@@ -1,9 +1,10 @@
-name: Fineract Sonarqube
+name: Fineract Latam Sonarqube
 on:
   push:
     branches:
-      - develop
-
+      - fiter/latam/dev
+  pull_request:
+    types: [opened, synchronize, reopened]
 permissions:
   contents: read
 
