@@ -63,12 +63,12 @@ public class PostInterestForSavingConfig {
 
     @Bean
     protected Step postInterestForSavingStep(PostInterestForSavingTasklet postInterestForSavingTasklet) {
-        return steps.get(JobName.POST_INTEREST_FOR_SAVINGS.name()).tasklet(postInterestForSavingTasklet).build();
+        return steps.get(JobName.POST_INTEREST_FOR_SAVINGS.name() + "- Original").tasklet(postInterestForSavingTasklet).build();
     }
 
     @Bean
     public Job postInterestForSavingJob(PostInterestForSavingTasklet postInterestForSavingTasklet) {
-        return jobs.get(JobName.POST_INTEREST_FOR_SAVINGS.name()).start(postInterestForSavingStep(postInterestForSavingTasklet))
+        return jobs.get(JobName.POST_INTEREST_FOR_SAVINGS.name() + "- Original").start(postInterestForSavingStep(postInterestForSavingTasklet))
                 .incrementer(new RunIdIncrementer()).build();
     }
 }

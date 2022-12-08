@@ -45,12 +45,12 @@ public class ApplyAnnualFeeForSavingsConfig {
 
     @Bean
     protected Step applyAnnualFeeForSavingsStep() {
-        return steps.get(JobName.APPLY_ANNUAL_FEE_FOR_SAVINGS.name()).tasklet(applyAnnualFeeForSavingsTasklet()).build();
+        return steps.get(JobName.APPLY_ANNUAL_FEE_FOR_SAVINGS.name()+"-ori").tasklet(applyAnnualFeeForSavingsTasklet()).build();
     }
 
     @Bean
     public Job applyAnnualFeeForSavingsJob() {
-        return jobs.get(JobName.APPLY_ANNUAL_FEE_FOR_SAVINGS.name()).start(applyAnnualFeeForSavingsStep())
+        return jobs.get(JobName.APPLY_ANNUAL_FEE_FOR_SAVINGS.name()+"-ori").start(applyAnnualFeeForSavingsStep())
                 .incrementer(new RunIdIncrementer()).build();
     }
 

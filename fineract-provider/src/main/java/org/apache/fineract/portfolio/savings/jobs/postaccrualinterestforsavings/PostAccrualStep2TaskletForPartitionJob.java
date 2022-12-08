@@ -44,8 +44,20 @@ public class PostAccrualStep2TaskletForPartitionJob implements Tasklet {
 
         List<Long> savingIds = (List<Long>) executionContext.get("activeSavingAccountIds");
         for (Long accountId : savingIds) {
-            LOG.info("Processing accrual for saving account id : " + accountId);
+            LOG.info("Starting Processing accrual for saving account id : " + accountId);
+            postAccrualInterest(accountId);
+            LOG.info("Finish Processing accrual for saving account id : " + accountId);
         }
         return RepeatStatus.FINISHED;
+    }
+
+    private void postAccrualInterest (Long savingAccountId){
+
+        try {
+            //mimic real world processing by thread sleep
+            Thread.sleep(1000);
+        } catch (Exception e){
+            LOG.error("exception : ");
+        }
     }
 }

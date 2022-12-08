@@ -40,7 +40,7 @@ import java.util.List;
 @Configuration
 @EnableBatchIntegration
 @ConditionalOnProperty(value = "fineract.mode.batch-manager-enabled", havingValue = "true")
-public class PostAccrualMultiStepPartitionJobManagerConfig {
+public class PostAccrualMultiStepPartitionJobMultithreadedRemoteManagerConfig {
 
     @Autowired
     private JobBuilderFactory jobBuilderFactory;
@@ -52,33 +52,33 @@ public class PostAccrualMultiStepPartitionJobManagerConfig {
     private DirectChannel outboundRequests;
 
     @Bean
-    public Step postAccrualPartitionJobStep1() {
-        return localStepBuilderFactory.get("PostAccrualMultiStepPartitionJob - Step1").tasklet(postAccrualStep1TaskletForPartitionJob()).build();
+    public Step postAccrualPartitionJobStep1MR() {
+        return localStepBuilderFactory.get("PostAccrualMultiStepPartitionJobMR - Step1").tasklet(postAccrualStep1TaskletForPartitionJobMR()).build();
     }
 
     @Bean
     @JobScope
-    public Tasklet postAccrualStep1TaskletForPartitionJob() {
+    public Tasklet postAccrualStep1TaskletForPartitionJobMR() {
         return new PostAccrualStep1TaskletForPartitionJob();
     }
 
     @Bean
     @JobScope
-    public PostAccrualInterestForSavingPartitioner partitionerAA(@Value("#{jobExecutionContext['activeSavingAccountIds']}") List<Long> savingAccountIds) {
+    public PostAccrualInterestForSavingPartitioner partitionerAAMR(@Value("#{jobExecutionContext['activeSavingAccountIds']}") List<Long> savingAccountIds) {
         return new PostAccrualInterestForSavingPartitioner(savingAccountIds);
     }
 
     @Bean
-    public Step postAccrualPartitionJobMasterStep() {
-        return stepBuilderFactory.get("PostAccrualMultiStepPartitionJob - MasterStep")
-                .partitioner("postAccrualMultiStepPartitionJobWorkerStep", partitionerAA(null)).gridSize(3).outputChannel(outboundRequests).build();
+    public Step postAccrualPartitionJobMasterStepMR() {
+        return stepBuilderFactory.get("PostAccrualMultiStepPartitionJobMR - MasterStep")
+                .partitioner("postAccrualMultiStepPartitionJobWorkerStepMR", partitionerAAMR(null)).gridSize(3).outputChannel(outboundRequests).build();
     }
 
     @Bean
     public Job postAccrualMultiStepJob() {
-        return jobBuilderFactory.get(JobName.POST_INTEREST_FOR_SAVINGS.name())
-                .start(postAccrualPartitionJobStep1())
-                .next(postAccrualPartitionJobMasterStep())
+        return jobBuilderFactory.get(JobName.APPLY_ANNUAL_FEE_FOR_SAVINGS.name())
+                .start(postAccrualPartitionJobStep1MR())
+                .next(postAccrualPartitionJobMasterStepMR())
                 .incrementer(new RunIdIncrementer()).build();
     }
 }

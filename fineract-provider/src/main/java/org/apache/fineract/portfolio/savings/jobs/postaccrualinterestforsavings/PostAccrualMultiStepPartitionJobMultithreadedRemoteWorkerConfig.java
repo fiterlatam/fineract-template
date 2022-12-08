@@ -36,33 +36,34 @@ import org.springframework.integration.channel.QueueChannel;
 @Configuration
 @EnableBatchIntegration
 @ConditionalOnProperty(value = "fineract.mode.batch-worker-enabled", havingValue = "true")
-public class PostAccrualMultiStepPartitionJobWorkerConfig {
+public class PostAccrualMultiStepPartitionJobMultithreadedRemoteWorkerConfig {
 
     @Autowired
     private RemotePartitioningWorkerStepBuilderFactory stepBuilderFactory;
+
     @Autowired
     private StepBuilderFactory localStepBuilderFactory;
     @Autowired
     private QueueChannel inboundRequests;
 
-    @Bean(name = "postAccrualMultiStepPartitionJobWorkerStep")
-    public Step postAccrualMultiStepPartitionJobWorkerStep() {
-        return stepBuilderFactory.get("postAccrualMultiStepPartitionJob - WorkerStep").inputChannel(inboundRequests).flow(flowA()).build();
+    @Bean(name = "postAccrualMultiStepPartitionJobWorkerStepMR")
+    public Step postAccrualMultiStepPartitionJobWorkerStepMR() {
+        return stepBuilderFactory.get("postAccrualMultiStepPartitionJobMR - WorkerStep").inputChannel(inboundRequests).flow(flowAMR()).build();
     }
 
     @Bean
-    public Flow flowA() {
-        return new FlowBuilder<Flow>("postAccrualMultiStepPartitionJob-postAccrualInterestFlow").start(postAccrualPartitionJobStep2(null)).build();
+    public Flow flowAMR() {
+        return new FlowBuilder<Flow>("postAccrualMultiStepPartitionJobMR-postAccrualInterestFlow").start(postAccrualPartitionJobStep2MR(null)).build();
     }
 
     @Bean
     @StepScope
-    public Step postAccrualPartitionJobStep2(@Value("#{stepExecutionContext['partition']}") String partitionName) {
-        return localStepBuilderFactory.get("PostAccrualMultiStepPartitionJob - Step2 - " + partitionName).tasklet(postAccrualStep2TaskletForPartitionJob()).build();
+    public Step postAccrualPartitionJobStep2MR(@Value("#{stepExecutionContext['partition']}") String partitionName) {
+        return localStepBuilderFactory.get("PostAccrualMultiStepPartitionJobMR - Step2 - " + partitionName).tasklet(postAccrualStep2TaskletForPartitionJobMR()).build();
     }
 
     @Bean
-    public Tasklet postAccrualStep2TaskletForPartitionJob() {
+    public Tasklet postAccrualStep2TaskletForPartitionJobMR() {
         return new PostAccrualStep2TaskletForPartitionJob();
     }
 }
