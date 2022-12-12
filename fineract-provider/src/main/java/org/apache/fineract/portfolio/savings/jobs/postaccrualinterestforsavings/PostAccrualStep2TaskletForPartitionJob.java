@@ -41,8 +41,8 @@ public class PostAccrualStep2TaskletForPartitionJob implements Tasklet {
 
         LOG.info(" ===== Starting Accrual Interest posting for savings account partition tasket ===== ");
         ExecutionContext executionContext = contribution.getStepExecution().getExecutionContext();
-
         List<Long> savingIds = (List<Long>) executionContext.get("activeSavingAccountIds");
+
         for (Long accountId : savingIds) {
             LOG.info("Starting Processing accrual for saving account id : " + accountId);
             postAccrualInterest(accountId);
@@ -51,8 +51,8 @@ public class PostAccrualStep2TaskletForPartitionJob implements Tasklet {
         return RepeatStatus.FINISHED;
     }
 
+    //actual logic for job
     private void postAccrualInterest (Long savingAccountId){
-
         try {
             //mimic real world processing by thread sleep
             Thread.sleep(1000);
