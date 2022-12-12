@@ -43,8 +43,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: executing remote ssh commands using ssh key
-        env:
-          IMAGE_TAG: ${{ steps.commit.outputs.short }}
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.LATAM_REMOTE_HOST }}
@@ -54,5 +52,5 @@ jobs:
             ./docker-login.sh
             docker stop fineract
             docker rm fineract
-            docker pull 916148231619.dkr.ecr.us-east-2.amazonaws.com/latam-backend:$IMAGE_TAG
+            docker pull 916148231619.dkr.ecr.us-east-2.amazonaws.com/latam-backend:latest
             docker run -d --fineract fineract 916148231619.dkr.ecr.us-east-2.amazonaws.com/latam-backed:latest
