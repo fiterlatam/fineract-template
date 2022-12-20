@@ -1,0 +1,40 @@
+name: Fiter Latam - Codacy Coverage Reporter
+on:
+  push:
+    branches:
+      - fiter/latam/dev
+  pull_request:
+    branches:
+      - fiter/latam/dev
+jobs:
+  codacy-coverage-reporter:
+    name: Build and upload code coverage report
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: JDK 17 Setup
+        uses: actions/setup-java@v3.8.0
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Check out code
+        uses: actions/checkout@v3
+
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v2
+
+      - name: Run test with Gradle Wrapper
+        continue-on-error: true
+        run: ./gradlew test jacocoTestReport -x licenseMain
+
+      - name: Run merge report with Gradle Wrapper
+        continue-on-error: true
+        run: ./gradlew generateMergedReport
+
+      - name: Run codacy-coverage-reporter
+        uses: codacy/codacy-coverage-reporter-action@master
+        continue-on-error: true
+        with:
+          api-token: "${{ secrets.CODACY_API_TOKEN }}"
+          coverage-reports: ../fineract-template/build/reports/jacoco/generateMergedReport/generateMergedReport.xml
