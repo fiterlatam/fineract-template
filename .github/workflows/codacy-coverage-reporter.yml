@@ -15,11 +15,15 @@ jobs:
         - name: Check out code
           uses: actions/checkout@v3
 
-        - name: JDK 17 Setup
+        - name: JDK 8 Setup
           uses: actions/setup-java@v3
           with:
-            distribution: 'temurin'
-            java-version: '17'
+            # distribution: 'temurin'
+            java-version: '8'
+            cache: gradle
+      
+        - name: Validate Gradle wrapper
+          uses: gradle/wrapper-validation-action@v2
 
         - name: Setup Gradle
           uses: gradle/gradle-build-action@v2
