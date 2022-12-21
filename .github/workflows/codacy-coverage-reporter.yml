@@ -28,3 +28,23 @@ jobs:
           uses: gradle/gradle-build-action@v2
           with:
             arguments: -b build.gradle clean bootJar --stacktrace
+            
+        - name: Run Gradle task to generate the coverage report
+          continue-on-error: true
+          uses: gradle/gradle-build-action@v2
+          with:
+            arguments: -b build.gradle clean test jacocoTestReport -x licenseMain
+
+        - name: Run merge report with Gradle Wrapper
+          continue-on-error: true
+          uses: gradle/gradle-build-action@v2
+          with:
+            arguments: -b build.gradle generateMergedReport
+
+        - name: Run codacy-coverage-reporter
+          continue-on-error: true
+          uses: codacy/codacy-coverage-reporter-action@master
+          with:
+            api-token: "${{ secrets.CODACY_API_TOKEN }}"
+            coverage-reports: ../fineract-template/build/reports/jacoco/generateMergedReport/generateMergedReport.xml
+
