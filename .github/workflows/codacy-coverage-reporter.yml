@@ -12,26 +12,30 @@ jobs:
     runs-on: ubuntu-latest
     steps:
 
-
       - name: Check out code
         uses: actions/checkout@v3
+        
+      - name: JDK 17 Setup
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
 
       - name: Setup Gradle
         uses: gradle/gradle-build-action@v2
         
       - name: Run the Gradle package task
-        continue-on-error: true
-        uses: gradle/gradle-build-action@67421db6bd0bf253fb4bd25b31ebb98943c375e1
+        uses: gradle/gradle-build-action@v2
         with:
           arguments: -b build.gradle clean test jacocoTestReport -x licenseMain 
-
+        
       - name: Run merge report with Gradle Wrapper
-        continue-on-error: true
-        run: ./gradlew generateMergedReport
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: -b build.gradle generateMergedReport 
 
       - name: Run codacy-coverage-reporter
         uses: codacy/codacy-coverage-reporter-action@master
-        continue-on-error: true
         with:
           api-token: "${{ secrets.CODACY_API_TOKEN }}"
           coverage-reports: ../fineract-template/build/reports/jacoco/generateMergedReport/generateMergedReport.xml
