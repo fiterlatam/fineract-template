@@ -28,6 +28,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.accounting.common.AccountingRuleType;
@@ -87,6 +88,7 @@ import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
@@ -95,6 +97,7 @@ public class SavingsAccountReadPlatformServiceImpl implements SavingsAccountRead
 
     private final PlatformSecurityContext context;
     private final JdbcTemplate jdbcTemplate;
+    private final NamedParameterJdbcTemplate namedParameterJdbcTemplate;
     private final ClientReadPlatformService clientReadPlatformService;
     private final GroupReadPlatformService groupReadPlatformService;
     private final SavingsProductReadPlatformService savingsProductReadPlatformService;
@@ -126,9 +129,10 @@ public class SavingsAccountReadPlatformServiceImpl implements SavingsAccountRead
             final ChargeReadPlatformService chargeReadPlatformService,
             final EntityDatatableChecksReadService entityDatatableChecksReadService, final ColumnValidator columnValidator,
             final SavingsAccountAssembler savingAccountAssembler, PaginationHelper paginationHelper,
-            DatabaseSpecificSQLGenerator sqlGenerator) {
+            DatabaseSpecificSQLGenerator sqlGenerator, final NamedParameterJdbcTemplate namedParameterJdbcTemplate) {
         this.context = context;
         this.jdbcTemplate = jdbcTemplate;
+        this.namedParameterJdbcTemplate = namedParameterJdbcTemplate;
         this.clientReadPlatformService = clientReadPlatformService;
         this.groupReadPlatformService = groupReadPlatformService;
         this.savingsProductReadPlatformService = savingProductReadPlatformService;
@@ -276,6 +280,57 @@ public class SavingsAccountReadPlatformServiceImpl implements SavingsAccountRead
 
         List<SavingsAccountData> savingsAccountDataList = this.jdbcTemplate.query(sql, this.savingAccountMapperForInterestPosting, // NOSONAR
                 new Object[] { maxSavingsId, status, pageSize, yesterday });
+        for (SavingsAccountData savingsAccountData : savingsAccountDataList) {
+            this.savingAccountAssembler.assembleSavings(savingsAccountData);
+        }
+        return savingsAccountDataList;
+    }
+
+    @Override
+    public List<Long> retrieveAllSavingsAccountIdsForInterestPosting(boolean backdatedTxnsAllowedTill, Integer status){
+
+        LocalDate yesterday = DateUtils.getBusinessLocalDate().minusDays(1);
+        List<Long> savingsAccountIds = null;
+        StringBuilder sql = new StringBuilder("select sa.id ");
+        sql.append(" from m_savings_account as sa ");
+        sql.append(" join m_savings_account_transaction as tr on sa.id = tr.savings_account_id ");
+        sql.append(" where sa.status_enum = ?  ");
+        if (backdatedTxnsAllowedTill) {
+            sql.append(" and (CASE WHEN sa.interest_posted_till_date is not null THEN tr.transaction_date >= sa.interest_posted_till_date ELSE tr.transaction_date >= sa.activatedon_date END) ");
+        }
+        sql.append(" and (sa.interest_posted_till_date is null or sa.interest_posted_till_date <= ? ) ");
+        sql.append(" order by sa.id, tr.transaction_date, tr.created_date, tr.id" );
+
+        try {
+            savingsAccountIds = this.jdbcTemplate.queryForList(sql.toString(), Long.class, new Object[] { status, yesterday });
+        } catch (EmptyResultDataAccessException e) {
+            // ignore empty result scenario
+        } catch (DataAccessException e) {
+            throw e;
+        }
+        return savingsAccountIds;
+    }
+
+    @Override
+    public List<SavingsAccountData> retrieveSavingsDataForForInterestPostingByIds(boolean backdatedTxnsAllowedTill, Integer status, List<Long> savingsAccountIds){
+
+        LocalDate yesterday = DateUtils.getBusinessLocalDate().minusDays(1);
+        String sql = "select " + this.savingAccountMapperForInterestPosting.schema()
+                + " where sa.status_enum = :status_enum_param  ";
+        sql = sql + " and sa.id in ( :savings_account_ids_param ) ";
+        if (backdatedTxnsAllowedTill) {
+            sql = sql
+                    + "and (CASE WHEN sa.interest_posted_till_date is not null THEN tr.transaction_date >= sa.interest_posted_till_date ELSE tr.transaction_date >= sa.activatedon_date END) ";
+        }
+        sql = sql + " and (sa.interest_posted_till_date is null or sa.interest_posted_till_date <= :date_param ) ";
+        sql = sql + " order by sa.id, tr.transaction_date, tr.created_date, tr.id";
+
+        Map<String, Object> paramMap = new HashMap<>(3);
+        paramMap.put("status_enum_param", status);
+        paramMap.put("savings_account_ids_param", savingsAccountIds);
+        paramMap.put("date_param", yesterday);
+
+        List<SavingsAccountData> savingsAccountDataList = this.namedParameterJdbcTemplate.query(sql, paramMap, this.savingAccountMapperForInterestPosting);
         for (SavingsAccountData savingsAccountData : savingsAccountDataList) {
             this.savingAccountAssembler.assembleSavings(savingsAccountData);
         }
