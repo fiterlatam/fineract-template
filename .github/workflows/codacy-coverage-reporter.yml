@@ -15,12 +15,11 @@ jobs:
         - name: Check out code
           uses: actions/checkout@v3
 
-        - name: JDK 8 Setup
+        - name: JDK 17 Setup
           uses: actions/setup-java@v3
           with:
-            java-version: '8'
+            java-version: '17'
             distribution: 'temurin'
-            cache: gradle
 
         - name: Setup Gradle
           uses: gradle/gradle-build-action@v2
