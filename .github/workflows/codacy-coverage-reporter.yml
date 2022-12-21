@@ -20,26 +20,19 @@ jobs:
           with:
             java-version: '17'
             distribution: 'temurin'
+            cache: gradle
 
-        - name: Setup Gradle
-          uses: gradle/gradle-build-action@v2
-
-        - name: Run the Gradle package task
-          uses: gradle/gradle-build-action@v2
-          with:
-            arguments: -b build.gradle clean bootJar --stacktrace
+        - name: Run Coverage
+          continue-on-error: true
+          run: |
+            chmod +x gradlew
+            ./gradlew jacocoTestReport -x licenseMain
             
-        - name: Run Gradle task to generate the coverage report
+        - name: Merge coverage reports
           continue-on-error: true
-          uses: gradle/gradle-build-action@v2
-          with:
-            arguments: -b build.gradle clean test jacocoTestReport -x licenseMain
-
-        - name: Run merge report with Gradle Wrapper
-          continue-on-error: true
-          uses: gradle/gradle-build-action@v2
-          with:
-            arguments: -b build.gradle generateMergedReport
+          run: |
+            chmod +x gradlew
+            ./gradlew generateMergedReport
 
         - name: Run codacy-coverage-reporter
           continue-on-error: true
