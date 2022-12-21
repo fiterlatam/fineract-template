@@ -18,8 +18,8 @@ jobs:
         - name: JDK 8 Setup
           uses: actions/setup-java@v3
           with:
-            # distribution: 'temurin'
             java-version: '8'
+            distribution: 'temurin'
             cache: gradle
 
         - name: Setup Gradle
