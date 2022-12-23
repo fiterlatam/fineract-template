@@ -23,14 +23,13 @@ jobs:
             cache: gradle
 
         - name: Run Coverage
-          continue-on-error: true
           run: |
             chmod +x gradlew
-            ./gradlew :fineract-cliente:test -x spotlessCheck  
+            ./gradlew clean bootJar
+            ./gradlew :fineract-client:test -x spotlessCheck  
             ./gradlew :fineract-provider:test -x spotlessCheck
 
         - name: Merge coverage reports
-          continue-on-error: true
           run: |
             chmod +x gradlew
             ./gradlew generateMergedReport
