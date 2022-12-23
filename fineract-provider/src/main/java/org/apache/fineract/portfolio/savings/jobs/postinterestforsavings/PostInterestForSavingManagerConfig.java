@@ -82,7 +82,7 @@ public class PostInterestForSavingManagerConfig {
 
     @Bean
     public Job postInterestMultiStepJob() {
-        return jobBuilderFactory.get(JobName.POST_INTEREST_FOR_SAVINGS.name())
+        return jobBuilderFactory.get(JobName.POST_INTEREST_FOR_SAVINGS_PARTITION_JOB.name())
                 .start(fetchSavingsAccountIdsStep())
                 .next(postInterestJobMasterStep()) // write partitioner and worker tasklet
                 .incrementer(new RunIdIncrementer()).build();

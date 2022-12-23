@@ -69,6 +69,7 @@ public class PostInterestForSavingTasklet implements Tasklet {
         long start = System.currentTimeMillis();
 
         log.debug("Reading Savings Account Data!");
+        log.info("Outside --- First Fetching with maxSavingsIdInList : " + maxSavingsIdInList + " pageSize : " + pageSize);
         List<SavingsAccountData> savingsAccounts = savingAccountReadPlatformService
                 .retrieveAllSavingsDataForInterestPosting(backdatedTxnsAllowedTill, pageSize, ACTIVE.getValue(), maxSavingsIdInList);
 
@@ -120,7 +121,8 @@ public class PostInterestForSavingTasklet implements Tasklet {
             }
 
             while (queue.size() <= queueSize) {
-                log.debug("Fetching while threads are running!");
+                log.info("Fetching while threads are running!");
+                log.info("--- Inside --- Fetching with maxSavingsIdInList : " + maxId + " pageSize : " + pageSize);
                 List<SavingsAccountData> savingsAccountDataList = Collections.synchronizedList(this.savingAccountReadPlatformService
                         .retrieveAllSavingsDataForInterestPosting(backdatedTxnsAllowedTill, pageSize, ACTIVE.getValue(), maxId));
                 if (savingsAccountDataList.isEmpty()) {
@@ -164,7 +166,7 @@ public class PostInterestForSavingTasklet implements Tasklet {
             }
 
             while (queue.size() <= queueSize) {
-                log.debug("Fetching while threads are running!..:: this is not supposed to run........");
+                log.info("Fetching while threads are running!..:: this is not supposed to run........");
                 savingsAccounts = Collections.synchronizedList(this.savingAccountReadPlatformService
                         .retrieveAllSavingsDataForInterestPosting(backdatedTxnsAllowedTill, pageSize, ACTIVE.getValue(), maxId));
                 if (savingsAccounts.isEmpty()) {

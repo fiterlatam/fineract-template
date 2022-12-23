@@ -44,7 +44,8 @@ public class PostInterestForSavingAccountIdsPartitioner implements Partitioner {
     @Override
     public Map<String, ExecutionContext> partition(int gridSize) {
         int totalSavingsAccounts = savingsAccountIds.size();
-        int partitionSize = totalSavingsAccounts / gridSize + 1;
+        int partitionSize = 1000;// must be set with properties( batchsize * poolsize)
+        //final int partitionSize = Integer.parseInt((String) chunkContext.getStepContext().getJobParameters().get("batch-size"));
         return getPartitions(partitionSize);
     }
 

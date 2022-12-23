@@ -60,9 +60,10 @@ public class PostInterestForSavingsWorkerTasklet implements Tasklet {
         ExecutionContext executionContext = contribution.getStepExecution().getExecutionContext();
         List<Long> savingsAccountIds = (List<Long>) executionContext.get("savingsAccountIdsForInterestPostingWorker");
 
-        final int threadPoolSize = Integer.parseInt((String) chunkContext.getStepContext().getJobParameters().get("thread-pool-size"));
-        final int batchSize = Integer.parseInt((String) chunkContext.getStepContext().getJobParameters().get("batch-size"));
-        final int pageSize = batchSize * threadPoolSize;
+        //final int threadPoolSize = Integer.parseInt((String) chunkContext.getStepContext().getJobParameters().get("thread-pool-size"));
+        final int threadPoolSize = 10; // this needs to comme from property
+        //final int batchSize = Integer.parseInt((String) chunkContext.getStepContext().getJobParameters().get("batch-size"));
+        //final int pageSize = batchSize * threadPoolSize;
         final ExecutorService executorService = Executors.newFixedThreadPool(threadPoolSize);
         final boolean backdatedTxnsAllowedTill = this.configurationDomainService.retrievePivotDateConfig();
 
@@ -78,7 +79,7 @@ public class PostInterestForSavingsWorkerTasklet implements Tasklet {
             log.debug("Done fetching Data within {} milliseconds", finish - start);
 
             int totalFilteredRecords = savingsAccounts.size();
-            log.debug("Starting Interest posting - total records - {}", totalFilteredRecords);
+            log.info("Starting Interest posting - total records - {}", totalFilteredRecords);
             postInterest(savingsAccounts, threadPoolSize, executorService, backdatedTxnsAllowedTill);
 
             executorService.shutdownNow();

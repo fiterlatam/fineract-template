@@ -76,6 +76,7 @@ public class SavingsSchedularInterestPoster implements Callable<Void> {
 
         if (!savingAccounts.isEmpty()) {
             List<Throwable> errors = new ArrayList<>();
+            log.info(" === SavingsSchedularInterestPoster === Posting Interest starts === ");
             for (SavingsAccountData savingsAccountData : savingAccounts) {
                 boolean postInterestAsOn = false;
                 LocalDate transactionDate = null;
@@ -87,6 +88,8 @@ public class SavingsSchedularInterestPoster implements Callable<Void> {
                     errors.add(e);
                 }
             }
+            log.info(" === SavingsSchedularInterestPoster === Posting Interest ends === ");
+            log.info(" === SavingsSchedularInterestPoster === batchUpdate starts === ");
             if (errors.isEmpty()) {
                 try {
                     batchUpdate(savingsAccountDataList);
@@ -98,7 +101,7 @@ public class SavingsSchedularInterestPoster implements Callable<Void> {
                     errors.add(exception);
                 }
             }
-
+            log.info(" === SavingsSchedularInterestPoster === batchUpdate ends === ");
             if (!errors.isEmpty()) {
                 throw new JobExecutionException(errors);
             }
@@ -110,7 +113,8 @@ public class SavingsSchedularInterestPoster implements Callable<Void> {
     private void batchUpdateJournalEntries(final List<SavingsAccountData> savingsAccountDataList,
             final HashMap<String, SavingsAccountTransactionData> savingsAccountTransactionDataHashMap)
             throws DataAccessException, NullPointerException {
-        Long userId = platformSecurityContext.authenticatedUser().getId();
+        //Long userId = platformSecurityContext.authenticatedUser().getId();
+        Long userId = 1L;
         String queryForJGLUpdate = batchQueryForJournalEntries();
         List<Object[]> paramsForGLInsertion = new ArrayList<>();
         for (SavingsAccountData savingsAccountData : savingsAccountDataList) {
