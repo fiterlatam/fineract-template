@@ -18,6 +18,7 @@
  */
 package org.apache.fineract.portfolio.savings.jobs.postinterestforsavings;
 
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.batch.core.partition.support.Partitioner;
 import org.springframework.batch.item.ExecutionContext;
@@ -30,6 +31,7 @@ import java.util.HashMap;
 import java.util.ArrayList;
 
 @Component
+@Slf4j
 public class PostInterestForSavingAccountIdsPartitioner implements Partitioner {
 
     public static final String PARTITION_PREFIX = "partition_";
@@ -71,6 +73,7 @@ public class PostInterestForSavingAccountIdsPartitioner implements Partitioner {
             data.add(loanId);
             remainingSpace++;
         }
+        log.info(" ===== Total Partitions for Interest posting for savings accounts =====  : " + partitions.size());
         return partitions;
     }
 

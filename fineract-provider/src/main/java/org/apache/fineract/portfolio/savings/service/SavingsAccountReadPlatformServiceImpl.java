@@ -30,6 +30,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.List;
+
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.accounting.common.AccountingRuleType;
 import org.apache.fineract.accounting.glaccount.data.GLAccountData;
@@ -93,6 +95,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
 @Service
+@Slf4j
 public class SavingsAccountReadPlatformServiceImpl implements SavingsAccountReadPlatformService {
 
     private final PlatformSecurityContext context;
@@ -289,20 +292,25 @@ public class SavingsAccountReadPlatformServiceImpl implements SavingsAccountRead
     @Override
     public List<Long> retrieveAllSavingsAccountIdsForInterestPosting(boolean backdatedTxnsAllowedTill, Integer status){
 
-        LocalDate yesterday = DateUtils.getBusinessLocalDate().minusDays(1);
+        //This is simple query to fetch all active savings accounts
+        //LocalDate yesterday = DateUtils.getBusinessLocalDate().minusDays(1);
         List<Long> savingsAccountIds = null;
         StringBuilder sql = new StringBuilder("select sa.id ");
         sql.append(" from m_savings_account as sa ");
-        sql.append(" join m_savings_account_transaction as tr on sa.id = tr.savings_account_id ");
+        //sql.append(" join m_savings_account_transaction as tr on sa.id = tr.savings_account_id ");
         sql.append(" where sa.status_enum = ?  ");
-        if (backdatedTxnsAllowedTill) {
+        /*if (backdatedTxnsAllowedTill) {
             sql.append(" and (CASE WHEN sa.interest_posted_till_date is not null THEN tr.transaction_date >= sa.interest_posted_till_date ELSE tr.transaction_date >= sa.activatedon_date END) ");
         }
         sql.append(" and (sa.interest_posted_till_date is null or sa.interest_posted_till_date <= ? ) ");
-        sql.append(" order by sa.id, tr.transaction_date, tr.created_date, tr.id" );
+        sql.append(" order by sa.id, tr.transaction_date, tr.created_date, tr.id" );*/
+        sql.append(" order by sa.id" );
+
+        String sqlString = sql.toString();
+        log.info(" === Query to fetch all savings account Ids for Interest Posting Partition Job : === " + sqlString + " ==== params status : ==== " + status );
 
         try {
-            savingsAccountIds = this.jdbcTemplate.queryForList(sql.toString(), Long.class, new Object[] { status, yesterday });
+            savingsAccountIds = this.jdbcTemplate.queryForList(sqlString, Long.class, new Object[] { status });
         } catch (EmptyResultDataAccessException e) {
             // ignore empty result scenario
         } catch (DataAccessException e) {
