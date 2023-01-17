@@ -36,6 +36,8 @@ public class JmsBrokerConfiguration {
     public ActiveMQConnectionFactory connectionFactory() {
         ActiveMQConnectionFactory connectionFactory = new ActiveMQConnectionFactory();
         connectionFactory.setBrokerURL(fineractProperties.getRemoteJobMessageHandler().getJms().getBrokerUrl());
+        connectionFactory.setUserName(fineractProperties.getRemoteJobMessageHandler().getJms().getBrokerUsername());
+        connectionFactory.setPassword(fineractProperties.getRemoteJobMessageHandler().getJms().getBrokerPassword());
         connectionFactory.setTrustAllPackages(true);
         return connectionFactory;
     }

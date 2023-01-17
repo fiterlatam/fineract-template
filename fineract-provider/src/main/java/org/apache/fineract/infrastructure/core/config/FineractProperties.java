@@ -124,6 +124,8 @@ public class FineractProperties {
         private boolean enabled;
         private String requestQueueName;
         private String brokerUrl;
+        private String brokerUsername;
+        private String brokerPassword;
     }
 
     @Getter
