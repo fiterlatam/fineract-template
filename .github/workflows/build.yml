@@ -1,4 +1,4 @@
-name: Latam Fineract Dev CI/CD
+name: Albo Fineract Dev CI/CD
 on:
   push:
     branches:

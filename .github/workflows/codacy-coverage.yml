@@ -1,4 +1,4 @@
-name: Fiter Latam - Codacy Coverage Reporter
+name: Albo - Codacy Coverage Reporter
 on:
   push:
     branches:
