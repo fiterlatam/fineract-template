@@ -1,14 +1,14 @@
-name: Latam Fineract Dev CI/CD
+name: FB Dev CI/CD
 on:
   push:
     branches:
-      - fiter/latam/dev
+      - fiter/fb/dev
 jobs:
   continuous-integration:
     runs-on: ubuntu-latest
     steps:
       - name: Check out code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - uses: kamiazya/setup-graphviz@v1
 
@@ -34,22 +34,3 @@ jobs:
         run: |
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:latest .
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
-
-  continuous-deployment:
-    needs: continuous-integration
-    runs-on: ubuntu-latest
-    steps:
-      - name: executing remote ssh commands using ssh key
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.LATAM_REMOTE_HOST }}
-          username: ${{ secrets.LATAM_REMOTE_USER }}
-          key: ${{ secrets.LATAM_EC2_SSH_KEY }}
-          script: |
-            ./docker-login.sh
-            cd fineract
-            docker-compose down
-            docker-compose up -d

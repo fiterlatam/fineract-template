@@ -1,11 +1,11 @@
-name: Fiter Latam - Codacy Coverage Reporter
+name: FB - Codacy Coverage Reporter
 on:
   push:
     branches:
-      - fiter/latam/dev
+      - fiter/fb/dev
   pull_request:
     branches:
-      - fiter/latam/dev
+      - fiter/fb/dev
 jobs:
   codacy-coverage-reporter:
     name: Build and upload code coverage report
