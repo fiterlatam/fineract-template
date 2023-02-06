@@ -26,7 +26,7 @@
 
     <changeSet author="fineract" id="1">
         <addColumn tableName="m_loan">
-            <column defaultValueComputed="NULL" name="tasa_effectiva" type="DECIMAL(19, 6)"/>
+            <column defaultValueComputed="NULL" name="effective_rate" type="DECIMAL(19, 6)"/>
         </addColumn>
     </changeSet>
 

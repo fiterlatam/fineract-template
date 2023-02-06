@@ -400,8 +400,8 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     @OneToOne(mappedBy = "loanAccount", fetch = FetchType.LAZY)
     private AccountAssociations accountAssociations;
 
-    @Column(name = "tasa_effectiva")
-    private BigDecimal tasaeffectiva;
+    @Column(name = "effective_rate")
+    private BigDecimal effectiveRate;
 
     public static Loan newIndividualLoanApplication(final String accountNo, final Client client, final Integer loanType,
             final LoanProduct loanProduct, final Fund fund, final Staff officer, final CodeValue loanPurpose,
@@ -465,7 +465,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             final BigDecimal fixedEmiAmount, final List<LoanDisbursementDetails> disbursementDetails,
             final BigDecimal maxOutstandingLoanBalance, final Boolean createStandingInstructionAtDisbursement,
             final Boolean isFloatingInterestRate, final BigDecimal interestRateDifferential, final List<Rate> rates,
-            final BigDecimal fixedPrincipalPercentagePerInstallment, final BigDecimal tasaeffectiva) {
+            final BigDecimal fixedPrincipalPercentagePerInstallment, final BigDecimal effectiveRate) {
 
         this.loanRepaymentScheduleDetail = loanRepaymentScheduleDetail;
         this.loanRepaymentScheduleDetail.validateRepaymentPeriodWithGraceSettings();
@@ -528,7 +528,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
         // Add net get net disbursal amount from charges and principal
         this.netDisbursalAmount = this.approvedPrincipal.subtract(deriveSumTotalOfChargesDueAtDisbursement());
-        this.tasaeffectiva = tasaeffectiva;
+        this.effectiveRate = effectiveRate;
 
     }
 
@@ -6883,11 +6883,11 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         return clientId;
     }
 
-    public BigDecimal getTasaeffectiva() {
-        return tasaeffectiva;
+    public BigDecimal getEffectiveRate() {
+        return effectiveRate;
     }
 
-    public void setTasaeffectiva(BigDecimal tasaeffectiva) {
-        this.tasaeffectiva = tasaeffectiva;
+    public void setEffectiveRate(BigDecimal effectiveRate) {
+        this.effectiveRate = effectiveRate;
     }
 }
