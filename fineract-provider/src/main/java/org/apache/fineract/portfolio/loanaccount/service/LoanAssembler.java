@@ -179,6 +179,20 @@ public class LoanAssembler {
         final Boolean createStandingInstructionAtDisbursement = this.fromApiJsonHelper
                 .extractBooleanNamed("createStandingInstructionAtDisbursement", element);
 
+        final BigDecimal loanTermFrequency = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed("loanTermFrequency", element);
+        final Integer loanTermFrequencyType = this.fromApiJsonHelper.extractIntegerWithLocaleNamed("loanTermFrequencyType", element);
+        final BigDecimal interestRatePerPeriod = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed("interestRatePerPeriod", element);
+
+        BigDecimal period = loanTermFrequency;
+        if (loanTermFrequencyType == 2) {
+            period = period.divide(BigDecimal.valueOf(12));
+        }
+        // Effective rate is calcvulate as follows (1 + interest / period) * period - 1;
+        BigDecimal rateForPeriod = interestRatePerPeriod.divide(period);
+        rateForPeriod = rateForPeriod.add(BigDecimal.ONE);
+        rateForPeriod = rateForPeriod.multiply(period);
+        BigDecimal effectInterestAmount = rateForPeriod.subtract(BigDecimal.ONE);
+
         final LoanProduct loanProduct = this.loanProductRepository.findById(productId)
                 .orElseThrow(() -> new LoanProductNotFoundException(productId));
         final BigDecimal amount = this.fromApiJsonHelper
@@ -305,21 +319,21 @@ public class LoanAssembler {
                     fund, loanOfficer, loanPurpose, loanTransactionProcessingStrategy, loanProductRelatedDetail, loanCharges, null,
                     syncDisbursementWithMeeting, fixedEmiAmount, disbursementDetails, maxOutstandingLoanBalance,
                     createStandingInstructionAtDisbursement, isFloatingInterestRate, interestRateDifferential, rates,
-                    fixedPrincipalPercentagePerInstallment);
+                    fixedPrincipalPercentagePerInstallment, effectInterestAmount);
 
         } else if (group != null) {
             loanApplication = Loan.newGroupLoanApplication(accountNo, group, loanType.getId().intValue(), loanProduct, fund, loanOfficer,
                     loanPurpose, loanTransactionProcessingStrategy, loanProductRelatedDetail, loanCharges, null,
                     syncDisbursementWithMeeting, fixedEmiAmount, disbursementDetails, maxOutstandingLoanBalance,
                     createStandingInstructionAtDisbursement, isFloatingInterestRate, interestRateDifferential, rates,
-                    fixedPrincipalPercentagePerInstallment);
+                    fixedPrincipalPercentagePerInstallment, effectInterestAmount);
 
         } else if (client != null) {
 
             loanApplication = Loan.newIndividualLoanApplication(accountNo, client, loanType.getId().intValue(), loanProduct, fund,
                     loanOfficer, loanPurpose, loanTransactionProcessingStrategy, loanProductRelatedDetail, loanCharges, collateral,
                     fixedEmiAmount, disbursementDetails, maxOutstandingLoanBalance, createStandingInstructionAtDisbursement,
-                    isFloatingInterestRate, interestRateDifferential, rates, fixedPrincipalPercentagePerInstallment);
+                    isFloatingInterestRate, interestRateDifferential, rates, fixedPrincipalPercentagePerInstallment, effectInterestAmount);
 
         }
 
