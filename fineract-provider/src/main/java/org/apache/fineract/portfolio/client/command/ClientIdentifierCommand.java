@@ -18,6 +18,7 @@
  */
 package org.apache.fineract.portfolio.client.command;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.fineract.infrastructure.core.data.ApiParameterError;
@@ -33,13 +34,17 @@ public class ClientIdentifierCommand {
     private final String documentKey;
     private final String description;
     private final String status;
+    private final String issuingId;
+    private final LocalDate validityDate;
 
-    public ClientIdentifierCommand(final Long documentTypeId, final String documentKey, final String statusString,
-            final String description) {
+    public ClientIdentifierCommand(final Long documentTypeId, final String documentKey, final String statusString, final String description,
+            final String issuingId, final LocalDate validityDate) {
         this.documentTypeId = documentTypeId;
         this.documentKey = documentKey;
         this.status = statusString;
         this.description = description;
+        this.issuingId = issuingId;
+        this.validityDate = validityDate;
     }
 
     public Long getDocumentTypeId() {

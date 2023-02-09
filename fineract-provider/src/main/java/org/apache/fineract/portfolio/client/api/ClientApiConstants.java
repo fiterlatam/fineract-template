@@ -85,6 +85,7 @@ public class ClientApiConstants {
     public static final String firstnameParamName = "firstname";
     public static final String middlenameParamName = "middlename";
     public static final String lastnameParamName = "lastname";
+    public static final String motherLastnameParamName = "motherlastname";
     public static final String fullnameParamName = "fullname";
     public static final String displaynameParamName = "displayname";
     public static final String officeIdParamName = "officeId";
@@ -115,6 +116,16 @@ public class ClientApiConstants {
     public static final String clientClassificationParamName = "clientClassification";
     public static final String legalFormIdParamName = "legalFormId";
     public static final String legalFormParamName = "legalForm";
+
+    public static final String uuidParamName = "uuid";
+    public static final String countryOfBirthParamName = "countryOfBirth";
+    public static final String nationalityParamName = "nationality";
+    public static final String curpParamName = "curp";
+    public static final String rfcParamName = "rfc";
+    public static final String finalBeneficiaryParamName = "finalBeneficiary";
+    public static final String thirdPartyBeneficiaryParamName = "thirdPartyBeneficiary";
+    public static final String professionIdParamName = "professionId";
+
     // request parameters for payment details
     public static final String paymentTypeIdParamName = "paymentTypeId";
     public static final String transactionAccountNumberParamName = "accountNumber";

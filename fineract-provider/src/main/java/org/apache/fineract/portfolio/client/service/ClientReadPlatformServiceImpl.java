@@ -429,6 +429,11 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
             sqlBuilder.append("cvMainBusinessLine.code_value as mainBusinessLineValue, ");
             sqlBuilder.append("cnp.remarks as remarks ");
 
+            sqlBuilder.append("c.uuid as uuid, c.mother_lastname as motherLastName, c.country_of_birth as countryOfBirth, ");
+            sqlBuilder.append("c.nationality as nationality, c.curp as curp, c.rfc as rfc, c.final_beneficiary as mainBeneficiary, ");
+            sqlBuilder.append("c.third_party_beneficiary as thirdPartyBeneficiary, ");
+            sqlBuilder.append("cvProfession.code_value as professionValue, c.profession_cv_id as professionId, ");
+
             sqlBuilder.append("from m_client c ");
             sqlBuilder.append("join m_office o on o.id = c.office_id ");
             sqlBuilder.append("left join m_client_non_person cnp on cnp.client_id = c.id ");
@@ -446,6 +451,7 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
             sqlBuilder.append("left join m_code_value cvSubStatus on cvSubStatus.id = c.sub_status ");
             sqlBuilder.append("left join m_code_value cvConstitution on cvConstitution.id = cnp.constitution_cv_id ");
             sqlBuilder.append("left join m_code_value cvMainBusinessLine on cvMainBusinessLine.id = cnp.main_business_line_cv_id ");
+            sqlBuilder.append("left join m_code_value cvProfession ON cvProfession.id = c.profession_cv_id");
 
             this.schema = sqlBuilder.toString();
         }
@@ -537,6 +543,18 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
             final CodeValueData mainBusinessLine = CodeValueData.instance(mainBusinessLineId, mainBusinessLineValue);
             final String remarks = rs.getString("remarks");
 
+            final String uuid = rs.getString("uuid");
+            final String motherLastName = rs.getString("motherLastName");
+            final String countryOfBirth = rs.getString("countryOfBirth");
+            final String nationality = rs.getString("nationality");
+            final String curp = rs.getString("curp");
+            final String rfc = rs.getString("rfc");
+            final String mainBeneficiary = rs.getString("mainBeneficiary");
+            final String thirdPartyBeneficiary = rs.getString("thirdPartyBeneficiary");
+            final String professionValue = rs.getString("professionValue");
+            final Long professionId = JdbcSupport.getLong(rs, "professionId");
+            final CodeValueData profession = CodeValueData.instance(professionId, professionValue);
+
             final ClientNonPersonData clientNonPerson = new ClientNonPersonData(constitution, incorpNo, incorpValidityTill,
                     mainBusinessLine, remarks);
 
@@ -547,7 +565,8 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
             return ClientData.instance(accountNo, status, subStatus, officeId, officeName, transferToOfficeId, transferToOfficeName, id,
                     firstname, middlename, lastname, fullname, displayName, externalId, mobileNo, emailAddress, dateOfBirth, gender,
                     activationDate, imageId, staffId, staffName, timeline, savingsProductId, savingsProductName, savingsAccountId,
-                    clienttype, classification, legalForm, clientNonPerson, isStaff);
+                    clienttype, classification, legalForm, clientNonPerson, isStaff, uuid, motherLastName, countryOfBirth, nationality,
+                    curp, rfc, mainBeneficiary, thirdPartyBeneficiary, profession);
 
         }
     }
@@ -571,7 +590,7 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
         private final String schema;
 
         ClientMapper() {
-            final StringBuilder builder = new StringBuilder(400);
+            final StringBuilder builder = new StringBuilder(500);
 
             builder.append(
                     "c.id as id, c.account_no as accountNo, c.external_id as externalId, c.status_enum as statusEnum,c.sub_status as subStatus, ");
@@ -591,6 +610,11 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
             builder.append("c.client_classification_cv_id as classificationId, ");
             builder.append("cvclassification.code_value as classificationValue, ");
             builder.append("c.legal_form_enum as legalFormEnum, ");
+
+            builder.append("c.uuid as uuid, c.mother_lastname as motherLastName, c.country_of_birth as countryOfBirth, ");
+            builder.append("c.nationality as nationality, c.curp as curp, c.rfc as rfc, c.final_beneficiary as mainBeneficiary, ");
+            builder.append("c.third_party_beneficiary as thirdPartyBeneficiary, ");
+            builder.append("cvProfession.code_value as professionValue, c.profession_cv_id as professionId, ");
 
             builder.append("c.submittedon_date as submittedOnDate, ");
             builder.append("sbu.username as submittedByUsername, ");
@@ -634,6 +658,7 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
             builder.append("left join m_code_value cvSubStatus on cvSubStatus.id = c.sub_status ");
             builder.append("left join m_code_value cvConstitution on cvConstitution.id = cnp.constitution_cv_id ");
             builder.append("left join m_code_value cvMainBusinessLine on cvMainBusinessLine.id = cnp.main_business_line_cv_id ");
+            builder.append("left join m_code_value cvProfession ON cvProfession.id = c.profession_cv_id");
 
             this.schema = builder.toString();
         }
@@ -724,6 +749,18 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
             final CodeValueData mainBusinessLine = CodeValueData.instance(mainBusinessLineId, mainBusinessLineValue);
             final String remarks = rs.getString("remarks");
 
+            final String uuid = rs.getString("uuid");
+            final String motherLastName = rs.getString("motherLastName");
+            final String countryOfBirth = rs.getString("countryOfBirth");
+            final String nationality = rs.getString("nationality");
+            final String curp = rs.getString("curp");
+            final String rfc = rs.getString("rfc");
+            final String mainBeneficiary = rs.getString("mainBeneficiary");
+            final String thirdPartyBeneficiary = rs.getString("thirdPartyBeneficiary");
+            final String professionValue = rs.getString("professionValue");
+            final Long professionId = JdbcSupport.getLong(rs, "professionId");
+            final CodeValueData profession = CodeValueData.instance(professionId, professionValue);
+
             final ClientNonPersonData clientNonPerson = new ClientNonPersonData(constitution, incorpNo, incorpValidityTill,
                     mainBusinessLine, remarks);
 
@@ -734,7 +771,8 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
             return ClientData.instance(accountNo, status, subStatus, officeId, officeName, transferToOfficeId, transferToOfficeName, id,
                     firstname, middlename, lastname, fullname, displayName, externalId, mobileNo, emailAddress, dateOfBirth, gender,
                     activationDate, imageId, staffId, staffName, timeline, savingsProductId, savingsProductName, savingsAccountId,
-                    clienttype, classification, legalForm, clientNonPerson, isStaff);
+                    clienttype, classification, legalForm, clientNonPerson, isStaff, uuid, motherLastName, countryOfBirth, nationality,
+                    curp, rfc, mainBeneficiary, thirdPartyBeneficiary, profession);
 
         }
     }

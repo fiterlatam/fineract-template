@@ -62,6 +62,14 @@ public final class ClientFamilyMembersData implements Serializable {
 
     private final Boolean isDependent;
 
+    private final String uuid;
+
+    private final String curp;
+
+    private final String motherLastName;
+
+    private final String email;
+
     // template holder
     private final Collection<CodeValueData> relationshipIdOptions;
     private final Collection<CodeValueData> genderIdOptions;
@@ -73,7 +81,8 @@ public final class ClientFamilyMembersData implements Serializable {
             final String relationship, final Long relationshipId, final String maritalStatus, final Long maritalStatusId,
             final String gender, final Long genderId, final LocalDate dateOfBirth, final String profession, final Long professionId,
             final Collection<CodeValueData> relationshipIdOptions, final Collection<CodeValueData> genderIdOptions,
-            final Collection<CodeValueData> maritalStatusIdOptions, final Collection<CodeValueData> professionIdOptions) {
+            final Collection<CodeValueData> maritalStatusIdOptions, final Collection<CodeValueData> professionIdOptions, final String uuid,
+            final String curp, final String motherLastName, final String email) {
         this.id = id;
         this.clientId = clientId;
         this.firstName = firstName;
@@ -96,16 +105,20 @@ public final class ClientFamilyMembersData implements Serializable {
         this.genderIdOptions = genderIdOptions;
         this.maritalStatusIdOptions = maritalStatusIdOptions;
         this.professionIdOptions = professionIdOptions;
-
+        this.uuid = uuid;
+        this.curp = curp;
+        this.motherLastName = motherLastName;
+        this.email = email;
     }
 
     public static ClientFamilyMembersData instance(final Long id, final Long clientId, final String firstName, final String middleName,
             final String lastName, final String qualification, final String mobileNumber, final Long age, final Boolean isDependent,
             final String relationship, final Long relationshipId, final String maritalStatus, final Long maritalStatusId,
-            final String gender, final Long genderId, final LocalDate dateOfBirth, final String profession, final Long professionId) {
+            final String gender, final Long genderId, final LocalDate dateOfBirth, final String profession, final Long professionId,
+            final String uuid, final String curp, final String motherLastName, final String email) {
         return new ClientFamilyMembersData(id, clientId, firstName, middleName, lastName, qualification, mobileNumber, age, isDependent,
                 relationship, relationshipId, maritalStatus, maritalStatusId, gender, genderId, dateOfBirth, profession, professionId, null,
-                null, null, null);
+                null, null, null, uuid, curp, motherLastName, email);
     }
 
     public static ClientFamilyMembersData templateInstance(final Collection<CodeValueData> relationshipIdOptions,
@@ -113,7 +126,7 @@ public final class ClientFamilyMembersData implements Serializable {
             final Collection<CodeValueData> professionIdOptions) {
 
         return new ClientFamilyMembersData(null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null,
-                null, null, relationshipIdOptions, genderIdOptions, maritalStatusIdOptions, professionIdOptions);
+                null, null, relationshipIdOptions, genderIdOptions, maritalStatusIdOptions, professionIdOptions, null, null, null, null);
     }
 
     public Long getId() {
@@ -188,4 +201,19 @@ public final class ClientFamilyMembersData implements Serializable {
         return this.isDependent;
     }
 
+    public String getUuid() {
+        return uuid;
+    }
+
+    public String getCurp() {
+        return curp;
+    }
+
+    public String getMotherLastName() {
+        return motherLastName;
+    }
+
+    public String getEmail() {
+        return email;
+    }
 }

@@ -512,6 +512,45 @@ public final class ClientDataValidator {
             baseDataValidator.reset().parameter("isStaff").value(isStaffFlag).notNull();
         }
 
+        if (this.fromApiJsonHelper.parameterExists(ClientApiConstants.motherLastnameParamName, element)) {
+            atLeastOneParameterPassedForUpdate = true;
+        }
+
+        if (this.fromApiJsonHelper.parameterExists(ClientApiConstants.uuidParamName, element)) {
+            atLeastOneParameterPassedForUpdate = true;
+        }
+
+        if (this.fromApiJsonHelper.parameterExists(ClientApiConstants.countryOfBirthParamName, element)) {
+            atLeastOneParameterPassedForUpdate = true;
+        }
+
+        if (this.fromApiJsonHelper.parameterExists(ClientApiConstants.nationalityParamName, element)) {
+            atLeastOneParameterPassedForUpdate = true;
+        }
+
+        if (this.fromApiJsonHelper.parameterExists(ClientApiConstants.curpParamName, element)) {
+            atLeastOneParameterPassedForUpdate = true;
+        }
+
+        if (this.fromApiJsonHelper.parameterExists(ClientApiConstants.rfcParamName, element)) {
+            atLeastOneParameterPassedForUpdate = true;
+        }
+
+        if (this.fromApiJsonHelper.parameterExists(ClientApiConstants.finalBeneficiaryParamName, element)) {
+            atLeastOneParameterPassedForUpdate = true;
+        }
+
+        if (this.fromApiJsonHelper.parameterExists(ClientApiConstants.thirdPartyBeneficiaryParamName, element)) {
+            atLeastOneParameterPassedForUpdate = true;
+        }
+
+        if (this.fromApiJsonHelper.parameterExists(ClientApiConstants.professionIdParamName, element)) {
+            atLeastOneParameterPassedForUpdate = true;
+            final Integer professionId = this.fromApiJsonHelper.extractIntegerSansLocaleNamed(ClientApiConstants.professionIdParamName,
+                    element);
+            baseDataValidator.reset().parameter(ClientApiConstants.professionIdParamName).value(professionId).integerGreaterThanZero();
+        }
+
         Map<String, Object> parameterUpdateStatusDetails = getParameterUpdateStatusAndDataValidationErrorsForUpdateOnClientNonPerson(
                 element.getAsJsonObject().get(ClientApiConstants.clientNonPersonDetailsParamName));
         boolean atLeastOneParameterPassedForClientNonPersonUpdate = (boolean) parameterUpdateStatusDetails.get("parameterUpdateStatus");

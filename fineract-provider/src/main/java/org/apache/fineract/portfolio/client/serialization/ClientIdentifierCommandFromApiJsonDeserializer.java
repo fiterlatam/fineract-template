@@ -21,6 +21,7 @@ package org.apache.fineract.portfolio.client.serialization;
 import com.google.gson.JsonElement;
 import com.google.gson.reflect.TypeToken;
 import java.lang.reflect.Type;
+import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Map;
@@ -43,7 +44,8 @@ public final class ClientIdentifierCommandFromApiJsonDeserializer extends Abstra
     /**
      * The parameters supported for this command.
      */
-    private final Set<String> supportedParameters = new HashSet<>(Arrays.asList("documentTypeId", "documentKey", "status", "description"));
+    private final Set<String> supportedParameters = new HashSet<>(
+            Arrays.asList("documentTypeId", "documentKey", "status", "description", "issuingId", "locale", "dateFormat", "validityDate"));
 
     private final FromJsonHelper fromApiJsonHelper;
 
@@ -67,6 +69,12 @@ public final class ClientIdentifierCommandFromApiJsonDeserializer extends Abstra
         final String documentKey = this.fromApiJsonHelper.extractStringNamed("documentKey", element);
         final String documentDescription = this.fromApiJsonHelper.extractStringNamed("documentDescription", element);
         final String statusString = this.fromApiJsonHelper.extractStringNamed("status", element);
-        return new ClientIdentifierCommand(documentTypeId, documentKey, statusString, documentDescription);
+        final String issuingId = this.fromApiJsonHelper.extractStringNamed("issuingId", element);
+        LocalDate validityDate = null;
+        if (this.fromApiJsonHelper.extractLocalDateNamed("validityDate", element) != null) {
+            validityDate = this.fromApiJsonHelper.extractLocalDateNamed("validityDate", element);
+        }
+
+        return new ClientIdentifierCommand(documentTypeId, documentKey, statusString, documentDescription, issuingId, validityDate);
     }
 }
