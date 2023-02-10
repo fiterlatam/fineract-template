@@ -76,9 +76,22 @@ public class ClientFamilyMembers extends AbstractPersistableCustom {
     @Column(name = "date_of_birth", nullable = true)
     private LocalDate dateOfBirth;
 
+    @Column(name = "uuid", nullable = true)
+    private String uuid;
+
+    @Column(name = "curp", nullable = true)
+    private String curp;
+
+    @Column(name = "mother_lastname", length = 50)
+    private String motherLastName;
+
+    @Column(name = "email", length = 50)
+    private String email;
+
     private ClientFamilyMembers(final Client client, final String firstName, final String middleName, final String lastName,
             final String qualification, final String mobileNumber, final Long age, final Boolean isDependent, final CodeValue relationship,
-            final CodeValue maritalStatus, final CodeValue gender, final LocalDate dateOfBirth, final CodeValue profession) {
+            final CodeValue maritalStatus, final CodeValue gender, final LocalDate dateOfBirth, final CodeValue profession,
+            final String uuid, final String curp, final String motherLastName, final String email) {
 
         this.client = client;
         this.firstName = firstName;
@@ -93,6 +106,10 @@ public class ClientFamilyMembers extends AbstractPersistableCustom {
         this.gender = gender;
         this.dateOfBirth = dateOfBirth;
         this.profession = profession;
+        this.uuid = uuid;
+        this.curp = curp;
+        this.motherLastName = motherLastName;
+        this.email = email;
     }
 
     public ClientFamilyMembers() {
@@ -101,9 +118,10 @@ public class ClientFamilyMembers extends AbstractPersistableCustom {
 
     public static ClientFamilyMembers fromJson(final Client client, final String firstName, final String middleName, final String lastName,
             final String qualification, final String mobileNumber, final Long age, final Boolean isDependent, final CodeValue relationship,
-            final CodeValue maritalStatus, final CodeValue gender, final LocalDate dateOfBirth, final CodeValue profession) {
+            final CodeValue maritalStatus, final CodeValue gender, final LocalDate dateOfBirth, final CodeValue profession,
+            final String uuid, final String curp, final String motherLastName, final String email) {
         return new ClientFamilyMembers(client, firstName, middleName, lastName, qualification, mobileNumber, age, isDependent, relationship,
-                maritalStatus, gender, dateOfBirth, profession);
+                maritalStatus, gender, dateOfBirth, profession, uuid, curp, motherLastName, email);
     }
 
     public Client getClient() {
@@ -210,4 +228,35 @@ public class ClientFamilyMembers extends AbstractPersistableCustom {
         this.isDependent = isDependent;
     }
 
+    public String getUuid() {
+        return uuid;
+    }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
+
+    public String getCurp() {
+        return curp;
+    }
+
+    public void setCurp(String curp) {
+        this.curp = curp;
+    }
+
+    public String getMotherLastName() {
+        return motherLastName;
+    }
+
+    public void setMotherLastName(String motherLastName) {
+        this.motherLastName = motherLastName;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
 }

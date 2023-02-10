@@ -25,6 +25,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import javax.persistence.PersistenceException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -292,6 +293,62 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
                     clientType, clientClassification, legalFormValue, command);
             this.clientRepository.saveAndFlush(newClient);
             boolean rollbackTransaction = false;
+
+            final Optional<String> uuid = Optional.ofNullable(command.stringValueOfParameterNamed(ClientApiConstants.uuidParamName));
+            if (uuid.isPresent()) {
+                newClient.setUuid(uuid.get());
+            }
+
+            final Optional<String> motherLastName = Optional
+                    .ofNullable(command.stringValueOfParameterNamed(ClientApiConstants.motherLastnameParamName));
+            if (motherLastName.isPresent()) {
+                newClient.setMotherLastName(motherLastName.get());
+            }
+
+            final Optional<String> countryOfBirth = Optional
+                    .ofNullable(command.stringValueOfParameterNamed(ClientApiConstants.countryOfBirthParamName));
+            if (countryOfBirth.isPresent()) {
+                newClient.setCountryOfBirth(countryOfBirth.get());
+            }
+
+            final Optional<String> nationality = Optional
+                    .ofNullable(command.stringValueOfParameterNamed(ClientApiConstants.nationalityParamName));
+            if (nationality.isPresent()) {
+                newClient.setNationality(nationality.get());
+            }
+
+            final Optional<String> curp = Optional.ofNullable(command.stringValueOfParameterNamed(ClientApiConstants.curpParamName));
+            if (curp.isPresent()) {
+                newClient.setCurp(curp.get());
+            }
+
+            final Optional<String> rfc = Optional.ofNullable(command.stringValueOfParameterNamed(ClientApiConstants.rfcParamName));
+            if (rfc.isPresent()) {
+                newClient.setRfc(rfc.get());
+            }
+
+            final Optional<String> finalBeneficiary = Optional
+                    .ofNullable(command.stringValueOfParameterNamed(ClientApiConstants.finalBeneficiaryParamName));
+            if (finalBeneficiary.isPresent()) {
+                newClient.setFinalBeneficiary(finalBeneficiary.get());
+            }
+
+            final Optional<String> thirdPartyBeneficiary = Optional
+                    .ofNullable(command.stringValueOfParameterNamed(ClientApiConstants.thirdPartyBeneficiaryParamName));
+            if (thirdPartyBeneficiary.isPresent()) {
+                newClient.setThirdPartyBeneficiary(thirdPartyBeneficiary.get());
+            }
+
+            CodeValue profession;
+            final Optional<Long> professionId = Optional
+                    .ofNullable(command.longValueOfParameterNamed(ClientApiConstants.professionIdParamName));
+            if (professionId.isPresent()) {
+                profession = this.codeValueRepository.findOneWithNotFoundDetection(professionId.get());
+                if (profession != null) {
+                    newClient.setProfession(profession);
+                }
+            }
+
             if (newClient.isActive()) {
                 validateParentGroupRulesBeforeClientActivation(newClient);
                 runEntityDatatableCheck(newClient.getId());
@@ -431,14 +488,14 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
                 clientForUpdate.updateStaff(newStaff);
             }
 
-            if (changes.containsKey(ClientApiConstants.genderIdParamName)) {
+            if (changes.containsKey(ClientApiConstants.professionIdParamName)) {
 
-                final Long newValue = command.longValueOfParameterNamed(ClientApiConstants.genderIdParamName);
-                CodeValue gender = null;
+                final Long newValue = command.longValueOfParameterNamed(ClientApiConstants.professionIdParamName);
+                CodeValue newCodeVal = null;
                 if (newValue != null) {
-                    gender = this.codeValueRepository.findOneByCodeNameAndIdWithNotFoundDetection(ClientApiConstants.GENDER, newValue);
+                    newCodeVal = this.codeValueRepository.findOneByCodeNameAndIdWithNotFoundDetection("PROFESSION", newValue);
                 }
-                clientForUpdate.updateGender(gender);
+                clientForUpdate.updateProfession(newCodeVal);
             }
 
             if (changes.containsKey(ClientApiConstants.savingsProductIdParamName)) {

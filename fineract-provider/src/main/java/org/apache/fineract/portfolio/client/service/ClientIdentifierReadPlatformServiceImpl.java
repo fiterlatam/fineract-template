@@ -20,6 +20,7 @@ package org.apache.fineract.portfolio.client.service;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.util.Collection;
 import lombok.RequiredArgsConstructor;
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
@@ -86,7 +87,8 @@ public class ClientIdentifierReadPlatformServiceImpl implements ClientIdentifier
 
         public String schema() {
             return "ci.id as id, ci.client_id as clientId, ci.document_type_id as documentTypeId, ci.status as status, ci.document_key as documentKey,"
-                    + " ci.description as description, cv.code_value as documentType "
+                    + " ci.description as description, cv.code_value as documentType, "
+                    + " ci.issuing_id as issuingId, ci.validity_date as validityDate "
                     + " from m_client_identifier ci, m_client c, m_office o, m_code_value cv"
                     + " where ci.client_id=c.id and c.office_id=o.id" + " and ci.document_type_id=cv.id"
                     + " and ci.client_id = ? and o.hierarchy like ? ";
@@ -103,7 +105,9 @@ public class ClientIdentifierReadPlatformServiceImpl implements ClientIdentifier
             final String documentTypeName = rs.getString("documentType");
             final CodeValueData documentType = CodeValueData.instance(documentTypeId, documentTypeName);
             final String status = ClientIdentifierStatus.fromInt(rs.getInt("status")).getCode();
-            return ClientIdentifierData.singleItem(id, clientId, documentType, documentKey, status, description);
+            final String issuingId = rs.getString("issuingId");
+            final LocalDate validityDate = JdbcSupport.getLocalDate(rs, "validityDate");
+            return ClientIdentifierData.singleItem(id, clientId, documentType, documentKey, status, description, issuingId, validityDate);
         }
 
     }

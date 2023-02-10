@@ -18,6 +18,7 @@
  */
 package org.apache.fineract.portfolio.client.domain;
 
+import java.time.LocalDate;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import javax.persistence.Column;
@@ -57,11 +58,20 @@ public class ClientIdentifier extends AbstractAuditableCustom {
     @Column(name = "active")
     private Integer active;
 
+    @Column(name = "issuing_id", length = 50)
+    private String issuingId;
+
+    @Column(name = "validity_date", nullable = true)
+    private LocalDate validityDate;
+
     public static ClientIdentifier fromJson(final Client client, final CodeValue documentType, final JsonCommand command) {
         final String documentKey = command.stringValueOfParameterNamed("documentKey");
         final String description = command.stringValueOfParameterNamed("description");
         final String status = command.stringValueOfParameterNamed("status");
-        return new ClientIdentifier(client, documentType, documentKey, status, description);
+        final String issuingId = command.stringValueOfParameterNamed("issuingId");
+        final LocalDate validityDate = command.localDateValueOfParameterNamed("validityDate");
+
+        return new ClientIdentifier(client, documentType, documentKey, status, description, issuingId, validityDate);
     }
 
     protected ClientIdentifier() {
@@ -69,11 +79,13 @@ public class ClientIdentifier extends AbstractAuditableCustom {
     }
 
     private ClientIdentifier(final Client client, final CodeValue documentType, final String documentKey, final String statusName,
-            String description) {
+            String description, String issuingId, LocalDate validityDate) {
         this.client = client;
         this.documentType = documentType;
         this.documentKey = StringUtils.defaultIfEmpty(documentKey, null);
         this.description = StringUtils.defaultIfEmpty(description, null);
+        this.issuingId = StringUtils.defaultIfEmpty(issuingId, null);
+        this.validityDate = validityDate;
         ClientIdentifierStatus statusEnum = ClientIdentifierStatus.valueOf(statusName.toUpperCase());
         this.active = null;
         if (statusEnum.isActive()) {
