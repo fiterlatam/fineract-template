@@ -22,6 +22,7 @@
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
                    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd">
+    <property name="now" value="now()"/>
     <changeSet author="fineract" id="1">
         <createTable tableName="m_vat_rate">
             <column autoIncrement="true" name="id" type="BIGINT">
@@ -63,7 +64,7 @@
                                  onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="id"
                                  referencedTableName="m_appuser" validate="true"/>
     </changeSet>
-    <changeSet author="fineract" id="9" context="mysql">
+    <changeSet author="fineract" id="3">
         <insert tableName="m_permission">
             <column name="grouping" value="portfolio"/>
             <column name="code" value="CREATE_vatrate"/>
@@ -91,6 +92,33 @@
             <column name="entity_name" value="vatrate"/>
             <column name="action_name" value="DELETE"/>
             <column name="can_maker_checker" valueNumeric="1"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="4" author="fineract">
+        <insert tableName="m_vat_rate">
+            <column name="id" valueNumeric="1"/>
+            <column name="name" value="Alicuota 0%" />
+            <column name="percentage" valueNumeric="0" />
+            <column name="active" valueBoolean="true" />
+            <column name="created_date" valueDate="${now}" />
+            <column name="createdby_id" valueNumeric="1" />
+        </insert>
+        <insert tableName="m_vat_rate">
+            <column name="id" valueNumeric="2"/>
+            <column name="name" value="Alicuota 8%" />
+            <column name="percentage" valueNumeric="8" />
+            <column name="active" valueBoolean="true" />
+            <column name="created_date" valueDate="${now}" />
+            <column name="createdby_id" valueNumeric="1" />
+        </insert>
+        <insert tableName="m_vat_rate">
+            <column name="id" valueNumeric="3"/>
+            <column name="name" value="Alicuota 16%" />
+            <column name="percentage" valueNumeric="16" />
+            <column name="active" valueBoolean="true" />
+            <column name="created_date" valueDate="${now}" />
+            <column name="createdby_id" valueNumeric="1" />
         </insert>
     </changeSet>
 
