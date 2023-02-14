@@ -56,7 +56,8 @@ public class ClientFamilyMembersReadPlatformServiceImpl implements ClientFamilyM
             return "fmb.id AS id, fmb.client_id AS clientId, fmb.firstname AS firstName, fmb.middlename AS middleName,"
                     + "fmb.lastname AS lastName,fmb.qualification AS qualification,fmb.mobile_number as mobileNumber,fmb.age as age,fmb.is_dependent as isDependent,cv.code_value AS relationship,fmb.relationship_cv_id AS relationshipId,"
                     + "c.code_value AS maritalStatus,fmb.marital_status_cv_id AS maritalStatusId,"
-                    + "c1.code_value AS gender, fmb.gender_cv_id AS genderId, fmb.date_of_birth AS dateOfBirth, c2.code_value AS profession, fmb.profession_cv_id AS professionId"
+                    + "c1.code_value AS gender, fmb.gender_cv_id AS genderId, fmb.date_of_birth AS dateOfBirth, c2.code_value AS profession, fmb.profession_cv_id AS professionId,"
+                    + "fmb.mother_lastname AS motherLastName, fmb.uuid as uuid, fmb.curp as curp, fmb.email as email"
                     + " FROM m_family_members fmb" + " LEFT JOIN m_code_value cv ON fmb.relationship_cv_id=cv.id"
                     + " LEFT JOIN m_code_value c ON fmb.marital_status_cv_id=c.id" + " LEFT JOIN m_code_value c1 ON fmb.gender_cv_id=c1.id"
                     + " LEFT JOIN m_code_value c2 ON fmb.profession_cv_id=c2.id";
@@ -82,10 +83,14 @@ public class ClientFamilyMembersReadPlatformServiceImpl implements ClientFamilyM
             final LocalDate dateOfBirth = JdbcSupport.getLocalDate(rs, "dateOfBirth");
             final String profession = rs.getString("profession");
             final long professionId = rs.getLong("professionId");
+            final String uuid = rs.getString("uuid");
+            final String curp = rs.getString("curp");
+            final String motherLastName = rs.getString("motherLastName");
+            final String email = rs.getString("email");
 
             return ClientFamilyMembersData.instance(id, clientId, firstName, middleName, lastName, qualification, mobileNumber, age,
                     isDependent, relationship, relationshipId, maritalStatus, maritalStatusId, gender, genderId, dateOfBirth, profession,
-                    professionId);
+                    professionId, uuid, curp, motherLastName, email);
 
         }
     }

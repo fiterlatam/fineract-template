@@ -43,5 +43,7 @@
     <include file="parts/0026_reversals_for_reversed_transactions.xml" relativeToChangelogFile="true"/>
     <include file="parts/0027_cupo_feature.xml" relativeToChangelogFile="true"/>
     <include file="parts/0028_causal_process_mapping.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0029_add_effective_rate_to_loan.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0030_client_feature_customize_fields.xml" relativeToChangelogFile="true"/>
     <include file="parts/0031_create_vat_rate_to_client.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

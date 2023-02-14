@@ -45,7 +45,7 @@ public final class ClientFamilyMemberCommandFromApiJsonDeserializer {
     private final FromJsonHelper fromApiJsonHelper;
     private final Set<String> supportedParameters = new HashSet<>(Arrays.asList("id", "clientId", "firstName", "middleName", "lastName",
             "qualification", "mobileNumber", "age", "isDependent", "relationshipId", "maritalStatusId", "genderId", "dateOfBirth",
-            "professionId", "locale", "dateFormat", "familyMembers"));
+            "professionId", "locale", "dateFormat", "familyMembers", "uuid", "curp", "motherLastName", "email"));
 
     @Autowired
     public ClientFamilyMemberCommandFromApiJsonDeserializer(final FromJsonHelper fromApiJsonHelper) {
