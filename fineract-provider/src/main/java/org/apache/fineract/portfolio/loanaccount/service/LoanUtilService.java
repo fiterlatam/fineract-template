@@ -36,6 +36,7 @@ import org.apache.fineract.organisation.holiday.domain.HolidayStatusType;
 import org.apache.fineract.organisation.monetary.domain.ApplicationCurrency;
 import org.apache.fineract.organisation.monetary.domain.ApplicationCurrencyRepositoryWrapper;
 import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
+import org.apache.fineract.organisation.monetary.domain.Money;
 import org.apache.fineract.organisation.workingdays.domain.WorkingDays;
 import org.apache.fineract.organisation.workingdays.domain.WorkingDaysRepositoryWrapper;
 import org.apache.fineract.portfolio.calendar.data.CalendarHistoryDataWrapper;
@@ -55,10 +56,13 @@ import org.apache.fineract.portfolio.loanaccount.api.LoanApiConstants;
 import org.apache.fineract.portfolio.loanaccount.data.HolidayDetailDTO;
 import org.apache.fineract.portfolio.loanaccount.data.ScheduleGeneratorDTO;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
+import org.apache.fineract.portfolio.loanaccount.domain.LoanCharge;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanDisbursementDetails;
+import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleInstallment;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionType;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleGeneratorFactory;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductRelatedDetail;
+import org.apache.poi.ss.formula.functions.Irr;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -353,6 +357,40 @@ public class LoanUtilService {
                     "Loan :" + repaymentTransactionType.getCode() + " Repayment Transaction Type provided is not a Repayment Type",
                     repaymentTransactionType.getCode());
         }
+    }
+
+    /**
+     * Calculate the CAT rate for a given loan considering the principal amount, disbursement charges and for each
+     * installment, the outstanding amount to pay
+     *
+     * @param loan
+     *            the loan
+     * @return the CAT rate
+     */
+    public BigDecimal getCalculatedCatRate(final Loan loan) {
+        BigDecimal catRate;
+        // for period = 0, the disbursement amount must be negative
+        double[] cash_flows = new double[loan.getRepaymentScheduleInstallments().size() + 1];
+        cash_flows[0] = loan.getPrincpal().getAmount().doubleValue() * -1;
+
+        // for period = 0, sum the charges amount
+        for (LoanCharge charge : loan.charges()) {
+            if (charge.isActive() && charge.isDisbursementCharge()) {
+                cash_flows[0] = cash_flows[0] + charge.getAmount(loan.getCurrency()).getAmount().doubleValue();
+            }
+        }
+
+        // for period = 1 to N, add the outstanding amount to pay
+        for (int i = 0; i < loan.getRepaymentScheduleInstallments().size(); i++) {
+            LoanRepaymentScheduleInstallment per = (LoanRepaymentScheduleInstallment) loan.getRepaymentScheduleInstallments().toArray()[i];
+            cash_flows[i + 1] = per.getPrincipal(loan.getCurrency()).plus(per.getInterestCharged(loan.getCurrency()))
+                    .plus(per.getFeeChargesCharged(loan.getCurrency()).getAmount().doubleValue())
+                    .plus(per.getPenaltyChargesCharged(loan.getCurrency())).getAmount().doubleValue();
+        }
+
+        double irrRate = Irr.irr(cash_flows);
+        catRate = Money.of(loan.getCurrency(), new BigDecimal((Math.pow(1 + irrRate, 12) - 1) * 100)).getAmount();
+        return catRate;
     }
 
 }

@@ -473,6 +473,9 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             loan.adjustNetDisbursalAmount(amountToDisburse.getAmount());
         }
         if (!changes.isEmpty()) {
+            // CAT calculation
+            loan.setCatRate(loanUtilService.getCalculatedCatRate(loan));
+
             saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
 
             final String noteText = command.stringValueOfParameterNamed("note");
@@ -643,6 +646,9 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
     private void saveLoanWithDataIntegrityViolationChecks(final Loan loan) {
         try {
+            // CAT calculation
+            loan.setCatRate(loanUtilService.getCalculatedCatRate(loan));
+
             this.loanRepositoryWrapper.save(loan);
         } catch (final JpaSystemException | DataIntegrityViolationException e) {
             final Throwable realCause = e.getCause();
@@ -846,6 +852,9 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 BigDecimal netDisbursalAmount = loan.getApprovedPrincipal().subtract(loanOutstanding);
                 loan.adjustNetDisbursalAmount(netDisbursalAmount);
             }
+            // CAT calculation
+            loan.setCatRate(loanUtilService.getCalculatedCatRate(loan));
+
             saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
             this.accountTransfersWritePlatformService.reverseAllTransactions(loanId, PortfolioAccountType.LOAN);
             String noteText = null;
@@ -1214,6 +1223,9 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
          * time being, not a major issue for now as this loop is entered only in edge cases (when a waiver is made
          * before the latest payment recorded against the loan)
          ***/
+        // CAT calculation
+        loan.setCatRate(loanUtilService.getCalculatedCatRate(loan));
+
         saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
         if (changedTransactionDetail != null) {
             for (final Map.Entry<Long, LoanTransaction> mapEntry : changedTransactionDetail.getNewTransactionMappings().entrySet()) {
@@ -2943,6 +2955,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 loan.processPostDisbursementTransactions();
             }
         }
+        // CAT calculation
+        loan.setCatRate(loanUtilService.getCalculatedCatRate(loan));
 
         saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
 
@@ -3237,6 +3251,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         final Map<String, Object> changes = loan.undoLastDisbursal(scheduleGeneratorDTO, existingTransactionIds,
                 existingReversedTransactionIds, loan);
         if (!changes.isEmpty()) {
+            loan.setCatRate(loanUtilService.getCalculatedCatRate(loan));
             saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
             String noteText = null;
             if (command.hasParameter("note")) {
