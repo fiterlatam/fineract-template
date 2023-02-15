@@ -94,6 +94,9 @@ public class Charge extends AbstractPersistableCustom {
     @Column(name = "is_active", nullable = false)
     private boolean active;
 
+    @Column(name = "is_vat_required", nullable = false)
+    private boolean isVatRequired;
+
     @Column(name = "is_deleted", nullable = false)
     private boolean deleted = false;
 
@@ -150,6 +153,7 @@ public class Charge extends AbstractPersistableCustom {
 
         final boolean penalty = command.booleanPrimitiveValueOfParameterNamed("penalty");
         final boolean active = command.booleanPrimitiveValueOfParameterNamed("active");
+        final boolean isVatRequired = command.booleanPrimitiveValueOfParameterNamed("isVatRequired");
         final MonthDay feeOnMonthDay = command.extractMonthDayNamed("feeOnMonthDay");
         final Integer feeInterval = command.integerValueOfParameterNamed("feeInterval");
         final BigDecimal minCap = command.bigDecimalValueOfParameterNamed("minCap");
@@ -173,17 +177,17 @@ public class Charge extends AbstractPersistableCustom {
             countFrequencyType = PeriodFrequencyType.fromInt(command.integerValueOfParameterNamed("countFrequencyType"));
         }
 
-        return new Charge(name, amount, currencyCode, chargeAppliesTo, chargeTimeType, chargeCalculationType, penalty, active, paymentMode,
-                feeOnMonthDay, feeInterval, minCap, maxCap, feeFrequency, enableFreeWithdrawalCharge, freeWithdrawalFrequency,
-                restartCountFrequency, countFrequencyType, account, taxGroup, enablePaymentType, paymentType);
+        return new Charge(name, amount, currencyCode, chargeAppliesTo, chargeTimeType, chargeCalculationType, penalty, active,
+                isVatRequired, paymentMode, feeOnMonthDay, feeInterval, minCap, maxCap, feeFrequency, enableFreeWithdrawalCharge,
+                freeWithdrawalFrequency, restartCountFrequency, countFrequencyType, account, taxGroup, enablePaymentType, paymentType);
     }
 
     protected Charge() {}
 
     private Charge(final String name, final BigDecimal amount, final String currencyCode, final ChargeAppliesTo chargeAppliesTo,
             final ChargeTimeType chargeTime, final ChargeCalculationType chargeCalculationType, final boolean penalty, final boolean active,
-            final ChargePaymentMode paymentMode, final MonthDay feeOnMonthDay, final Integer feeInterval, final BigDecimal minCap,
-            final BigDecimal maxCap, final Integer feeFrequency, final boolean enableFreeWithdrawalCharge,
+            final boolean isVatRequired, final ChargePaymentMode paymentMode, final MonthDay feeOnMonthDay, final Integer feeInterval,
+            final BigDecimal minCap, final BigDecimal maxCap, final Integer feeFrequency, final boolean enableFreeWithdrawalCharge,
             final Integer freeWithdrawalFrequency, final Integer restartFrequency, final PeriodFrequencyType restartFrequencyEnum,
             final GLAccount account, final TaxGroup taxGroup, final boolean enablePaymentType, final PaymentType paymentType) {
         this.name = name;
@@ -194,6 +198,7 @@ public class Charge extends AbstractPersistableCustom {
         this.chargeCalculation = chargeCalculationType.getValue();
         this.penalty = penalty;
         this.active = active;
+        this.isVatRequired = isVatRequired;
         this.account = account;
         this.taxGroup = taxGroup;
         this.chargePaymentMode = paymentMode == null ? null : paymentMode.getValue();
@@ -596,6 +601,13 @@ public class Charge extends AbstractPersistableCustom {
             actualChanges.put(activeParamName, newValue);
             this.active = newValue;
         }
+
+        final String isVatRequiredParamName = "isVatRequired";
+        if (command.isChangeInBooleanParameterNamed(isVatRequiredParamName, this.isVatRequired)) {
+            final boolean newValue = command.booleanPrimitiveValueOfParameterNamed(isVatRequiredParamName);
+            actualChanges.put(isVatRequiredParamName, newValue);
+            this.isVatRequired = newValue;
+        }
         // allow min and max cap to be only added to PERCENT_OF_AMOUNT for now
         if (isPercentageOfApprovedAmount()) {
             final String minCapParamName = "minCap";
@@ -674,9 +686,9 @@ public class Charge extends AbstractPersistableCustom {
 
         final CurrencyData currency = new CurrencyData(this.currencyCode, null, 0, 0, null, null, 0);
         return ChargeData.instance(getId(), this.name, this.amount, currency, chargeTimeType, chargeAppliesTo, chargeCalculationType,
-                chargePaymentmode, getFeeOnMonthDay(), this.feeInterval, this.penalty, this.active, this.enableFreeWithdrawal,
-                this.freeWithdrawalFrequency, this.restartFrequency, this.restartFrequencyEnum, this.enablePaymentType, paymentTypeData,
-                this.minCap, this.maxCap, feeFrequencyType, accountData, taxGroupData);
+                chargePaymentmode, getFeeOnMonthDay(), this.feeInterval, this.penalty, this.active, this.isVatRequired,
+                this.enableFreeWithdrawal, this.freeWithdrawalFrequency, this.restartFrequency, this.restartFrequencyEnum,
+                this.enablePaymentType, paymentTypeData, this.minCap, this.maxCap, feeFrequencyType, accountData, taxGroupData);
     }
 
     public Integer getChargePaymentMode() {
