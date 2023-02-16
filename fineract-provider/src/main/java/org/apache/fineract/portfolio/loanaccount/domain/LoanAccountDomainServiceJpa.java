@@ -203,6 +203,9 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
          * before the latest payment recorded against the loan)
          ***/
 
+        // CAT calculation
+        loan.setCatRate(loanUtilService.getCalculatedCatRate(loan));
+
         saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
 
         if (changedTransactionDetail != null) {
@@ -687,6 +690,9 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
                 existingReversedTransactionIds, allowTransactionsOnHoliday, holidays, workingDays, allowTransactionsOnNonWorkingDay);
 
         this.loanTransactionRepository.saveAndFlush(newRefundTransaction);
+
+        // CAT calculation
+        loan.setCatRate(loanUtilService.getCalculatedCatRate(loan));
 
         if (StringUtils.isNotBlank(noteText)) {
             final Note note = Note.loanTransactionNote(loan, newRefundTransaction, noteText);

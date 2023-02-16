@@ -403,6 +403,9 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     @Column(name = "effective_rate")
     private BigDecimal effectiveRate;
 
+    @Column(name = "cat_rate", nullable = false)
+    private BigDecimal catRate;
+
     public static Loan newIndividualLoanApplication(final String accountNo, final Client client, final Integer loanType,
             final LoanProduct loanProduct, final Fund fund, final Staff officer, final CodeValue loanPurpose,
             final LoanTransactionProcessingStrategy transactionProcessingStrategy,
@@ -6889,5 +6892,13 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
     public void setEffectiveRate(BigDecimal effectiveRate) {
         this.effectiveRate = effectiveRate;
+    }
+
+    public BigDecimal getCatRate() {
+        return this.catRate;
+    }
+
+    public void setCatRate(BigDecimal catRate) {
+        this.catRate = catRate;
     }
 }

@@ -46,4 +46,5 @@
     <include file="parts/0029_add_effective_rate_to_loan.xml" relativeToChangelogFile="true"/>
     <include file="parts/0030_client_feature_customize_fields.xml" relativeToChangelogFile="true"/>
     <include file="parts/0031_create_vat_rate_to_client.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0032_add_cat_rate_to_loan.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
