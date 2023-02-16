@@ -416,6 +416,9 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 }
             }
 
+            // CAT calculation
+            newLoanApplication.setCatRate(loanUtilService.getCalculatedCatRate(newLoanApplication));
+
             this.loanRepositoryWrapper.saveAndFlush(newLoanApplication);
 
             if (loanProduct.isInterestRecalculationEnabled()) {
@@ -1298,6 +1301,9 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 }
                 officeSpecificLoanProductValidation(existingLoanApplication.getLoanProduct().getId(), OfficeId);
             }
+
+            // CAT calculation
+            existingLoanApplication.setCatRate(loanUtilService.getCalculatedCatRate(existingLoanApplication));
 
             // updating loan interest recalculation details throwing null
             // pointer exception after saveAndFlush
