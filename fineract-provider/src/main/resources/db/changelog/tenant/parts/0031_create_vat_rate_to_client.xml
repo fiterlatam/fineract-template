@@ -130,4 +130,20 @@
         </addColumn>
     </changeSet>
 
+    <changeSet id="6" author="fineract">
+        <addColumn tableName="m_product_loan">
+            <column name="is_vat_required" type="boolean" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="7" author="fineract">
+        <addColumn tableName="m_loan">
+            <column name="is_vat_required" type="boolean" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
 </databaseChangeLog>
