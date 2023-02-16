@@ -406,6 +406,9 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     @Column(name = "cat_rate", nullable = false)
     private BigDecimal catRate;
 
+    @Column(name = "is_vat_required", nullable = false)
+    private boolean isVatRequired;
+
     public static Loan newIndividualLoanApplication(final String accountNo, final Client client, final Integer loanType,
             final LoanProduct loanProduct, final Fund fund, final Staff officer, final CodeValue loanPurpose,
             final LoanTransactionProcessingStrategy transactionProcessingStrategy,
@@ -414,14 +417,14 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             final List<LoanDisbursementDetails> disbursementDetails, final BigDecimal maxOutstandingLoanBalance,
             final Boolean createStandingInstructionAtDisbursement, final Boolean isFloatingInterestRate,
             final BigDecimal interestRateDifferential, final List<Rate> rates, final BigDecimal fixedPrincipalPercentagePerInstallment,
-            final BigDecimal tasaeffectiva) {
+            final BigDecimal tasaeffectiva, final Boolean isVatRequired) {
         final LoanStatus status = null;
         final Group group = null;
         final Boolean syncDisbursementWithMeeting = null;
         return new Loan(accountNo, client, group, loanType, fund, officer, loanPurpose, transactionProcessingStrategy, loanProduct,
                 loanRepaymentScheduleDetail, status, loanCharges, collateral, syncDisbursementWithMeeting, fixedEmiAmount,
                 disbursementDetails, maxOutstandingLoanBalance, createStandingInstructionAtDisbursement, isFloatingInterestRate,
-                interestRateDifferential, rates, fixedPrincipalPercentagePerInstallment, tasaeffectiva);
+                interestRateDifferential, rates, fixedPrincipalPercentagePerInstallment, tasaeffectiva, isVatRequired);
     }
 
     public static Loan newGroupLoanApplication(final String accountNo, final Group group, final Integer loanType,
@@ -432,13 +435,13 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             final List<LoanDisbursementDetails> disbursementDetails, final BigDecimal maxOutstandingLoanBalance,
             final Boolean createStandingInstructionAtDisbursement, final Boolean isFloatingInterestRate,
             final BigDecimal interestRateDifferential, final List<Rate> rates, final BigDecimal fixedPrincipalPercentagePerInstallment,
-            final BigDecimal tasaeffectiva) {
+            final BigDecimal tasaeffectiva, final Boolean isVatRequired) {
         final LoanStatus status = null;
         final Client client = null;
         return new Loan(accountNo, client, group, loanType, fund, officer, loanPurpose, transactionProcessingStrategy, loanProduct,
                 loanRepaymentScheduleDetail, status, loanCharges, collateral, syncDisbursementWithMeeting, fixedEmiAmount,
                 disbursementDetails, maxOutstandingLoanBalance, createStandingInstructionAtDisbursement, isFloatingInterestRate,
-                interestRateDifferential, rates, fixedPrincipalPercentagePerInstallment, tasaeffectiva);
+                interestRateDifferential, rates, fixedPrincipalPercentagePerInstallment, tasaeffectiva, isVatRequired);
     }
 
     public static Loan newIndividualLoanApplicationFromGroup(final String accountNo, final Client client, final Group group,
@@ -449,12 +452,12 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             final List<LoanDisbursementDetails> disbursementDetails, final BigDecimal maxOutstandingLoanBalance,
             final Boolean createStandingInstructionAtDisbursement, final Boolean isFloatingInterestRate,
             final BigDecimal interestRateDifferential, final List<Rate> rates, final BigDecimal fixedPrincipalPercentagePerInstallment,
-            final BigDecimal tasaeffectiva) {
+            final BigDecimal tasaeffectiva, final Boolean isVatRequired) {
         final LoanStatus status = null;
         return new Loan(accountNo, client, group, loanType, fund, officer, loanPurpose, transactionProcessingStrategy, loanProduct,
                 loanRepaymentScheduleDetail, status, loanCharges, collateral, syncDisbursementWithMeeting, fixedEmiAmount,
                 disbursementDetails, maxOutstandingLoanBalance, createStandingInstructionAtDisbursement, isFloatingInterestRate,
-                interestRateDifferential, rates, fixedPrincipalPercentagePerInstallment, tasaeffectiva);
+                interestRateDifferential, rates, fixedPrincipalPercentagePerInstallment, tasaeffectiva, isVatRequired);
     }
 
     protected Loan() {
@@ -468,7 +471,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             final BigDecimal fixedEmiAmount, final List<LoanDisbursementDetails> disbursementDetails,
             final BigDecimal maxOutstandingLoanBalance, final Boolean createStandingInstructionAtDisbursement,
             final Boolean isFloatingInterestRate, final BigDecimal interestRateDifferential, final List<Rate> rates,
-            final BigDecimal fixedPrincipalPercentagePerInstallment, final BigDecimal effectiveRate) {
+            final BigDecimal fixedPrincipalPercentagePerInstallment, final BigDecimal effectiveRate, final Boolean isVatRequired) {
 
         this.loanRepaymentScheduleDetail = loanRepaymentScheduleDetail;
         this.loanRepaymentScheduleDetail.validateRepaymentPeriodWithGraceSettings();
@@ -486,6 +489,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         this.group = group;
         this.loanType = loanType;
         this.fund = fund;
+        this.isVatRequired = isVatRequired;
         this.loanOfficer = loanOfficer;
         this.loanPurpose = loanPurpose;
 
@@ -1457,6 +1461,12 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         if (command.isChangeInLongParameterNamed(fundIdParamName, existingFundId)) {
             final Long newValue = command.longValueOfParameterNamed(fundIdParamName);
             actualChanges.put(fundIdParamName, newValue);
+        }
+
+        final String isVatRequiredParamName = "isVatRequired";
+        if (command.isChangeInBooleanParameterNamed(isVatRequiredParamName, this.isVatRequired)) {
+            final Boolean newValue = command.booleanObjectValueOfParameterNamed(isVatRequiredParamName);
+            actualChanges.put(isVatRequiredParamName, newValue);
         }
 
         Long existingLoanOfficerId = null;
@@ -6892,6 +6902,10 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
     public void setEffectiveRate(BigDecimal effectiveRate) {
         this.effectiveRate = effectiveRate;
+    }
+
+    public void setVatRequired(boolean vatRequired) {
+        isVatRequired = vatRequired;
     }
 
     public BigDecimal getCatRate() {

@@ -896,6 +896,12 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 existingLoanApplication.updateClient(client);
             }
 
+            final String isVatRequiredParamName = "isVatRequired";
+            if (changes.containsKey(isVatRequiredParamName)) {
+                final Boolean newValue = command.booleanObjectValueOfParameterNamed(isVatRequiredParamName);
+                existingLoanApplication.setVatRequired(newValue);
+            }
+
             final String groupIdParamName = "groupId";
             if (changes.containsKey(groupIdParamName)) {
                 final Long groupId = command.longValueOfParameterNamed(groupIdParamName);

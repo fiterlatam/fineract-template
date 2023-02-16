@@ -220,7 +220,7 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
                     + "lp.principal_threshold_for_last_installment as principalThresholdForLastInstallment, "
                     + "lp.fixed_principal_percentage_per_installment fixedPrincipalPercentagePerInstallment, "
                     + "lp.sync_expected_with_disbursement_date as syncExpectedWithDisbursementDate, "
-                    + "lpg.id as lpgId, lpg.mandatory_guarantee as mandatoryGuarantee, "
+                    + "lp.is_vat_required as isVatRequired, " + "lpg.id as lpgId, lpg.mandatory_guarantee as mandatoryGuarantee, "
                     + "lpg.minimum_guarantee_from_own_funds as minimumGuaranteeFromOwnFunds, lpg.minimum_guarantee_from_guarantor_funds as minimumGuaranteeFromGuarantor, "
                     + "lp.account_moves_out_of_npa_only_on_arrears_completion as accountMovesOutOfNPAOnlyOnArrearsCompletion, "
                     + "curr.name as currencyName, curr.internationalized_name_code as currencyNameCode, curr.display_symbol as currencyDisplaySymbol, curr.int_code as intCode, lp.external_id as externalId, "
@@ -258,6 +258,7 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
             final String description = rs.getString("description");
             final Long fundId = JdbcSupport.getLong(rs, "fundId");
             final String fundName = rs.getString("fundName");
+            final Boolean isVatRequired = rs.getBoolean("isVatRequired");
             final Long transactionStrategyId = JdbcSupport.getLong(rs, "transactionStrategyId");
             final String transactionStrategyName = rs.getString("transactionStrategyName");
 
@@ -483,7 +484,7 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
                     floatingRateName, interestRateDifferential, minDifferentialLendingRate, defaultDifferentialLendingRate,
                     maxDifferentialLendingRate, isFloatingInterestRateCalculationAllowed, isVariableIntallmentsAllowed, minimumGap,
                     maximumGap, syncExpectedWithDisbursementDate, canUseForTopup, isEqualAmortization, rateOptions, this.rates,
-                    isRatesEnabled, fixedPrincipalPercentagePerInstallment);
+                    isRatesEnabled, fixedPrincipalPercentagePerInstallment, isVatRequired);
         }
     }
 
