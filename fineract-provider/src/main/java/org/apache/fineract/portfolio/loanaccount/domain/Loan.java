@@ -6907,6 +6907,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     public void setVatRequired(boolean vatRequired) {
         isVatRequired = vatRequired;
     }
+
     public BigDecimal getCatRate() {
         return this.catRate;
     }
