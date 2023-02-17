@@ -131,14 +131,23 @@ public class DocumentManagementApiResource {
             @HeaderParam("Content-Length") @Parameter(description = "Content-Length") final Long fileSize,
             @FormDataParam("file") final InputStream inputStream, @FormDataParam("file") final FormDataContentDisposition fileDetails,
             @FormDataParam("file") final FormDataBodyPart bodyPart, @FormDataParam("name") final String name,
-            @FormDataParam("description") final String description) {
+            @FormDataParam("description") final String description, @FormDataParam("documentLink") final String documentLink) {
 
         // TODO: stop reading from stream after max size is reached to protect against malicious clients
         // TODO: need to extract the actual file type and determine if they are permissible
+        /***
+         * Populate Document command based on whether a file has also been passed in as a part of the update
+         ***/
+        DocumentCommand documentCommand = null;
+        if (inputStream != null && fileDetails.getFileName() != null) {
+            fileUploadValidator.validate(fileSize, inputStream, fileDetails, bodyPart);
+            documentCommand = new DocumentCommand(null, null, entityType, entityId, name, fileDetails.getFileName(), fileSize,
+                    bodyPart.getMediaType().toString(), description, null, documentLink);
+        } else {
+            documentCommand = new DocumentCommand(null, null, entityType, entityId, name, null, null, null, description, null,
+                    documentLink);
+        }
 
-        fileUploadValidator.validate(fileSize, inputStream, fileDetails, bodyPart);
-        final DocumentCommand documentCommand = new DocumentCommand(null, null, entityType, entityId, name, fileDetails.getFileName(),
-                fileSize, bodyPart.getMediaType().toString(), description, null);
         final Long documentId = this.documentWritePlatformService.createDocument(documentCommand, inputStream);
         return this.toApiJsonSerializer.serialize(CommandProcessingResult.resourceResult(documentId, null));
     }
@@ -160,11 +169,12 @@ public class DocumentManagementApiResource {
             @HeaderParam("Content-Length") @Parameter(description = "Content-Length") final Long fileSize,
             @FormDataParam("file") final InputStream inputStream, @FormDataParam("file") final FormDataContentDisposition fileDetails,
             @FormDataParam("file") final FormDataBodyPart bodyPart, @FormDataParam("name") final String name,
-            @FormDataParam("description") final String description) {
+            @FormDataParam("description") final String description, @FormDataParam("documentLink") final String documentLink) {
 
         final Set<String> modifiedParams = new HashSet<>();
         modifiedParams.add("name");
         modifiedParams.add("description");
+        modifiedParams.add("documentLink");
 
         /***
          * Populate Document command based on whether a file has also been passed in as a part of the update
@@ -177,10 +187,10 @@ public class DocumentManagementApiResource {
             modifiedParams.add("type");
             modifiedParams.add("location");
             documentCommand = new DocumentCommand(modifiedParams, documentId, entityType, entityId, name, fileDetails.getFileName(),
-                    fileSize, bodyPart.getMediaType().toString(), description, null);
+                    fileSize, bodyPart.getMediaType().toString(), description, null, documentLink);
         } else {
             documentCommand = new DocumentCommand(modifiedParams, documentId, entityType, entityId, name, null, null, null, description,
-                    null);
+                    null, documentLink);
         }
         /***
          * TODO: does not return list of changes, should be done for consistency with rest of API
@@ -238,7 +248,7 @@ public class DocumentManagementApiResource {
             @PathParam("documentId") @Parameter(description = "documentId") final Long documentId) {
 
         final DocumentCommand documentCommand = new DocumentCommand(null, documentId, entityType, entityId, null, null, null, null, null,
-                null);
+                null, null);
 
         final CommandProcessingResult documentIdentifier = this.documentWritePlatformService.deleteDocument(documentCommand);
 

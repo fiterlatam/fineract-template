@@ -96,8 +96,8 @@ public class DocumentReadPlatformServiceImpl implements DocumentReadPlatformServ
         public String schema() {
             return "d.id as id, d.parent_entity_type as parentEntityType, d.parent_entity_id as parentEntityId, d.name as name, "
                     + " d.file_name as fileName, d.size as fileSize, d.type as fileType, "
-                    + " d.description as description, d.location as location," + " d.storage_type_enum as storageType"
-                    + " from m_document d where d.parent_entity_type=? and d.parent_entity_id=?";
+                    + " d.description as description, d.location as location," + " d.storage_type_enum as storageType, "
+                    + " d.document_link as documentLink " + " from m_document d where d.parent_entity_type=? and d.parent_entity_id=?";
         }
 
         @Override
@@ -110,6 +110,7 @@ public class DocumentReadPlatformServiceImpl implements DocumentReadPlatformServ
             final String fileName = rs.getString("fileName");
             final String fileType = rs.getString("fileType");
             final String description = rs.getString("description");
+            final String documentLink = rs.getString("documentLink");
             String location = null;
             Integer storageType = null;
             if (!this.hideLocation) {
@@ -119,7 +120,7 @@ public class DocumentReadPlatformServiceImpl implements DocumentReadPlatformServ
                 storageType = rs.getInt("storageType");
             }
             return new DocumentData(id, parentEntityType, parentEntityId, name, fileName, fileSize, fileType, description, location,
-                    storageType);
+                    storageType, documentLink);
         }
     }
 }

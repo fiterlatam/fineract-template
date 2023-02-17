@@ -35,9 +35,11 @@ public class DocumentData {
     private final String location;
     private final String description;
     private final Integer storageType;
+    private final String documentLink;
 
     public DocumentData(final Long id, final String parentEntityType, final Long parentEntityId, final String name, final String fileName,
-            final Long size, final String type, final String description, final String location, final Integer storageType) {
+            final Long size, final String type, final String description, final String location, final Integer storageType,
+            final String documentLink) {
         this.id = id;
         this.parentEntityType = parentEntityType;
         this.parentEntityId = parentEntityId;
@@ -48,6 +50,7 @@ public class DocumentData {
         this.description = description;
         this.location = location;
         this.storageType = storageType;
+        this.documentLink = documentLink;
     }
 
     public String contentType() {
