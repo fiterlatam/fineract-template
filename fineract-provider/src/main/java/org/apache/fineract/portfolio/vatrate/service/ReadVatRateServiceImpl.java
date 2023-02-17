@@ -71,7 +71,7 @@ public class ReadVatRateServiceImpl implements ReadVatRateService {
         VatRateDataMapper() {
             final StringBuilder sqlBuilder = new StringBuilder(400);
             sqlBuilder.append(
-                    "r.id as id, r.name, r.percentage as name, r.active as active, r.created_date as created_date, r.createdby_id as createdby_id, ")
+                    "r.id as id, r.name as name, r.percentage as percentage, r.active as active, r.created_date as created_date, r.createdby_id as createdby_id, ")
                     .append("r.lastmodifiedby_id as lastmodifiedby_id, r.lastmodified_date as lastmodified_date, u.username as submittedByUsername ")
                     .append("FROM m_vat_rate r ").append("LEFT JOIN m_appuser u ON u.id = r.createdby_id");
             this.schemaSql = sqlBuilder.toString();

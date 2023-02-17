@@ -54,6 +54,7 @@ import org.apache.fineract.organisation.staff.domain.Staff;
 import org.apache.fineract.portfolio.client.api.ClientApiConstants;
 import org.apache.fineract.portfolio.collateralmanagement.domain.ClientCollateralManagement;
 import org.apache.fineract.portfolio.group.domain.Group;
+import org.apache.fineract.portfolio.vatrate.domain.VatRate;
 import org.apache.fineract.useradministration.domain.AppUser;
 
 @Entity
@@ -246,6 +247,13 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
     private String thirdPartyBeneficiary;
 
     @ManyToOne
+    @JoinColumn(name = "vat_rate_id", nullable = true)
+    private VatRate vatRate;
+
+    @Column(name = "is_vat_required", nullable = false)
+    private boolean isVatRequired;
+
+    @ManyToOne
     @JoinColumn(name = "profession_cv_id")
     private CodeValue profession;
 
@@ -254,7 +262,7 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
 
     public static Client createNew(final AppUser currentUser, final Office clientOffice, final Group clientParentGroup, final Staff staff,
             final Long savingsProductId, final CodeValue gender, final CodeValue clientType, final CodeValue clientClassification,
-            final Integer legalForm, final JsonCommand command) {
+            final Integer legalForm, final VatRate vatRate, final JsonCommand command) {
 
         final String accountNo = command.stringValueOfParameterNamed(ClientApiConstants.accountNoParamName);
         final String externalId = command.stringValueOfParameterNamed(ClientApiConstants.externalIdParamName);
@@ -265,6 +273,7 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
         final String middlename = command.stringValueOfParameterNamed(ClientApiConstants.middlenameParamName);
         final String lastname = command.stringValueOfParameterNamed(ClientApiConstants.lastnameParamName);
         final String fullname = command.stringValueOfParameterNamed(ClientApiConstants.fullnameParamName);
+        final Boolean isVatRequired = command.booleanObjectValueOfParameterNamed(ClientApiConstants.isVatRequiredParamName);
 
         final boolean isStaff = command.booleanPrimitiveValueOfParameterNamed(ClientApiConstants.isStaffParamName);
 
@@ -294,7 +303,7 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
         final Long savingsAccountId = null;
         return new Client(currentUser, status, clientOffice, clientParentGroup, accountNo, firstname, middlename, lastname, fullname,
                 activationDate, officeJoiningDate, externalId, mobileNo, emailAddress, staff, submittedOnDate, savingsProductId,
-                savingsAccountId, dataOfBirth, gender, clientType, clientClassification, legalForm, isStaff);
+                savingsAccountId, dataOfBirth, gender, clientType, clientClassification, legalForm, isStaff, vatRate, isVatRequired);
     }
 
     protected Client() {}
@@ -304,7 +313,8 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
             final LocalDate activationDate, final LocalDate officeJoiningDate, final String externalId, final String mobileNo,
             final String emailAddress, final Staff staff, final LocalDate submittedOnDate, final Long savingsProductId,
             final Long savingsAccountId, final LocalDate dateOfBirth, final CodeValue gender, final CodeValue clientType,
-            final CodeValue clientClassification, final Integer legalForm, final Boolean isStaff) {
+            final CodeValue clientClassification, final Integer legalForm, final Boolean isStaff, final VatRate vatRate,
+            final Boolean isVatRequired) {
 
         if (StringUtils.isBlank(accountNo)) {
             this.accountNumber = new RandomPasswordGenerator(19).generate();
@@ -369,6 +379,10 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
 
         this.clientType = clientType;
         this.clientClassification = clientClassification;
+
+        this.isVatRequired = isVatRequired;
+        this.vatRate = vatRate;
+
         this.setLegalForm(legalForm);
 
         deriveDisplayName();
@@ -609,6 +623,17 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
         if (command.isChangeInLongParameterNamed(ClientApiConstants.staffIdParamName, staffId())) {
             final Long newValue = command.longValueOfParameterNamed(ClientApiConstants.staffIdParamName);
             actualChanges.put(ClientApiConstants.staffIdParamName, newValue);
+        }
+
+        if (command.isChangeInBooleanParameterNamed(ClientApiConstants.isVatRequiredParamName, this.isVatRequired)) {
+            final boolean newValue = command.booleanPrimitiveValueOfParameterNamed(ClientApiConstants.isVatRequiredParamName);
+            actualChanges.put(ClientApiConstants.isVatRequiredParamName, newValue);
+            this.isVatRequired = newValue;
+        }
+
+        if (command.isChangeInLongParameterNamed(ClientApiConstants.vatRateIdParamName, this.vatRate.getId())) {
+            final Long newValue = command.longValueOfParameterNamed(ClientApiConstants.vatRateIdParamName);
+            actualChanges.put(ClientApiConstants.vatRateIdParamName, newValue);
         }
 
         if (command.isChangeInLongParameterNamed(ClientApiConstants.genderIdParamName, genderId())) {
@@ -982,6 +1007,14 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
         return genderId;
     }
 
+    public Long vatRateId() {
+        Long vatRateId = null;
+        if (this.vatRate != null) {
+            vatRateId = this.vatRate.getId();
+        }
+        return vatRateId;
+    }
+
     public Long clientTypeId() {
         Long clientTypeId = null;
         if (this.clientType != null) {
@@ -1036,6 +1069,14 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
 
     public void updateGender(CodeValue gender) {
         this.gender = gender;
+    }
+
+    public void setVatRate(VatRate vatRate) {
+        this.vatRate = vatRate;
+    }
+
+    public void setVatRequired(boolean vatRequired) {
+        isVatRequired = vatRequired;
     }
 
     public void updateProfession(CodeValue profession) {

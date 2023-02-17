@@ -146,4 +146,23 @@
         </addColumn>
     </changeSet>
 
+    <changeSet id="8" author="fineract">
+        <addColumn tableName="m_client">
+            <column name="is_vat_required" type="boolean" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <addColumn tableName="m_client">
+            <column name="vat_rate_id" type="BIGINT">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="9">
+        <addForeignKeyConstraint baseColumnNames="vat_rate_id" baseTableName="m_client" constraintName="FK_m_client_vat_rate_id"
+                                 deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT"
+                                 referencedColumnNames="id" referencedTableName="m_vat_rate" validate="true"/>
+    </changeSet>
+
 </databaseChangeLog>

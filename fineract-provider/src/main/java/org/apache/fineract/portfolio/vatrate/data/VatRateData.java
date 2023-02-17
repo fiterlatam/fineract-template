@@ -38,4 +38,10 @@ public class VatRateData {
     private String createdBy;
     private LocalDate submittedOnDate;
 
+    public VatRateData(Long id, String name, BigDecimal percentage, Boolean active) {
+        this.id = id;
+        this.name = name;
+        this.percentage = percentage;
+        this.active = active;
+    }
 }
