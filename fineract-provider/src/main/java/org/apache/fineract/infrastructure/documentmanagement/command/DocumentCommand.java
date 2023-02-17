@@ -30,6 +30,7 @@ public class DocumentCommand {
     private final Long parentEntityId;
     private final String name;
     private final String description;
+    private final String documentLink;
 
     private String fileName;
     private Long size;
@@ -40,7 +41,8 @@ public class DocumentCommand {
     private final Set<String> modifiedParameters;
 
     public DocumentCommand(final Set<String> modifiedParameters, final Long id, final String parentEntityType, final Long parentEntityId,
-            final String name, final String fileName, final Long size, final String type, final String description, final String location) {
+            final String name, final String fileName, final Long size, final String type, final String description, final String location,
+            final String documentLink) {
         this.modifiedParameters = modifiedParameters;
         this.id = id;
         this.parentEntityType = parentEntityType;
@@ -51,6 +53,7 @@ public class DocumentCommand {
         this.type = type;
         this.description = description;
         this.location = location;
+        this.documentLink = documentLink;
     }
 
     public Long getId() {
@@ -91,6 +94,10 @@ public class DocumentCommand {
 
     public Set<String> getModifiedParameters() {
         return this.modifiedParameters;
+    }
+
+    public String getDocumentLink() {
+        return this.documentLink;
     }
 
     public void setFileName(final String fileName) {
@@ -141,4 +148,7 @@ public class DocumentCommand {
         return this.modifiedParameters.contains("location");
     }
 
+    public boolean isDocumentLinkChanged() {
+        return this.modifiedParameters.contains("documentLink");
+    }
 }
