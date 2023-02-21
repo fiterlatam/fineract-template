@@ -67,6 +67,8 @@ import org.apache.fineract.portfolio.client.domain.LegalForm;
 import org.apache.fineract.portfolio.client.exception.ClientNotFoundException;
 import org.apache.fineract.portfolio.collateralmanagement.domain.ClientCollateralManagement;
 import org.apache.fineract.portfolio.collateralmanagement.domain.ClientCollateralManagementRepositoryWrapper;
+import org.apache.fineract.portfolio.creditstanding.data.CreditStandingData;
+import org.apache.fineract.portfolio.creditstanding.service.CreditStandingReadService;
 import org.apache.fineract.portfolio.group.data.GroupGeneralData;
 import org.apache.fineract.portfolio.savings.data.SavingsProductData;
 import org.apache.fineract.portfolio.savings.service.SavingsProductReadPlatformService;
@@ -104,6 +106,7 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
     private final ColumnValidator columnValidator;
     private final ClientCollateralManagementRepositoryWrapper clientCollateralManagementRepositoryWrapper;
     private final ReadVatRateService readVatRateService;
+    private final CreditStandingReadService creditStandingReadService;
 
     @Override
     public ClientData retrieveTemplate(final Long officeId, final boolean staffInSelectedOfficeOnly) {
@@ -322,7 +325,14 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
             final Collection<GroupGeneralData> parentGroups = this.jdbcTemplate.query(clientGroupsSql, this.clientGroupsMapper, // NOSONAR
                     clientId);
 
-            return ClientData.setParentGroups(clientData, parentGroups, clientCollateralManagementDataSet);
+            ClientData clientDataReturn = ClientData.setParentGroups(clientData, parentGroups, clientCollateralManagementDataSet);
+            CreditStandingData creditStandingData = creditStandingReadService.findByClientId(clientId);
+            if (creditStandingData == null) {
+                creditStandingData = CreditStandingData.instance(null, clientId, null, null);
+            }
+            clientDataReturn.setCreditStandingDetails(creditStandingData);
+
+            return clientDataReturn;
 
         } catch (final EmptyResultDataAccessException e) {
             throw new ClientNotFoundException(clientId, e);
