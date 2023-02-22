@@ -34,6 +34,7 @@ import org.apache.fineract.organisation.office.data.OfficeData;
 import org.apache.fineract.organisation.staff.data.StaffData;
 import org.apache.fineract.portfolio.address.data.AddressData;
 import org.apache.fineract.portfolio.collateralmanagement.domain.ClientCollateralManagement;
+import org.apache.fineract.portfolio.creditstanding.data.CreditStandingData;
 import org.apache.fineract.portfolio.group.data.GroupGeneralData;
 import org.apache.fineract.portfolio.savings.data.SavingsAccountData;
 import org.apache.fineract.portfolio.savings.data.SavingsProductData;
@@ -135,6 +136,8 @@ public final class ClientData implements Comparable<ClientData>, Serializable {
     private VatRateData vatRateData;
 
     Collection<VatRateData> vatRateOptions;
+
+    private CreditStandingData creditStandingDetails;
 
     public static ClientData importClientEntityInstance(Long legalFormId, Integer rowIndex, String fullname, Long officeId,
             Long clientTypeId, Long clientClassificationId, Long staffId, Boolean active, LocalDate activationDate,
@@ -806,4 +809,11 @@ public final class ClientData implements Comparable<ClientData>, Serializable {
         return this.isAddressEnabled;
     }
 
+    public CreditStandingData getCreditStandingDetails() {
+        return creditStandingDetails;
+    }
+
+    public void setCreditStandingDetails(CreditStandingData creditStandingDetails) {
+        this.creditStandingDetails = creditStandingDetails;
+    }
 }
