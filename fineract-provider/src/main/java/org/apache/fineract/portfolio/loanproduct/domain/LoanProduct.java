@@ -1590,4 +1590,7 @@ public class LoanProduct extends AbstractPersistableCustom {
         this.loanProducTrancheDetails = loanProducTrancheDetails;
     }
 
+    public boolean isVatRequired() {
+        return isVatRequired;
+    }
 }

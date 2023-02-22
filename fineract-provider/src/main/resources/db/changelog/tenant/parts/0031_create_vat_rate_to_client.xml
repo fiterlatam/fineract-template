@@ -165,4 +165,17 @@
                                  referencedColumnNames="id" referencedTableName="m_vat_rate" validate="true"/>
     </changeSet>
 
+    <changeSet id="fineract" author="10">
+        <addColumn tableName="m_loan_repayment_schedule">
+            <column name="vat_on_interest_derived" type="DECIMAL(19, 6)">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+        <addColumn tableName="m_loan_repayment_schedule">
+            <column name="vat_on_charges_derived" type="DECIMAL(19, 6)">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
 </databaseChangeLog>

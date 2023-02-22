@@ -2701,10 +2701,16 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 BigDecimal interest = BigDecimal.ZERO;
                 BigDecimal feeCharges = BigDecimal.ZERO;
                 BigDecimal penaltyCharges = BigDecimal.ONE;
+                BigDecimal vatOnInterest = BigDecimal.ZERO;
+                BigDecimal vatOnCharge = BigDecimal.ZERO;
+                if (loan.isVatRequired() && loan.getClient() != null && loan.getClient().getVatRate() != null
+                        && loan.getClient().getVatRate().getPercentage() % 1 == 0) {
+                    vatOnCharge = new BigDecimal(loan.getClient().getVatRate().getPercentage()).divide(BigDecimal.valueOf(100));
+                }
                 final Set<LoanInterestRecalcualtionAdditionalDetails> compoundingDetails = null;
                 LoanRepaymentScheduleInstallment newEntry = new LoanRepaymentScheduleInstallment(loan, installments.size() + 1,
                         lastInstallment.getDueDate(), lastChargeDate, principal, interest, feeCharges, penaltyCharges,
-                        recalculatedInterestComponent, compoundingDetails);
+                        recalculatedInterestComponent, compoundingDetails, vatOnInterest, vatOnCharge);
                 loan.addLoanRepaymentScheduleInstallment(newEntry);
             }
         }
@@ -3135,7 +3141,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                         scheduledLoanInstallment.periodDueDate(), scheduledLoanInstallment.principalDue(),
                         scheduledLoanInstallment.interestDue(), scheduledLoanInstallment.feeChargesDue(),
                         scheduledLoanInstallment.penaltyChargesDue(), scheduledLoanInstallment.isRecalculatedInterestComponent(),
-                        scheduledLoanInstallment.getLoanCompoundingDetails());
+                        scheduledLoanInstallment.getLoanCompoundingDetails(), scheduledLoanInstallment.getVatOnInterest().getAmount(),
+                        scheduledLoanInstallment.getVatOnCharges().getAmount());
                 installments.add(installment);
             }
         }

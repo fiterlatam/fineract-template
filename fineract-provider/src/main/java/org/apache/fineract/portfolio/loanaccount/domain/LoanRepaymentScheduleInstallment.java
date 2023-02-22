@@ -135,6 +135,12 @@ public final class LoanRepaymentScheduleInstallment extends AbstractAuditableCus
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY, mappedBy = "installment")
     private Set<LoanInstallmentCharge> installmentCharges = new HashSet<>();
 
+    @Column(name = "vat_on_interest_derived", scale = 6, precision = 19, nullable = true)
+    private BigDecimal vatOnInterest;
+
+    @Column(name = "vat_on_charges_derived", scale = 6, precision = 19, nullable = true)
+    private BigDecimal vatOnCharges;
+
     LoanRepaymentScheduleInstallment() {
         this.installmentNumber = null;
         this.fromDate = null;
@@ -145,7 +151,8 @@ public final class LoanRepaymentScheduleInstallment extends AbstractAuditableCus
     public LoanRepaymentScheduleInstallment(final Loan loan, final Integer installmentNumber, final LocalDate fromDate,
             final LocalDate dueDate, final BigDecimal principal, final BigDecimal interest, final BigDecimal feeCharges,
             final BigDecimal penaltyCharges, final boolean recalculatedInterestComponent,
-            final Set<LoanInterestRecalcualtionAdditionalDetails> compoundingDetails, final BigDecimal rescheduleInterestPortion) {
+            final Set<LoanInterestRecalcualtionAdditionalDetails> compoundingDetails, final BigDecimal rescheduleInterestPortion,
+            final BigDecimal vatOnInterest, final BigDecimal vatOnCharges) {
         this.loan = loan;
         this.installmentNumber = installmentNumber;
         this.fromDate = fromDate;
@@ -161,12 +168,15 @@ public final class LoanRepaymentScheduleInstallment extends AbstractAuditableCus
         }
         this.loanCompoundingDetails = compoundingDetails;
         this.rescheduleInterestPortion = rescheduleInterestPortion;
+        this.vatOnInterest = vatOnInterest;
+        this.vatOnCharges = vatOnCharges;
     }
 
     public LoanRepaymentScheduleInstallment(final Loan loan, final Integer installmentNumber, final LocalDate fromDate,
             final LocalDate dueDate, final BigDecimal principal, final BigDecimal interest, final BigDecimal feeCharges,
             final BigDecimal penaltyCharges, final boolean recalculatedInterestComponent,
-            final Set<LoanInterestRecalcualtionAdditionalDetails> compoundingDetails) {
+            final Set<LoanInterestRecalcualtionAdditionalDetails> compoundingDetails, final BigDecimal vatOnInterest,
+            final BigDecimal vatOnCharges) {
         this.loan = loan;
         this.installmentNumber = installmentNumber;
         this.fromDate = fromDate;
@@ -181,6 +191,8 @@ public final class LoanRepaymentScheduleInstallment extends AbstractAuditableCus
             compoundingDetails.forEach(cd -> cd.setLoanRepaymentScheduleInstallment(this));
         }
         this.loanCompoundingDetails = compoundingDetails;
+        this.vatOnInterest = vatOnInterest;
+        this.vatOnCharges = vatOnCharges;
     }
 
     public LoanRepaymentScheduleInstallment(final Loan loan) {
@@ -381,6 +393,8 @@ public final class LoanRepaymentScheduleInstallment extends AbstractAuditableCus
 
         this.obligationsMet = false;
         this.obligationsMetOnDate = null;
+        this.vatOnInterest = null;
+        this.vatOnCharges = null;
     }
 
     public void resetAccrualComponents() {
@@ -850,5 +864,21 @@ public final class LoanRepaymentScheduleInstallment extends AbstractAuditableCus
 
     public Set<LoanInstallmentCharge> getInstallmentCharges() {
         return installmentCharges;
+    }
+
+    public BigDecimal getVatOnInterest() {
+        return vatOnInterest;
+    }
+
+    public void setVatOnInterest(BigDecimal vatOnInterest) {
+        this.vatOnInterest = vatOnInterest;
+    }
+
+    public BigDecimal getVatOnCharges() {
+        return vatOnCharges;
+    }
+
+    public void setVatOnCharges(BigDecimal vatOnCharges) {
+        this.vatOnCharges = vatOnCharges;
     }
 }
