@@ -1190,4 +1190,12 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
     public void setProfession(CodeValue profession) {
         this.profession = profession;
     }
+
+    public VatRate getVatRate() {
+        return vatRate;
+    }
+
+    public boolean isVatRequired() {
+        return isVatRequired;
+    }
 }
