@@ -167,12 +167,83 @@
 
     <changeSet id="fineract" author="10">
         <addColumn tableName="m_loan_repayment_schedule">
-            <column name="vat_on_interest_derived" type="DECIMAL(19, 6)">
+            <!-- interest vat params -->
+            <column name="vat_on_interest_charged_derived" type="DECIMAL(19, 6)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="vat_on_interest_paid_derived" type="DECIMAL(19, 6)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="vat_on_interest_writtenoff_derived" type="DECIMAL(19, 6)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="vat_on_interest_waived_derived" type="DECIMAL(19, 6)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="vat_on_interest_outstanding" type="DECIMAL(19, 6)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="vat_on_interest_overdue_derived" type="DECIMAL(19, 6)">
+                <constraints nullable="true"/>
+            </column>
+            <!-- charge vat params -->
+            <column name="vat_on_charges_expected_derived" type="DECIMAL(19, 6)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="vat_on_charges_paid_derived" type="DECIMAL(19, 6)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="vat_on_charges_writtenoff_derived" type="DECIMAL(19, 6)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="vat_on_charges_waived_derived" type="DECIMAL(19, 6)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="vat_on_charges_outstanding_derived" type="DECIMAL(19, 6)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="vat_on_charges_overdue_derived" type="DECIMAL(19, 6)">
                 <constraints nullable="true"/>
             </column>
         </addColumn>
-        <addColumn tableName="m_loan_repayment_schedule">
-            <column name="vat_on_charges_derived" type="DECIMAL(19, 6)">
+    </changeSet>
+
+    <changeSet id="fineract" author="11">
+        <addColumn tableName="m_loan">
+            <column name="total_vatoninterest_charged" type="DECIMAL(19, 6)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="total_vatoninterest_paid" type="DECIMAL(19, 6)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="total_vatoninterest_writtenoff" type="DECIMAL(19, 6)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="total_vatoninterest_waived" type="DECIMAL(19, 6)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="total_vatoninterest_outstanding" type="DECIMAL(19, 6)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="total_vatoninterest_overdue" type="DECIMAL(19, 6)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="total_vatoncharge_expected" type="DECIMAL(19, 6)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="total_vatoncharge_paid" type="DECIMAL(19, 6)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="total_vatoncharge_writtenoff" type="DECIMAL(19, 6)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="total_vatoncharge_waived" type="DECIMAL(19, 6)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="total_vatoncharge_outstanding" type="DECIMAL(19, 6)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="total_vatoncharge_overdue" type="DECIMAL(19, 6)">
                 <constraints nullable="true"/>
             </column>
         </addColumn>

@@ -135,11 +135,41 @@ public final class LoanRepaymentScheduleInstallment extends AbstractAuditableCus
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY, mappedBy = "installment")
     private Set<LoanInstallmentCharge> installmentCharges = new HashSet<>();
 
-    @Column(name = "vat_on_interest_derived", scale = 6, precision = 19, nullable = true)
-    private BigDecimal vatOnInterest;
+    @Column(name = "vat_on_interest_charged_derived", scale = 6, precision = 19, nullable = true)
+    private BigDecimal vatOnInterestCharged;
 
-    @Column(name = "vat_on_charges_derived", scale = 6, precision = 19, nullable = true)
-    private BigDecimal vatOnCharges;
+    @Column(name = "vat_on_interest_paid_derived", scale = 6, precision = 19)
+    private BigDecimal vatOnInterestPaid;
+
+    @Column(name = "vat_on_interest_writtenoff_derived", scale = 6, precision = 19)
+    private BigDecimal vatOnInterestWrittenOff;
+
+    @Column(name = "vat_on_interest_waived_derived", scale = 6, precision = 19)
+    private BigDecimal vatOnInterestWaived;
+
+    @Column(name = "vat_on_interest_outstanding", scale = 6, precision = 19)
+    private BigDecimal vatOnInterestOutstanding;
+
+    @Column(name = "vat_on_interest_overdue_derived", scale = 6, precision = 19)
+    private BigDecimal vatOnInterestOverdue;
+
+    @Column(name = "vat_on_charges_expected_derived", scale = 6, precision = 19, nullable = true)
+    private BigDecimal vatOnChargeExpected;
+
+    @Column(name = "vat_on_charges_paid_derived", scale = 6, precision = 19)
+    private BigDecimal vatOnChargePaid;
+
+    @Column(name = "vat_on_charges_writtenoff_derived", scale = 6, precision = 19)
+    private BigDecimal vatOnChargeWrittenOff;
+
+    @Column(name = "vat_on_charges_waived_derived", scale = 6, precision = 19)
+    private BigDecimal vatOnChargeWaived;
+
+    @Column(name = "vat_on_charges_outstanding_derived", scale = 6, precision = 19)
+    private BigDecimal vatOnChargeOutstanding;
+
+    @Column(name = "vat_on_charges_overdue_derived", scale = 6, precision = 19)
+    private BigDecimal vatOnChargeOverdue;
 
     LoanRepaymentScheduleInstallment() {
         this.installmentNumber = null;
@@ -152,7 +182,7 @@ public final class LoanRepaymentScheduleInstallment extends AbstractAuditableCus
             final LocalDate dueDate, final BigDecimal principal, final BigDecimal interest, final BigDecimal feeCharges,
             final BigDecimal penaltyCharges, final boolean recalculatedInterestComponent,
             final Set<LoanInterestRecalcualtionAdditionalDetails> compoundingDetails, final BigDecimal rescheduleInterestPortion,
-            final BigDecimal vatOnInterest, final BigDecimal vatOnCharges) {
+            final BigDecimal vatOnInterestCharged, final BigDecimal vatOnChargeExpected) {
         this.loan = loan;
         this.installmentNumber = installmentNumber;
         this.fromDate = fromDate;
@@ -168,15 +198,15 @@ public final class LoanRepaymentScheduleInstallment extends AbstractAuditableCus
         }
         this.loanCompoundingDetails = compoundingDetails;
         this.rescheduleInterestPortion = rescheduleInterestPortion;
-        this.vatOnInterest = vatOnInterest;
-        this.vatOnCharges = vatOnCharges;
+        this.vatOnInterestCharged = vatOnInterestCharged;
+        this.vatOnChargeExpected = vatOnChargeExpected;
     }
 
     public LoanRepaymentScheduleInstallment(final Loan loan, final Integer installmentNumber, final LocalDate fromDate,
             final LocalDate dueDate, final BigDecimal principal, final BigDecimal interest, final BigDecimal feeCharges,
             final BigDecimal penaltyCharges, final boolean recalculatedInterestComponent,
-            final Set<LoanInterestRecalcualtionAdditionalDetails> compoundingDetails, final BigDecimal vatOnInterest,
-            final BigDecimal vatOnCharges) {
+            final Set<LoanInterestRecalcualtionAdditionalDetails> compoundingDetails, final BigDecimal vatOnInterestCharged,
+            final BigDecimal vatOnChargeExpected) {
         this.loan = loan;
         this.installmentNumber = installmentNumber;
         this.fromDate = fromDate;
@@ -191,8 +221,8 @@ public final class LoanRepaymentScheduleInstallment extends AbstractAuditableCus
             compoundingDetails.forEach(cd -> cd.setLoanRepaymentScheduleInstallment(this));
         }
         this.loanCompoundingDetails = compoundingDetails;
-        this.vatOnInterest = vatOnInterest;
-        this.vatOnCharges = vatOnCharges;
+        this.vatOnInterestCharged = vatOnInterestCharged;
+        this.vatOnChargeExpected = vatOnChargeExpected;
     }
 
     public LoanRepaymentScheduleInstallment(final Loan loan) {
@@ -393,8 +423,19 @@ public final class LoanRepaymentScheduleInstallment extends AbstractAuditableCus
 
         this.obligationsMet = false;
         this.obligationsMetOnDate = null;
-        this.vatOnInterest = null;
-        this.vatOnCharges = null;
+
+        this.vatOnInterestCharged = null;
+        this.vatOnInterestPaid = null;
+        this.vatOnInterestWrittenOff = null;
+        this.vatOnInterestWaived = null;
+        this.vatOnInterestOutstanding = null;
+        this.vatOnInterestOverdue = null;
+        this.vatOnChargeExpected = null;
+        this.vatOnChargePaid = null;
+        this.vatOnChargeWrittenOff = null;
+        this.vatOnChargeWaived = null;
+        this.vatOnChargeOutstanding = null;
+        this.vatOnChargeOverdue = null;
     }
 
     public void resetAccrualComponents() {
@@ -866,19 +907,99 @@ public final class LoanRepaymentScheduleInstallment extends AbstractAuditableCus
         return installmentCharges;
     }
 
-    public BigDecimal getVatOnInterest() {
-        return vatOnInterest;
+    public BigDecimal getVatOnInterestCharged() {
+        return vatOnInterestCharged;
     }
 
-    public void setVatOnInterest(BigDecimal vatOnInterest) {
-        this.vatOnInterest = vatOnInterest;
+    public BigDecimal getVatOnInterestPaid() {
+        return vatOnInterestPaid;
     }
 
-    public BigDecimal getVatOnCharges() {
-        return vatOnCharges;
+    public BigDecimal getVatOnInterestWrittenOff() {
+        return vatOnInterestWrittenOff;
     }
 
-    public void setVatOnCharges(BigDecimal vatOnCharges) {
-        this.vatOnCharges = vatOnCharges;
+    public BigDecimal getVatOnInterestWaived() {
+        return vatOnInterestWaived;
+    }
+
+    public BigDecimal getVatOnInterestOutstanding() {
+        return vatOnInterestOutstanding;
+    }
+
+    public BigDecimal getVatOnInterestOverdue() {
+        return vatOnInterestOverdue;
+    }
+
+    public BigDecimal getVatOnChargeExpected() {
+        return vatOnChargeExpected;
+    }
+
+    public BigDecimal getVatOnChargePaid() {
+        return vatOnChargePaid;
+    }
+
+    public BigDecimal getVatOnChargeWrittenOff() {
+        return vatOnChargeWrittenOff;
+    }
+
+    public BigDecimal getVatOnChargeWaived() {
+        return vatOnChargeWaived;
+    }
+
+    public BigDecimal getVatOnChargeOutstanding() {
+        return vatOnChargeOutstanding;
+    }
+
+    public BigDecimal getVatOnChargeOverdue() {
+        return vatOnChargeOverdue;
+    }
+
+    public Money getVatOnInterestCharged(final MonetaryCurrency currency) {
+        return Money.of(currency, this.vatOnInterestCharged);
+    }
+
+    public Money getVatOnInterestPaid(final MonetaryCurrency currency) {
+        return Money.of(currency, this.vatOnInterestPaid);
+    }
+
+    public Money getVatOnInterestWrittenOff(final MonetaryCurrency currency) {
+        return Money.of(currency, this.vatOnInterestWrittenOff);
+    }
+
+    public Money getVatOnInterestWaived(final MonetaryCurrency currency) {
+        return Money.of(currency, this.vatOnInterestWaived);
+    }
+
+    public Money getVatOnInterestOutstanding(final MonetaryCurrency currency) {
+        return Money.of(currency, this.vatOnInterestOutstanding);
+    }
+
+    public Money getVatOnInterestOverdue(final MonetaryCurrency currency) {
+        return Money.of(currency, this.vatOnInterestOverdue);
+    }
+
+    public Money getVatOnChargeExpected(final MonetaryCurrency currency) {
+        return Money.of(currency, this.vatOnChargeExpected);
+    }
+
+    public Money getVatOnChargePaid(final MonetaryCurrency currency) {
+        return Money.of(currency, this.vatOnChargePaid);
+    }
+
+    public Money getVatOnChargeWrittenOff(final MonetaryCurrency currency) {
+        return Money.of(currency, this.vatOnChargeWrittenOff);
+    }
+
+    public Money getVatOnChargeWaived(final MonetaryCurrency currency) {
+        return Money.of(currency, this.vatOnChargeWaived);
+    }
+
+    public Money getVatOnChargeOutstanding(final MonetaryCurrency currency) {
+        return Money.of(currency, this.vatOnChargeOutstanding);
+    }
+
+    public Money getVatOnChargeOverdue(final MonetaryCurrency currency) {
+        return Money.of(currency, this.vatOnChargeOverdue);
     }
 }

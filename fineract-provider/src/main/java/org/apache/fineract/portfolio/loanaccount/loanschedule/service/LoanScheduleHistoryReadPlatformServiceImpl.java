@@ -150,20 +150,22 @@ public class LoanScheduleHistoryReadPlatformServiceImpl implements LoanScheduleH
                 final Integer period = JdbcSupport.getInteger(rs, "period");
                 LocalDate fromDate = JdbcSupport.getLocalDate(rs, "fromDate");
                 final LocalDate dueDate = JdbcSupport.getLocalDate(rs, "dueDate");
+                final BigDecimal vatOnInterest = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "vatOnInterest");
+                final BigDecimal vatOnCharges = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "vatOnCharges");
                 if (disbursementData != null) {
                     BigDecimal principal = BigDecimal.ZERO;
                     for (DisbursementData data : disbursementData) {
                         if (fromDate.equals(this.disbursement.disbursementDate()) && data.disbursementDate().equals(fromDate)) {
                             principal = principal.add(data.amount());
                             final LoanSchedulePeriodData periodData = LoanSchedulePeriodData.disbursementOnlyPeriod(data.disbursementDate(),
-                                    data.amount(), this.totalFeeChargesDueAtDisbursement, data.isDisbursed(), null, null);
+                                    data.amount(), this.totalFeeChargesDueAtDisbursement, data.isDisbursed(), vatOnInterest, vatOnCharges);
                             periods.add(periodData);
                             this.outstandingLoanPrincipalBalance = this.outstandingLoanPrincipalBalance.add(data.amount());
                         } else if (data.isDueForDisbursement(fromDate, dueDate)
                                 && this.outstandingLoanPrincipalBalance.compareTo(BigDecimal.ZERO) > 0) {
                             principal = principal.add(data.amount());
                             final LoanSchedulePeriodData periodData = LoanSchedulePeriodData.disbursementOnlyPeriod(data.disbursementDate(),
-                                    data.amount(), BigDecimal.ZERO, data.isDisbursed(), null, null);
+                                    data.amount(), BigDecimal.ZERO, data.isDisbursed(), vatOnInterest, vatOnCharges);
                             periods.add(periodData);
                             this.outstandingLoanPrincipalBalance = this.outstandingLoanPrincipalBalance.add(data.amount());
                         }
@@ -191,9 +193,6 @@ public class LoanScheduleHistoryReadPlatformServiceImpl implements LoanScheduleH
 
                 final BigDecimal penaltyChargesExpectedDue = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "penaltyChargesDue");
                 totalPenaltyChargesCharged = totalPenaltyChargesCharged.plus(penaltyChargesExpectedDue);
-
-                final BigDecimal vatOnInterest = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "vatOnInterest");
-                final BigDecimal vatOnCharges = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "vatOnCharges");
 
                 totalVatOnInterestExpected = totalVatOnInterestExpected.plus(vatOnInterest);
                 totalVatOnChargeExpected = totalVatOnChargeExpected.plus(vatOnCharges);

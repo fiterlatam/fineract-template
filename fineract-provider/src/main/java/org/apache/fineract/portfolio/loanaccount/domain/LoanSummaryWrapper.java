@@ -244,4 +244,22 @@ public final class LoanSummaryWrapper {
         return total;
 
     }
+
+    public Money calculateTotalVatOnInterest(final List<LoanRepaymentScheduleInstallment> repaymentScheduleInstallments,
+            final MonetaryCurrency currency) {
+        Money total = Money.zero(currency);
+        for (final LoanRepaymentScheduleInstallment installment : repaymentScheduleInstallments) {
+            total = total.plus(installment.getVatOnInterestCharged(currency));
+        }
+        return total;
+    }
+
+    public Money calculateTotalVatOnCharges(final List<LoanRepaymentScheduleInstallment> repaymentScheduleInstallments,
+            final MonetaryCurrency currency) {
+        Money total = Money.zero(currency);
+        for (final LoanRepaymentScheduleInstallment installment : repaymentScheduleInstallments) {
+            total = total.plus(installment.getVatOnChargeExpected(currency));
+        }
+        return total;
+    }
 }

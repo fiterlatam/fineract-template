@@ -195,8 +195,8 @@ public class LoanScheduleCalculationPlatformServiceImpl implements LoanScheduleC
                         periodData.principalLoanBalanceOutstanding(), interestDue.getAmount(),
                         loanRepaymentScheduleInstallment.getFeeChargesCharged(currency).getAmount(),
                         loanRepaymentScheduleInstallment.getPenaltyChargesCharged(currency).getAmount(), totalAmount.getAmount(),
-                        totalPrincipal.plus(interestDue).getAmount(), loanRepaymentScheduleInstallment.getVatOnInterest(),
-                        loanRepaymentScheduleInstallment.getVatOnCharges());
+                        totalPrincipal.plus(interestDue).getAmount(), loanRepaymentScheduleInstallment.getVatOnInterestCharged(),
+                        loanRepaymentScheduleInstallment.getVatOnChargeExpected());
                 futureInstallments.add(loanSchedulePeriodData);
                 isNewPaymentRequired = false;
             } else if (periodData.periodDueDate().isAfter(today)) {
@@ -256,13 +256,13 @@ public class LoanScheduleCalculationPlatformServiceImpl implements LoanScheduleC
                     outstanding.getAmount(), installment.getInterestCharged(currency).getAmount(),
                     installment.getFeeChargesCharged(currency).getAmount(), installment.getPenaltyChargesCharged(currency).getAmount(),
                     installment.getDue(currency).getAmount(), installment.getTotalPrincipalAndInterest(currency).getAmount(),
-                    installment.getVatOnInterest(), installment.getVatOnCharges());
+                    installment.getVatOnInterestCharged(), installment.getVatOnChargeExpected());
             installmentData.add(loanSchedulePeriodData);
             totalInterest = totalInterest.plus(installment.getInterestCharged(currency));
             totalCharge = totalCharge.plus(installment.getFeeChargesCharged(currency));
             totalPenalty = totalPenalty.plus(installment.getPenaltyChargesCharged(currency));
-            totalVatOnInterest = totalVatOnInterest.plus(installment.getVatOnInterest());
-            totalVatOnCharges = totalVatOnCharges.plus(installment.getVatOnCharges());
+            totalVatOnInterest = totalVatOnInterest.plus(installment.getVatOnInterestCharged());
+            totalVatOnCharges = totalVatOnCharges.plus(installment.getVatOnChargeExpected());
         }
 
         CurrencyData currencyData = this.currencyReadPlatformService.retrieveCurrency(currency.getCode());
