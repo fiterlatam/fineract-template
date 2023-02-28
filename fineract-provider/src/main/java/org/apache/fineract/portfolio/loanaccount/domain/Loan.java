@@ -405,6 +405,9 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     @Column(name = "is_vat_required", nullable = false)
     private boolean isVatRequired;
 
+    @Column(name = "cat_rate_vat_derived", nullable = false)
+    private BigDecimal catRateWithVat = BigDecimal.ZERO;
+
     public static Loan newIndividualLoanApplication(final String accountNo, final Client client, final Integer loanType,
             final LoanProduct loanProduct, final Fund fund, final Staff officer, final CodeValue loanPurpose,
             final LoanTransactionProcessingStrategy transactionProcessingStrategy,
@@ -6839,5 +6842,13 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
     public boolean isVatRequired() {
         return isVatRequired;
+    }
+
+    public BigDecimal getCatRateWithVat() {
+        return catRateWithVat;
+    }
+
+    public void setCatRateWithVat(BigDecimal catRateWithVat) {
+        this.catRateWithVat = catRateWithVat;
     }
 }

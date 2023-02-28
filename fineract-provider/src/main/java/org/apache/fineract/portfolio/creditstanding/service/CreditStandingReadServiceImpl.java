@@ -91,7 +91,7 @@ public class CreditStandingReadServiceImpl implements CreditStandingReadService 
             return this.jdbcTemplate.queryForObject(sql, BigDecimal.class, clientId);
         } catch (EmptyResultDataAccessException e) {
             LOG.error("Problem encountered in calculateMonthlyCommitment()", e);
-            return  null;
+            return null;
         }
     }
 
