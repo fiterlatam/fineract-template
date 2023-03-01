@@ -365,9 +365,11 @@ public class LoanUtilService {
      *
      * @param loan
      *            the loan
+     * @param isVatRequired
+     *            indicates whether VAT is required for the loan
      * @return the CAT rate
      */
-    public BigDecimal getCalculatedCatRate(final Loan loan) {
+    public BigDecimal getCalculatedCatRate(final Loan loan, final Boolean isVatRequired) {
         BigDecimal catRate;
         // for period = 0, the disbursement amount must be negative
         double[] cash_flows = new double[loan.getRepaymentScheduleInstallments().size() + 1];
@@ -380,17 +382,28 @@ public class LoanUtilService {
             }
         }
 
-        // for period = 1 to N, add the outstanding amount to pay
-        for (int i = 0; i < loan.getRepaymentScheduleInstallments().size(); i++) {
-            LoanRepaymentScheduleInstallment per = (LoanRepaymentScheduleInstallment) loan.getRepaymentScheduleInstallments().toArray()[i];
-            cash_flows[i + 1] = per.getPrincipal(loan.getCurrency()).plus(per.getInterestCharged(loan.getCurrency()))
-                    .plus(per.getFeeChargesCharged(loan.getCurrency()).getAmount().doubleValue())
-                    .plus(per.getPenaltyChargesCharged(loan.getCurrency())).getAmount().doubleValue();
-        }
+        // get the cash flows for loan installments
+        calculateCashFlowsForInstallments(loan, isVatRequired, cash_flows);
 
         double irrRate = Irr.irr(cash_flows);
         catRate = Money.of(loan.getCurrency(), new BigDecimal((Math.pow(1 + irrRate, 12) - 1) * 100)).getAmount();
         return catRate;
+    }
+
+    private void calculateCashFlowsForInstallments(Loan loan, Boolean isVatRequired, double[] cash_flows) {
+        for (int i = 0; i < loan.getRepaymentScheduleInstallments().size(); i++) {
+            LoanRepaymentScheduleInstallment per = (LoanRepaymentScheduleInstallment) loan.getRepaymentScheduleInstallments().toArray()[i];
+            if (isVatRequired) {
+                cash_flows[i + 1] = per.getPrincipal(loan.getCurrency()).plus(per.getInterestCharged(loan.getCurrency()))
+                        .plus(per.getFeeChargesCharged(loan.getCurrency()).getAmount().doubleValue())
+                        .plus(per.getPenaltyChargesCharged(loan.getCurrency())).plus(per.getVatOnInterestCharged(loan.getCurrency()))
+                        .plus(per.getVatOnChargeExpected(loan.getCurrency())).getAmount().doubleValue();
+            } else {
+                cash_flows[i + 1] = per.getPrincipal(loan.getCurrency()).plus(per.getInterestCharged(loan.getCurrency()))
+                        .plus(per.getFeeChargesCharged(loan.getCurrency()).getAmount().doubleValue())
+                        .plus(per.getPenaltyChargesCharged(loan.getCurrency())).getAmount().doubleValue();
+            }
+        }
     }
 
 }

@@ -473,8 +473,11 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             loan.adjustNetDisbursalAmount(amountToDisburse.getAmount());
         }
         if (!changes.isEmpty()) {
-            // CAT calculation
-            loan.setCatRate(loanUtilService.getCalculatedCatRate(loan));
+            // CAT calculation with/without VAT
+            loan.setCatRate(loanUtilService.getCalculatedCatRate(loan, false));
+            if (loan.isVatRequired()) {
+                loan.setCatRateWithVat(loanUtilService.getCalculatedCatRate(loan, loan.isVatRequired()));
+            }
 
             saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
 
@@ -646,8 +649,11 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
     private void saveLoanWithDataIntegrityViolationChecks(final Loan loan) {
         try {
-            // CAT calculation
-            loan.setCatRate(loanUtilService.getCalculatedCatRate(loan));
+            // CAT calculation with/without VAT
+            loan.setCatRate(loanUtilService.getCalculatedCatRate(loan, false));
+            if (loan.isVatRequired()) {
+                loan.setCatRateWithVat(loanUtilService.getCalculatedCatRate(loan, loan.isVatRequired()));
+            }
 
             this.loanRepositoryWrapper.save(loan);
         } catch (final JpaSystemException | DataIntegrityViolationException e) {
@@ -852,8 +858,11 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 BigDecimal netDisbursalAmount = loan.getApprovedPrincipal().subtract(loanOutstanding);
                 loan.adjustNetDisbursalAmount(netDisbursalAmount);
             }
-            // CAT calculation
-            loan.setCatRate(loanUtilService.getCalculatedCatRate(loan));
+            // CAT calculation with/without VAT
+            loan.setCatRate(loanUtilService.getCalculatedCatRate(loan, false));
+            if (loan.isVatRequired()) {
+                loan.setCatRateWithVat(loanUtilService.getCalculatedCatRate(loan, loan.isVatRequired()));
+            }
 
             saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
             this.accountTransfersWritePlatformService.reverseAllTransactions(loanId, PortfolioAccountType.LOAN);
@@ -1223,8 +1232,11 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
          * time being, not a major issue for now as this loop is entered only in edge cases (when a waiver is made
          * before the latest payment recorded against the loan)
          ***/
-        // CAT calculation
-        loan.setCatRate(loanUtilService.getCalculatedCatRate(loan));
+        // CAT calculation with/without VAT
+        loan.setCatRate(loanUtilService.getCalculatedCatRate(loan, false));
+        if (loan.isVatRequired()) {
+            loan.setCatRateWithVat(loanUtilService.getCalculatedCatRate(loan, loan.isVatRequired()));
+        }
 
         saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
         if (changedTransactionDetail != null) {
@@ -2961,8 +2973,11 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 loan.processPostDisbursementTransactions();
             }
         }
-        // CAT calculation
-        loan.setCatRate(loanUtilService.getCalculatedCatRate(loan));
+        // CAT calculation with/without VAT
+        loan.setCatRate(loanUtilService.getCalculatedCatRate(loan, false));
+        if (loan.isVatRequired()) {
+            loan.setCatRateWithVat(loanUtilService.getCalculatedCatRate(loan, loan.isVatRequired()));
+        }
 
         saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
 
@@ -3258,7 +3273,12 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         final Map<String, Object> changes = loan.undoLastDisbursal(scheduleGeneratorDTO, existingTransactionIds,
                 existingReversedTransactionIds, loan);
         if (!changes.isEmpty()) {
-            loan.setCatRate(loanUtilService.getCalculatedCatRate(loan));
+            // CAT calculation with/without VAT
+            loan.setCatRate(loanUtilService.getCalculatedCatRate(loan, false));
+            if (loan.isVatRequired()) {
+                loan.setCatRateWithVat(loanUtilService.getCalculatedCatRate(loan, loan.isVatRequired()));
+            }
+
             saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
             String noteText = null;
             if (command.hasParameter("note")) {
