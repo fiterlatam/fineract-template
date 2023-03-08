@@ -39,6 +39,9 @@ jobs:
     needs: continuous-integration
     runs-on: ubuntu-latest
     steps:
+      - id: commit
+        uses: pr-mpt/actions-commit-hash@v1
+      
       - name: executing remote ssh commands using ssh key
         env:
           IMAGE_TAG: ${{ steps.commit.outputs.short }}
