@@ -53,5 +53,6 @@ jobs:
           script: |
             ./docker-login.sh
             cd fineract
-            IMAGE_TAG=$IMAGE_TAG docker-compose down
-            IMAGE_TAG=$IMAGE_TAG docker-compose up -d
+            echo IMAGE_TAG=${{ steps.commit.outputs.short }} > .env
+            docker-compose down
+            docker-compose up -d
