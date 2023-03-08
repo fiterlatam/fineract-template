@@ -408,6 +408,9 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     @Column(name = "cat_rate_vat_derived", nullable = false)
     private BigDecimal catRateWithVat = BigDecimal.ZERO;
 
+    @Column(name = "effective_rate_vat_derived")
+    private BigDecimal effectiveRateWithVat = BigDecimal.ZERO;
+
     public static Loan newIndividualLoanApplication(final String accountNo, final Client client, final Integer loanType,
             final LoanProduct loanProduct, final Fund fund, final Staff officer, final CodeValue loanPurpose,
             final LoanTransactionProcessingStrategy transactionProcessingStrategy,
@@ -6850,5 +6853,13 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
     public void setCatRateWithVat(BigDecimal catRateWithVat) {
         this.catRateWithVat = catRateWithVat;
+    }
+
+    public BigDecimal getEffectiveRateWithVat() {
+        return effectiveRateWithVat;
+    }
+
+    public void setEffectiveRateWithVat(BigDecimal effectiveRateWithVat) {
+        this.effectiveRateWithVat = effectiveRateWithVat;
     }
 }

@@ -22,6 +22,8 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import java.math.BigDecimal;
+import java.math.MathContext;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.temporal.ChronoField;
 import java.util.ArrayList;
@@ -113,6 +115,7 @@ import org.apache.fineract.portfolio.loanaccount.domain.LoanCollateralManagement
 import org.apache.fineract.portfolio.loanaccount.domain.LoanCollateralManagementRepository;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanDisbursementDetails;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanLifecycleStateMachine;
+import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleInstallment;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleInstallmentRepository;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleTransactionProcessorFactory;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepository;
@@ -351,6 +354,9 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             checkForProductMixRestrictions(newLoanApplication);
 
             validateSubmittedOnDate(newLoanApplication);
+
+            // update calculations for schedule installments
+            updateLoanInstallmentsAmounts(newLoanApplication);
 
             final LoanProductRelatedDetail productRelatedDetail = newLoanApplication.repaymentScheduleDetail();
 
@@ -1306,6 +1312,9 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 officeSpecificLoanProductValidation(existingLoanApplication.getLoanProduct().getId(), OfficeId);
             }
 
+            // update calculations for schedule installments
+            updateLoanInstallmentsAmounts(existingLoanApplication);
+
             // CAT calculation with/without VAT
             existingLoanApplication.setCatRate(loanUtilService.getCalculatedCatRate(existingLoanApplication, false));
             if (existingLoanApplication.isVatRequired()) {
@@ -1556,6 +1565,9 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 BigDecimal netDisbursalAmount = loan.getApprovedPrincipal().subtract(loanOutstanding);
                 loan.adjustNetDisbursalAmount(netDisbursalAmount);
             }
+
+            // update calculations for schedule installments
+            updateLoanInstallmentsAmounts(loan);
 
             saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
 
@@ -1870,6 +1882,35 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 throw new NotOfficeSpecificProductException(productId, officeId);
             }
 
+        }
+    }
+
+    private void updateLoanInstallmentsAmounts(Loan loan) {
+        // Get the total installments for this loan
+        BigDecimal totalInstallmentsForLoan = loanUtilService.calculateTotalInstallmentWithVat(loan).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal principalLeft = loan.getNetDisbursalAmount();
+
+        for (LoanRepaymentScheduleInstallment scheduleInstallment : loan.getRepaymentScheduleInstallments()) {
+            // Update interest installment
+            BigDecimal interestRateInstallment = loanUtilService.calculatePeriodicInterestRate(
+                    loan.getLoanProductRelatedDetail().getAnnualNominalInterestRate(), scheduleInstallment.getFromDate(),
+                    scheduleInstallment.getDueDate());
+            BigDecimal interestChargedInstallment = principalLeft.multiply(interestRateInstallment, MathContext.DECIMAL64).setScale(2,
+                    RoundingMode.HALF_UP);
+            scheduleInstallment.updateInterestCharged(interestChargedInstallment);
+
+            // Sum the values to subtract from the total installment
+            BigDecimal dueAmountInstallment = scheduleInstallment.getInterestCharged(loan.getCurrency()).getAmount()
+                    .add(scheduleInstallment.getVatOnInterestCharged())
+                    .add(scheduleInstallment.getPenaltyChargesCharged(loan.getCurrency()).getAmount())
+                    .add(scheduleInstallment.getFeeChargesCharged(loan.getCurrency()).getAmount());
+
+            BigDecimal principalInstallmentAmount = totalInstallmentsForLoan.subtract(dueAmountInstallment, MathContext.DECIMAL64)
+                    .setScale(2, RoundingMode.HALF_UP);
+            scheduleInstallment.updatePrincipal(principalInstallmentAmount);
+
+            // Update principal left
+            principalLeft = principalLeft.subtract(principalInstallmentAmount);
         }
     }
 

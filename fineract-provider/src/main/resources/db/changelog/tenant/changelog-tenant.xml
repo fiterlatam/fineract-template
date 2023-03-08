@@ -50,4 +50,5 @@
     <include file="parts/0033_client_document_add_field.xml" relativeToChangelogFile="true"/>
     <include file="parts/0034_create_credit_standing_to_client.xml" relativeToChangelogFile="true"/>
     <include file="parts/0035_add_cat_rate_with_vat_to_loan.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0036_add_effective_interest_rate_with_vat_to_loan.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

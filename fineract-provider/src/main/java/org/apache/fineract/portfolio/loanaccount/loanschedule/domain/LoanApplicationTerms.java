@@ -197,7 +197,7 @@ public final class LoanApplicationTerms {
 
     // used for FLAT loans when interest rate changed
     private Integer excludePeriodsForCalculation = 0;
-    private Money totalPrincipalAccountedForInterestCalcualtion;
+    private Money totalPrincipalAccountedForInterestCalculation;
 
     // used for FLAT loans generation on modifying terms
     private Money totalPrincipalAccounted;
@@ -526,7 +526,7 @@ public final class LoanApplicationTerms {
         Integer periodNumber = 1;
         updatePeriodNumberApplicableForPrincipalOrInterestGrace(periodNumber);
         updateRecurringMoratoriumOnPrincipalPeriods(periodNumber);
-        this.totalPrincipalAccountedForInterestCalcualtion = principal.zero();
+        this.totalPrincipalAccountedForInterestCalculation = principal.zero();
         this.totalInterestAccounted = principal.zero();
         this.totalPrincipalAccounted = principal.zero();
         this.isEqualAmortization = isEqualAmortization;
@@ -652,8 +652,12 @@ public final class LoanApplicationTerms {
     public Money pmtForInstallment(final PaymentPeriodsInOneYearCalculator calculator, final Money outstandingBalance,
             final int periodNumber, final MathContext mc) {
         // Calculate exact period from disbursement date
-        final LocalDate periodStartDate = getExpectedDisbursementDate().withDayOfMonth(1);
+        LocalDate periodStartDate = getExpectedDisbursementDate().withDayOfMonth(1);
         final LocalDate periodEndDate = getPeriodEndDate(periodStartDate);
+
+        // ABA-20 - requires period to start from disbursement date so use disbursement date as the beginning
+        periodStartDate = getExpectedDisbursementDate();
+
         // equal installments
         final int periodsElapsed = periodNumber - 1;
         // with periodic interest for default month and year for
@@ -774,7 +778,7 @@ public final class LoanApplicationTerms {
         switch (this.interestMethod) {
             case FLAT:
                 final BigDecimal interestRateForLoanTerm = calculateFlatInterestRateForLoanTerm(calculator, mc);
-                totalInterestDue = this.principal.minus(totalPrincipalAccountedForInterestCalcualtion)
+                totalInterestDue = this.principal.minus(totalPrincipalAccountedForInterestCalculation)
                         .multiplyRetainScale(interestRateForLoanTerm, mc.getRoundingMode());
 
             break;
@@ -1065,9 +1069,10 @@ public final class LoanApplicationTerms {
                         periodicInterestRate = oneDayOfYearInterestRate.multiply(numberOfDaysInPeriod, mc);
                     break;
                     case MONTHS:
-                        if (daysInMonthType.isDaysInMonth_30()) {
-                            numberOfDaysInPeriod = loanTermFrequencyBigDecimal.multiply(BigDecimal.valueOf(30), mc);
-                        }
+                        // ABA-20 Use the exact number of days in period
+                        // if (daysInMonthType.isDaysInMonth_30()) {
+                        // numberOfDaysInPeriod = loanTermFrequencyBigDecimal.multiply(BigDecimal.valueOf(30), mc);
+                        // }
                         periodicInterestRate = oneDayOfYearInterestRate.multiply(numberOfDaysInPeriod, mc);
                     break;
                     case YEARS:
@@ -1092,10 +1097,27 @@ public final class LoanApplicationTerms {
                 }
             break;
             case SAME_AS_REPAYMENT_PERIOD:
-                periodicInterestRate = this.annualNominalInterestRate.divide(loanTermPeriodsInYearBigDecimal, mc).divide(divisor, mc)
-                        .multiply(loanTermFrequencyBigDecimal);
+                // ABA-20 - Change way to calculate the interest rate to use
+                // periodicInterestRate = this.annualNominalInterestRate.divide(loanTermPeriodsInYearBigDecimal,
+                // mc).divide(divisor, mc)
+                // .multiply(loanTermFrequencyBigDecimal);
+                periodicInterestRate = calculatePeriodicInterestRate(mc, divisor, periodStartDate, periodEndDate);
             break;
         }
+        // Effective Monthly rate
+        return periodicInterestRate;
+    }
+
+    private BigDecimal calculatePeriodicInterestRate(final MathContext mc, BigDecimal divisor, LocalDate periodStartDate,
+            LocalDate periodEndDate) {
+        BigDecimal periodicInterestRate;
+
+        BigDecimal daysPerYear = BigDecimal.valueOf(365);
+        int exactDaysInPeriod = Math.toIntExact(ChronoUnit.DAYS.between(periodStartDate, periodEndDate));
+        BigDecimal exactDaysInPeriodBigDecimal = BigDecimal.valueOf(exactDaysInPeriod);
+
+        periodicInterestRate = this.annualNominalInterestRate.divide(daysPerYear, mc).divide(divisor, mc)
+                .multiply(exactDaysInPeriodBigDecimal);
 
         return periodicInterestRate;
     }
@@ -1773,7 +1795,7 @@ public final class LoanApplicationTerms {
     }
 
     public void setTotalPrincipalAccountedForInterestCalculation(Money totalPrincipalAccounted) {
-        this.totalPrincipalAccountedForInterestCalcualtion = totalPrincipalAccounted;
+        this.totalPrincipalAccountedForInterestCalculation = totalPrincipalAccounted;
     }
 
     // Used for FLAT loans to calculate principal and interest per installment

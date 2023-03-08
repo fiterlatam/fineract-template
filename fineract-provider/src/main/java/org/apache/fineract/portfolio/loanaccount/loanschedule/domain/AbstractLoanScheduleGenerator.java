@@ -130,9 +130,14 @@ public abstract class AbstractLoanScheduleGenerator implements LoanScheduleGener
         boolean isFirstRepayment = true;
         LocalDate firstRepaymentdate = this.scheduledDateGenerator
                 .generateNextRepaymentDate(loanApplicationTerms.getExpectedDisbursementDate(), loanApplicationTerms, isFirstRepayment);
-        final LocalDate idealDisbursementDate = this.scheduledDateGenerator.idealDisbursementDateBasedOnFirstRepaymentDate(
+        LocalDate idealDisbursementDate = this.scheduledDateGenerator.idealDisbursementDateBasedOnFirstRepaymentDate(
                 loanApplicationTerms.getLoanTermPeriodFrequencyType(), loanApplicationTerms.getRepaymentEvery(), firstRepaymentdate,
                 loanApplicationTerms.getLoanCalendar(), loanApplicationTerms.getHolidayDetailDTO(), loanApplicationTerms);
+
+        // ABA-20 - Reset the ideal disbursement date if different from the expected one
+        if (!loanApplicationTerms.getExpectedDisbursementDate().isEqual(idealDisbursementDate)) {
+            idealDisbursementDate = loanApplicationTerms.getExpectedDisbursementDate();
+        }
 
         if (!scheduleParams.isPartialUpdate()) {
             // Set Fixed Principal Amount

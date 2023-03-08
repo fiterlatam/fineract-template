@@ -37,6 +37,7 @@ import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
 import org.apache.fineract.organisation.holiday.domain.Holiday;
 import org.apache.fineract.organisation.holiday.domain.HolidayRepository;
 import org.apache.fineract.organisation.holiday.domain.HolidayStatusType;
+import org.apache.fineract.organisation.monetary.domain.MoneyHelper;
 import org.apache.fineract.organisation.staff.domain.Staff;
 import org.apache.fineract.organisation.staff.domain.StaffRepository;
 import org.apache.fineract.organisation.staff.exception.StaffNotFoundException;
@@ -184,15 +185,9 @@ public class LoanAssembler {
         final Integer loanTermFrequencyType = this.fromApiJsonHelper.extractIntegerWithLocaleNamed("loanTermFrequencyType", element);
         final BigDecimal interestRatePerPeriod = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed("interestRatePerPeriod", element);
 
-        BigDecimal period = loanTermFrequency;
-        if (loanTermFrequencyType == 2) {
-            period = period.divide(BigDecimal.valueOf(12));
-        }
-        // Effective rate is calcvulate as follows (1 + interest / period) * period - 1;
-        BigDecimal rateForPeriod = interestRatePerPeriod.divide(period);
-        rateForPeriod = rateForPeriod.add(BigDecimal.ONE);
-        rateForPeriod = rateForPeriod.multiply(period);
-        BigDecimal effectInterestAmount = rateForPeriod.subtract(BigDecimal.ONE);
+        // Calculate effective interest rate
+        BigDecimal effectInterestAmount = this.loanUtilService.calculateEffectiveRate(interestRatePerPeriod).setScale(2,
+                MoneyHelper.getRoundingMode());
 
         final LoanProduct loanProduct = this.loanProductRepository.findById(productId)
                 .orElseThrow(() -> new LoanProductNotFoundException(productId));
@@ -366,6 +361,15 @@ public class LoanAssembler {
                 isHolidayEnabled, holidays, workingDays, element, disbursementDetails);
         loanApplication.loanApplicationSubmittal(loanScheduleModel, loanApplicationTerms, defaultLoanLifecycleStateMachine(),
                 submittedOnDate, externalId, allowTransactionsOnHoliday, holidays, workingDays, allowTransactionsOnNonWorkingDay);
+
+        // if VAT is required, then calculates the effective annual rate with VAT
+        if (isVatRequired && client != null && client.getVatRate() != null && client.getVatRate().getPercentage() % 1 == 0) {
+            double vatPercentage = client.getVatRate().getPercentage();
+            BigDecimal effectInterestAmountWithVat = this.loanUtilService
+                    .calculateEffectiveRateWithVat(interestRatePerPeriod, BigDecimal.valueOf(vatPercentage))
+                    .setScale(2, MoneyHelper.getRoundingMode());
+            loanApplication.setEffectiveRateWithVat(effectInterestAmountWithVat);
+        }
 
         return loanApplication;
     }
