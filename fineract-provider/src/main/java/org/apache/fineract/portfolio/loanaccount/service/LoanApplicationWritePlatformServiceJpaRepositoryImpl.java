@@ -1889,15 +1889,25 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
         // Get the total installments for this loan
         BigDecimal totalInstallmentsForLoan = loanUtilService.calculateTotalInstallmentWithVat(loan).setScale(2, RoundingMode.HALF_UP);
         BigDecimal principalLeft = loan.getNetDisbursalAmount();
+        BigDecimal divisor = BigDecimal.valueOf(Double.parseDouble("100.0"));
 
         for (LoanRepaymentScheduleInstallment scheduleInstallment : loan.getRepaymentScheduleInstallments()) {
             // Update interest installment
             BigDecimal interestRateInstallment = loanUtilService.calculatePeriodicInterestRate(
                     loan.getLoanProductRelatedDetail().getAnnualNominalInterestRate(), scheduleInstallment.getFromDate(),
                     scheduleInstallment.getDueDate());
+
             BigDecimal interestChargedInstallment = principalLeft.multiply(interestRateInstallment, MathContext.DECIMAL64).setScale(2,
                     RoundingMode.HALF_UP);
             scheduleInstallment.updateInterestCharged(interestChargedInstallment);
+
+            if (loan.isVatRequired()) {
+                BigDecimal vatRate = loanUtilService.getLoanVatPercentage(loan);
+                BigDecimal vatRateForCalculation = vatRate.divide(divisor, MathContext.DECIMAL64);
+                BigDecimal interestVatChargedInstallment = interestChargedInstallment.multiply(vatRateForCalculation, MathContext.DECIMAL64)
+                        .setScale(2, RoundingMode.HALF_UP);
+                scheduleInstallment.updateVatOnInterestCharged(interestVatChargedInstallment);
+            }
 
             // Sum the values to subtract from the total installment
             BigDecimal dueAmountInstallment = scheduleInstallment.getInterestCharged(loan.getCurrency()).getAmount()
