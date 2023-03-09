@@ -871,6 +871,10 @@ public final class LoanRepaymentScheduleInstallment extends AbstractAuditableCus
         this.principal = principal;
     }
 
+    public void updateVatOnInterestCharged(final BigDecimal interestVatWrittenOff) {
+        this.vatOnInterestCharged = interestVatWrittenOff;
+    }
+
     public static Comparator<LoanRepaymentScheduleInstallment> installmentNumberComparator = new Comparator<LoanRepaymentScheduleInstallment>() {
 
         @Override
