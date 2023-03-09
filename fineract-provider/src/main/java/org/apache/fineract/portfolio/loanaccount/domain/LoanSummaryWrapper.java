@@ -254,11 +254,65 @@ public final class LoanSummaryWrapper {
         return total;
     }
 
+    public Money calculateTotalVatOnInterestPaid(final List<LoanRepaymentScheduleInstallment> repaymentScheduleInstallments,
+            final MonetaryCurrency currency) {
+        Money total = Money.zero(currency);
+        for (final LoanRepaymentScheduleInstallment installment : repaymentScheduleInstallments) {
+            total = total.plus(installment.getVatOnInterestPaid(currency));
+        }
+        return total;
+    }
+
+    public Money calculateTotalVatOnInterestWaived(final List<LoanRepaymentScheduleInstallment> repaymentScheduleInstallments,
+            final MonetaryCurrency currency) {
+        Money total = Money.zero(currency);
+        for (final LoanRepaymentScheduleInstallment installment : repaymentScheduleInstallments) {
+            total = total.plus(installment.getVatOnInterestWaived(currency));
+        }
+        return total;
+    }
+
+    public Money calculateTotalVatOnInterestWrittenOff(final List<LoanRepaymentScheduleInstallment> repaymentScheduleInstallments,
+            final MonetaryCurrency currency) {
+        Money total = Money.zero(currency);
+        for (final LoanRepaymentScheduleInstallment installment : repaymentScheduleInstallments) {
+            total = total.plus(installment.getVatOnInterestWrittenOff(currency));
+        }
+        return total;
+    }
+
     public Money calculateTotalVatOnCharges(final List<LoanRepaymentScheduleInstallment> repaymentScheduleInstallments,
             final MonetaryCurrency currency) {
         Money total = Money.zero(currency);
         for (final LoanRepaymentScheduleInstallment installment : repaymentScheduleInstallments) {
             total = total.plus(installment.getVatOnChargeExpected(currency));
+        }
+        return total;
+    }
+
+    public Money calculateTotalVatOnChargesPaid(final List<LoanRepaymentScheduleInstallment> repaymentScheduleInstallments,
+            final MonetaryCurrency currency) {
+        Money total = Money.zero(currency);
+        for (final LoanRepaymentScheduleInstallment installment : repaymentScheduleInstallments) {
+            total = total.plus(installment.getVatOnChargePaid(currency));
+        }
+        return total;
+    }
+
+    public Money calculateTotalVatOnChargesWaived(final List<LoanRepaymentScheduleInstallment> repaymentScheduleInstallments,
+            final MonetaryCurrency currency) {
+        Money total = Money.zero(currency);
+        for (final LoanRepaymentScheduleInstallment installment : repaymentScheduleInstallments) {
+            total = total.plus(installment.getVatOnChargeWaived(currency));
+        }
+        return total;
+    }
+
+    public Money calculateTotalVatOnChargesWrittenOff(final List<LoanRepaymentScheduleInstallment> repaymentScheduleInstallments,
+            final MonetaryCurrency currency) {
+        Money total = Money.zero(currency);
+        for (final LoanRepaymentScheduleInstallment installment : repaymentScheduleInstallments) {
+            total = total.plus(installment.getVatOnChargeWrittenOff(currency));
         }
         return total;
     }

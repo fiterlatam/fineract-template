@@ -249,4 +249,16 @@
         </addColumn>
     </changeSet>
 
+
+    <changeSet id="12" author="fineract">
+        <addColumn tableName="m_loan_transaction">
+            <column name="vat_on_interest_portion" type="DECIMAL(19, 6)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="vat_on_charges_portion" type="DECIMAL(19, 6)">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
 </databaseChangeLog>

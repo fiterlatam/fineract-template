@@ -788,4 +788,9 @@ public class Charge extends AbstractPersistableCustom {
         return Objects.hash(name, amount, currencyCode, chargeAppliesTo, chargeTimeType, chargeCalculation, chargePaymentMode, feeOnDay,
                 feeInterval, feeOnMonth, penalty, active, deleted, minCap, maxCap, feeFrequency, account, taxGroup);
     }
+
+    public boolean isVatRequired() {
+        return isVatRequired;
+    }
+
 }

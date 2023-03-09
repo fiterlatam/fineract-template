@@ -246,8 +246,10 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
 
             final Long groupId = command.longValueOfParameterNamed(ClientApiConstants.groupIdParamName);
 
-            final VatRate vatRate = readVatRateService.findById(command.longValueOfParameterNamed(ClientApiConstants.vatRateIdParamName));
-
+            VatRate vatRate = null;
+            if (command.hasParameter(ClientApiConstants.vatRateIdParamName)) {
+                vatRate = readVatRateService.findById(command.longValueOfParameterNamed(ClientApiConstants.vatRateIdParamName));
+            }
             Group clientParentGroup = null;
             if (groupId != null) {
                 clientParentGroup = this.groupRepository.findById(groupId).orElseThrow(() -> new GroupNotFoundException(groupId));

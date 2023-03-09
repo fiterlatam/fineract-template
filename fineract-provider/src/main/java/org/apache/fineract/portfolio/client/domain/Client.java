@@ -631,7 +631,7 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
             this.isVatRequired = newValue;
         }
 
-        if (command.isChangeInLongParameterNamed(ClientApiConstants.vatRateIdParamName, this.vatRate.getId())) {
+        if (command.isChangeInLongParameterNamed(ClientApiConstants.vatRateIdParamName, vatRateId())) {
             final Long newValue = command.longValueOfParameterNamed(ClientApiConstants.vatRateIdParamName);
             actualChanges.put(ClientApiConstants.vatRateIdParamName, newValue);
         }

@@ -2710,12 +2710,16 @@ public abstract class AbstractLoanScheduleGenerator implements LoanScheduleGener
         Money penaltyCharges = Money.zero(currency);
         Money totalPrincipal = Money.zero(currency);
         Money totalInterest = Money.zero(currency);
+        Money vatOnInterest = Money.zero(currency);
+        Money vatOnCharges = Money.zero(currency);
         for (final LoanRepaymentScheduleInstallment currentInstallment : loanScheduleDTO.getInstallments()) {
             if (currentInstallment.isNotFullyPaidOff()) {
                 totalPrincipal = totalPrincipal.plus(currentInstallment.getPrincipalOutstanding(currency));
                 totalInterest = totalInterest.plus(currentInstallment.getInterestOutstanding(currency));
                 feeCharges = feeCharges.plus(currentInstallment.getFeeChargesOutstanding(currency));
                 penaltyCharges = penaltyCharges.plus(currentInstallment.getPenaltyChargesOutstanding(currency));
+                vatOnInterest = vatOnInterest.plus(currentInstallment.getVatOnInterestOutstanding(currency));
+                vatOnCharges = vatOnCharges.plus(currentInstallment.getVatOnChargeOutstanding(currency));
             }
         }
         final Set<LoanInterestRecalcualtionAdditionalDetails> compoundingDetails = null;
