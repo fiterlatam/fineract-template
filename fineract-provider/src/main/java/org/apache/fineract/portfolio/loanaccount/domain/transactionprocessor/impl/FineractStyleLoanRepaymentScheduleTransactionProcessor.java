@@ -94,63 +94,125 @@ public class FineractStyleLoanRepaymentScheduleTransactionProcessor extends Abst
         Money penaltyChargesPortion = Money.zero(transactionAmountRemaining.getCurrency());
         Money vatOnChargesChargesPortion = Money.zero(transactionAmountRemaining.getCurrency());
 
-        Double vatPercentage = Double.valueOf(0);
-        if (loanTransaction != null && loanTransaction.getLoan() != null && loanTransaction.getLoan().client() != null
-                && loanTransaction.getLoan().client().getVatRate() != null) {
-            vatPercentage = loanTransaction.getLoan().client().getVatRate().getPercentage();
+        BigDecimal vatPercentage = BigDecimal.ZERO;
+        Boolean isVatRequired = loanTransaction.getLoan().isVatRequired();
+
+        if (loanTransaction != null && loanTransaction.getLoan() != null && loanTransaction.getLoan().isVatRequired()) {
+            vatPercentage = loanTransaction.getLoan().getVatPercentage();
         }
 
-        if (loanTransaction.isChargesWaiver()) {
-            penaltyChargesPortion = currentInstallment.waivePenaltyChargesComponent(transactionDate,
-                    loanTransaction.getPenaltyChargesPortion(currency));
-            transactionAmountRemaining = transactionAmountRemaining.minus(penaltyChargesPortion);
+        if (isVatRequired) {
+            if (loanTransaction.isChargesWaiver()) {
+                Pair<Money, Money> waivePenaltyChargesAndVatComponent = currentInstallment.waivePenaltyChargesAndVatComponents(
+                        transactionDate, loanTransaction.getPenaltyChargesPortion(currency), vatPercentage);
+                penaltyChargesPortion = waivePenaltyChargesAndVatComponent.getLeft();
+                transactionAmountRemaining = transactionAmountRemaining.minus(penaltyChargesPortion);
 
-            feeChargesPortion = currentInstallment.waiveFeeChargesComponent(transactionDate,
-                    loanTransaction.getFeeChargesPortion(currency));
-            transactionAmountRemaining = transactionAmountRemaining.minus(feeChargesPortion);
+                Pair<Money, Money> waiveFeeChargesAndVatComponent = currentInstallment.waiveFeeChargesAndVatComponents(transactionDate,
+                        loanTransaction.getFeeChargesPortion(currency), vatPercentage);
+                feeChargesPortion = waiveFeeChargesAndVatComponent.getLeft();
+                transactionAmountRemaining = transactionAmountRemaining.minus(feeChargesPortion);
 
-        } else if (loanTransaction.isInterestWaiver()) {
-            interestPortion = currentInstallment.waiveInterestComponent(transactionDate, transactionAmountRemaining);
-            transactionAmountRemaining = transactionAmountRemaining.minus(interestPortion);
+                vatOnChargesChargesPortion = waivePenaltyChargesAndVatComponent.getRight().plus(waiveFeeChargesAndVatComponent.getRight());
+                transactionAmountRemaining = transactionAmountRemaining.minus(vatOnChargesChargesPortion);
 
-            loanTransaction.updateComponents(principalPortion, interestPortion, feeChargesPortion, penaltyChargesPortion);
-        } else if (loanTransaction.isChargePayment()) {
-            if (loanTransaction.isPenaltyPayment()) {
+                loanTransaction.updateComponents(principalPortion, interestPortion, feeChargesPortion, penaltyChargesPortion,
+                        vatOnInterestPortion, vatOnChargesChargesPortion);
+            } else if (loanTransaction.isInterestWaiver()) {
+
+                Pair<Money, Money> waiveInterestAndVatComponents = currentInstallment.waiveInterestAndVatComponents(transactionDate,
+                        loanTransaction.getFeeChargesPortion(currency), vatPercentage);
+                interestPortion = waiveInterestAndVatComponents.getLeft();
+                transactionAmountRemaining = transactionAmountRemaining.minus(feeChargesPortion);
+                vatOnChargesChargesPortion = waiveInterestAndVatComponents.getRight();
+                loanTransaction.updateComponents(principalPortion, interestPortion, feeChargesPortion, penaltyChargesPortion,
+                        vatOnInterestPortion, vatOnChargesChargesPortion);
+
+            } else if (loanTransaction.isChargePayment()) {
+                if (loanTransaction.isPenaltyPayment()) {
+                    Pair<Money, Money> payPenaltyChargesAndVat = currentInstallment.payPenaltyChargesAndVatComponent(transactionDate,
+                            transactionAmountRemaining, vatPercentage);
+                    penaltyChargesPortion = payPenaltyChargesAndVat.getLeft();
+                    transactionAmountRemaining = transactionAmountRemaining.minus(penaltyChargesPortion);
+                    transactionAmountRemaining = transactionAmountRemaining.minus(payPenaltyChargesAndVat.getRight());
+                } else {
+                    Pair<Money, Money> payFeeChargesAndVatComponent = currentInstallment.payFeeChargesAndVatComponent(transactionDate,
+                            transactionAmountRemaining, vatPercentage);
+                    feeChargesPortion = payFeeChargesAndVatComponent.getLeft();
+                    transactionAmountRemaining = transactionAmountRemaining.minus(feeChargesPortion);
+                    transactionAmountRemaining = transactionAmountRemaining.minus(payFeeChargesAndVatComponent.getRight());
+                }
+                loanTransaction.updateComponents(principalPortion, interestPortion, feeChargesPortion, penaltyChargesPortion,
+                        vatOnInterestPortion, vatOnChargesChargesPortion);
+            } else {
+                Pair<Money, Money> payPenaltyChargesAndVat = currentInstallment.payPenaltyChargesAndVatComponent(transactionDate,
+                        transactionAmountRemaining, vatPercentage);
+                penaltyChargesPortion = payPenaltyChargesAndVat.getLeft();
+                transactionAmountRemaining = transactionAmountRemaining.minus(penaltyChargesPortion);
+
+                Pair<Money, Money> payFeeChargesAndVatComponent = currentInstallment.payFeeChargesAndVatComponent(transactionDate,
+                        transactionAmountRemaining, vatPercentage);
+                feeChargesPortion = payFeeChargesAndVatComponent.getLeft();
+                transactionAmountRemaining = transactionAmountRemaining.minus(feeChargesPortion);
+
+                // penalties and fees vat
+                vatOnChargesChargesPortion = payPenaltyChargesAndVat.getRight().plus(payFeeChargesAndVatComponent.getRight());
+                transactionAmountRemaining = transactionAmountRemaining.minus(vatOnChargesChargesPortion);
+
+                Pair<Money, Money> interestAndVatPortions = currentInstallment.payInterestAndVatComponents(transactionDate,
+                        transactionAmountRemaining, vatPercentage);
+                interestPortion = interestAndVatPortions.getLeft();
+                transactionAmountRemaining = transactionAmountRemaining.minus(interestPortion);
+
+                vatOnInterestPortion = interestAndVatPortions.getRight();
+                transactionAmountRemaining = transactionAmountRemaining.minus(vatOnInterestPortion);
+
+                principalPortion = currentInstallment.payPrincipalComponent(transactionDate, transactionAmountRemaining);
+                transactionAmountRemaining = transactionAmountRemaining.minus(principalPortion);
+
+                loanTransaction.updateComponents(principalPortion, interestPortion, feeChargesPortion, penaltyChargesPortion,
+                        vatOnInterestPortion, vatOnChargesChargesPortion);
+            }
+        } else {
+
+            if (loanTransaction.isChargesWaiver()) {
+                penaltyChargesPortion = currentInstallment.waivePenaltyChargesComponent(transactionDate,
+                        loanTransaction.getPenaltyChargesPortion(currency));
+                transactionAmountRemaining = transactionAmountRemaining.minus(penaltyChargesPortion);
+
+                feeChargesPortion = currentInstallment.waiveFeeChargesComponent(transactionDate,
+                        loanTransaction.getFeeChargesPortion(currency));
+                transactionAmountRemaining = transactionAmountRemaining.minus(feeChargesPortion);
+
+            } else if (loanTransaction.isInterestWaiver()) {
+                interestPortion = currentInstallment.waiveInterestComponent(transactionDate, transactionAmountRemaining);
+                transactionAmountRemaining = transactionAmountRemaining.minus(interestPortion);
+
+                loanTransaction.updateComponents(principalPortion, interestPortion, feeChargesPortion, penaltyChargesPortion);
+            } else if (loanTransaction.isChargePayment()) {
+                if (loanTransaction.isPenaltyPayment()) {
+                    penaltyChargesPortion = currentInstallment.payPenaltyChargesComponent(transactionDate, transactionAmountRemaining);
+                    transactionAmountRemaining = transactionAmountRemaining.minus(penaltyChargesPortion);
+                } else {
+                    feeChargesPortion = currentInstallment.payFeeChargesComponent(transactionDate, transactionAmountRemaining);
+                    transactionAmountRemaining = transactionAmountRemaining.minus(feeChargesPortion);
+                }
+                loanTransaction.updateComponents(principalPortion, interestPortion, feeChargesPortion, penaltyChargesPortion);
+            } else {
                 penaltyChargesPortion = currentInstallment.payPenaltyChargesComponent(transactionDate, transactionAmountRemaining);
                 transactionAmountRemaining = transactionAmountRemaining.minus(penaltyChargesPortion);
-            } else {
+
                 feeChargesPortion = currentInstallment.payFeeChargesComponent(transactionDate, transactionAmountRemaining);
                 transactionAmountRemaining = transactionAmountRemaining.minus(feeChargesPortion);
+
+                interestPortion = currentInstallment.payInterestComponent(transactionDate, transactionAmountRemaining);
+                transactionAmountRemaining = transactionAmountRemaining.minus(interestPortion);
+
+                principalPortion = currentInstallment.payPrincipalComponent(transactionDate, transactionAmountRemaining);
+                transactionAmountRemaining = transactionAmountRemaining.minus(principalPortion);
+
+                loanTransaction.updateComponents(principalPortion, interestPortion, feeChargesPortion, penaltyChargesPortion);
             }
-            loanTransaction.updateComponents(principalPortion, interestPortion, feeChargesPortion, penaltyChargesPortion);
-        } else {
-            Pair<Money, Money> payPenaltyChargesAndVat = currentInstallment.payPenaltyChargesAndVatComponent(transactionDate,
-                    transactionAmountRemaining, BigDecimal.valueOf(vatPercentage));
-            penaltyChargesPortion = payPenaltyChargesAndVat.getLeft();
-            transactionAmountRemaining = transactionAmountRemaining.minus(penaltyChargesPortion);
-
-            Pair<Money, Money> payFeeChargesAndVatComponent = currentInstallment.payFeeChargesAndVatComponent(transactionDate,
-                    transactionAmountRemaining, BigDecimal.valueOf(vatPercentage));
-            feeChargesPortion = payFeeChargesAndVatComponent.getLeft();
-            transactionAmountRemaining = transactionAmountRemaining.minus(feeChargesPortion);
-
-            // penalties and fees vat
-            vatOnChargesChargesPortion = payPenaltyChargesAndVat.getRight().plus(payFeeChargesAndVatComponent.getRight());
-            transactionAmountRemaining = transactionAmountRemaining.minus(vatOnChargesChargesPortion);
-
-            Pair<Money, Money> interestAndVatPortions = currentInstallment.payInterestAndVatComponents(transactionDate,
-                    transactionAmountRemaining, BigDecimal.valueOf(vatPercentage));
-            interestPortion = interestAndVatPortions.getLeft();
-            transactionAmountRemaining = transactionAmountRemaining.minus(interestPortion);
-
-            vatOnInterestPortion = interestAndVatPortions.getRight();
-            transactionAmountRemaining = transactionAmountRemaining.minus(vatOnInterestPortion);
-
-            principalPortion = currentInstallment.payPrincipalComponent(transactionDate, transactionAmountRemaining);
-            transactionAmountRemaining = transactionAmountRemaining.minus(principalPortion);
-
-            loanTransaction.updateComponents(principalPortion, interestPortion, feeChargesPortion, penaltyChargesPortion,
-                    vatOnInterestPortion, vatOnChargesChargesPortion);
         }
         if (principalPortion.plus(interestPortion).plus(feeChargesPortion).plus(penaltyChargesPortion).isGreaterThanZero()) {
             transactionMappings.add(LoanTransactionToRepaymentScheduleMapping.createFrom(loanTransaction, currentInstallment,

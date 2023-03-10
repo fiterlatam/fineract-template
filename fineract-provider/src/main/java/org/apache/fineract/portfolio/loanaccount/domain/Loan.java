@@ -405,6 +405,9 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     @Column(name = "is_vat_required", nullable = false)
     private boolean isVatRequired;
 
+    @Column(name = "vat_percentage", nullable = true)
+    private BigDecimal vatPercentage;
+
     @Column(name = "cat_rate_vat_derived", nullable = false)
     private BigDecimal catRateWithVat = BigDecimal.ZERO;
 
@@ -419,14 +422,14 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             final List<LoanDisbursementDetails> disbursementDetails, final BigDecimal maxOutstandingLoanBalance,
             final Boolean createStandingInstructionAtDisbursement, final Boolean isFloatingInterestRate,
             final BigDecimal interestRateDifferential, final List<Rate> rates, final BigDecimal fixedPrincipalPercentagePerInstallment,
-            final BigDecimal tasaeffectiva, final Boolean isVatRequired) {
+            final BigDecimal tasaeffectiva, final Boolean isVatRequired, final BigDecimal vatPercentage) {
         final LoanStatus status = null;
         final Group group = null;
         final Boolean syncDisbursementWithMeeting = null;
         return new Loan(accountNo, client, group, loanType, fund, officer, loanPurpose, transactionProcessingStrategy, loanProduct,
                 loanRepaymentScheduleDetail, status, loanCharges, collateral, syncDisbursementWithMeeting, fixedEmiAmount,
                 disbursementDetails, maxOutstandingLoanBalance, createStandingInstructionAtDisbursement, isFloatingInterestRate,
-                interestRateDifferential, rates, fixedPrincipalPercentagePerInstallment, tasaeffectiva, isVatRequired);
+                interestRateDifferential, rates, fixedPrincipalPercentagePerInstallment, tasaeffectiva, isVatRequired, vatPercentage);
     }
 
     public static Loan newGroupLoanApplication(final String accountNo, final Group group, final Integer loanType,
@@ -437,13 +440,13 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             final List<LoanDisbursementDetails> disbursementDetails, final BigDecimal maxOutstandingLoanBalance,
             final Boolean createStandingInstructionAtDisbursement, final Boolean isFloatingInterestRate,
             final BigDecimal interestRateDifferential, final List<Rate> rates, final BigDecimal fixedPrincipalPercentagePerInstallment,
-            final BigDecimal tasaeffectiva, final Boolean isVatRequired) {
+            final BigDecimal tasaeffectiva, final Boolean isVatRequired, final BigDecimal vatPercentage) {
         final LoanStatus status = null;
         final Client client = null;
         return new Loan(accountNo, client, group, loanType, fund, officer, loanPurpose, transactionProcessingStrategy, loanProduct,
                 loanRepaymentScheduleDetail, status, loanCharges, collateral, syncDisbursementWithMeeting, fixedEmiAmount,
                 disbursementDetails, maxOutstandingLoanBalance, createStandingInstructionAtDisbursement, isFloatingInterestRate,
-                interestRateDifferential, rates, fixedPrincipalPercentagePerInstallment, tasaeffectiva, isVatRequired);
+                interestRateDifferential, rates, fixedPrincipalPercentagePerInstallment, tasaeffectiva, isVatRequired, vatPercentage);
     }
 
     public static Loan newIndividualLoanApplicationFromGroup(final String accountNo, final Client client, final Group group,
@@ -454,12 +457,12 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             final List<LoanDisbursementDetails> disbursementDetails, final BigDecimal maxOutstandingLoanBalance,
             final Boolean createStandingInstructionAtDisbursement, final Boolean isFloatingInterestRate,
             final BigDecimal interestRateDifferential, final List<Rate> rates, final BigDecimal fixedPrincipalPercentagePerInstallment,
-            final BigDecimal tasaeffectiva, final Boolean isVatRequired) {
+            final BigDecimal tasaeffectiva, final Boolean isVatRequired, final BigDecimal vatPercentage) {
         final LoanStatus status = null;
         return new Loan(accountNo, client, group, loanType, fund, officer, loanPurpose, transactionProcessingStrategy, loanProduct,
                 loanRepaymentScheduleDetail, status, loanCharges, collateral, syncDisbursementWithMeeting, fixedEmiAmount,
                 disbursementDetails, maxOutstandingLoanBalance, createStandingInstructionAtDisbursement, isFloatingInterestRate,
-                interestRateDifferential, rates, fixedPrincipalPercentagePerInstallment, tasaeffectiva, isVatRequired);
+                interestRateDifferential, rates, fixedPrincipalPercentagePerInstallment, tasaeffectiva, isVatRequired, vatPercentage);
     }
 
     protected Loan() {
@@ -473,7 +476,8 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             final BigDecimal fixedEmiAmount, final List<LoanDisbursementDetails> disbursementDetails,
             final BigDecimal maxOutstandingLoanBalance, final Boolean createStandingInstructionAtDisbursement,
             final Boolean isFloatingInterestRate, final BigDecimal interestRateDifferential, final List<Rate> rates,
-            final BigDecimal fixedPrincipalPercentagePerInstallment, final BigDecimal effectiveRate, final Boolean isVatRequired) {
+            final BigDecimal fixedPrincipalPercentagePerInstallment, final BigDecimal effectiveRate, final Boolean isVatRequired,
+            final BigDecimal vatPercentage) {
 
         this.loanRepaymentScheduleDetail = loanRepaymentScheduleDetail;
         this.loanRepaymentScheduleDetail.validateRepaymentPeriodWithGraceSettings();
@@ -492,6 +496,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         this.loanType = loanType;
         this.fund = fund;
         this.isVatRequired = isVatRequired;
+        this.vatPercentage = vatPercentage;
         this.loanOfficer = loanOfficer;
         this.loanPurpose = loanPurpose;
 
@@ -6862,5 +6867,13 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
     public void setEffectiveRateWithVat(BigDecimal effectiveRateWithVat) {
         this.effectiveRateWithVat = effectiveRateWithVat;
+    }
+
+    public BigDecimal getVatPercentage() {
+        return vatPercentage;
+    }
+
+    public void setVatPercentage(BigDecimal vatPercentage) {
+        this.vatPercentage = vatPercentage;
     }
 }

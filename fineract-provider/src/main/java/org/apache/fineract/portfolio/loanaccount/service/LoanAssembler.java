@@ -60,6 +60,7 @@ import org.apache.fineract.portfolio.group.exception.ClientNotInGroupException;
 import org.apache.fineract.portfolio.group.exception.GroupNotActiveException;
 import org.apache.fineract.portfolio.group.exception.GroupNotFoundException;
 import org.apache.fineract.portfolio.loanaccount.api.LoanApiConstants;
+import org.apache.fineract.portfolio.loanaccount.domain.ClientVatRateNotSetException;
 import org.apache.fineract.portfolio.loanaccount.domain.DefaultLoanLifecycleStateMachine;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanCharge;
@@ -291,10 +292,24 @@ public class LoanAssembler {
         final Boolean isFloatingInterestRate = this.fromApiJsonHelper
                 .extractBooleanNamed(LoanApiConstants.isFloatingInterestRateParameterName, element);
 
+        BigDecimal vatPercentage = BigDecimal.ZERO;
+
         if (clientId != null) {
             client = this.clientRepository.findOneWithNotFoundDetection(clientId);
             if (client.isNotActive()) {
                 throw new ClientNotActiveException(clientId);
+            }
+
+            if (isVatRequired && client.getVatRate() == null) {
+                throw new ClientVatRateNotSetException(clientId);
+            }
+
+            if (isVatRequired && client.getVatRate() != null) {
+                if (!client.getVatRate().getActive()) {
+                    throw new ClientVatRateNotSetException(clientId);
+                }
+
+                vatPercentage = BigDecimal.valueOf(client.getVatRate().getPercentage());
             }
         }
 
@@ -315,14 +330,14 @@ public class LoanAssembler {
                     fund, loanOfficer, loanPurpose, loanTransactionProcessingStrategy, loanProductRelatedDetail, loanCharges, null,
                     syncDisbursementWithMeeting, fixedEmiAmount, disbursementDetails, maxOutstandingLoanBalance,
                     createStandingInstructionAtDisbursement, isFloatingInterestRate, interestRateDifferential, rates,
-                    fixedPrincipalPercentagePerInstallment, effectInterestAmount, isVatRequired);
+                    fixedPrincipalPercentagePerInstallment, effectInterestAmount, isVatRequired, vatPercentage);
 
         } else if (group != null) {
             loanApplication = Loan.newGroupLoanApplication(accountNo, group, loanType.getId().intValue(), loanProduct, fund, loanOfficer,
                     loanPurpose, loanTransactionProcessingStrategy, loanProductRelatedDetail, loanCharges, null,
                     syncDisbursementWithMeeting, fixedEmiAmount, disbursementDetails, maxOutstandingLoanBalance,
                     createStandingInstructionAtDisbursement, isFloatingInterestRate, interestRateDifferential, rates,
-                    fixedPrincipalPercentagePerInstallment, effectInterestAmount, isVatRequired);
+                    fixedPrincipalPercentagePerInstallment, effectInterestAmount, false, vatPercentage);
 
         } else if (client != null) {
 
@@ -330,7 +345,7 @@ public class LoanAssembler {
                     loanOfficer, loanPurpose, loanTransactionProcessingStrategy, loanProductRelatedDetail, loanCharges, collateral,
                     fixedEmiAmount, disbursementDetails, maxOutstandingLoanBalance, createStandingInstructionAtDisbursement,
                     isFloatingInterestRate, interestRateDifferential, rates, fixedPrincipalPercentagePerInstallment, effectInterestAmount,
-                    isVatRequired);
+                    isVatRequired, vatPercentage);
 
         }
 

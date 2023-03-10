@@ -261,4 +261,12 @@
         </addColumn>
     </changeSet>
 
+    <changeSet id="13" author="fineract">
+        <addColumn tableName="m_loan">
+            <column name="vat_percentage" type="DECIMAL(19, 2)" >
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
 </databaseChangeLog>

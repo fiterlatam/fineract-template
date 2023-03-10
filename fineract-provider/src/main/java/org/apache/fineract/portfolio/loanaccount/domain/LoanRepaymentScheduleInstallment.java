@@ -597,26 +597,16 @@ public final class LoanRepaymentScheduleInstallment extends AbstractAuditableCus
         Money vatOnInterestPortionOfTransaction = Money.zero(currency);
 
         final Money interestDue = getInterestOutstanding(currency);
-        final Money vatOnInterestDue = getVatOnInterestOutstanding(currency);
 
-        final Money interestDueAndVat = interestDue.plus(vatOnInterestDue);
+        BigDecimal vatConverted = vatPercentage.divide(BigDecimal.valueOf(100));
+        final Money vatOnInterestPortion = interestDue.multipliedBy(vatConverted);
+        final Money interestDueAndVat = interestDue.plus(vatOnInterestPortion);
 
         if (transactionAmountRemaining.isGreaterThanOrEqualTo(interestDueAndVat)) {
-            if (transactionAmountRemaining.isGreaterThanOrEqualTo(interestDueAndVat)) {
-                this.interestPaid = getInterestPaid(currency).plus(interestDue).getAmount();
-                this.vatOnInterestPaid = getVatOnInterestPaid(currency).plus(vatOnInterestDue).getAmount();
-                interestPortionOfTransaction = interestPortionOfTransaction.plus(interestDue);
-                vatOnInterestPortionOfTransaction = vatOnInterestPortionOfTransaction.plus(vatOnInterestDue);
-            } else {
-                BigDecimal percentageVatPlusOne = vatPercentage.add(BigDecimal.ONE);
-                BigDecimal interestPort = transactionAmountRemaining.getAmount().divide(percentageVatPlusOne);
-                BigDecimal vatPortion = transactionAmountRemaining.getAmount().subtract(interestPort);
-
-                this.interestPaid = getInterestPaid(currency).plus(interestPort).getAmount();
-                this.vatOnInterestPaid = getVatOnInterestPaid(currency).plus(vatPortion).getAmount();
-                interestPortionOfTransaction = interestPortionOfTransaction.plus(interestPort);
-                vatOnInterestPortionOfTransaction = vatOnInterestPortionOfTransaction.plus(vatPortion);
-            }
+            this.interestPaid = getInterestPaid(currency).plus(interestDue).getAmount();
+            this.vatOnInterestPaid = getVatOnInterestPaid(currency).plus(vatOnInterestPortion).getAmount();
+            interestPortionOfTransaction = interestPortionOfTransaction.plus(interestDue);
+            vatOnInterestPortionOfTransaction = vatOnInterestPortionOfTransaction.plus(vatOnInterestPortion);
         } else {
             BigDecimal percentageVatPlusOne = vatPercentage.add(BigDecimal.ONE);
             BigDecimal interestPort = transactionAmountRemaining.getAmount().divide(percentageVatPlusOne);
@@ -681,6 +671,43 @@ public final class LoanRepaymentScheduleInstallment extends AbstractAuditableCus
         return waivedInterestPortionOfTransaction;
     }
 
+    public Pair<Money, Money> waiveInterestAndVatComponents(final LocalDate transactionDate, final Money transactionAmountRemaining,
+            final BigDecimal vatPercentage) {
+        final MonetaryCurrency currency = transactionAmountRemaining.getCurrency();
+        Money waivedInterestPortionOfTransaction = Money.zero(currency);
+        Money vatOnInterestWaivedPortionOfTransaction = Money.zero(currency);
+
+        final Money interestDue = getInterestOutstanding(currency);
+
+        BigDecimal vatConverted = vatPercentage.divide(BigDecimal.valueOf(100));
+        final Money vatOnInterestPortion = interestDue.multipliedBy(vatConverted);
+
+        final Money interestDueAndVat = interestDue.plus(vatOnInterestPortion);
+
+        if (transactionAmountRemaining.isGreaterThanOrEqualTo(interestDueAndVat)) {
+            this.interestWaived = getInterestWaived(currency).plus(interestDue).getAmount();
+            this.vatOnInterestWaived = getVatOnInterestWaived(currency).plus(vatOnInterestPortion).getAmount();
+            waivedInterestPortionOfTransaction = waivedInterestPortionOfTransaction.plus(interestDue);
+            vatOnInterestWaivedPortionOfTransaction = vatOnInterestWaivedPortionOfTransaction.plus(vatOnInterestPortion);
+        } else {
+            BigDecimal percentageVatPlusOne = vatPercentage.add(BigDecimal.ONE);
+            BigDecimal interestPort = transactionAmountRemaining.getAmount().divide(percentageVatPlusOne);
+            BigDecimal vatPortion = transactionAmountRemaining.getAmount().subtract(interestPort);
+
+            this.interestWaived = getInterestWaived(currency).plus(interestPort).getAmount();
+            this.vatOnInterestWaived = getVatOnInterestWaived(currency).plus(vatPortion).getAmount();
+            waivedInterestPortionOfTransaction = waivedInterestPortionOfTransaction.plus(interestPort);
+            vatOnInterestWaivedPortionOfTransaction = vatOnInterestWaivedPortionOfTransaction.plus(vatPortion);
+        }
+
+        this.interestWaived = defaultToNullIfZero(this.interestWaived);
+        this.vatOnInterestWaived = defaultToNullIfZero(this.vatOnInterestWaived);
+
+        checkIfRepaymentPeriodObligationsAreMet(transactionDate, currency);
+
+        return Pair.of(waivedInterestPortionOfTransaction, vatOnInterestWaivedPortionOfTransaction);
+    }
+
     public Money waivePenaltyChargesComponent(final LocalDate transactionDate, final Money transactionAmountRemaining) {
         final MonetaryCurrency currency = transactionAmountRemaining.getCurrency();
         Money waivedPenaltyChargesPortionOfTransaction = Money.zero(currency);
@@ -701,6 +728,44 @@ public final class LoanRepaymentScheduleInstallment extends AbstractAuditableCus
         return waivedPenaltyChargesPortionOfTransaction;
     }
 
+    public Pair<Money, Money> waivePenaltyChargesAndVatComponents(final LocalDate transactionDate, final Money transactionAmountRemaining,
+            final BigDecimal vatPercentage) {
+        final MonetaryCurrency currency = transactionAmountRemaining.getCurrency();
+        Money vatPortionOfTransaction = Money.zero(currency);
+        Money waivedPenaltyChargesPortionOfTransaction = Money.zero(currency);
+        final Money penanltiesDue = getPenaltyChargesOutstanding(currency);
+
+        // we'll calculate the vat compo
+        BigDecimal vatConverted = vatPercentage.divide(BigDecimal.valueOf(100));
+        final Money vatOnPenaltiesPortion = penanltiesDue.multipliedBy(vatConverted);
+        final Money penaltyAndVat = vatOnPenaltiesPortion.plus(penanltiesDue);
+
+        if (transactionAmountRemaining.isGreaterThanOrEqualTo(penaltyAndVat)) {
+
+            this.penaltyChargesWaived = getPenaltyChargesWaived(currency).plus(penanltiesDue).getAmount();
+            this.vatOnChargeWaived = getVatOnChargeWaived(currency).plus(vatOnPenaltiesPortion).getAmount();
+            waivedPenaltyChargesPortionOfTransaction = waivedPenaltyChargesPortionOfTransaction.plus(penanltiesDue);
+            vatPortionOfTransaction = vatPortionOfTransaction.plus(vatOnPenaltiesPortion);
+
+        } else {
+            BigDecimal percentageVatPlusOne = vatPercentage.add(BigDecimal.ONE);
+            BigDecimal feeChargesPortion = transactionAmountRemaining.getAmount().divide(percentageVatPlusOne);
+            BigDecimal vatPortion = transactionAmountRemaining.getAmount().subtract(feeChargesPortion);
+
+            this.penaltyChargesWaived = getPenaltyChargesWaived(currency).plus(transactionAmountRemaining).getAmount();
+            this.vatOnChargeWaived = getVatOnChargeWaived(currency).plus(vatPortion).getAmount();
+            waivedPenaltyChargesPortionOfTransaction = waivedPenaltyChargesPortionOfTransaction.plus(transactionAmountRemaining);
+            vatPortionOfTransaction = vatPortionOfTransaction.plus(vatPortion);
+        }
+
+        this.penaltyChargesWaived = defaultToNullIfZero(this.penaltyChargesWaived);
+        this.vatOnChargeWaived = defaultToNullIfZero(this.vatOnChargeWaived);
+
+        checkIfRepaymentPeriodObligationsAreMet(transactionDate, currency);
+
+        return Pair.of(waivedPenaltyChargesPortionOfTransaction, vatPortionOfTransaction);
+    }
+
     public Money waiveFeeChargesComponent(final LocalDate transactionDate, final Money transactionAmountRemaining) {
         final MonetaryCurrency currency = transactionAmountRemaining.getCurrency();
         Money waivedFeeChargesPortionOfTransaction = Money.zero(currency);
@@ -719,6 +784,44 @@ public final class LoanRepaymentScheduleInstallment extends AbstractAuditableCus
         checkIfRepaymentPeriodObligationsAreMet(transactionDate, currency);
 
         return waivedFeeChargesPortionOfTransaction;
+    }
+
+    public Pair<Money, Money> waiveFeeChargesAndVatComponents(final LocalDate transactionDate, final Money transactionAmountRemaining,
+            final BigDecimal vatPercentage) {
+        final MonetaryCurrency currency = transactionAmountRemaining.getCurrency();
+        Money waivedFeeChargesPortionOfTransaction = Money.zero(currency);
+        Money waivedFeeChargesAndVatPortionOfTransaction = Money.zero(currency);
+
+        final Money feesDue = getFeeChargesOutstanding(currency);
+        // we'll calculate the vat compo
+        BigDecimal vatConverted = vatPercentage.divide(BigDecimal.valueOf(100));
+        final Money vatOnPenaltiesPortion = feesDue.multipliedBy(vatConverted);
+        final Money feesAndVat = vatOnPenaltiesPortion.plus(feesDue);
+
+        if (transactionAmountRemaining.isGreaterThanOrEqualTo(feesAndVat)) {
+
+            this.feeChargesWaived = getFeeChargesWaived(currency).plus(feesDue).getAmount();
+            this.vatOnChargeWaived = getVatOnChargeWaived(currency).plus(vatOnPenaltiesPortion).getAmount();
+            waivedFeeChargesPortionOfTransaction = waivedFeeChargesPortionOfTransaction.plus(feesDue);
+            waivedFeeChargesAndVatPortionOfTransaction = waivedFeeChargesAndVatPortionOfTransaction.plus(vatOnPenaltiesPortion);
+
+        } else {
+            BigDecimal percentageVatPlusOne = vatPercentage.add(BigDecimal.ONE);
+            BigDecimal feeChargesPortion = transactionAmountRemaining.getAmount().divide(percentageVatPlusOne);
+            BigDecimal vatPortion = transactionAmountRemaining.getAmount().subtract(feeChargesPortion);
+
+            this.feeChargesWaived = getFeeChargesWaived(currency).plus(transactionAmountRemaining).getAmount();
+            this.vatOnChargeWaived = getVatOnChargeWaived(currency).plus(vatPortion).getAmount();
+            waivedFeeChargesPortionOfTransaction = waivedFeeChargesPortionOfTransaction.plus(transactionAmountRemaining);
+            waivedFeeChargesAndVatPortionOfTransaction = waivedFeeChargesAndVatPortionOfTransaction.plus(vatPortion);
+        }
+
+        this.feeChargesWaived = defaultToNullIfZero(this.feeChargesWaived);
+        this.vatOnChargeWaived = defaultToNullIfZero(this.vatOnChargeWaived);
+
+        checkIfRepaymentPeriodObligationsAreMet(transactionDate, currency);
+
+        return Pair.of(waivedFeeChargesPortionOfTransaction, waivedFeeChargesAndVatPortionOfTransaction);
     }
 
     public Money writeOffOutstandingPrincipal(final LocalDate transactionDate, final MonetaryCurrency currency) {
