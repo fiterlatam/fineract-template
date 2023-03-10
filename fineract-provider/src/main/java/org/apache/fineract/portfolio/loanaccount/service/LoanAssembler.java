@@ -378,10 +378,9 @@ public class LoanAssembler {
                 submittedOnDate, externalId, allowTransactionsOnHoliday, holidays, workingDays, allowTransactionsOnNonWorkingDay);
 
         // if VAT is required, then calculates the effective annual rate with VAT
-        if (isVatRequired && client != null && client.getVatRate() != null && client.getVatRate().getPercentage() % 1 == 0) {
-            double vatPercentage = client.getVatRate().getPercentage();
+        if (isVatRequired && vatPercentage.compareTo(BigDecimal.ZERO) > 0) {
             BigDecimal effectInterestAmountWithVat = this.loanUtilService
-                    .calculateEffectiveRateWithVat(interestRatePerPeriod, BigDecimal.valueOf(vatPercentage))
+                    .calculateEffectiveRateWithVat(interestRatePerPeriod, vatPercentage)
                     .setScale(2, MoneyHelper.getRoundingMode());
             loanApplication.setEffectiveRateWithVat(effectInterestAmountWithVat);
         }
