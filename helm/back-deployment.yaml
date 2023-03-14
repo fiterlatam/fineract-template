@@ -86,7 +86,7 @@ spec:
         - name: FINERACT_DEFAULT_TENANTDB_HOSTNAME
           value: "fiter-frenbr-dev.cd935ealbyrb.us-east-2.rds.amazonaws.com"
         - name: FINERACT_DEFAULT_TENANTDB_PWD
-          value: "3sDPhaeU3C6n"
+          value: "DLETiAndEReC"
         - name: FINERACT_HIKARI_JDBC_URL
           value: "jdbc:mysql://fiter-frenbr-dev.cd935ealbyrb.us-east-2.rds.amazonaws.com:3306/fineract_tenants"
         - name: FINERACT_HIKARI_PASSWORD
