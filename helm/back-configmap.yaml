@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: "backend-fineract-rest-mount"
+  namespace: application
+data:
+    logback.xml: |
+      <?xml version="1.0" encoding="UTF-8"?>
+      <configuration scan="false">
+          <contextListener class="ch.qos.logback.classic.jul.LevelChangePropagator">
+              <resetJUL>false</resetJUL>
+          </contextListener>
+    
+          <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+              <withJansi>false</withJansi>
+              <encoder>
+                  <pattern>%green(%d{yyyy-MM-dd HH:mm:ss.SSS}) [%thread] %highlight(%-5level) %cyan(%logger{36}) - %msg%n</pattern>
+              </encoder>
+          </appender>
+    
+          <root level="INFO">
+              <appender-ref ref="STDOUT" />
+          </root>
+      </configuration>
