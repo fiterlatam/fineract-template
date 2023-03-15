@@ -18,7 +18,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-  - host: mifos.dev.fb #must be edited
+  - host: a6761ff9fa5284548a6d8ab002973574-733225307.us-east-2.elb.amazonaws.com #must be edited
     http:
       paths:
       - backend:
@@ -30,5 +30,5 @@ spec:
         pathType: ImplementationSpecific
   tls:
   - hosts:
-    - mifos.dev.fb #must be edited
+    - a6761ff9fa5284548a6d8ab002973574-733225307.us-east-2.elb.amazonaws.com #must be edited
     secretName: fineract-tls
