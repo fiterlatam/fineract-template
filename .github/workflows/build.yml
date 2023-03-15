@@ -52,6 +52,6 @@ jobs:
           git config --global user.email "git.latam@fiter.io"
           git config --global user.name "fiterlatam"
           git add .
-          git commit -am "Update Docker image tag to ${{ steps.commit.outputs.short }}"
+          git commit -am "Fineract - update Docker image tag to ${{ steps.commit.outputs.short }}"
           git push
           
