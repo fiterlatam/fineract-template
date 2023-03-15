@@ -39,7 +39,7 @@ jobs:
       - name: Checkout remote repo
         uses: actions/checkout@v3
         with:
-          repository: fiterlatam/gitops-argocd
+          repository: gitops-argocd
           ref: fiter/fb/dev
           path: gitops-argocd
           
