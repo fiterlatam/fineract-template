@@ -45,13 +45,13 @@ jobs:
           
       - name: Update YAML file
         run: |
-          sed -i 's/dev-backend.*/dev-backend: ${{ steps.commit.outputs.short }}/' helm/back-deployment.yaml
+          sed -i 's/dev-backend.*/dev-backend:${{ steps.commit.outputs.short }}/' helm/back-deployment.yaml
 
       - name: Commit changes
         run: |
           git config --global user.email "git.latam@fiter.io"
           git config --global user.name "fiterlatam"
           git add .
-          git commit -am "Update Docker image tag to ${{ steps.metadata.outputs.tags }}"
+          git commit -am "Update Docker image tag to ${{ steps.commit.outputs.short }}"
           git push
           
