@@ -34,3 +34,24 @@ jobs:
         run: |
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          
+      #Checkout remote repository 
+      - name: Checkout remote repo
+        uses: actions/checkout@v3
+        with:
+          repository: fiterlatam/gitops-argocd
+          ref: fiter/fb/dev
+          path: gitops-argocd
+          
+      - name: Update YAML file
+        run: |
+          sed -i 's/dev-backend.*/dev-backend: ${{ steps.commit.outputs.short }}/' helm/back-deployment.yaml
+
+      - name: Commit changes
+        run: |
+          git config --global user.email "git.latam@fiter.io"
+          git config --global user.name "fiterlatam"
+          git add .
+          git commit -am "Update Docker image tag to ${{ steps.metadata.outputs.tags }}"
+          git push
+          
