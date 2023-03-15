@@ -36,6 +36,7 @@ jobs:
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
     
   update_tag:
+    needs: continuous-integration
     runs-on: ubuntu-latest
     steps:
     
