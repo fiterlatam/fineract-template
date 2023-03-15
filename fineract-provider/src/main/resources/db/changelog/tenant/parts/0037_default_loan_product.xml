@@ -100,4 +100,27 @@
             </sql>
         </changeSet>
 
+        <changeSet author="fineract" id="5">
+            <update tableName="m_organisation_currency">
+                <column name="int_code" value="484"/>
+                <where>code='MXN'</where>
+            </update>
+        </changeSet>
+
+        <changeSet author="fineract" id="6">
+            <update tableName="m_currency">
+                <column name="int_code" value="484"/>
+                <where>code='MXN'</where>
+            </update>
+        </changeSet>
+
+        <changeSet author="fineract" id="7">
+            <delete tableName="m_organisation_currency">
+                <where>code='USD'</where>
+            </delete>
+            <delete tableName="m_organisation_currency">
+                <where>code='GTQ'</where>
+            </delete>
+        </changeSet>
+
 </databaseChangeLog>
