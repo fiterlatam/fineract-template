@@ -39,9 +39,9 @@ jobs:
       - name: Checkout remote repo
         uses: actions/checkout@v3
         with:
-          repository: gitops-argocd
+          repository: fiterlatam/gitops-argocd
+          token: ${{ secrets.PAT }}
           ref: fiter/fb/dev
-          path: gitops-argocd
           
       - name: Update YAML file
         run: |
