@@ -616,7 +616,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                     + " l.fixed_principal_percentage_per_installment fixedPrincipalPercentagePerInstallment, "
                     + " l.allow_partial_period_interest_calcualtion as allowPartialPeriodInterestCalcualtion,"
                     + " l.loan_status_id as lifeCycleStatusId, l.loan_transaction_strategy_id as transactionStrategyId, "
-                    + " lps.name as transactionStrategyName, "
+                    + " lps.name as transactionStrategyName, l.is_vat_required as isVatRequired, l.effective_rate as effectiveRate, "
                     + " l.currency_code as currencyCode, l.currency_digits as currencyDigits, l.currency_multiplesof as inMultiplesOf, rc."
                     + sqlGenerator.escape("name")
                     + " as currencyName, rc.display_symbol as currencyDisplaySymbol, rc.internationalized_name_code as currencyNameCode, rc.int_code as intCode, "
@@ -638,6 +638,9 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                     + " l.penalty_charges_outstanding_derived as penaltyChargesOutstanding,"
                     + " l.total_expected_repayment_derived as totalExpectedRepayment," + " l.total_repayment_derived as totalRepayment,"
                     + " l.total_expected_costofloan_derived as totalExpectedCostOfLoan," + " l.total_costofloan_derived as totalCostOfLoan,"
+                    + " l.total_vatoninterest_charged, l.total_vatoninterest_paid, l.total_vatoninterest_writtenoff, l.total_vatoninterest_waived,"
+                    + " l.total_vatoninterest_outstanding, l.total_vatoninterest_overdue, l.total_vatoncharge_expected,"
+                    + " l.total_vatoncharge_paid, l.total_vatoncharge_writtenoff, l.total_vatoncharge_waived, l.total_vatoncharge_outstanding, l.total_vatoncharge_overdue,"
                     + " l.total_waived_derived as totalWaived," + " l.total_writtenoff_derived as totalWrittenOff,"
                     + " l.writeoff_reason_cv_id as writeoffReasonId," + " codev.code_value as writeoffReason,"
                     + " l.total_outstanding_derived as totalOutstanding," + " l.total_overpaid_derived as totalOverpaid,"
@@ -667,7 +670,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                     + " lpvi.minimum_gap as minimuminstallmentgap, lpvi.maximum_gap as maximuminstallmentgap, "
                     + " lp.can_use_for_topup as canUseForTopup, " + " l.is_topup as isTopup, " + " topup.closure_loan_id as closureLoanId, "
                     + " l.total_recovered_derived as totalRecovered" + ", topuploan.account_no as closureLoanAccountNo, "
-                    + " topup.topup_amount as topupAmount " + " from m_loan l" //
+                    + " topup.topup_amount as topupAmount, l.cat_rate as catRate, l.cat_rate_vat_derived as catRateWithVat "
+                    + " from m_loan l" //
                     + " join m_product_loan lp on lp.id = l.product_id" //
                     + " left join m_loan_recalculation_details lir on lir.loan_id = l.id " + " join m_currency rc on rc."
                     + sqlGenerator.escape("code") + " = l.currency_code" //
@@ -893,6 +897,28 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                 final BigDecimal totalOverdue = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "totalOverdue");
                 final BigDecimal totalRecovered = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "totalRecovered");
 
+                // vat on interest
+                final BigDecimal totalVatOnInterestCharged = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs,
+                        "total_vatoninterest_charged");
+                final BigDecimal totalVatOnInterestPaid = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "total_vatoninterest_paid");
+                final BigDecimal totalVatOnInterestWrittenOff = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs,
+                        "total_vatoninterest_writtenoff");
+                final BigDecimal totalVatOnInterestWaived = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "total_vatoninterest_waived");
+                final BigDecimal totalVatOnInterestOutstanding = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs,
+                        "total_vatoninterest_outstanding");
+                final BigDecimal totalVatOnInterestOverdue = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs,
+                        "total_vatoninterest_overdue");
+
+                // vat on charges
+                final BigDecimal totalVatOnChargeExpected = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "total_vatoncharge_expected");
+                final BigDecimal totalVatOnChargePaid = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "total_vatoncharge_paid");
+                final BigDecimal totalVatOnChargeWrittenOff = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs,
+                        "total_vatoncharge_writtenoff");
+                final BigDecimal totalVatOnChargeWaived = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "total_vatoncharge_waived");
+                final BigDecimal totalVatOnChargeOutstanding = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs,
+                        "total_vatoncharge_outstanding");
+                final BigDecimal totalVatOnChargeOverdue = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "total_vatoncharge_overdue");
+
                 final LocalDate overdueSinceDate = JdbcSupport.getLocalDate(rs, "overdueSinceDate");
                 if (overdueSinceDate != null) {
                     inArrears = true;
@@ -905,7 +931,10 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                         penaltyChargesPaid, penaltyChargesWaived, penaltyChargesWrittenOff, penaltyChargesOutstanding,
                         penaltyChargesOverdue, totalExpectedRepayment, totalRepayment, totalExpectedCostOfLoan, totalCostOfLoan,
                         totalWaived, totalWrittenOff, totalOutstanding, totalOverdue, overdueSinceDate, writeoffReasonId, writeoffReason,
-                        totalRecovered);
+                        totalRecovered, totalVatOnInterestCharged, totalVatOnInterestPaid, totalVatOnInterestWrittenOff,
+                        totalVatOnInterestWaived, totalVatOnInterestOutstanding, totalVatOnInterestOverdue, totalVatOnChargeExpected,
+                        totalVatOnChargePaid, totalVatOnChargeWrittenOff, totalVatOnChargeWaived, totalVatOnChargeOutstanding,
+                        totalVatOnChargeOverdue);
             }
 
             GroupGeneralData groupData = null;
@@ -990,6 +1019,10 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
             final Long closureLoanId = rs.getLong("closureLoanId");
             final String closureLoanAccountNo = rs.getString("closureLoanAccountNo");
             final BigDecimal topupAmount = rs.getBigDecimal("topupAmount");
+            final BigDecimal catRate = rs.getBigDecimal("catRate");
+            final BigDecimal catRateWithVat = rs.getBigDecimal("catRateWithVat");
+            final BigDecimal effectiveRate = rs.getBigDecimal("effectiveRate");
+            final boolean isVatRequired = rs.getBoolean("isVatRequired");
 
             return LoanAccountData.basicLoanDetails(id, accountNo, status, externalId, clientId, clientAccountNo, clientName,
                     clientOfficeId, groupData, loanType, loanProductId, loanProductName, loanProductDescription,
@@ -1005,7 +1038,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                     isNPA, daysInMonthType, daysInYearType, isInterestRecalculationEnabled, interestRecalculationData,
                     createStandingInstructionAtDisbursement, isvariableInstallmentsAllowed, minimumGap, maximumGap, loanSubStatus,
                     canUseForTopup, isTopup, closureLoanId, closureLoanAccountNo, topupAmount, isEqualAmortization,
-                    fixedPrincipalPercentagePerInstallment);
+                    fixedPrincipalPercentagePerInstallment, catRate, effectiveRate, isVatRequired, catRateWithVat);
         }
     }
 
@@ -1085,7 +1118,13 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                     + " ls.interest_amount as interestDue, ls.interest_completed_derived as interestPaid, ls.interest_waived_derived as interestWaived, ls.interest_writtenoff_derived as interestWrittenOff, "
                     + " ls.fee_charges_amount as feeChargesDue, ls.fee_charges_completed_derived as feeChargesPaid, ls.fee_charges_waived_derived as feeChargesWaived, ls.fee_charges_writtenoff_derived as feeChargesWrittenOff, "
                     + " ls.penalty_charges_amount as penaltyChargesDue, ls.penalty_charges_completed_derived as penaltyChargesPaid, ls.penalty_charges_waived_derived as penaltyChargesWaived, ls.penalty_charges_writtenoff_derived as penaltyChargesWrittenOff, "
-                    + " ls.total_paid_in_advance_derived as totalPaidInAdvanceForPeriod, ls.total_paid_late_derived as totalPaidLateForPeriod "
+                    + " ls.total_paid_in_advance_derived as totalPaidInAdvanceForPeriod, ls.total_paid_late_derived as totalPaidLateForPeriod, "
+                    + " ls.vat_on_interest_charged_derived as vatOnInterest, ls.vat_on_interest_paid_derived as vatOnInterestPaid, "
+                    + " ls.vat_on_interest_writtenoff_derived as vatOnInterestWrittenOff, ls.vat_on_interest_waived_derived as vatOnInterestWaived, "
+                    + " ls.vat_on_interest_outstanding as vatOnInterestOutstanding, ls.vat_on_interest_overdue_derived as vatOnInterestOverdue, "
+                    + " ls.vat_on_charges_expected_derived as vatOnCharges, ls.vat_on_charges_paid_derived as vatOnChargesPaid, "
+                    + " ls.vat_on_charges_writtenoff_derived as vatOnChargesWrittenOff, ls.vat_on_charges_waived_derived as vatOnChargesWaived, "
+                    + " ls.vat_on_charges_outstanding_derived as vatOnChargesOutstanding, ls.vat_on_charges_overdue_derived as vatOnChargesDerived "
                     + " from m_loan_repayment_schedule ls ";
         }
 
@@ -1097,7 +1136,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
             }
             final LoanSchedulePeriodData disbursementPeriod = LoanSchedulePeriodData.disbursementOnlyPeriod(
                     this.disbursement.disbursementDate(), this.disbursement.amount(), this.totalFeeChargesDueAtDisbursement,
-                    this.disbursement.isDisbursed());
+                    this.disbursement.isDisbursed(), null, null);
 
             final Collection<LoanSchedulePeriodData> periods = new ArrayList<>();
             final MonetaryCurrency monCurrency = new MonetaryCurrency(this.currency.code(), this.currency.decimalPlaces(),
@@ -1124,6 +1163,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
             Money totalInterestCharged = Money.zero(monCurrency);
             Money totalFeeChargesCharged = Money.zero(monCurrency);
             Money totalPenaltyChargesCharged = Money.zero(monCurrency);
+
             Money totalWaived = Money.zero(monCurrency);
             Money totalWrittenOff = Money.zero(monCurrency);
             Money totalRepaymentExpected = Money.zero(monCurrency);
@@ -1131,6 +1171,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
             Money totalPaidInAdvance = Money.zero(monCurrency);
             Money totalPaidLate = Money.zero(monCurrency);
             Money totalOutstanding = Money.zero(monCurrency);
+            Money totalVatOnInterest = Money.zero(monCurrency);
+            Money totalVatOnCharges = Money.zero(monCurrency);
 
             // update totals with details of fees charged during disbursement
             totalFeeChargesCharged = totalFeeChargesCharged.plus(disbursementPeriod.feeChargesDue().subtract(waivedChargeAmount));
@@ -1147,6 +1189,9 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                 final LocalDate dueDate = JdbcSupport.getLocalDate(rs, "dueDate");
                 final LocalDate obligationsMetOnDate = JdbcSupport.getLocalDate(rs, "obligationsMetOnDate");
                 final boolean complete = rs.getBoolean("complete");
+                final BigDecimal vatOnInterest = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "vatOnInterest");
+                final BigDecimal vatOnCharges = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "vatOnCharges");
+
                 BigDecimal principal = BigDecimal.ZERO;
                 for (final DisbursementData data : disbursementData) {
                     if (fromDate.equals(this.disbursement.disbursementDate()) && data.disbursementDate().equals(fromDate)) {
@@ -1154,10 +1199,11 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                         LoanSchedulePeriodData periodData = null;
                         if (data.getChargeAmount() == null) {
                             periodData = LoanSchedulePeriodData.disbursementOnlyPeriod(data.disbursementDate(), data.amount(),
-                                    disbursementChargeAmount, data.isDisbursed());
+                                    disbursementChargeAmount, data.isDisbursed(), vatOnInterest, vatOnCharges);
                         } else {
                             periodData = LoanSchedulePeriodData.disbursementOnlyPeriod(data.disbursementDate(), data.amount(),
-                                    disbursementChargeAmount.add(data.getChargeAmount()).subtract(waivedChargeAmount), data.isDisbursed());
+                                    disbursementChargeAmount.add(data.getChargeAmount()).subtract(waivedChargeAmount), data.isDisbursed(),
+                                    vatOnInterest, vatOnCharges);
                         }
                         periods.add(periodData);
                         this.outstandingLoanPrincipalBalance = this.outstandingLoanPrincipalBalance.add(data.amount());
@@ -1168,10 +1214,10 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                             LoanSchedulePeriodData periodData;
                             if (data.getChargeAmount() == null) {
                                 periodData = LoanSchedulePeriodData.disbursementOnlyPeriod(data.disbursementDate(), data.amount(),
-                                        BigDecimal.ZERO, data.isDisbursed());
+                                        BigDecimal.ZERO, data.isDisbursed(), vatOnInterest, vatOnCharges);
                             } else {
                                 periodData = LoanSchedulePeriodData.disbursementOnlyPeriod(data.disbursementDate(), data.amount(),
-                                        data.getChargeAmount(), data.isDisbursed());
+                                        data.getChargeAmount(), data.isDisbursed(), vatOnInterest, vatOnCharges);
                             }
                             periods.add(periodData);
                             this.outstandingLoanPrincipalBalance = this.outstandingLoanPrincipalBalance.add(data.amount());
@@ -1220,6 +1266,18 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                 final BigDecimal penaltyChargesWaived = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "penaltyChargesWaived");
                 final BigDecimal penaltyChargesWrittenOff = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "penaltyChargesWrittenOff");
 
+                // vat on charges
+                final BigDecimal vatOnChargesPaid = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "vatOnChargesPaid");
+                final BigDecimal vatOnChargesWaived = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "vatOnChargesWaived");
+                final BigDecimal vatOnChargesWrittenOff = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "vatOnChargesWrittenOff");
+                final BigDecimal vatOnChargesOutstanding = vatOnCharges.subtract(vatOnChargesPaid);
+
+                // vat on interest
+                final BigDecimal vatOnInterestPaid = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "vatOnInterestPaid");
+                final BigDecimal vatOnInterestWaived = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "vatOnInterestWaived");
+                final BigDecimal vatOnInterestWrittenOff = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "vatOnInterestWrittenOff");
+                final BigDecimal vatOnInterestOutstanding = vatOnInterest.subtract(vatOnInterestPaid);
+
                 final BigDecimal totalPaidInAdvanceForPeriod = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs,
                         "totalPaidInAdvanceForPeriod");
                 final BigDecimal totalPaidLateForPeriod = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "totalPaidLateForPeriod");
@@ -1229,17 +1287,20 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                 final BigDecimal penaltyChargesOutstanding = penaltyChargesActualDue.subtract(penaltyChargesPaid);
 
                 final BigDecimal totalExpectedCostOfLoanForPeriod = interestExpectedDue.add(feeChargesExpectedDue)
-                        .add(penaltyChargesExpectedDue);
+                        .add(penaltyChargesExpectedDue).add(vatOnCharges).add(vatOnInterest);
 
                 final BigDecimal totalDueForPeriod = principalDue.add(totalExpectedCostOfLoanForPeriod);
-                final BigDecimal totalPaidForPeriod = principalPaid.add(interestPaid).add(feeChargesPaid).add(penaltyChargesPaid);
-                final BigDecimal totalWaivedForPeriod = interestWaived.add(feeChargesWaived).add(penaltyChargesWaived);
+                final BigDecimal totalPaidForPeriod = principalPaid.add(interestPaid).add(feeChargesPaid).add(penaltyChargesPaid)
+                        .add(vatOnChargesPaid).add(vatOnInterestPaid);
+
+                final BigDecimal totalWaivedForPeriod = interestWaived.add(feeChargesWaived).add(penaltyChargesWaived)
+                        .add(vatOnChargesWaived).add(vatOnInterestWaived);
                 totalWaived = totalWaived.plus(totalWaivedForPeriod);
                 final BigDecimal totalWrittenOffForPeriod = principalWrittenOff.add(interestWrittenOff).add(feeChargesWrittenOff)
-                        .add(penaltyChargesWrittenOff);
+                        .add(penaltyChargesWrittenOff).add(vatOnChargesWrittenOff).add(vatOnInterestWrittenOff);
                 totalWrittenOff = totalWrittenOff.plus(totalWrittenOffForPeriod);
                 final BigDecimal totalOutstandingForPeriod = principalOutstanding.add(interestOutstanding).add(feeChargesOutstanding)
-                        .add(penaltyChargesOutstanding);
+                        .add(penaltyChargesOutstanding).add(vatOnChargesOutstanding).add(vatOnInterestOutstanding);
 
                 final BigDecimal totalActualCostOfLoanForPeriod = interestActualDue.add(feeChargesActualDue).add(penaltyChargesActualDue);
 
@@ -1258,6 +1319,9 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                 this.lastDueDate = dueDate;
                 this.outstandingLoanPrincipalBalance = this.outstandingLoanPrincipalBalance.subtract(principalDue);
 
+                totalVatOnInterest = totalVatOnInterest.plus(vatOnInterest);
+                totalVatOnCharges = totalVatOnCharges.plus(vatOnCharges);
+
                 final LoanSchedulePeriodData periodData = LoanSchedulePeriodData.repaymentPeriodWithPayments(loanId, period, fromDate,
                         dueDate, obligationsMetOnDate, complete, principalDue, principalPaid, principalWrittenOff, principalOutstanding,
                         outstandingPrincipalBalanceOfLoan, interestExpectedDue, interestPaid, interestWaived, interestWrittenOff,
@@ -1265,7 +1329,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                         feeChargesOutstanding, penaltyChargesExpectedDue, penaltyChargesPaid, penaltyChargesWaived,
                         penaltyChargesWrittenOff, penaltyChargesOutstanding, totalDueForPeriod, totalPaidForPeriod,
                         totalPaidInAdvanceForPeriod, totalPaidLateForPeriod, totalWaivedForPeriod, totalWrittenOffForPeriod,
-                        totalOutstandingForPeriod, totalActualCostOfLoanForPeriod, totalInstallmentAmount);
+                        totalOutstandingForPeriod, totalActualCostOfLoanForPeriod, totalInstallmentAmount, vatOnInterest, vatOnCharges);
 
                 periods.add(periodData);
             }
@@ -1274,7 +1338,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                     totalPrincipalPaid.getAmount(), totalInterestCharged.getAmount(), totalFeeChargesCharged.getAmount(),
                     totalPenaltyChargesCharged.getAmount(), totalWaived.getAmount(), totalWrittenOff.getAmount(),
                     totalRepaymentExpected.getAmount(), totalRepayment.getAmount(), totalPaidInAdvance.getAmount(),
-                    totalPaidLate.getAmount(), totalOutstanding.getAmount());
+                    totalPaidLate.getAmount(), totalOutstanding.getAmount(), totalVatOnInterest.getAmount(), totalVatOnCharges.getAmount());
         }
 
     }
@@ -2059,6 +2123,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
             final BigDecimal totalOutstanding = null;
             final BigDecimal totalPaid = null;
             final BigDecimal totalInstallmentAmount = null;
+            final BigDecimal vatOnInterest = null;
+            final BigDecimal vatOnCharges = null;
 
             return LoanSchedulePeriodData.repaymentPeriodWithPayments(loanId, period, fromDate, dueDate, obligationsMetOnDate, complete,
                     principalOriginalDue, principalPaid, principalWrittenOff, principalOutstanding, outstandingPrincipalBalanceOfLoan,
@@ -2066,7 +2132,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                     feeChargesPaid, feeChargesWaived, feeChargesWrittenOff, feeChargesOutstanding, penaltyChargesDue, penaltyChargesPaid,
                     penaltyChargesWaived, penaltyChargesWrittenOff, penaltyChargesOutstanding, totalDueForPeriod, totalPaid,
                     totalPaidInAdvanceForPeriod, totalPaidLateForPeriod, totalWaived, totalWrittenOff, totalOutstanding,
-                    totalActualCostOfLoanForPeriod, totalInstallmentAmount);
+                    totalActualCostOfLoanForPeriod, totalInstallmentAmount, vatOnInterest, vatOnCharges);
         }
     }
 
@@ -2262,13 +2328,17 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
             sqlBuilder.append(
                     "ls.interest_amount - coalesce(ls.interest_completed_derived, 0) - coalesce(ls.interest_waived_derived, 0) - coalesce(ls.interest_writtenoff_derived, 0) as interestDue, ");
             sqlBuilder.append(
+                    "ls.vat_on_interest_charged_derived - coalesce(ls.vat_on_interest_paid_derived, 0) - coalesce(ls.vat_on_interest_waived_derived, 0) - coalesce(ls.vat_on_interest_writtenoff_derived, 0) as vatOnInterestDue, ");
+            sqlBuilder.append(
                     "ls.fee_charges_amount - coalesce(ls.fee_charges_completed_derived, 0) - coalesce(ls.fee_charges_writtenoff_derived, 0) - coalesce(ls.fee_charges_waived_derived, 0) as feeDue, ");
             sqlBuilder.append(
                     "ls.penalty_charges_amount - coalesce(ls.penalty_charges_completed_derived, 0) - coalesce(ls.penalty_charges_writtenoff_derived, 0) - coalesce(ls.penalty_charges_waived_derived, 0) as penaltyDue, ");
             sqlBuilder.append(
+                    "ls.vat_on_charges_expected_derived - coalesce(ls.vat_on_charges_paid_derived, 0) - coalesce(ls.vat_on_charges_writtenoff_derived, 0) - coalesce(ls.vat_on_charges_waived_derived, 0) as vatOnChargesDue, ");
+            sqlBuilder.append(
                     "l.currency_code as currencyCode, l.currency_digits as currencyDigits, l.currency_multiplesof as inMultiplesOf, l.net_disbursal_amount as netDisbursalAmount, ");
             sqlBuilder.append("rc." + sqlGenerator.escape("name")
-                    + " as currencyName, rc.display_symbol as currencyDisplaySymbol, rc.internationalized_name_code as currencyNameCode ");
+                    + " as currencyName, rc.display_symbol as currencyDisplaySymbol, rc.internationalized_name_code as currencyNameCode, rc.int_code as intCode ");
             sqlBuilder.append("FROM m_loan l ");
             sqlBuilder.append("JOIN m_currency rc on rc." + sqlGenerator.escape("code") + " = l.currency_code ");
             sqlBuilder.append("JOIN m_loan_repayment_schedule ls ON ls.loan_id = l.id AND ls.completed_derived = false ");
@@ -2285,10 +2355,13 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
             final CurrencyData currencyData = this.currencyMapper.mapRow(rs, rowNum);
             final LocalDate date = JdbcSupport.getLocalDate(rs, "transactionDate");
             final BigDecimal principalPortion = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "principalDue");
-            final BigDecimal interestDue = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "interestDue");
+            final BigDecimal interestDue = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "vatOnInterestDue");
+            final BigDecimal vatOnInterestDue = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "interestDue");
             final BigDecimal feeDue = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "feeDue");
             final BigDecimal penaltyDue = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "penaltyDue");
-            final BigDecimal totalDue = principalPortion.add(interestDue).add(feeDue).add(penaltyDue);
+            final BigDecimal vatOnChargesDue = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "vatOnChargesDue");
+            final BigDecimal totalDue = principalPortion.add(interestDue).add(feeDue).add(penaltyDue).add(vatOnInterestDue)
+                    .add(vatOnChargesDue);
             final BigDecimal outstandingLoanBalance = null;
             final BigDecimal unrecognizedIncomePortion = null;
             final BigDecimal overPaymentPortion = null;

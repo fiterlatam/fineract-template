@@ -109,7 +109,7 @@ public class LoanScheduleHistoryReadPlatformServiceImpl implements LoanScheduleH
             StringBuilder stringBuilder = new StringBuilder(200);
             stringBuilder.append(" ls.installment as period, ls.fromdate as fromDate, ls.duedate as dueDate, ");
             stringBuilder.append(
-                    "ls.principal_amount as principalDue, ls.interest_amount as interestDue, ls.fee_charges_amount as feeChargesDue, ls.penalty_charges_amount as penaltyChargesDue ");
+                    "ls.principal_amount as principalDue, ls.interest_amount as interestDue, ls.fee_charges_amount as feeChargesDue, ls.penalty_charges_amount as penaltyChargesDue, ls.vat_on_interest_derived as vatOnInterest, ls.vat_on_charges_derived as vatOnCharges ");
             stringBuilder.append(" from m_loan_repayment_schedule_history ls ");
             return stringBuilder.toString();
         }
@@ -119,7 +119,7 @@ public class LoanScheduleHistoryReadPlatformServiceImpl implements LoanScheduleH
 
             final LoanSchedulePeriodData disbursementPeriod = LoanSchedulePeriodData.disbursementOnlyPeriod(
                     this.disbursement.disbursementDate(), this.disbursement.amount(), this.totalFeeChargesDueAtDisbursement,
-                    this.disbursement.isDisbursed());
+                    this.disbursement.isDisbursed(), null, null);
 
             final Collection<LoanSchedulePeriodData> periods = new ArrayList<>();
             final MonetaryCurrency monCurrency = new MonetaryCurrency(this.currency.code(), this.currency.decimalPlaces(),
@@ -138,6 +138,9 @@ public class LoanScheduleHistoryReadPlatformServiceImpl implements LoanScheduleH
             Money totalPenaltyChargesCharged = Money.zero(monCurrency);
             Money totalRepaymentExpected = Money.zero(monCurrency);
 
+            Money totalVatOnInterestExpected = Money.zero(monCurrency);
+            Money totalVatOnChargeExpected = Money.zero(monCurrency);
+
             // update totals with details of fees charged during disbursement
             totalFeeChargesCharged = totalFeeChargesCharged.plus(disbursementPeriod.feeChargesDue());
             totalRepaymentExpected = totalRepaymentExpected.plus(disbursementPeriod.feeChargesDue());
@@ -147,20 +150,22 @@ public class LoanScheduleHistoryReadPlatformServiceImpl implements LoanScheduleH
                 final Integer period = JdbcSupport.getInteger(rs, "period");
                 LocalDate fromDate = JdbcSupport.getLocalDate(rs, "fromDate");
                 final LocalDate dueDate = JdbcSupport.getLocalDate(rs, "dueDate");
+                final BigDecimal vatOnInterest = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "vatOnInterest");
+                final BigDecimal vatOnCharges = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "vatOnCharges");
                 if (disbursementData != null) {
                     BigDecimal principal = BigDecimal.ZERO;
                     for (DisbursementData data : disbursementData) {
                         if (fromDate.equals(this.disbursement.disbursementDate()) && data.disbursementDate().equals(fromDate)) {
                             principal = principal.add(data.amount());
                             final LoanSchedulePeriodData periodData = LoanSchedulePeriodData.disbursementOnlyPeriod(data.disbursementDate(),
-                                    data.amount(), this.totalFeeChargesDueAtDisbursement, data.isDisbursed());
+                                    data.amount(), this.totalFeeChargesDueAtDisbursement, data.isDisbursed(), vatOnInterest, vatOnCharges);
                             periods.add(periodData);
                             this.outstandingLoanPrincipalBalance = this.outstandingLoanPrincipalBalance.add(data.amount());
                         } else if (data.isDueForDisbursement(fromDate, dueDate)
                                 && this.outstandingLoanPrincipalBalance.compareTo(BigDecimal.ZERO) > 0) {
                             principal = principal.add(data.amount());
                             final LoanSchedulePeriodData periodData = LoanSchedulePeriodData.disbursementOnlyPeriod(data.disbursementDate(),
-                                    data.amount(), BigDecimal.ZERO, data.isDisbursed());
+                                    data.amount(), BigDecimal.ZERO, data.isDisbursed(), vatOnInterest, vatOnCharges);
                             periods.add(periodData);
                             this.outstandingLoanPrincipalBalance = this.outstandingLoanPrincipalBalance.add(data.amount());
                         }
@@ -189,8 +194,11 @@ public class LoanScheduleHistoryReadPlatformServiceImpl implements LoanScheduleH
                 final BigDecimal penaltyChargesExpectedDue = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "penaltyChargesDue");
                 totalPenaltyChargesCharged = totalPenaltyChargesCharged.plus(penaltyChargesExpectedDue);
 
+                totalVatOnInterestExpected = totalVatOnInterestExpected.plus(vatOnInterest);
+                totalVatOnChargeExpected = totalVatOnChargeExpected.plus(vatOnCharges);
+
                 final BigDecimal totalExpectedCostOfLoanForPeriod = interestExpectedDue.add(feeChargesExpectedDue)
-                        .add(penaltyChargesExpectedDue);
+                        .add(penaltyChargesExpectedDue).add(vatOnInterest).add(vatOnCharges);
 
                 final BigDecimal totalDueForPeriod = principalDue.add(totalExpectedCostOfLoanForPeriod);
 
@@ -207,14 +215,14 @@ public class LoanScheduleHistoryReadPlatformServiceImpl implements LoanScheduleH
 
                 final LoanSchedulePeriodData periodData = LoanSchedulePeriodData.repaymentOnlyPeriod(period, fromDate, dueDate,
                         principalDue, outstandingPrincipalBalanceOfLoan, interestExpectedDue, feeChargesExpectedDue,
-                        penaltyChargesExpectedDue, totalDueForPeriod, totalInstallmentAmount);
+                        penaltyChargesExpectedDue, totalDueForPeriod, totalInstallmentAmount, vatOnInterest, vatOnCharges);
 
                 periods.add(periodData);
             }
 
             return new LoanScheduleData(this.currency, periods, loanTermInDays, totalPrincipalDisbursed, totalPrincipalExpected.getAmount(),
                     totalInterestCharged.getAmount(), totalFeeChargesCharged.getAmount(), totalPenaltyChargesCharged.getAmount(),
-                    totalRepaymentExpected.getAmount());
+                    totalRepaymentExpected.getAmount(), totalVatOnInterestExpected.getAmount(), totalVatOnChargeExpected.getAmount());
         }
 
     }

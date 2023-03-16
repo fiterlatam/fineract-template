@@ -114,6 +114,7 @@ import org.apache.fineract.portfolio.loanproduct.domain.LoanProductVariableInsta
 import org.apache.fineract.portfolio.loanproduct.domain.RecalculationFrequencyType;
 import org.apache.fineract.portfolio.loanproduct.exception.LoanProductNotFoundException;
 import org.apache.fineract.portfolio.loanproduct.service.LoanEnumerations;
+import org.apache.fineract.portfolio.vatrate.domain.VatRate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -440,6 +441,29 @@ public class LoanScheduleAssembler {
             group = this.groupRepository.findOneWithNotFoundDetection(groupId);
             officeId = group.getOffice().getId();
         }
+
+        // check for VAT parameters
+        Boolean isVatRequired = this.fromApiJsonHelper.extractBooleanNamed("isVatRequired", element);
+        VatRate vatRate = null;
+        if (isVatRequired && loanProduct.isVatRequired() && client.isVatRequired()) {
+            vatRate = client.getVatRate();
+        } else {
+            isVatRequired = Boolean.FALSE;
+        }
+
+        // calculate effective annual interest rate
+        BigDecimal effectInterestAmount = this.loanUtilService.calculateEffectiveRate(interestRatePerPeriod).setScale(2,
+                MoneyHelper.getRoundingMode());
+
+        // if VAT is required, then calculates the effective annual rate with VAT
+        BigDecimal effectInterestAmountWithVat = BigDecimal.ZERO;
+        if (isVatRequired && client != null && client.getVatRate() != null && client.getVatRate().getPercentage() % 1 == 0) {
+            double vatPercentage = client.getVatRate().getPercentage();
+            effectInterestAmountWithVat = this.loanUtilService
+                    .calculateEffectiveRateWithVat(interestRatePerPeriod, BigDecimal.valueOf(vatPercentage))
+                    .setScale(2, MoneyHelper.getRoundingMode());
+        }
+
         final boolean isHolidayEnabled = this.configurationDomainService.isRescheduleRepaymentsOnHolidaysEnabled();
         final List<Holiday> holidays = this.holidayRepository.findByOfficeIdAndGreaterThanDate(officeId, expectedDisbursementDate,
                 HolidayStatusType.ACTIVE.getValue());
@@ -461,7 +485,7 @@ public class LoanScheduleAssembler {
                 installmentAmountInMultiplesOf, loanProduct.preCloseInterestCalculationStrategy(), calendar, BigDecimal.ZERO,
                 loanTermVariations, isInterestChargedFromDateSameAsDisbursalDateEnabled, numberOfDays, isSkipMeetingOnFirstDay, detailDTO,
                 allowCompoundingOnEod, isEqualAmortization, isInterestToBeRecoveredFirstWhenGreaterThanEMI,
-                fixedPrincipalPercentagePerInstallment, isPrincipalCompoundingDisabledForOverdueLoans);
+                fixedPrincipalPercentagePerInstallment, isPrincipalCompoundingDisabledForOverdueLoans, isVatRequired, vatRate);
     }
 
     private CalendarInstance createCalendarForSameAsRepayment(final Integer repaymentEvery,

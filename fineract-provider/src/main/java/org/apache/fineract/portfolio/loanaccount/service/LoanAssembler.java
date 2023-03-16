@@ -37,6 +37,7 @@ import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
 import org.apache.fineract.organisation.holiday.domain.Holiday;
 import org.apache.fineract.organisation.holiday.domain.HolidayRepository;
 import org.apache.fineract.organisation.holiday.domain.HolidayStatusType;
+import org.apache.fineract.organisation.monetary.domain.MoneyHelper;
 import org.apache.fineract.organisation.staff.domain.Staff;
 import org.apache.fineract.organisation.staff.domain.StaffRepository;
 import org.apache.fineract.organisation.staff.exception.StaffNotFoundException;
@@ -59,6 +60,7 @@ import org.apache.fineract.portfolio.group.exception.ClientNotInGroupException;
 import org.apache.fineract.portfolio.group.exception.GroupNotActiveException;
 import org.apache.fineract.portfolio.group.exception.GroupNotFoundException;
 import org.apache.fineract.portfolio.loanaccount.api.LoanApiConstants;
+import org.apache.fineract.portfolio.loanaccount.domain.ClientVatRateNotSetException;
 import org.apache.fineract.portfolio.loanaccount.domain.DefaultLoanLifecycleStateMachine;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanCharge;
@@ -172,6 +174,7 @@ public class LoanAssembler {
         final String accountNo = this.fromApiJsonHelper.extractStringNamed("accountNo", element);
         final Long productId = this.fromApiJsonHelper.extractLongNamed("productId", element);
         final Long fundId = this.fromApiJsonHelper.extractLongNamed("fundId", element);
+        final Boolean isVatRequired = this.fromApiJsonHelper.extractBooleanNamed("isVatRequired", element);
         final Long loanOfficerId = this.fromApiJsonHelper.extractLongNamed("loanOfficerId", element);
         final Long transactionProcessingStrategyId = this.fromApiJsonHelper.extractLongNamed("transactionProcessingStrategyId", element);
         final Long loanPurposeId = this.fromApiJsonHelper.extractLongNamed("loanPurposeId", element);
@@ -183,15 +186,9 @@ public class LoanAssembler {
         final Integer loanTermFrequencyType = this.fromApiJsonHelper.extractIntegerWithLocaleNamed("loanTermFrequencyType", element);
         final BigDecimal interestRatePerPeriod = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed("interestRatePerPeriod", element);
 
-        BigDecimal period = loanTermFrequency;
-        if (loanTermFrequencyType == 2) {
-            period = period.divide(BigDecimal.valueOf(12));
-        }
-        // Effective rate is calcvulate as follows (1 + interest / period) * period - 1;
-        BigDecimal rateForPeriod = interestRatePerPeriod.divide(period);
-        rateForPeriod = rateForPeriod.add(BigDecimal.ONE);
-        rateForPeriod = rateForPeriod.multiply(period);
-        BigDecimal effectInterestAmount = rateForPeriod.subtract(BigDecimal.ONE);
+        // Calculate effective interest rate
+        BigDecimal effectInterestAmount = this.loanUtilService.calculateEffectiveRate(interestRatePerPeriod).setScale(2,
+                MoneyHelper.getRoundingMode());
 
         final LoanProduct loanProduct = this.loanProductRepository.findById(productId)
                 .orElseThrow(() -> new LoanProductNotFoundException(productId));
@@ -295,10 +292,24 @@ public class LoanAssembler {
         final Boolean isFloatingInterestRate = this.fromApiJsonHelper
                 .extractBooleanNamed(LoanApiConstants.isFloatingInterestRateParameterName, element);
 
+        BigDecimal vatPercentage = BigDecimal.ZERO;
+
         if (clientId != null) {
             client = this.clientRepository.findOneWithNotFoundDetection(clientId);
             if (client.isNotActive()) {
                 throw new ClientNotActiveException(clientId);
+            }
+
+            if (isVatRequired && client.getVatRate() == null) {
+                throw new ClientVatRateNotSetException(clientId);
+            }
+
+            if (isVatRequired && client.getVatRate() != null) {
+                if (!client.getVatRate().getActive()) {
+                    throw new ClientVatRateNotSetException(clientId);
+                }
+
+                vatPercentage = BigDecimal.valueOf(client.getVatRate().getPercentage());
             }
         }
 
@@ -319,21 +330,22 @@ public class LoanAssembler {
                     fund, loanOfficer, loanPurpose, loanTransactionProcessingStrategy, loanProductRelatedDetail, loanCharges, null,
                     syncDisbursementWithMeeting, fixedEmiAmount, disbursementDetails, maxOutstandingLoanBalance,
                     createStandingInstructionAtDisbursement, isFloatingInterestRate, interestRateDifferential, rates,
-                    fixedPrincipalPercentagePerInstallment, effectInterestAmount);
+                    fixedPrincipalPercentagePerInstallment, effectInterestAmount, isVatRequired, vatPercentage);
 
         } else if (group != null) {
             loanApplication = Loan.newGroupLoanApplication(accountNo, group, loanType.getId().intValue(), loanProduct, fund, loanOfficer,
                     loanPurpose, loanTransactionProcessingStrategy, loanProductRelatedDetail, loanCharges, null,
                     syncDisbursementWithMeeting, fixedEmiAmount, disbursementDetails, maxOutstandingLoanBalance,
                     createStandingInstructionAtDisbursement, isFloatingInterestRate, interestRateDifferential, rates,
-                    fixedPrincipalPercentagePerInstallment, effectInterestAmount);
+                    fixedPrincipalPercentagePerInstallment, effectInterestAmount, false, vatPercentage);
 
         } else if (client != null) {
 
             loanApplication = Loan.newIndividualLoanApplication(accountNo, client, loanType.getId().intValue(), loanProduct, fund,
                     loanOfficer, loanPurpose, loanTransactionProcessingStrategy, loanProductRelatedDetail, loanCharges, collateral,
                     fixedEmiAmount, disbursementDetails, maxOutstandingLoanBalance, createStandingInstructionAtDisbursement,
-                    isFloatingInterestRate, interestRateDifferential, rates, fixedPrincipalPercentagePerInstallment, effectInterestAmount);
+                    isFloatingInterestRate, interestRateDifferential, rates, fixedPrincipalPercentagePerInstallment, effectInterestAmount,
+                    isVatRequired, vatPercentage);
 
         }
 
@@ -353,6 +365,7 @@ public class LoanAssembler {
         }
 
         final LoanApplicationTerms loanApplicationTerms = this.loanScheduleAssembler.assembleLoanTerms(element);
+
         final boolean isHolidayEnabled = this.configurationDomainService.isRescheduleRepaymentsOnHolidaysEnabled();
         final List<Holiday> holidays = this.holidayRepository.findByOfficeIdAndGreaterThanDate(loanApplication.getOfficeId(),
                 loanApplicationTerms.getExpectedDisbursementDate(), HolidayStatusType.ACTIVE.getValue());
@@ -363,6 +376,14 @@ public class LoanAssembler {
                 isHolidayEnabled, holidays, workingDays, element, disbursementDetails);
         loanApplication.loanApplicationSubmittal(loanScheduleModel, loanApplicationTerms, defaultLoanLifecycleStateMachine(),
                 submittedOnDate, externalId, allowTransactionsOnHoliday, holidays, workingDays, allowTransactionsOnNonWorkingDay);
+
+        // if VAT is required, then calculates the effective annual rate with VAT
+        if (isVatRequired && vatPercentage.compareTo(BigDecimal.ZERO) > 0) {
+            BigDecimal effectInterestAmountWithVat = this.loanUtilService
+                    .calculateEffectiveRateWithVat(interestRatePerPeriod, vatPercentage)
+                    .setScale(2, MoneyHelper.getRoundingMode());
+            loanApplication.setEffectiveRateWithVat(effectInterestAmountWithVat);
+        }
 
         return loanApplication;
     }
