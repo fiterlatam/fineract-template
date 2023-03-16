@@ -1,4 +1,4 @@
-name: Albo Fineract Dev CI/CD
+name: Albo Fineract Dev CI
 on:
   push:
     branches:
@@ -35,24 +35,23 @@ jobs:
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
 
-  continuous-deployment:
-    needs: continuous-integration
-    runs-on: ubuntu-latest
-    steps:
-      - id: commit
-        uses: pr-mpt/actions-commit-hash@v1
-      
-      - name: executing remote ssh commands using ssh key
-        env:
-          IMAGE_TAG: ${{ steps.commit.outputs.short }}
-        uses: appleboy/ssh-action@master
+      #Checkout remote repository
+      - name: Checkout remote repo
+        uses: actions/checkout@v3
         with:
-          host: ${{ secrets.LATAM_REMOTE_HOST }}
-          username: ${{ secrets.LATAM_REMOTE_USER }}
-          key: ${{ secrets.LATAM_EC2_SSH_KEY }}
-          script: |
-            ./docker-login.sh
-            cd fineract
-            echo IMAGE_TAG=${{ steps.commit.outputs.short }} > .env
-            docker-compose down
-            docker-compose up -d
+          repository: fiterlatam/gitops-argocd
+          token: ${{ secrets.PAT }}
+          ref: fiter/albo/dev
+
+      - name: Update YAML file
+        run: |
+          sed -i 's/dev-backend.*/dev-backend:${{ steps.commit.outputs.short }}/' helm/back-deployment.yaml
+
+      - name: Commit changes
+        run: |
+          git config --global user.email "git.latam@fiter.io"
+          git config --global user.name "fiterlatam"
+          git add .
+          git commit -am "Fineract - update Docker image tag to ${{ steps.commit.outputs.short }}"
+          git push
+          
