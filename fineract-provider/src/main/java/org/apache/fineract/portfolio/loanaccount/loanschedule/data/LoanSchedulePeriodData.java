@@ -72,26 +72,23 @@ public final class LoanSchedulePeriodData {
     private final BigDecimal totalOverdue;
     private final BigDecimal totalActualCostOfLoanForPeriod;
     private final BigDecimal totalInstallmentAmountForPeriod;
-    private final BigDecimal vatOnInterest;
-    private final BigDecimal vatOnCharges;
 
     public static LoanSchedulePeriodData disbursementOnlyPeriod(final LocalDate disbursementDate, final BigDecimal principalDisbursed,
-            final BigDecimal feeChargesDueAtTimeOfDisbursement, final boolean isDisbursed, final BigDecimal vatOnInterest,
-            final BigDecimal vatOnCharges) {
+            final BigDecimal feeChargesDueAtTimeOfDisbursement, final boolean isDisbursed) {
         final Integer periodNumber = null;
         final LocalDate from = null;
         return new LoanSchedulePeriodData(periodNumber, from, disbursementDate, principalDisbursed, feeChargesDueAtTimeOfDisbursement,
-                isDisbursed, vatOnInterest, vatOnCharges);
+                isDisbursed);
     }
 
     public static LoanSchedulePeriodData repaymentOnlyPeriod(final Integer periodNumber, final LocalDate fromDate, final LocalDate dueDate,
             final BigDecimal principalDue, final BigDecimal principalOutstanding, final BigDecimal interestDueOnPrincipalOutstanding,
             final BigDecimal feeChargesDueForPeriod, final BigDecimal penaltyChargesDueForPeriod, final BigDecimal totalDueForPeriod,
-            final BigDecimal totalInstallmentAmountForPeriod, final BigDecimal vatOnInterest, final BigDecimal vatOnCharges) {
+            final BigDecimal totalInstallmentAmountForPeriod) {
 
         return new LoanSchedulePeriodData(periodNumber, fromDate, dueDate, principalDue, principalOutstanding,
                 interestDueOnPrincipalOutstanding, feeChargesDueForPeriod, penaltyChargesDueForPeriod, totalDueForPeriod,
-                totalInstallmentAmountForPeriod, vatOnInterest, vatOnCharges);
+                totalInstallmentAmountForPeriod);
     }
 
     public static LoanSchedulePeriodData repaymentPeriodWithPayments(@SuppressWarnings("unused") final Long loanId,
@@ -106,7 +103,7 @@ public final class LoanSchedulePeriodData {
             final BigDecimal totalDueForPeriod, final BigDecimal totalPaid, final BigDecimal totalPaidInAdvanceForPeriod,
             final BigDecimal totalPaidLateForPeriod, final BigDecimal totalWaived, final BigDecimal totalWrittenOff,
             final BigDecimal totalOutstanding, final BigDecimal totalActualCostOfLoanForPeriod,
-            final BigDecimal totalInstallmentAmountForPeriod, final BigDecimal vatOnInterest, final BigDecimal vatOnCharges) {
+            final BigDecimal totalInstallmentAmountForPeriod) {
 
         return new LoanSchedulePeriodData(periodNumber, fromDate, dueDate, obligationsMetOnDate, complete, principalOriginalDue,
                 principalPaid, principalWrittenOff, principalOutstanding, outstandingPrincipalBalanceOfLoan,
@@ -114,7 +111,7 @@ public final class LoanSchedulePeriodData {
                 feeChargesPaid, feeChargesWaived, feeChargesWrittenOff, feeChargesOutstanding, penaltyChargesDue, penaltyChargesPaid,
                 penaltyChargesWaived, penaltyChargesWrittenOff, penaltyChargesOutstanding, totalDueForPeriod, totalPaid,
                 totalPaidInAdvanceForPeriod, totalPaidLateForPeriod, totalWaived, totalWrittenOff, totalOutstanding,
-                totalActualCostOfLoanForPeriod, totalInstallmentAmountForPeriod, vatOnInterest, vatOnCharges);
+                totalActualCostOfLoanForPeriod, totalInstallmentAmountForPeriod);
     }
 
     public static LoanSchedulePeriodData withPaidDetail(final LoanSchedulePeriodData loanSchedulePeriodData, final boolean complete,
@@ -134,16 +131,14 @@ public final class LoanSchedulePeriodData {
                 loanSchedulePeriodData.totalPaidForPeriod, loanSchedulePeriodData.totalPaidInAdvanceForPeriod,
                 loanSchedulePeriodData.totalPaidLateForPeriod, loanSchedulePeriodData.totalWaivedForPeriod,
                 loanSchedulePeriodData.totalWrittenOffForPeriod, loanSchedulePeriodData.totalOutstandingForPeriod,
-                loanSchedulePeriodData.totalActualCostOfLoanForPeriod, loanSchedulePeriodData.totalInstallmentAmountForPeriod,
-                loanSchedulePeriodData.vatOnInterest, loanSchedulePeriodData.vatOnCharges);
+                loanSchedulePeriodData.totalActualCostOfLoanForPeriod, loanSchedulePeriodData.totalInstallmentAmountForPeriod);
     }
 
     /*
      * constructor used for creating period on loan schedule that is only a disbursement (typically first period)
      */
     private LoanSchedulePeriodData(final Integer periodNumber, final LocalDate fromDate, final LocalDate dueDate,
-            final BigDecimal principalDisbursed, final BigDecimal chargesDueAtTimeOfDisbursement, final boolean isDisbursed,
-            final BigDecimal vatOnInterest, final BigDecimal vatOnCharges) {
+            final BigDecimal principalDisbursed, final BigDecimal chargesDueAtTimeOfDisbursement, final boolean isDisbursed) {
         this.period = periodNumber;
         this.fromDate = fromDate;
         this.dueDate = dueDate;
@@ -203,8 +198,6 @@ public final class LoanSchedulePeriodData {
         } else {
             this.totalOverdue = null;
         }
-        this.vatOnInterest = vatOnInterest;
-        this.vatOnCharges = vatOnCharges;
     }
 
     /*
@@ -213,8 +206,7 @@ public final class LoanSchedulePeriodData {
     private LoanSchedulePeriodData(final Integer periodNumber, final LocalDate fromDate, final LocalDate dueDate,
             final BigDecimal principalOriginalDue, final BigDecimal principalOutstanding,
             final BigDecimal interestDueOnPrincipalOutstanding, final BigDecimal feeChargesDueForPeriod,
-            final BigDecimal penaltyChargesDueForPeriod, final BigDecimal totalDueForPeriod, BigDecimal totalInstallmentAmountForPeriod,
-            final BigDecimal vatOnInterest, final BigDecimal vatOnCharges) {
+            final BigDecimal penaltyChargesDueForPeriod, final BigDecimal totalDueForPeriod, BigDecimal totalInstallmentAmountForPeriod) {
         this.period = periodNumber;
         this.fromDate = fromDate;
         this.dueDate = dueDate;
@@ -268,9 +260,6 @@ public final class LoanSchedulePeriodData {
         } else {
             this.totalOverdue = null;
         }
-
-        this.vatOnInterest = vatOnInterest;
-        this.vatOnCharges = vatOnCharges;
     }
 
     /*
@@ -288,8 +277,7 @@ public final class LoanSchedulePeriodData {
             final BigDecimal penaltyChargesWrittenOff, final BigDecimal penaltyChargesOutstanding, final BigDecimal totalDueForPeriod,
             final BigDecimal totalPaid, final BigDecimal totalPaidInAdvanceForPeriod, final BigDecimal totalPaidLateForPeriod,
             final BigDecimal totalWaived, final BigDecimal totalWrittenOff, final BigDecimal totalOutstanding,
-            final BigDecimal totalActualCostOfLoanForPeriod, final BigDecimal totalInstallmentAmountForPeriod,
-            final BigDecimal vatOnInterest, final BigDecimal vatOnCharges) {
+            final BigDecimal totalActualCostOfLoanForPeriod, final BigDecimal totalInstallmentAmountForPeriod) {
         this.period = periodNumber;
         this.fromDate = fromDate;
         this.dueDate = dueDate;
@@ -343,8 +331,6 @@ public final class LoanSchedulePeriodData {
         } else {
             this.totalOverdue = null;
         }
-        this.vatOnInterest = vatOnInterest;
-        this.vatOnCharges = vatOnCharges;
     }
 
     private BigDecimal defaultToZeroIfNull(final BigDecimal possibleNullValue) {

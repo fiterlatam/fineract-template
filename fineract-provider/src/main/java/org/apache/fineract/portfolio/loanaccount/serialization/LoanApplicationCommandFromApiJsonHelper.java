@@ -97,7 +97,7 @@ public final class LoanApplicationCommandFromApiJsonHelper {
             LoanApiConstants.applicationId, // glim specific
             LoanApiConstants.lastApplication, // glim specific
             LoanApiConstants.daysInYearTypeParameterName, LoanApiConstants.fixedPrincipalPercentagePerInstallmentParamName,
-            LoanApiConstants.cupoIdParameterName, LoanApiConstants.isVatRequiredParameterName));
+            LoanApiConstants.cupoIdParameterName));
 
     private final FromJsonHelper fromApiJsonHelper;
     private final CalculateLoanScheduleQueryFromApiJsonHelper apiJsonHelper;
@@ -192,11 +192,6 @@ public final class LoanApplicationCommandFromApiJsonHelper {
         if (this.fromApiJsonHelper.parameterExists(accountNoParameterName, element)) {
             final String accountNo = this.fromApiJsonHelper.extractStringNamed(accountNoParameterName, element);
             baseDataValidator.reset().parameter(accountNoParameterName).value(accountNo).ignoreIfNull().notExceedingLengthOf(20);
-        }
-
-        if (this.fromApiJsonHelper.parameterExists("isVatRequired", element)) {
-            final Boolean isVatRequired = this.fromApiJsonHelper.extractBooleanNamed("isVatRequired", element);
-            baseDataValidator.reset().parameter("isVatRequired").value(isVatRequired).notNull();
         }
 
         final String externalIdParameterName = "externalId";
@@ -568,11 +563,6 @@ public final class LoanApplicationCommandFromApiJsonHelper {
             atLeastOneParameterPassedForUpdate = true;
             final Long groupId = this.fromApiJsonHelper.extractLongNamed(groupIdParameterName, element);
             baseDataValidator.reset().parameter(groupIdParameterName).value(groupId).notNull().integerGreaterThanZero();
-        }
-
-        if (this.fromApiJsonHelper.parameterExists("isVatRequired", element)) {
-            final Boolean isVatRequired = this.fromApiJsonHelper.extractBooleanNamed("isVatRequired", element);
-            baseDataValidator.reset().parameter("isVatRequired").value(isVatRequired).notNull();
         }
 
         final String productIdParameterName = "productId";

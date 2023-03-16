@@ -195,9 +195,6 @@ public class LoanProduct extends AbstractPersistableCustom {
     @Column(name = "over_applied_number", nullable = true)
     private Integer overAppliedNumber;
 
-    @Column(name = "is_vat_required", nullable = false)
-    private boolean isVatRequired;
-
     public static LoanProduct assembleFromJson(final Fund fund, final LoanTransactionProcessingStrategy loanTransactionProcessingStrategy,
             final List<Charge> productCharges, final JsonCommand command, final AprCalculator aprCalculator, FloatingRate floatingRate,
             final List<Rate> productRates) {
@@ -205,7 +202,6 @@ public class LoanProduct extends AbstractPersistableCustom {
         final String name = command.stringValueOfParameterNamed("name");
         final String shortName = command.stringValueOfParameterNamed(LoanProductConstants.SHORT_NAME);
         final String description = command.stringValueOfParameterNamed("description");
-        final Boolean isVatRequired = command.booleanObjectValueOfParameterNamed("isVatRequired");
         final String currencyCode = command.stringValueOfParameterNamed("currencyCode");
         final Integer digitsAfterDecimal = command.integerValueOfParameterNamed("digitsAfterDecimal");
         final Integer inMultiplesOf = command.integerValueOfParameterNamed("inMultiplesOf");
@@ -374,22 +370,22 @@ public class LoanProduct extends AbstractPersistableCustom {
 
         final Integer overAppliedNumber = command.integerValueOfParameterNamed(LoanProductConstants.OVER_APPLIED_NUMBER);
 
-        return new LoanProduct(isVatRequired, fund, loanTransactionProcessingStrategy, name, shortName, description, currency, principal,
-                minPrincipal, maxPrincipal, interestRatePerPeriod, minInterestRatePerPeriod, maxInterestRatePerPeriod,
-                interestFrequencyType, annualInterestRate, interestMethod, interestCalculationPeriodMethod,
-                allowPartialPeriodInterestCalcualtion, repaymentEvery, repaymentFrequencyType, numberOfRepayments, minNumberOfRepayments,
-                maxNumberOfRepayments, graceOnPrincipalPayment, recurringMoratoriumOnPrincipalPeriods, graceOnInterestPayment,
-                graceOnInterestCharged, amortizationMethod, inArrearsTolerance, productCharges, accountingRuleType, includeInBorrowerCycle,
-                startDate, closeDate, externalId, useBorrowerCycle, loanProductBorrowerCycleVariations, multiDisburseLoan, maxTrancheCount,
-                outstandingLoanBalance, graceOnArrearsAgeing, overdueDaysForNPA, daysInMonthType, daysInYearType,
-                isInterestRecalculationEnabled, interestRecalculationSettings, minimumDaysBetweenDisbursalAndFirstRepayment,
-                holdGuarantorFunds, loanProductGuaranteeDetails, principalThresholdForLastInstallment,
-                accountMovesOutOfNPAOnlyOnArrearsCompletion, canDefineEmiAmount, installmentAmountInMultiplesOf, loanConfigurableAttributes,
-                isLinkedToFloatingInterestRates, floatingRate, interestRateDifferential, minDifferentialLendingRate,
-                maxDifferentialLendingRate, defaultDifferentialLendingRate, isFloatingInterestRateCalculationAllowed,
-                isVariableInstallmentsAllowed, minimumGapBetweenInstallments, maximumGapBetweenInstallments,
-                syncExpectedWithDisbursementDate, canUseForTopup, isEqualAmortization, productRates, fixedPrincipalPercentagePerInstallment,
-                disallowExpectedDisbursements, allowApprovedDisbursedAmountsOverApplied, overAppliedCalculationType, overAppliedNumber);
+        return new LoanProduct(fund, loanTransactionProcessingStrategy, name, shortName, description, currency, principal, minPrincipal,
+                maxPrincipal, interestRatePerPeriod, minInterestRatePerPeriod, maxInterestRatePerPeriod, interestFrequencyType,
+                annualInterestRate, interestMethod, interestCalculationPeriodMethod, allowPartialPeriodInterestCalcualtion, repaymentEvery,
+                repaymentFrequencyType, numberOfRepayments, minNumberOfRepayments, maxNumberOfRepayments, graceOnPrincipalPayment,
+                recurringMoratoriumOnPrincipalPeriods, graceOnInterestPayment, graceOnInterestCharged, amortizationMethod,
+                inArrearsTolerance, productCharges, accountingRuleType, includeInBorrowerCycle, startDate, closeDate, externalId,
+                useBorrowerCycle, loanProductBorrowerCycleVariations, multiDisburseLoan, maxTrancheCount, outstandingLoanBalance,
+                graceOnArrearsAgeing, overdueDaysForNPA, daysInMonthType, daysInYearType, isInterestRecalculationEnabled,
+                interestRecalculationSettings, minimumDaysBetweenDisbursalAndFirstRepayment, holdGuarantorFunds,
+                loanProductGuaranteeDetails, principalThresholdForLastInstallment, accountMovesOutOfNPAOnlyOnArrearsCompletion,
+                canDefineEmiAmount, installmentAmountInMultiplesOf, loanConfigurableAttributes, isLinkedToFloatingInterestRates,
+                floatingRate, interestRateDifferential, minDifferentialLendingRate, maxDifferentialLendingRate,
+                defaultDifferentialLendingRate, isFloatingInterestRateCalculationAllowed, isVariableInstallmentsAllowed,
+                minimumGapBetweenInstallments, maximumGapBetweenInstallments, syncExpectedWithDisbursementDate, canUseForTopup,
+                isEqualAmortization, productRates, fixedPrincipalPercentagePerInstallment, disallowExpectedDisbursements,
+                allowApprovedDisbursedAmountsOverApplied, overAppliedCalculationType, overAppliedNumber);
 
     }
 
@@ -597,9 +593,9 @@ public class LoanProduct extends AbstractPersistableCustom {
         this.loanProductMinMaxConstraints = null;
     }
 
-    public LoanProduct(final Boolean isVatRequired, final Fund fund, final LoanTransactionProcessingStrategy transactionProcessingStrategy,
-            final String name, final String shortName, final String description, final MonetaryCurrency currency,
-            final BigDecimal defaultPrincipal, final BigDecimal defaultMinPrincipal, final BigDecimal defaultMaxPrincipal,
+    public LoanProduct(final Fund fund, final LoanTransactionProcessingStrategy transactionProcessingStrategy, final String name,
+            final String shortName, final String description, final MonetaryCurrency currency, final BigDecimal defaultPrincipal,
+            final BigDecimal defaultMinPrincipal, final BigDecimal defaultMaxPrincipal,
             final BigDecimal defaultNominalInterestRatePerPeriod, final BigDecimal defaultMinNominalInterestRatePerPeriod,
             final BigDecimal defaultMaxNominalInterestRatePerPeriod, final PeriodFrequencyType interestPeriodFrequencyType,
             final BigDecimal defaultAnnualNominalInterestRate, final InterestMethod interestMethod,
@@ -627,7 +623,6 @@ public class LoanProduct extends AbstractPersistableCustom {
             final List<Rate> rates, final BigDecimal fixedPrincipalPercentagePerInstallment, final boolean disallowExpectedDisbursements,
             final boolean allowApprovedDisbursedAmountsOverApplied, final String overAppliedCalculationType,
             final Integer overAppliedNumber) {
-        this.isVatRequired = isVatRequired;
         this.fund = fund;
         this.transactionProcessingStrategy = transactionProcessingStrategy;
         this.name = name.trim();
@@ -895,13 +890,6 @@ public class LoanProduct extends AbstractPersistableCustom {
             final String newValue = command.stringValueOfParameterNamed(shortNameParamName);
             actualChanges.put(shortNameParamName, newValue);
             this.shortName = newValue;
-        }
-
-        final String isVatRequiredParamName = "isVatRequired";
-        if (command.isChangeInBooleanParameterNamed(isVatRequiredParamName, this.isVatRequired)) {
-            final boolean newValue = command.booleanPrimitiveValueOfParameterNamed(isVatRequiredParamName);
-            actualChanges.put(isVatRequiredParamName, newValue);
-            this.isVatRequired = newValue;
         }
 
         final String descriptionParamName = "description";
@@ -1590,7 +1578,4 @@ public class LoanProduct extends AbstractPersistableCustom {
         this.loanProducTrancheDetails = loanProducTrancheDetails;
     }
 
-    public boolean isVatRequired() {
-        return isVatRequired;
-    }
 }

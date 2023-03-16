@@ -62,8 +62,4 @@ public interface LoanScheduleModelPeriod {
     BigDecimal rescheduleInterestPortion();
 
     void setRescheduleInterestPortion(BigDecimal rescheduleInterestPortion);
-
-    Money getVatOnInterest();
-
-    Money getVatOnCharges();
 }

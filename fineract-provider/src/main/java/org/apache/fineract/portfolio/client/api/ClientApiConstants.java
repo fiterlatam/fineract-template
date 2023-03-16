@@ -125,8 +125,6 @@ public class ClientApiConstants {
     public static final String finalBeneficiaryParamName = "finalBeneficiary";
     public static final String thirdPartyBeneficiaryParamName = "thirdPartyBeneficiary";
     public static final String professionIdParamName = "professionId";
-    public static final String isVatRequiredParamName = "isVatRequired";
-    public static final String vatRateIdParamName = "vatRateId";
 
     // request parameters for payment details
     public static final String paymentTypeIdParamName = "paymentTypeId";

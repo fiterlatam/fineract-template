@@ -55,7 +55,7 @@ public final class ChargeDefinitionCommandFromApiJsonDeserializer {
             "currencyOptions", "chargeAppliesTo", "chargeTimeType", "chargeCalculationType", "chargeCalculationTypeOptions", "penalty",
             "active", "chargePaymentMode", "feeOnMonthDay", "feeInterval", "monthDayFormat", "minCap", "maxCap", "feeFrequency",
             "enableFreeWithdrawalCharge", "freeWithdrawalFrequency", "restartCountFrequency", "countFrequencyType", "paymentTypeId",
-            "enablePaymentType", "isVatRequired", ChargesApiConstants.glAccountIdParamName, ChargesApiConstants.taxGroupIdParamName));
+            "enablePaymentType", ChargesApiConstants.glAccountIdParamName, ChargesApiConstants.taxGroupIdParamName));
 
     private final FromJsonHelper fromApiJsonHelper;
 
@@ -251,11 +251,6 @@ public final class ChargeDefinitionCommandFromApiJsonDeserializer {
             baseDataValidator.reset().parameter("active").value(active).notNull();
         }
 
-        if (this.fromApiJsonHelper.parameterExists("isVatRequired", element)) {
-            final Boolean isVatRequired = this.fromApiJsonHelper.extractBooleanNamed("isVatRequired", element);
-            baseDataValidator.reset().parameter("isVatRequired").value(isVatRequired).notNull();
-        }
-
         if (this.fromApiJsonHelper.parameterExists("minCap", element)) {
             final BigDecimal minCap = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed("minCap", element.getAsJsonObject());
             baseDataValidator.reset().parameter("minCap").value(minCap).notNull().positiveAmount();
@@ -406,10 +401,6 @@ public final class ChargeDefinitionCommandFromApiJsonDeserializer {
         if (this.fromApiJsonHelper.parameterExists("active", element)) {
             final Boolean active = this.fromApiJsonHelper.extractBooleanNamed("active", element);
             baseDataValidator.reset().parameter("active").value(active).notNull();
-        }
-        if (this.fromApiJsonHelper.parameterExists("isVatRequired", element)) {
-            final Boolean isVatRequired = this.fromApiJsonHelper.extractBooleanNamed("isVatRequired", element);
-            baseDataValidator.reset().parameter("isVatRequired").value(isVatRequired).notNull();
         }
         if (this.fromApiJsonHelper.parameterExists("minCap", element)) {
             final BigDecimal minCap = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed("minCap", element.getAsJsonObject());

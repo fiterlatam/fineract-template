@@ -56,19 +56,15 @@ public class Document extends AbstractPersistableCustom {
     @Column(name = "storage_type_enum")
     private Integer storageType;
 
-    @Column(name = "document_link", length = 255)
-    private String documentLink;
-
     public Document() {}
 
     public static Document createNew(final String parentEntityType, final Long parentEntityId, final String name, final String fileName,
-            final Long size, final String type, final String description, final String location, final StorageType storageType,
-            final String documentLink) {
-        return new Document(parentEntityType, parentEntityId, name, fileName, size, type, description, location, storageType, documentLink);
+            final Long size, final String type, final String description, final String location, final StorageType storageType) {
+        return new Document(parentEntityType, parentEntityId, name, fileName, size, type, description, location, storageType);
     }
 
     private Document(final String parentEntityType, final Long parentEntityId, final String name, final String fileName, final Long size,
-            final String type, final String description, final String location, final StorageType storageType, final String documentLink) {
+            final String type, final String description, final String location, final StorageType storageType) {
         this.parentEntityType = StringUtils.defaultIfEmpty(parentEntityType, null);
         this.parentEntityId = parentEntityId;
         this.name = StringUtils.defaultIfEmpty(name, null);
@@ -78,7 +74,6 @@ public class Document extends AbstractPersistableCustom {
         this.description = StringUtils.defaultIfEmpty(description, null);
         this.location = StringUtils.defaultIfEmpty(location, null);
         this.storageType = storageType.getValue();
-        this.documentLink = StringUtils.defaultIfEmpty(documentLink, null);
     }
 
     public void update(final DocumentCommand command) {
@@ -99,9 +94,6 @@ public class Document extends AbstractPersistableCustom {
         }
         if (command.isSizeChanged()) {
             this.size = command.getSize();
-        }
-        if (command.isDocumentLinkChanged()) {
-            this.documentLink = command.getDocumentLink();
         }
     }
 
@@ -171,13 +163,5 @@ public class Document extends AbstractPersistableCustom {
 
     public StorageType storageType() {
         return StorageType.fromInt(this.storageType);
-    }
-
-    public String getDocumentLink() {
-        return this.documentLink;
-    }
-
-    public void setDocumentLink(final String documentLink) {
-        this.documentLink = documentLink;
     }
 }

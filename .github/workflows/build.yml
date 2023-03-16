@@ -35,16 +35,14 @@ jobs:
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
 
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:latest .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+
   continuous-deployment:
     needs: continuous-integration
     runs-on: ubuntu-latest
     steps:
-      - id: commit
-        uses: pr-mpt/actions-commit-hash@v1
-      
       - name: executing remote ssh commands using ssh key
-        env:
-          IMAGE_TAG: ${{ steps.commit.outputs.short }}
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.LATAM_REMOTE_HOST }}
@@ -53,6 +51,5 @@ jobs:
           script: |
             ./docker-login.sh
             cd fineract
-            echo IMAGE_TAG=${{ steps.commit.outputs.short }} > .env
             docker-compose down
             docker-compose up -d

@@ -34,11 +34,9 @@ import org.apache.fineract.organisation.office.data.OfficeData;
 import org.apache.fineract.organisation.staff.data.StaffData;
 import org.apache.fineract.portfolio.address.data.AddressData;
 import org.apache.fineract.portfolio.collateralmanagement.domain.ClientCollateralManagement;
-import org.apache.fineract.portfolio.creditstanding.data.CreditStandingData;
 import org.apache.fineract.portfolio.group.data.GroupGeneralData;
 import org.apache.fineract.portfolio.savings.data.SavingsAccountData;
 import org.apache.fineract.portfolio.savings.data.SavingsProductData;
-import org.apache.fineract.portfolio.vatrate.data.VatRateData;
 
 /**
  * Immutable data object representing client data.
@@ -132,20 +130,13 @@ public final class ClientData implements Comparable<ClientData>, Serializable {
     private Long legalFormId;
     private LocalDate submittedOnDate;
 
-    private Boolean isVatRequired;
-    private VatRateData vatRateData;
-
-    Collection<VatRateData> vatRateOptions;
-
-    private CreditStandingData creditStandingDetails;
-
     public static ClientData importClientEntityInstance(Long legalFormId, Integer rowIndex, String fullname, Long officeId,
             Long clientTypeId, Long clientClassificationId, Long staffId, Boolean active, LocalDate activationDate,
             LocalDate submittedOnDate, String externalId, LocalDate dateOfBirth, String mobileNo,
             ClientNonPersonData clientNonPersonDetails, Collection<AddressData> address, String locale, String dateFormat) {
         return new ClientData(legalFormId, rowIndex, fullname, null, null, null, submittedOnDate, activationDate, active, externalId,
                 officeId, staffId, mobileNo, dateOfBirth, clientTypeId, null, clientClassificationId, null, address, clientNonPersonDetails,
-                locale, dateFormat, null);
+                locale, dateFormat);
     }
 
     public static ClientData createClientForInterestPosting(final Long id, final Long officeId) {
@@ -229,7 +220,7 @@ public final class ClientData implements Comparable<ClientData>, Serializable {
 
         return new ClientData(legalFormId, rowIndex, null, firstname, lastname, middlename, submittedOn, activationDate, active, externalId,
                 officeId, staffId, mobileNo, dob, clientTypeId, genderId, clientClassificationId, isStaff, address, null, locale,
-                dateFormat, null);
+                dateFormat);
     }
 
     public static ClientData emptyInstance(Long clientId) {
@@ -239,8 +230,7 @@ public final class ClientData implements Comparable<ClientData>, Serializable {
     private ClientData(Long legalFormId, Integer rowIndex, String fullname, String firstname, String lastname, String middlename,
             LocalDate submittedOn, LocalDate activationDate, Boolean active, String externalId, Long officeId, Long staffId,
             String mobileNo, LocalDate dob, Long clientTypeId, Long genderId, Long clientClassificationId, Boolean isStaff,
-            Collection<AddressData> address, ClientNonPersonData clientNonPersonDetails, String locale, String dateFormat,
-            Collection<VatRateData> vatRateOptions) {
+            Collection<AddressData> address, ClientNonPersonData clientNonPersonDetails, String locale, String dateFormat) {
         this.rowIndex = rowIndex;
         this.dateFormat = dateFormat;
         this.locale = locale;
@@ -262,7 +252,6 @@ public final class ClientData implements Comparable<ClientData>, Serializable {
         this.clientClassificationId = clientClassificationId;
         this.isStaff = isStaff;
         this.address = address;
-        this.vatRateOptions = vatRateOptions;
         this.id = null;
         this.accountNo = null;
         this.status = null;
@@ -334,7 +323,7 @@ public final class ClientData implements Comparable<ClientData>, Serializable {
             final Collection<CodeValueData> clientNonPersonConstitutionOptions,
             final Collection<CodeValueData> clientNonPersonMainBusinessLineOptions, final List<EnumOptionData> clientLegalFormOptions,
             final ClientFamilyMembersData familyMemberOptions, final Collection<AddressData> address, final Boolean isAddressEnabled,
-            final List<DatatableData> datatables, final Collection<VatRateData> vatRateOptions) {
+            final List<DatatableData> datatables) {
         final String accountNo = null;
         final EnumOptionData status = null;
         final CodeValueData subStatus = null;
@@ -376,8 +365,6 @@ public final class ClientData implements Comparable<ClientData>, Serializable {
         final String mainBeneficiary = null;
         final String thirdPartyBeneficiary = null;
         final CodeValueData profession = null;
-        final VatRateData vatRateData = null;
-        final Boolean isVatRequired = null;
         return new ClientData(accountNo, status, subStatus, officeId, officeName, transferToOfficeId, transferToOfficeName, id, firstname,
                 middlename, lastname, fullname, displayName, externalId, mobileNo, emailAddress, dateOfBirth, gender, joinedDate, imageId,
                 staffId, staffName, officeOptions, groups, staffOptions, narrations, genderOptions, timeline, savingProductOptions,
@@ -385,7 +372,7 @@ public final class ClientData implements Comparable<ClientData>, Serializable {
                 clientTypeOptions, clientClassificationOptions, clientNonPersonConstitutionOptions, clientNonPersonMainBusinessLineOptions,
                 clientNonPersonDetails, clientLegalFormOptions, familyMemberOptions, legalForm, address, isAddressEnabled, datatables,
                 isStaff, clientCollateralManagements, uuid, motherLastName, countryOfBirth, nationality, curp, rfc, mainBeneficiary,
-                thirdPartyBeneficiary, profession, isVatRequired, vatRateData, vatRateOptions);
+                thirdPartyBeneficiary, profession);
 
     }
 
@@ -404,7 +391,7 @@ public final class ClientData implements Comparable<ClientData>, Serializable {
                 templateData.familyMemberOptions, clientData.legalForm, clientData.address, clientData.isAddressEnabled, null,
                 clientData.isStaff, clientCollateralManagements, clientData.uuid, clientData.motherLastName, clientData.countryOfBirth,
                 clientData.nationality, clientData.curp, clientData.rfc, clientData.mainBeneficiary, clientData.thirdPartyBeneficiary,
-                clientData.profession, clientData.isVatRequired, clientData.vatRateData, templateData.vatRateOptions);
+                clientData.profession);
 
     }
 
@@ -424,7 +411,7 @@ public final class ClientData implements Comparable<ClientData>, Serializable {
                 clientData.familyMemberOptions, clientData.legalForm, clientData.address, clientData.isAddressEnabled, null,
                 clientData.isStaff, clientCollateralManagements, clientData.uuid, clientData.motherLastName, clientData.countryOfBirth,
                 clientData.nationality, clientData.curp, clientData.rfc, clientData.mainBeneficiary, clientData.thirdPartyBeneficiary,
-                clientData.profession, clientData.isVatRequired, clientData.vatRateData, clientData.vatRateOptions);
+                clientData.profession);
 
     }
 
@@ -442,7 +429,7 @@ public final class ClientData implements Comparable<ClientData>, Serializable {
                 clientData.familyMemberOptions, clientData.legalForm, clientData.address, clientData.isAddressEnabled, null,
                 clientData.isStaff, clientCollateralManagements, clientData.uuid, clientData.motherLastName, clientData.countryOfBirth,
                 clientData.nationality, clientData.curp, clientData.rfc, clientData.mainBeneficiary, clientData.thirdPartyBeneficiary,
-                clientData.profession, clientData.isVatRequired, clientData.vatRateData, clientData.vatRateOptions);
+                clientData.profession);
 
     }
 
@@ -494,9 +481,6 @@ public final class ClientData implements Comparable<ClientData>, Serializable {
         final String mainBeneficiary = null;
         final String thirdPartyBeneficiary = null;
         final CodeValueData profession = null;
-        final VatRateData vatRateData = null;
-        final Boolean isVatRequired = null;
-        final Collection<VatRateData> vatRateDataOptions = null;
         return new ClientData(accountNo, status, subStatus, officeId, officeName, transferToOfficeId, transferToOfficeName, id, firstname,
                 middlename, lastname, fullname, displayName, externalId, mobileNo, emailAddress, dateOfBirth, gender, activationDate,
                 imageId, staffId, staffName, allowedOffices, groups, staffOptions, closureReasons, genderOptions, timeline,
@@ -504,7 +488,7 @@ public final class ClientData implements Comparable<ClientData>, Serializable {
                 clientClassification, clientTypeOptions, clientClassificationOptions, clientNonPersonConstitutionOptions,
                 clientNonPersonMainBusinessLineOptions, clientNonPerson, clientLegalFormOptions, familyMemberOptions, legalForm, null, null,
                 null, isStaff, clientCollateralManagements, uuid, motherLastName, countryOfBirth, nationality, curp, rfc, mainBeneficiary,
-                thirdPartyBeneficiary, profession, isVatRequired, vatRateData, vatRateDataOptions);
+                thirdPartyBeneficiary, profession);
     }
 
     public static ClientData lookup(final Long id, final String displayName, final Long officeId, final String officeName) {
@@ -558,9 +542,6 @@ public final class ClientData implements Comparable<ClientData>, Serializable {
         final String mainBeneficiary = null;
         final String thirdPartyBeneficiary = null;
         final CodeValueData profession = null;
-        final VatRateData vatRateData = null;
-        final Boolean isVatRequired = null;
-        final Collection<VatRateData> vatRateDataOptions = null;
         return new ClientData(accountNo, status, subStatus, officeId, officeName, transferToOfficeId, transferToOfficeName, id, firstname,
                 middlename, lastname, fullname, displayName, externalId, mobileNo, emailAddress, dateOfBirth, gender, activationDate,
                 imageId, staffId, staffName, allowedOffices, groups, staffOptions, closureReasons, genderOptions, timeline,
@@ -568,7 +549,7 @@ public final class ClientData implements Comparable<ClientData>, Serializable {
                 clientClassification, clientTypeOptions, clientClassificationOptions, clientNonPersonConstitutionOptions,
                 clientNonPersonMainBusinessLineOptions, clientNonPerson, clientLegalFormOptions, familyMemberOptions, legalForm, null, null,
                 null, isStaff, clientCollateralManagements, uuid, motherLastName, countryOfBirth, nationality, curp, rfc, mainBeneficiary,
-                thirdPartyBeneficiary, profession, isVatRequired, vatRateData, vatRateDataOptions);
+                thirdPartyBeneficiary, profession);
 
     }
 
@@ -587,8 +568,7 @@ public final class ClientData implements Comparable<ClientData>, Serializable {
             final CodeValueData clientType, final CodeValueData clientClassification, final EnumOptionData legalForm,
             final ClientNonPersonData clientNonPerson, final Boolean isStaff, final String uuid, final String motherLastName,
             final String countryOfBirth, final String nationality, final String curp, final String rfc, final String mainBeneficiary,
-            final String thirdPartyBeneficiary, final CodeValueData profession, final Boolean isVatRequired,
-            final VatRateData vatRateData) {
+            final String thirdPartyBeneficiary, final CodeValueData profession) {
 
         final Collection<OfficeData> allowedOffices = null;
         final Collection<GroupGeneralData> groups = null;
@@ -603,15 +583,13 @@ public final class ClientData implements Comparable<ClientData>, Serializable {
         final List<EnumOptionData> clientLegalFormOptions = null;
         final ClientFamilyMembersData familyMemberOptions = null;
         final Collection<ClientCollateralManagement> clientCollateralManagements = null;
-        final Collection<VatRateData> vatRateDataOptions = null;
         return new ClientData(accountNo, status, subStatus, officeId, officeName, transferToOfficeId, transferToOfficeName, id, firstname,
                 middlename, lastname, fullname, displayName, externalId, mobileNo, emailAddress, dateOfBirth, gender, activationDate,
                 imageId, staffId, staffName, allowedOffices, groups, staffOptions, closureReasons, genderOptions, timeline,
                 savingProductOptions, savingsProductId, savingsProductName, savingsAccountId, null, clientType, clientClassification,
                 clientTypeOptions, clientClassificationOptions, clientNonPersonConstitutionOptions, clientNonPersonMainBusinessLineOptions,
                 clientNonPerson, clientLegalFormOptions, familyMemberOptions, legalForm, null, null, null, isStaff, null, uuid,
-                motherLastName, countryOfBirth, nationality, curp, rfc, mainBeneficiary, thirdPartyBeneficiary, profession, isVatRequired,
-                vatRateData, vatRateDataOptions);
+                motherLastName, countryOfBirth, nationality, curp, rfc, mainBeneficiary, thirdPartyBeneficiary, profession);
 
     }
 
@@ -633,8 +611,7 @@ public final class ClientData implements Comparable<ClientData>, Serializable {
             final List<DatatableData> datatables, final Boolean isStaff,
             final Set<ClientCollateralManagementData> clientCollateralManagements, final String uuid, final String motherLastName,
             final String countryOfBirth, final String nationality, final String curp, final String rfc, final String mainBeneficiary,
-            final String thirdPartyBeneficiary, final CodeValueData profession, final Boolean isVatRequired, final VatRateData vatRateData,
-            Collection<VatRateData> vatRateOptions) {
+            final String thirdPartyBeneficiary, final CodeValueData profession) {
         this.accountNo = accountNo;
         this.status = status;
         if (status != null) {
@@ -711,9 +688,6 @@ public final class ClientData implements Comparable<ClientData>, Serializable {
         this.mainBeneficiary = mainBeneficiary;
         this.thirdPartyBeneficiary = thirdPartyBeneficiary;
         this.profession = profession;
-        this.isVatRequired = isVatRequired;
-        this.vatRateData = vatRateData;
-        this.vatRateOptions = vatRateOptions;
     }
 
     public Long id() {
@@ -809,11 +783,4 @@ public final class ClientData implements Comparable<ClientData>, Serializable {
         return this.isAddressEnabled;
     }
 
-    public CreditStandingData getCreditStandingDetails() {
-        return creditStandingDetails;
-    }
-
-    public void setCreditStandingDetails(CreditStandingData creditStandingDetails) {
-        this.creditStandingDetails = creditStandingDetails;
-    }
 }

@@ -22,10 +22,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collection;
 import org.apache.fineract.infrastructure.creditbureau.data.CreditBureauLoanProductMappingData;
-import org.apache.fineract.infrastructure.creditbureau.exception.CreditBureauLoanProductNotFoundException;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
@@ -103,14 +101,10 @@ public class CreditBureauLoanProductMappingReadPlatformServiceImpl implements Cr
     public CreditBureauLoanProductMappingData readMappingByLoanId(long loanProductId) {
         this.context.authenticatedUser();
 
-        try {
-            final CreditBureauLoanProductMapper rm = new CreditBureauLoanProductMapper();
-            final String sql = "select " + rm.schema() + " and cblp.loan_product_id=?";
+        final CreditBureauLoanProductMapper rm = new CreditBureauLoanProductMapper();
+        final String sql = "select " + rm.schema() + " and cblp.loan_product_id=?";
 
-            return this.jdbcTemplate.queryForObject(sql, rm, new Object[] { loanProductId }); // NOSONAR
-        } catch (final EmptyResultDataAccessException e) {
-            throw new CreditBureauLoanProductNotFoundException(Long.valueOf(loanProductId), e);
-        }
+        return this.jdbcTemplate.queryForObject(sql, rm, new Object[] { loanProductId }); // NOSONAR
     }
 
     @Override

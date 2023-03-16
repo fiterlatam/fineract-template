@@ -592,14 +592,6 @@ final class LoansApiResourceSwagger {
         public GetLoansLoanIdInterestCalculationPeriodType interestCalculationPeriodType;
         @Schema(example = "2")
         public Integer transactionProcessingStrategyId;
-        @Schema(example = "21.94")
-        public Float catRate;
-        @Schema(example = "25.84")
-        public Float catRateWithVat;
-        @Schema(example = "20")
-        public Double effectiveRate;
-        @Schema(example = "true")
-        public Boolean isVatRequired;
         public GetLoansLoanIdTimeline timeline;
         public GetLoansLoanIdSummary summary;
         public GetLoansLoanIdRepaymentSchedule repaymentSchedule;

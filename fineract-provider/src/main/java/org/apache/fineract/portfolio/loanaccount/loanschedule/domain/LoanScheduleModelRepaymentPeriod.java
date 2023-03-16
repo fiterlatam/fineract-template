@@ -44,22 +44,18 @@ public final class LoanScheduleModelRepaymentPeriod implements LoanScheduleModel
     private final Set<LoanInterestRecalcualtionAdditionalDetails> loanCompoundingDetails = new HashSet<>();
     private boolean isEMIFixedSpecificToInstallment = false;
     BigDecimal rescheduleInterestPortion;
-    private final Money vatOnInterest;
-    private final Money vatOnCharges;
 
     public static LoanScheduleModelRepaymentPeriod repayment(final int periodNumber, final LocalDate startDate,
             final LocalDate scheduledDueDate, final Money principalDue, final Money outstandingLoanBalance, final Money interestDue,
-            final Money feeChargesDue, final Money penaltyChargesDue, final Money totalDue, boolean recalculatedInterestComponent,
-            final Money vatOnInterest, final Money vatOnCharges) {
+            final Money feeChargesDue, final Money penaltyChargesDue, final Money totalDue, boolean recalculatedInterestComponent) {
 
         return new LoanScheduleModelRepaymentPeriod(periodNumber, startDate, scheduledDueDate, principalDue, outstandingLoanBalance,
-                interestDue, feeChargesDue, penaltyChargesDue, totalDue, recalculatedInterestComponent, vatOnInterest, vatOnCharges);
+                interestDue, feeChargesDue, penaltyChargesDue, totalDue, recalculatedInterestComponent);
     }
 
     public LoanScheduleModelRepaymentPeriod(final int periodNumber, final LocalDate fromDate, final LocalDate dueDate,
             final Money principalDue, final Money outstandingLoanBalance, final Money interestDue, final Money feeChargesDue,
-            final Money penaltyChargesDue, final Money totalDue, final boolean recalculatedInterestComponent, final Money vatOnInterest,
-            final Money vatOnCharges) {
+            final Money penaltyChargesDue, final Money totalDue, final boolean recalculatedInterestComponent) {
         this.periodNumber = periodNumber;
         this.fromDate = fromDate;
         this.dueDate = dueDate;
@@ -70,16 +66,13 @@ public final class LoanScheduleModelRepaymentPeriod implements LoanScheduleModel
         this.penaltyChargesDue = penaltyChargesDue;
         this.totalDue = totalDue;
         this.recalculatedInterestComponent = recalculatedInterestComponent;
-        this.vatOnInterest = vatOnInterest;
-        this.vatOnCharges = vatOnCharges;
     }
 
     @Override
     public LoanSchedulePeriodData toData() {
         return LoanSchedulePeriodData.repaymentOnlyPeriod(this.periodNumber, this.fromDate, this.dueDate, this.principalDue.getAmount(),
                 this.outstandingLoanBalance.getAmount(), this.interestDue.getAmount(), this.feeChargesDue.getAmount(),
-                this.penaltyChargesDue.getAmount(), this.totalDue.getAmount(), this.principalDue.plus(this.interestDue).getAmount(),
-                this.vatOnInterest.getAmount(), this.vatOnCharges.getAmount());
+                this.penaltyChargesDue.getAmount(), this.totalDue.getAmount(), this.principalDue.plus(this.interestDue).getAmount());
     }
 
     @Override
@@ -189,15 +182,5 @@ public final class LoanScheduleModelRepaymentPeriod implements LoanScheduleModel
     @Override
     public BigDecimal rescheduleInterestPortion() {
         return this.rescheduleInterestPortion;
-    }
-
-    @Override
-    public Money getVatOnInterest() {
-        return vatOnInterest;
-    }
-
-    @Override
-    public Money getVatOnCharges() {
-        return vatOnCharges;
     }
 }

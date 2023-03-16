@@ -94,16 +94,6 @@ public final class ClientDataValidator {
             baseDataValidator.reset().parameter(ClientApiConstants.staffIdParamName).value(staffId).ignoreIfNull().longGreaterThanZero();
         }
 
-        if (this.fromApiJsonHelper.parameterExists(ClientApiConstants.isVatRequiredParamName, element)) {
-            final Boolean isVatRequired = this.fromApiJsonHelper.extractBooleanNamed(ClientApiConstants.isVatRequiredParamName, element);
-            baseDataValidator.reset().parameter(ClientApiConstants.isVatRequiredParamName).value(isVatRequired).notNull();
-        }
-
-        if (this.fromApiJsonHelper.parameterExists(ClientApiConstants.vatRateIdParamName, element)) {
-            final Long vatRateId = this.fromApiJsonHelper.extractLongNamed(ClientApiConstants.vatRateIdParamName, element);
-            baseDataValidator.reset().parameter(ClientApiConstants.vatRateIdParamName).value(vatRateId).notNull();
-        }
-
         if (this.fromApiJsonHelper.parameterExists(ClientApiConstants.accountNoParamName, element)) {
             final String accountNo = this.fromApiJsonHelper.extractStringNamed(ClientApiConstants.accountNoParamName, element);
             baseDataValidator.reset().parameter(ClientApiConstants.accountNoParamName).value(accountNo).notBlank().notExceedingLengthOf(20);
@@ -384,16 +374,6 @@ public final class ClientDataValidator {
             atLeastOneParameterPassedForUpdate = true;
             final String accountNo = this.fromApiJsonHelper.extractStringNamed(ClientApiConstants.accountNoParamName, element);
             baseDataValidator.reset().parameter(ClientApiConstants.accountNoParamName).value(accountNo).notBlank().notExceedingLengthOf(20);
-        }
-
-        if (this.fromApiJsonHelper.parameterExists(ClientApiConstants.isVatRequiredParamName, element)) {
-            final Boolean isVatRequired = this.fromApiJsonHelper.extractBooleanNamed(ClientApiConstants.isVatRequiredParamName, element);
-            baseDataValidator.reset().parameter(ClientApiConstants.isVatRequiredParamName).value(isVatRequired).notNull();
-        }
-
-        if (this.fromApiJsonHelper.parameterExists(ClientApiConstants.vatRateIdParamName, element)) {
-            final Long vatRateId = this.fromApiJsonHelper.extractLongNamed(ClientApiConstants.vatRateIdParamName, element);
-            baseDataValidator.reset().parameter(ClientApiConstants.vatRateIdParamName).value(vatRateId).notNull();
         }
 
         if (isFullnameProvided(element) || isIndividualNameProvided(element)) {

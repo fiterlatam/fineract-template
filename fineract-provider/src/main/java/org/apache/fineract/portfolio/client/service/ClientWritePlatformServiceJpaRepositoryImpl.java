@@ -86,8 +86,6 @@ import org.apache.fineract.portfolio.savings.domain.SavingsAccountRepositoryWrap
 import org.apache.fineract.portfolio.savings.domain.SavingsProductRepository;
 import org.apache.fineract.portfolio.savings.exception.SavingsProductNotFoundException;
 import org.apache.fineract.portfolio.savings.service.SavingsApplicationProcessWritePlatformService;
-import org.apache.fineract.portfolio.vatrate.domain.VatRate;
-import org.apache.fineract.portfolio.vatrate.service.ReadVatRateService;
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -122,7 +120,6 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
     private final ClientFamilyMembersWritePlatformService clientFamilyMembersWritePlatformService;
     private final BusinessEventNotifierService businessEventNotifierService;
     private final EntityDatatableChecksWritePlatformService entityDatatableChecksWritePlatformService;
-    private final ReadVatRateService readVatRateService;
 
     @Autowired
     public ClientWritePlatformServiceJpaRepositoryImpl(final PlatformSecurityContext context,
@@ -139,8 +136,7 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
             final AddressWritePlatformService addressWritePlatformService,
             final ClientFamilyMembersWritePlatformService clientFamilyMembersWritePlatformService,
             final BusinessEventNotifierService businessEventNotifierService,
-            final EntityDatatableChecksWritePlatformService entityDatatableChecksWritePlatformService,
-            final ReadVatRateService readVatRateService) {
+            final EntityDatatableChecksWritePlatformService entityDatatableChecksWritePlatformService) {
         this.context = context;
         this.clientRepository = clientRepository;
         this.clientNonPersonRepository = clientNonPersonRepository;
@@ -164,7 +160,6 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
         this.clientFamilyMembersWritePlatformService = clientFamilyMembersWritePlatformService;
         this.businessEventNotifierService = businessEventNotifierService;
         this.entityDatatableChecksWritePlatformService = entityDatatableChecksWritePlatformService;
-        this.readVatRateService = readVatRateService;
     }
 
     @Transactional
@@ -246,10 +241,6 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
 
             final Long groupId = command.longValueOfParameterNamed(ClientApiConstants.groupIdParamName);
 
-            VatRate vatRate = null;
-            if (command.hasParameter(ClientApiConstants.vatRateIdParamName)) {
-                vatRate = readVatRateService.findById(command.longValueOfParameterNamed(ClientApiConstants.vatRateIdParamName));
-            }
             Group clientParentGroup = null;
             if (groupId != null) {
                 clientParentGroup = this.groupRepository.findById(groupId).orElseThrow(() -> new GroupNotFoundException(groupId));
@@ -299,7 +290,7 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
             }
 
             final Client newClient = Client.createNew(currentUser, clientOffice, clientParentGroup, staff, savingsProductId, gender,
-                    clientType, clientClassification, legalFormValue, vatRate, command);
+                    clientType, clientClassification, legalFormValue, command);
             this.clientRepository.saveAndFlush(newClient);
             boolean rollbackTransaction = false;
 
@@ -526,17 +517,6 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
                     newCodeVal = this.codeValueRepository.findOneByCodeNameAndIdWithNotFoundDetection(ClientApiConstants.GENDER, newValue);
                 }
                 clientForUpdate.updateGender(newCodeVal);
-            }
-
-            if (changes.containsKey(ClientApiConstants.isVatRequiredParamName)) {
-                final Boolean newValue = command.booleanPrimitiveValueOfParameterNamed(ClientApiConstants.isVatRequiredParamName);
-                clientForUpdate.setVatRequired(newValue);
-            }
-
-            if (changes.containsKey(ClientApiConstants.vatRateIdParamName)) {
-                final Long newValue = command.longValueOfParameterNamed(ClientApiConstants.vatRateIdParamName);
-                VatRate vatRate = this.readVatRateService.findById(newValue);
-                clientForUpdate.setVatRate(vatRate);
             }
 
             if (changes.containsKey(ClientApiConstants.clientTypeIdParamName)) {

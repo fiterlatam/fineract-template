@@ -71,16 +71,11 @@ public class DocumentWritePlatformServiceJpaRepositoryImpl implements DocumentWr
 
             final ContentRepository contentRepository = this.contentRepositoryFactory.getRepository();
 
-            String fileName = "";
-            String fileLocation = "";
-            if (documentCommand.getFileName() != null && inputStream != null) {
-                fileName = documentCommand.getFileName();
-                fileLocation = contentRepository.saveFile(inputStream, documentCommand);
-            }
+            final String fileLocation = contentRepository.saveFile(inputStream, documentCommand);
 
             final Document document = Document.createNew(documentCommand.getParentEntityType(), documentCommand.getParentEntityId(),
-                    documentCommand.getName(), fileName, documentCommand.getSize(), documentCommand.getType(),
-                    documentCommand.getDescription(), fileLocation, contentRepository.getStorageType(), documentCommand.getDocumentLink());
+                    documentCommand.getName(), documentCommand.getFileName(), documentCommand.getSize(), documentCommand.getType(),
+                    documentCommand.getDescription(), fileLocation, contentRepository.getStorageType());
 
             this.documentRepository.saveAndFlush(document);
 
@@ -98,7 +93,7 @@ public class DocumentWritePlatformServiceJpaRepositoryImpl implements DocumentWr
             final String mimeType, final String name, final String description, final String fileName) {
 
         final DocumentCommand documentCommand = new DocumentCommand(null, null, entityType, entityId, name, fileName, fileSize, mimeType,
-                description, null, null);
+                description, null);
 
         final Long documentId = createDocument(documentCommand, inputStream);
 
@@ -161,10 +156,8 @@ public class DocumentWritePlatformServiceJpaRepositoryImpl implements DocumentWr
                         documentCommand.getId()));
         this.documentRepository.delete(document);
 
-        if (document.getLocation() != null) {
-            final ContentRepository contentRepository = this.contentRepositoryFactory.getRepository(document.storageType());
-            contentRepository.deleteFile(document.getLocation());
-        }
+        final ContentRepository contentRepository = this.contentRepositoryFactory.getRepository(document.storageType());
+        contentRepository.deleteFile(document.getLocation());
         return new CommandProcessingResult(document.getId());
     }
 

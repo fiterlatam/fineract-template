@@ -286,9 +286,9 @@ public class ChargeReadPlatformServiceImpl implements ChargeReadPlatformService 
             return "c.id as id, c.name as name, c.amount as amount, c.currency_code as currencyCode, "
                     + "c.charge_applies_to_enum as chargeAppliesTo, c.charge_time_enum as chargeTime, "
                     + "c.charge_payment_mode_enum as chargePaymentMode, "
-                    + "c.charge_calculation_enum as chargeCalculation, c.is_penalty as penalty, c.is_vat_required as isVatRequired, "
+                    + "c.charge_calculation_enum as chargeCalculation, c.is_penalty as penalty, "
                     + "c.is_active as active, c.is_free_withdrawal as isFreeWithdrawal, c.free_withdrawal_charge_frequency as freeWithdrawalChargeFrequency, c.restart_frequency as restartFrequency, c.restart_frequency_enum as restartFrequencyEnum,"
-                    + "oc.name as currencyName, oc.decimal_places as currencyDecimalPlaces, oc.int_code as intCode, "
+                    + "oc.name as currencyName, oc.decimal_places as currencyDecimalPlaces, "
                     + "oc.currency_multiplesof as inMultiplesOf, oc.display_symbol as currencyDisplaySymbol, "
                     + "oc.internationalized_name_code as currencyNameCode, c.fee_on_day as feeOnDay, c.fee_on_month as feeOnMonth, "
                     + "c.fee_interval as feeInterval, c.fee_frequency as feeFrequency,c.min_cap as minCap,c.max_cap as maxCap, "
@@ -342,7 +342,6 @@ public class ChargeReadPlatformServiceImpl implements ChargeReadPlatformService 
 
             final boolean penalty = rs.getBoolean("penalty");
             final boolean active = rs.getBoolean("active");
-            final boolean isVatRequired = rs.getBoolean("is_vat_required");
 
             final Integer feeInterval = JdbcSupport.getInteger(rs, "feeInterval");
             EnumOptionData feeFrequencyType = null;
@@ -390,9 +389,9 @@ public class ChargeReadPlatformServiceImpl implements ChargeReadPlatformService 
             }
 
             return ChargeData.instance(id, name, amount, currency, chargeTimeType, chargeAppliesToType, chargeCalculationType,
-                    chargePaymentMode, feeOnMonthDay, feeInterval, penalty, active, isVatRequired, isFreeWithdrawal,
-                    freeWithdrawalChargeFrequency, restartFrequency, restartFrequencyEnum, isPaymentType, paymentTypeData, minCap, maxCap,
-                    feeFrequencyType, glAccountData, taxGroupData);
+                    chargePaymentMode, feeOnMonthDay, feeInterval, penalty, active, isFreeWithdrawal, freeWithdrawalChargeFrequency,
+                    restartFrequency, restartFrequencyEnum, isPaymentType, paymentTypeData, minCap, maxCap, feeFrequencyType, glAccountData,
+                    taxGroupData);
         }
     }
 

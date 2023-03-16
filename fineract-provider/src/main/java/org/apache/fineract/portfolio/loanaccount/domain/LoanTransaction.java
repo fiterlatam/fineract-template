@@ -121,12 +121,6 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER, mappedBy = "loanTransaction")
     private Set<LoanTransactionToRepaymentScheduleMapping> loanTransactionToRepaymentScheduleMappings = new HashSet<>();
 
-    @Column(name = "vat_on_interest_portion", scale = 6, precision = 19, nullable = true)
-    private BigDecimal vatOnInterestPortion;
-
-    @Column(name = "vat_on_charges_portion", scale = 6, precision = 19, nullable = true)
-    private BigDecimal vatOnChargesPortion;
-
     protected LoanTransaction() {}
 
     public static LoanTransaction incomePosting(final Loan loan, final Office office, final LocalDate dateOf, final BigDecimal amount,
@@ -386,16 +380,6 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
         final MonetaryCurrency currency = principal.getCurrency();
         this.principalPortion = defaultToNullIfZero(getPrincipalPortion(currency).plus(principal).getAmount());
         this.interestPortion = defaultToNullIfZero(getInterestPortion(currency).plus(interest).getAmount());
-        updateChargesComponents(feeCharges, penaltyCharges);
-    }
-
-    public void updateComponents(final Money principal, final Money interest, final Money feeCharges, final Money penaltyCharges,
-            final Money vatOnInterest, final Money vatOnCharges) {
-        final MonetaryCurrency currency = principal.getCurrency();
-        this.principalPortion = defaultToNullIfZero(getPrincipalPortion(currency).plus(principal).getAmount());
-        this.interestPortion = defaultToNullIfZero(getInterestPortion(currency).plus(interest).getAmount());
-        this.vatOnInterestPortion = defaultToNullIfZero(getVatOnInterestPortion(currency).plus(vatOnInterest).getAmount());
-        this.vatOnChargesPortion = defaultToNullIfZero(getVatOnChargesPortion(currency).plus(vatOnCharges).getAmount());
         updateChargesComponents(feeCharges, penaltyCharges);
     }
 
@@ -834,18 +818,4 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
 
     // TODO missing hashCode(), equals(Object obj), but probably OK as long as
     // this is never stored in a Collection.
-
-    public void updateVatComponents(Money vatOnInterestPortion, Money vatOnChargesPortion) {
-        this.vatOnInterestPortion = vatOnInterestPortion.getAmount();
-        this.vatOnChargesPortion = vatOnChargesPortion.getAmount();
-    }
-
-    public Money getVatOnInterestPortion(final MonetaryCurrency currency) {
-        return Money.of(currency, this.vatOnInterestPortion);
-    }
-
-    public Money getVatOnChargesPortion(final MonetaryCurrency currency) {
-        return Money.of(currency, this.vatOnChargesPortion);
-    }
-
 }
