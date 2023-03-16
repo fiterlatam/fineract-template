@@ -375,7 +375,8 @@ public final class LoanRepaymentScheduleInstallment extends AbstractAuditableCus
 
     public Money getTotalOutstanding(final MonetaryCurrency currency) {
         return getPrincipalOutstanding(currency).plus(getInterestOutstanding(currency)).plus(getFeeChargesOutstanding(currency))
-                .plus(getPenaltyChargesOutstanding(currency));
+                .plus(getPenaltyChargesOutstanding(currency)).plus(getVatOnChargeOutstanding(currency))
+                .plus(getVatOnInterestOutstanding(currency));
     }
 
     public void updateLoan(final Loan loan) {
@@ -875,6 +876,9 @@ public final class LoanRepaymentScheduleInstallment extends AbstractAuditableCus
         this.penaltyCharges = defaultToNullIfZero(penaltyChargesDue.getAmount());
         this.penaltyChargesWaived = defaultToNullIfZero(penaltyChargesWaived.getAmount());
         this.penaltyChargesWrittenOff = defaultToNullIfZero(penaltyChargesWrittenOff.getAmount());
+        this.vatOnChargeExpected = defaultToNullIfZero(chargeAmountDueForVatCalculation.getAmount());
+        this.vatOnChargeWaived  = defaultToNullIfZero(chargeAmountDueForVatCalculation.getAmount());
+        this.vatOnChargeWrittenOff  = defaultToNullIfZero(chargeAmountDueForVatCalculation.getAmount());
     }
 
     public void updateAccrualPortion(final Money interest, final Money feeCharges, final Money penalityCharges) {

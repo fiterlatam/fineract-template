@@ -106,6 +106,7 @@ import org.apache.fineract.portfolio.group.exception.GroupNotActiveException;
 import org.apache.fineract.portfolio.loanaccount.api.LoanApiConstants;
 import org.apache.fineract.portfolio.loanaccount.data.LoanChargeData;
 import org.apache.fineract.portfolio.loanaccount.data.ScheduleGeneratorDTO;
+import org.apache.fineract.portfolio.loanaccount.domain.ClientVatRateNotSetException;
 import org.apache.fineract.portfolio.loanaccount.domain.DefaultLoanLifecycleStateMachine;
 import org.apache.fineract.portfolio.loanaccount.domain.GLIMAccountInfoRepository;
 import org.apache.fineract.portfolio.loanaccount.domain.GroupLoanIndividualMonitoringAccount;
@@ -910,6 +911,18 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             if (changes.containsKey(isVatRequiredParamName)) {
                 final Boolean newValue = command.booleanObjectValueOfParameterNamed(isVatRequiredParamName);
                 existingLoanApplication.setVatRequired(newValue);
+
+                if (newValue && existingLoanApplication.getClient().vatRateId() == null) {
+                    throw new ClientVatRateNotSetException(existingLoanApplication.getClient().vatRateId());
+                }
+
+                if (newValue && existingLoanApplication.getClient().vatRateId() != null) {
+                    if (!existingLoanApplication.getClient().getVatRate().getActive()) {
+                        throw new ClientVatRateNotSetException(existingLoanApplication.getClient().vatRateId());
+                    }
+                    existingLoanApplication
+                            .setVatPercentage(BigDecimal.valueOf(existingLoanApplication.getClient().getVatRate().getPercentage()));
+                }
             }
 
             final String groupIdParamName = "groupId";

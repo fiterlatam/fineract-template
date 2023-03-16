@@ -58,7 +58,6 @@ public class LoanRepaymentScheduleProcessingWrapper {
             final Pair<Money, Money> cumulativePenaltyChargesDueWithin = cumulativePenaltyChargesDueWithin(startDate, period.getDueDate(),
                     loanCharges, currency, period, totalPrincipal, totalInterest, !period.isRecalculatedInterestComponent());
             final Money penaltyChargesDueForRepaymentPeriod = cumulativePenaltyChargesDueWithin.getLeft();
-
             final Money penaltyChargesDueForVatCalculation = cumulativePenaltyChargesDueWithin.getRight();
 
             final Money penaltyChargesWaivedForRepaymentPeriod = cumulativePenaltyChargesWaivedWithin(startDate, period.getDueDate(),
@@ -67,6 +66,9 @@ public class LoanRepaymentScheduleProcessingWrapper {
                     period.getDueDate(), loanCharges, currency, !period.isRecalculatedInterestComponent());
 
             Money chargeAmountDueForVatCalculation = feeChargesDueForVatCalculation.plus(penaltyChargesDueForVatCalculation);
+
+
+
             period.updateChargePortion(feeChargesDueForRepaymentPeriod, feeChargesWaivedForRepaymentPeriod,
                     feeChargesWrittenOffForRepaymentPeriod, penaltyChargesDueForRepaymentPeriod, penaltyChargesWaivedForRepaymentPeriod,
                     penaltyChargesWrittenOffForRepaymentPeriod, chargeAmountDueForVatCalculation);
