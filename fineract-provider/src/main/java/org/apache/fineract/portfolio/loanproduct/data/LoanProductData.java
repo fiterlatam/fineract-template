@@ -197,6 +197,7 @@ public class LoanProductData implements Serializable {
     private final boolean syncExpectedWithDisbursementDate;
     private final boolean isEqualAmortization;
     private final BigDecimal fixedPrincipalPercentagePerInstallment;
+    private final Boolean isVatRequired;
 
     /**
      * Used when returning lookup information about loan product for dropdowns.
@@ -282,6 +283,7 @@ public class LoanProductData implements Serializable {
         final Collection<RateData> rateOptions = null;
         final Collection<RateData> rates = null;
         final boolean isRatesEnabled = false;
+        final Boolean isVatRequired = null;
         return new LoanProductData(id, name, shortName, description, currency, principal, minPrincipal, maxPrincipal, tolerance,
                 numberOfRepayments, minNumberOfRepayments, maxNumberOfRepayments, repaymentEvery, interestRatePerPeriod,
                 minInterestRatePerPeriod, maxInterestRatePerPeriod, annualInterestRate, repaymentFrequencyType, interestRateFrequencyType,
@@ -298,7 +300,7 @@ public class LoanProductData implements Serializable {
                 floatingRateName, interestRateDifferential, minDifferentialLendingRate, defaultDifferentialLendingRate,
                 maxDifferentialLendingRate, isFloatingInterestRateCalculationAllowed, isVariableInstallmentsAllowed, minimumGap, maximumGap,
                 syncExpectedWithDisbursementDate, canUseForTopup, isEqualAmortization, rateOptions, rates, isRatesEnabled,
-                fixedPrincipalPercentagePerInstallment);
+                fixedPrincipalPercentagePerInstallment, isVatRequired);
 
     }
 
@@ -384,6 +386,7 @@ public class LoanProductData implements Serializable {
         final Collection<RateData> rateOptions = null;
         final Collection<RateData> rates = null;
         final boolean isRatesEnabled = false;
+        final Boolean isVatRequired = null;
 
         return new LoanProductData(id, name, shortName, description, currency, principal, minPrincipal, maxPrincipal, tolerance,
                 numberOfRepayments, minNumberOfRepayments, maxNumberOfRepayments, repaymentEvery, interestRatePerPeriod,
@@ -401,7 +404,7 @@ public class LoanProductData implements Serializable {
                 floatingRateName, interestRateDifferential, minDifferentialLendingRate, defaultDifferentialLendingRate,
                 maxDifferentialLendingRate, isFloatingInterestRateCalculationAllowed, isVariableInstallmentsAllowed, minimumGap, maximumGap,
                 syncExpectedWithDisbursementDate, canUseForTopup, isEqualAmortization, rateOptions, rates, isRatesEnabled,
-                fixedPrincipalPercentagePerInstallment);
+                fixedPrincipalPercentagePerInstallment, isVatRequired);
 
     }
 
@@ -494,6 +497,7 @@ public class LoanProductData implements Serializable {
         final Collection<RateData> rateOptions = null;
         final Collection<RateData> rates = null;
         final boolean isRatesEnabled = false;
+        final Boolean isVatRequired = null;
 
         return new LoanProductData(id, name, shortName, description, currency, principal, minPrincipal, maxPrincipal, tolerance,
                 numberOfRepayments, minNumberOfRepayments, maxNumberOfRepayments, repaymentEvery, interestRatePerPeriod,
@@ -511,7 +515,7 @@ public class LoanProductData implements Serializable {
                 floatingRateName, interestRateDifferential, minDifferentialLendingRate, defaultDifferentialLendingRate,
                 maxDifferentialLendingRate, isFloatingInterestRateCalculationAllowed, isVariableInstallmentsAllowed, minimumGap, maximumGap,
                 syncExpectedWithDisbursementDate, canUseForTopup, isEqualAmortization, rateOptions, rates, isRatesEnabled,
-                fixedPrincipalPercentagePerInstallment);
+                fixedPrincipalPercentagePerInstallment, isVatRequired);
 
     }
 
@@ -598,6 +602,7 @@ public class LoanProductData implements Serializable {
         final Collection<RateData> rateOptions = null;
         final Collection<RateData> rates = null;
         final boolean isRatesEnabled = false;
+        final Boolean isVatRequired = null;
 
         return new LoanProductData(id, name, shortName, description, currency, principal, minPrincipal, maxPrincipal, tolerance,
                 numberOfRepayments, minNumberOfRepayments, maxNumberOfRepayments, repaymentEvery, interestRatePerPeriod,
@@ -615,7 +620,7 @@ public class LoanProductData implements Serializable {
                 floatingRateName, interestRateDifferential, minDifferentialLendingRate, defaultDifferentialLendingRate,
                 maxDifferentialLendingRate, isFloatingInterestRateCalculationAllowed, isVariableInstallmentsAllowed, minimumGap, maximumGap,
                 syncExpectedWithDisbursementDate, canUseForTopup, isEqualAmortization, rateOptions, rates, isRatesEnabled,
-                fixedPrincipalPercentagePerInstallment);
+                fixedPrincipalPercentagePerInstallment, isVatRequired);
 
     }
 
@@ -660,7 +665,7 @@ public class LoanProductData implements Serializable {
             final Integer minimumGapBetweenInstallments, final Integer maximumGapBetweenInstallments,
             final boolean syncExpectedWithDisbursementDate, final boolean canUseForTopup, final boolean isEqualAmortization,
             Collection<RateData> rateOptions, Collection<RateData> rates, final boolean isRatesEnabled,
-            final BigDecimal fixedPrincipalPercentagePerInstallment) {
+            final BigDecimal fixedPrincipalPercentagePerInstallment, final Boolean isVatRequired) {
         this.id = id;
         this.name = name;
         this.shortName = shortName;
@@ -774,6 +779,7 @@ public class LoanProductData implements Serializable {
         this.syncExpectedWithDisbursementDate = syncExpectedWithDisbursementDate;
         this.canUseForTopup = canUseForTopup;
         this.isEqualAmortization = isEqualAmortization;
+        this.isVatRequired = isVatRequired;
 
     }
 
@@ -921,6 +927,7 @@ public class LoanProductData implements Serializable {
         this.isEqualAmortization = productData.isEqualAmortization;
         this.rates = productData.rates;
         this.isRatesEnabled = isRatesEnabled;
+        this.isVatRequired = productData.isVatRequired;
     }
 
     private Collection<ChargeData> nullIfEmpty(final Collection<ChargeData> charges) {

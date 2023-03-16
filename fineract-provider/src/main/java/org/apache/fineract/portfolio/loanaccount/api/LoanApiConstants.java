@@ -143,4 +143,5 @@ public interface LoanApiConstants {
 
     String LOAN_ASSOCIATIONS_ALL = "all";
     String cupoIdParameterName = "cupoId";
+    String isVatRequiredParameterName = "isVatRequired";
 }

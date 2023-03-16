@@ -22,6 +22,8 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import java.math.BigDecimal;
+import java.math.MathContext;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.temporal.ChronoField;
 import java.util.ArrayList;
@@ -113,6 +115,7 @@ import org.apache.fineract.portfolio.loanaccount.domain.LoanCollateralManagement
 import org.apache.fineract.portfolio.loanaccount.domain.LoanCollateralManagementRepository;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanDisbursementDetails;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanLifecycleStateMachine;
+import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleInstallment;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleInstallmentRepository;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleTransactionProcessorFactory;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepository;
@@ -352,6 +355,9 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
 
             validateSubmittedOnDate(newLoanApplication);
 
+            // update calculations for schedule installments
+            updateLoanInstallmentsAmounts(newLoanApplication);
+
             final LoanProductRelatedDetail productRelatedDetail = newLoanApplication.repaymentScheduleDetail();
 
             if (loanProduct.getLoanProductConfigurableAttributes() != null) {
@@ -414,6 +420,13 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                     final LoanTopupDetails topupDetails = new LoanTopupDetails(newLoanApplication, loanIdToClose);
                     newLoanApplication.setTopupLoanDetails(topupDetails);
                 }
+            }
+
+            // CAT calculation with/without VAT
+            newLoanApplication.setCatRate(loanUtilService.getCalculatedCatRate(newLoanApplication, false));
+            if (newLoanApplication.isVatRequired()) {
+                newLoanApplication
+                        .setCatRateWithVat(loanUtilService.getCalculatedCatRate(newLoanApplication, newLoanApplication.isVatRequired()));
             }
 
             this.loanRepositoryWrapper.saveAndFlush(newLoanApplication);
@@ -893,6 +906,12 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 existingLoanApplication.updateClient(client);
             }
 
+            final String isVatRequiredParamName = "isVatRequired";
+            if (changes.containsKey(isVatRequiredParamName)) {
+                final Boolean newValue = command.booleanObjectValueOfParameterNamed(isVatRequiredParamName);
+                existingLoanApplication.setVatRequired(newValue);
+            }
+
             final String groupIdParamName = "groupId";
             if (changes.containsKey(groupIdParamName)) {
                 final Long groupId = command.longValueOfParameterNamed(groupIdParamName);
@@ -1293,6 +1312,16 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 officeSpecificLoanProductValidation(existingLoanApplication.getLoanProduct().getId(), OfficeId);
             }
 
+            // update calculations for schedule installments
+            updateLoanInstallmentsAmounts(existingLoanApplication);
+
+            // CAT calculation with/without VAT
+            existingLoanApplication.setCatRate(loanUtilService.getCalculatedCatRate(existingLoanApplication, false));
+            if (existingLoanApplication.isVatRequired()) {
+                existingLoanApplication.setCatRateWithVat(
+                        loanUtilService.getCalculatedCatRate(existingLoanApplication, existingLoanApplication.isVatRequired()));
+            }
+
             // updating loan interest recalculation details throwing null
             // pointer exception after saveAndFlush
             // http://stackoverflow.com/questions/17151757/hibernate-cascade-update-gives-null-pointer/17334374#17334374
@@ -1536,6 +1565,9 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 BigDecimal netDisbursalAmount = loan.getApprovedPrincipal().subtract(loanOutstanding);
                 loan.adjustNetDisbursalAmount(netDisbursalAmount);
             }
+
+            // update calculations for schedule installments
+            updateLoanInstallmentsAmounts(loan);
 
             saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
 
@@ -1850,6 +1882,45 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 throw new NotOfficeSpecificProductException(productId, officeId);
             }
 
+        }
+    }
+
+    private void updateLoanInstallmentsAmounts(Loan loan) {
+        // Get the total installments for this loan
+        BigDecimal totalInstallmentsForLoan = loanUtilService.calculateTotalInstallmentWithVat(loan).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal principalLeft = loan.getNetDisbursalAmount();
+        BigDecimal divisor = BigDecimal.valueOf(Double.parseDouble("100.0"));
+
+        for (LoanRepaymentScheduleInstallment scheduleInstallment : loan.getRepaymentScheduleInstallments()) {
+            // Update interest installment
+            BigDecimal interestRateInstallment = loanUtilService.calculatePeriodicInterestRate(
+                    loan.getLoanProductRelatedDetail().getAnnualNominalInterestRate(), scheduleInstallment.getFromDate(),
+                    scheduleInstallment.getDueDate());
+
+            BigDecimal interestChargedInstallment = principalLeft.multiply(interestRateInstallment, MathContext.DECIMAL64).setScale(2,
+                    RoundingMode.HALF_UP);
+            scheduleInstallment.updateInterestCharged(interestChargedInstallment);
+
+            if (loan.isVatRequired()) {
+                BigDecimal vatRate = loanUtilService.getLoanVatPercentage(loan);
+                BigDecimal vatRateForCalculation = vatRate.divide(divisor, MathContext.DECIMAL64);
+                BigDecimal interestVatChargedInstallment = interestChargedInstallment.multiply(vatRateForCalculation, MathContext.DECIMAL64)
+                        .setScale(2, RoundingMode.HALF_UP);
+                scheduleInstallment.updateVatOnInterestCharged(interestVatChargedInstallment);
+            }
+
+            // Sum the values to subtract from the total installment
+            BigDecimal dueAmountInstallment = scheduleInstallment.getInterestCharged(loan.getCurrency()).getAmount()
+                    .add(scheduleInstallment.getVatOnInterestCharged())
+                    .add(scheduleInstallment.getPenaltyChargesCharged(loan.getCurrency()).getAmount())
+                    .add(scheduleInstallment.getFeeChargesCharged(loan.getCurrency()).getAmount());
+
+            BigDecimal principalInstallmentAmount = totalInstallmentsForLoan.subtract(dueAmountInstallment, MathContext.DECIMAL64)
+                    .setScale(2, RoundingMode.HALF_UP);
+            scheduleInstallment.updatePrincipal(principalInstallmentAmount);
+
+            // Update principal left
+            principalLeft = principalLeft.subtract(principalInstallmentAmount);
         }
     }
 

@@ -71,7 +71,7 @@ public final class LoanProductDataValidator {
             "graceOnInterestPayment", "graceOnInterestCharged", "charges", "accountingRule", "includeInBorrowerCycle", "startDate",
             "closeDate", "externalId", "isLinkedToFloatingInterestRates", "floatingRatesId", "interestRateDifferential",
             "minDifferentialLendingRate", "defaultDifferentialLendingRate", "maxDifferentialLendingRate",
-            "isFloatingInterestRateCalculationAllowed", "syncExpectedWithDisbursementDate",
+            "isFloatingInterestRateCalculationAllowed", "syncExpectedWithDisbursementDate", "isVatRequired",
             LoanProductAccountingParams.FEES_RECEIVABLE.getValue(), LoanProductAccountingParams.FUND_SOURCE.getValue(),
             LoanProductAccountingParams.INCOME_FROM_FEES.getValue(), LoanProductAccountingParams.INCOME_FROM_PENALTIES.getValue(),
             LoanProductAccountingParams.INTEREST_ON_LOANS.getValue(), LoanProductAccountingParams.INTEREST_RECEIVABLE.getValue(),
@@ -147,6 +147,11 @@ public final class LoanProductDataValidator {
 
         final String description = this.fromApiJsonHelper.extractStringNamed("description", element);
         baseDataValidator.reset().parameter("description").value(description).notExceedingLengthOf(500);
+
+        if (this.fromApiJsonHelper.parameterExists("isVatRequired", element)) {
+            final Boolean isVatRequired = this.fromApiJsonHelper.extractBooleanNamed("isVatRequired", element);
+            baseDataValidator.reset().parameter("isVatRequired").value(isVatRequired).notNull();
+        }
 
         if (this.fromApiJsonHelper.parameterExists("fundId", element)) {
             final Long fundId = this.fromApiJsonHelper.extractLongNamed("fundId", element);
@@ -964,6 +969,11 @@ public final class LoanProductDataValidator {
         if (this.fromApiJsonHelper.parameterExists("description", element)) {
             final String description = this.fromApiJsonHelper.extractStringNamed("description", element);
             baseDataValidator.reset().parameter("description").value(description).notExceedingLengthOf(500);
+        }
+
+        if (this.fromApiJsonHelper.parameterExists("isVatRequired", element)) {
+            final Boolean isVatRequired = this.fromApiJsonHelper.extractBooleanNamed("isVatRequired", element);
+            baseDataValidator.reset().parameter("isVatRequired").value(isVatRequired).notNull();
         }
 
         if (this.fromApiJsonHelper.parameterExists("fundId", element)) {
