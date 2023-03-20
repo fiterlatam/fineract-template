@@ -138,7 +138,7 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
         final PaymentDetail paymentDetail = null;
         final String externalId = null;
         return new LoanTransaction(loan, office, typeOf, dateOf, amount, principalPortion, interestPortion, feeChargesPortion,
-                penaltyChargesPortion, overPaymentPortion, reversed, paymentDetail, externalId);
+                penaltyChargesPortion, overPaymentPortion, reversed, paymentDetail, externalId, null, null);
     }
 
     public static LoanTransaction disbursement(final Office office, final Money amount, final PaymentDetail paymentDetail,
@@ -205,7 +205,8 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
         PaymentDetail paymentDetail = null;
         String externalId = null;
         return new LoanTransaction(loan, office, LoanTransactionType.ACCRUAL.getValue(), interestAppliedDate, interestPortion,
-                principalPortion, interestPortion, feesPortion, penaltiesPortion, overPaymentPortion, reversed, paymentDetail, externalId);
+                principalPortion, interestPortion, feesPortion, penaltiesPortion, overPaymentPortion, reversed, paymentDetail, externalId,
+                null, null);
     }
 
     public static LoanTransaction accrual(final Loan loan, final Office office, final Money amount, final Money interest,
@@ -222,28 +223,28 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
         PaymentDetail paymentDetail = null;
         String externalId = null;
         return new LoanTransaction(loan, office, LoanTransactionType.ACCRUAL.getValue(), dateOf, amount, principalPortion, interestPortion,
-                feeChargesPortion, penaltyChargesPortion, overPaymentPortion, reversed, paymentDetail, externalId);
+                feeChargesPortion, penaltyChargesPortion, overPaymentPortion, reversed, paymentDetail, externalId, null, null);
     }
 
     public static LoanTransaction initiateTransfer(final Office office, final Loan loan, final LocalDate transferDate) {
         return new LoanTransaction(loan, office, LoanTransactionType.INITIATE_TRANSFER.getValue(), transferDate,
                 loan.getSummary().getTotalOutstanding(), loan.getSummary().getTotalPrincipalOutstanding(),
                 loan.getSummary().getTotalInterestOutstanding(), loan.getSummary().getTotalFeeChargesOutstanding(),
-                loan.getSummary().getTotalPenaltyChargesOutstanding(), null, false, null, null);
+                loan.getSummary().getTotalPenaltyChargesOutstanding(), null, false, null, null, null, null);
     }
 
     public static LoanTransaction approveTransfer(final Office office, final Loan loan, final LocalDate transferDate) {
         return new LoanTransaction(loan, office, LoanTransactionType.APPROVE_TRANSFER.getValue(), transferDate,
                 loan.getSummary().getTotalOutstanding(), loan.getSummary().getTotalPrincipalOutstanding(),
                 loan.getSummary().getTotalInterestOutstanding(), loan.getSummary().getTotalFeeChargesOutstanding(),
-                loan.getSummary().getTotalPenaltyChargesOutstanding(), null, false, null, null);
+                loan.getSummary().getTotalPenaltyChargesOutstanding(), null, false, null, null, null, null);
     }
 
     public static LoanTransaction withdrawTransfer(final Office office, final Loan loan, final LocalDate transferDate) {
         return new LoanTransaction(loan, office, LoanTransactionType.WITHDRAW_TRANSFER.getValue(), transferDate,
                 loan.getSummary().getTotalOutstanding(), loan.getSummary().getTotalPrincipalOutstanding(),
                 loan.getSummary().getTotalInterestOutstanding(), loan.getSummary().getTotalFeeChargesOutstanding(),
-                loan.getSummary().getTotalPenaltyChargesOutstanding(), null, false, null, null);
+                loan.getSummary().getTotalPenaltyChargesOutstanding(), null, false, null, null, null, null);
     }
 
     public static LoanTransaction refund(final Office office, final Money amount, final PaymentDetail paymentDetail,
@@ -255,7 +256,8 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
         return new LoanTransaction(loanTransaction.loan, loanTransaction.office, loanTransaction.typeOf, loanTransaction.dateOf,
                 loanTransaction.amount, loanTransaction.principalPortion, loanTransaction.interestPortion,
                 loanTransaction.feeChargesPortion, loanTransaction.penaltyChargesPortion, loanTransaction.overPaymentPortion,
-                loanTransaction.reversed, loanTransaction.paymentDetail, loanTransaction.externalId);
+                loanTransaction.reversed, loanTransaction.paymentDetail, loanTransaction.externalId, loanTransaction.vatOnInterestPortion,
+                loanTransaction.vatOnChargesPortion);
     }
 
     public static LoanTransaction accrueLoanCharge(final Loan loan, final Office office, final Money amount, final LocalDate applyDate,
@@ -296,7 +298,8 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
     private LoanTransaction(final Loan loan, final Office office, final Integer typeOf, final LocalDate dateOf, final BigDecimal amount,
             final BigDecimal principalPortion, final BigDecimal interestPortion, final BigDecimal feeChargesPortion,
             final BigDecimal penaltyChargesPortion, final BigDecimal overPaymentPortion, final boolean reversed,
-            final PaymentDetail paymentDetail, final String externalId) {
+            final PaymentDetail paymentDetail, final String externalId, final BigDecimal vatOnInterestPortion,
+            final BigDecimal vatOnChargesPortion) {
 
         this.loan = loan;
         this.typeOf = typeOf;
@@ -312,6 +315,8 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
         this.office = office;
         this.externalId = externalId;
         this.submittedOnDate = DateUtils.getBusinessLocalDate();
+        this.vatOnInterestPortion = vatOnInterestPortion;
+        this.vatOnChargesPortion = vatOnChargesPortion;
     }
 
     public static LoanTransaction waiveLoanCharge(final Loan loan, final Office office, final Money waived, final LocalDate waiveDate,
@@ -427,7 +432,8 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
 
         final MonetaryCurrency currency = principal.getCurrency();
         this.amount = getPrincipalPortion(currency).plus(getInterestPortion(currency)).plus(getFeeChargesPortion(currency))
-                .plus(getPenaltyChargesPortion(currency)).getAmount();
+                .plus(getPenaltyChargesPortion(currency)).plus(getVatOnInterestPortion(currency)).plus(getVatOnChargesPortion(currency))
+                .getAmount();
     }
 
     public void updateOverPayments(final Money overPayment) {
@@ -785,7 +791,9 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
                             .equals(updatedrepaymentScheduleMapping.getLoanRepaymentScheduleInstallment().getDueDate())) {
                 repaymentScheduleMapping.setComponents(updatedrepaymentScheduleMapping.getPrincipalPortion(),
                         updatedrepaymentScheduleMapping.getInterestPortion(), updatedrepaymentScheduleMapping.getFeeChargesPortion(),
-                        updatedrepaymentScheduleMapping.getPenaltyChargesPortion());
+                        updatedrepaymentScheduleMapping.getPenaltyChargesPortion(),
+                        updatedrepaymentScheduleMapping.getVatOnInterestPortion(),
+                        updatedrepaymentScheduleMapping.getVatOnChargesPortion());
                 isMappingUpdated = true;
                 retainMappings.add(repaymentScheduleMapping);
                 break;

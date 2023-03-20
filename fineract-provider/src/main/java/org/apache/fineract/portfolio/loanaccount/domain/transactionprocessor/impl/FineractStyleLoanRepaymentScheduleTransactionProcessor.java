@@ -214,9 +214,11 @@ public class FineractStyleLoanRepaymentScheduleTransactionProcessor extends Abst
                 loanTransaction.updateComponents(principalPortion, interestPortion, feeChargesPortion, penaltyChargesPortion);
             }
         }
-        if (principalPortion.plus(interestPortion).plus(feeChargesPortion).plus(penaltyChargesPortion).isGreaterThanZero()) {
-            transactionMappings.add(LoanTransactionToRepaymentScheduleMapping.createFrom(loanTransaction, currentInstallment,
-                    principalPortion, interestPortion, feeChargesPortion, penaltyChargesPortion));
+        if (principalPortion.plus(interestPortion).plus(feeChargesPortion).plus(penaltyChargesPortion).plus(vatOnChargesChargesPortion)
+                .plus(vatOnInterestPortion).isGreaterThanZero()) {
+            transactionMappings
+                    .add(LoanTransactionToRepaymentScheduleMapping.createFrom(loanTransaction, currentInstallment, principalPortion,
+                            interestPortion, feeChargesPortion, penaltyChargesPortion, vatOnInterestPortion, vatOnChargesChargesPortion));
         }
         return transactionAmountRemaining;
     }

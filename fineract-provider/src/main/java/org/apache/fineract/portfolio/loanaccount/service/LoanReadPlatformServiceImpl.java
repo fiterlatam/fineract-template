@@ -2356,8 +2356,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
             final CurrencyData currencyData = this.currencyMapper.mapRow(rs, rowNum);
             final LocalDate date = JdbcSupport.getLocalDate(rs, "transactionDate");
             final BigDecimal principalPortion = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "principalDue");
-            final BigDecimal interestDue = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "vatOnInterestDue");
-            final BigDecimal vatOnInterestDue = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "interestDue");
+            final BigDecimal interestDue = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "interestDue");
+            final BigDecimal vatOnInterestDue = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "vatOnInterestDue");
             final BigDecimal feeDue = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "feeDue");
             final BigDecimal penaltyDue = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "penaltyDue");
             final BigDecimal vatOnChargesDue = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "vatOnChargesDue");
