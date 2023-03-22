@@ -380,8 +380,7 @@ public class LoanAssembler {
         // if VAT is required, then calculates the effective annual rate with VAT
         if (isVatRequired && vatPercentage.compareTo(BigDecimal.ZERO) > 0) {
             BigDecimal effectInterestAmountWithVat = this.loanUtilService
-                    .calculateEffectiveRateWithVat(interestRatePerPeriod, vatPercentage)
-                    .setScale(2, MoneyHelper.getRoundingMode());
+                    .calculateEffectiveRateWithVat(interestRatePerPeriod, vatPercentage).setScale(2, MoneyHelper.getRoundingMode());
             loanApplication.setEffectiveRateWithVat(effectInterestAmountWithVat);
         }
 
