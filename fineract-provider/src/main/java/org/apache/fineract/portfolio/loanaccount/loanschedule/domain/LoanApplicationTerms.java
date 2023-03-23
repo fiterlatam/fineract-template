@@ -43,7 +43,6 @@ import org.apache.fineract.portfolio.loanaccount.data.DisbursementData;
 import org.apache.fineract.portfolio.loanaccount.data.HolidayDetailDTO;
 import org.apache.fineract.portfolio.loanaccount.data.LoanTermVariationsData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanTermVariationsDataWrapper;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanInterestRecalculationDetails;
 import org.apache.fineract.portfolio.loanproduct.domain.AmortizationMethod;
 import org.apache.fineract.portfolio.loanproduct.domain.InterestCalculationPeriodMethod;
 import org.apache.fineract.portfolio.loanproduct.domain.InterestMethod;
@@ -79,6 +78,7 @@ public final class LoanApplicationTerms {
     private final boolean allowPartialPeriodInterestCalcualtion;
 
     private Money principal;
+    private Money principalAndOriginationFees;
     private final LocalDate expectedDisbursementDate;
     private final LocalDate repaymentsStartingFromDate;
     private final LocalDate calculatedRepaymentsStartingFromDate;
@@ -220,14 +220,14 @@ public final class LoanApplicationTerms {
             final AmortizationMethod amortizationMethod, final InterestMethod interestMethod, final BigDecimal interestRatePerPeriod,
             final PeriodFrequencyType interestRatePeriodFrequencyType, final BigDecimal annualNominalInterestRate,
             final InterestCalculationPeriodMethod interestCalculationPeriodMethod, final boolean allowPartialPeriodInterestCalcualtion,
-            final Money principalMoney, final LocalDate expectedDisbursementDate, final LocalDate repaymentsStartingFromDate,
-            final LocalDate calculatedRepaymentsStartingFromDate, final Integer graceOnPrincipalPayment,
-            final Integer recurringMoratoriumOnPrincipalPeriods, final Integer graceOnInterestPayment, final Integer graceOnInterestCharged,
-            final LocalDate interestChargedFromDate, final Money inArrearsTolerance, final boolean multiDisburseLoan,
-            final BigDecimal emiAmount, final List<DisbursementData> disbursementDatas, final BigDecimal maxOutstandingBalance,
-            final Integer graceOnArrearsAgeing, final DaysInMonthType daysInMonthType, final DaysInYearType daysInYearType,
-            final boolean isInterestRecalculationEnabled, final RecalculationFrequencyType recalculationFrequencyType,
-            final CalendarInstance restCalendarInstance,
+            final Money principalMoney, final Money principalAndOriginationFees, final LocalDate expectedDisbursementDate,
+            final LocalDate repaymentsStartingFromDate, final LocalDate calculatedRepaymentsStartingFromDate,
+            final Integer graceOnPrincipalPayment, final Integer recurringMoratoriumOnPrincipalPeriods,
+            final Integer graceOnInterestPayment, final Integer graceOnInterestCharged, final LocalDate interestChargedFromDate,
+            final Money inArrearsTolerance, final boolean multiDisburseLoan, final BigDecimal emiAmount,
+            final List<DisbursementData> disbursementDatas, final BigDecimal maxOutstandingBalance, final Integer graceOnArrearsAgeing,
+            final DaysInMonthType daysInMonthType, final DaysInYearType daysInYearType, final boolean isInterestRecalculationEnabled,
+            final RecalculationFrequencyType recalculationFrequencyType, final CalendarInstance restCalendarInstance,
             final InterestRecalculationCompoundingMethod interestRecalculationCompoundingMethod,
             final CalendarInstance compoundingCalendarInstance, final RecalculationFrequencyType compoundingFrequencyType,
             final BigDecimal principalThresholdForLastInstalment, final Integer installmentAmountInMultiplesOf,
@@ -244,45 +244,18 @@ public final class LoanApplicationTerms {
         return new LoanApplicationTerms(currency, loanTermFrequency, loanTermPeriodFrequencyType, numberOfRepayments, repaymentEvery,
                 repaymentPeriodFrequencyType, nthDay, weekDayType, amortizationMethod, interestMethod, interestRatePerPeriod,
                 interestRatePeriodFrequencyType, annualNominalInterestRate, interestCalculationPeriodMethod,
-                allowPartialPeriodInterestCalcualtion, principalMoney, expectedDisbursementDate, repaymentsStartingFromDate,
-                calculatedRepaymentsStartingFromDate, graceOnPrincipalPayment, recurringMoratoriumOnPrincipalPeriods,
-                graceOnInterestPayment, graceOnInterestCharged, interestChargedFromDate, inArrearsTolerance, multiDisburseLoan, emiAmount,
-                disbursementDatas, maxOutstandingBalance, graceOnArrearsAgeing, daysInMonthType, daysInYearType,
-                isInterestRecalculationEnabled, rescheduleStrategyMethod, interestRecalculationCompoundingMethod, restCalendarInstance,
-                recalculationFrequencyType, compoundingCalendarInstance, compoundingFrequencyType, principalThresholdForLastInstalment,
-                installmentAmountInMultiplesOf, preClosureInterestCalculationStrategy, loanCalendar, approvedAmount, loanTermVariations,
-                calendarHistoryDataWrapper, isInterestChargedFromDateSameAsDisbursalDateEnabled, numberOfDays,
-                isSkipRepaymentOnFirstDayOfMonth, holidayDetailDTO, allowCompoundingOnEod, isEqualAmortization, false,
-                isInterestToBeRecoveredFirstWhenGreaterThanEMI, fixedPrincipalPercentagePerInstallment,
-                isPrincipalCompoundingDisabledForOverdueLoans, isVatRequired, vatRate);
+                allowPartialPeriodInterestCalcualtion, principalMoney, principalAndOriginationFees, expectedDisbursementDate,
+                repaymentsStartingFromDate, calculatedRepaymentsStartingFromDate, graceOnPrincipalPayment,
+                recurringMoratoriumOnPrincipalPeriods, graceOnInterestPayment, graceOnInterestCharged, interestChargedFromDate,
+                inArrearsTolerance, multiDisburseLoan, emiAmount, disbursementDatas, maxOutstandingBalance, graceOnArrearsAgeing,
+                daysInMonthType, daysInYearType, isInterestRecalculationEnabled, rescheduleStrategyMethod,
+                interestRecalculationCompoundingMethod, restCalendarInstance, recalculationFrequencyType, compoundingCalendarInstance,
+                compoundingFrequencyType, principalThresholdForLastInstalment, installmentAmountInMultiplesOf,
+                preClosureInterestCalculationStrategy, loanCalendar, approvedAmount, loanTermVariations, calendarHistoryDataWrapper,
+                isInterestChargedFromDateSameAsDisbursalDateEnabled, numberOfDays, isSkipRepaymentOnFirstDayOfMonth, holidayDetailDTO,
+                allowCompoundingOnEod, isEqualAmortization, false, isInterestToBeRecoveredFirstWhenGreaterThanEMI,
+                fixedPrincipalPercentagePerInstallment, isPrincipalCompoundingDisabledForOverdueLoans, isVatRequired, vatRate);
 
-    }
-
-    public static LoanApplicationTerms assembleFrom(final ApplicationCurrency applicationCurrency, final Integer loanTermFrequency,
-            final PeriodFrequencyType loanTermPeriodFrequencyType, NthDayType nthDay, DayOfWeekType dayOfWeek,
-            final LocalDate expectedDisbursementDate, final LocalDate repaymentsStartingFromDate,
-            final LocalDate calculatedRepaymentsStartingFromDate, final Money inArrearsTolerance,
-            final LoanProductRelatedDetail loanProductRelatedDetail, final boolean multiDisburseLoan, final BigDecimal emiAmount,
-            final List<DisbursementData> disbursementDatas, final BigDecimal maxOutstandingBalance, final LocalDate interestChargedFromDate,
-            final BigDecimal principalThresholdForLastInstalment, final Integer installmentAmountInMultiplesOf,
-            final RecalculationFrequencyType recalculationFrequencyType, final CalendarInstance restCalendarInstance,
-            final InterestRecalculationCompoundingMethod compoundingMethod, final CalendarInstance compoundingCalendarInstance,
-            final RecalculationFrequencyType compoundingFrequencyType,
-            final LoanPreClosureInterestCalculationStrategy loanPreClosureInterestCalculationStrategy,
-            final LoanRescheduleStrategyMethod rescheduleStrategyMethod, BigDecimal approvedAmount, BigDecimal annualNominalInterestRate,
-            List<LoanTermVariationsData> loanTermVariations, final Integer numberOfDays, final boolean isSkipRepaymentOnFirstDayOfMonth,
-            final Calendar loanCalendar, final HolidayDetailDTO holidayDetailDTO, final boolean allowCompoundingOnEod,
-            final boolean isVatRequired, final VatRate vatRate) {
-        final CalendarHistoryDataWrapper calendarHistoryDataWrapper = null;
-
-        return assembleFrom(applicationCurrency, loanTermFrequency, loanTermPeriodFrequencyType, nthDay, dayOfWeek,
-                expectedDisbursementDate, repaymentsStartingFromDate, calculatedRepaymentsStartingFromDate, inArrearsTolerance,
-                loanProductRelatedDetail, multiDisburseLoan, emiAmount, disbursementDatas, maxOutstandingBalance, interestChargedFromDate,
-                principalThresholdForLastInstalment, installmentAmountInMultiplesOf, recalculationFrequencyType, restCalendarInstance,
-                compoundingMethod, compoundingCalendarInstance, compoundingFrequencyType, loanPreClosureInterestCalculationStrategy,
-                rescheduleStrategyMethod, loanCalendar, approvedAmount, annualNominalInterestRate, loanTermVariations,
-                calendarHistoryDataWrapper, numberOfDays, isSkipRepaymentOnFirstDayOfMonth, holidayDetailDTO, allowCompoundingOnEod, false,
-                false, null, false, isVatRequired, vatRate);
     }
 
     public static LoanApplicationTerms assembleFrom(final ApplicationCurrency applicationCurrency, final Integer loanTermFrequency,
@@ -302,7 +275,7 @@ public final class LoanApplicationTerms {
             final boolean isSkipRepaymentOnFirstDayOfMonth, final HolidayDetailDTO holidayDetailDTO, final boolean allowCompoundingOnEod,
             final boolean isFirstRepaymentDateAllowedOnHoliday, final boolean isInterestToBeRecoveredFirstWhenGreaterThanEMI,
             final BigDecimal fixedPrincipalPercentagePerInstallment, final boolean isPrincipalCompoundingDisabledForOverdueLoans,
-            final boolean isVatRequired, final VatRate vatRate) {
+            final boolean isVatRequired, final VatRate vatRate, final Money originationFees) {
 
         final Integer numberOfRepayments = loanProductRelatedDetail.getNumberOfRepayments();
         final Integer repaymentEvery = loanProductRelatedDetail.getRepayEvery();
@@ -315,6 +288,7 @@ public final class LoanApplicationTerms {
                 .getInterestCalculationPeriodMethod();
         final boolean allowPartialPeriodInterestCalcualtion = loanProductRelatedDetail.isAllowPartialPeriodInterestCalcualtion();
         final Money principalMoney = loanProductRelatedDetail.getPrincipal();
+        final Money principalAndOriginationFees = loanProductRelatedDetail.getPrincipal().plus(originationFees);
 
         //
         final Integer graceOnPrincipalPayment = loanProductRelatedDetail.graceOnPrincipalPayment();
@@ -331,8 +305,8 @@ public final class LoanApplicationTerms {
         return new LoanApplicationTerms(applicationCurrency, loanTermFrequency, loanTermPeriodFrequencyType, numberOfRepayments,
                 repaymentEvery, repaymentPeriodFrequencyType, ((nthDay != null) ? nthDay.getValue() : null), dayOfWeek, amortizationMethod,
                 interestMethod, interestRatePerPeriod, interestRatePeriodFrequencyType, annualNominalInterestRate,
-                interestCalculationPeriodMethod, allowPartialPeriodInterestCalcualtion, principalMoney, expectedDisbursementDate,
-                repaymentsStartingFromDate, calculatedRepaymentsStartingFromDate, graceOnPrincipalPayment,
+                interestCalculationPeriodMethod, allowPartialPeriodInterestCalcualtion, principalMoney, principalAndOriginationFees,
+                expectedDisbursementDate, repaymentsStartingFromDate, calculatedRepaymentsStartingFromDate, graceOnPrincipalPayment,
                 recurringMoratoriumOnPrincipalPeriods, graceOnInterestPayment, graceOnInterestCharged, interestChargedFromDate,
                 inArrearsTolerance, multiDisburseLoan, emiAmount, disbursementDatas, maxOutstandingBalance,
                 loanProductRelatedDetail.getGraceOnDueDate(), daysInMonthType, daysInYearType, isInterestRecalculationEnabled,
@@ -345,67 +319,6 @@ public final class LoanApplicationTerms {
                 isPrincipalCompoundingDisabledForOverdueLoans, isVatRequired, vatRate);
     }
 
-    public static LoanApplicationTerms assembleFrom(final ApplicationCurrency applicationCurrency, final Integer loanTermFrequency,
-            final PeriodFrequencyType loanTermPeriodFrequencyType, final LocalDate expectedDisbursementDate,
-            final LocalDate repaymentsStartingFromDate, final LocalDate calculatedRepaymentsStartingFromDate,
-            final Money inArrearsTolerance, final LoanProductRelatedDetail loanProductRelatedDetail, final boolean multiDisburseLoan,
-            final BigDecimal emiAmount, final List<DisbursementData> disbursementDatas, final BigDecimal maxOutstandingBalance,
-            final LocalDate interestChargedFromDate, final LoanInterestRecalculationDetails interestRecalculationDetails,
-            final CalendarInstance restCalendarInstance, final RecalculationFrequencyType recalculationFrequencyType,
-            final CalendarInstance compoundingCalendarInstance, final RecalculationFrequencyType compoundingFrequencyType,
-            final BigDecimal principalThresholdForLastInstalment, final Integer installmentAmountInMultiplesOf,
-            final LoanPreClosureInterestCalculationStrategy loanPreClosureInterestCalculationStrategy, final Calendar loanCalendar,
-            BigDecimal approvedAmount, final BigDecimal annualNominalInterestRate, final List<LoanTermVariationsData> loanTermVariations,
-            Integer numberOfDays, boolean isSkipRepaymentOnFirstDayOfMonth, final HolidayDetailDTO holidayDetailDTO,
-            final boolean allowCompoundingOnEod, final boolean isVatRequired, final VatRate vatRate) {
-
-        final Integer numberOfRepayments = loanProductRelatedDetail.getNumberOfRepayments();
-        final Integer repaymentEvery = loanProductRelatedDetail.getRepayEvery();
-        final PeriodFrequencyType repaymentPeriodFrequencyType = loanProductRelatedDetail.getRepaymentPeriodFrequencyType();
-        final AmortizationMethod amortizationMethod = loanProductRelatedDetail.getAmortizationMethod();
-        final InterestMethod interestMethod = loanProductRelatedDetail.getInterestMethod();
-        final BigDecimal interestRatePerPeriod = loanProductRelatedDetail.getNominalInterestRatePerPeriod();
-        final PeriodFrequencyType interestRatePeriodFrequencyType = loanProductRelatedDetail.getInterestPeriodFrequencyType();
-        final InterestCalculationPeriodMethod interestCalculationPeriodMethod = loanProductRelatedDetail
-                .getInterestCalculationPeriodMethod();
-        final boolean allowPartialPeriodInterestCalcualtion = loanProductRelatedDetail.isAllowPartialPeriodInterestCalcualtion();
-        final Money principalMoney = loanProductRelatedDetail.getPrincipal();
-
-        //
-        final Integer graceOnPrincipalPayment = loanProductRelatedDetail.graceOnPrincipalPayment();
-        final Integer recurringMoratoriumOnPrincipalPeriods = loanProductRelatedDetail.recurringMoratoriumOnPrincipalPeriods();
-        final Integer graceOnInterestPayment = loanProductRelatedDetail.graceOnInterestPayment();
-        final Integer graceOnInterestCharged = loanProductRelatedDetail.graceOnInterestCharged();
-
-        // Interest recalculation settings
-        final DaysInMonthType daysInMonthType = loanProductRelatedDetail.fetchDaysInMonthType();
-        final DaysInYearType daysInYearType = loanProductRelatedDetail.fetchDaysInYearType();
-        final boolean isInterestRecalculationEnabled = loanProductRelatedDetail.isInterestRecalculationEnabled();
-        LoanRescheduleStrategyMethod rescheduleStrategyMethod = null;
-        InterestRecalculationCompoundingMethod interestRecalculationCompoundingMethod = null;
-        if (isInterestRecalculationEnabled) {
-            rescheduleStrategyMethod = interestRecalculationDetails.getRescheduleStrategyMethod();
-            interestRecalculationCompoundingMethod = interestRecalculationDetails.getInterestRecalculationCompoundingMethod();
-        }
-        final CalendarHistoryDataWrapper calendarHistoryDataWrapper = null;
-        final boolean isInterestChargedFromDateSameAsDisbursalDateEnabled = false;
-        final boolean isEqualAmortization = loanProductRelatedDetail.isEqualAmortization();
-        return new LoanApplicationTerms(applicationCurrency, loanTermFrequency, loanTermPeriodFrequencyType, numberOfRepayments,
-                repaymentEvery, repaymentPeriodFrequencyType, null, null, amortizationMethod, interestMethod, interestRatePerPeriod,
-                interestRatePeriodFrequencyType, annualNominalInterestRate, interestCalculationPeriodMethod,
-                allowPartialPeriodInterestCalcualtion, principalMoney, expectedDisbursementDate, repaymentsStartingFromDate,
-                calculatedRepaymentsStartingFromDate, graceOnPrincipalPayment, recurringMoratoriumOnPrincipalPeriods,
-                graceOnInterestPayment, graceOnInterestCharged, interestChargedFromDate, inArrearsTolerance, multiDisburseLoan, emiAmount,
-                disbursementDatas, maxOutstandingBalance, loanProductRelatedDetail.getGraceOnDueDate(), daysInMonthType, daysInYearType,
-                isInterestRecalculationEnabled, rescheduleStrategyMethod, interestRecalculationCompoundingMethod, restCalendarInstance,
-                recalculationFrequencyType, compoundingCalendarInstance, compoundingFrequencyType, principalThresholdForLastInstalment,
-                installmentAmountInMultiplesOf, loanPreClosureInterestCalculationStrategy, loanCalendar, approvedAmount, loanTermVariations,
-                calendarHistoryDataWrapper, isInterestChargedFromDateSameAsDisbursalDateEnabled, numberOfDays,
-                isSkipRepaymentOnFirstDayOfMonth, holidayDetailDTO, allowCompoundingOnEod, isEqualAmortization, false, false, null, false,
-                isVatRequired, vatRate);
-
-    }
-
     public static LoanApplicationTerms assembleFrom(final LoanApplicationTerms applicationTerms,
             final List<LoanTermVariationsData> loanTermVariations) {
         return new LoanApplicationTerms(applicationTerms.currency, applicationTerms.loanTermFrequency,
@@ -414,20 +327,21 @@ public final class LoanApplicationTerms {
                 applicationTerms.amortizationMethod, applicationTerms.interestMethod, applicationTerms.interestRatePerPeriod,
                 applicationTerms.interestRatePeriodFrequencyType, applicationTerms.annualNominalInterestRate,
                 applicationTerms.interestCalculationPeriodMethod, applicationTerms.allowPartialPeriodInterestCalcualtion,
-                applicationTerms.principal, applicationTerms.expectedDisbursementDate, applicationTerms.repaymentsStartingFromDate,
-                applicationTerms.calculatedRepaymentsStartingFromDate, applicationTerms.principalGrace,
-                applicationTerms.recurringMoratoriumOnPrincipalPeriods, applicationTerms.interestPaymentGrace,
-                applicationTerms.interestChargingGrace, applicationTerms.interestChargedFromDate, applicationTerms.inArrearsTolerance,
-                applicationTerms.multiDisburseLoan, applicationTerms.actualFixedEmiAmount, applicationTerms.disbursementDatas,
-                applicationTerms.maxOutstandingBalance, applicationTerms.graceOnArrearsAgeing, applicationTerms.daysInMonthType,
-                applicationTerms.daysInYearType, applicationTerms.interestRecalculationEnabled, applicationTerms.rescheduleStrategyMethod,
-                applicationTerms.interestRecalculationCompoundingMethod, applicationTerms.restCalendarInstance,
-                applicationTerms.recalculationFrequencyType, applicationTerms.compoundingCalendarInstance,
-                applicationTerms.compoundingFrequencyType, applicationTerms.principalThresholdForLastInstalment,
-                applicationTerms.installmentAmountInMultiplesOf, applicationTerms.preClosureInterestCalculationStrategy,
-                applicationTerms.loanCalendar, applicationTerms.approvedPrincipal.getAmount(), loanTermVariations,
-                applicationTerms.calendarHistoryDataWrapper, applicationTerms.isInterestChargedFromDateSameAsDisbursalDateEnabled,
-                applicationTerms.numberOfDays, applicationTerms.isSkipRepaymentOnFirstDayOfMonth, applicationTerms.holidayDetailDTO,
+                applicationTerms.principal, applicationTerms.principalAndOriginationFees, applicationTerms.expectedDisbursementDate,
+                applicationTerms.repaymentsStartingFromDate, applicationTerms.calculatedRepaymentsStartingFromDate,
+                applicationTerms.principalGrace, applicationTerms.recurringMoratoriumOnPrincipalPeriods,
+                applicationTerms.interestPaymentGrace, applicationTerms.interestChargingGrace, applicationTerms.interestChargedFromDate,
+                applicationTerms.inArrearsTolerance, applicationTerms.multiDisburseLoan, applicationTerms.actualFixedEmiAmount,
+                applicationTerms.disbursementDatas, applicationTerms.maxOutstandingBalance, applicationTerms.graceOnArrearsAgeing,
+                applicationTerms.daysInMonthType, applicationTerms.daysInYearType, applicationTerms.interestRecalculationEnabled,
+                applicationTerms.rescheduleStrategyMethod, applicationTerms.interestRecalculationCompoundingMethod,
+                applicationTerms.restCalendarInstance, applicationTerms.recalculationFrequencyType,
+                applicationTerms.compoundingCalendarInstance, applicationTerms.compoundingFrequencyType,
+                applicationTerms.principalThresholdForLastInstalment, applicationTerms.installmentAmountInMultiplesOf,
+                applicationTerms.preClosureInterestCalculationStrategy, applicationTerms.loanCalendar,
+                applicationTerms.approvedPrincipal.getAmount(), loanTermVariations, applicationTerms.calendarHistoryDataWrapper,
+                applicationTerms.isInterestChargedFromDateSameAsDisbursalDateEnabled, applicationTerms.numberOfDays,
+                applicationTerms.isSkipRepaymentOnFirstDayOfMonth, applicationTerms.holidayDetailDTO,
                 applicationTerms.allowCompoundingOnEod, applicationTerms.isEqualAmortization,
                 applicationTerms.isFirstRepaymentDateAllowedOnHoliday, applicationTerms.isInterestToBeRecoveredFirstWhenGreaterThanEMI,
                 applicationTerms.fixedPrincipalPercentagePerInstallment, applicationTerms.isPrincipalCompoundingDisabledForOverdueLoans,
@@ -440,8 +354,8 @@ public final class LoanApplicationTerms {
             final AmortizationMethod amortizationMethod, final InterestMethod interestMethod, final BigDecimal interestRatePerPeriod,
             final PeriodFrequencyType interestRatePeriodFrequencyType, final BigDecimal annualNominalInterestRate,
             final InterestCalculationPeriodMethod interestCalculationPeriodMethod, final boolean allowPartialPeriodInterestCalcualtion,
-            final Money principal, final LocalDate expectedDisbursementDate, final LocalDate repaymentsStartingFromDate,
-            final LocalDate calculatedRepaymentsStartingFromDate, final Integer principalGrace,
+            final Money principal, final Money principalAndOriginationFees, final LocalDate expectedDisbursementDate,
+            final LocalDate repaymentsStartingFromDate, final LocalDate calculatedRepaymentsStartingFromDate, final Integer principalGrace,
             final Integer recurringMoratoriumOnPrincipalPeriods, final Integer interestPaymentGrace, final Integer interestChargingGrace,
             final LocalDate interestChargedFromDate, final Money inArrearsTolerance, final boolean multiDisburseLoan,
             final BigDecimal emiAmount, final List<DisbursementData> disbursementDatas, final BigDecimal maxOutstandingBalance,
@@ -477,6 +391,7 @@ public final class LoanApplicationTerms {
         this.allowPartialPeriodInterestCalcualtion = allowPartialPeriodInterestCalcualtion;
 
         this.principal = principal;
+        this.principalAndOriginationFees = principalAndOriginationFees;
         this.expectedDisbursementDate = expectedDisbursementDate;
         this.repaymentsStartingFromDate = repaymentsStartingFromDate;
         this.calculatedRepaymentsStartingFromDate = calculatedRepaymentsStartingFromDate;
@@ -1472,6 +1387,14 @@ public final class LoanApplicationTerms {
         return this.approvedPrincipal;
     }
 
+    public Money getPrincipalAndOriginationFees() {
+        return this.principalAndOriginationFees;
+    }
+
+    public void setPrincipalAndOriginationFees(Money principalAndOriginationFees) {
+        this.principalAndOriginationFees = principalAndOriginationFees;
+    }
+
     public List<DisbursementData> getDisbursementDatas() {
         return this.disbursementDatas;
     }
@@ -1862,4 +1785,5 @@ public final class LoanApplicationTerms {
     public VatRate getVatRate() {
         return vatRate;
     }
+
 }

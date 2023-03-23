@@ -60,11 +60,15 @@ public abstract class AbstractLoanScheduleGenerator implements LoanScheduleGener
 
     protected final ScheduledDateGenerator scheduledDateGenerator = new DefaultScheduledDateGenerator();
     private final PaymentPeriodsInOneYearCalculator paymentPeriodsInOneYearCalculator = new DefaultPaymentPeriodsInOneYearCalculator();
+    private LoanApplicationTerms loanApplicationTerms;
+    private MathContext mc;
 
     @Override
     public LoanScheduleModel generate(final MathContext mc, final LoanApplicationTerms loanApplicationTerms,
             final Set<LoanCharge> loanCharges, final HolidayDetailDTO holidayDetailDTO) {
         final LoanScheduleParams loanScheduleRecalculationDTO = null;
+        this.loanApplicationTerms = loanApplicationTerms;
+        this.mc = mc;
         return generate(mc, loanApplicationTerms, loanCharges, holidayDetailDTO, loanScheduleRecalculationDTO);
     }
 
@@ -2020,8 +2024,17 @@ public abstract class AbstractLoanScheduleGenerator implements LoanScheduleGener
         Money cumulative = Money.zero(monetaryCurrency);
 
         for (final LoanCharge loanCharge : loanCharges) {
-            if (!loanCharge.isDueAtDisbursement() && loanCharge.isFeeCharge()) {
-                if (loanCharge.isInstalmentFee() && isInstallmentChargeApplicable) {
+
+            if (loanCharge.isPunitiveFee()) {
+                cumulative = cumulative.plus(calculatePunitiveFeesForSinglePeriod(loanCharge.getAmount(monetaryCurrency)));
+            }
+            if (loanCharge.isCollectionFee()) {
+                cumulative = cumulative.plus(loanCharge.getAmount(monetaryCurrency));
+            }
+
+            if (!loanCharge.isDueAtDisbursement() && loanCharge.isFeeCharge() && loanCharge.isNotPunitiveFee()
+                    && loanCharge.isNotCollectionFee()) {
+                if (loanCharge.isInstalmentFee()) {
                     cumulative = calculateInstallmentCharge(principalInterestForThisPeriod, cumulative, loanCharge);
                 } else if (loanCharge.isOverdueInstallmentCharge()
                         && loanCharge.isDueForCollectionFromAndUpToAndIncluding(periodStart, periodEnd)
@@ -2083,7 +2096,16 @@ public abstract class AbstractLoanScheduleGenerator implements LoanScheduleGener
         Money cumulative = Money.zero(monetaryCurrency);
 
         for (final LoanCharge loanCharge : loanCharges) {
-            if (loanCharge.isPenaltyCharge()) {
+
+            if (loanCharge.isPunitiveFee()) {
+                cumulative = cumulative.plus(calculatePunitiveFeesForSinglePeriod(loanCharge.getAmount(monetaryCurrency)));
+            }
+            if (loanCharge.isCollectionFee()) {
+                cumulative = cumulative.plus(loanCharge.getAmount(monetaryCurrency));
+            }
+
+            if (loanCharge.isPenaltyCharge() && loanCharge.isNotPunitiveFee() && loanCharge.isNotCollectionFee()
+                    && loanCharge.isNotCollectionFee()) {
                 if (loanCharge.isInstalmentFee() && isInstallmentChargeApplicable) {
                     cumulative = calculateInstallmentCharge(principalInterestForThisPeriod, cumulative, loanCharge);
                 } else if (loanCharge.isOverdueInstallmentCharge()
@@ -2113,6 +2135,8 @@ public abstract class AbstractLoanScheduleGenerator implements LoanScheduleGener
 
         // Fixed schedule End Date for generating schedule
         final LocalDate scheduleTillDate = null;
+        this.loanApplicationTerms = loanApplicationTerms;
+        this.mc = mc;
         return rescheduleNextInstallments(mc, loanApplicationTerms, loan, holidayDetailDTO, loanRepaymentScheduleTransactionProcessor,
                 rescheduleFrom, scheduleTillDate);
 
@@ -2694,7 +2718,8 @@ public abstract class AbstractLoanScheduleGenerator implements LoanScheduleGener
     public LoanRepaymentScheduleInstallment calculatePrepaymentAmount(final MonetaryCurrency currency, final LocalDate onDate,
             final LoanApplicationTerms loanApplicationTerms, final MathContext mc, Loan loan, final HolidayDetailDTO holidayDetailDTO,
             final LoanRepaymentScheduleTransactionProcessor loanRepaymentScheduleTransactionProcessor) {
-
+        this.loanApplicationTerms = loanApplicationTerms;
+        this.mc = mc;
         LocalDate calculateTill = onDate;
         if (loanApplicationTerms.getPreClosureInterestCalculationStrategy().calculateTillRestFrequencyEnabled()) {
             calculateTill = getNextRestScheduleDate(onDate.minusDays(1), loanApplicationTerms, holidayDetailDTO);
@@ -2917,6 +2942,14 @@ public abstract class AbstractLoanScheduleGenerator implements LoanScheduleGener
         }
 
         return Pair.of(vatOnInterestDue, vatOnChargesDue);
+    }
+
+    private Money calculatePunitiveFeesForSinglePeriod(Money chargeAmount) {
+
+        Integer loanTerms = loanApplicationTerms.getLoanTermFrequency();
+        BigDecimal divisor = BigDecimal.valueOf(loanTerms);
+
+        return chargeAmount.dividedBy(divisor, mc.getRoundingMode());
     }
 
 }
