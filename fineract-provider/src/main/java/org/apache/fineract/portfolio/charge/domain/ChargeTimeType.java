@@ -37,7 +37,8 @@ public enum ChargeTimeType {
     SHAREACCOUNT_ACTIVATION(13, "chargeTimeType.activation"), // only for loan
     SHARE_PURCHASE(14, "chargeTimeType.sharespurchase"), SHARE_REDEEM(15, "chargeTimeType.sharesredeem"),
 
-    SAVINGS_NOACTIVITY_FEE(16, "chargeTimeType.savingsNoActivityFee");
+    SAVINGS_NOACTIVITY_FEE(16, "chargeTimeType.savingsNoActivityFee"), PUNITIVE_FEE(17, "chargeTimeType.punitiveFee"), COLLECTION_FEE(18,
+            "chargeTimeType.collectionFee"), ORIGINATION_FEE(19, "chargeTimeType.originationFee");
 
     private final Integer value;
     private final String code;
@@ -58,7 +59,8 @@ public enum ChargeTimeType {
     public static Object[] validLoanValues() {
         return new Integer[] { ChargeTimeType.DISBURSEMENT.getValue(), ChargeTimeType.SPECIFIED_DUE_DATE.getValue(),
                 ChargeTimeType.INSTALMENT_FEE.getValue(), ChargeTimeType.OVERDUE_INSTALLMENT.getValue(),
-                ChargeTimeType.TRANCHE_DISBURSEMENT.getValue() };
+                ChargeTimeType.TRANCHE_DISBURSEMENT.getValue(), ChargeTimeType.PUNITIVE_FEE.getValue(),
+                ChargeTimeType.COLLECTION_FEE.getValue(), ChargeTimeType.ORIGINATION_FEE.getValue() };
     }
 
     public static Object[] validLoanChargeValues() {
@@ -134,6 +136,15 @@ public enum ChargeTimeType {
                 case 16:
                     chargeTimeType = SAVINGS_NOACTIVITY_FEE;
                 break;
+                case 17:
+                    chargeTimeType = PUNITIVE_FEE;
+                break;
+                case 18:
+                    chargeTimeType = COLLECTION_FEE;
+                break;
+                case 19:
+                    chargeTimeType = ORIGINATION_FEE;
+                break;
                 default:
                     chargeTimeType = INVALID;
                 break;
@@ -187,7 +198,8 @@ public enum ChargeTimeType {
     }
 
     public boolean isAllowedLoanChargeTime() {
-        return isTimeOfDisbursement() || isOnSpecifiedDueDate() || isInstalmentFee() || isOverdueInstallment() || isTrancheDisbursement();
+        return isTimeOfDisbursement() || isOnSpecifiedDueDate() || isInstalmentFee() || isOverdueInstallment() || isTrancheDisbursement()
+                || isPunitiveCharge() || isCollectiveCharge() || isOriginationCharge();
     }
 
     public boolean isAllowedClientChargeTime() {
@@ -217,5 +229,17 @@ public enum ChargeTimeType {
 
     public boolean isSharesRedeem() {
         return this.value.equals(ChargeTimeType.SHARE_REDEEM.getValue());
+    }
+
+    public boolean isPunitiveCharge() {
+        return this.value.equals(ChargeTimeType.PUNITIVE_FEE.getValue());
+    }
+
+    public boolean isCollectiveCharge() {
+        return this.value.equals(ChargeTimeType.COLLECTION_FEE.getValue());
+    }
+
+    public boolean isOriginationCharge() {
+        return this.value.equals(ChargeTimeType.ORIGINATION_FEE.getValue());
     }
 }

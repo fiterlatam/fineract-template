@@ -43,33 +43,74 @@ public class LoanRepaymentScheduleProcessingWrapper {
         LocalDate startDate = disbursementDate;
         for (final LoanRepaymentScheduleInstallment period : repaymentPeriods) {
 
-            final Pair<Money, Money> cumulativeFeeChargesDueWithin = cumulativeFeeChargesDueWithin(startDate, period.getDueDate(),
-                    loanCharges, currency, period, totalPrincipal, totalInterest, !period.isRecalculatedInterestComponent());
+            if (period.getLoan().isVatRequired()) {
 
-            final Money feeChargesDueForRepaymentPeriod = cumulativeFeeChargesDueWithin.getLeft();
+                final Pair<Money, Money> cumulativeFeeChargesDueWithin = cumulativeFeeChargesDueWithin(startDate, period.getDueDate(),
+                        loanCharges, currency, period, totalPrincipal, totalInterest, !period.isRecalculatedInterestComponent());
+                final Money feeChargesDueForRepaymentPeriod = cumulativeFeeChargesDueWithin.getLeft();
+                final Money feeChargesDueForVatCalculation = cumulativeFeeChargesDueWithin.getRight();
 
-            final Money feeChargesDueForVatCalculation = cumulativeFeeChargesDueWithin.getRight();
+                final Pair<Money, Money> feeChargesWaivedForRepaymentPeriod = cumulativeFeeChargesAndVatWaivedWithin(startDate,
+                        period.getDueDate(), loanCharges, currency, !period.isRecalculatedInterestComponent());
+                final Money feeChargesWaivedForRepayment = feeChargesWaivedForRepaymentPeriod.getLeft();
+                final Money feeChargesWaivedForVatCalculation = feeChargesWaivedForRepaymentPeriod.getRight();
 
-            final Money feeChargesWaivedForRepaymentPeriod = cumulativeFeeChargesWaivedWithin(startDate, period.getDueDate(), loanCharges,
-                    currency, !period.isRecalculatedInterestComponent());
-            final Money feeChargesWrittenOffForRepaymentPeriod = cumulativeFeeChargesWrittenOffWithin(startDate, period.getDueDate(),
-                    loanCharges, currency, !period.isRecalculatedInterestComponent());
+                final Pair<Money, Money> feeChargesWrittenOffForRepaymentPeriod = cumulativeFeeChargesWrittenOffAndVatWithin(startDate,
+                        period.getDueDate(), loanCharges, currency, !period.isRecalculatedInterestComponent());
+                final Money feeChargesWrittenOffForRepayment = feeChargesWrittenOffForRepaymentPeriod.getLeft();
+                final Money feeChargesWrittenForVatCalculation = feeChargesWrittenOffForRepaymentPeriod.getRight();
 
-            final Pair<Money, Money> cumulativePenaltyChargesDueWithin = cumulativePenaltyChargesDueWithin(startDate, period.getDueDate(),
-                    loanCharges, currency, period, totalPrincipal, totalInterest, !period.isRecalculatedInterestComponent());
-            final Money penaltyChargesDueForRepaymentPeriod = cumulativePenaltyChargesDueWithin.getLeft();
+                final Pair<Money, Money> cumulativePenaltyChargesDueWithin = cumulativePenaltyChargesDueWithin(startDate,
+                        period.getDueDate(), loanCharges, currency, period, totalPrincipal, totalInterest,
+                        !period.isRecalculatedInterestComponent());
+                final Money penaltyChargesDueForRepaymentPeriod = cumulativePenaltyChargesDueWithin.getLeft();
+                final Money penaltyChargesDueForVatCalculation = cumulativePenaltyChargesDueWithin.getRight();
+                final Money vatOnChargeDue = calculateVatOnAmount(period.getLoan().getVatPercentage(),
+                        feeChargesDueForVatCalculation.plus(penaltyChargesDueForVatCalculation));
 
-            final Money penaltyChargesDueForVatCalculation = cumulativePenaltyChargesDueWithin.getRight();
+                final Pair<Money, Money> penaltyChargesWaivedForRepaymentPeriod = cumulativePenaltyChargesAndVatWaivedWithin(startDate,
+                        period.getDueDate(), loanCharges, currency, !period.isRecalculatedInterestComponent());
+                final Money penaltyChargesWaivedForRepayment = penaltyChargesWaivedForRepaymentPeriod.getLeft();
+                final Money penaltyChargesWaivedForVatCalculation = penaltyChargesWaivedForRepaymentPeriod.getRight();
+                final Money vatOnChargeWaived = calculateVatOnAmount(period.getLoan().getVatPercentage(),
+                        penaltyChargesWaivedForVatCalculation.plus(feeChargesWaivedForVatCalculation));
 
-            final Money penaltyChargesWaivedForRepaymentPeriod = cumulativePenaltyChargesWaivedWithin(startDate, period.getDueDate(),
-                    loanCharges, currency, !period.isRecalculatedInterestComponent());
-            final Money penaltyChargesWrittenOffForRepaymentPeriod = cumulativePenaltyChargesWrittenOffWithin(startDate,
-                    period.getDueDate(), loanCharges, currency, !period.isRecalculatedInterestComponent());
+                final Pair<Money, Money> penaltyChargesWrittenOffForRepaymentPeriod = cumulativePenaltyChargesAndVatWrittenOffWithin(
+                        startDate, period.getDueDate(), loanCharges, currency, !period.isRecalculatedInterestComponent());
+                final Money penaltyChargesWrittenOffForRepayment = penaltyChargesWrittenOffForRepaymentPeriod.getLeft();
+                final Money penaltyChargesWrittenOffForVatCalculation = penaltyChargesWrittenOffForRepaymentPeriod.getRight();
+                final Money vatOnChargeWrittenOff = calculateVatOnAmount(period.getLoan().getVatPercentage(),
+                        penaltyChargesWrittenOffForVatCalculation.plus(feeChargesWrittenForVatCalculation));
 
-            Money chargeAmountDueForVatCalculation = feeChargesDueForVatCalculation.plus(penaltyChargesDueForVatCalculation);
-            period.updateChargePortion(feeChargesDueForRepaymentPeriod, feeChargesWaivedForRepaymentPeriod,
-                    feeChargesWrittenOffForRepaymentPeriod, penaltyChargesDueForRepaymentPeriod, penaltyChargesWaivedForRepaymentPeriod,
-                    penaltyChargesWrittenOffForRepaymentPeriod, chargeAmountDueForVatCalculation);
+                period.updateChargePortion(feeChargesDueForRepaymentPeriod, feeChargesWaivedForRepayment, feeChargesWrittenOffForRepayment,
+                        penaltyChargesDueForRepaymentPeriod, penaltyChargesWaivedForRepayment, penaltyChargesWrittenOffForRepayment,
+                        vatOnChargeDue, vatOnChargeWaived, vatOnChargeWrittenOff);
+
+            } else {
+                final Pair<Money, Money> cumulativeFeeChargesDueWithin = cumulativeFeeChargesDueWithin(startDate, period.getDueDate(),
+                        loanCharges, currency, period, totalPrincipal, totalInterest, !period.isRecalculatedInterestComponent());
+                final Money feeChargesDueForRepaymentPeriod = cumulativeFeeChargesDueWithin.getLeft();
+
+                final Money feeChargesWaivedForRepaymentPeriod = cumulativeFeeChargesWaivedWithin(startDate, period.getDueDate(),
+                        loanCharges, currency, !period.isRecalculatedInterestComponent());
+                final Money feeChargesWrittenOffForRepaymentPeriod = cumulativeFeeChargesWrittenOffWithin(startDate, period.getDueDate(),
+                        loanCharges, currency, !period.isRecalculatedInterestComponent());
+
+                final Pair<Money, Money> cumulativePenaltyChargesDueWithin = cumulativePenaltyChargesDueWithin(startDate,
+                        period.getDueDate(), loanCharges, currency, period, totalPrincipal, totalInterest,
+                        !period.isRecalculatedInterestComponent());
+                final Money penaltyChargesDueForRepaymentPeriod = cumulativePenaltyChargesDueWithin.getLeft();
+
+                final Money penaltyChargesWaivedForRepaymentPeriod = cumulativePenaltyChargesWaivedWithin(startDate, period.getDueDate(),
+                        loanCharges, currency, !period.isRecalculatedInterestComponent());
+
+                final Money penaltyChargesWrittenOffForRepaymentPeriod = cumulativePenaltyChargesWrittenOffWithin(startDate,
+                        period.getDueDate(), loanCharges, currency, !period.isRecalculatedInterestComponent());
+
+                period.updateChargePortion(feeChargesDueForRepaymentPeriod, feeChargesWaivedForRepaymentPeriod,
+                        feeChargesWrittenOffForRepaymentPeriod, penaltyChargesDueForRepaymentPeriod, penaltyChargesWaivedForRepaymentPeriod,
+                        penaltyChargesWrittenOffForRepaymentPeriod, Money.zero(currency), Money.zero(currency), Money.zero(currency));
+            }
 
             startDate = period.getDueDate();
         }
@@ -179,6 +220,32 @@ public class LoanRepaymentScheduleProcessingWrapper {
         return cumulative;
     }
 
+    private Pair<Money, Money> cumulativeFeeChargesAndVatWaivedWithin(final LocalDate periodStart, final LocalDate periodEnd,
+            final Set<LoanCharge> loanCharges, final MonetaryCurrency currency, boolean isInstallmentChargeApplicable) {
+
+        Money cumulative = Money.zero(currency);
+        Money amountSubjectToVat = Money.zero(currency);
+
+        for (final LoanCharge loanCharge : loanCharges) {
+            if (loanCharge.isFeeCharge() && !loanCharge.isDueAtDisbursement()) {
+                if (loanCharge.isInstalmentFee() && isInstallmentChargeApplicable) {
+                    LoanInstallmentCharge loanChargePerInstallment = loanCharge.getInstallmentLoanCharge(periodEnd);
+                    if (loanChargePerInstallment != null) {
+                        cumulative = cumulative.plus(loanChargePerInstallment.getAmountWaived(currency));
+                    }
+                } else if (loanCharge.isDueForCollectionFromAndUpToAndIncluding(periodStart, periodEnd)) {
+                    cumulative = cumulative.plus(loanCharge.getAmountWaived(currency));
+                }
+
+                if (loanCharge.getCharge().isVatRequired()) {
+                    amountSubjectToVat = amountSubjectToVat.plus(cumulative);
+                }
+            }
+        }
+
+        return Pair.of(cumulative, amountSubjectToVat);
+    }
+
     private Money cumulativeFeeChargesWrittenOffWithin(final LocalDate periodStart, final LocalDate periodEnd,
             final Set<LoanCharge> loanCharges, final MonetaryCurrency currency, boolean isInstallmentChargeApplicable) {
 
@@ -198,6 +265,32 @@ public class LoanRepaymentScheduleProcessingWrapper {
         }
 
         return cumulative;
+    }
+
+    private Pair<Money, Money> cumulativeFeeChargesWrittenOffAndVatWithin(final LocalDate periodStart, final LocalDate periodEnd,
+            final Set<LoanCharge> loanCharges, final MonetaryCurrency currency, boolean isInstallmentChargeApplicable) {
+
+        Money cumulative = Money.zero(currency);
+        Money amountSubjectToVat = Money.zero(currency);
+
+        for (final LoanCharge loanCharge : loanCharges) {
+            if (loanCharge.isFeeCharge() && !loanCharge.isDueAtDisbursement()) {
+                if (loanCharge.isInstalmentFee() && isInstallmentChargeApplicable) {
+                    LoanInstallmentCharge loanChargePerInstallment = loanCharge.getInstallmentLoanCharge(periodEnd);
+                    if (loanChargePerInstallment != null) {
+                        cumulative = cumulative.plus(loanChargePerInstallment.getAmountWrittenOff(currency));
+                    }
+                } else if (loanCharge.isDueForCollectionFromAndUpToAndIncluding(periodStart, periodEnd)) {
+                    cumulative = cumulative.plus(loanCharge.getAmountWrittenOff(currency));
+                }
+
+                if (loanCharge.getCharge().isVatRequired()) {
+                    amountSubjectToVat = amountSubjectToVat.plus(cumulative);
+                }
+            }
+        }
+
+        return Pair.of(cumulative, amountSubjectToVat);
     }
 
     private Pair<Money, Money> cumulativePenaltyChargesDueWithin(final LocalDate periodStart, final LocalDate periodEnd,
@@ -292,6 +385,32 @@ public class LoanRepaymentScheduleProcessingWrapper {
         return cumulative;
     }
 
+    private Pair<Money, Money> cumulativePenaltyChargesAndVatWaivedWithin(final LocalDate periodStart, final LocalDate periodEnd,
+            final Set<LoanCharge> loanCharges, final MonetaryCurrency currency, boolean isInstallmentChargeApplicable) {
+
+        Money cumulative = Money.zero(currency);
+        Money amountSubjectToVat = Money.zero(currency);
+
+        for (final LoanCharge loanCharge : loanCharges) {
+            if (loanCharge.isPenaltyCharge()) {
+                if (loanCharge.isInstalmentFee() && isInstallmentChargeApplicable) {
+                    LoanInstallmentCharge loanChargePerInstallment = loanCharge.getInstallmentLoanCharge(periodEnd);
+                    if (loanChargePerInstallment != null) {
+                        cumulative = cumulative.plus(loanChargePerInstallment.getAmountWaived(currency));
+                    }
+                } else if (loanCharge.isDueForCollectionFromAndUpToAndIncluding(periodStart, periodEnd)) {
+                    cumulative = cumulative.plus(loanCharge.getAmountWaived(currency));
+                }
+
+                if (loanCharge.getCharge().isVatRequired()) {
+                    amountSubjectToVat = amountSubjectToVat.plus(cumulative);
+                }
+            }
+        }
+
+        return Pair.of(cumulative, amountSubjectToVat);
+    }
+
     private Money cumulativePenaltyChargesWrittenOffWithin(final LocalDate periodStart, final LocalDate periodEnd,
             final Set<LoanCharge> loanCharges, final MonetaryCurrency currency, boolean isInstallmentChargeApplicable) {
 
@@ -311,5 +430,36 @@ public class LoanRepaymentScheduleProcessingWrapper {
         }
 
         return cumulative;
+    }
+
+    private Pair<Money, Money> cumulativePenaltyChargesAndVatWrittenOffWithin(final LocalDate periodStart, final LocalDate periodEnd,
+            final Set<LoanCharge> loanCharges, final MonetaryCurrency currency, boolean isInstallmentChargeApplicable) {
+
+        Money cumulative = Money.zero(currency);
+        Money amountSubjectToVat = Money.zero(currency);
+
+        for (final LoanCharge loanCharge : loanCharges) {
+            if (loanCharge.isPenaltyCharge()) {
+                if (loanCharge.isInstalmentFee() && isInstallmentChargeApplicable) {
+                    LoanInstallmentCharge loanChargePerInstallment = loanCharge.getInstallmentLoanCharge(periodEnd);
+                    if (loanChargePerInstallment != null) {
+                        cumulative = cumulative.plus(loanChargePerInstallment.getAmountWrittenOff(currency));
+                    }
+                } else if (loanCharge.isDueForCollectionFromAndUpToAndIncluding(periodStart, periodEnd)) {
+                    cumulative = cumulative.plus(loanCharge.getAmountWrittenOff(currency));
+                }
+
+                if (loanCharge.getCharge().isVatRequired()) {
+                    amountSubjectToVat = amountSubjectToVat.plus(cumulative);
+                }
+            }
+        }
+
+        return Pair.of(cumulative, amountSubjectToVat);
+    }
+
+    private Money calculateVatOnAmount(BigDecimal vatPercentage, Money amountSubjectToVat) {
+        BigDecimal vatConverted = vatPercentage.divide(BigDecimal.valueOf(100));
+        return amountSubjectToVat.multipliedBy(vatConverted);
     }
 }

@@ -244,6 +244,7 @@ public final class LoanAccountData {
     private BigDecimal catRateWithVat;
     private BigDecimal effectiveRate;
     private Boolean isVatRequired;
+    private BigDecimal vatPercentage;
 
     private final CollectionData delinquent;
 

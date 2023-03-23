@@ -366,6 +366,14 @@ public class LoanAssembler {
 
         final LoanApplicationTerms loanApplicationTerms = this.loanScheduleAssembler.assembleLoanTerms(element);
 
+        BigDecimal originationFees = BigDecimal.ZERO;
+        for (final LoanCharge loanCharge : loanCharges) {
+            if (loanCharge.isOriginationFee()) {
+                originationFees = originationFees.add(loanCharge.amount());
+            }
+        }
+        loanApplicationTerms.setPrincipalAndOriginationFees(loanApplicationTerms.getPrincipal().plus(originationFees));
+
         final boolean isHolidayEnabled = this.configurationDomainService.isRescheduleRepaymentsOnHolidaysEnabled();
         final List<Holiday> holidays = this.holidayRepository.findByOfficeIdAndGreaterThanDate(loanApplication.getOfficeId(),
                 loanApplicationTerms.getExpectedDisbursementDate(), HolidayStatusType.ACTIVE.getValue());

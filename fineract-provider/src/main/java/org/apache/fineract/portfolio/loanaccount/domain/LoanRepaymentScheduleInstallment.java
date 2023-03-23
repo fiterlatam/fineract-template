@@ -375,7 +375,8 @@ public final class LoanRepaymentScheduleInstallment extends AbstractAuditableCus
 
     public Money getTotalOutstanding(final MonetaryCurrency currency) {
         return getPrincipalOutstanding(currency).plus(getInterestOutstanding(currency)).plus(getFeeChargesOutstanding(currency))
-                .plus(getPenaltyChargesOutstanding(currency));
+                .plus(getPenaltyChargesOutstanding(currency)).plus(getVatOnChargeOutstanding(currency))
+                .plus(getVatOnInterestOutstanding(currency));
     }
 
     public void updateLoan(final Loan loan) {
@@ -383,7 +384,8 @@ public final class LoanRepaymentScheduleInstallment extends AbstractAuditableCus
     }
 
     public boolean isPartlyPaid() {
-        return !this.obligationsMet && (this.interestPaid != null || this.feeChargesPaid != null || this.principalCompleted != null);
+        return !this.obligationsMet && (this.interestPaid != null || this.feeChargesPaid != null || this.principalCompleted != null
+                || this.vatOnInterestPaid != null || this.vatOnChargePaid != null);
     }
 
     public boolean isObligationsMet() {
@@ -425,13 +427,11 @@ public final class LoanRepaymentScheduleInstallment extends AbstractAuditableCus
         this.obligationsMet = false;
         this.obligationsMetOnDate = null;
 
-        this.vatOnInterestCharged = null;
         this.vatOnInterestPaid = null;
         this.vatOnInterestWrittenOff = null;
         this.vatOnInterestWaived = null;
         this.vatOnInterestOutstanding = null;
         this.vatOnInterestOverdue = null;
-        this.vatOnChargeExpected = null;
         this.vatOnChargePaid = null;
         this.vatOnChargeWrittenOff = null;
         this.vatOnChargeWaived = null;
@@ -868,13 +868,16 @@ public final class LoanRepaymentScheduleInstallment extends AbstractAuditableCus
 
     public void updateChargePortion(final Money feeChargesDue, final Money feeChargesWaived, final Money feeChargesWrittenOff,
             final Money penaltyChargesDue, final Money penaltyChargesWaived, final Money penaltyChargesWrittenOff,
-            final Money chargeAmountDueForVatCalculation) {
+            final Money chargeAmountDueForVatCalculation, final Money vatOnChargeWaived, final Money vatOnChargeWrittenOff) {
         this.feeChargesCharged = defaultToNullIfZero(feeChargesDue.getAmount());
         this.feeChargesWaived = defaultToNullIfZero(feeChargesWaived.getAmount());
         this.feeChargesWrittenOff = defaultToNullIfZero(feeChargesWrittenOff.getAmount());
         this.penaltyCharges = defaultToNullIfZero(penaltyChargesDue.getAmount());
         this.penaltyChargesWaived = defaultToNullIfZero(penaltyChargesWaived.getAmount());
         this.penaltyChargesWrittenOff = defaultToNullIfZero(penaltyChargesWrittenOff.getAmount());
+        this.vatOnChargeExpected = defaultToNullIfZero(chargeAmountDueForVatCalculation.getAmount());
+        this.vatOnChargeWaived = defaultToNullIfZero(vatOnChargeWaived.getAmount());
+        this.vatOnChargeWrittenOff = defaultToNullIfZero(vatOnChargeWrittenOff.getAmount());
     }
 
     public void updateAccrualPortion(final Money interest, final Money feeCharges, final Money penalityCharges) {

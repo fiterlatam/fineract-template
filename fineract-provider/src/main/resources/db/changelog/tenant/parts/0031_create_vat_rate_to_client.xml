@@ -269,4 +269,15 @@
         </addColumn>
     </changeSet>
 
+    <changeSet id="14" author="fineract">
+        <addColumn tableName="m_loan_transaction_repayment_schedule_mapping">
+            <column name="vat_on_interest_portion_derived" type="DECIMAL(19, 6)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="vat_on_charges_portion_derived" type="DECIMAL(19, 6)">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
 </databaseChangeLog>

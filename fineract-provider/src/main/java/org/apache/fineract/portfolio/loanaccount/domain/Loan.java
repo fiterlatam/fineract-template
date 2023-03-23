@@ -5653,6 +5653,10 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         final PeriodFrequencyType loanTermPeriodFrequencyType = PeriodFrequencyType.fromInt(this.termPeriodFrequencyType);
         NthDayType nthDayType = null;
         DayOfWeekType dayOfWeekType = null;
+
+        // check for any disbursement charges
+        final Money originationCharges = deriveTotalOriginationFees(this.getCurrency());
+
         final List<DisbursementData> disbursementData = new ArrayList<>();
         for (LoanDisbursementDetails disbursementDetails : this.disbursementDetails) {
             disbursementData.add(disbursementDetails.toData());
@@ -5714,8 +5718,18 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 calendarHistoryDataWrapper, scheduleGeneratorDTO.getNumberOfdays(), scheduleGeneratorDTO.isSkipRepaymentOnFirstDayofMonth(),
                 holidayDetailDTO, allowCompoundingOnEod, scheduleGeneratorDTO.isFirstRepaymentDateAllowedOnHoliday(),
                 scheduleGeneratorDTO.isInterestToBeRecoveredFirstWhenGreaterThanEMI(), this.fixedPrincipalPercentagePerInstallment,
-                scheduleGeneratorDTO.isPrincipalCompoundingDisabledForOverdueLoans(), isVatRequired, vatRate);
+                scheduleGeneratorDTO.isPrincipalCompoundingDisabledForOverdueLoans(), isVatRequired, vatRate, originationCharges);
         return loanApplicationTerms;
+    }
+
+    private Money deriveTotalOriginationFees(MonetaryCurrency currency) {
+        BigDecimal chargesDueAtTimeOfDisbursement = BigDecimal.ZERO;
+        for (final LoanCharge loanCharge : this.charges) {
+            if (loanCharge.isOriginationFee()) {
+                chargesDueAtTimeOfDisbursement = chargesDueAtTimeOfDisbursement.add(loanCharge.amount());
+            }
+        }
+        return Money.of(currency, chargesDueAtTimeOfDisbursement);
     }
 
     public BigDecimal constructLoanTermVariations(FloatingRateDTO floatingRateDTO, BigDecimal annualNominalInterestRate,
