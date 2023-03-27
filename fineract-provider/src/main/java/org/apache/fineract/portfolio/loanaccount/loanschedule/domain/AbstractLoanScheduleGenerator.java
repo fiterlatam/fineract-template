@@ -2100,9 +2100,6 @@ public abstract class AbstractLoanScheduleGenerator implements LoanScheduleGener
             if (loanCharge.isPunitiveFee()) {
                 cumulative = cumulative.plus(calculatePunitiveFeesForSinglePeriod(loanCharge.getAmount(monetaryCurrency)));
             }
-            if (loanCharge.isCollectionFee()) {
-                cumulative = cumulative.plus(loanCharge.getAmount(monetaryCurrency));
-            }
 
             if (loanCharge.isPenaltyCharge() && loanCharge.isNotPunitiveFee() && loanCharge.isNotCollectionFee()
                     && loanCharge.isNotCollectionFee()) {

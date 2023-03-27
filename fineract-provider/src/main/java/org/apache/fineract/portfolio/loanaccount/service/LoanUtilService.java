@@ -530,6 +530,12 @@ public class LoanUtilService {
         BigDecimal installmentFee = BigDecimal.ZERO;
         BigDecimal collectionFee = BigDecimal.ZERO;
 
+        for(LoanCharge charge : loan.getCharges()) {
+            if (charge.isActive() && charge.isCollectionFee()) {
+                collectionFee = collectionFee.add(charge.getAmount());
+            }
+        }
+
         BigDecimal vatPercentage = getLoanVatPercentage(loan);
         vatPercentage = vatPercentage.divide(divisor, MathContext.DECIMAL64).add(BigDecimal.ONE);
 
