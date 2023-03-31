@@ -68,6 +68,8 @@ public abstract class AbstractLoanScheduleGenerator implements LoanScheduleGener
             final Set<LoanCharge> loanCharges, final HolidayDetailDTO holidayDetailDTO) {
         final LoanScheduleParams loanScheduleRecalculationDTO = null;
         this.loanApplicationTerms = loanApplicationTerms;
+        this.loanApplicationTerms.addCharges(loanCharges.stream().toList());
+        this.loanApplicationTerms.addRepaymentDateList(createProspectiveListOfInstalmentPayDates());
         this.mc = mc;
         return generate(mc, loanApplicationTerms, loanCharges, holidayDetailDTO, loanScheduleRecalculationDTO);
     }
@@ -95,8 +97,8 @@ public abstract class AbstractLoanScheduleGenerator implements LoanScheduleGener
         final int numberOfRepayments = loanApplicationTerms.fetchNumberOfRepaymentsAfterExceptions();
 
         // calculate VAT at disubursement
-        Pair<Money, Money> vatAtDisbursement = this.calculateVat(Money.zero(currency), Money.of(currency, chargesDueAtTimeOfDisbursement),
-                Money.zero(currency), loanApplicationTerms, mc);
+        Pair<Money, Money> vatAtDisbursement = loanApplicationTerms.calculateVat(Money.zero(currency),
+                Money.of(currency, chargesDueAtTimeOfDisbursement), Money.zero(currency), mc);
 
         LoanScheduleParams scheduleParams = null;
         if (loanScheduleParams == null) {
@@ -341,9 +343,8 @@ public abstract class AbstractLoanScheduleGenerator implements LoanScheduleGener
             }
 
             // calculate vat for next installments
-            Pair<Money, Money> vat = this.calculateVat(currentPeriodParams.getInterestForThisPeriod(),
-                    currentPeriodParams.getPenaltyChargesForInstallment(), currentPeriodParams.getFeeChargesForInstallment(),
-                    loanApplicationTerms, mc);
+            Pair<Money, Money> vat = loanApplicationTerms.calculateVat(currentPeriodParams.getInterestForThisPeriod(),
+                    currentPeriodParams.getPenaltyChargesForInstallment(), currentPeriodParams.getFeeChargesForInstallment(), mc);
 
             // create repayment period from parts
             LoanScheduleModelPeriod installment = LoanScheduleModelRepaymentPeriod.repayment(scheduleParams.getInstalmentNumber(),
@@ -649,9 +650,8 @@ public abstract class AbstractLoanScheduleGenerator implements LoanScheduleGener
                 currentPeriodParams.plusPrincipalForThisPeriod(diff);
 
                 // calculate vat for installment
-                Pair<Money, Money> vat = this.calculateVat(currentPeriodParams.getInterestForThisPeriod(),
-                        currentPeriodParams.getPenaltyChargesForInstallment(), currentPeriodParams.getFeeChargesForInstallment(),
-                        loanApplicationTerms, mc);
+                Pair<Money, Money> vat = loanApplicationTerms.calculateVat(currentPeriodParams.getInterestForThisPeriod(),
+                        currentPeriodParams.getPenaltyChargesForInstallment(), currentPeriodParams.getFeeChargesForInstallment(), mc);
 
                 // create and replaces repayment period
                 // from parts
@@ -796,8 +796,8 @@ public abstract class AbstractLoanScheduleGenerator implements LoanScheduleGener
                                     .plus(feeChargesForInstallment).plus(penaltyChargesForInstallment);
 
                             // calculate vat for installment
-                            Pair<Money, Money> vat = this.calculateVat(interestForThisinstallment, penaltyChargesForInstallment,
-                                    feeChargesForInstallment, loanApplicationTerms, mc);
+                            Pair<Money, Money> vat = loanApplicationTerms.calculateVat(interestForThisinstallment,
+                                    penaltyChargesForInstallment, feeChargesForInstallment, mc);
 
                             // create repayment period from parts
                             installment = LoanScheduleModelRepaymentPeriod.repayment(scheduleParams.getInstalmentNumber(),
@@ -1388,8 +1388,8 @@ public abstract class AbstractLoanScheduleGenerator implements LoanScheduleGener
                     totalInterest = totalInterest.plus(interest);
 
                     // calculate VAT against disbursement charge
-                    Pair<Money, Money> vat = this.calculateVat(totalInterest, Money.zero(currency), Money.zero(currency),
-                            loanApplicationTerms, mc);
+                    Pair<Money, Money> vat = loanApplicationTerms.calculateVat(totalInterest, Money.zero(currency), Money.zero(currency),
+                            mc);
 
                     LoanScheduleModelRepaymentPeriod installment = LoanScheduleModelRepaymentPeriod.repayment(params.getInstalmentNumber(),
                             startDate, transactionDate, totalInterest.zero(), totalInterest.zero(), totalInterest, totalInterest.zero(),
@@ -1466,7 +1466,7 @@ public abstract class AbstractLoanScheduleGenerator implements LoanScheduleGener
 
         if (totalInterest.isGreaterThanZero()) {
 
-            Pair<Money, Money> vat = this.calculateVat(totalInterest, Money.zero(currency), Money.zero(currency), loanApplicationTerms, mc);
+            Pair<Money, Money> vat = loanApplicationTerms.calculateVat(totalInterest, Money.zero(currency), Money.zero(currency), mc);
 
             LoanScheduleModelRepaymentPeriod installment = LoanScheduleModelRepaymentPeriod.repayment(params.getInstalmentNumber(),
                     startDate, params.getActualRepaymentDate(), totalInterest.zero(), totalInterest.zero(), totalInterest,
@@ -2025,10 +2025,10 @@ public abstract class AbstractLoanScheduleGenerator implements LoanScheduleGener
 
         for (final LoanCharge loanCharge : loanCharges) {
 
-            if (loanCharge.isPunitiveFee()) {
+            if (loanCharge.isPunitiveFee() && loanCharge.isFeeCharge()) {
                 cumulative = cumulative.plus(calculatePunitiveFeesForSinglePeriod(loanCharge.getAmount(monetaryCurrency)));
             }
-            if (loanCharge.isCollectionFee()) {
+            if (loanCharge.isCollectionFee() && loanCharge.isFeeCharge()) {
                 cumulative = cumulative.plus(loanCharge.getAmount(monetaryCurrency));
             }
 
@@ -2097,10 +2097,6 @@ public abstract class AbstractLoanScheduleGenerator implements LoanScheduleGener
 
         for (final LoanCharge loanCharge : loanCharges) {
 
-            if (loanCharge.isPunitiveFee()) {
-                cumulative = cumulative.plus(calculatePunitiveFeesForSinglePeriod(loanCharge.getAmount(monetaryCurrency)));
-            }
-
             if (loanCharge.isPenaltyCharge() && loanCharge.isNotPunitiveFee() && loanCharge.isNotCollectionFee()
                     && loanCharge.isNotCollectionFee()) {
                 if (loanCharge.isInstalmentFee() && isInstallmentChargeApplicable) {
@@ -2134,6 +2130,9 @@ public abstract class AbstractLoanScheduleGenerator implements LoanScheduleGener
         final LocalDate scheduleTillDate = null;
         this.loanApplicationTerms = loanApplicationTerms;
         this.mc = mc;
+        this.loanApplicationTerms.addCharges(loan.getCharges().stream().toList());
+        this.loanApplicationTerms.addRepaymentDateList(createProspectiveListOfInstalmentPayDates());
+
         return rescheduleNextInstallments(mc, loanApplicationTerms, loan, holidayDetailDTO, loanRepaymentScheduleTransactionProcessor,
                 rescheduleFrom, scheduleTillDate);
 
@@ -2421,8 +2420,8 @@ public abstract class AbstractLoanScheduleGenerator implements LoanScheduleGener
             if (!newRepaymentScheduleInstallments.isEmpty() && totalCumulativeInterest.isGreaterThanZero()) {
                 Money totalOutstandingInterestPaymentDueToGrace = Money.zero(currency);
 
-                Pair<Money, Money> vat = this.calculateVat(totalCumulativeInterest, totalPenaltyChargesCharged, totalFeeChargesCharged,
-                        loanApplicationTerms, mc);
+                Pair<Money, Money> vat = loanApplicationTerms.calculateVat(totalCumulativeInterest, totalPenaltyChargesCharged,
+                        totalFeeChargesCharged, mc);
 
                 loanScheduleParams = LoanScheduleParams.createLoanScheduleParamsForPartialUpdate(periodNumber, instalmentNumber,
                         loanTermInDays, periodStartDate, actualRepaymentDate, totalCumulativePrincipal, totalCumulativeInterest,
@@ -2717,6 +2716,10 @@ public abstract class AbstractLoanScheduleGenerator implements LoanScheduleGener
             final LoanRepaymentScheduleTransactionProcessor loanRepaymentScheduleTransactionProcessor) {
         this.loanApplicationTerms = loanApplicationTerms;
         this.mc = mc;
+
+        this.loanApplicationTerms.addCharges(loan.getCharges().stream().toList());
+        this.loanApplicationTerms.addRepaymentDateList(createProspectiveListOfInstalmentPayDates());
+
         LocalDate calculateTill = onDate;
         if (loanApplicationTerms.getPreClosureInterestCalculationStrategy().calculateTillRestFrequencyEnabled()) {
             calculateTill = getNextRestScheduleDate(onDate.minusDays(1), loanApplicationTerms, holidayDetailDTO);
@@ -2746,7 +2749,7 @@ public abstract class AbstractLoanScheduleGenerator implements LoanScheduleGener
         }
         final Set<LoanInterestRecalcualtionAdditionalDetails> compoundingDetails = null;
 
-        Pair<Money, Money> vat = this.calculateVat(totalInterest, penaltyCharges, feeCharges, loanApplicationTerms, mc);
+        Pair<Money, Money> vat = loanApplicationTerms.calculateVat(totalInterest, penaltyCharges, feeCharges, mc);
 
         return new LoanRepaymentScheduleInstallment(null, 0, onDate, onDate, totalPrincipal.getAmount(), totalInterest.getAmount(),
                 feeCharges.getAmount(), penaltyCharges.getAmount(), false, compoundingDetails, vat.getLeft().getAmount(),
@@ -2920,33 +2923,28 @@ public abstract class AbstractLoanScheduleGenerator implements LoanScheduleGener
 
     }
 
-    public Pair<Money, Money> calculateVat(Money totalInterest, Money penalties, Money fees, LoanApplicationTerms loanApplicationTerms,
-            final MathContext mc) {
-        MonetaryCurrency currency = totalInterest.getCurrency();
-
-        Money vatOnInterestDue = Money.zero(currency);
-        Money vatOnChargesDue = Money.zero(currency);
-        if (loanApplicationTerms.isVatRequired() && (loanApplicationTerms.getVatRate() != null)
-                && (loanApplicationTerms.getVatRate().getPercentage() % 1 == 0)) {
-            vatOnInterestDue = totalInterest.multipliedBy(BigDecimal.valueOf(loanApplicationTerms.getVatRate().getPercentage()))
-                    .dividedBy(100, mc.getRoundingMode());
-
-            // total charges is penalities and fees
-            Money charges = penalties.add(fees);
-
-            vatOnChargesDue = charges.multipliedBy(BigDecimal.valueOf(loanApplicationTerms.getVatRate().getPercentage())).dividedBy(100,
-                    mc.getRoundingMode());
-        }
-
-        return Pair.of(vatOnInterestDue, vatOnChargesDue);
-    }
-
     private Money calculatePunitiveFeesForSinglePeriod(Money chargeAmount) {
 
         Integer loanTerms = loanApplicationTerms.getLoanTermFrequency();
         BigDecimal divisor = BigDecimal.valueOf(loanTerms);
 
         return chargeAmount.dividedBy(divisor, mc.getRoundingMode());
+    }
+
+    private List<LocalDate> createProspectiveListOfInstalmentPayDates() {
+        List<LocalDate> instalmentDates = new ArrayList<>();
+        Boolean isFirstRepayment = true;
+        LocalDate previousPaymentDate = loanApplicationTerms.getExpectedDisbursementDate();
+        LocalDate nextPaymentDate = loanApplicationTerms.getExpectedDisbursementDate();
+        for (int instalmentCount = 0; instalmentCount < this.loanApplicationTerms.getNumberOfRepayments(); instalmentCount++) {
+            nextPaymentDate = this.scheduledDateGenerator.generateNextRepaymentDate(previousPaymentDate, this.loanApplicationTerms,
+                    isFirstRepayment);
+            instalmentDates.add(nextPaymentDate);
+            previousPaymentDate = nextPaymentDate;
+            isFirstRepayment = false;
+        }
+
+        return instalmentDates;
     }
 
 }

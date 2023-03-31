@@ -20,12 +20,15 @@ package org.apache.fineract.portfolio.loanaccount.loanschedule.domain;
 
 import java.math.BigDecimal;
 import java.math.MathContext;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.fineract.organisation.monetary.domain.ApplicationCurrency;
 import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
 import org.apache.fineract.organisation.monetary.domain.Money;
@@ -43,6 +46,8 @@ import org.apache.fineract.portfolio.loanaccount.data.DisbursementData;
 import org.apache.fineract.portfolio.loanaccount.data.HolidayDetailDTO;
 import org.apache.fineract.portfolio.loanaccount.data.LoanTermVariationsData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanTermVariationsDataWrapper;
+import org.apache.fineract.portfolio.loanaccount.domain.AlboFinancialFunctions;
+import org.apache.fineract.portfolio.loanaccount.domain.LoanCharge;
 import org.apache.fineract.portfolio.loanproduct.domain.AmortizationMethod;
 import org.apache.fineract.portfolio.loanproduct.domain.InterestCalculationPeriodMethod;
 import org.apache.fineract.portfolio.loanproduct.domain.InterestMethod;
@@ -213,6 +218,10 @@ public final class LoanApplicationTerms {
     private final boolean isVatRequired;
 
     private final VatRate vatRate;
+
+    private List<LocalDate> repaymentDateList;
+
+    private List<LoanCharge> charges;
 
     public static LoanApplicationTerms assembleFrom(final ApplicationCurrency currency, final Integer loanTermFrequency,
             final PeriodFrequencyType loanTermPeriodFrequencyType, final Integer numberOfRepayments, final Integer repaymentEvery,
@@ -451,6 +460,8 @@ public final class LoanApplicationTerms {
         this.isPrincipalCompoundingDisabledForOverdueLoans = isPrincipalCompoundingDisabledForOverdueLoans;
         this.isVatRequired = isVatRequired;
         this.vatRate = vatRate;
+        this.repaymentDateList = Collections.emptyList();
+        this.charges = Collections.emptyList();
     }
 
     public Money adjustPrincipalIfLastRepaymentPeriod(final Money principalForPeriod, final Money totalCumulativePrincipalToDate,
@@ -579,8 +590,16 @@ public final class LoanApplicationTerms {
         // equal installment
         final BigDecimal periodicInterestRateForRepaymentPeriod = periodicInterestRate(calculator, mc, DaysInMonthType.DAYS_30,
                 DaysInYearType.DAYS_365, periodStartDate, periodEndDate, true);
-        Money totalPmtForThisInstallment = calculateTotalDueForEqualInstallmentRepaymentPeriod(periodicInterestRateForRepaymentPeriod,
-                outstandingBalance, periodsElapsed);
+
+        // TODO fineract's default pmt calculation is disabled, incase the client is still interested in it we can
+        // create a configuration for it
+        // Money totalPmtForThisInstallment =
+        // calculateTotalDueForEqualInstallmentRepaymentPeriod(periodicInterestRateForRepaymentPeriod,
+        // outstandingBalance, periodsElapsed);
+
+        // enable Albo's pmt calculators here
+        Money totalPmtForThisInstallment = calculateTotalDueForEqualInstallmentRepaymentPeriod(outstandingBalance);
+
         return totalPmtForThisInstallment;
     }
 
@@ -1199,6 +1218,40 @@ public final class LoanApplicationTerms {
         return getFixedEmiAmount().doubleValue();
     }
 
+    private Money calculateTotalDueForEqualInstallmentRepaymentPeriod(final Money balance) {
+
+        final double paymentPerRepaymentPeriod = paymentPerPeriodAlbo(balance);
+
+        return Money.of(balance.getCurrency(), BigDecimal.valueOf(paymentPerRepaymentPeriod));
+    }
+
+    private double paymentPerPeriodAlbo(final Money balance) {
+
+        if (getFixedEmiAmount() == null) {
+
+            Long loanLength = ChronoUnit.DAYS.between(this.expectedDisbursementDate, this.loanEndDate);
+
+            BigDecimal vatRatePercentage = BigDecimal.ZERO;
+            if (this.vatRate != null) {
+                vatRatePercentage = BigDecimal.valueOf(this.vatRate.getPercentage());
+            }
+
+            final BigDecimal futureValue = AlboFinancialFunctions.futureValue(balance.getAmount(), loanLength.intValue(), vatRatePercentage,
+                    this.annualNominalInterestRate);
+
+            double installmentAmount = AlboFinancialFunctions.pmt(balance.getAmount(), futureValue, this.actualNumberOfRepayments,
+                    vatRatePercentage, this.annualNominalInterestRate, this.repaymentDateList, this.loanEndDate, this.charges,
+                    this.currency);
+
+            // manage decimal places using currency
+            installmentAmount = Money.of(this.currency.toOrganisationCurrency().toMonetaryCurrency(), BigDecimal.valueOf(installmentAmount))
+                    .getAmount().doubleValue();
+
+            setFixedEmiAmount(BigDecimal.valueOf(installmentAmount));
+        }
+        return getFixedEmiAmount().doubleValue();
+    }
+
     private Money calculateDecliningInterestDueForInstallmentBeforeApplyingGrace(final PaymentPeriodsInOneYearCalculator calculator,
             final MathContext mc, final Money outstandingBalance, LocalDate periodStartDate, LocalDate periodEndDate) {
 
@@ -1291,13 +1344,53 @@ public final class LoanApplicationTerms {
 
     private Money calculatePrincipalDueForInstallment(final int periodNumber, final Money totalDuePerInstallment,
             final Money periodInterest) {
+        final RoundingMode roundingMode = MoneyHelper.getRoundingMode();
+        final MathContext mc = new MathContext(8, roundingMode);
+
         Money principal = totalDuePerInstallment.minus(periodInterest);
+
+        BigDecimal collectionFee = charges.stream().filter(charge -> charge.isActive() && charge.isCollectionFee())
+                .map(LoanCharge::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal instalmentFee = charges.stream().filter(charge -> charge.isActive() && charge.isPunitiveFee()).map(LoanCharge::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add).divide(BigDecimal.valueOf(this.actualNumberOfRepayments), MathContext.DECIMAL64);
+
+        Money totalFee = Money.of(principal.getCurrency(), collectionFee.add(instalmentFee));
+
+        // calculate vat for next installments
+        Pair<Money, Money> vat = this.calculateVat(periodInterest, Money.zero(principal.getCurrency()), totalFee, mc);
+
+        // set principle for period
+        // vat and charges
+        Money vatAndAlboFeesForInstalment = vat.getLeft().add(vat.getRight())
+                .add(cumulativeInstalmentAndCollectionFees(new HashSet<>(charges), periodInterest.getCurrency(), mc));
+        Money calculatedPriciple = principal.minus(vatAndAlboFeesForInstalment);
+
         if (isPrincipalGraceApplicableForThisPeriod(periodNumber)) {
-            principal = principal.zero();
+            calculatedPriciple = calculatedPriciple.zero();
         }
-        return principal;
+        return calculatedPriciple;
     }
 
+    private Money cumulativeInstalmentAndCollectionFees(Set<LoanCharge> loanCharges, MonetaryCurrency monetaryCurrency, MathContext mc) {
+
+        Money cumulative = Money.zero(monetaryCurrency);
+
+        for (final LoanCharge loanCharge : loanCharges) {
+
+            if (loanCharge.isPunitiveFee() && loanCharge.isFeeCharge()) {
+                Money chargeAmount = loanCharge.getAmount(monetaryCurrency).dividedBy(this.actualNumberOfRepayments, mc.getRoundingMode());
+                cumulative = cumulative.plus(chargeAmount);
+            }
+            if (loanCharge.isCollectionFee() && loanCharge.isFeeCharge()) {
+                cumulative = cumulative.plus(loanCharge.getAmount(monetaryCurrency));
+            }
+        }
+
+        return cumulative;
+    }
+
+    @SuppressWarnings("unused")
     private Money calculateTotalDueForEqualInstallmentRepaymentPeriod(final BigDecimal periodicInterestRate, final Money balance,
             final int periodsElapsed) {
 
@@ -1784,6 +1877,33 @@ public final class LoanApplicationTerms {
 
     public VatRate getVatRate() {
         return vatRate;
+    }
+
+    public void addCharges(List<LoanCharge> charges) {
+        this.charges = charges;
+    }
+
+    public void addRepaymentDateList(List<LocalDate> repaymentDateList) {
+        this.repaymentDateList = repaymentDateList;
+    }
+
+    public Pair<Money, Money> calculateVat(Money totalInterest, Money penalties, Money fees, final MathContext mc) {
+        MonetaryCurrency currency = totalInterest.getCurrency();
+
+        Money vatOnInterestDue = Money.zero(currency);
+        Money vatOnChargesDue = Money.zero(currency);
+        if (this.isVatRequired() && (this.getVatRate() != null) && (this.getVatRate().getPercentage() % 1 == 0)) {
+            vatOnInterestDue = totalInterest.multipliedBy(BigDecimal.valueOf(this.getVatRate().getPercentage())).dividedBy(100,
+                    mc.getRoundingMode());
+
+            // total charges is penalities and fees
+            Money charges = penalties.add(fees);
+
+            vatOnChargesDue = charges.multipliedBy(BigDecimal.valueOf(this.getVatRate().getPercentage())).dividedBy(100,
+                    mc.getRoundingMode());
+        }
+
+        return Pair.of(vatOnInterestDue, vatOnChargesDue);
     }
 
 }
