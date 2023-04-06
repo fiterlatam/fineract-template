@@ -44,4 +44,6 @@
     <include file="parts/0027_cupo_feature.xml" relativeToChangelogFile="true"/>
     <include file="parts/0028_causal_process_mapping.xml" relativeToChangelogFile="true"/>
     <include file="parts/0029_add_user_roles.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0030_update_main_office_and_role_permissions.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0031_add_office_code_to_office.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
