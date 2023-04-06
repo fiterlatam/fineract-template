@@ -63,8 +63,11 @@ public class Office extends AbstractPersistableCustom implements Serializable {
     @Column(name = "external_id", length = 100)
     private String externalId;
 
-    public static Office headOffice(final String name, final LocalDate openingDate, final String externalId) {
-        return new Office(null, name, openingDate, externalId);
+    @Column(name = "office_code", nullable = false, length = 10)
+    private String officeCode;
+
+    public static Office headOffice(final String name, final LocalDate openingDate, final String externalId, final String officeCode) {
+        return new Office(null, name, openingDate, externalId, officeCode);
     }
 
     public static Office fromJson(final Office parentOffice, final JsonCommand command) {
@@ -72,7 +75,8 @@ public class Office extends AbstractPersistableCustom implements Serializable {
         final String name = command.stringValueOfParameterNamed("name");
         final LocalDate openingDate = command.localDateValueOfParameterNamed("openingDate");
         final String externalId = command.stringValueOfParameterNamed("externalId");
-        return new Office(parentOffice, name, openingDate, externalId);
+        final String officeCode = command.stringValueOfParameterNamed("officeCode");
+        return new Office(parentOffice, name, openingDate, externalId, officeCode);
     }
 
     protected Office() {
@@ -82,7 +86,7 @@ public class Office extends AbstractPersistableCustom implements Serializable {
         this.externalId = null;
     }
 
-    private Office(final Office parent, final String name, final LocalDate openingDate, final String externalId) {
+    private Office(final Office parent, final String name, final LocalDate openingDate, final String externalId, final String officeCode) {
         this.parent = parent;
         this.openingDate = openingDate;
         if (parent != null) {
@@ -98,6 +102,11 @@ public class Office extends AbstractPersistableCustom implements Serializable {
             this.externalId = externalId.trim();
         } else {
             this.externalId = null;
+        }
+        if (StringUtils.isNotBlank(officeCode)) {
+            this.officeCode = officeCode.trim();
+        } else {
+            this.officeCode = null;
         }
     }
 
@@ -145,6 +154,13 @@ public class Office extends AbstractPersistableCustom implements Serializable {
             final String newValue = command.stringValueOfParameterNamed(externalIdParamName);
             actualChanges.put(externalIdParamName, newValue);
             this.externalId = StringUtils.defaultIfEmpty(newValue, null);
+        }
+
+        final String officeCodeParamName = "officeCode";
+        if (command.isChangeInStringParameterNamed(officeCodeParamName, this.name)) {
+            final String newValue = command.stringValueOfParameterNamed(officeCodeParamName);
+            actualChanges.put(officeCodeParamName, newValue);
+            this.officeCode = newValue;
         }
 
         return actualChanges;
@@ -196,6 +212,8 @@ public class Office extends AbstractPersistableCustom implements Serializable {
     public String getName() {
         return this.name;
     }
+
+    public String getOfficeCode() { return this.officeCode; }
 
     public String getHierarchy() {
         return this.hierarchy;
