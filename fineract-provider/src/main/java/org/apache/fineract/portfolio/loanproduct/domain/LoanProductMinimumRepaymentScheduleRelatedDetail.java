@@ -32,6 +32,8 @@ public interface LoanProductMinimumRepaymentScheduleRelatedDetail {
 
     Money getPrincipal();
 
+    Money getOriginalPrincipal();
+
     Integer graceOnInterestCharged();
 
     Integer graceOnInterestPayment();

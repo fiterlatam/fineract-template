@@ -52,4 +52,5 @@
     <include file="parts/0035_add_cat_rate_with_vat_to_loan.xml" relativeToChangelogFile="true"/>
     <include file="parts/0036_add_effective_interest_rate_with_vat_to_loan.xml" relativeToChangelogFile="true"/>
     <include file="parts/0037_default_loan_product.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0038_albo_loan_custom_params.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

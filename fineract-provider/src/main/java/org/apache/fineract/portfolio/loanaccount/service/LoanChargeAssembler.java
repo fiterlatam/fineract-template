@@ -238,4 +238,97 @@ public class LoanChargeAssembler {
         }
         return associatedChargesForLoan;
     }
+
+    public Set<LoanCharge> fromParsedJson(final JsonElement element) {
+        JsonArray jsonDisbursement = this.fromApiJsonHelper.extractJsonArrayNamed("disbursementData", element);
+        List<Long> disbursementChargeIds = new ArrayList<>();
+
+        if (jsonDisbursement != null && jsonDisbursement.size() > 0) {
+            for (int i = 0; i < jsonDisbursement.size(); i++) {
+                final JsonObject jsonObject = jsonDisbursement.get(i).getAsJsonObject();
+                if (jsonObject != null && jsonObject.getAsJsonPrimitive(LoanApiConstants.loanChargeIdParameterName) != null) {
+                    String chargeIds = jsonObject.getAsJsonPrimitive(LoanApiConstants.loanChargeIdParameterName).getAsString();
+                    if (chargeIds != null) {
+                        if (chargeIds.indexOf(",") != -1) {
+                            Iterable<String> chargeId = Splitter.on(',').split(chargeIds);
+                            for (String loanChargeId : chargeId) {
+                                disbursementChargeIds.add(Long.parseLong(loanChargeId));
+                            }
+                        } else {
+                            disbursementChargeIds.add(Long.parseLong(chargeIds));
+                        }
+                    }
+
+                }
+            }
+        }
+
+        final Set<LoanCharge> loanCharges = new HashSet<>();
+        final BigDecimal principal = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed("principal", element);
+        final Integer numberOfRepayments = this.fromApiJsonHelper.extractIntegerWithLocaleNamed("numberOfRepayments", element);
+
+        if (element.isJsonObject()) {
+            final JsonObject topLevelJsonElement = element.getAsJsonObject();
+            final String dateFormat = this.fromApiJsonHelper.extractDateFormatParameter(topLevelJsonElement);
+            final Locale locale = this.fromApiJsonHelper.extractLocaleParameter(topLevelJsonElement);
+            if (topLevelJsonElement.has("charges") && topLevelJsonElement.get("charges").isJsonArray()) {
+                final JsonArray array = topLevelJsonElement.get("charges").getAsJsonArray();
+                for (int i = 0; i < array.size(); i++) {
+
+                    final JsonObject loanChargeElement = array.get(i).getAsJsonObject();
+
+                    final Long id = this.fromApiJsonHelper.extractLongNamed("id", loanChargeElement);
+                    final Long chargeId = this.fromApiJsonHelper.extractLongNamed("chargeId", loanChargeElement);
+                    final BigDecimal amount = this.fromApiJsonHelper.extractBigDecimalNamed("amount", loanChargeElement, locale);
+                    final Integer chargeTimeType = this.fromApiJsonHelper.extractIntegerNamed("chargeTimeType", loanChargeElement, locale);
+                    final Integer chargeCalculationType = this.fromApiJsonHelper.extractIntegerNamed("chargeCalculationType",
+                            loanChargeElement, locale);
+                    final LocalDate dueDate = this.fromApiJsonHelper.extractLocalDateNamed("dueDate", loanChargeElement, dateFormat,
+                            locale);
+                    final Integer chargePaymentMode = this.fromApiJsonHelper.extractIntegerNamed("chargePaymentMode", loanChargeElement,
+                            locale);
+                    if (id == null) {
+                        final Charge chargeDefinition = this.chargeRepository.findOneWithNotFoundDetection(chargeId);
+
+                        if (chargeDefinition.isOverdueInstallment()) {
+
+                            final String defaultUserMessage = "Installment charge cannot be added to the loan.";
+                            throw new LoanChargeCannotBeAddedException("loanCharge", "overdue.charge", defaultUserMessage, null,
+                                    chargeDefinition.getName());
+                        }
+
+                        ChargeTimeType chargeTime = null;
+                        if (chargeTimeType != null) {
+                            chargeTime = ChargeTimeType.fromInt(chargeTimeType);
+                        }
+                        ChargeCalculationType chargeCalculation = null;
+                        if (chargeCalculationType != null) {
+                            chargeCalculation = ChargeCalculationType.fromInt(chargeCalculationType);
+                        }
+                        ChargePaymentMode chargePaymentModeEnum = null;
+                        if (chargePaymentMode != null) {
+                            chargePaymentModeEnum = ChargePaymentMode.fromInt(chargePaymentMode);
+                        }
+                        if (ChargeTimeType.ORIGINATION_FEE.getValue().equals(chargeDefinition.getChargeTimeType())) {
+                            final LoanCharge loanCharge = LoanCharge.createNewWithoutLoan(chargeDefinition, principal, amount, chargeTime,
+                                    chargeCalculation, dueDate, chargePaymentModeEnum, numberOfRepayments);
+                            loanCharges.add(loanCharge);
+                        }
+
+                    } else {
+                        final Long loanChargeId = id;
+                        final LoanCharge loanCharge = this.loanChargeRepository.findById(loanChargeId).orElse(null);
+                        if (loanCharge != null) {
+                            if (!loanCharge.isTrancheDisbursementCharge() || disbursementChargeIds.contains(loanChargeId)) {
+                                loanCharge.update(amount, dueDate, numberOfRepayments);
+                                loanCharges.add(loanCharge);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return loanCharges;
+    }
 }
