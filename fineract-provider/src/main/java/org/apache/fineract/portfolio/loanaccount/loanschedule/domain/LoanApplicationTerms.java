@@ -83,7 +83,7 @@ public final class LoanApplicationTerms {
     private final boolean allowPartialPeriodInterestCalcualtion;
 
     private Money principal;
-    private Money principalAndOriginationFees;
+    private Money originalPrincipal;
     private final LocalDate expectedDisbursementDate;
     private final LocalDate repaymentsStartingFromDate;
     private final LocalDate calculatedRepaymentsStartingFromDate;
@@ -284,7 +284,7 @@ public final class LoanApplicationTerms {
             final boolean isSkipRepaymentOnFirstDayOfMonth, final HolidayDetailDTO holidayDetailDTO, final boolean allowCompoundingOnEod,
             final boolean isFirstRepaymentDateAllowedOnHoliday, final boolean isInterestToBeRecoveredFirstWhenGreaterThanEMI,
             final BigDecimal fixedPrincipalPercentagePerInstallment, final boolean isPrincipalCompoundingDisabledForOverdueLoans,
-            final boolean isVatRequired, final VatRate vatRate, final Money originationFees) {
+            final boolean isVatRequired, final VatRate vatRate) {
 
         final Integer numberOfRepayments = loanProductRelatedDetail.getNumberOfRepayments();
         final Integer repaymentEvery = loanProductRelatedDetail.getRepayEvery();
@@ -297,7 +297,7 @@ public final class LoanApplicationTerms {
                 .getInterestCalculationPeriodMethod();
         final boolean allowPartialPeriodInterestCalcualtion = loanProductRelatedDetail.isAllowPartialPeriodInterestCalcualtion();
         final Money principalMoney = loanProductRelatedDetail.getPrincipal();
-        final Money principalAndOriginationFees = loanProductRelatedDetail.getPrincipal().plus(originationFees);
+        final Money originalPrincipal = loanProductRelatedDetail.getOriginalPrincipal();
 
         //
         final Integer graceOnPrincipalPayment = loanProductRelatedDetail.graceOnPrincipalPayment();
@@ -314,7 +314,7 @@ public final class LoanApplicationTerms {
         return new LoanApplicationTerms(applicationCurrency, loanTermFrequency, loanTermPeriodFrequencyType, numberOfRepayments,
                 repaymentEvery, repaymentPeriodFrequencyType, ((nthDay != null) ? nthDay.getValue() : null), dayOfWeek, amortizationMethod,
                 interestMethod, interestRatePerPeriod, interestRatePeriodFrequencyType, annualNominalInterestRate,
-                interestCalculationPeriodMethod, allowPartialPeriodInterestCalcualtion, principalMoney, principalAndOriginationFees,
+                interestCalculationPeriodMethod, allowPartialPeriodInterestCalcualtion, principalMoney, originalPrincipal,
                 expectedDisbursementDate, repaymentsStartingFromDate, calculatedRepaymentsStartingFromDate, graceOnPrincipalPayment,
                 recurringMoratoriumOnPrincipalPeriods, graceOnInterestPayment, graceOnInterestCharged, interestChargedFromDate,
                 inArrearsTolerance, multiDisburseLoan, emiAmount, disbursementDatas, maxOutstandingBalance,
@@ -336,7 +336,7 @@ public final class LoanApplicationTerms {
                 applicationTerms.amortizationMethod, applicationTerms.interestMethod, applicationTerms.interestRatePerPeriod,
                 applicationTerms.interestRatePeriodFrequencyType, applicationTerms.annualNominalInterestRate,
                 applicationTerms.interestCalculationPeriodMethod, applicationTerms.allowPartialPeriodInterestCalcualtion,
-                applicationTerms.principal, applicationTerms.principalAndOriginationFees, applicationTerms.expectedDisbursementDate,
+                applicationTerms.principal, applicationTerms.originalPrincipal, applicationTerms.expectedDisbursementDate,
                 applicationTerms.repaymentsStartingFromDate, applicationTerms.calculatedRepaymentsStartingFromDate,
                 applicationTerms.principalGrace, applicationTerms.recurringMoratoriumOnPrincipalPeriods,
                 applicationTerms.interestPaymentGrace, applicationTerms.interestChargingGrace, applicationTerms.interestChargedFromDate,
@@ -363,7 +363,7 @@ public final class LoanApplicationTerms {
             final AmortizationMethod amortizationMethod, final InterestMethod interestMethod, final BigDecimal interestRatePerPeriod,
             final PeriodFrequencyType interestRatePeriodFrequencyType, final BigDecimal annualNominalInterestRate,
             final InterestCalculationPeriodMethod interestCalculationPeriodMethod, final boolean allowPartialPeriodInterestCalcualtion,
-            final Money principal, final Money principalAndOriginationFees, final LocalDate expectedDisbursementDate,
+            final Money principal, final Money originalPrincipal, final LocalDate expectedDisbursementDate,
             final LocalDate repaymentsStartingFromDate, final LocalDate calculatedRepaymentsStartingFromDate, final Integer principalGrace,
             final Integer recurringMoratoriumOnPrincipalPeriods, final Integer interestPaymentGrace, final Integer interestChargingGrace,
             final LocalDate interestChargedFromDate, final Money inArrearsTolerance, final boolean multiDisburseLoan,
@@ -400,7 +400,7 @@ public final class LoanApplicationTerms {
         this.allowPartialPeriodInterestCalcualtion = allowPartialPeriodInterestCalcualtion;
 
         this.principal = principal;
-        this.principalAndOriginationFees = principalAndOriginationFees;
+        this.originalPrincipal = originalPrincipal;
         this.expectedDisbursementDate = expectedDisbursementDate;
         this.repaymentsStartingFromDate = repaymentsStartingFromDate;
         this.calculatedRepaymentsStartingFromDate = calculatedRepaymentsStartingFromDate;
@@ -1239,9 +1239,9 @@ public final class LoanApplicationTerms {
             final BigDecimal futureValue = AlboFinancialFunctions.futureValue(balance.getAmount(), loanLength.intValue(), vatRatePercentage,
                     this.annualNominalInterestRate);
 
-            double installmentAmount = AlboFinancialFunctions.pmt(balance.getAmount(), futureValue, this.actualNumberOfRepayments,
-                    vatRatePercentage, this.annualNominalInterestRate, this.repaymentDateList, this.loanEndDate, this.charges,
-                    this.currency);
+            double installmentAmount = AlboFinancialFunctions.pmt(this.originalPrincipal.getAmount(), futureValue,
+                    this.actualNumberOfRepayments, vatRatePercentage, this.annualNominalInterestRate, this.repaymentDateList,
+                    this.loanEndDate, this.charges, this.currency);
 
             // manage decimal places using currency
             installmentAmount = Money.of(this.currency.toOrganisationCurrency().toMonetaryCurrency(), BigDecimal.valueOf(installmentAmount))
@@ -1403,8 +1403,8 @@ public final class LoanApplicationTerms {
         final MonetaryCurrency currency = new MonetaryCurrency(this.currency.getCode(), this.currency.getDecimalPlaces(),
                 this.currency.getCurrencyInMultiplesOf());
 
-        return LoanProductRelatedDetail.createFrom(currency, this.principal.getAmount(), this.interestRatePerPeriod,
-                this.interestRatePeriodFrequencyType, this.annualNominalInterestRate, this.interestMethod,
+        return LoanProductRelatedDetail.createFrom(currency, this.principal.getAmount(), this.originalPrincipal.getAmount(),
+                this.interestRatePerPeriod, this.interestRatePeriodFrequencyType, this.annualNominalInterestRate, this.interestMethod,
                 this.interestCalculationPeriodMethod, this.allowPartialPeriodInterestCalcualtion, this.repaymentEvery,
                 this.repaymentPeriodFrequencyType, this.numberOfRepayments, this.principalGrace, this.recurringMoratoriumOnPrincipalPeriods,
                 this.interestPaymentGrace, this.interestChargingGrace, this.amortizationMethod, this.inArrearsTolerance.getAmount(),
@@ -1480,12 +1480,12 @@ public final class LoanApplicationTerms {
         return this.approvedPrincipal;
     }
 
-    public Money getPrincipalAndOriginationFees() {
-        return this.principalAndOriginationFees;
+    public Money getOriginalPrincipal() {
+        return this.originalPrincipal;
     }
 
-    public void setPrincipalAndOriginationFees(Money principalAndOriginationFees) {
-        this.principalAndOriginationFees = principalAndOriginationFees;
+    public void setOriginalPrincipal(Money originalPrincipal) {
+        this.originalPrincipal = originalPrincipal;
     }
 
     public List<DisbursementData> getDisbursementDatas() {
