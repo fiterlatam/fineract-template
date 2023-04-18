@@ -3586,4 +3586,28 @@ public class CommandWrapperBuilder {
         this.href = "/codecauses/" + causeId;
         return this;
     }
+
+    public CommandWrapperBuilder createAgency() {
+        this.actionName = "CREATE";
+        this.entityName = "AGENCY";
+        this.entityId = null;
+        this.href = "/agencies";
+        return this;
+    }
+
+    public CommandWrapperBuilder updateAgency(final Long agencyId) {
+        this.actionName = "UPDATE";
+        this.entityName = "AGENCY";
+        this.entityId = agencyId;
+        this.href = "/agencies/" + agencyId;
+        return this;
+    }
+
+    public CommandWrapperBuilder deleteAgency(final Long agencyId) {
+        this.actionName = "DELETE";
+        this.entityName = "AGENCY";
+        this.entityId = agencyId;
+        this.href = "/agencies/" + agencyId;
+        return this;
+    }
 }

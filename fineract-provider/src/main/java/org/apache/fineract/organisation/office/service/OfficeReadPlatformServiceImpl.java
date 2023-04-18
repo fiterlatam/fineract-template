@@ -34,6 +34,7 @@ import org.apache.fineract.organisation.monetary.data.CurrencyData;
 import org.apache.fineract.organisation.monetary.service.CurrencyReadPlatformService;
 import org.apache.fineract.organisation.office.data.OfficeData;
 import org.apache.fineract.organisation.office.data.OfficeTransactionData;
+import org.apache.fineract.organisation.office.domain.OfficeHierarchyLevel;
 import org.apache.fineract.organisation.office.exception.OfficeNotFoundException;
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -267,6 +268,23 @@ public class OfficeReadPlatformServiceImpl implements OfficeReadPlatformService 
         final Collection<CurrencyData> currencyOptions = this.currencyReadPlatformService.retrieveAllowedCurrencies();
 
         return OfficeTransactionData.template(LocalDate.now(DateUtils.getDateTimeZoneOfTenant()), parentLookups, currencyOptions);
+    }
+
+    @Override
+    public Collection<OfficeData> retrieveOfficesByHierarchyLevel(Long hierarchyLevel) {
+        final AppUser currentUser = this.context.authenticatedUser();
+
+        final String hierarchy = currentUser.getOffice().getHierarchy();
+        String hierarchySearchString = hierarchy + "%";
+
+        if (hierarchyLevel.compareTo(Long.valueOf(OfficeHierarchyLevel.GERENCIA.getValue())) == 0) {
+            hierarchySearchString = hierarchy;
+        }
+
+        final OfficeDropdownMapper rm = new OfficeDropdownMapper();
+        final String sql = "select " + rm.schema() + "where o.hierarchy like ? order by o.hierarchy";
+
+        return this.jdbcTemplate.query(sql, rm, new Object[] { hierarchySearchString }); //
     }
 
     public PlatformSecurityContext getContext() {

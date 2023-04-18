@@ -22,15 +22,9 @@
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
                    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd">
-    <!--Office-->
     <changeSet author="fineract" id="1">
-        <addColumn tableName="m_office">
-            <column name="office_code" type="VARCHAR(10)"/>
-        </addColumn>
-    </changeSet>
-    <changeSet author="fineract" id="1">
-        <addColumn tableName="m_office">
-            <column name="office_code" type="VARCHAR(10)"/>
-        </addColumn>
+        <delete tableName="m_organisation_currency">
+            <where>code='USD'</where>
+        </delete>
     </changeSet>
 </databaseChangeLog>

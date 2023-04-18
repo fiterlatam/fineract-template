@@ -213,7 +213,9 @@ public class Office extends AbstractPersistableCustom implements Serializable {
         return this.name;
     }
 
-    public String getOfficeCode() { return this.officeCode; }
+    public String getOfficeCode() {
+        return this.officeCode;
+    }
 
     public String getHierarchy() {
         return this.hierarchy;
