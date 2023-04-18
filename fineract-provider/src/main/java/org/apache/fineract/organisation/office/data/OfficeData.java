@@ -85,7 +85,8 @@ public class OfficeData implements Serializable {
     }
 
     public OfficeData(final Long id, final String name, final String nameDecorated, final String externalId, final LocalDate openingDate,
-            final String hierarchy, final Long parentId, final String parentName, final Collection<OfficeData> allowedParents, final String officeCode) {
+            final String hierarchy, final Long parentId, final String parentName, final Collection<OfficeData> allowedParents,
+            final String officeCode) {
         this.id = id;
         this.name = name;
         this.nameDecorated = nameDecorated;

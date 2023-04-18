@@ -46,4 +46,7 @@
     <include file="parts/0029_add_user_roles.xml" relativeToChangelogFile="true"/>
     <include file="parts/0030_update_main_office_and_role_permissions.xml" relativeToChangelogFile="true"/>
     <include file="parts/0031_add_office_code_to_office.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0032_agency_feature.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0033_add_new_code_and_values.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0034_adjust_currencies.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
