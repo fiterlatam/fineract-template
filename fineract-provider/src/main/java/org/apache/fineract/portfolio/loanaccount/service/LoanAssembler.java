@@ -365,6 +365,7 @@ public class LoanAssembler {
         }
 
         final LoanApplicationTerms loanApplicationTerms = this.loanScheduleAssembler.assembleLoanTerms(element);
+        loanApplication.setTotalOriginationFees(loanApplicationTerms.originationFees(loanCharges).getAmount());
 
         final boolean isHolidayEnabled = this.configurationDomainService.isRescheduleRepaymentsOnHolidaysEnabled();
         final List<Holiday> holidays = this.holidayRepository.findByOfficeIdAndGreaterThanDate(loanApplication.getOfficeId(),

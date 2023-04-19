@@ -34,10 +34,11 @@ public class RepaymentScheduleRelatedLoanData {
     private final BigDecimal netDisbursalAmount;
     private final BigDecimal inArrearsTolerance;
     private final BigDecimal totalFeeChargesAtDisbursement;
+    private final BigDecimal originationFees;
 
     public RepaymentScheduleRelatedLoanData(final LocalDate expectedDisbursementDate, final LocalDate actualDisbursementDate,
             final CurrencyData currency, final BigDecimal principal, final BigDecimal inArrearsTolerance,
-            final BigDecimal totalFeeChargesAtDisbursement) {
+            final BigDecimal totalFeeChargesAtDisbursement, final BigDecimal originationFees) {
         this.expectedDisbursementDate = expectedDisbursementDate;
         this.actualDisbursementDate = actualDisbursementDate;
         this.currency = currency;
@@ -45,6 +46,7 @@ public class RepaymentScheduleRelatedLoanData {
         this.inArrearsTolerance = inArrearsTolerance;
         this.totalFeeChargesAtDisbursement = totalFeeChargesAtDisbursement;
         this.netDisbursalAmount = this.principal.subtract(this.totalFeeChargesAtDisbursement);
+        this.originationFees = originationFees;
     }
 
     public LocalDate disbursementDate() {
@@ -79,5 +81,9 @@ public class RepaymentScheduleRelatedLoanData {
         BigDecimal waivedChargeAmount = null;
         return new DisbursementData(null, this.expectedDisbursementDate, this.actualDisbursementDate, this.principal,
                 this.netDisbursalAmount, null, null, waivedChargeAmount);
+    }
+
+    public BigDecimal getOriginationFees() {
+        return originationFees;
     }
 }

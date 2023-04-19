@@ -68,7 +68,6 @@ import org.apache.fineract.portfolio.calendar.exception.MeetingFrequencyMismatch
 import org.apache.fineract.portfolio.calendar.service.CalendarUtils;
 import org.apache.fineract.portfolio.client.domain.Client;
 import org.apache.fineract.portfolio.client.domain.ClientRepositoryWrapper;
-import org.apache.fineract.portfolio.client.exception.ClientNotActiveException;
 import org.apache.fineract.portfolio.common.domain.DayOfWeekType;
 import org.apache.fineract.portfolio.common.domain.DaysInMonthType;
 import org.apache.fineract.portfolio.common.domain.DaysInYearType;
@@ -85,7 +84,6 @@ import org.apache.fineract.portfolio.loanaccount.data.DisbursementData;
 import org.apache.fineract.portfolio.loanaccount.data.HolidayDetailDTO;
 import org.apache.fineract.portfolio.loanaccount.data.LoanTermVariationsData;
 import org.apache.fineract.portfolio.loanaccount.data.ScheduleGeneratorDTO;
-import org.apache.fineract.portfolio.loanaccount.domain.ClientVatRateNotSetException;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanCharge;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanDisbursementDetails;
@@ -240,13 +238,7 @@ public class LoanScheduleAssembler {
         }
         // disbursement details
         final BigDecimal principal = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed("principal", element);
-        final Money originalPrincipal = Money.of(currency, principal);
-        final Set<LoanCharge> loanCharges = this.loanChargeAssembler.fromParsedJson(element);
-        Money originationFeesPercentage = deriveTotalOriginationFees(currency, loanCharges);
-        BigDecimal vatPercentage = getVatPercentage(clientId, isVatRequired);
-
-        final Money principalMoney = Money.of(currency, principal).multipliedBy(BigDecimal.ONE.add(originationFeesPercentage.getAmount()
-                .divide(a100, MathContext.DECIMAL32).multiply(BigDecimal.ONE.add(vatPercentage.divide(a100, MathContext.DECIMAL32)))));
+        final Money principalMoney = Money.of(currency, principal);
 
         final LocalDate expectedDisbursementDate = this.fromApiJsonHelper.extractLocalDateNamed("expectedDisbursementDate", element);
         final LocalDate repaymentsStartingFromDate = this.fromApiJsonHelper.extractLocalDateNamed("repaymentsStartingFromDate", element);
@@ -470,7 +462,9 @@ public class LoanScheduleAssembler {
         // if VAT is required, then calculates the effective annual rate with VAT
         BigDecimal effectInterestAmountWithVat = BigDecimal.ZERO;
         if (isVatRequired && client != null && client.getVatRate() != null && client.getVatRate().getPercentage() % 1 == 0) {
-            effectInterestAmountWithVat = this.loanUtilService.calculateEffectiveRateWithVat(interestRatePerPeriod, vatPercentage)
+            double vatPercentage = client.getVatRate().getPercentage();
+            effectInterestAmountWithVat = this.loanUtilService
+                    .calculateEffectiveRateWithVat(interestRatePerPeriod, BigDecimal.valueOf(vatPercentage))
                     .setScale(2, MoneyHelper.getRoundingMode());
         }
 
@@ -487,17 +481,16 @@ public class LoanScheduleAssembler {
         return LoanApplicationTerms.assembleFrom(applicationCurrency, loanTermFrequency, loanTermPeriodFrequencyType, numberOfRepayments,
                 repaymentEvery, repaymentPeriodFrequencyType, nthDay, weekDayType, amortizationMethod, interestMethod,
                 interestRatePerPeriod, interestRatePeriodFrequencyType, annualNominalInterestRate, interestCalculationPeriodMethod,
-                allowPartialPeriodInterestCalcualtion, principalMoney, originalPrincipal, expectedDisbursementDate,
-                repaymentsStartingFromDate, calculatedRepaymentsStartingFromDate, graceOnPrincipalPayment,
-                recurringMoratoriumOnPrincipalPeriods, graceOnInterestPayment, graceOnInterestCharged, interestChargedFromDate,
-                inArrearsToleranceMoney, loanProduct.isMultiDisburseLoan(), emiAmount, disbursementDatas, maxOutstandingBalance,
-                graceOnArrearsAgeing, daysInMonthType, daysInYearType, isInterestRecalculationEnabled, recalculationFrequencyType,
-                restCalendarInstance, compoundingMethod, compoundingCalendarInstance, compoundingFrequencyType,
-                principalThresholdForLastInstalment, installmentAmountInMultiplesOf, loanProduct.preCloseInterestCalculationStrategy(),
-                calendar, BigDecimal.ZERO, loanTermVariations, isInterestChargedFromDateSameAsDisbursalDateEnabled, numberOfDays,
-                isSkipMeetingOnFirstDay, detailDTO, allowCompoundingOnEod, isEqualAmortization,
-                isInterestToBeRecoveredFirstWhenGreaterThanEMI, fixedPrincipalPercentagePerInstallment,
-                isPrincipalCompoundingDisabledForOverdueLoans, isVatRequired, vatRate);
+                allowPartialPeriodInterestCalcualtion, principalMoney, expectedDisbursementDate, repaymentsStartingFromDate,
+                calculatedRepaymentsStartingFromDate, graceOnPrincipalPayment, recurringMoratoriumOnPrincipalPeriods,
+                graceOnInterestPayment, graceOnInterestCharged, interestChargedFromDate, inArrearsToleranceMoney,
+                loanProduct.isMultiDisburseLoan(), emiAmount, disbursementDatas, maxOutstandingBalance, graceOnArrearsAgeing,
+                daysInMonthType, daysInYearType, isInterestRecalculationEnabled, recalculationFrequencyType, restCalendarInstance,
+                compoundingMethod, compoundingCalendarInstance, compoundingFrequencyType, principalThresholdForLastInstalment,
+                installmentAmountInMultiplesOf, loanProduct.preCloseInterestCalculationStrategy(), calendar, BigDecimal.ZERO,
+                loanTermVariations, isInterestChargedFromDateSameAsDisbursalDateEnabled, numberOfDays, isSkipMeetingOnFirstDay, detailDTO,
+                allowCompoundingOnEod, isEqualAmortization, isInterestToBeRecoveredFirstWhenGreaterThanEMI,
+                fixedPrincipalPercentagePerInstallment, isPrincipalCompoundingDisabledForOverdueLoans, isVatRequired, vatRate);
     }
 
     private CalendarInstance createCalendarForSameAsRepayment(final Integer repaymentEvery,
@@ -1157,37 +1150,6 @@ public class LoanScheduleAssembler {
             throw new MinDaysBetweenDisbursalAndFirstRepaymentViolationException(disbursalDate, firstRepaymentDate,
                     minimumDaysBetweenDisbursalAndFirstRepayment);
         }
-    }
-
-    private Money deriveTotalOriginationFees(MonetaryCurrency currency, Set<LoanCharge> loanCharges) {
-        BigDecimal chargesDueAtTimeOfDisbursement = BigDecimal.ZERO;
-        for (final LoanCharge loanCharge : loanCharges) {
-            if (loanCharge.isOriginationFee()) {
-                chargesDueAtTimeOfDisbursement = chargesDueAtTimeOfDisbursement.add(loanCharge.getPercentage());
-            }
-        }
-        return Money.of(currency, chargesDueAtTimeOfDisbursement);
-    }
-
-    private BigDecimal getVatPercentage(Long clientId, boolean isVatRequired) {
-        BigDecimal vatPercentage = BigDecimal.ZERO;
-        if (clientId != null) {
-            Client client = this.clientRepository.findOneWithNotFoundDetection(clientId);
-            if (client.isNotActive()) {
-                throw new ClientNotActiveException(clientId);
-            }
-            if (isVatRequired && client.getVatRate() == null) {
-                throw new ClientVatRateNotSetException(clientId);
-            }
-            if (isVatRequired && client.getVatRate() != null) {
-                if (!client.getVatRate().getActive()) {
-                    throw new ClientVatRateNotSetException(clientId);
-                }
-
-                vatPercentage = BigDecimal.valueOf(client.getVatRate().getPercentage());
-            }
-        }
-        return vatPercentage;
     }
 
 }

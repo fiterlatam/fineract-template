@@ -47,6 +47,7 @@ public final class LoanScheduleModelDisbursementPeriod implements LoanScheduleMo
 
     public static LoanScheduleModelDisbursementPeriod disbursement(final LocalDate disbursementDate, final Money principalDisbursed,
             final BigDecimal chargesDueAtTimeOfDisbursement) {
+
         return new LoanScheduleModelDisbursementPeriod(null, disbursementDate, principalDisbursed, chargesDueAtTimeOfDisbursement);
     }
 

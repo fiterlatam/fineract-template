@@ -85,6 +85,9 @@ public class LoanTransactionData {
     private transient Long accountId;
     private transient String transactionType;
     private List<LoanRepaymentScheduleInstallmentData> loanRepaymentScheduleInstallments;
+    private BigDecimal originationFees;
+    private BigDecimal vatOnCharges;
+    private BigDecimal vatOnInterest;
 
     public static LoanTransactionData importInstance(BigDecimal repaymentAmount, LocalDate lastRepaymentDate, Long repaymentTypeId,
             Integer rowIndex, String locale, String dateFormat) {
@@ -370,5 +373,29 @@ public class LoanTransactionData {
 
     public void setLoanChargePaidByList(Collection<LoanChargePaidByData> loanChargePaidByList) {
         this.loanChargePaidByList = loanChargePaidByList;
+    }
+
+    public BigDecimal getOriginationFees() {
+        return originationFees;
+    }
+
+    public void setOriginationFees(BigDecimal originationFees) {
+        this.originationFees = originationFees;
+    }
+
+    public BigDecimal getVatOnCharges() {
+        return vatOnCharges;
+    }
+
+    public void setVatOnCharges(BigDecimal vatOnCharges) {
+        this.vatOnCharges = vatOnCharges;
+    }
+
+    public BigDecimal getVatOnInterest() {
+        return vatOnInterest;
+    }
+
+    public void setVatOnInterest(BigDecimal vatOnInterest) {
+        this.vatOnInterest = vatOnInterest;
     }
 }

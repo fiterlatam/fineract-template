@@ -76,6 +76,12 @@ public class LoanRepaymentScheduleHistory extends AbstractPersistableCustom {
     @Column(name = "lastmodified_date")
     private LocalDateTime lastModifiedOnDate;
 
+    @Column(name = "vat_on_charges", scale = 6, precision = 19, nullable = true)
+    private BigDecimal vatOnCharges;
+
+    @Column(name = "vat_on_interest", scale = 6, precision = 19, nullable = true)
+    private BigDecimal vatOnInterest;
+
     @Column(name = "version")
     private Integer version;
 
@@ -91,7 +97,7 @@ public class LoanRepaymentScheduleHistory extends AbstractPersistableCustom {
             final Integer installmentNumber, final LocalDate fromDate, final LocalDate dueDate, final BigDecimal principal,
             final BigDecimal interestCharged, final BigDecimal feeChargesCharged, final BigDecimal penaltyCharges,
             final LocalDateTime createdOnDate, final Long createdByUser, final Long lastModifiedByUser,
-            final LocalDateTime lastModifiedOnDate, final Integer version) {
+            final LocalDateTime lastModifiedOnDate, final Integer version, BigDecimal vatOnInterest, BigDecimal vatOnCharges) {
 
         this.loan = loan;
         this.loanRescheduleRequest = loanRescheduleRequest;
@@ -107,6 +113,8 @@ public class LoanRepaymentScheduleHistory extends AbstractPersistableCustom {
         this.lastModifiedByUser = lastModifiedByUser;
         this.lastModifiedOnDate = lastModifiedOnDate;
         this.version = version;
+        this.vatOnCharges = vatOnCharges;
+        this.vatOnInterest = vatOnInterest;
     }
 
     /**
@@ -116,11 +124,11 @@ public class LoanRepaymentScheduleHistory extends AbstractPersistableCustom {
             final Integer installmentNumber, final LocalDate fromDate, final LocalDate dueDate, final BigDecimal principal,
             final BigDecimal interestCharged, final BigDecimal feeChargesCharged, final BigDecimal penaltyCharges,
             final LocalDateTime createdOnDate, final Long createdByUser, final Long lastModifiedByUser,
-            final LocalDateTime lastModifiedOnDate, final Integer version) {
+            final LocalDateTime lastModifiedOnDate, final Integer version, BigDecimal vatOnInterest, BigDecimal vatOnCharges) {
 
         return new LoanRepaymentScheduleHistory(loan, loanRescheduleRequest, installmentNumber, fromDate, dueDate, principal,
                 interestCharged, feeChargesCharged, penaltyCharges, createdOnDate, createdByUser, lastModifiedByUser, lastModifiedOnDate,
-                version);
+                version, vatOnInterest, vatOnCharges);
 
     }
 

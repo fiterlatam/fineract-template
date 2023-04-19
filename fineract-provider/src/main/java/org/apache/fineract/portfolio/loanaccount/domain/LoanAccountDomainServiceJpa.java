@@ -763,15 +763,20 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         Money feePayable = foreCloseDetail.getFeeChargesCharged(currency);
         Money penaltyPayable = foreCloseDetail.getPenaltyChargesCharged(currency);
         Money payPrincipal = foreCloseDetail.getPrincipal(currency);
+        Money vatOnInterest = foreCloseDetail.getVatOnInterestCharged(currency);
+        Money vatOnCharges = foreCloseDetail.getVatOnChargeExpected(currency);
+        Money originationFees = Money.of(currency, loan.getTotalOriginationFees());
         loan.updateInstallmentsPostDate(foreClosureDate);
 
         LoanTransaction payment = null;
 
-        if (payPrincipal.plus(interestPayable).plus(feePayable).plus(penaltyPayable).isGreaterThanZero()) {
+        if (payPrincipal.plus(interestPayable).plus(feePayable).plus(penaltyPayable).plus(vatOnInterest).plus(vatOnCharges)
+                .isGreaterThanZero()) {
             final PaymentDetail paymentDetail = null;
             String externalId = null;
             final LocalDateTime currentDateTime = DateUtils.getLocalDateTimeOfTenant();
-            payment = LoanTransaction.repayment(loan.getOffice(), payPrincipal.plus(interestPayable).plus(feePayable).plus(penaltyPayable),
+            payment = LoanTransaction.repayment(loan.getOffice(),
+                    payPrincipal.plus(interestPayable).plus(feePayable).plus(penaltyPayable).plus(vatOnInterest).plus(vatOnCharges),
                     paymentDetail, foreClosureDate, externalId);
             payment.updateLoan(loan);
             newTransactions.add(payment);
