@@ -38,4 +38,13 @@
             </column>
         </addColumn>
     </changeSet>
+
+    <changeSet author="fineract" id="3">
+        <addColumn tableName="m_loan">
+            <column defaultValueComputed="0" name="total_origination_fees" type="DECIMAL(19, 6)" >
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
 </databaseChangeLog>

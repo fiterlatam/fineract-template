@@ -655,12 +655,12 @@ public class LoanProduct extends AbstractPersistableCustom {
                     maximumGapBetweenInstallments);
         }
 
-        this.loanProductRelatedDetail = new LoanProductRelatedDetail(currency, defaultPrincipal, defaultPrincipal,
-                defaultNominalInterestRatePerPeriod, interestPeriodFrequencyType, defaultAnnualNominalInterestRate, interestMethod,
-                interestCalculationPeriodMethod, considerPartialPeriodInterest, repayEvery, repaymentFrequencyType,
-                defaultNumberOfInstallments, graceOnPrincipalPayment, recurringMoratoriumOnPrincipalPeriods, graceOnInterestPayment,
-                graceOnInterestCharged, amortizationMethod, inArrearsTolerance, graceOnArrearsAgeing, daysInMonthType.getValue(),
-                daysInYearType.getValue(), isInterestRecalculationEnabled, isEqualAmortization);
+        this.loanProductRelatedDetail = new LoanProductRelatedDetail(currency, defaultPrincipal, defaultNominalInterestRatePerPeriod,
+                interestPeriodFrequencyType, defaultAnnualNominalInterestRate, interestMethod, interestCalculationPeriodMethod,
+                considerPartialPeriodInterest, repayEvery, repaymentFrequencyType, defaultNumberOfInstallments, graceOnPrincipalPayment,
+                recurringMoratoriumOnPrincipalPeriods, graceOnInterestPayment, graceOnInterestCharged, amortizationMethod,
+                inArrearsTolerance, graceOnArrearsAgeing, daysInMonthType.getValue(), daysInYearType.getValue(),
+                isInterestRecalculationEnabled, isEqualAmortization);
 
         this.loanProductRelatedDetail.validateRepaymentPeriodWithGraceSettings();
 

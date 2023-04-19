@@ -1294,7 +1294,7 @@ public abstract class AbstractLoanScheduleGenerator implements LoanScheduleGener
         if (loanApplicationTerms.isMultiDisburseLoan() && loanApplicationTerms.getApprovedPrincipal().isGreaterThanZero()) {
             principalToBeScheduled = loanApplicationTerms.getApprovedPrincipal();
         } else {
-            principalToBeScheduled = loanApplicationTerms.getPrincipal();
+            principalToBeScheduled = loanApplicationTerms.getPrincipal().add(loanApplicationTerms.originationFees());
         }
         return principalToBeScheduled;
     }
@@ -2751,9 +2751,12 @@ public abstract class AbstractLoanScheduleGenerator implements LoanScheduleGener
 
         Pair<Money, Money> vat = loanApplicationTerms.calculateVat(totalInterest, penaltyCharges, feeCharges, mc);
 
+        BigDecimal originationFeesPerPeriod = loanApplicationTerms.originationFees().getAmount()
+                .divide(BigDecimal.valueOf(loanApplicationTerms.getLoanTermFrequency()), mc);
+
         return new LoanRepaymentScheduleInstallment(null, 0, onDate, onDate, totalPrincipal.getAmount(), totalInterest.getAmount(),
                 feeCharges.getAmount(), penaltyCharges.getAmount(), false, compoundingDetails, vat.getLeft().getAmount(),
-                vat.getRight().getAmount());
+                vat.getRight().getAmount(), originationFeesPerPeriod);
     }
 
     private static final class LoanTermVariationParams {
@@ -2802,6 +2805,9 @@ public abstract class AbstractLoanScheduleGenerator implements LoanScheduleGener
         Money reducedBalance;
         boolean isEmiAmountChanged;
         double interestCalculationGraceOnRepaymentPeriodFraction;
+        Money chargesVatForPeriod;
+        Money interestVatForPeriod;
+        Money originationFeeForPeriod;
 
         ScheduleCurrentPeriodParams(final MonetaryCurrency currency, double interestCalculationGraceOnRepaymentPeriodFraction) {
             this.earlyPaidAmount = Money.zero(currency);
@@ -2814,6 +2820,9 @@ public abstract class AbstractLoanScheduleGenerator implements LoanScheduleGener
             this.penaltyChargesForInstallment = Money.zero(currency);
             this.isEmiAmountChanged = false;
             this.interestCalculationGraceOnRepaymentPeriodFraction = interestCalculationGraceOnRepaymentPeriodFraction;
+            this.chargesVatForPeriod = Money.zero(currency);
+            this.interestVatForPeriod = Money.zero(currency);
+            this.originationFeeForPeriod = Money.zero(currency);
         }
 
         public Money getEarlyPaidAmount() {
@@ -2905,8 +2914,8 @@ public abstract class AbstractLoanScheduleGenerator implements LoanScheduleGener
         }
 
         public Money fetchTotalAmountForPeriod() {
-            return this.principalForThisPeriod.plus(interestForThisPeriod).plus(feeChargesForInstallment)
-                    .plus(penaltyChargesForInstallment);
+            return this.principalForThisPeriod.plus(interestForThisPeriod).plus(feeChargesForInstallment).plus(penaltyChargesForInstallment)
+                    .plus(this.chargesVatForPeriod).plus(interestVatForPeriod);
         }
 
         public boolean isEmiAmountChanged() {

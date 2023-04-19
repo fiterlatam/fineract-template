@@ -260,14 +260,15 @@ public final class LoanSummary {
 
     public void updateSummary(final MonetaryCurrency currency, final Money principal,
             final List<LoanRepaymentScheduleInstallment> repaymentScheduleInstallments, final LoanSummaryWrapper summaryWrapper,
-            final Boolean disbursed, Set<LoanCharge> charges) {
+            final Boolean disbursed, Set<LoanCharge> charges, Money originationFees) {
 
         this.totalPrincipalDisbursed = principal.getAmount();
         this.totalPrincipalRepaid = summaryWrapper.calculateTotalPrincipalRepaid(repaymentScheduleInstallments, currency).getAmount();
         this.totalPrincipalWrittenOff = summaryWrapper.calculateTotalPrincipalWrittenOff(repaymentScheduleInstallments, currency)
                 .getAmount();
 
-        this.totalPrincipalOutstanding = principal.minus(this.totalPrincipalRepaid).minus(this.totalPrincipalWrittenOff).getAmount();
+        this.totalPrincipalOutstanding = principal.plus(originationFees).minus(this.totalPrincipalRepaid)
+                .minus(this.totalPrincipalWrittenOff).getAmount();
 
         final Money totalInterestCharged = summaryWrapper.calculateTotalInterestCharged(repaymentScheduleInstallments, currency);
         this.totalInterestCharged = totalInterestCharged.getAmount();
@@ -329,13 +330,14 @@ public final class LoanSummary {
         this.totalVatOnChargeOutstanding = totalVatChargedOnCharges.minus(this.totalVatOnChargePaid).minus(this.totalVatOnChargeWaived)
                 .minus(this.totalVatOnChargeWrittenOff).getAmount();
 
-        final Money totalExpectedRepayment = Money.of(currency, this.totalPrincipalDisbursed).plus(this.totalInterestCharged)
-                .plus(this.totalFeeChargesCharged).plus(this.totalVatOnInterestCharged).plus(this.totalVatOnChargeExpected);
+        final Money totalExpectedRepayment = Money.of(currency, this.totalPrincipalDisbursed).plus(originationFees)
+                .plus(this.totalInterestCharged).plus(this.totalFeeChargesCharged).plus(this.totalVatOnInterestCharged)
+                .plus(this.totalVatOnChargeExpected);
         this.totalExpectedRepayment = totalExpectedRepayment.getAmount();
 
         final Money totalRepayment = Money.of(currency, this.totalPrincipalRepaid).plus(this.totalInterestRepaid)
-                .plus(this.totalFeeChargesRepaid).plus(this.totalPenaltyChargesRepaid).plus(this.totalVatOnInterestCharged)
-                .plus(this.totalVatOnChargeExpected);
+                .plus(this.totalFeeChargesRepaid).plus(this.totalPenaltyChargesRepaid).plus(this.totalVatOnInterestPaid)
+                .plus(this.totalVatOnChargePaid);
         this.totalRepayment = totalRepayment.getAmount();
 
         final Money totalExpectedCostOfLoan = Money.of(currency, this.totalInterestCharged).plus(this.totalFeeChargesCharged)

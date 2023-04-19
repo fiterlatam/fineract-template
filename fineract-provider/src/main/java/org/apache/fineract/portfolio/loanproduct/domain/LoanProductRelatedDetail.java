@@ -54,9 +54,6 @@ public class LoanProductRelatedDetail implements LoanProductMinimumRepaymentSche
     @Column(name = "principal_amount", scale = 6, precision = 19, nullable = true)
     private BigDecimal principal;
 
-    @Column(name = "original_principal_amount", scale = 6, precision = 19, nullable = true)
-    private BigDecimal originalPrincipal;
-
     @Column(name = "nominal_interest_rate_per_period", scale = 6, precision = 19, nullable = true)
     private BigDecimal nominalInterestRatePerPeriod;
 
@@ -133,22 +130,21 @@ public class LoanProductRelatedDetail implements LoanProductMinimumRepaymentSche
     private boolean isEqualAmortization = false;
 
     public static LoanProductRelatedDetail createFrom(final MonetaryCurrency currency, final BigDecimal principal,
-            BigDecimal originalPrincipal, final BigDecimal nominalInterestRatePerPeriod,
-            final PeriodFrequencyType interestRatePeriodFrequencyType, final BigDecimal nominalAnnualInterestRate,
-            final InterestMethod interestMethod, final InterestCalculationPeriodMethod interestCalculationPeriodMethod,
-            final boolean allowPartialPeriodInterestCalcualtion, final Integer repaymentEvery,
-            final PeriodFrequencyType repaymentPeriodFrequencyType, final Integer numberOfRepayments, final Integer graceOnPrincipalPayment,
-            final Integer recurringMoratoriumOnPrincipalPeriods, final Integer graceOnInterestPayment, final Integer graceOnInterestCharged,
-            final AmortizationMethod amortizationMethod, final BigDecimal inArrearsTolerance, final Integer graceOnArrearsAgeing,
-            final Integer daysInMonthType, final Integer daysInYearType, final boolean isInterestRecalculationEnabled,
-            final boolean isEqualAmortization) {
+            final BigDecimal nominalInterestRatePerPeriod, final PeriodFrequencyType interestRatePeriodFrequencyType,
+            final BigDecimal nominalAnnualInterestRate, final InterestMethod interestMethod,
+            final InterestCalculationPeriodMethod interestCalculationPeriodMethod, final boolean allowPartialPeriodInterestCalcualtion,
+            final Integer repaymentEvery, final PeriodFrequencyType repaymentPeriodFrequencyType, final Integer numberOfRepayments,
+            final Integer graceOnPrincipalPayment, final Integer recurringMoratoriumOnPrincipalPeriods,
+            final Integer graceOnInterestPayment, final Integer graceOnInterestCharged, final AmortizationMethod amortizationMethod,
+            final BigDecimal inArrearsTolerance, final Integer graceOnArrearsAgeing, final Integer daysInMonthType,
+            final Integer daysInYearType, final boolean isInterestRecalculationEnabled, final boolean isEqualAmortization) {
 
-        return new LoanProductRelatedDetail(currency, principal, originalPrincipal, nominalInterestRatePerPeriod,
-                interestRatePeriodFrequencyType, nominalAnnualInterestRate, interestMethod, interestCalculationPeriodMethod,
-                allowPartialPeriodInterestCalcualtion, repaymentEvery, repaymentPeriodFrequencyType, numberOfRepayments,
-                graceOnPrincipalPayment, recurringMoratoriumOnPrincipalPeriods, graceOnInterestPayment, graceOnInterestCharged,
-                amortizationMethod, inArrearsTolerance, graceOnArrearsAgeing, daysInMonthType, daysInYearType,
-                isInterestRecalculationEnabled, isEqualAmortization);
+        return new LoanProductRelatedDetail(currency, principal, nominalInterestRatePerPeriod, interestRatePeriodFrequencyType,
+                nominalAnnualInterestRate, interestMethod, interestCalculationPeriodMethod, allowPartialPeriodInterestCalcualtion,
+                repaymentEvery, repaymentPeriodFrequencyType, numberOfRepayments, graceOnPrincipalPayment,
+                recurringMoratoriumOnPrincipalPeriods, graceOnInterestPayment, graceOnInterestCharged, amortizationMethod,
+                inArrearsTolerance, graceOnArrearsAgeing, daysInMonthType, daysInYearType, isInterestRecalculationEnabled,
+                isEqualAmortization);
     }
 
     protected LoanProductRelatedDetail() {
@@ -156,18 +152,16 @@ public class LoanProductRelatedDetail implements LoanProductMinimumRepaymentSche
     }
 
     public LoanProductRelatedDetail(final MonetaryCurrency currency, final BigDecimal defaultPrincipal,
-            final BigDecimal defaultOriginalPrincipal, final BigDecimal defaultNominalInterestRatePerPeriod,
-            final PeriodFrequencyType interestPeriodFrequencyType, final BigDecimal defaultAnnualNominalInterestRate,
-            final InterestMethod interestMethod, final InterestCalculationPeriodMethod interestCalculationPeriodMethod,
-            final boolean allowPartialPeriodInterestCalcualtion, final Integer repayEvery, final PeriodFrequencyType repaymentFrequencyType,
-            final Integer defaultNumberOfRepayments, final Integer graceOnPrincipalPayment,
-            final Integer recurringMoratoriumOnPrincipalPeriods, final Integer graceOnInterestPayment, final Integer graceOnInterestCharged,
-            final AmortizationMethod amortizationMethod, final BigDecimal inArrearsTolerance, final Integer graceOnArrearsAgeing,
-            final Integer daysInMonthType, final Integer daysInYearType, final boolean isInterestRecalculationEnabled,
-            final boolean isEqualAmortization) {
+            final BigDecimal defaultNominalInterestRatePerPeriod, final PeriodFrequencyType interestPeriodFrequencyType,
+            final BigDecimal defaultAnnualNominalInterestRate, final InterestMethod interestMethod,
+            final InterestCalculationPeriodMethod interestCalculationPeriodMethod, final boolean allowPartialPeriodInterestCalcualtion,
+            final Integer repayEvery, final PeriodFrequencyType repaymentFrequencyType, final Integer defaultNumberOfRepayments,
+            final Integer graceOnPrincipalPayment, final Integer recurringMoratoriumOnPrincipalPeriods,
+            final Integer graceOnInterestPayment, final Integer graceOnInterestCharged, final AmortizationMethod amortizationMethod,
+            final BigDecimal inArrearsTolerance, final Integer graceOnArrearsAgeing, final Integer daysInMonthType,
+            final Integer daysInYearType, final boolean isInterestRecalculationEnabled, final boolean isEqualAmortization) {
         this.currency = currency;
         this.principal = defaultPrincipal;
-        this.originalPrincipal = defaultOriginalPrincipal;
         this.nominalInterestRatePerPeriod = defaultNominalInterestRatePerPeriod;
         this.interestPeriodFrequencyType = interestPeriodFrequencyType;
         this.annualNominalInterestRate = defaultAnnualNominalInterestRate;
@@ -210,11 +204,6 @@ public class LoanProductRelatedDetail implements LoanProductMinimumRepaymentSche
     @Override
     public Money getPrincipal() {
         return Money.of(this.currency, this.principal);
-    }
-
-    @Override
-    public Money getOriginalPrincipal() {
-        return Money.of(this.currency, this.originalPrincipal);
     }
 
     public void setPrincipal(BigDecimal principal) {
@@ -687,7 +676,4 @@ public class LoanProductRelatedDetail implements LoanProductMinimumRepaymentSche
         this.nominalInterestRatePerPeriod = nominalInterestRatePerPeriod;
     }
 
-    public void setOriginalPrincipal(BigDecimal originalPrincipal) {
-        this.originalPrincipal = originalPrincipal;
-    }
 }

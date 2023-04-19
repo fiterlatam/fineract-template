@@ -78,6 +78,7 @@ public class LoanSummaryData {
     private final BigDecimal totalVatOnChargeWaived;
     private final BigDecimal totalVatOnChargeOutstanding;
     private final BigDecimal totalVatOnChargeOverdue;
+    private final BigDecimal originationFees;
 
     public LoanSummaryData(final CurrencyData currency, final BigDecimal principalDisbursed, final BigDecimal principalPaid,
             final BigDecimal principalWrittenOff, final BigDecimal principalOutstanding, final BigDecimal principalOverdue,
@@ -95,8 +96,8 @@ public class LoanSummaryData {
             final BigDecimal totalVatOnInterestWrittenOff, final BigDecimal totalVatOnInterestWaived,
             final BigDecimal totalVatOnInterestOutstanding, final BigDecimal totalVatOnInterestOverdue,
             final BigDecimal totalVatOnChargeExpected, final BigDecimal totalVatOnChargePaid, final BigDecimal totalVatOnChargeWrittenOff,
-            final BigDecimal totalVatOnChargeWaived, final BigDecimal totalVatOnChargeOutstanding,
-            final BigDecimal totalVatOnChargeOverdue) {
+            final BigDecimal totalVatOnChargeWaived, final BigDecimal totalVatOnChargeOutstanding, final BigDecimal totalVatOnChargeOverdue,
+            final BigDecimal originationFees) {
         this.currency = currency;
         this.principalDisbursed = principalDisbursed;
         this.principalPaid = principalPaid;
@@ -146,6 +147,7 @@ public class LoanSummaryData {
         this.totalVatOnChargeWaived = totalVatOnChargeWaived;
         this.totalVatOnChargeOutstanding = totalVatOnChargeOutstanding;
         this.totalVatOnChargeOverdue = totalVatOnChargeOverdue;
+        this.originationFees = originationFees;
     }
 
     public BigDecimal getTotalOutstanding() {
@@ -154,5 +156,9 @@ public class LoanSummaryData {
 
     public BigDecimal getTotalPaidFeeCharges() {
         return feeChargesPaid;
+    }
+
+    public BigDecimal getOriginationFees() {
+        return originationFees;
     }
 }

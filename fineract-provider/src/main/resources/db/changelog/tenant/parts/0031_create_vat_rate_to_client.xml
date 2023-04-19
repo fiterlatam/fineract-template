@@ -280,4 +280,15 @@
         </addColumn>
     </changeSet>
 
+    <changeSet author="fineract" id="15">
+        <addColumn tableName="m_loan_repayment_schedule_history">
+            <column defaultValueComputed="0" name="vat_on_charges" type="DECIMAL(19, 6)" >
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueComputed="0" name="vat_on_interest" type="DECIMAL(19, 6)" >
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
 </databaseChangeLog>

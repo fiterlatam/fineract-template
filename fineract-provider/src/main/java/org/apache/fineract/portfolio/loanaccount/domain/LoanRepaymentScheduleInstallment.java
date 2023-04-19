@@ -19,6 +19,7 @@
 package org.apache.fineract.portfolio.loanaccount.domain;
 
 import java.math.BigDecimal;
+import java.math.MathContext;
 import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -609,7 +610,7 @@ public final class LoanRepaymentScheduleInstallment extends AbstractAuditableCus
             vatOnInterestPortionOfTransaction = vatOnInterestPortionOfTransaction.plus(vatOnInterestPortion);
         } else {
             BigDecimal percentageVatPlusOne = vatPercentage.add(BigDecimal.ONE);
-            BigDecimal interestPort = transactionAmountRemaining.getAmount().divide(percentageVatPlusOne);
+            BigDecimal interestPort = transactionAmountRemaining.getAmount().divide(percentageVatPlusOne, MathContext.DECIMAL32);
             BigDecimal vatPortion = transactionAmountRemaining.getAmount().subtract(interestPort);
 
             this.interestPaid = getInterestPaid(currency).plus(interestPort).getAmount();

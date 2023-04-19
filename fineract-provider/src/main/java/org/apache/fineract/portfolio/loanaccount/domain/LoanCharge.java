@@ -599,6 +599,11 @@ public class LoanCharge extends AbstractPersistableCustom {
         return !ChargeTimeType.fromInt(this.chargeTime).equals(ChargeTimeType.ORIGINATION_FEE);
     }
 
+    public boolean isAlboCharge() {
+        return ChargeTimeType.fromInt(this.chargeTime).equals(ChargeTimeType.COLLECTION_FEE)
+                || ChargeTimeType.fromInt(this.chargeTime).equals(ChargeTimeType.PUNITIVE_FEE);
+    }
+
     public boolean isOverdueInstallmentCharge() {
         return ChargeTimeType.fromInt(this.chargeTime).equals(ChargeTimeType.OVERDUE_INSTALLMENT);
     }

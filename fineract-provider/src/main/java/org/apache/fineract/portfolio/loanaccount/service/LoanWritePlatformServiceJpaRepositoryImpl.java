@@ -2715,6 +2715,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 BigDecimal penaltyCharges = BigDecimal.ONE;
                 BigDecimal vatOnInterest = BigDecimal.ZERO;
                 BigDecimal vatOnCharge = BigDecimal.ZERO;
+                BigDecimal originationFeePortion = BigDecimal.ZERO;
                 if (loan.isVatRequired() && loan.getClient() != null && loan.getClient().getVatRate() != null
                         && loan.getClient().getVatRate().getPercentage() % 1 == 0) {
                     vatOnCharge = new BigDecimal(loan.getClient().getVatRate().getPercentage()).divide(BigDecimal.valueOf(100));
@@ -2722,7 +2723,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 final Set<LoanInterestRecalcualtionAdditionalDetails> compoundingDetails = null;
                 LoanRepaymentScheduleInstallment newEntry = new LoanRepaymentScheduleInstallment(loan, installments.size() + 1,
                         lastInstallment.getDueDate(), lastChargeDate, principal, interest, feeCharges, penaltyCharges,
-                        recalculatedInterestComponent, compoundingDetails, vatOnInterest, vatOnCharge);
+                        recalculatedInterestComponent, compoundingDetails, vatOnInterest, vatOnCharge, originationFeePortion);
                 loan.addLoanRepaymentScheduleInstallment(newEntry);
             }
         }

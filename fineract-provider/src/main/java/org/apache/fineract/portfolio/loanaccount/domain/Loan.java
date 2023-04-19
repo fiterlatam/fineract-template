@@ -414,6 +414,9 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     @Column(name = "effective_rate_vat_derived")
     private BigDecimal effectiveRateWithVat = BigDecimal.ZERO;
 
+    @Column(name = "total_origination_fees")
+    private BigDecimal totalOriginationFees = BigDecimal.ZERO;
+
     public static Loan newIndividualLoanApplication(final String accountNo, final Client client, final Integer loanType,
             final LoanProduct loanProduct, final Fund fund, final Staff officer, final CodeValue loanPurpose,
             final LoanTransactionProcessingStrategy transactionProcessingStrategy,
@@ -1372,8 +1375,9 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             this.totalRecovered = recoveredAmount.getAmountDefaultedToNullIfZero();
 
             final Money principal = this.loanRepaymentScheduleDetail.getPrincipal();
+            final Money originationFees = Money.of(getCurrency(), this.getTotalOriginationFees());
             this.summary.updateSummary(loanCurrency(), principal, getRepaymentScheduleInstallments(), this.loanSummaryWrapper,
-                    isDisbursed(), this.charges);
+                    isDisbursed(), this.charges, originationFees);
             updateLoanOutstandingBalaces();
         }
     }
@@ -2817,6 +2821,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
         final LoanScheduleModel loanSchedule = loanScheduleGenerator.generate(mc, loanApplicationTerms, charges(),
                 scheduleGeneratorDTO.getHolidayDetailDTO());
+        this.setTotalOriginationFees(loanApplicationTerms.originationFees().getAmount());
         return loanSchedule;
     }
 
@@ -5735,6 +5740,8 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         Money penaltyCharges = Money.zero(loanCurrency());
         Money totalPrincipal = Money.zero(loanCurrency());
         Money totalInterest = Money.zero(loanCurrency());
+        Money totalVatOnInterest = Money.zero(loanCurrency());
+        Money totalVatOnCharges = Money.zero(loanCurrency());
         final Set<LoanInterestRecalcualtionAdditionalDetails> compoundingDetails = null;
         List<LoanRepaymentScheduleInstallment> repaymentSchedule = getRepaymentScheduleInstallments();
         for (final LoanRepaymentScheduleInstallment scheduledRepayment : repaymentSchedule) {
@@ -5742,21 +5749,14 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             totalInterest = totalInterest.plus(scheduledRepayment.getInterestOutstanding(loanCurrency()));
             feeCharges = feeCharges.plus(scheduledRepayment.getFeeChargesOutstanding(loanCurrency()));
             penaltyCharges = penaltyCharges.plus(scheduledRepayment.getPenaltyChargesOutstanding(loanCurrency()));
+            totalVatOnInterest = totalVatOnInterest.plus(scheduledRepayment.getVatOnInterestOutstanding(loanCurrency()));
+            totalVatOnCharges = totalVatOnCharges.plus(scheduledRepayment.getVatOnChargeOutstanding(loanCurrency()));
         }
         LocalDate businessDate = DateUtils.getBusinessLocalDate();
 
-        BigDecimal vatOnInterest = BigDecimal.ZERO;
-        BigDecimal vatOnCharge = BigDecimal.ZERO;
-        if (this.isVatRequired() && this.client != null && this.client.getVatRate() != null
-                && this.client.getVatRate().getPercentage() % 1 == 0) {
-            double vatPercentage = this.client.getVatRate().getPercentage();
-            vatOnCharge = penaltyCharges.getAmount().multiply(new BigDecimal(vatPercentage)).divide(BigDecimal.valueOf(100));
-            vatOnInterest = totalInterest.getAmount().multiply(new BigDecimal(vatPercentage)).divide(BigDecimal.valueOf(100));
-        }
-
         return new LoanRepaymentScheduleInstallment(null, 0, businessDate, businessDate, totalPrincipal.getAmount(),
-                totalInterest.getAmount(), feeCharges.getAmount(), penaltyCharges.getAmount(), false, compoundingDetails, vatOnInterest,
-                vatOnCharge);
+                totalInterest.getAmount(), feeCharges.getAmount(), penaltyCharges.getAmount(), false, compoundingDetails,
+                totalVatOnInterest.getAmount(), totalVatOnCharges.getAmount());
     }
 
     public LocalDate getAccruedTill() {
@@ -5778,7 +5778,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         List<LoanTransaction> loanTransactions = retreiveListOfTransactionsExcludeAccruals();
         for (LoanTransaction loanTransaction : loanTransactions) {
             if (loanTransaction.isDisbursement() || loanTransaction.isIncomePosting()) {
-                outstanding = outstanding.plus(loanTransaction.getAmount(getCurrency()));
+                outstanding = outstanding.plus(loanTransaction.getAmount(getCurrency())).add(this.totalOriginationFees);
                 loanTransaction.updateOutstandingLoanBalance(outstanding.getAmount());
             } else {
                 if (this.loanInterestRecalculationDetails != null
@@ -6308,7 +6308,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     public BigDecimal getDerivedAmountForCharge(final LoanCharge loanCharge) {
         BigDecimal amount = BigDecimal.ZERO;
         if (isMultiDisburmentLoan() && loanCharge.getCharge().getChargeTimeType().equals(ChargeTimeType.DISBURSEMENT.getValue())) {
-            amount = getApprovedPrincipal();
+            amount = getPrincpal().getAmount();
         } else {
             // If charge type is specified due date and loan is multi disburment
             // loan.
@@ -6354,32 +6354,27 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         final Set<LoanInterestRecalcualtionAdditionalDetails> compoundingDetails = null;
         final LocalDate currentDate = DateUtils.getBusinessLocalDate();
 
-        BigDecimal vatOnInterest = BigDecimal.ZERO;
-        BigDecimal vatOnCharge = BigDecimal.ZERO;
-        if (this.isVatRequired() && this.client != null && this.client.getVatRate() != null
-                && this.client.getVatRate().getPercentage() % 1 == 0) {
-            double vatPercentage = this.client.getVatRate().getPercentage();
-            vatOnCharge = receivables[2].getAmount().multiply(new BigDecimal(vatPercentage)).divide(BigDecimal.valueOf(100));
-            vatOnInterest = receivables[0].getAmount().multiply(new BigDecimal(vatPercentage)).divide(BigDecimal.valueOf(100));
-        }
-
         return new LoanRepaymentScheduleInstallment(null, 0, currentDate, currentDate, totalPrincipal.getAmount(),
                 receivables[0].getAmount(), receivables[1].getAmount(), receivables[2].getAmount(), false, compoundingDetails,
-                vatOnInterest, vatOnCharge);
+                receivables[4].getAmount(), receivables[5].getAmount());
     }
 
     public Money[] retriveIncomeOutstandingTillDate(final LocalDate paymentDate) {
-        Money[] balances = new Money[4];
+        Money[] balances = new Money[6];
         final MonetaryCurrency currency = getCurrency();
         Money interest = Money.zero(currency);
         Money paidFromFutureInstallments = Money.zero(currency);
         Money fee = Money.zero(currency);
         Money penalty = Money.zero(currency);
+        Money vatOnCharges = Money.zero(currency);
+        Money vatOnInterest = Money.zero(currency);
         for (final LoanRepaymentScheduleInstallment installment : this.repaymentScheduleInstallments) {
             if (!installment.getDueDate().isAfter(paymentDate)) {
                 interest = interest.plus(installment.getInterestOutstanding(currency));
                 penalty = penalty.plus(installment.getPenaltyChargesOutstanding(currency));
                 fee = fee.plus(installment.getFeeChargesOutstanding(currency));
+                vatOnCharges = vatOnCharges.plus(installment.getVatOnChargeOutstanding(currency));
+                vatOnInterest = vatOnInterest.plus(installment.getVatOnInterestOutstanding(currency));
             } else if (installment.getFromDate().isBefore(paymentDate)) {
                 Money[] balancesForCurrentPeroid = fetchInterestFeeAndPenaltyTillDate(paymentDate, currency, installment);
                 if (balancesForCurrentPeroid[0].isGreaterThan(balancesForCurrentPeroid[5])) {
@@ -6400,9 +6395,25 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                     paidFromFutureInstallments = paidFromFutureInstallments.plus(balancesForCurrentPeroid[4])
                             .minus(balancesForCurrentPeroid[2]);
                 }
+
+                if (balancesForCurrentPeroid[6].isGreaterThan(balancesForCurrentPeroid[8])) {
+                    vatOnInterest = vatOnInterest.plus(balancesForCurrentPeroid[6]).minus(balancesForCurrentPeroid[8]);
+                } else {
+                    paidFromFutureInstallments = paidFromFutureInstallments.plus(balancesForCurrentPeroid[8])
+                            .minus(balancesForCurrentPeroid[6]);
+                }
+
+                if (balancesForCurrentPeroid[7].isGreaterThan(balancesForCurrentPeroid[9])) {
+                    vatOnCharges = vatOnCharges.plus(balancesForCurrentPeroid[7]).minus(balancesForCurrentPeroid[9]);
+                } else {
+                    paidFromFutureInstallments = paidFromFutureInstallments.plus(balancesForCurrentPeroid[9])
+                            .minus(balancesForCurrentPeroid[7]);
+                }
+
             } else if (installment.getDueDate().isAfter(paymentDate)) {
                 paidFromFutureInstallments = paidFromFutureInstallments.plus(installment.getInterestPaid(currency))
-                        .plus(installment.getPenaltyChargesPaid(currency)).plus(installment.getFeeChargesPaid(currency));
+                        .plus(installment.getPenaltyChargesPaid(currency)).plus(installment.getFeeChargesPaid(currency))
+                        .plus(installment.getVatOnChargePaid(currency)).plus(installment.getVatOnInterestPaid(currency));
             }
 
         }
@@ -6410,6 +6421,8 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         balances[1] = fee;
         balances[2] = penalty;
         balances[3] = paidFromFutureInstallments;
+        balances[4] = vatOnInterest;
+        balances[5] = vatOnCharges;
         return balances;
     }
 
@@ -6421,6 +6434,11 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         Money feeAccountedForCurrentPeriod = Money.zero(getCurrency());
         Money interestForCurrentPeriod = Money.zero(getCurrency());
         Money interestAccountedForCurrentPeriod = Money.zero(getCurrency());
+        Money vatOnInterestForPeriod = Money.zero(getCurrency());
+        Money vatOnInterestAccountedForPeriod = installment.getVatOnInterestWaived(currency)
+                .plus(installment.getVatOnInterestPaid(currency));
+        Money vatOnChargeForPeriod = Money.zero(getCurrency());
+        Money vatOnChargeAccountedForPeriod = installment.getVatOnChargeWaived(currency).plus(installment.getVatOnChargePaid(currency));
         int totalPeriodDays = Math.toIntExact(ChronoUnit.DAYS.between(installment.getFromDate(), installment.getDueDate()));
         int tillDays = Math.toIntExact(ChronoUnit.DAYS.between(installment.getFromDate(), paymentDate));
         interestForCurrentPeriod = Money.of(getCurrency(), BigDecimal
@@ -6451,13 +6469,26 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             }
         }
 
-        Money[] balances = new Money[6];
+        if (this.isVatRequired() && this.vatPercentage != null) {
+            vatOnInterestForPeriod = interestForCurrentPeriod.multipliedBy(this.vatPercentage).dividedBy(BigDecimal.valueOf(100),
+                    MoneyHelper.getRoundingMode());
+
+            Money totalCharges = feeForCurrentPeriod.add(penaltyForCurrentPeriod);
+            vatOnChargeForPeriod = totalCharges.multipliedBy(this.vatPercentage).dividedBy(BigDecimal.valueOf(100),
+                    MoneyHelper.getRoundingMode());
+        }
+
+        Money[] balances = new Money[10];
         balances[0] = interestForCurrentPeriod;
         balances[1] = feeForCurrentPeriod;
         balances[2] = penaltyForCurrentPeriod;
         balances[3] = feeAccountedForCurrentPeriod;
         balances[4] = penaltyAccoutedForCurrentPeriod;
         balances[5] = interestAccountedForCurrentPeriod;
+        balances[6] = vatOnInterestForPeriod;
+        balances[7] = vatOnChargeForPeriod;
+        balances[8] = vatOnInterestAccountedForPeriod;
+        balances[9] = vatOnChargeAccountedForPeriod;
         return balances;
     }
 
@@ -6877,4 +6908,13 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     public void setVatPercentage(BigDecimal vatPercentage) {
         this.vatPercentage = vatPercentage;
     }
+
+    public BigDecimal getTotalOriginationFees() {
+        return totalOriginationFees;
+    }
+
+    public void setTotalOriginationFees(BigDecimal totalOriginationFees) {
+        this.totalOriginationFees = totalOriginationFees;
+    }
+
 }

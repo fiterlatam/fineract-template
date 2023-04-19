@@ -527,7 +527,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
     @Override
     public LoanApprovalData retrieveApprovalTemplate(final Long loanId) {
         final Loan loan = this.loanRepositoryWrapper.findOneWithNotFoundDetection(loanId, true);
-        return new LoanApprovalData(loan.getProposedPrincipal(), DateUtils.getBusinessLocalDate(), loan.getNetDisbursalAmount());
+        return new LoanApprovalData(loan.getLoanRepaymentScheduleDetail().getPrincipal().getAmount(), DateUtils.getBusinessLocalDate(),
+                loan.getLoanRepaymentScheduleDetail().getPrincipal().getAmount());
     }
 
     @Override
@@ -540,7 +541,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
         }
 
         return LoanTransactionData.loanTransactionDataForDisbursalTemplate(transactionType,
-                loan.getExpectedDisbursedOnLocalDateForTemplate(), loan.getDisburseAmountForTemplate(), loan.getNetDisbursalAmount(),
+                loan.getExpectedDisbursedOnLocalDateForTemplate(), loan.getPrincpal().getAmount(), loan.getPrincpal().getAmount(),
                 paymentOptions, loan.retriveLastEmiAmount(), loan.getNextPossibleRepaymentDateForRescheduling());
 
     }
@@ -620,7 +621,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                     + " l.currency_code as currencyCode, l.currency_digits as currencyDigits, l.currency_multiplesof as inMultiplesOf, rc."
                     + sqlGenerator.escape("name")
                     + " as currencyName, rc.display_symbol as currencyDisplaySymbol, rc.internationalized_name_code as currencyNameCode, rc.int_code as intCode, "
-                    + " l.loan_officer_id as loanOfficerId, s.display_name as loanOfficerName, "
+                    + " l.loan_officer_id as loanOfficerId, s.display_name as loanOfficerName, l.total_origination_fees as originationFees, "
                     + " l.principal_disbursed_derived as principalDisbursed," + " l.principal_repaid_derived as principalPaid,"
                     + " l.principal_writtenoff_derived as principalWrittenOff,"
                     + " l.principal_outstanding_derived as principalOutstanding," + " l.interest_charged_derived as interestCharged,"
@@ -794,6 +795,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                     expectedMaturityDate, writtenOffOnDate, closedByUsername, closedByFirstname, closedByLastname);
 
             final BigDecimal principal = rs.getBigDecimal("principal");
+            final BigDecimal originationFees = rs.getBigDecimal("originationFees");
             final BigDecimal approvedPrincipal = rs.getBigDecimal("approvedPrincipal");
             final BigDecimal proposedPrincipal = rs.getBigDecimal("proposedPrincipal");
             final BigDecimal netDisbursalAmount = rs.getBigDecimal("netDisbursalAmount");
@@ -934,7 +936,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                         totalRecovered, totalVatOnInterestCharged, totalVatOnInterestPaid, totalVatOnInterestWrittenOff,
                         totalVatOnInterestWaived, totalVatOnInterestOutstanding, totalVatOnInterestOverdue, totalVatOnChargeExpected,
                         totalVatOnChargePaid, totalVatOnChargeWrittenOff, totalVatOnChargeWaived, totalVatOnChargeOutstanding,
-                        totalVatOnChargeOverdue);
+                        totalVatOnChargeOverdue, originationFees);
             }
 
             GroupGeneralData groupData = null;
@@ -1039,7 +1041,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                     isNPA, daysInMonthType, daysInYearType, isInterestRecalculationEnabled, interestRecalculationData,
                     createStandingInstructionAtDisbursement, isvariableInstallmentsAllowed, minimumGap, maximumGap, loanSubStatus,
                     canUseForTopup, isTopup, closureLoanId, closureLoanAccountNo, topupAmount, isEqualAmortization,
-                    fixedPrincipalPercentagePerInstallment, catRate, effectiveRate, isVatRequired, catRateWithVat);
+                    fixedPrincipalPercentagePerInstallment, catRate, effectiveRate, isVatRequired, catRateWithVat, originationFees);
         }
     }
 
@@ -1099,6 +1101,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
         private BigDecimal outstandingLoanPrincipalBalance;
         private boolean excludePastUndisbursed;
         private final BigDecimal totalPaidFeeCharges;
+        private final BigDecimal originationFees;
 
         LoanScheduleResultSetExtractor(final RepaymentScheduleRelatedLoanData repaymentScheduleRelatedLoanData,
                 Collection<DisbursementData> disbursementData, boolean isInterestRecalculationEnabled, BigDecimal totalPaidFeeCharges) {
@@ -1106,7 +1109,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
             this.disbursement = repaymentScheduleRelatedLoanData.disbursementData();
             this.totalFeeChargesDueAtDisbursement = repaymentScheduleRelatedLoanData.getTotalFeeChargesAtDisbursement();
             this.lastDueDate = this.disbursement.disbursementDate();
-            this.outstandingLoanPrincipalBalance = this.disbursement.amount();
+            this.originationFees = repaymentScheduleRelatedLoanData.getOriginationFees();
+            this.outstandingLoanPrincipalBalance = this.disbursement.amount().add(this.originationFees);
             this.disbursementData = disbursementData;
             this.excludePastUndisbursed = isInterestRecalculationEnabled;
             this.totalPaidFeeCharges = totalPaidFeeCharges;
@@ -1136,8 +1140,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                 waivedChargeAmount = waivedChargeAmount.add(disbursementDetail.getWaivedChargeAmount());
             }
             final LoanSchedulePeriodData disbursementPeriod = LoanSchedulePeriodData.disbursementOnlyPeriod(
-                    this.disbursement.disbursementDate(), this.disbursement.amount(), this.totalFeeChargesDueAtDisbursement,
-                    this.disbursement.isDisbursed(), null, null);
+                    this.disbursement.disbursementDate(), this.disbursement.amount().add(originationFees),
+                    this.totalFeeChargesDueAtDisbursement, this.disbursement.isDisbursed(), null, null);
 
             final Collection<LoanSchedulePeriodData> periods = new ArrayList<>();
             final MonetaryCurrency monCurrency = new MonetaryCurrency(this.currency.code(), this.currency.decimalPlaces(),
@@ -1146,7 +1150,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
             BigDecimal disbursementChargeAmount = this.totalFeeChargesDueAtDisbursement;
             if (disbursementData.isEmpty()) {
                 periods.add(disbursementPeriod);
-                totalPrincipalDisbursed = Money.of(monCurrency, this.disbursement.amount()).getAmount();
+                totalPrincipalDisbursed = Money.of(monCurrency, this.disbursement.amount()).getAmount().add(originationFees);
             } else {
                 if (!this.disbursement.isDisbursed()) {
                     excludePastUndisbursed = false;
@@ -2281,13 +2285,17 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
 
         final Money outStandingAmount = loanRepaymentScheduleInstallment.getTotalOutstanding(currency);
 
-        return new LoanTransactionData(null, null, null, transactionType, null, currencyData, earliestUnpaidInstallmentDate,
-                outStandingAmount.getAmount(), loan.getNetDisbursalAmount(),
+        LoanTransactionData loanTransactionData = new LoanTransactionData(null, null, null, transactionType, null, currencyData,
+                earliestUnpaidInstallmentDate, outStandingAmount.getAmount(), loan.getNetDisbursalAmount(),
                 loanRepaymentScheduleInstallment.getPrincipalOutstanding(currency).getAmount(),
                 loanRepaymentScheduleInstallment.getInterestOutstanding(currency).getAmount(),
                 loanRepaymentScheduleInstallment.getFeeChargesOutstanding(currency).getAmount(),
                 loanRepaymentScheduleInstallment.getPenaltyChargesOutstanding(currency).getAmount(), null, unrecognizedIncomePortion,
                 paymentTypeOptions, null, null, null, outstandingLoanBalance, isReversed);
+        loanTransactionData.setVatOnInterest(loanRepaymentScheduleInstallment.getVatOnInterestOutstanding());
+        loanTransactionData.setVatOnCharges(loanRepaymentScheduleInstallment.getVatOnChargeOutstanding());
+        loanTransactionData.setOriginationFees(loan.getTotalOriginationFees());
+        return loanTransactionData;
     }
 
     private static final class CurrencyMapper implements RowMapper<CurrencyData> {

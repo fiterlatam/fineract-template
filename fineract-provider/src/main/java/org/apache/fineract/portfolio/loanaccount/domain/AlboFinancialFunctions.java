@@ -99,10 +99,6 @@ public final class AlboFinancialFunctions {
                 installmentFee = installmentFee.add(chargeFraction);
             }
 
-            if (charge.isActive() && charge.isDisbursementCharge()) {
-                loanAmountWithFeeAndCharges = loanAmountWithFeeAndCharges.subtract(
-                        charge.getAmount(currency.toOrganisationCurrency().toMonetaryCurrency()).getAmount(), MathContext.DECIMAL64);
-            }
         }
 
         vatPercentage = vatPercentage.divide(a100, MathContext.DECIMAL64).add(BigDecimal.ONE);
