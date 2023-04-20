@@ -213,13 +213,21 @@ public class AgencyWritePlatformServiceImpl implements AgencyWritePlatformServic
     public CommandProcessingResult updateAgency(Long agencyId, JsonCommand command) {
 
         try {
-            this.context.authenticatedUser();
+            final AppUser currentUser = this.context.authenticatedUser();
 
             this.fromApiJsonDeserializer.validateForUpdate(command.json());
 
             Agency agency = this.agencyRepositoryWrapper.findOneWithNotFoundDetection(agencyId);
 
             final Map<String, Object> changes = agency.update(command);
+
+            Long parentId;
+            if (command.parameterExists(AgencyConstants.AgencySupportedParameters.OFFICE_PARENT_ID.getValue())) {
+                parentId = command.longValueOfParameterNamed(AgencyConstants.AgencySupportedParameters.OFFICE_PARENT_ID.getValue());
+
+                final Office parentOffice = validateUserPrivilegeOnOfficeAndRetrieve(currentUser, parentId);
+                agency.setParentOffice(parentOffice);
+            }
 
             // Get code values for fields
             if (command.longValueOfParameterNamed(AgencyConstants.AgencySupportedParameters.CITY_ID.getValue()) != 0) {
@@ -369,7 +377,7 @@ public class AgencyWritePlatformServiceImpl implements AgencyWritePlatformServic
                     .withEntityId(agency.getId()) //
                     .build();
         } catch (final JpaSystemException | DataIntegrityViolationException dve) {
-            LOG.error("Error occured.", dve);
+            LOG.error("Error occurred.", dve);
             throw new PlatformDataIntegrityException("error.msg.agency.unknown.data.integrity.issue",
                     "Unknown data integrity issue with resource.", dve);
         }

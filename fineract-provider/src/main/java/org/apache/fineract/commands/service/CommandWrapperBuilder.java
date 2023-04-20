@@ -3610,4 +3610,28 @@ public class CommandWrapperBuilder {
         this.href = "/agencies/" + agencyId;
         return this;
     }
+
+    public CommandWrapperBuilder createSupervision() {
+        this.actionName = "CREATE";
+        this.entityName = "SUPERVISION";
+        this.entityId = null;
+        this.href = "/supervisions";
+        return this;
+    }
+
+    public CommandWrapperBuilder updateSupervision(final Long supervisionId) {
+        this.actionName = "UPDATE";
+        this.entityName = "SUPERVISION";
+        this.entityId = supervisionId;
+        this.href = "/supervisions/" + supervisionId;
+        return this;
+    }
+
+    public CommandWrapperBuilder deleteSupervision(final Long supervisionId) {
+        this.actionName = "DELETE";
+        this.entityName = "SUPERVISION";
+        this.entityId = supervisionId;
+        this.href = "/supervisions/" + supervisionId;
+        return this;
+    }
 }

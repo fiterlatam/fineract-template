@@ -23,6 +23,7 @@ import java.sql.SQLException;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 import org.apache.fineract.infrastructure.codes.service.CodeValueReadPlatformService;
@@ -130,14 +131,15 @@ public class AgencyReadPlatformServiceImpl implements AgencyReadPlatformService 
 
         final List<Long> officeIds = new ArrayList<>();
         final Collection<OfficeData> parentOfficesOptions = officeReadPlatformService
-                .retrieveOfficesByHierarchyLevel(Long.valueOf(OfficeHierarchyLevel.GERENCIA.getValue()));
+                .retrieveOfficesByHierarchyLevel(Long.valueOf(OfficeHierarchyLevel.REGION.getValue()));
         parentOfficesOptions.forEach(parentOffice -> officeIds.add(parentOffice.getId()));
 
+        String inSql = String.join(",", Collections.nCopies(officeIds.size(), "?"));
         AgencyMapper agencyMapper = new AgencyMapper();
         String schemaSql = "select " + agencyMapper.schema();
-        schemaSql += "where a.linked_office_id in (?)";
+        schemaSql += "where a.linked_office_id in (%s)";
 
-        return this.jdbcTemplate.query(schemaSql, agencyMapper, officeIds.toArray());
+        return this.jdbcTemplate.query(String.format(schemaSql, inSql), agencyMapper, officeIds.toArray());
     }
 
     private static final class AgencyMapper implements RowMapper<AgencyData> {
