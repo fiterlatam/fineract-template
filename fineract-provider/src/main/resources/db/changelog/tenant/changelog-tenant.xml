@@ -49,4 +49,6 @@
     <include file="parts/0032_agency_feature.xml" relativeToChangelogFile="true"/>
     <include file="parts/0033_add_new_code_and_values.xml" relativeToChangelogFile="true"/>
     <include file="parts/0034_adjust_currencies.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0035_agency_add_constraints.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0036_supervision_feature.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
