@@ -6470,8 +6470,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 } else if (loanCharge.isAlboCharge() && loanCharge.isFeeCharge()) {
 
                     if (loanCharge.isPunitiveFee() && loanCharge.isFeeCharge()) {
-                        feeForCurrentPeriod = feeForCurrentPeriod
-                                .plus(loanCharge.getAmount(currency));
+                        feeForCurrentPeriod = feeForCurrentPeriod.plus(loanCharge.getAmount(currency));
                         feeAccountedForCurrentPeriod = feeAccountedForCurrentPeriod
                                 .plus(loanCharge.getAmountWaived(getCurrency()).plus(loanCharge.getAmountPaid(getCurrency())));
                     }
@@ -6944,11 +6943,6 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
     public void setTotalOriginationFees(BigDecimal totalOriginationFees) {
         this.totalOriginationFees = totalOriginationFees;
-    }
-
-    private Money calculatePunitiveFeesForSinglePeriod(Money chargeAmount) {
-        BigDecimal divisor = BigDecimal.valueOf(this.termFrequency);
-        return chargeAmount.dividedBy(divisor, MoneyHelper.getRoundingMode());
     }
 
 }
