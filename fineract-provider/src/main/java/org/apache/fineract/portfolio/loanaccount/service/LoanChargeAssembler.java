@@ -181,7 +181,8 @@ public class LoanChargeAssembler {
                                         }
                                     }
                                 }
-                            } else if (ChargeTimeType.TRANCHE_DISBURSEMENT.getValue().equals(chargeDefinition.getChargeTimeType())) {
+                            }
+                            else if (ChargeTimeType.TRANCHE_DISBURSEMENT.getValue().equals(chargeDefinition.getChargeTimeType())) {
                                 LoanTrancheDisbursementCharge loanTrancheDisbursementCharge = null;
                                 for (LoanDisbursementDetails disbursementDetail : disbursementDetails) {
                                     if (ChargeTimeType.TRANCHE_DISBURSEMENT.getValue().equals(chargeDefinition.getChargeTimeType())) {
@@ -266,6 +267,11 @@ public class LoanChargeAssembler {
         final Set<LoanCharge> loanCharges = new HashSet<>();
         final BigDecimal principal = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed("principal", element);
         final Integer numberOfRepayments = this.fromApiJsonHelper.extractIntegerWithLocaleNamed("numberOfRepayments", element);
+        final Long productId = this.fromApiJsonHelper.extractLongNamed("productId", element);
+        final LoanProduct loanProduct = this.loanProductRepository.findById(productId)
+                .orElseThrow(() -> new LoanProductNotFoundException(productId));
+        final boolean isMultiDisbursal = loanProduct.isMultiDisburseLoan();
+        LocalDate expectedDisbursementDate = null;
 
         if (element.isJsonObject()) {
             final JsonObject topLevelJsonElement = element.getAsJsonObject();
@@ -309,12 +315,24 @@ public class LoanChargeAssembler {
                         if (chargePaymentMode != null) {
                             chargePaymentModeEnum = ChargePaymentMode.fromInt(chargePaymentMode);
                         }
-                        if (ChargeTimeType.ORIGINATION_FEE.getValue().equals(chargeDefinition.getChargeTimeType())) {
+                        if (!isMultiDisbursal) {
                             final LoanCharge loanCharge = LoanCharge.createNewWithoutLoan(chargeDefinition, principal, amount, chargeTime,
                                     chargeCalculation, dueDate, chargePaymentModeEnum, numberOfRepayments);
                             loanCharges.add(loanCharge);
-                        }
+                        } else {
+                            if (topLevelJsonElement.has("disbursementData") && topLevelJsonElement.get("disbursementData").isJsonArray()) {
+                                final JsonArray disbursementArray = topLevelJsonElement.get("disbursementData").getAsJsonArray();
+                                if (disbursementArray.size() > 0) {
+                                    JsonObject disbursementDataElement = disbursementArray.get(0).getAsJsonObject();
+                                    expectedDisbursementDate = this.fromApiJsonHelper.extractLocalDateNamed(
+                                            LoanApiConstants.disbursementDateParameterName, disbursementDataElement, dateFormat, locale);
+                                }
+                            }
+                            final LoanCharge loanCharge = LoanCharge.createNewWithoutLoan(chargeDefinition, principal, amount, chargeTime,
+                                    chargeCalculation, dueDate, chargePaymentModeEnum, numberOfRepayments);
+                            loanCharges.add(loanCharge);
 
+                        }
                     } else {
                         final Long loanChargeId = id;
                         final LoanCharge loanCharge = this.loanChargeRepository.findById(loanChargeId).orElse(null);

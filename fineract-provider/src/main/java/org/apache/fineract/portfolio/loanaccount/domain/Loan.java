@@ -3425,6 +3425,8 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
         boolean isAllChargesPaid = true;
         for (final LoanCharge loanCharge : this.charges) {
+            if (loanCharge.isOriginationFee() || loanCharge.isAlboCharge()) continue;
+
             if (loanCharge.isActive() && loanCharge.amount().compareTo(BigDecimal.ZERO) > 0
                     && !(loanCharge.isPaid() || loanCharge.isWaived())) {
                 isAllChargesPaid = false;
@@ -6465,6 +6467,20 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                     } else {
                         feeAccountedForCurrentPeriod = feeAccountedForCurrentPeriod.plus(loanInstallmentCharge.getAmountPaid(currency));
                     }
+                } else if (loanCharge.isAlboCharge() && loanCharge.isFeeCharge()) {
+
+                    if (loanCharge.isPunitiveFee() && loanCharge.isFeeCharge()) {
+                        feeForCurrentPeriod = feeForCurrentPeriod
+                                .plus(loanCharge.getAmount(currency));
+                        feeAccountedForCurrentPeriod = feeAccountedForCurrentPeriod
+                                .plus(loanCharge.getAmountWaived(getCurrency()).plus(loanCharge.getAmountPaid(getCurrency())));
+                    }
+
+                    if (loanCharge.isCollectionFee()) {
+                        feeForCurrentPeriod = feeForCurrentPeriod.plus(loanCharge.getAmount(currency));
+                        feeAccountedForCurrentPeriod = feeAccountedForCurrentPeriod
+                                .plus(loanCharge.getAmountWaived(getCurrency()).plus(loanCharge.getAmountPaid(getCurrency())));
+                    }
                 }
             }
         }
@@ -6526,7 +6542,9 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         Money receivableInterest = Money.zero(currency);
         Money receivableFee = Money.zero(currency);
         Money receivablePenalty = Money.zero(currency);
-        Money[] receivables = new Money[3];
+        Money vatOnInterest = Money.zero(currency);
+        Money vatOnCharges = Money.zero(currency);
+        Money[] receivables = new Money[5];
         for (final LoanTransaction transaction : this.loanTransactions) {
             if (transaction.isNotReversed() && !transaction.isRepaymentAtDisbursement() && !transaction.isDisbursement()
                     && !transaction.getTransactionDate().isAfter(tillDate)) {
@@ -6534,10 +6552,14 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                     receivableInterest = receivableInterest.plus(transaction.getInterestPortion(currency));
                     receivableFee = receivableFee.plus(transaction.getFeeChargesPortion(currency));
                     receivablePenalty = receivablePenalty.plus(transaction.getPenaltyChargesPortion(currency));
+                    vatOnInterest = vatOnInterest.plus(transaction.getVatOnInterestPortion(currency));
+                    vatOnCharges = vatOnCharges.plus(transaction.getVatOnChargesPortion(currency));
                 } else if (transaction.isRepaymentType() || transaction.isChargePayment()) {
                     receivableInterest = receivableInterest.minus(transaction.getInterestPortion(currency));
                     receivableFee = receivableFee.minus(transaction.getFeeChargesPortion(currency));
                     receivablePenalty = receivablePenalty.minus(transaction.getPenaltyChargesPortion(currency));
+                    vatOnInterest = vatOnInterest.plus(transaction.getVatOnInterestPortion(currency));
+                    vatOnCharges = vatOnCharges.plus(transaction.getVatOnChargesPortion(currency));
                 }
             }
             if (receivableInterest.isLessThanZero()) {
@@ -6549,10 +6571,18 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             if (receivablePenalty.isLessThanZero()) {
                 receivablePenalty = receivablePenalty.zero();
             }
+            if (vatOnInterest.isLessThanZero()) {
+                vatOnInterest = vatOnInterest.zero();
+            }
+            if (vatOnCharges.isLessThanZero()) {
+                vatOnCharges = vatOnCharges.zero();
+            }
         }
         receivables[0] = receivableInterest;
         receivables[1] = receivableFee;
         receivables[2] = receivablePenalty;
+        receivables[3] = vatOnInterest;
+        receivables[4] = vatOnCharges;
         return receivables;
     }
 
@@ -6659,11 +6689,10 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
         BigDecimal vatOnInterest = BigDecimal.ZERO;
         BigDecimal vatOnCharge = BigDecimal.ZERO;
-        if (this.isVatRequired() && this.client != null && this.client.getVatRate() != null
-                && this.client.getVatRate().getPercentage() % 1 == 0) {
-            double vatPercentage = this.client.getVatRate().getPercentage();
-            vatOnCharge = balances[2].getAmount().multiply(new BigDecimal(vatPercentage)).divide(BigDecimal.valueOf(100));
-            vatOnInterest = balances[0].getAmount().multiply(new BigDecimal(vatPercentage)).divide(BigDecimal.valueOf(100));
+        if (this.isVatRequired() && this.vatPercentage != null) {
+            BigDecimal totalCharges = balances[2].add(balances[1]).getAmount();
+            vatOnCharge = totalCharges.multiply(this.vatPercentage).divide(BigDecimal.valueOf(100), MathContext.DECIMAL32);
+            vatOnInterest = balances[0].getAmount().multiply(this.vatPercentage).divide(BigDecimal.valueOf(100), MathContext.DECIMAL32);
         }
 
         LoanRepaymentScheduleInstallment newInstallment = new LoanRepaymentScheduleInstallment(null, newInstallments.size() + 1,
@@ -6915,6 +6944,11 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
     public void setTotalOriginationFees(BigDecimal totalOriginationFees) {
         this.totalOriginationFees = totalOriginationFees;
+    }
+
+    private Money calculatePunitiveFeesForSinglePeriod(Money chargeAmount) {
+        BigDecimal divisor = BigDecimal.valueOf(this.termFrequency);
+        return chargeAmount.dividedBy(divisor, MoneyHelper.getRoundingMode());
     }
 
 }

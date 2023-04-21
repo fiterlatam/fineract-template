@@ -736,7 +736,9 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
             Money interestPortion = foreCloseDetail.getInterestCharged(currency).minus(accruedReceivables[0]);
             Money feePortion = foreCloseDetail.getFeeChargesCharged(currency).minus(accruedReceivables[1]);
             Money penaltyPortion = foreCloseDetail.getPenaltyChargesCharged(currency).minus(accruedReceivables[2]);
-            Money total = interestPortion.plus(feePortion).plus(penaltyPortion);
+            Money vatOnInterest = foreCloseDetail.getVatOnInterestCharged(currency).minus(accruedReceivables[3]);
+            Money vatOnCharges = foreCloseDetail.getVatOnChargeExpected(currency).minus(accruedReceivables[4]);
+            Money total = interestPortion.plus(feePortion).plus(penaltyPortion).plus(vatOnInterest).plus(vatOnCharges);
             if (total.isGreaterThanZero()) {
                 LoanTransaction accrualTransaction = LoanTransaction.accrueTransaction(loan, loan.getOffice(), foreClosureDate,
                         total.getAmount(), interestPortion.getAmount(), feePortion.getAmount(), penaltyPortion.getAmount());
@@ -765,7 +767,6 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         Money payPrincipal = foreCloseDetail.getPrincipal(currency);
         Money vatOnInterest = foreCloseDetail.getVatOnInterestCharged(currency);
         Money vatOnCharges = foreCloseDetail.getVatOnChargeExpected(currency);
-        Money originationFees = Money.of(currency, loan.getTotalOriginationFees());
         loan.updateInstallmentsPostDate(foreClosureDate);
 
         LoanTransaction payment = null;

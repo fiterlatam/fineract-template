@@ -25,6 +25,7 @@ import java.util.Set;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
 import org.apache.fineract.organisation.monetary.domain.Money;
+import org.apache.fineract.organisation.monetary.domain.MoneyHelper;
 
 /**
  * A wrapper around loan schedule related data exposing needed behaviour by loan.
@@ -192,6 +193,18 @@ public class LoanRepaymentScheduleProcessingWrapper {
                         amountSubjectToVat = amountSubjectToVat.plus(loanCharge.amount());
                     }
 
+                } else if (loanCharge.isCollectionFee()) {
+                    cumulative = cumulative.plus(loanCharge.amount());
+                    if (loanCharge.getCharge().isVatRequired()) {
+                        amountSubjectToVat = amountSubjectToVat.plus(loanCharge.amount());
+                    }
+                } else if (loanCharge.isPunitiveFee()) {
+                    Money punitiveFee = calculatePunitiveFeesForSinglePeriod(Money.of(monetaryCurrency, loanCharge.amount()),
+                            loanCharge.getLoan());
+                    cumulative = cumulative.plus(punitiveFee);
+                    if (loanCharge.getCharge().isVatRequired()) {
+                        amountSubjectToVat = amountSubjectToVat.plus(punitiveFee);
+                    }
                 }
             }
         }
@@ -232,13 +245,26 @@ public class LoanRepaymentScheduleProcessingWrapper {
                     LoanInstallmentCharge loanChargePerInstallment = loanCharge.getInstallmentLoanCharge(periodEnd);
                     if (loanChargePerInstallment != null) {
                         cumulative = cumulative.plus(loanChargePerInstallment.getAmountWaived(currency));
+                        if (loanCharge.getCharge().isVatRequired()) {
+                            amountSubjectToVat = amountSubjectToVat.plus(loanChargePerInstallment.getAmountWaived(currency));
+                        }
                     }
                 } else if (loanCharge.isDueForCollectionFromAndUpToAndIncluding(periodStart, periodEnd)) {
                     cumulative = cumulative.plus(loanCharge.getAmountWaived(currency));
-                }
-
-                if (loanCharge.getCharge().isVatRequired()) {
-                    amountSubjectToVat = amountSubjectToVat.plus(cumulative);
+                    if (loanCharge.getCharge().isVatRequired()) {
+                        amountSubjectToVat = amountSubjectToVat.plus(loanCharge.getAmountWaived(currency));
+                    }
+                } else if (loanCharge.isCollectionFee()) {
+                    cumulative = cumulative.plus(loanCharge.getAmountWaived(currency));
+                    if (loanCharge.getCharge().isVatRequired()) {
+                        amountSubjectToVat = amountSubjectToVat.plus(loanCharge.getAmountWaived(currency));
+                    }
+                } else if (loanCharge.isPunitiveFee()) {
+                    Money punitiveFee = calculatePunitiveFeesForSinglePeriod(loanCharge.getAmountWaived(currency), loanCharge.getLoan());
+                    cumulative = cumulative.plus(punitiveFee);
+                    if (loanCharge.getCharge().isVatRequired()) {
+                        amountSubjectToVat = amountSubjectToVat.plus(punitiveFee);
+                    }
                 }
             }
         }
@@ -279,14 +305,29 @@ public class LoanRepaymentScheduleProcessingWrapper {
                     LoanInstallmentCharge loanChargePerInstallment = loanCharge.getInstallmentLoanCharge(periodEnd);
                     if (loanChargePerInstallment != null) {
                         cumulative = cumulative.plus(loanChargePerInstallment.getAmountWrittenOff(currency));
+                        if (loanCharge.getCharge().isVatRequired()) {
+                            amountSubjectToVat = amountSubjectToVat.plus(loanChargePerInstallment.getAmountWrittenOff(currency));
+                        }
                     }
                 } else if (loanCharge.isDueForCollectionFromAndUpToAndIncluding(periodStart, periodEnd)) {
                     cumulative = cumulative.plus(loanCharge.getAmountWrittenOff(currency));
+                    if (loanCharge.getCharge().isVatRequired()) {
+                        amountSubjectToVat = amountSubjectToVat.plus(loanCharge.getAmountWrittenOff(currency));
+                    }
+                } else if (loanCharge.isCollectionFee()) {
+                    cumulative = cumulative.plus(loanCharge.getAmountWrittenOff(currency));
+                    if (loanCharge.getCharge().isVatRequired()) {
+                        amountSubjectToVat = amountSubjectToVat.plus(loanCharge.getAmountWrittenOff(currency));
+                    }
+                } else if (loanCharge.isPunitiveFee()) {
+                    Money punitiveFee = calculatePunitiveFeesForSinglePeriod(loanCharge.getAmountWrittenOff(currency),
+                            loanCharge.getLoan());
+                    cumulative = cumulative.plus(punitiveFee);
+                    if (loanCharge.getCharge().isVatRequired()) {
+                        amountSubjectToVat = amountSubjectToVat.plus(punitiveFee);
+                    }
                 }
 
-                if (loanCharge.getCharge().isVatRequired()) {
-                    amountSubjectToVat = amountSubjectToVat.plus(cumulative);
-                }
             }
         }
 
@@ -357,6 +398,17 @@ public class LoanRepaymentScheduleProcessingWrapper {
                     if (loanCharge.getCharge().isVatRequired()) {
                         amountSubjectToVat = amountSubjectToVat.plus(loanCharge.amount());
                     }
+                } else if (loanCharge.isCollectionFee()) {
+                    cumulative = cumulative.plus(loanCharge.amount());
+                    if (loanCharge.getCharge().isVatRequired()) {
+                        amountSubjectToVat = amountSubjectToVat.plus(loanCharge.amount());
+                    }
+                } else if (loanCharge.isPunitiveFee()) {
+                    Money punitiveFee = calculatePunitiveFeesForSinglePeriod(Money.of(currency, loanCharge.amount()), loanCharge.getLoan());
+                    cumulative = cumulative.plus(punitiveFee);
+                    if (loanCharge.getCharge().isVatRequired()) {
+                        amountSubjectToVat = amountSubjectToVat.plus(punitiveFee);
+                    }
                 }
             }
         }
@@ -397,14 +449,28 @@ public class LoanRepaymentScheduleProcessingWrapper {
                     LoanInstallmentCharge loanChargePerInstallment = loanCharge.getInstallmentLoanCharge(periodEnd);
                     if (loanChargePerInstallment != null) {
                         cumulative = cumulative.plus(loanChargePerInstallment.getAmountWaived(currency));
+                        if (loanCharge.getCharge().isVatRequired()) {
+                            amountSubjectToVat = amountSubjectToVat.plus(loanChargePerInstallment.getAmountWaived(currency));
+                        }
                     }
                 } else if (loanCharge.isDueForCollectionFromAndUpToAndIncluding(periodStart, periodEnd)) {
                     cumulative = cumulative.plus(loanCharge.getAmountWaived(currency));
+                    if (loanCharge.getCharge().isVatRequired()) {
+                        amountSubjectToVat = amountSubjectToVat.plus(loanCharge.getAmountWaived(currency));
+                    }
+                } else if (loanCharge.isCollectionFee()) {
+                    cumulative = cumulative.plus(loanCharge.getAmountWaived(currency));
+                    if (loanCharge.getCharge().isVatRequired()) {
+                        amountSubjectToVat = amountSubjectToVat.plus(loanCharge.getAmountWaived(currency));
+                    }
+                } else if (loanCharge.isPunitiveFee()) {
+                    Money punitiveFee = calculatePunitiveFeesForSinglePeriod(loanCharge.getAmountWaived(currency), loanCharge.getLoan());
+                    cumulative = cumulative.plus(punitiveFee);
+                    if (loanCharge.getCharge().isVatRequired()) {
+                        amountSubjectToVat = amountSubjectToVat.plus(punitiveFee);
+                    }
                 }
 
-                if (loanCharge.getCharge().isVatRequired()) {
-                    amountSubjectToVat = amountSubjectToVat.plus(cumulative);
-                }
             }
         }
 
@@ -444,13 +510,27 @@ public class LoanRepaymentScheduleProcessingWrapper {
                     LoanInstallmentCharge loanChargePerInstallment = loanCharge.getInstallmentLoanCharge(periodEnd);
                     if (loanChargePerInstallment != null) {
                         cumulative = cumulative.plus(loanChargePerInstallment.getAmountWrittenOff(currency));
+                        if (loanCharge.getCharge().isVatRequired()) {
+                            amountSubjectToVat = amountSubjectToVat.plus(loanChargePerInstallment.getAmountWrittenOff(currency));
+                        }
                     }
                 } else if (loanCharge.isDueForCollectionFromAndUpToAndIncluding(periodStart, periodEnd)) {
                     cumulative = cumulative.plus(loanCharge.getAmountWrittenOff(currency));
-                }
-
-                if (loanCharge.getCharge().isVatRequired()) {
-                    amountSubjectToVat = amountSubjectToVat.plus(cumulative);
+                    if (loanCharge.getCharge().isVatRequired()) {
+                        amountSubjectToVat = amountSubjectToVat.plus(loanCharge.getAmountWrittenOff(currency));
+                    }
+                } else if (loanCharge.isCollectionFee()) {
+                    cumulative = cumulative.plus(loanCharge.getAmountWrittenOff(currency));
+                    if (loanCharge.getCharge().isVatRequired()) {
+                        amountSubjectToVat = amountSubjectToVat.plus(loanCharge.getAmountWrittenOff(currency));
+                    }
+                } else if (loanCharge.isPunitiveFee()) {
+                    Money punitiveFee = calculatePunitiveFeesForSinglePeriod(loanCharge.getAmountWrittenOff(currency),
+                            loanCharge.getLoan());
+                    cumulative = cumulative.plus(punitiveFee);
+                    if (loanCharge.getCharge().isVatRequired()) {
+                        amountSubjectToVat = amountSubjectToVat.plus(punitiveFee);
+                    }
                 }
             }
         }
@@ -461,5 +541,10 @@ public class LoanRepaymentScheduleProcessingWrapper {
     private Money calculateVatOnAmount(BigDecimal vatPercentage, Money amountSubjectToVat) {
         BigDecimal vatConverted = vatPercentage.divide(BigDecimal.valueOf(100));
         return amountSubjectToVat.multipliedBy(vatConverted);
+    }
+
+    private Money calculatePunitiveFeesForSinglePeriod(Money chargeAmount, Loan loan) {
+        BigDecimal divisor = BigDecimal.valueOf(loan.getTermFrequency());
+        return chargeAmount.dividedBy(divisor, MoneyHelper.getRoundingMode());
     }
 }
