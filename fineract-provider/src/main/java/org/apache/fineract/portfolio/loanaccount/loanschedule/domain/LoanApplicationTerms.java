@@ -468,13 +468,15 @@ public final class LoanApplicationTerms {
 
         Money adjusted = principalForPeriod;
 
-        final Money totalPrincipalRemaining = this.principal.add(originationFees()).minus(totalCumulativePrincipalToDate);
+        final Money totalPrincipalAndOriginationFee = this.principal.add(originationFees());
+
+        final Money totalPrincipalRemaining = totalPrincipalAndOriginationFee.minus(totalCumulativePrincipalToDate);
         if (totalPrincipalRemaining.isLessThanZero()) {
             // paid too much principal, subtract amount that overpays from
             // principal paid for period.
             adjusted = principalForPeriod.minus(totalPrincipalRemaining.abs());
         } else if (this.actualFixedEmiAmount != null) {
-            final Money difference = this.principal.minus(totalCumulativePrincipalToDate);
+            final Money difference = totalPrincipalAndOriginationFee.minus(totalCumulativePrincipalToDate);
             final Money principalThreshold = principalForPeriod.multipliedBy(this.principalThresholdForLastInstalment).dividedBy(100,
                     MoneyHelper.getRoundingMode());
             if (difference.isLessThan(principalThreshold)) {
@@ -482,7 +484,7 @@ public final class LoanApplicationTerms {
             }
         } else if (isLastRepaymentPeriod(this.actualNumberOfRepayments, periodNumber)) {
 
-            final Money difference = totalCumulativePrincipalToDate.minus(this.principal);
+            final Money difference = totalCumulativePrincipalToDate.minus(totalPrincipalAndOriginationFee);
             if (difference.isLessThanZero()) {
                 adjusted = principalForPeriod.plus(difference.abs());
             } else if (difference.isGreaterThanZero()) {
@@ -1350,10 +1352,18 @@ public final class LoanApplicationTerms {
         Money principal = totalDuePerInstallment.minus(periodInterest);
 
         BigDecimal collectionFee = charges.stream().filter(charge -> charge.isActive() && charge.isCollectionFee())
-                .map(LoanCharge::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
+                .map(LoanCharge::amountOrPercentage).reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        BigDecimal instalmentFee = charges.stream().filter(charge -> charge.isActive() && charge.isPunitiveFee()).map(LoanCharge::getAmount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add).divide(BigDecimal.valueOf(this.actualNumberOfRepayments), MathContext.DECIMAL64);
+        BigDecimal instalmentFee = BigDecimal.ZERO;
+
+        for (LoanCharge charge : charges) {
+            if (charge.isAlboInstalmentFee() && charge.isFeeCharge()) {
+                BigDecimal chargeFraction = charge.getPercentage().divide(a100, mc);
+                Money chargeAmt = this.principal.multipliedBy(chargeFraction);
+                Money unitCharge = chargeAmt.dividedBy(BigDecimal.valueOf(this.actualNumberOfRepayments), mc.getRoundingMode());
+                instalmentFee = instalmentFee.add(unitCharge.getAmount());
+            }
+        }
 
         Money totalFee = Money.of(principal.getCurrency(), collectionFee.add(instalmentFee));
 
@@ -1378,12 +1388,15 @@ public final class LoanApplicationTerms {
 
         for (final LoanCharge loanCharge : loanCharges) {
 
-            if (loanCharge.isPunitiveFee() && loanCharge.isFeeCharge()) {
-                Money chargeAmount = loanCharge.getAmount(monetaryCurrency).dividedBy(this.actualNumberOfRepayments, mc.getRoundingMode());
-                cumulative = cumulative.plus(chargeAmount);
+            if (loanCharge.isAlboInstalmentFee() && loanCharge.isFeeCharge()) {
+                Money principal = this.getPrincipal();
+                BigDecimal totalCharge = LoanCharge.percentageOf(principal.getAmount(), loanCharge.getPercentage());
+                BigDecimal divisor = BigDecimal.valueOf(this.getLoanTermFrequency());
+                BigDecimal unitInstalmentCharge = totalCharge.divide(divisor, MoneyHelper.getRoundingMode());
+                cumulative = cumulative.plus(Money.of(this.getCurrency(), unitInstalmentCharge));
             }
             if (loanCharge.isCollectionFee() && loanCharge.isFeeCharge()) {
-                cumulative = cumulative.plus(loanCharge.getAmount(monetaryCurrency));
+                cumulative = cumulative.plus(loanCharge.amountOrPercentage());
             }
         }
 

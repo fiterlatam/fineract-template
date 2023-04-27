@@ -575,20 +575,24 @@ public class LoanCharge extends AbstractPersistableCustom {
         return ChargeTimeType.fromInt(this.chargeTime).equals(ChargeTimeType.INSTALMENT_FEE);
     }
 
-    public boolean isPunitiveFee() {
-        return ChargeTimeType.fromInt(this.chargeTime).equals(ChargeTimeType.PUNITIVE_FEE);
+    public boolean isAlboInstalmentFee() {
+        return ChargeTimeType.fromInt(this.chargeTime).equals(ChargeTimeType.INSTALMENT_FEE)
+                && ChargeCalculationType.fromInt(this.chargeCalculation).equals(ChargeCalculationType.PERCENT_OF_AMOUNT);
     }
 
-    public boolean isNotPunitiveFee() {
-        return !ChargeTimeType.fromInt(this.chargeTime).equals(ChargeTimeType.PUNITIVE_FEE);
+    public boolean isNotAlboInstalmentFee() {
+        return !(ChargeTimeType.fromInt(this.chargeTime).equals(ChargeTimeType.INSTALMENT_FEE)
+                && ChargeCalculationType.fromInt(this.chargeCalculation).equals(ChargeCalculationType.PERCENT_OF_AMOUNT));
     }
 
     public boolean isCollectionFee() {
-        return ChargeTimeType.fromInt(this.chargeTime).equals(ChargeTimeType.COLLECTION_FEE);
+        return ChargeTimeType.fromInt(this.chargeTime).equals(ChargeTimeType.INSTALMENT_FEE)
+                && ChargeCalculationType.fromInt(this.chargeCalculation).equals(ChargeCalculationType.FLAT);
     }
 
     public boolean isNotCollectionFee() {
-        return !ChargeTimeType.fromInt(this.chargeTime).equals(ChargeTimeType.COLLECTION_FEE);
+        return !(ChargeTimeType.fromInt(this.chargeTime).equals(ChargeTimeType.INSTALMENT_FEE)
+                && ChargeCalculationType.fromInt(this.chargeCalculation).equals(ChargeCalculationType.FLAT));
     }
 
     public boolean isOriginationFee() {
@@ -597,11 +601,6 @@ public class LoanCharge extends AbstractPersistableCustom {
 
     public boolean isNotOriginationFee() {
         return !ChargeTimeType.fromInt(this.chargeTime).equals(ChargeTimeType.ORIGINATION_FEE);
-    }
-
-    public boolean isAlboCharge() {
-        return ChargeTimeType.fromInt(this.chargeTime).equals(ChargeTimeType.COLLECTION_FEE)
-                || ChargeTimeType.fromInt(this.chargeTime).equals(ChargeTimeType.PUNITIVE_FEE);
     }
 
     public boolean isOverdueInstallmentCharge() {
