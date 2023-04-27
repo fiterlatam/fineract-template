@@ -532,7 +532,7 @@ public class LoanUtilService {
 
         for (LoanCharge charge : loan.getCharges()) {
             if (charge.isActive() && charge.isCollectionFee()) {
-                collectionFee = collectionFee.add(charge.getAmount());
+                collectionFee = collectionFee.add(charge.amountOrPercentage());
             }
         }
 

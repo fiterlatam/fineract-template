@@ -90,11 +90,11 @@ public final class AlboFinancialFunctions {
         BigDecimal loanAmountWithFeeAndCharges = loanDisbursedAmount;
 
         for (LoanCharge charge : charges) {
-            if (charge.isActive() && charge.isCollectionFee()) {
-                collectionFee = collectionFee.add(charge.getAmount());
+            if (charge.isFeeCharge() && charge.isCollectionFee()) {
+                collectionFee = collectionFee.add(charge.amountOrPercentage());
             }
 
-            if (charge.isPunitiveFee() && charge.isFeeCharge()) {
+            if (charge.isAlboInstalmentFee() && charge.isFeeCharge()) {
                 BigDecimal chargeFraction = charge.getPercentage().divide(a100, mc);
                 installmentFee = installmentFee.add(chargeFraction);
             }

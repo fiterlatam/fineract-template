@@ -992,6 +992,26 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             final LoanRepaymentScheduleInstallment installment) {
         Money amount = Money.zero(getCurrency());
         Money percentOf = Money.zero(getCurrency());
+        Money principal = this.loanRepaymentScheduleDetail.getPrincipal();
+        BigDecimal totalCharge = LoanCharge.percentageOf(principal.getAmount(), percentage);
+        BigDecimal divisor = BigDecimal.valueOf(this.termFrequency);
+
+        BigDecimal unitInstalmentCharge = totalCharge.divide(divisor, MoneyHelper.getRoundingMode());
+
+        return Money.of(loanCurrency(), unitInstalmentCharge);
+    }
+
+    /**
+     * @param calculationType
+     * @param percentage
+     * @param installment
+     * @return
+     */
+    @SuppressWarnings("unused")
+    private Money calculateInstallmentChargeAmountOld(final ChargeCalculationType calculationType, final BigDecimal percentage,
+            final LoanRepaymentScheduleInstallment installment) {
+        Money amount = Money.zero(getCurrency());
+        Money percentOf = Money.zero(getCurrency());
         switch (calculationType) {
             case PERCENT_OF_AMOUNT:
                 percentOf = installment.getPrincipal(getCurrency());
@@ -3425,7 +3445,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
         boolean isAllChargesPaid = true;
         for (final LoanCharge loanCharge : this.charges) {
-            if (loanCharge.isOriginationFee() || loanCharge.isAlboCharge()) continue;
+            if (loanCharge.isOriginationFee()) continue;
 
             if (loanCharge.isActive() && loanCharge.amount().compareTo(BigDecimal.ZERO) > 0
                     && !(loanCharge.isPaid() || loanCharge.isWaived())) {
@@ -6466,19 +6486,6 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                                 .plus(loanInstallmentCharge.getAmountPaid(currency));
                     } else {
                         feeAccountedForCurrentPeriod = feeAccountedForCurrentPeriod.plus(loanInstallmentCharge.getAmountPaid(currency));
-                    }
-                } else if (loanCharge.isAlboCharge() && loanCharge.isFeeCharge()) {
-
-                    if (loanCharge.isPunitiveFee() && loanCharge.isFeeCharge()) {
-                        feeForCurrentPeriod = feeForCurrentPeriod.plus(loanCharge.getAmount(currency));
-                        feeAccountedForCurrentPeriod = feeAccountedForCurrentPeriod
-                                .plus(loanCharge.getAmountWaived(getCurrency()).plus(loanCharge.getAmountPaid(getCurrency())));
-                    }
-
-                    if (loanCharge.isCollectionFee()) {
-                        feeForCurrentPeriod = feeForCurrentPeriod.plus(loanCharge.getAmount(currency));
-                        feeAccountedForCurrentPeriod = feeAccountedForCurrentPeriod
-                                .plus(loanCharge.getAmountWaived(getCurrency()).plus(loanCharge.getAmountPaid(getCurrency())));
                     }
                 }
             }

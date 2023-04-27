@@ -36,6 +36,7 @@ import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.organisation.monetary.domain.ApplicationCurrency;
 import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
 import org.apache.fineract.organisation.monetary.domain.Money;
+import org.apache.fineract.organisation.monetary.domain.MoneyHelper;
 import org.apache.fineract.organisation.workingdays.data.AdjustedDateDetailsDTO;
 import org.apache.fineract.organisation.workingdays.domain.RepaymentRescheduleType;
 import org.apache.fineract.portfolio.calendar.domain.CalendarInstance;
@@ -2025,17 +2026,9 @@ public abstract class AbstractLoanScheduleGenerator implements LoanScheduleGener
 
         for (final LoanCharge loanCharge : loanCharges) {
 
-            if (loanCharge.isPunitiveFee() && loanCharge.isFeeCharge()) {
-                cumulative = cumulative.plus(calculatePunitiveFeesForSinglePeriod(loanCharge.getAmount(monetaryCurrency)));
-            }
-            if (loanCharge.isCollectionFee() && loanCharge.isFeeCharge()) {
-                cumulative = cumulative.plus(loanCharge.getAmount(monetaryCurrency));
-            }
-
-            if (!loanCharge.isDueAtDisbursement() && loanCharge.isFeeCharge() && loanCharge.isNotPunitiveFee()
-                    && loanCharge.isNotCollectionFee()) {
+            if (!loanCharge.isDueAtDisbursement() && loanCharge.isFeeCharge()) {
                 if (loanCharge.isInstalmentFee()) {
-                    cumulative = calculateInstallmentCharge(principalInterestForThisPeriod, cumulative, loanCharge);
+                    cumulative = calculateInstallmentCharge(cumulative, loanCharge);
                 } else if (loanCharge.isOverdueInstallmentCharge()
                         && loanCharge.isDueForCollectionFromAndUpToAndIncluding(periodStart, periodEnd)
                         && loanCharge.getChargeCalculation().isPercentageBased()) {
@@ -2068,7 +2061,22 @@ public abstract class AbstractLoanScheduleGenerator implements LoanScheduleGener
         return cumulative;
     }
 
-    private Money calculateInstallmentCharge(final PrincipalInterest principalInterestForThisPeriod, Money cumulative,
+    private Money calculateInstallmentCharge(Money cumulative, final LoanCharge loanCharge) {
+        if (loanCharge.getChargeCalculation().isPercentageOfAmount()) {
+            Money principal = this.loanApplicationTerms.getPrincipal();
+            BigDecimal totalCharge = LoanCharge.percentageOf(principal.getAmount(), loanCharge.getPercentage());
+            BigDecimal divisor = BigDecimal.valueOf(this.loanApplicationTerms.getLoanTermFrequency());
+            BigDecimal unitInstalmentCharge = totalCharge.divide(divisor, MoneyHelper.getRoundingMode());
+            cumulative = cumulative.plus(Money.of(this.loanApplicationTerms.getCurrency(), unitInstalmentCharge));
+        } else {
+            cumulative = cumulative.plus(loanCharge.amountOrPercentage());
+        }
+
+        return cumulative;
+    }
+
+    @SuppressWarnings("unused")
+    private Money calculateInstallmentChargeOld(final PrincipalInterest principalInterestForThisPeriod, Money cumulative,
             final LoanCharge loanCharge) {
         if (loanCharge.getChargeCalculation().isPercentageBased()) {
             BigDecimal amount = BigDecimal.ZERO;
@@ -2097,10 +2105,9 @@ public abstract class AbstractLoanScheduleGenerator implements LoanScheduleGener
 
         for (final LoanCharge loanCharge : loanCharges) {
 
-            if (loanCharge.isPenaltyCharge() && loanCharge.isNotPunitiveFee() && loanCharge.isNotCollectionFee()
-                    && loanCharge.isNotCollectionFee()) {
+            if (loanCharge.isPenaltyCharge()) {
                 if (loanCharge.isInstalmentFee() && isInstallmentChargeApplicable) {
-                    cumulative = calculateInstallmentCharge(principalInterestForThisPeriod, cumulative, loanCharge);
+                    cumulative = calculateInstallmentCharge(cumulative, loanCharge);
                 } else if (loanCharge.isOverdueInstallmentCharge()
                         && loanCharge.isDueForCollectionFromAndUpToAndIncluding(periodStart, periodEnd)
                         && loanCharge.getChargeCalculation().isPercentageBased()) {
@@ -2932,6 +2939,7 @@ public abstract class AbstractLoanScheduleGenerator implements LoanScheduleGener
 
     }
 
+    @SuppressWarnings("unused")
     private Money calculatePunitiveFeesForSinglePeriod(Money chargeAmount) {
 
         Integer loanTerms = loanApplicationTerms.getLoanTermFrequency();

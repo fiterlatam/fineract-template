@@ -367,7 +367,7 @@ public abstract class AbstractLoanRepaymentScheduleTransactionProcessor implemen
             if (loanCharge.isOriginationFee()) continue;
 
             if (loanCharge.getAmountOutstanding(currency).isGreaterThanZero() && !loanCharge.isDueAtDisbursement()) {
-                if (loanCharge.isInstalmentFee() || loanCharge.isAlboCharge()) {
+                if (loanCharge.isInstalmentFee()) {
                     LoanInstallmentCharge unpaidLoanChargePerInstallment = loanCharge.getUnpaidInstallmentLoanCharge();
                     if (chargePerInstallment == null || chargePerInstallment.getRepaymentInstallment().getDueDate()
                             .isAfter(unpaidLoanChargePerInstallment.getRepaymentInstallment().getDueDate())) {
