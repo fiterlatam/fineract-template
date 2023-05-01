@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.organisation.supervision.domain;
+package org.apache.fineract.organisation.portfolio.domain;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -30,12 +30,12 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.domain.AbstractAuditableCustom;
 import org.apache.fineract.organisation.office.domain.Office;
-import org.apache.fineract.organisation.supervision.service.SupervisionConstants;
+import org.apache.fineract.organisation.portfolio.service.PortfolioConstants;
 import org.apache.fineract.useradministration.domain.AppUser;
 
 @Entity
-@Table(name = "m_supervision")
-public class Supervision extends AbstractAuditableCustom {
+@Table(name = "m_portfolio")
+public class Portfolio extends AbstractAuditableCustom {
 
     @Column(name = "name", nullable = false, length = 60)
     private String name;
@@ -48,29 +48,28 @@ public class Supervision extends AbstractAuditableCustom {
     @JoinColumn(name = "responsible_user_id")
     private AppUser responsibleUser;
 
-    protected Supervision() {
+    protected Portfolio() {
 
     }
 
-    public Supervision(Office parentOffice, String name, AppUser responsibleUser) {
+    public Portfolio(Office parentOffice, String name, AppUser responsibleUser) {
         this.parentOffice = parentOffice;
         this.name = StringUtils.defaultIfEmpty(name, null);
         this.responsibleUser = responsibleUser;
     }
 
-    public static Supervision fromJson(Office parentOffice, AppUser responsibleUser, JsonCommand command) {
-        final String name = command.stringValueOfParameterNamed(SupervisionConstants.SupervisionSupportedParameters.NAME.getValue());
+    public static Portfolio fromJson(Office parentOffice, AppUser responsibleUser, JsonCommand command) {
+        final String name = command.stringValueOfParameterNamed(PortfolioConstants.PortfolioSupportedParameters.NAME.getValue());
 
-        return new Supervision(parentOffice, name, responsibleUser);
+        return new Portfolio(parentOffice, name, responsibleUser);
     }
 
     public Map<String, Object> update(JsonCommand command) {
         final Map<String, Object> actualChanges = new LinkedHashMap<>(2);
 
-        if (command.isChangeInStringParameterNamed(SupervisionConstants.SupervisionSupportedParameters.NAME.getValue(), this.name)) {
-            final String newValue = command
-                    .stringValueOfParameterNamed(SupervisionConstants.SupervisionSupportedParameters.NAME.getValue());
-            actualChanges.put(SupervisionConstants.SupervisionSupportedParameters.NAME.getValue(), newValue);
+        if (command.isChangeInStringParameterNamed(PortfolioConstants.PortfolioSupportedParameters.NAME.getValue(), this.name)) {
+            final String newValue = command.stringValueOfParameterNamed(PortfolioConstants.PortfolioSupportedParameters.NAME.getValue());
+            actualChanges.put(PortfolioConstants.PortfolioSupportedParameters.NAME.getValue(), newValue);
             this.name = newValue;
         }
 

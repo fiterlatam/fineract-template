@@ -1,0 +1,268 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements. See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership. The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License. You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied. See the License for the
+    specific language governing permissions and limitations
+    under the License.
+
+-->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd">
+    <!--Add m_portfolio_center table-->
+    <changeSet author="fineract" id="1">
+        <createTable tableName="m_portfolio_center">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="portfolio_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+             <column name="name" type="VARCHAR(60)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column defaultValueComputed="NULL" name="legacy_center_number" type="BIGINT"/>
+            <column defaultValueComputed="NULL" name="address" type="VARCHAR(150)"/>
+            <column defaultValueComputed="NULL" name="address2" type="VARCHAR(150)"/>
+            <column defaultValueComputed="NULL" name="city_id" type="INT"/>
+            <column defaultValueComputed="NULL" name="state_province_id" type="INT"/>
+            <column defaultValueComputed="NULL" name="country_id" type="INT"/>
+            <column defaultValueComputed="NULL" name="zone" type="INT"/>
+            <column defaultValueComputed="NULL" name="location_id" type="INT"/>
+            <column name="center_status" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueComputed="NULL" name="distance_from_agency" type="INT"/>
+            <column name="facilitator_effective_date" type="datetime">
+                <constraints nullable="false"/>
+            </column>
+            <column name="first_meeting_date" type="datetime">
+                <constraints nullable="false"/>
+            </column>
+            <column name="frequency_meeting" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="meeting_start_date" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="meeting_end_date" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="next_meeting_date" type="datetime">
+                <constraints nullable="false"/>
+            </column>
+            <column name="meeting_day" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="createdby_id" type="BIGINT" >
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_date" type="datetime">
+                <constraints nullable="false"/>
+            </column>
+            <column name="lastmodifiedby_id" type="BIGINT" >
+                <constraints nullable="false"/>
+            </column>
+            <column name="lastmodified_date" type="datetime">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <!--Insert constraints for table m_portfolio_center-->
+    <changeSet author="fineract" id="2">
+        <addForeignKeyConstraint baseColumnNames="portfolio_id"
+                                 baseTableName="m_portfolio_center"
+                                 constraintName="m_portfolio_center_id_fk" deferrable="false" initiallyDeferred="false"
+                                 onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="id"
+                                 referencedTableName="m_portfolio" validate="true"/>
+    </changeSet>
+    <changeSet author="fineract" id="3" >
+        <insert tableName="m_permission">
+            <column name="id" valueNumeric="913"/>
+            <column name="grouping" value="organisation"/>
+            <column name="code" value="CREATE_PORTFOLIO_CENTER"/>
+            <column name="entity_name" value="PORTFOLIO_CENTER" />
+            <column name="action_name" value="CREATE" />
+            <column name="can_maker_checker" valueBoolean="true" />
+        </insert>
+        <insert tableName="m_permission">
+            <column name="id" valueNumeric="914"/>
+            <column name="grouping" value="organisation"/>
+            <column name="code" value="READ_PORTFOLIO_CENTER"/>
+            <column name="entity_name" value="PORTFOLIO_CENTER" />
+            <column name="action_name" value="READ" />
+            <column name="can_maker_checker" valueBoolean="true" />
+        </insert>
+        <insert tableName="m_permission">
+            <column name="id" valueNumeric="915"/>
+            <column name="grouping" value="organisation"/>
+            <column name="code" value="UPDATE_PORTFOLIO_CENTER"/>
+            <column name="entity_name" value="PORTFOLIO_CENTER" />
+            <column name="action_name" value="UPDATE" />
+            <column name="can_maker_checker" valueBoolean="true" />
+        </insert>
+        <insert tableName="m_permission">
+            <column name="id" valueNumeric="916"/>
+            <column name="grouping" value="organisation"/>
+            <column name="code" value="DELETE_PORTFOLIO_CENTER"/>
+            <column name="entity_name" value="PORTFOLIO_CENTER"/>
+            <column name="action_name" value="DELETE"/>
+            <column name="can_maker_checker" valueBoolean="false"/>
+        </insert>
+    </changeSet>
+    <!--Insert permissions for role Gerente-->
+    <changeSet author="fineract" id="4" >
+        <insert tableName="m_role_permission">
+            <column name="role_id" valueNumeric="3"/>
+            <column name="permission_id" valueNumeric="913"/>
+        </insert>
+        <insert tableName="m_role_permission">
+            <column name="role_id" valueNumeric="3"/>
+            <column name="permission_id" valueNumeric="914"/>
+        </insert>
+        <insert tableName="m_role_permission">
+            <column name="role_id" valueNumeric="3"/>
+            <column name="permission_id" valueNumeric="915"/>
+        </insert>
+        <insert tableName="m_role_permission">
+            <column name="role_id" valueNumeric="3"/>
+            <column name="permission_id" valueNumeric="916"/>
+        </insert>
+    </changeSet>
+    <!--Insert permissions for role Regional-->
+    <changeSet author="fineract" id="5" >
+        <insert tableName="m_role_permission">
+            <column name="role_id" valueNumeric="4"/>
+            <column name="permission_id" valueNumeric="913"/>
+        </insert>
+        <insert tableName="m_role_permission">
+            <column name="role_id" valueNumeric="4"/>
+            <column name="permission_id" valueNumeric="914"/>
+        </insert>
+        <insert tableName="m_role_permission">
+            <column name="role_id" valueNumeric="4"/>
+            <column name="permission_id" valueNumeric="915"/>
+        </insert>
+        <insert tableName="m_role_permission">
+            <column name="role_id" valueNumeric="4"/>
+            <column name="permission_id" valueNumeric="916"/>
+        </insert>
+    </changeSet>
+    <!--Insert permissions for role Líder de agencia-->
+    <changeSet author="fineract" id="6" >
+        <insert tableName="m_role_permission">
+            <column name="role_id" valueNumeric="5"/>
+            <column name="permission_id" valueNumeric="913"/>
+        </insert>
+        <insert tableName="m_role_permission">
+            <column name="role_id" valueNumeric="5"/>
+            <column name="permission_id" valueNumeric="914"/>
+        </insert>
+        <insert tableName="m_role_permission">
+            <column name="role_id" valueNumeric="5"/>
+            <column name="permission_id" valueNumeric="915"/>
+        </insert>
+        <insert tableName="m_role_permission">
+            <column name="role_id" valueNumeric="5"/>
+            <column name="permission_id" valueNumeric="916"/>
+        </insert>
+    </changeSet>
+    <!--Insert new code in m_code table-->
+    <changeSet author="fineract" id="7">
+        <insert tableName="m_code">
+            <column name="id" valueNumeric="46"/>
+            <column name="code_name" value="Location"/>
+            <column name="is_system_defined" valueBoolean="true"/>
+        </insert>
+    </changeSet>
+    <!--Add m_code_values for Location -->
+    <changeSet author="fineract" id="8">
+        <insert tableName="m_code_value">
+            <column name="code_id" valueNumeric="46"/>
+            <column name="code_value" value="Urbano"/>
+            <column name="code_description" value="Urbano"/>
+            <column name="order_position" valueNumeric="1"/>
+            <column name="code_score" valueNumeric="1"/>
+            <column name="is_active" valueBoolean="true"/>
+            <column name="is_mandatory" valueBoolean="false"/>
+        </insert>
+        <insert tableName="m_code_value">
+            <column name="code_id" valueNumeric="46"/>
+            <column name="code_value" value="Rural"/>
+            <column name="code_description" value="Rural"/>
+            <column name="order_position" valueNumeric="2"/>
+            <column name="code_score" valueNumeric="2"/>
+            <column name="is_active" valueBoolean="true"/>
+            <column name="is_mandatory" valueBoolean="false"/>
+        </insert>
+        <insert tableName="m_code_value">
+            <column name="code_id" valueNumeric="46"/>
+            <column name="code_value" value="Peri Urbano"/>
+            <column name="code_description" value="Peri Urbano"/>
+            <column name="order_position" valueNumeric="3"/>
+            <column name="code_score" valueNumeric="3"/>
+            <column name="is_active" valueBoolean="true"/>
+            <column name="is_mandatory" valueBoolean="false"/>
+        </insert>
+    </changeSet>
+    <!--Add code value for DiaReunion-->
+    <changeSet author="fineract" id="9">
+        <insert tableName="m_code">
+            <column name="id" valueNumeric="47"/>
+            <column name="code_name" value="DiaReunion"/>
+            <column name="is_system_defined" valueBoolean="true"/>
+        </insert>
+    </changeSet>
+    <!--Add m_code_values for DiaReunion-->
+    <changeSet author="fineract" id="10">
+        <insert tableName="m_code_value">
+            <column name="code_id" valueNumeric="47"/>
+            <column name="code_value" value="Lunes"/>
+            <column name="code_description" value="Lunes"/>
+            <column name="order_position" valueNumeric="1"/>
+            <column name="code_score" valueNumeric="1"/>
+            <column name="is_active" valueBoolean="true"/>
+            <column name="is_mandatory" valueBoolean="false"/>
+        </insert>
+        <insert tableName="m_code_value">
+            <column name="code_id" valueNumeric="47"/>
+            <column name="code_value" value="Martes"/>
+            <column name="code_description" value="Martes"/>
+            <column name="order_position" valueNumeric="2"/>
+            <column name="code_score" valueNumeric="2"/>
+            <column name="is_active" valueBoolean="true"/>
+            <column name="is_mandatory" valueBoolean="false"/>
+        </insert>
+        <insert tableName="m_code_value">
+            <column name="code_id" valueNumeric="47"/>
+            <column name="code_value" value="Miércoles"/>
+            <column name="code_description" value="Miércoles"/>
+            <column name="order_position" valueNumeric="3"/>
+            <column name="code_score" valueNumeric="3"/>
+            <column name="is_active" valueBoolean="true"/>
+            <column name="is_mandatory" valueBoolean="false"/>
+        </insert>
+        <insert tableName="m_code_value">
+            <column name="code_id" valueNumeric="47"/>
+            <column name="code_value" value="Jueves"/>
+            <column name="code_description" value="Jueves"/>
+            <column name="order_position" valueNumeric="4"/>
+            <column name="code_score" valueNumeric="4"/>
+            <column name="is_active" valueBoolean="true"/>
+            <column name="is_mandatory" valueBoolean="false"/>
+        </insert>
+    </changeSet>
+</databaseChangeLog>

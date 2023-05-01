@@ -3634,4 +3634,28 @@ public class CommandWrapperBuilder {
         this.href = "/supervisions/" + supervisionId;
         return this;
     }
+
+    public CommandWrapperBuilder createPortfolio() {
+        this.actionName = "CREATE";
+        this.entityName = "PORTFOLIO";
+        this.entityId = null;
+        this.href = "/portfolios";
+        return this;
+    }
+
+    public CommandWrapperBuilder updatePortfolio(final Long portfolioId) {
+        this.actionName = "UPDATE";
+        this.entityName = "PORTFOLIO";
+        this.entityId = portfolioId;
+        this.href = "/portfolios/" + portfolioId;
+        return this;
+    }
+
+    public CommandWrapperBuilder deletePortfolio(final Long portfolioId) {
+        this.actionName = "DELETE";
+        this.entityName = "PORTFOLIO";
+        this.entityId = portfolioId;
+        this.href = "/portfolios/" + portfolioId;
+        return this;
+    }
 }

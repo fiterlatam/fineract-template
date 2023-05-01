@@ -51,4 +51,7 @@
     <include file="parts/0034_adjust_currencies.xml" relativeToChangelogFile="true"/>
     <include file="parts/0035_agency_add_constraints.xml" relativeToChangelogFile="true"/>
     <include file="parts/0036_supervision_feature.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0037_portfolio_feature.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0038_portfolio_center_feature.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0039_range_template_for_portfolio_center.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
