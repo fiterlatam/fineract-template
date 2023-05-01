@@ -988,10 +988,8 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
      * @param installment
      * @return
      */
-    private Money calculateInstallmentChargeAmount(final ChargeCalculationType calculationType, final BigDecimal percentage,
+    public Money calculateInstallmentChargeAmount(final ChargeCalculationType calculationType, final BigDecimal percentage,
             final LoanRepaymentScheduleInstallment installment) {
-        Money amount = Money.zero(getCurrency());
-        Money percentOf = Money.zero(getCurrency());
         Money principal = this.loanRepaymentScheduleDetail.getPrincipal();
         BigDecimal totalCharge = LoanCharge.percentageOf(principal.getAmount(), percentage);
         BigDecimal divisor = BigDecimal.valueOf(this.termFrequency);
