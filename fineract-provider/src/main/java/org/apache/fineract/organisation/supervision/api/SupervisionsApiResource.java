@@ -124,7 +124,7 @@ public class SupervisionsApiResource {
     @RequestBody(required = true, content = @Content(schema = @Schema(implementation = SupervisionsApiResourceSwagger.PutSupervisionSupervisionIdRequest.class)))
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = SupervisionsApiResourceSwagger.PutSupervisionSupervisionIdResponse.class))) })
-    public String updateOffice(@PathParam("supervisionId") @Parameter(description = "supervisionId") final Long supervisionId,
+    public String updateSupervision(@PathParam("supervisionId") @Parameter(description = "supervisionId") final Long supervisionId,
             @Parameter(hidden = true) final String apiRequestBodyAsJson) {
         final CommandWrapper commandRequest = new CommandWrapperBuilder() //
                 .updateSupervision(supervisionId) //

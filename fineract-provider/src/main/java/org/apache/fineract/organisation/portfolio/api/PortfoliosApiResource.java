@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.organisation.agency.api;
+package org.apache.fineract.organisation.portfolio.api;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -43,71 +43,83 @@ import org.apache.fineract.infrastructure.core.api.ApiRequestParameterHelper;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
-import org.apache.fineract.organisation.agency.data.AgencyData;
-import org.apache.fineract.organisation.agency.service.AgencyConstants;
-import org.apache.fineract.organisation.agency.service.AgencyReadPlatformService;
+import org.apache.fineract.organisation.portfolio.data.PortfolioData;
+import org.apache.fineract.organisation.portfolio.service.PortfolioConstants;
+import org.apache.fineract.organisation.portfolio.service.PortfolioReadPlatformService;
+import org.apache.fineract.organisation.portfolioCenter.data.PortfolioCenterData;
+import org.apache.fineract.organisation.portfolioCenter.service.PortfolioCenterReadPlatformService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
-@Path("/agencies")
+@Path("/portfolios")
 @Component
 @Scope("singleton")
-@Tag(name = "Agencies", description = "Agencies are used to extend the office model, when the hierarchy indicates the office is an agency.")
-public class AgenciesApiResource {
+@Tag(name = "Portfolios", description = "Portfolios are used to extend the office model, and they are related to supervisions.")
+public class PortfoliosApiResource {
 
     private final PlatformSecurityContext context;
-    private final AgencyReadPlatformService readPlatformService;
-    private final DefaultToApiJsonSerializer<AgencyData> toApiJsonSerializer;
+    private final PortfolioReadPlatformService readPlatformService;
+    private final DefaultToApiJsonSerializer<PortfolioData> toApiJsonSerializer;
     private final ApiRequestParameterHelper apiRequestParameterHelper;
     private final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService;
+    private final PortfolioCenterReadPlatformService centerReadPlatformService;
 
     @Autowired
-    public AgenciesApiResource(final PlatformSecurityContext context, final AgencyReadPlatformService readPlatformService,
-            final DefaultToApiJsonSerializer<AgencyData> toApiJsonSerializer, final ApiRequestParameterHelper apiRequestParameterHelper,
-            final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService) {
+    public PortfoliosApiResource(final PlatformSecurityContext context, final PortfolioReadPlatformService readPlatformService,
+            final DefaultToApiJsonSerializer<PortfolioData> toApiJsonSerializer, final ApiRequestParameterHelper apiRequestParameterHelper,
+            final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService,
+            final PortfolioCenterReadPlatformService centerReadPlatformService) {
         this.context = context;
         this.readPlatformService = readPlatformService;
         this.toApiJsonSerializer = toApiJsonSerializer;
         this.apiRequestParameterHelper = apiRequestParameterHelper;
         this.commandsSourceWritePlatformService = commandsSourceWritePlatformService;
+        this.centerReadPlatformService = centerReadPlatformService;
     }
 
     @GET
     @Produces({ MediaType.APPLICATION_JSON })
     public String retrieveAll() {
-        this.context.authenticatedUser().validateHasReadPermission(AgencyConstants.AGENCY_RESOURCE_NAME);
-        Collection<AgencyData> agencies = this.readPlatformService.retrieveAllByUser();
-        return this.toApiJsonSerializer.serialize(agencies);
+        this.context.authenticatedUser().validateHasReadPermission(PortfolioConstants.PORTFOLIO_RESOURCE_NAME);
+        Collection<PortfolioData> portfolios = this.readPlatformService.retrieveAllByUser();
+        return this.toApiJsonSerializer.serialize(portfolios);
     }
 
     @GET
-    @Path("/{agencyId}")
+    @Path("/{portfolioId}")
     @Produces({ MediaType.APPLICATION_JSON })
-    public String retrieveAgency(@PathParam("agencyId") final Long agencyId) {
-        this.context.authenticatedUser().validateHasReadPermission(AgencyConstants.AGENCY_RESOURCE_NAME);
-        AgencyData agencyData = this.readPlatformService.findById(agencyId);
-        return this.toApiJsonSerializer.serialize(agencyData);
+    public String retrievePortfolio(@PathParam("portfolioId") final Long portfolioId) {
+        this.context.authenticatedUser().validateHasReadPermission(PortfolioConstants.PORTFOLIO_RESOURCE_NAME);
+        PortfolioData portfolioData = this.readPlatformService.findById(portfolioId);
+
+        // get list of centers if any
+        Collection<PortfolioCenterData> centers = centerReadPlatformService.retrieveAllByPortfolio(portfolioId);
+        if (centers != null && !centers.isEmpty()) {
+            portfolioData.setCenters(centers);
+        }
+
+        return this.toApiJsonSerializer.serialize(portfolioData);
     }
 
     @GET
     @Path("/template")
     @Produces({ MediaType.APPLICATION_JSON })
     public String template() {
-        AgencyData agencyData = this.readPlatformService.retrieveNewAgencyTemplate();
-        return this.toApiJsonSerializer.serialize(agencyData);
+        PortfolioData portfolioData = this.readPlatformService.retrieveNewPortfolioTemplate();
+        return this.toApiJsonSerializer.serialize(portfolioData);
     }
 
     @POST
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
-    @Operation(summary = "Create an Agency", description = "Mandatory Fields\n" + "name, parentId")
-    @RequestBody(required = true, content = @Content(schema = @Schema(implementation = AgenciesApiResourceSwagger.PostAgenciesRequest.class)))
+    @Operation(summary = "Create a Portfolio", description = "Mandatory Fields\n" + "name, parentId")
+    @RequestBody(required = true, content = @Content(schema = @Schema(implementation = PortfoliosApiResourceSwagger.PostPortfoliosRequest.class)))
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = AgenciesApiResourceSwagger.PostAgenciesResponse.class))) })
-    public String createAgency(@Parameter(hidden = true) final String apiRequestBodyAsJson) {
+            @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = PortfoliosApiResourceSwagger.PostPortfoliosResponse.class))) })
+    public String createPortfolio(@Parameter(hidden = true) final String apiRequestBodyAsJson) {
         final CommandWrapper commandRequest = new CommandWrapperBuilder() //
-                .createAgency() //
+                .createPortfolio() //
                 .withJson(apiRequestBodyAsJson) //
                 .build();
 
@@ -116,17 +128,17 @@ public class AgenciesApiResource {
     }
 
     @PUT
-    @Path("{agencyId}")
+    @Path("{portfolioId}")
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
-    @Operation(summary = "Update Agency", description = "")
-    @RequestBody(required = true, content = @Content(schema = @Schema(implementation = AgenciesApiResourceSwagger.PutAgenciesAgencyIdRequest.class)))
+    @Operation(summary = "Update Portfolio", description = "")
+    @RequestBody(required = true, content = @Content(schema = @Schema(implementation = PortfoliosApiResourceSwagger.PutPortfolioPortfolioIdRequest.class)))
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = AgenciesApiResourceSwagger.PutAgencyAgencyIdResponse.class))) })
-    public String updateAgency(@PathParam("agencyId") @Parameter(description = "agencyId") final Long agencyId,
+            @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = PortfoliosApiResourceSwagger.PutPortfolioPortfolioIdResponse.class))) })
+    public String updatePortfolio(@PathParam("portfolioId") @Parameter(description = "portfolioId") final Long portfolioId,
             @Parameter(hidden = true) final String apiRequestBodyAsJson) {
         final CommandWrapper commandRequest = new CommandWrapperBuilder() //
-                .updateAgency(agencyId) //
+                .updatePortfolio(portfolioId) //
                 .withJson(apiRequestBodyAsJson) //
                 .build();
 
@@ -135,15 +147,15 @@ public class AgenciesApiResource {
     }
 
     @DELETE
-    @Path("{agencyId}")
+    @Path("{portfolioId}")
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
-    @Operation(summary = "Delete an agency", description = "An agency can be deleted if it has no association")
+    @Operation(summary = "Delete a portfolio", description = "A portfolio can be deleted if it has no association")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = AgenciesApiResourceSwagger.DeleteAgenciesAgencyIdResponse.class))) })
-    public String delete(@PathParam("agencyId") @Parameter(description = "agencyId") final Long agencyId) {
+            @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = PortfoliosApiResourceSwagger.DeletePortfolioPortfolioIdResponse.class))) })
+    public String delete(@PathParam("portfolioId") @Parameter(description = "portfolioId") final Long portfolioId) {
         final CommandWrapper commandRequest = new CommandWrapperBuilder() //
-                .deleteAgency(agencyId) //
+                .deletePortfolio(portfolioId) //
                 .build(); //
         final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
         return this.toApiJsonSerializer.serialize(result);

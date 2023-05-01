@@ -97,6 +97,10 @@ public class CodeValueData implements Serializable {
         return this.name;
     }
 
+    public Integer getPosition() {
+        return this.position;
+    }
+
     /**
      * @return the mandatory
      */

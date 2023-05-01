@@ -16,22 +16,28 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.organisation.supervision.service;
+package org.apache.fineract.organisation.portfolio.service;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import javax.persistence.PersistenceException;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
+import org.apache.fineract.infrastructure.core.data.ApiParameterError;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuilder;
+import org.apache.fineract.infrastructure.core.data.DataValidatorBuilder;
+import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidationException;
 import org.apache.fineract.infrastructure.core.exception.PlatformDataIntegrityException;
 import org.apache.fineract.infrastructure.security.exception.NoAuthorizationException;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.organisation.office.domain.Office;
 import org.apache.fineract.organisation.office.domain.OfficeRepositoryWrapper;
-import org.apache.fineract.organisation.supervision.domain.Supervision;
-import org.apache.fineract.organisation.supervision.domain.SupervisionRepositoryWrapper;
-import org.apache.fineract.organisation.supervision.serialization.SupervisionCommandFromApiJsonDeserializer;
+import org.apache.fineract.organisation.portfolio.domain.Portfolio;
+import org.apache.fineract.organisation.portfolio.domain.PortfolioRepositoryWrapper;
+import org.apache.fineract.organisation.portfolio.serialization.PortfolioCommandFromApiJsonDeserializer;
+import org.apache.fineract.organisation.portfolioCenter.service.PortfolioCenterWritePlatformService;
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.apache.fineract.useradministration.domain.AppUserRepository;
 import org.apache.fineract.useradministration.exception.UserNotFoundException;
@@ -44,134 +50,137 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-public class SupervisionWritePlatformServiceImpl implements SupervisionWritePlatformService {
+public class PortfolioWritePlatformServiceImpl implements PortfolioWritePlatformService {
 
-    private static final Logger LOG = LoggerFactory.getLogger(SupervisionWritePlatformServiceImpl.class);
+    private static final Logger LOG = LoggerFactory.getLogger(PortfolioWritePlatformServiceImpl.class);
 
     private final PlatformSecurityContext context;
-    private final SupervisionCommandFromApiJsonDeserializer fromApiJsonDeserializer;
-    private final SupervisionRepositoryWrapper supervisionRepositoryWrapper;
+    private final PortfolioCommandFromApiJsonDeserializer fromApiJsonDeserializer;
+    private final PortfolioRepositoryWrapper portfolioRepositoryWrapper;
     private final OfficeRepositoryWrapper officeRepositoryWrapper;
     private final AppUserRepository appUserRepository;
+    private final PortfolioCenterWritePlatformService portfolioCenterWritePlatformService;
 
     @Autowired
-    public SupervisionWritePlatformServiceImpl(PlatformSecurityContext context,
-            SupervisionCommandFromApiJsonDeserializer fromApiJsonDeserializer, SupervisionRepositoryWrapper supervisionRepositoryWrapper,
-            OfficeRepositoryWrapper officeRepositoryWrapper, AppUserRepository appUserRepository) {
+    public PortfolioWritePlatformServiceImpl(PlatformSecurityContext context,
+            PortfolioCommandFromApiJsonDeserializer fromApiJsonDeserializer, PortfolioRepositoryWrapper portfolioRepositoryWrapper,
+            OfficeRepositoryWrapper officeRepositoryWrapper, AppUserRepository appUserRepository,
+            PortfolioCenterWritePlatformService portfolioCenterWritePlatformService) {
         this.context = context;
         this.fromApiJsonDeserializer = fromApiJsonDeserializer;
-        this.supervisionRepositoryWrapper = supervisionRepositoryWrapper;
+        this.portfolioRepositoryWrapper = portfolioRepositoryWrapper;
         this.officeRepositoryWrapper = officeRepositoryWrapper;
         this.appUserRepository = appUserRepository;
+        this.portfolioCenterWritePlatformService = portfolioCenterWritePlatformService;
     }
 
     @Transactional
     @Override
-    public CommandProcessingResult createSupervision(JsonCommand command) {
+    public CommandProcessingResult createPortfolio(JsonCommand command) {
         try {
             final AppUser currentUser = this.context.authenticatedUser();
 
             this.fromApiJsonDeserializer.validateForCreate(command.json());
 
             Long parentId = null;
-            if (command.parameterExists(SupervisionConstants.SupervisionSupportedParameters.OFFICE_PARENT_ID.getValue())) {
-                parentId = command
-                        .longValueOfParameterNamed(SupervisionConstants.SupervisionSupportedParameters.OFFICE_PARENT_ID.getValue());
+            if (command.parameterExists(PortfolioConstants.PortfolioSupportedParameters.OFFICE_PARENT_ID.getValue())) {
+                parentId = command.longValueOfParameterNamed(PortfolioConstants.PortfolioSupportedParameters.OFFICE_PARENT_ID.getValue());
             }
 
             final Office parentOffice = validateUserPrivilegeOnOfficeAndRetrieve(currentUser, parentId);
 
             final Long responsibleUserId = command
-                    .longValueOfParameterNamed(SupervisionConstants.SupervisionSupportedParameters.RESPONSIBLE_USER_ID.getValue());
+                    .longValueOfParameterNamed(PortfolioConstants.PortfolioSupportedParameters.RESPONSIBLE_USER_ID.getValue());
             AppUser responsibleUser = null;
             if (responsibleUserId != null) {
                 responsibleUser = this.appUserRepository.findById(responsibleUserId)
                         .orElseThrow(() -> new UserNotFoundException(responsibleUserId));
             }
 
-            final Supervision supervision = Supervision.fromJson(parentOffice, responsibleUser, command);
+            final Portfolio portfolio = Portfolio.fromJson(parentOffice, responsibleUser, command);
 
-            this.supervisionRepositoryWrapper.saveAndFlush(supervision);
+            saveAndFlushPortfolioWithDataIntegrityViolationChecks(portfolio);
+
+            // generate all centers for the portfolio
+            portfolioCenterWritePlatformService.generateAllCentersByPortfolio(portfolio);
 
             return new CommandProcessingResultBuilder() //
                     .withCommandId(command.commandId()) //
-                    .withEntityId(supervision.getId()) //
+                    .withEntityId(portfolio.getId()) //
                     .build();
         } catch (final JpaSystemException | DataIntegrityViolationException dve) {
-            handleSupervisionDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
+            handlePortfolioDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
             return CommandProcessingResult.empty();
         } catch (final PersistenceException dve) {
             Throwable throwable = ExceptionUtils.getRootCause(dve.getCause());
-            handleSupervisionDataIntegrityIssues(command, throwable, dve);
+            handlePortfolioDataIntegrityIssues(command, throwable, dve);
             return CommandProcessingResult.empty();
         }
     }
 
     @Transactional
     @Override
-    public CommandProcessingResult updateSupervision(Long supervisionId, JsonCommand command) {
+    public CommandProcessingResult updatePortfolio(Long portfolioId, JsonCommand command) {
         try {
             final AppUser currentUser = this.context.authenticatedUser();
 
             this.fromApiJsonDeserializer.validateForUpdate(command.json());
 
-            Supervision supervision = this.supervisionRepositoryWrapper.findOneWithNotFoundDetection(supervisionId);
+            Portfolio portfolio = this.portfolioRepositoryWrapper.findOneWithNotFoundDetection(portfolioId);
 
-            final Map<String, Object> changes = supervision.update(command);
+            final Map<String, Object> changes = portfolio.update(command);
 
             Long parentId;
-            if (command.parameterExists(SupervisionConstants.SupervisionSupportedParameters.OFFICE_PARENT_ID.getValue())) {
-                parentId = command
-                        .longValueOfParameterNamed(SupervisionConstants.SupervisionSupportedParameters.OFFICE_PARENT_ID.getValue());
+            if (command.parameterExists(PortfolioConstants.PortfolioSupportedParameters.OFFICE_PARENT_ID.getValue())) {
+                parentId = command.longValueOfParameterNamed(PortfolioConstants.PortfolioSupportedParameters.OFFICE_PARENT_ID.getValue());
 
                 final Office parentOffice = validateUserPrivilegeOnOfficeAndRetrieve(currentUser, parentId);
-                supervision.setParentOffice(parentOffice);
+                portfolio.setParentOffice(parentOffice);
             }
 
-            if (command
-                    .longValueOfParameterNamed(SupervisionConstants.SupervisionSupportedParameters.RESPONSIBLE_USER_ID.getValue()) != 0) {
+            if (command.longValueOfParameterNamed(PortfolioConstants.PortfolioSupportedParameters.RESPONSIBLE_USER_ID.getValue()) != 0) {
                 final Long responsibleUserId = command
-                        .longValueOfParameterNamed(SupervisionConstants.SupervisionSupportedParameters.RESPONSIBLE_USER_ID.getValue());
+                        .longValueOfParameterNamed(PortfolioConstants.PortfolioSupportedParameters.RESPONSIBLE_USER_ID.getValue());
                 AppUser responsibleUser = null;
                 if (responsibleUserId != null) {
                     responsibleUser = this.appUserRepository.findById(responsibleUserId)
                             .orElseThrow(() -> new UserNotFoundException(responsibleUserId));
-                    supervision.setResponsibleUser(responsibleUser);
-                    changes.put(SupervisionConstants.SupervisionSupportedParameters.RESPONSIBLE_USER_ID.getValue(), responsibleUserId);
+                    portfolio.setResponsibleUser(responsibleUser);
+                    changes.put(PortfolioConstants.PortfolioSupportedParameters.RESPONSIBLE_USER_ID.getValue(), responsibleUserId);
                 }
             }
 
-            this.supervisionRepositoryWrapper.saveAndFlush(supervision);
+            this.portfolioRepositoryWrapper.saveAndFlush(portfolio);
 
             return new CommandProcessingResultBuilder() //
                     .withCommandId(command.commandId()) //
-                    .withEntityId(supervisionId) //
+                    .withEntityId(portfolioId) //
                     .with(changes) //
                     .build();
         } catch (final JpaSystemException | DataIntegrityViolationException dve) {
-            handleSupervisionDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
+            handlePortfolioDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
             return CommandProcessingResult.empty();
         } catch (final PersistenceException dve) {
             Throwable throwable = ExceptionUtils.getRootCause(dve.getCause());
-            handleSupervisionDataIntegrityIssues(command, throwable, dve);
+            handlePortfolioDataIntegrityIssues(command, throwable, dve);
             return CommandProcessingResult.empty();
         }
     }
 
     @Transactional
     @Override
-    public CommandProcessingResult deleteSupervision(Long supervisionId) {
+    public CommandProcessingResult deletePortfolio(Long portfolioId) {
         try {
 
-            final Supervision supervision = this.supervisionRepositoryWrapper.findOneWithNotFoundDetection(supervisionId);
+            final Portfolio portfolio = this.portfolioRepositoryWrapper.findOneWithNotFoundDetection(portfolioId);
 
-            this.supervisionRepositoryWrapper.delete(supervision);
+            this.portfolioRepositoryWrapper.delete(portfolio);
             return new CommandProcessingResultBuilder() //
-                    .withEntityId(supervision.getId()) //
+                    .withEntityId(portfolio.getId()) //
                     .build();
         } catch (final JpaSystemException | DataIntegrityViolationException dve) {
             LOG.error("Error occurred.", dve);
-            throw new PlatformDataIntegrityException("error.msg.supervision.unknown.data.integrity.issue",
+            throw new PlatformDataIntegrityException("error.msg.portfolio.unknown.data.integrity.issue",
                     "Unknown data integrity issue with resource.", dve);
         }
     }
@@ -179,15 +188,32 @@ public class SupervisionWritePlatformServiceImpl implements SupervisionWritePlat
     /*
      * Guaranteed to throw an exception no matter what the data integrity issue is.
      */
-    private void handleSupervisionDataIntegrityIssues(final JsonCommand command, final Throwable realCause, final Exception dve) {
+    private void handlePortfolioDataIntegrityIssues(final JsonCommand command, final Throwable realCause, final Exception dve) {
         if (realCause.getMessage().contains("name")) {
             final String name = command.stringValueOfParameterNamed("name");
-            throw new PlatformDataIntegrityException("error.msg.supervision.duplicate.name",
-                    "Supervision with name '" + name + "' already exists", "name", name);
+            throw new PlatformDataIntegrityException("error.msg.portfolio.duplicate.name",
+                    "Portfolio with name '" + name + "' already exists", "name", name);
         }
 
-        throw new PlatformDataIntegrityException("error.msg.supervision.unknown.data.integrity.issue",
+        throw new PlatformDataIntegrityException("error.msg.portfolio.unknown.data.integrity.issue",
                 "Unknown data integrity issue with resource.");
+    }
+
+    private void saveAndFlushPortfolioWithDataIntegrityViolationChecks(final Portfolio portfolio) {
+        try {
+            this.portfolioRepositoryWrapper.saveAndFlush(portfolio);
+        } catch (final JpaSystemException | DataIntegrityViolationException e) {
+            final Throwable realCause = e.getCause();
+            final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
+            final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors).resource("portfolio.name");
+            if (realCause.getMessage().toLowerCase().contains("name")) {
+                baseDataValidator.reset().parameter("name").failWithCode("value.must.be.unique");
+            }
+            if (!dataValidationErrors.isEmpty()) {
+                throw new PlatformApiDataValidationException("validation.msg.validation.errors.exist", "Validation errors exist.",
+                        dataValidationErrors, e);
+            }
+        }
     }
 
     /*

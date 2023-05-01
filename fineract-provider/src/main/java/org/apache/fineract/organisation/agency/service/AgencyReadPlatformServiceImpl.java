@@ -63,7 +63,7 @@ public class AgencyReadPlatformServiceImpl implements AgencyReadPlatformService 
             final CurrencyReadPlatformService currencyReadPlatformService, final JdbcTemplate jdbcTemplate,
             final ColumnValidator columnValidator, final DatabaseSpecificSQLGenerator sqlGenerator,
             final CodeValueReadPlatformService codeValueReadPlatformService, final OfficeReadPlatformService officeReadPlatformService,
-            AppUserReadPlatformService appUserReadPlatformService) {
+            final AppUserReadPlatformService appUserReadPlatformService) {
         this.context = context;
         this.currencyReadPlatformService = currencyReadPlatformService;
         this.columnValidator = columnValidator;
