@@ -2292,8 +2292,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                 loanRepaymentScheduleInstallment.getFeeChargesOutstanding(currency).getAmount(),
                 loanRepaymentScheduleInstallment.getPenaltyChargesOutstanding(currency).getAmount(), null, unrecognizedIncomePortion,
                 paymentTypeOptions, null, null, null, outstandingLoanBalance, isReversed);
-        loanTransactionData.setVatOnInterest(loanRepaymentScheduleInstallment.getVatOnInterestOutstanding());
-        loanTransactionData.setVatOnCharges(loanRepaymentScheduleInstallment.getVatOnChargeOutstanding());
+        loanTransactionData.setVatOnInterest(loanRepaymentScheduleInstallment.getVatOnInterestOutstanding(currency).getAmount());
+        loanTransactionData.setVatOnCharges(loanRepaymentScheduleInstallment.getVatOnChargeOutstanding(currency).getAmount());
         loanTransactionData.setOriginationFees(loan.getTotalOriginationFees());
         return loanTransactionData;
     }
