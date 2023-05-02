@@ -89,7 +89,8 @@ public class LoanTransactionToRepaymentScheduleMapping extends AbstractPersistab
         return new LoanTransactionToRepaymentScheduleMapping(loanTransaction, installment, defaultToNullIfZero(principalPortion),
                 defaultToNullIfZero(interestPortion), defaultToNullIfZero(feeChargesPortion), defaultToNullIfZero(penaltyChargesPortion),
                 defaultToNullIfZero(vatOnInterestPortion), defaultToNullIfZero(vatOnChargesPortion),
-                defaultToNullIfZero(principalPortion.plus(interestPortion).plus(feeChargesPortion).plus(penaltyChargesPortion)));
+                defaultToNullIfZero(principalPortion.plus(interestPortion).plus(feeChargesPortion).plus(penaltyChargesPortion)
+                        .plus(vatOnChargesPortion).plus(vatOnInterestPortion)));
     }
 
     public static LoanTransactionToRepaymentScheduleMapping createFrom(final LoanTransaction loanTransaction,

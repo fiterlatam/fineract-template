@@ -124,7 +124,7 @@ public class LoanRepaymentScheduleProcessingWrapper {
         Money cumulative = Money.zero(monetaryCurrency);
         Money amountSubjectToVat = Money.zero(monetaryCurrency);
         for (final LoanCharge loanCharge : loanCharges) {
-            if (loanCharge.isFeeCharge() && !loanCharge.isDueAtDisbursement()) {
+            if (loanCharge.isFeeCharge() && !loanCharge.isDueAtDisbursement() && loanCharge.isNotOriginationFee()) {
                 if (loanCharge.isInstalmentFee() && isInstallmentChargeApplicable) {
                     if (loanCharge.getChargeCalculation().isPercentageBased()) {
                         BigDecimal amount = BigDecimal.ZERO;
@@ -134,9 +134,9 @@ public class LoanRepaymentScheduleProcessingWrapper {
                         } else if (loanCharge.getChargeCalculation().isPercentageOfInterest()) {
                             amount = amount.add(period.getInterestCharged(monetaryCurrency).getAmount());
                         } else {
-                            amount = amount.add(period.getPrincipal(monetaryCurrency).getAmount());
+                            amount = amount.add(loanCharge.getAmountPercentageAppliedTo());
                         }
-                        BigDecimal loanChargeAmt = amount.multiply(loanCharge.getPercentage()).divide(BigDecimal.valueOf(100));
+                        Money loanChargeAmt = calculateInstalmentChargeForInstalment(loanCharge, amount);
                         cumulative = cumulative.plus(loanChargeAmt);
 
                         if (loanCharge.getCharge().isVatRequired()) {
@@ -317,9 +317,9 @@ public class LoanRepaymentScheduleProcessingWrapper {
                         } else if (loanCharge.getChargeCalculation().isPercentageOfInterest()) {
                             amount = amount.add(period.getInterestCharged(currency).getAmount());
                         } else {
-                            amount = amount.add(period.getPrincipal(currency).getAmount());
+                            amount = amount.add(loanCharge.getAmountPercentageAppliedTo());
                         }
-                        BigDecimal loanChargeAmt = amount.multiply(loanCharge.getPercentage()).divide(BigDecimal.valueOf(100));
+                        Money loanChargeAmt = calculateInstalmentChargeForInstalment(loanCharge, amount);
                         cumulative = cumulative.plus(loanChargeAmt);
 
                         if (loanCharge.getCharge().isVatRequired()) {
@@ -349,9 +349,9 @@ public class LoanRepaymentScheduleProcessingWrapper {
                     } else if (loanCharge.getChargeCalculation().isPercentageOfInterest()) {
                         amount = amount.add(totalInterest.getAmount());
                     } else {
-                        amount = amount.add(totalPrincipal.getAmount());
+                        amount = amount.add(loanCharge.getAmountPercentageAppliedTo());
                     }
-                    BigDecimal loanChargeAmt = amount.multiply(loanCharge.getPercentage()).divide(BigDecimal.valueOf(100));
+                    Money loanChargeAmt = calculateInstalmentChargeForInstalment(loanCharge, amount);
                     cumulative = cumulative.plus(loanChargeAmt);
 
                     if (loanCharge.getCharge().isVatRequired()) {
@@ -479,4 +479,13 @@ public class LoanRepaymentScheduleProcessingWrapper {
         BigDecimal divisor = BigDecimal.valueOf(loan.getTermFrequency());
         return chargeAmount.dividedBy(divisor, MoneyHelper.getRoundingMode());
     }
+
+    private Money calculateInstalmentChargeForInstalment(LoanCharge loanCharge, BigDecimal amount) {
+        Loan loan = loanCharge.getLoan();
+        BigDecimal totalCharge = LoanCharge.percentageOf(amount, loanCharge.getPercentage());
+        BigDecimal divisor = BigDecimal.valueOf(loan.getTermFrequency());
+        BigDecimal unitInstalmentCharge = totalCharge.divide(divisor, MoneyHelper.getRoundingMode());
+        return Money.of(loan.getCurrency(), unitInstalmentCharge);
+    }
+
 }
