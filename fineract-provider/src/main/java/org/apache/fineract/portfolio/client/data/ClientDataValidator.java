@@ -94,6 +94,16 @@ public final class ClientDataValidator {
             baseDataValidator.reset().parameter(ClientApiConstants.staffIdParamName).value(staffId).ignoreIfNull().longGreaterThanZero();
         }
 
+        if (this.fromApiJsonHelper.parameterExists(ClientApiConstants.isVatRequiredParamName, element)) {
+            final Boolean isVatRequired = this.fromApiJsonHelper.extractBooleanNamed(ClientApiConstants.isVatRequiredParamName, element);
+            baseDataValidator.reset().parameter(ClientApiConstants.isVatRequiredParamName).value(isVatRequired).notNull();
+        }
+
+        if (this.fromApiJsonHelper.parameterExists(ClientApiConstants.vatRateIdParamName, element)) {
+            final Long vatRateId = this.fromApiJsonHelper.extractLongNamed(ClientApiConstants.vatRateIdParamName, element);
+            baseDataValidator.reset().parameter(ClientApiConstants.vatRateIdParamName).value(vatRateId).notNull();
+        }
+
         if (this.fromApiJsonHelper.parameterExists(ClientApiConstants.accountNoParamName, element)) {
             final String accountNo = this.fromApiJsonHelper.extractStringNamed(ClientApiConstants.accountNoParamName, element);
             baseDataValidator.reset().parameter(ClientApiConstants.accountNoParamName).value(accountNo).notBlank().notExceedingLengthOf(20);
@@ -376,6 +386,16 @@ public final class ClientDataValidator {
             baseDataValidator.reset().parameter(ClientApiConstants.accountNoParamName).value(accountNo).notBlank().notExceedingLengthOf(20);
         }
 
+        if (this.fromApiJsonHelper.parameterExists(ClientApiConstants.isVatRequiredParamName, element)) {
+            final Boolean isVatRequired = this.fromApiJsonHelper.extractBooleanNamed(ClientApiConstants.isVatRequiredParamName, element);
+            baseDataValidator.reset().parameter(ClientApiConstants.isVatRequiredParamName).value(isVatRequired).notNull();
+        }
+
+        if (this.fromApiJsonHelper.parameterExists(ClientApiConstants.vatRateIdParamName, element)) {
+            final Long vatRateId = this.fromApiJsonHelper.extractLongNamed(ClientApiConstants.vatRateIdParamName, element);
+            baseDataValidator.reset().parameter(ClientApiConstants.vatRateIdParamName).value(vatRateId).notNull();
+        }
+
         if (isFullnameProvided(element) || isIndividualNameProvided(element)) {
 
             // 1. No individual name part provided and fullname provided
@@ -510,6 +530,45 @@ public final class ClientDataValidator {
         if (this.fromApiJsonHelper.parameterExists("isStaff", element)) {
             final Boolean isStaffFlag = this.fromApiJsonHelper.extractBooleanNamed("isStaff", element);
             baseDataValidator.reset().parameter("isStaff").value(isStaffFlag).notNull();
+        }
+
+        if (this.fromApiJsonHelper.parameterExists(ClientApiConstants.motherLastnameParamName, element)) {
+            atLeastOneParameterPassedForUpdate = true;
+        }
+
+        if (this.fromApiJsonHelper.parameterExists(ClientApiConstants.uuidParamName, element)) {
+            atLeastOneParameterPassedForUpdate = true;
+        }
+
+        if (this.fromApiJsonHelper.parameterExists(ClientApiConstants.countryOfBirthParamName, element)) {
+            atLeastOneParameterPassedForUpdate = true;
+        }
+
+        if (this.fromApiJsonHelper.parameterExists(ClientApiConstants.nationalityParamName, element)) {
+            atLeastOneParameterPassedForUpdate = true;
+        }
+
+        if (this.fromApiJsonHelper.parameterExists(ClientApiConstants.curpParamName, element)) {
+            atLeastOneParameterPassedForUpdate = true;
+        }
+
+        if (this.fromApiJsonHelper.parameterExists(ClientApiConstants.rfcParamName, element)) {
+            atLeastOneParameterPassedForUpdate = true;
+        }
+
+        if (this.fromApiJsonHelper.parameterExists(ClientApiConstants.finalBeneficiaryParamName, element)) {
+            atLeastOneParameterPassedForUpdate = true;
+        }
+
+        if (this.fromApiJsonHelper.parameterExists(ClientApiConstants.thirdPartyBeneficiaryParamName, element)) {
+            atLeastOneParameterPassedForUpdate = true;
+        }
+
+        if (this.fromApiJsonHelper.parameterExists(ClientApiConstants.professionIdParamName, element)) {
+            atLeastOneParameterPassedForUpdate = true;
+            final Integer professionId = this.fromApiJsonHelper.extractIntegerSansLocaleNamed(ClientApiConstants.professionIdParamName,
+                    element);
+            baseDataValidator.reset().parameter(ClientApiConstants.professionIdParamName).value(professionId).integerGreaterThanZero();
         }
 
         Map<String, Object> parameterUpdateStatusDetails = getParameterUpdateStatusAndDataValidationErrorsForUpdateOnClientNonPerson(

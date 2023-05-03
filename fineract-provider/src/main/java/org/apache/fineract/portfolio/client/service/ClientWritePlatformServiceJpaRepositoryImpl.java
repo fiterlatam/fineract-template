@@ -25,6 +25,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import javax.persistence.PersistenceException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -85,6 +86,8 @@ import org.apache.fineract.portfolio.savings.domain.SavingsAccountRepositoryWrap
 import org.apache.fineract.portfolio.savings.domain.SavingsProductRepository;
 import org.apache.fineract.portfolio.savings.exception.SavingsProductNotFoundException;
 import org.apache.fineract.portfolio.savings.service.SavingsApplicationProcessWritePlatformService;
+import org.apache.fineract.portfolio.vatrate.domain.VatRate;
+import org.apache.fineract.portfolio.vatrate.service.ReadVatRateService;
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -119,6 +122,7 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
     private final ClientFamilyMembersWritePlatformService clientFamilyMembersWritePlatformService;
     private final BusinessEventNotifierService businessEventNotifierService;
     private final EntityDatatableChecksWritePlatformService entityDatatableChecksWritePlatformService;
+    private final ReadVatRateService readVatRateService;
 
     @Autowired
     public ClientWritePlatformServiceJpaRepositoryImpl(final PlatformSecurityContext context,
@@ -135,7 +139,8 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
             final AddressWritePlatformService addressWritePlatformService,
             final ClientFamilyMembersWritePlatformService clientFamilyMembersWritePlatformService,
             final BusinessEventNotifierService businessEventNotifierService,
-            final EntityDatatableChecksWritePlatformService entityDatatableChecksWritePlatformService) {
+            final EntityDatatableChecksWritePlatformService entityDatatableChecksWritePlatformService,
+            final ReadVatRateService readVatRateService) {
         this.context = context;
         this.clientRepository = clientRepository;
         this.clientNonPersonRepository = clientNonPersonRepository;
@@ -159,6 +164,7 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
         this.clientFamilyMembersWritePlatformService = clientFamilyMembersWritePlatformService;
         this.businessEventNotifierService = businessEventNotifierService;
         this.entityDatatableChecksWritePlatformService = entityDatatableChecksWritePlatformService;
+        this.readVatRateService = readVatRateService;
     }
 
     @Transactional
@@ -240,6 +246,10 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
 
             final Long groupId = command.longValueOfParameterNamed(ClientApiConstants.groupIdParamName);
 
+            VatRate vatRate = null;
+            if (command.hasParameter(ClientApiConstants.vatRateIdParamName)) {
+                vatRate = readVatRateService.findById(command.longValueOfParameterNamed(ClientApiConstants.vatRateIdParamName));
+            }
             Group clientParentGroup = null;
             if (groupId != null) {
                 clientParentGroup = this.groupRepository.findById(groupId).orElseThrow(() -> new GroupNotFoundException(groupId));
@@ -289,9 +299,65 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
             }
 
             final Client newClient = Client.createNew(currentUser, clientOffice, clientParentGroup, staff, savingsProductId, gender,
-                    clientType, clientClassification, legalFormValue, command);
+                    clientType, clientClassification, legalFormValue, vatRate, command);
             this.clientRepository.saveAndFlush(newClient);
             boolean rollbackTransaction = false;
+
+            final Optional<String> uuid = Optional.ofNullable(command.stringValueOfParameterNamed(ClientApiConstants.uuidParamName));
+            if (uuid.isPresent()) {
+                newClient.setUuid(uuid.get());
+            }
+
+            final Optional<String> motherLastName = Optional
+                    .ofNullable(command.stringValueOfParameterNamed(ClientApiConstants.motherLastnameParamName));
+            if (motherLastName.isPresent()) {
+                newClient.setMotherLastName(motherLastName.get());
+            }
+
+            final Optional<String> countryOfBirth = Optional
+                    .ofNullable(command.stringValueOfParameterNamed(ClientApiConstants.countryOfBirthParamName));
+            if (countryOfBirth.isPresent()) {
+                newClient.setCountryOfBirth(countryOfBirth.get());
+            }
+
+            final Optional<String> nationality = Optional
+                    .ofNullable(command.stringValueOfParameterNamed(ClientApiConstants.nationalityParamName));
+            if (nationality.isPresent()) {
+                newClient.setNationality(nationality.get());
+            }
+
+            final Optional<String> curp = Optional.ofNullable(command.stringValueOfParameterNamed(ClientApiConstants.curpParamName));
+            if (curp.isPresent()) {
+                newClient.setCurp(curp.get());
+            }
+
+            final Optional<String> rfc = Optional.ofNullable(command.stringValueOfParameterNamed(ClientApiConstants.rfcParamName));
+            if (rfc.isPresent()) {
+                newClient.setRfc(rfc.get());
+            }
+
+            final Optional<String> finalBeneficiary = Optional
+                    .ofNullable(command.stringValueOfParameterNamed(ClientApiConstants.finalBeneficiaryParamName));
+            if (finalBeneficiary.isPresent()) {
+                newClient.setFinalBeneficiary(finalBeneficiary.get());
+            }
+
+            final Optional<String> thirdPartyBeneficiary = Optional
+                    .ofNullable(command.stringValueOfParameterNamed(ClientApiConstants.thirdPartyBeneficiaryParamName));
+            if (thirdPartyBeneficiary.isPresent()) {
+                newClient.setThirdPartyBeneficiary(thirdPartyBeneficiary.get());
+            }
+
+            CodeValue profession;
+            final Optional<Long> professionId = Optional
+                    .ofNullable(command.longValueOfParameterNamed(ClientApiConstants.professionIdParamName));
+            if (professionId.isPresent()) {
+                profession = this.codeValueRepository.findOneWithNotFoundDetection(professionId.get());
+                if (profession != null) {
+                    newClient.setProfession(profession);
+                }
+            }
+
             if (newClient.isActive()) {
                 validateParentGroupRulesBeforeClientActivation(newClient);
                 runEntityDatatableCheck(newClient.getId());
@@ -431,14 +497,14 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
                 clientForUpdate.updateStaff(newStaff);
             }
 
-            if (changes.containsKey(ClientApiConstants.genderIdParamName)) {
+            if (changes.containsKey(ClientApiConstants.professionIdParamName)) {
 
-                final Long newValue = command.longValueOfParameterNamed(ClientApiConstants.genderIdParamName);
-                CodeValue gender = null;
+                final Long newValue = command.longValueOfParameterNamed(ClientApiConstants.professionIdParamName);
+                CodeValue newCodeVal = null;
                 if (newValue != null) {
-                    gender = this.codeValueRepository.findOneByCodeNameAndIdWithNotFoundDetection(ClientApiConstants.GENDER, newValue);
+                    newCodeVal = this.codeValueRepository.findOneByCodeNameAndIdWithNotFoundDetection("PROFESSION", newValue);
                 }
-                clientForUpdate.updateGender(gender);
+                clientForUpdate.updateProfession(newCodeVal);
             }
 
             if (changes.containsKey(ClientApiConstants.savingsProductIdParamName)) {
@@ -460,6 +526,17 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
                     newCodeVal = this.codeValueRepository.findOneByCodeNameAndIdWithNotFoundDetection(ClientApiConstants.GENDER, newValue);
                 }
                 clientForUpdate.updateGender(newCodeVal);
+            }
+
+            if (changes.containsKey(ClientApiConstants.isVatRequiredParamName)) {
+                final Boolean newValue = command.booleanPrimitiveValueOfParameterNamed(ClientApiConstants.isVatRequiredParamName);
+                clientForUpdate.setVatRequired(newValue);
+            }
+
+            if (changes.containsKey(ClientApiConstants.vatRateIdParamName)) {
+                final Long newValue = command.longValueOfParameterNamed(ClientApiConstants.vatRateIdParamName);
+                VatRate vatRate = this.readVatRateService.findById(newValue);
+                clientForUpdate.setVatRate(vatRate);
             }
 
             if (changes.containsKey(ClientApiConstants.clientTypeIdParamName)) {

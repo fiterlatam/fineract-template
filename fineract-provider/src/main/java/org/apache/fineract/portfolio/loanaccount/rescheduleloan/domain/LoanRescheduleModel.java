@@ -40,6 +40,8 @@ public final class LoanRescheduleModel {
     private final BigDecimal totalInterestCharged;
     private final BigDecimal totalFeeChargesCharged;
     private final BigDecimal totalPenaltyChargesCharged;
+    private final BigDecimal totalVatOnInterestExpected;
+    private final BigDecimal totalVatOnChargeExpected;
     private final BigDecimal totalRepaymentExpected;
     private final BigDecimal totalOutstanding;
 
@@ -47,7 +49,8 @@ public final class LoanRescheduleModel {
             final Collection<LoanRepaymentScheduleHistory> oldPeriods, final ApplicationCurrency applicationCurrency,
             final int loanTermInDays, final Money principalDisbursed, final BigDecimal totalPrincipalExpected,
             final BigDecimal totalPrincipalPaid, final BigDecimal totalInterestCharged, final BigDecimal totalFeeChargesCharged,
-            final BigDecimal totalPenaltyChargesCharged, final BigDecimal totalRepaymentExpected, final BigDecimal totalOutstanding) {
+            final BigDecimal totalPenaltyChargesCharged, final BigDecimal totalVatOnInterestExpected,
+            final BigDecimal totalVatOnChargeExpected, final BigDecimal totalRepaymentExpected, final BigDecimal totalOutstanding) {
         this.periods = periods;
         this.oldPeriods = oldPeriods;
         this.applicationCurrency = applicationCurrency;
@@ -58,6 +61,8 @@ public final class LoanRescheduleModel {
         this.totalInterestCharged = totalInterestCharged;
         this.totalFeeChargesCharged = totalFeeChargesCharged;
         this.totalPenaltyChargesCharged = totalPenaltyChargesCharged;
+        this.totalVatOnInterestExpected = totalVatOnInterestExpected;
+        this.totalVatOnChargeExpected = totalVatOnChargeExpected;
         this.totalRepaymentExpected = totalRepaymentExpected;
         this.totalOutstanding = totalOutstanding;
     }
@@ -66,11 +71,12 @@ public final class LoanRescheduleModel {
             final Collection<LoanRepaymentScheduleHistory> oldPeriods, final ApplicationCurrency applicationCurrency,
             final int loanTermInDays, final Money principalDisbursed, final BigDecimal totalPrincipalExpected,
             final BigDecimal totalPrincipalPaid, final BigDecimal totalInterestCharged, final BigDecimal totalFeeChargesCharged,
-            final BigDecimal totalPenaltyChargesCharged, final BigDecimal totalRepaymentExpected, final BigDecimal totalOutstanding) {
+            final BigDecimal totalPenaltyChargesCharged, final BigDecimal totalVatOnInterestExpected,
+            final BigDecimal totalVatOnChargeExpected, final BigDecimal totalRepaymentExpected, final BigDecimal totalOutstanding) {
 
         return new LoanRescheduleModel(periods, oldPeriods, applicationCurrency, loanTermInDays, principalDisbursed, totalPrincipalExpected,
-                totalPrincipalPaid, totalInterestCharged, totalFeeChargesCharged, totalPenaltyChargesCharged, totalRepaymentExpected,
-                totalOutstanding);
+                totalPrincipalPaid, totalInterestCharged, totalFeeChargesCharged, totalPenaltyChargesCharged, totalVatOnInterestExpected,
+                totalVatOnChargeExpected, totalRepaymentExpected, totalOutstanding);
     }
 
     public static LoanRescheduleModel createWithSchedulehistory(LoanRescheduleModel loanRescheduleModel,
@@ -80,6 +86,7 @@ public final class LoanRescheduleModel {
                 loanRescheduleModel.loanTermInDays, loanRescheduleModel.totalPrincipalDisbursed, loanRescheduleModel.totalPrincipalExpected,
                 loanRescheduleModel.totalPrincipalPaid, loanRescheduleModel.totalInterestCharged,
                 loanRescheduleModel.totalFeeChargesCharged, loanRescheduleModel.totalPenaltyChargesCharged,
+                loanRescheduleModel.totalVatOnInterestExpected, loanRescheduleModel.totalVatOnChargeExpected,
                 loanRescheduleModel.totalRepaymentExpected, loanRescheduleModel.totalOutstanding);
     }
 
@@ -103,7 +110,7 @@ public final class LoanRescheduleModel {
         return new LoanScheduleData(currency, periodsData, this.loanTermInDays, this.totalPrincipalDisbursed.getAmount(),
                 this.totalPrincipalExpected, this.totalPrincipalPaid, this.totalInterestCharged, this.totalFeeChargesCharged,
                 this.totalPenaltyChargesCharged, totalWaived, totalWrittenOff, this.totalRepaymentExpected, totalRepayment,
-                totalPaidInAdvance, totalPaidLate, this.totalOutstanding);
+                totalPaidInAdvance, totalPaidLate, this.totalOutstanding, this.totalVatOnInterestExpected, this.totalVatOnChargeExpected);
     }
 
     public Collection<LoanRescheduleModelRepaymentPeriod> getPeriods() {

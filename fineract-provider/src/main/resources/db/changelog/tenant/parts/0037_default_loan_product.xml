@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements. See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership. The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License. You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied. See the License for the
+    specific language governing permissions and limitations
+    under the License.
+
+-->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd">
+
+        <changeSet author="fineract" id="1" >
+            <insert tableName="m_organisation_currency">
+                <column name="code" value="MXN"/>
+                <column name="decimal_places" valueNumeric="2"/>
+                <column name="currency_multiplesof"/>
+                <column name="name" value="Mexican Peso"/>
+                <column name="display_symbol" value="$"/>
+                <column name="internationalized_name_code" value="currency.MXN"/>
+            </insert>
+        </changeSet>
+
+        <changeSet author="fineract" id="2">
+            <insert tableName="m_product_loan">
+                <column name="short_name" value="PRST"/>
+                <column name="currency_code" value="MXN"/>
+                <column name="currency_digits" valueNumeric="2"/>
+                <column name="currency_multiplesof" valueNumeric="1"/>
+                <column name="principal_amount" value="5000.000000"/>
+                <column name="min_principal_amount" value="1000.000000"/>
+                <column name="max_principal_amount" value="50000.000000"/>
+                <column name="name" value="Prestamo"/>
+                <column name="is_linked_to_floating_interest_rates" valueNumeric="0"/>
+                <column name="allow_variabe_installments" valueNumeric="0"/>
+                <column name="nominal_interest_rate_per_period" valueNumeric="15.000000"/>
+                <column name="min_nominal_interest_rate_per_period" valueNumeric="5.000000"/>
+                <column name="max_nominal_interest_rate_per_period" valueNumeric="50.000000"/>
+                <column name="interest_period_frequency_enum" valueNumeric="3"/>
+                <column name="interest_method_enum" valueNumeric="0"/>
+                <column name="interest_calculated_in_period_enum" valueNumeric="1"/>
+                <column name="allow_partial_period_interest_calcualtion" valueNumeric="0"/>
+                <column name="repay_every" valueNumeric="1"/>
+                <column name="repayment_period_frequency_enum" valueNumeric="2"/>
+                <column name="number_of_repayments" valueNumeric="12"/>
+                <column name="min_number_of_repayments" valueNumeric="1"/>
+                <column name="max_number_of_repayments" valueNumeric="60"/>
+                <column name="amortization_method_enum" valueNumeric="1"/>
+                <column name="accounting_type" valueNumeric="1"/>
+                <column name="loan_transaction_strategy_id" valueNumeric="1"/>
+                <column name="include_in_borrower_cycle" valueNumeric="0"/>
+                <column name="use_borrower_cycle" valueNumeric="0"/>
+                <column name="allow_multiple_disbursals" valueNumeric="0"/>
+                <column name="days_in_month_enum" valueNumeric="1"/>
+                <column name="days_in_year_enum" valueNumeric="1"/>
+                <column name="interest_recalculation_enabled" valueNumeric="0"/>
+                <column name="hold_guarantee_funds" valueNumeric="0"/>
+                <column name="principal_threshold_for_last_installment" valueNumeric="0.00"/>
+                <column name="account_moves_out_of_npa_only_on_arrears_completion" valueNumeric="0"/>
+                <column name="can_define_fixed_emi_amount" valueNumeric="0"/>
+                <column name="instalment_amount_in_multiples_of" valueNumeric="1.000000"/>
+                <column name="can_use_for_topup" valueNumeric="0"/>
+                <column name="sync_expected_with_disbursement_date" valueNumeric="0"/>
+                <column name="is_equal_amortization" valueNumeric="0"/>
+                <column name="disallow_expected_disbursements" valueNumeric="0"/>
+                <column name="allow_approved_disbursed_amounts_over_applied" valueNumeric="0"/>
+            </insert>
+        </changeSet>
+
+        <changeSet author="fineract" id="3">
+            <insert tableName="m_product_loan_configurable_attributes">
+                <column name="loan_product_id" valueNumeric="1"/>
+                <column name="amortization_method_enum" valueNumeric="1"/>
+                <column name="interest_method_enum" valueNumeric="1"/>
+                <column name="loan_transaction_strategy_id" valueNumeric="1"/>
+                <column name="interest_calculated_in_period_enum" valueNumeric="1"/>
+                <column name="arrearstolerance_amount" valueNumeric="1"/>
+                <column name="repay_every" valueNumeric="1"/>
+                <column name="moratorium" valueNumeric="1"/>
+                <column name="grace_on_arrears_ageing" valueNumeric="1"/>
+            </insert>
+        </changeSet>
+
+        <changeSet id="4" author="fineract">
+            <sql>
+                UPDATE stretchy_report SET report_name = 'ClientSummary' WHERE (report_name = 'ClientSummary ')
+            </sql>
+        </changeSet>
+
+        <changeSet author="fineract" id="5">
+            <update tableName="m_organisation_currency">
+                <column name="int_code" value="484"/>
+                <where>code='MXN'</where>
+            </update>
+        </changeSet>
+
+        <changeSet author="fineract" id="6">
+            <update tableName="m_currency">
+                <column name="int_code" value="484"/>
+                <where>code='MXN'</where>
+            </update>
+        </changeSet>
+
+        <changeSet author="fineract" id="7">
+            <delete tableName="m_organisation_currency">
+                <where>code='USD'</where>
+            </delete>
+            <delete tableName="m_organisation_currency">
+                <where>code='GTQ'</where>
+            </delete>
+        </changeSet>
+
+</databaseChangeLog>

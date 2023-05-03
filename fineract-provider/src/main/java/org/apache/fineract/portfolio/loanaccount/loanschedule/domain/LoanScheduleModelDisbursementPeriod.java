@@ -47,6 +47,7 @@ public final class LoanScheduleModelDisbursementPeriod implements LoanScheduleMo
 
     public static LoanScheduleModelDisbursementPeriod disbursement(final LocalDate disbursementDate, final Money principalDisbursed,
             final BigDecimal chargesDueAtTimeOfDisbursement) {
+
         return new LoanScheduleModelDisbursementPeriod(null, disbursementDate, principalDisbursed, chargesDueAtTimeOfDisbursement);
     }
 
@@ -61,7 +62,7 @@ public final class LoanScheduleModelDisbursementPeriod implements LoanScheduleMo
     @Override
     public LoanSchedulePeriodData toData() {
         return LoanSchedulePeriodData.disbursementOnlyPeriod(this.disbursementDate, this.principalDisbursed.getAmount(),
-                this.chargesDueAtTimeOfDisbursement, false);
+                this.chargesDueAtTimeOfDisbursement, false, this.getVatOnInterest().getAmount(), this.getVatOnCharges().getAmount());
     }
 
     @Override
@@ -148,4 +149,15 @@ public final class LoanScheduleModelDisbursementPeriod implements LoanScheduleMo
     public void setRescheduleInterestPortion(BigDecimal rescheduleInterestPortion) {
         return;
     }
+
+    @Override
+    public Money getVatOnInterest() {
+        return null;
+    }
+
+    @Override
+    public Money getVatOnCharges() {
+        return null;
+    }
+
 }

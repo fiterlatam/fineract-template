@@ -3586,4 +3586,19 @@ public class CommandWrapperBuilder {
         this.href = "/codecauses/" + causeId;
         return this;
     }
+
+    public CommandWrapperBuilder createCreditStanding() {
+        this.actionName = "CREATE";
+        this.entityName = "CREDITSTANDING";
+        this.href = "/creditstandings";
+        return this;
+    }
+
+    public CommandWrapperBuilder updateCreditStanding(Long clientId) {
+        this.actionName = "UPDATE";
+        this.entityName = "CREDITSTANDING";
+        this.href = "/creditstandings" + clientId;
+        this.clientId = clientId;
+        return this;
+    }
 }

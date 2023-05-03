@@ -54,6 +54,7 @@ import org.apache.fineract.organisation.staff.domain.Staff;
 import org.apache.fineract.portfolio.client.api.ClientApiConstants;
 import org.apache.fineract.portfolio.collateralmanagement.domain.ClientCollateralManagement;
 import org.apache.fineract.portfolio.group.domain.Group;
+import org.apache.fineract.portfolio.vatrate.domain.VatRate;
 import org.apache.fineract.useradministration.domain.AppUser;
 
 @Entity
@@ -221,12 +222,47 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
     @Column(name = "proposed_transfer_date", nullable = true)
     private LocalDate proposedTransferDate;
 
+    @Column(name = "uuid", nullable = true)
+    private String uuid;
+
+    @Column(name = "mother_lastname", length = 50)
+    private String motherLastName;
+
+    @Column(name = "country_of_birth", length = 50)
+    private String countryOfBirth;
+
+    @Column(name = "nationality", length = 50)
+    private String nationality;
+
+    @Column(name = "curp", nullable = true)
+    private String curp;
+
+    @Column(name = "rfc", nullable = true)
+    private String rfc;
+
+    @Column(name = "final_beneficiary", nullable = false)
+    private String finalBeneficiary;
+
+    @Column(name = "third_party_beneficiary", length = 100)
+    private String thirdPartyBeneficiary;
+
+    @ManyToOne
+    @JoinColumn(name = "vat_rate_id", nullable = true)
+    private VatRate vatRate;
+
+    @Column(name = "is_vat_required", nullable = false)
+    private boolean isVatRequired;
+
+    @ManyToOne
+    @JoinColumn(name = "profession_cv_id")
+    private CodeValue profession;
+
     @OneToMany(mappedBy = "client", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private Set<ClientCollateralManagement> clientCollateralManagements = new HashSet<>();
 
     public static Client createNew(final AppUser currentUser, final Office clientOffice, final Group clientParentGroup, final Staff staff,
             final Long savingsProductId, final CodeValue gender, final CodeValue clientType, final CodeValue clientClassification,
-            final Integer legalForm, final JsonCommand command) {
+            final Integer legalForm, final VatRate vatRate, final JsonCommand command) {
 
         final String accountNo = command.stringValueOfParameterNamed(ClientApiConstants.accountNoParamName);
         final String externalId = command.stringValueOfParameterNamed(ClientApiConstants.externalIdParamName);
@@ -237,6 +273,7 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
         final String middlename = command.stringValueOfParameterNamed(ClientApiConstants.middlenameParamName);
         final String lastname = command.stringValueOfParameterNamed(ClientApiConstants.lastnameParamName);
         final String fullname = command.stringValueOfParameterNamed(ClientApiConstants.fullnameParamName);
+        final Boolean isVatRequired = command.booleanObjectValueOfParameterNamed(ClientApiConstants.isVatRequiredParamName);
 
         final boolean isStaff = command.booleanPrimitiveValueOfParameterNamed(ClientApiConstants.isStaffParamName);
 
@@ -266,7 +303,7 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
         final Long savingsAccountId = null;
         return new Client(currentUser, status, clientOffice, clientParentGroup, accountNo, firstname, middlename, lastname, fullname,
                 activationDate, officeJoiningDate, externalId, mobileNo, emailAddress, staff, submittedOnDate, savingsProductId,
-                savingsAccountId, dataOfBirth, gender, clientType, clientClassification, legalForm, isStaff);
+                savingsAccountId, dataOfBirth, gender, clientType, clientClassification, legalForm, isStaff, vatRate, isVatRequired);
     }
 
     protected Client() {}
@@ -276,7 +313,8 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
             final LocalDate activationDate, final LocalDate officeJoiningDate, final String externalId, final String mobileNo,
             final String emailAddress, final Staff staff, final LocalDate submittedOnDate, final Long savingsProductId,
             final Long savingsAccountId, final LocalDate dateOfBirth, final CodeValue gender, final CodeValue clientType,
-            final CodeValue clientClassification, final Integer legalForm, final Boolean isStaff) {
+            final CodeValue clientClassification, final Integer legalForm, final Boolean isStaff, final VatRate vatRate,
+            final Boolean isVatRequired) {
 
         if (StringUtils.isBlank(accountNo)) {
             this.accountNumber = new RandomPasswordGenerator(19).generate();
@@ -341,6 +379,10 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
 
         this.clientType = clientType;
         this.clientClassification = clientClassification;
+
+        this.isVatRequired = isVatRequired;
+        this.vatRate = vatRate;
+
         this.setLegalForm(legalForm);
 
         deriveDisplayName();
@@ -391,6 +433,10 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
     public void updateAccountNo(final String accountIdentifier) {
         this.accountNumber = accountIdentifier;
         this.accountNumberRequiresAutoGeneration = false;
+    }
+
+    public String getAccountNumber() {
+        return accountNumber;
     }
 
     public void activate(final AppUser currentUser, final DateTimeFormatter formatter, final LocalDate activationLocalDate) {
@@ -521,9 +567,73 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
             this.fullname = newValue;
         }
 
+        if (command.isChangeInStringParameterNamed(ClientApiConstants.motherLastnameParamName, this.motherLastName)) {
+            final String newValue = command.stringValueOfParameterNamed(ClientApiConstants.motherLastnameParamName);
+            actualChanges.put(ClientApiConstants.motherLastnameParamName, newValue);
+            this.motherLastName = newValue;
+        }
+
+        if (command.isChangeInStringParameterNamed(ClientApiConstants.uuidParamName, this.uuid)) {
+            final String newValue = command.stringValueOfParameterNamed(ClientApiConstants.uuidParamName);
+            actualChanges.put(ClientApiConstants.uuidParamName, newValue);
+            this.uuid = newValue;
+        }
+
+        if (command.isChangeInStringParameterNamed(ClientApiConstants.countryOfBirthParamName, this.countryOfBirth)) {
+            final String newValue = command.stringValueOfParameterNamed(ClientApiConstants.countryOfBirthParamName);
+            actualChanges.put(ClientApiConstants.countryOfBirthParamName, newValue);
+            this.countryOfBirth = newValue;
+        }
+
+        if (command.isChangeInStringParameterNamed(ClientApiConstants.nationalityParamName, this.nationality)) {
+            final String newValue = command.stringValueOfParameterNamed(ClientApiConstants.nationalityParamName);
+            actualChanges.put(ClientApiConstants.nationalityParamName, newValue);
+            this.nationality = newValue;
+        }
+
+        if (command.isChangeInStringParameterNamed(ClientApiConstants.curpParamName, this.curp)) {
+            final String newValue = command.stringValueOfParameterNamed(ClientApiConstants.curpParamName);
+            actualChanges.put(ClientApiConstants.curpParamName, newValue);
+            this.curp = newValue;
+        }
+
+        if (command.isChangeInStringParameterNamed(ClientApiConstants.rfcParamName, this.rfc)) {
+            final String newValue = command.stringValueOfParameterNamed(ClientApiConstants.rfcParamName);
+            actualChanges.put(ClientApiConstants.rfcParamName, newValue);
+            this.rfc = newValue;
+        }
+
+        if (command.isChangeInStringParameterNamed(ClientApiConstants.finalBeneficiaryParamName, this.finalBeneficiary)) {
+            final String newValue = command.stringValueOfParameterNamed(ClientApiConstants.finalBeneficiaryParamName);
+            actualChanges.put(ClientApiConstants.finalBeneficiaryParamName, newValue);
+            this.finalBeneficiary = newValue;
+        }
+
+        if (command.isChangeInStringParameterNamed(ClientApiConstants.thirdPartyBeneficiaryParamName, this.thirdPartyBeneficiary)) {
+            final String newValue = command.stringValueOfParameterNamed(ClientApiConstants.thirdPartyBeneficiaryParamName);
+            actualChanges.put(ClientApiConstants.thirdPartyBeneficiaryParamName, newValue);
+            this.thirdPartyBeneficiary = newValue;
+        }
+
+        if (command.isChangeInLongParameterNamed(ClientApiConstants.professionIdParamName, genderId())) {
+            final Long newValue = command.longValueOfParameterNamed(ClientApiConstants.professionIdParamName);
+            actualChanges.put(ClientApiConstants.professionIdParamName, newValue);
+        }
+
         if (command.isChangeInLongParameterNamed(ClientApiConstants.staffIdParamName, staffId())) {
             final Long newValue = command.longValueOfParameterNamed(ClientApiConstants.staffIdParamName);
             actualChanges.put(ClientApiConstants.staffIdParamName, newValue);
+        }
+
+        if (command.isChangeInBooleanParameterNamed(ClientApiConstants.isVatRequiredParamName, this.isVatRequired)) {
+            final boolean newValue = command.booleanPrimitiveValueOfParameterNamed(ClientApiConstants.isVatRequiredParamName);
+            actualChanges.put(ClientApiConstants.isVatRequiredParamName, newValue);
+            this.isVatRequired = newValue;
+        }
+
+        if (command.isChangeInLongParameterNamed(ClientApiConstants.vatRateIdParamName, vatRateId())) {
+            final Long newValue = command.longValueOfParameterNamed(ClientApiConstants.vatRateIdParamName);
+            actualChanges.put(ClientApiConstants.vatRateIdParamName, newValue);
         }
 
         if (command.isChangeInLongParameterNamed(ClientApiConstants.genderIdParamName, genderId())) {
@@ -897,6 +1007,14 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
         return genderId;
     }
 
+    public Long vatRateId() {
+        Long vatRateId = null;
+        if (this.vatRate != null) {
+            vatRateId = this.vatRate.getId();
+        }
+        return vatRateId;
+    }
+
     public Long clientTypeId() {
         Long clientTypeId = null;
         if (this.clientType != null) {
@@ -951,6 +1069,18 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
 
     public void updateGender(CodeValue gender) {
         this.gender = gender;
+    }
+
+    public void setVatRate(VatRate vatRate) {
+        this.vatRate = vatRate;
+    }
+
+    public void setVatRequired(boolean vatRequired) {
+        isVatRequired = vatRequired;
+    }
+
+    public void updateProfession(CodeValue profession) {
+        this.profession = profession;
     }
 
     public LocalDate dateOfBirth() {
@@ -1025,4 +1155,47 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
         this.proposedTransferDate = proposedTransferDate;
     }
 
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
+
+    public void setMotherLastName(String motherLastName) {
+        this.motherLastName = motherLastName;
+    }
+
+    public void setCountryOfBirth(String countryOfBirth) {
+        this.countryOfBirth = countryOfBirth;
+    }
+
+    public void setNationality(String nationality) {
+        this.nationality = nationality;
+    }
+
+    public void setCurp(String curp) {
+        this.curp = curp;
+    }
+
+    public void setRfc(String rfc) {
+        this.rfc = rfc;
+    }
+
+    public void setFinalBeneficiary(String finalBeneficiary) {
+        this.finalBeneficiary = finalBeneficiary;
+    }
+
+    public void setThirdPartyBeneficiary(String thirdPartyBeneficiary) {
+        this.thirdPartyBeneficiary = thirdPartyBeneficiary;
+    }
+
+    public void setProfession(CodeValue profession) {
+        this.profession = profession;
+    }
+
+    public VatRate getVatRate() {
+        return vatRate;
+    }
+
+    public boolean isVatRequired() {
+        return isVatRequired;
+    }
 }

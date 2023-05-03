@@ -203,6 +203,12 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
          * before the latest payment recorded against the loan)
          ***/
 
+        // CAT calculation with/without VAT
+        loan.setCatRate(loanUtilService.getCalculatedCatRate(loan, false));
+        if (loan.isVatRequired()) {
+            loan.setCatRateWithVat(loanUtilService.getCalculatedCatRate(loan, loan.isVatRequired()));
+        }
+
         saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
 
         if (changedTransactionDetail != null) {
@@ -688,6 +694,12 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
 
         this.loanTransactionRepository.saveAndFlush(newRefundTransaction);
 
+        // CAT calculation with/without VAT
+        loan.setCatRate(loanUtilService.getCalculatedCatRate(loan, false));
+        if (loan.isVatRequired()) {
+            loan.setCatRateWithVat(loanUtilService.getCalculatedCatRate(loan, loan.isVatRequired()));
+        }
+
         if (StringUtils.isNotBlank(noteText)) {
             final Note note = Note.loanTransactionNote(loan, newRefundTransaction, noteText);
             this.noteRepository.save(note);
@@ -724,7 +736,9 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
             Money interestPortion = foreCloseDetail.getInterestCharged(currency).minus(accruedReceivables[0]);
             Money feePortion = foreCloseDetail.getFeeChargesCharged(currency).minus(accruedReceivables[1]);
             Money penaltyPortion = foreCloseDetail.getPenaltyChargesCharged(currency).minus(accruedReceivables[2]);
-            Money total = interestPortion.plus(feePortion).plus(penaltyPortion);
+            Money vatOnInterest = foreCloseDetail.getVatOnInterestCharged(currency).minus(accruedReceivables[3]);
+            Money vatOnCharges = foreCloseDetail.getVatOnChargeExpected(currency).minus(accruedReceivables[4]);
+            Money total = interestPortion.plus(feePortion).plus(penaltyPortion).plus(vatOnInterest).plus(vatOnCharges);
             if (total.isGreaterThanZero()) {
                 LoanTransaction accrualTransaction = LoanTransaction.accrueTransaction(loan, loan.getOffice(), foreClosureDate,
                         total.getAmount(), interestPortion.getAmount(), feePortion.getAmount(), penaltyPortion.getAmount());
@@ -751,15 +765,19 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         Money feePayable = foreCloseDetail.getFeeChargesCharged(currency);
         Money penaltyPayable = foreCloseDetail.getPenaltyChargesCharged(currency);
         Money payPrincipal = foreCloseDetail.getPrincipal(currency);
+        Money vatOnInterest = foreCloseDetail.getVatOnInterestCharged(currency);
+        Money vatOnCharges = foreCloseDetail.getVatOnChargeExpected(currency);
         loan.updateInstallmentsPostDate(foreClosureDate);
 
         LoanTransaction payment = null;
 
-        if (payPrincipal.plus(interestPayable).plus(feePayable).plus(penaltyPayable).isGreaterThanZero()) {
+        if (payPrincipal.plus(interestPayable).plus(feePayable).plus(penaltyPayable).plus(vatOnInterest).plus(vatOnCharges)
+                .isGreaterThanZero()) {
             final PaymentDetail paymentDetail = null;
             String externalId = null;
             final LocalDateTime currentDateTime = DateUtils.getLocalDateTimeOfTenant();
-            payment = LoanTransaction.repayment(loan.getOffice(), payPrincipal.plus(interestPayable).plus(feePayable).plus(penaltyPayable),
+            payment = LoanTransaction.repayment(loan.getOffice(),
+                    payPrincipal.plus(interestPayable).plus(feePayable).plus(penaltyPayable).plus(vatOnInterest).plus(vatOnCharges),
                     paymentDetail, foreClosureDate, externalId);
             payment.updateLoan(loan);
             newTransactions.add(payment);

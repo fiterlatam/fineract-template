@@ -575,6 +575,34 @@ public class LoanCharge extends AbstractPersistableCustom {
         return ChargeTimeType.fromInt(this.chargeTime).equals(ChargeTimeType.INSTALMENT_FEE);
     }
 
+    public boolean isAlboInstalmentFee() {
+        return ChargeTimeType.fromInt(this.chargeTime).equals(ChargeTimeType.INSTALMENT_FEE)
+                && ChargeCalculationType.fromInt(this.chargeCalculation).equals(ChargeCalculationType.PERCENT_OF_AMOUNT);
+    }
+
+    public boolean isNotAlboInstalmentFee() {
+        return !(ChargeTimeType.fromInt(this.chargeTime).equals(ChargeTimeType.INSTALMENT_FEE)
+                && ChargeCalculationType.fromInt(this.chargeCalculation).equals(ChargeCalculationType.PERCENT_OF_AMOUNT));
+    }
+
+    public boolean isCollectionFee() {
+        return ChargeTimeType.fromInt(this.chargeTime).equals(ChargeTimeType.INSTALMENT_FEE)
+                && ChargeCalculationType.fromInt(this.chargeCalculation).equals(ChargeCalculationType.FLAT);
+    }
+
+    public boolean isNotCollectionFee() {
+        return !(ChargeTimeType.fromInt(this.chargeTime).equals(ChargeTimeType.INSTALMENT_FEE)
+                && ChargeCalculationType.fromInt(this.chargeCalculation).equals(ChargeCalculationType.FLAT));
+    }
+
+    public boolean isOriginationFee() {
+        return ChargeTimeType.fromInt(this.chargeTime).equals(ChargeTimeType.ORIGINATION_FEE);
+    }
+
+    public boolean isNotOriginationFee() {
+        return !ChargeTimeType.fromInt(this.chargeTime).equals(ChargeTimeType.ORIGINATION_FEE);
+    }
+
     public boolean isOverdueInstallmentCharge() {
         return ChargeTimeType.fromInt(this.chargeTime).equals(ChargeTimeType.OVERDUE_INSTALLMENT);
     }
@@ -741,6 +769,10 @@ public class LoanCharge extends AbstractPersistableCustom {
 
     public Money getAmount(final MonetaryCurrency currency) {
         return Money.of(currency, this.amount);
+    }
+
+    public BigDecimal getAmount() {
+        return this.amount;
     }
 
     public Money getAmountPaid(final MonetaryCurrency currency) {

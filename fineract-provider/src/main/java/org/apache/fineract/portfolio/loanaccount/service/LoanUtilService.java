@@ -21,10 +21,14 @@ package org.apache.fineract.portfolio.loanaccount.service;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import java.math.BigDecimal;
+import java.math.MathContext;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
@@ -36,6 +40,8 @@ import org.apache.fineract.organisation.holiday.domain.HolidayStatusType;
 import org.apache.fineract.organisation.monetary.domain.ApplicationCurrency;
 import org.apache.fineract.organisation.monetary.domain.ApplicationCurrencyRepositoryWrapper;
 import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
+import org.apache.fineract.organisation.monetary.domain.Money;
+import org.apache.fineract.organisation.monetary.domain.MoneyHelper;
 import org.apache.fineract.organisation.workingdays.domain.WorkingDays;
 import org.apache.fineract.organisation.workingdays.domain.WorkingDaysRepositoryWrapper;
 import org.apache.fineract.portfolio.calendar.data.CalendarHistoryDataWrapper;
@@ -46,6 +52,7 @@ import org.apache.fineract.portfolio.calendar.domain.CalendarInstance;
 import org.apache.fineract.portfolio.calendar.domain.CalendarInstanceRepository;
 import org.apache.fineract.portfolio.calendar.service.CalendarReadPlatformService;
 import org.apache.fineract.portfolio.calendar.service.CalendarUtils;
+import org.apache.fineract.portfolio.common.domain.DaysInYearType;
 import org.apache.fineract.portfolio.floatingrates.data.FloatingRateDTO;
 import org.apache.fineract.portfolio.floatingrates.data.FloatingRatePeriodData;
 import org.apache.fineract.portfolio.floatingrates.exception.FloatingRateNotFoundException;
@@ -55,10 +62,13 @@ import org.apache.fineract.portfolio.loanaccount.api.LoanApiConstants;
 import org.apache.fineract.portfolio.loanaccount.data.HolidayDetailDTO;
 import org.apache.fineract.portfolio.loanaccount.data.ScheduleGeneratorDTO;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
+import org.apache.fineract.portfolio.loanaccount.domain.LoanCharge;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanDisbursementDetails;
+import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleInstallment;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionType;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleGeneratorFactory;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductRelatedDetail;
+import org.apache.poi.ss.formula.functions.Irr;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -74,6 +84,9 @@ public class LoanUtilService {
     private final FloatingRatesReadPlatformService floatingRatesReadPlatformService;
     private final FromJsonHelper fromApiJsonHelper;
     private final CalendarReadPlatformService calendarReadPlatformService;
+
+    private final BigDecimal divisor = BigDecimal.valueOf(Double.parseDouble("100.0"));
+    private final long daysInMonth = 30;
 
     @Autowired
     public LoanUtilService(final ApplicationCurrencyRepositoryWrapper applicationCurrencyRepository,
@@ -353,6 +366,210 @@ public class LoanUtilService {
                     "Loan :" + repaymentTransactionType.getCode() + " Repayment Transaction Type provided is not a Repayment Type",
                     repaymentTransactionType.getCode());
         }
+    }
+
+    /**
+     * Calculate the CAT rate for a given loan considering the principal amount, disbursement charges and for each
+     * installment, the outstanding amount to pay
+     *
+     * @param loan
+     *            the loan
+     * @param isVatRequired
+     *            indicates whether VAT is required for the loan
+     * @return the CAT rate
+     */
+    public BigDecimal getCalculatedCatRate(final Loan loan, final Boolean isVatRequired) {
+        BigDecimal catRate;
+        // for period = 0, the disbursement amount must be negative
+        double[] cash_flows = new double[loan.getRepaymentScheduleInstallments().size() + 1];
+        cash_flows[0] = loan.getPrincpal().getAmount().doubleValue() * -1;
+
+        // for period = 0, sum the charges amount
+        for (LoanCharge charge : loan.charges()) {
+            if (charge.isActive() && charge.isDisbursementCharge()) {
+                cash_flows[0] = cash_flows[0] + charge.getAmount(loan.getCurrency()).getAmount().doubleValue();
+            }
+        }
+
+        // get the cash flows for loan installments
+        calculateCashFlowsForInstallments(loan, isVatRequired, cash_flows);
+
+        double irrRate = Irr.irr(cash_flows);
+        catRate = Money.of(loan.getCurrency(), new BigDecimal((Math.pow(1 + irrRate, 12) - 1) * 100)).getAmount();
+        return catRate;
+    }
+
+    private void calculateCashFlowsForInstallments(Loan loan, Boolean isVatRequired, double[] cash_flows) {
+        for (int i = 0; i < loan.getRepaymentScheduleInstallments().size(); i++) {
+            LoanRepaymentScheduleInstallment per = (LoanRepaymentScheduleInstallment) loan.getRepaymentScheduleInstallments().toArray()[i];
+            if (isVatRequired) {
+                cash_flows[i + 1] = per.getPrincipal(loan.getCurrency()).plus(per.getInterestCharged(loan.getCurrency()))
+                        .plus(per.getFeeChargesCharged(loan.getCurrency()).getAmount().doubleValue())
+                        .plus(per.getPenaltyChargesCharged(loan.getCurrency())).plus(per.getVatOnInterestCharged(loan.getCurrency()))
+                        .plus(per.getVatOnChargeExpected(loan.getCurrency())).getAmount().doubleValue();
+            } else {
+                cash_flows[i + 1] = per.getPrincipal(loan.getCurrency()).plus(per.getInterestCharged(loan.getCurrency()))
+                        .plus(per.getFeeChargesCharged(loan.getCurrency()).getAmount().doubleValue())
+                        .plus(per.getPenaltyChargesCharged(loan.getCurrency())).getAmount().doubleValue();
+            }
+        }
+    }
+
+    public BigDecimal calculateEffectiveRate(BigDecimal annualInterestRate) {
+        BigDecimal exponent = BigDecimal.valueOf(DaysInYearType.DAYS_365.getValue().doubleValue()).divide(BigDecimal.valueOf(daysInMonth),
+                MathContext.DECIMAL64);
+        BigDecimal interestRate = annualInterestRate.divide(divisor, MathContext.DECIMAL64);
+        BigDecimal base = interestRate.divide(exponent, MathContext.DECIMAL64).add(BigDecimal.ONE);
+        Double effectiveRateInterest = Math.pow(base.doubleValue(), exponent.doubleValue()) - 1;
+        BigDecimal effectiveRateInterestBigDecimal = BigDecimal.valueOf(effectiveRateInterest).multiply(divisor, MathContext.DECIMAL64)
+                .setScale(9, MoneyHelper.getRoundingMode());
+
+        return effectiveRateInterestBigDecimal;
+    }
+
+    public BigDecimal calculateEffectiveRateWithVat(BigDecimal annualInterestRate, BigDecimal vatRate) {
+        BigDecimal exponent = BigDecimal.valueOf(DaysInYearType.DAYS_365.getValue().doubleValue()).divide(BigDecimal.valueOf(daysInMonth),
+                MathContext.DECIMAL64);
+        BigDecimal interestRate = annualInterestRate.divide(divisor, MathContext.DECIMAL64);
+        BigDecimal vatRateForCalculation = vatRate.divide(divisor, MathContext.DECIMAL64).add(BigDecimal.ONE);
+        BigDecimal base = interestRate.divide(exponent, MathContext.DECIMAL64).multiply(vatRateForCalculation, MathContext.DECIMAL64)
+                .add(BigDecimal.ONE);
+        Double effectiveRateInterest = Math.pow(base.doubleValue(), exponent.doubleValue()) - 1;
+        BigDecimal effectiveRateInterestBigDecimal = BigDecimal.valueOf(effectiveRateInterest).multiply(divisor, MathContext.DECIMAL64)
+                .setScale(9, MoneyHelper.getRoundingMode());
+
+        return effectiveRateInterestBigDecimal;
+    }
+
+    public Integer calculateDurationOfLoan(Loan loan) {
+        LoanRepaymentScheduleInstallment lastInstallment = loan.getRepaymentScheduleInstallments()
+                .get(loan.getRepaymentScheduleInstallments().size() - 1);
+
+        LocalDate disbursementDate = loan.getDisbursementDate();
+        LocalDate dueDateLastInstallment = lastInstallment.getDueDate();
+
+        // Calculate the duration of a loan between disbursement date and the last installment due date
+        Integer daysInPeriod = Math.toIntExact(ChronoUnit.DAYS.between(disbursementDate, dueDateLastInstallment));
+        return daysInPeriod;
+    }
+
+    public BigDecimal getLoanVatPercentage(Loan loan) {
+        BigDecimal vatPercentage = BigDecimal.ZERO;
+        if (loan.isVatRequired() && loan.getClient() != null && loan.getClient().getVatRate() != null
+                && loan.getClient().getVatRate().getPercentage() % 1 == 0) {
+            vatPercentage = BigDecimal.valueOf(loan.getClient().getVatRate().getPercentage());
+        }
+        return vatPercentage;
+    }
+
+    public BigDecimal calculateLoanFutureValue(Loan loan) {
+        BigDecimal loanFutureValue;
+
+        // get values to use in the formula
+        BigDecimal loanAmount = loan.getNetDisbursalAmount();
+        Integer loanDuration = calculateDurationOfLoan(loan);
+        BigDecimal vatRate = getLoanVatPercentage(loan);
+        BigDecimal effectiveAnnualRateWithVat = calculateEffectiveRateWithVat(
+                loan.getLoanProductRelatedDetail().getAnnualNominalInterestRate(), vatRate);
+
+        // calculate elements needed for the formula
+        BigDecimal interestRate = effectiveAnnualRateWithVat.divide(divisor, MathContext.DECIMAL64);
+        BigDecimal base = interestRate.add(BigDecimal.ONE);
+        BigDecimal exponent = BigDecimal.valueOf(loanDuration.intValue())
+                .divide(BigDecimal.valueOf(DaysInYearType.DAYS_365.getValue().intValue()), MathContext.DECIMAL64);
+        Double powResult = Math.pow(base.doubleValue(), exponent.doubleValue());
+
+        loanFutureValue = loanAmount.multiply(BigDecimal.valueOf(powResult), MathContext.DECIMAL64).setScale(9,
+                MoneyHelper.getRoundingMode());
+
+        return loanFutureValue;
+    }
+
+    public Map<Integer, BigDecimal> calculateFactorPerInstallment(Loan loan) {
+        Map<Integer, BigDecimal> factorInstallmentsMapping = new HashMap<>();
+
+        LoanRepaymentScheduleInstallment lastInstallment = loan.getRepaymentScheduleInstallments()
+                .get(loan.getRepaymentScheduleInstallments().size() - 1);
+        LocalDate dueDateLastInstallment = lastInstallment.getDueDate();
+
+        // get values to use in the formula
+        BigDecimal vatRate = getLoanVatPercentage(loan);
+        BigDecimal effectiveAnnualRateWithVat = calculateEffectiveRateWithVat(
+                loan.getLoanProductRelatedDetail().getAnnualNominalInterestRate(), vatRate);
+        BigDecimal interestRate = effectiveAnnualRateWithVat.divide(divisor, MathContext.DECIMAL64);
+        BigDecimal base = interestRate.add(BigDecimal.ONE);
+
+        // calculate the factor per installment of the loan
+        for (int i = 0; i < loan.getRepaymentScheduleInstallments().size(); i++) {
+            LoanRepaymentScheduleInstallment currentInstallment = loan.getRepaymentScheduleInstallments().get(i);
+
+            // Calculate the duration of a loan between the last installment due date and the installment due date
+            Integer daysInPeriod = Math.toIntExact(ChronoUnit.DAYS.between(currentInstallment.getDueDate(), dueDateLastInstallment));
+            BigDecimal exponent = BigDecimal.valueOf(daysInPeriod.intValue())
+                    .divide(BigDecimal.valueOf(DaysInYearType.DAYS_365.getValue().intValue()), MathContext.DECIMAL64);
+
+            // Calculate the factor of the current installment
+            Double powResult = Math.pow(base.doubleValue(), exponent.doubleValue());
+            BigDecimal factorInstallment = BigDecimal.valueOf(powResult).setScale(9, MoneyHelper.getRoundingMode());
+
+            factorInstallmentsMapping.put(currentInstallment.getInstallmentNumber(), factorInstallment);
+        }
+
+        return factorInstallmentsMapping;
+    }
+
+    public BigDecimal calculateTotalInstallmentWithVat(Loan loan) {
+        BigDecimal totalInstallmentWithVat;
+
+        // get values to use in the formula
+        BigDecimal loanDisbursedAmount = loan.getNetDisbursalAmount();
+        BigDecimal loanFutureValue = calculateLoanFutureValue(loan);
+        int numberOfInstallments = loan.getRepaymentScheduleInstallments().size();
+        Map<Integer, BigDecimal> factorInstallmentsMap = calculateFactorPerInstallment(loan);
+        BigDecimal installmentsFactorTotal = factorInstallmentsMap.values().stream().reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal installmentFee = BigDecimal.ZERO;
+        BigDecimal collectionFee = BigDecimal.ZERO;
+
+        for (LoanCharge charge : loan.getCharges()) {
+            if (charge.isActive() && charge.isCollectionFee()) {
+                collectionFee = collectionFee.add(charge.amountOrPercentage());
+            }
+        }
+
+        BigDecimal vatPercentage = getLoanVatPercentage(loan);
+        vatPercentage = vatPercentage.divide(divisor, MathContext.DECIMAL64).add(BigDecimal.ONE);
+
+        // for period = 0, the disbursement amount must be negative
+        BigDecimal loanAmountWithFeeAndCharges = loanDisbursedAmount;
+        for (LoanCharge charge : loan.charges()) {
+            if (charge.isActive() && charge.isDisbursementCharge()) {
+                loanAmountWithFeeAndCharges = loanAmountWithFeeAndCharges.subtract(charge.getAmount(loan.getCurrency()).getAmount(),
+                        MathContext.DECIMAL64);
+            }
+        }
+
+        // calculate total installments with VAT
+        BigDecimal futureValueOverFactors = loanFutureValue.divide(installmentsFactorTotal, MathContext.DECIMAL64);
+        BigDecimal loanAmountOverNumberOfInstallments = loanAmountWithFeeAndCharges.multiply(installmentFee, MathContext.DECIMAL64)
+                .divide(BigDecimal.valueOf(numberOfInstallments), MathContext.DECIMAL64).add(collectionFee);
+        totalInstallmentWithVat = loanAmountOverNumberOfInstallments.multiply(vatPercentage, MathContext.DECIMAL64)
+                .add(futureValueOverFactors);
+
+        return totalInstallmentWithVat;
+    }
+
+    public BigDecimal calculatePeriodicInterestRate(BigDecimal annualNominalInterestRate, LocalDate periodStartDate,
+            LocalDate periodEndDate) {
+        BigDecimal periodicInterestRate;
+
+        BigDecimal daysPerYear = BigDecimal.valueOf(365);
+        int exactDaysInPeriod = Math.toIntExact(ChronoUnit.DAYS.between(periodStartDate, periodEndDate));
+        BigDecimal exactDaysInPeriodBigDecimal = BigDecimal.valueOf(exactDaysInPeriod);
+
+        periodicInterestRate = annualNominalInterestRate.divide(daysPerYear, MathContext.DECIMAL64).divide(divisor, MathContext.DECIMAL64)
+                .multiply(exactDaysInPeriodBigDecimal);
+
+        return periodicInterestRate;
     }
 
 }

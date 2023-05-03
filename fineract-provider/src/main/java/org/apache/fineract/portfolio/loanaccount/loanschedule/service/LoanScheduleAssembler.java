@@ -114,6 +114,7 @@ import org.apache.fineract.portfolio.loanproduct.domain.LoanProductVariableInsta
 import org.apache.fineract.portfolio.loanproduct.domain.RecalculationFrequencyType;
 import org.apache.fineract.portfolio.loanproduct.exception.LoanProductNotFoundException;
 import org.apache.fineract.portfolio.loanproduct.service.LoanEnumerations;
+import org.apache.fineract.portfolio.vatrate.domain.VatRate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -137,6 +138,7 @@ public class LoanScheduleAssembler {
     private final CalendarInstanceRepository calendarInstanceRepository;
     private final PlatformSecurityContext context;
     private final LoanUtilService loanUtilService;
+    private final BigDecimal a100 = BigDecimal.valueOf(100);
 
     @Autowired
     public LoanScheduleAssembler(final FromJsonHelper fromApiJsonHelper, final LoanProductRepository loanProductRepository,
@@ -229,6 +231,11 @@ public class LoanScheduleAssembler {
                     numberOfRepayments, repaymentEvery, repaymentPeriodFrequencyType);
         }
 
+        final Long clientId = this.fromApiJsonHelper.extractLongNamed("clientId", element);
+        boolean isVatRequired = false;
+        if (this.fromApiJsonHelper.parameterExists(LoanApiConstants.isVatRequiredParameterName, element)) {
+            isVatRequired = this.fromApiJsonHelper.extractBooleanNamed(LoanApiConstants.isVatRequiredParameterName, element);
+        }
         // disbursement details
         final BigDecimal principal = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed("principal", element);
         final Money principalMoney = Money.of(currency, principal);
@@ -430,7 +437,6 @@ public class LoanScheduleAssembler {
             }
         }
 
-        final Long clientId = this.fromApiJsonHelper.extractLongNamed("clientId", element);
         Client client = null;
         Long officeId = null;
         if (clientId != null) {
@@ -440,6 +446,28 @@ public class LoanScheduleAssembler {
             group = this.groupRepository.findOneWithNotFoundDetection(groupId);
             officeId = group.getOffice().getId();
         }
+
+        // check for VAT parameters
+        VatRate vatRate = null;
+        if (isVatRequired && loanProduct.isVatRequired() && client.isVatRequired()) {
+            vatRate = client.getVatRate();
+        } else {
+            isVatRequired = Boolean.FALSE;
+        }
+
+        // calculate effective annual interest rate
+        BigDecimal effectInterestAmount = this.loanUtilService.calculateEffectiveRate(interestRatePerPeriod).setScale(2,
+                MoneyHelper.getRoundingMode());
+
+        // if VAT is required, then calculates the effective annual rate with VAT
+        BigDecimal effectInterestAmountWithVat = BigDecimal.ZERO;
+        if (isVatRequired && client != null && client.getVatRate() != null && client.getVatRate().getPercentage() % 1 == 0) {
+            double vatPercentage = client.getVatRate().getPercentage();
+            effectInterestAmountWithVat = this.loanUtilService
+                    .calculateEffectiveRateWithVat(interestRatePerPeriod, BigDecimal.valueOf(vatPercentage))
+                    .setScale(2, MoneyHelper.getRoundingMode());
+        }
+
         final boolean isHolidayEnabled = this.configurationDomainService.isRescheduleRepaymentsOnHolidaysEnabled();
         final List<Holiday> holidays = this.holidayRepository.findByOfficeIdAndGreaterThanDate(officeId, expectedDisbursementDate,
                 HolidayStatusType.ACTIVE.getValue());
@@ -449,6 +477,7 @@ public class LoanScheduleAssembler {
                 .isInterestToBeRecoveredFirstWhenGreaterThanEMI();
         final boolean isPrincipalCompoundingDisabledForOverdueLoans = this.configurationDomainService
                 .isPrincipalCompoundingDisabledForOverdueLoans();
+
         return LoanApplicationTerms.assembleFrom(applicationCurrency, loanTermFrequency, loanTermPeriodFrequencyType, numberOfRepayments,
                 repaymentEvery, repaymentPeriodFrequencyType, nthDay, weekDayType, amortizationMethod, interestMethod,
                 interestRatePerPeriod, interestRatePeriodFrequencyType, annualNominalInterestRate, interestCalculationPeriodMethod,
@@ -461,7 +490,7 @@ public class LoanScheduleAssembler {
                 installmentAmountInMultiplesOf, loanProduct.preCloseInterestCalculationStrategy(), calendar, BigDecimal.ZERO,
                 loanTermVariations, isInterestChargedFromDateSameAsDisbursalDateEnabled, numberOfDays, isSkipMeetingOnFirstDay, detailDTO,
                 allowCompoundingOnEod, isEqualAmortization, isInterestToBeRecoveredFirstWhenGreaterThanEMI,
-                fixedPrincipalPercentagePerInstallment, isPrincipalCompoundingDisabledForOverdueLoans);
+                fixedPrincipalPercentagePerInstallment, isPrincipalCompoundingDisabledForOverdueLoans, isVatRequired, vatRate);
     }
 
     private CalendarInstance createCalendarForSameAsRepayment(final Integer repaymentEvery,
@@ -1122,4 +1151,5 @@ public class LoanScheduleAssembler {
                     minimumDaysBetweenDisbursalAndFirstRepayment);
         }
     }
+
 }

@@ -72,6 +72,8 @@ public class LoanScheduleHistoryWritePlatformServiceImpl implements LoanSchedule
             final BigDecimal interestCharged = repaymentScheduleInstallment.getInterestCharged(currency).getAmount();
             final BigDecimal feeChargesCharged = repaymentScheduleInstallment.getFeeChargesCharged(currency).getAmount();
             final BigDecimal penaltyCharges = repaymentScheduleInstallment.getPenaltyChargesCharged(currency).getAmount();
+            final BigDecimal vatOnInterest = repaymentScheduleInstallment.getVatOnInterestCharged(currency).getAmount();
+            final BigDecimal vatOnCharges = repaymentScheduleInstallment.getVatOnChargeExpected(currency).getAmount();
 
             LocalDateTime createdOnDate = null;
             if (repaymentScheduleInstallment.getCreatedDate().isPresent()) {
@@ -89,7 +91,7 @@ public class LoanScheduleHistoryWritePlatformServiceImpl implements LoanSchedule
 
             LoanRepaymentScheduleHistory loanRepaymentScheduleHistory = LoanRepaymentScheduleHistory.instance(loan, loanRescheduleRequest,
                     installmentNumber, fromDate, dueDate, principal, interestCharged, feeChargesCharged, penaltyCharges, createdOnDate,
-                    createdByUser, lastModifiedByUser, lastModifiedOnDate, version);
+                    createdByUser, lastModifiedByUser, lastModifiedOnDate, version, vatOnInterest, vatOnCharges);
 
             loanRepaymentScheduleHistoryList.add(loanRepaymentScheduleHistory);
         }

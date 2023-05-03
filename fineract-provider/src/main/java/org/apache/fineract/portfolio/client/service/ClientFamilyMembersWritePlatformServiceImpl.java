@@ -83,6 +83,10 @@ public class ClientFamilyMembersWritePlatformServiceImpl implements ClientFamily
         Long age = null;
         Boolean isDependent = false;
         LocalDate dateOfBirth = null;
+        String uuid = null;
+        String curp = null;
+        String motherLastName = null;
+        String email = null;
 
         this.context.authenticatedUser();
         apiJsonDeserializer.validateForCreate(clientId, command.json());
@@ -95,6 +99,10 @@ public class ClientFamilyMembersWritePlatformServiceImpl implements ClientFamily
         mobileNumber = command.stringValueOfParameterNamed("mobileNumber");
         age = command.longValueOfParameterNamed("age");
         isDependent = command.booleanObjectValueOfParameterNamed("isDependent");
+        uuid = command.stringValueOfParameterNamed("uuid");
+        curp = command.stringValueOfParameterNamed("curp");
+        motherLastName = command.stringValueOfParameterNamed("motherLastName");
+        email = command.stringValueOfParameterNamed("email");
 
         if (command.longValueOfParameterNamed("relationshipId") != null) {
             relationshipId = command.longValueOfParameterNamed("relationshipId");
@@ -119,7 +127,8 @@ public class ClientFamilyMembersWritePlatformServiceImpl implements ClientFamily
         dateOfBirth = command.localDateValueOfParameterNamed("dateOfBirth");
 
         ClientFamilyMembers clientFamilyMembers = ClientFamilyMembers.fromJson(client, firstName, middleName, lastName, qualification,
-                mobileNumber, age, isDependent, relationship, maritalStatus, gender, dateOfBirth, profession);
+                mobileNumber, age, isDependent, relationship, maritalStatus, gender, dateOfBirth, profession, uuid, curp, motherLastName,
+                email);
 
         this.clientFamilyRepository.saveAndFlush(clientFamilyMembers);
 
@@ -146,6 +155,10 @@ public class ClientFamilyMembersWritePlatformServiceImpl implements ClientFamily
         String mobileNumber = "";
         Long age = null;
         Boolean isDependent = false;
+        String uuid = null;
+        String curp = null;
+        String motherLastName = null;
+        String email = null;
 
         this.context.authenticatedUser();
 
@@ -231,8 +244,24 @@ public class ClientFamilyMembersWritePlatformServiceImpl implements ClientFamily
 
             }
 
+            if (member.get("uuid") != null) {
+                uuid = member.get("uuid").getAsString();
+            }
+
+            if (member.get("curp") != null) {
+                curp = member.get("curp").getAsString();
+            }
+
+            if (member.get("motherLastName") != null) {
+                motherLastName = member.get("motherLastName").getAsString();
+            }
+
+            if (member.get("email") != null) {
+                email = member.get("email").getAsString();
+            }
+
             familyMember = ClientFamilyMembers.fromJson(client, firstName, middleName, lastName, qualification, mobileNumber, age,
-                    isDependent, relationship, maritalStatus, gender, dateOfBirth, profession);
+                    isDependent, relationship, maritalStatus, gender, dateOfBirth, profession, uuid, curp, motherLastName, email);
 
             this.clientFamilyRepository.saveAndFlush(familyMember);
 
@@ -261,6 +290,10 @@ public class ClientFamilyMembersWritePlatformServiceImpl implements ClientFamily
         String mobileNumber = "";
         Long age = null;
         Boolean isDependent = false;
+        String uuid = null;
+        String curp = null;
+        String motherLastName = null;
+        String email = null;
         // long clientFamilyMemberId=0;
 
         this.context.authenticatedUser();
@@ -339,7 +372,26 @@ public class ClientFamilyMembersWritePlatformServiceImpl implements ClientFamily
         if (command.localDateValueOfParameterNamed("dateOfBirth") != null) {
             dateOfBirth = command.localDateValueOfParameterNamed("dateOfBirth");
             clientFamilyMember.setDateOfBirth(dateOfBirth);
+        }
 
+        if (command.stringValueOfParameterNamed("uuid") != null) {
+            uuid = command.stringValueOfParameterNamed("uuid");
+            clientFamilyMember.setUuid(uuid);
+        }
+
+        if (command.stringValueOfParameterNamed("curp") != null) {
+            curp = command.stringValueOfParameterNamed("curp");
+            clientFamilyMember.setCurp(curp);
+        }
+
+        if (command.stringValueOfParameterNamed("motherLastName") != null) {
+            motherLastName = command.stringValueOfParameterNamed("motherLastName");
+            clientFamilyMember.setMotherLastName(motherLastName);
+        }
+
+        if (command.stringValueOfParameterNamed("email") != null) {
+            email = command.stringValueOfParameterNamed("email");
+            clientFamilyMember.setEmail(email);
         }
 
         // ClientFamilyMembers

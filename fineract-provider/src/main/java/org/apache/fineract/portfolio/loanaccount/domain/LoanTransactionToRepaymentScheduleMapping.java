@@ -53,6 +53,12 @@ public class LoanTransactionToRepaymentScheduleMapping extends AbstractPersistab
     @Column(name = "penalty_charges_portion_derived", scale = 6, precision = 19, nullable = true)
     private BigDecimal penaltyChargesPortion;
 
+    @Column(name = "vat_on_interest_portion_derived", scale = 6, precision = 19, nullable = true)
+    private BigDecimal vatOnInterestPortion;
+
+    @Column(name = "vat_on_charges_portion_derived", scale = 6, precision = 19, nullable = true)
+    private BigDecimal vatOnChargesPortion;
+
     @Column(name = "amount", scale = 6, precision = 19)
     private BigDecimal amount;
 
@@ -62,14 +68,29 @@ public class LoanTransactionToRepaymentScheduleMapping extends AbstractPersistab
 
     private LoanTransactionToRepaymentScheduleMapping(final LoanTransaction loanTransaction,
             final LoanRepaymentScheduleInstallment installment, final BigDecimal principalPortion, final BigDecimal interestPortion,
-            final BigDecimal feeChargesPortion, final BigDecimal penaltyChargesPortion, final BigDecimal amount) {
+            final BigDecimal feeChargesPortion, final BigDecimal penaltyChargesPortion, final BigDecimal vatOnInterestPortion,
+            final BigDecimal vatOnChargesPortion, final BigDecimal amount) {
         this.loanTransaction = loanTransaction;
         this.installment = installment;
         this.principalPortion = principalPortion;
         this.interestPortion = interestPortion;
         this.feeChargesPortion = feeChargesPortion;
         this.penaltyChargesPortion = penaltyChargesPortion;
+        this.vatOnInterestPortion = vatOnInterestPortion;
+        this.vatOnChargesPortion = vatOnChargesPortion;
         this.amount = amount;
+
+    }
+
+    public static LoanTransactionToRepaymentScheduleMapping createFrom(final LoanTransaction loanTransaction,
+            final LoanRepaymentScheduleInstallment installment, final Money principalPortion, final Money interestPortion,
+            final Money feeChargesPortion, final Money penaltyChargesPortion, final Money vatOnInterestPortion,
+            final Money vatOnChargesPortion) {
+        return new LoanTransactionToRepaymentScheduleMapping(loanTransaction, installment, defaultToNullIfZero(principalPortion),
+                defaultToNullIfZero(interestPortion), defaultToNullIfZero(feeChargesPortion), defaultToNullIfZero(penaltyChargesPortion),
+                defaultToNullIfZero(vatOnInterestPortion), defaultToNullIfZero(vatOnChargesPortion),
+                defaultToNullIfZero(principalPortion.plus(interestPortion).plus(feeChargesPortion).plus(penaltyChargesPortion)
+                        .plus(vatOnChargesPortion).plus(vatOnInterestPortion)));
     }
 
     public static LoanTransactionToRepaymentScheduleMapping createFrom(final LoanTransaction loanTransaction,
@@ -77,6 +98,8 @@ public class LoanTransactionToRepaymentScheduleMapping extends AbstractPersistab
             final Money feeChargesPortion, final Money penaltyChargesPortion) {
         return new LoanTransactionToRepaymentScheduleMapping(loanTransaction, installment, defaultToNullIfZero(principalPortion),
                 defaultToNullIfZero(interestPortion), defaultToNullIfZero(feeChargesPortion), defaultToNullIfZero(penaltyChargesPortion),
+                defaultToNullIfZero(Money.zero(principalPortion.getCurrency())),
+                defaultToNullIfZero(Money.zero(principalPortion.getCurrency())),
                 defaultToNullIfZero(principalPortion.plus(interestPortion).plus(feeChargesPortion).plus(penaltyChargesPortion)));
     }
 
@@ -114,11 +137,13 @@ public class LoanTransactionToRepaymentScheduleMapping extends AbstractPersistab
     }
 
     public void setComponents(final BigDecimal principal, final BigDecimal interest, final BigDecimal feeCharges,
-            final BigDecimal penaltyCharges) {
+            final BigDecimal penaltyCharges, final BigDecimal vatOnInterestPortion, final BigDecimal vatOnChargesPortion) {
         this.principalPortion = principal;
         this.interestPortion = interest;
         this.feeChargesPortion = feeCharges;
         this.penaltyChargesPortion = penaltyCharges;
+        this.vatOnInterestPortion = vatOnInterestPortion;
+        this.vatOnChargesPortion = vatOnChargesPortion;
         updateAmount();
     }
 
@@ -166,5 +191,21 @@ public class LoanTransactionToRepaymentScheduleMapping extends AbstractPersistab
 
     public void setLoanTransaction(LoanTransaction loanTransaction) {
         this.loanTransaction = loanTransaction;
+    }
+
+    public BigDecimal getVatOnInterestPortion() {
+        return vatOnInterestPortion;
+    }
+
+    public void setVatOnInterestPortion(BigDecimal vatOnInterestPortion) {
+        this.vatOnInterestPortion = vatOnInterestPortion;
+    }
+
+    public BigDecimal getVatOnChargesPortion() {
+        return vatOnChargesPortion;
+    }
+
+    public void setVatOnChargesPortion(BigDecimal vatOnChargesPortion) {
+        this.vatOnChargesPortion = vatOnChargesPortion;
     }
 }
