@@ -221,7 +221,7 @@ public final class AgencyCommandFromApiJsonDeserializer {
         this.fromApiJsonHelper.checkForUnsupportedParameters(typeOfMap, json, this.supportedParameters);
 
         final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
-        final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors).resource("office");
+        final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors).resource("agency");
 
         final JsonElement element = this.fromApiJsonHelper.parse(json);
 
