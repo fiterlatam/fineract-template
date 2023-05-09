@@ -3658,4 +3658,14 @@ public class CommandWrapperBuilder {
         this.href = "/portfolios/" + portfolioId;
         return this;
     }
+
+    public CommandWrapperBuilder updatePortfolioCenter(Long portfolioId, Long portfolioCenterId) {
+        this.actionName = "UPDATE";
+        this.entityName = "PORTFOLIO_CENTER";
+        this.entityId = portfolioCenterId;
+        this.subentityId = portfolioId; // refers parent portfolio
+        this.href = "/portfolios/" + portfolioId + "/centers/" + portfolioCenterId;
+        return this;
+    }
+
 }

@@ -19,6 +19,8 @@
 package org.apache.fineract.organisation.portfolioCenter.service;
 
 import java.util.Collection;
+import java.util.List;
+import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.organisation.portfolioCenter.data.PortfolioCenterData;
 
 public interface PortfolioCenterReadPlatformService {
@@ -28,5 +30,7 @@ public interface PortfolioCenterReadPlatformService {
     Collection<PortfolioCenterData> retrieveAllByPortfolio(Long portfolioId);
 
     PortfolioCenterData retrievePortfolioCenterTemplate();
+
+    List<EnumOptionData> retrieveCenterStatusOptions();
 
 }

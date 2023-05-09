@@ -54,4 +54,5 @@
     <include file="parts/0037_portfolio_feature.xml" relativeToChangelogFile="true"/>
     <include file="parts/0038_portfolio_center_feature.xml" relativeToChangelogFile="true"/>
     <include file="parts/0039_range_template_for_portfolio_center.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0040_portfolio_center_feature_refactor.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

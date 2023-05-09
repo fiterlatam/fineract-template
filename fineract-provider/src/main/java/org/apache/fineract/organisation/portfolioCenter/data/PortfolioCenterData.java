@@ -23,6 +23,7 @@ import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
+import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.organisation.office.data.OfficeData;
 import org.apache.fineract.useradministration.data.AppUserData;
 
@@ -41,97 +42,60 @@ public final class PortfolioCenterData {
 
     private final BigDecimal legacyCenterNumber;
 
-    private final String address;
-
-    private final String address2;
-
     private final CodeValueData city;
 
     private final CodeValueData state;
 
-    private final CodeValueData country;
+    private final CodeValueData type;
 
-    private final Integer zone;
-
-    private final CodeValueData location;
-
-    private final PortfolioCenterStatusEnumData status;
+    private final EnumOptionData status;
 
     private final Integer distance;
 
-    private final LocalDate effectiveDate;
-
-    private final LocalDate firstMeetingDate;
-
-    private final PortfolioCenterFrecuencyMeetingEnumData frequencyMeeting;
-
-    private final Integer meetingStart;
-
-    private final Integer meetingEnd;
-
-    private final LocalDate nextMeetingDate;
-
-    private final Integer meetingDay;
+    private final LocalDate createdDate;
 
     // template
     private final Collection<OfficeData> parentOfficesOptions;
     private final Collection<AppUserData> responsibleUserOptions;
     private final Collection<CodeValueData> cityOptions;
     private final Collection<CodeValueData> stateOptions;
-    private final Collection<CodeValueData> countryOptions;
-    private final Collection<CodeValueData> labourDayOptions;
+    private final Collection<CodeValueData> typeOptions;
+    private final Collection<EnumOptionData> statusOptions;
 
-    public static PortfolioCenterData instance(Long id, String name, Long portfolioId, String portfolioName, BigDecimal legacyCenterNumber,
-            String address, String address2, CodeValueData city, CodeValueData state, CodeValueData country, Integer zone,
-            CodeValueData location, PortfolioCenterStatusEnumData status, Integer distance, LocalDate effectiveDate,
-            LocalDate firstMeetingDate, PortfolioCenterFrecuencyMeetingEnumData frequencyMeeting, Integer meetingStart, Integer meetingEnd,
-            LocalDate nextMeetingDate, Integer meetingDay) {
-        return new PortfolioCenterData(id, name, portfolioId, portfolioName, legacyCenterNumber, address, address2, city, state, country,
-                zone, location, status, distance, effectiveDate, firstMeetingDate, frequencyMeeting, meetingStart, meetingEnd,
-                nextMeetingDate, meetingDay, null, null, null, null, null, null);
-    }
-
-    public PortfolioCenterData(Long id, String name, Long portfolioId, String portfolioName, BigDecimal legacyCenterNumber, String address,
-            String address2, CodeValueData city, CodeValueData state, CodeValueData country, Integer zone, CodeValueData location,
-            PortfolioCenterStatusEnumData status, Integer distance, LocalDate effectiveDate, LocalDate firstMeetingDate,
-            PortfolioCenterFrecuencyMeetingEnumData frequencyMeeting, Integer meetingStart, Integer meetingEnd, LocalDate nextMeetingDate,
-            Integer meetingDay, Collection<OfficeData> parentOfficesOptions, Collection<AppUserData> responsibleUserOptions,
-
-            Collection<CodeValueData> cityOptions, Collection<CodeValueData> stateOptions, Collection<CodeValueData> countryOptions,
-            Collection<CodeValueData> labourDayOptions) {
+    public PortfolioCenterData(Long id, String name, Long portfolioId, String portfolioName, BigDecimal legacyCenterNumber,
+            CodeValueData city, CodeValueData state, CodeValueData type, EnumOptionData status, Integer distance, LocalDate createdDate,
+            Collection<OfficeData> parentOfficesOptions, Collection<AppUserData> responsibleUserOptions,
+            Collection<CodeValueData> cityOptions, Collection<CodeValueData> stateOptions, Collection<CodeValueData> typeOptions,
+            Collection<EnumOptionData> statusOptions) {
         this.id = id;
         this.name = name;
         this.portfolioId = portfolioId;
         this.portfolioName = portfolioName;
         this.legacyCenterNumber = legacyCenterNumber;
-        this.address = address;
-        this.address2 = address2;
         this.city = city;
         this.state = state;
-        this.country = country;
-        this.zone = zone;
-        this.location = location;
+        this.type = type;
         this.status = status;
         this.distance = distance;
-        this.effectiveDate = effectiveDate;
-        this.firstMeetingDate = firstMeetingDate;
-        this.frequencyMeeting = frequencyMeeting;
-        this.meetingStart = meetingStart;
-        this.meetingEnd = meetingEnd;
-        this.nextMeetingDate = nextMeetingDate;
-        this.meetingDay = meetingDay;
+        this.createdDate = createdDate;
         this.parentOfficesOptions = parentOfficesOptions;
         this.responsibleUserOptions = responsibleUserOptions;
         this.cityOptions = cityOptions;
         this.stateOptions = stateOptions;
-        this.countryOptions = countryOptions;
-        this.labourDayOptions = labourDayOptions;
+        this.typeOptions = typeOptions;
+        this.statusOptions = statusOptions;
+    }
+
+    public static PortfolioCenterData instance(Long id, String name, Long portfolioId, String portfolioName, BigDecimal legacyCenterNumber,
+            CodeValueData city, CodeValueData state, CodeValueData type, EnumOptionData status, Integer distance, LocalDate createdDate) {
+        return new PortfolioCenterData(id, name, portfolioId, portfolioName, legacyCenterNumber, city, state, type, status, distance,
+                createdDate, null, null, null, null, null, null);
     }
 
     public static PortfolioCenterData template(Collection<OfficeData> parentOfficesOptions, List<AppUserData> appUsers,
-            Collection<CodeValueData> cityOptions, Collection<CodeValueData> stateOptions, Collection<CodeValueData> countryOptions,
-            List<CodeValueData> labourDayOptions) {
-        return new PortfolioCenterData(null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null,
-                null, null, null, null, parentOfficesOptions, appUsers, cityOptions, stateOptions, countryOptions, labourDayOptions);
+            Collection<CodeValueData> cityOptions, Collection<CodeValueData> stateOptions, Collection<CodeValueData> typeOptions,
+            Collection<EnumOptionData> statusOptions) {
+        return new PortfolioCenterData(null, null, null, null, null, null, null, null, null, null, null, parentOfficesOptions, appUsers,
+                cityOptions, stateOptions, typeOptions, statusOptions);
     }
 }

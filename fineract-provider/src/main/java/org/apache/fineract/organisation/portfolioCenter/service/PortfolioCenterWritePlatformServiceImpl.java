@@ -25,9 +25,12 @@ import java.time.temporal.WeekFields;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import javax.persistence.PersistenceException;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
+import org.apache.fineract.infrastructure.codes.domain.CodeValue;
+import org.apache.fineract.infrastructure.codes.domain.CodeValueRepository;
 import org.apache.fineract.infrastructure.codes.service.CodeValueReadPlatformService;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
@@ -41,8 +44,11 @@ import org.apache.fineract.organisation.portfolioCenter.domain.PortfolioCenter;
 import org.apache.fineract.organisation.portfolioCenter.domain.PortfolioCenterFrecuencyMeeting;
 import org.apache.fineract.organisation.portfolioCenter.domain.PortfolioCenterRepositoryWrapper;
 import org.apache.fineract.organisation.portfolioCenter.domain.PortfolioCenterStatus;
+import org.apache.fineract.organisation.portfolioCenter.serialization.PortfolioCenterCommandFromApiJsonDeserializer;
 import org.apache.fineract.organisation.rangeTemplate.data.RangeTemplateData;
 import org.apache.fineract.organisation.rangeTemplate.service.RangeTemplateReadPlatformService;
+import org.apache.fineract.useradministration.domain.AppUser;
+import org.apache.fineract.useradministration.domain.AppUserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -56,19 +62,27 @@ public class PortfolioCenterWritePlatformServiceImpl implements PortfolioCenterW
     private static final Logger LOG = LoggerFactory.getLogger(PortfolioCenterWritePlatformServiceImpl.class);
 
     private final PlatformSecurityContext context;
+    private final PortfolioCenterCommandFromApiJsonDeserializer fromApiJsonDeserializer;
     private final PortfolioRepositoryWrapper portfolioRepositoryWrapper;
     private final PortfolioCenterRepositoryWrapper portfolioCenterRepositoryWrapper;
     private final CodeValueReadPlatformService codeValueReadPlatformService;
     private final RangeTemplateReadPlatformService rangeTemplateReadPlatformService;
+    private final AppUserRepository appUserRepository;
+    private final CodeValueRepository codeValueRepository;
 
-    public PortfolioCenterWritePlatformServiceImpl(PlatformSecurityContext context, PortfolioRepositoryWrapper portfolioRepositoryWrapper,
+    public PortfolioCenterWritePlatformServiceImpl(PlatformSecurityContext context,
+            PortfolioCenterCommandFromApiJsonDeserializer fromApiJsonDeserializer, PortfolioRepositoryWrapper portfolioRepositoryWrapper,
             PortfolioCenterRepositoryWrapper portfolioCenterRepositoryWrapper, CodeValueReadPlatformService codeValueReadPlatformService,
-            RangeTemplateReadPlatformService rangeTemplateReadPlatformService) {
+            RangeTemplateReadPlatformService rangeTemplateReadPlatformService, AppUserRepository appUserRepository,
+            CodeValueRepository codeValueRepository) {
         this.context = context;
+        this.fromApiJsonDeserializer = fromApiJsonDeserializer;
         this.portfolioRepositoryWrapper = portfolioRepositoryWrapper;
         this.portfolioCenterRepositoryWrapper = portfolioCenterRepositoryWrapper;
         this.codeValueReadPlatformService = codeValueReadPlatformService;
         this.rangeTemplateReadPlatformService = rangeTemplateReadPlatformService;
+        this.appUserRepository = appUserRepository;
+        this.codeValueRepository = codeValueRepository;
     }
 
     @Transactional
@@ -89,16 +103,8 @@ public class PortfolioCenterWritePlatformServiceImpl implements PortfolioCenterW
                 for (CodeValueData meetingDay : meetingDayOptions) {
                     // complete required fields for entity
                     final String centerName = generateCenterName(portfolio.getId(), rangeTemplateData, meetingDay);
-                    LocalDate effectiveDate = currentTenantDate;
-                    // for now, frecuency meeting is always MENSUAL
-                    LocalDate firstMeetingDate = calculateMeetingDate(currentTenantDate, rangeTemplateData, meetingDay.getPosition(), week,
-                            PortfolioCenterFrecuencyMeeting.MENSUAL);
-                    LocalDate nextMeetingDate = calculateNextMeetingDate(firstMeetingDate, rangeTemplateData, meetingDay.getPosition(),
-                            PortfolioCenterFrecuencyMeeting.MENSUAL);
 
-                    PortfolioCenter entity = PortfolioCenter.assembleFrom(centerName, portfolio, PortfolioCenterStatus.ACTIVE.getValue(),
-                            effectiveDate, firstMeetingDate, PortfolioCenterFrecuencyMeeting.MENSUAL.getValue(),
-                            rangeTemplateData.getStartDay(), rangeTemplateData.getEndDay(), nextMeetingDate, meetingDay.getId().intValue());
+                    PortfolioCenter entity = PortfolioCenter.assembleFrom(centerName, portfolio, PortfolioCenterStatus.ACTIVE.getValue());
 
                     portfolioCenterRepositoryWrapper.save(entity);
                 }
@@ -120,7 +126,56 @@ public class PortfolioCenterWritePlatformServiceImpl implements PortfolioCenterW
     @Transactional
     @Override
     public CommandProcessingResult updatePortfolioCenter(Long portfolioCenterId, JsonCommand command) {
-        return null;
+        try {
+            final AppUser currentUser = this.context.authenticatedUser();
+
+            this.fromApiJsonDeserializer.validateForUpdate(command.json());
+
+            PortfolioCenter portfolioCenter = this.portfolioCenterRepositoryWrapper.findOneWithNotFoundDetection(portfolioCenterId);
+
+            final Map<String, Object> changes = portfolioCenter.update(command);
+
+            // Get code values for fields
+            if (command.longValueOfParameterNamed(PortfolioCenterConstants.PortfolioCenterSupportedParameters.CITY_ID.getValue()) != 0) {
+                final Long cityId = command
+                        .longValueOfParameterNamed(PortfolioCenterConstants.PortfolioCenterSupportedParameters.CITY_ID.getValue());
+                CodeValue city = codeValueRepository.getReferenceById(cityId);
+                portfolioCenter.setCity(city);
+                changes.put(PortfolioCenterConstants.PortfolioCenterSupportedParameters.CITY_ID.getValue(), cityId);
+            }
+
+            if (command.longValueOfParameterNamed(PortfolioCenterConstants.PortfolioCenterSupportedParameters.STATE_ID.getValue()) != 0) {
+                final Long stateId = command
+                        .longValueOfParameterNamed(PortfolioCenterConstants.PortfolioCenterSupportedParameters.STATE_ID.getValue());
+                CodeValue setStateProvince = codeValueRepository.getReferenceById(stateId);
+                portfolioCenter.setStateProvince(setStateProvince);
+                changes.put(PortfolioCenterConstants.PortfolioCenterSupportedParameters.STATE_ID.getValue(), stateId);
+            }
+
+            if (command
+                    .longValueOfParameterNamed(PortfolioCenterConstants.PortfolioCenterSupportedParameters.CENTER_TYPE.getValue()) != 0) {
+                final Long centerTypeId = command
+                        .longValueOfParameterNamed(PortfolioCenterConstants.PortfolioCenterSupportedParameters.CENTER_TYPE.getValue());
+                CodeValue centerType = codeValueRepository.getReferenceById(centerTypeId);
+                portfolioCenter.setType(centerType);
+                changes.put(PortfolioCenterConstants.PortfolioCenterSupportedParameters.CENTER_TYPE.getValue(), centerTypeId);
+            }
+
+            this.portfolioCenterRepositoryWrapper.saveAndFlush(portfolioCenter);
+
+            return new CommandProcessingResultBuilder() //
+                    .withCommandId(command.commandId()) //
+                    .withEntityId(portfolioCenterId) //
+                    .with(changes) //
+                    .build();
+        } catch (final JpaSystemException | DataIntegrityViolationException dve) {
+            handlePortfolioCenterDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
+            return CommandProcessingResult.empty();
+        } catch (final PersistenceException dve) {
+            Throwable throwable = ExceptionUtils.getRootCause(dve.getCause());
+            handlePortfolioCenterDataIntegrityIssues(command, throwable, dve);
+            return CommandProcessingResult.empty();
+        }
     }
 
     /*
@@ -148,6 +203,7 @@ public class PortfolioCenterWritePlatformServiceImpl implements PortfolioCenterW
         return centerName.toString();
     }
 
+    @SuppressWarnings("unused")
     private static LocalDate calculateMeetingDate(LocalDate startingDate, RangeTemplateData rangeTemplate, int dayOfWeekNumber,
             int weekOfMonth, PortfolioCenterFrecuencyMeeting frecuencyMeeting) {
         LocalDate meetingDate = null;
@@ -174,6 +230,7 @@ public class PortfolioCenterWritePlatformServiceImpl implements PortfolioCenterW
         return meetingDate;
     }
 
+    @SuppressWarnings("unused")
     private static LocalDate calculateNextMeetingDate(LocalDate startingDate, RangeTemplateData rangeTemplate, int dayOfWeekNumber,
             PortfolioCenterFrecuencyMeeting frecuencyMeeting) {
         LocalDate meetingDate = null;
@@ -192,6 +249,7 @@ public class PortfolioCenterWritePlatformServiceImpl implements PortfolioCenterW
         return meetingDate;
     }
 
+    @SuppressWarnings("unused")
     private static boolean dateInRange(int day, int startDay, int endDay) {
         if (day >= startDay && day <= endDay)
             return true;

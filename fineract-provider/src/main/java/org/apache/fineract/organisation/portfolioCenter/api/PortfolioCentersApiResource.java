@@ -18,16 +18,28 @@
  */
 package org.apache.fineract.organisation.portfolioCenter.api;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.UriInfo;
+import org.apache.fineract.commands.domain.CommandWrapper;
+import org.apache.fineract.commands.service.CommandWrapperBuilder;
 import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformService;
 import org.apache.fineract.infrastructure.core.api.ApiRequestParameterHelper;
+import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.organisation.portfolio.data.PortfolioData;
@@ -82,6 +94,26 @@ public class PortfolioCentersApiResource {
         PortfolioCenterData portfolioCenterData = this.portfolioCenterReadPlatformService.retrievePortfolioCenterTemplate();
 
         return this.toApiJsonSerializer.serialize(portfolioCenterData);
+    }
+
+    @PUT
+    @Path("/{portfolioCenterId}")
+    @Consumes({ MediaType.APPLICATION_JSON })
+    @Produces({ MediaType.APPLICATION_JSON })
+    @Operation(summary = "Update Portfolio Center", description = "")
+    @RequestBody(required = true, content = @Content(schema = @Schema(implementation = PortfolioCentersApiResourceSwagger.PutPortfolioCenterPortfolioIdRequest.class)))
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = PortfolioCentersApiResourceSwagger.PutPortfolioCenterPortfolioIdResponse.class))) })
+    public String updatePortfolioCenter(@PathParam("portfolioId") @Parameter(description = "portfolioId") final Long portfolioId,
+            @PathParam("portfolioCenterId") @Parameter(description = "portfolioCenterId") final Long portfolioCenterId,
+            @Parameter(hidden = true) final String apiRequestBodyAsJson) {
+        final CommandWrapper commandRequest = new CommandWrapperBuilder() //
+                .updatePortfolioCenter(portfolioId, portfolioCenterId) //
+                .withJson(apiRequestBodyAsJson) //
+                .build();
+
+        final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
+        return this.toApiJsonSerializer.serialize(result);
     }
 
 }
