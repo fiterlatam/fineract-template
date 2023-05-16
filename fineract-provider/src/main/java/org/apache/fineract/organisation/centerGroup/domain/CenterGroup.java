@@ -161,8 +161,7 @@ public class CenterGroup extends AbstractAuditableCustom {
             this.status = newValue;
         }
 
-        if (command.isChangeInIntegerParameterNamed(CenterGroupConstants.CenterGroupSupportedParameters.SIZE.getValue(),
-                this.size)) {
+        if (command.isChangeInIntegerParameterNamed(CenterGroupConstants.CenterGroupSupportedParameters.SIZE.getValue(), this.size)) {
             final Integer newValue = command
                     .integerValueOfParameterNamed(CenterGroupConstants.CenterGroupSupportedParameters.SIZE.getValue());
             actualChanges.put(CenterGroupConstants.CenterGroupSupportedParameters.SIZE.getValue(), newValue);
