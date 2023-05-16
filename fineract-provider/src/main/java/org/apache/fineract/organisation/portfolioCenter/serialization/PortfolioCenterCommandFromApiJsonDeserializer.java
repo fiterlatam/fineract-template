@@ -63,7 +63,8 @@ public class PortfolioCenterCommandFromApiJsonDeserializer {
         this.fromApiJsonHelper.checkForUnsupportedParameters(typeOfMap, json, this.supportedParameters);
 
         final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
-        final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors).resource("portfolioCenter");
+        final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors)
+                .resource(PortfolioCenterConstants.PORTFOLIO_CENTER_RESOURCE_NAME);
 
         final JsonElement element = this.fromApiJsonHelper.parse(json);
 
@@ -101,7 +102,7 @@ public class PortfolioCenterCommandFromApiJsonDeserializer {
             final Long centerType = this.fromApiJsonHelper
                     .extractLongNamed(PortfolioCenterConstants.PortfolioCenterSupportedParameters.CENTER_TYPE.getValue(), element);
             baseDataValidator.reset().parameter(PortfolioCenterConstants.PortfolioCenterSupportedParameters.CENTER_TYPE.getValue())
-                    .value(centerType).ignoreIfNull().integerGreaterThanZero();
+                    .value(centerType).ignoreIfNull();
         }
 
         if (this.fromApiJsonHelper.parameterExists(PortfolioCenterConstants.PortfolioCenterSupportedParameters.STATUS_ID.getValue(),

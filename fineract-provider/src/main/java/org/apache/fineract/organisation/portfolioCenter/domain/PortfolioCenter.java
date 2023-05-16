@@ -19,6 +19,8 @@
 package org.apache.fineract.organisation.portfolioCenter.domain;
 
 import java.math.BigDecimal;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import javax.persistence.Column;
@@ -27,6 +29,7 @@ import javax.persistence.FetchType;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.infrastructure.codes.domain.CodeValue;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.domain.AbstractAuditableCustom;
@@ -67,16 +70,34 @@ public class PortfolioCenter extends AbstractAuditableCustom {
     @Column(name = "distance_from_agency")
     private Integer distance;
 
+    @Column(name = "meeting_start_date")
+    private Integer meetingStart;
+
+    @Column(name = "meeting_end_date")
+    private Integer meetingEnd;
+
+    @Column(name = "meeting_day")
+    private Integer meetingDay;
+
+    @Column(name = "meeting_start_time")
+    private LocalTime meetingStartTime;
+
+    @Column(name = "meeting_end_time")
+    private LocalTime meetingEndTime;
+
     protected PortfolioCenter() {
 
     }
 
-    public static PortfolioCenter assembleFrom(String name, Portfolio portfolio, Integer status) {
-        return new PortfolioCenter(name, portfolio, null, null, null, null, status, null);
+    public static PortfolioCenter assembleFrom(String name, Portfolio portfolio, Integer status, Integer meetingStart, Integer meetingEnd,
+            Integer meetingDay, LocalTime meetingStartTime, LocalTime meetingEndTime) {
+        return new PortfolioCenter(name, portfolio, null, null, null, null, status, null, meetingStart, meetingEnd, meetingDay,
+                meetingStartTime, meetingEndTime);
     }
 
     public PortfolioCenter(String name, Portfolio portfolio, BigDecimal legacyCenterNumber, CodeValue city, CodeValue stateProvince,
-            CodeValue type, Integer status, Integer distance) {
+            CodeValue type, Integer status, Integer distance, Integer meetingStart, Integer meetingEnd, Integer meetingDay,
+            LocalTime meetingStartTime, LocalTime meetingEndTime) {
         this.name = name;
         this.portfolio = portfolio;
         this.legacyCenterNumber = legacyCenterNumber;
@@ -85,6 +106,11 @@ public class PortfolioCenter extends AbstractAuditableCustom {
         this.type = type;
         this.status = status;
         this.distance = distance;
+        this.meetingStart = meetingStart;
+        this.meetingEnd = meetingEnd;
+        this.meetingDay = meetingDay;
+        this.meetingStartTime = meetingStartTime;
+        this.meetingEndTime = meetingEndTime;
     }
 
     public Map<String, Object> update(JsonCommand command) {
@@ -100,8 +126,8 @@ public class PortfolioCenter extends AbstractAuditableCustom {
 
         if (command.isChangeInBigDecimalParameterNamed(
                 PortfolioCenterConstants.PortfolioCenterSupportedParameters.LEGACY_CENTER_NUMBER.getValue(), this.legacyCenterNumber)) {
-            final BigDecimal newValue = command
-                    .bigDecimalValueOfParameterNamed(PortfolioCenterConstants.PortfolioCenterSupportedParameters.LEGACY_CENTER_NUMBER.getValue());
+            final BigDecimal newValue = command.bigDecimalValueOfParameterNamed(
+                    PortfolioCenterConstants.PortfolioCenterSupportedParameters.LEGACY_CENTER_NUMBER.getValue());
             actualChanges.put(PortfolioCenterConstants.PortfolioCenterSupportedParameters.LEGACY_CENTER_NUMBER.getValue(), newValue);
             this.legacyCenterNumber = newValue;
         }
@@ -120,6 +146,21 @@ public class PortfolioCenter extends AbstractAuditableCustom {
                     .integerValueOfParameterNamed(PortfolioCenterConstants.PortfolioCenterSupportedParameters.DISTANCE.getValue());
             actualChanges.put(PortfolioCenterConstants.PortfolioCenterSupportedParameters.DISTANCE.getValue(), newValue);
             this.distance = newValue;
+        }
+
+        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ISO_LOCAL_TIME;
+        String meetingStartTime = command
+                .stringValueOfParameterNamed(PortfolioCenterConstants.PortfolioCenterSupportedParameters.MEETING_START_TIME.getValue());
+        if (StringUtils.isNotBlank(meetingStartTime)) {
+            LocalTime newMeetingStarTime = LocalTime.parse(meetingStartTime, dateTimeFormatter);
+            this.meetingStartTime = newMeetingStarTime;
+        }
+
+        String meetingEndTime = command
+                .stringValueOfParameterNamed(PortfolioCenterConstants.PortfolioCenterSupportedParameters.MEETING_END_TIME.getValue());
+        if (StringUtils.isNotBlank(meetingEndTime)) {
+            LocalTime newMeetingEndTime = LocalTime.parse(meetingEndTime, dateTimeFormatter);
+            this.meetingEndTime = newMeetingEndTime;
         }
 
         return actualChanges;

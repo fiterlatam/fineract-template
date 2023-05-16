@@ -26,6 +26,7 @@ import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.Collection;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.PUT;
@@ -42,6 +43,8 @@ import org.apache.fineract.infrastructure.core.api.ApiRequestParameterHelper;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
+import org.apache.fineract.organisation.centerGroup.data.CenterGroupData;
+import org.apache.fineract.organisation.centerGroup.service.CenterGroupReadPlatformService;
 import org.apache.fineract.organisation.portfolio.data.PortfolioData;
 import org.apache.fineract.organisation.portfolio.service.PortfolioReadPlatformService;
 import org.apache.fineract.organisation.portfolioCenter.data.PortfolioCenterData;
@@ -63,18 +66,21 @@ public class PortfolioCentersApiResource {
     private final ApiRequestParameterHelper apiRequestParameterHelper;
     private final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService;
     private final PortfolioCenterReadPlatformService portfolioCenterReadPlatformService;
+    private final CenterGroupReadPlatformService centerGroupReadPlatformService;
 
     @Autowired
     public PortfolioCentersApiResource(final PlatformSecurityContext context, final PortfolioReadPlatformService readPlatformService,
             final DefaultToApiJsonSerializer<PortfolioData> toApiJsonSerializer, final ApiRequestParameterHelper apiRequestParameterHelper,
             final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService,
-            final PortfolioCenterReadPlatformService portfolioCenterReadPlatformService) {
+            final PortfolioCenterReadPlatformService portfolioCenterReadPlatformService,
+            final CenterGroupReadPlatformService centerGroupReadPlatformService) {
         this.context = context;
         this.readPlatformService = readPlatformService;
         this.toApiJsonSerializer = toApiJsonSerializer;
         this.apiRequestParameterHelper = apiRequestParameterHelper;
         this.commandsSourceWritePlatformService = commandsSourceWritePlatformService;
         this.portfolioCenterReadPlatformService = portfolioCenterReadPlatformService;
+        this.centerGroupReadPlatformService = centerGroupReadPlatformService;
     }
 
     @GET
@@ -83,6 +89,12 @@ public class PortfolioCentersApiResource {
     public String retrievePortfolioCenter(@Context final UriInfo uriInfo, @PathParam("portfolioCenterId") final Long portfolioCenterId) {
         this.context.authenticatedUser().validateHasReadPermission(PortfolioCenterConstants.PORTFOLIO_CENTER_RESOURCE_NAME);
         PortfolioCenterData portfolioCenterData = this.portfolioCenterReadPlatformService.findById(portfolioCenterId);
+
+        // get list of groups if any
+        Collection<CenterGroupData> centerGroups = centerGroupReadPlatformService.retrieveAllByCenter(portfolioCenterId);
+        if (centerGroups != null && !centerGroups.isEmpty()) {
+            portfolioCenterData.setCenterGroups(centerGroups);
+        }
 
         return this.toApiJsonSerializer.serialize(portfolioCenterData);
     }

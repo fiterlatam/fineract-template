@@ -16,22 +16,11 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.organisation.portfolioCenter.service;
+package org.apache.fineract.organisation.centerGroup.domain;
 
-import java.util.Collection;
-import java.util.List;
-import org.apache.fineract.infrastructure.core.data.EnumOptionData;
-import org.apache.fineract.organisation.portfolioCenter.data.PortfolioCenterData;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
-public interface PortfolioCenterReadPlatformService {
-
-    PortfolioCenterData findById(Long portfolioCenterId);
-
-    Collection<PortfolioCenterData> retrieveAllByPortfolio(Long portfolioId);
-
-    PortfolioCenterData retrievePortfolioCenterTemplate();
-
-    List<EnumOptionData> retrieveCenterStatusOptions();
-
-    Collection<PortfolioCenterData> retrieveAllByCurrentUser();
+public interface CenterGroupRepository extends JpaRepository<CenterGroup, Long>, JpaSpecificationExecutor<CenterGroup> {
+    // no added behaviour
 }

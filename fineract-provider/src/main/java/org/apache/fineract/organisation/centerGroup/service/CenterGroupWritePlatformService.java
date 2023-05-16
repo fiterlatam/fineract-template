@@ -16,22 +16,16 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.organisation.portfolioCenter.service;
+package org.apache.fineract.organisation.centerGroup.service;
 
-import java.util.Collection;
-import java.util.List;
-import org.apache.fineract.infrastructure.core.data.EnumOptionData;
-import org.apache.fineract.organisation.portfolioCenter.data.PortfolioCenterData;
+import org.apache.fineract.infrastructure.core.api.JsonCommand;
+import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 
-public interface PortfolioCenterReadPlatformService {
+public interface CenterGroupWritePlatformService {
 
-    PortfolioCenterData findById(Long portfolioCenterId);
+    CommandProcessingResult createCenterGroup(Long portfolioCenterId, JsonCommand command);
 
-    Collection<PortfolioCenterData> retrieveAllByPortfolio(Long portfolioId);
+    CommandProcessingResult updateCenterGroup(Long centerGroupId, JsonCommand command);
 
-    PortfolioCenterData retrievePortfolioCenterTemplate();
-
-    List<EnumOptionData> retrieveCenterStatusOptions();
-
-    Collection<PortfolioCenterData> retrieveAllByCurrentUser();
+    CommandProcessingResult deleteCenterGroup(Long centerGroupId);
 }

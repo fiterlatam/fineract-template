@@ -3668,4 +3668,30 @@ public class CommandWrapperBuilder {
         return this;
     }
 
+    public CommandWrapperBuilder createCenterGroup(final long portfolioCenterId) {
+        this.actionName = "CREATE";
+        this.entityName = "CENTER_GROUP";
+        this.entityId = portfolioCenterId;
+        this.href = "/centers/" + portfolioCenterId + "/groups/";
+        return this;
+    }
+
+    public CommandWrapperBuilder updateCenterGroup(Long portfolioCenterId, Long centerGroupId) {
+        this.actionName = "UPDATE";
+        this.entityName = "CENTER_GROUP";
+        this.entityId = centerGroupId;
+        this.subentityId = portfolioCenterId; // refers parent center
+        this.href = "/centers/" + portfolioCenterId + "/groups/" + centerGroupId;
+        return this;
+    }
+
+    public CommandWrapperBuilder deleteCenterGroup(Long portfolioCenterId, Long centerGroupId) {
+        this.actionName = "DELETE";
+        this.entityName = "CENTER_GROUP";
+        this.entityId = centerGroupId;
+        this.subentityId = portfolioCenterId; // refers parent center
+        this.href = "/centers/" + portfolioCenterId + "/groups/" + centerGroupId;
+        return this;
+    }
+
 }
