@@ -16,22 +16,21 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.organisation.portfolioCenter.service;
+package org.apache.fineract.organisation.centerGroup.exception;
 
-import java.util.Collection;
-import java.util.List;
-import org.apache.fineract.infrastructure.core.data.EnumOptionData;
-import org.apache.fineract.organisation.portfolioCenter.data.PortfolioCenterData;
+import org.apache.fineract.infrastructure.core.exception.AbstractPlatformResourceNotFoundException;
+import org.springframework.dao.EmptyResultDataAccessException;
 
-public interface PortfolioCenterReadPlatformService {
+/**
+ * A {@link RuntimeException} thrown when center group resources are not found.
+ */
+public class CenterGroupNotFoundException extends AbstractPlatformResourceNotFoundException {
 
-    PortfolioCenterData findById(Long portfolioCenterId);
+    public CenterGroupNotFoundException(final Long id) {
+        super("error.msg.center.group.id.invalid", "Group with identifier " + id + " does not exist", id);
+    }
 
-    Collection<PortfolioCenterData> retrieveAllByPortfolio(Long portfolioId);
-
-    PortfolioCenterData retrievePortfolioCenterTemplate();
-
-    List<EnumOptionData> retrieveCenterStatusOptions();
-
-    Collection<PortfolioCenterData> retrieveAllByCurrentUser();
+    public CenterGroupNotFoundException(Long id, EmptyResultDataAccessException e) {
+        super("error.msg.center.group.id.invalid", "Group with identifier " + id + " does not exist", id, e);
+    }
 }

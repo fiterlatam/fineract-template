@@ -18,12 +18,17 @@
  */
 package org.apache.fineract.organisation.portfolioCenter.data;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.datatype.jsr310.deser.LocalTimeDeserializer;
+import com.fasterxml.jackson.datatype.jsr310.ser.LocalTimeSerializer;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
+import org.apache.fineract.organisation.centerGroup.data.CenterGroupData;
 import org.apache.fineract.organisation.office.data.OfficeData;
 import org.apache.fineract.useradministration.data.AppUserData;
 
@@ -54,6 +59,24 @@ public final class PortfolioCenterData {
 
     private final LocalDate createdDate;
 
+    private final Integer meetingStart;
+
+    private final Integer meetingEnd;
+
+    private final Integer meetingDay;
+
+    private final String meetingDayName;
+
+    @JsonDeserialize(using = LocalTimeDeserializer.class)
+    @JsonSerialize(using = LocalTimeSerializer.class)
+    private final String meetingStartTime;
+
+    @JsonDeserialize(using = LocalTimeDeserializer.class)
+    @JsonSerialize(using = LocalTimeSerializer.class)
+    private final String meetingEndTime;
+
+    private Collection<CenterGroupData> groups;
+
     // template
     private final Collection<OfficeData> parentOfficesOptions;
     private final Collection<AppUserData> responsibleUserOptions;
@@ -61,12 +84,14 @@ public final class PortfolioCenterData {
     private final Collection<CodeValueData> stateOptions;
     private final Collection<CodeValueData> typeOptions;
     private final Collection<EnumOptionData> statusOptions;
+    private final Collection<CodeValueData> meetingDayOptions;
 
     public PortfolioCenterData(Long id, String name, Long portfolioId, String portfolioName, BigDecimal legacyCenterNumber,
             CodeValueData city, CodeValueData state, CodeValueData type, EnumOptionData status, Integer distance, LocalDate createdDate,
-            Collection<OfficeData> parentOfficesOptions, Collection<AppUserData> responsibleUserOptions,
+            Integer meetingStart, Integer meetingEnd, Integer meetingDay, String meetingStartTime, String meetingEndTime,
+            String meetingDayName, Collection<OfficeData> parentOfficesOptions, Collection<AppUserData> responsibleUserOptions,
             Collection<CodeValueData> cityOptions, Collection<CodeValueData> stateOptions, Collection<CodeValueData> typeOptions,
-            Collection<EnumOptionData> statusOptions) {
+            Collection<EnumOptionData> statusOptions, Collection<CodeValueData> meetingDayOptions) {
         this.id = id;
         this.name = name;
         this.portfolioId = portfolioId;
@@ -78,24 +103,38 @@ public final class PortfolioCenterData {
         this.status = status;
         this.distance = distance;
         this.createdDate = createdDate;
+        this.meetingStart = meetingStart;
+        this.meetingEnd = meetingEnd;
+        this.meetingDay = meetingDay;
+        this.meetingDayName = meetingDayName;
+        this.meetingStartTime = meetingStartTime;
+        this.meetingEndTime = meetingEndTime;
         this.parentOfficesOptions = parentOfficesOptions;
         this.responsibleUserOptions = responsibleUserOptions;
         this.cityOptions = cityOptions;
         this.stateOptions = stateOptions;
         this.typeOptions = typeOptions;
         this.statusOptions = statusOptions;
+        this.meetingDayOptions = meetingDayOptions;
     }
 
     public static PortfolioCenterData instance(Long id, String name, Long portfolioId, String portfolioName, BigDecimal legacyCenterNumber,
-            CodeValueData city, CodeValueData state, CodeValueData type, EnumOptionData status, Integer distance, LocalDate createdDate) {
+            CodeValueData city, CodeValueData state, CodeValueData type, EnumOptionData status, Integer distance, LocalDate createdDate,
+            Integer meetingStart, Integer meetingEnd, Integer meetingDay, String meetingStartTime, String meetingEndTime,
+            String meetingDayName) {
         return new PortfolioCenterData(id, name, portfolioId, portfolioName, legacyCenterNumber, city, state, type, status, distance,
-                createdDate, null, null, null, null, null, null);
+                createdDate, meetingStart, meetingEnd, meetingDay, meetingStartTime, meetingEndTime, meetingDayName, null, null, null, null,
+                null, null, null);
     }
 
     public static PortfolioCenterData template(Collection<OfficeData> parentOfficesOptions, List<AppUserData> appUsers,
             Collection<CodeValueData> cityOptions, Collection<CodeValueData> stateOptions, Collection<CodeValueData> typeOptions,
-            Collection<EnumOptionData> statusOptions) {
-        return new PortfolioCenterData(null, null, null, null, null, null, null, null, null, null, null, parentOfficesOptions, appUsers,
-                cityOptions, stateOptions, typeOptions, statusOptions);
+            Collection<EnumOptionData> statusOptions, Collection<CodeValueData> meetingDayOptions) {
+        return new PortfolioCenterData(null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null,
+                parentOfficesOptions, appUsers, cityOptions, stateOptions, typeOptions, statusOptions, meetingDayOptions);
+    }
+
+    public void setCenterGroups(Collection<CenterGroupData> groups) {
+        this.groups = groups;
     }
 }

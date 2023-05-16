@@ -20,6 +20,7 @@ package org.apache.fineract.organisation.portfolioCenter.service;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.temporal.TemporalAdjusters;
 import java.time.temporal.WeekFields;
 import java.util.ArrayList;
@@ -32,6 +33,7 @@ import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 import org.apache.fineract.infrastructure.codes.domain.CodeValue;
 import org.apache.fineract.infrastructure.codes.domain.CodeValueRepository;
 import org.apache.fineract.infrastructure.codes.service.CodeValueReadPlatformService;
+import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainServiceJpa;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuilder;
@@ -69,12 +71,13 @@ public class PortfolioCenterWritePlatformServiceImpl implements PortfolioCenterW
     private final RangeTemplateReadPlatformService rangeTemplateReadPlatformService;
     private final AppUserRepository appUserRepository;
     private final CodeValueRepository codeValueRepository;
+    private final ConfigurationDomainServiceJpa configurationDomainServiceJpa;
 
     public PortfolioCenterWritePlatformServiceImpl(PlatformSecurityContext context,
             PortfolioCenterCommandFromApiJsonDeserializer fromApiJsonDeserializer, PortfolioRepositoryWrapper portfolioRepositoryWrapper,
             PortfolioCenterRepositoryWrapper portfolioCenterRepositoryWrapper, CodeValueReadPlatformService codeValueReadPlatformService,
             RangeTemplateReadPlatformService rangeTemplateReadPlatformService, AppUserRepository appUserRepository,
-            CodeValueRepository codeValueRepository) {
+            CodeValueRepository codeValueRepository, ConfigurationDomainServiceJpa configurationDomainServiceJpa) {
         this.context = context;
         this.fromApiJsonDeserializer = fromApiJsonDeserializer;
         this.portfolioRepositoryWrapper = portfolioRepositoryWrapper;
@@ -83,6 +86,7 @@ public class PortfolioCenterWritePlatformServiceImpl implements PortfolioCenterW
         this.rangeTemplateReadPlatformService = rangeTemplateReadPlatformService;
         this.appUserRepository = appUserRepository;
         this.codeValueRepository = codeValueRepository;
+        this.configurationDomainServiceJpa = configurationDomainServiceJpa;
     }
 
     @Transactional
@@ -96,6 +100,9 @@ public class PortfolioCenterWritePlatformServiceImpl implements PortfolioCenterW
             LocalDate currentTenantDate = DateUtils.getLocalDateOfTenant();
             int week = 1;
 
+            LocalTime meetingStartTime = LocalTime.parse(this.configurationDomainServiceJpa.getStartTimeForMeetings());
+            LocalTime meetingEndTime = LocalTime.parse(this.configurationDomainServiceJpa.getEndTimeForMeetings());
+
             // get the range template and generate the centers for the parent portfolio
             Collection<RangeTemplateData> rangeTemplateDataCollection = rangeTemplateReadPlatformService.retrieveAll();
             for (RangeTemplateData rangeTemplateData : rangeTemplateDataCollection) {
@@ -104,7 +111,9 @@ public class PortfolioCenterWritePlatformServiceImpl implements PortfolioCenterW
                     // complete required fields for entity
                     final String centerName = generateCenterName(portfolio.getId(), rangeTemplateData, meetingDay);
 
-                    PortfolioCenter entity = PortfolioCenter.assembleFrom(centerName, portfolio, PortfolioCenterStatus.ACTIVE.getValue());
+                    PortfolioCenter entity = PortfolioCenter.assembleFrom(centerName, portfolio, PortfolioCenterStatus.ACTIVE.getValue(),
+                            rangeTemplateData.getStartDay(), rangeTemplateData.getEndDay(), meetingDay.getId().intValue(), meetingStartTime,
+                            meetingEndTime);
 
                     portfolioCenterRepositoryWrapper.save(entity);
                 }

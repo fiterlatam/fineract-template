@@ -451,4 +451,54 @@ public class ConfigurationDomainServiceJpa implements ConfigurationDomainService
         final GlobalConfigurationPropertyData property = getGlobalConfigurationPropertyData(propertyName);
         return property.isEnabled();
     }
+
+    @Override
+    public String getStartTimeForMeetings() {
+        final String propertyName = "meeting-start-time";
+        String defaultValue = "08:00";
+        final GlobalConfigurationPropertyData property = getGlobalConfigurationPropertyData(propertyName);
+        if (property.isEnabled()) {
+            String value = property.getStringValue();
+            if (StringUtils.isBlank(value)) {
+                return defaultValue;
+            }
+            return value;
+        }
+        return defaultValue;
+    }
+
+    @Override
+    public String getEndTimeForMeetings() {
+        final String propertyName = "meeting-end-time";
+        String defaultValue = "16:00";
+        final GlobalConfigurationPropertyData property = getGlobalConfigurationPropertyData(propertyName);
+        if (property.isEnabled()) {
+            String value = property.getStringValue();
+            if (StringUtils.isBlank(value)) {
+                return defaultValue;
+            }
+            return value;
+        }
+        return defaultValue;
+    }
+
+    @Override
+    public Long retrieveDefaultDurationForMeetings() {
+        final String propertyName = "meeting-default-duration";
+        final GlobalConfigurationPropertyData property = getGlobalConfigurationPropertyData(propertyName);
+        if (property.getValue() == null) {
+            return Long.valueOf(0);
+        }
+        return property.getValue();
+    }
+
+    @Override
+    public Long retrieveTimeBetweenMeetings() {
+        final String propertyName = "time-between-meetings";
+        final GlobalConfigurationPropertyData property = getGlobalConfigurationPropertyData(propertyName);
+        if (property.getValue() == null) {
+            return Long.valueOf(0);
+        }
+        return property.getValue();
+    }
 }

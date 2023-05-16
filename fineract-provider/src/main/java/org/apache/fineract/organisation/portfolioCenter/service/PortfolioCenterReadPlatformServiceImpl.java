@@ -24,9 +24,11 @@ import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 import org.apache.fineract.infrastructure.codes.service.CodeValueReadPlatformService;
@@ -35,7 +37,6 @@ import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
 import org.apache.fineract.infrastructure.core.service.database.DatabaseSpecificSQLGenerator;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.infrastructure.security.utils.ColumnValidator;
-import org.apache.fineract.organisation.monetary.service.CurrencyReadPlatformService;
 import org.apache.fineract.organisation.office.data.OfficeData;
 import org.apache.fineract.organisation.office.domain.OfficeHierarchyLevel;
 import org.apache.fineract.organisation.office.service.OfficeReadPlatformService;
@@ -56,7 +57,6 @@ public class PortfolioCenterReadPlatformServiceImpl implements PortfolioCenterRe
     private final JdbcTemplate jdbcTemplate;
     private final DatabaseSpecificSQLGenerator sqlGenerator;
     private final PlatformSecurityContext context;
-    private final CurrencyReadPlatformService currencyReadPlatformService;
     private final ColumnValidator columnValidator;
     private final CodeValueReadPlatformService codeValueReadPlatformService;
     private final OfficeReadPlatformService officeReadPlatformService;
@@ -64,13 +64,12 @@ public class PortfolioCenterReadPlatformServiceImpl implements PortfolioCenterRe
 
     @Autowired
     public PortfolioCenterReadPlatformServiceImpl(final JdbcTemplate jdbcTemplate, final DatabaseSpecificSQLGenerator sqlGenerator,
-            final PlatformSecurityContext context, final CurrencyReadPlatformService currencyReadPlatformService,
-            final ColumnValidator columnValidator, final CodeValueReadPlatformService codeValueReadPlatformService,
-            final OfficeReadPlatformService officeReadPlatformService, final AppUserReadPlatformService appUserReadPlatformService) {
+            final PlatformSecurityContext context, final ColumnValidator columnValidator,
+            final CodeValueReadPlatformService codeValueReadPlatformService, final OfficeReadPlatformService officeReadPlatformService,
+            final AppUserReadPlatformService appUserReadPlatformService) {
         this.jdbcTemplate = jdbcTemplate;
         this.sqlGenerator = sqlGenerator;
         this.context = context;
-        this.currencyReadPlatformService = currencyReadPlatformService;
         this.columnValidator = columnValidator;
         this.codeValueReadPlatformService = codeValueReadPlatformService;
         this.officeReadPlatformService = officeReadPlatformService;
@@ -99,7 +98,7 @@ public class PortfolioCenterReadPlatformServiceImpl implements PortfolioCenterRe
         PortfolioCenterMapper portfolioCenterMapper = new PortfolioCenterMapper();
         String schemaSql = "select " + portfolioCenterMapper.schema();
         schemaSql += " where pc.portfolio_id = ? ";
-        schemaSql += " order by centerCodeName";
+        schemaSql += " order by centerCodeName, meetingDay";
 
         List<Object> params = new ArrayList<>();
         params.add(portfolioId);
@@ -127,7 +126,11 @@ public class PortfolioCenterReadPlatformServiceImpl implements PortfolioCenterRe
 
         final Collection<EnumOptionData> statusOptions = retrieveCenterStatusOptions();
 
-        return PortfolioCenterData.template(parentOfficesOptions, appUsers, cityOptions, stateOptions, typeOptions, statusOptions);
+        final List<CodeValueData> meetingDayOptions = new ArrayList<>(
+                this.codeValueReadPlatformService.retrieveCodeValuesByCode(PortfolioCenterConstants.MEETING_DAYS));
+
+        return PortfolioCenterData.template(parentOfficesOptions, appUsers, cityOptions, stateOptions, typeOptions, statusOptions,
+                meetingDayOptions);
     }
 
     @Override
@@ -135,6 +138,25 @@ public class PortfolioCenterReadPlatformServiceImpl implements PortfolioCenterRe
         final List<EnumOptionData> statusOptions = Arrays.asList(statusOptionData(PortfolioCenterStatus.ACTIVE),
                 statusOptionData(PortfolioCenterStatus.INACTIVE));
         return statusOptions;
+    }
+
+    @Override
+    public Collection<PortfolioCenterData> retrieveAllByCurrentUser() {
+        this.context.authenticatedUser();
+
+        final List<Long> officeIds = new ArrayList<>();
+
+        final Collection<OfficeData> parentOfficesOptions = officeReadPlatformService
+                .retrieveOfficesByHierarchyLevel(Long.valueOf(OfficeHierarchyLevel.AGENCIA.getValue()));
+        parentOfficesOptions.forEach(parentOffice -> officeIds.add(parentOffice.getId()));
+
+        String inSql = String.join(",", Collections.nCopies(officeIds.size(), "?"));
+
+        PortfolioCenterMapper portfolioCenterMapper = new PortfolioCenterMapper();
+        String schemaSql = "select " + portfolioCenterMapper.schema();
+        schemaSql += "where p.linked_office_id in (%s)";
+
+        return this.jdbcTemplate.query(String.format(schemaSql, inSql), portfolioCenterMapper, officeIds.toArray());
     }
 
     private static final class PortfolioCenterMapper implements RowMapper<PortfolioCenterData> {
@@ -148,12 +170,16 @@ public class PortfolioCenterReadPlatformServiceImpl implements PortfolioCenterRe
             sqlBuilder.append("pc.city_id as cityId, cvCity.code_value as cityValue, ");
             sqlBuilder.append("pc.state_province_id as stateId, cvState.code_value as stateValue, ");
             sqlBuilder.append("pc.center_status as status, pc.distance_from_agency as distance, ");
-            sqlBuilder.append("pc.type_id as typeId, cvType.code_value as typeValue, pc.created_date as createdDate ");
+            sqlBuilder.append("pc.type_id as typeId, cvType.code_value as typeValue, pc.created_date as createdDate, ");
+            sqlBuilder.append("pc.meeting_start_date as meetingStart, pc.meeting_end_date as meetingEnd, ");
+            sqlBuilder.append("pc.meeting_day as meetingDay, cvMeetingDay.code_value as meetingDayValue, ");
+            sqlBuilder.append("pc.meeting_start_time as meetingStartTime, pc.meeting_end_time as meetingEndTime ");
             sqlBuilder.append("from m_portfolio_center pc ");
             sqlBuilder.append("left join m_portfolio AS p ON p.id = pc.portfolio_id ");
             sqlBuilder.append("left join m_code_value cvCity on pc.city_id = cvCity.id ");
             sqlBuilder.append("left join m_code_value cvState on pc.state_province_id = cvState.id ");
             sqlBuilder.append("left join m_code_value cvType on pc.type_id = cvType.id ");
+            sqlBuilder.append("left join m_code_value cvMeetingDay on pc.meeting_day = cvMeetingDay.id ");
             this.schema = sqlBuilder.toString();
         }
 
@@ -189,8 +215,17 @@ public class PortfolioCenterReadPlatformServiceImpl implements PortfolioCenterRe
             final String typeValue = rs.getString("typeValue");
             final CodeValueData type = CodeValueData.instance(typeId, typeValue);
 
+            final int meetingStart = rs.getInt("meetingStart");
+            final int meetingEnd = rs.getInt("meetingEnd");
+            final int meetingDay = rs.getInt("meetingDay");
+            final String meetingDayValue = rs.getString("meetingDayValue");
+
+            final LocalTime meetingStartTime = JdbcSupport.getLocalTime(rs, "meetingStartTime");
+            final LocalTime meetingEndTime = JdbcSupport.getLocalTime(rs, "meetingEndTime");
+
             return PortfolioCenterData.instance(id, name, portfolioId, portfolioName, legacyCenterNumber, city, state, type, statusEnum,
-                    distance, createdDate);
+                    distance, createdDate, meetingStart, meetingEnd, meetingDay, meetingStartTime.toString(), meetingEndTime.toString(),
+                    meetingDayValue);
         }
 
         public String schema() {
