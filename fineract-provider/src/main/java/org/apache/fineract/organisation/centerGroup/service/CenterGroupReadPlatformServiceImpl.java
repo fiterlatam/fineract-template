@@ -41,8 +41,6 @@ import org.apache.fineract.organisation.centerGroup.exception.CenterGroupNotFoun
 import org.apache.fineract.organisation.office.data.OfficeData;
 import org.apache.fineract.organisation.office.domain.OfficeHierarchyLevel;
 import org.apache.fineract.organisation.office.service.OfficeReadPlatformService;
-import org.apache.fineract.organisation.portfolioCenter.data.PortfolioCenterData;
-import org.apache.fineract.organisation.portfolioCenter.service.PortfolioCenterReadPlatformService;
 import org.apache.fineract.useradministration.data.AppUserData;
 import org.apache.fineract.useradministration.service.AppUserReadPlatformService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -61,14 +59,12 @@ public class CenterGroupReadPlatformServiceImpl implements CenterGroupReadPlatfo
     private final CodeValueReadPlatformService codeValueReadPlatformService;
     private final OfficeReadPlatformService officeReadPlatformService;
     private final AppUserReadPlatformService appUserReadPlatformService;
-    private final PortfolioCenterReadPlatformService portfolioCenterReadPlatformService;
 
     @Autowired
     public CenterGroupReadPlatformServiceImpl(final JdbcTemplate jdbcTemplate, final DatabaseSpecificSQLGenerator sqlGenerator,
             final PlatformSecurityContext context, final ColumnValidator columnValidator,
             final CodeValueReadPlatformService codeValueReadPlatformService, final OfficeReadPlatformService officeReadPlatformService,
-            final AppUserReadPlatformService appUserReadPlatformService,
-            final PortfolioCenterReadPlatformService portfolioCenterReadPlatformService) {
+            final AppUserReadPlatformService appUserReadPlatformService) {
         this.jdbcTemplate = jdbcTemplate;
         this.sqlGenerator = sqlGenerator;
         this.context = context;
@@ -76,7 +72,6 @@ public class CenterGroupReadPlatformServiceImpl implements CenterGroupReadPlatfo
         this.codeValueReadPlatformService = codeValueReadPlatformService;
         this.officeReadPlatformService = officeReadPlatformService;
         this.appUserReadPlatformService = appUserReadPlatformService;
-        this.portfolioCenterReadPlatformService = portfolioCenterReadPlatformService;
     }
 
     @Override
@@ -123,9 +118,7 @@ public class CenterGroupReadPlatformServiceImpl implements CenterGroupReadPlatfo
 
         final Collection<EnumOptionData> statusOptions = retrieveGroupStatusOptions();
 
-        Collection<PortfolioCenterData> portfolioCenterOptions = portfolioCenterReadPlatformService.retrieveAllByCurrentUser();
-
-        return CenterGroupData.template(parentOfficesOptions, appUsers, statusOptions, portfolioCenterOptions);
+        return CenterGroupData.template(parentOfficesOptions, appUsers, statusOptions);
     }
 
     private List<EnumOptionData> retrieveGroupStatusOptions() {

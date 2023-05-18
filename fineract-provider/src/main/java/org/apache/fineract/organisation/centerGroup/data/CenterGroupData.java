@@ -64,13 +64,12 @@ public class CenterGroupData {
     private final Collection<OfficeData> parentOfficesOptions;
     private final Collection<AppUserData> responsibleUserOptions;
     private final Collection<EnumOptionData> statusOptions;
-    private final Collection<PortfolioCenterData> portfolioCenterOptions;
+    private Collection<PortfolioCenterData> portfolioCenterOptions;
 
     public CenterGroupData(Long id, String name, Long portfolioCenterId, String portfolioCenterName, Long legacyGroupNumber,
             BigDecimal latitude, BigDecimal longitude, LocalDate formationDate, EnumOptionData status, Integer size, Long responsibleUserId,
             LocalDate createdDate, LocalTime meetingStartTime, LocalTime meetingEndTime, Collection<OfficeData> parentOfficesOptions,
-            Collection<AppUserData> responsibleUserOptions, Collection<EnumOptionData> statusOptions,
-            Collection<PortfolioCenterData> portfolioCenterOptions) {
+            Collection<AppUserData> responsibleUserOptions, Collection<EnumOptionData> statusOptions) {
         this.id = id;
         this.name = name;
         this.portfolioCenterId = portfolioCenterId;
@@ -88,19 +87,27 @@ public class CenterGroupData {
         this.parentOfficesOptions = parentOfficesOptions;
         this.responsibleUserOptions = responsibleUserOptions;
         this.statusOptions = statusOptions;
-        this.portfolioCenterOptions = portfolioCenterOptions;
     }
 
     public static CenterGroupData instance(Long id, String name, Long portfolioCenterId, String portfolioCenterName, Long legacyGroupNumber,
             BigDecimal latitude, BigDecimal longitude, LocalDate formationDate, EnumOptionData status, Integer size, Long responsibleUserId,
             LocalDate createdDate, LocalTime meetingStartTime, LocalTime meetingEndTime) {
         return new CenterGroupData(id, name, portfolioCenterId, portfolioCenterName, legacyGroupNumber, latitude, longitude, formationDate,
-                status, size, responsibleUserId, createdDate, meetingStartTime, meetingEndTime, null, null, null, null);
+                status, size, responsibleUserId, createdDate, meetingStartTime, meetingEndTime, null, null, null);
     }
 
     public static CenterGroupData template(Collection<OfficeData> parentOfficesOptions, Collection<AppUserData> appUsers,
-            Collection<EnumOptionData> statusOptions, Collection<PortfolioCenterData> portfolioCenterOptions) {
+            Collection<EnumOptionData> statusOptions) {
         return new CenterGroupData(null, null, null, null, null, null, null, null, null, null, null, null, null, null, parentOfficesOptions,
-                appUsers, statusOptions, portfolioCenterOptions);
+                appUsers, statusOptions);
     }
+
+    public LocalTime getMeetingStartTime() {
+        return meetingStartTime;
+    }
+
+    public LocalTime getMeetingEndTime() {
+        return meetingEndTime;
+    }
+
 }

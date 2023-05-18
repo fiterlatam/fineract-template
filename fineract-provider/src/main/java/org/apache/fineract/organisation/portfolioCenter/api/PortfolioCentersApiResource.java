@@ -47,6 +47,7 @@ import org.apache.fineract.organisation.centerGroup.data.CenterGroupData;
 import org.apache.fineract.organisation.centerGroup.service.CenterGroupReadPlatformService;
 import org.apache.fineract.organisation.portfolio.data.PortfolioData;
 import org.apache.fineract.organisation.portfolio.service.PortfolioReadPlatformService;
+import org.apache.fineract.organisation.portfolioCenter.data.PortfolioCenterAvailabilityForMeetings;
 import org.apache.fineract.organisation.portfolioCenter.data.PortfolioCenterData;
 import org.apache.fineract.organisation.portfolioCenter.service.PortfolioCenterConstants;
 import org.apache.fineract.organisation.portfolioCenter.service.PortfolioCenterReadPlatformService;
@@ -126,6 +127,40 @@ public class PortfolioCentersApiResource {
 
         final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
         return this.toApiJsonSerializer.serialize(result);
+    }
+
+    @GET
+    @Produces({ MediaType.APPLICATION_JSON })
+    public String retrieveAllByCurrentUser() {
+        this.context.authenticatedUser().validateHasReadPermission(PortfolioCenterConstants.PORTFOLIO_CENTER_RESOURCE_NAME);
+        Collection<PortfolioCenterData> portfolioCenterDataCollection = this.portfolioCenterReadPlatformService.retrieveAllByCurrentUser();
+
+        return this.toApiJsonSerializer.serialize(portfolioCenterDataCollection);
+    }
+
+    @GET
+    @Path("/{portfolioCenterId}/availability")
+    @Produces({ MediaType.APPLICATION_JSON })
+    public String retrieveAvailableTimesByPortfolioCenter(@Context final UriInfo uriInfo,
+            @PathParam("portfolioCenterId") final Long portfolioCenterId) {
+        this.context.authenticatedUser().validateHasReadPermission(PortfolioCenterConstants.PORTFOLIO_CENTER_RESOURCE_NAME);
+        PortfolioCenterAvailabilityForMeetings portfolioCenterAvailableTimes = this.portfolioCenterReadPlatformService
+                .retrieveAvailableTimesByPortfolioCenter(portfolioCenterId);
+
+        return this.toApiJsonSerializer.serialize(portfolioCenterAvailableTimes);
+    }
+
+    @GET
+    @Path("/availability/")
+    @Produces({ MediaType.APPLICATION_JSON })
+    public String retrieveAllAvailableTimesByPortfolio(@Context final UriInfo uriInfo,
+            @PathParam("portfolioId") @Parameter(description = "portfolioId") final Long portfolioId) {
+        this.context.authenticatedUser().validateHasReadPermission(PortfolioCenterConstants.PORTFOLIO_CENTER_RESOURCE_NAME);
+
+        Collection<PortfolioCenterAvailabilityForMeetings> portfolioAllCentersAvailableTimes = this.portfolioCenterReadPlatformService
+                .retrieveAvailableTimesByPortfolio(portfolioId);
+
+        return this.toApiJsonSerializer.serialize(portfolioAllCentersAvailableTimes);
     }
 
 }

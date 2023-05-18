@@ -36,8 +36,8 @@ public class CenterGroupConstants {
         CENTER_GROUP_ID("id"), PORTFOLIO_CENTER_ID("portfolioCenterId"), NAME("name"), RESPONSIBLE_USER_ID(
                 "responsibleUserId"), LEGACY_GROUP_NUMBER("legacyGroupNumber"), LATITUDE("latitude"), LONGITUDE(
                         "longitude"), FORMATION_DATE("formationDate"), SIZE("size"), CREATED_DATE("createdDate"), STATUS_ID(
-                                "statusId"), MEETING_START_TIME(
-                                        "meetingStartTime"), MEETING_END_TIME("meetingEndTime"), LOCALE("locale"), DATEFORMAT("dateFormat");
+                                "statusId"), MEETING_START_TIME("meetingStartTime"), MEETING_END_TIME("meetingEndTime"), LOCALE(
+                                        "locale"), DESTINATION_PORTFOLIO_CENTER_ID("newPortfolioCenterId"), DATEFORMAT("dateFormat");
 
         private final String value;
 

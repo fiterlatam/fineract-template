@@ -18,8 +18,13 @@
  */
 package org.apache.fineract.organisation.centerGroup.service;
 
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import javax.persistence.PersistenceException;
+
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.fineract.infrastructure.codes.domain.CodeValueRepository;
 import org.apache.fineract.infrastructure.codes.service.CodeValueReadPlatformService;
@@ -148,6 +153,64 @@ public class CenterGroupWritePlatformServiceImpl implements CenterGroupWritePlat
     public CommandProcessingResult deleteCenterGroup(Long centerGroupId) {
 
         return null;
+    }
+
+    @Override
+    public CommandProcessingResult transferCenterGroup(Long centerGroupId, JsonCommand command) {
+        try {
+            this.context.authenticatedUser();
+
+            this.fromApiJsonDeserializer.validateForTransfer(command.json());
+
+            CenterGroup centerGroup = this.centerGroupRepositoryWrapper.findOneWithNotFoundDetection(centerGroupId);
+
+            final Map<String, Object> changes = new LinkedHashMap<>(2);
+
+            final Long destinationPortfolioCenterId = command.longValueOfParameterNamed(
+                    CenterGroupConstants.CenterGroupSupportedParameters.DESTINATION_PORTFOLIO_CENTER_ID.getValue());
+
+            PortfolioCenter newParentPortfolioCenter = null;
+            if (destinationPortfolioCenterId != null) {
+                newParentPortfolioCenter = this.portfolioCenterRepositoryWrapper.findOneWithNotFoundDetection(destinationPortfolioCenterId);
+                centerGroup.setPortfolioCenter(newParentPortfolioCenter);
+                changes.put(CenterGroupConstants.CenterGroupSupportedParameters.DESTINATION_PORTFOLIO_CENTER_ID.getValue(),
+                        destinationPortfolioCenterId);
+            }
+
+            DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ISO_LOCAL_TIME;
+            String meetingStartTime = command
+                    .stringValueOfParameterNamed(CenterGroupConstants.CenterGroupSupportedParameters.MEETING_START_TIME.getValue());
+            if (StringUtils.isNotBlank(meetingStartTime)) {
+                LocalTime newMeetingStarTime = LocalTime.parse(meetingStartTime, dateTimeFormatter);
+                centerGroup.setMeetingStartTime(newMeetingStarTime);
+                changes.put(CenterGroupConstants.CenterGroupSupportedParameters.MEETING_START_TIME.getValue(),
+                        meetingStartTime);
+            }
+
+            String meetingEndTime = command
+                    .stringValueOfParameterNamed(CenterGroupConstants.CenterGroupSupportedParameters.MEETING_END_TIME.getValue());
+            if (StringUtils.isNotBlank(meetingEndTime)) {
+                LocalTime newMeetingEndTime = LocalTime.parse(meetingEndTime, dateTimeFormatter);
+                centerGroup.setMeetingEndTime(newMeetingEndTime);
+                changes.put(CenterGroupConstants.CenterGroupSupportedParameters.MEETING_END_TIME.getValue(),
+                        meetingEndTime);
+            }
+
+            this.centerGroupRepositoryWrapper.saveAndFlush(centerGroup);
+
+            return new CommandProcessingResultBuilder() //
+                    .withCommandId(command.commandId()) //
+                    .withEntityId(centerGroupId) //
+                    .with(changes) //
+                    .build();
+        } catch (final JpaSystemException | DataIntegrityViolationException dve) {
+            handleCenterGroupDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
+            return CommandProcessingResult.empty();
+        } catch (final PersistenceException dve) {
+            Throwable throwable = ExceptionUtils.getRootCause(dve.getCause());
+            handleCenterGroupDataIntegrityIssues(command, throwable, dve);
+            return CommandProcessingResult.empty();
+        }
     }
 
     /*

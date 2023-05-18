@@ -218,4 +218,15 @@ public class CenterGroup extends AbstractAuditableCustom {
         return actualChanges;
     }
 
+    public void setPortfolioCenter(PortfolioCenter portfolioCenter) {
+        this.portfolioCenter = portfolioCenter;
+    }
+
+    public void setMeetingStartTime(LocalTime meetingStartTime) {
+        this.meetingStartTime = meetingStartTime;
+    }
+
+    public void setMeetingEndTime(LocalTime meetingEndTime) {
+        this.meetingEndTime = meetingEndTime;
+    }
 }
