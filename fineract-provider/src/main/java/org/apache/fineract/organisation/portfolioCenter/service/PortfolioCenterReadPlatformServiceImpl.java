@@ -32,15 +32,20 @@ import java.util.Collections;
 import java.util.List;
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 import org.apache.fineract.infrastructure.codes.service.CodeValueReadPlatformService;
+import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainServiceJpa;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
 import org.apache.fineract.infrastructure.core.service.database.DatabaseSpecificSQLGenerator;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.infrastructure.security.utils.ColumnValidator;
+import org.apache.fineract.organisation.centerGroup.data.CenterGroupData;
+import org.apache.fineract.organisation.centerGroup.service.CenterGroupReadPlatformService;
 import org.apache.fineract.organisation.office.data.OfficeData;
 import org.apache.fineract.organisation.office.domain.OfficeHierarchyLevel;
 import org.apache.fineract.organisation.office.service.OfficeReadPlatformService;
 import org.apache.fineract.organisation.portfolio.exception.PortfolioNotFoundException;
+import org.apache.fineract.organisation.portfolioCenter.data.AvailableMeetingTimes;
+import org.apache.fineract.organisation.portfolioCenter.data.PortfolioCenterAvailabilityForMeetings;
 import org.apache.fineract.organisation.portfolioCenter.data.PortfolioCenterData;
 import org.apache.fineract.organisation.portfolioCenter.domain.PortfolioCenterStatus;
 import org.apache.fineract.useradministration.data.AppUserData;
@@ -61,12 +66,16 @@ public class PortfolioCenterReadPlatformServiceImpl implements PortfolioCenterRe
     private final CodeValueReadPlatformService codeValueReadPlatformService;
     private final OfficeReadPlatformService officeReadPlatformService;
     private final AppUserReadPlatformService appUserReadPlatformService;
+    private final CenterGroupReadPlatformService centerGroupReadPlatformService;
+    private final ConfigurationDomainServiceJpa configurationDomainServiceJpa;
 
     @Autowired
     public PortfolioCenterReadPlatformServiceImpl(final JdbcTemplate jdbcTemplate, final DatabaseSpecificSQLGenerator sqlGenerator,
             final PlatformSecurityContext context, final ColumnValidator columnValidator,
             final CodeValueReadPlatformService codeValueReadPlatformService, final OfficeReadPlatformService officeReadPlatformService,
-            final AppUserReadPlatformService appUserReadPlatformService) {
+            final AppUserReadPlatformService appUserReadPlatformService,
+            final CenterGroupReadPlatformService centerGroupReadPlatformService,
+            final ConfigurationDomainServiceJpa configurationDomainServiceJpa) {
         this.jdbcTemplate = jdbcTemplate;
         this.sqlGenerator = sqlGenerator;
         this.context = context;
@@ -74,6 +83,8 @@ public class PortfolioCenterReadPlatformServiceImpl implements PortfolioCenterRe
         this.codeValueReadPlatformService = codeValueReadPlatformService;
         this.officeReadPlatformService = officeReadPlatformService;
         this.appUserReadPlatformService = appUserReadPlatformService;
+        this.centerGroupReadPlatformService = centerGroupReadPlatformService;
+        this.configurationDomainServiceJpa = configurationDomainServiceJpa;
     }
 
     @Override
@@ -157,6 +168,66 @@ public class PortfolioCenterReadPlatformServiceImpl implements PortfolioCenterRe
         schemaSql += "where p.linked_office_id in (%s)";
 
         return this.jdbcTemplate.query(String.format(schemaSql, inSql), portfolioCenterMapper, officeIds.toArray());
+    }
+
+    @Override
+    public PortfolioCenterAvailabilityForMeetings retrieveAvailableTimesByPortfolioCenter(Long portfolioCenterId) {
+        try {
+            this.context.authenticatedUser();
+
+            PortfolioCenterAvailabilityForMeetings centerAvailabilityForMeetings = null;
+            Collection<AvailableMeetingTimes> availableMeetingTimes = new ArrayList<>();
+
+            PortfolioCenterData portfolioCenterData = this.findById(portfolioCenterId);
+            Collection<CenterGroupData> centerGroups = centerGroupReadPlatformService.retrieveAllByCenter(portfolioCenterId);
+
+            // generate list of availability for meetings
+            LocalTime meetingStartTime = LocalTime.parse(this.configurationDomainServiceJpa.getStartTimeForMeetings());
+            LocalTime meetingEndTime = LocalTime.parse(this.configurationDomainServiceJpa.getEndTimeForMeetings());
+            Long durationForMeetingsInMin = this.configurationDomainServiceJpa.retrieveDefaultDurationForMeetings();
+            Long timeBetweenMeetingsInMin = this.configurationDomainServiceJpa.retrieveTimeBetweenMeetings();
+            final Long meetingDurationInMin = durationForMeetingsInMin + timeBetweenMeetingsInMin;
+
+            LocalTime nextMeetingStartTime = meetingStartTime;
+            LocalTime nextMeetingEndTime = meetingStartTime.plusMinutes(meetingDurationInMin);
+            while (nextMeetingStartTime.isBefore(meetingEndTime)) {
+
+                LocalTime finalNextMeetingStartTime = nextMeetingStartTime;
+                CenterGroupData centerGroupData = centerGroups.stream().filter(
+                        centerGroupDataAvailable -> finalNextMeetingStartTime.equals(centerGroupDataAvailable.getMeetingStartTime()))
+                        .findAny().orElse(null);
+
+                if (centerGroupData == null) {
+                    // add the available time
+                    AvailableMeetingTimes availableTime = new AvailableMeetingTimes(nextMeetingStartTime, nextMeetingEndTime);
+                    availableMeetingTimes.add(availableTime);
+                }
+
+                // go to the next slot for meeting time
+                nextMeetingStartTime = nextMeetingEndTime;
+                nextMeetingEndTime = nextMeetingEndTime.plusMinutes(meetingDurationInMin);
+            }
+            centerAvailabilityForMeetings = new PortfolioCenterAvailabilityForMeetings(portfolioCenterData.getId(),
+                    portfolioCenterData.getName(), availableMeetingTimes);
+            return centerAvailabilityForMeetings;
+        } catch (final EmptyResultDataAccessException e) {
+            throw new PortfolioNotFoundException(portfolioCenterId, e);
+        }
+    }
+
+    @Override
+    public Collection<PortfolioCenterAvailabilityForMeetings> retrieveAvailableTimesByPortfolio(Long portfolioId) {
+        // get list of centers if any
+        Collection<PortfolioCenterData> centers = this.retrieveAllByPortfolio(portfolioId);
+        Collection<PortfolioCenterAvailabilityForMeetings> availabilityForMeetings = new ArrayList<>();
+
+        for (final PortfolioCenterData centerData : centers) {
+            PortfolioCenterAvailabilityForMeetings centerAvailabilityForMeetings = this
+                    .retrieveAvailableTimesByPortfolioCenter(centerData.getId());
+            availabilityForMeetings.add(centerAvailabilityForMeetings);
+        }
+
+        return availabilityForMeetings;
     }
 
     private static final class PortfolioCenterMapper implements RowMapper<PortfolioCenterData> {

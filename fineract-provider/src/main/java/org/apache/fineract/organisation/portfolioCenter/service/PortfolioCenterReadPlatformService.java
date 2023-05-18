@@ -21,6 +21,7 @@ package org.apache.fineract.organisation.portfolioCenter.service;
 import java.util.Collection;
 import java.util.List;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
+import org.apache.fineract.organisation.portfolioCenter.data.PortfolioCenterAvailabilityForMeetings;
 import org.apache.fineract.organisation.portfolioCenter.data.PortfolioCenterData;
 
 public interface PortfolioCenterReadPlatformService {
@@ -34,4 +35,8 @@ public interface PortfolioCenterReadPlatformService {
     List<EnumOptionData> retrieveCenterStatusOptions();
 
     Collection<PortfolioCenterData> retrieveAllByCurrentUser();
+
+    PortfolioCenterAvailabilityForMeetings retrieveAvailableTimesByPortfolioCenter(Long portfolioCenterId);
+
+    Collection<PortfolioCenterAvailabilityForMeetings> retrieveAvailableTimesByPortfolio(Long portfolioId);
 }

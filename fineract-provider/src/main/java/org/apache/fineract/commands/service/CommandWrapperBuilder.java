@@ -3694,4 +3694,13 @@ public class CommandWrapperBuilder {
         return this;
     }
 
+    public CommandWrapperBuilder transferCenterGroup(Long portfolioCenterId, Long centerGroupId) {
+        this.actionName = "TRANSFER";
+        this.entityName = "CENTER_GROUP";
+        this.entityId = centerGroupId;
+        this.subentityId = portfolioCenterId; // refers parent center
+        this.href = "/centers/" + portfolioCenterId + "/groups/" + centerGroupId + "/transfer";
+        return this;
+    }
+
 }

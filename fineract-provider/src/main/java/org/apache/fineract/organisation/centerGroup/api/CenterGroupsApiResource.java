@@ -132,11 +132,33 @@ public class CenterGroupsApiResource {
     @RequestBody(required = true, content = @Content(schema = @Schema(implementation = CenterGroupsApiResourceSwagger.PutCenterGroupsCenterGroupIdRequest.class)))
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = CenterGroupsApiResourceSwagger.PutCenterGroupsCenterGroupIdResponse.class))) })
-    public String updateAgency(@PathParam("portfolioCenterId") @Parameter(description = "portfolioCenterId") final Long portfolioCenterId,
+    public String updateCenterGroup(
+            @PathParam("portfolioCenterId") @Parameter(description = "portfolioCenterId") final Long portfolioCenterId,
             @PathParam("centerGroupId") @Parameter(description = "centerGroupId") final Long centerGroupId,
             @Parameter(hidden = true) final String apiRequestBodyAsJson) {
         final CommandWrapper commandRequest = new CommandWrapperBuilder() //
                 .updateCenterGroup(portfolioCenterId, centerGroupId) //
+                .withJson(apiRequestBodyAsJson) //
+                .build();
+
+        final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
+        return this.toApiJsonSerializer.serialize(result);
+    }
+
+    @PUT
+    @Path("{centerGroupId}/transfer")
+    @Consumes({ MediaType.APPLICATION_JSON })
+    @Produces({ MediaType.APPLICATION_JSON })
+    @Operation(summary = "Transfer a Center Group to another center", description = "")
+    @RequestBody(required = true, content = @Content(schema = @Schema(implementation = CenterGroupsApiResourceSwagger.PutCenterGroupsCenterGroupIdRequest.class)))
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = CenterGroupsApiResourceSwagger.PutCenterGroupsCenterGroupIdResponse.class))) })
+    public String transferCenterGroup(
+            @PathParam("portfolioCenterId") @Parameter(description = "portfolioCenterId") final Long portfolioCenterId,
+            @PathParam("centerGroupId") @Parameter(description = "centerGroupId") final Long centerGroupId,
+            @Parameter(hidden = true) final String apiRequestBodyAsJson) {
+        final CommandWrapper commandRequest = new CommandWrapperBuilder() //
+                .transferCenterGroup(portfolioCenterId, centerGroupId) //
                 .withJson(apiRequestBodyAsJson) //
                 .build();
 

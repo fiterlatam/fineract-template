@@ -16,18 +16,27 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.organisation.centerGroup.service;
+package org.apache.fineract.organisation.portfolioCenter.data;
 
-import org.apache.fineract.infrastructure.core.api.JsonCommand;
-import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
+import java.util.Collection;
 
-public interface CenterGroupWritePlatformService {
+/**
+ * Immutable data object availability for meeting.
+ */
+public final class PortfolioCenterAvailabilityForMeetings {
 
-    CommandProcessingResult createCenterGroup(Long portfolioCenterId, JsonCommand command);
+    private final Long portfolioCenterId;
 
-    CommandProcessingResult updateCenterGroup(Long centerGroupId, JsonCommand command);
+    private final String portfolioCenterName;
 
-    CommandProcessingResult deleteCenterGroup(Long centerGroupId);
+    // collection of available meeting times for this group
+    private final Collection<AvailableMeetingTimes> availableMeetingTimes;
 
-    CommandProcessingResult transferCenterGroup(Long centerGroupId, JsonCommand command);
+    public PortfolioCenterAvailabilityForMeetings(Long portfolioCenterId, String portfolioCenterName,
+            Collection<AvailableMeetingTimes> availableMeetingTimes) {
+        this.portfolioCenterId = portfolioCenterId;
+        this.portfolioCenterName = portfolioCenterName;
+        this.availableMeetingTimes = availableMeetingTimes;
+    }
+
 }

@@ -58,4 +58,5 @@
     <include file="parts/0041_group_feature.xml" relativeToChangelogFile="true"/>
     <include file="parts/0042_portfolio_center_feature_refactor.xml" relativeToChangelogFile="true"/>
     <include file="parts/0043_configuration_parameters_for_meetings.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0044_group_add_transfer_permision.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

@@ -134,6 +134,14 @@ public final class PortfolioCenterData {
                 parentOfficesOptions, appUsers, cityOptions, stateOptions, typeOptions, statusOptions, meetingDayOptions);
     }
 
+    public Long getId() {
+        return id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
     public void setCenterGroups(Collection<CenterGroupData> groups) {
         this.groups = groups;
     }
