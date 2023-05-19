@@ -221,7 +221,7 @@ public final class AgencyCommandFromApiJsonDeserializer {
         this.fromApiJsonHelper.checkForUnsupportedParameters(typeOfMap, json, this.supportedParameters);
 
         final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
-        final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors).resource("office");
+        final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors).resource("agency");
 
         final JsonElement element = this.fromApiJsonHelper.parse(json);
 
@@ -254,8 +254,7 @@ public final class AgencyCommandFromApiJsonDeserializer {
 
         if (this.fromApiJsonHelper.parameterExists(AgencySupportedParameters.COUNTRY_ID.getValue(), element)) {
             final Long countryId = this.fromApiJsonHelper.extractLongNamed(AgencySupportedParameters.COUNTRY_ID.getValue(), element);
-            baseDataValidator.reset().parameter(AgencySupportedParameters.COUNTRY_ID.getValue()).value(countryId).ignoreIfNull()
-                    .integerGreaterThanZero();
+            baseDataValidator.reset().parameter(AgencySupportedParameters.COUNTRY_ID.getValue()).value(countryId).ignoreIfNull();
         }
 
         if (this.fromApiJsonHelper.parameterExists(AgencySupportedParameters.ENTITY_CODE.getValue(), element)) {
