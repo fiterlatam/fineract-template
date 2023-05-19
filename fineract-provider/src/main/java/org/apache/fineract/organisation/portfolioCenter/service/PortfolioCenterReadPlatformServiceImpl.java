@@ -18,27 +18,36 @@
  */
 package org.apache.fineract.organisation.portfolioCenter.service;
 
+import static org.apache.fineract.organisation.portfolioCenter.service.PortfolioCenterEnumerations.statusOptionData;
+
 import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 import org.apache.fineract.infrastructure.codes.service.CodeValueReadPlatformService;
+import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainServiceJpa;
+import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
 import org.apache.fineract.infrastructure.core.service.database.DatabaseSpecificSQLGenerator;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.infrastructure.security.utils.ColumnValidator;
-import org.apache.fineract.organisation.monetary.service.CurrencyReadPlatformService;
+import org.apache.fineract.organisation.centerGroup.data.CenterGroupData;
+import org.apache.fineract.organisation.centerGroup.service.CenterGroupReadPlatformService;
 import org.apache.fineract.organisation.office.data.OfficeData;
 import org.apache.fineract.organisation.office.domain.OfficeHierarchyLevel;
 import org.apache.fineract.organisation.office.service.OfficeReadPlatformService;
 import org.apache.fineract.organisation.portfolio.exception.PortfolioNotFoundException;
+import org.apache.fineract.organisation.portfolioCenter.data.AvailableMeetingTimes;
+import org.apache.fineract.organisation.portfolioCenter.data.PortfolioCenterAvailabilityForMeetings;
 import org.apache.fineract.organisation.portfolioCenter.data.PortfolioCenterData;
-import org.apache.fineract.organisation.portfolioCenter.data.PortfolioCenterFrecuencyMeetingEnumData;
-import org.apache.fineract.organisation.portfolioCenter.data.PortfolioCenterStatusEnumData;
+import org.apache.fineract.organisation.portfolioCenter.domain.PortfolioCenterStatus;
 import org.apache.fineract.useradministration.data.AppUserData;
 import org.apache.fineract.useradministration.service.AppUserReadPlatformService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,25 +62,29 @@ public class PortfolioCenterReadPlatformServiceImpl implements PortfolioCenterRe
     private final JdbcTemplate jdbcTemplate;
     private final DatabaseSpecificSQLGenerator sqlGenerator;
     private final PlatformSecurityContext context;
-    private final CurrencyReadPlatformService currencyReadPlatformService;
     private final ColumnValidator columnValidator;
     private final CodeValueReadPlatformService codeValueReadPlatformService;
     private final OfficeReadPlatformService officeReadPlatformService;
     private final AppUserReadPlatformService appUserReadPlatformService;
+    private final CenterGroupReadPlatformService centerGroupReadPlatformService;
+    private final ConfigurationDomainServiceJpa configurationDomainServiceJpa;
 
     @Autowired
     public PortfolioCenterReadPlatformServiceImpl(final JdbcTemplate jdbcTemplate, final DatabaseSpecificSQLGenerator sqlGenerator,
-            final PlatformSecurityContext context, final CurrencyReadPlatformService currencyReadPlatformService,
-            final ColumnValidator columnValidator, final CodeValueReadPlatformService codeValueReadPlatformService,
-            final OfficeReadPlatformService officeReadPlatformService, final AppUserReadPlatformService appUserReadPlatformService) {
+            final PlatformSecurityContext context, final ColumnValidator columnValidator,
+            final CodeValueReadPlatformService codeValueReadPlatformService, final OfficeReadPlatformService officeReadPlatformService,
+            final AppUserReadPlatformService appUserReadPlatformService,
+            final CenterGroupReadPlatformService centerGroupReadPlatformService,
+            final ConfigurationDomainServiceJpa configurationDomainServiceJpa) {
         this.jdbcTemplate = jdbcTemplate;
         this.sqlGenerator = sqlGenerator;
         this.context = context;
-        this.currencyReadPlatformService = currencyReadPlatformService;
         this.columnValidator = columnValidator;
         this.codeValueReadPlatformService = codeValueReadPlatformService;
         this.officeReadPlatformService = officeReadPlatformService;
         this.appUserReadPlatformService = appUserReadPlatformService;
+        this.centerGroupReadPlatformService = centerGroupReadPlatformService;
+        this.configurationDomainServiceJpa = configurationDomainServiceJpa;
     }
 
     @Override
@@ -119,13 +132,102 @@ public class PortfolioCenterReadPlatformServiceImpl implements PortfolioCenterRe
         final List<CodeValueData> stateOptions = new ArrayList<>(
                 this.codeValueReadPlatformService.retrieveCodeValuesByCode(PortfolioCenterConstants.PORTFOLIO_CENTER_DEPARTMENTS));
 
-        final List<CodeValueData> countryOptions = new ArrayList<>(
-                this.codeValueReadPlatformService.retrieveCodeValuesByCode(PortfolioCenterConstants.PORTFOLIO_CENTER_COUNTRIES));
+        final List<CodeValueData> typeOptions = new ArrayList<>(
+                this.codeValueReadPlatformService.retrieveCodeValuesByCode(PortfolioCenterConstants.PORTFOLIO_CENTER_TYPE));
 
-        final List<CodeValueData> labourDayOptions = new ArrayList<>(
+        final Collection<EnumOptionData> statusOptions = retrieveCenterStatusOptions();
+
+        final List<CodeValueData> meetingDayOptions = new ArrayList<>(
                 this.codeValueReadPlatformService.retrieveCodeValuesByCode(PortfolioCenterConstants.MEETING_DAYS));
 
-        return PortfolioCenterData.template(parentOfficesOptions, appUsers, cityOptions, stateOptions, countryOptions, labourDayOptions);
+        return PortfolioCenterData.template(parentOfficesOptions, appUsers, cityOptions, stateOptions, typeOptions, statusOptions,
+                meetingDayOptions);
+    }
+
+    @Override
+    public List<EnumOptionData> retrieveCenterStatusOptions() {
+        final List<EnumOptionData> statusOptions = Arrays.asList(statusOptionData(PortfolioCenterStatus.ACTIVE),
+                statusOptionData(PortfolioCenterStatus.INACTIVE));
+        return statusOptions;
+    }
+
+    @Override
+    public Collection<PortfolioCenterData> retrieveAllByCurrentUser() {
+        this.context.authenticatedUser();
+
+        final List<Long> officeIds = new ArrayList<>();
+
+        final Collection<OfficeData> parentOfficesOptions = officeReadPlatformService
+                .retrieveOfficesByHierarchyLevel(Long.valueOf(OfficeHierarchyLevel.AGENCIA.getValue()));
+        parentOfficesOptions.forEach(parentOffice -> officeIds.add(parentOffice.getId()));
+
+        String inSql = String.join(",", Collections.nCopies(officeIds.size(), "?"));
+
+        PortfolioCenterMapper portfolioCenterMapper = new PortfolioCenterMapper();
+        String schemaSql = "select " + portfolioCenterMapper.schema();
+        schemaSql += "where p.linked_office_id in (%s)";
+
+        return this.jdbcTemplate.query(String.format(schemaSql, inSql), portfolioCenterMapper, officeIds.toArray());
+    }
+
+    @Override
+    public PortfolioCenterAvailabilityForMeetings retrieveAvailableTimesByPortfolioCenter(Long portfolioCenterId) {
+        try {
+            this.context.authenticatedUser();
+
+            PortfolioCenterAvailabilityForMeetings centerAvailabilityForMeetings = null;
+            Collection<AvailableMeetingTimes> availableMeetingTimes = new ArrayList<>();
+
+            PortfolioCenterData portfolioCenterData = this.findById(portfolioCenterId);
+            Collection<CenterGroupData> centerGroups = centerGroupReadPlatformService.retrieveAllByCenter(portfolioCenterId);
+
+            // generate list of availability for meetings
+            LocalTime meetingStartTime = LocalTime.parse(this.configurationDomainServiceJpa.getStartTimeForMeetings());
+            LocalTime meetingEndTime = LocalTime.parse(this.configurationDomainServiceJpa.getEndTimeForMeetings());
+            Long durationForMeetingsInMin = this.configurationDomainServiceJpa.retrieveDefaultDurationForMeetings();
+            Long timeBetweenMeetingsInMin = this.configurationDomainServiceJpa.retrieveTimeBetweenMeetings();
+            final Long meetingDurationInMin = durationForMeetingsInMin + timeBetweenMeetingsInMin;
+
+            LocalTime nextMeetingStartTime = meetingStartTime;
+            LocalTime nextMeetingEndTime = meetingStartTime.plusMinutes(meetingDurationInMin);
+            while (nextMeetingStartTime.isBefore(meetingEndTime)) {
+
+                LocalTime finalNextMeetingStartTime = nextMeetingStartTime;
+                CenterGroupData centerGroupData = centerGroups.stream().filter(
+                        centerGroupDataAvailable -> finalNextMeetingStartTime.equals(centerGroupDataAvailable.getMeetingStartTime()))
+                        .findAny().orElse(null);
+
+                if (centerGroupData == null) {
+                    // add the available time
+                    AvailableMeetingTimes availableTime = new AvailableMeetingTimes(nextMeetingStartTime, nextMeetingEndTime);
+                    availableMeetingTimes.add(availableTime);
+                }
+
+                // go to the next slot for meeting time
+                nextMeetingStartTime = nextMeetingEndTime;
+                nextMeetingEndTime = nextMeetingEndTime.plusMinutes(meetingDurationInMin);
+            }
+            centerAvailabilityForMeetings = new PortfolioCenterAvailabilityForMeetings(portfolioCenterData.getId(),
+                    portfolioCenterData.getName(), availableMeetingTimes);
+            return centerAvailabilityForMeetings;
+        } catch (final EmptyResultDataAccessException e) {
+            throw new PortfolioNotFoundException(portfolioCenterId, e);
+        }
+    }
+
+    @Override
+    public Collection<PortfolioCenterAvailabilityForMeetings> retrieveAvailableTimesByPortfolio(Long portfolioId) {
+        // get list of centers if any
+        Collection<PortfolioCenterData> centers = this.retrieveAllByPortfolio(portfolioId);
+        Collection<PortfolioCenterAvailabilityForMeetings> availabilityForMeetings = new ArrayList<>();
+
+        for (final PortfolioCenterData centerData : centers) {
+            PortfolioCenterAvailabilityForMeetings centerAvailabilityForMeetings = this
+                    .retrieveAvailableTimesByPortfolioCenter(centerData.getId());
+            availabilityForMeetings.add(centerAvailabilityForMeetings);
+        }
+
+        return availabilityForMeetings;
     }
 
     private static final class PortfolioCenterMapper implements RowMapper<PortfolioCenterData> {
@@ -135,21 +237,20 @@ public class PortfolioCenterReadPlatformServiceImpl implements PortfolioCenterRe
         public PortfolioCenterMapper() {
             final StringBuilder sqlBuilder = new StringBuilder(300);
             sqlBuilder.append("pc.id as id, pc.name as name, substring(pc.name, 1, 4) as centerCodeName, pc.portfolio_id as portfolioId, ");
-            sqlBuilder.append("p.name as portfolioName, pc.address as address, pc.legacy_center_number as legacyCenterNumber, ");
-            sqlBuilder.append("pc.address2 as address2, pc.city_id as cityId, cvCity.code_value as cityValue, ");
+            sqlBuilder.append("p.name as portfolioName, pc.legacy_center_number as legacyCenterNumber, ");
+            sqlBuilder.append("pc.city_id as cityId, cvCity.code_value as cityValue, ");
             sqlBuilder.append("pc.state_province_id as stateId, cvState.code_value as stateValue, ");
-            sqlBuilder.append("pc.country_id as countryId, cvCountry.code_value as countryValue, ");
-            sqlBuilder.append("pc.zone as zone, pc.center_status as status, pc.distance_from_agency as distance, ");
-            sqlBuilder.append("pc.location_id as locationId, cvLocation.code_value as locationValue, ");
-            sqlBuilder.append("pc.facilitator_effective_date as effectiveDate, pc.first_meeting_date as firstMeetingDate, ");
-            sqlBuilder.append("pc.frequency_meeting as frequencyMeeting, pc.meeting_start_date as meetingStart, ");
-            sqlBuilder.append("pc.meeting_end_date as meetingEnd, pc.next_meeting_date as nextMeetingDate, pc.meeting_day as meetingDay ");
+            sqlBuilder.append("pc.center_status as status, pc.distance_from_agency as distance, ");
+            sqlBuilder.append("pc.type_id as typeId, cvType.code_value as typeValue, pc.created_date as createdDate, ");
+            sqlBuilder.append("pc.meeting_start_date as meetingStart, pc.meeting_end_date as meetingEnd, ");
+            sqlBuilder.append("pc.meeting_day as meetingDay, cvMeetingDay.code_value as meetingDayValue, ");
+            sqlBuilder.append("pc.meeting_start_time as meetingStartTime, pc.meeting_end_time as meetingEndTime ");
             sqlBuilder.append("from m_portfolio_center pc ");
             sqlBuilder.append("left join m_portfolio AS p ON p.id = pc.portfolio_id ");
             sqlBuilder.append("left join m_code_value cvCity on pc.city_id = cvCity.id ");
             sqlBuilder.append("left join m_code_value cvState on pc.state_province_id = cvState.id ");
-            sqlBuilder.append("left join m_code_value cvCountry on pc.country_id = cvCountry.id ");
-            sqlBuilder.append("left join m_code_value cvLocation on pc.location_id = cvLocation.id ");
+            sqlBuilder.append("left join m_code_value cvType on pc.type_id = cvType.id ");
+            sqlBuilder.append("left join m_code_value cvMeetingDay on pc.meeting_day = cvMeetingDay.id ");
             this.schema = sqlBuilder.toString();
         }
 
@@ -163,9 +264,6 @@ public class PortfolioCenterReadPlatformServiceImpl implements PortfolioCenterRe
             final Long portfolioId = rs.getLong("portfolioId");
             final String portfolioName = rs.getString("portfolioName");
 
-            final String address = rs.getString("address");
-            final String address2 = rs.getString("address2");
-
             final long cityId = rs.getLong("cityId");
             final String cityValue = rs.getString("cityValue");
             final CodeValueData city = CodeValueData.instance(cityId, cityValue);
@@ -174,40 +272,31 @@ public class PortfolioCenterReadPlatformServiceImpl implements PortfolioCenterRe
             final String stateValue = rs.getString("stateValue");
             final CodeValueData state = CodeValueData.instance(stateId, stateValue);
 
-            final long countryId = rs.getLong("countryId");
-            final String countryValue = rs.getString("countryValue");
-            final CodeValueData country = CodeValueData.instance(countryId, countryValue);
-
-            final Integer zone = rs.getInt("zone");
             final Integer distance = rs.getInt("distance");
             final Integer statusId = rs.getInt("status");
 
-            PortfolioCenterStatusEnumData statusEnum = null;
+            final LocalDate createdDate = JdbcSupport.getLocalDate(rs, "createdDate");
+
+            EnumOptionData statusEnum = null;
             if (statusId != null) {
-                statusEnum = PortfolioCenterEnumerations.status(statusId);
+                statusEnum = PortfolioCenterEnumerations.statusOptionData(statusId);
             }
 
-            final long locationId = rs.getLong("locationId");
-            final String locationValue = rs.getString("locationValue");
-            final CodeValueData location = CodeValueData.instance(locationId, locationValue);
-
-            final LocalDate effectiveDate = JdbcSupport.getLocalDate(rs, "effectiveDate");
-            final LocalDate firstMeetingDate = JdbcSupport.getLocalDate(rs, "firstMeetingDate");
-
-            final Integer frequencyMeetingId = rs.getInt("frequencyMeeting");
-            PortfolioCenterFrecuencyMeetingEnumData frequencyMeeting = null;
-            if (frequencyMeetingId != null) {
-                frequencyMeeting = PortfolioCenterEnumerations.type(frequencyMeetingId);
-            }
+            final long typeId = rs.getLong("typeId");
+            final String typeValue = rs.getString("typeValue");
+            final CodeValueData type = CodeValueData.instance(typeId, typeValue);
 
             final int meetingStart = rs.getInt("meetingStart");
             final int meetingEnd = rs.getInt("meetingEnd");
-            final LocalDate nextMeetingDate = JdbcSupport.getLocalDate(rs, "nextMeetingDate");
             final int meetingDay = rs.getInt("meetingDay");
+            final String meetingDayValue = rs.getString("meetingDayValue");
 
-            return PortfolioCenterData.instance(id, name, portfolioId, portfolioName, legacyCenterNumber, address, address2, city, state,
-                    country, zone, location, statusEnum, distance, effectiveDate, firstMeetingDate, frequencyMeeting, meetingStart,
-                    meetingEnd, nextMeetingDate, meetingDay);
+            final LocalTime meetingStartTime = JdbcSupport.getLocalTime(rs, "meetingStartTime");
+            final LocalTime meetingEndTime = JdbcSupport.getLocalTime(rs, "meetingEndTime");
+
+            return PortfolioCenterData.instance(id, name, portfolioId, portfolioName, legacyCenterNumber, city, state, type, statusEnum,
+                    distance, createdDate, meetingStart, meetingEnd, meetingDay, meetingStartTime.toString(), meetingEndTime.toString(),
+                    meetingDayValue);
         }
 
         public String schema() {

@@ -18,21 +18,61 @@
  */
 package org.apache.fineract.organisation.portfolioCenter.service;
 
+import java.util.HashSet;
+import java.util.Set;
+
 public class PortfolioCenterConstants {
 
     private PortfolioCenterConstants() {
 
     }
 
-    public static final String PORTFOLIO_CENTER_RESOURCE_NAME = "portfolioCenter";
+    public static final String PORTFOLIO_CENTER_RESOURCE_NAME = "portfolio_center";
 
     // template
     public static final String MEETING_DAYS = "DiaReunion";
+
+    public static final String PORTFOLIO_CENTER_TYPE = "TipoCentro";
 
     public static final String PORTFOLIO_CENTER_DEPARTMENTS = "Ldepartamento";
 
     public static final String PORTFOLIO_CENTER_MUNICIPALITIES = "Lmunicipio";
 
-    public static final String PORTFOLIO_CENTER_COUNTRIES = "Lpaises";
+    public enum PortfolioCenterSupportedParameters {
+
+        PORTFOLIO_CENTER_ID("id"), NAME("name"), PORTFOLIO_ID("portfolioId"), PORTFOLIO_NAME("portfolioName"), OFFICE_PARENT_ID(
+                "parentId"), RESPONSIBLE_USER_ID("responsibleUserId"), CITY_ID("cityId"), STATE_ID("stateId"), CENTER_TYPE(
+                        "centerTypeId"), LEGACY_CENTER_NUMBER("legacyCenterNumber"), DISTANCE("distance"), CREATED_DATE(
+                                "createdDate"), STATUS_ID("statusId"), MEETING_START("meetingStart"), MEETING_END(
+                                        "meetingEnd"), MEETING_DAY("meetingDay"), MEETING_START_TIME("meetingStartTime"), MEETING_END_TIME(
+                                                "meetingEndTime"), LOCALE("locale"), DATEFORMAT("dateFormat");
+
+        private final String value;
+
+        PortfolioCenterSupportedParameters(final String value) {
+            this.value = value;
+        }
+
+        private static final Set<String> values = new HashSet<>();
+
+        static {
+            for (final PortfolioCenterSupportedParameters param : PortfolioCenterSupportedParameters.values()) {
+                values.add(param.value);
+            }
+        }
+
+        public static Set<String> getAllValues() {
+            return values;
+        }
+
+        @Override
+        public String toString() {
+            return name().replaceAll("_", " ");
+        }
+
+        public String getValue() {
+            return this.value;
+        }
+    }
 
 }

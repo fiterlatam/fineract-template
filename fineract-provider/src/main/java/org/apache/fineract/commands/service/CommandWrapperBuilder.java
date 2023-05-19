@@ -3658,4 +3658,49 @@ public class CommandWrapperBuilder {
         this.href = "/portfolios/" + portfolioId;
         return this;
     }
+
+    public CommandWrapperBuilder updatePortfolioCenter(Long portfolioId, Long portfolioCenterId) {
+        this.actionName = "UPDATE";
+        this.entityName = "PORTFOLIO_CENTER";
+        this.entityId = portfolioCenterId;
+        this.subentityId = portfolioId; // refers parent portfolio
+        this.href = "/portfolios/" + portfolioId + "/centers/" + portfolioCenterId;
+        return this;
+    }
+
+    public CommandWrapperBuilder createCenterGroup(final long portfolioCenterId) {
+        this.actionName = "CREATE";
+        this.entityName = "CENTER_GROUP";
+        this.entityId = portfolioCenterId;
+        this.href = "/centers/" + portfolioCenterId + "/groups/";
+        return this;
+    }
+
+    public CommandWrapperBuilder updateCenterGroup(Long portfolioCenterId, Long centerGroupId) {
+        this.actionName = "UPDATE";
+        this.entityName = "CENTER_GROUP";
+        this.entityId = centerGroupId;
+        this.subentityId = portfolioCenterId; // refers parent center
+        this.href = "/centers/" + portfolioCenterId + "/groups/" + centerGroupId;
+        return this;
+    }
+
+    public CommandWrapperBuilder deleteCenterGroup(Long portfolioCenterId, Long centerGroupId) {
+        this.actionName = "DELETE";
+        this.entityName = "CENTER_GROUP";
+        this.entityId = centerGroupId;
+        this.subentityId = portfolioCenterId; // refers parent center
+        this.href = "/centers/" + portfolioCenterId + "/groups/" + centerGroupId;
+        return this;
+    }
+
+    public CommandWrapperBuilder transferCenterGroup(Long portfolioCenterId, Long centerGroupId) {
+        this.actionName = "TRANSFER";
+        this.entityName = "CENTER_GROUP";
+        this.entityId = centerGroupId;
+        this.subentityId = portfolioCenterId; // refers parent center
+        this.href = "/centers/" + portfolioCenterId + "/groups/" + centerGroupId + "/transfer";
+        return this;
+    }
+
 }

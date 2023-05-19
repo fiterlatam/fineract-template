@@ -40,4 +40,5 @@ public interface OfficeReadPlatformService {
     OfficeTransactionData retrieveNewOfficeTransactionDetails();
 
     Collection<OfficeData> retrieveOfficesByHierarchyLevel(Long hierarchyLevel);
+
 }
