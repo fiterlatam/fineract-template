@@ -244,7 +244,8 @@ public class PortfolioCenterReadPlatformServiceImpl implements PortfolioCenterRe
             sqlBuilder.append("pc.type_id as typeId, cvType.code_value as typeValue, pc.created_date as createdDate, ");
             sqlBuilder.append("pc.meeting_start_date as meetingStart, pc.meeting_end_date as meetingEnd, ");
             sqlBuilder.append("pc.meeting_day as meetingDay, cvMeetingDay.code_value as meetingDayValue, ");
-            sqlBuilder.append("pc.meeting_start_time as meetingStartTime, pc.meeting_end_time as meetingEndTime ");
+            sqlBuilder.append("pc.meeting_start_time as meetingStartTime, pc.meeting_end_time as meetingEndTime, ");
+            sqlBuilder.append("pc.reference_point as referencePoint ");
             sqlBuilder.append("from m_portfolio_center pc ");
             sqlBuilder.append("left join m_portfolio AS p ON p.id = pc.portfolio_id ");
             sqlBuilder.append("left join m_code_value cvCity on pc.city_id = cvCity.id ");
@@ -294,9 +295,11 @@ public class PortfolioCenterReadPlatformServiceImpl implements PortfolioCenterRe
             final LocalTime meetingStartTime = JdbcSupport.getLocalTime(rs, "meetingStartTime");
             final LocalTime meetingEndTime = JdbcSupport.getLocalTime(rs, "meetingEndTime");
 
+            final String referencePoint = rs.getString("referencePoint");
+
             return PortfolioCenterData.instance(id, name, portfolioId, portfolioName, legacyCenterNumber, city, state, type, statusEnum,
                     distance, createdDate, meetingStart, meetingEnd, meetingDay, meetingStartTime.toString(), meetingEndTime.toString(),
-                    meetingDayValue);
+                    meetingDayValue, referencePoint);
         }
 
         public String schema() {

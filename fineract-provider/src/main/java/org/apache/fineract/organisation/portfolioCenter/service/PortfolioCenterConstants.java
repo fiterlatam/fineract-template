@@ -45,7 +45,7 @@ public class PortfolioCenterConstants {
                         "centerTypeId"), LEGACY_CENTER_NUMBER("legacyCenterNumber"), DISTANCE("distance"), CREATED_DATE(
                                 "createdDate"), STATUS_ID("statusId"), MEETING_START("meetingStart"), MEETING_END(
                                         "meetingEnd"), MEETING_DAY("meetingDay"), MEETING_START_TIME("meetingStartTime"), MEETING_END_TIME(
-                                                "meetingEndTime"), LOCALE("locale"), DATEFORMAT("dateFormat");
+                                                "meetingEndTime"), REFERENCE_POINT("referencePoint"), LOCALE("locale"), DATEFORMAT("dateFormat");
 
         private final String value;
 
