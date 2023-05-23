@@ -67,6 +67,8 @@ public final class PortfolioCenterData {
 
     private final String meetingDayName;
 
+    private final String referencePoint;
+
     @JsonDeserialize(using = LocalTimeDeserializer.class)
     @JsonSerialize(using = LocalTimeSerializer.class)
     private final String meetingStartTime;
@@ -89,7 +91,7 @@ public final class PortfolioCenterData {
     public PortfolioCenterData(Long id, String name, Long portfolioId, String portfolioName, BigDecimal legacyCenterNumber,
             CodeValueData city, CodeValueData state, CodeValueData type, EnumOptionData status, Integer distance, LocalDate createdDate,
             Integer meetingStart, Integer meetingEnd, Integer meetingDay, String meetingStartTime, String meetingEndTime,
-            String meetingDayName, Collection<OfficeData> parentOfficesOptions, Collection<AppUserData> responsibleUserOptions,
+            String meetingDayName, String referencePoint, Collection<OfficeData> parentOfficesOptions, Collection<AppUserData> responsibleUserOptions,
             Collection<CodeValueData> cityOptions, Collection<CodeValueData> stateOptions, Collection<CodeValueData> typeOptions,
             Collection<EnumOptionData> statusOptions, Collection<CodeValueData> meetingDayOptions) {
         this.id = id;
@@ -109,6 +111,7 @@ public final class PortfolioCenterData {
         this.meetingDayName = meetingDayName;
         this.meetingStartTime = meetingStartTime;
         this.meetingEndTime = meetingEndTime;
+        this.referencePoint = referencePoint;
         this.parentOfficesOptions = parentOfficesOptions;
         this.responsibleUserOptions = responsibleUserOptions;
         this.cityOptions = cityOptions;
@@ -121,9 +124,9 @@ public final class PortfolioCenterData {
     public static PortfolioCenterData instance(Long id, String name, Long portfolioId, String portfolioName, BigDecimal legacyCenterNumber,
             CodeValueData city, CodeValueData state, CodeValueData type, EnumOptionData status, Integer distance, LocalDate createdDate,
             Integer meetingStart, Integer meetingEnd, Integer meetingDay, String meetingStartTime, String meetingEndTime,
-            String meetingDayName) {
+            String meetingDayName, String referencePoint) {
         return new PortfolioCenterData(id, name, portfolioId, portfolioName, legacyCenterNumber, city, state, type, status, distance,
-                createdDate, meetingStart, meetingEnd, meetingDay, meetingStartTime, meetingEndTime, meetingDayName, null, null, null, null,
+                createdDate, meetingStart, meetingEnd, meetingDay, meetingStartTime, meetingEndTime, meetingDayName, referencePoint, null, null, null, null,
                 null, null, null);
     }
 
@@ -131,7 +134,7 @@ public final class PortfolioCenterData {
             Collection<CodeValueData> cityOptions, Collection<CodeValueData> stateOptions, Collection<CodeValueData> typeOptions,
             Collection<EnumOptionData> statusOptions, Collection<CodeValueData> meetingDayOptions) {
         return new PortfolioCenterData(null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null,
-                parentOfficesOptions, appUsers, cityOptions, stateOptions, typeOptions, statusOptions, meetingDayOptions);
+                null, parentOfficesOptions, appUsers, cityOptions, stateOptions, typeOptions, statusOptions, meetingDayOptions);
     }
 
     public Long getId() {
