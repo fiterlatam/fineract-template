@@ -31,4 +31,13 @@
                 splitStatements="true"
                 stripComments="true"/>
     </changeSet>
+    <!--Remove special permissions for role Gerente y Regional-->
+    <changeSet author="fineract" id="2">
+        <sqlFile
+                encoding="utf8"
+                path="db/changelog/tenant/commands/remove_special_permissions_for_roles_gerente_and_regional.sql"
+                relativeToChangelogFile="false"
+                splitStatements="true"
+                stripComments="true"/>
+    </changeSet>
 </databaseChangeLog>
