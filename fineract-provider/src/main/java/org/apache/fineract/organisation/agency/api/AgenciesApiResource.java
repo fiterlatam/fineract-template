@@ -134,6 +134,25 @@ public class AgenciesApiResource {
         return this.toApiJsonSerializer.serialize(result);
     }
 
+    @PUT
+    @Path("{agencyId}/transfer")
+    @Consumes({ MediaType.APPLICATION_JSON })
+    @Produces({ MediaType.APPLICATION_JSON })
+    @Operation(summary = "Transfer an agency to another region", description = "")
+    @RequestBody(required = true, content = @Content(schema = @Schema(implementation = AgenciesApiResourceSwagger.PutAgenciesAgencyIdRequest.class)))
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = AgenciesApiResourceSwagger.PutAgencyAgencyIdResponse.class))) })
+    public String transferAgency(@PathParam("agencyId") @Parameter(description = "agencyId") final Long agencyId,
+            @Parameter(hidden = true) final String apiRequestBodyAsJson) {
+        final CommandWrapper commandRequest = new CommandWrapperBuilder() //
+                .transferAgency(agencyId) //
+                .withJson(apiRequestBodyAsJson) //
+                .build();
+
+        final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
+        return this.toApiJsonSerializer.serialize(result);
+    }
+
     @DELETE
     @Path("{agencyId}")
     @Consumes({ MediaType.APPLICATION_JSON })

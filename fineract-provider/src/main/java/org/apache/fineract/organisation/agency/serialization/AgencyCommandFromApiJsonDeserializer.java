@@ -375,4 +375,26 @@ public final class AgencyCommandFromApiJsonDeserializer {
                     dataValidationErrors);
         }
     }
+
+    public void validateForTransfer(String json) {
+        if (StringUtils.isBlank(json)) {
+            throw new InvalidJsonException();
+        }
+
+        final Type typeOfMap = new TypeToken<Map<String, Object>>() {}.getType();
+        this.fromApiJsonHelper.checkForUnsupportedParameters(typeOfMap, json, this.supportedParameters);
+
+        final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
+        final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors)
+                .resource(AgencyConstants.AGENCY_RESOURCE_NAME);
+
+        final JsonElement element = this.fromApiJsonHelper.parse(json);
+
+        final Long destinationRegionId = this.fromApiJsonHelper.extractLongNamed(AgencySupportedParameters.DESTINATION_REGION_ID.getValue(),
+                element);
+        baseDataValidator.reset().parameter(AgencySupportedParameters.DESTINATION_REGION_ID.getValue()).value(destinationRegionId).notNull()
+                .integerGreaterThanZero();
+
+        throwExceptionIfValidationWarningsExist(dataValidationErrors);
+    }
 }

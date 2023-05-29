@@ -3603,6 +3603,14 @@ public class CommandWrapperBuilder {
         return this;
     }
 
+    public CommandWrapperBuilder transferAgency(final Long agencyId) {
+        this.actionName = "TRANSFER";
+        this.entityName = "AGENCY";
+        this.entityId = agencyId;
+        this.href = "/agencies/" + agencyId;
+        return this;
+    }
+
     public CommandWrapperBuilder deleteAgency(final Long agencyId) {
         this.actionName = "DELETE";
         this.entityName = "AGENCY";

@@ -28,4 +28,6 @@ public interface AgencyWritePlatformService {
     CommandProcessingResult updateAgency(Long agencyId, JsonCommand command);
 
     CommandProcessingResult deleteAgency(Long agencyId);
+
+    CommandProcessingResult transferAgency(Long agencyId, JsonCommand command);
 }
