@@ -47,4 +47,10 @@
             <column name="permission_id" valueNumeric="922"/>
         </insert>
     </changeSet>
+    <!--Remove permission for role Regional-->
+    <changeSet author="fineract" id="4">
+        <delete tableName="m_role_permission">
+            <where>role_id='4' AND permission_id='922'</where>
+        </delete>
+    </changeSet>
 </databaseChangeLog>
