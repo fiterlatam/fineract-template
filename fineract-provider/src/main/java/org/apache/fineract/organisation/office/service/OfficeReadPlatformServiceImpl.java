@@ -287,6 +287,17 @@ public class OfficeReadPlatformServiceImpl implements OfficeReadPlatformService 
         return this.jdbcTemplate.query(sql, rm, new Object[] { hierarchySearchString }); //
     }
 
+    @Override
+    public Collection<OfficeData> retrieveOfficesByParent(Long parentOfficeId) {
+        this.context.authenticatedUser();
+
+        // return only the immediate children for the parent office provided as parameter
+        final OfficeDropdownMapper rm = new OfficeDropdownMapper();
+        final String sql = "select " + rm.schema() + "where o.parent_id = ?";
+
+        return this.jdbcTemplate.query(sql, rm, new Object[] { parentOfficeId });
+    }
+
     public PlatformSecurityContext getContext() {
         return this.context;
     }
