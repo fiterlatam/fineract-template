@@ -28,6 +28,9 @@ public final class AppUserConstants {
     public static final String IS_SELF_SERVICE_USER = "isSelfServiceUser";
     public static final String CLIENTS = "clients";
 
+    // user roles for FB
+    public static final String FACILITATOR_ROLE_START_WITH = "Facilitador";
+
     // TODO: Remove hard coding of system user name and make this a configurable parameter
     public static final String SYSTEM_USER_NAME = "system";
 }

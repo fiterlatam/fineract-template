@@ -18,6 +18,8 @@
  */
 package org.apache.fineract.organisation.portfolio.service;
 
+import static org.apache.fineract.useradministration.service.AppUserConstants.FACILITATOR_ROLE_START_WITH;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -31,8 +33,11 @@ import org.apache.fineract.organisation.office.data.OfficeData;
 import org.apache.fineract.organisation.office.domain.OfficeHierarchyLevel;
 import org.apache.fineract.organisation.office.service.OfficeReadPlatformService;
 import org.apache.fineract.organisation.portfolio.data.PortfolioData;
+import org.apache.fineract.organisation.portfolio.data.PortfolioPlanningData;
 import org.apache.fineract.organisation.portfolio.exception.PortfolioNotFoundException;
 import org.apache.fineract.useradministration.data.AppUserData;
+import org.apache.fineract.useradministration.domain.AppUser;
+import org.apache.fineract.useradministration.domain.Role;
 import org.apache.fineract.useradministration.service.AppUserReadPlatformService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
@@ -84,14 +89,16 @@ public class PortfolioReadPlatformServiceImpl implements PortfolioReadPlatformSe
         final Collection<OfficeData> parentOfficesOptions = officeReadPlatformService
                 .retrieveOfficesByHierarchyLevel(Long.valueOf(OfficeHierarchyLevel.SUPERVISION.getValue()));
 
-        final List<AppUserData> appUsers = new ArrayList<>(this.appUserReadPlatformService.retrieveAllUsers());
+        // retrieve list of users under agency hierarchy level as this is the user role to access these feature
+        final List<AppUserData> appUsers = new ArrayList<>(
+                this.appUserReadPlatformService.retrieveUsersUnderHierarchy(Long.valueOf(OfficeHierarchyLevel.AGENCIA.getValue())));
 
         return PortfolioData.template(parentOfficesOptions, appUsers);
     }
 
     @Override
     public Collection<PortfolioData> retrieveAllByUser() {
-        this.context.authenticatedUser();
+        AppUser currentUser = this.context.authenticatedUser();
 
         final List<Object> officeIds = new ArrayList<>();
         final Collection<OfficeData> parentOfficesOptions = officeReadPlatformService
@@ -101,9 +108,30 @@ public class PortfolioReadPlatformServiceImpl implements PortfolioReadPlatformSe
         String inSql = String.join(",", Collections.nCopies(officeIds.size(), "?"));
         PortfolioMapper portfolioMapper = new PortfolioMapper();
         String schemaSql = "select " + portfolioMapper.schema();
-        schemaSql += "where p.linked_office_id in (%s)";
 
-        return this.jdbcTemplate.query(String.format(schemaSql, inSql), portfolioMapper, officeIds.toArray());
+        // TODO: this must be improved by adding types in Roles
+        // check if the user has a role as FACILITATOR
+        Role facilitatorRole = currentUser.getRoles().stream().filter(x -> x.getName().startsWith(FACILITATOR_ROLE_START_WITH)) //
+                .findFirst().orElse(null);
+
+        if (facilitatorRole != null) {
+            schemaSql += "where p.responsible_user_id = ?";
+            return this.jdbcTemplate.query(String.format(schemaSql, inSql), portfolioMapper, currentUser.getId());
+        } else {
+            schemaSql += "where p.linked_office_id in (%s)";
+            return this.jdbcTemplate.query(String.format(schemaSql, inSql), portfolioMapper, officeIds.toArray());
+        }
+    }
+
+    @Override
+    public PortfolioPlanningData retrievePlanningByPortfolio(Long portfolioId) {
+        AppUser currentUser = this.context.authenticatedUser();
+
+        PortfolioPlanningMapper portfolioPlanningMapper = new PortfolioPlanningMapper();
+        String schemaSql = "select " + portfolioPlanningMapper.schema();
+        schemaSql += "where p.id = ? and p.responsible_user_id = ?";
+
+        return this.jdbcTemplate.queryForObject(schemaSql, portfolioPlanningMapper, new Object[] { portfolioId, currentUser.getId() });
     }
 
     private static final class PortfolioMapper implements RowMapper<PortfolioData> {
@@ -132,6 +160,45 @@ public class PortfolioReadPlatformServiceImpl implements PortfolioReadPlatformSe
             final long responsibleUserId = rs.getLong("responsibleUserId");
 
             return PortfolioData.instance(id, name, parentId, parentName, responsibleUserId);
+        }
+
+        public String schema() {
+            return this.schema;
+        }
+
+    }
+
+    private static final class PortfolioPlanningMapper implements RowMapper<PortfolioPlanningData> {
+
+        private final String schema;
+
+        public PortfolioPlanningMapper() {
+            final StringBuilder sqlBuilder = new StringBuilder(300);
+            sqlBuilder.append("p.id as id, p.name as name, ");
+            sqlBuilder.append(
+                    "p.linked_office_id as parentSupervisionId, supervision.name as parentSupervisionName, agency.id as agencyId, agency.name as agencyName, ");
+            sqlBuilder.append("p.responsible_user_id as responsibleUserId, ru.firstname as userFirstName, ru.lastname as userLastName ");
+            sqlBuilder.append("from m_portfolio p left join m_office AS supervision ON supervision.id = p.linked_office_id ");
+            sqlBuilder.append("left join m_appuser ru on ru.id = p.responsible_user_id ");
+            sqlBuilder.append("left join fineract_default.m_office AS agency ON agency.id = supervision.parent_id ");
+            this.schema = sqlBuilder.toString();
+        }
+
+        @Override
+        public PortfolioPlanningData mapRow(final ResultSet rs, @SuppressWarnings("unused") final int rowNum) throws SQLException {
+
+            final Long id = rs.getLong("id");
+            final String name = rs.getString("name");
+
+            final long parentId = rs.getLong("parentSupervisionId");
+            final String parentName = rs.getString("parentSupervisionName");
+
+            final long agencyId = rs.getLong("agencyId");
+            final String agencyName = rs.getString("agencyName");
+
+            final long responsibleUserId = rs.getLong("responsibleUserId");
+
+            return PortfolioPlanningData.instance(id, name, parentId, parentName, responsibleUserId, agencyId, agencyName);
         }
 
         public String schema() {

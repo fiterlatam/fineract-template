@@ -32,4 +32,6 @@ public interface AppUserReadPlatformService {
     AppUserData retrieveUser(Long userId);
 
     boolean isUsernameExist(String username);
+
+    Collection<AppUserData> retrieveUsersUnderHierarchy(Long hierarchyLevel);
 }
