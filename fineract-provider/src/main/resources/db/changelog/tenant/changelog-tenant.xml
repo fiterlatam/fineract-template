@@ -62,4 +62,5 @@
     <include file="parts/0045_portfolio_center_add_new_column.xml" relativeToChangelogFile="true"/>
     <include file="parts/0046_remove_permissions_for_roles_gerente_and_regional.xml" relativeToChangelogFile="true"/>
     <include file="parts/0047_agency_add_transfer_permission.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0048_portfolio_add_planning_permision.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

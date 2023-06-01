@@ -18,6 +18,8 @@
  */
 package org.apache.fineract.useradministration.service;
 
+import static org.apache.fineract.useradministration.service.AppUserConstants.FACILITATOR_ROLE_START_WITH;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -27,6 +29,7 @@ import java.util.Set;
 import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.organisation.office.data.OfficeData;
+import org.apache.fineract.organisation.office.domain.OfficeHierarchyLevel;
 import org.apache.fineract.organisation.office.service.OfficeReadPlatformService;
 import org.apache.fineract.organisation.staff.data.StaffData;
 import org.apache.fineract.organisation.staff.service.StaffReadPlatformService;
@@ -223,5 +226,36 @@ public class AppUserReadPlatformServiceImpl implements AppUserReadPlatformServic
             return false;
         }
         return true;
+    }
+
+    @Override
+    public Collection<AppUserData> retrieveUsersUnderHierarchy(Long hierarchyLevel) {
+        final AppUser currentUser = this.context.authenticatedUser();
+        final String hierarchy = currentUser.getOffice().getHierarchy();
+        final String hierarchySearchString = hierarchy + "%";
+
+        final AppUserMapper mapper = new AppUserMapper(this.roleReadPlatformService, this.staffReadPlatformService);
+        final String sql = "select " + mapper.schema();
+
+        Collection<AppUserData> usersDataList = this.jdbcTemplate.query(sql, mapper, new Object[] { hierarchySearchString });
+
+        Collection<AppUserData> usersforDropdown = new ArrayList<>();
+
+        // TODO: implement a different way to filter by role. One option is to set a type for each role, where types are
+        // value codes from DB
+        if (Long.valueOf(OfficeHierarchyLevel.AGENCIA.getValue()).equals(hierarchyLevel)) {
+            for (AppUserData userData : usersDataList) {
+                AppUser user = this.appUserRepository.findById(userData.getId())
+                        .orElseThrow(() -> new UserNotFoundException(userData.getId()));
+                final Set<Role> userRoles = user.getRoles();
+                for (final Role role : userRoles) {
+                    if (role.getName().startsWith(FACILITATOR_ROLE_START_WITH)) {
+                        usersforDropdown.add(userData);
+                    }
+                }
+            }
+        }
+
+        return usersforDropdown;
     }
 }

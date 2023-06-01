@@ -20,6 +20,7 @@ package org.apache.fineract.organisation.portfolio.service;
 
 import java.util.Collection;
 import org.apache.fineract.organisation.portfolio.data.PortfolioData;
+import org.apache.fineract.organisation.portfolio.data.PortfolioPlanningData;
 
 public interface PortfolioReadPlatformService {
 
@@ -28,4 +29,6 @@ public interface PortfolioReadPlatformService {
     PortfolioData retrieveNewPortfolioTemplate();
 
     Collection<PortfolioData> retrieveAllByUser();
+
+    PortfolioPlanningData retrievePlanningByPortfolio(Long portfolioId);
 }
