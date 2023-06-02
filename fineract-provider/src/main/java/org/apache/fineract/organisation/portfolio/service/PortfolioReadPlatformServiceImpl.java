@@ -91,7 +91,7 @@ public class PortfolioReadPlatformServiceImpl implements PortfolioReadPlatformSe
 
         // retrieve list of users under agency hierarchy level as this is the user role to access these feature
         final List<AppUserData> appUsers = new ArrayList<>(
-                this.appUserReadPlatformService.retrieveUsersUnderHierarchy(Long.valueOf(OfficeHierarchyLevel.AGENCIA.getValue())));
+                this.appUserReadPlatformService.retrieveUsersUnderHierarchy(Long.valueOf(OfficeHierarchyLevel.CARTERA.getValue())));
 
         return PortfolioData.template(parentOfficesOptions, appUsers);
     }

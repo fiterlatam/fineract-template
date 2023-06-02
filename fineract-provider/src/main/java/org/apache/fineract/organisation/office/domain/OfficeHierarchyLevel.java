@@ -28,7 +28,8 @@ public enum OfficeHierarchyLevel {
     INVALID(0, "holidayStatusType.invalid"), //
     GERENCIA(1, "officehierarchylevel.gerencia"), //
     REGION(2, "officehierarchylevel.region"), AGENCIA(3, "officehierarchylevel.agencia"), SUPERVISION(4,
-            "officehierarchylevel.supervision"), CARTERA(5, "officehierarchylevel.supervision");
+            "officehierarchylevel.supervision"), CARTERA(5,
+                    "officehierarchylevel.supervision"), PRINCIPAL(99, "officehierarchylevel.principal");
 
     private final Integer value;
     private final String code;
@@ -50,6 +51,9 @@ public enum OfficeHierarchyLevel {
             break;
             case 5:
                 enumeration = OfficeHierarchyLevel.CARTERA;
+            break;
+            case 99:
+                enumeration = OfficeHierarchyLevel.PRINCIPAL;
             break;
         }
         return enumeration;
