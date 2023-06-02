@@ -326,7 +326,8 @@ public class PortfolioCenterReadPlatformServiceImpl implements PortfolioCenterRe
         public PortfolioDetailedPlanningMapper() {
             final StringBuilder sqlBuilder = new StringBuilder(300);
             sqlBuilder.append("cvMeetingDay.code_value as meetingDayName, cg.id as centerGroupId, cg.name as centerGroupName,  ");
-            sqlBuilder.append("cg.legacy_group_number as legacyGroupNumber, cg.meeting_start_time as meetingStartTime, cg.meeting_end_time as meetingEndTime, ");
+            sqlBuilder.append(
+                    "cg.legacy_group_number as legacyGroupNumber, cg.meeting_start_time as meetingStartTime, cg.meeting_end_time as meetingEndTime, ");
             sqlBuilder.append("pc.id as portfolioCenterId, pc.name as portfolioCenterName, pc.legacy_center_number as legacyCenterNumber ");
             sqlBuilder.append("from m_center_group cg ");
             sqlBuilder.append("left join m_portfolio_center pc on pc.id = cg.portfolio_center_id ");

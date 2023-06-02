@@ -84,7 +84,8 @@ public class SupervisionReadPlatformServiceImpl implements SupervisionReadPlatfo
         final Collection<OfficeData> parentOfficesOptions = officeReadPlatformService
                 .retrieveOfficesByHierarchyLevel(Long.valueOf(OfficeHierarchyLevel.GERENCIA.getValue()));
 
-        final List<AppUserData> appUsers = new ArrayList<>(this.appUserReadPlatformService.retrieveAllUsers());
+        final List<AppUserData> appUsers = new ArrayList<>(
+                this.appUserReadPlatformService.retrieveUsersUnderHierarchy(Long.valueOf(OfficeHierarchyLevel.SUPERVISION.getValue())));
 
         return SupervisionData.template(parentOfficesOptions, appUsers);
     }

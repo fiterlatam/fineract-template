@@ -142,6 +142,11 @@ public final class UserDataValidator {
         final String[] roles = this.fromApiJsonHelper.extractArrayNamed("roles", element);
         baseDataValidator.reset().parameter("roles").value(roles).arrayNotEmpty();
 
+        if (roles.length > 1) {
+            baseDataValidator.reset().parameter("roles").failWithCode("not.supported.more.than.one.role",
+                    "role parameter only one role is supported");
+        }
+
         throwExceptionIfValidationWarningsExist(dataValidationErrors);
     }
 
@@ -197,6 +202,11 @@ public final class UserDataValidator {
         if (this.fromApiJsonHelper.parameterExists("roles", element)) {
             final String[] roles = this.fromApiJsonHelper.extractArrayNamed("roles", element);
             baseDataValidator.reset().parameter("roles").value(roles).arrayNotEmpty();
+
+            if (roles.length > 1) {
+                baseDataValidator.reset().parameter("roles").failWithCode("not.supported.more.than.one.role",
+                        "role parameter only one role is supported");
+            }
         }
 
         if (this.fromApiJsonHelper.parameterExists("password", element)) {
