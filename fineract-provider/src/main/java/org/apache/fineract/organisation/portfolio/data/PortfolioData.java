@@ -38,17 +38,20 @@ public final class PortfolioData {
 
     private final Long responsibleUserId;
 
+    private final String responsibleUserName;
+
     private Collection<PortfolioCenterData> centers;
 
     // template
     private final Collection<OfficeData> parentOfficesOptions;
     private final Collection<AppUserData> responsibleUserOptions;
 
-    public static PortfolioData instance(Long id, String name, Long parentId, String parentName, Long responsibleUserId) {
-        return new PortfolioData(id, name, parentId, parentName, responsibleUserId, null, null, null);
+    public static PortfolioData instance(Long id, String name, Long parentId, String parentName, Long responsibleUserId,
+            String responsibleUserName) {
+        return new PortfolioData(id, name, parentId, parentName, responsibleUserId, responsibleUserName, null, null, null);
     }
 
-    public PortfolioData(Long id, String name, Long parentId, String parentName, Long responsibleUserId,
+    public PortfolioData(Long id, String name, Long parentId, String parentName, Long responsibleUserId, String responsibleUserName,
             Collection<PortfolioCenterData> centers, Collection<OfficeData> parentOfficesOptions,
             Collection<AppUserData> responsibleUserOptions) {
         this.id = id;
@@ -56,6 +59,7 @@ public final class PortfolioData {
         this.parentId = parentId;
         this.parentName = parentName;
         this.responsibleUserId = responsibleUserId;
+        this.responsibleUserName = responsibleUserName;
         this.centers = centers;
         // template
         this.parentOfficesOptions = parentOfficesOptions;
@@ -63,7 +67,7 @@ public final class PortfolioData {
     }
 
     public static PortfolioData template(Collection<OfficeData> parentOfficesOptions, Collection<AppUserData> responsibleUserOptions) {
-        return new PortfolioData(null, null, null, null, null, null, parentOfficesOptions, responsibleUserOptions);
+        return new PortfolioData(null, null, null, null, null, null, null, parentOfficesOptions, responsibleUserOptions);
     }
 
     public void setCenters(Collection<PortfolioCenterData> centers) {
