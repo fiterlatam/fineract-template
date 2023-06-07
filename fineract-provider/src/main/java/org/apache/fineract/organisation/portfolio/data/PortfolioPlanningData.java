@@ -39,15 +39,18 @@ public final class PortfolioPlanningData {
 
     private final String agencyName;
 
+    private final String responsibleUserName;
+
     private Collection<PortfolioDetailedPlanningData> detailedPlanningData;
 
     public static PortfolioPlanningData instance(Long id, String name, Long parentId, String parentName, Long responsibleUserId,
-            Long agencyId, String agencyName) {
-        return new PortfolioPlanningData(id, name, parentId, parentName, responsibleUserId, agencyId, agencyName, null);
+            Long agencyId, String agencyName, String responsibleUserName) {
+        return new PortfolioPlanningData(id, name, parentId, parentName, responsibleUserId, agencyId, agencyName, responsibleUserName,
+                null);
     }
 
     public PortfolioPlanningData(Long id, String name, Long parentId, String parentName, Long responsibleUserId, Long agencyId,
-            String agencyName, Collection<PortfolioDetailedPlanningData> detailedPlanningData) {
+            String agencyName, String responsibleUserName, Collection<PortfolioDetailedPlanningData> detailedPlanningData) {
         this.id = id;
         this.name = name;
         this.parentId = parentId;
@@ -56,6 +59,7 @@ public final class PortfolioPlanningData {
         this.agencyId = agencyId;
         this.agencyName = agencyName;
         this.detailedPlanningData = detailedPlanningData;
+        this.responsibleUserName = responsibleUserName;
     }
 
     public Long getId() {

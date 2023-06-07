@@ -158,8 +158,9 @@ public class PortfolioReadPlatformServiceImpl implements PortfolioReadPlatformSe
             final String parentName = rs.getString("parentRegionName");
 
             final long responsibleUserId = rs.getLong("responsibleUserId");
+            final String responsibleUserName = rs.getString("userFirstName") + " " + rs.getString("userLastName");
 
-            return PortfolioData.instance(id, name, parentId, parentName, responsibleUserId);
+            return PortfolioData.instance(id, name, parentId, parentName, responsibleUserId, responsibleUserName);
         }
 
         public String schema() {
@@ -197,8 +198,10 @@ public class PortfolioReadPlatformServiceImpl implements PortfolioReadPlatformSe
             final String agencyName = rs.getString("agencyName");
 
             final long responsibleUserId = rs.getLong("responsibleUserId");
+            final String responsibleUserName = rs.getString("userFirstName") + " " + rs.getString("userLastName");
 
-            return PortfolioPlanningData.instance(id, name, parentId, parentName, responsibleUserId, agencyId, agencyName);
+            return PortfolioPlanningData.instance(id, name, parentId, parentName, responsibleUserId, agencyId, agencyName,
+                    responsibleUserName);
         }
 
         public String schema() {
