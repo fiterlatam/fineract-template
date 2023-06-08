@@ -85,6 +85,9 @@ public class PortfolioCenter extends AbstractAuditableCustom {
     @Column(name = "meeting_end_time")
     private LocalTime meetingEndTime;
 
+    @Column(name = "reference_point", nullable = false, length = 60)
+    private String referencePoint;
+
     protected PortfolioCenter() {
 
     }
@@ -92,12 +95,12 @@ public class PortfolioCenter extends AbstractAuditableCustom {
     public static PortfolioCenter assembleFrom(String name, Portfolio portfolio, Integer status, Integer meetingStart, Integer meetingEnd,
             Integer meetingDay, LocalTime meetingStartTime, LocalTime meetingEndTime) {
         return new PortfolioCenter(name, portfolio, null, null, null, null, status, null, meetingStart, meetingEnd, meetingDay,
-                meetingStartTime, meetingEndTime);
+                meetingStartTime, meetingEndTime, null);
     }
 
     public PortfolioCenter(String name, Portfolio portfolio, BigDecimal legacyCenterNumber, CodeValue city, CodeValue stateProvince,
             CodeValue type, Integer status, Integer distance, Integer meetingStart, Integer meetingEnd, Integer meetingDay,
-            LocalTime meetingStartTime, LocalTime meetingEndTime) {
+            LocalTime meetingStartTime, LocalTime meetingEndTime, String referencePoint) {
         this.name = name;
         this.portfolio = portfolio;
         this.legacyCenterNumber = legacyCenterNumber;
@@ -111,6 +114,7 @@ public class PortfolioCenter extends AbstractAuditableCustom {
         this.meetingDay = meetingDay;
         this.meetingStartTime = meetingStartTime;
         this.meetingEndTime = meetingEndTime;
+        this.referencePoint = referencePoint;
     }
 
     public Map<String, Object> update(JsonCommand command) {
@@ -161,6 +165,14 @@ public class PortfolioCenter extends AbstractAuditableCustom {
         if (StringUtils.isNotBlank(meetingEndTime)) {
             LocalTime newMeetingEndTime = LocalTime.parse(meetingEndTime, dateTimeFormatter);
             this.meetingEndTime = newMeetingEndTime;
+        }
+
+        if (command.isChangeInStringParameterNamed(PortfolioCenterConstants.PortfolioCenterSupportedParameters.REFERENCE_POINT.getValue(),
+                this.referencePoint)) {
+            final String newValue = command
+                    .stringValueOfParameterNamed(PortfolioCenterConstants.PortfolioCenterSupportedParameters.REFERENCE_POINT.getValue());
+            actualChanges.put(PortfolioCenterConstants.PortfolioCenterSupportedParameters.REFERENCE_POINT.getValue(), newValue);
+            this.referencePoint = newValue;
         }
 
         return actualChanges;

@@ -44,6 +44,8 @@ import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.organisation.portfolio.data.PortfolioData;
+import org.apache.fineract.organisation.portfolio.data.PortfolioDetailedPlanningData;
+import org.apache.fineract.organisation.portfolio.data.PortfolioPlanningData;
 import org.apache.fineract.organisation.portfolio.service.PortfolioConstants;
 import org.apache.fineract.organisation.portfolio.service.PortfolioReadPlatformService;
 import org.apache.fineract.organisation.portfolioCenter.data.PortfolioCenterData;
@@ -159,6 +161,24 @@ public class PortfoliosApiResource {
                 .build(); //
         final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
         return this.toApiJsonSerializer.serialize(result);
+    }
+
+    @GET
+    @Path("{portfolioId}/planning")
+    @Produces({ MediaType.APPLICATION_JSON })
+    public String planning(@PathParam("portfolioId") final Long portfolioId) {
+        final String taskPermissionName = "PLANNING_PORTFOLIO";
+        this.context.authenticatedUser().validateHasPermissionTo(taskPermissionName);
+
+        PortfolioPlanningData portfoliosPlanning = this.readPlatformService.retrievePlanningByPortfolio(portfolioId);
+
+        // get planning
+        Collection<PortfolioDetailedPlanningData> planning = centerReadPlatformService.retrievePlanningByPortfolio(portfolioId);
+        if (planning != null) {
+            portfoliosPlanning.setDetailedPlanningData(planning);
+        }
+
+        return this.toApiJsonSerializer.serialize(portfoliosPlanning);
     }
 
 }

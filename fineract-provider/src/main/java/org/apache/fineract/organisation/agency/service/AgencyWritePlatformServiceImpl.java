@@ -18,6 +18,7 @@
  */
 package org.apache.fineract.organisation.agency.service;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 import javax.persistence.PersistenceException;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -380,6 +381,44 @@ public class AgencyWritePlatformServiceImpl implements AgencyWritePlatformServic
             LOG.error("Error occurred.", dve);
             throw new PlatformDataIntegrityException("error.msg.agency.unknown.data.integrity.issue",
                     "Unknown data integrity issue with resource.", dve);
+        }
+    }
+
+    @Override
+    public CommandProcessingResult transferAgency(Long agencyId, JsonCommand command) {
+        try {
+            this.context.authenticatedUser();
+
+            this.fromApiJsonDeserializer.validateForTransfer(command.json());
+
+            Agency agency = this.agencyRepositoryWrapper.findOneWithNotFoundDetection(agencyId);
+
+            final Map<String, Object> changes = new LinkedHashMap<>(2);
+
+            final Long destinationRegionId = command
+                    .longValueOfParameterNamed(AgencyConstants.AgencySupportedParameters.DESTINATION_REGION_ID.getValue());
+
+            Office newParentOffice = null;
+            if (destinationRegionId != null) {
+                newParentOffice = this.officeRepositoryWrapper.findOneWithNotFoundDetection(destinationRegionId);
+                agency.setParentOffice(newParentOffice);
+                changes.put(AgencyConstants.AgencySupportedParameters.DESTINATION_REGION_ID.getValue(), destinationRegionId);
+            }
+
+            this.agencyRepositoryWrapper.saveAndFlush(agency);
+
+            return new CommandProcessingResultBuilder() //
+                    .withCommandId(command.commandId()) //
+                    .withEntityId(agencyId) //
+                    .with(changes) //
+                    .build();
+        } catch (final JpaSystemException | DataIntegrityViolationException dve) {
+            handleAgencyDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
+            return CommandProcessingResult.empty();
+        } catch (final PersistenceException dve) {
+            Throwable throwable = ExceptionUtils.getRootCause(dve.getCause());
+            handleAgencyDataIntegrityIssues(command, throwable, dve);
+            return CommandProcessingResult.empty();
         }
     }
 

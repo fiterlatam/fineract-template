@@ -53,7 +53,8 @@ public final class AgencyConstants {
                                         "financialYearFrom"), FINANCIAL_YEAR_TO("financialYearTo"), NON_BUSINESS_DAY1(
                                                 "nonBusinessDay1"), NON_BUSINESS_DAY2("nonBusinessDay2"), HALF_BUSINESS_DAY1(
                                                         "halfBusinessDay1"), HALF_BUSINESS_DAY2("halfBusinessDay2"), RESPONSIBLE_USER_ID(
-                                                                "responsibleUserId"), LOCALE("locale"), DATEFORMAT("dateFormat");
+                                                                "responsibleUserId"), DESTINATION_REGION_ID(
+                                                                        "newRegionId"), LOCALE("locale"), DATEFORMAT("dateFormat");
 
         private final String value;
 
