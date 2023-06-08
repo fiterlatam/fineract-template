@@ -23,7 +23,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import javax.persistence.PersistenceException;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.fineract.infrastructure.codes.domain.CodeValueRepository;
@@ -183,8 +182,7 @@ public class CenterGroupWritePlatformServiceImpl implements CenterGroupWritePlat
             if (StringUtils.isNotBlank(meetingStartTime)) {
                 LocalTime newMeetingStarTime = LocalTime.parse(meetingStartTime, dateTimeFormatter);
                 centerGroup.setMeetingStartTime(newMeetingStarTime);
-                changes.put(CenterGroupConstants.CenterGroupSupportedParameters.MEETING_START_TIME.getValue(),
-                        meetingStartTime);
+                changes.put(CenterGroupConstants.CenterGroupSupportedParameters.MEETING_START_TIME.getValue(), meetingStartTime);
             }
 
             String meetingEndTime = command
@@ -192,8 +190,7 @@ public class CenterGroupWritePlatformServiceImpl implements CenterGroupWritePlat
             if (StringUtils.isNotBlank(meetingEndTime)) {
                 LocalTime newMeetingEndTime = LocalTime.parse(meetingEndTime, dateTimeFormatter);
                 centerGroup.setMeetingEndTime(newMeetingEndTime);
-                changes.put(CenterGroupConstants.CenterGroupSupportedParameters.MEETING_END_TIME.getValue(),
-                        meetingEndTime);
+                changes.put(CenterGroupConstants.CenterGroupSupportedParameters.MEETING_END_TIME.getValue(), meetingEndTime);
             }
 
             this.centerGroupRepositoryWrapper.saveAndFlush(centerGroup);

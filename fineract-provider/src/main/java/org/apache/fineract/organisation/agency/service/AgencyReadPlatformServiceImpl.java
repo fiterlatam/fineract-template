@@ -119,7 +119,8 @@ public class AgencyReadPlatformServiceImpl implements AgencyReadPlatformService 
         final List<CodeValueData> financialMonthOptions = new ArrayList<>(
                 this.codeValueReadPlatformService.retrieveCodeValuesByCode(AgencyConstants.FINANCIAL_MONTHS));
 
-        final List<AppUserData> appUsers = new ArrayList<>(this.appUserReadPlatformService.retrieveAllUsers());
+        final List<AppUserData> appUsers = new ArrayList<>(
+                this.appUserReadPlatformService.retrieveUsersUnderHierarchy(Long.valueOf(OfficeHierarchyLevel.AGENCIA.getValue())));
 
         return AgencyData.template(parentOfficesOptions, currencyOptions, cityOptions, stateOptions, countryOptions,
                 agencyEntityCodesOptions, agencyTypeOptions, labourDayOptions, financialMonthOptions, appUsers);

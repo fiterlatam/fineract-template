@@ -43,6 +43,7 @@ import org.apache.fineract.organisation.centerGroup.service.CenterGroupReadPlatf
 import org.apache.fineract.organisation.office.data.OfficeData;
 import org.apache.fineract.organisation.office.domain.OfficeHierarchyLevel;
 import org.apache.fineract.organisation.office.service.OfficeReadPlatformService;
+import org.apache.fineract.organisation.portfolio.data.PortfolioDetailedPlanningData;
 import org.apache.fineract.organisation.portfolio.exception.PortfolioNotFoundException;
 import org.apache.fineract.organisation.portfolioCenter.data.AvailableMeetingTimes;
 import org.apache.fineract.organisation.portfolioCenter.data.PortfolioCenterAvailabilityForMeetings;
@@ -230,6 +231,16 @@ public class PortfolioCenterReadPlatformServiceImpl implements PortfolioCenterRe
         return availabilityForMeetings;
     }
 
+    @Override
+    public Collection<PortfolioDetailedPlanningData> retrievePlanningByPortfolio(Long portfolioId) {
+        PortfolioDetailedPlanningMapper portfolioDetailedPlanningMapper = new PortfolioDetailedPlanningMapper();
+        String schemaSql = "select " + portfolioDetailedPlanningMapper.schema();
+        schemaSql += "where pc.portfolio_id = ? ";
+        schemaSql += "order by cvMeetingDay.id, pc.meeting_start_date";
+
+        return this.jdbcTemplate.query(schemaSql, portfolioDetailedPlanningMapper, portfolioId);
+    }
+
     private static final class PortfolioCenterMapper implements RowMapper<PortfolioCenterData> {
 
         private final String schema;
@@ -244,7 +255,8 @@ public class PortfolioCenterReadPlatformServiceImpl implements PortfolioCenterRe
             sqlBuilder.append("pc.type_id as typeId, cvType.code_value as typeValue, pc.created_date as createdDate, ");
             sqlBuilder.append("pc.meeting_start_date as meetingStart, pc.meeting_end_date as meetingEnd, ");
             sqlBuilder.append("pc.meeting_day as meetingDay, cvMeetingDay.code_value as meetingDayValue, ");
-            sqlBuilder.append("pc.meeting_start_time as meetingStartTime, pc.meeting_end_time as meetingEndTime ");
+            sqlBuilder.append("pc.meeting_start_time as meetingStartTime, pc.meeting_end_time as meetingEndTime, ");
+            sqlBuilder.append("pc.reference_point as referencePoint ");
             sqlBuilder.append("from m_portfolio_center pc ");
             sqlBuilder.append("left join m_portfolio AS p ON p.id = pc.portfolio_id ");
             sqlBuilder.append("left join m_code_value cvCity on pc.city_id = cvCity.id ");
@@ -294,9 +306,54 @@ public class PortfolioCenterReadPlatformServiceImpl implements PortfolioCenterRe
             final LocalTime meetingStartTime = JdbcSupport.getLocalTime(rs, "meetingStartTime");
             final LocalTime meetingEndTime = JdbcSupport.getLocalTime(rs, "meetingEndTime");
 
+            final String referencePoint = rs.getString("referencePoint");
+
             return PortfolioCenterData.instance(id, name, portfolioId, portfolioName, legacyCenterNumber, city, state, type, statusEnum,
                     distance, createdDate, meetingStart, meetingEnd, meetingDay, meetingStartTime.toString(), meetingEndTime.toString(),
-                    meetingDayValue);
+                    meetingDayValue, referencePoint);
+        }
+
+        public String schema() {
+            return this.schema;
+        }
+
+    }
+
+    private static final class PortfolioDetailedPlanningMapper implements RowMapper<PortfolioDetailedPlanningData> {
+
+        private final String schema;
+
+        public PortfolioDetailedPlanningMapper() {
+            final StringBuilder sqlBuilder = new StringBuilder(300);
+            sqlBuilder.append("cvMeetingDay.code_value as meetingDayName, cg.id as centerGroupId, cg.name as centerGroupName,  ");
+            sqlBuilder.append(
+                    "cg.legacy_group_number as legacyGroupNumber, cg.meeting_start_time as meetingStartTime, cg.meeting_end_time as meetingEndTime, ");
+            sqlBuilder.append("pc.id as portfolioCenterId, pc.name as portfolioCenterName, pc.legacy_center_number as legacyCenterNumber ");
+            sqlBuilder.append("from m_center_group cg ");
+            sqlBuilder.append("left join m_portfolio_center pc on pc.id = cg.portfolio_center_id ");
+            sqlBuilder.append("left join m_code_value cvMeetingDay on cvMeetingDay.id = pc.meeting_day ");
+
+            this.schema = sqlBuilder.toString();
+        }
+
+        @Override
+        public PortfolioDetailedPlanningData mapRow(final ResultSet rs, @SuppressWarnings("unused") final int rowNum) throws SQLException {
+
+            final Long centerGroupId = rs.getLong("centerGroupId");
+            final String centerGroupName = rs.getString("centerGroupName");
+            final BigDecimal legacyGroupNumber = rs.getBigDecimal("legacyGroupNumber");
+
+            final Long portfolioCenterId = rs.getLong("portfolioCenterId");
+            final String portfolioCenterName = rs.getString("portfolioCenterName");
+            final BigDecimal legacyCenterNumber = rs.getBigDecimal("legacyCenterNumber");
+
+            final LocalTime meetingStartTime = JdbcSupport.getLocalTime(rs, "meetingStartTime");
+            final LocalTime meetingEndTime = JdbcSupport.getLocalTime(rs, "meetingEndTime");
+
+            final String meetingDayName = rs.getString("meetingDayName");
+
+            return PortfolioDetailedPlanningData.instance(centerGroupId, centerGroupName, legacyGroupNumber, meetingStartTime,
+                    meetingEndTime, portfolioCenterId, portfolioCenterName, legacyCenterNumber, meetingDayName);
         }
 
         public String schema() {
