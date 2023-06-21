@@ -146,7 +146,7 @@ public class CenterGroup extends AbstractAuditableCustom {
     public Map<String, Object> update(JsonCommand command) {
         final Map<String, Object> actualChanges = new LinkedHashMap<>(2);
 
-        if (command.isChangeInStringParameterNamed(CenterGroupConstants.CenterGroupSupportedParameters.NAME.getValue(), this.name)) {
+        if (command.isChangeInStringParameterNamed(CenterGroupConstants.CenterGroupSupportedParameters.NAME.getValue(), this.getName())) {
             final String newValue = command
                     .stringValueOfParameterNamed(CenterGroupConstants.CenterGroupSupportedParameters.NAME.getValue());
             actualChanges.put(CenterGroupConstants.CenterGroupSupportedParameters.NAME.getValue(), newValue);
@@ -228,5 +228,21 @@ public class CenterGroup extends AbstractAuditableCustom {
 
     public void setMeetingEndTime(LocalTime meetingEndTime) {
         this.meetingEndTime = meetingEndTime;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public LocalTime getMeetingStartTime() {
+        return meetingStartTime;
+    }
+
+    public LocalTime getMeetingEndTime() {
+        return meetingEndTime;
+    }
+
+    public PortfolioCenter getPortfolioCenter() {
+        return portfolioCenter;
     }
 }

@@ -18,6 +18,8 @@
  */
 package org.apache.fineract.organisation.centerGroup.domain;
 
+import java.time.LocalTime;
+import java.util.Collection;
 import org.apache.fineract.organisation.centerGroup.exception.CenterGroupNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -39,6 +41,11 @@ public class CenterGroupRepositoryWrapper {
 
     public CenterGroup findOneWithNotFoundDetection(final Long id) {
         return this.repository.findById(id).orElseThrow(() -> new CenterGroupNotFoundException(id));
+    }
+
+    public Collection<CenterGroup> findCenterGroupsByCenterIdAndMeetingTimes(final Long center, final LocalTime startTime,
+            final LocalTime endTime) {
+        return this.repository.findCenterGroupsByCenterIdAndMeetingTimes(center, startTime, endTime);
     }
 
     public CenterGroup save(final CenterGroup entity) {
