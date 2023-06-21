@@ -20,12 +20,25 @@ package org.apache.fineract.organisation.centerGroup.domain;
 
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Collection;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 public interface CenterGroupRepository extends JpaRepository<CenterGroup, Long>, JpaSpecificationExecutor<CenterGroup> {
     // no added behaviour
+
+    String FIND_CENTERS_BY_MEETING_TIMES_AND_CENTER_ID = "Select cgroup from CenterGroup cgroup where cgroup.portfolioCenter.id = :center "
+            + "and( ( :startTime >= cgroup.meetingStartTime and :startTime <= cgroup.meetingEndTime) "
+            + "OR ( :endTime >= cgroup.meetingStartTime and :endTime <= cgroup.meetingEndTime) )";
+
+    @Query(FIND_CENTERS_BY_MEETING_TIMES_AND_CENTER_ID)
+    Collection<CenterGroup> findCenterGroupsByCenterIdAndMeetingTimes(@Param("center") Long center, @Param("startTime") LocalTime startTime,
+            @Param("endTime") LocalTime endTime);
+
+
+
 
     @Query("SELECT e FROM CenterGroup e where e.portfolioCenter.id=:portfolioCenterId AND ( (e.meetingStartTime >= :startTime AND e.meetingStartTime <= :endTime) "
             + "OR (e.meetingEndTime >= :startTime AND e.meetingEndTime <= :endTime) OR (e.meetingStartTime <= :startTime AND e.meetingEndTime >= :endTime) )")

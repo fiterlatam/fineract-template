@@ -121,7 +121,7 @@ public class PortfolioCenter extends AbstractAuditableCustom {
         final Map<String, Object> actualChanges = new LinkedHashMap<>(2);
 
         if (command.isChangeInStringParameterNamed(PortfolioCenterConstants.PortfolioCenterSupportedParameters.NAME.getValue(),
-                this.name)) {
+                this.getName())) {
             final String newValue = command
                     .stringValueOfParameterNamed(PortfolioCenterConstants.PortfolioCenterSupportedParameters.NAME.getValue());
             actualChanges.put(PortfolioCenterConstants.PortfolioCenterSupportedParameters.NAME.getValue(), newValue);
@@ -189,6 +189,11 @@ public class PortfolioCenter extends AbstractAuditableCustom {
     public void setType(CodeValue type) {
         this.type = type;
     }
+
+    public String getName() {
+        return name;
+    }
+
 
     public LocalTime getMeetingStartTime() {
         return meetingStartTime;

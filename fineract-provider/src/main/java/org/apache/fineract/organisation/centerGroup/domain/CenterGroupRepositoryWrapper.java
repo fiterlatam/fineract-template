@@ -18,6 +18,7 @@
  */
 package org.apache.fineract.organisation.centerGroup.domain;
 
+import java.util.Collection;
 import java.time.LocalTime;
 import java.util.List;
 import org.apache.fineract.organisation.centerGroup.exception.CenterGroupNotFoundException;
@@ -45,6 +46,11 @@ public class CenterGroupRepositoryWrapper {
 
     public List<CenterGroup> findOverLappingCenterGroups(Long portfolioCenter, LocalTime startTime, LocalTime endTime) {
         return this.repository.findOverlappingCenterGroups(portfolioCenter, startTime, endTime);
+    }
+
+    public Collection<CenterGroup> findCenterGroupsByCenterIdAndMeetingTimes(final Long center, final LocalTime startTime,
+            final LocalTime endTime) {
+        return this.repository.findCenterGroupsByCenterIdAndMeetingTimes(center, startTime, endTime);
     }
 
     public CenterGroup save(final CenterGroup entity) {
