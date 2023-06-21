@@ -224,6 +224,9 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
     @OneToMany(mappedBy = "client", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private Set<ClientCollateralManagement> clientCollateralManagements = new HashSet<>();
 
+    @Column(name = "dpi", nullable = false)
+    private String dpiNumber;
+
     public static Client createNew(final AppUser currentUser, final Office clientOffice, final Group clientParentGroup, final Staff staff,
             final Long savingsProductId, final CodeValue gender, final CodeValue clientType, final CodeValue clientClassification,
             final Integer legalForm, final JsonCommand command) {
@@ -237,6 +240,7 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
         final String middlename = command.stringValueOfParameterNamed(ClientApiConstants.middlenameParamName);
         final String lastname = command.stringValueOfParameterNamed(ClientApiConstants.lastnameParamName);
         final String fullname = command.stringValueOfParameterNamed(ClientApiConstants.fullnameParamName);
+        final String dpiNumber = command.stringValueOfParameterNamed(ClientApiConstants.dpiParamName);
 
         final boolean isStaff = command.booleanPrimitiveValueOfParameterNamed(ClientApiConstants.isStaffParamName);
 
@@ -266,7 +270,7 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
         final Long savingsAccountId = null;
         return new Client(currentUser, status, clientOffice, clientParentGroup, accountNo, firstname, middlename, lastname, fullname,
                 activationDate, officeJoiningDate, externalId, mobileNo, emailAddress, staff, submittedOnDate, savingsProductId,
-                savingsAccountId, dataOfBirth, gender, clientType, clientClassification, legalForm, isStaff);
+                savingsAccountId, dataOfBirth, gender, clientType, clientClassification, legalForm, isStaff, dpiNumber);
     }
 
     protected Client() {}
@@ -276,7 +280,7 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
             final LocalDate activationDate, final LocalDate officeJoiningDate, final String externalId, final String mobileNo,
             final String emailAddress, final Staff staff, final LocalDate submittedOnDate, final Long savingsProductId,
             final Long savingsAccountId, final LocalDate dateOfBirth, final CodeValue gender, final CodeValue clientType,
-            final CodeValue clientClassification, final Integer legalForm, final Boolean isStaff) {
+            final CodeValue clientClassification, final Integer legalForm, final Boolean isStaff, final String dpiNumber) {
 
         if (StringUtils.isBlank(accountNo)) {
             this.accountNumber = new RandomPasswordGenerator(19).generate();
@@ -342,6 +346,7 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
         this.clientType = clientType;
         this.clientClassification = clientClassification;
         this.setLegalForm(legalForm);
+        this.dpiNumber = dpiNumber;
 
         deriveDisplayName();
         validate();
@@ -605,6 +610,13 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
 
             this.submittedOnDate = command.localDateValueOfParameterNamed(ClientApiConstants.submittedOnDateParamName);
         }
+
+        if (command.isChangeInStringParameterNamed(ClientApiConstants.dpiParamName, this.dpiNumber)) {
+            final String newValue = command.stringValueOfParameterNamed(ClientApiConstants.dpiParamName);
+            actualChanges.put(ClientApiConstants.dpiParamName, newValue);
+            this.dpiNumber = newValue;
+        }
+
 
         validateUpdate();
 
@@ -1025,4 +1037,7 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
         this.proposedTransferDate = proposedTransferDate;
     }
 
+    public void updateDpiNumber(String dpiNumber) {
+        this.dpiNumber = dpiNumber;
+    }
 }

@@ -40,6 +40,7 @@ import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidati
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.portfolio.client.api.ClientApiConstants;
+import org.apache.fineract.portfolio.client.domain.ClientRepositoryWrapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -48,12 +49,14 @@ public final class ClientDataValidator {
 
     private final FromJsonHelper fromApiJsonHelper;
     private final ConfigurationReadPlatformService configurationReadPlatformService;
+    private final ClientRepositoryWrapper clientRepositoryWrapper;
 
     @Autowired
-    public ClientDataValidator(final FromJsonHelper fromApiJsonHelper,
+    public ClientDataValidator(final FromJsonHelper fromApiJsonHelper,final ClientRepositoryWrapper clientRepositoryWrapper,
             final ConfigurationReadPlatformService configurationReadPlatformService) {
         this.fromApiJsonHelper = fromApiJsonHelper;
         this.configurationReadPlatformService = configurationReadPlatformService;
+        this.clientRepositoryWrapper = clientRepositoryWrapper;
     }
 
     public void validateForCreate(final String json) {
@@ -83,6 +86,11 @@ public final class ClientDataValidator {
 
         final Long officeId = this.fromApiJsonHelper.extractLongNamed(ClientApiConstants.officeIdParamName, element);
         baseDataValidator.reset().parameter(ClientApiConstants.officeIdParamName).value(officeId).notNull().integerGreaterThanZero();
+
+        final String dpi = this.fromApiJsonHelper.extractStringNamed(ClientApiConstants.dpiParamName, element);
+        baseDataValidator.reset().parameter(ClientApiConstants.dpiParamName).value(dpi).notNull();
+
+        this.clientRepositoryWrapper.getClientByDpiNumber(dpi);
 
         if (this.fromApiJsonHelper.parameterExists(ClientApiConstants.groupIdParamName, element)) {
             final Long groupId = this.fromApiJsonHelper.extractLongNamed(ClientApiConstants.groupIdParamName, element);
