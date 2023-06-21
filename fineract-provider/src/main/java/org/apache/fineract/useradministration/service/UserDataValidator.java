@@ -107,7 +107,7 @@ public final class UserDataValidator {
 
         if (this.fromApiJsonHelper.parameterExists("staffId", element)) {
             final Long staffId = this.fromApiJsonHelper.extractLongNamed("staffId", element);
-            baseDataValidator.reset().parameter("staffId").value(staffId).notNull().integerGreaterThanZero();
+            baseDataValidator.reset().parameter("staffId").value(staffId).notNull();
         }
 
         if (this.fromApiJsonHelper.parameterExists(AppUserConstants.PASSWORD_NEVER_EXPIRES, element)) {
