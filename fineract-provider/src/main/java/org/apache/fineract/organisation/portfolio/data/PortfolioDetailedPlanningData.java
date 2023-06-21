@@ -19,6 +19,7 @@
 package org.apache.fineract.organisation.portfolio.data;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalTime;
 
 /**
@@ -44,9 +45,11 @@ public class PortfolioDetailedPlanningData {
 
     private final String meetingDayName;
 
+    private final LocalDate meetingDate;
+
     public PortfolioDetailedPlanningData(Long centerGroupId, String centerGroupName, BigDecimal legacyGroupNumber,
             LocalTime meetingStartTime, LocalTime meetingEndTime, Long portfolioCenterId, String portfolioCenterName,
-            BigDecimal legacyCenterNumber, String meetingDayName) {
+            BigDecimal legacyCenterNumber, String meetingDayName, LocalDate meetingDate) {
         this.centerGroupId = centerGroupId;
         this.centerGroupName = centerGroupName;
         this.legacyGroupNumber = legacyGroupNumber;
@@ -56,12 +59,13 @@ public class PortfolioDetailedPlanningData {
         this.portfolioCenterName = portfolioCenterName;
         this.legacyCenterNumber = legacyCenterNumber;
         this.meetingDayName = meetingDayName;
+        this.meetingDate = meetingDate;
     }
 
     public static PortfolioDetailedPlanningData instance(Long centerGroupId, String centerGroupName, BigDecimal legacyGroupNumber,
             LocalTime meetingStartTime, LocalTime meetingEndTime, Long portfolioCenterId, String portfolioCenterName,
-            BigDecimal legacyCenterNumber, String meetingDayName) {
+            BigDecimal legacyCenterNumber, String meetingDayName, LocalDate meetingDate) {
         return new PortfolioDetailedPlanningData(centerGroupId, centerGroupName, legacyGroupNumber, meetingStartTime, meetingEndTime,
-                portfolioCenterId, portfolioCenterName, legacyCenterNumber, meetingDayName);
+                portfolioCenterId, portfolioCenterName, legacyCenterNumber, meetingDayName, meetingDate);
     }
 }
