@@ -18,8 +18,8 @@
  */
 package org.apache.fineract.organisation.centerGroup.domain;
 
-import java.util.Collection;
 import java.time.LocalTime;
+import java.util.Collection;
 import java.util.List;
 import org.apache.fineract.organisation.centerGroup.exception.CenterGroupNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;

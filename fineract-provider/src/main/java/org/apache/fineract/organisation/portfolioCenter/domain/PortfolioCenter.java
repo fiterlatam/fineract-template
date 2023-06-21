@@ -194,7 +194,6 @@ public class PortfolioCenter extends AbstractAuditableCustom {
         return name;
     }
 
-
     public LocalTime getMeetingStartTime() {
         return meetingStartTime;
     }

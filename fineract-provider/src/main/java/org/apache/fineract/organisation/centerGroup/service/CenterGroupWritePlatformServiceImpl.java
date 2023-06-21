@@ -81,7 +81,7 @@ public class CenterGroupWritePlatformServiceImpl implements CenterGroupWritePlat
             CenterGroupRepositoryWrapper centerGroupRepositoryWrapper, PortfolioCenterRepositoryWrapper portfolioCenterRepositoryWrapper,
             CodeValueReadPlatformService codeValueReadPlatformService, AppUserRepository appUserRepository,
             CodeValueRepository codeValueRepository, ConfigurationReadPlatformService configurationReadPlatformService,
-                                               FromJsonHelper fromJsonHelper) {
+            FromJsonHelper fromJsonHelper) {
         this.context = context;
         this.fromApiJsonDeserializer = fromApiJsonDeserializer;
         this.officeRepositoryWrapper = officeRepositoryWrapper;
