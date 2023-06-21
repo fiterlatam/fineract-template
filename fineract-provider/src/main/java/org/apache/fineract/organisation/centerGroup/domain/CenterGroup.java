@@ -229,4 +229,12 @@ public class CenterGroup extends AbstractAuditableCustom {
     public void setMeetingEndTime(LocalTime meetingEndTime) {
         this.meetingEndTime = meetingEndTime;
     }
+
+    public LocalTime getMeetingStartTime() {
+        return meetingStartTime;
+    }
+
+    public LocalTime getMeetingEndTime() {
+        return meetingEndTime;
+    }
 }
