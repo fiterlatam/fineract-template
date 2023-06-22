@@ -52,7 +52,7 @@ public final class ClientDataValidator {
     private final ClientRepositoryWrapper clientRepositoryWrapper;
 
     @Autowired
-    public ClientDataValidator(final FromJsonHelper fromApiJsonHelper,final ClientRepositoryWrapper clientRepositoryWrapper,
+    public ClientDataValidator(final FromJsonHelper fromApiJsonHelper, final ClientRepositoryWrapper clientRepositoryWrapper,
             final ConfigurationReadPlatformService configurationReadPlatformService) {
         this.fromApiJsonHelper = fromApiJsonHelper;
         this.configurationReadPlatformService = configurationReadPlatformService;

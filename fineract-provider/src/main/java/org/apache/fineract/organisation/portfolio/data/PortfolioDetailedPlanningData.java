@@ -68,4 +68,13 @@ public class PortfolioDetailedPlanningData {
         return new PortfolioDetailedPlanningData(centerGroupId, centerGroupName, legacyGroupNumber, meetingStartTime, meetingEndTime,
                 portfolioCenterId, portfolioCenterName, legacyCenterNumber, meetingDayName, meetingDate);
     }
+
+    public LocalDate getMeetingDate() {
+        return meetingDate;
+    }
+
+    public LocalTime getMeetingStartTime() {
+        return meetingStartTime;
+    }
+
 }
