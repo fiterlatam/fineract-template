@@ -144,6 +144,7 @@ public class ClientApiConstants {
     public static final String imageIdParamName = "imageId";
     public static final String imagePresentParamName = "imagePresent";
     public static final String timelineParamName = "timeline";
+    public static final String dpiParamName = "dpi";
 
     // client charges response parameters
     public static final String chargeIdParamName = "chargeId";
@@ -195,7 +196,7 @@ public class ClientApiConstants {
             officeNameParamName, transferToOfficeIdParamName, transferToOfficeNameParamName, hierarchyParamName, imageIdParamName,
             imagePresentParamName, staffIdParamName, staffNameParamName, timelineParamName, groupsParamName, officeOptionsParamName,
             staffOptionsParamName, dateOfBirthParamName, genderParamName, clientTypeParamName, clientClassificationParamName,
-            legalFormParamName, clientNonPersonDetailsParamName, isStaffParamName));
+            legalFormParamName, clientNonPersonDetailsParamName, isStaffParamName, dpiParamName));
 
     protected static final Set<String> CLIENT_CHARGES_RESPONSE_DATA_PARAMETERS = new HashSet<>(Arrays.asList(chargeIdParamName,
             clientIdParamName, chargeNameParamName, penaltyParamName, chargeTimeTypeParamName, dueAsOfDateParamName,

@@ -211,6 +211,10 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
             final String mobileNo = command.stringValueOfParameterNamed("mobileNo");
             throw new PlatformDataIntegrityException("error.msg.client.duplicate.mobileNo",
                     "Client with mobileNo `" + mobileNo + "` already exists", "mobileNo", mobileNo);
+        } else if (realCause.getMessage().contains("dpi")) {
+            final String dpi = command.stringValueOfParameterNamed("dpi");
+            throw new PlatformDataIntegrityException("error.msg.client.duplicate.dpi", "Client with dpi `" + dpi + "` already exists",
+                    "dpi", dpi);
         }
 
         logAsErrorUnexpectedDataIntegrityException(dve);
@@ -235,6 +239,7 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
             final Boolean isStaff = command.booleanObjectValueOfParameterNamed(ClientApiConstants.isStaffParamName);
 
             final Long officeId = command.longValueOfParameterNamed(ClientApiConstants.officeIdParamName);
+            final Long dpiNumber = command.longValueOfParameterNamed(ClientApiConstants.dpiParamName);
 
             final Office clientOffice = this.officeRepositoryWrapper.findOneWithNotFoundDetection(officeId);
 
@@ -460,6 +465,12 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
                     newCodeVal = this.codeValueRepository.findOneByCodeNameAndIdWithNotFoundDetection(ClientApiConstants.GENDER, newValue);
                 }
                 clientForUpdate.updateGender(newCodeVal);
+            }
+
+            if (changes.containsKey(ClientApiConstants.dpiParamName)) {
+                final String newValue = command.stringValueOfParameterNamed(ClientApiConstants.dpiParamName);
+                this.clientRepository.getClientByDpiNumber(newValue);
+                clientForUpdate.updateDpiNumber(newValue);
             }
 
             if (changes.containsKey(ClientApiConstants.clientTypeIdParamName)) {

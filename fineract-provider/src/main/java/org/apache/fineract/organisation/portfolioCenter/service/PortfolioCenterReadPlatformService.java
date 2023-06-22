@@ -42,5 +42,4 @@ public interface PortfolioCenterReadPlatformService {
     Collection<PortfolioCenterAvailabilityForMeetings> retrieveAvailableTimesByPortfolio(Long portfolioId);
 
     Collection<PortfolioDetailedPlanningData> retrievePlanningByPortfolio(Long portfolioId);
-
 }

@@ -35,6 +35,7 @@ import org.apache.fineract.infrastructure.codes.service.CodeValueReadPlatformSer
 import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainServiceJpa;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
+import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.core.service.database.DatabaseSpecificSQLGenerator;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.infrastructure.security.utils.ColumnValidator;
@@ -48,6 +49,7 @@ import org.apache.fineract.organisation.portfolio.exception.PortfolioNotFoundExc
 import org.apache.fineract.organisation.portfolioCenter.data.AvailableMeetingTimes;
 import org.apache.fineract.organisation.portfolioCenter.data.PortfolioCenterAvailabilityForMeetings;
 import org.apache.fineract.organisation.portfolioCenter.data.PortfolioCenterData;
+import org.apache.fineract.organisation.portfolioCenter.domain.PortfolioCenterFrecuencyMeeting;
 import org.apache.fineract.organisation.portfolioCenter.domain.PortfolioCenterStatus;
 import org.apache.fineract.useradministration.data.AppUserData;
 import org.apache.fineract.useradministration.service.AppUserReadPlatformService;
@@ -328,7 +330,10 @@ public class PortfolioCenterReadPlatformServiceImpl implements PortfolioCenterRe
             sqlBuilder.append("cvMeetingDay.code_value as meetingDayName, cg.id as centerGroupId, cg.name as centerGroupName,  ");
             sqlBuilder.append(
                     "cg.legacy_group_number as legacyGroupNumber, cg.meeting_start_time as meetingStartTime, cg.meeting_end_time as meetingEndTime, ");
-            sqlBuilder.append("pc.id as portfolioCenterId, pc.name as portfolioCenterName, pc.legacy_center_number as legacyCenterNumber ");
+            sqlBuilder
+                    .append("pc.id as portfolioCenterId, pc.name as portfolioCenterName, pc.legacy_center_number as legacyCenterNumber, ");
+            sqlBuilder.append(
+                    "pc.meeting_day as meetingDay, cvMeetingDay.order_position as position, pc.meeting_start_date as rangeStartDay, pc.meeting_end_date as rangeEndDay ");
             sqlBuilder.append("from m_center_group cg ");
             sqlBuilder.append("left join m_portfolio_center pc on pc.id = cg.portfolio_center_id ");
             sqlBuilder.append("left join m_code_value cvMeetingDay on cvMeetingDay.id = pc.meeting_day ");
@@ -352,8 +357,17 @@ public class PortfolioCenterReadPlatformServiceImpl implements PortfolioCenterRe
 
             final String meetingDayName = rs.getString("meetingDayName");
 
+            // calculate the next meeting date
+            LocalDate currentTenantDate = DateUtils.getLocalDateOfTenant();
+            final int meetingDayOfWeek = rs.getInt("position");
+            final int rangeStartDay = rs.getInt("rangeStartDay");
+            final int rangeEndDay = rs.getInt("rangeEndDay");
+
+            final LocalDate nextMeetingDate = PortfolioCenterGroupUtil.calculateNextMeetingDate(currentTenantDate, rangeStartDay,
+                    rangeEndDay, meetingDayOfWeek, PortfolioCenterFrecuencyMeeting.MENSUAL);
+
             return PortfolioDetailedPlanningData.instance(centerGroupId, centerGroupName, legacyGroupNumber, meetingStartTime,
-                    meetingEndTime, portfolioCenterId, portfolioCenterName, legacyCenterNumber, meetingDayName);
+                    meetingEndTime, portfolioCenterId, portfolioCenterName, legacyCenterNumber, meetingDayName, nextMeetingDate);
         }
 
         public String schema() {

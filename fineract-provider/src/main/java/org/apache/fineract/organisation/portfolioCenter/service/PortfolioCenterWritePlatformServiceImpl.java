@@ -18,11 +18,8 @@
  */
 package org.apache.fineract.organisation.portfolioCenter.service;
 
-import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.time.temporal.TemporalAdjusters;
-import java.time.temporal.WeekFields;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -43,7 +40,6 @@ import org.apache.fineract.infrastructure.security.service.PlatformSecurityConte
 import org.apache.fineract.organisation.portfolio.domain.Portfolio;
 import org.apache.fineract.organisation.portfolio.domain.PortfolioRepositoryWrapper;
 import org.apache.fineract.organisation.portfolioCenter.domain.PortfolioCenter;
-import org.apache.fineract.organisation.portfolioCenter.domain.PortfolioCenterFrecuencyMeeting;
 import org.apache.fineract.organisation.portfolioCenter.domain.PortfolioCenterRepositoryWrapper;
 import org.apache.fineract.organisation.portfolioCenter.domain.PortfolioCenterStatus;
 import org.apache.fineract.organisation.portfolioCenter.serialization.PortfolioCenterCommandFromApiJsonDeserializer;
@@ -212,57 +208,4 @@ public class PortfolioCenterWritePlatformServiceImpl implements PortfolioCenterW
         return centerName.toString();
     }
 
-    @SuppressWarnings("unused")
-    private static LocalDate calculateMeetingDate(LocalDate startingDate, RangeTemplateData rangeTemplate, int dayOfWeekNumber,
-            int weekOfMonth, PortfolioCenterFrecuencyMeeting frecuencyMeeting) {
-        LocalDate meetingDate = null;
-        boolean isMeeetingDateInRange;
-
-        switch (frecuencyMeeting) {
-            case MENSUAL:
-                // calculate first meeting date
-                DayOfWeek dow = DayOfWeek.of(dayOfWeekNumber);
-                meetingDate = startingDate.with(WeekFields.ISO.weekOfMonth(), weekOfMonth).with(dow);
-                isMeeetingDateInRange = dateInRange(meetingDate.getDayOfMonth(), rangeTemplate.getStartDay(), rangeTemplate.getEndDay());
-
-                if (meetingDate.isBefore(startingDate) || meetingDate.isEqual(startingDate)
-                        || meetingDate.getMonthValue() == startingDate.getMonthValue() || !isMeeetingDateInRange) {
-                    // Use next month instead
-                    meetingDate = startingDate.plusMonths(1).with(WeekFields.ISO.weekOfMonth(), weekOfMonth).with(dow);
-                } else {
-                    return meetingDate;
-                }
-            break;
-            default:
-            break;
-        }
-        return meetingDate;
-    }
-
-    @SuppressWarnings("unused")
-    private static LocalDate calculateNextMeetingDate(LocalDate startingDate, RangeTemplateData rangeTemplate, int dayOfWeekNumber,
-            PortfolioCenterFrecuencyMeeting frecuencyMeeting) {
-        LocalDate meetingDate = null;
-        DayOfWeek dow = DayOfWeek.of(dayOfWeekNumber);
-
-        if (frecuencyMeeting.isMensual()) {
-            meetingDate = startingDate.with(TemporalAdjusters.firstDayOfNextMonth()).with(TemporalAdjusters.next(dow));
-            boolean isMeeetingDateInRange;
-            do {
-                isMeeetingDateInRange = dateInRange(meetingDate.getDayOfMonth(), rangeTemplate.getStartDay(), rangeTemplate.getEndDay());
-                if (!isMeeetingDateInRange) {
-                    meetingDate = meetingDate.with(TemporalAdjusters.next(dow));
-                }
-            } while (!isMeeetingDateInRange);
-        }
-        return meetingDate;
-    }
-
-    @SuppressWarnings("unused")
-    private static boolean dateInRange(int day, int startDay, int endDay) {
-        if (day >= startDay && day <= endDay)
-            return true;
-        else
-            return false;
-    }
 }
