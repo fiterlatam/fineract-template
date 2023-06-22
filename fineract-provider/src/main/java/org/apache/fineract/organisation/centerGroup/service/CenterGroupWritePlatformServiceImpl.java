@@ -20,20 +20,30 @@ package org.apache.fineract.organisation.centerGroup.service;
 
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import javax.persistence.PersistenceException;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.fineract.infrastructure.codes.domain.CodeValueRepository;
 import org.apache.fineract.infrastructure.codes.service.CodeValueReadPlatformService;
+import org.apache.fineract.infrastructure.configuration.data.GlobalConfigurationPropertyData;
+import org.apache.fineract.infrastructure.configuration.service.ConfigurationReadPlatformService;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
+import org.apache.fineract.infrastructure.core.data.ApiParameterError;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuilder;
+import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidationException;
 import org.apache.fineract.infrastructure.core.exception.PlatformDataIntegrityException;
+import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.organisation.centerGroup.domain.CenterGroup;
 import org.apache.fineract.organisation.centerGroup.domain.CenterGroupRepositoryWrapper;
+import org.apache.fineract.organisation.centerGroup.exception.CenterGroupMeetingTimeCollisionException;
 import org.apache.fineract.organisation.centerGroup.serialization.CenterGroupCommandFromApiJsonDeserializer;
 import org.apache.fineract.organisation.office.domain.OfficeRepositoryWrapper;
 import org.apache.fineract.organisation.portfolioCenter.domain.PortfolioCenter;
@@ -56,19 +66,22 @@ public class CenterGroupWritePlatformServiceImpl implements CenterGroupWritePlat
 
     private final PlatformSecurityContext context;
     private final CenterGroupCommandFromApiJsonDeserializer fromApiJsonDeserializer;
+    private final FromJsonHelper fromJsonHelper;
     private final OfficeRepositoryWrapper officeRepositoryWrapper;
     private final CenterGroupRepositoryWrapper centerGroupRepositoryWrapper;
     private final PortfolioCenterRepositoryWrapper portfolioCenterRepositoryWrapper;
     private final CodeValueReadPlatformService codeValueReadPlatformService;
     private final AppUserRepository appUserRepository;
     private final CodeValueRepository codeValueRepository;
+    private final ConfigurationReadPlatformService configurationReadPlatformService;
 
     @Autowired
     public CenterGroupWritePlatformServiceImpl(PlatformSecurityContext context,
             CenterGroupCommandFromApiJsonDeserializer fromApiJsonDeserializer, OfficeRepositoryWrapper officeRepositoryWrapper,
             CenterGroupRepositoryWrapper centerGroupRepositoryWrapper, PortfolioCenterRepositoryWrapper portfolioCenterRepositoryWrapper,
             CodeValueReadPlatformService codeValueReadPlatformService, AppUserRepository appUserRepository,
-            CodeValueRepository codeValueRepository) {
+            CodeValueRepository codeValueRepository, ConfigurationReadPlatformService configurationReadPlatformService,
+            FromJsonHelper fromJsonHelper) {
         this.context = context;
         this.fromApiJsonDeserializer = fromApiJsonDeserializer;
         this.officeRepositoryWrapper = officeRepositoryWrapper;
@@ -77,6 +90,8 @@ public class CenterGroupWritePlatformServiceImpl implements CenterGroupWritePlat
         this.codeValueReadPlatformService = codeValueReadPlatformService;
         this.appUserRepository = appUserRepository;
         this.codeValueRepository = codeValueRepository;
+        this.configurationReadPlatformService = configurationReadPlatformService;
+        this.fromJsonHelper = fromJsonHelper;
     }
 
     @Transactional
@@ -92,6 +107,20 @@ public class CenterGroupWritePlatformServiceImpl implements CenterGroupWritePlat
                 portfolioCenter = this.portfolioCenterRepositoryWrapper.findOneWithNotFoundDetection(portfolioCenterId);
             }
 
+            Integer meetingDefaultDureation = 0;
+            Integer timeBetweenMeetings = 0;
+
+            GlobalConfigurationPropertyData meetingDefaultDurationConfig = configurationReadPlatformService
+                    .retrieveGlobalConfiguration("meeting-default-duration");
+            if (meetingDefaultDurationConfig != null) {
+                meetingDefaultDureation = meetingDefaultDurationConfig.getValue().intValue();
+            }
+            GlobalConfigurationPropertyData timeBetweenMeetingsConfig = configurationReadPlatformService
+                    .retrieveGlobalConfiguration("time-between-meetings");
+            if (timeBetweenMeetingsConfig != null) {
+                timeBetweenMeetings = timeBetweenMeetingsConfig.getValue().intValue();
+            }
+
             final Long responsibleUserId = command
                     .longValueOfParameterNamed(CenterGroupConstants.CenterGroupSupportedParameters.RESPONSIBLE_USER_ID.getValue());
             AppUser responsibleUser = null;
@@ -101,6 +130,76 @@ public class CenterGroupWritePlatformServiceImpl implements CenterGroupWritePlat
             }
 
             final CenterGroup centerGroup = CenterGroup.fromJson(portfolioCenter, responsibleUser, command);
+
+            final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
+
+            // confirm meeting start time is not after meeting end time
+            if (centerGroup.getMeetingStartTime().isAfter(centerGroup.getMeetingEndTime())) {
+                final ApiParameterError error = ApiParameterError.parameterErrorWithValue(
+                        "error.msg.centerGroup.meetingStartTime.after.meetingEndTime",
+                        "Meeting start time '" + centerGroup.getMeetingStartTime() + "' cannot be after meeting end time '"
+                                + centerGroup.getMeetingEndTime() + "'",
+                        CenterGroupConstants.CenterGroupSupportedParameters.MEETING_START_TIME.getValue(),
+                        centerGroup.getMeetingStartTime().toString());
+                dataValidationErrors.add(error);
+            }
+
+            // Check if centerGroup stand and end date is within the PortfolioCenter start and end dates
+            if (portfolioCenter != null) {
+                if (centerGroup.getMeetingStartTime().isBefore(portfolioCenter.getMeetingStartTime())) {
+                    final ApiParameterError error = ApiParameterError.parameterErrorWithValue(
+                            "error.msg.centerGroup.startDate.before.portfolioCenterStartDate",
+                            "Center group start date '" + centerGroup.getMeetingStartTime()
+                                    + "' cannot be before portfolio center start date '" + portfolioCenter.getMeetingStartTime() + "'",
+                            CenterGroupConstants.CenterGroupSupportedParameters.MEETING_START_TIME.getValue(),
+                            centerGroup.getMeetingStartTime().toString());
+                    dataValidationErrors.add(error);
+                }
+
+                if (centerGroup.getMeetingEndTime().isAfter(portfolioCenter.getMeetingEndTime())) {
+                    final ApiParameterError error = ApiParameterError.parameterErrorWithValue(
+                            "error.msg.centerGroup.endDate.after.portfolioCenterEndDate",
+                            "Center group end date '" + centerGroup.getMeetingEndTime() + "' cannot be after portfolio center end date '"
+                                    + portfolioCenter.getMeetingEndTime() + "'",
+                            CenterGroupConstants.CenterGroupSupportedParameters.MEETING_END_TIME.getValue(),
+                            centerGroup.getMeetingEndTime().toString());
+                    dataValidationErrors.add(error);
+                }
+            }
+
+            // check for overlapping center groups
+            List<CenterGroup> overLappingCenterGroups = centerGroupRepositoryWrapper.findOverLappingCenterGroups(portfolioCenterId,
+                    centerGroup.getMeetingStartTime(), centerGroup.getMeetingEndTime());
+            if (overLappingCenterGroups.size() > 0) {
+                for (CenterGroup centerGroup1 : overLappingCenterGroups) {
+
+                    final ApiParameterError error = ApiParameterError.parameterErrorWithValue("error.msg.centerGroup.overlapping",
+                            "Center Group with id " + centerGroup1.getId() + " with duration '" + centerGroup1.getMeetingStartTime() + " - "
+                                    + centerGroup1.getMeetingEndTime() + "' overlaps with the new center group",
+                            CenterGroupConstants.CenterGroupSupportedParameters.FORMATION_DATE.getValue(),
+                            centerGroup.getMeetingStartTime().toString());
+
+                    if (centerGroup1.getMeetingStartTime().isAfter(centerGroup.getMeetingStartTime().minusMinutes(timeBetweenMeetings))
+                            || centerGroup1.getMeetingStartTime()
+                                    .isBefore(centerGroup.getMeetingEndTime().plusMinutes(timeBetweenMeetings))) {
+                        final ApiParameterError error2 = ApiParameterError.parameterErrorWithValue(
+                                "error.msg.centerGroup.lapse.between.meetings",
+                                "Center Group with id " + centerGroup1.getId() + " with duration '" + centerGroup1.getMeetingStartTime()
+                                        + " - " + centerGroup1.getMeetingEndTime() + "' does not meet the configured '"
+                                        + timeBetweenMeetings + "' minutes lapse between meetings",
+                                CenterGroupConstants.CenterGroupSupportedParameters.FORMATION_DATE.getValue(),
+                                centerGroup.getMeetingStartTime().toString());
+                        dataValidationErrors.add(error2);
+                    }
+
+                    dataValidationErrors.add(error);
+                }
+            }
+
+            if (CollectionUtils.isNotEmpty(dataValidationErrors)) {
+                throw new PlatformApiDataValidationException("validation.msg.validation.errors.exist", "Validation errors exist.",
+                        dataValidationErrors);
+            }
 
             this.centerGroupRepositoryWrapper.saveAndFlush(centerGroup);
 
@@ -168,6 +267,21 @@ public class CenterGroupWritePlatformServiceImpl implements CenterGroupWritePlat
             final Long destinationPortfolioCenterId = command.longValueOfParameterNamed(
                     CenterGroupConstants.CenterGroupSupportedParameters.DESTINATION_PORTFOLIO_CENTER_ID.getValue());
 
+            System.out.println("old center group ");
+            System.out.println(centerGroup.getPortfolioCenter().getId());
+            System.out.println(centerGroup.getName());
+            System.out.println(centerGroup.getMeetingStartTime());
+            System.out.println(centerGroup.getMeetingEndTime());
+
+            Collection<CenterGroup> collidingCenterGroups = this.centerGroupRepositoryWrapper.findCenterGroupsByCenterIdAndMeetingTimes(
+                    destinationPortfolioCenterId, centerGroup.getMeetingStartTime(), centerGroup.getMeetingEndTime());
+            // extract one center group from the collection
+
+            if (collidingCenterGroups != null && !collidingCenterGroups.isEmpty()) {
+                CenterGroup group = collidingCenterGroups.iterator().next();
+                throw new CenterGroupMeetingTimeCollisionException(group.getName(), group.getId(), group.getMeetingStartTime(),
+                        group.getMeetingEndTime());
+            }
             PortfolioCenter newParentPortfolioCenter = null;
             if (destinationPortfolioCenterId != null) {
                 newParentPortfolioCenter = this.portfolioCenterRepositoryWrapper.findOneWithNotFoundDetection(destinationPortfolioCenterId);
@@ -179,16 +293,18 @@ public class CenterGroupWritePlatformServiceImpl implements CenterGroupWritePlat
             DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ISO_LOCAL_TIME;
             String meetingStartTime = command
                     .stringValueOfParameterNamed(CenterGroupConstants.CenterGroupSupportedParameters.MEETING_START_TIME.getValue());
+            LocalTime newMeetingStarTime = null;
             if (StringUtils.isNotBlank(meetingStartTime)) {
-                LocalTime newMeetingStarTime = LocalTime.parse(meetingStartTime, dateTimeFormatter);
+                newMeetingStarTime = LocalTime.parse(meetingStartTime, dateTimeFormatter);
                 centerGroup.setMeetingStartTime(newMeetingStarTime);
                 changes.put(CenterGroupConstants.CenterGroupSupportedParameters.MEETING_START_TIME.getValue(), meetingStartTime);
             }
 
             String meetingEndTime = command
                     .stringValueOfParameterNamed(CenterGroupConstants.CenterGroupSupportedParameters.MEETING_END_TIME.getValue());
+            LocalTime newMeetingEndTime = null;
             if (StringUtils.isNotBlank(meetingEndTime)) {
-                LocalTime newMeetingEndTime = LocalTime.parse(meetingEndTime, dateTimeFormatter);
+                newMeetingEndTime = LocalTime.parse(meetingEndTime, dateTimeFormatter);
                 centerGroup.setMeetingEndTime(newMeetingEndTime);
                 changes.put(CenterGroupConstants.CenterGroupSupportedParameters.MEETING_END_TIME.getValue(), meetingEndTime);
             }
