@@ -617,7 +617,6 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
             this.dpiNumber = newValue;
         }
 
-
         validateUpdate();
 
         deriveDisplayName();

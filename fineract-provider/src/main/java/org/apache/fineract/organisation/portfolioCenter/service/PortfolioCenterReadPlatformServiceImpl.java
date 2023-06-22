@@ -363,8 +363,8 @@ public class PortfolioCenterReadPlatformServiceImpl implements PortfolioCenterRe
             final int rangeStartDay = rs.getInt("rangeStartDay");
             final int rangeEndDay = rs.getInt("rangeEndDay");
 
-            final LocalDate nextMeetingDate = PortfolioCenterGroupUtil.calculateNextMeetingDate(currentTenantDate, rangeStartDay, rangeEndDay,
-                    meetingDayOfWeek, PortfolioCenterFrecuencyMeeting.MENSUAL);
+            final LocalDate nextMeetingDate = PortfolioCenterGroupUtil.calculateNextMeetingDate(currentTenantDate, rangeStartDay,
+                    rangeEndDay, meetingDayOfWeek, PortfolioCenterFrecuencyMeeting.MENSUAL);
 
             return PortfolioDetailedPlanningData.instance(centerGroupId, centerGroupName, legacyGroupNumber, meetingStartTime,
                     meetingEndTime, portfolioCenterId, portfolioCenterName, legacyCenterNumber, meetingDayName, nextMeetingDate);
