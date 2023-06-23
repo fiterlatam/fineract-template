@@ -77,11 +77,11 @@ public class CenterGroupWritePlatformServiceImpl implements CenterGroupWritePlat
 
     @Autowired
     public CenterGroupWritePlatformServiceImpl(PlatformSecurityContext context,
-            CenterGroupCommandFromApiJsonDeserializer fromApiJsonDeserializer, OfficeRepositoryWrapper officeRepositoryWrapper,
-            CenterGroupRepositoryWrapper centerGroupRepositoryWrapper, PortfolioCenterRepositoryWrapper portfolioCenterRepositoryWrapper,
-            CodeValueReadPlatformService codeValueReadPlatformService, AppUserRepository appUserRepository,
-            CodeValueRepository codeValueRepository, ConfigurationReadPlatformService configurationReadPlatformService,
-            FromJsonHelper fromJsonHelper) {
+                                               CenterGroupCommandFromApiJsonDeserializer fromApiJsonDeserializer, OfficeRepositoryWrapper officeRepositoryWrapper,
+                                               CenterGroupRepositoryWrapper centerGroupRepositoryWrapper, PortfolioCenterRepositoryWrapper portfolioCenterRepositoryWrapper,
+                                               CodeValueReadPlatformService codeValueReadPlatformService, AppUserRepository appUserRepository,
+                                               CodeValueRepository codeValueRepository, ConfigurationReadPlatformService configurationReadPlatformService,
+                                               FromJsonHelper fromJsonHelper) {
         this.context = context;
         this.fromApiJsonDeserializer = fromApiJsonDeserializer;
         this.officeRepositoryWrapper = officeRepositoryWrapper;
@@ -107,13 +107,13 @@ public class CenterGroupWritePlatformServiceImpl implements CenterGroupWritePlat
                 portfolioCenter = this.portfolioCenterRepositoryWrapper.findOneWithNotFoundDetection(portfolioCenterId);
             }
 
-            Integer meetingDefaultDureation = 0;
+            Integer meetingDefaultDuration = 0;
             Integer timeBetweenMeetings = 0;
 
             GlobalConfigurationPropertyData meetingDefaultDurationConfig = configurationReadPlatformService
                     .retrieveGlobalConfiguration("meeting-default-duration");
             if (meetingDefaultDurationConfig != null) {
-                meetingDefaultDureation = meetingDefaultDurationConfig.getValue().intValue();
+                meetingDefaultDuration = meetingDefaultDurationConfig.getValue().intValue();
             }
             GlobalConfigurationPropertyData timeBetweenMeetingsConfig = configurationReadPlatformService
                     .retrieveGlobalConfiguration("time-between-meetings");
@@ -129,7 +129,8 @@ public class CenterGroupWritePlatformServiceImpl implements CenterGroupWritePlat
                         .orElseThrow(() -> new UserNotFoundException(responsibleUserId));
             }
 
-            final CenterGroup centerGroup = CenterGroup.fromJson(portfolioCenter, responsibleUser, command);
+            final CenterGroup centerGroup = CenterGroup.fromJson(portfolioCenter, responsibleUser, command, meetingDefaultDuration,
+                    timeBetweenMeetings);
 
             final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
 
@@ -155,16 +156,6 @@ public class CenterGroupWritePlatformServiceImpl implements CenterGroupWritePlat
                             centerGroup.getMeetingStartTime().toString());
                     dataValidationErrors.add(error);
                 }
-
-                if (centerGroup.getMeetingEndTime().isAfter(portfolioCenter.getMeetingEndTime())) {
-                    final ApiParameterError error = ApiParameterError.parameterErrorWithValue(
-                            "error.msg.centerGroup.endDate.after.portfolioCenterEndDate",
-                            "Center group end date '" + centerGroup.getMeetingEndTime() + "' cannot be after portfolio center end date '"
-                                    + portfolioCenter.getMeetingEndTime() + "'",
-                            CenterGroupConstants.CenterGroupSupportedParameters.MEETING_END_TIME.getValue(),
-                            centerGroup.getMeetingEndTime().toString());
-                    dataValidationErrors.add(error);
-                }
             }
 
             // check for overlapping center groups
@@ -181,7 +172,7 @@ public class CenterGroupWritePlatformServiceImpl implements CenterGroupWritePlat
 
                     if (centerGroup1.getMeetingStartTime().isAfter(centerGroup.getMeetingStartTime().minusMinutes(timeBetweenMeetings))
                             || centerGroup1.getMeetingStartTime()
-                                    .isBefore(centerGroup.getMeetingEndTime().plusMinutes(timeBetweenMeetings))) {
+                            .isBefore(centerGroup.getMeetingEndTime().plusMinutes(timeBetweenMeetings))) {
                         final ApiParameterError error2 = ApiParameterError.parameterErrorWithValue(
                                 "error.msg.centerGroup.lapse.between.meetings",
                                 "Center Group with id " + centerGroup1.getId() + " with duration '" + centerGroup1.getMeetingStartTime()
