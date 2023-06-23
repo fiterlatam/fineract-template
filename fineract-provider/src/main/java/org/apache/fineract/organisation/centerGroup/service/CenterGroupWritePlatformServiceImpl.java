@@ -107,13 +107,13 @@ public class CenterGroupWritePlatformServiceImpl implements CenterGroupWritePlat
                 portfolioCenter = this.portfolioCenterRepositoryWrapper.findOneWithNotFoundDetection(portfolioCenterId);
             }
 
-            Integer meetingDefaultDureation = 0;
+            Integer meetingDefaultDuration = 0;
             Integer timeBetweenMeetings = 0;
 
             GlobalConfigurationPropertyData meetingDefaultDurationConfig = configurationReadPlatformService
                     .retrieveGlobalConfiguration("meeting-default-duration");
             if (meetingDefaultDurationConfig != null) {
-                meetingDefaultDureation = meetingDefaultDurationConfig.getValue().intValue();
+                meetingDefaultDuration = meetingDefaultDurationConfig.getValue().intValue();
             }
             GlobalConfigurationPropertyData timeBetweenMeetingsConfig = configurationReadPlatformService
                     .retrieveGlobalConfiguration("time-between-meetings");
@@ -129,7 +129,8 @@ public class CenterGroupWritePlatformServiceImpl implements CenterGroupWritePlat
                         .orElseThrow(() -> new UserNotFoundException(responsibleUserId));
             }
 
-            final CenterGroup centerGroup = CenterGroup.fromJson(portfolioCenter, responsibleUser, command);
+            final CenterGroup centerGroup = CenterGroup.fromJson(portfolioCenter, responsibleUser, command, meetingDefaultDuration,
+                    timeBetweenMeetings);
 
             final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
 
@@ -153,16 +154,6 @@ public class CenterGroupWritePlatformServiceImpl implements CenterGroupWritePlat
                                     + "' cannot be before portfolio center start date '" + portfolioCenter.getMeetingStartTime() + "'",
                             CenterGroupConstants.CenterGroupSupportedParameters.MEETING_START_TIME.getValue(),
                             centerGroup.getMeetingStartTime().toString());
-                    dataValidationErrors.add(error);
-                }
-
-                if (centerGroup.getMeetingEndTime().isAfter(portfolioCenter.getMeetingEndTime())) {
-                    final ApiParameterError error = ApiParameterError.parameterErrorWithValue(
-                            "error.msg.centerGroup.endDate.after.portfolioCenterEndDate",
-                            "Center group end date '" + centerGroup.getMeetingEndTime() + "' cannot be after portfolio center end date '"
-                                    + portfolioCenter.getMeetingEndTime() + "'",
-                            CenterGroupConstants.CenterGroupSupportedParameters.MEETING_END_TIME.getValue(),
-                            centerGroup.getMeetingEndTime().toString());
                     dataValidationErrors.add(error);
                 }
             }
