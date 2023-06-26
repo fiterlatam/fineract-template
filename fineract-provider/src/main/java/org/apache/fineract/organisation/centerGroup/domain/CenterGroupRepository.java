@@ -30,8 +30,8 @@ public interface CenterGroupRepository extends JpaRepository<CenterGroup, Long>,
     // no added behaviour
 
     String FIND_CENTERS_BY_MEETING_TIMES_AND_CENTER_ID = "Select cgroup from CenterGroup cgroup where cgroup.portfolioCenter.id = :center "
-            + "and( ( :startTime >= cgroup.meetingStartTime and :startTime <= cgroup.meetingEndTime) "
-            + "OR ( :endTime >= cgroup.meetingStartTime and :endTime <= cgroup.meetingEndTime) )";
+            + "and( ( :startTime > cgroup.meetingStartTime and :startTime <= cgroup.meetingEndTime) "
+            + "OR ( :endTime >= cgroup.meetingStartTime and :endTime < cgroup.meetingEndTime) )";
 
     @Query(FIND_CENTERS_BY_MEETING_TIMES_AND_CENTER_ID)
     Collection<CenterGroup> findCenterGroupsByCenterIdAndMeetingTimes(@Param("center") Long center, @Param("startTime") LocalTime startTime,
