@@ -62,9 +62,9 @@ public class CenterGroupReadPlatformServiceImpl implements CenterGroupReadPlatfo
 
     @Autowired
     public CenterGroupReadPlatformServiceImpl(final JdbcTemplate jdbcTemplate, final DatabaseSpecificSQLGenerator sqlGenerator,
-                                              final PlatformSecurityContext context, final ColumnValidator columnValidator,
-                                              final CodeValueReadPlatformService codeValueReadPlatformService, final OfficeReadPlatformService officeReadPlatformService,
-                                              final AppUserReadPlatformService appUserReadPlatformService) {
+            final PlatformSecurityContext context, final ColumnValidator columnValidator,
+            final CodeValueReadPlatformService codeValueReadPlatformService, final OfficeReadPlatformService officeReadPlatformService,
+            final AppUserReadPlatformService appUserReadPlatformService) {
         this.jdbcTemplate = jdbcTemplate;
         this.sqlGenerator = sqlGenerator;
         this.context = context;
@@ -98,7 +98,7 @@ public class CenterGroupReadPlatformServiceImpl implements CenterGroupReadPlatfo
         String schemaSql = "select " + centerGroupMapper.schema();
         schemaSql += " where cg.portfolio_center_id = ? ";
         schemaSql += " and cg.status = ? ";
-        schemaSql += " order by cg.meeting_start_time ASC ";
+        schemaSql += " order by cg.name asc ";
 
         List<Object> params = new ArrayList<>();
         params.add(portfolioCenterId);
