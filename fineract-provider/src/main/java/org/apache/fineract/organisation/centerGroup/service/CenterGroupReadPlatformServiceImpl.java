@@ -98,7 +98,7 @@ public class CenterGroupReadPlatformServiceImpl implements CenterGroupReadPlatfo
         String schemaSql = "select " + centerGroupMapper.schema();
         schemaSql += " where cg.portfolio_center_id = ? ";
         schemaSql += " and cg.status = ? ";
-        schemaSql += " order by cg.meeting_start_time ASC ";
+        schemaSql += " order by cg.name asc ";
 
         List<Object> params = new ArrayList<>();
         params.add(portfolioCenterId);
