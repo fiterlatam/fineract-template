@@ -30,15 +30,15 @@ public interface CenterGroupRepository extends JpaRepository<CenterGroup, Long>,
     // no added behaviour
 
     String FIND_CENTERS_BY_MEETING_TIMES_AND_CENTER_ID = "Select cgroup from CenterGroup cgroup where cgroup.portfolioCenter.id = :center "
-            + "and( ( :startTime >= cgroup.meetingStartTime and :startTime <= cgroup.meetingEndTime) "
-            + "OR ( :endTime >= cgroup.meetingStartTime and :endTime <= cgroup.meetingEndTime) )";
+            + "and( ( :startTime > cgroup.meetingStartTime and :startTime <= cgroup.meetingEndTime) "
+            + "OR ( :endTime >= cgroup.meetingStartTime and :endTime < cgroup.meetingEndTime) )";
 
     @Query(FIND_CENTERS_BY_MEETING_TIMES_AND_CENTER_ID)
     Collection<CenterGroup> findCenterGroupsByCenterIdAndMeetingTimes(@Param("center") Long center, @Param("startTime") LocalTime startTime,
             @Param("endTime") LocalTime endTime);
 
-    @Query("SELECT e FROM CenterGroup e where e.portfolioCenter.id=:portfolioCenterId AND ( (e.meetingStartTime >= :startTime AND e.meetingStartTime <= :endTime) "
-            + "OR (e.meetingEndTime >= :startTime AND e.meetingEndTime <= :endTime) OR (e.meetingStartTime <= :startTime AND e.meetingEndTime >= :endTime) )")
+    @Query("SELECT e FROM CenterGroup e where e.portfolioCenter.id=:portfolioCenterId AND ( (e.meetingStartTime > :startTime AND e.meetingStartTime < :endTime) "
+            + "OR (e.meetingEndTime > :startTime AND e.meetingEndTime < :endTime) OR (e.meetingStartTime < :startTime AND e.meetingEndTime > :endTime) )")
     List<CenterGroup> findOverlappingCenterGroups(Long portfolioCenterId, LocalTime startTime, LocalTime endTime);
 
 }

@@ -83,8 +83,8 @@ public class CenterGroup extends AbstractAuditableCustom {
     }
 
     public CenterGroup(String name, PortfolioCenter portfolioCenter, Long legacyGroupNumber, BigDecimal latitude, BigDecimal longitude,
-                       LocalDate formationDate, Integer status, Integer size, LocalTime meetingStartTime, LocalTime meetingEndTime,
-                       AppUser responsibleUser) {
+            LocalDate formationDate, Integer status, Integer size, LocalTime meetingStartTime, LocalTime meetingEndTime,
+            AppUser responsibleUser) {
         this.name = name;
         this.portfolioCenter = portfolioCenter;
         this.legacyGroupNumber = legacyGroupNumber;
@@ -99,7 +99,7 @@ public class CenterGroup extends AbstractAuditableCustom {
     }
 
     public static CenterGroup fromJson(PortfolioCenter portfolioCenter, AppUser responsibleUser, JsonCommand command,
-                                       Integer meetingDefaultDuration, Integer timeBetweenMeetings) {
+            Integer meetingDefaultDuration, Integer timeBetweenMeetings) {
         final String name = command.stringValueOfParameterNamed(CenterGroupConstants.CenterGroupSupportedParameters.NAME.getValue());
         final Integer size = command.integerValueOfParameterNamed(CenterGroupConstants.CenterGroupSupportedParameters.SIZE.getValue());
         final LocalDate formationDate = command
