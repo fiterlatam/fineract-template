@@ -16,16 +16,14 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.portfolio.client.exception;
+package org.apache.fineract.organisation.portfolio.data;
 
-import org.apache.fineract.infrastructure.core.exception.AbstractPlatformResourceNotFoundException;
+import java.util.Comparator;
 
-/**
- * A {@link RuntimeException} thrown when client resources are not found.
- */
-public class ClientDpiExistsException extends AbstractPlatformResourceNotFoundException {
+public class PortfolioDetailedPlanningComparator {
 
-    public ClientDpiExistsException(String dpi) {
-        super("error.msg.client.duplicate.dpi", "Client with dpi " + dpi + " already exists.", dpi);
+    public static Comparator<PortfolioDetailedPlanningData> createPortfolioDetailedPlanningComparator() {
+        return Comparator.comparing(PortfolioDetailedPlanningData::getMeetingDate)
+                .thenComparing(PortfolioDetailedPlanningData::getMeetingStartTime);
     }
 }

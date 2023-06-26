@@ -213,8 +213,8 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
                     "Client with mobileNo `" + mobileNo + "` already exists", "mobileNo", mobileNo);
         } else if (realCause.getMessage().contains("dpi")) {
             final String dpi = command.stringValueOfParameterNamed("dpi");
-            throw new PlatformDataIntegrityException("error.msg.client.duplicate.dpi",
-                    "Client with dpi `" + dpi + "` already exists", "dpi", dpi);
+            throw new PlatformDataIntegrityException("error.msg.client.duplicate.dpi", "Client with dpi `" + dpi + "` already exists",
+                    "dpi", dpi);
         }
 
         logAsErrorUnexpectedDataIntegrityException(dve);

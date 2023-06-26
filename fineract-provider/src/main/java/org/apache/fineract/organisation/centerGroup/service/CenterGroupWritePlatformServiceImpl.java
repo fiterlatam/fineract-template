@@ -107,13 +107,13 @@ public class CenterGroupWritePlatformServiceImpl implements CenterGroupWritePlat
                 portfolioCenter = this.portfolioCenterRepositoryWrapper.findOneWithNotFoundDetection(portfolioCenterId);
             }
 
-            Integer meetingDefaultDureation = 0;
+            Integer meetingDefaultDuration = 0;
             Integer timeBetweenMeetings = 0;
 
             GlobalConfigurationPropertyData meetingDefaultDurationConfig = configurationReadPlatformService
                     .retrieveGlobalConfiguration("meeting-default-duration");
             if (meetingDefaultDurationConfig != null) {
-                meetingDefaultDureation = meetingDefaultDurationConfig.getValue().intValue();
+                meetingDefaultDuration = meetingDefaultDurationConfig.getValue().intValue();
             }
             GlobalConfigurationPropertyData timeBetweenMeetingsConfig = configurationReadPlatformService
                     .retrieveGlobalConfiguration("time-between-meetings");
@@ -129,7 +129,8 @@ public class CenterGroupWritePlatformServiceImpl implements CenterGroupWritePlat
                         .orElseThrow(() -> new UserNotFoundException(responsibleUserId));
             }
 
-            final CenterGroup centerGroup = CenterGroup.fromJson(portfolioCenter, responsibleUser, command);
+            final CenterGroup centerGroup = CenterGroup.fromJson(portfolioCenter, responsibleUser, command, meetingDefaultDuration,
+                    timeBetweenMeetings);
 
             final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
 
@@ -178,20 +179,6 @@ public class CenterGroupWritePlatformServiceImpl implements CenterGroupWritePlat
                                     + centerGroup1.getMeetingEndTime() + "' overlaps with the new center group",
                             CenterGroupConstants.CenterGroupSupportedParameters.FORMATION_DATE.getValue(),
                             centerGroup.getMeetingStartTime().toString());
-
-                    if (centerGroup1.getMeetingStartTime().isAfter(centerGroup.getMeetingStartTime().minusMinutes(timeBetweenMeetings))
-                            || centerGroup1.getMeetingStartTime()
-                                    .isBefore(centerGroup.getMeetingEndTime().plusMinutes(timeBetweenMeetings))) {
-                        final ApiParameterError error2 = ApiParameterError.parameterErrorWithValue(
-                                "error.msg.centerGroup.lapse.between.meetings",
-                                "Center Group with id " + centerGroup1.getId() + " with duration '" + centerGroup1.getMeetingStartTime()
-                                        + " - " + centerGroup1.getMeetingEndTime() + "' does not meet the configured '"
-                                        + timeBetweenMeetings + "' minutes lapse between meetings",
-                                CenterGroupConstants.CenterGroupSupportedParameters.FORMATION_DATE.getValue(),
-                                centerGroup.getMeetingStartTime().toString());
-                        dataValidationErrors.add(error2);
-                    }
-
                     dataValidationErrors.add(error);
                 }
             }
