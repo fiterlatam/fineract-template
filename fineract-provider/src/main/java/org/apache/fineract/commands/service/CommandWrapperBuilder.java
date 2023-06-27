@@ -3711,4 +3711,11 @@ public class CommandWrapperBuilder {
         return this;
     }
 
+    public CommandWrapperBuilder addClientToBlacklist(Long clientId) {
+        this.actionName = "ADD";
+        this.entityName = "BLACKLIST";
+        this.clientId = clientId;
+        this.href = "/blacklist/" + clientId;
+        return this;
+    }
 }
