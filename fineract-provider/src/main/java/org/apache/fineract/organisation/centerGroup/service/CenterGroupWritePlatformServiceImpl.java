@@ -21,7 +21,6 @@ package org.apache.fineract.organisation.centerGroup.service;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -55,6 +54,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -63,7 +63,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class CenterGroupWritePlatformServiceImpl implements CenterGroupWritePlatformService {
 
     private static final Logger LOG = LoggerFactory.getLogger(CenterGroupWritePlatformServiceImpl.class);
-
+    private final JdbcTemplate jdbcTemplate;
     private final PlatformSecurityContext context;
     private final CenterGroupCommandFromApiJsonDeserializer fromApiJsonDeserializer;
     private final FromJsonHelper fromJsonHelper;
@@ -76,12 +76,12 @@ public class CenterGroupWritePlatformServiceImpl implements CenterGroupWritePlat
     private final ConfigurationReadPlatformService configurationReadPlatformService;
 
     @Autowired
-    public CenterGroupWritePlatformServiceImpl(PlatformSecurityContext context,
-            CenterGroupCommandFromApiJsonDeserializer fromApiJsonDeserializer, OfficeRepositoryWrapper officeRepositoryWrapper,
-            CenterGroupRepositoryWrapper centerGroupRepositoryWrapper, PortfolioCenterRepositoryWrapper portfolioCenterRepositoryWrapper,
-            CodeValueReadPlatformService codeValueReadPlatformService, AppUserRepository appUserRepository,
-            CodeValueRepository codeValueRepository, ConfigurationReadPlatformService configurationReadPlatformService,
-            FromJsonHelper fromJsonHelper) {
+    public CenterGroupWritePlatformServiceImpl(PlatformSecurityContext context,final JdbcTemplate jdbcTemplate,
+                                               CenterGroupCommandFromApiJsonDeserializer fromApiJsonDeserializer, OfficeRepositoryWrapper officeRepositoryWrapper,
+                                               CenterGroupRepositoryWrapper centerGroupRepositoryWrapper, PortfolioCenterRepositoryWrapper portfolioCenterRepositoryWrapper,
+                                               CodeValueReadPlatformService codeValueReadPlatformService, AppUserRepository appUserRepository,
+                                               CodeValueRepository codeValueRepository, ConfigurationReadPlatformService configurationReadPlatformService,
+                                               FromJsonHelper fromJsonHelper) {
         this.context = context;
         this.fromApiJsonDeserializer = fromApiJsonDeserializer;
         this.officeRepositoryWrapper = officeRepositoryWrapper;
@@ -91,6 +91,7 @@ public class CenterGroupWritePlatformServiceImpl implements CenterGroupWritePlat
         this.appUserRepository = appUserRepository;
         this.codeValueRepository = codeValueRepository;
         this.configurationReadPlatformService = configurationReadPlatformService;
+        this.jdbcTemplate = jdbcTemplate;
         this.fromJsonHelper = fromJsonHelper;
     }
 
@@ -254,21 +255,7 @@ public class CenterGroupWritePlatformServiceImpl implements CenterGroupWritePlat
             final Long destinationPortfolioCenterId = command.longValueOfParameterNamed(
                     CenterGroupConstants.CenterGroupSupportedParameters.DESTINATION_PORTFOLIO_CENTER_ID.getValue());
 
-            System.out.println("old center group ");
-            System.out.println(centerGroup.getPortfolioCenter().getId());
-            System.out.println(centerGroup.getName());
-            System.out.println(centerGroup.getMeetingStartTime());
-            System.out.println(centerGroup.getMeetingEndTime());
 
-            Collection<CenterGroup> collidingCenterGroups = this.centerGroupRepositoryWrapper.findCenterGroupsByCenterIdAndMeetingTimes(
-                    destinationPortfolioCenterId, centerGroup.getMeetingStartTime(), centerGroup.getMeetingEndTime());
-            // extract one center group from the collection
-
-            if (collidingCenterGroups != null && !collidingCenterGroups.isEmpty()) {
-                CenterGroup group = collidingCenterGroups.iterator().next();
-                throw new CenterGroupMeetingTimeCollisionException(group.getName(), group.getId(), group.getMeetingStartTime(),
-                        group.getMeetingEndTime());
-            }
             PortfolioCenter newParentPortfolioCenter = null;
             if (destinationPortfolioCenterId != null) {
                 newParentPortfolioCenter = this.portfolioCenterRepositoryWrapper.findOneWithNotFoundDetection(destinationPortfolioCenterId);
@@ -295,6 +282,22 @@ public class CenterGroupWritePlatformServiceImpl implements CenterGroupWritePlat
                 centerGroup.setMeetingEndTime(newMeetingEndTime);
                 changes.put(CenterGroupConstants.CenterGroupSupportedParameters.MEETING_END_TIME.getValue(), meetingEndTime);
             }
+            String schemaSql = "Select cgroup.id from m_center_group cgroup where cgroup.portfolio_center_id = ? and " +
+                    "( ( ? >= cgroup.meeting_start_time and ? < cgroup.meeting_end_time) OR " +
+                    "( ? > cgroup.meeting_start_time and ? < cgroup.meeting_end_time) ) order by id desc";
+            List<Long> groupIds = jdbcTemplate.queryForList(schemaSql, Long.class, newParentPortfolioCenter.getId(), newMeetingStarTime,
+                    newMeetingStarTime, newMeetingEndTime, newMeetingEndTime);
+
+
+            if (groupIds.size() > 0) {
+                CenterGroup group = centerGroupRepositoryWrapper.findOneWithNotFoundDetection(groupIds.get(0));
+
+                throw new CenterGroupMeetingTimeCollisionException(group.getName(), group.getId(), group.getMeetingStartTime(),
+                        group.getMeetingEndTime());
+            }
+
+            System.out.println("new meeting start: "+ newMeetingStarTime);
+            System.out.println("new meeting end: "+ newMeetingEndTime);
 
             this.centerGroupRepositoryWrapper.saveAndFlush(centerGroup);
 
