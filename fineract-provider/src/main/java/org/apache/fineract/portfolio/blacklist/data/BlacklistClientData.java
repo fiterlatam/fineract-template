@@ -20,6 +20,7 @@ package org.apache.fineract.portfolio.blacklist.data;
 
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 import org.apache.fineract.portfolio.client.data.ClientData;
+import org.apache.fineract.portfolio.loanproduct.data.LoanProductData;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -48,12 +49,12 @@ public class BlacklistClientData {
     private final LocalDateTime createdAt;
     @SuppressWarnings("unused")
     private final Collection<CodeValueData> typificationOptions;
-
+    private final Collection<LoanProductData> loanProducts;
 
     public BlacklistClientData(final Long id, final Long clientId, final String clientName, final Long productId, final CodeValueData typification,
                                final String productCode,final String dpi,final String nit,final String agencyId,final Integer year,
                                final BigDecimal balance,final BigDecimal disbursementAmount,final String addedBy,final LocalDateTime createdAt,
-                               final String description, final String status, final Collection<CodeValueData> typificationOptions) {
+                               final String description, final String status, final Collection<CodeValueData> typificationOptions,final Collection<LoanProductData> loanProducts) {
         this.id = id;
 
         this.clientId = clientId;
@@ -72,11 +73,12 @@ public class BlacklistClientData {
         this.addedBy = addedBy;
         this.createdAt = createdAt;
         this.typificationOptions = typificationOptions;
+        this.loanProducts = loanProducts;
     }
 
-    public static BlacklistClientData template(Collection<CodeValueData> codeValues, ClientData clientData) {
+    public static BlacklistClientData template(Collection<CodeValueData> codeValues, ClientData clientData,final Collection<LoanProductData> loanProducts) {
         return new BlacklistClientData(null, clientData.id(), clientData.displayName(), null, null, null,
                 clientData.getDpiNumber(), null, null, null, null, null, null,
-                null,null,null, codeValues);
+                null,null,null, codeValues, loanProducts);
     }
 }

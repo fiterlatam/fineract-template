@@ -19,10 +19,20 @@
 package org.apache.fineract.portfolio.blacklist.service;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.fineract.infrastructure.codes.data.CodeValueData;
+import org.apache.fineract.infrastructure.codes.service.CodeValueReadPlatformService;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
+import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuilder;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
+import org.apache.fineract.portfolio.blacklist.command.BlacklistApiConstants;
+import org.apache.fineract.portfolio.blacklist.command.BlacklistDataValidator;
+import org.apache.fineract.portfolio.blacklist.domain.BlacklistClients;
+import org.apache.fineract.portfolio.blacklist.domain.BlacklistClientsRepository;
 import org.apache.fineract.portfolio.client.service.ClientChargeWritePlatformServiceJpaRepositoryImpl;
+import org.apache.fineract.portfolio.client.service.ClientReadPlatformService;
+import org.apache.fineract.portfolio.loanproduct.domain.LoanProduct;
+import org.apache.fineract.portfolio.loanproduct.domain.LoanProductRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,15 +44,43 @@ public class BlacklistClientWritePlatformServiceImpl implements BlacklistClientW
     private static final Logger LOG = LoggerFactory.getLogger(ClientChargeWritePlatformServiceJpaRepositoryImpl.class);
 
     private final PlatformSecurityContext context;
+    private final BlacklistDataValidator dataValidator;
+    private final LoanProductRepository loanProductRepository;
+    private final ClientReadPlatformService clientReadPlatformService;
+    private final CodeValueReadPlatformService codeValueReadPlatformService;
+    private final BlacklistClientsRepository blacklistClientsRepository;
 
     @Autowired
-    public BlacklistClientWritePlatformServiceImpl(final PlatformSecurityContext context) {
+    public BlacklistClientWritePlatformServiceImpl(final PlatformSecurityContext context,
+                   final BlacklistDataValidator dataValidator, final LoanProductRepository loanProductRepository,
+                   final ClientReadPlatformService clientReadPlatformService,final CodeValueReadPlatformService codeValueReadPlatformService,
+                   final BlacklistClientsRepository blacklistClientsRepository) {
         this.context = context;
-
+        this.dataValidator = dataValidator;
+        this.loanProductRepository = loanProductRepository;
+        this.clientReadPlatformService = clientReadPlatformService;
+        this.codeValueReadPlatformService = codeValueReadPlatformService;
+        this.blacklistClientsRepository = blacklistClientsRepository;
     }
 
     @Override
     public CommandProcessingResult addClientToBlacklist(JsonCommand command) {
-        return null;
+        Long clientId = command.getClientId();
+        this.dataValidator.validateForCreate(command.json());
+        final Long productId = command.longValueOfParameterNamed(BlacklistApiConstants.productIdParamName);
+
+
+        LoanProduct loanProduct = this.loanProductRepository.getById(productId);
+
+        CodeValueData typification = codeValueReadPlatformService.retrieveCodeValue(command.longValueOfParameterNamed(BlacklistApiConstants.typificationParamName));
+        BlacklistClients blacklistClient = BlacklistClients.fromJson(this.context.authenticatedUser(), loanProduct, typification, command);
+
+        this.blacklistClientsRepository.saveAndFlush(blacklistClient);
+
+        return new CommandProcessingResultBuilder() //
+                .withCommandId(command.commandId()) //
+                .withClientId(clientId) //
+                .withEntityId(blacklistClient.getId()) //
+                .build();
     }
 }

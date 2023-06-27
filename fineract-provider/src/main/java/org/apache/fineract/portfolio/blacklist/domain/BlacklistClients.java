@@ -20,9 +20,10 @@
 package org.apache.fineract.portfolio.blacklist.domain;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.fineract.infrastructure.codes.domain.CodeValue;
+import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.domain.AbstractAuditableCustom;
+import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProduct;
 import org.apache.fineract.useradministration.domain.AppUser;
 
@@ -84,7 +85,7 @@ public class BlacklistClients extends AbstractAuditableCustom {
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
-    public static BlacklistClients fromJson(final AppUser appUser, final LoanProduct loanProduct, final CodeValue typification, final JsonCommand command) {
+    public static BlacklistClients fromJson(final AppUser appUser, final LoanProduct loanProduct, final CodeValueData typification, final JsonCommand command) {
         final String dpi = command.stringValueOfParameterNamed("dpi");
         final String nit = command.stringValueOfParameterNamed("nit");
         final String description = command.stringValueOfParameterNamed("description");
@@ -100,7 +101,7 @@ public class BlacklistClients extends AbstractAuditableCustom {
         //
     }
 
-    private BlacklistClients(final AppUser appUser, final CodeValue typification, final String dpi, final String nit,
+    private BlacklistClients(final AppUser appUser, final CodeValueData typification, final String dpi, final String nit,
                              final String description, final String agencyId, final LoanProduct loanProduct,
                              final BigDecimal balance, final BigDecimal disbursementAmount, final Integer year) {
         this.addedBy = appUser;
@@ -115,7 +116,7 @@ public class BlacklistClients extends AbstractAuditableCustom {
         this.balance = balance;
         this.disbursementAmount = disbursementAmount;
         this.year = year;
-        this.createdAt = LocalDateTime.now();
+        this.createdAt = DateUtils.getLocalDateTimeOfTenant();
     }
 
     public void updateStatus(final BlacklistStatus blacklistStatus) {
