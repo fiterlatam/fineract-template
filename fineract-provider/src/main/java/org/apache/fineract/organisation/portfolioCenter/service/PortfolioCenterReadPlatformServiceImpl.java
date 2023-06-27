@@ -238,7 +238,7 @@ public class PortfolioCenterReadPlatformServiceImpl implements PortfolioCenterRe
         PortfolioDetailedPlanningMapper portfolioDetailedPlanningMapper = new PortfolioDetailedPlanningMapper();
         String schemaSql = "select " + portfolioDetailedPlanningMapper.schema();
         schemaSql += "where pc.portfolio_id = ? ";
-        schemaSql += "order by cvMeetingDay.id, pc.meeting_start_date";
+        schemaSql += "order by centerCodeName, meetingDayOrderPosition";
 
         return this.jdbcTemplate.query(schemaSql, portfolioDetailedPlanningMapper, portfolioId);
     }
@@ -249,7 +249,7 @@ public class PortfolioCenterReadPlatformServiceImpl implements PortfolioCenterRe
 
         public PortfolioCenterMapper() {
             final StringBuilder sqlBuilder = new StringBuilder(300);
-            sqlBuilder.append("pc.id as id, pc.name as name, substring(pc.name, 1, 4) as centerCodeName, pc.portfolio_id as portfolioId, ");
+            sqlBuilder.append("pc.id as id, pc.name as name, substring(pc.name, 1, 5) as centerCodeName, pc.portfolio_id as portfolioId, ");
             sqlBuilder.append("p.name as portfolioName, pc.legacy_center_number as legacyCenterNumber, ");
             sqlBuilder.append("pc.city_id as cityId, cvCity.code_value as cityValue, ");
             sqlBuilder.append("pc.state_province_id as stateId, cvState.code_value as stateValue, ");
@@ -257,8 +257,8 @@ public class PortfolioCenterReadPlatformServiceImpl implements PortfolioCenterRe
             sqlBuilder.append("pc.type_id as typeId, cvType.code_value as typeValue, pc.created_date as createdDate, ");
             sqlBuilder.append("pc.meeting_start_date as meetingStart, pc.meeting_end_date as meetingEnd, ");
             sqlBuilder.append("pc.meeting_day as meetingDay, cvMeetingDay.code_value as meetingDayValue, ");
-            sqlBuilder.append("pc.meeting_start_time as meetingStartTime, pc.meeting_end_time as meetingEndTime, ");
-            sqlBuilder.append("pc.reference_point as referencePoint ");
+            sqlBuilder.append("cvMeetingDay.order_position as meetingDayOrderPosition, pc.meeting_start_time as meetingStartTime, ");
+            sqlBuilder.append("pc.meeting_end_time as meetingEndTime, pc.reference_point as referencePoint ");
             sqlBuilder.append("from m_portfolio_center pc ");
             sqlBuilder.append("left join m_portfolio AS p ON p.id = pc.portfolio_id ");
             sqlBuilder.append("left join m_code_value cvCity on pc.city_id = cvCity.id ");
