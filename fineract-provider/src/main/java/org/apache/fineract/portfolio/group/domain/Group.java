@@ -18,8 +18,10 @@
  */
 package org.apache.fineract.portfolio.group.domain;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -41,12 +43,13 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.infrastructure.codes.domain.CodeValue;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.ApiParameterError;
-import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
+import org.apache.fineract.infrastructure.core.domain.AbstractAuditableCustom;
 import org.apache.fineract.infrastructure.core.exception.GeneralPlatformDomainRuleException;
 import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidationException;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.security.service.RandomPasswordGenerator;
 import org.apache.fineract.organisation.office.domain.Office;
+import org.apache.fineract.organisation.portfolioCenter.domain.PortfolioCenter;
 import org.apache.fineract.organisation.staff.domain.Staff;
 import org.apache.fineract.portfolio.client.domain.Client;
 import org.apache.fineract.portfolio.group.api.GroupingTypesApiConstants;
@@ -60,7 +63,7 @@ import org.apache.fineract.useradministration.domain.AppUser;
 
 @Entity
 @Table(name = "m_group")
-public final class Group extends AbstractPersistableCustom {
+public final class Group extends AbstractAuditableCustom {
 
     @Column(name = "external_id", length = 100, unique = true)
     private String externalId;
@@ -150,6 +153,26 @@ public final class Group extends AbstractPersistableCustom {
     @Column(name = "meeting_day")
     private Integer meetingDay;
 
+    //
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "portfolio_center_id")
+    private PortfolioCenter portfolioCenter;
+
+    @Column(name = "legacy_group_number")
+    private Long legacyGroupNumber;
+
+    @Column(name = "latitude")
+    private BigDecimal latitude;
+
+    @Column(name = "longitude")
+    private BigDecimal longitude;
+
+    @Column(name = "formation_date", nullable = false)
+    private LocalDate formationDate;
+
+    @Column(name = "size", nullable = false)
+    private Integer size;
+
     @Column(name = "meeting_start_time")
     private LocalTime meetingStartTime;
 
@@ -158,6 +181,10 @@ public final class Group extends AbstractPersistableCustom {
 
     @Column(name = "group_location")
     private String groupLocation;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "responsible_user_id")
+    private AppUser responsibleUser;
 
     // JPA default constructor for entity
     Group() {
@@ -168,7 +195,10 @@ public final class Group extends AbstractPersistableCustom {
 
     public static Group newGroup(final Office office, final Staff staff, final Group parent, final GroupLevel groupLevel, final String name,
             final String externalId, final boolean active, final LocalDate activationDate, final Set<Client> clientMembers,
-            final Set<Group> groupMembers, final LocalDate submittedOnDate, final AppUser currentUser, final String accountNo) {
+            final Set<Group> groupMembers, final LocalDate submittedOnDate, final AppUser currentUser, final String accountNo,
+            final PortfolioCenter portfolioCenter, final Long legacyGroupNumber, final BigDecimal latitude, final BigDecimal longitude,
+            final LocalDate formationDate, final Integer size, final LocalTime meetingStartTime, final LocalTime meetingEndTime,
+            final AppUser responsibleUser) {
 
         // By default new group is created in PENDING status, unless explicitly
         // status is set to active
@@ -180,12 +210,16 @@ public final class Group extends AbstractPersistableCustom {
         }
 
         return new Group(office, staff, parent, groupLevel, name, externalId, status, groupActivationDate, clientMembers, groupMembers,
-                submittedOnDate, currentUser, accountNo);
+                submittedOnDate, currentUser, accountNo, portfolioCenter, legacyGroupNumber, latitude, longitude, formationDate, size,
+                meetingStartTime, meetingEndTime, responsibleUser);
     }
 
     private Group(final Office office, final Staff staff, final Group parent, final GroupLevel groupLevel, final String name,
             final String externalId, final GroupingTypeStatus status, final LocalDate activationDate, final Set<Client> clientMembers,
-            final Set<Group> groupMembers, final LocalDate submittedOnDate, final AppUser currentUser, final String accountNo) {
+            final Set<Group> groupMembers, final LocalDate submittedOnDate, final AppUser currentUser, final String accountNo,
+            final PortfolioCenter portfolioCenter, final Long legacyGroupNumber, final BigDecimal latitude, final BigDecimal longitude,
+            final LocalDate formationDate, final Integer size, final LocalTime meetingStartTime, final LocalTime meetingEndTime,
+            final AppUser responsibleUser) {
 
         final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
 
@@ -223,6 +257,17 @@ public final class Group extends AbstractPersistableCustom {
         this.submittedOnDate = submittedOnDate;
         this.submittedBy = currentUser;
         this.staffHistory = null;
+
+        // custom new fields added for Group
+        this.portfolioCenter = portfolioCenter;
+        this.legacyGroupNumber = legacyGroupNumber;
+        this.latitude = latitude;
+        this.longitude = longitude;
+        this.formationDate = formationDate;
+        this.size = size;
+        this.meetingStartTime = meetingStartTime;
+        this.meetingEndTime = meetingEndTime;
+        this.responsibleUser = responsibleUser;
 
         associateClients(clientMembers);
 
@@ -363,6 +408,55 @@ public final class Group extends AbstractPersistableCustom {
             this.submittedOnDate = command.localDateValueOfParameterNamed(GroupingTypesApiConstants.submittedOnDateParamName);
         }
 
+        // update custom fields
+        if (command.isChangeInLongParameterNamed(GroupingTypesApiConstants.portfolioCenterId, portfolioCenterId())) {
+            final Long newValue = command.longValueOfParameterNamed(GroupingTypesApiConstants.portfolioCenterId);
+            actualChanges.put(GroupingTypesApiConstants.portfolioCenterId, newValue);
+        }
+
+        if (command.isChangeInIntegerParameterNamed(GroupingTypesApiConstants.size, this.size)) {
+            final Integer newValue = command.integerValueOfParameterNamed(GroupingTypesApiConstants.size);
+            actualChanges.put(GroupingTypesApiConstants.size, newValue);
+            this.size = newValue;
+        }
+
+        if (command.isChangeInLocalDateParameterNamed(GroupingTypesApiConstants.formationDate, this.formationDate)) {
+            final LocalDate newValue = command.localDateValueOfParameterNamed(GroupingTypesApiConstants.formationDate);
+            actualChanges.put(GroupingTypesApiConstants.formationDate, newValue);
+            this.formationDate = newValue;
+        }
+
+        if (command.isChangeInLongParameterNamed(GroupingTypesApiConstants.legacyGroupNumber, this.legacyGroupNumber)) {
+            final Long newValue = command.longValueOfParameterNamed(GroupingTypesApiConstants.legacyGroupNumber);
+            actualChanges.put(GroupingTypesApiConstants.legacyGroupNumber, newValue);
+            this.legacyGroupNumber = newValue;
+        }
+
+        if (command.isChangeInBigDecimalParameterNamed(GroupingTypesApiConstants.latitude, this.latitude)) {
+            final BigDecimal newValue = command.bigDecimalValueOfParameterNamed(GroupingTypesApiConstants.latitude);
+            actualChanges.put(GroupingTypesApiConstants.latitude, newValue);
+            this.latitude = newValue;
+        }
+
+        if (command.isChangeInBigDecimalParameterNamed(GroupingTypesApiConstants.longitude, this.longitude)) {
+            final BigDecimal newValue = command.bigDecimalValueOfParameterNamed(GroupingTypesApiConstants.longitude);
+            actualChanges.put(GroupingTypesApiConstants.longitude, newValue);
+            this.longitude = newValue;
+        }
+
+        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ISO_LOCAL_TIME;
+        String meetingStartTime = command.stringValueOfParameterNamed(GroupingTypesApiConstants.meetingStartTime);
+        if (StringUtils.isNotBlank(meetingStartTime)) {
+            LocalTime newMeetingStarTime = LocalTime.parse(meetingStartTime, dateTimeFormatter);
+            this.meetingStartTime = newMeetingStarTime;
+        }
+
+        String meetingEndTime = command.stringValueOfParameterNamed(GroupingTypesApiConstants.meetingEndTime);
+        if (StringUtils.isNotBlank(meetingEndTime)) {
+            LocalTime newMeetingEndTime = LocalTime.parse(meetingEndTime, dateTimeFormatter);
+            this.meetingEndTime = newMeetingEndTime;
+        }
+
         return actualChanges;
     }
 
@@ -439,6 +533,14 @@ public final class Group extends AbstractPersistableCustom {
             staffId = this.staff.getId();
         }
         return staffId;
+    }
+
+    private Long portfolioCenterId() {
+        Long portfolioCenterId = null;
+        if (this.portfolioCenter != null) {
+            portfolioCenterId = this.portfolioCenter.getId();
+        }
+        return portfolioCenterId;
     }
 
     private void addChild(final Group group) {
@@ -790,5 +892,9 @@ public final class Group extends AbstractPersistableCustom {
 
     public LocalTime getMeetingEndTime() {
         return meetingEndTime;
+    }
+
+    public void updatePortfolioCenter(PortfolioCenter portfolioCenter) {
+        this.portfolioCenter = portfolioCenter;
     }
 }

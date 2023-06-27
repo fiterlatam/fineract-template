@@ -80,4 +80,5 @@
     <include file="parts/0063_add_group_name_prequalification_group_table.xml" relativeToChangelogFile="true"/>
     <include file="parts/0064_add_contract_field_to_loan_product.xml" relativeToChangelogFile="true"/>
     <include file="parts/0065_add_age_limit_settings_to_loan_products.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0064_refactor_center_and_group.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

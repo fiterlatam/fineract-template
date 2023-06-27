@@ -39,7 +39,10 @@ import org.apache.fineract.infrastructure.security.service.PlatformSecurityConte
 import org.apache.fineract.infrastructure.security.utils.ColumnValidator;
 import org.apache.fineract.infrastructure.security.utils.SQLBuilder;
 import org.apache.fineract.organisation.office.data.OfficeData;
+import org.apache.fineract.organisation.office.domain.OfficeHierarchyLevel;
 import org.apache.fineract.organisation.office.service.OfficeReadPlatformService;
+import org.apache.fineract.organisation.portfolioCenter.data.PortfolioCenterData;
+import org.apache.fineract.organisation.portfolioCenter.service.PortfolioCenterReadPlatformService;
 import org.apache.fineract.organisation.staff.data.StaffData;
 import org.apache.fineract.organisation.staff.service.StaffReadPlatformService;
 import org.apache.fineract.portfolio.client.data.ClientData;
@@ -48,7 +51,9 @@ import org.apache.fineract.portfolio.group.data.CenterData;
 import org.apache.fineract.portfolio.group.data.GroupGeneralData;
 import org.apache.fineract.portfolio.group.domain.GroupTypes;
 import org.apache.fineract.portfolio.group.exception.GroupNotFoundException;
+import org.apache.fineract.useradministration.data.AppUserData;
 import org.apache.fineract.useradministration.domain.AppUser;
+import org.apache.fineract.useradministration.service.AppUserReadPlatformService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -65,6 +70,8 @@ public class GroupReadPlatformServiceImpl implements GroupReadPlatformService {
     private final StaffReadPlatformService staffReadPlatformService;
     private final CenterReadPlatformService centerReadPlatformService;
     private final CodeValueReadPlatformService codeValueReadPlatformService;
+    private final AppUserReadPlatformService appUserReadPlatformService;
+    private final PortfolioCenterReadPlatformService portfolioCenterReadPlatformService;
 
     private final AllGroupTypesDataMapper allGroupTypesDataMapper = new AllGroupTypesDataMapper();
     private final PaginationHelper paginationHelper;
@@ -79,7 +86,10 @@ public class GroupReadPlatformServiceImpl implements GroupReadPlatformService {
             final CenterReadPlatformService centerReadPlatformService, final OfficeReadPlatformService officeReadPlatformService,
             final StaffReadPlatformService staffReadPlatformService, final CodeValueReadPlatformService codeValueReadPlatformService,
             final PaginationParametersDataValidator paginationParametersDataValidator, final ColumnValidator columnValidator,
-            DatabaseSpecificSQLGenerator sqlGenerator, PaginationHelper paginationHelper) {
+            DatabaseSpecificSQLGenerator sqlGenerator, PaginationHelper paginationHelper,
+            final AppUserReadPlatformService appUserReadPlatformService,
+            final PortfolioCenterReadPlatformService portfolioCenterReadPlatformService) {
+
         this.context = context;
         this.jdbcTemplate = jdbcTemplate;
         this.centerReadPlatformService = centerReadPlatformService;
@@ -90,6 +100,8 @@ public class GroupReadPlatformServiceImpl implements GroupReadPlatformService {
         this.columnValidator = columnValidator;
         this.paginationHelper = paginationHelper;
         this.sqlGenerator = sqlGenerator;
+        this.appUserReadPlatformService = appUserReadPlatformService;
+        this.portfolioCenterReadPlatformService = portfolioCenterReadPlatformService;
     }
 
     @Override
@@ -120,6 +132,13 @@ public class GroupReadPlatformServiceImpl implements GroupReadPlatformService {
         final Collection<CodeValueData> availableRoles = this.codeValueReadPlatformService
                 .retrieveCodeValuesByCode(GroupingTypesApiConstants.GROUP_ROLE_NAME);
 
+        final Collection<OfficeData> parentOfficesOptions = officeReadPlatformService
+                .retrieveOfficesByHierarchyLevel(Long.valueOf(OfficeHierarchyLevel.CARTERA.getValue()));
+
+        final List<AppUserData> appUsers = new ArrayList<>(this.appUserReadPlatformService.retrieveAllUsers());
+
+        Collection<PortfolioCenterData> portfolioCenterOptions = this.portfolioCenterReadPlatformService.retrieveAllByCurrentUser();
+
         final Long centerId = null;
         final String accountNo = null;
         final String centerName = null;
@@ -128,7 +147,7 @@ public class GroupReadPlatformServiceImpl implements GroupReadPlatformService {
         final Collection<ClientData> clientOptions = null;
 
         return GroupGeneralData.template(defaultOfficeId, centerId, accountNo, centerName, staffId, staffName, centerOptions, officeOptions,
-                staffOptions, clientOptions, availableRoles);
+                staffOptions, clientOptions, availableRoles, parentOfficesOptions, appUsers, portfolioCenterOptions);
     }
 
     private Long defaultToUsersOfficeIfNull(final Long officeId) {

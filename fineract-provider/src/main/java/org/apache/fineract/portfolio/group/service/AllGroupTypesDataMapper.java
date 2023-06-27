@@ -18,11 +18,11 @@
  */
 package org.apache.fineract.portfolio.group.service;
 
+import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.LocalTime;
-
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
 import org.apache.fineract.portfolio.client.domain.ClientEnumerations;
@@ -64,7 +64,15 @@ public final class AllGroupTypesDataMapper implements RowMapper<GroupGeneralData
         sqlBuilder.append("acu.lastname as activatedByLastname, ");
 
         sqlBuilder.append("g.hierarchy as hierarchy, ");
-        sqlBuilder.append("g.level_id as groupLevel ");
+        sqlBuilder.append("g.level_id as groupLevel, ");
+
+        sqlBuilder.append("g.portfolio_center_id as portfolioCenterId, g.legacy_group_number as legacyGroupNumber, ");
+        sqlBuilder.append("g.latitude as latitude, g.longitude as longitude, ");
+        sqlBuilder.append("g.formation_date as formationDate, g.responsible_user_id as responsibleUserId, ");
+        sqlBuilder.append(" ru.firstname as userFirstName, ru.lastname as userLastName, ");
+        sqlBuilder.append("g.size as size, g.created_date as createdDate, ");
+        sqlBuilder.append("g.meeting_start_time as meetingStartTime, g.meeting_end_time as meetingEndTime ");
+
         sqlBuilder.append("from m_group g ");
         sqlBuilder.append("left join m_code_value cvMeetingDay on g.meeting_day = cvMeetingDay.id ");
         sqlBuilder.append("join m_office o on o.id = g.office_id ");
@@ -73,6 +81,7 @@ public final class AllGroupTypesDataMapper implements RowMapper<GroupGeneralData
         sqlBuilder.append("left join m_appuser sbu on sbu.id = g.submittedon_userid ");
         sqlBuilder.append("left join m_appuser acu on acu.id = g.activatedon_userid ");
         sqlBuilder.append("left join m_appuser clu on clu.id = g.closedon_userid ");
+        sqlBuilder.append("left join m_appuser ru on ru.id = g.responsible_user_id ");
 
         this.schemaSql = sqlBuilder.toString();
     }
@@ -124,11 +133,34 @@ public final class AllGroupTypesDataMapper implements RowMapper<GroupGeneralData
         final LocalTime meetingEndTime = JdbcSupport.getLocalTime(rs, "meetingEndTime");
 
 
+        final Long legacyGroupNumber = rs.getLong("legacyGroupNumber");
+        final Long portfolioCenterId = rs.getLong("portfolioCenterId");
+        final BigDecimal latitude = rs.getBigDecimal("latitude");
+        final BigDecimal longitude = rs.getBigDecimal("longitude");
+        final LocalDate formationDate = JdbcSupport.getLocalDate(rs, "formationDate");
+        final long responsibleUserId = rs.getLong("responsibleUserId");
+        final Integer size = rs.getInt("size");
+        final LocalDate createdDate = JdbcSupport.getLocalDate(rs, "createdDate");
+
         final GroupTimelineData timeline = new GroupTimelineData(submittedOnDate, submittedByUsername, submittedByFirstname,
                 submittedByLastname, activationDate, activatedByUsername, activatedByFirstname, activatedByLastname, closedOnDate,
                 closedByUsername, closedByFirstname, closedByLastname);
 
-        return GroupGeneralData.instance(id, accountNo, name, externalId, status, activationDate, officeId, officeName, centerId,
-                centerName, staffId, staffName, hierarchy, groupLevel, timeline, meetingDay, meetingDayValue, meetingStart, meetingEnd, meetingStartTime, meetingEndTime, groupLocation);
+        GroupGeneralData ret = GroupGeneralData.instance(id, accountNo, name, externalId, status, activationDate, officeId, officeName,
+                centerId, centerName, staffId, staffName, hierarchy, groupLevel, timeline);
+
+        // set the remaining fields for group general data
+        ret.setLegacyGroupNumber(legacyGroupNumber);
+        ret.setPortfolioCenterId(portfolioCenterId);
+        ret.setLatitude(latitude);
+        ret.setLongitude(longitude);
+        ret.setFormationDate(formationDate);
+        ret.setResponsibleUserId(responsibleUserId);
+        ret.setSize(size);
+        ret.setCreatedDate(createdDate);
+        ret.setMeetingStartTime(meetingStartTime);
+        ret.setMeetingEndTime(meetingEndTime);
+
+        return ret;
     }
 }

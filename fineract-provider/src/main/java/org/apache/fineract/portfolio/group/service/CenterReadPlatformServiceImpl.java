@@ -50,7 +50,10 @@ import org.apache.fineract.infrastructure.security.service.PlatformSecurityConte
 import org.apache.fineract.infrastructure.security.utils.ColumnValidator;
 import org.apache.fineract.infrastructure.security.utils.SQLBuilder;
 import org.apache.fineract.organisation.office.data.OfficeData;
+import org.apache.fineract.organisation.office.domain.OfficeHierarchyLevel;
 import org.apache.fineract.organisation.office.service.OfficeReadPlatformService;
+import org.apache.fineract.organisation.portfolioCenter.data.PortfolioCenterData;
+import org.apache.fineract.organisation.portfolioCenter.service.PortfolioCenterReadPlatformService;
 import org.apache.fineract.organisation.staff.data.StaffData;
 import org.apache.fineract.organisation.staff.service.StaffReadPlatformService;
 import org.apache.fineract.portfolio.calendar.data.CalendarData;
@@ -68,7 +71,9 @@ import org.apache.fineract.portfolio.group.data.StaffCenterData;
 import org.apache.fineract.portfolio.group.domain.GroupTypes;
 import org.apache.fineract.portfolio.group.domain.GroupingTypeEnumerations;
 import org.apache.fineract.portfolio.group.exception.CenterNotFoundException;
+import org.apache.fineract.useradministration.data.AppUserData;
 import org.apache.fineract.useradministration.domain.AppUser;
+import org.apache.fineract.useradministration.service.AppUserReadPlatformService;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -89,6 +94,8 @@ public class CenterReadPlatformServiceImpl implements CenterReadPlatformService 
     private final CalendarReadPlatformService calendarReadPlatformService;
     private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     private final ColumnValidator columnValidator;
+    private final AppUserReadPlatformService appUserReadPlatformService;
+    private final PortfolioCenterReadPlatformService portfolioCenterReadPlatformService;
 
     // data mappers
     private final CenterDataMapper centerMapper = new CenterDataMapper();
@@ -509,8 +516,15 @@ public class CenterReadPlatformServiceImpl implements CenterReadPlatformService 
             clientOptions = null;
         }
 
+        final Collection<OfficeData> parentOfficesOptions = officeReadPlatformService
+                .retrieveOfficesByHierarchyLevel(Long.valueOf(OfficeHierarchyLevel.CARTERA.getValue()));
+
+        final List<AppUserData> appUsers = new ArrayList<>(this.appUserReadPlatformService.retrieveAllUsers());
+
+        Collection<PortfolioCenterData> portfolioCenterOptions = this.portfolioCenterReadPlatformService.retrieveAllByCurrentUser();
+
         return GroupGeneralData.template(centerOfficeId, center.getId(), center.getAccountNo(), center.getName(), staffId, staffName,
-                centerOptions, officeOptions, staffOptions, clientOptions, null);
+                centerOptions, officeOptions, staffOptions, clientOptions, null, parentOfficesOptions, appUsers, portfolioCenterOptions);
     }
 
     @Override

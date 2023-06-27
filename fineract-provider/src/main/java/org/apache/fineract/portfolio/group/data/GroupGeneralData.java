@@ -19,6 +19,7 @@
 package org.apache.fineract.portfolio.group.data;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.Collection;
@@ -34,9 +35,11 @@ import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.infrastructure.dataqueries.data.DatatableData;
 import org.apache.fineract.organisation.office.data.OfficeData;
+import org.apache.fineract.organisation.portfolioCenter.data.PortfolioCenterData;
 import org.apache.fineract.organisation.staff.data.StaffData;
 import org.apache.fineract.portfolio.calendar.data.CalendarData;
 import org.apache.fineract.portfolio.client.data.ClientData;
+import org.apache.fineract.useradministration.data.AppUserData;
 
 /**
  * Immutable data object representing a general group (so may or may not have a parent).
@@ -81,29 +84,41 @@ public class GroupGeneralData implements Serializable {
 
     private List<DatatableData> datatables = null;
 
+    private final Collection<OfficeData> parentOfficesOptions;
+    private final Collection<AppUserData> responsibleUserOptions;
+    private final Collection<PortfolioCenterData> portfolioCenterOptions;
+
+    // Additional fields for FB groups
+    private Long portfolioCenterId = 0L;
+    private Long legacyNumber;
+    private BigDecimal latitude;
+    private BigDecimal longitude;
+    private LocalDate formationDate;
+    private Integer size;
+    private Long responsibleUserId;
+    private LocalDate createdDate;
+    private LocalTime meetingStartTime;
+    private LocalTime meetingEndTime;
+
+    // Additional fields for FB centers
+    private Long portfolioId;
+    private CodeValueData city;
+    private CodeValueData state;
+    private CodeValueData type;
+    private Integer distance;
+    private Integer meetingStart;
+    private Integer meetingEnd;
+    private Integer meetingDay;
+    private String meetingDayName;
+    private String referencePoint;
+
+    private String groupLocation;
+
     // import fields
     private transient Integer rowIndex;
     private String dateFormat;
     private String locale;
     private LocalDate submittedOnDate;
-    private final Integer meetingStart;
-
-    private final Integer meetingEnd;
-
-    private final Integer meetingDay;
-
-    private final String meetingDayName;
-
-    private final String groupLocation;
-
-
-    @JsonDeserialize(using = LocalTimeDeserializer.class)
-    @JsonSerialize(using = LocalTimeSerializer.class)
-    private final String meetingStartTime;
-
-    @JsonDeserialize(using = LocalTimeDeserializer.class)
-    @JsonSerialize(using = LocalTimeSerializer.class)
-    private final String meetingEndTime;
 
     public static GroupGeneralData importInstance(String groupName, List<ClientData> clientMembers, LocalDate activationDate,
             LocalDate submittedOnDate, Boolean active, String externalId, Long officeId, Long staffId, Long centerId, Integer rowIndex,
@@ -155,6 +170,10 @@ public class GroupGeneralData implements Serializable {
         this.meetingDay = null;
         this.meetingDayName = null;
         this.groupLocation = null;
+        this.parentOfficesOptions = null;
+        this.responsibleUserOptions = null;
+        this.portfolioCenterOptions = null;
+
     }
 
     public GroupGeneralData(Long id, Long officeId) {
@@ -193,6 +212,9 @@ public class GroupGeneralData implements Serializable {
         this.meetingDay = null;
         this.meetingDayName = null;
         this.groupLocation = null;
+        this.parentOfficesOptions = null;
+        this.responsibleUserOptions = null;
+        this.portfolioCenterOptions = null;
     }
 
     public GroupGeneralData(Long id) {
@@ -231,6 +253,9 @@ public class GroupGeneralData implements Serializable {
         this.meetingDay = null;
         this.meetingDayName = null;
         this.groupLocation = null;
+        this.parentOfficesOptions = null;
+        this.responsibleUserOptions = null;
+        this.portfolioCenterOptions = null;
     }
 
     public Integer getRowIndex() {
@@ -254,13 +279,15 @@ public class GroupGeneralData implements Serializable {
         final Collection<GroupRoleData> groupRoles = null;
         final Collection<CodeValueData> closureReasons = null;
         return new GroupGeneralData(groupId, accountNo, groupName, null, null, null, null, null, null, null, null, null, null, null,
-                clientMembers, null, null, null, null, null, groupRoles, null, null, null, null, closureReasons, null, 0,   null, 0, 0, null, null, null);
+                clientMembers, null, null, null, null, null, groupRoles, null, null, null, null, closureReasons, null, null, null, null);
     }
 
     public static GroupGeneralData template(final Long officeId, final Long centerId, final String accountNo, final String centerName,
-            final Long staffId, final String staffName, final Collection<CenterData> centerOptions,
-            final Collection<OfficeData> officeOptions, final Collection<StaffData> staffOptions,
-            final Collection<ClientData> clientOptions, final Collection<CodeValueData> availableRoles) {
+                                            final Long staffId, final String staffName, final Collection<CenterData> centerOptions,
+                                            final Collection<OfficeData> officeOptions, final Collection<StaffData> staffOptions,
+                                            final Collection<ClientData> clientOptions, final Collection<CodeValueData> availableRoles,
+                                            final Collection<OfficeData> parentOfficesOptions, final Collection<AppUserData> responsibleUserOptions,
+                                            final Collection<PortfolioCenterData> portfolioCenterOptions) {
 
         final Collection<ClientData> clientMembers = null;
         final Collection<GroupRoleData> groupRoles = null;
@@ -268,33 +295,64 @@ public class GroupGeneralData implements Serializable {
 
         return new GroupGeneralData(null, accountNo, null, null, null, null, officeId, null, centerId, centerName, staffId, staffName, null,
                 null, clientMembers, null, centerOptions, officeOptions, staffOptions, clientOptions, groupRoles, availableRoles, null,
-                null, null, closureReasons, null, 0,
-                null, 0, 0, null, null, null);
+                null, null, closureReasons, null, parentOfficesOptions, responsibleUserOptions, portfolioCenterOptions);
     }
 
     public static GroupGeneralData withTemplate(final GroupGeneralData templatedGrouping, final GroupGeneralData grouping) {
-        return new GroupGeneralData(grouping.id, grouping.accountNo, grouping.name, grouping.externalId, grouping.status,
+        GroupGeneralData ret = new GroupGeneralData(grouping.id, grouping.accountNo, grouping.name, grouping.externalId, grouping.status,
                 grouping.activationDate, grouping.officeId, grouping.officeName, grouping.centerId, grouping.centerName, grouping.staffId,
                 grouping.staffName, grouping.hierarchy, grouping.groupLevel, grouping.clientMembers, grouping.activeClientMembers,
                 templatedGrouping.centerOptions, templatedGrouping.officeOptions, templatedGrouping.staffOptions,
                 templatedGrouping.clientOptions, grouping.groupRoles, templatedGrouping.availableRoles, grouping.selectedRole,
-                grouping.calendarsData, grouping.collectionMeetingCalendar, grouping.closureReasons, templatedGrouping.timeline, templatedGrouping.meetingDay, templatedGrouping.meetingDayName, templatedGrouping.meetingStart, templatedGrouping.meetingEnd, templatedGrouping.meetingStartTime, templatedGrouping.meetingEndTime, templatedGrouping.groupLocation);
+                grouping.calendarsData, grouping.collectionMeetingCalendar, grouping.closureReasons, templatedGrouping.timeline,
+                templatedGrouping.parentOfficesOptions, templatedGrouping.responsibleUserOptions, templatedGrouping.portfolioCenterOptions);
+
+        return mapDTO(grouping, ret);
+    }
+
+    private static GroupGeneralData mapDTO(GroupGeneralData grouping, GroupGeneralData ret) {
+        ret.setLegacyNumber(grouping.legacyNumber);
+        ret.setPortfolioCenterId(grouping.portfolioCenterId);
+        ret.setLatitude(grouping.latitude);
+        ret.setLongitude(grouping.longitude);
+        ret.setFormationDate(grouping.formationDate);
+        ret.setResponsibleUserId(grouping.responsibleUserId);
+        ret.setSize(grouping.size);
+        ret.setCreatedDate(grouping.createdDate);
+        ret.setMeetingStartTime(grouping.meetingStartTime);
+        ret.setMeetingEndTime(grouping.meetingEndTime);
+
+        ret.setPortfolioId(grouping.portfolioId);
+        ret.setCity(grouping.city);
+        ret.setState(grouping.state);
+        ret.setType(grouping.type);
+        ret.setDistance(grouping.distance);
+        ret.setMeetingStart(grouping.meetingStart);
+        ret.setMeetingEnd(grouping.meetingEnd);
+        ret.setMeetingDay(grouping.meetingDay);
+        ret.setMeetingDayName(grouping.meetingDayName);
+        ret.setReferencePoint(grouping.referencePoint);
+
+        return ret;
     }
 
     public static GroupGeneralData withAssocations(final GroupGeneralData grouping, final Collection<ClientData> membersOfGroup,
-            final Collection<ClientData> activeClientMembers, final Collection<GroupRoleData> groupRoles,
-            final Collection<CalendarData> calendarsData, final CalendarData collectionMeetingCalendar) {
-        return new GroupGeneralData(grouping.id, grouping.accountNo, grouping.name, grouping.externalId, grouping.status,
+                                                   final Collection<ClientData> activeClientMembers, final Collection<GroupRoleData> groupRoles,
+                                                   final Collection<CalendarData> calendarsData, final CalendarData collectionMeetingCalendar) {
+        GroupGeneralData ret = new GroupGeneralData(grouping.id, grouping.accountNo, grouping.name, grouping.externalId, grouping.status,
                 grouping.activationDate, grouping.officeId, grouping.officeName, grouping.centerId, grouping.centerName, grouping.staffId,
                 grouping.staffName, grouping.hierarchy, grouping.groupLevel, membersOfGroup, activeClientMembers, grouping.centerOptions,
                 grouping.officeOptions, grouping.staffOptions, grouping.clientOptions, groupRoles, grouping.availableRoles,
-                grouping.selectedRole, calendarsData, collectionMeetingCalendar, grouping.closureReasons, grouping.timeline, grouping.meetingDay, grouping.meetingDayName, grouping.meetingStart, grouping.meetingEnd, grouping.meetingStartTime, grouping.meetingEndTime, grouping.groupLocation);
+                grouping.selectedRole, calendarsData, collectionMeetingCalendar, grouping.closureReasons, grouping.timeline,
+                grouping.parentOfficesOptions, grouping.responsibleUserOptions, grouping.portfolioCenterOptions);
+
+        return mapDTO(grouping, ret);
     }
 
     public static GroupGeneralData instance(final Long id, final String accountNo, final String name, final String externalId,
                                             final EnumOptionData status, final LocalDate activationDate, final Long officeId, final String officeName, final Long centerId,
                                             final String centerName, final Long staffId, final String staffName, final String hierarchy, final String groupLevel,
-                                            final GroupTimelineData timeline, int meetingDay, String meetingDayValue, int meetingStart, int meetingEnd, LocalTime meetingStartTime, LocalTime meetingEndTime, String groupLocation) {
+                                            final GroupTimelineData timeline) {
 
         final Collection<ClientData> clientMembers = null;
         final Collection<ClientData> activeClientMembers = null;
@@ -308,13 +366,14 @@ public class GroupGeneralData implements Serializable {
         final Collection<CalendarData> calendarsData = null;
         final CalendarData collectionMeetingCalendar = null;
         final Collection<CodeValueData> closureReasons = null;
+        final Collection<OfficeData> parentOfficesOptions = null;
+        final Collection<AppUserData> responsibleUserOptions = null;
+        final Collection<PortfolioCenterData> portfolioCenterOptions = null;
 
-        String meetingStartTimeString = meetingStartTime!=null ? meetingStartTime.toString():null;
-        String meetingEndTimeString = meetingEndTime!=null ? meetingEndTime.toString():null;
         return new GroupGeneralData(id, accountNo, name, externalId, status, activationDate, officeId, officeName, centerId, centerName,
                 staffId, staffName, hierarchy, groupLevel, clientMembers, activeClientMembers, centerOptions, officeOptions, staffOptions,
                 clientOptions, groupRoles, availableRoles, role, calendarsData, collectionMeetingCalendar, closureReasons, timeline,
-                meetingDay, meetingDayValue, meetingStart, meetingEnd, meetingStartTimeString, meetingEndTimeString, groupLocation);
+                parentOfficesOptions, responsibleUserOptions, portfolioCenterOptions);
     }
 
     private GroupGeneralData(final Long id, final String accountNo, final String name, final String externalId, final EnumOptionData status,
@@ -325,7 +384,9 @@ public class GroupGeneralData implements Serializable {
                              final Collection<StaffData> staffOptions, final Collection<ClientData> clientOptions,
                              final Collection<GroupRoleData> groupRoles, final Collection<CodeValueData> availableRoles, final GroupRoleData role,
                              final Collection<CalendarData> calendarsData, final CalendarData collectionMeetingCalendar,
-                             final Collection<CodeValueData> closureReasons, final GroupTimelineData timeline, int meetingDay, String meetingDayValue, int meetingStart, int meetingEnd, String meetingStartTime, String meetingEndTime, String groupLocation) {
+                             final Collection<CodeValueData> closureReasons, final GroupTimelineData timeline,
+                             final Collection<OfficeData> parentOfficesOptions, final Collection<AppUserData> responsibleUserOptions,
+                             final Collection<PortfolioCenterData> portfolioCenterOptions) {
         this.id = id;
         this.accountNo = accountNo;
         this.name = name;
@@ -367,13 +428,9 @@ public class GroupGeneralData implements Serializable {
         this.collectionMeetingCalendar = collectionMeetingCalendar;
         this.closureReasons = closureReasons;
         this.timeline = timeline;
-        this.meetingStartTime = meetingStartTime;
-        this.meetingEndTime = meetingEndTime;
-        this.meetingStart = meetingStart;
-        this.meetingEnd = meetingEnd;
-        this.meetingDay = meetingDay;
-        this.meetingDayName = meetingDayValue;
-        this.groupLocation = groupLocation;
+        this.parentOfficesOptions = parentOfficesOptions;
+        this.responsibleUserOptions = responsibleUserOptions;
+        this.portfolioCenterOptions = portfolioCenterOptions;
     }
 
     public Long getId() {
@@ -410,7 +467,7 @@ public class GroupGeneralData implements Serializable {
                 grouping.staffName, grouping.hierarchy, grouping.groupLevel, grouping.clientMembers, grouping.activeClientMembers,
                 grouping.centerOptions, grouping.officeOptions, grouping.staffOptions, grouping.clientOptions, grouping.groupRoles,
                 grouping.availableRoles, selectedRole, grouping.calendarsData, grouping.collectionMeetingCalendar, grouping.closureReasons,
-                null, grouping.meetingDay, grouping.meetingDayName, grouping.meetingStart, grouping.meetingEnd, grouping.meetingStartTime, grouping.meetingEndTime, grouping.groupLocation);
+                null, null, null, null);
     }
 
     public static GroupGeneralData withClosureReasons(final Collection<CodeValueData> closureReasons) {
@@ -439,10 +496,14 @@ public class GroupGeneralData implements Serializable {
         final GroupRoleData role = null;
         final Collection<CalendarData> calendarsData = null;
         final CalendarData collectionMeetingCalendar = null;
+        final Collection<OfficeData> parentOfficesOptions = null;
+        final Collection<AppUserData> responsibleUserOptions = null;
+        final Collection<PortfolioCenterData> portfolioCenterOptions = null;
 
         return new GroupGeneralData(id, accountNo, name, externalId, status, activationDate, officeId, officeName, centerId, centerName,
                 staffId, staffName, hierarchy, groupLevel, clientMembers, activeClientMembers, centerOptions, officeOptions, staffOptions,
-                clientOptions, groupRoles, availableRoles, role, calendarsData, collectionMeetingCalendar, closureReasons, null, 0, null, 0, 0, null, null, null);
+                clientOptions, groupRoles, availableRoles, role, calendarsData, collectionMeetingCalendar, closureReasons, null,
+                parentOfficesOptions, responsibleUserOptions, portfolioCenterOptions);
     }
 
     public Collection<ClientData> clientMembers() {
@@ -492,11 +553,83 @@ public class GroupGeneralData implements Serializable {
                 closureReasons, timeline, datatables, rowIndex, dateFormat, locale, submittedOnDate);
     }
 
-    public String getMeetingStartTime() {
-        return meetingStartTime;
+    public void setPortfolioCenterId(Long portfolioCenterId) {
+        this.portfolioCenterId = portfolioCenterId;
     }
 
-    public String getMeetingEndTime() {
-        return meetingEndTime;
+    public void setLegacyNumber(Long legacyNumber) {
+        this.legacyNumber = legacyNumber;
+    }
+
+    public void setLatitude(BigDecimal latitude) {
+        this.latitude = latitude;
+    }
+
+    public void setLongitude(BigDecimal longitude) {
+        this.longitude = longitude;
+    }
+
+    public void setFormationDate(LocalDate formationDate) {
+        this.formationDate = formationDate;
+    }
+
+    public void setSize(Integer size) {
+        this.size = size;
+    }
+
+    public void setResponsibleUserId(Long responsibleUserId) {
+        this.responsibleUserId = responsibleUserId;
+    }
+
+    public void setCreatedDate(LocalDate createdDate) {
+        this.createdDate = createdDate;
+    }
+
+    public void setMeetingStartTime(LocalTime meetingStartTime) {
+        this.meetingStartTime = meetingStartTime;
+    }
+
+    public void setMeetingEndTime(LocalTime meetingEndTime) {
+        this.meetingEndTime = meetingEndTime;
+    }
+
+    public void setPortfolioId(Long portfolioId) {
+        this.portfolioId = portfolioId;
+    }
+
+    public void setCity(CodeValueData city) {
+        this.city = city;
+    }
+
+    public void setState(CodeValueData state) {
+        this.state = state;
+    }
+
+    public void setType(CodeValueData type) {
+        this.type = type;
+    }
+
+    public void setDistance(Integer distance) {
+        this.distance = distance;
+    }
+
+    public void setMeetingStart(Integer meetingStart) {
+        this.meetingStart = meetingStart;
+    }
+
+    public void setMeetingEnd(Integer meetingEnd) {
+        this.meetingEnd = meetingEnd;
+    }
+
+    public void setMeetingDay(Integer meetingDay) {
+        this.meetingDay = meetingDay;
+    }
+
+    public void setMeetingDayName(String meetingDayName) {
+        this.meetingDayName = meetingDayName;
+    }
+
+    public void setReferencePoint(String referencePoint) {
+        this.referencePoint = referencePoint;
     }
 }

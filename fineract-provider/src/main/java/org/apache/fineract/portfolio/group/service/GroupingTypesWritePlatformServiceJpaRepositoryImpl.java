@@ -18,8 +18,10 @@
  */
 package org.apache.fineract.portfolio.group.service;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -30,6 +32,7 @@ import java.util.Set;
 import javax.persistence.PersistenceException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.fineract.commands.domain.CommandWrapper;
 import org.apache.fineract.commands.service.CommandProcessingService;
@@ -39,7 +42,9 @@ import org.apache.fineract.infrastructure.accountnumberformat.domain.AccountNumb
 import org.apache.fineract.infrastructure.accountnumberformat.domain.EntityAccountType;
 import org.apache.fineract.infrastructure.codes.domain.CodeValue;
 import org.apache.fineract.infrastructure.codes.domain.CodeValueRepositoryWrapper;
+import org.apache.fineract.infrastructure.configuration.data.GlobalConfigurationPropertyData;
 import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
+import org.apache.fineract.infrastructure.configuration.service.ConfigurationReadPlatformService;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuilder;
@@ -50,9 +55,12 @@ import org.apache.fineract.infrastructure.dataqueries.data.EntityTables;
 import org.apache.fineract.infrastructure.dataqueries.data.StatusEnum;
 import org.apache.fineract.infrastructure.dataqueries.service.EntityDatatableChecksWritePlatformService;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
+import org.apache.fineract.organisation.centerGroup.service.CenterGroupConstants;
 import org.apache.fineract.organisation.office.domain.Office;
 import org.apache.fineract.organisation.office.domain.OfficeRepositoryWrapper;
 import org.apache.fineract.organisation.office.exception.InvalidOfficeException;
+import org.apache.fineract.organisation.portfolioCenter.domain.PortfolioCenter;
+import org.apache.fineract.organisation.portfolioCenter.domain.PortfolioCenterRepositoryWrapper;
 import org.apache.fineract.organisation.staff.domain.Staff;
 import org.apache.fineract.organisation.staff.domain.StaffRepositoryWrapper;
 import org.apache.fineract.portfolio.businessevent.domain.group.CentersCreateBusinessEvent;
@@ -89,6 +97,8 @@ import org.apache.fineract.portfolio.note.domain.NoteRepository;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccount;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountRepositoryWrapper;
 import org.apache.fineract.useradministration.domain.AppUser;
+import org.apache.fineract.useradministration.domain.AppUserRepository;
+import org.apache.fineract.useradministration.exception.UserNotFoundException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.orm.jpa.JpaSystemException;
@@ -123,6 +133,9 @@ public class GroupingTypesWritePlatformServiceJpaRepositoryImpl implements Group
     private final BusinessEventNotifierService businessEventNotifierService;
     private final GroupReadPlatformService groupReadPlatformService;
     private final JdbcTemplate jdbcTemplate;
+    private final AppUserRepository appUserRepository;
+    private final PortfolioCenterRepositoryWrapper portfolioCenterRepositoryWrapper;
+    private final ConfigurationReadPlatformService configurationReadPlatformService;
 
     private CommandProcessingResult createGroupingType(final JsonCommand command, final GroupTypes groupingType, final Long centerId) {
         try {
@@ -167,8 +180,61 @@ public class GroupingTypesWritePlatformServiceJpaRepositoryImpl implements Group
                 submittedOnDate = command.localDateValueOfParameterNamed(GroupingTypesApiConstants.submittedOnDateParamName);
             }
 
+            // new custom fields for group
+            final Long responsibleUserId = command.longValueOfParameterNamed(GroupingTypesApiConstants.responsibleUserId);
+            AppUser responsibleUser = null;
+            if (responsibleUserId != null) {
+                responsibleUser = this.appUserRepository.findById(responsibleUserId)
+                        .orElseThrow(() -> new UserNotFoundException(responsibleUserId));
+            }
+
+            PortfolioCenter portfolioCenter = null;
+            final Long portfolioCenterId = command.longValueOfParameterNamed(GroupingTypesApiConstants.portfolioCenterId);
+            if (portfolioCenterId != null) {
+                portfolioCenter = this.portfolioCenterRepositoryWrapper.findOneWithNotFoundDetection(portfolioCenterId);
+            }
+
+            final Integer size = command.integerValueOfParameterNamed(GroupingTypesApiConstants.size);
+
+            final LocalDate formationDate = command.localDateValueOfParameterNamed(GroupingTypesApiConstants.formationDate);
+
+            final Long legacyGroupNumber = command.longValueOfParameterNamed(GroupingTypesApiConstants.legacyGroupNumber);
+
+            final BigDecimal latitude = command.bigDecimalValueOfParameterNamed(GroupingTypesApiConstants.latitude);
+
+            final BigDecimal longitude = command.bigDecimalValueOfParameterNamed(GroupingTypesApiConstants.longitude);
+
+
+            int meetingDefaultDuration = 0;
+            int timeBetweenMeetings = 0;
+
+            GlobalConfigurationPropertyData meetingDefaultDurationConfig = configurationReadPlatformService
+                    .retrieveGlobalConfiguration("meeting-default-duration");
+            if (meetingDefaultDurationConfig != null) {
+                meetingDefaultDuration = meetingDefaultDurationConfig.getValue().intValue();
+            }
+            GlobalConfigurationPropertyData timeBetweenMeetingsConfig = configurationReadPlatformService
+                    .retrieveGlobalConfiguration("time-between-meetings");
+            if (timeBetweenMeetingsConfig != null) {
+                timeBetweenMeetings = timeBetweenMeetingsConfig.getValue().intValue();
+            }
+
+            DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ISO_LOCAL_TIME;
+            LocalTime meetingStartTime = null;
+            LocalTime meetingEndTime = null;
+            String meetingStartTimeAsString = command
+                    .stringValueOfParameterNamed(CenterGroupConstants.CenterGroupSupportedParameters.MEETING_START_TIME.getValue());
+            if (StringUtils.isNotBlank(meetingStartTimeAsString)) {
+                LocalTime newMeetingStarTime = LocalTime.parse(meetingStartTimeAsString, dateTimeFormatter);
+                meetingStartTime = newMeetingStarTime;
+
+                LocalTime newMeetingEndTime = newMeetingStarTime.plusMinutes(meetingDefaultDuration).plusMinutes(timeBetweenMeetings);
+                meetingEndTime = newMeetingEndTime;
+            }
+
             final Group newGroup = Group.newGroup(groupOffice, staff, parentGroup, groupLevel, name, externalId, active, activationDate,
-                    clientMembers, groupMembers, submittedOnDate, currentUser, accountNo);
+                    clientMembers, groupMembers, submittedOnDate, currentUser, accountNo, portfolioCenter, legacyGroupNumber, latitude,
+                    longitude, formationDate, size, meetingStartTime, meetingEndTime, responsibleUser);
 
             boolean rollbackTransaction = false;
             if (newGroup.isActive()) {
@@ -433,6 +499,16 @@ public class GroupingTypesWritePlatformServiceJpaRepositoryImpl implements Group
                     groupForUpdate.generateHierarchy();
 
                 }
+            }
+
+            if (actualChanges.containsKey(GroupingTypesApiConstants.portfolioCenterId)) {
+                final Long newValue = command.longValueOfParameterNamed(GroupingTypesApiConstants.portfolioCenterId);
+
+                PortfolioCenter newPortfolioCenter = null;
+                if (newValue != null) {
+                    newPortfolioCenter = this.portfolioCenterRepositoryWrapper.findOneWithNotFoundDetection(newValue);
+                }
+                groupForUpdate.updatePortfolioCenter(newPortfolioCenter);
             }
 
             /*
