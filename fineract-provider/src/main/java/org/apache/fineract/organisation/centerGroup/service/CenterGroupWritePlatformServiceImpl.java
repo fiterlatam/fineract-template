@@ -283,8 +283,8 @@ public class CenterGroupWritePlatformServiceImpl implements CenterGroupWritePlat
                 changes.put(CenterGroupConstants.CenterGroupSupportedParameters.MEETING_END_TIME.getValue(), meetingEndTime);
             }
             String schemaSql = "Select cgroup.id from m_center_group cgroup where cgroup.portfolio_center_id = ? and " +
-                    "( ( ? > cgroup.meeting_start_time and ? <= cgroup.meeting_end_time) OR " +
-                    "( ? >= cgroup.meeting_start_time and ? < cgroup.meeting_end_time) ) order by id desc";
+                    "( ( ? >= cgroup.meeting_start_time and ? < cgroup.meeting_end_time) OR " +
+                    "( ? > cgroup.meeting_start_time and ? < cgroup.meeting_end_time) ) order by id desc";
             List<Long> groupIds = jdbcTemplate.queryForList(schemaSql, Long.class, newParentPortfolioCenter.getId(), newMeetingStarTime,
                     newMeetingStarTime, newMeetingEndTime, newMeetingEndTime);
 
