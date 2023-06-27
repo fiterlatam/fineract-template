@@ -151,7 +151,8 @@ public class CenterGroupReadPlatformServiceImpl implements CenterGroupReadPlatfo
 
             final Long id = rs.getLong("id");
             final String name = rs.getString("name");
-            final Long legacyGroupNumber = rs.getLong("legacyGroupNumber");
+            Long legacyGroupNumber = rs.getLong("legacyGroupNumber");
+            legacyGroupNumber = rs.wasNull() ? null : legacyGroupNumber;
 
             final Long portfolioCenterId = rs.getLong("portfolioCenterId");
             final String portfolioCenterName = rs.getString("portfolioCenterName");
