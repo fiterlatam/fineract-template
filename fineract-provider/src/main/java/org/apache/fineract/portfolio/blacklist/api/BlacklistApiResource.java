@@ -21,6 +21,20 @@ package org.apache.fineract.portfolio.blacklist.api;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.UriInfo;
 import org.apache.fineract.commands.domain.CommandWrapper;
 import org.apache.fineract.commands.service.CommandWrapperBuilder;
 import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformService;
@@ -40,30 +54,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.UriInfo;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
-
 @Path("/blacklist")
 @Component
 @Scope("singleton")
 @Tag(name = "Blacklist", description = "Clients with Bad credit history can be blacklisted. Blacklisted clients cannot be added to any loan or savings account.")
 public class BlacklistApiResource {
 
-    private static final Set<String> BLACKLIST_DATA_PARAMETERS = new HashSet<>(
-            Arrays.asList("id", "productId", "productCode", "year", "typification", "dpi", "nit",
-                    "description", "agencyId", "balance", "disbursementAmount", "status", "addedBy", "createdAt"));
+    private static final Set<String> BLACKLIST_DATA_PARAMETERS = new HashSet<>(Arrays.asList("id", "productId", "productCode", "year",
+            "typification", "dpi", "nit", "description", "agencyId", "balance", "disbursementAmount", "status", "addedBy", "createdAt"));
 
     private final String resourceNameForPermissions = "BLACKLIST";
 
@@ -77,11 +75,11 @@ public class BlacklistApiResource {
 
     @Autowired
     public BlacklistApiResource(final PlatformSecurityContext context, final ClientReadPlatformService readPlatformService,
-                                final CodeValueReadPlatformService codeValueReadPlatformService,
-                                final LoanProductReadPlatformService loanProductReadPlatformService,
-                                final DefaultToApiJsonSerializer<BlacklistClientData> toApiJsonSerializer,
-                                final ApiRequestParameterHelper apiRequestParameterHelper,
-                                final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService) {
+            final CodeValueReadPlatformService codeValueReadPlatformService,
+            final LoanProductReadPlatformService loanProductReadPlatformService,
+            final DefaultToApiJsonSerializer<BlacklistClientData> toApiJsonSerializer,
+            final ApiRequestParameterHelper apiRequestParameterHelper,
+            final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService) {
         this.context = context;
         this.clientReadPlatformService = readPlatformService;
         this.codeValueReadPlatformService = codeValueReadPlatformService;
@@ -94,8 +92,7 @@ public class BlacklistApiResource {
     @GET
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
-    @Operation(summary = "List all Blacklist clients", description = "Example Requests:\n" + "blacklist\n" + "\n" + "\n"
-            + "blacklist")
+    @Operation(summary = "List all Blacklist clients", description = "Example Requests:\n" + "blacklist\n" + "\n" + "\n" + "blacklist")
     public String retrieveAllClientIdentifiers(@Context final UriInfo uriInfo) {
 
         this.context.authenticatedUser().validateHasReadPermission(this.resourceNameForPermissions);
@@ -134,8 +131,8 @@ public class BlacklistApiResource {
             @Parameter(hidden = true) final String apiRequestBodyAsJson) {
 
         try {
-            final CommandWrapper commandRequest = new CommandWrapperBuilder().addClientToBlacklist(clientId)
-                    .withJson(apiRequestBodyAsJson).build();
+            final CommandWrapper commandRequest = new CommandWrapperBuilder().addClientToBlacklist(clientId).withJson(apiRequestBodyAsJson)
+                    .build();
 
             final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
 

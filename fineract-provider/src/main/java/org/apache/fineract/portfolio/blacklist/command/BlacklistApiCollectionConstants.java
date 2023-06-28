@@ -18,16 +18,14 @@
  */
 package org.apache.fineract.portfolio.blacklist.command;
 
-import org.apache.fineract.portfolio.blacklist.command.BlacklistApiConstants;
-
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
 public class BlacklistApiCollectionConstants extends BlacklistApiConstants {
 
-    protected static final Set<String> BLACKLIST_CREATE_REQUEST_DATA_PARAMETERS = new HashSet<>(Arrays.asList(
-            dpiParamName,nitParamName, yearParamName,typificationParamName,agencyIdParamName,
-            productIdParamName,descriptionParamName,balanceParamName,disbursementAmountParamName, clientNameParamName,localeParamName));
+    protected static final Set<String> BLACKLIST_CREATE_REQUEST_DATA_PARAMETERS = new HashSet<>(
+            Arrays.asList(dpiParamName, nitParamName, yearParamName, typificationParamName, agencyIdParamName, productIdParamName,
+                    descriptionParamName, balanceParamName, disbursementAmountParamName, clientNameParamName, localeParamName));
 
 }
