@@ -24,12 +24,14 @@ public class BlacklistApiConstants {
     public static final String BLACKLIST_RESOURCE_NAME = "blacklist";
 
     public static final String balanceParamName = "balance";
+    public static final String clientNameParamName = "clientName";
+    public static final String localeParamName = "locale";
     public static final String disbursementAmountParamName = "disbursementAmount";
     public static final String yearParamName = "year";
     public static final String nitParamName = "nit";
     public static final String descriptionParamName = "description";
-    public static final String dpiParamName = "dpi";
+    public static final String dpiParamName = "dpiNumber";
     public static final String typificationParamName = "typification";
     public static final String agencyIdParamName = "agencyId";
-    public static final String productIdParamName = "productId";
+    public static final String productIdParamName = "loanProduct";
 }
