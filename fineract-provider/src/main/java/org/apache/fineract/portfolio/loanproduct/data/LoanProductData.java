@@ -1343,4 +1343,8 @@ public class LoanProductData implements Serializable {
     public BigDecimal getFixedPrincipalPercentagePerInstallment() {
         return fixedPrincipalPercentagePerInstallment;
     }
+
+    public String getShortName() {
+        return shortName;
+    }
 }

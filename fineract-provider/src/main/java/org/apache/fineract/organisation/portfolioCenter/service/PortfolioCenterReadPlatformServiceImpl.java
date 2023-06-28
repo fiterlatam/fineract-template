@@ -238,7 +238,7 @@ public class PortfolioCenterReadPlatformServiceImpl implements PortfolioCenterRe
         PortfolioDetailedPlanningMapper portfolioDetailedPlanningMapper = new PortfolioDetailedPlanningMapper();
         String schemaSql = "select " + portfolioDetailedPlanningMapper.schema();
         schemaSql += "where pc.portfolio_id = ? ";
-        schemaSql += "order by centerCodeName, meetingDayOrderPosition";
+        schemaSql += "order by centerGroupName, position";
 
         return this.jdbcTemplate.query(schemaSql, portfolioDetailedPlanningMapper, portfolioId);
     }

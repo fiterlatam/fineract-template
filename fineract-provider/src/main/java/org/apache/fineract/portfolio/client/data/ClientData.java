@@ -706,4 +706,8 @@ public final class ClientData implements Comparable<ClientData>, Serializable {
         return this.isAddressEnabled;
     }
 
+    public String getDpiNumber() {
+        return this.dpiNumber;
+    }
+
 }
