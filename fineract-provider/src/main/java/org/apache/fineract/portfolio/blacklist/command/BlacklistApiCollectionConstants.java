@@ -28,6 +28,6 @@ public class BlacklistApiCollectionConstants extends BlacklistApiConstants {
 
     protected static final Set<String> BLACKLIST_CREATE_REQUEST_DATA_PARAMETERS = new HashSet<>(Arrays.asList(
             dpiParamName,nitParamName, yearParamName,typificationParamName,agencyIdParamName,
-            productIdParamName,descriptionParamName,balanceParamName,disbursementAmountParamName));
+            productIdParamName,descriptionParamName,balanceParamName,disbursementAmountParamName, clientNameParamName,localeParamName));
 
 }

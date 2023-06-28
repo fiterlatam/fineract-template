@@ -33,10 +33,13 @@ import org.apache.fineract.portfolio.client.service.ClientChargeWritePlatformSer
 import org.apache.fineract.portfolio.client.service.ClientReadPlatformService;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProduct;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductRepository;
+import org.apache.fineract.portfolio.loanproduct.exception.LoanProductNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.util.Optional;
 
 @Service
 @Slf4j
@@ -70,7 +73,9 @@ public class BlacklistClientWritePlatformServiceImpl implements BlacklistClientW
         final Long productId = command.longValueOfParameterNamed(BlacklistApiConstants.productIdParamName);
 
 
-        LoanProduct loanProduct = this.loanProductRepository.getById(productId);
+        Optional<LoanProduct> productOption = this.loanProductRepository.findById(productId);
+        if (productOption.isEmpty()) throw new LoanProductNotFoundException(productId);
+        LoanProduct loanProduct = productOption.get();
 
         CodeValueData typification = codeValueReadPlatformService.retrieveCodeValue(command.longValueOfParameterNamed(BlacklistApiConstants.typificationParamName));
         BlacklistClients blacklistClient = BlacklistClients.fromJson(this.context.authenticatedUser(), loanProduct, typification, command);

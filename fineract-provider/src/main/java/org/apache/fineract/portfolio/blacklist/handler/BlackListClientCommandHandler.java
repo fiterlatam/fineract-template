@@ -28,7 +28,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@CommandType(entity = "ADD", action = "BLACKLIST")
+@CommandType(entity = "BLACKLIST", action = "ADD")
 public class BlackListClientCommandHandler implements NewCommandSourceHandler {
 
     private final BlacklistClientWritePlatformService blacklistClientWritePlatformService;

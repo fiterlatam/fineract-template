@@ -65,4 +65,5 @@
     <include file="parts/0048_portfolio_add_planning_permision.xml" relativeToChangelogFile="true"/>
     <include file="parts/0049_FB_183_add_dpi_to_customer_details.xml" relativeToChangelogFile="true"/>
     <include file="parts/0050_FB_15_add_blacklist_table.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0051_FB_15_add_blacklist_permissions.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

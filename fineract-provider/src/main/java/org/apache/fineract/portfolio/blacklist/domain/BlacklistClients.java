@@ -22,7 +22,7 @@ package org.apache.fineract.portfolio.blacklist.domain;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
-import org.apache.fineract.infrastructure.core.domain.AbstractAuditableCustom;
+import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProduct;
 import org.apache.fineract.useradministration.domain.AppUser;
@@ -41,7 +41,7 @@ import java.util.Map;
 @Entity
 @Table(name = "m_client_blacklist", uniqueConstraints = {
         @UniqueConstraint(columnNames = {"dpi"}, name = "unique_dpi_number")})
-public class BlacklistClients extends AbstractAuditableCustom {
+public class BlacklistClients extends AbstractPersistableCustom {
 
 
     @Column(name = "dpi", nullable = false)
@@ -86,7 +86,7 @@ public class BlacklistClients extends AbstractAuditableCustom {
     private LocalDateTime createdAt;
 
     public static BlacklistClients fromJson(final AppUser appUser, final LoanProduct loanProduct, final CodeValueData typification, final JsonCommand command) {
-        final String dpi = command.stringValueOfParameterNamed("dpi");
+        final String dpi = command.stringValueOfParameterNamed("dpiNumber");
         final String nit = command.stringValueOfParameterNamed("nit");
         final String description = command.stringValueOfParameterNamed("description");
         final String agencyId = command.stringValueOfParameterNamed("agencyId");
