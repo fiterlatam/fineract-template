@@ -16,16 +16,16 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.portfolio.blacklist.command;
+package org.apache.fineract.portfolio.blacklist.exception;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
+import org.apache.fineract.infrastructure.core.exception.AbstractPlatformResourceNotFoundException;
 
-public class BlacklistApiCollectionConstants extends BlacklistApiConstants {
+/**
+ * A {@link RuntimeException} thrown when client is already blacklisted.
+ */
+public class ClientBlacklistedException extends AbstractPlatformResourceNotFoundException {
 
-    protected static final Set<String> BLACKLIST_CREATE_REQUEST_DATA_PARAMETERS = new HashSet<>(
-            Arrays.asList(dpiParamName, nitParamName, yearParamName, typificationParamName, agencyIdParamName, productIdParamName,
-                    descriptionParamName, balanceParamName, disbursementAmountParamName, clientNameParamName, localeParamName));
-
+    public ClientBlacklistedException(String dpi) {
+        super("error.msg.client.already.blacklisted", "Client with dpi " + dpi + " is already blacklisted.", dpi);
+    }
 }

@@ -76,7 +76,7 @@ public class CenterGroupWritePlatformServiceImpl implements CenterGroupWritePlat
     private final ConfigurationReadPlatformService configurationReadPlatformService;
 
     @Autowired
-    public CenterGroupWritePlatformServiceImpl(PlatformSecurityContext context,final JdbcTemplate jdbcTemplate,
+    public CenterGroupWritePlatformServiceImpl(PlatformSecurityContext context, final JdbcTemplate jdbcTemplate,
             CenterGroupCommandFromApiJsonDeserializer fromApiJsonDeserializer, OfficeRepositoryWrapper officeRepositoryWrapper,
             CenterGroupRepositoryWrapper centerGroupRepositoryWrapper, PortfolioCenterRepositoryWrapper portfolioCenterRepositoryWrapper,
             CodeValueReadPlatformService codeValueReadPlatformService, AppUserRepository appUserRepository,
@@ -255,7 +255,6 @@ public class CenterGroupWritePlatformServiceImpl implements CenterGroupWritePlat
             final Long destinationPortfolioCenterId = command.longValueOfParameterNamed(
                     CenterGroupConstants.CenterGroupSupportedParameters.DESTINATION_PORTFOLIO_CENTER_ID.getValue());
 
-
             PortfolioCenter newParentPortfolioCenter = null;
             if (destinationPortfolioCenterId != null) {
                 newParentPortfolioCenter = this.portfolioCenterRepositoryWrapper.findOneWithNotFoundDetection(destinationPortfolioCenterId);
@@ -282,12 +281,11 @@ public class CenterGroupWritePlatformServiceImpl implements CenterGroupWritePlat
                 centerGroup.setMeetingEndTime(newMeetingEndTime);
                 changes.put(CenterGroupConstants.CenterGroupSupportedParameters.MEETING_END_TIME.getValue(), meetingEndTime);
             }
-            String schemaSql = "Select cgroup.id from m_center_group cgroup where cgroup.portfolio_center_id = ? and " +
-                    "( ( ? >= cgroup.meeting_start_time and ? < cgroup.meeting_end_time) OR " +
-                    "( ? > cgroup.meeting_start_time and ? < cgroup.meeting_end_time) ) order by id desc";
+            String schemaSql = "Select cgroup.id from m_center_group cgroup where cgroup.portfolio_center_id = ? and "
+                    + "( ( ? >= cgroup.meeting_start_time and ? < cgroup.meeting_end_time) OR "
+                    + "( ? > cgroup.meeting_start_time and ? < cgroup.meeting_end_time) ) order by id desc";
             List<Long> groupIds = jdbcTemplate.queryForList(schemaSql, Long.class, newParentPortfolioCenter.getId(), newMeetingStarTime,
                     newMeetingStarTime, newMeetingEndTime, newMeetingEndTime);
-
 
             if (groupIds.size() > 0) {
                 CenterGroup group = centerGroupRepositoryWrapper.findOneWithNotFoundDetection(groupIds.get(0));
@@ -296,8 +294,8 @@ public class CenterGroupWritePlatformServiceImpl implements CenterGroupWritePlat
                         group.getMeetingEndTime());
             }
 
-            System.out.println("new meeting start: "+ newMeetingStarTime);
-            System.out.println("new meeting end: "+ newMeetingEndTime);
+            System.out.println("new meeting start: " + newMeetingStarTime);
+            System.out.println("new meeting end: " + newMeetingEndTime);
 
             this.centerGroupRepositoryWrapper.saveAndFlush(centerGroup);
 
