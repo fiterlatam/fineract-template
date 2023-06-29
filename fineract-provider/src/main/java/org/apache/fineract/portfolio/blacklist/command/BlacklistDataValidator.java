@@ -20,6 +20,12 @@ package org.apache.fineract.portfolio.blacklist.command;
 
 import com.google.gson.JsonElement;
 import com.google.gson.reflect.TypeToken;
+import java.lang.reflect.Type;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.infrastructure.core.data.ApiParameterError;
 import org.apache.fineract.infrastructure.core.data.DataValidatorBuilder;
@@ -29,13 +35,6 @@ import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
 import org.apache.fineract.portfolio.client.api.ClientApiConstants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-
-import java.lang.reflect.Type;
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
 @Component
 public class BlacklistDataValidator {
@@ -65,8 +64,10 @@ public class BlacklistDataValidator {
         final BigDecimal balance = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed(BlacklistApiConstants.balanceParamName, element);
         baseDataValidator.reset().parameter(BlacklistApiConstants.balanceParamName).value(balance).notNull().positiveAmount();
 
-        final BigDecimal disbursementAmount = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed(BlacklistApiConstants.disbursementAmountParamName, element);
-        baseDataValidator.reset().parameter(BlacklistApiConstants.disbursementAmountParamName).value(disbursementAmount).notNull().positiveAmount();
+        final BigDecimal disbursementAmount = this.fromApiJsonHelper
+                .extractBigDecimalWithLocaleNamed(BlacklistApiConstants.disbursementAmountParamName, element);
+        baseDataValidator.reset().parameter(BlacklistApiConstants.disbursementAmountParamName).value(disbursementAmount).notNull()
+                .positiveAmount();
 
         final String dpi = this.fromApiJsonHelper.extractStringNamed(BlacklistApiConstants.dpiParamName, element);
         baseDataValidator.reset().parameter(BlacklistApiConstants.dpiParamName).value(dpi).notBlank();
@@ -85,7 +86,6 @@ public class BlacklistDataValidator {
 
         final Long year = this.fromApiJsonHelper.extractLongNamed(BlacklistApiConstants.yearParamName, element);
         baseDataValidator.reset().parameter(BlacklistApiConstants.yearParamName).value(year).notNull();
-
 
         throwExceptionIfValidationWarningsExist(dataValidationErrors);
     }

@@ -67,6 +67,7 @@ import org.apache.fineract.portfolio.client.domain.ClientRepositoryWrapper;
 import org.apache.fineract.portfolio.client.domain.ClientStatus;
 import org.apache.fineract.portfolio.client.domain.LegalForm;
 import org.apache.fineract.portfolio.client.exception.ClientActiveForUpdateException;
+import org.apache.fineract.portfolio.client.exception.ClientDpiExistsException;
 import org.apache.fineract.portfolio.client.exception.ClientHasNoStaffException;
 import org.apache.fineract.portfolio.client.exception.ClientMustBePendingToBeDeletedException;
 import org.apache.fineract.portfolio.client.exception.InvalidClientSavingProductException;
@@ -88,6 +89,7 @@ import org.apache.fineract.portfolio.savings.service.SavingsApplicationProcessWr
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -119,6 +121,7 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
     private final ClientFamilyMembersWritePlatformService clientFamilyMembersWritePlatformService;
     private final BusinessEventNotifierService businessEventNotifierService;
     private final EntityDatatableChecksWritePlatformService entityDatatableChecksWritePlatformService;
+    private final JdbcTemplate jdbcTemplate;
 
     @Autowired
     public ClientWritePlatformServiceJpaRepositoryImpl(final PlatformSecurityContext context,
@@ -134,7 +137,7 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
             final ConfigurationReadPlatformService configurationReadPlatformService,
             final AddressWritePlatformService addressWritePlatformService,
             final ClientFamilyMembersWritePlatformService clientFamilyMembersWritePlatformService,
-            final BusinessEventNotifierService businessEventNotifierService,
+            final BusinessEventNotifierService businessEventNotifierService,final JdbcTemplate jdbcTemplate,
             final EntityDatatableChecksWritePlatformService entityDatatableChecksWritePlatformService) {
         this.context = context;
         this.clientRepository = clientRepository;
@@ -159,6 +162,7 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
         this.clientFamilyMembersWritePlatformService = clientFamilyMembersWritePlatformService;
         this.businessEventNotifierService = businessEventNotifierService;
         this.entityDatatableChecksWritePlatformService = entityDatatableChecksWritePlatformService;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     @Transactional
@@ -240,7 +244,11 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
 
             final Long officeId = command.longValueOfParameterNamed(ClientApiConstants.officeIdParamName);
             final Long dpiNumber = command.longValueOfParameterNamed(ClientApiConstants.dpiParamName);
-
+            String sqlString = "select count(*) from m_client where dpi=?";
+            Long count = jdbcTemplate.queryForObject(sqlString, Long.class, dpiNumber);
+            if (count > 0) {
+                throw new ClientDpiExistsException(String.valueOf(dpiNumber));
+            }
             final Office clientOffice = this.officeRepositoryWrapper.findOneWithNotFoundDetection(officeId);
 
             final Long groupId = command.longValueOfParameterNamed(ClientApiConstants.groupIdParamName);
@@ -469,7 +477,11 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
 
             if (changes.containsKey(ClientApiConstants.dpiParamName)) {
                 final String newValue = command.stringValueOfParameterNamed(ClientApiConstants.dpiParamName);
-                this.clientRepository.getClientByDpiNumber(newValue);
+                String sqlString = "select count(*) from m_client where dpi=?";
+                Long count = jdbcTemplate.queryForObject(sqlString, Long.class, newValue);
+                if (count > 0) {
+                    throw new ClientDpiExistsException(newValue);
+                }
                 clientForUpdate.updateDpiNumber(newValue);
             }
 
