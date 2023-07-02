@@ -67,6 +67,7 @@ import org.apache.fineract.portfolio.client.domain.ClientRepositoryWrapper;
 import org.apache.fineract.portfolio.client.domain.ClientStatus;
 import org.apache.fineract.portfolio.client.domain.LegalForm;
 import org.apache.fineract.portfolio.client.exception.ClientActiveForUpdateException;
+import org.apache.fineract.portfolio.client.exception.ClientBlacklistedException;
 import org.apache.fineract.portfolio.client.exception.ClientDpiExistsException;
 import org.apache.fineract.portfolio.client.exception.ClientHasNoStaffException;
 import org.apache.fineract.portfolio.client.exception.ClientMustBePendingToBeDeletedException;
@@ -244,11 +245,25 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
 
             final Long officeId = command.longValueOfParameterNamed(ClientApiConstants.officeIdParamName);
             final Long dpiNumber = command.longValueOfParameterNamed(ClientApiConstants.dpiParamName);
+
+            //check if client is blacklisted
+            String blacklistString = "select count(*) from m_client_blacklist where dpi=?";
+            Long blacklisted = jdbcTemplate.queryForObject(blacklistString, Long.class, dpiNumber);
+            if (blacklisted>0){
+                String blacklistReason = "select description from m_client_blacklist where dpi=?";
+                String reason = jdbcTemplate.queryForObject(blacklistReason, String.class, dpiNumber);
+                throw new ClientBlacklistedException(reason);
+            }
+
+            //check if client with given dpi exists
             String sqlString = "select count(*) from m_client where dpi=?";
             Long count = jdbcTemplate.queryForObject(sqlString, Long.class, dpiNumber);
             if (count > 0) {
                 throw new ClientDpiExistsException(String.valueOf(dpiNumber));
             }
+
+
+
             final Office clientOffice = this.officeRepositoryWrapper.findOneWithNotFoundDetection(officeId);
 
             final Long groupId = command.longValueOfParameterNamed(ClientApiConstants.groupIdParamName);
