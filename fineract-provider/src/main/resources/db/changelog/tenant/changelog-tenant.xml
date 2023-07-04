@@ -67,4 +67,5 @@
     <include file="parts/0050_FB_15_add_blacklist_table.xml" relativeToChangelogFile="true"/>
     <include file="parts/0051_FB_15_add_blacklist_permissions.xml" relativeToChangelogFile="true"/>
     <include file="parts/0052_FB_181_add_remove_from_blacklist_permissions.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0053_create_new_charge_for_late_payment.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
