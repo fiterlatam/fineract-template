@@ -25,4 +25,5 @@ public interface BlacklistClientWritePlatformService {
 
     CommandProcessingResult addClientToBlacklist(JsonCommand command);
 
+    Long removeFromBlacklist(Long blacklistId);
 }

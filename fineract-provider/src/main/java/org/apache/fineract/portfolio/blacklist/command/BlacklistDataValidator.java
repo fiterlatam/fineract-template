@@ -32,6 +32,10 @@ import org.apache.fineract.infrastructure.core.data.DataValidatorBuilder;
 import org.apache.fineract.infrastructure.core.exception.InvalidJsonException;
 import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidationException;
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
+import org.apache.fineract.portfolio.blacklist.domain.BlacklistClients;
+import org.apache.fineract.portfolio.blacklist.domain.BlacklistClientsRepository;
+import org.apache.fineract.portfolio.blacklist.domain.BlacklistStatus;
+import org.apache.fineract.portfolio.blacklist.exception.ClientBlacklistedException;
 import org.apache.fineract.portfolio.client.api.ClientApiConstants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -40,10 +44,12 @@ import org.springframework.stereotype.Component;
 public class BlacklistDataValidator {
 
     private final FromJsonHelper fromApiJsonHelper;
+    private final BlacklistClientsRepository blacklistClientsRepository;
 
     @Autowired
-    public BlacklistDataValidator(final FromJsonHelper fromApiJsonHelper) {
+    public BlacklistDataValidator(final FromJsonHelper fromApiJsonHelper,final BlacklistClientsRepository blacklistClientsRepository) {
         this.fromApiJsonHelper = fromApiJsonHelper;
+        this.blacklistClientsRepository = blacklistClientsRepository;
     }
 
     public void validateForCreate(final String json) {
@@ -71,7 +77,10 @@ public class BlacklistDataValidator {
 
         final String dpi = this.fromApiJsonHelper.extractStringNamed(BlacklistApiConstants.dpiParamName, element);
         baseDataValidator.reset().parameter(BlacklistApiConstants.dpiParamName).value(dpi).notBlank();
-
+        BlacklistClients blacklist = this.blacklistClientsRepository.findBlacklistClientsByDpi(dpi, BlacklistStatus.ACTIVE.getValue());
+        if (blacklist != null) {
+            throw new ClientBlacklistedException(dpi);
+        }
         final String description = this.fromApiJsonHelper.extractStringNamed(BlacklistApiConstants.descriptionParamName, element);
         baseDataValidator.reset().parameter(BlacklistApiConstants.descriptionParamName).value(description).notBlank();
 
