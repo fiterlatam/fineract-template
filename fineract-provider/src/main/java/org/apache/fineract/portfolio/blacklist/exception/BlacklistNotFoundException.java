@@ -16,15 +16,16 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.portfolio.blacklist.service;
+package org.apache.fineract.portfolio.blacklist.exception;
 
-import org.apache.fineract.infrastructure.core.service.Page;
-import org.apache.fineract.infrastructure.core.service.SearchParameters;
-import org.apache.fineract.portfolio.blacklist.data.BlacklistClientData;
+import org.apache.fineract.infrastructure.core.exception.AbstractPlatformResourceNotFoundException;
 
-public interface BlacklistClientReadPlatformService {
+/**
+ * A {@link RuntimeException} thrown when client is already blacklisted.
+ */
+public class BlacklistNotFoundException extends AbstractPlatformResourceNotFoundException {
 
-    Page<BlacklistClientData> retrieveAll(SearchParameters searchParameters);
-
-    BlacklistClientData retrieveOne(Long blacklistId);
+    public BlacklistNotFoundException(Long id) {
+        super("error.msg.blacklist.client.not.found", "Blacklist record with id " + id + " was not found.", id);
+    }
 }

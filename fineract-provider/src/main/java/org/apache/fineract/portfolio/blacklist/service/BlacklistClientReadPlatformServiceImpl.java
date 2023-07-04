@@ -133,6 +133,15 @@ public class BlacklistClientReadPlatformServiceImpl implements BlacklistClientRe
         return this.paginationHelper.fetchPage(this.jdbcTemplate, sqlBuilder.toString(), paramList.toArray(), this.blacklistMapper);
     }
 
+    @Override
+    public BlacklistClientData retrieveOne(Long blacklistId) {
+
+        final String sql = "select " + this.blacklistMapper.schema() + " where b.id = ? and b.dpi is not null";
+        final BlacklistClientData clientData = this.jdbcTemplate.queryForObject(sql, this.blacklistMapper, new Object[] { blacklistId });
+        return clientData;
+
+    }
+
     private String buildSqlStringFromBlacklistCriteria(String schemaSql, final SearchParameters searchParameters, List<Object> paramList) {
 
         String sqlSearch = searchParameters.getSqlSearch();

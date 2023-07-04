@@ -36,18 +36,18 @@ public final class BlacklistEnumerations {
 
     public static EnumOptionData status(final BlacklistStatus status) {
         EnumOptionData optionData = new EnumOptionData(BlacklistStatus.INVALID.getValue().longValue(), BlacklistStatus.INVALID.getCode(),
-                "Invalid");
+                "INVALID");
         switch (status) {
             case INVALID:
                 optionData = new EnumOptionData(BlacklistStatus.INVALID.getValue().longValue(), BlacklistStatus.INVALID.getCode(),
-                        "Invalid");
+                        "INVALID");
             break;
             case ACTIVE:
-                optionData = new EnumOptionData(BlacklistStatus.ACTIVE.getValue().longValue(), BlacklistStatus.ACTIVE.getCode(), "Active");
+                optionData = new EnumOptionData(BlacklistStatus.ACTIVE.getValue().longValue(), BlacklistStatus.ACTIVE.getCode(), "ACTIVE");
             break;
             case INACTIVE:
                 optionData = new EnumOptionData(BlacklistStatus.INACTIVE.getValue().longValue(), BlacklistStatus.INACTIVE.getCode(),
-                        "Inactive");
+                        "INACTIVE");
             break;
         }
 

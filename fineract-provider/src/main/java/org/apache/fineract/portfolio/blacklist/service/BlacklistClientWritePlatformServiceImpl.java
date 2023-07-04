@@ -30,6 +30,8 @@ import org.apache.fineract.portfolio.blacklist.command.BlacklistApiConstants;
 import org.apache.fineract.portfolio.blacklist.command.BlacklistDataValidator;
 import org.apache.fineract.portfolio.blacklist.domain.BlacklistClients;
 import org.apache.fineract.portfolio.blacklist.domain.BlacklistClientsRepository;
+import org.apache.fineract.portfolio.blacklist.domain.BlacklistStatus;
+import org.apache.fineract.portfolio.blacklist.exception.BlacklistNotFoundException;
 import org.apache.fineract.portfolio.client.service.ClientChargeWritePlatformServiceJpaRepositoryImpl;
 import org.apache.fineract.portfolio.client.service.ClientReadPlatformService;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProduct;
@@ -86,5 +88,16 @@ public class BlacklistClientWritePlatformServiceImpl implements BlacklistClientW
                 .withClientId(clientId) //
                 .withEntityId(blacklistClient.getId()) //
                 .build();
+    }
+
+    @Override
+    public Long removeFromBlacklist(Long blacklistId) {
+        BlacklistClients blacklistClient = this.blacklistClientsRepository.findById(blacklistId).orElse(null);
+        if (blacklistClient == null) {
+            throw new BlacklistNotFoundException(blacklistId);
+        }
+        blacklistClient.updateStatus(BlacklistStatus.INACTIVE);
+        this.blacklistClientsRepository.saveAndFlush(blacklistClient);
+        return blacklistId;
     }
 }
