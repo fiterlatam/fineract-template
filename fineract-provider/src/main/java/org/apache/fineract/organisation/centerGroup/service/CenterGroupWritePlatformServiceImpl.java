@@ -170,31 +170,18 @@ public class CenterGroupWritePlatformServiceImpl implements CenterGroupWritePlat
             }
 
             // check for overlapping center groups
-//            List<CenterGroup> overLappingCenterGroups = centerGroupRepositoryWrapper.findOverLappingCenterGroups(portfolioCenterId,
-//                    centerGroup.getMeetingStartTime(), centerGroup.getMeetingEndTime());
-//            if (overLappingCenterGroups.size() > 0) {
-//                for (CenterGroup centerGroup1 : overLappingCenterGroups) {
-//
-//                    final ApiParameterError error = ApiParameterError.parameterErrorWithValue("error.msg.centerGroup.overlapping",
-//                            "Center Group with id " + centerGroup1.getId() + " with duration '" + centerGroup1.getMeetingStartTime() + " - "
-//                                    + centerGroup1.getMeetingEndTime() + "' overlaps with the new center group",
-//                            CenterGroupConstants.CenterGroupSupportedParameters.FORMATION_DATE.getValue(),
-//                            centerGroup.getMeetingStartTime().toString());
-//                    dataValidationErrors.add(error);
-//                }
-//            }
+            List<CenterGroup> overLappingCenterGroups = centerGroupRepositoryWrapper.findOverLappingCenterGroups(portfolioCenterId,
+                    centerGroup.getMeetingStartTime(), centerGroup.getMeetingEndTime());
+            if (overLappingCenterGroups.size() > 0) {
+                for (CenterGroup centerGroup1 : overLappingCenterGroups) {
 
-            String schemaSql = "Select cgroup.id from m_center_group cgroup where cgroup.portfolio_center_id = ? and "
-                    + "( ( ? >= cgroup.meeting_start_time and ? < cgroup.meeting_end_time) OR "
-                    + "( ? > cgroup.meeting_start_time and ? < cgroup.meeting_end_time) ) order by id desc";
-            List<Long> groupIds = jdbcTemplate.queryForList(schemaSql, Long.class, portfolioCenterId, centerGroup.getMeetingStartTime(),
-                    centerGroup.getMeetingStartTime(), centerGroup.getMeetingEndTime(), centerGroup.getMeetingEndTime());
-
-            if (groupIds.size() > 0) {
-                CenterGroup group = centerGroupRepositoryWrapper.findOneWithNotFoundDetection(groupIds.get(0));
-
-                throw new CenterGroupMeetingTimeCollisionException(group.getName(), group.getId(), group.getMeetingStartTime(),
-                        group.getMeetingEndTime());
+                    final ApiParameterError error = ApiParameterError.parameterErrorWithValue("error.msg.centerGroup.overlapping",
+                            "Center Group with id " + centerGroup1.getId() + " with duration '" + centerGroup1.getMeetingStartTime() + " - "
+                                    + centerGroup1.getMeetingEndTime() + "' overlaps with the new center group",
+                            CenterGroupConstants.CenterGroupSupportedParameters.FORMATION_DATE.getValue(),
+                            centerGroup.getMeetingStartTime().toString());
+                    dataValidationErrors.add(error);
+                }
             }
 
             if (CollectionUtils.isNotEmpty(dataValidationErrors)) {
@@ -306,6 +293,9 @@ public class CenterGroupWritePlatformServiceImpl implements CenterGroupWritePlat
                 throw new CenterGroupMeetingTimeCollisionException(group.getName(), group.getId(), group.getMeetingStartTime(),
                         group.getMeetingEndTime());
             }
+
+            System.out.println("new meeting start: " + newMeetingStarTime);
+            System.out.println("new meeting end: " + newMeetingEndTime);
 
             this.centerGroupRepositoryWrapper.saveAndFlush(centerGroup);
 
