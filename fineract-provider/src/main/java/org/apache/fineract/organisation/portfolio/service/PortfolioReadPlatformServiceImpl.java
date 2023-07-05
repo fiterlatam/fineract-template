@@ -87,7 +87,7 @@ public class PortfolioReadPlatformServiceImpl implements PortfolioReadPlatformSe
         this.context.authenticatedUser();
 
         final Collection<OfficeData> parentOfficesOptions = officeReadPlatformService
-                .retrieveOfficesByHierarchyLevel(Long.valueOf(OfficeHierarchyLevel.SUPERVISION.getValue()));
+                .retrieveChildOfficesByUserHierarchyAsParent();
 
         // retrieve list of users under agency hierarchy level as this is the user role to access these feature
         final List<AppUserData> appUsers = new ArrayList<>(
