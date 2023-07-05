@@ -266,6 +266,10 @@ public class AppUserReadPlatformServiceImpl implements AppUserReadPlatformServic
             findUserWithRoleLike(usersDataList, usersforDropdown, SUPERVISOR_ROLE_START_WITH);
         }
 
+        if (Long.valueOf(OfficeHierarchyLevel.GRUPO.getValue()).equals(hierarchyLevel)) {
+            findUserWithRoleLike(usersDataList, usersforDropdown, FACILITATOR_ROLE_START_WITH);
+        }
+
         return usersforDropdown;
     }
 

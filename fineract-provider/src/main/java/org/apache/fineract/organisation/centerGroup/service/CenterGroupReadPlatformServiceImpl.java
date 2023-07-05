@@ -114,7 +114,8 @@ public class CenterGroupReadPlatformServiceImpl implements CenterGroupReadPlatfo
         final Collection<OfficeData> parentOfficesOptions = officeReadPlatformService
                 .retrieveOfficesByHierarchyLevel(Long.valueOf(OfficeHierarchyLevel.CARTERA.getValue()));
 
-        final List<AppUserData> appUsers = new ArrayList<>(this.appUserReadPlatformService.retrieveAllUsers());
+        final List<AppUserData> appUsers = new ArrayList<>(
+                this.appUserReadPlatformService.retrieveUsersUnderHierarchy(Long.valueOf(OfficeHierarchyLevel.GRUPO.getValue())));
 
         final Collection<EnumOptionData> statusOptions = retrieveGroupStatusOptions();
 

@@ -72,8 +72,8 @@ public class BlacklistClientReadPlatformServiceImpl implements BlacklistClientRe
     public BlacklistClientReadPlatformServiceImpl(final PlatformSecurityContext context, final PaginationHelper paginationHelper,
             final DatabaseSpecificSQLGenerator sqlGenerator, final ColumnValidator columnValidator,
             final BlacklistDataValidator dataValidator, final LoanProductRepository loanProductRepository,
-            final ClientReadPlatformService clientReadPlatformService,
-            final CodeValueReadPlatformService codeValueReadPlatformService, final JdbcTemplate jdbcTemplate) {
+            final ClientReadPlatformService clientReadPlatformService, final CodeValueReadPlatformService codeValueReadPlatformService,
+            final JdbcTemplate jdbcTemplate) {
         this.context = context;
         this.dataValidator = dataValidator;
         this.loanProductRepository = loanProductRepository;

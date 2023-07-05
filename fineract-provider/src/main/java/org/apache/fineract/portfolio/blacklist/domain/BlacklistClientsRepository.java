@@ -28,5 +28,5 @@ public interface BlacklistClientsRepository extends JpaRepository<BlacklistClien
 
     // no behaviour
     @Query("SELECT client FROM BlacklistClients client WHERE client.dpi = :dpiNumber and client.status = :status")
-    BlacklistClients findBlacklistClientsByDpi(@Param("dpiNumber") String dpiNumber,@Param("status") Integer status);
+    BlacklistClients findBlacklistClientsByDpi(@Param("dpiNumber") String dpiNumber, @Param("status") Integer status);
 }
