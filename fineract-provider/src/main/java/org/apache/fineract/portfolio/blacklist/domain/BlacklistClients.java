@@ -95,15 +95,16 @@ public class BlacklistClients extends AbstractPersistableCustom {
         final Integer year = command.integerValueOfParameterNamed("year");
         final BigDecimal balance = command.bigDecimalValueOfParameterNamed("balance");
         final BigDecimal disbursementAmount = command.bigDecimalValueOfParameterNamed("disbursementAmount");
-        return new BlacklistClients(appUser, typification,clientName, dpi, nit, description, agencyId, loanProduct, balance, disbursementAmount, year);
+        return new BlacklistClients(appUser, typification, clientName, dpi, nit, description, agencyId, loanProduct, balance,
+                disbursementAmount, year);
     }
 
     protected BlacklistClients() {
         //
     }
 
-    private BlacklistClients(final AppUser appUser, final CodeValueData typification, final String clientName, final String dpi, final String nit,
-            final String description, final String agencyId, final LoanProduct loanProduct, final BigDecimal balance,
+    private BlacklistClients(final AppUser appUser, final CodeValueData typification, final String clientName, final String dpi,
+            final String nit, final String description, final String agencyId, final LoanProduct loanProduct, final BigDecimal balance,
             final BigDecimal disbursementAmount, final Integer year) {
         this.addedBy = appUser;
         this.typeEnum = typification.getId().intValue();

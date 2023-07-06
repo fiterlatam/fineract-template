@@ -151,7 +151,7 @@ public class BlacklistClientReadPlatformServiceImpl implements BlacklistClientRe
 
         String extraCriteria = "";
         if (sqlSearch != null) {
-            extraCriteria = " and (b.client_name like '%" + sqlSearch + "%' OR b.dpi='"+sqlSearch+"') ";
+            extraCriteria = " and (b.client_name like '%" + sqlSearch + "%' OR b.dpi='" + sqlSearch + "') ";
         }
 
         if (officeId != null) {

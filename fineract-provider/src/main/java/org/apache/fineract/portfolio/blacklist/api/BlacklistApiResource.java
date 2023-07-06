@@ -21,7 +21,6 @@ package org.apache.fineract.portfolio.blacklist.api;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
-
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Collection;
@@ -94,14 +93,14 @@ public class BlacklistApiResource {
 
     @Autowired
     public BlacklistApiResource(final PlatformSecurityContext context, final ClientReadPlatformService readPlatformService,
-                                final CodeValueReadPlatformService codeValueReadPlatformService,
-                                final BlacklistClientWritePlatformService blacklistClientWritePlatformService,
-                                final LoanProductReadPlatformService loanProductReadPlatformService,
-                                final DefaultToApiJsonSerializer<BlacklistClientData> toApiJsonSerializer,
-                                final BlacklistClientReadPlatformService blacklistClientReadPlatformService,
-                                final FileUploadValidator fileUploadValidator,final DocumentWritePlatformService documentWritePlatformService,
-                                final ApiRequestParameterHelper apiRequestParameterHelper, final BlacklistClientsRepository blacklistClientsRepository,
-                                final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService) {
+            final CodeValueReadPlatformService codeValueReadPlatformService,
+            final BlacklistClientWritePlatformService blacklistClientWritePlatformService,
+            final LoanProductReadPlatformService loanProductReadPlatformService,
+            final DefaultToApiJsonSerializer<BlacklistClientData> toApiJsonSerializer,
+            final BlacklistClientReadPlatformService blacklistClientReadPlatformService, final FileUploadValidator fileUploadValidator,
+            final DocumentWritePlatformService documentWritePlatformService, final ApiRequestParameterHelper apiRequestParameterHelper,
+            final BlacklistClientsRepository blacklistClientsRepository,
+            final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService) {
         this.context = context;
         this.clientReadPlatformService = readPlatformService;
         this.codeValueReadPlatformService = codeValueReadPlatformService;
@@ -121,12 +120,12 @@ public class BlacklistApiResource {
     @Produces({ MediaType.APPLICATION_JSON })
     @Operation(summary = "List all Blacklist clients", description = "Example Requests:\n" + "blacklist\n" + "\n" + "\n" + "blacklist")
     public String retrieveAllBlacklistItems(@Context final UriInfo uriInfo,
-                                            @QueryParam("offset") @Parameter(description = "offset") final Integer offset,
-                                            @QueryParam("limit") @Parameter(description = "limit") final Integer limit,
-                                            @QueryParam("orderBy") @Parameter(description = "orderBy") final String orderBy,
-                                            @QueryParam("status") @Parameter(description = "status") final String status,
-                                            @QueryParam("searchText") @Parameter(description = "searchText") final String searchText,
-                                            @QueryParam("sortOrder") @Parameter(description = "sortOrder") final String sortOrder) {
+            @QueryParam("offset") @Parameter(description = "offset") final Integer offset,
+            @QueryParam("limit") @Parameter(description = "limit") final Integer limit,
+            @QueryParam("orderBy") @Parameter(description = "orderBy") final String orderBy,
+            @QueryParam("status") @Parameter(description = "status") final String status,
+            @QueryParam("searchText") @Parameter(description = "searchText") final String searchText,
+            @QueryParam("sortOrder") @Parameter(description = "sortOrder") final String sortOrder) {
 
         this.context.authenticatedUser().validateHasViewPermission(this.resourceNameForPermissions);
 
@@ -134,7 +133,8 @@ public class BlacklistApiResource {
 
         String clientName = queryParameters.getFirst("clientName");
         String dpi = queryParameters.getFirst("dpi");
-        SearchParameters searchParameters = SearchParameters.forBlacklist(clientName, status, offset, limit, orderBy, sortOrder, dpi,searchText);
+        SearchParameters searchParameters = SearchParameters.forBlacklist(clientName, status, offset, limit, orderBy, sortOrder, dpi,
+                searchText);
         final Page<BlacklistClientData> clientData = this.blacklistClientReadPlatformService.retrieveAll(searchParameters);
 
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(queryParameters);
@@ -167,7 +167,7 @@ public class BlacklistApiResource {
     @Operation(summary = "Retrieve Blacklist Details", description = "This is a convenience resource useful for building maintenance user interface screens for client applications. The template data returned consists of any or all of:\n"
             + "\n" + " Field Defaults\n" + " Allowed description Lists\n" + "\n\nExample Request:\n" + "clients/1/identifiers/template")
     public String getBlacklistDetails(@Context final UriInfo uriInfo,
-                                      @PathParam("blacklistId") @Parameter(description = "blacklistId") final Long blacklistId) {
+            @PathParam("blacklistId") @Parameter(description = "blacklistId") final Long blacklistId) {
 
         this.context.authenticatedUser().validateHasViewPermission(this.resourceNameForPermissions);
 
@@ -183,8 +183,7 @@ public class BlacklistApiResource {
     public String createClientIdentifier(@Parameter(hidden = true) final String apiRequestBodyAsJson) {
 
         try {
-            final CommandWrapper commandRequest = new CommandWrapperBuilder().addClientToBlacklist().withJson(apiRequestBodyAsJson)
-                    .build();
+            final CommandWrapper commandRequest = new CommandWrapperBuilder().addClientToBlacklist().withJson(apiRequestBodyAsJson).build();
 
             final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
 
@@ -200,10 +199,10 @@ public class BlacklistApiResource {
     @Consumes({ MediaType.MULTIPART_FORM_DATA })
     @Produces({ MediaType.APPLICATION_JSON })
     public String createDocument(@PathParam("blacklistId") @Parameter(description = "blacklistId") final Long blacklistId,
-                                 @HeaderParam("Content-Length") @Parameter(description = "Content-Length") final Long fileSize,
-                                 @FormDataParam("file") final InputStream inputStream, @FormDataParam("file") final FormDataContentDisposition fileDetails,
-                                 @FormDataParam("file") final FormDataBodyPart bodyPart, @FormDataParam("name") final String name,
-                                 @FormDataParam("description") final String description) {
+            @HeaderParam("Content-Length") @Parameter(description = "Content-Length") final Long fileSize,
+            @FormDataParam("file") final InputStream inputStream, @FormDataParam("file") final FormDataContentDisposition fileDetails,
+            @FormDataParam("file") final FormDataBodyPart bodyPart, @FormDataParam("name") final String name,
+            @FormDataParam("description") final String description) {
 
         fileUploadValidator.validate(fileSize, inputStream, fileDetails, bodyPart);
         final DocumentCommand documentCommand = new DocumentCommand(null, null, "blacklist", blacklistId, name, fileDetails.getFileName(),
