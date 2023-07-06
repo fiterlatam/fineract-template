@@ -403,6 +403,13 @@ public class AgencyWritePlatformServiceImpl implements AgencyWritePlatformServic
                 newParentOffice = this.officeRepositoryWrapper.findOneWithNotFoundDetection(destinationRegionId);
                 agency.setParentOffice(newParentOffice);
                 changes.put(AgencyConstants.AgencySupportedParameters.DESTINATION_REGION_ID.getValue(), destinationRegionId);
+
+                // update the office hierarchy as well
+                Office existingOfficeAgency = this.officeRepositoryWrapper.findByName(agency.getName());
+                if (existingOfficeAgency != null) {
+                    existingOfficeAgency.update(newParentOffice);
+                    this.officeRepositoryWrapper.saveAndFlush(existingOfficeAgency);
+                }
             }
 
             this.agencyRepositoryWrapper.saveAndFlush(agency);
