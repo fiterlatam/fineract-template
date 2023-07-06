@@ -245,7 +245,7 @@ jib {
     }
 
     to {
-        image = 'fineract-lt'
+        image = 'fineract'
         tags = [
             "${project.version}",
             'latest'
