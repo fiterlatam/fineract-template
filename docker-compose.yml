@@ -21,22 +21,21 @@
 version: '3.7'
 services:
   # Backend service
-  fineractmysql:
-    image: mariadb:10.8
+  fineractmysqlLatam:
+    image: mysql:8.0
     volumes:
-      - ./fineract-db/server_collation.cnf:/etc/mysql/conf.d/server_collation.cnf
       - ./fineract-db/docker:/docker-entrypoint-initdb.d:Z,ro
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: skdcnwauicn2ucnaecasdsajdnizucawencascdca
+      MYSQL_ROOT_PASSWORD: mysql
     healthcheck:
-      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost", "--password=skdcnwauicn2ucnaecasdsajdnizucawencascdca" ]
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost", "--password=mysql" ]
       timeout: 10s
       retries: 10
     ports:
       - "3306:3306"
   fineract-server:
-    image: fineract:latest
+    image: fineract-lt:latest
     volumes:
       - ./fineract-provider/build/data:/data
     healthcheck:
@@ -46,20 +45,20 @@ services:
     ports:
       - 8443:8443
     depends_on:
-      - fineractmysql
+      - fineractmysqlLatam
     environment:
       # TODO: env vars prefixed with "fineract_tenants_*" will be removed with one of the next releases
       #- fineract_tenants_driver=org.mariadb.jdbc.Driver
       #- fineract_tenants_url=jdbc:mariadb://fineractmysql:3306/fineract_tenants
       #- fineract_tenants_uid=root
-      #- fineract_tenants_pwd=skdcnwauicn2ucnaecasdsajdnizucawencascdca
+      #- fineract_tenants_pwd=mysql
       # NOTE: node aware scheduler
       - FINERACT_NODE_ID=1
       # NOTE: env vars prefixed "FINERACT_HIKARI_*" are used to configure the database connection pool
-      - FINERACT_HIKARI_DRIVER_SOURCE_CLASS_NAME=org.mariadb.jdbc.Driver
-      - FINERACT_HIKARI_JDBC_URL=jdbc:mariadb://fineractmysql:3306/fineract_tenants
+      - FINERACT_HIKARI_DRIVER_CLASS_NAME=com.mysql.cj.jdbc.Driver
+      - FINERACT_HIKARI_JDBC_URL=jdbc:mysql://fineractmysqlLatam:3306/fineract_tenants?allowPublicKeyRetrieval=true&useSSL=false
       - FINERACT_HIKARI_USERNAME=root
-      - FINERACT_HIKARI_PASSWORD=skdcnwauicn2ucnaecasdsajdnizucawencascdca
+      - FINERACT_HIKARI_PASSWORD=mysql
       # ... following variables are optional; "application.properties" contains reasonable defaults (same as here)
       - FINERACT_HIKARI_MINIMUM_IDLE=3
       - FINERACT_HIKARI_MAXIMUM_POOL_SIZE=10
@@ -80,15 +79,15 @@ services:
       - FINERACT_HIKARI_DS_PROPERTIES_LOG_SLOW_QUERIES=true
       - FINERACT_HIKARI_DS_PROPERTIES_DUMP_QUERIES_IN_EXCEPTION=true
       # NOTE: env vars prefixed "FINERACT_DEFAULT_TENANTDB_*" are used to create the default tenant database
-      - FINERACT_DEFAULT_TENANTDB_HOSTNAME=fineractmysql
+      - FINERACT_DEFAULT_TENANTDB_HOSTNAME=fineractmysqlLatam
       - FINERACT_DEFAULT_TENANTDB_PORT=3306
       - FINERACT_DEFAULT_TENANTDB_UID=root
-      - FINERACT_DEFAULT_TENANTDB_PWD=skdcnwauicn2ucnaecasdsajdnizucawencascdca
+      - FINERACT_DEFAULT_TENANTDB_PWD=mysql
       - FINERACT_DEFAULT_TENANTDB_CONN_PARAMS=
       - FINERACT_DEFAULT_TENANTDB_TIMEZONE=America/Antigua
       - FINERACT_DEFAULT_TENANTDB_IDENTIFIER=default
       - FINERACT_DEFAULT_TENANTDB_NAME=fineract_default
       - FINERACT_DEFAULT_TENANTDB_DESCRIPTION=Latam Default Tenant
-      - FINERACT_SERVER_SSL_ENABLED="true"
-      - FINERACT_SERVER_PORT="8443"
+      - FINERACT_SERVER_SSL_ENABLED=true
+      - FINERACT_SERVER_PORT=8443
       - JAVA_TOOL_OPTIONS="-Xmx1G"
