@@ -76,10 +76,9 @@ public class BlacklistClientData {
         this.loanProducts = loanProducts;
     }
 
-    public static BlacklistClientData template(Collection<CodeValueData> codeValues,
-            final Collection<LoanProductData> loanProducts) {
-        return new BlacklistClientData(null, null, null, null, null, null, null, null,
-                null, null, null, null, null, null, null, null, codeValues, loanProducts);
+    public static BlacklistClientData template(Collection<CodeValueData> codeValues, final Collection<LoanProductData> loanProducts) {
+        return new BlacklistClientData(null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null,
+                codeValues, loanProducts);
     }
 
     public static BlacklistClientData instance(Long id, String displayName, EnumOptionData status, CodeValueData typification,

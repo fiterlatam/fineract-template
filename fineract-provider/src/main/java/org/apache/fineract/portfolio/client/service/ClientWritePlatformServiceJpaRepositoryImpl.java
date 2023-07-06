@@ -138,7 +138,7 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
             final ConfigurationReadPlatformService configurationReadPlatformService,
             final AddressWritePlatformService addressWritePlatformService,
             final ClientFamilyMembersWritePlatformService clientFamilyMembersWritePlatformService,
-            final BusinessEventNotifierService businessEventNotifierService,final JdbcTemplate jdbcTemplate,
+            final BusinessEventNotifierService businessEventNotifierService, final JdbcTemplate jdbcTemplate,
             final EntityDatatableChecksWritePlatformService entityDatatableChecksWritePlatformService) {
         this.context = context;
         this.clientRepository = clientRepository;
@@ -246,23 +246,21 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
             final Long officeId = command.longValueOfParameterNamed(ClientApiConstants.officeIdParamName);
             final Long dpiNumber = command.longValueOfParameterNamed(ClientApiConstants.dpiParamName);
 
-            //check if client is blacklisted
+            // check if client is blacklisted
             String blacklistString = "select count(*) from m_client_blacklist where dpi=?";
             Long blacklisted = jdbcTemplate.queryForObject(blacklistString, Long.class, dpiNumber);
-            if (blacklisted>0){
+            if (blacklisted > 0) {
                 String blacklistReason = "select description from m_client_blacklist where dpi=?";
                 String reason = jdbcTemplate.queryForObject(blacklistReason, String.class, dpiNumber);
                 throw new ClientBlacklistedException(reason);
             }
 
-            //check if client with given dpi exists
+            // check if client with given dpi exists
             String sqlString = "select count(*) from m_client where dpi=?";
             Long count = jdbcTemplate.queryForObject(sqlString, Long.class, dpiNumber);
             if (count > 0) {
                 throw new ClientDpiExistsException(String.valueOf(dpiNumber));
             }
-
-
 
             final Office clientOffice = this.officeRepositoryWrapper.findOneWithNotFoundDetection(officeId);
 

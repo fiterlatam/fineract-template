@@ -170,19 +170,22 @@ public class CenterGroupWritePlatformServiceImpl implements CenterGroupWritePlat
             }
 
             // check for overlapping center groups
-            //            List<CenterGroup> overLappingCenterGroups = centerGroupRepositoryWrapper.findOverLappingCenterGroups(portfolioCenterId,
-//                    centerGroup.getMeetingStartTime(), centerGroup.getMeetingEndTime());
-//            if (overLappingCenterGroups.size() > 0) {
-//                for (CenterGroup centerGroup1 : overLappingCenterGroups) {
-//
-//                    final ApiParameterError error = ApiParameterError.parameterErrorWithValue("error.msg.centerGroup.overlapping",
-//                            "Center Group with id " + centerGroup1.getId() + " with duration '" + centerGroup1.getMeetingStartTime() + " - "
-//                                    + centerGroup1.getMeetingEndTime() + "' overlaps with the new center group",
-//                            CenterGroupConstants.CenterGroupSupportedParameters.FORMATION_DATE.getValue(),
-//                            centerGroup.getMeetingStartTime().toString());
-//                    dataValidationErrors.add(error);
-//                }
-//            }
+            // List<CenterGroup> overLappingCenterGroups =
+            // centerGroupRepositoryWrapper.findOverLappingCenterGroups(portfolioCenterId,
+            // centerGroup.getMeetingStartTime(), centerGroup.getMeetingEndTime());
+            // if (overLappingCenterGroups.size() > 0) {
+            // for (CenterGroup centerGroup1 : overLappingCenterGroups) {
+            //
+            // final ApiParameterError error =
+            // ApiParameterError.parameterErrorWithValue("error.msg.centerGroup.overlapping",
+            // "Center Group with id " + centerGroup1.getId() + " with duration '" + centerGroup1.getMeetingStartTime()
+            // + " - "
+            // + centerGroup1.getMeetingEndTime() + "' overlaps with the new center group",
+            // CenterGroupConstants.CenterGroupSupportedParameters.FORMATION_DATE.getValue(),
+            // centerGroup.getMeetingStartTime().toString());
+            // dataValidationErrors.add(error);
+            // }
+            // }
 
             String schemaSql = "Select cgroup.id from m_center_group cgroup where cgroup.portfolio_center_id = ? and "
                     + "( ( ? >= cgroup.meeting_start_time and ? < cgroup.meeting_end_time) OR "

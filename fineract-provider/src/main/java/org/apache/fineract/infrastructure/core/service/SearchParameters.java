@@ -79,7 +79,7 @@ public final class SearchParameters {
     }
 
     public static SearchParameters forBlacklist(final String displayName, final String status, final Integer offset, final Integer limit,
-                                                final String orderBy, final String sortOrder, final String dpiNumber, String searchText) {
+            final String orderBy, final String sortOrder, final String dpiNumber, String searchText) {
 
         final Integer maxLimitAllowed = getCheckedLimit(limit);
         final Long staffId = null;
@@ -87,8 +87,8 @@ public final class SearchParameters {
         final Long loanId = null;
         final Long savingsId = null;
 
-        return new SearchParameters(searchText, null, null, displayName, null, null, null, status, offset, maxLimitAllowed, orderBy, sortOrder,
-                staffId, accountNo, loanId, savingsId, null, false, dpiNumber);
+        return new SearchParameters(searchText, null, null, displayName, null, null, null, status, offset, maxLimitAllowed, orderBy,
+                sortOrder, staffId, accountNo, loanId, savingsId, null, false, dpiNumber);
     }
 
     public static SearchParameters forGroups(final Long officeId, final Long staffId, final String externalId, final String name,
