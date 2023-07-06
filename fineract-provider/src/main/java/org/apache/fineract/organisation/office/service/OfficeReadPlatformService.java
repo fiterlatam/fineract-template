@@ -43,4 +43,6 @@ public interface OfficeReadPlatformService {
 
     Collection<OfficeData> retrieveOfficesByParent(Long parentOfficeId);
 
+    Collection<OfficeData> retrieveChildOfficesByUserHierarchyAsParent();
+
 }
