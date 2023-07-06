@@ -92,7 +92,7 @@ public class BlacklistClientReadPlatformServiceImpl implements BlacklistClientRe
         if (searchParameters != null && searchParameters.getStatus() != null
                 && BlacklistStatus.fromString(searchParameters.getStatus()) == BlacklistStatus.INVALID) {
             final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
-            final String defaultUserMessage = "The Status value '" + searchParameters.getStatus() + "' is not supported.";
+            final String defaultUserMessage = "The status value '" + searchParameters.getStatus() + "' is not supported.";
             final ApiParameterError error = ApiParameterError.parameterError("validation.msg.client.status.value.is.not.supported",
                     defaultUserMessage, "status", searchParameters.getStatus());
             dataValidationErrors.add(error);
@@ -106,7 +106,7 @@ public class BlacklistClientReadPlatformServiceImpl implements BlacklistClientRe
 
         if (searchParameters != null) {
 
-            final String extraCriteria = buildSqlStringFromBlacklistCriteria(this.blacklistMapper.schema(), searchParameters, paramList);
+            final String extraCriteria = buildSqlStringFromBlacklistCriteria(searchParameters, paramList);
 
             if (StringUtils.isNotBlank(extraCriteria)) {
                 sqlBuilder.append(" and (").append(extraCriteria).append(")");
@@ -142,21 +142,16 @@ public class BlacklistClientReadPlatformServiceImpl implements BlacklistClientRe
 
     }
 
-    private String buildSqlStringFromBlacklistCriteria(String schemaSql, final SearchParameters searchParameters, List<Object> paramList) {
+    private String buildSqlStringFromBlacklistCriteria(final SearchParameters searchParameters, List<Object> paramList) {
 
         String sqlSearch = searchParameters.getSqlSearch();
         final Long officeId = searchParameters.getOfficeId();
-        final String externalId = searchParameters.getExternalId();
-        final String displayName = searchParameters.getName();
         final String dpiNumber = searchParameters.getName();
         final String status = searchParameters.getStatus();
 
         String extraCriteria = "";
         if (sqlSearch != null) {
-            sqlSearch = sqlSearch.replaceAll(" display_name ", " c.display_name ");
-            sqlSearch = sqlSearch.replaceAll("display_name ", "c.display_name ");
-            extraCriteria = " and (" + sqlSearch + ")";
-            this.columnValidator.validateSqlInjection(schemaSql, sqlSearch);
+            extraCriteria = " and (b.client_name like '%" + sqlSearch + "%' OR b.dpi='"+sqlSearch+"') ";
         }
 
         if (officeId != null) {
@@ -167,13 +162,6 @@ public class BlacklistClientReadPlatformServiceImpl implements BlacklistClientRe
         if (dpiNumber != null) {
             paramList.add(dpiNumber);
             extraCriteria += " and c.dpi = ? ";
-        }
-
-        if (displayName != null) {
-            // extraCriteria += " and concatcoalesce(c.firstname, ''),
-            // if(c.firstname > '',' ', '') , coalesce(c.lastname, '')) like "
-            paramList.add("%" + displayName + "%");
-            extraCriteria += " and c.display_name like ? ";
         }
 
         if (status != null) {
@@ -198,9 +186,8 @@ public class BlacklistClientReadPlatformServiceImpl implements BlacklistClientRe
             builder.append("cv.id as typificationId, cv.code_description as typificationDescription, cv.code_value as typificationValue, ");
             builder.append("b.status, b.product_id as productId, b.product_code as productCode, ");
             builder.append("lp.name as productName, b.balance, b.disbursement_amount as disbursementAmount, au.firstname, au.lastname, ");
-            builder.append("b.year, b.description, c.display_name as displayName ");
+            builder.append("b.year, b.description, b.client_name as displayName ");
             builder.append("from m_client_blacklist b ");
-            builder.append("inner join m_client c on c.dpi = b.dpi ");
             builder.append("inner join m_product_loan lp on lp.id = b.product_id ");
             builder.append("inner join m_code_value cv on cv.id = b.type_enum ");
             builder.append("inner join m_appuser au on au.id = b.added_by ");

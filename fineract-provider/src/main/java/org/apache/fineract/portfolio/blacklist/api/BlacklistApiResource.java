@@ -55,13 +55,9 @@ import org.apache.fineract.infrastructure.documentmanagement.command.DocumentCom
 import org.apache.fineract.infrastructure.documentmanagement.service.DocumentWritePlatformService;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.portfolio.blacklist.data.BlacklistClientData;
-import org.apache.fineract.portfolio.blacklist.domain.BlacklistClients;
 import org.apache.fineract.portfolio.blacklist.domain.BlacklistClientsRepository;
-import org.apache.fineract.portfolio.blacklist.domain.BlacklistStatus;
-import org.apache.fineract.portfolio.blacklist.exception.ClientBlacklistedException;
 import org.apache.fineract.portfolio.blacklist.service.BlacklistClientReadPlatformService;
 import org.apache.fineract.portfolio.blacklist.service.BlacklistClientWritePlatformService;
-import org.apache.fineract.portfolio.client.data.ClientData;
 import org.apache.fineract.portfolio.client.service.ClientReadPlatformService;
 import org.apache.fineract.portfolio.loanproduct.data.LoanProductData;
 import org.apache.fineract.portfolio.loanproduct.service.LoanProductReadPlatformService;
@@ -129,15 +125,16 @@ public class BlacklistApiResource {
             @QueryParam("limit") @Parameter(description = "limit") final Integer limit,
             @QueryParam("orderBy") @Parameter(description = "orderBy") final String orderBy,
             @QueryParam("status") @Parameter(description = "status") final String status,
+            @QueryParam("searchText") @Parameter(description = "searchText") final String searchText,
             @QueryParam("sortOrder") @Parameter(description = "sortOrder") final String sortOrder) {
 
-        this.context.authenticatedUser().validateHasReadPermission(this.resourceNameForPermissions);
+        this.context.authenticatedUser().validateHasViewPermission(this.resourceNameForPermissions);
 
         MultivaluedMap<String, String> queryParameters = uriInfo.getQueryParameters();
 
         String clientName = queryParameters.getFirst("clientName");
         String dpi = queryParameters.getFirst("dpi");
-        SearchParameters searchParameters = SearchParameters.forBlacklist(clientName, status, offset, limit, orderBy, sortOrder, dpi);
+        SearchParameters searchParameters = SearchParameters.forBlacklist(clientName, status, offset, limit, orderBy, sortOrder, dpi,searchText);
         final Page<BlacklistClientData> clientData = this.blacklistClientReadPlatformService.retrieveAll(searchParameters);
 
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(queryParameters);
@@ -146,25 +143,18 @@ public class BlacklistApiResource {
     }
 
     @GET
-    @Path("template/{clientId}")
+    @Path("template")
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     @Operation(summary = "Retrieve Client Blacklist Template", description = "This is a convenience resource useful for building maintenance user interface screens for client applications. The template data returned consists of any or all of:\n"
             + "\n" + " Field Defaults\n" + " Allowed description Lists\n" + "\n\nExample Request:\n" + "clients/1/identifiers/template")
-    public String newClientIdentifierDetails(@Context final UriInfo uriInfo,
-            @PathParam("clientId") @Parameter(description = "clientId") final Long clientId) {
+    public String newClientIdentifierDetails(@Context final UriInfo uriInfo) {
 
-        this.context.authenticatedUser().validateHasReadPermission(this.resourceNameForPermissions);
+        this.context.authenticatedUser().validateHasViewPermission(this.resourceNameForPermissions);
 
-        ClientData clientData = this.clientReadPlatformService.retrieveOne(clientId);
-
-        BlacklistClients blacklist = this.blacklistClientsRepository.findBlacklistClientsByDpi(clientData.getDpiNumber(), BlacklistStatus.ACTIVE.getValue());
-        if (blacklist != null) {
-            throw new ClientBlacklistedException(clientData.getDpiNumber());
-        }
         Collection<LoanProductData> loanProducts = this.loanProductReadPlatformService.retrieveAllLoanProducts();
         final Collection<CodeValueData> codeValues = this.codeValueReadPlatformService.retrieveCodeValuesByCode("Typification");
-        final BlacklistClientData clientIdentifierData = BlacklistClientData.template(codeValues, clientData, loanProducts);
+        final BlacklistClientData clientIdentifierData = BlacklistClientData.template(codeValues, loanProducts);
 
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
         return this.toApiJsonSerializer.serialize(settings, clientIdentifierData, BLACKLIST_DATA_PARAMETERS);
@@ -179,7 +169,7 @@ public class BlacklistApiResource {
     public String getBlacklistDetails(@Context final UriInfo uriInfo,
             @PathParam("blacklistId") @Parameter(description = "blacklistId") final Long blacklistId) {
 
-        this.context.authenticatedUser().validateHasReadPermission(this.resourceNameForPermissions);
+        this.context.authenticatedUser().validateHasViewPermission(this.resourceNameForPermissions);
 
         BlacklistClientData clientData = this.blacklistClientReadPlatformService.retrieveOne(blacklistId);
 
@@ -188,14 +178,12 @@ public class BlacklistApiResource {
     }
 
     @POST
-    @Path("{clientId}")
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
-    public String createClientIdentifier(@PathParam("clientId") @Parameter(description = "clientId") final Long clientId,
-            @Parameter(hidden = true) final String apiRequestBodyAsJson) {
+    public String createClientIdentifier(@Parameter(hidden = true) final String apiRequestBodyAsJson) {
 
         try {
-            final CommandWrapper commandRequest = new CommandWrapperBuilder().addClientToBlacklist(clientId).withJson(apiRequestBodyAsJson)
+            final CommandWrapper commandRequest = new CommandWrapperBuilder().addClientToBlacklist().withJson(apiRequestBodyAsJson)
                     .build();
 
             final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);

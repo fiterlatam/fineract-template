@@ -69,7 +69,6 @@ public class BlacklistClientWritePlatformServiceImpl implements BlacklistClientW
 
     @Override
     public CommandProcessingResult addClientToBlacklist(JsonCommand command) {
-        Long clientId = command.getClientId();
         this.dataValidator.validateForCreate(command.json());
         final Long productId = command.longValueOfParameterNamed(BlacklistApiConstants.productIdParamName);
 
@@ -85,7 +84,7 @@ public class BlacklistClientWritePlatformServiceImpl implements BlacklistClientW
 
         return new CommandProcessingResultBuilder() //
                 .withCommandId(command.commandId()) //
-                .withClientId(clientId) //
+                .withResourceIdAsString(blacklistClient.getId().toString()) //
                 .withEntityId(blacklistClient.getId()) //
                 .build();
     }

@@ -23,7 +23,6 @@ import java.time.LocalDateTime;
 import java.util.Collection;
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
-import org.apache.fineract.portfolio.client.data.ClientData;
 import org.apache.fineract.portfolio.loanproduct.data.LoanProductData;
 
 /**
@@ -77,9 +76,9 @@ public class BlacklistClientData {
         this.loanProducts = loanProducts;
     }
 
-    public static BlacklistClientData template(Collection<CodeValueData> codeValues, ClientData clientData,
+    public static BlacklistClientData template(Collection<CodeValueData> codeValues,
             final Collection<LoanProductData> loanProducts) {
-        return new BlacklistClientData(null, clientData.id(), clientData.displayName(), null, null, null, clientData.getDpiNumber(), null,
+        return new BlacklistClientData(null, null, null, null, null, null, null, null,
                 null, null, null, null, null, null, null, null, codeValues, loanProducts);
     }
 
