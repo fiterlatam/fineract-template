@@ -68,4 +68,6 @@
     <include file="parts/0051_FB_15_add_blacklist_permissions.xml" relativeToChangelogFile="true"/>
     <include file="parts/0052_FB_181_add_remove_from_blacklist_permissions.xml" relativeToChangelogFile="true"/>
     <include file="parts/0053_create_new_charge_for_late_payment.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0054_FB_217_Increase_length_of_shortname_loan_products.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0055_FB_217_Add_Name_To_blacklist_table.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
