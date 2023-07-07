@@ -251,9 +251,10 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
             String blacklistString = "select count(*) from m_client_blacklist where dpi=? and status=?";
             Long blacklisted = jdbcTemplate.queryForObject(blacklistString, Long.class, dpiNumber,BlacklistStatus.ACTIVE.getValue());
             if (blacklisted>0){
-                String blacklistReason = "select description from m_client_blacklist where dpi=? and status=?";
-                String reason = jdbcTemplate.queryForObject(blacklistReason, String.class, dpiNumber, BlacklistStatus.ACTIVE.getValue());
-                throw new ClientBlacklistedException(reason);
+                String blacklistReason = "select type_enum from m_client_blacklist where dpi=? and status=?";
+                Integer typification = jdbcTemplate.queryForObject(blacklistReason, Integer.class, dpiNumber, BlacklistStatus.ACTIVE.getValue());
+                CodeValue typificationCodeValue = this.codeValueRepository.findOneWithNotFoundDetection(typification.longValue());
+                throw new ClientBlacklistedException(typificationCodeValue.getDescription());
             }
 
             // check if client with given dpi exists

@@ -119,6 +119,8 @@ public class BlacklistClientReadPlatformServiceImpl implements BlacklistClientRe
                     sqlBuilder.append(' ').append(searchParameters.getSortOrder());
                     this.columnValidator.validateSqlInjection(sqlBuilder.toString(), searchParameters.getSortOrder());
                 }
+            }else{
+                sqlBuilder.append(" order by b.id desc ");
             }
 
             if (searchParameters.isLimited()) {

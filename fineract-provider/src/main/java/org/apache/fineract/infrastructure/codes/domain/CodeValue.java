@@ -140,4 +140,8 @@ public class CodeValue extends AbstractPersistableCustom {
     public CodeValueData toData() {
         return CodeValueData.instance(getId(), this.label, this.position, this.isActive, this.mandatory);
     }
+
+    public String getDescription() {
+        return description;
+    }
 }
