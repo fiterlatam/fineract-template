@@ -42,6 +42,7 @@ import org.apache.fineract.infrastructure.accountnumberformat.domain.AccountNumb
 import org.apache.fineract.infrastructure.accountnumberformat.domain.AccountNumberFormatRepositoryWrapper;
 import org.apache.fineract.infrastructure.accountnumberformat.domain.EntityAccountType;
 import org.apache.fineract.infrastructure.codes.domain.CodeValue;
+import org.apache.fineract.infrastructure.codes.domain.CodeValueRepositoryWrapper;
 import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
 import org.apache.fineract.infrastructure.configuration.domain.GlobalConfigurationProperty;
 import org.apache.fineract.infrastructure.configuration.domain.GlobalConfigurationRepositoryWrapper;
@@ -213,6 +214,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
     private final CupoRepositoryWrapper cupoRepositoryWrapper;
     private final LumaAccountingProcessorForLoan lumaAccountingProcessorForLoan;
     private final JdbcTemplate jdbcTemplate;
+    private final CodeValueRepositoryWrapper codeValueRepository;
     @Autowired
     private BitaCoraMasterRepository bitaCoraMasterRepository;
 
@@ -226,7 +228,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             final NoteRepository noteRepository, final LoanScheduleCalculationPlatformService calculationPlatformService,
             final ClientRepositoryWrapper clientRepository, final LoanProductRepository loanProductRepository,
             final AccountNumberGenerator accountNumberGenerator, final LoanSummaryWrapper loanSummaryWrapper,
-            final GroupRepositoryWrapper groupRepository,
+            final GroupRepositoryWrapper groupRepository,final CodeValueRepositoryWrapper codeValueRepository,
             final LoanRepaymentScheduleTransactionProcessorFactory loanRepaymentScheduleTransactionProcessorFactory,
             final CalendarRepository calendarRepository, final CalendarInstanceRepository calendarInstanceRepository,
             final SavingsAccountAssembler savingsAccountAssembler, final AccountAssociationsRepository accountAssociationsRepository,
@@ -290,6 +292,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
         this.cupoRepositoryWrapper = cupoRepositoryWrapper;
         this.lumaAccountingProcessorForLoan = lumaAccountingProcessorForLoan;
         this.jdbcTemplate = jdbcTemplate;
+        this.codeValueRepository = codeValueRepository;
     }
 
     private LoanLifecycleStateMachine defaultLoanLifecycleStateMachine() {
@@ -317,9 +320,10 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                     String blacklistString = "select count(*) from m_client_blacklist where dpi=? and status=?";
                     Long blacklisted = jdbcTemplate.queryForObject(blacklistString, Long.class, dpiNumber, BlacklistStatus.ACTIVE.getValue());
                     if (blacklisted>0){
-                        String blacklistReason = "select description from m_client_blacklist where dpi=? and status=?";
-                        String reason = jdbcTemplate.queryForObject(blacklistReason, String.class, dpiNumber,BlacklistStatus.ACTIVE.getValue());
-                        throw new ClientBlacklistedException(reason);
+                        String blacklistReason = "select type_enum from m_client_blacklist where dpi=? and status=?";
+                        Integer typification = jdbcTemplate.queryForObject(blacklistReason, Integer.class, dpiNumber, BlacklistStatus.ACTIVE.getValue());
+                        CodeValue typificationCodeValue = this.codeValueRepository.findOneWithNotFoundDetection(typification.longValue());
+                        throw new ClientBlacklistedException(typificationCodeValue.getDescription());
                     }
                 }
             }
