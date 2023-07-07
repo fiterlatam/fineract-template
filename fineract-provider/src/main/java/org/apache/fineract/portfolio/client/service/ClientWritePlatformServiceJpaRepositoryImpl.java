@@ -53,6 +53,7 @@ import org.apache.fineract.organisation.office.domain.OfficeRepositoryWrapper;
 import org.apache.fineract.organisation.staff.domain.Staff;
 import org.apache.fineract.organisation.staff.domain.StaffRepositoryWrapper;
 import org.apache.fineract.portfolio.address.service.AddressWritePlatformService;
+import org.apache.fineract.portfolio.blacklist.domain.BlacklistStatus;
 import org.apache.fineract.portfolio.businessevent.domain.client.ClientActivateBusinessEvent;
 import org.apache.fineract.portfolio.businessevent.domain.client.ClientCreateBusinessEvent;
 import org.apache.fineract.portfolio.businessevent.domain.client.ClientRejectBusinessEvent;
@@ -247,11 +248,11 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
             final Long dpiNumber = command.longValueOfParameterNamed(ClientApiConstants.dpiParamName);
 
             //check if client is blacklisted
-            String blacklistString = "select count(*) from m_client_blacklist where dpi=?";
-            Long blacklisted = jdbcTemplate.queryForObject(blacklistString, Long.class, dpiNumber);
+            String blacklistString = "select count(*) from m_client_blacklist where dpi=? and status=?";
+            Long blacklisted = jdbcTemplate.queryForObject(blacklistString, Long.class, dpiNumber,BlacklistStatus.ACTIVE.getValue());
             if (blacklisted>0){
-                String blacklistReason = "select description from m_client_blacklist where dpi=?";
-                String reason = jdbcTemplate.queryForObject(blacklistReason, String.class, dpiNumber);
+                String blacklistReason = "select description from m_client_blacklist where dpi=? and status=?";
+                String reason = jdbcTemplate.queryForObject(blacklistReason, String.class, dpiNumber, BlacklistStatus.ACTIVE.getValue());
                 throw new ClientBlacklistedException(reason);
             }
 
