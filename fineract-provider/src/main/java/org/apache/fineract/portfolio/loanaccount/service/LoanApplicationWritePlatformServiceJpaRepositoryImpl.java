@@ -71,6 +71,7 @@ import org.apache.fineract.portfolio.account.domain.AccountAssociationType;
 import org.apache.fineract.portfolio.account.domain.AccountAssociations;
 import org.apache.fineract.portfolio.account.domain.AccountAssociationsRepository;
 import org.apache.fineract.portfolio.accountdetails.domain.AccountType;
+import org.apache.fineract.portfolio.blacklist.domain.BlacklistStatus;
 import org.apache.fineract.portfolio.businessevent.domain.loan.LoanApprovedBusinessEvent;
 import org.apache.fineract.portfolio.businessevent.domain.loan.LoanCreatedBusinessEvent;
 import org.apache.fineract.portfolio.businessevent.domain.loan.LoanRejectedBusinessEvent;
@@ -89,6 +90,7 @@ import org.apache.fineract.portfolio.charge.domain.Charge;
 import org.apache.fineract.portfolio.client.domain.AccountNumberGenerator;
 import org.apache.fineract.portfolio.client.domain.Client;
 import org.apache.fineract.portfolio.client.domain.ClientRepositoryWrapper;
+import org.apache.fineract.portfolio.client.exception.ClientBlacklistedException;
 import org.apache.fineract.portfolio.client.exception.ClientNotActiveException;
 import org.apache.fineract.portfolio.collateralmanagement.domain.ClientCollateralManagement;
 import org.apache.fineract.portfolio.collateralmanagement.domain.ClientCollateralManagementRepository;
@@ -154,6 +156,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -209,6 +212,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
     private final ClientCollateralManagementRepository clientCollateralManagementRepository;
     private final CupoRepositoryWrapper cupoRepositoryWrapper;
     private final LumaAccountingProcessorForLoan lumaAccountingProcessorForLoan;
+    private final JdbcTemplate jdbcTemplate;
     @Autowired
     private BitaCoraMasterRepository bitaCoraMasterRepository;
 
@@ -237,7 +241,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             final EntityDatatableChecksWritePlatformService entityDatatableChecksWritePlatformService,
             final GLIMAccountInfoWritePlatformService glimAccountInfoWritePlatformService, final GLIMAccountInfoRepository glimRepository,
             final LoanRepository loanRepository, final GSIMReadPlatformService gsimReadPlatformService, final RateAssembler rateAssembler,
-            final LoanProductReadPlatformService loanProductReadPlatformService,
+            final LoanProductReadPlatformService loanProductReadPlatformService,final JdbcTemplate jdbcTemplate,
             final LoanCollateralManagementRepository loanCollateralManagementRepository,
             final ClientCollateralManagementRepository clientCollateralManagementRepository,
             final CupoRepositoryWrapper cupoRepositoryWrapper, final LumaAccountingProcessorForLoan lumaAccountingProcessorForLoan) {
@@ -285,6 +289,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
         this.clientCollateralManagementRepository = clientCollateralManagementRepository;
         this.cupoRepositoryWrapper = cupoRepositoryWrapper;
         this.lumaAccountingProcessorForLoan = lumaAccountingProcessorForLoan;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     private LoanLifecycleStateMachine defaultLoanLifecycleStateMachine() {
@@ -306,6 +311,17 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             if (clientId != null) {
                 Client client = this.clientRepository.findOneWithNotFoundDetection(clientId);
                 officeSpecificLoanProductValidation(productId, client.getOffice().getId());
+
+                String dpiNumber = client.getDpiNumber();
+                if (dpiNumber != null) {
+                    String blacklistString = "select count(*) from m_client_blacklist where dpi=? and status=?";
+                    Long blacklisted = jdbcTemplate.queryForObject(blacklistString, Long.class, dpiNumber, BlacklistStatus.ACTIVE.getValue());
+                    if (blacklisted>0){
+                        String blacklistReason = "select description from m_client_blacklist where dpi=? and status=?";
+                        String reason = jdbcTemplate.queryForObject(blacklistReason, String.class, dpiNumber,BlacklistStatus.ACTIVE.getValue());
+                        throw new ClientBlacklistedException(reason);
+                    }
+                }
             }
             final Long groupId = this.fromJsonHelper.extractLongNamed("groupId", command.parsedJson());
             if (groupId != null) {
