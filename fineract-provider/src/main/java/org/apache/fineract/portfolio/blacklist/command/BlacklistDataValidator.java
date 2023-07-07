@@ -47,7 +47,7 @@ public class BlacklistDataValidator {
     private final BlacklistClientsRepository blacklistClientsRepository;
 
     @Autowired
-    public BlacklistDataValidator(final FromJsonHelper fromApiJsonHelper,final BlacklistClientsRepository blacklistClientsRepository) {
+    public BlacklistDataValidator(final FromJsonHelper fromApiJsonHelper, final BlacklistClientsRepository blacklistClientsRepository) {
         this.fromApiJsonHelper = fromApiJsonHelper;
         this.blacklistClientsRepository = blacklistClientsRepository;
     }

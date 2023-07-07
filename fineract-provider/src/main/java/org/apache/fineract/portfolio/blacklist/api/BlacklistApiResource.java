@@ -21,7 +21,6 @@ package org.apache.fineract.portfolio.blacklist.api;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
-
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Collection;
@@ -98,9 +97,9 @@ public class BlacklistApiResource {
             final BlacklistClientWritePlatformService blacklistClientWritePlatformService,
             final LoanProductReadPlatformService loanProductReadPlatformService,
             final DefaultToApiJsonSerializer<BlacklistClientData> toApiJsonSerializer,
-            final BlacklistClientReadPlatformService blacklistClientReadPlatformService,
-            final FileUploadValidator fileUploadValidator,final DocumentWritePlatformService documentWritePlatformService,
-            final ApiRequestParameterHelper apiRequestParameterHelper, final BlacklistClientsRepository blacklistClientsRepository,
+            final BlacklistClientReadPlatformService blacklistClientReadPlatformService, final FileUploadValidator fileUploadValidator,
+            final DocumentWritePlatformService documentWritePlatformService, final ApiRequestParameterHelper apiRequestParameterHelper,
+            final BlacklistClientsRepository blacklistClientsRepository,
             final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService) {
         this.context = context;
         this.clientReadPlatformService = readPlatformService;
@@ -134,7 +133,8 @@ public class BlacklistApiResource {
 
         String clientName = queryParameters.getFirst("clientName");
         String dpi = queryParameters.getFirst("dpi");
-        SearchParameters searchParameters = SearchParameters.forBlacklist(clientName, status, offset, limit, orderBy, sortOrder, dpi,searchText);
+        SearchParameters searchParameters = SearchParameters.forBlacklist(clientName, status, offset, limit, orderBy, sortOrder, dpi,
+                searchText);
         final Page<BlacklistClientData> clientData = this.blacklistClientReadPlatformService.retrieveAll(searchParameters);
 
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(queryParameters);
@@ -183,8 +183,7 @@ public class BlacklistApiResource {
     public String createClientIdentifier(@Parameter(hidden = true) final String apiRequestBodyAsJson) {
 
         try {
-            final CommandWrapper commandRequest = new CommandWrapperBuilder().addClientToBlacklist().withJson(apiRequestBodyAsJson)
-                    .build();
+            final CommandWrapper commandRequest = new CommandWrapperBuilder().addClientToBlacklist().withJson(apiRequestBodyAsJson).build();
 
             final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
 
@@ -200,10 +199,10 @@ public class BlacklistApiResource {
     @Consumes({ MediaType.MULTIPART_FORM_DATA })
     @Produces({ MediaType.APPLICATION_JSON })
     public String createDocument(@PathParam("blacklistId") @Parameter(description = "blacklistId") final Long blacklistId,
-                                 @HeaderParam("Content-Length") @Parameter(description = "Content-Length") final Long fileSize,
-                                 @FormDataParam("file") final InputStream inputStream, @FormDataParam("file") final FormDataContentDisposition fileDetails,
-                                 @FormDataParam("file") final FormDataBodyPart bodyPart, @FormDataParam("name") final String name,
-                                 @FormDataParam("description") final String description) {
+            @HeaderParam("Content-Length") @Parameter(description = "Content-Length") final Long fileSize,
+            @FormDataParam("file") final InputStream inputStream, @FormDataParam("file") final FormDataContentDisposition fileDetails,
+            @FormDataParam("file") final FormDataBodyPart bodyPart, @FormDataParam("name") final String name,
+            @FormDataParam("description") final String description) {
 
         fileUploadValidator.validate(fileSize, inputStream, fileDetails, bodyPart);
         final DocumentCommand documentCommand = new DocumentCommand(null, null, "blacklist", blacklistId, name, fileDetails.getFileName(),

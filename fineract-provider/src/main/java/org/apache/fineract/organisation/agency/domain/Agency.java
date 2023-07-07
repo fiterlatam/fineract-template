@@ -209,6 +209,10 @@ public class Agency extends AbstractAuditableCustom {
         return actualChanges;
     }
 
+    public String getName() {
+        return name;
+    }
+
     public CodeValue getCity() {
         return city;
     }

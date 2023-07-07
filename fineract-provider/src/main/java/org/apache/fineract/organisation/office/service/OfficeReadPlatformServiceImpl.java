@@ -317,7 +317,6 @@ public class OfficeReadPlatformServiceImpl implements OfficeReadPlatformService 
         return childOffices;
     }
 
-
     public PlatformSecurityContext getContext() {
         return this.context;
     }
