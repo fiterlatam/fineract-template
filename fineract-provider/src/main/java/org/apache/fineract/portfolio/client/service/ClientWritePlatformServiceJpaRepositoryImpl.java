@@ -247,12 +247,13 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
             final Long officeId = command.longValueOfParameterNamed(ClientApiConstants.officeIdParamName);
             final Long dpiNumber = command.longValueOfParameterNamed(ClientApiConstants.dpiParamName);
 
-            //check if client is blacklisted
+            // check if client is blacklisted
             String blacklistString = "select count(*) from m_client_blacklist where dpi=? and status=?";
-            Long blacklisted = jdbcTemplate.queryForObject(blacklistString, Long.class, dpiNumber,BlacklistStatus.ACTIVE.getValue());
-            if (blacklisted>0){
+            Long blacklisted = jdbcTemplate.queryForObject(blacklistString, Long.class, dpiNumber, BlacklistStatus.ACTIVE.getValue());
+            if (blacklisted > 0) {
                 String blacklistReason = "select type_enum from m_client_blacklist where dpi=? and status=?";
-                Integer typification = jdbcTemplate.queryForObject(blacklistReason, Integer.class, dpiNumber, BlacklistStatus.ACTIVE.getValue());
+                Integer typification = jdbcTemplate.queryForObject(blacklistReason, Integer.class, dpiNumber,
+                        BlacklistStatus.ACTIVE.getValue());
                 CodeValue typificationCodeValue = this.codeValueRepository.findOneWithNotFoundDetection(typification.longValue());
                 throw new ClientBlacklistedException(typificationCodeValue.getDescription());
             }
