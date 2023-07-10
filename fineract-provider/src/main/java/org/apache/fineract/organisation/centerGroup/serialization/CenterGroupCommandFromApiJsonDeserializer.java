@@ -91,6 +91,11 @@ public class CenterGroupCommandFromApiJsonDeserializer {
         baseDataValidator.reset().parameter(CenterGroupConstants.CenterGroupSupportedParameters.STATUS_ID.getValue()).value(statusId)
                 .notNull().integerGreaterThanZero();
 
+        final Integer locationId = this.fromApiJsonHelper
+                .extractIntegerWithLocaleNamed(CenterGroupConstants.CenterGroupSupportedParameters.CENTER_GROUP_LOCATION.getValue(), element);
+        baseDataValidator.reset().parameter(CenterGroupConstants.CenterGroupSupportedParameters.CENTER_GROUP_LOCATION.getValue()).value(locationId)
+                .notNull().integerGreaterThanZero();
+
         if (this.fromApiJsonHelper.parameterExists(CenterGroupConstants.CenterGroupSupportedParameters.LEGACY_GROUP_NUMBER.getValue(),
                 element)) {
             final Long legacyCenterNumber = this.fromApiJsonHelper

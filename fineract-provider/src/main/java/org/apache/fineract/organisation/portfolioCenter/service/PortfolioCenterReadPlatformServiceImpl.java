@@ -41,6 +41,7 @@ import org.apache.fineract.infrastructure.security.service.PlatformSecurityConte
 import org.apache.fineract.infrastructure.security.utils.ColumnValidator;
 import org.apache.fineract.organisation.centerGroup.data.CenterGroupData;
 import org.apache.fineract.organisation.centerGroup.service.CenterGroupReadPlatformService;
+import org.apache.fineract.organisation.centerGroup.service.GroupLocationEnumerations;
 import org.apache.fineract.organisation.office.data.OfficeData;
 import org.apache.fineract.organisation.office.domain.OfficeHierarchyLevel;
 import org.apache.fineract.organisation.office.service.OfficeReadPlatformService;
@@ -99,7 +100,7 @@ public class PortfolioCenterReadPlatformServiceImpl implements PortfolioCenterRe
             String schemaSql = "select " + portfolioCenterMapper.schema();
             schemaSql += "where pc.id = ?";
 
-            return this.jdbcTemplate.queryForObject(schemaSql, portfolioCenterMapper, new Object[] { portfolioCenterId });
+            return this.jdbcTemplate.queryForObject(schemaSql, portfolioCenterMapper, new Object[] {portfolioCenterId });
         } catch (final EmptyResultDataAccessException e) {
             throw new PortfolioNotFoundException(portfolioCenterId, e);
         }
@@ -253,6 +254,11 @@ public class PortfolioCenterReadPlatformServiceImpl implements PortfolioCenterRe
             sqlBuilder.append("p.name as portfolioName, pc.legacy_center_number as legacyCenterNumber, ");
             sqlBuilder.append("pc.city_id as cityId, cvCity.code_value as cityValue, ");
             sqlBuilder.append("pc.state_province_id as stateId, cvState.code_value as stateValue, ");
+            sqlBuilder.append("(case " +
+                    "when ( (select count(mcg.id) from m_center_group mcg where mcg.location = 100 and mcg.portfolio_center_id = pc.id) <=0 AND " +
+                    "(select count(mcg.id) from m_center_group mcg where mcg.location = 100 and mcg.portfolio_center_id = pc.id)<=0) THEN 0 " +
+                    "when ( (select count(mcg.id) from m_center_group mcg where mcg.location = 100 and mcg.portfolio_center_id = pc.id) >= " +
+                    "(select count(mcg.id) from m_center_group mcg where mcg.location = 100 and mcg.portfolio_center_id = pc.id)) THEN 100 ELSE 200 END) as center_location, ");
             sqlBuilder.append("pc.center_status as status, pc.distance_from_agency as distance, ");
             sqlBuilder.append("pc.type_id as typeId, cvType.code_value as typeValue, pc.created_date as createdDate, ");
             sqlBuilder.append("pc.meeting_start_date as meetingStart, pc.meeting_end_date as meetingEnd, ");
@@ -288,12 +294,18 @@ public class PortfolioCenterReadPlatformServiceImpl implements PortfolioCenterRe
 
             final Integer distance = rs.getInt("distance");
             final Integer statusId = rs.getInt("status");
+            final Integer centerLocationId = rs.getInt("center_location");
 
             final LocalDate createdDate = JdbcSupport.getLocalDate(rs, "createdDate");
 
             EnumOptionData statusEnum = null;
             if (statusId != null) {
                 statusEnum = PortfolioCenterEnumerations.statusOptionData(statusId);
+            }
+
+            EnumOptionData centerLocation = null;
+            if (centerLocationId != null) {
+                centerLocation = GroupLocationEnumerations.groupLocationsOptionData(centerLocationId);
             }
 
             final long typeId = rs.getLong("typeId");
@@ -312,7 +324,7 @@ public class PortfolioCenterReadPlatformServiceImpl implements PortfolioCenterRe
 
             return PortfolioCenterData.instance(id, name, portfolioId, portfolioName, legacyCenterNumber, city, state, type, statusEnum,
                     distance, createdDate, meetingStart, meetingEnd, meetingDay, meetingStartTime.toString(), meetingEndTime.toString(),
-                    meetingDayValue, referencePoint);
+                    meetingDayValue, referencePoint,centerLocation);
         }
 
         public String schema() {
