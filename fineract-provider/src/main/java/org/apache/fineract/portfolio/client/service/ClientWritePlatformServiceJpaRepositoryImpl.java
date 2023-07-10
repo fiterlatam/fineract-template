@@ -53,6 +53,7 @@ import org.apache.fineract.organisation.office.domain.OfficeRepositoryWrapper;
 import org.apache.fineract.organisation.staff.domain.Staff;
 import org.apache.fineract.organisation.staff.domain.StaffRepositoryWrapper;
 import org.apache.fineract.portfolio.address.service.AddressWritePlatformService;
+import org.apache.fineract.portfolio.blacklist.domain.BlacklistStatus;
 import org.apache.fineract.portfolio.businessevent.domain.client.ClientActivateBusinessEvent;
 import org.apache.fineract.portfolio.businessevent.domain.client.ClientCreateBusinessEvent;
 import org.apache.fineract.portfolio.businessevent.domain.client.ClientRejectBusinessEvent;
@@ -67,6 +68,8 @@ import org.apache.fineract.portfolio.client.domain.ClientRepositoryWrapper;
 import org.apache.fineract.portfolio.client.domain.ClientStatus;
 import org.apache.fineract.portfolio.client.domain.LegalForm;
 import org.apache.fineract.portfolio.client.exception.ClientActiveForUpdateException;
+import org.apache.fineract.portfolio.client.exception.ClientBlacklistedException;
+import org.apache.fineract.portfolio.client.exception.ClientDpiExistsException;
 import org.apache.fineract.portfolio.client.exception.ClientHasNoStaffException;
 import org.apache.fineract.portfolio.client.exception.ClientMustBePendingToBeDeletedException;
 import org.apache.fineract.portfolio.client.exception.InvalidClientSavingProductException;
@@ -88,6 +91,7 @@ import org.apache.fineract.portfolio.savings.service.SavingsApplicationProcessWr
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -119,23 +123,24 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
     private final ClientFamilyMembersWritePlatformService clientFamilyMembersWritePlatformService;
     private final BusinessEventNotifierService businessEventNotifierService;
     private final EntityDatatableChecksWritePlatformService entityDatatableChecksWritePlatformService;
+    private final JdbcTemplate jdbcTemplate;
 
     @Autowired
     public ClientWritePlatformServiceJpaRepositoryImpl(final PlatformSecurityContext context,
-            final ClientRepositoryWrapper clientRepository, final ClientNonPersonRepositoryWrapper clientNonPersonRepository,
-            final OfficeRepositoryWrapper officeRepositoryWrapper, final NoteRepository noteRepository,
-            final ClientDataValidator fromApiJsonDeserializer, final AccountNumberGenerator accountNumberGenerator,
-            final GroupRepository groupRepository, final StaffRepositoryWrapper staffRepository,
-            final CodeValueRepositoryWrapper codeValueRepository, final LoanRepositoryWrapper loanRepositoryWrapper,
-            final SavingsAccountRepositoryWrapper savingsRepositoryWrapper, final SavingsProductRepository savingsProductRepository,
-            final SavingsApplicationProcessWritePlatformService savingsApplicationProcessWritePlatformService,
-            final CommandProcessingService commandProcessingService, final ConfigurationDomainService configurationDomainService,
-            final AccountNumberFormatRepositoryWrapper accountNumberFormatRepository, final FromJsonHelper fromApiJsonHelper,
-            final ConfigurationReadPlatformService configurationReadPlatformService,
-            final AddressWritePlatformService addressWritePlatformService,
-            final ClientFamilyMembersWritePlatformService clientFamilyMembersWritePlatformService,
-            final BusinessEventNotifierService businessEventNotifierService,
-            final EntityDatatableChecksWritePlatformService entityDatatableChecksWritePlatformService) {
+                                                       final ClientRepositoryWrapper clientRepository, final ClientNonPersonRepositoryWrapper clientNonPersonRepository,
+                                                       final OfficeRepositoryWrapper officeRepositoryWrapper, final NoteRepository noteRepository,
+                                                       final ClientDataValidator fromApiJsonDeserializer, final AccountNumberGenerator accountNumberGenerator,
+                                                       final GroupRepository groupRepository, final StaffRepositoryWrapper staffRepository,
+                                                       final CodeValueRepositoryWrapper codeValueRepository, final LoanRepositoryWrapper loanRepositoryWrapper,
+                                                       final SavingsAccountRepositoryWrapper savingsRepositoryWrapper, final SavingsProductRepository savingsProductRepository,
+                                                       final SavingsApplicationProcessWritePlatformService savingsApplicationProcessWritePlatformService,
+                                                       final CommandProcessingService commandProcessingService, final ConfigurationDomainService configurationDomainService,
+                                                       final AccountNumberFormatRepositoryWrapper accountNumberFormatRepository, final FromJsonHelper fromApiJsonHelper,
+                                                       final ConfigurationReadPlatformService configurationReadPlatformService,
+                                                       final AddressWritePlatformService addressWritePlatformService,
+                                                       final ClientFamilyMembersWritePlatformService clientFamilyMembersWritePlatformService,
+                                                       final BusinessEventNotifierService businessEventNotifierService, final JdbcTemplate jdbcTemplate,
+                                                       final EntityDatatableChecksWritePlatformService entityDatatableChecksWritePlatformService) {
         this.context = context;
         this.clientRepository = clientRepository;
         this.clientNonPersonRepository = clientNonPersonRepository;
@@ -159,6 +164,7 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
         this.clientFamilyMembersWritePlatformService = clientFamilyMembersWritePlatformService;
         this.businessEventNotifierService = businessEventNotifierService;
         this.entityDatatableChecksWritePlatformService = entityDatatableChecksWritePlatformService;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     @Transactional
@@ -240,6 +246,23 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
 
             final Long officeId = command.longValueOfParameterNamed(ClientApiConstants.officeIdParamName);
             final Long dpiNumber = command.longValueOfParameterNamed(ClientApiConstants.dpiParamName);
+
+            //check if client is blacklisted
+            String blacklistString = "select count(*) from m_client_blacklist where dpi=? and status=?";
+            Long blacklisted = jdbcTemplate.queryForObject(blacklistString, Long.class, dpiNumber,BlacklistStatus.ACTIVE.getValue());
+            if (blacklisted>0){
+                String blacklistReason = "select type_enum from m_client_blacklist where dpi=? and status=?";
+                Integer typification = jdbcTemplate.queryForObject(blacklistReason, Integer.class, dpiNumber, BlacklistStatus.ACTIVE.getValue());
+                CodeValue typificationCodeValue = this.codeValueRepository.findOneWithNotFoundDetection(typification.longValue());
+                throw new ClientBlacklistedException(typificationCodeValue.getDescription());
+            }
+
+            // check if client with given dpi exists
+            String sqlString = "select count(*) from m_client where dpi=?";
+            Long count = jdbcTemplate.queryForObject(sqlString, Long.class, dpiNumber);
+            if (count > 0) {
+                throw new ClientDpiExistsException(String.valueOf(dpiNumber));
+            }
 
             final Office clientOffice = this.officeRepositoryWrapper.findOneWithNotFoundDetection(officeId);
 
@@ -469,7 +492,11 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
 
             if (changes.containsKey(ClientApiConstants.dpiParamName)) {
                 final String newValue = command.stringValueOfParameterNamed(ClientApiConstants.dpiParamName);
-                this.clientRepository.getClientByDpiNumber(newValue);
+                String sqlString = "select count(*) from m_client where dpi=?";
+                Long count = jdbcTemplate.queryForObject(sqlString, Long.class, newValue);
+                if (count > 0) {
+                    throw new ClientDpiExistsException(newValue);
+                }
                 clientForUpdate.updateDpiNumber(newValue);
             }
 

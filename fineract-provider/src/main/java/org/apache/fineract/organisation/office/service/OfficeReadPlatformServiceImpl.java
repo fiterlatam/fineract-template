@@ -56,8 +56,8 @@ public class OfficeReadPlatformServiceImpl implements OfficeReadPlatformService 
 
     @Autowired
     public OfficeReadPlatformServiceImpl(final PlatformSecurityContext context,
-            final CurrencyReadPlatformService currencyReadPlatformService, final JdbcTemplate jdbcTemplate,
-            final ColumnValidator columnValidator, DatabaseSpecificSQLGenerator sqlGenerator) {
+                                         final CurrencyReadPlatformService currencyReadPlatformService, final JdbcTemplate jdbcTemplate,
+                                         final ColumnValidator columnValidator, DatabaseSpecificSQLGenerator sqlGenerator) {
         this.context = context;
         this.currencyReadPlatformService = currencyReadPlatformService;
         this.columnValidator = columnValidator;
@@ -296,6 +296,25 @@ public class OfficeReadPlatformServiceImpl implements OfficeReadPlatformService 
         final String sql = "select " + rm.schema() + "where o.parent_id = ?";
 
         return this.jdbcTemplate.query(sql, rm, new Object[] { parentOfficeId });
+    }
+
+    @Override
+    public Collection<OfficeData> retrieveChildOfficesByUserHierarchyAsParent() {
+        Collection<OfficeData> childOffices = new ArrayList<>();
+        final AppUser currentUser = this.context.authenticatedUser();
+
+        final String hierarchy = currentUser.getOffice().getHierarchy();
+
+        final OfficeMapper rm = new OfficeMapper();
+        final String sql = "select " + rm.officeSchema() + " where o.hierarchy = ?";
+
+        final OfficeData selectedOffice = this.jdbcTemplate.queryForObject(sql, rm, new Object[] { hierarchy });
+
+        if (selectedOffice != null) {
+            childOffices = retrieveOfficesByParent(selectedOffice.getId());
+        }
+
+        return childOffices;
     }
 
     public PlatformSecurityContext getContext() {

@@ -62,9 +62,9 @@ public class CenterGroupReadPlatformServiceImpl implements CenterGroupReadPlatfo
 
     @Autowired
     public CenterGroupReadPlatformServiceImpl(final JdbcTemplate jdbcTemplate, final DatabaseSpecificSQLGenerator sqlGenerator,
-            final PlatformSecurityContext context, final ColumnValidator columnValidator,
-            final CodeValueReadPlatformService codeValueReadPlatformService, final OfficeReadPlatformService officeReadPlatformService,
-            final AppUserReadPlatformService appUserReadPlatformService) {
+                                              final PlatformSecurityContext context, final ColumnValidator columnValidator,
+                                              final CodeValueReadPlatformService codeValueReadPlatformService, final OfficeReadPlatformService officeReadPlatformService,
+                                              final AppUserReadPlatformService appUserReadPlatformService) {
         this.jdbcTemplate = jdbcTemplate;
         this.sqlGenerator = sqlGenerator;
         this.context = context;
@@ -114,7 +114,8 @@ public class CenterGroupReadPlatformServiceImpl implements CenterGroupReadPlatfo
         final Collection<OfficeData> parentOfficesOptions = officeReadPlatformService
                 .retrieveOfficesByHierarchyLevel(Long.valueOf(OfficeHierarchyLevel.CARTERA.getValue()));
 
-        final List<AppUserData> appUsers = new ArrayList<>(this.appUserReadPlatformService.retrieveAllUsers());
+        final List<AppUserData> appUsers = new ArrayList<>(
+                this.appUserReadPlatformService.retrieveUsersUnderHierarchy(Long.valueOf(OfficeHierarchyLevel.GRUPO.getValue())));
 
         final Collection<EnumOptionData> statusOptions = retrieveGroupStatusOptions();
 

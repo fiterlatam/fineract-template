@@ -30,6 +30,8 @@ import org.apache.fineract.portfolio.blacklist.command.BlacklistApiConstants;
 import org.apache.fineract.portfolio.blacklist.command.BlacklistDataValidator;
 import org.apache.fineract.portfolio.blacklist.domain.BlacklistClients;
 import org.apache.fineract.portfolio.blacklist.domain.BlacklistClientsRepository;
+import org.apache.fineract.portfolio.blacklist.domain.BlacklistStatus;
+import org.apache.fineract.portfolio.blacklist.exception.BlacklistNotFoundException;
 import org.apache.fineract.portfolio.client.service.ClientChargeWritePlatformServiceJpaRepositoryImpl;
 import org.apache.fineract.portfolio.client.service.ClientReadPlatformService;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProduct;
@@ -55,8 +57,8 @@ public class BlacklistClientWritePlatformServiceImpl implements BlacklistClientW
 
     @Autowired
     public BlacklistClientWritePlatformServiceImpl(final PlatformSecurityContext context, final BlacklistDataValidator dataValidator,
-            final LoanProductRepository loanProductRepository, final ClientReadPlatformService clientReadPlatformService,
-            final CodeValueReadPlatformService codeValueReadPlatformService, final BlacklistClientsRepository blacklistClientsRepository) {
+                                                   final LoanProductRepository loanProductRepository, final ClientReadPlatformService clientReadPlatformService,
+                                                   final CodeValueReadPlatformService codeValueReadPlatformService, final BlacklistClientsRepository blacklistClientsRepository) {
         this.context = context;
         this.dataValidator = dataValidator;
         this.loanProductRepository = loanProductRepository;
@@ -67,7 +69,6 @@ public class BlacklistClientWritePlatformServiceImpl implements BlacklistClientW
 
     @Override
     public CommandProcessingResult addClientToBlacklist(JsonCommand command) {
-        Long clientId = command.getClientId();
         this.dataValidator.validateForCreate(command.json());
         final Long productId = command.longValueOfParameterNamed(BlacklistApiConstants.productIdParamName);
 
@@ -83,8 +84,19 @@ public class BlacklistClientWritePlatformServiceImpl implements BlacklistClientW
 
         return new CommandProcessingResultBuilder() //
                 .withCommandId(command.commandId()) //
-                .withClientId(clientId) //
+                .withResourceIdAsString(blacklistClient.getId().toString()) //
                 .withEntityId(blacklistClient.getId()) //
                 .build();
+    }
+
+    @Override
+    public Long removeFromBlacklist(Long blacklistId) {
+        BlacklistClients blacklistClient = this.blacklistClientsRepository.findById(blacklistId).orElse(null);
+        if (blacklistClient == null) {
+            throw new BlacklistNotFoundException(blacklistId);
+        }
+        blacklistClient.updateStatus(BlacklistStatus.INACTIVE);
+        this.blacklistClientsRepository.saveAndFlush(blacklistClient);
+        return blacklistId;
     }
 }

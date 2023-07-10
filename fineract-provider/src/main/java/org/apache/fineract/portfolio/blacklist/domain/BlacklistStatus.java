@@ -19,6 +19,9 @@
 
 package org.apache.fineract.portfolio.blacklist.domain;
 
+import org.apache.fineract.portfolio.client.domain.ClientStatus;
+import org.springframework.util.StringUtils;
+
 /**
  * Enum representation of client identifier status states.
  */
@@ -37,10 +40,10 @@ public enum BlacklistStatus {
         switch (statusValue) {
             case 100:
                 enumeration = BlacklistStatus.INACTIVE;
-            break;
+                break;
             case 200:
                 enumeration = BlacklistStatus.ACTIVE;
-            break;
+                break;
         }
         return enumeration;
     }
@@ -48,6 +51,24 @@ public enum BlacklistStatus {
     BlacklistStatus(final Integer value, final String code) {
         this.value = value;
         this.code = code;
+    }
+
+    public static BlacklistStatus fromString(String status) {
+
+        BlacklistStatus clientStatus = BlacklistStatus.INVALID;
+
+        if (!StringUtils.hasLength(status)) {
+            return clientStatus;
+        }
+
+        if (status.equalsIgnoreCase(BlacklistStatus.INACTIVE.toString())) {
+            clientStatus = BlacklistStatus.INACTIVE;
+        } else if (status.equalsIgnoreCase(ClientStatus.ACTIVE.toString())) {
+            clientStatus = BlacklistStatus.ACTIVE;
+        }
+
+        return clientStatus;
+
     }
 
     // public boolean hasStateOf(final ClientIdentifierStatus state) {

@@ -44,6 +44,9 @@ public class BlacklistClients extends AbstractPersistableCustom {
     @Column(name = "dpi", nullable = false)
     private String dpi;
 
+    @Column(name = "client_name", nullable = false)
+    private String clientName;
+
     @Column(name = "nit", nullable = false)
     private String nit;
 
@@ -83,24 +86,26 @@ public class BlacklistClients extends AbstractPersistableCustom {
     private LocalDateTime createdAt;
 
     public static BlacklistClients fromJson(final AppUser appUser, final LoanProduct loanProduct, final CodeValueData typification,
-            final JsonCommand command) {
-        final String dpi = command.stringValueOfParameterNamed("dpiNumber");
+                                            final JsonCommand command) {
+        final String dpi = command.stringValueOfParameterNamed("dpiNumber").trim();
+        final String clientName = command.stringValueOfParameterNamed("clientName").trim();
         final String nit = command.stringValueOfParameterNamed("nit");
         final String description = command.stringValueOfParameterNamed("description");
         final String agencyId = command.stringValueOfParameterNamed("agencyId");
         final Integer year = command.integerValueOfParameterNamed("year");
         final BigDecimal balance = command.bigDecimalValueOfParameterNamed("balance");
         final BigDecimal disbursementAmount = command.bigDecimalValueOfParameterNamed("disbursementAmount");
-        return new BlacklistClients(appUser, typification, dpi, nit, description, agencyId, loanProduct, balance, disbursementAmount, year);
+        return new BlacklistClients(appUser, typification, clientName, dpi, nit, description, agencyId, loanProduct, balance,
+                disbursementAmount, year);
     }
 
     protected BlacklistClients() {
         //
     }
 
-    private BlacklistClients(final AppUser appUser, final CodeValueData typification, final String dpi, final String nit,
-            final String description, final String agencyId, final LoanProduct loanProduct, final BigDecimal balance,
-            final BigDecimal disbursementAmount, final Integer year) {
+    private BlacklistClients(final AppUser appUser, final CodeValueData typification, final String clientName, final String dpi,
+                             final String nit, final String description, final String agencyId, final LoanProduct loanProduct, final BigDecimal balance,
+                             final BigDecimal disbursementAmount, final Integer year) {
         this.addedBy = appUser;
         this.typeEnum = typification.getId().intValue();
         this.agencyId = agencyId;
@@ -113,6 +118,7 @@ public class BlacklistClients extends AbstractPersistableCustom {
         this.balance = balance;
         this.disbursementAmount = disbursementAmount;
         this.year = year;
+        this.clientName = clientName;
         this.createdAt = DateUtils.getLocalDateTimeOfTenant();
     }
 

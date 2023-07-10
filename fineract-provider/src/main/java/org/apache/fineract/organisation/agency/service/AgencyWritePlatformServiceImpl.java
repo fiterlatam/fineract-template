@@ -18,8 +18,10 @@
  */
 package org.apache.fineract.organisation.agency.service;
 
+import java.time.LocalDate;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Random;
 import javax.persistence.PersistenceException;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.fineract.infrastructure.codes.domain.CodeValue;
@@ -63,9 +65,9 @@ public class AgencyWritePlatformServiceImpl implements AgencyWritePlatformServic
 
     @Autowired
     public AgencyWritePlatformServiceImpl(PlatformSecurityContext context, AgencyCommandFromApiJsonDeserializer fromApiJsonDeserializer,
-            AgencyRepositoryWrapper agencyRepositoryWrapper, OfficeRepositoryWrapper officeRepositoryWrapper,
-            CodeValueRepository codeValueRepository, OrganisationCurrencyRepositoryWrapper organisationCurrencyRepositoryWrapper,
-            AppUserRepository appUserRepository) {
+                                          AgencyRepositoryWrapper agencyRepositoryWrapper, OfficeRepositoryWrapper officeRepositoryWrapper,
+                                          CodeValueRepository codeValueRepository, OrganisationCurrencyRepositoryWrapper organisationCurrencyRepositoryWrapper,
+                                          AppUserRepository appUserRepository) {
         this.context = context;
         this.fromApiJsonDeserializer = fromApiJsonDeserializer;
         this.agencyRepositoryWrapper = agencyRepositoryWrapper;
@@ -403,6 +405,24 @@ public class AgencyWritePlatformServiceImpl implements AgencyWritePlatformServic
                 newParentOffice = this.officeRepositoryWrapper.findOneWithNotFoundDetection(destinationRegionId);
                 agency.setParentOffice(newParentOffice);
                 changes.put(AgencyConstants.AgencySupportedParameters.DESTINATION_REGION_ID.getValue(), destinationRegionId);
+
+                // update the office hierarchy as well
+                Office existingOfficeAgency = this.officeRepositoryWrapper.findByName(agency.getName());
+                if (existingOfficeAgency != null) {
+                    existingOfficeAgency.update(newParentOffice);
+                    this.officeRepositoryWrapper.saveAndFlush(existingOfficeAgency);
+                } else {
+                    LocalDate openingDate = newParentOffice.getOpeningLocalDate();
+                    String externalId = "";
+                    Random rand = new Random();
+                    int upperbound = 99999;
+                    String officeCode = String.valueOf(rand.nextInt(upperbound));
+                    Office newAgencyOffice = Office.newOffice(newParentOffice, agency.getName(), openingDate, externalId, officeCode);
+                    // pre save to generate id for use in office hierarchy
+                    this.officeRepositoryWrapper.saveAndFlush(newAgencyOffice);
+                    newAgencyOffice.generateHierarchy();
+                    this.officeRepositoryWrapper.save(newAgencyOffice);
+                }
             }
 
             this.agencyRepositoryWrapper.saveAndFlush(agency);

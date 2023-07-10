@@ -22,7 +22,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
-import org.apache.fineract.portfolio.client.data.ClientData;
+import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.portfolio.loanproduct.data.LoanProductData;
 
 /**
@@ -51,10 +51,10 @@ public class BlacklistClientData {
     private final Collection<LoanProductData> loanProducts;
 
     public BlacklistClientData(final Long id, final Long clientId, final String clientName, final Long productId,
-            final CodeValueData typification, final String productCode, final String dpi, final String nit, final String agencyId,
-            final Integer year, final BigDecimal balance, final BigDecimal disbursementAmount, final String addedBy,
-            final LocalDateTime createdAt, final String description, final String status,
-            final Collection<CodeValueData> typificationOptions, final Collection<LoanProductData> loanProducts) {
+                               final CodeValueData typification, final String productCode, final String dpi, final String nit, final String agencyId,
+                               final Integer year, final BigDecimal balance, final BigDecimal disbursementAmount, final String addedBy,
+                               final LocalDateTime createdAt, final String description, final String status,
+                               final Collection<CodeValueData> typificationOptions, final Collection<LoanProductData> loanProducts) {
         this.id = id;
 
         this.clientId = clientId;
@@ -76,9 +76,15 @@ public class BlacklistClientData {
         this.loanProducts = loanProducts;
     }
 
-    public static BlacklistClientData template(Collection<CodeValueData> codeValues, ClientData clientData,
-            final Collection<LoanProductData> loanProducts) {
-        return new BlacklistClientData(null, clientData.id(), clientData.displayName(), null, null, null, clientData.getDpiNumber(), null,
-                null, null, null, null, null, null, null, null, codeValues, loanProducts);
+    public static BlacklistClientData template(Collection<CodeValueData> codeValues, final Collection<LoanProductData> loanProducts) {
+        return new BlacklistClientData(null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null,
+                codeValues, loanProducts);
+    }
+
+    public static BlacklistClientData instance(Long id, String displayName, EnumOptionData status, CodeValueData typification,
+                                               Long productId, String dpiNumber, String nitNumber, String agencyId, String productCode, String productName, BigDecimal balance,
+                                               BigDecimal disbursementAmount, String addedBy, String year, String description) {
+        return new BlacklistClientData(id, null, displayName, productId, typification, productCode, dpiNumber, nitNumber, agencyId,
+                Integer.valueOf(year), balance, disbursementAmount, addedBy, null, description, status.getValue(), null, null);
     }
 }

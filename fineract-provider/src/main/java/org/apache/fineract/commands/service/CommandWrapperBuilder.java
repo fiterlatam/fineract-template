@@ -1707,7 +1707,7 @@ public class CommandWrapperBuilder {
     }
 
     public CommandWrapperBuilder createCalendar(final CommandWrapper resourceDetails, final String supportedEntityType,
-            final Long supportedEntityId) {
+                                                final Long supportedEntityId) {
         this.actionName = "CREATE";
         this.entityName = "CALENDAR";
         this.clientId = resourceDetails.getClientId();
@@ -1750,7 +1750,7 @@ public class CommandWrapperBuilder {
     }
 
     public CommandWrapperBuilder updateNote(final CommandWrapper resourceDetails, final String resourceType, final Long resourceId,
-            final Long noteId) {
+                                            final Long noteId) {
         this.actionName = "UPDATE";
         this.entityName = resourceDetails.entityName();// Note supports multiple
         // resources. Note
@@ -1767,7 +1767,7 @@ public class CommandWrapperBuilder {
     }
 
     public CommandWrapperBuilder deleteNote(final CommandWrapper resourceDetails, final String resourceType, final Long resourceId,
-            final Long noteId) {
+                                            final Long noteId) {
         this.actionName = "DELETE";
         this.entityName = resourceDetails.entityName();// Note supports multiple
         // resources. Note
@@ -2248,7 +2248,7 @@ public class CommandWrapperBuilder {
     }
 
     public CommandWrapperBuilder createMeeting(final CommandWrapper resourceDetails, final String supportedEntityType,
-            final Long supportedEntityId) {
+                                               final Long supportedEntityId) {
         this.actionName = "CREATE";
         this.entityName = "MEETING";
         this.clientId = resourceDetails.getClientId();
@@ -2275,7 +2275,7 @@ public class CommandWrapperBuilder {
     }
 
     public CommandWrapperBuilder saveOrUpdateAttendance(final Long entityId, final String supportedEntityType,
-            final Long supportedEntityId) {
+                                                        final Long supportedEntityId) {
         this.actionName = "SAVEORUPDATEATTENDANCE";
         this.entityName = "MEETING";
         this.entityId = entityId;
@@ -3711,11 +3711,10 @@ public class CommandWrapperBuilder {
         return this;
     }
 
-    public CommandWrapperBuilder addClientToBlacklist(Long clientId) {
+    public CommandWrapperBuilder addClientToBlacklist() {
         this.actionName = "ADD";
         this.entityName = "BLACKLIST";
-        this.clientId = clientId;
-        this.href = "/blacklist/" + clientId;
+        this.href = "/blacklist/addtoblacklist";
         return this;
     }
 }
