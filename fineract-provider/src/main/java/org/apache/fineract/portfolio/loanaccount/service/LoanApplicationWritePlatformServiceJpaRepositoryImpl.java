@@ -228,7 +228,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             final NoteRepository noteRepository, final LoanScheduleCalculationPlatformService calculationPlatformService,
             final ClientRepositoryWrapper clientRepository, final LoanProductRepository loanProductRepository,
             final AccountNumberGenerator accountNumberGenerator, final LoanSummaryWrapper loanSummaryWrapper,
-            final GroupRepositoryWrapper groupRepository,final CodeValueRepositoryWrapper codeValueRepository,
+            final GroupRepositoryWrapper groupRepository, final CodeValueRepositoryWrapper codeValueRepository,
             final LoanRepaymentScheduleTransactionProcessorFactory loanRepaymentScheduleTransactionProcessorFactory,
             final CalendarRepository calendarRepository, final CalendarInstanceRepository calendarInstanceRepository,
             final SavingsAccountAssembler savingsAccountAssembler, final AccountAssociationsRepository accountAssociationsRepository,
@@ -243,7 +243,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             final EntityDatatableChecksWritePlatformService entityDatatableChecksWritePlatformService,
             final GLIMAccountInfoWritePlatformService glimAccountInfoWritePlatformService, final GLIMAccountInfoRepository glimRepository,
             final LoanRepository loanRepository, final GSIMReadPlatformService gsimReadPlatformService, final RateAssembler rateAssembler,
-            final LoanProductReadPlatformService loanProductReadPlatformService,final JdbcTemplate jdbcTemplate,
+            final LoanProductReadPlatformService loanProductReadPlatformService, final JdbcTemplate jdbcTemplate,
             final LoanCollateralManagementRepository loanCollateralManagementRepository,
             final ClientCollateralManagementRepository clientCollateralManagementRepository,
             final CupoRepositoryWrapper cupoRepositoryWrapper, final LumaAccountingProcessorForLoan lumaAccountingProcessorForLoan) {
@@ -318,10 +318,12 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 String dpiNumber = client.getDpiNumber();
                 if (dpiNumber != null) {
                     String blacklistString = "select count(*) from m_client_blacklist where dpi=? and status=?";
-                    Long blacklisted = jdbcTemplate.queryForObject(blacklistString, Long.class, dpiNumber, BlacklistStatus.ACTIVE.getValue());
-                    if (blacklisted>0){
+                    Long blacklisted = jdbcTemplate.queryForObject(blacklistString, Long.class, dpiNumber,
+                            BlacklistStatus.ACTIVE.getValue());
+                    if (blacklisted > 0) {
                         String blacklistReason = "select type_enum from m_client_blacklist where dpi=? and status=?";
-                        Integer typification = jdbcTemplate.queryForObject(blacklistReason, Integer.class, dpiNumber, BlacklistStatus.ACTIVE.getValue());
+                        Integer typification = jdbcTemplate.queryForObject(blacklistReason, Integer.class, dpiNumber,
+                                BlacklistStatus.ACTIVE.getValue());
                         CodeValue typificationCodeValue = this.codeValueRepository.findOneWithNotFoundDetection(typification.longValue());
                         throw new ClientBlacklistedException(typificationCodeValue.getDescription());
                     }
