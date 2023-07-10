@@ -1895,13 +1895,15 @@ public final class LoanProductDataValidator {
                 int i = 0;
                 do {
                     final JsonObject jsonObject = variationArray.get(i).getAsJsonObject();
-
-                    BigDecimal defaultValue = this.fromApiJsonHelper
-                            .extractBigDecimalNamed(LoanProductConstants.DEFAULT_VALUE_PARAMETER_NAME, jsonObject, locale);
-                    BigDecimal minValue = this.fromApiJsonHelper.extractBigDecimalNamed(LoanProductConstants.MIN_VALUE_PARAMETER_NAME,
-                            jsonObject, locale);
-                    BigDecimal maxValue = this.fromApiJsonHelper.extractBigDecimalNamed(LoanProductConstants.MAX_VALUE_PARAMETER_NAME,
-                            jsonObject, locale);
+                    String defaultValueAsString = this.fromApiJsonHelper.extractStringNamed(LoanProductConstants.DEFAULT_VALUE_PARAMETER_NAME,
+                            jsonObject);
+                    String minValueAsString = this.fromApiJsonHelper.extractStringNamed(LoanProductConstants.MIN_VALUE_PARAMETER_NAME,
+                            jsonObject);
+                    String maxValueAsString = this.fromApiJsonHelper.extractStringNamed(LoanProductConstants.MAX_VALUE_PARAMETER_NAME,
+                            jsonObject);
+                    BigDecimal defaultValue = BigDecimal.valueOf(Double.valueOf(defaultValueAsString));
+                    BigDecimal minValue = BigDecimal.valueOf(Double.valueOf(minValueAsString));
+                    BigDecimal maxValue = BigDecimal.valueOf(Double.valueOf(maxValueAsString));
                     Integer cycleNumber = this.fromApiJsonHelper.extractIntegerNamed(LoanProductConstants.BORROWER_CYCLE_NUMBER_PARAM_NAME,
                             jsonObject, locale);
                     Integer valueUsageCondition = this.fromApiJsonHelper
@@ -1957,10 +1959,11 @@ public final class LoanProductDataValidator {
                     }
                     i++;
                 } while (i < variationArray.size());
-                if (!lastConditionType.equals(LoanProductValueConditionType.GREATERTHAN)) {
-                    baseDataValidator.reset().parameter(cycleNumbersParamName)
-                            .failWithCode(LoanProductConstants.VALUE_CONDITION_END_WITH_ERROR);
-                }
+                /*
+                 * if (!lastConditionType.equals(LoanProductValueConditionType.GREATERTHAN)) {
+                 * baseDataValidator.reset().parameter(cycleNumbersParamName)
+                 * .failWithCode(LoanProductConstants.VALUE_CONDITION_END_WITH_ERROR); }
+                 */
             }
 
         }
