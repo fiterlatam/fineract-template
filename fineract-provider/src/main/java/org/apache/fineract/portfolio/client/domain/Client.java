@@ -1036,6 +1036,10 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
         this.proposedTransferDate = proposedTransferDate;
     }
 
+    public String getDpiNumber() {
+        return this.dpiNumber;
+    }
+
     public void updateDpiNumber(String dpiNumber) {
         this.dpiNumber = dpiNumber;
     }

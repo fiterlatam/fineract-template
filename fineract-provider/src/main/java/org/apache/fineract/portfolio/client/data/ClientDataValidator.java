@@ -90,8 +90,6 @@ public final class ClientDataValidator {
         final String dpi = this.fromApiJsonHelper.extractStringNamed(ClientApiConstants.dpiParamName, element);
         baseDataValidator.reset().parameter(ClientApiConstants.dpiParamName).value(dpi).notNull();
 
-        this.clientRepositoryWrapper.getClientByDpiNumber(dpi);
-
         if (this.fromApiJsonHelper.parameterExists(ClientApiConstants.groupIdParamName, element)) {
             final Long groupId = this.fromApiJsonHelper.extractLongNamed(ClientApiConstants.groupIdParamName, element);
             baseDataValidator.reset().parameter(ClientApiConstants.groupIdParamName).value(groupId).notNull().integerGreaterThanZero();

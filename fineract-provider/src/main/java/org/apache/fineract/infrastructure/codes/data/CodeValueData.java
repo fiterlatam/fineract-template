@@ -114,4 +114,8 @@ public class CodeValueData implements Serializable {
     public boolean isActive() {
         return active;
     }
+
+    public String getDescription() {
+        return description;
+    }
 }

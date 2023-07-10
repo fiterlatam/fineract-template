@@ -79,6 +79,11 @@ public class Office extends AbstractPersistableCustom implements Serializable {
         return new Office(parentOffice, name, openingDate, externalId, officeCode);
     }
 
+    public static Office newOffice(final Office parentOffice, final String name, final LocalDate openingDate, final String externalId,
+            final String officeCode) {
+        return new Office(parentOffice, name, openingDate, externalId, officeCode);
+    }
+
     protected Office() {
         this.openingDate = null;
         this.parent = null;

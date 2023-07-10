@@ -16,14 +16,16 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.portfolio.blacklist.service;
+package org.apache.fineract.portfolio.client.exception;
 
-import org.apache.fineract.infrastructure.core.api.JsonCommand;
-import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
+import org.apache.fineract.infrastructure.core.exception.AbstractPlatformResourceNotFoundException;
 
-public interface BlacklistClientWritePlatformService {
+/**
+ * A {@link RuntimeException} thrown when client resources are not found.
+ */
+public class ClientBlacklistedException extends AbstractPlatformResourceNotFoundException {
 
-    CommandProcessingResult addClientToBlacklist(JsonCommand command);
-
-    Long removeFromBlacklist(Long blacklistId);
+    public ClientBlacklistedException(String reason) {
+        super("error.msg.client.blacklisted", "This person is blacklisted " + reason, reason);
+    }
 }

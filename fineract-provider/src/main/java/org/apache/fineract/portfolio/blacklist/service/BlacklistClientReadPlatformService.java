@@ -18,12 +18,13 @@
  */
 package org.apache.fineract.portfolio.blacklist.service;
 
-import org.apache.fineract.infrastructure.core.api.JsonCommand;
-import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
+import org.apache.fineract.infrastructure.core.service.Page;
+import org.apache.fineract.infrastructure.core.service.SearchParameters;
+import org.apache.fineract.portfolio.blacklist.data.BlacklistClientData;
 
-public interface BlacklistClientWritePlatformService {
+public interface BlacklistClientReadPlatformService {
 
-    CommandProcessingResult addClientToBlacklist(JsonCommand command);
+    Page<BlacklistClientData> retrieveAll(SearchParameters searchParameters);
 
-    Long removeFromBlacklist(Long blacklistId);
+    BlacklistClientData retrieveOne(Long blacklistId);
 }

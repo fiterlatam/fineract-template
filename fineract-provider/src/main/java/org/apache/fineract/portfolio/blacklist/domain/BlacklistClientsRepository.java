@@ -21,7 +21,12 @@ package org.apache.fineract.portfolio.blacklist.domain;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 public interface BlacklistClientsRepository extends JpaRepository<BlacklistClients, Long>, JpaSpecificationExecutor<BlacklistClients> {
+
     // no behaviour
+    @Query("SELECT client FROM BlacklistClients client WHERE client.dpi = :dpiNumber and client.status = :status")
+    BlacklistClients findBlacklistClientsByDpi(@Param("dpiNumber") String dpiNumber, @Param("status") Integer status);
 }
