@@ -78,13 +78,16 @@ public class CenterGroup extends AbstractAuditableCustom {
     @JoinColumn(name = "responsible_user_id")
     private AppUser responsibleUser;
 
+    @Column(name = "location", nullable = false)
+    private Integer location;
+
     protected CenterGroup() {
 
     }
 
     public CenterGroup(String name, PortfolioCenter portfolioCenter, Long legacyGroupNumber, BigDecimal latitude, BigDecimal longitude,
             LocalDate formationDate, Integer status, Integer size, LocalTime meetingStartTime, LocalTime meetingEndTime,
-            AppUser responsibleUser) {
+            AppUser responsibleUser, Integer location) {
         this.name = name;
         this.portfolioCenter = portfolioCenter;
         this.legacyGroupNumber = legacyGroupNumber;
@@ -96,6 +99,7 @@ public class CenterGroup extends AbstractAuditableCustom {
         this.meetingStartTime = meetingStartTime;
         this.meetingEndTime = meetingEndTime;
         this.responsibleUser = responsibleUser;
+        this.location = location;
     }
 
     public static CenterGroup fromJson(PortfolioCenter portfolioCenter, AppUser responsibleUser, JsonCommand command,
@@ -106,6 +110,9 @@ public class CenterGroup extends AbstractAuditableCustom {
                 .localDateValueOfParameterNamed(CenterGroupConstants.CenterGroupSupportedParameters.FORMATION_DATE.getValue());
         final Integer status = command
                 .integerValueOfParameterNamed(CenterGroupConstants.CenterGroupSupportedParameters.STATUS_ID.getValue());
+
+        final Integer groupLocation = command
+                .integerValueOfParameterNamed(CenterGroupConstants.CenterGroupSupportedParameters.CENTER_GROUP_LOCATION.getValue());
 
         Long legacyGroupNumber = null;
         if (command.parameterExists(CenterGroupConstants.CenterGroupSupportedParameters.LEGACY_GROUP_NUMBER.getValue())) {
@@ -137,7 +144,7 @@ public class CenterGroup extends AbstractAuditableCustom {
         }
 
         return new CenterGroup(name, portfolioCenter, legacyGroupNumber, latitude, longitude, formationDate, status, size, meetingStartTime,
-                meetingEndTime, responsibleUser);
+                meetingEndTime, responsibleUser,groupLocation);
     }
 
     public Map<String, Object> update(JsonCommand command) {
@@ -156,6 +163,13 @@ public class CenterGroup extends AbstractAuditableCustom {
                     .integerValueOfParameterNamed(CenterGroupConstants.CenterGroupSupportedParameters.STATUS_ID.getValue());
             actualChanges.put(CenterGroupConstants.CenterGroupSupportedParameters.STATUS_ID.getValue(), newValue);
             this.status = newValue;
+        }
+        if (command.isChangeInIntegerParameterNamed(CenterGroupConstants.CenterGroupSupportedParameters.CENTER_GROUP_LOCATION.getValue(),
+                this.location)) {
+            final Integer newValue = command
+                    .integerValueOfParameterNamed(CenterGroupConstants.CenterGroupSupportedParameters.CENTER_GROUP_LOCATION.getValue());
+            actualChanges.put(CenterGroupConstants.CenterGroupSupportedParameters.CENTER_GROUP_LOCATION.getValue(), newValue);
+            this.location = newValue;
         }
 
         if (command.isChangeInIntegerParameterNamed(CenterGroupConstants.CenterGroupSupportedParameters.SIZE.getValue(), this.size)) {

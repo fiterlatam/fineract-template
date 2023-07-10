@@ -37,7 +37,7 @@ public class CenterGroupConstants {
                 "responsibleUserId"), LEGACY_GROUP_NUMBER("legacyGroupNumber"), LATITUDE("latitude"), LONGITUDE(
                         "longitude"), FORMATION_DATE("formationDate"), SIZE("size"), CREATED_DATE("createdDate"), STATUS_ID(
                                 "statusId"), MEETING_START_TIME("meetingStartTime"), MEETING_END_TIME("meetingEndTime"), LOCALE(
-                                        "locale"), DESTINATION_PORTFOLIO_CENTER_ID("newPortfolioCenterId"), DATEFORMAT("dateFormat");
+                                        "locale"), DESTINATION_PORTFOLIO_CENTER_ID("newPortfolioCenterId"), CENTER_GROUP_LOCATION("grouplocation"), DATEFORMAT("dateFormat");
 
         private final String value;
 
