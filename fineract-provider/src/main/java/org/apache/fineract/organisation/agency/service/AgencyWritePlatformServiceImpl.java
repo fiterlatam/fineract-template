@@ -65,9 +65,9 @@ public class AgencyWritePlatformServiceImpl implements AgencyWritePlatformServic
 
     @Autowired
     public AgencyWritePlatformServiceImpl(PlatformSecurityContext context, AgencyCommandFromApiJsonDeserializer fromApiJsonDeserializer,
-                                          AgencyRepositoryWrapper agencyRepositoryWrapper, OfficeRepositoryWrapper officeRepositoryWrapper,
-                                          CodeValueRepository codeValueRepository, OrganisationCurrencyRepositoryWrapper organisationCurrencyRepositoryWrapper,
-                                          AppUserRepository appUserRepository) {
+            AgencyRepositoryWrapper agencyRepositoryWrapper, OfficeRepositoryWrapper officeRepositoryWrapper,
+            CodeValueRepository codeValueRepository, OrganisationCurrencyRepositoryWrapper organisationCurrencyRepositoryWrapper,
+            AppUserRepository appUserRepository) {
         this.context = context;
         this.fromApiJsonDeserializer = fromApiJsonDeserializer;
         this.agencyRepositoryWrapper = agencyRepositoryWrapper;

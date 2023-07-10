@@ -57,8 +57,8 @@ public class BlacklistClientWritePlatformServiceImpl implements BlacklistClientW
 
     @Autowired
     public BlacklistClientWritePlatformServiceImpl(final PlatformSecurityContext context, final BlacklistDataValidator dataValidator,
-                                                   final LoanProductRepository loanProductRepository, final ClientReadPlatformService clientReadPlatformService,
-                                                   final CodeValueReadPlatformService codeValueReadPlatformService, final BlacklistClientsRepository blacklistClientsRepository) {
+            final LoanProductRepository loanProductRepository, final ClientReadPlatformService clientReadPlatformService,
+            final CodeValueReadPlatformService codeValueReadPlatformService, final BlacklistClientsRepository blacklistClientsRepository) {
         this.context = context;
         this.dataValidator = dataValidator;
         this.loanProductRepository = loanProductRepository;

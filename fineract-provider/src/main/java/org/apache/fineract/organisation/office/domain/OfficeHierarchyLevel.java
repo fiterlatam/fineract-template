@@ -29,7 +29,7 @@ public enum OfficeHierarchyLevel {
     GERENCIA(1, "officehierarchylevel.gerencia"), //
     REGION(2, "officehierarchylevel.region"), AGENCIA(3, "officehierarchylevel.agencia"), SUPERVISION(4,
             "officehierarchylevel.supervision"), CARTERA(5, "officehierarchylevel.cartera"), GRUPO(6,
-            "officehierarchylevel.grupo"), PRINCIPAL(99, "officehierarchylevel.principal");
+                    "officehierarchylevel.grupo"), PRINCIPAL(99, "officehierarchylevel.principal");
 
     private final Integer value;
     private final String code;
@@ -39,25 +39,25 @@ public enum OfficeHierarchyLevel {
         switch (type) {
             case 1:
                 enumeration = OfficeHierarchyLevel.GERENCIA;
-                break;
+            break;
             case 2:
                 enumeration = OfficeHierarchyLevel.REGION;
-                break;
+            break;
             case 3:
                 enumeration = OfficeHierarchyLevel.AGENCIA;
-                break;
+            break;
             case 4:
                 enumeration = OfficeHierarchyLevel.SUPERVISION;
-                break;
+            break;
             case 5:
                 enumeration = OfficeHierarchyLevel.CARTERA;
-                break;
+            break;
             case 6:
                 enumeration = OfficeHierarchyLevel.GRUPO;
-                break;
+            break;
             case 99:
                 enumeration = OfficeHierarchyLevel.PRINCIPAL;
-                break;
+            break;
         }
         return enumeration;
     }

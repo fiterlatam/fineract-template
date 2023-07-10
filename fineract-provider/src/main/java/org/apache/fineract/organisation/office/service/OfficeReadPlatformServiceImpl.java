@@ -56,8 +56,8 @@ public class OfficeReadPlatformServiceImpl implements OfficeReadPlatformService 
 
     @Autowired
     public OfficeReadPlatformServiceImpl(final PlatformSecurityContext context,
-                                         final CurrencyReadPlatformService currencyReadPlatformService, final JdbcTemplate jdbcTemplate,
-                                         final ColumnValidator columnValidator, DatabaseSpecificSQLGenerator sqlGenerator) {
+            final CurrencyReadPlatformService currencyReadPlatformService, final JdbcTemplate jdbcTemplate,
+            final ColumnValidator columnValidator, DatabaseSpecificSQLGenerator sqlGenerator) {
         this.context = context;
         this.currencyReadPlatformService = currencyReadPlatformService;
         this.columnValidator = columnValidator;

@@ -53,7 +53,7 @@ public final class ClientDataValidator {
 
     @Autowired
     public ClientDataValidator(final FromJsonHelper fromApiJsonHelper, final ClientRepositoryWrapper clientRepositoryWrapper,
-                               final ConfigurationReadPlatformService configurationReadPlatformService) {
+            final ConfigurationReadPlatformService configurationReadPlatformService) {
         this.fromApiJsonHelper = fromApiJsonHelper;
         this.configurationReadPlatformService = configurationReadPlatformService;
         this.clientRepositoryWrapper = clientRepositoryWrapper;
@@ -285,7 +285,7 @@ public final class ClientDataValidator {
     }
 
     private void validateIndividualNamePartsCannotBeUsedWithFullname(final JsonElement element,
-                                                                     final DataValidatorBuilder baseDataValidator) {
+            final DataValidatorBuilder baseDataValidator) {
         final String firstnameParam = this.fromApiJsonHelper.extractStringNamed(ClientApiConstants.firstnameParamName, element);
         if (StringUtils.isNotBlank(firstnameParam)) {
             final String fullnameParam = this.fromApiJsonHelper.extractStringNamed(ClientApiConstants.fullnameParamName, element);

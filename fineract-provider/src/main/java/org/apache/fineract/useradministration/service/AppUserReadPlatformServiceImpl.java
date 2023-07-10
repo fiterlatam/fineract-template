@@ -64,8 +64,8 @@ public class AppUserReadPlatformServiceImpl implements AppUserReadPlatformServic
 
     @Autowired
     public AppUserReadPlatformServiceImpl(final PlatformSecurityContext context, final JdbcTemplate jdbcTemplate,
-                                          final OfficeReadPlatformService officeReadPlatformService, final RoleReadPlatformService roleReadPlatformService,
-                                          final AppUserRepository appUserRepository, final StaffReadPlatformService staffReadPlatformService) {
+            final OfficeReadPlatformService officeReadPlatformService, final RoleReadPlatformService roleReadPlatformService,
+            final AppUserRepository appUserRepository, final StaffReadPlatformService staffReadPlatformService) {
         this.context = context;
         this.officeReadPlatformService = officeReadPlatformService;
         this.roleReadPlatformService = roleReadPlatformService;
@@ -274,7 +274,7 @@ public class AppUserReadPlatformServiceImpl implements AppUserReadPlatformServic
     }
 
     private void findUserWithRoleLike(Collection<AppUserData> usersDataList, Collection<AppUserData> usersforDropdown,
-                                      String gerenteRoleStartWith) {
+            String gerenteRoleStartWith) {
         for (AppUserData userData : usersDataList) {
             AppUser user = this.appUserRepository.findById(userData.getId()).orElseThrow(() -> new UserNotFoundException(userData.getId()));
             final Set<Role> userRoles = user.getRoles();

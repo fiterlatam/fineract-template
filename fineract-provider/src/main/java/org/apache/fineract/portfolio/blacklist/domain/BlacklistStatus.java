@@ -40,10 +40,10 @@ public enum BlacklistStatus {
         switch (statusValue) {
             case 100:
                 enumeration = BlacklistStatus.INACTIVE;
-                break;
+            break;
             case 200:
                 enumeration = BlacklistStatus.ACTIVE;
-                break;
+            break;
         }
         return enumeration;
     }

@@ -62,9 +62,9 @@ public class CenterGroupReadPlatformServiceImpl implements CenterGroupReadPlatfo
 
     @Autowired
     public CenterGroupReadPlatformServiceImpl(final JdbcTemplate jdbcTemplate, final DatabaseSpecificSQLGenerator sqlGenerator,
-                                              final PlatformSecurityContext context, final ColumnValidator columnValidator,
-                                              final CodeValueReadPlatformService codeValueReadPlatformService, final OfficeReadPlatformService officeReadPlatformService,
-                                              final AppUserReadPlatformService appUserReadPlatformService) {
+            final PlatformSecurityContext context, final ColumnValidator columnValidator,
+            final CodeValueReadPlatformService codeValueReadPlatformService, final OfficeReadPlatformService officeReadPlatformService,
+            final AppUserReadPlatformService appUserReadPlatformService) {
         this.jdbcTemplate = jdbcTemplate;
         this.sqlGenerator = sqlGenerator;
         this.context = context;

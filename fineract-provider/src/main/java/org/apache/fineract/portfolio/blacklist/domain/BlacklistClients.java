@@ -86,7 +86,7 @@ public class BlacklistClients extends AbstractPersistableCustom {
     private LocalDateTime createdAt;
 
     public static BlacklistClients fromJson(final AppUser appUser, final LoanProduct loanProduct, final CodeValueData typification,
-                                            final JsonCommand command) {
+            final JsonCommand command) {
         final String dpi = command.stringValueOfParameterNamed("dpiNumber").trim();
         final String clientName = command.stringValueOfParameterNamed("clientName").trim();
         final String nit = command.stringValueOfParameterNamed("nit");
@@ -104,8 +104,8 @@ public class BlacklistClients extends AbstractPersistableCustom {
     }
 
     private BlacklistClients(final AppUser appUser, final CodeValueData typification, final String clientName, final String dpi,
-                             final String nit, final String description, final String agencyId, final LoanProduct loanProduct, final BigDecimal balance,
-                             final BigDecimal disbursementAmount, final Integer year) {
+            final String nit, final String description, final String agencyId, final LoanProduct loanProduct, final BigDecimal balance,
+            final BigDecimal disbursementAmount, final Integer year) {
         this.addedBy = appUser;
         this.typeEnum = typification.getId().intValue();
         this.agencyId = agencyId;

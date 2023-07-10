@@ -127,20 +127,20 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
 
     @Autowired
     public ClientWritePlatformServiceJpaRepositoryImpl(final PlatformSecurityContext context,
-                                                       final ClientRepositoryWrapper clientRepository, final ClientNonPersonRepositoryWrapper clientNonPersonRepository,
-                                                       final OfficeRepositoryWrapper officeRepositoryWrapper, final NoteRepository noteRepository,
-                                                       final ClientDataValidator fromApiJsonDeserializer, final AccountNumberGenerator accountNumberGenerator,
-                                                       final GroupRepository groupRepository, final StaffRepositoryWrapper staffRepository,
-                                                       final CodeValueRepositoryWrapper codeValueRepository, final LoanRepositoryWrapper loanRepositoryWrapper,
-                                                       final SavingsAccountRepositoryWrapper savingsRepositoryWrapper, final SavingsProductRepository savingsProductRepository,
-                                                       final SavingsApplicationProcessWritePlatformService savingsApplicationProcessWritePlatformService,
-                                                       final CommandProcessingService commandProcessingService, final ConfigurationDomainService configurationDomainService,
-                                                       final AccountNumberFormatRepositoryWrapper accountNumberFormatRepository, final FromJsonHelper fromApiJsonHelper,
-                                                       final ConfigurationReadPlatformService configurationReadPlatformService,
-                                                       final AddressWritePlatformService addressWritePlatformService,
-                                                       final ClientFamilyMembersWritePlatformService clientFamilyMembersWritePlatformService,
-                                                       final BusinessEventNotifierService businessEventNotifierService, final JdbcTemplate jdbcTemplate,
-                                                       final EntityDatatableChecksWritePlatformService entityDatatableChecksWritePlatformService) {
+            final ClientRepositoryWrapper clientRepository, final ClientNonPersonRepositoryWrapper clientNonPersonRepository,
+            final OfficeRepositoryWrapper officeRepositoryWrapper, final NoteRepository noteRepository,
+            final ClientDataValidator fromApiJsonDeserializer, final AccountNumberGenerator accountNumberGenerator,
+            final GroupRepository groupRepository, final StaffRepositoryWrapper staffRepository,
+            final CodeValueRepositoryWrapper codeValueRepository, final LoanRepositoryWrapper loanRepositoryWrapper,
+            final SavingsAccountRepositoryWrapper savingsRepositoryWrapper, final SavingsProductRepository savingsProductRepository,
+            final SavingsApplicationProcessWritePlatformService savingsApplicationProcessWritePlatformService,
+            final CommandProcessingService commandProcessingService, final ConfigurationDomainService configurationDomainService,
+            final AccountNumberFormatRepositoryWrapper accountNumberFormatRepository, final FromJsonHelper fromApiJsonHelper,
+            final ConfigurationReadPlatformService configurationReadPlatformService,
+            final AddressWritePlatformService addressWritePlatformService,
+            final ClientFamilyMembersWritePlatformService clientFamilyMembersWritePlatformService,
+            final BusinessEventNotifierService businessEventNotifierService, final JdbcTemplate jdbcTemplate,
+            final EntityDatatableChecksWritePlatformService entityDatatableChecksWritePlatformService) {
         this.context = context;
         this.clientRepository = clientRepository;
         this.clientNonPersonRepository = clientNonPersonRepository;
@@ -247,12 +247,13 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
             final Long officeId = command.longValueOfParameterNamed(ClientApiConstants.officeIdParamName);
             final Long dpiNumber = command.longValueOfParameterNamed(ClientApiConstants.dpiParamName);
 
-            //check if client is blacklisted
+            // check if client is blacklisted
             String blacklistString = "select count(*) from m_client_blacklist where dpi=? and status=?";
-            Long blacklisted = jdbcTemplate.queryForObject(blacklistString, Long.class, dpiNumber,BlacklistStatus.ACTIVE.getValue());
-            if (blacklisted>0){
+            Long blacklisted = jdbcTemplate.queryForObject(blacklistString, Long.class, dpiNumber, BlacklistStatus.ACTIVE.getValue());
+            if (blacklisted > 0) {
                 String blacklistReason = "select type_enum from m_client_blacklist where dpi=? and status=?";
-                Integer typification = jdbcTemplate.queryForObject(blacklistReason, Integer.class, dpiNumber, BlacklistStatus.ACTIVE.getValue());
+                Integer typification = jdbcTemplate.queryForObject(blacklistReason, Integer.class, dpiNumber,
+                        BlacklistStatus.ACTIVE.getValue());
                 CodeValue typificationCodeValue = this.codeValueRepository.findOneWithNotFoundDetection(typification.longValue());
                 throw new ClientBlacklistedException(typificationCodeValue.getDescription());
             }

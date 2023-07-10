@@ -77,11 +77,11 @@ public class CenterGroupWritePlatformServiceImpl implements CenterGroupWritePlat
 
     @Autowired
     public CenterGroupWritePlatformServiceImpl(PlatformSecurityContext context, final JdbcTemplate jdbcTemplate,
-                                               CenterGroupCommandFromApiJsonDeserializer fromApiJsonDeserializer, OfficeRepositoryWrapper officeRepositoryWrapper,
-                                               CenterGroupRepositoryWrapper centerGroupRepositoryWrapper, PortfolioCenterRepositoryWrapper portfolioCenterRepositoryWrapper,
-                                               CodeValueReadPlatformService codeValueReadPlatformService, AppUserRepository appUserRepository,
-                                               CodeValueRepository codeValueRepository, ConfigurationReadPlatformService configurationReadPlatformService,
-                                               FromJsonHelper fromJsonHelper) {
+            CenterGroupCommandFromApiJsonDeserializer fromApiJsonDeserializer, OfficeRepositoryWrapper officeRepositoryWrapper,
+            CenterGroupRepositoryWrapper centerGroupRepositoryWrapper, PortfolioCenterRepositoryWrapper portfolioCenterRepositoryWrapper,
+            CodeValueReadPlatformService codeValueReadPlatformService, AppUserRepository appUserRepository,
+            CodeValueRepository codeValueRepository, ConfigurationReadPlatformService configurationReadPlatformService,
+            FromJsonHelper fromJsonHelper) {
         this.context = context;
         this.fromApiJsonDeserializer = fromApiJsonDeserializer;
         this.officeRepositoryWrapper = officeRepositoryWrapper;
