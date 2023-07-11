@@ -385,7 +385,7 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
             final StringBuilder sqlBuilder = new StringBuilder(200);
 
             sqlBuilder.append(
-                    "c.id as id, c.account_no as accountNo, c.external_id as externalId, c.status_enum as statusEnum,c.sub_status as subStatus, c.dpi as dpiNumber, ");
+                    "c.id as id, c.account_no as accountNo, c.external_id as externalId, c.status_enum as statusEnum,c.sub_status as subStatus, c.dpi as dpiNumber, c.old_customer_number as oldCustomerNumber, ");
             sqlBuilder.append(
                     "cvSubStatus.code_value as subStatusValue,cvSubStatus.code_description as subStatusDesc,c.office_id as officeId, o.name as officeName, ");
             sqlBuilder.append("c.transfer_to_office_id as transferToOfficeId, transferToOffice.name as transferToOfficeName, ");
@@ -537,6 +537,7 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
             final CodeValueData mainBusinessLine = CodeValueData.instance(mainBusinessLineId, mainBusinessLineValue);
             final String remarks = rs.getString("remarks");
             final String dpiNumber = rs.getString("dpiNumber");
+            final String oldCustomerNumber = rs.getString("oldCustomerNumber");
 
             final ClientNonPersonData clientNonPerson = new ClientNonPersonData(constitution, incorpNo, incorpValidityTill,
                     mainBusinessLine, remarks);
@@ -548,7 +549,7 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
             return ClientData.instance(accountNo, status, subStatus, officeId, officeName, transferToOfficeId, transferToOfficeName, id,
                     firstname, middlename, lastname, fullname, displayName, externalId, mobileNo, emailAddress, dateOfBirth, gender,
                     activationDate, imageId, staffId, staffName, timeline, savingsProductId, savingsProductName, savingsAccountId,
-                    clienttype, classification, legalForm, clientNonPerson, isStaff, dpiNumber);
+                    clienttype, classification, legalForm, clientNonPerson, isStaff, dpiNumber,oldCustomerNumber);
 
         }
     }
@@ -575,7 +576,7 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
             final StringBuilder builder = new StringBuilder(400);
 
             builder.append(
-                    "c.id as id, c.account_no as accountNo, c.external_id as externalId, c.status_enum as statusEnum,c.sub_status as subStatus, c.dpi as dpiNumber, ");
+                    "c.id as id, c.account_no as accountNo, c.external_id as externalId, c.status_enum as statusEnum,c.sub_status as subStatus, c.dpi as dpiNumber, c.old_customer_number as oldCustomerNumber, ");
             builder.append(
                     "cvSubStatus.code_value as subStatusValue,cvSubStatus.code_description as subStatusDesc,c.office_id as officeId, o.name as officeName, ");
             builder.append("c.transfer_to_office_id as transferToOfficeId, transferToOffice.name as transferToOfficeName, ");
@@ -725,6 +726,7 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
             final CodeValueData mainBusinessLine = CodeValueData.instance(mainBusinessLineId, mainBusinessLineValue);
             final String remarks = rs.getString("remarks");
             final String dpiNumber = rs.getString("dpiNumber");
+            final String oldCustomerNumber = rs.getString("oldCustomerNumber");
 
             final ClientNonPersonData clientNonPerson = new ClientNonPersonData(constitution, incorpNo, incorpValidityTill,
                     mainBusinessLine, remarks);
@@ -736,7 +738,7 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
             return ClientData.instance(accountNo, status, subStatus, officeId, officeName, transferToOfficeId, transferToOfficeName, id,
                     firstname, middlename, lastname, fullname, displayName, externalId, mobileNo, emailAddress, dateOfBirth, gender,
                     activationDate, imageId, staffId, staffName, timeline, savingsProductId, savingsProductName, savingsAccountId,
-                    clienttype, classification, legalForm, clientNonPerson, isStaff, dpiNumber);
+                    clienttype, classification, legalForm, clientNonPerson, isStaff, dpiNumber,oldCustomerNumber);
 
         }
     }
