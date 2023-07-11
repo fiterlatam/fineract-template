@@ -145,6 +145,7 @@ public class ClientApiConstants {
     public static final String imagePresentParamName = "imagePresent";
     public static final String timelineParamName = "timeline";
     public static final String dpiParamName = "dpi";
+    public static final String oldCustomerNumberParamName = "oldCustomerNumber";
 
     // client charges response parameters
     public static final String chargeIdParamName = "chargeId";

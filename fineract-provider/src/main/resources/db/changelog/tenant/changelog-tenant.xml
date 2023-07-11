@@ -72,4 +72,5 @@
     <include file="parts/0055_FB_217_Add_Name_To_blacklist_table.xml" relativeToChangelogFile="true"/>
     <include file="parts/0056_FBR_insert_loan_products.xml" relativeToChangelogFile="true"/>
     <include file="parts/0057_FBR_add_center_group_location.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0058_FBR_add_old_customer_number.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
