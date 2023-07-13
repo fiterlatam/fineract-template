@@ -33,7 +33,7 @@ import org.apache.fineract.organisation.monetary.domain.MoneyHelper;
 public class LoanRepaymentScheduleProcessingWrapper {
 
     public void reprocess(final MonetaryCurrency currency, final LocalDate disbursementDate,
-            final List<LoanRepaymentScheduleInstallment> repaymentPeriods, final Set<LoanCharge> loanCharges) {
+            final List<LoanRepaymentScheduleInstallment> repaymentPeriods, final Set<LoanCharge> loanCharges, Loan loan) {
 
         Money totalInterest = Money.zero(currency);
         Money totalPrincipal = Money.zero(currency);
@@ -44,7 +44,11 @@ public class LoanRepaymentScheduleProcessingWrapper {
         LocalDate startDate = disbursementDate;
         for (final LoanRepaymentScheduleInstallment period : repaymentPeriods) {
 
-            if (period.getLoan().isVatRequired()) {
+            if (disbursementDate.isEqual(period.getDueDate())) {
+                continue;
+            }
+
+            if (loan.isVatRequired()) {
 
                 final Pair<Money, Money> cumulativeFeeChargesDueWithin = cumulativeFeeChargesDueWithin(startDate, period.getDueDate(),
                         loanCharges, currency, period, totalPrincipal, totalInterest, !period.isRecalculatedInterestComponent());
@@ -66,21 +70,21 @@ public class LoanRepaymentScheduleProcessingWrapper {
                         !period.isRecalculatedInterestComponent());
                 final Money penaltyChargesDueForRepaymentPeriod = cumulativePenaltyChargesDueWithin.getLeft();
                 final Money penaltyChargesDueForVatCalculation = cumulativePenaltyChargesDueWithin.getRight();
-                final Money vatOnChargeDue = calculateVatOnAmount(period.getLoan().getVatPercentage(),
+                final Money vatOnChargeDue = calculateVatOnAmount(loan.getVatPercentage(),
                         feeChargesDueForVatCalculation.plus(penaltyChargesDueForVatCalculation));
 
                 final Pair<Money, Money> penaltyChargesWaivedForRepaymentPeriod = cumulativePenaltyChargesAndVatWaivedWithin(startDate,
                         period.getDueDate(), loanCharges, currency, !period.isRecalculatedInterestComponent());
                 final Money penaltyChargesWaivedForRepayment = penaltyChargesWaivedForRepaymentPeriod.getLeft();
                 final Money penaltyChargesWaivedForVatCalculation = penaltyChargesWaivedForRepaymentPeriod.getRight();
-                final Money vatOnChargeWaived = calculateVatOnAmount(period.getLoan().getVatPercentage(),
+                final Money vatOnChargeWaived = calculateVatOnAmount(loan.getVatPercentage(),
                         penaltyChargesWaivedForVatCalculation.plus(feeChargesWaivedForVatCalculation));
 
                 final Pair<Money, Money> penaltyChargesWrittenOffForRepaymentPeriod = cumulativePenaltyChargesAndVatWrittenOffWithin(
                         startDate, period.getDueDate(), loanCharges, currency, !period.isRecalculatedInterestComponent());
                 final Money penaltyChargesWrittenOffForRepayment = penaltyChargesWrittenOffForRepaymentPeriod.getLeft();
                 final Money penaltyChargesWrittenOffForVatCalculation = penaltyChargesWrittenOffForRepaymentPeriod.getRight();
-                final Money vatOnChargeWrittenOff = calculateVatOnAmount(period.getLoan().getVatPercentage(),
+                final Money vatOnChargeWrittenOff = calculateVatOnAmount(loan.getVatPercentage(),
                         penaltyChargesWrittenOffForVatCalculation.plus(feeChargesWrittenForVatCalculation));
 
                 period.updateChargePortion(feeChargesDueForRepaymentPeriod, feeChargesWaivedForRepayment, feeChargesWrittenOffForRepayment,
@@ -125,7 +129,7 @@ public class LoanRepaymentScheduleProcessingWrapper {
         Money amountSubjectToVat = Money.zero(monetaryCurrency);
         for (final LoanCharge loanCharge : loanCharges) {
             if (loanCharge.isFeeCharge() && !loanCharge.isDueAtDisbursement() && loanCharge.isNotOriginationFee()) {
-                if (loanCharge.isInstalmentFee() && isInstallmentChargeApplicable) {
+                if (loanCharge.isInstalmentFee()) {
                     if (loanCharge.getChargeCalculation().isPercentageBased()) {
                         BigDecimal amount = BigDecimal.ZERO;
                         if (loanCharge.getChargeCalculation().isPercentageOfAmountAndInterest()) {

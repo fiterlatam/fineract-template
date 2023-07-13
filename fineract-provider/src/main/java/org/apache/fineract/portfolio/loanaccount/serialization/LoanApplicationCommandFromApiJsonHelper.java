@@ -1355,7 +1355,8 @@ public final class LoanApplicationCommandFromApiJsonHelper {
             switch (loanCharge.getChargeCalculation()) {
                 case PERCENT_OF_AMOUNT:
                     if (loanCharge.isInstalmentFee()) {
-                        errorcode = "installment." + LoanApiConstants.LOAN_CHARGE_CAN_NOT_BE_ADDED_WITH_PRINCIPAL_CALCULATION_TYPE;
+                        // errorcode = "installment." +
+                        // LoanApiConstants.LOAN_CHARGE_CAN_NOT_BE_ADDED_WITH_PRINCIPAL_CALCULATION_TYPE;
 
                     }
                 break;

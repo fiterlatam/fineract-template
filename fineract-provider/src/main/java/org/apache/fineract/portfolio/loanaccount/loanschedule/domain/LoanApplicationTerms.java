@@ -1226,11 +1226,23 @@ public final class LoanApplicationTerms {
         return Money.of(balance.getCurrency(), BigDecimal.valueOf(paymentPerRepaymentPeriod));
     }
 
+    private LocalDate getLastRepaymentPeriodDueDate() {
+        LocalDate lastRepaymentDate = this.expectedDisbursementDate;
+        for (LocalDate installmentDate : this.repaymentDateList) {
+            if (installmentDate.isAfter(lastRepaymentDate)) {
+                lastRepaymentDate = installmentDate;
+            }
+        }
+        return lastRepaymentDate;
+    }
+
     private double paymentPerPeriodAlbo() {
 
         if (getFixedEmiAmount() == null) {
 
-            Long loanLength = ChronoUnit.DAYS.between(this.expectedDisbursementDate, this.loanEndDate);
+            LocalDate lastInstalmentDueDate = getLastRepaymentPeriodDueDate();
+
+            Long loanLength = ChronoUnit.DAYS.between(this.expectedDisbursementDate, lastInstalmentDueDate);
 
             BigDecimal originationFeesPercentage = this.charges.stream().filter(LoanCharge::isOriginationFee).map(LoanCharge::getPercentage)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -1242,7 +1254,7 @@ public final class LoanApplicationTerms {
                     vatRatePercentage(), this.annualNominalInterestRate);
 
             double installmentAmount = AlboFinancialFunctions.pmt(this.principal.getAmount(), futureValue, this.actualNumberOfRepayments,
-                    vatRatePercentage(), this.annualNominalInterestRate, this.repaymentDateList, this.loanEndDate, this.charges,
+                    vatRatePercentage(), this.annualNominalInterestRate, this.repaymentDateList, lastInstalmentDueDate, this.charges,
                     this.currency);
 
             // manage decimal places using currency

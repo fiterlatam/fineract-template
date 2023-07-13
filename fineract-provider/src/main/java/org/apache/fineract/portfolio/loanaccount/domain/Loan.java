@@ -658,7 +658,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         // store Id's of existing loan transactions and existing reversed loan
         // transactions
         final LoanRepaymentScheduleProcessingWrapper wrapper = new LoanRepaymentScheduleProcessingWrapper();
-        wrapper.reprocess(getCurrency(), getDisbursementDate(), getRepaymentScheduleInstallments(), charges());
+        wrapper.reprocess(getCurrency(), getDisbursementDate(), getRepaymentScheduleInstallments(), charges(), this);
         updateLoanSummaryDerivedFields();
 
     }
@@ -669,7 +669,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 .determineProcessor(this.transactionProcessingStrategy);
         final List<LoanTransaction> allNonContraTransactionsPostDisbursement = retreiveListOfTransactionsPostDisbursement();
         changedTransactionDetail = loanRepaymentScheduleTransactionProcessor.handleTransaction(getDisbursementDate(),
-                allNonContraTransactionsPostDisbursement, getCurrency(), getRepaymentScheduleInstallments(), charges());
+                allNonContraTransactionsPostDisbursement, getCurrency(), getRepaymentScheduleInstallments(), charges(), this);
         for (final Map.Entry<Long, LoanTransaction> mapEntry : changedTransactionDetail.getNewTransactionMappings().entrySet()) {
 
             mapEntry.getValue().updateLoan(this);
@@ -813,7 +813,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         if (removed) {
             loanCharge.setActive(false);
             final LoanRepaymentScheduleProcessingWrapper wrapper = new LoanRepaymentScheduleProcessingWrapper();
-            wrapper.reprocess(getCurrency(), getDisbursementDate(), getRepaymentScheduleInstallments(), charges());
+            wrapper.reprocess(getCurrency(), getDisbursementDate(), getRepaymentScheduleInstallments(), charges(), this);
             updateSummaryWithTotalFeeChargesDueAtDisbursement(deriveSumTotalOfChargesDueAtDisbursement());
         }
 
@@ -831,7 +831,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
              ***/
             final List<LoanTransaction> allNonContraTransactionsPostDisbursement = retreiveListOfTransactionsPostDisbursement();
             loanRepaymentScheduleTransactionProcessor.handleTransaction(getDisbursementDate(), allNonContraTransactionsPostDisbursement,
-                    getCurrency(), getRepaymentScheduleInstallments(), charges());
+                    getCurrency(), getRepaymentScheduleInstallments(), charges(), this);
         }
         this.charges.remove(loanCharge);
         updateLoanSummaryDerivedFields();
@@ -899,11 +899,11 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
              ***/
             final List<LoanTransaction> allNonContraTransactionsPostDisbursement = retreiveListOfTransactionsPostDisbursement();
             loanRepaymentScheduleTransactionProcessor.handleTransaction(getDisbursementDate(), allNonContraTransactionsPostDisbursement,
-                    getCurrency(), getRepaymentScheduleInstallments(), charges());
+                    getCurrency(), getRepaymentScheduleInstallments(), charges(), this);
         } else {
             // reprocess loan schedule based on charge been waived.
             final LoanRepaymentScheduleProcessingWrapper wrapper = new LoanRepaymentScheduleProcessingWrapper();
-            wrapper.reprocess(getCurrency(), getDisbursementDate(), getRepaymentScheduleInstallments(), charges());
+            wrapper.reprocess(getCurrency(), getDisbursementDate(), getRepaymentScheduleInstallments(), charges(), this);
         }
 
         updateLoanSummaryDerivedFields();
@@ -1124,11 +1124,11 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
              ***/
             final List<LoanTransaction> allNonContraTransactionsPostDisbursement = retreiveListOfTransactionsPostDisbursement();
             loanRepaymentScheduleTransactionProcessor.handleTransaction(getDisbursementDate(), allNonContraTransactionsPostDisbursement,
-                    getCurrency(), getRepaymentScheduleInstallments(), charges());
+                    getCurrency(), getRepaymentScheduleInstallments(), charges(), this);
         } else {
             // reprocess loan schedule based on charge been waived.
             final LoanRepaymentScheduleProcessingWrapper wrapper = new LoanRepaymentScheduleProcessingWrapper();
-            wrapper.reprocess(getCurrency(), getDisbursementDate(), getRepaymentScheduleInstallments(), charges());
+            wrapper.reprocess(getCurrency(), getDisbursementDate(), getRepaymentScheduleInstallments(), charges(), this);
         }
 
         updateLoanSummaryDerivedFields();
@@ -2709,7 +2709,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 final LoanRepaymentScheduleTransactionProcessor loanRepaymentScheduleTransactionProcessor = this.transactionProcessorFactory
                         .determineProcessor(this.transactionProcessingStrategy);
                 changedTransactionDetail = loanRepaymentScheduleTransactionProcessor.handleTransaction(getDisbursementDate(),
-                        allNonContraTransactionsPostDisbursement, getCurrency(), getRepaymentScheduleInstallments(), charges());
+                        allNonContraTransactionsPostDisbursement, getCurrency(), getRepaymentScheduleInstallments(), charges(), this);
                 for (final Map.Entry<Long, LoanTransaction> mapEntry : changedTransactionDetail.getNewTransactionMappings().entrySet()) {
                     mapEntry.getValue().updateLoan(this);
                 }
@@ -3089,7 +3089,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             }
         }
         final LoanRepaymentScheduleProcessingWrapper wrapper = new LoanRepaymentScheduleProcessingWrapper();
-        wrapper.reprocess(getCurrency(), getDisbursementDate(), getRepaymentScheduleInstallments(), charges());
+        wrapper.reprocess(getCurrency(), getDisbursementDate(), getRepaymentScheduleInstallments(), charges(), this);
 
         updateLoanSummaryDerivedFields();
     }
@@ -3332,12 +3332,12 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             }
         }
         if (reprocess) {
-            if (this.repaymentScheduleDetail().isInterestRecalculationEnabled()) {
+            if (this.repaymentScheduleDetail().isInterestRecalculationEnabled() && !isForeclosure()) {
                 regenerateRepaymentScheduleWithInterestRecalculation(scheduleGeneratorDTO);
             }
             final List<LoanTransaction> allNonContraTransactionsPostDisbursement = retreiveListOfTransactionsPostDisbursement();
             changedTransactionDetail = loanRepaymentScheduleTransactionProcessor.handleTransaction(getDisbursementDate(),
-                    allNonContraTransactionsPostDisbursement, getCurrency(), getRepaymentScheduleInstallments(), charges());
+                    allNonContraTransactionsPostDisbursement, getCurrency(), getRepaymentScheduleInstallments(), charges(), this);
             for (final Map.Entry<Long, LoanTransaction> mapEntry : changedTransactionDetail.getNewTransactionMappings().entrySet()) {
                 mapEntry.getValue().updateLoan(this);
             }
@@ -3463,7 +3463,9 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
         boolean isAllChargesPaid = true;
         for (final LoanCharge loanCharge : this.charges) {
-            if (loanCharge.isOriginationFee()) continue;
+            if (loanCharge.isOriginationFee() || (transactionDate.isEqual(this.actualDisbursementDate)
+                    && this.interestChargedFromDate.isAfter(actualDisbursementDate)))
+                continue;
 
             if (loanCharge.isActive() && loanCharge.amount().compareTo(BigDecimal.ZERO) > 0
                     && !(loanCharge.isPaid() || loanCharge.isWaived())) {
@@ -3743,7 +3745,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         }
         ChangedTransactionDetail changedTransactionDetail = loanRepaymentScheduleTransactionProcessor.handleTransaction(
                 getDisbursementDate(), allNonContraTransactionsPostDisbursement, getCurrency(), getRepaymentScheduleInstallments(),
-                charges());
+                charges(), this);
         updateLoanSummaryDerivedFields();
         return changedTransactionDetail;
     }
@@ -3883,7 +3885,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             }
             final List<LoanTransaction> allNonContraTransactionsPostDisbursement = retreiveListOfTransactionsPostDisbursement();
             changedTransactionDetail = loanRepaymentScheduleTransactionProcessor.handleTransaction(getDisbursementDate(),
-                    allNonContraTransactionsPostDisbursement, getCurrency(), getRepaymentScheduleInstallments(), charges());
+                    allNonContraTransactionsPostDisbursement, getCurrency(), getRepaymentScheduleInstallments(), charges(), this);
             for (final Map.Entry<Long, LoanTransaction> mapEntry : changedTransactionDetail.getNewTransactionMappings().entrySet()) {
                 mapEntry.getValue().updateLoan(this);
                 addLoanTransaction(mapEntry.getValue());
@@ -5054,9 +5056,6 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         if (loanCharge.isInstalmentFee()) {
             List<LoanRepaymentScheduleInstallment> installments = getRepaymentScheduleInstallments();
             for (final LoanRepaymentScheduleInstallment installment : installments) {
-                if (installment.isRecalculatedInterestComponent()) {
-                    continue;
-                }
                 BigDecimal amount = BigDecimal.ZERO;
                 if (loanCharge.getChargeCalculation().isFlat()) {
                     amount = loanCharge.amountOrPercentage();
@@ -5293,7 +5292,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         final List<LoanTransaction> allNonContraTransactionsPostDisbursement = retreiveListOfTransactionsPostDisbursement();
         ChangedTransactionDetail changedTransactionDetail = loanRepaymentScheduleTransactionProcessor.handleTransaction(
                 getDisbursementDate(), allNonContraTransactionsPostDisbursement, getCurrency(), getRepaymentScheduleInstallments(),
-                charges());
+                charges(), this);
         for (final Map.Entry<Long, LoanTransaction> mapEntry : changedTransactionDetail.getNewTransactionMappings().entrySet()) {
             mapEntry.getValue().updateLoan(this);
             addLoanTransaction(mapEntry.getValue());
@@ -5405,7 +5404,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         final List<LoanTransaction> allNonContraTransactionsPostDisbursement = retreiveListOfTransactionsPostDisbursement();
         ChangedTransactionDetail changedTransactionDetail = loanRepaymentScheduleTransactionProcessor.handleTransaction(
                 getDisbursementDate(), allNonContraTransactionsPostDisbursement, getCurrency(), getRepaymentScheduleInstallments(),
-                charges());
+                charges(), this);
         for (final Map.Entry<Long, LoanTransaction> mapEntry : changedTransactionDetail.getNewTransactionMappings().entrySet()) {
             mapEntry.getValue().updateLoan(this);
         }
@@ -5646,7 +5645,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 copyTransactions.add(LoanTransaction.copyTransactionProperties(loanTransaction));
             }
             loanRepaymentScheduleTransactionProcessor.handleTransaction(getDisbursementDate(), copyTransactions, getCurrency(),
-                    getRepaymentScheduleInstallments(), charges());
+                    getRepaymentScheduleInstallments(), charges(), this);
 
             updateLoanSummaryDerivedFields();
         }
@@ -6138,7 +6137,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         } else {
             final List<LoanTransaction> allNonContraTransactionsPostDisbursement = retreiveListOfTransactionsPostDisbursement();
             changedTransactionDetail = loanRepaymentScheduleTransactionProcessor.handleTransaction(getDisbursementDate(),
-                    allNonContraTransactionsPostDisbursement, getCurrency(), getRepaymentScheduleInstallments(), charges());
+                    allNonContraTransactionsPostDisbursement, getCurrency(), getRepaymentScheduleInstallments(), charges(), this);
             for (final Map.Entry<Long, LoanTransaction> mapEntry : changedTransactionDetail.getNewTransactionMappings().entrySet()) {
                 mapEntry.getValue().updateLoan(this);
             }
@@ -6454,6 +6453,20 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 paidFromFutureInstallments = paidFromFutureInstallments.plus(installment.getInterestPaid(currency))
                         .plus(installment.getPenaltyChargesPaid(currency)).plus(installment.getFeeChargesPaid(currency))
                         .plus(installment.getVatOnChargePaid(currency)).plus(installment.getVatOnInterestPaid(currency));
+
+                if (this.actualDisbursementDate.isEqual(paymentDate) && this.interestChargedFromDate.isAfter(actualDisbursementDate)) {
+                    if (installment.getInstallmentNumber().doubleValue() == 1) {
+                        int totalPeriodDays = Math.toIntExact(ChronoUnit.DAYS.between(installment.getFromDate(), installment.getDueDate()));
+                        Money interestForDisbursementDate = Money.of(getCurrency(), BigDecimal.valueOf(
+                                calculateInterestForDays(totalPeriodDays, installment.getInterestCharged(getCurrency()).getAmount(), 1)));
+                        interest = interest.plus(interestForDisbursementDate);
+
+                        if (this.isVatRequired) {
+                            vatOnInterest = vatOnInterest.plus(Money.of(getCurrency(),
+                                    LoanCharge.percentageOf(interestForDisbursementDate.getAmount(), this.vatPercentage)));
+                        }
+                    }
+                }
             }
 
         }
@@ -6547,6 +6560,13 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 break;
             } else if (installment.getDueDate().isAfter(paymentDate) && installment.getFromDate().isBefore(paymentDate)) {
                 balances = fetchInterestFeeAndPenaltyTillDate(paymentDate, currency, installment);
+                break;
+            } else if (this.actualDisbursementDate.isEqual(paymentDate) && this.interestChargedFromDate.isAfter(actualDisbursementDate)
+                    && installment.getInstallmentNumber().doubleValue() == 1) {
+                int totalPeriodDays = Math.toIntExact(ChronoUnit.DAYS.between(installment.getFromDate(), installment.getDueDate()));
+                BigDecimal interestForDisbursementDate = BigDecimal
+                        .valueOf(calculateInterestForDays(totalPeriodDays, installment.getInterestCharged(getCurrency()).getAmount(), 1));
+                balances[0] = Money.of(currency, interestForDisbursementDate);
                 break;
             }
         }
@@ -6655,12 +6675,6 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     }
 
     public void validateForForeclosure(final LocalDate transactionDate) {
-
-        if (isInterestRecalculationEnabledForProduct()) {
-            final String defaultUserMessage = "The loan with interest recalculation enabled cannot be foreclosed.";
-            throw new LoanForeclosureException("loan.with.interest.recalculation.enabled.cannot.be.foreclosured", defaultUserMessage,
-                    getId());
-        }
 
         LocalDate lastUserTransactionDate = getLastUserTransactionDate();
 

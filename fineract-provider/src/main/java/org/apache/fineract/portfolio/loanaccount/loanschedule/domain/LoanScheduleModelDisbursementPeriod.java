@@ -36,6 +36,8 @@ public final class LoanScheduleModelDisbursementPeriod implements LoanScheduleMo
     private final Money principalDisbursed;
     private final BigDecimal chargesDueAtTimeOfDisbursement;
     private boolean isEMIFixedSpecificToInstallment = false;
+    private final Money vatOnInterest;
+    private final Money vatOnCharges;
 
     public static LoanScheduleModelDisbursementPeriod disbursement(final LoanApplicationTerms loanApplicationTerms,
             final BigDecimal chargesDueAtTimeOfDisbursement) {
@@ -57,6 +59,8 @@ public final class LoanScheduleModelDisbursementPeriod implements LoanScheduleMo
         this.disbursementDate = disbursementDate;
         this.principalDisbursed = principalDisbursed;
         this.chargesDueAtTimeOfDisbursement = chargesDueAtTimeOfDisbursement;
+        this.vatOnInterest = Money.zero(principalDisbursed.getCurrency());
+        this.vatOnCharges = Money.zero(principalDisbursed.getCurrency());
     }
 
     @Override
@@ -152,12 +156,12 @@ public final class LoanScheduleModelDisbursementPeriod implements LoanScheduleMo
 
     @Override
     public Money getVatOnInterest() {
-        return null;
+        return this.vatOnInterest;
     }
 
     @Override
     public Money getVatOnCharges() {
-        return null;
+        return this.vatOnCharges;
     }
 
 }
