@@ -30,6 +30,7 @@ import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
 import org.apache.fineract.organisation.monetary.domain.Money;
 import org.apache.fineract.portfolio.loanaccount.data.LoanChargePaidDetail;
 import org.apache.fineract.portfolio.loanaccount.domain.ChangedTransactionDetail;
+import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanCharge;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanChargePaidBy;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanInstallmentCharge;
@@ -63,7 +64,7 @@ public abstract class AbstractLoanRepaymentScheduleTransactionProcessor implemen
     @Override
     public ChangedTransactionDetail handleTransaction(final LocalDate disbursementDate,
             final List<LoanTransaction> transactionsPostDisbursement, final MonetaryCurrency currency,
-            final List<LoanRepaymentScheduleInstallment> installments, final Set<LoanCharge> charges) {
+            final List<LoanRepaymentScheduleInstallment> installments, final Set<LoanCharge> charges, Loan loan) {
 
         if (charges != null) {
             for (final LoanCharge loanCharge : charges) {
@@ -81,7 +82,7 @@ public abstract class AbstractLoanRepaymentScheduleTransactionProcessor implemen
         // re-process loan charges over repayment periods (picking up on waived
         // loan charges)
         final LoanRepaymentScheduleProcessingWrapper wrapper = new LoanRepaymentScheduleProcessingWrapper();
-        wrapper.reprocess(currency, disbursementDate, installments, charges);
+        wrapper.reprocess(currency, disbursementDate, installments, charges, loan);
 
         final ChangedTransactionDetail changedTransactionDetail = new ChangedTransactionDetail();
         final List<LoanTransaction> transactionstoBeProcessed = new ArrayList<>();

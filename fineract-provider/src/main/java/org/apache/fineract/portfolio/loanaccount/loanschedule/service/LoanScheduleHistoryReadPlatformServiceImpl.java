@@ -109,7 +109,7 @@ public class LoanScheduleHistoryReadPlatformServiceImpl implements LoanScheduleH
             StringBuilder stringBuilder = new StringBuilder(200);
             stringBuilder.append(" ls.installment as period, ls.fromdate as fromDate, ls.duedate as dueDate, ");
             stringBuilder.append(
-                    "ls.principal_amount as principalDue, ls.interest_amount as interestDue, ls.fee_charges_amount as feeChargesDue, ls.penalty_charges_amount as penaltyChargesDue, ls.vat_on_interest_derived as vatOnInterest, ls.vat_on_charges_derived as vatOnCharges ");
+                    "ls.principal_amount as principalDue, ls.interest_amount as interestDue, ls.fee_charges_amount as feeChargesDue, ls.penalty_charges_amount as penaltyChargesDue, ls.vat_on_interest as vatOnInterest, ls.vat_on_charges as vatOnCharges ");
             stringBuilder.append(" from m_loan_repayment_schedule_history ls ");
             return stringBuilder.toString();
         }

@@ -564,6 +564,8 @@ public final class LoanRepaymentScheduleInstallment extends AbstractAuditableCus
 
         trackAdvanceAndLateTotalsForRepaymentPeriod(transactionDate, currency, feePortionOfTransaction);
 
+        trackAdvanceAndLateTotalsForRepaymentPeriod(transactionDate, currency, Money.of(currency, this.vatOnChargePaid));
+
         return Pair.of(feePortionOfTransaction, vatPortionOfTransaction);
     }
 
@@ -625,6 +627,8 @@ public final class LoanRepaymentScheduleInstallment extends AbstractAuditableCus
         checkIfRepaymentPeriodObligationsAreMet(transactionDate, currency);
 
         trackAdvanceAndLateTotalsForRepaymentPeriod(transactionDate, currency, interestPortionOfTransaction);
+
+        trackAdvanceAndLateTotalsForRepaymentPeriod(transactionDate, currency, Money.of(currency, this.vatOnInterestPaid));
 
         return Pair.of(interestPortionOfTransaction, vatOnInterestPortionOfTransaction);
     }

@@ -975,6 +975,21 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 .build();
     }
 
+    @SuppressWarnings("unused")
+    private LoanRepaymentScheduleInstallment fetchLoanRepaymentScheduleInstallment(LocalDate repaymentDate, Loan loan) {
+        LoanRepaymentScheduleInstallment installment = null;
+        List<LoanRepaymentScheduleInstallment> installments = loan.getRepaymentScheduleInstallments();
+        for (LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment : installments) {
+            if (loanRepaymentScheduleInstallment.isNotFullyPaidOff()
+                    && repaymentDate.isAfter(loanRepaymentScheduleInstallment.getFromDate())
+                    && repaymentDate.isBefore(loanRepaymentScheduleInstallment.getDueDate())) {
+                installment = loanRepaymentScheduleInstallment;
+                break;
+            }
+        }
+        return installment;
+    }
+
     @Transactional
     @Override
     public Map<String, Object> makeLoanBulkRepayment(final CollectionSheetBulkRepaymentCommand bulkRepaymentCommand) {
