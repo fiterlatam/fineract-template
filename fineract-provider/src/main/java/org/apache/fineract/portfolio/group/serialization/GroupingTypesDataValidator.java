@@ -56,7 +56,11 @@ public final class GroupingTypesDataValidator {
             GroupingTypesApiConstants.externalIdParamName, GroupingTypesApiConstants.officeIdParamName,
             GroupingTypesApiConstants.staffIdParamName, GroupingTypesApiConstants.activeParamName,
             GroupingTypesApiConstants.activationDateParamName, GroupingTypesApiConstants.groupMembersParamName,
-            GroupingTypesApiConstants.submittedOnDateParamName, GroupingTypesApiConstants.datatables));
+            GroupingTypesApiConstants.submittedOnDateParamName, GroupingTypesApiConstants.datatables, GroupingTypesApiConstants.portfolioId,
+            GroupingTypesApiConstants.cityId, GroupingTypesApiConstants.stateId, GroupingTypesApiConstants.centerTypeId,
+            GroupingTypesApiConstants.distance, GroupingTypesApiConstants.meetingStart, GroupingTypesApiConstants.meetingEnd,
+            GroupingTypesApiConstants.meetingStartTime, GroupingTypesApiConstants.meetingEndTime, GroupingTypesApiConstants.meetingDay,
+            GroupingTypesApiConstants.referencePoint));
 
     private static final Set<String> GROUP_TRANSFER_DATA_PARAMETERS = new HashSet<>(Arrays.asList(
             GroupingTypesApiConstants.groupIdParamName,GroupingTypesApiConstants.toCenterIdParamname));
@@ -69,7 +73,7 @@ public final class GroupingTypesDataValidator {
             GroupingTypesApiConstants.clientMembersParamName, GroupingTypesApiConstants.collectionMeetingCalendar,
             GroupingTypesApiConstants.submittedOnDateParamName, GroupingTypesApiConstants.datatables,
             GroupingTypesApiConstants.portfolioCenterId, GroupingTypesApiConstants.responsibleUserId,
-            GroupingTypesApiConstants.legacyGroupNumber, GroupingTypesApiConstants.latitude, GroupingTypesApiConstants.longitude,
+            GroupingTypesApiConstants.legacyNumber, GroupingTypesApiConstants.latitude, GroupingTypesApiConstants.longitude,
             GroupingTypesApiConstants.formationDate, GroupingTypesApiConstants.size, GroupingTypesApiConstants.createdDate,
             GroupingTypesApiConstants.meetingStartTime, GroupingTypesApiConstants.meetingEndTime,
             GroupingTypesApiConstants.newPortfolioCenterId));

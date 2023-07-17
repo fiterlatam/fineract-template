@@ -25,11 +25,6 @@ import java.time.LocalTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
-
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.fasterxml.jackson.datatype.jsr310.deser.LocalTimeDeserializer;
-import com.fasterxml.jackson.datatype.jsr310.ser.LocalTimeSerializer;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
@@ -112,8 +107,6 @@ public class GroupGeneralData implements Serializable {
     private String meetingDayName;
     private String referencePoint;
 
-    private String groupLocation;
-
     // import fields
     private transient Integer rowIndex;
     private String dateFormat;
@@ -121,16 +114,16 @@ public class GroupGeneralData implements Serializable {
     private LocalDate submittedOnDate;
 
     public static GroupGeneralData importInstance(String groupName, List<ClientData> clientMembers, LocalDate activationDate,
-            LocalDate submittedOnDate, Boolean active, String externalId, Long officeId, Long staffId, Long centerId, Integer rowIndex,
-            String locale, String dateFormat) {
+                                                  LocalDate submittedOnDate, Boolean active, String externalId, Long officeId, Long staffId, Long centerId, Integer rowIndex,
+                                                  String locale, String dateFormat) {
 
         return new GroupGeneralData(groupName, clientMembers, activationDate, submittedOnDate, active, externalId, officeId, staffId,
                 centerId, rowIndex, locale, dateFormat);
     }
 
     private GroupGeneralData(String name, List<ClientData> clientMembers, LocalDate activationDate, LocalDate submittedOnDate,
-            Boolean active, String externalId, Long officeId, Long staffId, Long centerId, Integer rowIndex, String locale,
-            String dateFormat) {
+                             Boolean active, String externalId, Long officeId, Long staffId, Long centerId, Integer rowIndex, String locale,
+                             String dateFormat) {
         this.dateFormat = dateFormat;
         this.locale = locale;
         this.name = name;
@@ -163,17 +156,9 @@ public class GroupGeneralData implements Serializable {
         this.selectedRole = null;
         this.closureReasons = null;
         this.timeline = null;
-        this.meetingStartTime = null;
-        this.meetingEndTime = null;
-        this.meetingStart = null;
-        this.meetingEnd = null;
-        this.meetingDay = null;
-        this.meetingDayName = null;
-        this.groupLocation = null;
         this.parentOfficesOptions = null;
         this.responsibleUserOptions = null;
         this.portfolioCenterOptions = null;
-
     }
 
     public GroupGeneralData(Long id, Long officeId) {
@@ -205,13 +190,6 @@ public class GroupGeneralData implements Serializable {
         this.selectedRole = null;
         this.closureReasons = null;
         this.timeline = null;
-        this.meetingStartTime = null;
-        this.meetingEndTime = null;
-        this.meetingStart = null;
-        this.meetingEnd = null;
-        this.meetingDay = null;
-        this.meetingDayName = null;
-        this.groupLocation = null;
         this.parentOfficesOptions = null;
         this.responsibleUserOptions = null;
         this.portfolioCenterOptions = null;
@@ -246,13 +224,6 @@ public class GroupGeneralData implements Serializable {
         this.selectedRole = null;
         this.closureReasons = null;
         this.timeline = null;
-        this.meetingStartTime = null;
-        this.meetingEndTime = null;
-        this.meetingStart = null;
-        this.meetingEnd = null;
-        this.meetingDay = null;
-        this.meetingDayName = null;
-        this.groupLocation = null;
         this.parentOfficesOptions = null;
         this.responsibleUserOptions = null;
         this.portfolioCenterOptions = null;

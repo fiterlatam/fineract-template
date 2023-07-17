@@ -100,7 +100,7 @@ public class PortfolioCenterReadPlatformServiceImpl implements PortfolioCenterRe
             String schemaSql = "select " + portfolioCenterMapper.schema();
             schemaSql += "where pc.id = ?";
 
-            return this.jdbcTemplate.queryForObject(schemaSql, portfolioCenterMapper, new Object[] {portfolioCenterId });
+            return this.jdbcTemplate.queryForObject(schemaSql, portfolioCenterMapper, new Object[] { portfolioCenterId });
         } catch (final EmptyResultDataAccessException e) {
             throw new PortfolioNotFoundException(portfolioCenterId, e);
         }
@@ -254,11 +254,11 @@ public class PortfolioCenterReadPlatformServiceImpl implements PortfolioCenterRe
             sqlBuilder.append("p.name as portfolioName, pc.legacy_center_number as legacyCenterNumber, ");
             sqlBuilder.append("pc.city_id as cityId, cvCity.code_value as cityValue, ");
             sqlBuilder.append("pc.state_province_id as stateId, cvState.code_value as stateValue, ");
-            sqlBuilder.append("(case " +
-                    "when ( (select count(mcg.id) from m_center_group mcg where mcg.location = 100 and mcg.portfolio_center_id = pc.id) <=0 AND " +
-                    "(select count(mcg.id) from m_center_group mcg where mcg.location = 100 and mcg.portfolio_center_id = pc.id)<=0) THEN 0 " +
-                    "when ( (select count(mcg.id) from m_center_group mcg where mcg.location = 100 and mcg.portfolio_center_id = pc.id) >= " +
-                    "(select count(mcg.id) from m_center_group mcg where mcg.location = 100 and mcg.portfolio_center_id = pc.id)) THEN 100 ELSE 200 END) as center_location, ");
+            sqlBuilder.append("(case "
+                    + "when ( (select count(mcg.id) from m_center_group mcg where mcg.location = 100 and mcg.portfolio_center_id = pc.id) <=0 AND "
+                    + "(select count(mcg.id) from m_center_group mcg where mcg.location = 100 and mcg.portfolio_center_id = pc.id)<=0) THEN 0 "
+                    + "when ( (select count(mcg.id) from m_center_group mcg where mcg.location = 100 and mcg.portfolio_center_id = pc.id) >= "
+                    + "(select count(mcg.id) from m_center_group mcg where mcg.location = 100 and mcg.portfolio_center_id = pc.id)) THEN 100 ELSE 200 END) as center_location, ");
             sqlBuilder.append("pc.center_status as status, pc.distance_from_agency as distance, ");
             sqlBuilder.append("pc.type_id as typeId, cvType.code_value as typeValue, pc.created_date as createdDate, ");
             sqlBuilder.append("pc.meeting_start_date as meetingStart, pc.meeting_end_date as meetingEnd, ");
@@ -324,7 +324,7 @@ public class PortfolioCenterReadPlatformServiceImpl implements PortfolioCenterRe
 
             return PortfolioCenterData.instance(id, name, portfolioId, portfolioName, legacyCenterNumber, city, state, type, statusEnum,
                     distance, createdDate, meetingStart, meetingEnd, meetingDay, meetingStartTime.toString(), meetingEndTime.toString(),
-                    meetingDayValue, referencePoint,centerLocation);
+                    meetingDayValue, referencePoint, centerLocation);
         }
 
         public String schema() {

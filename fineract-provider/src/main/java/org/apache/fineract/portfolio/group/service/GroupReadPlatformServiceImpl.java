@@ -111,7 +111,8 @@ public class GroupReadPlatformServiceImpl implements GroupReadPlatformService {
 
         Collection<CenterData> centerOptions = null;
         if (isCenterGroup) {
-            centerOptions = this.centerReadPlatformService.retrieveAllForDropdown(defaultOfficeId);
+            // centerOptions = this.centerReadPlatformService.retrieveAllForDropdown(defaultOfficeId);
+            centerOptions = this.centerReadPlatformService.retrieveAllCentersByCurrentUser();
         }
 
         final Collection<OfficeData> officeOptions = this.officeReadPlatformService.retrieveAllOfficesForDropdown();
@@ -137,14 +138,14 @@ public class GroupReadPlatformServiceImpl implements GroupReadPlatformService {
 
         final List<AppUserData> appUsers = new ArrayList<>(this.appUserReadPlatformService.retrieveAllUsers());
 
-        Collection<PortfolioCenterData> portfolioCenterOptions = this.portfolioCenterReadPlatformService.retrieveAllByCurrentUser();
-
         final Long centerId = null;
         final String accountNo = null;
         final String centerName = null;
         final Long staffId = null;
         final String staffName = null;
         final Collection<ClientData> clientOptions = null;
+
+        Collection<PortfolioCenterData> portfolioCenterOptions = new ArrayList<>();
 
         return GroupGeneralData.template(defaultOfficeId, centerId, accountNo, centerName, staffId, staffName, centerOptions, officeOptions,
                 staffOptions, clientOptions, availableRoles, parentOfficesOptions, appUsers, portfolioCenterOptions);
