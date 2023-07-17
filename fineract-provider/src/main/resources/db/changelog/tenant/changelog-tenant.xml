@@ -73,4 +73,6 @@
     <include file="parts/0056_FBR_insert_loan_products.xml" relativeToChangelogFile="true"/>
     <include file="parts/0057_FBR_add_center_group_location.xml" relativeToChangelogFile="true"/>
     <include file="parts/0058_FBR_add_old_customer_number.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0059_FBR_add_prequalification_permissions.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0060_add_new_prequalification_tables.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
