@@ -3717,4 +3717,11 @@ public class CommandWrapperBuilder {
         this.href = "/blacklist/addtoblacklist";
         return this;
     }
+
+    public CommandWrapperBuilder createPrequalification() {
+        this.actionName = "CREATE";
+        this.entityName = "PREQUALIFICATIONS";
+        this.href = "/prequalification/newprequalification";
+        return this;
+    }
 }
