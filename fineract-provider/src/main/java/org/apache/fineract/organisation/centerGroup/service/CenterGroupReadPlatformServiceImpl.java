@@ -192,7 +192,7 @@ public class CenterGroupReadPlatformServiceImpl implements CenterGroupReadPlatfo
             }
 
             return CenterGroupData.instance(id, name, portfolioCenterId, portfolioCenterName, legacyGroupNumber, latitude, longitude,
-                    formationDate, statusEnum, size, responsibleUserId, createdDate, meetingStartTime, meetingEndTime,locationEnum);
+                    formationDate, statusEnum, size, responsibleUserId, createdDate, meetingStartTime, meetingEndTime, locationEnum);
         }
 
         public String schema() {

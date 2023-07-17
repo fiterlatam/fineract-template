@@ -34,10 +34,11 @@ public class CenterGroupConstants {
     public enum CenterGroupSupportedParameters {
 
         CENTER_GROUP_ID("id"), PORTFOLIO_CENTER_ID("portfolioCenterId"), NAME("name"), RESPONSIBLE_USER_ID(
-                "responsibleUserId"), LEGACY_GROUP_NUMBER("legacyGroupNumber"), LATITUDE("latitude"), LONGITUDE(
-                        "longitude"), FORMATION_DATE("formationDate"), SIZE("size"), CREATED_DATE("createdDate"), STATUS_ID(
-                                "statusId"), MEETING_START_TIME("meetingStartTime"), MEETING_END_TIME("meetingEndTime"), LOCALE(
-                                        "locale"), DESTINATION_PORTFOLIO_CENTER_ID("newPortfolioCenterId"), CENTER_GROUP_LOCATION("grouplocation"), DATEFORMAT("dateFormat");
+                "responsibleUserId"), LEGACY_GROUP_NUMBER("legacyGroupNumber"), LATITUDE(
+                        "latitude"), LONGITUDE("longitude"), FORMATION_DATE("formationDate"), SIZE("size"), CREATED_DATE(
+                                "createdDate"), STATUS_ID("statusId"), MEETING_START_TIME("meetingStartTime"), MEETING_END_TIME(
+                                        "meetingEndTime"), LOCALE("locale"), DESTINATION_PORTFOLIO_CENTER_ID(
+                                                "newPortfolioCenterId"), CENTER_GROUP_LOCATION("grouplocation"), DATEFORMAT("dateFormat");
 
         private final String value;
 
