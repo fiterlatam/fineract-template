@@ -316,6 +316,7 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
                     isEntity = legalForm.isEntity();
                 }
             }
+            String oldCustomerNumber = command.stringValueOfParameterNamed(ClientApiConstants.oldCustomerNumberParamName);
 
             final Client newClient = Client.createNew(currentUser, clientOffice, clientParentGroup, staff, savingsProductId, gender,
                     clientType, clientClassification, legalFormValue, command);

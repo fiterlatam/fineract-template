@@ -19,6 +19,7 @@
 package org.apache.fineract.organisation.centerGroup.service;
 
 import static org.apache.fineract.organisation.centerGroup.service.CenterGroupEnumerations.groupStatusOptionData;
+import static org.apache.fineract.organisation.centerGroup.service.GroupLocationEnumerations.groupLocationsOptionData;
 
 import java.math.BigDecimal;
 import java.sql.ResultSet;
@@ -36,6 +37,7 @@ import org.apache.fineract.infrastructure.core.service.database.DatabaseSpecific
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.infrastructure.security.utils.ColumnValidator;
 import org.apache.fineract.organisation.centerGroup.data.CenterGroupData;
+import org.apache.fineract.organisation.centerGroup.domain.CenterGroupLocation;
 import org.apache.fineract.organisation.centerGroup.domain.CenterGroupStatus;
 import org.apache.fineract.organisation.centerGroup.exception.CenterGroupNotFoundException;
 import org.apache.fineract.organisation.office.data.OfficeData;
@@ -118,13 +120,20 @@ public class CenterGroupReadPlatformServiceImpl implements CenterGroupReadPlatfo
                 this.appUserReadPlatformService.retrieveUsersUnderHierarchy(Long.valueOf(OfficeHierarchyLevel.GRUPO.getValue())));
 
         final Collection<EnumOptionData> statusOptions = retrieveGroupStatusOptions();
+        List<EnumOptionData> centerGroupLocations = retrieveGroupLocationOptions();
 
-        return CenterGroupData.template(parentOfficesOptions, appUsers, statusOptions);
+        return CenterGroupData.template(parentOfficesOptions, appUsers, statusOptions, centerGroupLocations);
     }
 
     private List<EnumOptionData> retrieveGroupStatusOptions() {
         final List<EnumOptionData> statusOptions = Arrays.asList(groupStatusOptionData(CenterGroupStatus.ACTIVE),
                 groupStatusOptionData(CenterGroupStatus.INACTIVE));
+        return statusOptions;
+    }
+
+    private List<EnumOptionData> retrieveGroupLocationOptions() {
+        final List<EnumOptionData> statusOptions = Arrays.asList(groupLocationsOptionData(CenterGroupLocation.URBAN),
+                groupLocationsOptionData(CenterGroupLocation.RURAL));
         return statusOptions;
     }
 
@@ -134,7 +143,7 @@ public class CenterGroupReadPlatformServiceImpl implements CenterGroupReadPlatfo
 
         public CenterGroupMapper() {
             final StringBuilder sqlBuilder = new StringBuilder(300);
-            sqlBuilder.append("cg.id as id, cg.name as name, cg.portfolio_center_id as portfolioCenterId, ");
+            sqlBuilder.append("cg.id as id, cg.name as name, cg.portfolio_center_id as portfolioCenterId, cg.location, ");
             sqlBuilder.append("pc.name as portfolioCenterName, cg.legacy_group_number as legacyGroupNumber, ");
             sqlBuilder.append("cg.latitude as latitude, cg.longitude as longitude, cg.formation_date as formationDate, ");
             sqlBuilder.append("cg.latitude as latitude, cg.longitude as longitude, cg.formation_date as formationDate, ");
@@ -165,6 +174,7 @@ public class CenterGroupReadPlatformServiceImpl implements CenterGroupReadPlatfo
             final long responsibleUserId = rs.getLong("responsibleUserId");
 
             final Integer statusId = rs.getInt("status");
+            final Integer grouplocation = rs.getInt("location");
             final Integer size = rs.getInt("size");
             final LocalDate createdDate = JdbcSupport.getLocalDate(rs, "createdDate");
 
@@ -176,8 +186,13 @@ public class CenterGroupReadPlatformServiceImpl implements CenterGroupReadPlatfo
                 statusEnum = CenterGroupEnumerations.groupStatusOptionData(statusId);
             }
 
+            EnumOptionData locationEnum = null;
+            if (grouplocation != null) {
+                locationEnum = GroupLocationEnumerations.groupLocationsOptionData(grouplocation);
+            }
+
             return CenterGroupData.instance(id, name, portfolioCenterId, portfolioCenterName, legacyGroupNumber, latitude, longitude,
-                    formationDate, statusEnum, size, responsibleUserId, createdDate, meetingStartTime, meetingEndTime);
+                    formationDate, statusEnum, size, responsibleUserId, createdDate, meetingStartTime, meetingEndTime,locationEnum);
         }
 
         public String schema() {
