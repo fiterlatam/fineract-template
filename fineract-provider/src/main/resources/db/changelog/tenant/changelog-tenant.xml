@@ -75,4 +75,6 @@
     <include file="parts/0058_FBR_add_old_customer_number.xml" relativeToChangelogFile="true"/>
     <include file="parts/0059_FBR_add_prequalification_permissions.xml" relativeToChangelogFile="true"/>
     <include file="parts/0060_add_new_prequalification_tables.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0061_FBR_migrate_m_potfolio_centers_and_centergroups_to_m_group.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0062_Permission_for_Transfer_of_groups_in_m_group.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
