@@ -118,6 +118,10 @@ public class CenterReadPlatformServiceImpl implements CenterReadPlatformService 
 
     private static final String SQL_QUERY = "g.id as id, g.account_no as accountNo, g.external_id as externalId, g.display_name as name, "
             + "g.office_id as officeId, o.name as officeName, " //
+            + "g.meeting_start_time as meetingStartTime, g.meeting_end_time as meetingEndTime, " //
+            + "g.meeting_start_date as meetingStartDate, g.meeting_end_date as meetingEndDate, " //
+            + "g.meeting_day as meetingDay, g.group_location as groupLocation, " //
+            + "cvMeetingDay.code_value as meetingDayValue ,cvMeetingDay.order_position as meetingDayOrderPosition, g.group_location as groupLocation, " //
             + "g.staff_id as staffId, s.display_name as staffName, " //
             + "g.status_enum as statusEnum, g.activation_date as activationDate, " //
             + "g.hierarchy as hierarchy, " //
@@ -126,7 +130,9 @@ public class CenterReadPlatformServiceImpl implements CenterReadPlatformService 
             + "sbu.firstname as submittedByFirstname, " + "sbu.lastname as submittedByLastname, " + "clu.username as closedByUsername, "
             + "clu.firstname as closedByFirstname, " + "clu.lastname as closedByLastname, " + "acu.username as activatedByUsername, "
             + "acu.firstname as activatedByFirstname, " + "acu.lastname as activatedByLastname " + "from m_group g " //
-            + "join m_office o on o.id = g.office_id " + "left join m_staff s on s.id = g.staff_id "
+            + "join m_office o on o.id = g.office_id "
+            + "left join m_code_value cvMeetingDay on g.meeting_day = cvMeetingDay.id "
+            + "left join m_staff s on s.id = g.staff_id "
             + "left join m_group pg on pg.id = g.parent_id " + "left join m_appuser sbu on sbu.id = g.submittedon_userid "
             + "left join m_appuser acu on acu.id = g.activatedon_userid " + "left join m_appuser clu on clu.id = g.closedon_userid ";
 
@@ -172,13 +178,21 @@ public class CenterReadPlatformServiceImpl implements CenterReadPlatformService 
             final String activatedByUsername = rs.getString("activatedByUsername");
             final String activatedByFirstname = rs.getString("activatedByFirstname");
             final String activatedByLastname = rs.getString("activatedByLastname");
+            final String groupLocation = rs.getString("groupLocation");
+            final int meetingStart = rs.getInt("meetingStartDate");
+            final int meetingEnd = rs.getInt("meetingEndDate");
+            final int meetingDay = rs.getInt("meetingDay");
+            final String meetingDayValue = rs.getString("meetingDayValue");
+
+            final LocalTime meetingStartTime = JdbcSupport.getLocalTime(rs, "meetingStartTime");
+            final LocalTime meetingEndTime = JdbcSupport.getLocalTime(rs, "meetingEndTime");
 
             final GroupTimelineData timeline = new GroupTimelineData(submittedOnDate, submittedByUsername, submittedByFirstname,
                     submittedByLastname, activationDate, activatedByUsername, activatedByFirstname, activatedByLastname, closedOnDate,
                     closedByUsername, closedByFirstname, closedByLastname);
 
             return CenterData.instance(id, accountNo, name, externalId, status, activationDate, officeId, officeName, staffId, staffName,
-                    hierarchy, timeline, null, null, null, null, null);
+                    hierarchy, timeline, null, null, null, null, null,meetingDay,meetingDayValue,meetingStart,meetingEnd,meetingStartTime,meetingEndTime,groupLocation);
         }
     }
 
@@ -193,6 +207,9 @@ public class CenterReadPlatformServiceImpl implements CenterReadPlatformService 
                     + " g.external_id as externalId,  g.status_enum as statusEnum, g.activation_date as activationDate,"
                     + " g.hierarchy as hierarchy,   c.id as calendarId, ci.id as calendarInstanceId, ci.entity_id as entityId,"
                     + " ci.entity_type_enum as entityTypeId, c.title as title,  c.description as description,"
+                    + "g.meeting_start_time as meetingStartTime, g.meeting_end_time as meetingEndTime, " //
+                    + "g.meeting_start_date as meetingStartDate, g.meeting_end_date as meetingEndDate, " //
+                    + "g.meeting_day as meetingDay, g.group_location as groupLocation, " //
                     + "c.location as location, c.start_date as startDate, c.end_date as endDate, c.recurrence as recurrence,c.meeting_time as meetingTime,"
                     + "sum(CASE WHEN l.loan_status_id=300 and lrs.duedate = ? THEN COALESCE(lrs.principal_amount,0)) + (COALESCE(lrs.interest_amount,0) ELSE 0 END)) as installmentDue,"
                     + "sum(CASE WHEN l.loan_status_id=300 and lrs.duedate = ? THEN COALESCE(lrs.principal_completed_derived,0) + COALESCE(lrs.interest_completed_derived,0) ELSE 0 END) as totalCollected,"
@@ -244,13 +261,21 @@ public class CenterReadPlatformServiceImpl implements CenterReadPlatformService 
             final BigDecimal totaldue = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "totaldue");
             final BigDecimal installmentDue = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "installmentDue");
             Integer monthOnDay = CalendarUtils.getMonthOnDay(recurrence);
+            final String groupLocation = rs.getString("groupLocation");
+            final int meetingStart = rs.getInt("meetingStartDate");
+            final int meetingEnd = rs.getInt("meetingEndDate");
+            final int meetingDay = rs.getInt("meetingDay");
+            final String meetingDayValue = rs.getString("meetingDayValue");
+
+            final LocalTime meetingStartTime = JdbcSupport.getLocalTime(rs, "meetingStartTime");
+            final LocalTime meetingEndTime = JdbcSupport.getLocalTime(rs, "meetingEndTime");
 
             CalendarData calendarData = CalendarData.instance(calendarId, calendarInstanceId, entityId, entityType, title, description,
                     location, startDate, endDate, null, null, false, recurrence, null, null, null, null, null, null, null, null, null, null,
                     null, null, null, null, meetingTime, monthOnDay);
 
             return CenterData.instance(id, accountNo, name, externalId, status, activationDate, officeId, null, staffId, staffName,
-                    hierarchy, null, calendarData, totalCollected, totalOverdue, totaldue, installmentDue);
+                    hierarchy, null, calendarData, totalCollected, totalOverdue, totaldue, installmentDue, meetingDay, meetingDayValue, meetingStart, meetingEnd, meetingStartTime, meetingEndTime, groupLocation);
         }
     }
 
@@ -299,13 +324,21 @@ public class CenterReadPlatformServiceImpl implements CenterReadPlatformService 
             final String activatedByUsername = rs.getString("activatedByUsername");
             final String activatedByFirstname = rs.getString("activatedByFirstname");
             final String activatedByLastname = rs.getString("activatedByLastname");
+            final String groupLocation = rs.getString("groupLocation");
+            final int meetingStart = rs.getInt("meetingStartDate");
+            final int meetingEnd = rs.getInt("meetingEndDate");
+            final int meetingDay = rs.getInt("meetingDay");
+            final String meetingDayValue = rs.getString("meetingDayValue");
+
+            final LocalTime meetingStartTime = JdbcSupport.getLocalTime(rs, "meetingStartTime");
+            final LocalTime meetingEndTime = JdbcSupport.getLocalTime(rs, "meetingEndTime");
 
             final GroupTimelineData timeline = new GroupTimelineData(submittedOnDate, submittedByUsername, submittedByFirstname,
                     submittedByLastname, activationDate, activatedByUsername, activatedByFirstname, activatedByLastname, closedOnDate,
                     closedByUsername, closedByFirstname, closedByLastname);
 
             return GroupGeneralData.instance(id, accountNo, name, externalId, status, activationDate, officeId, officeName, null, null,
-                    staffId, staffName, hierarchy, groupLevel, timeline);
+                    staffId, staffName, hierarchy, groupLevel, timeline, meetingDay, meetingDayValue, meetingStart, meetingEnd, meetingStartTime, meetingEndTime, groupLocation);
         }
     }
 

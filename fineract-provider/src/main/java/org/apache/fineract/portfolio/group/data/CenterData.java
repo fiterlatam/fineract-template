@@ -21,9 +21,15 @@ package org.apache.fineract.portfolio.group.data;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.datatype.jsr310.deser.LocalTimeDeserializer;
+import com.fasterxml.jackson.datatype.jsr310.ser.LocalTimeSerializer;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
@@ -75,6 +81,65 @@ public final class CenterData implements Serializable {
     private String locale;
     private LocalDate submittedOnDate;
 
+    private final Integer meetingStart;
+
+    private final Integer meetingEnd;
+
+    private final Integer meetingDay;
+
+    private final String meetingDayName;
+
+    private final String groupLocation;
+
+
+    @JsonDeserialize(using = LocalTimeDeserializer.class)
+    @JsonSerialize(using = LocalTimeSerializer.class)
+    private final String meetingStartTime;
+
+    @JsonDeserialize(using = LocalTimeDeserializer.class)
+    @JsonSerialize(using = LocalTimeSerializer.class)
+    private final String meetingEndTime;
+
+    private CenterData(Long id, String accountNo, String name, String externalId, EnumOptionData status, LocalDate activationDate, Long officeId, String officeName, Long staffId, String staffName, String hierarchy, Collection<GroupGeneralData> groupMembers, Collection<OfficeData> officeOptions, Collection<StaffData> staffOptions, Collection<GroupGeneralData> groupMembersOptions, CalendarData collectionMeetingCalendar, Collection<CodeValueData> closureReasons, GroupTimelineData timeline, BigDecimal totalCollected, BigDecimal totalOverdue, BigDecimal totaldue, BigDecimal installmentDue, int meetingDay, String meetingDayValue, int meetingStart, int meetingEnd, LocalTime meetingStartTime, LocalTime meetingEndTime, String groupLocation) {
+        this.id = id;
+        this.accountNo = accountNo;
+        this.name = name;
+        this.externalId = externalId;
+        this.status = status;
+        if (status != null) {
+            this.active = status.getId().equals(300L);
+        } else {
+            this.active = false;
+        }
+        this.activationDate = activationDate;
+        this.officeId = officeId;
+        this.officeName = officeName;
+        this.staffId = staffId;
+        this.staffName = staffName;
+        this.hierarchy = hierarchy;
+
+        this.groupMembers = groupMembers;
+
+        //
+        this.officeOptions = officeOptions;
+        this.staffOptions = staffOptions;
+        this.groupMembersOptions = groupMembersOptions;
+        this.collectionMeetingCalendar = collectionMeetingCalendar;
+        this.closureReasons = closureReasons;
+        this.timeline = timeline;
+        this.totalCollected = totalCollected;
+        this.totaldue = totaldue;
+        this.totalOverdue = totalOverdue;
+        this.installmentDue = installmentDue;
+        this.meetingStartTime = meetingStartTime.toString();
+        this.meetingEndTime = meetingEndTime.toString();
+        this.meetingStart = meetingStart;
+        this.meetingEnd = meetingEnd;
+        this.meetingDay = meetingDay;
+        this.meetingDayName = meetingDayValue;
+        this.groupLocation = groupLocation;
+    }
+
     public static CenterData importInstance(String name, List<GroupGeneralData> groupMembers, LocalDate activationDate, boolean active,
             LocalDate submittedOnDate, String externalId, Long officeId, Long staffId, Integer rowIndex, String dateFormat, String locale) {
 
@@ -83,7 +148,8 @@ public final class CenterData implements Serializable {
     }
 
     private CenterData(String name, List<GroupGeneralData> groupMembers, LocalDate activationDate, boolean active,
-            LocalDate submittedOnDate, String externalId, Long officeId, Long staffId, Integer rowIndex, String dateFormat, String locale) {
+            LocalDate submittedOnDate, String externalId, Long officeId, Long staffId, Integer rowIndex, String dateFormat,
+                       String locale) {
         this.name = name;
         this.groupMembers = groupMembers;
         this.externalId = externalId;
@@ -111,6 +177,13 @@ public final class CenterData implements Serializable {
         this.totaldue = null;
         this.installmentDue = null;
         this.officeName = null;
+        this.meetingStartTime = null;
+        this.meetingEndTime = null;
+        this.meetingStart = null;
+        this.meetingEnd = null;
+        this.meetingDay = null;
+        this.meetingDayName = null;
+        this.groupLocation = null;
     }
 
     public Integer getRowIndex() {
@@ -142,9 +215,11 @@ public final class CenterData implements Serializable {
     }
 
     public static CenterData instance(final Long id, final String accountNo, final String name, final String externalId,
-            final EnumOptionData status, final LocalDate activationDate, final Long officeId, final String officeName, final Long staffId,
-            final String staffName, final String hierarchy, final GroupTimelineData timeline, final CalendarData collectionMeetingCalendar,
-            final BigDecimal totalCollected, final BigDecimal totalOverdue, final BigDecimal totaldue, final BigDecimal installmentDue) {
+                                      final EnumOptionData status, final LocalDate activationDate, final Long officeId, final String officeName, final Long staffId,
+                                      final String staffName, final String hierarchy, final GroupTimelineData timeline, final CalendarData collectionMeetingCalendar,
+                                      final BigDecimal totalCollected, final BigDecimal totalOverdue, final BigDecimal totaldue,
+                                      final BigDecimal installmentDue, int meetingDay, String meetingDayValue, int meetingStart,
+                                      int meetingEnd, LocalTime meetingStartTime, LocalTime meetingEndTime, String groupLocation) {
 
         final Collection<GroupGeneralData> groupMembers = null;
         final Collection<OfficeData> officeOptions = null;
@@ -154,7 +229,7 @@ public final class CenterData implements Serializable {
 
         return new CenterData(id, accountNo, name, externalId, status, activationDate, officeId, officeName, staffId, staffName, hierarchy,
                 groupMembers, officeOptions, staffOptions, groupMembersOptions, collectionMeetingCalendar, closureReasons, timeline,
-                totalCollected, totalOverdue, totaldue, installmentDue);
+                totalCollected, totalOverdue, totaldue, installmentDue, meetingDay, meetingDayValue, meetingStart, meetingEnd, meetingStartTime, meetingEndTime, groupLocation);
     }
 
     public static CenterData withAssociations(final CenterData centerData, final Collection<GroupGeneralData> groupMembers,
@@ -229,6 +304,14 @@ public final class CenterData implements Serializable {
         this.totaldue = totaldue;
         this.totalOverdue = totalOverdue;
         this.installmentDue = installmentDue;
+        this.meetingStartTime = null;
+        this.meetingEndTime = null;
+        this.meetingStart = null;
+        this.meetingEnd = null;
+        this.meetingDay = null;
+        this.meetingDayName = null;
+        this.groupLocation = null;
+
     }
 
     public Long officeId() {

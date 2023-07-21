@@ -25,6 +25,7 @@ import org.apache.fineract.portfolio.group.data.CenterData;
 
 public final class GroupingTypesApiConstants {
 
+
     private GroupingTypesApiConstants() {
 
     }
@@ -65,6 +66,7 @@ public final class GroupingTypesApiConstants {
 
     // group parameters
     public static final String centerIdParamName = "centerId";
+    public static final String toCenterIdParamname = "toCenterId";
     public static final String clientMembersParamName = "clientMembers";
 
     // response parameters

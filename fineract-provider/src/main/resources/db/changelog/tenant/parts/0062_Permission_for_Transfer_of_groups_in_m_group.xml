@@ -22,23 +22,13 @@
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
                    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd">
-    <changeSet author="brian@fiter.io" id="0061_1_FBR_add_meeting_time_columns_to_group">
-        <addColumn tableName="m_group">
-            <column name="meeting_day" type="INTEGER"></column>
-            <column name="meeting_start_date" type="INTEGER"></column>
-            <column name="meeting_end_date" type="INTEGER"></column>
-            <column name="meeting_start_time" type="TIME"></column>
-            <column name="meeting_end_time" type="TIME"></column>
-            <column name="group_location" type="INTEGER" defaultValue="0"></column>
-        </addColumn>
-    </changeSet>
-
-    <changeSet author="brian@fiter.io" id="0061_2_FBR_migrate_m_potfolio_centers_and_centergroups_to_m_group">
-        <sqlFile
-                encoding="utf8"
-                path="db/changelog/tenant/commands/migrate_m_portfolio_center_to_m_group.sql"
-                relativeToChangelogFile="false"
-                splitStatements="true"
-                stripComments="true"/>
+    <changeSet author="brian@fiter.io" id="0062_Permission_for_Transfer_of_groups_in_m_group">
+        <insert tableName="m_permission">
+            <column name="grouping" value="portfolio" />
+            <column name="code" value="TRANSFER_GROUP" />
+            <column name="entity_name" value="GROUP" />
+            <column name="action_name" value="TRANSFER" />
+            <column name="can_maker_checker" valueBoolean="false" />
+        </insert>
     </changeSet>
 </databaseChangeLog>

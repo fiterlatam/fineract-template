@@ -3724,4 +3724,12 @@ public class CommandWrapperBuilder {
         this.href = "/prequalification/newprequalification";
         return this;
     }
+
+    public CommandWrapperBuilder transferGroup(Long centerId) {
+        this.actionName = "TRANSFER";
+        this.entityName = "GROUP";
+        this.entityId = centerId;
+        this.href = "/centers/" + centerId;
+        return this;
+    }
 }
