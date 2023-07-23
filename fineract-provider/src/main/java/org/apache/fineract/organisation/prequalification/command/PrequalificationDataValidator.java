@@ -66,8 +66,17 @@ public class PrequalificationDataValidator {
 
         final JsonElement element = this.fromApiJsonHelper.parse(json);
 
-        final Long groupId = this.fromApiJsonHelper.extractLongNamed(PrequalificatoinApiConstants.groupIdParamName, element);
-        baseDataValidator.reset().parameter(PrequalificatoinApiConstants.groupIdParamName).value(groupId).notNull().longGreaterThanZero();
+        final Long centerId = this.fromApiJsonHelper.extractLongNamed(PrequalificatoinApiConstants.centerIdParamName, element);
+        baseDataValidator.reset().parameter(PrequalificatoinApiConstants.centerIdParamName).value(centerId).notNull().longGreaterThanZero();
+
+
+        if (this.fromApiJsonHelper.parameterExists(PrequalificatoinApiConstants.groupIdParamName, element)) {
+            final Long groupId = this.fromApiJsonHelper.extractLongNamed(PrequalificatoinApiConstants.groupIdParamName, element);
+            baseDataValidator.reset().parameter(PrequalificatoinApiConstants.groupIdParamName).value(groupId).notNull().longGreaterThanZero();
+        }else{
+            final String groupName = this.fromApiJsonHelper.extractStringNamed(PrequalificatoinApiConstants.groupNameParamName, element);
+            baseDataValidator.reset().parameter(PrequalificatoinApiConstants.groupNameParamName).value(groupName).notBlank();
+        }
 
         final JsonArray members = this.fromApiJsonHelper.extractJsonArrayNamed(PrequalificatoinApiConstants.membersParamName, element);
         baseDataValidator.reset().parameter(PrequalificatoinApiConstants.membersParamName).value(members).ignoreIfNull().jsonArrayNotEmpty();

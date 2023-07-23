@@ -23,6 +23,7 @@ import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.organisation.agency.domain.Agency;
 import org.apache.fineract.organisation.centerGroup.domain.CenterGroup;
+import org.apache.fineract.organisation.prequalification.command.PrequalificatoinApiConstants;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProduct;
 import org.apache.fineract.useradministration.domain.AppUser;
 
@@ -50,8 +51,11 @@ public class PrequalificationGroup extends AbstractPersistableCustom {
     private Agency agency;
 
     @ManyToOne
-    @JoinColumn(name = "group_id", nullable = false)
+    @JoinColumn(name = "group_id", nullable = true)
     private CenterGroup centerGroup;
+
+    @Column(name = "group_name", nullable = false)
+    private String groupName;
 
     @ManyToOne
     @JoinColumn(name = "product_id", nullable = false)
@@ -65,8 +69,14 @@ public class PrequalificationGroup extends AbstractPersistableCustom {
     @JoinColumn(name = "facilitator", nullable = false)
     private AppUser facilitator;
 
+    @Column(name = "center_id", nullable = false)
+    private Long centerId;
+
     @Column(name = "status", nullable = false)
     private Integer status;
+
+    @Column(name = "comments", nullable = false)
+    private String comments;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
@@ -78,7 +88,12 @@ public class PrequalificationGroup extends AbstractPersistableCustom {
     public static PrequalificationGroup fromJson(final AppUser appUser, final AppUser facilitator,
                                                  final Agency agency, final CenterGroup centerGroup, final LoanProduct loanProduct,
                                                  final JsonCommand command) {
-        return new PrequalificationGroup(appUser, facilitator, agency, centerGroup, loanProduct);
+        String groupName = command.stringValueOfParameterNamed("groupName");
+        Long center = command.longValueOfParameterNamed(PrequalificatoinApiConstants.centerIdParamName);
+        if (centerGroup!=null) {
+            groupName = centerGroup.getName();
+        }
+        return new PrequalificationGroup(appUser, facilitator, agency, centerGroup, groupName,center, loanProduct);
     }
 
     protected PrequalificationGroup() {
@@ -86,12 +101,14 @@ public class PrequalificationGroup extends AbstractPersistableCustom {
     }
 
     private PrequalificationGroup(final AppUser appUser, final AppUser facilitator,
-                                  final Agency agency, final CenterGroup centerGroup, final LoanProduct loanProduct) {
+                                  final Agency agency, final CenterGroup centerGroup, final String groupName, Long center, final LoanProduct loanProduct) {
         this.addedBy = appUser;
         this.facilitator = facilitator;
         this.status = PrequalificationStatus.PENDING.getValue();
         this.loanProduct = loanProduct;
         this.centerGroup = centerGroup;
+        this.groupName = groupName;
+        this.centerId = center;
         this.agency = agency;
         this.createdAt = DateUtils.getLocalDateTimeOfTenant();
     }
@@ -114,5 +131,9 @@ public class PrequalificationGroup extends AbstractPersistableCustom {
         final Map<String, Object> actualChanges = new LinkedHashMap<>(7);
 
         return actualChanges;
+    }
+
+    public void updateComments(String comment) {
+        this.comments = comment;
     }
 }

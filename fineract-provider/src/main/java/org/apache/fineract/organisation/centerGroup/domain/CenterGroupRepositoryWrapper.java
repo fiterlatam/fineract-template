@@ -21,6 +21,8 @@ package org.apache.fineract.organisation.centerGroup.domain;
 import java.time.LocalTime;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
+
 import org.apache.fineract.organisation.centerGroup.exception.CenterGroupNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -42,6 +44,11 @@ public class CenterGroupRepositoryWrapper {
 
     public CenterGroup findOneWithNotFoundDetection(final Long id) {
         return this.repository.findById(id).orElseThrow(() -> new CenterGroupNotFoundException(id));
+    }
+
+    public CenterGroup findOne(final Long id) {
+        Optional<CenterGroup> centerGoup = this.repository.findById(id);
+        return centerGoup.isPresent()?centerGoup.get():null;
     }
 
     public List<CenterGroup> findOverLappingCenterGroups(Long portfolioCenter, LocalTime startTime, LocalTime endTime) {

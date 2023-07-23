@@ -20,8 +20,7 @@ package org.apache.fineract.organisation.prequalification.data;
 
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.organisation.agency.data.AgencyData;
-import org.apache.fineract.organisation.portfolio.data.PortfolioData;
-import org.apache.fineract.organisation.prequalification.domain.PrequalificationGroupMember;
+import org.apache.fineract.portfolio.group.data.CenterData;
 import org.apache.fineract.portfolio.loanproduct.data.LoanProductData;
 import org.apache.fineract.useradministration.data.AppUserData;
 
@@ -43,18 +42,19 @@ public class GroupPrequalificationData {
     private final String agencyName;
     private final EnumOptionData status;
     private final String addedBy;
+    private final String comments;
     private final LocalDate createdAt;
     private final Collection<AgencyData> agencies;
-    private final Collection<PortfolioData> portfolioData;
+    private final Collection<CenterData> centerData;
     private final Collection<LoanProductData> loanProducts;
     private final Collection<AppUserData> facilitators;
-    private final Collection<PrequalificationGroupMember> groupMembers;
+    private Collection<MemberPrequalificationData> groupMembers;
 
     public GroupPrequalificationData(final Long id, final String productName, final String prequalificationNumber, final String agencyName,
                                      final String portforlioName, final String centerName, final String groupName,
                                      final String addedBy, final LocalDate createdAt, final EnumOptionData status,
-                                     final Collection<PrequalificationGroupMember> groupMembers, final Collection<AgencyData> agencies,
-                                     Collection<PortfolioData> portfolioData, Collection<LoanProductData> loanProducts, Collection<AppUserData> appUsers) {
+                                     String comments, final Collection<MemberPrequalificationData> groupMembers, final Collection<AgencyData> agencies,
+                                     Collection<CenterData> centerData, Collection<LoanProductData> loanProducts, Collection<AppUserData> appUsers) {
         this.id = id;
         this.productName = productName;
         this.prequalificationNumber = prequalificationNumber;
@@ -66,22 +66,23 @@ public class GroupPrequalificationData {
         this.addedBy = addedBy;
         this.createdAt = createdAt;
         this.agencies = agencies;
-        this.portfolioData = portfolioData;
+        this.centerData = centerData;
         this.loanProducts = loanProducts;
         this.facilitators = appUsers;
         this.groupMembers = groupMembers;
+        this.comments= comments;
     }
 
-    public static GroupPrequalificationData template(final Collection<AgencyData> agencies, Collection<PortfolioData> portfolioData, Collection<LoanProductData> loanProducts, Collection<AppUserData> appUsers) {
-        return new GroupPrequalificationData(null,null,null, null,null,null,null, null,null,null, null, agencies, portfolioData, loanProducts, appUsers);
+    public static GroupPrequalificationData template(final Collection<AgencyData> agencies, Collection<CenterData> centerData, Collection<LoanProductData> loanProducts, Collection<AppUserData> appUsers) {
+        return new GroupPrequalificationData(null,null,null, null,null,null,null, null,null,null, null, null, agencies, centerData, loanProducts, appUsers);
     }
 
     public static GroupPrequalificationData instance(Long id, String prequalificationNumber, EnumOptionData status, String agencyName,
-                                                     String portfolioName, String centerName, String groupName, String productName, String addedBy, LocalDate createdAt) {
-        return new GroupPrequalificationData(id, productName, prequalificationNumber,agencyName,portfolioName,centerName,groupName, addedBy, createdAt, status, null, null, null, null, null);
+                                                     String portfolioName, String centerName, String groupName, String productName, String addedBy, LocalDate createdAt, String comments) {
+        return new GroupPrequalificationData(id, productName, prequalificationNumber,agencyName,portfolioName,centerName,groupName, addedBy, createdAt, status, comments,null, null, null, null, null);
     }
 
-    public void updateMembers(Collection<PrequalificationGroupMember> groupMembers){
-        this.groupMembers.addAll(groupMembers);
+    public void updateMembers(Collection<MemberPrequalificationData> groupMembers){
+        this.groupMembers = groupMembers;
     }
 }
