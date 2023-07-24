@@ -16,14 +16,11 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.organisation.prequalification.service;
+package org.apache.fineract.organisation.prequalification.domain;
 
-import org.apache.fineract.infrastructure.core.api.JsonCommand;
-import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
-public interface PrequalificationWritePlatformService {
-
-    CommandProcessingResult processPrequalification(JsonCommand command);
-
-    Long addCommentsToPrequalification(Long blacklistId, String comment);
+public interface PreQualificationMemberRepository extends JpaRepository<PrequalificationGroupMember, Long>, JpaSpecificationExecutor<PrequalificationGroupMember> {
+    // no behaviour
 }

@@ -38,7 +38,6 @@ import org.apache.fineract.organisation.prequalification.domain.Prequalification
 import org.apache.fineract.organisation.prequalification.domain.PreQualificationGroupRepository;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationGroupMember;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationMemberIndication;
-import org.apache.fineract.organisation.prequalification.domain.PrequalificationStatus;
 import org.apache.fineract.organisation.prequalification.exception.GroupPreQualificationNotFound;
 import org.apache.fineract.organisation.prequalification.serialization.PrequalificationMemberCommandFromApiJsonDeserializer;
 import org.apache.fineract.portfolio.blacklist.domain.BlacklistStatus;
@@ -114,8 +113,14 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         Optional<LoanProduct> productOption = this.loanProductRepository.findById(productId);
         if (productOption.isEmpty()) throw new LoanProductNotFoundException(productId);
         LoanProduct loanProduct = productOption.get();
+        String groupName = command.stringValueOfParameterNamed(PrequalificatoinApiConstants.groupNameParamName);
 
-        CenterGroup centerGroup = this.centerGroupRepositoryWrapper.findOneWithNotFoundDetection(centerGroupId);
+        CenterGroup centerGroup = null;
+        if (centerGroupId != null) {
+            centerGroup = this.centerGroupRepositoryWrapper.findOneWithNotFoundDetection(centerGroupId);
+            groupName = centerGroup.getName();
+        }
+
         Agency agency = this.agencyRepositoryWrapper.findOneWithNotFoundDetection(agencyId);
 
         AppUser addedBy = this.context.getAuthenticatedUserIfPresent();
@@ -125,7 +130,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             facilitator = this.appUserRepository.findById(facilitatorId)
                     .orElseThrow(() -> new UserNotFoundException(facilitatorId));
         }
-        PrequalificationGroup prequalificationGroup = PrequalificationGroup.fromJson(addedBy,facilitator,agency,centerGroup,loanProduct, command);
+        PrequalificationGroup prequalificationGroup = PrequalificationGroup.fromJson(addedBy, facilitator, agency, centerGroup, loanProduct, command);
 
         this.preQualificationGroupRepository.saveAndFlush(prequalificationGroup);
         StringBuilder prequalSB = new StringBuilder();
@@ -192,10 +197,9 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                 }
 
                 //get light indicator
-                String activeBlacklist = "select count(*) from m_client_blacklist where dpi=? and status=?";
-                String inactiveBlacklist = "select count(*) from m_client_blacklist where dpi=? and status=?";
-                Long activeBlacklisted = jdbcTemplate.queryForObject(activeBlacklist, Long.class, dpi, BlacklistStatus.ACTIVE.getValue());
-                Long inactiveBlacklisted = jdbcTemplate.queryForObject(inactiveBlacklist, Long.class, dpi, BlacklistStatus.INACTIVE.getValue());
+                String blistSql = "select count(*) from m_client_blacklist where dpi=? and status=?";
+                Long activeBlacklisted = jdbcTemplate.queryForObject(blistSql, Long.class, dpi, BlacklistStatus.ACTIVE.getValue());
+                Long inactiveBlacklisted = jdbcTemplate.queryForObject(blistSql, Long.class, dpi, BlacklistStatus.INACTIVE.getValue());
                 Integer status = PrequalificationMemberIndication.NONE.getValue();
                 if (activeBlacklisted <=0 && inactiveBlacklisted<=0) {
                     status = PrequalificationMemberIndication.NONE.getValue();
@@ -218,13 +222,13 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
     }
 
     @Override
-    public Long removeFromBlacklist(Long blacklistId) {
-        PrequalificationGroup blacklistClient = this.preQualificationGroupRepository.findById(blacklistId).orElse(null);
-        if (blacklistClient == null) {
-            throw new GroupPreQualificationNotFound(blacklistId);
+    public Long addCommentsToPrequalification(Long groupId, String comment) {
+        PrequalificationGroup prequalificationGroup = this.preQualificationGroupRepository.findById(groupId).orElse(null);
+        if (prequalificationGroup == null) {
+            throw new GroupPreQualificationNotFound(groupId);
         }
-        blacklistClient.updateStatus(PrequalificationStatus.REJECTED);
-        this.preQualificationGroupRepository.saveAndFlush(blacklistClient);
-        return blacklistId;
+        prequalificationGroup.updateComments(comment);
+        this.preQualificationGroupRepository.saveAndFlush(prequalificationGroup);
+        return groupId;
     }
 }

@@ -38,11 +38,11 @@ import org.apache.fineract.infrastructure.security.service.PlatformSecurityConte
 import org.apache.fineract.organisation.agency.data.AgencyData;
 import org.apache.fineract.organisation.agency.service.AgencyReadPlatformServiceImpl;
 import org.apache.fineract.organisation.office.domain.OfficeHierarchyLevel;
-import org.apache.fineract.organisation.portfolio.data.PortfolioData;
-import org.apache.fineract.organisation.portfolio.service.PortfolioReadPlatformServiceImpl;
 import org.apache.fineract.organisation.prequalification.data.GroupPrequalificationData;
 import org.apache.fineract.organisation.prequalification.service.PrequalificationReadPlatformService;
 import org.apache.fineract.organisation.prequalification.service.PrequalificationWritePlatformService;
+import org.apache.fineract.portfolio.group.data.CenterData;
+import org.apache.fineract.portfolio.group.service.CenterReadPlatformServiceImpl;
 import org.apache.fineract.portfolio.loanproduct.data.LoanProductData;
 import org.apache.fineract.portfolio.loanproduct.service.LoanProductReadPlatformService;
 import org.apache.fineract.useradministration.data.AppUserData;
@@ -88,7 +88,7 @@ public class PrequalificationApiResource {
     private final PlatformSecurityContext context;
     private final PrequalificationReadPlatformService prequalificationReadPlatformService;
     private final CodeValueReadPlatformService codeValueReadPlatformService;
-    private final PortfolioReadPlatformServiceImpl portfolioReadPlatformService;
+    private final CenterReadPlatformServiceImpl centerReadPlatformService;
     private final DefaultToApiJsonSerializer<GroupPrequalificationData> toApiJsonSerializer;
     private final ApiRequestParameterHelper apiRequestParameterHelper;
     private final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService;
@@ -104,7 +104,7 @@ public class PrequalificationApiResource {
                                        final CodeValueReadPlatformService codeValueReadPlatformService,
                                        final AgencyReadPlatformServiceImpl agencyReadPlatformService,
                                        final PrequalificationWritePlatformService prequalificationWritePlatformService,
-                                       final PortfolioReadPlatformServiceImpl portfolioReadPlatformService,
+                                       final CenterReadPlatformServiceImpl centerReadPlatformService,
                                        final LoanProductReadPlatformService loanProductReadPlatformService,
                                        final AppUserReadPlatformService appUserReadPlatformService,
                                        final DefaultToApiJsonSerializer<GroupPrequalificationData> toApiJsonSerializer,
@@ -121,7 +121,7 @@ public class PrequalificationApiResource {
         this.documentWritePlatformService = documentWritePlatformService;
         this.prequalificationWritePlatformService = prequalificationWritePlatformService;
         this.agencyReadPlatformService = agencyReadPlatformService;
-        this.portfolioReadPlatformService = portfolioReadPlatformService;
+        this.centerReadPlatformService = centerReadPlatformService;
         this.loanProductReadPlatformService = loanProductReadPlatformService;
         this.appUserReadPlatformService = appUserReadPlatformService;
     }
@@ -163,13 +163,14 @@ public class PrequalificationApiResource {
 
         this.context.authenticatedUser().validateHasViewPermission(this.resourceNameForPermissions);
 
-        Collection<PortfolioData> portfolioData = this.portfolioReadPlatformService.retrieveAllByUser();
+        Collection<CenterData> centerData = this.centerReadPlatformService.retrieveAllForDropdown(this.context.authenticatedUser().getOffice().getId());
+
         Collection<AgencyData> agencies = this.agencyReadPlatformService.retrieveAllByUser();
         Collection<LoanProductData> loanProducts = this.loanProductReadPlatformService.retrieveAllLoanProducts();
         final List<AppUserData> appUsers = new ArrayList<>(
                 this.appUserReadPlatformService.retrieveUsersUnderHierarchy(Long.valueOf(OfficeHierarchyLevel.GRUPO.getValue())));
 
-        final GroupPrequalificationData clientIdentifierData = GroupPrequalificationData.template(agencies, portfolioData,loanProducts,appUsers);
+        final GroupPrequalificationData clientIdentifierData = GroupPrequalificationData.template(agencies, centerData,loanProducts,appUsers);
 
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
         return this.toApiJsonSerializer.serialize(settings, clientIdentifierData, PRE_QUALIFICATION_DATA_PARAMETERS);
@@ -179,8 +180,7 @@ public class PrequalificationApiResource {
     @Path("/{groupId}")
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
-    @Operation(summary = "Retrieve Blacklist Details", description = "This is a convenience resource useful for building maintenance user interface screens for client applications. The template data returned consists of any or all of:\n"
-            + "\n" + " Field Defaults\n" + " Allowed description Lists\n" + "\n\nExample Request:\n" + "clients/1/identifiers/template")
+    @Operation(summary = "Retrieve Prequalification Details")
     public String getBlacklistDetails(@Context final UriInfo uriInfo,
             @PathParam("groupId") @Parameter(description = "groupId") final Long groupId) {
 
@@ -210,20 +210,24 @@ public class PrequalificationApiResource {
     }
 
     @POST
-    @Path("/{blacklistId}/removeblacklist")
+    @Path("/{groupId}/comment")
     @Consumes({ MediaType.MULTIPART_FORM_DATA })
     @Produces({ MediaType.APPLICATION_JSON })
-    public String createDocument(@PathParam("blacklistId") @Parameter(description = "blacklistId") final Long blacklistId,
+    public String createDocument(@PathParam("groupId") @Parameter(description = "groupId") final Long groupId,
             @HeaderParam("Content-Length") @Parameter(description = "Content-Length") final Long fileSize,
             @FormDataParam("file") final InputStream inputStream, @FormDataParam("file") final FormDataContentDisposition fileDetails,
             @FormDataParam("file") final FormDataBodyPart bodyPart, @FormDataParam("name") final String name,
-            @FormDataParam("description") final String description) {
+            @FormDataParam("description") final String description, @FormDataParam("comment") final String comment) {
 
-        fileUploadValidator.validate(fileSize, inputStream, fileDetails, bodyPart);
-        final DocumentCommand documentCommand = new DocumentCommand(null, null, "blacklist", blacklistId, name, fileDetails.getFileName(),
-                fileSize, bodyPart.getMediaType().toString(), description, null);
-        final Long documentId = this.documentWritePlatformService.createDocument(documentCommand, inputStream);
-        this.prequalificationWritePlatformService.removeFromBlacklist(blacklistId);
-        return this.toApiJsonSerializer.serialize(CommandProcessingResult.resourceResult(documentId, null));
+
+        if (inputStream != null) {
+            fileUploadValidator.validate(fileSize, inputStream, fileDetails, bodyPart);
+            final DocumentCommand documentCommand = new DocumentCommand(null, null, "prequalifications", groupId, name, fileDetails.getFileName(),
+                    fileSize, bodyPart.getMediaType().toString(), description, null);
+            final Long documentId = this.documentWritePlatformService.createDocument(documentCommand, inputStream);
+        }
+
+        this.prequalificationWritePlatformService.addCommentsToPrequalification(groupId, comment);
+        return this.toApiJsonSerializer.serialize(CommandProcessingResult.resourceResult(groupId, null));
     }
 }

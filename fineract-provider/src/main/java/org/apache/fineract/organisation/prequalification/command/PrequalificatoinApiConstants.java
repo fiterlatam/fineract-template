@@ -25,6 +25,7 @@ public class PrequalificatoinApiConstants {
 
     public static final String dateFormatParamName = "dateFormat";
     public static final String groupIdParamName = "groupId";
+    public static final String groupNameParamName = "groupName";
     public static final String productIdParamName = "productId";
     public static final String centerIdParamName = "centerId";
     public static final String portfolioIdParamName = "portfolioId";
