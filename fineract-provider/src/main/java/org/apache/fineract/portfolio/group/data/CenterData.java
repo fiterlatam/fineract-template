@@ -131,8 +131,8 @@ public final class CenterData implements Serializable {
         this.totaldue = totaldue;
         this.totalOverdue = totalOverdue;
         this.installmentDue = installmentDue;
-        this.meetingStartTime = meetingStartTime.toString();
-        this.meetingEndTime = meetingEndTime.toString();
+        this.meetingStartTime = meetingStartTime!=null?meetingStartTime.toString():null;
+        this.meetingEndTime = meetingEndTime!=null?meetingEndTime.toString():null;
         this.meetingStart = meetingStart;
         this.meetingEnd = meetingEnd;
         this.meetingDay = meetingDay;

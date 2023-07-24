@@ -35,10 +35,9 @@ import org.apache.fineract.organisation.centerGroup.domain.CenterGroupRepository
 import org.apache.fineract.organisation.prequalification.command.PrequalificatoinApiConstants;
 import org.apache.fineract.organisation.prequalification.command.PrequalificationDataValidator;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationGroup;
-import org.apache.fineract.organisation.prequalification.domain.PreQualificationGroupRepository;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationGroupMember;
+import org.apache.fineract.organisation.prequalification.domain.PrequalificationGroupRepositoryWrapper;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationMemberIndication;
-import org.apache.fineract.organisation.prequalification.exception.GroupPreQualificationNotFound;
 import org.apache.fineract.organisation.prequalification.serialization.PrequalificationMemberCommandFromApiJsonDeserializer;
 import org.apache.fineract.portfolio.blacklist.domain.BlacklistStatus;
 import org.apache.fineract.portfolio.client.service.ClientChargeWritePlatformServiceJpaRepositoryImpl;
@@ -76,7 +75,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
     private final LoanProductRepository loanProductRepository;
     private final ClientReadPlatformService clientReadPlatformService;
     private final CodeValueReadPlatformService codeValueReadPlatformService;
-    private final PreQualificationGroupRepository preQualificationGroupRepository;
+    private final PrequalificationGroupRepositoryWrapper prequalificationGroupRepositoryWrapper;
     private final CenterGroupRepositoryWrapper centerGroupRepositoryWrapper;
     private final AppUserRepository appUserRepository;
     private final AgencyRepositoryWrapper agencyRepositoryWrapper;
@@ -89,13 +88,13 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                                                     final LoanProductRepository loanProductRepository, final ClientReadPlatformService clientReadPlatformService,
                                                     final AgencyRepositoryWrapper agencyRepositoryWrapper,final PrequalificationMemberCommandFromApiJsonDeserializer apiJsonDeserializer,
                                                     final CodeValueReadPlatformService codeValueReadPlatformService, final JdbcTemplate jdbcTemplate,
-                                                    final PreQualificationGroupRepository preQualificationGroupRepository) {
+                                                    final PrequalificationGroupRepositoryWrapper prequalificationGroupRepositoryWrapper) {
         this.context = context;
         this.dataValidator = dataValidator;
         this.loanProductRepository = loanProductRepository;
         this.clientReadPlatformService = clientReadPlatformService;
         this.codeValueReadPlatformService = codeValueReadPlatformService;
-        this.preQualificationGroupRepository = preQualificationGroupRepository;
+        this.prequalificationGroupRepositoryWrapper = prequalificationGroupRepositoryWrapper;
         this.centerGroupRepositoryWrapper = centerGroupRepositoryWrapper;
         this.appUserRepository = appUserRepository;
         this.agencyRepositoryWrapper = agencyRepositoryWrapper;
@@ -132,7 +131,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         }
         PrequalificationGroup prequalificationGroup = PrequalificationGroup.fromJson(addedBy, facilitator, agency, centerGroup, loanProduct, command);
 
-        this.preQualificationGroupRepository.saveAndFlush(prequalificationGroup);
+        this.prequalificationGroupRepositoryWrapper.saveAndFlush(prequalificationGroup);
         StringBuilder prequalSB = new StringBuilder();
         prequalSB.append("PRECAL-");
         prequalSB.append(agency.getId()).append("-");
@@ -141,7 +140,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         prequalificationGroup.updatePrequalificationNumber(prequalSB.toString());
         List<PrequalificationGroupMember> members = assembleMembers(command, prequalificationGroup, addedBy);
         prequalificationGroup.updateMembers(members);
-        this.preQualificationGroupRepository.saveAndFlush(prequalificationGroup);
+        this.prequalificationGroupRepositoryWrapper.saveAndFlush(prequalificationGroup);
 
         return new CommandProcessingResultBuilder() //
                 .withCommandId(command.commandId()) //
@@ -223,12 +222,9 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
 
     @Override
     public Long addCommentsToPrequalification(Long groupId, String comment) {
-        PrequalificationGroup prequalificationGroup = this.preQualificationGroupRepository.findById(groupId).orElse(null);
-        if (prequalificationGroup == null) {
-            throw new GroupPreQualificationNotFound(groupId);
-        }
+        PrequalificationGroup prequalificationGroup = this.prequalificationGroupRepositoryWrapper.findOneWithNotFoundDetection(groupId);
         prequalificationGroup.updateComments(comment);
-        this.preQualificationGroupRepository.saveAndFlush(prequalificationGroup);
+        this.prequalificationGroupRepositoryWrapper.saveAndFlush(prequalificationGroup);
         return groupId;
     }
 }

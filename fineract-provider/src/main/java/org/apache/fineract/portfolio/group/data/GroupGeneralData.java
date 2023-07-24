@@ -309,10 +309,12 @@ public class GroupGeneralData implements Serializable {
         final CalendarData collectionMeetingCalendar = null;
         final Collection<CodeValueData> closureReasons = null;
 
+        String meetingStartTimeString = meetingStartTime!=null ? meetingStartTime.toString():null;
+        String meetingEndTimeString = meetingEndTime!=null ? meetingEndTime.toString():null;
         return new GroupGeneralData(id, accountNo, name, externalId, status, activationDate, officeId, officeName, centerId, centerName,
                 staffId, staffName, hierarchy, groupLevel, clientMembers, activeClientMembers, centerOptions, officeOptions, staffOptions,
                 clientOptions, groupRoles, availableRoles, role, calendarsData, collectionMeetingCalendar, closureReasons, timeline,
-                meetingDay, meetingDayValue, meetingStart, meetingEnd, meetingStartTime.toString(), meetingEndTime.toString(), groupLocation);
+                meetingDay, meetingDayValue, meetingStart, meetingEnd, meetingStartTimeString, meetingEndTimeString, groupLocation);
     }
 
     private GroupGeneralData(final Long id, final String accountNo, final String name, final String externalId, final EnumOptionData status,
@@ -365,8 +367,8 @@ public class GroupGeneralData implements Serializable {
         this.collectionMeetingCalendar = collectionMeetingCalendar;
         this.closureReasons = closureReasons;
         this.timeline = timeline;
-        this.meetingStartTime = meetingStartTime.toString();
-        this.meetingEndTime = meetingEndTime.toString();
+        this.meetingStartTime = meetingStartTime;
+        this.meetingEndTime = meetingEndTime;
         this.meetingStart = meetingStart;
         this.meetingEnd = meetingEnd;
         this.meetingDay = meetingDay;
