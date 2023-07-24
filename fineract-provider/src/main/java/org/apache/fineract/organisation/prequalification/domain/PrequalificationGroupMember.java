@@ -18,21 +18,20 @@
  */
 package org.apache.fineract.organisation.prequalification.domain;
 
-import org.apache.fineract.infrastructure.core.api.JsonCommand;
-import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
-import org.apache.fineract.infrastructure.core.service.DateUtils;
-import org.apache.fineract.useradministration.domain.AppUser;
-
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.Table;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.Table;
+import org.apache.fineract.infrastructure.core.api.JsonCommand;
+import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
+import org.apache.fineract.infrastructure.core.service.DateUtils;
+import org.apache.fineract.useradministration.domain.AppUser;
 
 @Entity
 @Table(name = "m_prequalification_group_members")
@@ -72,7 +71,7 @@ public class PrequalificationGroupMember extends AbstractPersistableCustom {
     }
 
     private PrequalificationGroupMember(final AppUser appUser, final String clientName, final String dpi, final LocalDate dob,
-                                        final String puente, final PrequalificationGroup groupId, final  BigDecimal requestedAmount, final  Integer status) {
+            final String puente, final PrequalificationGroup groupId, final BigDecimal requestedAmount, final Integer status) {
         this.status = PrequalificationStatus.PENDING.getValue();
         this.createdAt = DateUtils.getLocalDateTimeOfTenant();
         this.dob = dob;
@@ -85,7 +84,8 @@ public class PrequalificationGroupMember extends AbstractPersistableCustom {
         this.status = status;
     }
 
-    public static PrequalificationGroupMember fromJson(PrequalificationGroup groupId, String name, String dpi, LocalDate dateOfBirth, BigDecimal requestedAmount, String puente, AppUser addedBy, Integer status) {
+    public static PrequalificationGroupMember fromJson(PrequalificationGroup groupId, String name, String dpi, LocalDate dateOfBirth,
+            BigDecimal requestedAmount, String puente, AppUser addedBy, Integer status) {
         // TODO Auto-generated method stub
         return new PrequalificationGroupMember(addedBy, name, dpi, dateOfBirth, puente, groupId, requestedAmount, status);
     }

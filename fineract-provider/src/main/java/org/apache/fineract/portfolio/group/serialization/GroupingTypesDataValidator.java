@@ -62,8 +62,8 @@ public final class GroupingTypesDataValidator {
             GroupingTypesApiConstants.meetingStartTime, GroupingTypesApiConstants.meetingEndTime, GroupingTypesApiConstants.meetingDay,
             GroupingTypesApiConstants.referencePoint));
 
-    private static final Set<String> GROUP_TRANSFER_DATA_PARAMETERS = new HashSet<>(Arrays.asList(
-            GroupingTypesApiConstants.groupIdParamName,GroupingTypesApiConstants.toCenterIdParamname));
+    private static final Set<String> GROUP_TRANSFER_DATA_PARAMETERS = new HashSet<>(
+            Arrays.asList(GroupingTypesApiConstants.groupIdParamName, GroupingTypesApiConstants.toCenterIdParamName));
 
     private static final Set<String> GROUP_REQUEST_DATA_PARAMETERS = new HashSet<>(Arrays.asList(GroupingTypesApiConstants.localeParamName,
             GroupingTypesApiConstants.dateFormatParamName, GroupingTypesApiConstants.idParamName, GroupingTypesApiConstants.nameParamName,
@@ -187,8 +187,9 @@ public final class GroupingTypesDataValidator {
         final Long groupId = this.fromApiJsonHelper.extractLongNamed(GroupingTypesApiConstants.groupIdParamName, element);
         baseDataValidator.reset().parameter(GroupingTypesApiConstants.groupIdParamName).value(groupId).notNull().integerGreaterThanZero();
 
-        final Long toCenter = this.fromApiJsonHelper.extractLongNamed(GroupingTypesApiConstants.toCenterIdParamname, element);
-        baseDataValidator.reset().parameter(GroupingTypesApiConstants.toCenterIdParamname).value(toCenter).notNull().integerGreaterThanZero();
+        final Long toCenter = this.fromApiJsonHelper.extractLongNamed(GroupingTypesApiConstants.toCenterIdParamName, element);
+        baseDataValidator.reset().parameter(GroupingTypesApiConstants.toCenterIdParamName).value(toCenter).notNull()
+                .integerGreaterThanZero();
 
         throwExceptionIfValidationWarningsExist(dataValidationErrors);
     }

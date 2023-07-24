@@ -633,7 +633,7 @@ public class CenterReadPlatformServiceImpl implements CenterReadPlatformService 
 
     @Override
     public Collection<StaffCenterData> retriveAllCentersByMeetingDate(final Long officeId, final LocalDate meetingDate,
-                                                                      final Long staffId) {
+            final Long staffId) {
         validateForGenerateCollectionSheet(staffId);
         final CenterCalendarDataMapper centerCalendarMapper = new CenterCalendarDataMapper();
         String sql = centerCalendarMapper.schema();

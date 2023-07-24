@@ -28,8 +28,6 @@
             <column name="legacy_number" type="BIGINT" defaultValueComputed="NULL" />
             <column name="latitude" type="DECIMAL(12, 4)" defaultValueComputed="NULL" />
             <column name="longitude" type="DECIMAL(12, 4)" defaultValueComputed="NULL" />
-            <column name="meeting_start_time" type="TIME" defaultValueComputed="NULL" />
-            <column name="meeting_end_time" type="TIME" defaultValueComputed="NULL" />
             <column name="formation_date" type="date" defaultValueComputed="NULL" />
             <column name="size" type="INT" defaultValueComputed="NULL" />
             <column name="responsible_user_id" type="BIGINT(20)" defaultValueComputed="NULL" />
@@ -55,9 +53,6 @@
             <column name="state_province_id" type="INT" defaultValueComputed="NULL"/>
             <column name="type_id" type="INT" defaultValueComputed="NULL"/>
             <column name="distance_from_agency" type="INT" defaultValueComputed="NULL"/>
-            <column name="meeting_day" type="INT" defaultValueComputed="NULL"/>
-            <column name="meeting_start_date" type="INT" defaultValueComputed="NULL" />
-            <column name="meeting_end_date" type="INT" defaultValueComputed="NULL" />
             <column name="reference_point" type="VARCHAR(150)" defaultValueComputed="NULL" />
         </addColumn>
     </changeSet>

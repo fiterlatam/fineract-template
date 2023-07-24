@@ -65,7 +65,6 @@ import org.apache.fineract.organisation.office.domain.OfficeRepositoryWrapper;
 import org.apache.fineract.organisation.office.exception.InvalidOfficeException;
 import org.apache.fineract.organisation.portfolio.domain.Portfolio;
 import org.apache.fineract.organisation.portfolio.domain.PortfolioRepositoryWrapper;
-import org.apache.fineract.organisation.portfolioCenter.domain.PortfolioCenterRepositoryWrapper;
 import org.apache.fineract.organisation.portfolioCenter.service.PortfolioCenterConstants;
 import org.apache.fineract.organisation.rangeTemplate.data.RangeTemplateData;
 import org.apache.fineract.organisation.rangeTemplate.service.RangeTemplateReadPlatformService;
@@ -84,6 +83,7 @@ import org.apache.fineract.portfolio.client.domain.Client;
 import org.apache.fineract.portfolio.client.domain.ClientRepositoryWrapper;
 import org.apache.fineract.portfolio.client.service.LoanStatusMapper;
 import org.apache.fineract.portfolio.group.api.GroupingTypesApiConstants;
+import org.apache.fineract.portfolio.group.data.GroupGeneralData;
 import org.apache.fineract.portfolio.group.domain.Group;
 import org.apache.fineract.portfolio.group.domain.GroupLevel;
 import org.apache.fineract.portfolio.group.domain.GroupLevelRepository;
@@ -91,6 +91,7 @@ import org.apache.fineract.portfolio.group.domain.GroupRepositoryWrapper;
 import org.apache.fineract.portfolio.group.domain.GroupTypes;
 import org.apache.fineract.portfolio.group.exception.GroupAccountExistsException;
 import org.apache.fineract.portfolio.group.exception.GroupHasNoStaffException;
+import org.apache.fineract.portfolio.group.exception.GroupMeetingTimeCollisionException;
 import org.apache.fineract.portfolio.group.exception.GroupMemberCountNotInPermissibleRangeException;
 import org.apache.fineract.portfolio.group.exception.GroupMustBePendingToBeDeletedException;
 import org.apache.fineract.portfolio.group.exception.InvalidGroupLevelException;
@@ -106,6 +107,7 @@ import org.apache.fineract.useradministration.domain.AppUser;
 import org.apache.fineract.useradministration.domain.AppUserRepository;
 import org.apache.fineract.useradministration.exception.UserNotFoundException;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -136,12 +138,13 @@ public class GroupingTypesWritePlatformServiceJpaRepositoryImpl implements Group
     private final EntityDatatableChecksWritePlatformService entityDatatableChecksWritePlatformService;
     private final BusinessEventNotifierService businessEventNotifierService;
     private final AppUserRepository appUserRepository;
-    private final PortfolioCenterRepositoryWrapper portfolioCenterRepositoryWrapper;
     private final ConfigurationReadPlatformService configurationReadPlatformService;
     private final PortfolioRepositoryWrapper portfolioRepositoryWrapper;
     private final ConfigurationDomainServiceJpa configurationDomainServiceJpa;
     private final CodeValueReadPlatformService codeValueReadPlatformService;
     private final RangeTemplateReadPlatformService rangeTemplateReadPlatformService;
+    private final GroupReadPlatformService groupReadPlatformService;
+    private final JdbcTemplate jdbcTemplate;
 
     private CommandProcessingResult createGroupingType(final JsonCommand command, final GroupTypes groupingType, final Long centerId) {
         try {
@@ -857,18 +860,18 @@ public class GroupingTypesWritePlatformServiceJpaRepositoryImpl implements Group
      * Guaranteed to throw an exception no matter what the data integrity issue is.
      */
     private void handleGroupDataIntegrityIssues(final JsonCommand command, final Throwable realCause, final Exception dve,
-                                                final GroupTypes groupLevel) {
+            final GroupTypes groupLevel) {
 
         String levelName = "Invalid";
         switch (groupLevel) {
             case CENTER:
                 levelName = "Center";
-                break;
+            break;
             case GROUP:
                 levelName = "Group";
-                break;
+            break;
             case INVALID:
-                break;
+            break;
         }
 
         String errorMessageForUser = null;
@@ -1009,7 +1012,33 @@ public class GroupingTypesWritePlatformServiceJpaRepositoryImpl implements Group
 
     @Override
     public CommandProcessingResult transferGroup(JsonCommand command) {
-        return null;
+        this.fromApiJsonDeserializer.validateForTransferGroup(command);
+        final Long newCenterId = command.longValueOfParameterNamed(GroupingTypesApiConstants.toCenterIdParamName);
+        final Long groupId = command.longValueOfParameterNamed(GroupingTypesApiConstants.groupIdParamName);
+        Group newCenter = this.groupRepository.findOneWithNotFoundDetection(newCenterId);
+        Group group = this.groupRepository.findOneWithNotFoundDetection(groupId);
+
+        LocalTime meetingStartTime = group.getMeetingStartTime();
+        LocalTime meetingEndTime = group.getMeetingEndTime();
+        String schemaSql = "select cgroup.id from m_group cgroup where cgroup.parent_id = ? and "
+                + "( ( ? >= cgroup.meeting_start_time and ? < cgroup.meeting_end_time) OR "
+                + "( ? > cgroup.meeting_start_time and ? < cgroup.meeting_end_time) ) order by id desc";
+        List<Long> groupIds = jdbcTemplate.queryForList(schemaSql, Long.class, newCenter.getId(), meetingStartTime, meetingStartTime,
+                meetingEndTime, meetingEndTime);
+
+        if (groupIds.size() > 0) {
+            GroupGeneralData existingGroup = this.groupReadPlatformService.retrieveOne(groupId);
+
+            throw new GroupMeetingTimeCollisionException(existingGroup.getName(), existingGroup.getId(), meetingStartTime, meetingEndTime);
+        }
+        group.setParent(newCenter);
+        this.groupRepository.saveAndFlush(group);
+        return new CommandProcessingResultBuilder() //
+                .withCommandId(command.commandId()) //
+                .withOfficeId(newCenter.officeId()) //
+                .withGroupId(newCenterId) //
+                .withEntityId(groupId) //
+                .build();
     }
 
     @Override
@@ -1091,7 +1120,7 @@ public class GroupingTypesWritePlatformServiceJpaRepositoryImpl implements Group
     }
 
     public void validateOfficeOpeningDateisAfterGroupOrCenterOpeningDate(final Office groupOffice, final GroupLevel groupLevel,
-                                                                         final LocalDate activationDate) {
+            final LocalDate activationDate) {
         if (activationDate != null && groupOffice.getOpeningLocalDate().isAfter(activationDate)) {
             final String levelName = groupLevel.getLevelName();
             final String errorMessage = levelName + " activation date should be greater than or equal to the parent Office's creation date "

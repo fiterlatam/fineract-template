@@ -41,7 +41,6 @@ public class PrequalificationGroupRepositoryWrapper {
         return this.repository.findById(id).orElseThrow(() -> new GroupPreQualificationNotFound(id));
     }
 
-
     public PrequalificationGroup save(final PrequalificationGroup entity) {
         return this.repository.save(entity);
     }

@@ -302,12 +302,12 @@ public class CentersApiResource {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = CentersApiResourceSwagger.PostCentersResponse.class))) })
     public String modify(@Parameter(hidden = true) final String apiRequestBodyAsJson,
-                         @PathParam("centerId") @Parameter(description = "centerId") final Long centerId,
-                         @PathParam("action") @Parameter(description = "action") final String action) {
+            @PathParam("centerId") @Parameter(description = "centerId") final Long centerId,
+            @PathParam("action") @Parameter(description = "action") final String action) {
 
         CommandWrapper commandRequest = null; //
-        if (StringUtils.equals(action,"transfer")){
-           commandRequest =  new CommandWrapperBuilder().transferGroup(centerId) //
+        if (StringUtils.equals(action, "transfer")) {
+            commandRequest = new CommandWrapperBuilder().transferGroup(centerId) //
                     .withJson(apiRequestBodyAsJson) //
                     .build();
         }

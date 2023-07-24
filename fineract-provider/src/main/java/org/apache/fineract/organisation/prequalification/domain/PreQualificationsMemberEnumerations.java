@@ -18,12 +18,11 @@
  */
 package org.apache.fineract.organisation.prequalification.domain;
 
+import java.util.ArrayList;
+import java.util.List;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.portfolio.client.domain.ClientTransactionType;
 import org.apache.fineract.portfolio.client.domain.LegalForm;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public final class PreQualificationsMemberEnumerations {
 
@@ -36,22 +35,23 @@ public final class PreQualificationsMemberEnumerations {
     }
 
     public static EnumOptionData status(final PrequalificationMemberIndication status) {
-        EnumOptionData optionData = new EnumOptionData(PrequalificationMemberIndication.INVALID.getValue().longValue(), PrequalificationMemberIndication.INVALID.getCode(),
-                "INVALID");
+        EnumOptionData optionData = new EnumOptionData(PrequalificationMemberIndication.INVALID.getValue().longValue(),
+                PrequalificationMemberIndication.INVALID.getCode(), "INVALID");
         switch (status) {
             case INVALID:
-                optionData = new EnumOptionData(PrequalificationMemberIndication.INVALID.getValue().longValue(), PrequalificationMemberIndication.INVALID.getCode(),
-                        "INVALID");
+                optionData = new EnumOptionData(PrequalificationMemberIndication.INVALID.getValue().longValue(),
+                        PrequalificationMemberIndication.INVALID.getCode(), "INVALID");
             break;
             case ACTIVE:
-                optionData = new EnumOptionData(PrequalificationMemberIndication.ACTIVE.getValue().longValue(), PrequalificationMemberIndication.ACTIVE.getCode(), "ACTIVE");
+                optionData = new EnumOptionData(PrequalificationMemberIndication.ACTIVE.getValue().longValue(),
+                        PrequalificationMemberIndication.ACTIVE.getCode(), "ACTIVE");
             break;
             case INACTIVE:
-                optionData = new EnumOptionData(PrequalificationMemberIndication.INACTIVE.getValue().longValue(), PrequalificationMemberIndication.INACTIVE.getCode(),
-                        "INACTIVE");
+                optionData = new EnumOptionData(PrequalificationMemberIndication.INACTIVE.getValue().longValue(),
+                        PrequalificationMemberIndication.INACTIVE.getCode(), "INACTIVE");
             case NONE:
-                optionData = new EnumOptionData(PrequalificationMemberIndication.NONE.getValue().longValue(), PrequalificationMemberIndication.NONE.getCode(),
-                        "NONE");
+                optionData = new EnumOptionData(PrequalificationMemberIndication.NONE.getValue().longValue(),
+                        PrequalificationMemberIndication.NONE.getCode(), "NONE");
             break;
         }
 

@@ -97,14 +97,14 @@ public final class CenterData implements Serializable {
     private LocalDate submittedOnDate;
 
     public static CenterData importInstance(String name, List<GroupGeneralData> groupMembers, LocalDate activationDate, boolean active,
-                                            LocalDate submittedOnDate, String externalId, Long officeId, Long staffId, Integer rowIndex, String dateFormat, String locale) {
+            LocalDate submittedOnDate, String externalId, Long officeId, Long staffId, Integer rowIndex, String dateFormat, String locale) {
 
         return new CenterData(name, groupMembers, activationDate, active, submittedOnDate, externalId, officeId, staffId, rowIndex,
                 dateFormat, locale);
     }
 
     private CenterData(String name, List<GroupGeneralData> groupMembers, LocalDate activationDate, boolean active,
-                       LocalDate submittedOnDate, String externalId, Long officeId, Long staffId, Integer rowIndex, String dateFormat, String locale) {
+            LocalDate submittedOnDate, String externalId, Long officeId, Long staffId, Integer rowIndex, String dateFormat, String locale) {
         this.name = name;
         this.groupMembers = groupMembers;
         this.externalId = externalId;
@@ -147,11 +147,11 @@ public final class CenterData implements Serializable {
     }
 
     public static CenterData template(final Long officeId, final String accountNo, final LocalDate activationDate,
-                                      final Collection<OfficeData> officeOptions, final Collection<StaffData> staffOptions,
-                                      final Collection<GroupGeneralData> groupMembersOptions, final BigDecimal totalCollected, final BigDecimal totalOverdue,
-                                      final BigDecimal totaldue, final BigDecimal installmentDue, final Collection<CodeValueData> cityOptions,
-                                      final Collection<CodeValueData> stateOptions, final Collection<CodeValueData> typeOptions,
-                                      final Collection<CodeValueData> meetingDayOptions) {
+            final Collection<OfficeData> officeOptions, final Collection<StaffData> staffOptions,
+            final Collection<GroupGeneralData> groupMembersOptions, final BigDecimal totalCollected, final BigDecimal totalOverdue,
+            final BigDecimal totaldue, final BigDecimal installmentDue, final Collection<CodeValueData> cityOptions,
+            final Collection<CodeValueData> stateOptions, final Collection<CodeValueData> typeOptions,
+            final Collection<CodeValueData> meetingDayOptions) {
         final CalendarData collectionMeetingCalendar = null;
         final Collection<CodeValueData> closureReasons = null;
         final GroupTimelineData timeline = null;
@@ -172,9 +172,9 @@ public final class CenterData implements Serializable {
     }
 
     public static CenterData instance(final Long id, final String accountNo, final String name, final String externalId,
-                                      final EnumOptionData status, final LocalDate activationDate, final Long officeId, final String officeName, final Long staffId,
-                                      final String staffName, final String hierarchy, final GroupTimelineData timeline, final CalendarData collectionMeetingCalendar,
-                                      final BigDecimal totalCollected, final BigDecimal totalOverdue, final BigDecimal totaldue, final BigDecimal installmentDue) {
+            final EnumOptionData status, final LocalDate activationDate, final Long officeId, final String officeName, final Long staffId,
+            final String staffName, final String hierarchy, final GroupTimelineData timeline, final CalendarData collectionMeetingCalendar,
+            final BigDecimal totalCollected, final BigDecimal totalOverdue, final BigDecimal totaldue, final BigDecimal installmentDue) {
 
         final Collection<GroupGeneralData> groupMembers = null;
         final Collection<OfficeData> officeOptions = null;
@@ -192,7 +192,7 @@ public final class CenterData implements Serializable {
     }
 
     public static CenterData withAssociations(final CenterData centerData, final Collection<GroupGeneralData> groupMembers,
-                                              final CalendarData collectionMeetingCalendar) {
+            final CalendarData collectionMeetingCalendar) {
         return new CenterData(centerData.id, centerData.accountNo, centerData.name, centerData.externalId, centerData.status,
                 centerData.activationDate, centerData.officeId, centerData.officeName, centerData.staffId, centerData.staffName,
                 centerData.hierarchy, groupMembers, centerData.officeOptions, centerData.staffOptions, centerData.groupMembersOptions,
@@ -252,13 +252,13 @@ public final class CenterData implements Serializable {
     }
 
     private CenterData(final Long id, final String accountNo, final String name, final String externalId, final EnumOptionData status,
-                       final LocalDate activationDate, final Long officeId, final String officeName, final Long staffId, final String staffName,
-                       final String hierarchy, final Collection<GroupGeneralData> groupMembers, final Collection<OfficeData> officeOptions,
-                       final Collection<StaffData> staffOptions, final Collection<GroupGeneralData> groupMembersOptions,
-                       final CalendarData collectionMeetingCalendar, final Collection<CodeValueData> closureReasons, final GroupTimelineData timeline,
-                       final BigDecimal totalCollected, final BigDecimal totalOverdue, final BigDecimal totaldue, final BigDecimal installmentDue,
-                       final Collection<CodeValueData> cityOptions, final Collection<CodeValueData> stateOptions,
-                       final Collection<CodeValueData> typeOptions, final Collection<CodeValueData> meetingDayOptions) {
+            final LocalDate activationDate, final Long officeId, final String officeName, final Long staffId, final String staffName,
+            final String hierarchy, final Collection<GroupGeneralData> groupMembers, final Collection<OfficeData> officeOptions,
+            final Collection<StaffData> staffOptions, final Collection<GroupGeneralData> groupMembersOptions,
+            final CalendarData collectionMeetingCalendar, final Collection<CodeValueData> closureReasons, final GroupTimelineData timeline,
+            final BigDecimal totalCollected, final BigDecimal totalOverdue, final BigDecimal totaldue, final BigDecimal installmentDue,
+            final Collection<CodeValueData> cityOptions, final Collection<CodeValueData> stateOptions,
+            final Collection<CodeValueData> typeOptions, final Collection<CodeValueData> meetingDayOptions) {
         this.id = id;
         this.accountNo = accountNo;
         this.name = name;

@@ -42,4 +42,3 @@ select mcg.id, mcg.name as group_name, mpc.id as parent_id,mpc.office_id,300 as 
 
 --update account numbers and hirearchy
 update m_group set account_no = LPAD(id, 9, '0'), hierarchy = concat('.',id,'.')
-

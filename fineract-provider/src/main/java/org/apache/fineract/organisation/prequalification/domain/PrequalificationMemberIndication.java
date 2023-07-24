@@ -40,12 +40,12 @@ public enum PrequalificationMemberIndication {
         switch (statusValue) {
             case 100:
                 enumeration = PrequalificationMemberIndication.ACTIVE;
-                break;
+            break;
             case 200:
                 enumeration = PrequalificationMemberIndication.INACTIVE;
             case 300:
                 enumeration = PrequalificationMemberIndication.NONE;
-                break;
+            break;
         }
         return enumeration;
     }
@@ -67,7 +67,7 @@ public enum PrequalificationMemberIndication {
             clientStatus = PrequalificationMemberIndication.INACTIVE;
         } else if (status.equalsIgnoreCase(ClientStatus.PENDING.toString())) {
             clientStatus = PrequalificationMemberIndication.ACTIVE;
-        }else if (status.equalsIgnoreCase(ClientStatus.REJECTED.toString())) {
+        } else if (status.equalsIgnoreCase(ClientStatus.REJECTED.toString())) {
             clientStatus = PrequalificationMemberIndication.NONE;
         }
 
@@ -94,6 +94,7 @@ public enum PrequalificationMemberIndication {
     public boolean isInactive() {
         return this.value.equals(PrequalificationMemberIndication.INACTIVE.getValue());
     }
+
     public boolean isNotBlacklisted() {
         return this.value.equals(PrequalificationMemberIndication.NONE.getValue());
     }

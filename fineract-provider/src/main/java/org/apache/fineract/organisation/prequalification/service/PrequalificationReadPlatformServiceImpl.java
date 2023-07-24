@@ -18,6 +18,12 @@
  */
 package org.apache.fineract.organisation.prequalification.service;
 
+import java.math.BigDecimal;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.infrastructure.codes.service.CodeValueReadPlatformService;
@@ -48,13 +54,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
-
 @Service
 @Slf4j
 public class PrequalificationReadPlatformServiceImpl implements PrequalificationReadPlatformService {
@@ -76,11 +75,11 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
 
     @Autowired
     public PrequalificationReadPlatformServiceImpl(final PlatformSecurityContext context, final PaginationHelper paginationHelper,
-                                                   final DatabaseSpecificSQLGenerator sqlGenerator, final ColumnValidator columnValidator,
-                                                   final PrequalificationDataValidator dataValidator, final LoanProductRepository loanProductRepository,
-                                                   final PreQualificationMemberRepository preQualificationMemberRepository,
-                                                   final ClientReadPlatformService clientReadPlatformService, final CodeValueReadPlatformService codeValueReadPlatformService,
-                                                   final JdbcTemplate jdbcTemplate) {
+            final DatabaseSpecificSQLGenerator sqlGenerator, final ColumnValidator columnValidator,
+            final PrequalificationDataValidator dataValidator, final LoanProductRepository loanProductRepository,
+            final PreQualificationMemberRepository preQualificationMemberRepository,
+            final ClientReadPlatformService clientReadPlatformService, final CodeValueReadPlatformService codeValueReadPlatformService,
+            final JdbcTemplate jdbcTemplate) {
         this.context = context;
         this.dataValidator = dataValidator;
         this.loanProductRepository = loanProductRepository;
@@ -140,18 +139,21 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                 }
             }
         }
-        return this.paginationHelper.fetchPage(this.jdbcTemplate, sqlBuilder.toString(), paramList.toArray(), this.prequalificationsGroupMapper);
+        return this.paginationHelper.fetchPage(this.jdbcTemplate, sqlBuilder.toString(), paramList.toArray(),
+                this.prequalificationsGroupMapper);
     }
 
     @Override
     public GroupPrequalificationData retrieveOne(Long groupId) {
 
         final String sql = "select " + this.prequalificationsGroupMapper.schema() + " where g.id = ? ";
-        final GroupPrequalificationData clientData = this.jdbcTemplate.queryForObject(sql, this.prequalificationsGroupMapper, new Object[] { groupId });
+        final GroupPrequalificationData clientData = this.jdbcTemplate.queryForObject(sql, this.prequalificationsGroupMapper,
+                new Object[] { groupId });
 
         final String membersql = "select " + this.prequalificationsMemberMapper.schema() + " where m.group_id = ? ";
 
-        List<MemberPrequalificationData> members = this.jdbcTemplate.query(membersql, this.prequalificationsMemberMapper, new Object[]{groupId});
+        List<MemberPrequalificationData> members = this.jdbcTemplate.query(membersql, this.prequalificationsMemberMapper,
+                new Object[] { groupId });
 
         clientData.updateMembers(members);
         return clientData;
@@ -198,8 +200,8 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
         PrequalificationsGroupMapper() {
             final StringBuilder builder = new StringBuilder(400);
 
-            builder.append("g.id as id, g.prequalification_number as prequalificationNumber, g.status, g.created_at, g.comments, " +
-                    "ma.name as agencyName, cg.display_name as groupName, g.group_name as newGroupName, pc.display_name as centerName, ");
+            builder.append("g.id as id, g.prequalification_number as prequalificationNumber, g.status, g.created_at, g.comments, "
+                    + "ma.name as agencyName, cg.display_name as groupName, g.group_name as newGroupName, pc.display_name as centerName, ");
             builder.append("lp.name as productName, au.firstname, au.lastname ");
             builder.append("from m_prequalification_group g ");
             builder.append("inner join m_appuser au on au.id = g.added_by ");
@@ -207,7 +209,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             builder.append("inner join m_agency ma on g.agency_id = ma.id ");
             builder.append("left join m_group cg on cg.id = g.group_id ");
             builder.append("left join m_group pc on pc.id = g.center_id ");
-            //builder.append("left join m_portfolio mp on mp.id = pc.portfolio_id ");
+            // builder.append("left join m_portfolio mp on mp.id = pc.portfolio_id ");
 
             this.schema = builder.toString();
         }
@@ -222,24 +224,24 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             final Integer statusEnum = JdbcSupport.getInteger(rs, "status");
             final EnumOptionData status = PreQualificationsEnumerations.status(statusEnum);
 
-
             final Long id = JdbcSupport.getLong(rs, "id");
             final String prequalificationNumber = rs.getString("prequalificationNumber");
             String groupName = rs.getString("groupName");
             final String agencyName = rs.getString("agencyName");
             final String centerName = rs.getString("centerName");
             final String newGroupName = rs.getString("newGroupName");
-            //final String portfolioName = rs.getString("portfolioName");
+            // final String portfolioName = rs.getString("portfolioName");
             final String productName = rs.getString("productName");
             final String comments = rs.getString("comments");
             final LocalDate createdAt = JdbcSupport.getLocalDate(rs, "created_at");
 
             final String addedBy = rs.getString("firstname") + " " + rs.getString("lastname");
 
-            if (StringUtils.isBlank(groupName)){
+            if (StringUtils.isBlank(groupName)) {
                 groupName = newGroupName;
             }
-            return GroupPrequalificationData.instance(id, prequalificationNumber, status, agencyName, null, centerName, groupName, productName, addedBy, createdAt,comments);
+            return GroupPrequalificationData.instance(id, prequalificationNumber, status, agencyName, null, centerName, groupName,
+                    productName, addedBy, createdAt, comments);
 
         }
     }
@@ -268,17 +270,16 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             final Integer statusEnum = JdbcSupport.getInteger(rs, "status");
             final EnumOptionData status = PreQualificationsMemberEnumerations.status(statusEnum);
 
-
             final Long id = JdbcSupport.getLong(rs, "id");
-            final String name = rs.getString("name");;
+            final String name = rs.getString("name");
+            ;
             final String dpi = rs.getString("dpi");
             final BigDecimal requestedAmount = rs.getBigDecimal("requestedAmount");
             final String puente = rs.getString("puente");
             final Long blacklistCount = rs.getLong("blacklistCount");
             final LocalDate dob = JdbcSupport.getLocalDate(rs, "dob");
 
-
-            return MemberPrequalificationData.instance(id, name, dpi, dob,puente,requestedAmount,status, blacklistCount);
+            return MemberPrequalificationData.instance(id, name, dpi, dob, puente, requestedAmount, status, blacklistCount);
 
         }
     }
