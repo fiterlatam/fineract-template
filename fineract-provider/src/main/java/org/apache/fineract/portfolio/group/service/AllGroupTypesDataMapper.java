@@ -21,6 +21,8 @@ package org.apache.fineract.portfolio.group.service;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
+import java.time.LocalTime;
+
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
 import org.apache.fineract.portfolio.client.domain.ClientEnumerations;
@@ -43,6 +45,10 @@ public final class AllGroupTypesDataMapper implements RowMapper<GroupGeneralData
         sqlBuilder.append("g.staff_id as staffId, s.display_name as staffName, ");
         sqlBuilder.append("g.status_enum as statusEnum, g.activation_date as activationDate, ");
         sqlBuilder.append("g.closedon_date as closedOnDate, ");
+        sqlBuilder.append("g.meeting_start_time as meetingStartTime, g.meeting_end_time as meetingEndTime, "); //
+        sqlBuilder.append("g.meeting_start_date as meetingStartDate, g.meeting_end_date as meetingEndDate, "); //
+        sqlBuilder.append("g.meeting_day as meetingDay, g.group_location as groupLocation, "); //
+        sqlBuilder.append("cvMeetingDay.code_value as meetingDayValue ,cvMeetingDay.order_position as meetingDayOrderPosition, g.group_location as groupLocation, "); //
 
         sqlBuilder.append("g.submittedon_date as submittedOnDate, ");
         sqlBuilder.append("sbu.username as submittedByUsername, ");
@@ -60,6 +66,7 @@ public final class AllGroupTypesDataMapper implements RowMapper<GroupGeneralData
         sqlBuilder.append("g.hierarchy as hierarchy, ");
         sqlBuilder.append("g.level_id as groupLevel ");
         sqlBuilder.append("from m_group g ");
+        sqlBuilder.append("left join m_code_value cvMeetingDay on g.meeting_day = cvMeetingDay.id ");
         sqlBuilder.append("join m_office o on o.id = g.office_id ");
         sqlBuilder.append("left join m_staff s on s.id = g.staff_id ");
         sqlBuilder.append("left join m_group pg on pg.id = g.parent_id ");
@@ -108,12 +115,20 @@ public final class AllGroupTypesDataMapper implements RowMapper<GroupGeneralData
         final String activatedByUsername = rs.getString("activatedByUsername");
         final String activatedByFirstname = rs.getString("activatedByFirstname");
         final String activatedByLastname = rs.getString("activatedByLastname");
+        final String groupLocation = rs.getString("groupLocation");
+        final int meetingStart = rs.getInt("meetingStartDate");
+        final int meetingEnd = rs.getInt("meetingEndDate");
+        final int meetingDay = rs.getInt("meetingDay");
+        final String meetingDayValue = rs.getString("meetingDayValue");
+        final LocalTime meetingStartTime = JdbcSupport.getLocalTime(rs, "meetingStartTime");
+        final LocalTime meetingEndTime = JdbcSupport.getLocalTime(rs, "meetingEndTime");
+
 
         final GroupTimelineData timeline = new GroupTimelineData(submittedOnDate, submittedByUsername, submittedByFirstname,
                 submittedByLastname, activationDate, activatedByUsername, activatedByFirstname, activatedByLastname, closedOnDate,
                 closedByUsername, closedByFirstname, closedByLastname);
 
         return GroupGeneralData.instance(id, accountNo, name, externalId, status, activationDate, officeId, officeName, centerId,
-                centerName, staffId, staffName, hierarchy, groupLevel, timeline);
+                centerName, staffId, staffName, hierarchy, groupLevel, timeline, meetingDay, meetingDayValue, meetingStart, meetingEnd, meetingStartTime, meetingEndTime, groupLocation);
     }
 }

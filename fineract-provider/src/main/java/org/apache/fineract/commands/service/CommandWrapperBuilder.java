@@ -3717,4 +3717,19 @@ public class CommandWrapperBuilder {
         this.href = "/blacklist/addtoblacklist";
         return this;
     }
+
+    public CommandWrapperBuilder createPrequalification() {
+        this.actionName = "CREATE";
+        this.entityName = "PREQUALIFICATIONS";
+        this.href = "/prequalification/newprequalification";
+        return this;
+    }
+
+    public CommandWrapperBuilder transferGroup(Long centerId) {
+        this.actionName = "TRANSFER";
+        this.entityName = "GROUP";
+        this.entityId = centerId;
+        this.href = "/centers/" + centerId;
+        return this;
+    }
 }
