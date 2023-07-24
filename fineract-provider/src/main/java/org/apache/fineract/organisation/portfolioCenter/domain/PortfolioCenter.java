@@ -209,4 +209,8 @@ public class PortfolioCenter extends AbstractAuditableCustom {
     public void setMeetingEndTime(LocalTime meetingEndTime) {
         this.meetingEndTime = meetingEndTime;
     }
+
+    public Portfolio getPortfolio() {
+        return portfolio;
+    }
 }

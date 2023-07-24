@@ -55,6 +55,9 @@ public final class GroupingTypesDataValidator {
             GroupingTypesApiConstants.activationDateParamName, GroupingTypesApiConstants.groupMembersParamName,
             GroupingTypesApiConstants.submittedOnDateParamName, GroupingTypesApiConstants.datatables));
 
+    private static final Set<String> GROUP_TRANSFER_DATA_PARAMETERS = new HashSet<>(Arrays.asList(
+            GroupingTypesApiConstants.groupIdParamName,GroupingTypesApiConstants.toCenterIdParamname));
+
     private static final Set<String> GROUP_REQUEST_DATA_PARAMETERS = new HashSet<>(Arrays.asList(GroupingTypesApiConstants.localeParamName,
             GroupingTypesApiConstants.dateFormatParamName, GroupingTypesApiConstants.idParamName, GroupingTypesApiConstants.nameParamName,
             GroupingTypesApiConstants.externalIdParamName, GroupingTypesApiConstants.centerIdParamName,
@@ -147,6 +150,33 @@ public final class GroupingTypesDataValidator {
             final JsonArray datatables = this.fromApiJsonHelper.extractJsonArrayNamed(GroupingTypesApiConstants.datatables, element);
             baseDataValidator.reset().parameter(GroupingTypesApiConstants.datatables).value(datatables).notNull().jsonArrayNotEmpty();
         }
+
+        throwExceptionIfValidationWarningsExist(dataValidationErrors);
+    }
+
+    public void validateForTransferGroup(final JsonCommand command) {
+
+        final String json = command.json();
+
+        if (StringUtils.isBlank(json)) {
+            throw new InvalidJsonException();
+        }
+
+        final Type typeOfMap = new TypeToken<Map<String, Object>>() {}.getType();
+        this.fromApiJsonHelper.checkForUnsupportedParameters(typeOfMap, json, GROUP_TRANSFER_DATA_PARAMETERS);
+
+        final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
+
+        final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors)
+                .resource(GroupingTypesApiConstants.CENTER_RESOURCE_NAME);
+
+        final JsonElement element = command.parsedJson();
+
+        final Long groupId = this.fromApiJsonHelper.extractLongNamed(GroupingTypesApiConstants.groupIdParamName, element);
+        baseDataValidator.reset().parameter(GroupingTypesApiConstants.groupIdParamName).value(groupId).notNull().integerGreaterThanZero();
+
+        final Long toCenter = this.fromApiJsonHelper.extractLongNamed(GroupingTypesApiConstants.toCenterIdParamname, element);
+        baseDataValidator.reset().parameter(GroupingTypesApiConstants.toCenterIdParamname).value(toCenter).notNull().integerGreaterThanZero();
 
         throwExceptionIfValidationWarningsExist(dataValidationErrors);
     }

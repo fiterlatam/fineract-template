@@ -19,6 +19,7 @@
 package org.apache.fineract.portfolio.group.domain;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -139,6 +140,24 @@ public final class Group extends AbstractPersistableCustom {
 
     @OneToMany(mappedBy = "group")
     private List<GroupLoanIndividualMonitoringAccount> glimLoan;
+
+    @Column(name = "meeting_start_date")
+    private Integer meetingStart;
+
+    @Column(name = "meeting_end_date")
+    private Integer meetingEnd;
+
+    @Column(name = "meeting_day")
+    private Integer meetingDay;
+
+    @Column(name = "meeting_start_time")
+    private LocalTime meetingStartTime;
+
+    @Column(name = "meeting_end_time")
+    private LocalTime meetingEndTime;
+
+    @Column(name = "group_location")
+    private String groupLocation;
 
     // JPA default constructor for entity
     Group() {
@@ -765,4 +784,11 @@ public final class Group extends AbstractPersistableCustom {
         this.groupMembers = groupMembers;
     }
 
+    public LocalTime getMeetingStartTime() {
+        return meetingStartTime;
+    }
+
+    public LocalTime getMeetingEndTime() {
+        return meetingEndTime;
+    }
 }

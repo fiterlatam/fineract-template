@@ -19,6 +19,7 @@
 package org.apache.fineract.portfolio.group.service;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -67,6 +68,7 @@ import org.apache.fineract.portfolio.client.domain.Client;
 import org.apache.fineract.portfolio.client.domain.ClientRepositoryWrapper;
 import org.apache.fineract.portfolio.client.service.LoanStatusMapper;
 import org.apache.fineract.portfolio.group.api.GroupingTypesApiConstants;
+import org.apache.fineract.portfolio.group.data.GroupGeneralData;
 import org.apache.fineract.portfolio.group.domain.Group;
 import org.apache.fineract.portfolio.group.domain.GroupLevel;
 import org.apache.fineract.portfolio.group.domain.GroupLevelRepository;
@@ -74,6 +76,7 @@ import org.apache.fineract.portfolio.group.domain.GroupRepositoryWrapper;
 import org.apache.fineract.portfolio.group.domain.GroupTypes;
 import org.apache.fineract.portfolio.group.exception.GroupAccountExistsException;
 import org.apache.fineract.portfolio.group.exception.GroupHasNoStaffException;
+import org.apache.fineract.portfolio.group.exception.GroupMeetingTimeCollisionException;
 import org.apache.fineract.portfolio.group.exception.GroupMemberCountNotInPermissibleRangeException;
 import org.apache.fineract.portfolio.group.exception.GroupMustBePendingToBeDeletedException;
 import org.apache.fineract.portfolio.group.exception.InvalidGroupLevelException;
@@ -87,6 +90,7 @@ import org.apache.fineract.portfolio.savings.domain.SavingsAccount;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountRepositoryWrapper;
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -101,6 +105,7 @@ public class GroupingTypesWritePlatformServiceJpaRepositoryImpl implements Group
     private final PlatformSecurityContext context;
     private final GroupRepositoryWrapper groupRepository;
     private final ClientRepositoryWrapper clientRepositoryWrapper;
+    private final CenterReadPlatformServiceImpl centerReadPlatformService;
     private final OfficeRepositoryWrapper officeRepositoryWrapper;
     private final StaffRepositoryWrapper staffRepository;
     private final NoteRepository noteRepository;
@@ -116,6 +121,8 @@ public class GroupingTypesWritePlatformServiceJpaRepositoryImpl implements Group
     private final AccountNumberGenerator accountNumberGenerator;
     private final EntityDatatableChecksWritePlatformService entityDatatableChecksWritePlatformService;
     private final BusinessEventNotifierService businessEventNotifierService;
+    private final GroupReadPlatformService groupReadPlatformService;
+    private final JdbcTemplate jdbcTemplate;
 
     private CommandProcessingResult createGroupingType(final JsonCommand command, final GroupTypes groupingType, final Long centerId) {
         try {
@@ -878,8 +885,41 @@ public class GroupingTypesWritePlatformServiceJpaRepositoryImpl implements Group
 
     }
 
+    @Override
+    public CommandProcessingResult transferGroup(JsonCommand command) {
+        Long originalCenterId = command.entityId();
+        this.fromApiJsonDeserializer.validateForTransferGroup(command);
+        final Long newCenterId = command.longValueOfParameterNamed(GroupingTypesApiConstants.toCenterIdParamname);
+        final Long groupId = command.longValueOfParameterNamed(GroupingTypesApiConstants.groupIdParamName);
+        Group newCenter = this.groupRepository.findOneWithNotFoundDetection(newCenterId);
+        Group group = this.groupRepository.findOneWithNotFoundDetection(groupId);
+
+        LocalTime meetingStartTime = group.getMeetingStartTime();
+        LocalTime meetingEndTime = group.getMeetingEndTime();
+        String schemaSql = "select cgroup.id from m_group cgroup where cgroup.parent_id = ? and "
+                + "( ( ? >= cgroup.meeting_start_time and ? < cgroup.meeting_end_time) OR "
+                + "( ? > cgroup.meeting_start_time and ? < cgroup.meeting_end_time) ) order by id desc";
+        List<Long> groupIds = jdbcTemplate.queryForList(schemaSql, Long.class, newCenter.getId(), meetingStartTime,
+                meetingStartTime, meetingEndTime, meetingEndTime);
+
+        if (groupIds.size() > 0) {
+            GroupGeneralData existingGroup = this.groupReadPlatformService.retrieveOne(groupId);
+
+            throw new GroupMeetingTimeCollisionException(existingGroup.getName(), existingGroup.getId(), meetingStartTime,
+                    meetingEndTime);
+        }
+        group.setParent(newCenter);
+        this.groupRepository.saveAndFlush(group);
+        return new CommandProcessingResultBuilder() //
+                .withCommandId(command.commandId()) //
+                .withOfficeId(newCenter.officeId()) //
+                .withGroupId(newCenterId) //
+                .withEntityId(groupId) //
+                .build();
+    }
+
     @Transactional
-    private void checkForActiveJLGLoans(final Long groupId, final Set<Client> clientMembers) {
+    protected void checkForActiveJLGLoans(final Long groupId, final Set<Client> clientMembers) {
         for (final Client client : clientMembers) {
             final Collection<Loan> loans = this.loanRepositoryWrapper.findActiveLoansByLoanIdAndGroupId(client.getId(), groupId);
             if (!CollectionUtils.isEmpty(loans)) {
@@ -891,7 +931,7 @@ public class GroupingTypesWritePlatformServiceJpaRepositoryImpl implements Group
     }
 
     @Transactional
-    private void validateForJLGSavings(final Long groupId, final Set<Client> clientMembers) {
+    protected void validateForJLGSavings(final Long groupId, final Set<Client> clientMembers) {
         for (final Client client : clientMembers) {
             final Collection<SavingsAccount> savings = this.savingsAccountRepositoryWrapper.findByClientIdAndGroupId(client.getId(),
                     groupId);
