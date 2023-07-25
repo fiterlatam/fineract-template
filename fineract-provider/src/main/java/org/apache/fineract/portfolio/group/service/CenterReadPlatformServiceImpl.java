@@ -50,6 +50,7 @@ import org.apache.fineract.infrastructure.core.service.database.DatabaseSpecific
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.infrastructure.security.utils.ColumnValidator;
 import org.apache.fineract.infrastructure.security.utils.SQLBuilder;
+import org.apache.fineract.organisation.centerGroup.domain.CenterGroupLocation;
 import org.apache.fineract.organisation.centerGroup.service.GroupLocationEnumerations;
 import org.apache.fineract.organisation.office.data.OfficeData;
 import org.apache.fineract.organisation.office.domain.OfficeHierarchyLevel;
@@ -82,6 +83,8 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
+
+import static org.apache.fineract.organisation.centerGroup.service.GroupLocationEnumerations.groupLocationsOptionData;
 
 @Service
 @RequiredArgsConstructor
@@ -616,7 +619,8 @@ public class CenterReadPlatformServiceImpl implements CenterReadPlatformService 
 
         Collection<PortfolioCenterData> portfolioCenterOptions = this.portfolioCenterReadPlatformService.retrieveAllByCurrentUser();
 
-        List<EnumOptionData> centerGroupLocations = new ArrayList<>();
+        List<EnumOptionData> centerGroupLocations = Arrays.asList(groupLocationsOptionData(CenterGroupLocation.URBAN),
+                groupLocationsOptionData(CenterGroupLocation.RURAL));
 
         return GroupGeneralData.template(centerOfficeId, center.getId(), center.getAccountNo(), center.getName(), staffId, staffName,
                 centerOptions, officeOptions, staffOptions, clientOptions, null, parentOfficesOptions, appUsers, portfolioCenterOptions,
