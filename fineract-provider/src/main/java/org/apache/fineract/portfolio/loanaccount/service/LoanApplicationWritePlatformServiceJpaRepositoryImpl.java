@@ -438,6 +438,15 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 }
             }
 
+            //contract number generation
+            StringBuilder contractBuilder = new StringBuilder();
+            String countLoansSql = "select count(*) from m_loan where product_id = ? ";
+            Long productLoansCount = this.jdbcTemplate.queryForObject(countLoansSql, Long.class, loanProduct.getId());
+            contractBuilder.append(StringUtils.leftPad(loanProduct.getShortName(), 8, '0'));
+            contractBuilder.append(StringUtils.leftPad(clientId.toString(), 8, '0'));
+            contractBuilder.append(StringUtils.leftPad(productLoansCount.toString(), 8, '0'));
+            newLoanApplication.updateLoanContract(contractBuilder.toString());
+
             this.loanRepositoryWrapper.saveAndFlush(newLoanApplication);
 
             if (loanProduct.isInterestRecalculationEnabled()) {
