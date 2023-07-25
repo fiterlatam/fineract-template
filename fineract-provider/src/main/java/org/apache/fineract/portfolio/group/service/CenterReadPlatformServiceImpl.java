@@ -233,6 +233,7 @@ public class CenterReadPlatformServiceImpl implements CenterReadPlatformService 
             final LocalDate createdDate = JdbcSupport.getLocalDate(rs, "createdDate");
             final LocalTime meetingStartTime = JdbcSupport.getLocalTime(rs, "meetingStartTime");
             final LocalTime meetingEndTime = JdbcSupport.getLocalTime(rs, "meetingEndTime");
+            final Long legacyNumber = rs.getLong("legacyNumber");
 
             final GroupTimelineData timeline = new GroupTimelineData(submittedOnDate, submittedByUsername, submittedByFirstname,
                     submittedByLastname, activationDate, activatedByUsername, activatedByFirstname, activatedByLastname, closedOnDate,
@@ -255,6 +256,7 @@ public class CenterReadPlatformServiceImpl implements CenterReadPlatformService 
             centerData.setCreatedDate(createdDate);
             centerData.setMeetingStartTime(meetingStartTime);
             centerData.setMeetingEndTime(meetingEndTime);
+            centerData.setLegacyNumber(legacyNumber);
 
             return centerData;
         }
@@ -614,8 +616,11 @@ public class CenterReadPlatformServiceImpl implements CenterReadPlatformService 
 
         Collection<PortfolioCenterData> portfolioCenterOptions = this.portfolioCenterReadPlatformService.retrieveAllByCurrentUser();
 
+        List<EnumOptionData> centerGroupLocations = new ArrayList<>();
+
         return GroupGeneralData.template(centerOfficeId, center.getId(), center.getAccountNo(), center.getName(), staffId, staffName,
-                centerOptions, officeOptions, staffOptions, clientOptions, null, parentOfficesOptions, appUsers, portfolioCenterOptions);
+                centerOptions, officeOptions, staffOptions, clientOptions, null, parentOfficesOptions, appUsers, portfolioCenterOptions,
+                centerGroupLocations);
     }
 
     @Override

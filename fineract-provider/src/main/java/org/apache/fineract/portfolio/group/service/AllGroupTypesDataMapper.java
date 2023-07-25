@@ -73,7 +73,7 @@ public final class AllGroupTypesDataMapper implements RowMapper<GroupGeneralData
 
         sqlBuilder.append("substring(g.display_name, 1, 5) as centerCodeName, g.portfolio_id as portfolioId, ");
         sqlBuilder.append("g.legacy_number as legacyNumber, g.city_id as cityId, cvCity.code_value as cityValue, ");
-        sqlBuilder.append("g.state_province_id as stateId, cvState.code_value as stateValue, 0 as center_location, ");
+        sqlBuilder.append("g.state_province_id as stateId, cvState.code_value as stateValue, g.group_location as group_location, ");
         sqlBuilder.append("g.distance_from_agency as distance, ");
         sqlBuilder.append("g.type_id as typeId, cvType.code_value as typeValue, g.created_date as createdDate, ");
         sqlBuilder.append("g.meeting_start_date as meetingStart, g.meeting_end_date as meetingEnd, ");
@@ -159,11 +159,11 @@ public final class AllGroupTypesDataMapper implements RowMapper<GroupGeneralData
         Integer distance = rs.getInt("distance");
         distance = rs.wasNull() ? null : distance;
 
-        final Integer centerLocationId = rs.getInt("center_location");
+        final Integer groupLocationId = rs.getInt("group_location");
 
-        EnumOptionData centerLocation = null;
-        if (centerLocationId != null) {
-            centerLocation = GroupLocationEnumerations.groupLocationsOptionData(centerLocationId);
+        EnumOptionData groupLocation = null;
+        if (groupLocationId != null) {
+            groupLocation = GroupLocationEnumerations.groupLocationsOptionData(groupLocationId);
         }
 
         final long typeId = rs.getLong("typeId");
@@ -193,6 +193,8 @@ public final class AllGroupTypesDataMapper implements RowMapper<GroupGeneralData
         ret.setCreatedDate(createdDate);
         ret.setMeetingStartTime(meetingStartTime);
         ret.setMeetingEndTime(meetingEndTime);
+        ret.setPortfolioCenterId(centerId);
+        ret.setGroupLocation(groupLocation);
 
         ret.setPortfolioId(portfolioId);
         ret.setCity(city);

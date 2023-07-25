@@ -89,6 +89,7 @@ public final class CenterData implements Serializable {
     private LocalDate createdDate;
     private LocalTime meetingStartTime;
     private LocalTime meetingEndTime;
+    private Long legacyNumber;
 
     // import fields
     private transient Integer rowIndex;
@@ -216,6 +217,7 @@ public final class CenterData implements Serializable {
         ret.setCreatedDate(centerData.createdDate);
         ret.setMeetingStartTime(centerData.meetingStartTime);
         ret.setMeetingEndTime(centerData.meetingEndTime);
+        ret.setLegacyNumber(centerData.legacyNumber);
 
         return ret;
     }
@@ -386,6 +388,10 @@ public final class CenterData implements Serializable {
 
     public void setMeetingEndTime(LocalTime meetingEndTime) {
         this.meetingEndTime = meetingEndTime;
+    }
+
+    public void setLegacyNumber(Long legacyNumber) {
+        this.legacyNumber = legacyNumber;
     }
 
     @Override

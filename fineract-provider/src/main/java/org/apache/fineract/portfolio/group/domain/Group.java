@@ -202,6 +202,9 @@ public final class Group extends AbstractAuditableCustom {
     @Column(name = "reference_point", nullable = false, length = 60)
     private String referencePoint;
 
+    @Column(name = "group_location", nullable = false)
+    private Integer location;
+
     // JPA default constructor for entity
     Group() {
         this.name = null;
@@ -499,6 +502,12 @@ public final class Group extends AbstractAuditableCustom {
         if (StringUtils.isNotBlank(meetingEndTime)) {
             LocalTime newMeetingEndTime = LocalTime.parse(meetingEndTime, dateTimeFormatter);
             this.meetingEndTime = newMeetingEndTime;
+        }
+
+        if (command.isChangeInIntegerParameterNamed(GroupingTypesApiConstants.groupLocation, this.location)) {
+            final Integer newValue = command.integerValueOfParameterNamed(GroupingTypesApiConstants.groupLocation);
+            actualChanges.put(GroupingTypesApiConstants.groupLocation, newValue);
+            this.location = newValue;
         }
 
         // custom fields for Centers

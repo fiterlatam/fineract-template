@@ -18,6 +18,8 @@
  */
 package org.apache.fineract.portfolio.group.service;
 
+import static org.apache.fineract.organisation.centerGroup.service.GroupLocationEnumerations.groupLocationsOptionData;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -28,6 +30,7 @@ import java.util.List;
 import java.util.Set;
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 import org.apache.fineract.infrastructure.codes.service.CodeValueReadPlatformService;
+import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.infrastructure.core.data.PaginationParameters;
 import org.apache.fineract.infrastructure.core.data.PaginationParametersDataValidator;
 import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
@@ -38,6 +41,7 @@ import org.apache.fineract.infrastructure.core.service.database.DatabaseSpecific
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.infrastructure.security.utils.ColumnValidator;
 import org.apache.fineract.infrastructure.security.utils.SQLBuilder;
+import org.apache.fineract.organisation.centerGroup.domain.CenterGroupLocation;
 import org.apache.fineract.organisation.office.data.OfficeData;
 import org.apache.fineract.organisation.office.domain.OfficeHierarchyLevel;
 import org.apache.fineract.organisation.office.service.OfficeReadPlatformService;
@@ -109,9 +113,10 @@ public class GroupReadPlatformServiceImpl implements GroupReadPlatformService {
 
         final Long defaultOfficeId = defaultToUsersOfficeIfNull(officeId);
 
-        Collection<CenterData> centerOptions = null;
+        Collection<CenterData> centerOptions;
         if (isCenterGroup) {
-            // centerOptions = this.centerReadPlatformService.retrieveAllForDropdown(defaultOfficeId);
+            centerOptions = this.centerReadPlatformService.retrieveAllForDropdown(defaultOfficeId);
+        } else {
             centerOptions = this.centerReadPlatformService.retrieveAllCentersByCurrentUser();
         }
 
@@ -138,6 +143,9 @@ public class GroupReadPlatformServiceImpl implements GroupReadPlatformService {
 
         final List<AppUserData> appUsers = new ArrayList<>(this.appUserReadPlatformService.retrieveAllUsers());
 
+        // move this into another method
+        List<EnumOptionData> centerGroupLocations = retrieveGroupLocationOptions();
+
         final Long centerId = null;
         final String accountNo = null;
         final String centerName = null;
@@ -148,7 +156,7 @@ public class GroupReadPlatformServiceImpl implements GroupReadPlatformService {
         Collection<PortfolioCenterData> portfolioCenterOptions = new ArrayList<>();
 
         return GroupGeneralData.template(defaultOfficeId, centerId, accountNo, centerName, staffId, staffName, centerOptions, officeOptions,
-                staffOptions, clientOptions, availableRoles, parentOfficesOptions, appUsers, portfolioCenterOptions);
+                staffOptions, clientOptions, availableRoles, parentOfficesOptions, appUsers, portfolioCenterOptions, centerGroupLocations);
     }
 
     private Long defaultToUsersOfficeIfNull(final Long officeId) {
@@ -157,6 +165,12 @@ public class GroupReadPlatformServiceImpl implements GroupReadPlatformService {
             defaultOfficeId = this.context.authenticatedUser().getOffice().getId();
         }
         return defaultOfficeId;
+    }
+
+    private List<EnumOptionData> retrieveGroupLocationOptions() {
+        final List<EnumOptionData> statusOptions = Arrays.asList(groupLocationsOptionData(CenterGroupLocation.URBAN),
+                groupLocationsOptionData(CenterGroupLocation.RURAL));
+        return statusOptions;
     }
 
     @Override

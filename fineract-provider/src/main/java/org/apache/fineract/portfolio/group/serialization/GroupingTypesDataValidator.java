@@ -38,7 +38,6 @@ import org.apache.fineract.infrastructure.core.exception.InvalidJsonException;
 import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidationException;
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
-import org.apache.fineract.organisation.centerGroup.service.CenterGroupConstants;
 import org.apache.fineract.portfolio.client.api.ClientApiConstants;
 import org.apache.fineract.portfolio.group.api.GroupingTypesApiConstants;
 import org.apache.fineract.portfolio.group.domain.GroupRepositoryWrapper;
@@ -60,7 +59,7 @@ public final class GroupingTypesDataValidator {
             GroupingTypesApiConstants.cityId, GroupingTypesApiConstants.stateId, GroupingTypesApiConstants.centerTypeId,
             GroupingTypesApiConstants.distance, GroupingTypesApiConstants.meetingStart, GroupingTypesApiConstants.meetingEnd,
             GroupingTypesApiConstants.meetingStartTime, GroupingTypesApiConstants.meetingEndTime, GroupingTypesApiConstants.meetingDay,
-            GroupingTypesApiConstants.referencePoint));
+            GroupingTypesApiConstants.referencePoint, GroupingTypesApiConstants.legacyNumber));
 
     private static final Set<String> GROUP_TRANSFER_DATA_PARAMETERS = new HashSet<>(
             Arrays.asList(GroupingTypesApiConstants.groupIdParamName, GroupingTypesApiConstants.toCenterIdParamName));
@@ -76,7 +75,7 @@ public final class GroupingTypesDataValidator {
             GroupingTypesApiConstants.legacyNumber, GroupingTypesApiConstants.latitude, GroupingTypesApiConstants.longitude,
             GroupingTypesApiConstants.formationDate, GroupingTypesApiConstants.size, GroupingTypesApiConstants.createdDate,
             GroupingTypesApiConstants.meetingStartTime, GroupingTypesApiConstants.meetingEndTime,
-            GroupingTypesApiConstants.newPortfolioCenterId));
+            GroupingTypesApiConstants.newPortfolioCenterId, GroupingTypesApiConstants.groupLocation));
 
     private static final Set<String> ACTIVATION_REQUEST_DATA_PARAMETERS = new HashSet<>(
             Arrays.asList(GroupingTypesApiConstants.localeParamName, GroupingTypesApiConstants.dateFormatParamName,
@@ -663,44 +662,31 @@ public final class GroupingTypesDataValidator {
     }
 
     private void validateGroupAdditionalData(DataValidatorBuilder baseDataValidator, JsonElement element) {
-        final Long portfolioCenterId = this.fromApiJsonHelper
-                .extractLongNamed(CenterGroupConstants.CenterGroupSupportedParameters.PORTFOLIO_CENTER_ID.getValue(), element);
-        baseDataValidator.reset().parameter(CenterGroupConstants.CenterGroupSupportedParameters.PORTFOLIO_CENTER_ID.getValue())
-                .value(portfolioCenterId).notNull().integerGreaterThanZero();
+        final Integer size = this.fromApiJsonHelper.extractIntegerWithLocaleNamed(GroupingTypesApiConstants.size, element);
+        baseDataValidator.reset().parameter(GroupingTypesApiConstants.size).value(size).notNull().integerZeroOrGreater();
 
-        final Integer size = this.fromApiJsonHelper
-                .extractIntegerWithLocaleNamed(CenterGroupConstants.CenterGroupSupportedParameters.SIZE.getValue(), element);
-        baseDataValidator.reset().parameter(CenterGroupConstants.CenterGroupSupportedParameters.SIZE.getValue()).value(size).notNull()
-                .integerZeroOrGreater();
-
-        if (this.fromApiJsonHelper.parameterExists(CenterGroupConstants.CenterGroupSupportedParameters.LEGACY_GROUP_NUMBER.getValue(),
-                element)) {
-            final Long legacyCenterNumber = this.fromApiJsonHelper
-                    .extractLongNamed(CenterGroupConstants.CenterGroupSupportedParameters.LEGACY_GROUP_NUMBER.getValue(), element);
-            baseDataValidator.reset().parameter(CenterGroupConstants.CenterGroupSupportedParameters.LEGACY_GROUP_NUMBER.getValue())
-                    .value(legacyCenterNumber).ignoreIfNull().longGreaterThanZero();
+        if (this.fromApiJsonHelper.parameterExists(GroupingTypesApiConstants.legacyNumber, element)) {
+            final Long legacyCenterNumber = this.fromApiJsonHelper.extractLongNamed(GroupingTypesApiConstants.legacyNumber, element);
+            baseDataValidator.reset().parameter(GroupingTypesApiConstants.legacyNumber).value(legacyCenterNumber).ignoreIfNull()
+                    .longGreaterThanZero();
         }
 
-        if (this.fromApiJsonHelper.parameterExists(CenterGroupConstants.CenterGroupSupportedParameters.LATITUDE.getValue(), element)) {
-            final BigDecimal latitude = this.fromApiJsonHelper
-                    .extractBigDecimalWithLocaleNamed(CenterGroupConstants.CenterGroupSupportedParameters.LATITUDE.getValue(), element);
-            baseDataValidator.reset().parameter(CenterGroupConstants.CenterGroupSupportedParameters.LATITUDE.getValue()).value(latitude)
-                    .ignoreIfNull().zeroOrPositiveAmount();
+        if (this.fromApiJsonHelper.parameterExists(GroupingTypesApiConstants.latitude, element)) {
+            final BigDecimal latitude = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed(GroupingTypesApiConstants.latitude,
+                    element);
+            baseDataValidator.reset().parameter(GroupingTypesApiConstants.latitude).value(latitude).ignoreIfNull().zeroOrPositiveAmount();
         }
 
-        if (this.fromApiJsonHelper.parameterExists(CenterGroupConstants.CenterGroupSupportedParameters.LONGITUDE.getValue(), element)) {
-            final BigDecimal longitude = this.fromApiJsonHelper
-                    .extractBigDecimalWithLocaleNamed(CenterGroupConstants.CenterGroupSupportedParameters.LONGITUDE.getValue(), element);
-            baseDataValidator.reset().parameter(CenterGroupConstants.CenterGroupSupportedParameters.LONGITUDE.getValue()).value(longitude)
-                    .ignoreIfNull().zeroOrPositiveAmount();
+        if (this.fromApiJsonHelper.parameterExists(GroupingTypesApiConstants.longitude, element)) {
+            final BigDecimal longitude = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed(GroupingTypesApiConstants.longitude,
+                    element);
+            baseDataValidator.reset().parameter(GroupingTypesApiConstants.longitude).value(longitude).ignoreIfNull().zeroOrPositiveAmount();
         }
 
-        if (this.fromApiJsonHelper.parameterExists(CenterGroupConstants.CenterGroupSupportedParameters.FORMATION_DATE.getValue(),
-                element)) {
-            final LocalDate formationDate = this.fromApiJsonHelper
-                    .extractLocalDateNamed(CenterGroupConstants.CenterGroupSupportedParameters.FORMATION_DATE.getValue(), element);
-            baseDataValidator.reset().parameter(CenterGroupConstants.CenterGroupSupportedParameters.FORMATION_DATE.getValue())
-                    .value(formationDate).ignoreIfNull().validateDateBefore(DateUtils.getBusinessLocalDate());
+        if (this.fromApiJsonHelper.parameterExists(GroupingTypesApiConstants.formationDate, element)) {
+            final LocalDate formationDate = this.fromApiJsonHelper.extractLocalDateNamed(GroupingTypesApiConstants.formationDate, element);
+            baseDataValidator.reset().parameter(GroupingTypesApiConstants.formationDate).value(formationDate).ignoreIfNull()
+                    .validateDateBefore(DateUtils.getBusinessLocalDate());
         }
     }
 

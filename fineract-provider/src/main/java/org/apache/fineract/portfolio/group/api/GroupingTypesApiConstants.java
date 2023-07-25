@@ -105,6 +105,8 @@ public final class GroupingTypesApiConstants {
     public static final String meetingStartTime = "meetingStartTime";
     public static final String meetingEndTime = "meetingEndTime";
     public static final String newPortfolioCenterId = "newPortfolioCenterId";
+    public static final String groupLocation = "groupLocation";
+    public static final String groupLocationId = "groupLocationId";
 
     // center customized parameters
     public static final String portfolioId = "portfolioId";

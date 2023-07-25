@@ -82,6 +82,7 @@ public class GroupGeneralData implements Serializable {
     private final Collection<OfficeData> parentOfficesOptions;
     private final Collection<AppUserData> responsibleUserOptions;
     private final Collection<PortfolioCenterData> portfolioCenterOptions;
+    private final Collection<EnumOptionData> centerGroupLocations;
 
     // Additional fields for FB groups
     private Long portfolioCenterId = 0L;
@@ -94,6 +95,7 @@ public class GroupGeneralData implements Serializable {
     private LocalDate createdDate;
     private LocalTime meetingStartTime;
     private LocalTime meetingEndTime;
+    private EnumOptionData groupLocation;
 
     // Additional fields for FB centers
     private Long portfolioId;
@@ -159,6 +161,8 @@ public class GroupGeneralData implements Serializable {
         this.parentOfficesOptions = null;
         this.responsibleUserOptions = null;
         this.portfolioCenterOptions = null;
+        this.centerGroupLocations = null;
+        this.groupLocation = null;
     }
 
     public GroupGeneralData(Long id, Long officeId) {
@@ -193,6 +197,8 @@ public class GroupGeneralData implements Serializable {
         this.parentOfficesOptions = null;
         this.responsibleUserOptions = null;
         this.portfolioCenterOptions = null;
+        this.centerGroupLocations = null;
+        this.groupLocation = null;
     }
 
     public GroupGeneralData(Long id) {
@@ -227,6 +233,8 @@ public class GroupGeneralData implements Serializable {
         this.parentOfficesOptions = null;
         this.responsibleUserOptions = null;
         this.portfolioCenterOptions = null;
+        this.centerGroupLocations = null;
+        this.groupLocation = null;
     }
 
     public Integer getRowIndex() {
@@ -250,7 +258,8 @@ public class GroupGeneralData implements Serializable {
         final Collection<GroupRoleData> groupRoles = null;
         final Collection<CodeValueData> closureReasons = null;
         return new GroupGeneralData(groupId, accountNo, groupName, null, null, null, null, null, null, null, null, null, null, null,
-                clientMembers, null, null, null, null, null, groupRoles, null, null, null, null, closureReasons, null, null, null, null);
+                clientMembers, null, null, null, null, null, groupRoles, null, null, null, null, closureReasons, null, null, null, null,
+                null);
     }
 
     public static GroupGeneralData template(final Long officeId, final Long centerId, final String accountNo, final String centerName,
@@ -258,7 +267,7 @@ public class GroupGeneralData implements Serializable {
             final Collection<OfficeData> officeOptions, final Collection<StaffData> staffOptions,
             final Collection<ClientData> clientOptions, final Collection<CodeValueData> availableRoles,
             final Collection<OfficeData> parentOfficesOptions, final Collection<AppUserData> responsibleUserOptions,
-            final Collection<PortfolioCenterData> portfolioCenterOptions) {
+            final Collection<PortfolioCenterData> portfolioCenterOptions, Collection<EnumOptionData> centerGroupLocations) {
 
         final Collection<ClientData> clientMembers = null;
         final Collection<GroupRoleData> groupRoles = null;
@@ -266,7 +275,8 @@ public class GroupGeneralData implements Serializable {
 
         return new GroupGeneralData(null, accountNo, null, null, null, null, officeId, null, centerId, centerName, staffId, staffName, null,
                 null, clientMembers, null, centerOptions, officeOptions, staffOptions, clientOptions, groupRoles, availableRoles, null,
-                null, null, closureReasons, null, parentOfficesOptions, responsibleUserOptions, portfolioCenterOptions);
+                null, null, closureReasons, null, parentOfficesOptions, responsibleUserOptions, portfolioCenterOptions,
+                centerGroupLocations);
     }
 
     public static GroupGeneralData withTemplate(final GroupGeneralData templatedGrouping, final GroupGeneralData grouping) {
@@ -276,14 +286,15 @@ public class GroupGeneralData implements Serializable {
                 templatedGrouping.centerOptions, templatedGrouping.officeOptions, templatedGrouping.staffOptions,
                 templatedGrouping.clientOptions, grouping.groupRoles, templatedGrouping.availableRoles, grouping.selectedRole,
                 grouping.calendarsData, grouping.collectionMeetingCalendar, grouping.closureReasons, templatedGrouping.timeline,
-                templatedGrouping.parentOfficesOptions, templatedGrouping.responsibleUserOptions, templatedGrouping.portfolioCenterOptions);
+                templatedGrouping.parentOfficesOptions, templatedGrouping.responsibleUserOptions, templatedGrouping.portfolioCenterOptions,
+                templatedGrouping.centerGroupLocations);
 
         return mapDTO(grouping, ret);
     }
 
     private static GroupGeneralData mapDTO(GroupGeneralData grouping, GroupGeneralData ret) {
         ret.setLegacyNumber(grouping.legacyNumber);
-        ret.setPortfolioCenterId(grouping.portfolioCenterId);
+        ret.setPortfolioCenterId(grouping.centerId);
         ret.setLatitude(grouping.latitude);
         ret.setLongitude(grouping.longitude);
         ret.setFormationDate(grouping.formationDate);
@@ -292,6 +303,7 @@ public class GroupGeneralData implements Serializable {
         ret.setCreatedDate(grouping.createdDate);
         ret.setMeetingStartTime(grouping.meetingStartTime);
         ret.setMeetingEndTime(grouping.meetingEndTime);
+        ret.setGroupLocation(grouping.groupLocation);
 
         ret.setPortfolioId(grouping.portfolioId);
         ret.setCity(grouping.city);
@@ -315,7 +327,8 @@ public class GroupGeneralData implements Serializable {
                 grouping.staffName, grouping.hierarchy, grouping.groupLevel, membersOfGroup, activeClientMembers, grouping.centerOptions,
                 grouping.officeOptions, grouping.staffOptions, grouping.clientOptions, groupRoles, grouping.availableRoles,
                 grouping.selectedRole, calendarsData, collectionMeetingCalendar, grouping.closureReasons, grouping.timeline,
-                grouping.parentOfficesOptions, grouping.responsibleUserOptions, grouping.portfolioCenterOptions);
+                grouping.parentOfficesOptions, grouping.responsibleUserOptions, grouping.portfolioCenterOptions,
+                grouping.centerGroupLocations);
 
         return mapDTO(grouping, ret);
     }
@@ -340,11 +353,12 @@ public class GroupGeneralData implements Serializable {
         final Collection<OfficeData> parentOfficesOptions = null;
         final Collection<AppUserData> responsibleUserOptions = null;
         final Collection<PortfolioCenterData> portfolioCenterOptions = null;
+        final Collection<EnumOptionData> centerGroupLocations = null;
 
         return new GroupGeneralData(id, accountNo, name, externalId, status, activationDate, officeId, officeName, centerId, centerName,
                 staffId, staffName, hierarchy, groupLevel, clientMembers, activeClientMembers, centerOptions, officeOptions, staffOptions,
                 clientOptions, groupRoles, availableRoles, role, calendarsData, collectionMeetingCalendar, closureReasons, timeline,
-                parentOfficesOptions, responsibleUserOptions, portfolioCenterOptions);
+                parentOfficesOptions, responsibleUserOptions, portfolioCenterOptions, centerGroupLocations);
     }
 
     private GroupGeneralData(final Long id, final String accountNo, final String name, final String externalId, final EnumOptionData status,
@@ -357,7 +371,7 @@ public class GroupGeneralData implements Serializable {
             final Collection<CalendarData> calendarsData, final CalendarData collectionMeetingCalendar,
             final Collection<CodeValueData> closureReasons, final GroupTimelineData timeline,
             final Collection<OfficeData> parentOfficesOptions, final Collection<AppUserData> responsibleUserOptions,
-            final Collection<PortfolioCenterData> portfolioCenterOptions) {
+            final Collection<PortfolioCenterData> portfolioCenterOptions, Collection<EnumOptionData> centerGroupLocations) {
         this.id = id;
         this.accountNo = accountNo;
         this.name = name;
@@ -402,6 +416,7 @@ public class GroupGeneralData implements Serializable {
         this.parentOfficesOptions = parentOfficesOptions;
         this.responsibleUserOptions = responsibleUserOptions;
         this.portfolioCenterOptions = portfolioCenterOptions;
+        this.centerGroupLocations = centerGroupLocations;
     }
 
     public Long getId() {
@@ -438,7 +453,7 @@ public class GroupGeneralData implements Serializable {
                 grouping.staffName, grouping.hierarchy, grouping.groupLevel, grouping.clientMembers, grouping.activeClientMembers,
                 grouping.centerOptions, grouping.officeOptions, grouping.staffOptions, grouping.clientOptions, grouping.groupRoles,
                 grouping.availableRoles, selectedRole, grouping.calendarsData, grouping.collectionMeetingCalendar, grouping.closureReasons,
-                null, null, null, null);
+                null, null, null, null, null);
     }
 
     public static GroupGeneralData withClosureReasons(final Collection<CodeValueData> closureReasons) {
@@ -470,11 +485,12 @@ public class GroupGeneralData implements Serializable {
         final Collection<OfficeData> parentOfficesOptions = null;
         final Collection<AppUserData> responsibleUserOptions = null;
         final Collection<PortfolioCenterData> portfolioCenterOptions = null;
+        final Collection<EnumOptionData> centerGroupLocations = null;
 
         return new GroupGeneralData(id, accountNo, name, externalId, status, activationDate, officeId, officeName, centerId, centerName,
                 staffId, staffName, hierarchy, groupLevel, clientMembers, activeClientMembers, centerOptions, officeOptions, staffOptions,
                 clientOptions, groupRoles, availableRoles, role, calendarsData, collectionMeetingCalendar, closureReasons, null,
-                parentOfficesOptions, responsibleUserOptions, portfolioCenterOptions);
+                parentOfficesOptions, responsibleUserOptions, portfolioCenterOptions, centerGroupLocations);
     }
 
     public Collection<ClientData> clientMembers() {
@@ -602,5 +618,9 @@ public class GroupGeneralData implements Serializable {
 
     public void setReferencePoint(String referencePoint) {
         this.referencePoint = referencePoint;
+    }
+
+    public void setGroupLocation(EnumOptionData groupLocation) {
+        this.groupLocation = groupLocation;
     }
 }

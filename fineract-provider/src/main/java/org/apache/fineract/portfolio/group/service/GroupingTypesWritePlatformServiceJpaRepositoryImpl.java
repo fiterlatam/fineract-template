@@ -494,25 +494,27 @@ public class GroupingTypesWritePlatformServiceJpaRepositoryImpl implements Group
 
             final GroupLevel groupLevel = this.groupLevelRepository.findById(groupForUpdate.getGroupLevel().getId()).orElse(null);
 
-            if (command.longValueOfParameterNamed(GroupingTypesApiConstants.cityId) != 0) {
-                final Long cityId = command.longValueOfParameterNamed(GroupingTypesApiConstants.cityId);
-                CodeValue city = codeValueRepository.findOneWithNotFoundDetection(cityId);
-                groupForUpdate.setCity(city);
-                actualChanges.put(GroupingTypesApiConstants.cityId, cityId);
-            }
+            if (groupingType == GroupTypes.CENTER) {
+                if (command.longValueOfParameterNamed(GroupingTypesApiConstants.cityId) != 0) {
+                    final Long cityId = command.longValueOfParameterNamed(GroupingTypesApiConstants.cityId);
+                    CodeValue city = codeValueRepository.findOneWithNotFoundDetection(cityId);
+                    groupForUpdate.setCity(city);
+                    actualChanges.put(GroupingTypesApiConstants.cityId, cityId);
+                }
 
-            if (command.longValueOfParameterNamed(GroupingTypesApiConstants.stateId) != 0) {
-                final Long stateId = command.longValueOfParameterNamed(GroupingTypesApiConstants.stateId);
-                CodeValue stateProvince = codeValueRepository.findOneWithNotFoundDetection(stateId);
-                groupForUpdate.setStateProvince(stateProvince);
-                actualChanges.put(GroupingTypesApiConstants.stateId, stateId);
-            }
+                if (command.longValueOfParameterNamed(GroupingTypesApiConstants.stateId) != 0) {
+                    final Long stateId = command.longValueOfParameterNamed(GroupingTypesApiConstants.stateId);
+                    CodeValue stateProvince = codeValueRepository.findOneWithNotFoundDetection(stateId);
+                    groupForUpdate.setStateProvince(stateProvince);
+                    actualChanges.put(GroupingTypesApiConstants.stateId, stateId);
+                }
 
-            if (command.longValueOfParameterNamed(GroupingTypesApiConstants.centerTypeId) != 0) {
-                final Long centerTypeId = command.longValueOfParameterNamed(GroupingTypesApiConstants.centerTypeId);
-                CodeValue centerType = codeValueRepository.findOneWithNotFoundDetection(centerTypeId);
-                groupForUpdate.setType(centerType);
-                actualChanges.put(GroupingTypesApiConstants.centerTypeId, centerTypeId);
+                if (command.longValueOfParameterNamed(GroupingTypesApiConstants.centerTypeId) != 0) {
+                    final Long centerTypeId = command.longValueOfParameterNamed(GroupingTypesApiConstants.centerTypeId);
+                    CodeValue centerType = codeValueRepository.findOneWithNotFoundDetection(centerTypeId);
+                    groupForUpdate.setType(centerType);
+                    actualChanges.put(GroupingTypesApiConstants.centerTypeId, centerTypeId);
+                }
             }
 
             /*
