@@ -400,6 +400,9 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     @OneToOne(mappedBy = "loanAccount", fetch = FetchType.LAZY)
     private AccountAssociations accountAssociations;
 
+    @Column(name = "contract")
+    private String contract;
+
     public static Loan newIndividualLoanApplication(final String accountNo, final Client client, final Integer loanType,
             final LoanProduct loanProduct, final Fund fund, final Staff officer, final CodeValue loanPurpose,
             final LoanTransactionProcessingStrategy transactionProcessingStrategy,
@@ -6874,6 +6877,10 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             clientId = this.group.getId();
         }
         return clientId;
+    }
+
+    public void updateLoanContract(String contract) {
+        this.contract = contract;
     }
 
 }
