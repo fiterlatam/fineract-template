@@ -197,6 +197,8 @@ public class LoanProductData implements Serializable {
     private final boolean syncExpectedWithDisbursementDate;
     private final boolean isEqualAmortization;
     private final BigDecimal fixedPrincipalPercentagePerInstallment;
+    private final Integer ageLimitWarning;
+    private final Integer ageLimitBlock;
 
     /**
      * Used when returning lookup information about loan product for dropdowns.
@@ -282,6 +284,8 @@ public class LoanProductData implements Serializable {
         final Collection<RateData> rateOptions = null;
         final Collection<RateData> rates = null;
         final boolean isRatesEnabled = false;
+        final Integer ageLimitWarning = null;
+        final Integer ageLimitBlock = null;
         return new LoanProductData(id, name, shortName, description, currency, principal, minPrincipal, maxPrincipal, tolerance,
                 numberOfRepayments, minNumberOfRepayments, maxNumberOfRepayments, repaymentEvery, interestRatePerPeriod,
                 minInterestRatePerPeriod, maxInterestRatePerPeriod, annualInterestRate, repaymentFrequencyType, interestRateFrequencyType,
@@ -298,7 +302,7 @@ public class LoanProductData implements Serializable {
                 floatingRateName, interestRateDifferential, minDifferentialLendingRate, defaultDifferentialLendingRate,
                 maxDifferentialLendingRate, isFloatingInterestRateCalculationAllowed, isVariableInstallmentsAllowed, minimumGap, maximumGap,
                 syncExpectedWithDisbursementDate, canUseForTopup, isEqualAmortization, rateOptions, rates, isRatesEnabled,
-                fixedPrincipalPercentagePerInstallment);
+                fixedPrincipalPercentagePerInstallment, ageLimitWarning, ageLimitBlock);
 
     }
 
@@ -384,6 +388,8 @@ public class LoanProductData implements Serializable {
         final Collection<RateData> rateOptions = null;
         final Collection<RateData> rates = null;
         final boolean isRatesEnabled = false;
+        final Integer ageLimitWarning = null;
+        final Integer ageLimitBlock = null;
 
         return new LoanProductData(id, name, shortName, description, currency, principal, minPrincipal, maxPrincipal, tolerance,
                 numberOfRepayments, minNumberOfRepayments, maxNumberOfRepayments, repaymentEvery, interestRatePerPeriod,
@@ -401,7 +407,7 @@ public class LoanProductData implements Serializable {
                 floatingRateName, interestRateDifferential, minDifferentialLendingRate, defaultDifferentialLendingRate,
                 maxDifferentialLendingRate, isFloatingInterestRateCalculationAllowed, isVariableInstallmentsAllowed, minimumGap, maximumGap,
                 syncExpectedWithDisbursementDate, canUseForTopup, isEqualAmortization, rateOptions, rates, isRatesEnabled,
-                fixedPrincipalPercentagePerInstallment);
+                fixedPrincipalPercentagePerInstallment, ageLimitWarning, ageLimitBlock);
 
     }
 
@@ -494,6 +500,8 @@ public class LoanProductData implements Serializable {
         final Collection<RateData> rateOptions = null;
         final Collection<RateData> rates = null;
         final boolean isRatesEnabled = false;
+        final Integer ageLimitWarning = null;
+        final Integer ageLimitBlock = null;
 
         return new LoanProductData(id, name, shortName, description, currency, principal, minPrincipal, maxPrincipal, tolerance,
                 numberOfRepayments, minNumberOfRepayments, maxNumberOfRepayments, repaymentEvery, interestRatePerPeriod,
@@ -511,7 +519,7 @@ public class LoanProductData implements Serializable {
                 floatingRateName, interestRateDifferential, minDifferentialLendingRate, defaultDifferentialLendingRate,
                 maxDifferentialLendingRate, isFloatingInterestRateCalculationAllowed, isVariableInstallmentsAllowed, minimumGap, maximumGap,
                 syncExpectedWithDisbursementDate, canUseForTopup, isEqualAmortization, rateOptions, rates, isRatesEnabled,
-                fixedPrincipalPercentagePerInstallment);
+                fixedPrincipalPercentagePerInstallment,ageLimitWarning,ageLimitBlock);
 
     }
 
@@ -597,7 +605,9 @@ public class LoanProductData implements Serializable {
         final boolean isEqualAmortization = false;
         final Collection<RateData> rateOptions = null;
         final Collection<RateData> rates = null;
-        final boolean isRatesEnabled = false;
+        final Boolean isRatesEnabled = false;
+        final Integer ageLimitWarning = null;
+        final Integer ageLimitBlock = null;
 
         return new LoanProductData(id, name, shortName, description, currency, principal, minPrincipal, maxPrincipal, tolerance,
                 numberOfRepayments, minNumberOfRepayments, maxNumberOfRepayments, repaymentEvery, interestRatePerPeriod,
@@ -615,7 +625,7 @@ public class LoanProductData implements Serializable {
                 floatingRateName, interestRateDifferential, minDifferentialLendingRate, defaultDifferentialLendingRate,
                 maxDifferentialLendingRate, isFloatingInterestRateCalculationAllowed, isVariableInstallmentsAllowed, minimumGap, maximumGap,
                 syncExpectedWithDisbursementDate, canUseForTopup, isEqualAmortization, rateOptions, rates, isRatesEnabled,
-                fixedPrincipalPercentagePerInstallment);
+                fixedPrincipalPercentagePerInstallment, ageLimitWarning, ageLimitBlock);
 
     }
 
@@ -660,7 +670,7 @@ public class LoanProductData implements Serializable {
             final Integer minimumGapBetweenInstallments, final Integer maximumGapBetweenInstallments,
             final boolean syncExpectedWithDisbursementDate, final boolean canUseForTopup, final boolean isEqualAmortization,
             Collection<RateData> rateOptions, Collection<RateData> rates, final boolean isRatesEnabled,
-            final BigDecimal fixedPrincipalPercentagePerInstallment) {
+            final BigDecimal fixedPrincipalPercentagePerInstallmen, final Integer ageLimitWarning, final Integer ageLimitBlock) {
         this.id = id;
         this.name = name;
         this.shortName = shortName;
@@ -756,7 +766,7 @@ public class LoanProductData implements Serializable {
         this.holdGuaranteeFunds = holdGuaranteeFunds;
         this.productGuaranteeData = loanProductGuaranteeData;
         this.principalThresholdForLastInstallment = principalThresholdForLastInstallment;
-        this.fixedPrincipalPercentagePerInstallment = fixedPrincipalPercentagePerInstallment;
+        this.fixedPrincipalPercentagePerInstallment = null;
         this.accountMovesOutOfNPAOnlyOnArrearsCompletion = accountMovesOutOfNPAOnlyOnArrearsCompletion;
         this.allowAttributeOverrides = allowAttributeOverrides;
 
@@ -774,6 +784,8 @@ public class LoanProductData implements Serializable {
         this.syncExpectedWithDisbursementDate = syncExpectedWithDisbursementDate;
         this.canUseForTopup = canUseForTopup;
         this.isEqualAmortization = isEqualAmortization;
+        this.ageLimitBlock = ageLimitBlock;
+        this.ageLimitWarning = ageLimitWarning;
 
     }
 
@@ -921,6 +933,8 @@ public class LoanProductData implements Serializable {
         this.isEqualAmortization = productData.isEqualAmortization;
         this.rates = productData.rates;
         this.isRatesEnabled = isRatesEnabled;
+        this.ageLimitBlock = productData.ageLimitBlock;
+        this.ageLimitWarning = productData.ageLimitWarning;
     }
 
     private Collection<ChargeData> nullIfEmpty(final Collection<ChargeData> charges) {
@@ -1346,5 +1360,11 @@ public class LoanProductData implements Serializable {
 
     public String getShortName() {
         return shortName;
+    }
+    public Integer getAgeLimitWarning() {
+        return ageLimitWarning;
+    }
+    public Integer getAgeLimitBlock() {
+        return ageLimitBlock;
     }
 }

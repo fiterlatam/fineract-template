@@ -195,6 +195,12 @@ public class LoanProduct extends AbstractPersistableCustom {
     @Column(name = "over_applied_number", nullable = true)
     private Integer overAppliedNumber;
 
+    @Column(name = "age_limit_warning", nullable = true)
+    private Integer ageLimitWarning;
+
+    @Column(name = "age_limit_block", nullable = true)
+    private Integer ageLimitBlock;
+
     public static LoanProduct assembleFromJson(final Fund fund, final LoanTransactionProcessingStrategy loanTransactionProcessingStrategy,
             final List<Charge> productCharges, final JsonCommand command, final AprCalculator aprCalculator, FloatingRate floatingRate,
             final List<Rate> productRates) {
@@ -210,6 +216,8 @@ public class LoanProduct extends AbstractPersistableCustom {
         final BigDecimal principal = command.bigDecimalValueOfParameterNamed("principal");
         final BigDecimal minPrincipal = command.bigDecimalValueOfParameterNamed("minPrincipal");
         final BigDecimal maxPrincipal = command.bigDecimalValueOfParameterNamed("maxPrincipal");
+        final Integer ageLimitWarning = command.integerValueOfParameterNamed("ageLimitWarning");
+        final Integer ageLimitBlock = command.integerValueOfParameterNamed("ageLimitBlock");
 
         final InterestMethod interestMethod = InterestMethod.fromInt(command.integerValueOfParameterNamed("interestType"));
         final InterestCalculationPeriodMethod interestCalculationPeriodMethod = InterestCalculationPeriodMethod
@@ -385,7 +393,7 @@ public class LoanProduct extends AbstractPersistableCustom {
                 defaultDifferentialLendingRate, isFloatingInterestRateCalculationAllowed, isVariableInstallmentsAllowed,
                 minimumGapBetweenInstallments, maximumGapBetweenInstallments, syncExpectedWithDisbursementDate, canUseForTopup,
                 isEqualAmortization, productRates, fixedPrincipalPercentagePerInstallment, disallowExpectedDisbursements,
-                allowApprovedDisbursedAmountsOverApplied, overAppliedCalculationType, overAppliedNumber);
+                allowApprovedDisbursedAmountsOverApplied, overAppliedCalculationType, overAppliedNumber,ageLimitWarning,ageLimitBlock);
 
     }
 
@@ -622,7 +630,7 @@ public class LoanProduct extends AbstractPersistableCustom {
             final boolean syncExpectedWithDisbursementDate, final boolean canUseForTopup, final boolean isEqualAmortization,
             final List<Rate> rates, final BigDecimal fixedPrincipalPercentagePerInstallment, final boolean disallowExpectedDisbursements,
             final boolean allowApprovedDisbursedAmountsOverApplied, final String overAppliedCalculationType,
-            final Integer overAppliedNumber) {
+            final Integer overAppliedNumber,final Integer ageLimitWarning,final Integer ageLimitBlock) {
         this.fund = fund;
         this.transactionProcessingStrategy = transactionProcessingStrategy;
         this.name = name.trim();
@@ -700,6 +708,8 @@ public class LoanProduct extends AbstractPersistableCustom {
         this.allowApprovedDisbursedAmountsOverApplied = allowApprovedDisbursedAmountsOverApplied;
         this.overAppliedCalculationType = overAppliedCalculationType;
         this.overAppliedNumber = overAppliedNumber;
+        this.ageLimitBlock = ageLimitBlock;
+        this.ageLimitWarning = ageLimitWarning;
 
         if (rates != null) {
             this.rates = rates;
@@ -1198,6 +1208,20 @@ public class LoanProduct extends AbstractPersistableCustom {
             actualChanges.put(LoanProductConstants.OVER_APPLIED_NUMBER, newValue);
             actualChanges.put("locale", localeAsInput);
             this.overAppliedNumber = newValue;
+        }
+
+        final String ageLimitWarning = "ageLimitWarning";
+        if (command.isChangeInIntegerParameterNamed(ageLimitWarning, this.ageLimitWarning)) {
+            final Integer newValue = command.integerValueOfParameterNamed(ageLimitWarning);
+            actualChanges.put(ageLimitWarning, newValue);
+            this.ageLimitWarning = newValue;
+        }
+
+        final String ageLimitBlock = "ageLimitBlock";
+        if (command.isChangeInIntegerParameterNamed(ageLimitBlock, this.ageLimitBlock)) {
+            final Integer newValue = command.integerValueOfParameterNamed(ageLimitBlock);
+            actualChanges.put(ageLimitBlock, newValue);
+            this.ageLimitBlock = newValue;
         }
 
         return actualChanges;
