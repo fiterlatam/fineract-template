@@ -1895,8 +1895,8 @@ public final class LoanProductDataValidator {
                 int i = 0;
                 do {
                     final JsonObject jsonObject = variationArray.get(i).getAsJsonObject();
-                    String defaultValueAsString = this.fromApiJsonHelper.extractStringNamed(LoanProductConstants.DEFAULT_VALUE_PARAMETER_NAME,
-                            jsonObject);
+                    String defaultValueAsString = this.fromApiJsonHelper
+                            .extractStringNamed(LoanProductConstants.DEFAULT_VALUE_PARAMETER_NAME, jsonObject);
                     String minValueAsString = this.fromApiJsonHelper.extractStringNamed(LoanProductConstants.MIN_VALUE_PARAMETER_NAME,
                             jsonObject);
                     String maxValueAsString = this.fromApiJsonHelper.extractStringNamed(LoanProductConstants.MAX_VALUE_PARAMETER_NAME,

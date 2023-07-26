@@ -18,11 +18,9 @@
  */
 package org.apache.fineract.organisation.prequalification.data;
 
-import org.apache.fineract.infrastructure.core.data.EnumOptionData;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
-
+import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 
 /**
  * Immutable data object represent client identity data.
@@ -38,7 +36,8 @@ public class MemberPrequalificationData {
     private final EnumOptionData status;
     private final Long blacklistCount;
 
-    public MemberPrequalificationData(final Long id, final String name, final String dpi, final LocalDate dob, final String workWithPuente, final BigDecimal requestedAmount, final EnumOptionData status, Long blacklistCount) {
+    public MemberPrequalificationData(final Long id, final String name, final String dpi, final LocalDate dob, final String workWithPuente,
+            final BigDecimal requestedAmount, final EnumOptionData status, Long blacklistCount) {
         this.id = id;
         this.name = name;
         this.dpi = dpi;
@@ -49,7 +48,8 @@ public class MemberPrequalificationData {
         this.blacklistCount = blacklistCount;
     }
 
-    public static MemberPrequalificationData instance(final Long id, final String name, final String dpi, final LocalDate dob, final String workWithPuente, final BigDecimal requestedAmount, final EnumOptionData status, Long blacklistCount) {
+    public static MemberPrequalificationData instance(final Long id, final String name, final String dpi, final LocalDate dob,
+            final String workWithPuente, final BigDecimal requestedAmount, final EnumOptionData status, Long blacklistCount) {
         return new MemberPrequalificationData(id, name, dpi, dob, workWithPuente, requestedAmount, status, blacklistCount);
     }
 }

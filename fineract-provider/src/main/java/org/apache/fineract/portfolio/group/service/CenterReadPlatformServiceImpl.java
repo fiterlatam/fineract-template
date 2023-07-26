@@ -27,6 +27,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -49,8 +50,14 @@ import org.apache.fineract.infrastructure.core.service.database.DatabaseSpecific
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.infrastructure.security.utils.ColumnValidator;
 import org.apache.fineract.infrastructure.security.utils.SQLBuilder;
+import org.apache.fineract.organisation.centerGroup.domain.CenterGroupLocation;
+import org.apache.fineract.organisation.centerGroup.service.GroupLocationEnumerations;
 import org.apache.fineract.organisation.office.data.OfficeData;
+import org.apache.fineract.organisation.office.domain.OfficeHierarchyLevel;
 import org.apache.fineract.organisation.office.service.OfficeReadPlatformService;
+import org.apache.fineract.organisation.portfolioCenter.data.PortfolioCenterData;
+import org.apache.fineract.organisation.portfolioCenter.service.PortfolioCenterConstants;
+import org.apache.fineract.organisation.portfolioCenter.service.PortfolioCenterReadPlatformService;
 import org.apache.fineract.organisation.staff.data.StaffData;
 import org.apache.fineract.organisation.staff.service.StaffReadPlatformService;
 import org.apache.fineract.portfolio.calendar.data.CalendarData;
@@ -68,12 +75,16 @@ import org.apache.fineract.portfolio.group.data.StaffCenterData;
 import org.apache.fineract.portfolio.group.domain.GroupTypes;
 import org.apache.fineract.portfolio.group.domain.GroupingTypeEnumerations;
 import org.apache.fineract.portfolio.group.exception.CenterNotFoundException;
+import org.apache.fineract.useradministration.data.AppUserData;
 import org.apache.fineract.useradministration.domain.AppUser;
+import org.apache.fineract.useradministration.service.AppUserReadPlatformService;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
+
+import static org.apache.fineract.organisation.centerGroup.service.GroupLocationEnumerations.groupLocationsOptionData;
 
 @Service
 @RequiredArgsConstructor
@@ -89,6 +100,8 @@ public class CenterReadPlatformServiceImpl implements CenterReadPlatformService 
     private final CalendarReadPlatformService calendarReadPlatformService;
     private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     private final ColumnValidator columnValidator;
+    private final AppUserReadPlatformService appUserReadPlatformService;
+    private final PortfolioCenterReadPlatformService portfolioCenterReadPlatformService;
 
     // data mappers
     private final CenterDataMapper centerMapper = new CenterDataMapper();
@@ -116,33 +129,45 @@ public class CenterReadPlatformServiceImpl implements CenterReadPlatformService 
         return extraCriteria;
     }
 
-    private static final String SQL_QUERY = "g.id as id, g.account_no as accountNo, g.external_id as externalId, g.display_name as name, "
-            + "g.office_id as officeId, o.name as officeName, " //
-            + "g.meeting_start_time as meetingStartTime, g.meeting_end_time as meetingEndTime, " //
-            + "g.meeting_start_date as meetingStartDate, g.meeting_end_date as meetingEndDate, " //
-            + "g.meeting_day as meetingDay, g.group_location as groupLocation, " //
-            + "cvMeetingDay.code_value as meetingDayValue ,cvMeetingDay.order_position as meetingDayOrderPosition, g.group_location as groupLocation, " //
-            + "g.staff_id as staffId, s.display_name as staffName, " //
-            + "g.status_enum as statusEnum, g.activation_date as activationDate, " //
-            + "g.hierarchy as hierarchy, " //
-            + "g.level_id as groupLevel," //
-            + "g.closedon_date as closedOnDate, " + "g.submittedon_date as submittedOnDate, " + "sbu.username as submittedByUsername, "
-            + "sbu.firstname as submittedByFirstname, " + "sbu.lastname as submittedByLastname, " + "clu.username as closedByUsername, "
-            + "clu.firstname as closedByFirstname, " + "clu.lastname as closedByLastname, " + "acu.username as activatedByUsername, "
-            + "acu.firstname as activatedByFirstname, " + "acu.lastname as activatedByLastname " + "from m_group g " //
-            + "join m_office o on o.id = g.office_id "
-            + "left join m_code_value cvMeetingDay on g.meeting_day = cvMeetingDay.id "
-            + "left join m_staff s on s.id = g.staff_id "
-            + "left join m_group pg on pg.id = g.parent_id " + "left join m_appuser sbu on sbu.id = g.submittedon_userid "
-            + "left join m_appuser acu on acu.id = g.activatedon_userid " + "left join m_appuser clu on clu.id = g.closedon_userid ";
-
     private static final class CenterDataMapper implements RowMapper<CenterData> {
 
         private final String schemaSql;
 
         CenterDataMapper() {
+            final StringBuilder sqlBuilder = new StringBuilder(500);
 
-            this.schemaSql = SQL_QUERY;
+            sqlBuilder.append("g.id as id, g.account_no as accountNo, g.external_id as externalId, g.display_name as name, ");
+            sqlBuilder.append("g.office_id as officeId, o.name as officeName, ");
+            sqlBuilder.append("g.staff_id as staffId, s.display_name as staffName, ");
+            sqlBuilder.append("g.status_enum as statusEnum, g.activation_date as activationDate, ");
+            sqlBuilder.append("g.hierarchy as hierarchy, g.level_id as groupLevel, ");
+            sqlBuilder.append("g.closedon_date as closedOnDate, g.submittedon_date as submittedOnDate, ");
+            sqlBuilder
+                    .append("substring(g.display_name, 1, 5) as centerCodeName, g.portfolio_id as portfolioId, p.name as portfolioName, ");
+            sqlBuilder.append("g.legacy_number as legacyNumber, g.city_id as cityId, cvCity.code_value as cityValue, ");
+            sqlBuilder.append("g.state_province_id as stateId, cvState.code_value as stateValue, 0 as center_location, ");
+            sqlBuilder.append("g.distance_from_agency as distance, ");
+            sqlBuilder.append("g.type_id as typeId, cvType.code_value as typeValue, g.created_date as createdDate, ");
+            sqlBuilder.append("g.meeting_start_date as meetingStart, g.meeting_end_date as meetingEnd, ");
+            sqlBuilder.append("g.meeting_day as meetingDay, cvMeetingDay.code_value as meetingDayValue, ");
+            sqlBuilder.append("cvMeetingDay.order_position as meetingDayOrderPosition, g.meeting_start_time as meetingStartTime, ");
+            sqlBuilder.append("g.meeting_end_time as meetingEndTime, g.reference_point as referencePoint, ");
+            sqlBuilder.append(
+                    "sbu.username as submittedByUsername, sbu.firstname as submittedByFirstname, sbu.lastname as submittedByLastname, ");
+            sqlBuilder.append(
+                    "clu.username as closedByUsername, clu.firstname as closedByFirstname, clu.lastname as closedByLastname, acu.username as activatedByUsername, ");
+            sqlBuilder.append("acu.firstname as activatedByFirstname, acu.lastname as activatedByLastname from m_group g ");
+            sqlBuilder.append("join m_office o on o.id = g.office_id left join m_staff s on s.id = g.staff_id ");
+            sqlBuilder.append("left join m_group pg on pg.id = g.parent_id left join m_appuser sbu on sbu.id = g.submittedon_userid ");
+            sqlBuilder.append(
+                    "left join m_appuser acu on acu.id = g.activatedon_userid left join m_appuser clu on clu.id = g.closedon_userid ");
+            sqlBuilder.append("left join m_portfolio AS p ON p.id = g.portfolio_id ");
+            sqlBuilder.append("left join m_code_value cvCity on g.city_id = cvCity.id ");
+            sqlBuilder.append("left join m_code_value cvState on g.state_province_id = cvState.id ");
+            sqlBuilder.append("left join m_code_value cvType on g.type_id = cvType.id ");
+            sqlBuilder.append("left join m_code_value cvMeetingDay on g.meeting_day = cvMeetingDay.id ");
+
+            this.schemaSql = sqlBuilder.toString();
         }
 
         public String schema() {
@@ -178,21 +203,65 @@ public class CenterReadPlatformServiceImpl implements CenterReadPlatformService 
             final String activatedByUsername = rs.getString("activatedByUsername");
             final String activatedByFirstname = rs.getString("activatedByFirstname");
             final String activatedByLastname = rs.getString("activatedByLastname");
-            final String groupLocation = rs.getString("groupLocation");
-            final int meetingStart = rs.getInt("meetingStartDate");
-            final int meetingEnd = rs.getInt("meetingEndDate");
+
+            final Long portfolioId = rs.getLong("portfolioId");
+            final String portfolioName = rs.getString("portfolioName");
+            final long cityId = rs.getLong("cityId");
+            final String cityValue = rs.getString("cityValue");
+            final CodeValueData city = CodeValueData.instance(cityId, cityValue);
+
+            final long stateId = rs.getLong("stateId");
+            final String stateValue = rs.getString("stateValue");
+            final CodeValueData state = CodeValueData.instance(stateId, stateValue);
+
+            Integer distance = rs.getInt("distance");
+            distance = rs.wasNull() ? null : distance;
+
+            final Integer centerLocationId = rs.getInt("center_location");
+
+            EnumOptionData centerLocation = null;
+            if (centerLocationId != null) {
+                centerLocation = GroupLocationEnumerations.groupLocationsOptionData(centerLocationId);
+            }
+
+            final long typeId = rs.getLong("typeId");
+            final String typeValue = rs.getString("typeValue");
+            final CodeValueData type = CodeValueData.instance(typeId, typeValue);
+
+            final int meetingStart = rs.getInt("meetingStart");
+            final int meetingEnd = rs.getInt("meetingEnd");
             final int meetingDay = rs.getInt("meetingDay");
             final String meetingDayValue = rs.getString("meetingDayValue");
-
+            final String referencePoint = rs.getString("referencePoint");
+            final LocalDate createdDate = JdbcSupport.getLocalDate(rs, "createdDate");
             final LocalTime meetingStartTime = JdbcSupport.getLocalTime(rs, "meetingStartTime");
             final LocalTime meetingEndTime = JdbcSupport.getLocalTime(rs, "meetingEndTime");
+            final Long legacyNumber = rs.getLong("legacyNumber");
 
             final GroupTimelineData timeline = new GroupTimelineData(submittedOnDate, submittedByUsername, submittedByFirstname,
                     submittedByLastname, activationDate, activatedByUsername, activatedByFirstname, activatedByLastname, closedOnDate,
                     closedByUsername, closedByFirstname, closedByLastname);
 
-            return CenterData.instance(id, accountNo, name, externalId, status, activationDate, officeId, officeName, staffId, staffName,
-                    hierarchy, timeline, null, null, null, null, null,meetingDay,meetingDayValue,meetingStart,meetingEnd,meetingStartTime,meetingEndTime,groupLocation);
+            CenterData centerData = CenterData.instance(id, accountNo, name, externalId, status, activationDate, officeId, officeName,
+                    staffId, staffName, hierarchy, timeline, null, null, null, null, null);
+
+            centerData.setPortfolioId(portfolioId);
+            centerData.setPortfolioName(portfolioName);
+            centerData.setCity(city);
+            centerData.setState(state);
+            centerData.setType(type);
+            centerData.setDistance(distance);
+            centerData.setMeetingStart(meetingStart);
+            centerData.setMeetingEnd(meetingEnd);
+            centerData.setMeetingDay(meetingDay);
+            centerData.setMeetingDayName(meetingDayValue);
+            centerData.setReferencePoint(referencePoint);
+            centerData.setCreatedDate(createdDate);
+            centerData.setMeetingStartTime(meetingStartTime);
+            centerData.setMeetingEndTime(meetingEndTime);
+            centerData.setLegacyNumber(legacyNumber);
+
+            return centerData;
         }
     }
 
@@ -207,9 +276,6 @@ public class CenterReadPlatformServiceImpl implements CenterReadPlatformService 
                     + " g.external_id as externalId,  g.status_enum as statusEnum, g.activation_date as activationDate,"
                     + " g.hierarchy as hierarchy,   c.id as calendarId, ci.id as calendarInstanceId, ci.entity_id as entityId,"
                     + " ci.entity_type_enum as entityTypeId, c.title as title,  c.description as description,"
-                    + "g.meeting_start_time as meetingStartTime, g.meeting_end_time as meetingEndTime, " //
-                    + "g.meeting_start_date as meetingStartDate, g.meeting_end_date as meetingEndDate, " //
-                    + "g.meeting_day as meetingDay, g.group_location as groupLocation, " //
                     + "c.location as location, c.start_date as startDate, c.end_date as endDate, c.recurrence as recurrence,c.meeting_time as meetingTime,"
                     + "sum(CASE WHEN l.loan_status_id=300 and lrs.duedate = ? THEN COALESCE(lrs.principal_amount,0)) + (COALESCE(lrs.interest_amount,0) ELSE 0 END)) as installmentDue,"
                     + "sum(CASE WHEN l.loan_status_id=300 and lrs.duedate = ? THEN COALESCE(lrs.principal_completed_derived,0) + COALESCE(lrs.interest_completed_derived,0) ELSE 0 END) as totalCollected,"
@@ -261,21 +327,13 @@ public class CenterReadPlatformServiceImpl implements CenterReadPlatformService 
             final BigDecimal totaldue = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "totaldue");
             final BigDecimal installmentDue = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "installmentDue");
             Integer monthOnDay = CalendarUtils.getMonthOnDay(recurrence);
-            final String groupLocation = rs.getString("groupLocation");
-            final int meetingStart = rs.getInt("meetingStartDate");
-            final int meetingEnd = rs.getInt("meetingEndDate");
-            final int meetingDay = rs.getInt("meetingDay");
-            final String meetingDayValue = rs.getString("meetingDayValue");
-
-            final LocalTime meetingStartTime = JdbcSupport.getLocalTime(rs, "meetingStartTime");
-            final LocalTime meetingEndTime = JdbcSupport.getLocalTime(rs, "meetingEndTime");
 
             CalendarData calendarData = CalendarData.instance(calendarId, calendarInstanceId, entityId, entityType, title, description,
                     location, startDate, endDate, null, null, false, recurrence, null, null, null, null, null, null, null, null, null, null,
                     null, null, null, null, meetingTime, monthOnDay);
 
             return CenterData.instance(id, accountNo, name, externalId, status, activationDate, officeId, null, staffId, staffName,
-                    hierarchy, null, calendarData, totalCollected, totalOverdue, totaldue, installmentDue, meetingDay, meetingDayValue, meetingStart, meetingEnd, meetingStartTime, meetingEndTime, groupLocation);
+                    hierarchy, null, calendarData, totalCollected, totalOverdue, totaldue, installmentDue);
         }
     }
 
@@ -285,7 +343,39 @@ public class CenterReadPlatformServiceImpl implements CenterReadPlatformService 
 
         GroupDataMapper() {
 
-            this.schemaSql = SQL_QUERY;
+            final StringBuilder sqlBuilder = new StringBuilder(500);
+
+            sqlBuilder.append("g.id as id, g.account_no as accountNo, g.external_id as externalId, g.display_name as name, ");
+            sqlBuilder.append("g.office_id as officeId, o.name as officeName, ");
+            sqlBuilder.append("g.staff_id as staffId, s.display_name as staffName, ");
+            sqlBuilder.append("g.status_enum as statusEnum, g.activation_date as activationDate, ");
+            sqlBuilder.append("g.hierarchy as hierarchy, g.level_id as groupLevel, ");
+            sqlBuilder.append("g.closedon_date as closedOnDate, g.submittedon_date as submittedOnDate, ");
+            sqlBuilder.append("substring(g.display_name, 1, 5) as centerCodeName, g.portfolio_id as portfolioId, ");
+            sqlBuilder.append("g.legacy_number as legacyNumber, g.city_id as cityId, cvCity.code_value as cityValue, ");
+            sqlBuilder.append("g.state_province_id as stateId, cvState.code_value as stateValue, 0 as center_location, ");
+            sqlBuilder.append("g.distance_from_agency as distance, ");
+            sqlBuilder.append("g.type_id as typeId, cvType.code_value as typeValue, g.created_date as createdDate, ");
+            sqlBuilder.append("g.meeting_start_date as meetingStart, g.meeting_end_date as meetingEnd, ");
+            sqlBuilder.append("g.meeting_day as meetingDay, cvMeetingDay.code_value as meetingDayValue, ");
+            sqlBuilder.append("cvMeetingDay.order_position as meetingDayOrderPosition, g.meeting_start_time as meetingStartTime, ");
+            sqlBuilder.append("g.meeting_end_time as meetingEndTime, g.reference_point as referencePoint, ");
+            sqlBuilder.append(
+                    "sbu.username as submittedByUsername, sbu.firstname as submittedByFirstname, sbu.lastname as submittedByLastname, ");
+            sqlBuilder.append(
+                    "clu.username as closedByUsername, clu.firstname as closedByFirstname, clu.lastname as closedByLastname, acu.username as activatedByUsername, ");
+            sqlBuilder.append("acu.firstname as activatedByFirstname, acu.lastname as activatedByLastname from m_group g ");
+            sqlBuilder.append("join m_office o on o.id = g.office_id left join m_staff s on s.id = g.staff_id ");
+            sqlBuilder.append("left join m_group pg on pg.id = g.parent_id left join m_appuser sbu on sbu.id = g.submittedon_userid ");
+            sqlBuilder.append(
+                    "left join m_appuser acu on acu.id = g.activatedon_userid left join m_appuser clu on clu.id = g.closedon_userid ");
+            sqlBuilder.append("left join m_portfolio AS p ON p.id = g.portfolio_id ");
+            sqlBuilder.append("left join m_code_value cvCity on g.city_id = cvCity.id ");
+            sqlBuilder.append("left join m_code_value cvState on g.state_province_id = cvState.id ");
+            sqlBuilder.append("left join m_code_value cvType on g.type_id = cvType.id ");
+            sqlBuilder.append("left join m_code_value cvMeetingDay on g.meeting_day = cvMeetingDay.id ");
+
+            this.schemaSql = sqlBuilder.toString();
         }
 
         public String schema() {
@@ -324,21 +414,13 @@ public class CenterReadPlatformServiceImpl implements CenterReadPlatformService 
             final String activatedByUsername = rs.getString("activatedByUsername");
             final String activatedByFirstname = rs.getString("activatedByFirstname");
             final String activatedByLastname = rs.getString("activatedByLastname");
-            final String groupLocation = rs.getString("groupLocation");
-            final int meetingStart = rs.getInt("meetingStartDate");
-            final int meetingEnd = rs.getInt("meetingEndDate");
-            final int meetingDay = rs.getInt("meetingDay");
-            final String meetingDayValue = rs.getString("meetingDayValue");
-
-            final LocalTime meetingStartTime = JdbcSupport.getLocalTime(rs, "meetingStartTime");
-            final LocalTime meetingEndTime = JdbcSupport.getLocalTime(rs, "meetingEndTime");
 
             final GroupTimelineData timeline = new GroupTimelineData(submittedOnDate, submittedByUsername, submittedByFirstname,
                     submittedByLastname, activationDate, activatedByUsername, activatedByFirstname, activatedByLastname, closedOnDate,
                     closedByUsername, closedByFirstname, closedByLastname);
 
             return GroupGeneralData.instance(id, accountNo, name, externalId, status, activationDate, officeId, officeName, null, null,
-                    staffId, staffName, hierarchy, groupLevel, timeline, meetingDay, meetingDayValue, meetingStart, meetingEnd, meetingStartTime, meetingEndTime, groupLocation);
+                    staffId, staffName, hierarchy, groupLevel, timeline);
         }
     }
 
@@ -361,6 +443,9 @@ public class CenterReadPlatformServiceImpl implements CenterReadPlatformService 
             this.columnValidator.validateSqlInjection(sqlBuilder.toString(), searchParameters.getOrderBy(),
                     searchParameters.getSortOrder());
 
+        } else {
+            // default order - order by centerCodeName, meetingDay
+            sqlBuilder.append(" order by centerCodeName, meetingDay ");
         }
 
         if (searchParameters.isLimited()) {
@@ -395,6 +480,9 @@ public class CenterReadPlatformServiceImpl implements CenterReadPlatformService 
                 sqlBuilder.append(" order by ").append(searchParameters.getOrderBy()).append(' ').append(searchParameters.getSortOrder());
                 this.columnValidator.validateSqlInjection(sqlBuilder.toString(), searchParameters.getOrderBy(),
                         searchParameters.getSortOrder());
+            } else {
+                // default order - order by centerCodeName, meetingDay
+                sqlBuilder.append(" order by centerCodeName, meetingDay ");
             }
 
             if (searchParameters.isLimited()) {
@@ -452,8 +540,23 @@ public class CenterReadPlatformServiceImpl implements CenterReadPlatformService 
         // final boolean clientPendingApprovalAllowed =
         // this.configurationDomainService.isClientPendingApprovalAllowedEnabled();
 
+        // FB Centers - add options to template
+        // cityOptions, stateOptions, typeOptions, statusOptions, meetingDayOptions
+        final List<CodeValueData> cityOptions = new ArrayList<>(
+                this.codeValueReadPlatformService.retrieveCodeValuesByCode(PortfolioCenterConstants.PORTFOLIO_CENTER_MUNICIPALITIES));
+
+        final List<CodeValueData> stateOptions = new ArrayList<>(
+                this.codeValueReadPlatformService.retrieveCodeValuesByCode(PortfolioCenterConstants.PORTFOLIO_CENTER_DEPARTMENTS));
+
+        final List<CodeValueData> typeOptions = new ArrayList<>(
+                this.codeValueReadPlatformService.retrieveCodeValuesByCode(PortfolioCenterConstants.PORTFOLIO_CENTER_TYPE));
+
+        final List<CodeValueData> meetingDayOptions = new ArrayList<>(
+                this.codeValueReadPlatformService.retrieveCodeValuesByCode(PortfolioCenterConstants.MEETING_DAYS));
+
         return CenterData.template(officeIdDefaulted, accountNo, LocalDate.now(DateUtils.getDateTimeZoneOfTenant()), officeOptions,
-                staffOptions, groupMembersOptions, totalCollected, totalOverdue, totaldue, installmentDue);
+                staffOptions, groupMembersOptions, totalCollected, totalOverdue, totaldue, installmentDue, cityOptions, stateOptions,
+                typeOptions, meetingDayOptions);
     }
 
     private Long defaultToUsersOfficeIfNull(final Long officeId) {
@@ -509,8 +612,19 @@ public class CenterReadPlatformServiceImpl implements CenterReadPlatformService 
             clientOptions = null;
         }
 
+        final Collection<OfficeData> parentOfficesOptions = officeReadPlatformService
+                .retrieveOfficesByHierarchyLevel(Long.valueOf(OfficeHierarchyLevel.CARTERA.getValue()));
+
+        final List<AppUserData> appUsers = new ArrayList<>(this.appUserReadPlatformService.retrieveAllUsers());
+
+        Collection<PortfolioCenterData> portfolioCenterOptions = this.portfolioCenterReadPlatformService.retrieveAllByCurrentUser();
+
+        List<EnumOptionData> centerGroupLocations = Arrays.asList(groupLocationsOptionData(CenterGroupLocation.URBAN),
+                groupLocationsOptionData(CenterGroupLocation.RURAL));
+
         return GroupGeneralData.template(centerOfficeId, center.getId(), center.getAccountNo(), center.getName(), staffId, staffName,
-                centerOptions, officeOptions, staffOptions, clientOptions, null);
+                centerOptions, officeOptions, staffOptions, clientOptions, null, parentOfficesOptions, appUsers, portfolioCenterOptions,
+                centerGroupLocations);
     }
 
     @Override
@@ -579,6 +693,23 @@ public class CenterReadPlatformServiceImpl implements CenterReadPlatformService 
             }
         }
         return staffCenterDataArray;
+    }
+
+    @Override
+    public Collection<CenterData> retrieveAllCentersByCurrentUser() {
+
+        final List<Long> officeIds = new ArrayList<>();
+
+        final Collection<OfficeData> parentOfficesOptions = officeReadPlatformService
+                .retrieveOfficesByHierarchyLevel(Long.valueOf(OfficeHierarchyLevel.AGENCIA.getValue()));
+        parentOfficesOptions.forEach(parentOffice -> officeIds.add(parentOffice.getId()));
+
+        String inSql = String.join(",", Collections.nCopies(officeIds.size(), "?"));
+
+        String schemaSql = "select " + this.centerMapper.schema();
+        schemaSql += "where g.office_id in (%s)";
+
+        return this.jdbcTemplate.query(String.format(schemaSql, inSql), this.centerMapper, officeIds.toArray());
     }
 
     public void validateForGenerateCollectionSheet(final Long staffId) {

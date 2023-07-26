@@ -144,7 +144,7 @@ public class CenterGroup extends AbstractAuditableCustom {
         }
 
         return new CenterGroup(name, portfolioCenter, legacyGroupNumber, latitude, longitude, formationDate, status, size, meetingStartTime,
-                meetingEndTime, responsibleUser,groupLocation);
+                meetingEndTime, responsibleUser, groupLocation);
     }
 
     public Map<String, Object> update(JsonCommand command) {

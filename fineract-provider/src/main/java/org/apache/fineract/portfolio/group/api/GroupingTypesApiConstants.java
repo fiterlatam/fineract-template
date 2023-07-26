@@ -25,7 +25,6 @@ import org.apache.fineract.portfolio.group.data.CenterData;
 
 public final class GroupingTypesApiConstants {
 
-
     private GroupingTypesApiConstants() {
 
     }
@@ -66,7 +65,7 @@ public final class GroupingTypesApiConstants {
 
     // group parameters
     public static final String centerIdParamName = "centerId";
-    public static final String toCenterIdParamname = "toCenterId";
+    public static final String toCenterIdParamName = "toCenterId";
     public static final String clientMembersParamName = "clientMembers";
 
     // response parameters
@@ -94,23 +93,51 @@ public final class GroupingTypesApiConstants {
 
     public static final String datatables = "datatables";
 
+    // group customized parameters
+    public static final String portfolioCenterId = "portfolioCenterId";
+    public static final String responsibleUserId = "responsibleUserId";
+    public static final String legacyNumber = "legacyNumber";
+    public static final String latitude = "latitude";
+    public static final String longitude = "longitude";
+    public static final String formationDate = "formationDate";
+    public static final String size = "size";
+    public static final String createdDate = "createdDate";
+    public static final String meetingStartTime = "meetingStartTime";
+    public static final String meetingEndTime = "meetingEndTime";
+    public static final String newPortfolioCenterId = "newPortfolioCenterId";
+    public static final String groupLocation = "groupLocation";
+    public static final String groupLocationId = "groupLocationId";
+
+    // center customized parameters
+    public static final String portfolioId = "portfolioId";
+    public static final String cityId = "cityId";
+    public static final String stateId = "stateId";
+    public static final String centerTypeId = "centerTypeId";
+    public static final String distance = "distance";
+    public static final String meetingStart = "meetingStart";
+    public static final String meetingEnd = "meetingEnd";
+    public static final String meetingDay = "meetingDay";
+    public static final String referencePoint = "referencePoint";
+
     /**
      * These parameters will match the class level parameters of {@link CenterData}. Where possible, we try to get
      * response parameters to match those of request parameters.
      */
-    static final Set<String> CENTER_RESPONSE_DATA_PARAMETERS = new HashSet<>(
-            Arrays.asList(idParamName, nameParamName, externalIdParamName, officeIdParamName, officeNameParamName, staffIdParamName,
-                    staffNameParamName, hierarchyParamName, officeOptionsParamName, staffOptionsParamName, statusParamName, activeParamName,
-                    activationDateParamName, timeLine, groupMembersParamName, collectionMeetingCalendar, closureReasons, datatables));
+    static final Set<String> CENTER_RESPONSE_DATA_PARAMETERS = new HashSet<>(Arrays.asList(idParamName, nameParamName, externalIdParamName,
+            officeIdParamName, officeNameParamName, staffIdParamName, staffNameParamName, hierarchyParamName, officeOptionsParamName,
+            staffOptionsParamName, statusParamName, activeParamName, activationDateParamName, timeLine, groupMembersParamName,
+            collectionMeetingCalendar, closureReasons, datatables, portfolioId, cityId, stateId, centerTypeId, distance, meetingStart,
+            meetingEnd, meetingDay, referencePoint, responsibleUserId, legacyNumber, createdDate, meetingStartTime, meetingEndTime));
 
     static final Set<String> CENTER_GROUP_RESPONSE_DATA_PARAMETERS = new HashSet<>(Arrays.asList(idParamName, nameParamName,
             externalIdParamName, officeIdParamName, officeNameParamName, staffIdParamName, staffNameParamName, hierarchyParamName,
             officeOptionsParamName, staffOptionsParamName, clientOptionsParamName, datatables));
 
-    static final Set<String> GROUP_RESPONSE_DATA_PARAMETERS = new HashSet<>(
-            Arrays.asList(idParamName, nameParamName, externalIdParamName, officeIdParamName, officeNameParamName, "parentId", "parentName",
-                    staffIdParamName, staffNameParamName, hierarchyParamName, officeOptionsParamName, statusParamName, activeParamName,
-                    activationDateParamName, staffOptionsParamName, clientOptionsParamName, timeLine, datatables));
+    static final Set<String> GROUP_RESPONSE_DATA_PARAMETERS = new HashSet<>(Arrays.asList(idParamName, nameParamName, externalIdParamName,
+            officeIdParamName, officeNameParamName, "parentId", "parentName", staffIdParamName, staffNameParamName, hierarchyParamName,
+            officeOptionsParamName, statusParamName, activeParamName, activationDateParamName, staffOptionsParamName,
+            clientOptionsParamName, timeLine, datatables, portfolioCenterId, responsibleUserId, legacyNumber, latitude, longitude,
+            formationDate, size, createdDate, meetingStartTime, meetingEndTime, newPortfolioCenterId));
 
     static final Set<String> COLLECTIONSHEET_DATA_PARAMETERS = new HashSet<>(Arrays.asList("dueDate", "loanProducts", "groups"));
 

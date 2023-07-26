@@ -18,6 +18,17 @@
  */
 package org.apache.fineract.organisation.prequalification.domain;
 
+import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import javax.persistence.CascadeType;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
+import javax.persistence.Table;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
@@ -26,18 +37,6 @@ import org.apache.fineract.organisation.centerGroup.domain.CenterGroup;
 import org.apache.fineract.organisation.prequalification.command.PrequalificatoinApiConstants;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProduct;
 import org.apache.fineract.useradministration.domain.AppUser;
-
-import javax.persistence.CascadeType;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.OneToMany;
-import javax.persistence.Table;
-import java.time.LocalDateTime;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
 
 @Entity
 @Table(name = "m_prequalification_group")
@@ -84,24 +83,22 @@ public class PrequalificationGroup extends AbstractPersistableCustom {
     @OneToMany(mappedBy = "prequalificationGroup", cascade = CascadeType.ALL)
     private List<PrequalificationGroupMember> members;
 
-
-    public static PrequalificationGroup fromJson(final AppUser appUser, final AppUser facilitator,
-                                                 final Agency agency, final CenterGroup centerGroup, final LoanProduct loanProduct,
-                                                 final JsonCommand command) {
+    public static PrequalificationGroup fromJson(final AppUser appUser, final AppUser facilitator, final Agency agency,
+            final CenterGroup centerGroup, final LoanProduct loanProduct, final JsonCommand command) {
         String groupName = command.stringValueOfParameterNamed("groupName");
         Long center = command.longValueOfParameterNamed(PrequalificatoinApiConstants.centerIdParamName);
-        if (centerGroup!=null) {
+        if (centerGroup != null) {
             groupName = centerGroup.getName();
         }
-        return new PrequalificationGroup(appUser, facilitator, agency, centerGroup, groupName,center, loanProduct);
+        return new PrequalificationGroup(appUser, facilitator, agency, centerGroup, groupName, center, loanProduct);
     }
 
     protected PrequalificationGroup() {
         //
     }
 
-    private PrequalificationGroup(final AppUser appUser, final AppUser facilitator,
-                                  final Agency agency, final CenterGroup centerGroup, final String groupName, Long center, final LoanProduct loanProduct) {
+    private PrequalificationGroup(final AppUser appUser, final AppUser facilitator, final Agency agency, final CenterGroup centerGroup,
+            final String groupName, Long center, final LoanProduct loanProduct) {
         this.addedBy = appUser;
         this.facilitator = facilitator;
         this.status = PrequalificationStatus.PENDING.getValue();
@@ -117,10 +114,12 @@ public class PrequalificationGroup extends AbstractPersistableCustom {
         ;
         this.status = prequalificationStatus.getValue();
     }
+
     public void updateMembers(final List<PrequalificationGroupMember> members) {
         ;
         this.members = members;
     }
+
     public void updatePrequalificationNumber(final String prequalificationNumber) {
         ;
         this.prequalificationNumber = prequalificationNumber;

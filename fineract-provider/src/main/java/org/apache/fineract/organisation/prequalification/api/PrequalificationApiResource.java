@@ -21,6 +21,25 @@ package org.apache.fineract.organisation.prequalification.api;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
+import javax.ws.rs.HeaderParam;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.UriInfo;
 import org.apache.fineract.commands.domain.CommandWrapper;
 import org.apache.fineract.commands.service.CommandWrapperBuilder;
 import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformService;
@@ -54,34 +73,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.HeaderParam;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.UriInfo;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
 @Path("/prequalification")
 @Component
 @Scope("singleton")
 @Tag(name = "Prequalification", description = "Prequalify clients that need loans against a blacklist")
 public class PrequalificationApiResource {
 
-    private static final Set<String> PRE_QUALIFICATION_DATA_PARAMETERS = new HashSet<>(Arrays.asList("id", "productId", "productCode", "year",
-            "typification", "dpi", "nit", "description", "agencyId", "balance", "disbursementAmount", "status", "addedBy", "createdAt"));
+    private static final Set<String> PRE_QUALIFICATION_DATA_PARAMETERS = new HashSet<>(
+            Arrays.asList("id", "productId", "productCode", "year", "typification", "dpi", "nit", "description", "agencyId", "balance",
+                    "disbursementAmount", "status", "addedBy", "createdAt"));
 
     private final String resourceNameForPermissions = "PREQUALIFICATIONS";
 
@@ -101,16 +101,15 @@ public class PrequalificationApiResource {
 
     @Autowired
     public PrequalificationApiResource(final PlatformSecurityContext context,
-                                       final CodeValueReadPlatformService codeValueReadPlatformService,
-                                       final AgencyReadPlatformServiceImpl agencyReadPlatformService,
-                                       final PrequalificationWritePlatformService prequalificationWritePlatformService,
-                                       final CenterReadPlatformServiceImpl centerReadPlatformService,
-                                       final LoanProductReadPlatformService loanProductReadPlatformService,
-                                       final AppUserReadPlatformService appUserReadPlatformService,
-                                       final DefaultToApiJsonSerializer<GroupPrequalificationData> toApiJsonSerializer,
-                                       final PrequalificationReadPlatformService prequalificationReadPlatformService, final FileUploadValidator fileUploadValidator,
-                                       final DocumentWritePlatformService documentWritePlatformService, final ApiRequestParameterHelper apiRequestParameterHelper,
-                                       final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService) {
+            final CodeValueReadPlatformService codeValueReadPlatformService, final AgencyReadPlatformServiceImpl agencyReadPlatformService,
+            final PrequalificationWritePlatformService prequalificationWritePlatformService,
+            final CenterReadPlatformServiceImpl centerReadPlatformService,
+            final LoanProductReadPlatformService loanProductReadPlatformService,
+            final AppUserReadPlatformService appUserReadPlatformService,
+            final DefaultToApiJsonSerializer<GroupPrequalificationData> toApiJsonSerializer,
+            final PrequalificationReadPlatformService prequalificationReadPlatformService, final FileUploadValidator fileUploadValidator,
+            final DocumentWritePlatformService documentWritePlatformService, final ApiRequestParameterHelper apiRequestParameterHelper,
+            final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService) {
         this.context = context;
         this.codeValueReadPlatformService = codeValueReadPlatformService;
         this.toApiJsonSerializer = toApiJsonSerializer;
@@ -163,14 +162,16 @@ public class PrequalificationApiResource {
 
         this.context.authenticatedUser().validateHasViewPermission(this.resourceNameForPermissions);
 
-        Collection<CenterData> centerData = this.centerReadPlatformService.retrieveAllForDropdown(this.context.authenticatedUser().getOffice().getId());
+        Collection<CenterData> centerData = this.centerReadPlatformService
+                .retrieveAllForDropdown(this.context.authenticatedUser().getOffice().getId());
 
         Collection<AgencyData> agencies = this.agencyReadPlatformService.retrieveAllByUser();
         Collection<LoanProductData> loanProducts = this.loanProductReadPlatformService.retrieveAllLoanProducts();
         final List<AppUserData> appUsers = new ArrayList<>(
                 this.appUserReadPlatformService.retrieveUsersUnderHierarchy(Long.valueOf(OfficeHierarchyLevel.GRUPO.getValue())));
 
-        final GroupPrequalificationData clientIdentifierData = GroupPrequalificationData.template(agencies, centerData,loanProducts,appUsers);
+        final GroupPrequalificationData clientIdentifierData = GroupPrequalificationData.template(agencies, centerData, loanProducts,
+                appUsers);
 
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
         return this.toApiJsonSerializer.serialize(settings, clientIdentifierData, PRE_QUALIFICATION_DATA_PARAMETERS);
@@ -198,7 +199,8 @@ public class PrequalificationApiResource {
     public String createPrequalification(@Parameter(hidden = true) final String apiRequestBodyAsJson) {
 
         try {
-            final CommandWrapper commandRequest = new CommandWrapperBuilder().createPrequalification().withJson(apiRequestBodyAsJson).build();
+            final CommandWrapper commandRequest = new CommandWrapperBuilder().createPrequalification().withJson(apiRequestBodyAsJson)
+                    .build();
 
             final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
 
@@ -219,11 +221,10 @@ public class PrequalificationApiResource {
             @FormDataParam("file") final FormDataBodyPart bodyPart, @FormDataParam("name") final String name,
             @FormDataParam("description") final String description, @FormDataParam("comment") final String comment) {
 
-
         if (inputStream != null) {
             fileUploadValidator.validate(fileSize, inputStream, fileDetails, bodyPart);
-            final DocumentCommand documentCommand = new DocumentCommand(null, null, "prequalifications", groupId, name, fileDetails.getFileName(),
-                    fileSize, bodyPart.getMediaType().toString(), description, null);
+            final DocumentCommand documentCommand = new DocumentCommand(null, null, "prequalifications", groupId, name,
+                    fileDetails.getFileName(), fileSize, bodyPart.getMediaType().toString(), description, null);
             final Long documentId = this.documentWritePlatformService.createDocument(documentCommand, inputStream);
         }
 

@@ -21,6 +21,7 @@ package org.apache.fineract.organisation.prequalification.domain;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
-public interface PreQualificationMemberRepository extends JpaRepository<PrequalificationGroupMember, Long>, JpaSpecificationExecutor<PrequalificationGroupMember> {
+public interface PreQualificationMemberRepository
+        extends JpaRepository<PrequalificationGroupMember, Long>, JpaSpecificationExecutor<PrequalificationGroupMember> {
     // no behaviour
 }
