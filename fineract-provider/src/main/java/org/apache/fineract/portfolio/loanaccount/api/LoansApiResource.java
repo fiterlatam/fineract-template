@@ -31,7 +31,9 @@ import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+
 import java.io.InputStream;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -54,6 +56,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.commands.domain.CommandWrapper;
 import org.apache.fineract.commands.service.CommandWrapperBuilder;
@@ -74,6 +77,7 @@ import org.apache.fineract.infrastructure.core.exception.UnrecognizedQueryParamE
 import org.apache.fineract.infrastructure.core.serialization.ApiRequestJsonSerializationSettings;
 import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
+import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.core.service.Page;
 import org.apache.fineract.infrastructure.core.service.SearchParameters;
 import org.apache.fineract.infrastructure.dataqueries.api.DataTableApiConstant;
@@ -98,6 +102,7 @@ import org.apache.fineract.portfolio.charge.data.ChargeData;
 import org.apache.fineract.portfolio.charge.domain.ChargeTimeType;
 import org.apache.fineract.portfolio.charge.service.ChargeReadPlatformService;
 import org.apache.fineract.portfolio.client.data.ClientData;
+import org.apache.fineract.portfolio.client.service.ClientReadPlatformService;
 import org.apache.fineract.portfolio.collateralmanagement.data.LoanCollateralResponseData;
 import org.apache.fineract.portfolio.collateralmanagement.service.LoanCollateralManagementReadPlatformService;
 import org.apache.fineract.portfolio.cupo.data.CupoData;
@@ -108,6 +113,8 @@ import org.apache.fineract.portfolio.fund.data.FundData;
 import org.apache.fineract.portfolio.fund.service.FundReadPlatformService;
 import org.apache.fineract.portfolio.group.data.GroupGeneralData;
 import org.apache.fineract.portfolio.group.service.GroupReadPlatformService;
+import org.apache.fineract.portfolio.loanaccount.data.AgeLimitStatus;
+import org.apache.fineract.portfolio.loanaccount.data.AgeLimitStatusEnumerations;
 import org.apache.fineract.portfolio.loanaccount.data.CollectionData;
 import org.apache.fineract.portfolio.loanaccount.data.DisbursementData;
 import org.apache.fineract.portfolio.loanaccount.data.GlimRepaymentTemplate;
@@ -232,6 +239,7 @@ public class LoansApiResource {
     private final String resourceNameForPermissions = "LOAN";
 
     private final PlatformSecurityContext context;
+    private final ClientReadPlatformService clientReadPlatformService;
     private final LoanReadPlatformService loanReadPlatformService;
     private final LoanProductReadPlatformService loanProductReadPlatformService;
     private final LoanDropdownReadPlatformService dropdownReadPlatformService;
@@ -245,6 +253,7 @@ public class LoansApiResource {
     private final DefaultToApiJsonSerializer<LoanAccountData> toApiJsonSerializer;
     private final DefaultToApiJsonSerializer<LoanApprovalData> loanApprovalDataToApiJsonSerializer;
     private final DefaultToApiJsonSerializer<LoanScheduleData> loanScheduleToApiJsonSerializer;
+    private final DefaultToApiJsonSerializer<EnumOptionData> ageLimitValidationJsonSerializer;
     private final ApiRequestParameterHelper apiRequestParameterHelper;
     private final FromJsonHelper fromJsonHelper;
     private final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService;
@@ -265,30 +274,31 @@ public class LoansApiResource {
     private final CupoReadService cupoReadService;
 
     public LoansApiResource(final PlatformSecurityContext context, final LoanReadPlatformService loanReadPlatformService,
-            final LoanProductReadPlatformService loanProductReadPlatformService,
-            final LoanDropdownReadPlatformService dropdownReadPlatformService, final FundReadPlatformService fundReadPlatformService,
-            final ChargeReadPlatformService chargeReadPlatformService, final LoanChargeReadPlatformService loanChargeReadPlatformService,
-            final LoanScheduleCalculationPlatformService calculationPlatformService,
-            final GuarantorReadPlatformService guarantorReadPlatformService,
-            final CodeValueReadPlatformService codeValueReadPlatformService, final GroupReadPlatformService groupReadPlatformService,
-            final DefaultToApiJsonSerializer<LoanAccountData> toApiJsonSerializer,
-            final DefaultToApiJsonSerializer<LoanApprovalData> loanApprovalDataToApiJsonSerializer,
-            final DefaultToApiJsonSerializer<LoanScheduleData> loanScheduleToApiJsonSerializer,
-            final ApiRequestParameterHelper apiRequestParameterHelper, final FromJsonHelper fromJsonHelper,
-            final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService,
-            final CalendarReadPlatformService calendarReadPlatformService, final NoteReadPlatformService noteReadPlatformService,
-            final PortfolioAccountReadPlatformService portfolioAccountReadPlatformServiceImpl,
-            final AccountAssociationsReadPlatformService accountAssociationsReadPlatformService,
-            final LoanScheduleHistoryReadPlatformService loanScheduleHistoryReadPlatformService,
-            final AccountDetailsReadPlatformService accountDetailsReadPlatformService,
-            final EntityDatatableChecksReadService entityDatatableChecksReadService,
-            final BulkImportWorkbookService bulkImportWorkbookService,
-            final BulkImportWorkbookPopulatorService bulkImportWorkbookPopulatorService, final RateReadService rateReadService,
-            final ConfigurationDomainService configurationDomainService,
-            final DefaultToApiJsonSerializer<GlimRepaymentTemplate> glimTemplateToApiJsonSerializer,
-            final GLIMAccountInfoReadPlatformService glimAccountInfoReadPlatformService,
-            final LoanCollateralManagementReadPlatformService loanCollateralManagementReadPlatformService,
-            final CupoReadService cupoReadService) {
+                            final LoanProductReadPlatformService loanProductReadPlatformService,
+                            final LoanDropdownReadPlatformService dropdownReadPlatformService, final FundReadPlatformService fundReadPlatformService,
+                            final ChargeReadPlatformService chargeReadPlatformService, final LoanChargeReadPlatformService loanChargeReadPlatformService,
+                            final LoanScheduleCalculationPlatformService calculationPlatformService,
+                            final GuarantorReadPlatformService guarantorReadPlatformService,final ClientReadPlatformService clientReadPlatformService,
+                            final CodeValueReadPlatformService codeValueReadPlatformService, final GroupReadPlatformService groupReadPlatformService,
+                            final DefaultToApiJsonSerializer<LoanAccountData> toApiJsonSerializer,
+                            final DefaultToApiJsonSerializer<LoanApprovalData> loanApprovalDataToApiJsonSerializer,
+                            final DefaultToApiJsonSerializer<LoanScheduleData> loanScheduleToApiJsonSerializer,
+                            final DefaultToApiJsonSerializer<EnumOptionData> ageLimitValidationJsonSerializer,
+                            final ApiRequestParameterHelper apiRequestParameterHelper, final FromJsonHelper fromJsonHelper,
+                            final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService,
+                            final CalendarReadPlatformService calendarReadPlatformService, final NoteReadPlatformService noteReadPlatformService,
+                            final PortfolioAccountReadPlatformService portfolioAccountReadPlatformServiceImpl,
+                            final AccountAssociationsReadPlatformService accountAssociationsReadPlatformService,
+                            final LoanScheduleHistoryReadPlatformService loanScheduleHistoryReadPlatformService,
+                            final AccountDetailsReadPlatformService accountDetailsReadPlatformService,
+                            final EntityDatatableChecksReadService entityDatatableChecksReadService,
+                            final BulkImportWorkbookService bulkImportWorkbookService,
+                            final BulkImportWorkbookPopulatorService bulkImportWorkbookPopulatorService, final RateReadService rateReadService,
+                            final ConfigurationDomainService configurationDomainService,
+                            final DefaultToApiJsonSerializer<GlimRepaymentTemplate> glimTemplateToApiJsonSerializer,
+                            final GLIMAccountInfoReadPlatformService glimAccountInfoReadPlatformService,
+                            final LoanCollateralManagementReadPlatformService loanCollateralManagementReadPlatformService,
+                            final CupoReadService cupoReadService) {
         this.context = context;
         this.loanReadPlatformService = loanReadPlatformService;
         this.loanProductReadPlatformService = loanProductReadPlatformService;
@@ -321,6 +331,8 @@ public class LoansApiResource {
         this.glimAccountInfoReadPlatformService = glimAccountInfoReadPlatformService;
         this.loanCollateralManagementReadPlatformService = loanCollateralManagementReadPlatformService;
         this.cupoReadService = cupoReadService;
+        this.clientReadPlatformService = clientReadPlatformService;
+        this.ageLimitValidationJsonSerializer = ageLimitValidationJsonSerializer;
     }
 
     /*
@@ -331,11 +343,11 @@ public class LoansApiResource {
 
     @GET
     @Path("{loanId}/template")
-    @Consumes({ MediaType.APPLICATION_JSON })
-    @Produces({ MediaType.APPLICATION_JSON })
+    @Consumes({MediaType.APPLICATION_JSON})
+    @Produces({MediaType.APPLICATION_JSON})
     public String retrieveApprovalTemplate(@PathParam("loanId") @Parameter(description = "loanId") final Long loanId,
-            @QueryParam("templateType") @Parameter(description = "templateType") final String templateType,
-            @Context final UriInfo uriInfo) {
+                                           @QueryParam("templateType") @Parameter(description = "templateType") final String templateType,
+                                           @Context final UriInfo uriInfo) {
 
         this.context.authenticatedUser().validateHasReadPermission(this.resourceNameForPermissions);
 
@@ -355,21 +367,21 @@ public class LoansApiResource {
 
     @GET
     @Path("template")
-    @Consumes({ MediaType.APPLICATION_JSON })
-    @Produces({ MediaType.APPLICATION_JSON })
+    @Consumes({MediaType.APPLICATION_JSON})
+    @Produces({MediaType.APPLICATION_JSON})
     @Operation(summary = "Retrieve Loan Details Template", description = "This is a convenience resource. It can be useful when building maintenance user interface screens for client applications. The template data returned consists of any or all of:\n"
             + "\n" + "Field Defaults\n" + "Allowed description Lists\n" + "Example Requests:\n" + "\n"
             + "loans/template?templateType=individual&clientId=1\n" + "\n" + "\n"
             + "loans/template?templateType=individual&clientId=1&productId=1")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = LoansApiResourceSwagger.GetLoansTemplateResponse.class))) })
+            @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = LoansApiResourceSwagger.GetLoansTemplateResponse.class)))})
     public String template(@QueryParam("clientId") @Parameter(description = "clientId") final Long clientId,
-            @QueryParam("groupId") @Parameter(description = "groupId") final Long groupId,
-            @QueryParam("productId") @Parameter(description = "productId") final Long productId,
-            @QueryParam("templateType") @Parameter(description = "templateType") final String templateType,
-            @DefaultValue("false") @QueryParam("staffInSelectedOfficeOnly") @Parameter(description = "staffInSelectedOfficeOnly") final boolean staffInSelectedOfficeOnly,
-            @DefaultValue("false") @QueryParam("activeOnly") @Parameter(description = "activeOnly") final boolean onlyActive,
-            @Context final UriInfo uriInfo) {
+                           @QueryParam("groupId") @Parameter(description = "groupId") final Long groupId,
+                           @QueryParam("productId") @Parameter(description = "productId") final Long productId,
+                           @QueryParam("templateType") @Parameter(description = "templateType") final String templateType,
+                           @DefaultValue("false") @QueryParam("staffInSelectedOfficeOnly") @Parameter(description = "staffInSelectedOfficeOnly") final boolean staffInSelectedOfficeOnly,
+                           @DefaultValue("false") @QueryParam("activeOnly") @Parameter(description = "activeOnly") final boolean onlyActive,
+                           @Context final UriInfo uriInfo) {
 
         this.context.authenticatedUser().validateHasReadPermission(this.resourceNameForPermissions);
 
@@ -479,14 +491,56 @@ public class LoansApiResource {
         return this.toApiJsonSerializer.serialize(settings, newLoanAccount, this.loanDataParameters);
     }
 
+    @GET
+    @Path("validateAgeLimits/{clientId}/{productId}")
+    @Consumes({MediaType.APPLICATION_JSON})
+    @Produces({MediaType.APPLICATION_JSON})
+    @Operation(summary = "Validate Client age limits", description = "This is a resource used for validating the age limits of the client on loan application:\n"
+            + "\n" + "Field Defaults\n" + "Allowed description Lists\n" + "Example Requests:\n" + "\n"
+            + "loans/validateAgeLimits?clientId=1\n" + "\n" + "\n"
+            + "loans/validateAgeLimits?clientId=1&productId=1")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = LoansApiResourceSwagger.GetLoansTemplateResponse.class)))})
+    public String template(@PathParam("clientId") @Parameter(description = "clientId") final Long clientId,
+                           @PathParam("productId") @Parameter(description = "productId") final Long productId,
+                           @Context final UriInfo uriInfo) {
+
+        this.context.authenticatedUser().validateHasReadPermission(this.resourceNameForPermissions);
+
+        // template
+        ClientData clientData = this.clientReadPlatformService.retrieveOne(clientId);
+        LocalDate dateOfBirth = clientData.getDateOfBirth();
+        LocalDate businessLocalDate = DateUtils.getBusinessLocalDate();
+
+        LoanProductData loanProductData = loanProductReadPlatformService.retrieveLoanProduct(productId);
+
+        Integer ageLimitWarning = loanProductData.getAgeLimitWarning();
+        Integer ageLimitBlock = loanProductData.getAgeLimitBlock();
+
+        AgeLimitStatus status = AgeLimitStatus.CONTINUE;
+        if (dateOfBirth != null && ageLimitWarning != null && ageLimitBlock != null) {
+            Integer age = businessLocalDate.getYear() - dateOfBirth.getYear();
+            if (age > ageLimitBlock) {
+                status = AgeLimitStatus.BLOCK;
+            }
+            if (age > ageLimitWarning && age < ageLimitBlock) {
+                status = AgeLimitStatus.WARNING;
+            }
+        }
+
+        EnumOptionData enumSatus = AgeLimitStatusEnumerations.status(status);
+        final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
+        return this.ageLimitValidationJsonSerializer.serialize(settings, enumSatus, this.loanDataParameters);
+    }
+
     private Collection<PortfolioAccountData> getaccountLinkingOptions(final LoanAccountData newLoanAccount, final Long clientId,
-            final Long groupId) {
+                                                                      final Long groupId) {
         final CurrencyData currencyData = newLoanAccount.currency();
         String currencyCode = null;
         if (currencyData != null) {
             currencyCode = currencyData.code();
         }
-        final long[] accountStatus = { SavingsAccountStatusType.ACTIVE.getValue() };
+        final long[] accountStatus = {SavingsAccountStatusType.ACTIVE.getValue()};
         final PortfolioAccountDTO portfolioAccountDTO = new PortfolioAccountDTO(PortfolioAccountType.SAVINGS.getValue(), clientId,
                 currencyCode, accountStatus, DepositAccountType.SAVINGS_DEPOSIT.getValue());
         if (groupId != null) {
@@ -497,21 +551,21 @@ public class LoansApiResource {
 
     @GET
     @Path("{loanId}")
-    @Consumes({ MediaType.APPLICATION_JSON })
-    @Produces({ MediaType.APPLICATION_JSON })
+    @Consumes({MediaType.APPLICATION_JSON})
+    @Produces({MediaType.APPLICATION_JSON})
     @Operation(summary = "Retrieve a Loan", description = "Note: template=true parameter doesn't apply to this resource."
             + "Example Requests:\n" + "\n" + "loans/1\n" + "\n" + "\n" + "loans/1?fields=id,principal,annualInterestRate\n" + "\n" + "\n"
             + "loans/1?associations=all\n" + "\n" + "loans/1?associations=all&exclude=guarantors\n" + "\n" + "\n"
             + "loans/1?fields=id,principal,annualInterestRate&associations=repaymentSchedule,transactions")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = LoansApiResourceSwagger.GetLoansLoanIdResponse.class))) })
+            @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = LoansApiResourceSwagger.GetLoansLoanIdResponse.class)))})
     public String retrieveLoan(@PathParam("loanId") @Parameter(description = "loanId") final Long loanId,
-            @DefaultValue("false") @QueryParam("staffInSelectedOfficeOnly") @Parameter(description = "staffInSelectedOfficeOnly") final boolean staffInSelectedOfficeOnly,
-            @DefaultValue("all") @QueryParam("associations") @Parameter(in = ParameterIn.QUERY, name = "associations", description = "Loan object relations to be included in the response", required = false, examples = {
-                    @ExampleObject(value = "all"), @ExampleObject(value = "repaymentSchedule,transactions") }) final String associations,
-            @QueryParam("exclude") @Parameter(in = ParameterIn.QUERY, name = "exclude", description = "Optional Loan object relation list to be filtered in the response", required = false, example = "guarantors,futureSchedule") final String exclude,
-            @QueryParam("fields") @Parameter(in = ParameterIn.QUERY, name = "fields", description = "Optional Loan attribute list to be in the response", required = false, example = "id,principal,annualInterestRate") final String fields,
-            @Context final UriInfo uriInfo) {
+                               @DefaultValue("false") @QueryParam("staffInSelectedOfficeOnly") @Parameter(description = "staffInSelectedOfficeOnly") final boolean staffInSelectedOfficeOnly,
+                               @DefaultValue("all") @QueryParam("associations") @Parameter(in = ParameterIn.QUERY, name = "associations", description = "Loan object relations to be included in the response", required = false, examples = {
+                                       @ExampleObject(value = "all"), @ExampleObject(value = "repaymentSchedule,transactions")}) final String associations,
+                               @QueryParam("exclude") @Parameter(in = ParameterIn.QUERY, name = "exclude", description = "Optional Loan object relation list to be filtered in the response", required = false, example = "guarantors,futureSchedule") final String exclude,
+                               @QueryParam("fields") @Parameter(in = ParameterIn.QUERY, name = "fields", description = "Optional Loan attribute list to be in the response", required = false, example = "id,principal,annualInterestRate") final String fields,
+                               @Context final UriInfo uriInfo) {
         this.context.authenticatedUser().validateHasReadPermission(this.resourceNameForPermissions);
 
         LoanAccountData loanBasicDetails = this.loanReadPlatformService.retrieveOne(loanId);
@@ -716,10 +770,10 @@ public class LoansApiResource {
             repaymentStrategyOptions = this.dropdownReadPlatformService.retreiveTransactionProcessingStrategies();
             if (product.getMultiDisburseLoan()) {
                 chargeOptions = this.chargeReadPlatformService.retrieveLoanAccountApplicableCharges(loanId,
-                        new ChargeTimeType[] { ChargeTimeType.OVERDUE_INSTALLMENT });
+                        new ChargeTimeType[]{ChargeTimeType.OVERDUE_INSTALLMENT});
             } else {
                 chargeOptions = this.chargeReadPlatformService.retrieveLoanAccountApplicableCharges(loanId,
-                        new ChargeTimeType[] { ChargeTimeType.OVERDUE_INSTALLMENT, ChargeTimeType.TRANCHE_DISBURSEMENT });
+                        new ChargeTimeType[]{ChargeTimeType.OVERDUE_INSTALLMENT, ChargeTimeType.TRANCHE_DISBURSEMENT});
             }
             chargeTemplate = this.loanChargeReadPlatformService.retrieveLoanChargeTemplate();
 
@@ -733,7 +787,7 @@ public class LoansApiResource {
             if (currencyData != null) {
                 currencyCode = currencyData.code();
             }
-            final long[] accountStatus = { SavingsAccountStatusType.ACTIVE.getValue() };
+            final long[] accountStatus = {SavingsAccountStatusType.ACTIVE.getValue()};
             PortfolioAccountDTO portfolioAccountDTO = new PortfolioAccountDTO(PortfolioAccountType.SAVINGS.getValue(),
                     loanBasicDetails.clientId(), currencyCode, accountStatus, DepositAccountType.SAVINGS_DEPOSIT.getValue());
             accountLinkingOptions = this.portfolioAccountReadPlatformService.retrieveAllForLookup(portfolioAccountDTO);
@@ -789,22 +843,22 @@ public class LoansApiResource {
     }
 
     @GET
-    @Consumes({ MediaType.APPLICATION_JSON })
-    @Produces({ MediaType.APPLICATION_JSON })
+    @Consumes({MediaType.APPLICATION_JSON})
+    @Produces({MediaType.APPLICATION_JSON})
     @Operation(summary = "List Loans", description = "The list capability of loans can support pagination and sorting.\n"
             + "Example Requests:\n" + "\n" + "loans\n" + "\n" + "loans?fields=accountNo\n" + "\n" + "loans?offset=10&limit=50\n" + "\n"
             + "loans?orderBy=accountNo&sortOrder=DESC")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = LoansApiResourceSwagger.GetLoansResponse.class))) })
+            @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = LoansApiResourceSwagger.GetLoansResponse.class)))})
     public String retrieveAll(@Context final UriInfo uriInfo,
-            @QueryParam("sqlSearch") @Parameter(description = "sqlSearch") final String sqlSearch,
-            @QueryParam("externalId") @Parameter(description = "externalId") final String externalId,
-            // @QueryParam("underHierarchy") final String hierarchy,
-            @QueryParam("offset") @Parameter(description = "offset") final Integer offset,
-            @QueryParam("limit") @Parameter(description = "limit") final Integer limit,
-            @QueryParam("orderBy") @Parameter(description = "orderBy") final String orderBy,
-            @QueryParam("sortOrder") @Parameter(description = "sortOrder") final String sortOrder,
-            @QueryParam("accountNo") @Parameter(description = "accountNo") final String accountNo) {
+                              @QueryParam("sqlSearch") @Parameter(description = "sqlSearch") final String sqlSearch,
+                              @QueryParam("externalId") @Parameter(description = "externalId") final String externalId,
+                              // @QueryParam("underHierarchy") final String hierarchy,
+                              @QueryParam("offset") @Parameter(description = "offset") final Integer offset,
+                              @QueryParam("limit") @Parameter(description = "limit") final Integer limit,
+                              @QueryParam("orderBy") @Parameter(description = "orderBy") final String orderBy,
+                              @QueryParam("sortOrder") @Parameter(description = "sortOrder") final String sortOrder,
+                              @QueryParam("accountNo") @Parameter(description = "accountNo") final String accountNo) {
 
         this.context.authenticatedUser().validateHasReadPermission(this.resourceNameForPermissions);
 
@@ -818,8 +872,8 @@ public class LoansApiResource {
     }
 
     @POST
-    @Consumes({ MediaType.APPLICATION_JSON })
-    @Produces({ MediaType.APPLICATION_JSON })
+    @Consumes({MediaType.APPLICATION_JSON})
+    @Produces({MediaType.APPLICATION_JSON})
     @Operation(summary = "Calculate loan repayment schedule | Submit a new Loan Application", description = "It calculates the loan repayment Schedule\n"
             + "Submits a new loan application\n"
             + "Mandatory Fields: clientId, productId, principal, loanTermFrequency, loanTermFrequencyType, loanType, numberOfRepayments, repaymentEvery, repaymentFrequencyType, interestRatePerPeriod, amortizationType, interestType, interestCalculationPeriodType, transactionProcessingStrategyId, expectedDisbursementDate, submittedOnDate, loanType\n"
@@ -829,7 +883,7 @@ public class LoansApiResource {
             + "Additional Mandatory Field if Entity-Datatable Check is enabled for the entity of type loan: datatables")
     @RequestBody(required = true, content = @Content(schema = @Schema(implementation = LoansApiResourceSwagger.PostLoansRequest.class)))
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = LoansApiResourceSwagger.PostLoansResponse.class))) })
+            @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = LoansApiResourceSwagger.PostLoansResponse.class)))})
     public String calculateLoanScheduleOrSubmitLoanApplication(
             @QueryParam("command") @Parameter(description = "command") final String commandParam, @Context final UriInfo uriInfo,
             @Parameter(hidden = true) final String apiRequestBodyAsJson) {
@@ -854,14 +908,14 @@ public class LoansApiResource {
 
     @PUT
     @Path("{loanId}")
-    @Consumes({ MediaType.APPLICATION_JSON })
-    @Produces({ MediaType.APPLICATION_JSON })
+    @Consumes({MediaType.APPLICATION_JSON})
+    @Produces({MediaType.APPLICATION_JSON})
     @Operation(summary = "Modify a loan application", description = "Loan application can only be modified when in 'Submitted and pending approval' state. Once the application is approved, the details cannot be changed using this method.")
     @RequestBody(required = true, content = @Content(schema = @Schema(implementation = LoansApiResourceSwagger.PutLoansLoanIdRequest.class)))
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = LoansApiResourceSwagger.PutLoansLoanIdResponse.class))) })
+            @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = LoansApiResourceSwagger.PutLoansLoanIdResponse.class)))})
     public String modifyLoanApplication(@PathParam("loanId") @Parameter(description = "loanId") final Long loanId,
-            @Parameter(hidden = true) final String apiRequestBodyAsJson) {
+                                        @Parameter(hidden = true) final String apiRequestBodyAsJson) {
 
         final CommandWrapper commandRequest = new CommandWrapperBuilder().updateLoanApplication(loanId).withJson(apiRequestBodyAsJson)
                 .build();
@@ -873,11 +927,11 @@ public class LoansApiResource {
 
     @DELETE
     @Path("{loanId}")
-    @Consumes({ MediaType.APPLICATION_JSON })
-    @Produces({ MediaType.APPLICATION_JSON })
+    @Consumes({MediaType.APPLICATION_JSON})
+    @Produces({MediaType.APPLICATION_JSON})
     @Operation(summary = "Delete a Loan Application", description = "Note: Only loans in \"Submitted and awaiting approval\" status can be deleted.")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = LoansApiResourceSwagger.DeleteLoansLoanIdResponse.class))) })
+            @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = LoansApiResourceSwagger.DeleteLoansLoanIdResponse.class)))})
     public String deleteLoanApplication(@PathParam("loanId") @Parameter(description = "loanId") final Long loanId) {
 
         final CommandWrapper commandRequest = new CommandWrapperBuilder().deleteLoanApplication(loanId).build();
@@ -889,8 +943,8 @@ public class LoansApiResource {
 
     @POST
     @Path("{loanId}")
-    @Consumes({ MediaType.APPLICATION_JSON })
-    @Produces({ MediaType.APPLICATION_JSON })
+    @Consumes({MediaType.APPLICATION_JSON})
+    @Produces({MediaType.APPLICATION_JSON})
     @Operation(summary = "Approve Loan Application | Recover Loan Guarantee | Undo Loan Application Approval | Assign a Loan Officer | Unassign a Loan Officer | Reject Loan Application | Applicant Withdraws from Loan Application | Disburse Loan Disburse Loan To Savings Account | Undo Loan Disbursal", description = "Approve Loan Application:\n"
             + "Mandatory Fields: approvedOnDate\n" + "Optional Fields: approvedLoanAmount and expectedDisbursementDate\n"
             + "Approves the loan application\n\n" + "Recover Loan Guarantee:\n" + "Recovers the loan guarantee\n\n"
@@ -905,10 +959,10 @@ public class LoansApiResource {
             + "Undo Loan Disbursal:\n" + "Undoes the Loan Disbursal\n" + "Showing request and response for Assign a Loan Officer")
     @RequestBody(required = true, content = @Content(schema = @Schema(implementation = LoansApiResourceSwagger.PostLoansLoanIdRequest.class)))
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = LoansApiResourceSwagger.PostLoansLoanIdResponse.class))) })
+            @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = LoansApiResourceSwagger.PostLoansLoanIdResponse.class)))})
     public String stateTransitions(@PathParam("loanId") @Parameter(description = "loanId") final Long loanId,
-            @QueryParam("command") @Parameter(description = "command") final String commandParam,
-            @Parameter(hidden = true) final String apiRequestBodyAsJson) {
+                                   @QueryParam("command") @Parameter(description = "command") final String commandParam,
+                                   @Parameter(hidden = true) final String apiRequestBodyAsJson) {
 
         final CommandWrapperBuilder builder = new CommandWrapperBuilder().withJson(apiRequestBodyAsJson);
 
@@ -968,14 +1022,14 @@ public class LoansApiResource {
     @Path("downloadtemplate")
     @Produces("application/vnd.ms-excel")
     public Response getLoansTemplate(@QueryParam("officeId") final Long officeId, @QueryParam("staffId") final Long staffId,
-            @QueryParam("dateFormat") final String dateFormat) {
+                                     @QueryParam("dateFormat") final String dateFormat) {
         return bulkImportWorkbookPopulatorService.getTemplate(GlobalEntityType.LOANS.toString(), officeId, staffId, dateFormat);
     }
 
     @GET
     @Path("glimAccount/{glimId}")
-    @Consumes({ MediaType.APPLICATION_JSON })
-    @Produces({ MediaType.APPLICATION_JSON })
+    @Consumes({MediaType.APPLICATION_JSON})
+    @Produces({MediaType.APPLICATION_JSON})
     public String getGlimRepaymentTemplate(@PathParam("glimId") final Long glimId, @Context final UriInfo uriInfo) {
         this.context.authenticatedUser().validateHasReadPermission(this.resourceNameForPermissions);
         Collection<GlimRepaymentTemplate> glimRepaymentTemplate = this.glimAccountInfoReadPlatformService.findglimRepaymentTemplate(glimId);
@@ -985,8 +1039,8 @@ public class LoansApiResource {
 
     @POST
     @Path("glimAccount/{glimId}")
-    @Consumes({ MediaType.APPLICATION_JSON })
-    @Produces({ MediaType.APPLICATION_JSON })
+    @Consumes({MediaType.APPLICATION_JSON})
+    @Produces({MediaType.APPLICATION_JSON})
     @Operation(summary = "Approve GLIM Application | Undo GLIM Application Approval | Reject GLIM Application | Disburse Loan Disburse Loan To Savings Account | Undo Loan Disbursal", description = "Approve GLIM Application:\n"
             + "Mandatory Fields: approvedOnDate\n" + "Optional Fields: approvedLoanAmount and expectedDisbursementDate\n"
             + "Approves the GLIM application\n\n" + "Undo GLIM Application Approval:\n" + "Undoes the GLIM Application Approval\n\n"
@@ -997,9 +1051,9 @@ public class LoansApiResource {
             + "Undo Loan Disbursal:\n" + "Undoes the Loan Disbursal\n")
     @RequestBody(required = true, content = @Content(schema = @Schema(implementation = LoansApiResourceSwagger.PostLoansLoanIdRequest.class)))
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = LoansApiResourceSwagger.PostLoansLoanIdResponse.class))) })
+            @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = LoansApiResourceSwagger.PostLoansLoanIdResponse.class)))})
     public String glimStateTransitions(@PathParam("glimId") final Long glimId, @QueryParam("command") final String commandParam,
-            final String apiRequestBodyAsJson) {
+                                       final String apiRequestBodyAsJson) {
 
         final CommandWrapperBuilder builder = new CommandWrapperBuilder().withJson(apiRequestBodyAsJson);
 
@@ -1036,7 +1090,7 @@ public class LoansApiResource {
     @Path("repayments/downloadtemplate")
     @Produces("application/vnd.ms-excel")
     public Response getLoanRepaymentTemplate(@QueryParam("officeId") final Long officeId,
-            @QueryParam("dateFormat") final String dateFormat) {
+                                             @QueryParam("dateFormat") final String dateFormat) {
         return bulkImportWorkbookPopulatorService.getTemplate(GlobalEntityType.LOAN_TRANSACTIONS.toString(), officeId, null, dateFormat);
     }
 
@@ -1044,10 +1098,10 @@ public class LoansApiResource {
     @Path("uploadtemplate")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @RequestBody(description = "Upload Loan template", content = {
-            @Content(mediaType = MediaType.MULTIPART_FORM_DATA, schema = @Schema(implementation = UploadRequest.class)) })
+            @Content(mediaType = MediaType.MULTIPART_FORM_DATA, schema = @Schema(implementation = UploadRequest.class))})
     public String postLoanTemplate(@FormDataParam("file") InputStream uploadedInputStream,
-            @FormDataParam("file") FormDataContentDisposition fileDetail, @FormDataParam("locale") final String locale,
-            @FormDataParam("dateFormat") final String dateFormat) {
+                                   @FormDataParam("file") FormDataContentDisposition fileDetail, @FormDataParam("locale") final String locale,
+                                   @FormDataParam("dateFormat") final String dateFormat) {
         final Long importDocumentId = this.bulkImportWorkbookService.importWorkbook(GlobalEntityType.LOANS.toString(), uploadedInputStream,
                 fileDetail, locale, dateFormat);
         return this.toApiJsonSerializer.serialize(importDocumentId);
@@ -1057,10 +1111,10 @@ public class LoansApiResource {
     @Path("repayments/uploadtemplate")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @RequestBody(description = "Upload Loan repayments template", content = {
-            @Content(mediaType = MediaType.MULTIPART_FORM_DATA, schema = @Schema(implementation = UploadRequest.class)) })
+            @Content(mediaType = MediaType.MULTIPART_FORM_DATA, schema = @Schema(implementation = UploadRequest.class))})
     public String postLoanRepaymentTemplate(@FormDataParam("file") InputStream uploadedInputStream,
-            @FormDataParam("file") FormDataContentDisposition fileDetail, @FormDataParam("locale") final String locale,
-            @FormDataParam("dateFormat") final String dateFormat) {
+                                            @FormDataParam("file") FormDataContentDisposition fileDetail, @FormDataParam("locale") final String locale,
+                                            @FormDataParam("dateFormat") final String dateFormat) {
         final Long importDocumentId = this.bulkImportWorkbookService.importWorkbook(GlobalEntityType.LOAN_TRANSACTIONS.toString(),
                 uploadedInputStream, fileDetail, locale, dateFormat);
         return this.toApiJsonSerializer.serialize(importDocumentId);
