@@ -339,15 +339,15 @@ public class PortfolioCenterReadPlatformServiceImpl implements PortfolioCenterRe
 
         public PortfolioDetailedPlanningMapper() {
             final StringBuilder sqlBuilder = new StringBuilder(300);
-            sqlBuilder.append("cvMeetingDay.code_value as meetingDayName, cg.id as centerGroupId, cg.name as centerGroupName,  ");
+            sqlBuilder.append("cvMeetingDay.code_value as meetingDayName, cg.id as centerGroupId, cg.display_name as centerGroupName, ");
+            sqlBuilder.append("cg.legacy_number as legacyGroupNumber, cg.meeting_start_time as meetingStartTime, ");
+            sqlBuilder.append(" cg.meeting_end_time as meetingEndTime, pc.id as portfolioCenterId, ");
             sqlBuilder.append(
-                    "cg.legacy_group_number as legacyGroupNumber, cg.meeting_start_time as meetingStartTime, cg.meeting_end_time as meetingEndTime, ");
-            sqlBuilder
-                    .append("pc.id as portfolioCenterId, pc.name as portfolioCenterName, pc.legacy_center_number as legacyCenterNumber, ");
+                    "pc.display_name as portfolioCenterName, pc.legacy_number as legacyCenterNumber,pc.meeting_day as meetingDay, ");
             sqlBuilder.append(
-                    "pc.meeting_day as meetingDay, cvMeetingDay.order_position as position, pc.meeting_start_date as rangeStartDay, pc.meeting_end_date as rangeEndDay ");
-            sqlBuilder.append("from m_center_group cg ");
-            sqlBuilder.append("left join m_portfolio_center pc on pc.id = cg.portfolio_center_id ");
+                    "cvMeetingDay.order_position as position, pc.meeting_start_date as rangeStartDay, pc.meeting_end_date as rangeEndDay ");
+            sqlBuilder.append("from m_group cg ");
+            sqlBuilder.append("left join m_group pc on pc.id = cg.parent_id ");
             sqlBuilder.append("left join m_code_value cvMeetingDay on cvMeetingDay.id = pc.meeting_day ");
 
             this.schema = sqlBuilder.toString();

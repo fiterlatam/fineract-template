@@ -468,7 +468,6 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
             final Integer ageLimitWarning = JdbcSupport.getInteger(rs, "ageLimitWarning");
             final Integer ageLimitBlock = JdbcSupport.getInteger(rs, "ageLimitBlock");
 
-
             return new LoanProductData(id, name, shortName, description, currency, principal, minPrincipal, maxPrincipal, tolerance,
                     numberOfRepayments, minNumberOfRepayments, maxNumberOfRepayments, repaymentEvery, interestRatePerPeriod,
                     minInterestRatePerPeriod, maxInterestRatePerPeriod, annualInterestRate, repaymentFrequencyType,

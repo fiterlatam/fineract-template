@@ -519,7 +519,7 @@ public class LoanProductData implements Serializable {
                 floatingRateName, interestRateDifferential, minDifferentialLendingRate, defaultDifferentialLendingRate,
                 maxDifferentialLendingRate, isFloatingInterestRateCalculationAllowed, isVariableInstallmentsAllowed, minimumGap, maximumGap,
                 syncExpectedWithDisbursementDate, canUseForTopup, isEqualAmortization, rateOptions, rates, isRatesEnabled,
-                fixedPrincipalPercentagePerInstallment,ageLimitWarning,ageLimitBlock);
+                fixedPrincipalPercentagePerInstallment, ageLimitWarning, ageLimitBlock);
 
     }
 
@@ -1361,9 +1361,11 @@ public class LoanProductData implements Serializable {
     public String getShortName() {
         return shortName;
     }
+
     public Integer getAgeLimitWarning() {
         return ageLimitWarning;
     }
+
     public Integer getAgeLimitBlock() {
         return ageLimitBlock;
     }

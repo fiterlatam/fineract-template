@@ -35,15 +35,13 @@ public final class AgeLimitStatusEnumerations {
                 "INVALID");
         switch (status) {
             case INVALID:
-                optionData = new EnumOptionData(AgeLimitStatus.INVALID.getValue().longValue(), AgeLimitStatus.INVALID.getCode(),
-                        "INVALID");
+                optionData = new EnumOptionData(AgeLimitStatus.INVALID.getValue().longValue(), AgeLimitStatus.INVALID.getCode(), "INVALID");
             break;
             case WARNING:
                 optionData = new EnumOptionData(AgeLimitStatus.WARNING.getValue().longValue(), AgeLimitStatus.WARNING.getCode(), "WARNING");
             break;
             case BLOCK:
-                optionData = new EnumOptionData(AgeLimitStatus.BLOCK.getValue().longValue(), AgeLimitStatus.BLOCK.getCode(),
-                        "BLOCK");
+                optionData = new EnumOptionData(AgeLimitStatus.BLOCK.getValue().longValue(), AgeLimitStatus.BLOCK.getCode(), "BLOCK");
             case CONTINUE:
                 optionData = new EnumOptionData(AgeLimitStatus.CONTINUE.getValue().longValue(), AgeLimitStatus.CONTINUE.getCode(),
                         "CONTINUE");

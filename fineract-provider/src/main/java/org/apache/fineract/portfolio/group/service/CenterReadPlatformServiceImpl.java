@@ -18,6 +18,8 @@
  */
 package org.apache.fineract.portfolio.group.service;
 
+import static org.apache.fineract.organisation.centerGroup.service.GroupLocationEnumerations.groupLocationsOptionData;
+
 import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -83,8 +85,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
-
-import static org.apache.fineract.organisation.centerGroup.service.GroupLocationEnumerations.groupLocationsOptionData;
 
 @Service
 @RequiredArgsConstructor

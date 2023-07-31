@@ -393,7 +393,7 @@ public class LoanProduct extends AbstractPersistableCustom {
                 defaultDifferentialLendingRate, isFloatingInterestRateCalculationAllowed, isVariableInstallmentsAllowed,
                 minimumGapBetweenInstallments, maximumGapBetweenInstallments, syncExpectedWithDisbursementDate, canUseForTopup,
                 isEqualAmortization, productRates, fixedPrincipalPercentagePerInstallment, disallowExpectedDisbursements,
-                allowApprovedDisbursedAmountsOverApplied, overAppliedCalculationType, overAppliedNumber,ageLimitWarning,ageLimitBlock);
+                allowApprovedDisbursedAmountsOverApplied, overAppliedCalculationType, overAppliedNumber, ageLimitWarning, ageLimitBlock);
 
     }
 
@@ -630,7 +630,7 @@ public class LoanProduct extends AbstractPersistableCustom {
             final boolean syncExpectedWithDisbursementDate, final boolean canUseForTopup, final boolean isEqualAmortization,
             final List<Rate> rates, final BigDecimal fixedPrincipalPercentagePerInstallment, final boolean disallowExpectedDisbursements,
             final boolean allowApprovedDisbursedAmountsOverApplied, final String overAppliedCalculationType,
-            final Integer overAppliedNumber,final Integer ageLimitWarning,final Integer ageLimitBlock) {
+            final Integer overAppliedNumber, final Integer ageLimitWarning, final Integer ageLimitBlock) {
         this.fund = fund;
         this.transactionProcessingStrategy = transactionProcessingStrategy;
         this.name = name.trim();

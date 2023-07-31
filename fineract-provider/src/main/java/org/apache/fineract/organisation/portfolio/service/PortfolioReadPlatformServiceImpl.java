@@ -126,11 +126,15 @@ public class PortfolioReadPlatformServiceImpl implements PortfolioReadPlatformSe
     public PortfolioPlanningData retrievePlanningByPortfolio(Long portfolioId) {
         AppUser currentUser = this.context.authenticatedUser();
 
-        PortfolioPlanningMapper portfolioPlanningMapper = new PortfolioPlanningMapper();
-        String schemaSql = "select " + portfolioPlanningMapper.schema();
-        schemaSql += "where p.id = ? and p.responsible_user_id = ?";
+        try {
+            PortfolioPlanningMapper portfolioPlanningMapper = new PortfolioPlanningMapper();
+            String schemaSql = "select " + portfolioPlanningMapper.schema();
+            schemaSql += "where p.id = ? and p.responsible_user_id = ?";
 
-        return this.jdbcTemplate.queryForObject(schemaSql, portfolioPlanningMapper, new Object[] { portfolioId, currentUser.getId() });
+            return this.jdbcTemplate.queryForObject(schemaSql, portfolioPlanningMapper, new Object[] { portfolioId, currentUser.getId() });
+        } catch (EmptyResultDataAccessException e) {
+            return null;
+        }
     }
 
     private static final class PortfolioMapper implements RowMapper<PortfolioData> {
