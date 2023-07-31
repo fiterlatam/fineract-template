@@ -712,6 +712,7 @@ public final class ClientData implements Comparable<ClientData>, Serializable {
     public String getDpiNumber() {
         return this.dpiNumber;
     }
+
     public LocalDate getDateOfBirth() {
         return this.dateOfBirth;
     }

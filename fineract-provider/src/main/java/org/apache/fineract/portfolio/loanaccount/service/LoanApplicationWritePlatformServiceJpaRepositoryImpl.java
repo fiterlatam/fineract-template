@@ -438,7 +438,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 }
             }
 
-            //contract number generation
+            // contract number generation
             StringBuilder contractBuilder = new StringBuilder();
             String countLoansSql = "select count(*) from m_loan where product_id = ? ";
             Long productLoansCount = this.jdbcTemplate.queryForObject(countLoansSql, Long.class, loanProduct.getId());
