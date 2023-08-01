@@ -1400,6 +1400,15 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         }
     }
 
+    public void adjustLoanScheduleDates(List<LoanRepaymentScheduleInstallment> originalLoanRepaymentScheduleInstallments) {
+        if (this.getLoanRepaymentScheduleInstallmentsSize() > 0
+                && originalLoanRepaymentScheduleInstallments.size() > this.getLoanRepaymentScheduleInstallmentsSize()) {
+            for (LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment : this.repaymentScheduleInstallments) {
+
+            }
+        }
+    }
+
     private void updateLoanSummaryDerivedFields() {
 
         if (isNotDisbursed()) {
@@ -6984,4 +6993,16 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         this.totalOriginationFees = totalOriginationFees;
     }
 
+    public LoanRepaymentScheduleInstallment fetchRepaymentScheduleInstallmentAfter(LocalDate transactionDate) {
+        LoanRepaymentScheduleInstallment installment = null;
+        // fetch the first unpaid instalment if all previous ones behind given date are fully paid
+        for (LoanRepaymentScheduleInstallment scheduleInstallment : this.repaymentScheduleInstallments) {
+            if ((scheduleInstallment.getDueDate().isAfter(transactionDate) || scheduleInstallment.getDueDate().isEqual(transactionDate))
+                    && !scheduleInstallment.isObligationsMet()) {
+                installment = scheduleInstallment;
+                break;
+            }
+        }
+        return installment;
+    }
 }
