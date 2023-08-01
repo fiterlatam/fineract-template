@@ -52,6 +52,7 @@ import org.apache.fineract.organisation.portfolioCenter.data.PortfolioCenterAvai
 import org.apache.fineract.organisation.portfolioCenter.data.PortfolioCenterData;
 import org.apache.fineract.organisation.portfolioCenter.domain.PortfolioCenterFrecuencyMeeting;
 import org.apache.fineract.organisation.portfolioCenter.domain.PortfolioCenterStatus;
+import org.apache.fineract.portfolio.group.domain.GroupTypes;
 import org.apache.fineract.useradministration.data.AppUserData;
 import org.apache.fineract.useradministration.service.AppUserReadPlatformService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -112,7 +113,7 @@ public class PortfolioCenterReadPlatformServiceImpl implements PortfolioCenterRe
 
         PortfolioCenterMapper portfolioCenterMapper = new PortfolioCenterMapper();
         String schemaSql = "select " + portfolioCenterMapper.schema();
-        schemaSql += " where pc.portfolio_id = ? ";
+        schemaSql += " where pc.portfolio_id = ? and pc.level_id = "+ GroupTypes.CENTER.getId();
         schemaSql += " order by centerCodeName, meetingDay";
 
         List<Object> params = new ArrayList<>();
@@ -250,22 +251,22 @@ public class PortfolioCenterReadPlatformServiceImpl implements PortfolioCenterRe
 
         public PortfolioCenterMapper() {
             final StringBuilder sqlBuilder = new StringBuilder(300);
-            sqlBuilder.append("pc.id as id, pc.name as name, substring(pc.name, 1, 5) as centerCodeName, pc.portfolio_id as portfolioId, ");
-            sqlBuilder.append("p.name as portfolioName, pc.legacy_center_number as legacyCenterNumber, ");
+            sqlBuilder.append("pc.id as id, pc.display_name as name, substring(pc.display_name, 1, 5) as centerCodeName, pc.portfolio_id as portfolioId, ");
+            sqlBuilder.append("p.name as portfolioName, pc.legacy_number as legacyCenterNumber, ");
             sqlBuilder.append("pc.city_id as cityId, cvCity.code_value as cityValue, ");
             sqlBuilder.append("pc.state_province_id as stateId, cvState.code_value as stateValue, ");
             sqlBuilder.append("(case "
-                    + "when ( (select count(mcg.id) from m_center_group mcg where mcg.location = 100 and mcg.portfolio_center_id = pc.id) <=0 AND "
-                    + "(select count(mcg.id) from m_center_group mcg where mcg.location = 100 and mcg.portfolio_center_id = pc.id)<=0) THEN 0 "
-                    + "when ( (select count(mcg.id) from m_center_group mcg where mcg.location = 100 and mcg.portfolio_center_id = pc.id) >= "
-                    + "(select count(mcg.id) from m_center_group mcg where mcg.location = 100 and mcg.portfolio_center_id = pc.id)) THEN 100 ELSE 200 END) as center_location, ");
-            sqlBuilder.append("pc.center_status as status, pc.distance_from_agency as distance, ");
+                    + "when ( (select count(mcg.id) from m_group mcg where mcg.group_location = 100 and mcg.parent_id = pc.id) <=0 AND "
+                    + "(select count(mcg.id) from m_group mcg where mcg.group_location = 100 and mcg.parent_id = pc.id)<=0) THEN 0 "
+                    + "when ( (select count(mcg.id) from m_group mcg where mcg.group_location = 100 and mcg.parent_id = pc.id) >= "
+                    + "(select count(mcg.id) from m_group mcg where mcg.group_location = 100 and mcg.parent_id = pc.id)) THEN 100 ELSE 200 END) as center_location, ");
+            sqlBuilder.append("pc.status_enum as status, pc.distance_from_agency as distance, ");
             sqlBuilder.append("pc.type_id as typeId, cvType.code_value as typeValue, pc.created_date as createdDate, ");
             sqlBuilder.append("pc.meeting_start_date as meetingStart, pc.meeting_end_date as meetingEnd, ");
             sqlBuilder.append("pc.meeting_day as meetingDay, cvMeetingDay.code_value as meetingDayValue, ");
             sqlBuilder.append("cvMeetingDay.order_position as meetingDayOrderPosition, pc.meeting_start_time as meetingStartTime, ");
             sqlBuilder.append("pc.meeting_end_time as meetingEndTime, pc.reference_point as referencePoint ");
-            sqlBuilder.append("from m_portfolio_center pc ");
+            sqlBuilder.append("from m_group pc ");
             sqlBuilder.append("left join m_portfolio AS p ON p.id = pc.portfolio_id ");
             sqlBuilder.append("left join m_code_value cvCity on pc.city_id = cvCity.id ");
             sqlBuilder.append("left join m_code_value cvState on pc.state_province_id = cvState.id ");
