@@ -36,10 +36,10 @@ select pc.id, pc.name as portfolio_name, mp.linked_office_id,300 as group_status
 from m_portfolio_center pc inner join m_portfolio mp on pc.portfolio_id = mp.id;
 
 --migrate m_center_group to m_group
-insert into m_group(external_id, display_name,parent_id,office_id,status_enum, level_id,submittedon_userid,activatedon_userid,hierarchy,submittedon_date, activation_date, account_no, meeting_day,meeting_start_date, meeting_end_date, meeting_start_time, meeting_end_time, group_location,latitude,longitude,
+insert into m_group(display_name,parent_id,office_id,status_enum, level_id,submittedon_userid,activatedon_userid,hierarchy,submittedon_date, activation_date, account_no, meeting_day,meeting_start_date, meeting_end_date, meeting_start_time, meeting_end_time, group_location,latitude,longitude,
                     legacy_number,formation_date,responsible_user_id,createdby_id,created_date,lastmodifiedby_id,lastmodified_date,portfolio_id,city_id,state_province_id,type_id,distance_from_agency,reference_point)
 
-select mcg.id, mcg.name as group_name, mpc.id as parent_id,mpc.office_id,300 as group_status,2 as group_level,
+select mcg.name as group_name, mpc.id as parent_id,mpc.office_id,300 as group_status,2 as group_level,
        mcg.createdby_id, mcg.createdby_id as activated_by, '.1.' as hierarchy,
        DATE_FORMAT(mcg.created_date, "%y-%m-%d") as created_at, DATE_FORMAT(mcg.created_date, "%y-%m-%d") as activation_date,
        LPAD(mcg.id, 9, '0') as account_no, mpc.meeting_day, mpc.meeting_start_date, mpc.meeting_end_date,
