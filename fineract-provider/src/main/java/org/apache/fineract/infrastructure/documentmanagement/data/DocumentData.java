@@ -92,4 +92,8 @@ public class DocumentData {
     public Long getSize() {
         return this.size;
     }
+
+    public String getDocumentLink() {
+        return this.documentLink;
+    }
 }

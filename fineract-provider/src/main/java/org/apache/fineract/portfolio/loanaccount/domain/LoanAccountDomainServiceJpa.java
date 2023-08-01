@@ -204,10 +204,10 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
          ***/
 
         // CAT calculation with/without VAT
-        loan.setCatRate(loanUtilService.getCalculatedCatRate(loan, false));
-        if (loan.isVatRequired()) {
-            loan.setCatRateWithVat(loanUtilService.getCalculatedCatRate(loan, loan.isVatRequired()));
-        }
+        /*
+         * loan.setCatRate(loanUtilService.getCalculatedCatRate(loan, false)); if (loan.isVatRequired()) {
+         * loan.setCatRateWithVat(loanUtilService.getCalculatedCatRate(loan, loan.isVatRequired())); }
+         */
 
         saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
 
@@ -695,10 +695,10 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         this.loanTransactionRepository.saveAndFlush(newRefundTransaction);
 
         // CAT calculation with/without VAT
-        loan.setCatRate(loanUtilService.getCalculatedCatRate(loan, false));
-        if (loan.isVatRequired()) {
-            loan.setCatRateWithVat(loanUtilService.getCalculatedCatRate(loan, loan.isVatRequired()));
-        }
+        /*
+         * loan.setCatRate(loanUtilService.getCalculatedCatRate(loan, false)); if (loan.isVatRequired()) {
+         * loan.setCatRateWithVat(loanUtilService.getCalculatedCatRate(loan, loan.isVatRequired())); }
+         */
 
         if (StringUtils.isNotBlank(noteText)) {
             final Note note = Note.loanTransactionNote(loan, newRefundTransaction, noteText);

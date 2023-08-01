@@ -68,7 +68,6 @@ import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleIns
 import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionType;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleGeneratorFactory;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductRelatedDetail;
-import org.apache.poi.ss.formula.functions.Irr;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -380,25 +379,74 @@ public class LoanUtilService {
      */
     public BigDecimal getCalculatedCatRate(final Loan loan, final Boolean isVatRequired) {
         BigDecimal catRate;
+        Money vatAmount = Money.zero(loan.getCurrency());
+        List<CashFlowData> cashFlows = new ArrayList<>();
+
         // for period = 0, the disbursement amount must be negative
         double[] cash_flows = new double[loan.getRepaymentScheduleInstallments().size() + 1];
         cash_flows[0] = loan.getPrincpal().getAmount().doubleValue() * -1;
 
         // for period = 0, sum the charges amount
         for (LoanCharge charge : loan.charges()) {
-            if (charge.isActive() && charge.isDisbursementCharge()) {
-                cash_flows[0] = cash_flows[0] + charge.getAmount(loan.getCurrency()).getAmount().doubleValue();
+            if (charge.isActive()) {
+                // check for Disbursement Charge
+                if (charge.isDisbursementCharge()) {
+                    cash_flows[0] = cash_flows[0] + charge.getAmount(loan.getCurrency()).getAmount().doubleValue();
+                }
+                // check for Origination Charge
+                if (charge.isOriginationFee()) {
+                    if (!isVatRequired) {
+                        vatAmount = calculateVatCharge(loan.getVatPercentage(), charge.getAmount(loan.getCurrency()));
+                        cash_flows[0] = cash_flows[0] - vatAmount.getAmount().doubleValue();
+                    }
+                }
             }
         }
+        cashFlows.add(new CashFlowData(cash_flows[0], 0));
 
-        // get the cash flows for loan installments
-        calculateCashFlowsForInstallments(loan, isVatRequired, cash_flows);
+        // calculate cat rate using XIRR implementation based on the Newton-Raphson method
+        generateCashFlowsForInstallments(loan, isVatRequired, cashFlows, vatAmount);
+        double xirrResult = XIRR.calculateXIRR(cashFlows);
+        catRate = Money.of(loan.getCurrency(), new BigDecimal(xirrResult * 100)).getAmount();
 
-        double irrRate = Irr.irr(cash_flows);
-        catRate = Money.of(loan.getCurrency(), new BigDecimal((Math.pow(1 + irrRate, 12) - 1) * 100)).getAmount();
         return catRate;
     }
 
+    private Money calculateVatCharge(BigDecimal vatPercentage, Money chargeAmount) {
+        BigDecimal vatConverted = vatPercentage.divide(BigDecimal.valueOf(100));
+        final Money vatPortion = chargeAmount.multipliedBy(vatConverted);
+        return vatPortion;
+    }
+
+    private void generateCashFlowsForInstallments(Loan loan, Boolean isVatRequired, List<CashFlowData> cashFlows, Money vatAmount) {
+        double amount;
+        double vatAmountForInstallments = vatAmount.getAmount().doubleValue();
+        LocalDate disbursementDate = loan.getDisbursementDate();
+
+        // generate the list of pairs composed by amount and date
+        for (int i = 0; i < loan.getRepaymentScheduleInstallments().size(); i++) {
+            LoanRepaymentScheduleInstallment per = (LoanRepaymentScheduleInstallment) loan.getRepaymentScheduleInstallments().toArray()[i];
+            if (isVatRequired) {
+                amount = per.getPrincipal(loan.getCurrency()).plus(per.getFeeChargesCharged(loan.getCurrency()).getAmount().doubleValue())
+                        .plus(per.getPenaltyChargesCharged(loan.getCurrency())).plus(per.getVatOnInterestCharged(loan.getCurrency()))
+                        .plus(per.getVatOnChargeExpected(loan.getCurrency())).getAmount().doubleValue();
+            } else {
+                amount = per.getPrincipal(loan.getCurrency()).plus(per.getFeeChargesCharged(loan.getCurrency()).getAmount().doubleValue())
+                        .plus(per.getPenaltyChargesCharged(loan.getCurrency())).getAmount().doubleValue();
+                // this removes the VAT portion from first installment
+                if (per.getInstallmentNumber() == 1 && vatAmountForInstallments > 0) {
+                    amount = amount - vatAmountForInstallments;
+                }
+            }
+            // calculate days since disbursement date
+            int numberOfDays = Math.toIntExact(daysBetween(disbursementDate, per.getDueDate()));
+
+            // add new cash flow data into the list
+            cashFlows.add(new CashFlowData(amount, numberOfDays));
+        }
+    }
+
+    @SuppressWarnings("unused")
     private void calculateCashFlowsForInstallments(Loan loan, Boolean isVatRequired, double[] cash_flows) {
         for (int i = 0; i < loan.getRepaymentScheduleInstallments().size(); i++) {
             LoanRepaymentScheduleInstallment per = (LoanRepaymentScheduleInstallment) loan.getRepaymentScheduleInstallments().toArray()[i];
@@ -413,6 +461,10 @@ public class LoanUtilService {
                         .plus(per.getPenaltyChargesCharged(loan.getCurrency())).getAmount().doubleValue();
             }
         }
+    }
+
+    private static long daysBetween(LocalDate d1, LocalDate d2) {
+        return ChronoUnit.DAYS.between(d1, d2);
     }
 
     public BigDecimal calculateEffectiveRate(BigDecimal annualInterestRate) {

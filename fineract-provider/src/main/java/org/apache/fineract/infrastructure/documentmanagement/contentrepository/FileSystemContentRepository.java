@@ -18,11 +18,14 @@
  */
 package org.apache.fineract.infrastructure.documentmanagement.contentrepository;
 
+import com.google.common.io.ByteSource;
 import com.google.common.io.Files;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Base64;
 import org.apache.commons.io.FileUtils;
 import org.apache.fineract.infrastructure.core.domain.Base64EncodedImage;
@@ -33,6 +36,7 @@ import org.apache.fineract.infrastructure.documentmanagement.data.FileData;
 import org.apache.fineract.infrastructure.documentmanagement.data.ImageData;
 import org.apache.fineract.infrastructure.documentmanagement.domain.StorageType;
 import org.apache.fineract.infrastructure.documentmanagement.exception.ContentManagementException;
+import org.apache.fineract.infrastructure.security.service.RandomOTPGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -98,7 +102,28 @@ public class FileSystemContentRepository implements ContentRepository {
 
     @Override
     public FileData fetchFile(final DocumentData documentData) {
-        final File file = new File(documentData.fileLocation());
+
+        File file = null;
+        if (documentData.getDocumentLink() != null) {
+            try {
+                URL url = new URL(documentData.getDocumentLink());
+                // Generate the ByteSource from the URL
+                ByteSource byteSource = new ByteSource() {
+
+                    @Override
+                    public InputStream openStream() throws IOException {
+                        return url.openStream();
+                    }
+                };
+                return new FileData(byteSource, new RandomOTPGenerator(12).generate(), documentData.contentType());
+            } catch (MalformedURLException e) {
+                LOG.error(e.getMessage());
+            }
+
+        } else {
+            file = new File(documentData.fileLocation());
+        }
+
         return new FileData(Files.asByteSource(file), documentData.fileName(), documentData.contentType());
     }
 

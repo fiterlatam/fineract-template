@@ -649,11 +649,12 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
     private void saveLoanWithDataIntegrityViolationChecks(final Loan loan) {
         try {
+            // Disabled by implementation of fix for ABA-131
             // CAT calculation with/without VAT
-            loan.setCatRate(loanUtilService.getCalculatedCatRate(loan, false));
-            if (loan.isVatRequired()) {
-                loan.setCatRateWithVat(loanUtilService.getCalculatedCatRate(loan, loan.isVatRequired()));
-            }
+            /*
+             * loan.setCatRate(loanUtilService.getCalculatedCatRate(loan, false)); if (loan.isVatRequired()) {
+             * loan.setCatRateWithVat(loanUtilService.getCalculatedCatRate(loan, loan.isVatRequired())); }
+             */
 
             this.loanRepositoryWrapper.save(loan);
         } catch (final JpaSystemException | DataIntegrityViolationException e) {
@@ -1248,10 +1249,10 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
          * before the latest payment recorded against the loan)
          ***/
         // CAT calculation with/without VAT
-        loan.setCatRate(loanUtilService.getCalculatedCatRate(loan, false));
-        if (loan.isVatRequired()) {
-            loan.setCatRateWithVat(loanUtilService.getCalculatedCatRate(loan, loan.isVatRequired()));
-        }
+        /*
+         * loan.setCatRate(loanUtilService.getCalculatedCatRate(loan, false)); if (loan.isVatRequired()) {
+         * loan.setCatRateWithVat(loanUtilService.getCalculatedCatRate(loan, loan.isVatRequired())); }
+         */
 
         saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
         if (changedTransactionDetail != null) {

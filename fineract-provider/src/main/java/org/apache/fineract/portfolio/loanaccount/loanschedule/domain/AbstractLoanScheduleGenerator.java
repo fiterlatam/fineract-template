@@ -292,6 +292,31 @@ public abstract class AbstractLoanScheduleGenerator implements LoanScheduleGener
             // backup for pre-close transaction
             updateCompoundingDetails(scheduleParams, periodStartDateApplicableForInterest);
 
+            /***
+             * ABA-117 Lets confirm that the loan is not yet closed and that the number of repayments has not reduced
+             * Due to a lumpsum payment made that covers more than one installment ahead of the current date
+             ****/
+            // Let's update the schedule Due Date and the last rest Date by a whole term if it's greater than current
+            // date and unprocessed amount still greater than the emi amount
+            if (scheduleParams.applyInterestRecalculation() && periodStartDateApplicableForInterest.isEqual(currentDate)) {
+
+                // get scheduled instalment from scheduleParams with due date equal to current date
+                LoanRepaymentScheduleInstallment scheduledInstalment = scheduleParams.getInstallments().stream()
+                        .filter(installment -> installment.getDueDate().isEqual(DateUtils.getBusinessLocalDate())).findFirst().orElse(null);
+
+                // confirm that placed amount on scheduledInstalment is greater than the emi amount
+                if (scheduledInstalment != null && scheduledInstalment.getTotalPaid(currency)
+                        .isGreaterThan(Money.of(currency, loanApplicationTerms.getFixedEmiAmount()))) {
+                    // get the next schedule due date
+                    LocalDate nextScheduleDueDate = getNextRestScheduleDate(scheduledDueDate, loanApplicationTerms, holidayDetailDTO);
+
+                    // update the schedule due date and last rest date
+                    scheduledDueDate = nextScheduleDueDate;
+                    lastRestDate = nextScheduleDueDate; // scheduleParams.setPeriodStartDate(nextScheduleDueDate);
+                    scheduleParams.setActualRepaymentDate(scheduledDueDate);
+                }
+            }
+
             // 5 determine principal,interest of repayment period
             PrincipalInterest principalInterestForThisPeriod = calculatePrincipalInterestComponentsForPeriod(
                     this.paymentPeriodsInOneYearCalculator, currentPeriodParams.getInterestCalculationGraceOnRepaymentPeriodFraction(),

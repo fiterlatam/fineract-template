@@ -47,4 +47,17 @@
         </addColumn>
     </changeSet>
 
+    <changeSet author="fineract" id="4">
+        <insert tableName="m_code_value">
+            <column name="id" valueNumeric="19"/>
+            <column name="code_id" valueNumeric="23"/>
+            <column name="code_value" value="Pago de suma global"/>
+            <column name="code_description"/>
+            <column name="order_position" valueNumeric="1"/>
+            <column name="code_score"/>
+            <column name="is_active" valueBoolean="true"/>
+            <column name="is_mandatory" valueBoolean="false"/>
+        </insert>
+    </changeSet>
+
 </databaseChangeLog>
