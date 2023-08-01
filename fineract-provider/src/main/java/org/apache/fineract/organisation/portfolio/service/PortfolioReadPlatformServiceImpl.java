@@ -184,7 +184,7 @@ public class PortfolioReadPlatformServiceImpl implements PortfolioReadPlatformSe
             sqlBuilder.append("p.responsible_user_id as responsibleUserId, ru.firstname as userFirstName, ru.lastname as userLastName ");
             sqlBuilder.append("from m_portfolio p left join m_office AS supervision ON supervision.id = p.linked_office_id ");
             sqlBuilder.append("left join m_appuser ru on ru.id = p.responsible_user_id ");
-            sqlBuilder.append("left join fineract_default.m_office AS agency ON agency.id = supervision.parent_id ");
+            sqlBuilder.append("left join m_office AS agency ON agency.id = supervision.parent_id ");
             this.schema = sqlBuilder.toString();
         }
 

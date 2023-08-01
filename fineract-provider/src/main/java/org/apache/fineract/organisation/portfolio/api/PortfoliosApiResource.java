@@ -49,6 +49,7 @@ import org.apache.fineract.infrastructure.security.service.PlatformSecurityConte
 import org.apache.fineract.organisation.portfolio.data.PortfolioData;
 import org.apache.fineract.organisation.portfolio.data.PortfolioDetailedPlanningData;
 import org.apache.fineract.organisation.portfolio.data.PortfolioPlanningData;
+import org.apache.fineract.organisation.portfolio.exception.PortfolioPlanningNotFoundException;
 import org.apache.fineract.organisation.portfolio.service.PortfolioConstants;
 import org.apache.fineract.organisation.portfolio.service.PortfolioReadPlatformService;
 import org.apache.fineract.organisation.portfolioCenter.data.PortfolioCenterData;
@@ -174,6 +175,10 @@ public class PortfoliosApiResource {
         this.context.authenticatedUser().validateHasPermissionTo(taskPermissionName);
 
         PortfolioPlanningData portfoliosPlanning = this.readPlatformService.retrievePlanningByPortfolio(portfolioId);
+
+        if (portfoliosPlanning==null){
+            throw new PortfolioPlanningNotFoundException(portfolioId, this.context.authenticatedUser().getUsername());
+        }
 
         // get planning
         Collection<PortfolioDetailedPlanningData> planning = centerReadPlatformService.retrievePlanningByPortfolio(portfolioId);
