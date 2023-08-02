@@ -176,7 +176,7 @@ public class PortfoliosApiResource {
 
         PortfolioPlanningData portfoliosPlanning = this.readPlatformService.retrievePlanningByPortfolio(portfolioId);
 
-        if (portfoliosPlanning==null){
+        if (portfoliosPlanning == null) {
             throw new PortfolioPlanningNotFoundException(portfolioId, this.context.authenticatedUser().getUsername());
         }
 
