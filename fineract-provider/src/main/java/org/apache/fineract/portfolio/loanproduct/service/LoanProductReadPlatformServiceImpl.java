@@ -41,6 +41,7 @@ import org.apache.fineract.portfolio.loanproduct.data.LoanProductData;
 import org.apache.fineract.portfolio.loanproduct.data.LoanProductGuaranteeData;
 import org.apache.fineract.portfolio.loanproduct.data.LoanProductInterestRecalculationData;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductConfigurableAttributes;
+import org.apache.fineract.portfolio.loanproduct.domain.LoanProductOwnerType;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductParamType;
 import org.apache.fineract.portfolio.loanproduct.exception.LoanProductNotFoundException;
 import org.apache.fineract.portfolio.rate.data.RateData;
@@ -236,7 +237,8 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
                     + "lfr.is_floating_interest_rate_calculation_allowed as isFloatingInterestRateCalculationAllowed, "
                     + "lp.allow_variabe_installments as isVariableIntallmentsAllowed, " + "lvi.minimum_gap as minimumGap, "
                     + "lvi.maximum_gap as maximumGap, "
-                    + "lp.can_use_for_topup as canUseForTopup, lp.is_equal_amortization as isEqualAmortization "
+                    + "lp.can_use_for_topup as canUseForTopup, lp.is_equal_amortization as isEqualAmortization, "
+                    + "  lp.owner_type_enum as productOwnerType, lp.add_new_cycles_enabled as addNewCyclesEnabled "
                     + " from m_product_loan lp " + " left join m_fund f on f.id = lp.fund_id "
                     + " left join m_product_loan_recalculation_details lpr on lpr.product_id=lp.id "
                     + " left join m_product_loan_guarantee_details lpg on lpg.loan_product_id=lp.id "
@@ -322,6 +324,10 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
 
             final Integer interestRateFrequencyTypeId = JdbcSupport.getInteger(rs, "interestRatePerPeriodFreq");
             final EnumOptionData interestRateFrequencyType = LoanEnumerations.interestRateFrequencyType(interestRateFrequencyTypeId);
+
+            final Integer productOwnerType = JdbcSupport.getInteger(rs, "productOwnerType");
+            final EnumOptionData ownerTypeOption = LoanEnumerations.loanProductOwnerType(LoanProductOwnerType.fromInt(productOwnerType));
+            final boolean addNewCyclesEnabled = rs.getBoolean("addNewCyclesEnabled");
 
             final int interestTypeId = JdbcSupport.getInteger(rs, "interestMethod");
             final EnumOptionData interestType = LoanEnumerations.interestType(interestTypeId);
@@ -485,7 +491,8 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
                     floatingRateName, interestRateDifferential, minDifferentialLendingRate, defaultDifferentialLendingRate,
                     maxDifferentialLendingRate, isFloatingInterestRateCalculationAllowed, isVariableIntallmentsAllowed, minimumGap,
                     maximumGap, syncExpectedWithDisbursementDate, canUseForTopup, isEqualAmortization, rateOptions, this.rates,
-                    isRatesEnabled, fixedPrincipalPercentagePerInstallment, ageLimitWarning, ageLimitBlock);
+                    isRatesEnabled, fixedPrincipalPercentagePerInstallment, ageLimitWarning, ageLimitBlock, ownerTypeOption,
+                    addNewCyclesEnabled);
         }
     }
 

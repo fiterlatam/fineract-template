@@ -113,7 +113,7 @@ public class PortfolioCenterReadPlatformServiceImpl implements PortfolioCenterRe
 
         PortfolioCenterMapper portfolioCenterMapper = new PortfolioCenterMapper();
         String schemaSql = "select " + portfolioCenterMapper.schema();
-        schemaSql += " where pc.portfolio_id = ? and pc.level_id = "+ GroupTypes.CENTER.getId();
+        schemaSql += " where pc.portfolio_id = ? and pc.level_id = " + GroupTypes.CENTER.getId();
         schemaSql += " order by centerCodeName, meetingDay";
 
         List<Object> params = new ArrayList<>();
@@ -251,7 +251,8 @@ public class PortfolioCenterReadPlatformServiceImpl implements PortfolioCenterRe
 
         public PortfolioCenterMapper() {
             final StringBuilder sqlBuilder = new StringBuilder(300);
-            sqlBuilder.append("pc.id as id, pc.display_name as name, substring(pc.display_name, 1, 5) as centerCodeName, pc.portfolio_id as portfolioId, ");
+            sqlBuilder.append(
+                    "pc.id as id, pc.display_name as name, substring(pc.display_name, 1, 5) as centerCodeName, pc.portfolio_id as portfolioId, ");
             sqlBuilder.append("p.name as portfolioName, pc.legacy_number as legacyCenterNumber, ");
             sqlBuilder.append("pc.city_id as cityId, cvCity.code_value as cityValue, ");
             sqlBuilder.append("pc.state_province_id as stateId, cvState.code_value as stateValue, ");
