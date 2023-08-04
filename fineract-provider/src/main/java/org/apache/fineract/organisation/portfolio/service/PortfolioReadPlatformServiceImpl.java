@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.fineract.infrastructure.core.service.database.DatabaseSpecificSQLGenerator;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.infrastructure.security.utils.ColumnValidator;
@@ -145,10 +146,8 @@ public class PortfolioReadPlatformServiceImpl implements PortfolioReadPlatformSe
                 return this.jdbcTemplate.queryForObject(schemaSql, portfolioPlanningMapper, portfolioId, currentUser.getId());
             } else {
                 schemaSql += " and p.linked_office_id in (%s)";
-                List<Object> args = new ArrayList<>();
-                args.add(portfolioId);
-                args.addAll(officeIds);
-                return this.jdbcTemplate.queryForObject(String.format(schemaSql, inSql), portfolioPlanningMapper, args.toArray());
+                Object[] args = ArrayUtils.addAll(new Object[] { portfolioId }, officeIds.toArray());
+                return this.jdbcTemplate.queryForObject(String.format(schemaSql, inSql), portfolioPlanningMapper, args);
             }
         } catch (EmptyResultDataAccessException e) {
             return null;
