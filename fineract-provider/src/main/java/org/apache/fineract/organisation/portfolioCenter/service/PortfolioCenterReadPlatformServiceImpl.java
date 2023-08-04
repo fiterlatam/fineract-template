@@ -113,7 +113,7 @@ public class PortfolioCenterReadPlatformServiceImpl implements PortfolioCenterRe
 
         PortfolioCenterMapper portfolioCenterMapper = new PortfolioCenterMapper();
         String schemaSql = "select " + portfolioCenterMapper.schema();
-        schemaSql += " where pc.portfolio_id = ? and pc.level_id = "+ GroupTypes.CENTER.getId();
+        schemaSql += " where pc.portfolio_id = ? and pc.level_id = " + GroupTypes.CENTER.getId();
         schemaSql += " order by centerCodeName, meetingDay";
 
         List<Object> params = new ArrayList<>();

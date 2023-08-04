@@ -81,4 +81,5 @@
     <include file="parts/0064_add_contract_field_to_loan_product.xml" relativeToChangelogFile="true"/>
     <include file="parts/0065_add_age_limit_settings_to_loan_products.xml" relativeToChangelogFile="true"/>
     <include file="parts/0066_refactor_center_and_group.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0067_FBR_additional_fields_to_m_product_loan.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
