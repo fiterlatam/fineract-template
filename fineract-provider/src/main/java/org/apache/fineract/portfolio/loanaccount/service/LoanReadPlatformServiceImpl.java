@@ -35,6 +35,8 @@ import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.accounting.common.AccountingRuleType;
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
+import org.apache.fineract.infrastructure.codes.domain.CodeValue;
+import org.apache.fineract.infrastructure.codes.domain.CodeValueRepositoryWrapper;
 import org.apache.fineract.infrastructure.codes.service.CodeValueReadPlatformService;
 import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
@@ -59,6 +61,7 @@ import org.apache.fineract.portfolio.accountdetails.data.LoanAccountSummaryData;
 import org.apache.fineract.portfolio.accountdetails.domain.AccountType;
 import org.apache.fineract.portfolio.accountdetails.service.AccountDetailsReadPlatformService;
 import org.apache.fineract.portfolio.accountdetails.service.AccountEnumerations;
+import org.apache.fineract.portfolio.blacklist.domain.BlacklistStatus;
 import org.apache.fineract.portfolio.calendar.data.CalendarData;
 import org.apache.fineract.portfolio.calendar.domain.CalendarEntityType;
 import org.apache.fineract.portfolio.calendar.service.CalendarReadPlatformService;
@@ -67,6 +70,7 @@ import org.apache.fineract.portfolio.charge.domain.ChargeTimeType;
 import org.apache.fineract.portfolio.charge.service.ChargeReadPlatformService;
 import org.apache.fineract.portfolio.client.data.ClientData;
 import org.apache.fineract.portfolio.client.domain.ClientEnumerations;
+import org.apache.fineract.portfolio.client.exception.ClientBlacklistedException;
 import org.apache.fineract.portfolio.client.service.ClientReadPlatformService;
 import org.apache.fineract.portfolio.common.domain.PeriodFrequencyType;
 import org.apache.fineract.portfolio.common.service.CommonEnumerations;
@@ -144,6 +148,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
     private final FundReadPlatformService fundReadPlatformService;
     private final ChargeReadPlatformService chargeReadPlatformService;
     private final CodeValueReadPlatformService codeValueReadPlatformService;
+    private final CodeValueRepositoryWrapper codeValueRepositoryWrapper;
     private final CalendarReadPlatformService calendarReadPlatformService;
     private final StaffReadPlatformService staffReadPlatformService;
     private final PaginationHelper paginationHelper;
@@ -169,7 +174,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
             final StaffReadPlatformService staffReadPlatformService, final PaymentTypeReadPlatformService paymentTypeReadPlatformService,
             final LoanRepaymentScheduleTransactionProcessorFactory loanRepaymentScheduleTransactionProcessorFactory,
             final FloatingRatesReadPlatformService floatingRatesReadPlatformService, final LoanUtilService loanUtilService,
-            final ConfigurationDomainService configurationDomainService,
+            final ConfigurationDomainService configurationDomainService,final CodeValueRepositoryWrapper codeValueRepositoryWrapper,
             final AccountDetailsReadPlatformService accountDetailsReadPlatformService, final LoanRepositoryWrapper loanRepositoryWrapper,
             final ColumnValidator columnValidator, DatabaseSpecificSQLGenerator sqlGenerator, PaginationHelper paginationHelper) {
         this.context = context;
@@ -196,6 +201,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
         this.loaanLoanMapper = new LoanMapper(sqlGenerator);
         this.sqlGenerator = sqlGenerator;
         this.paginationHelper = paginationHelper;
+        this.codeValueRepositoryWrapper = codeValueRepositoryWrapper;
     }
 
     @Override
@@ -1395,6 +1401,21 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
     public LoanAccountData retrieveLoanProductDetailsTemplate(final Long productId, final Long clientId, final Long groupId) {
 
         this.context.authenticatedUser();
+
+        ClientData clientData = this.clientReadPlatformService.retrieveOne(clientId);
+
+        String blacklistString = "select count(*) from m_client_blacklist where dpi=? and status=?";
+        String dpiNumber = clientData.getDpiNumber();
+        Long blacklisted = jdbcTemplate.queryForObject(blacklistString, Long.class, dpiNumber,
+                BlacklistStatus.ACTIVE.getValue());
+        if (blacklisted > 0) {
+            String blacklistReason = "select type_enum from m_client_blacklist where dpi=? and status=?";
+            Integer typification = jdbcTemplate.queryForObject(blacklistReason, Integer.class, dpiNumber,
+                    BlacklistStatus.ACTIVE.getValue());
+            CodeValue typificationCodeValue = this.codeValueRepositoryWrapper.findOneWithNotFoundDetection(typification.longValue());
+            throw new ClientBlacklistedException(typificationCodeValue.getDescription());
+        }
+
 
         final LoanProductData loanProduct = this.loanProductReadPlatformService.retrieveLoanProduct(productId);
         final Collection<EnumOptionData> loanTermFrequencyTypeOptions = this.loanDropdownReadPlatformService

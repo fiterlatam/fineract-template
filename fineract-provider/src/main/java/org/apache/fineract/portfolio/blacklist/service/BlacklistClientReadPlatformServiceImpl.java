@@ -184,7 +184,7 @@ public class BlacklistClientReadPlatformServiceImpl implements BlacklistClientRe
         BlacklistMapper() {
             final StringBuilder builder = new StringBuilder(400);
 
-            builder.append("b.id as id, b.dpi as dpiNumber, b.nit as nitNumber, b.agency_id as agencyId, ");
+            builder.append("b.id as id, b.dpi as dpiNumber, b.nit as nitNumber, ma.name as agencyName, ");
             builder.append("cv.id as typificationId, cv.code_description as typificationDescription, cv.code_value as typificationValue, ");
             builder.append("b.status, b.product_id as productId, b.product_code as productCode, ");
             builder.append("lp.name as productName, b.balance, b.disbursement_amount as disbursementAmount, au.firstname, au.lastname, ");
@@ -193,6 +193,7 @@ public class BlacklistClientReadPlatformServiceImpl implements BlacklistClientRe
             builder.append("inner join m_product_loan lp on lp.id = b.product_id ");
             builder.append("inner join m_code_value cv on cv.id = b.type_enum ");
             builder.append("inner join m_appuser au on au.id = b.added_by ");
+            builder.append("left join m_agency ma on ma.id = b.agency_id ");
 
             this.schema = builder.toString();
         }
@@ -216,7 +217,7 @@ public class BlacklistClientReadPlatformServiceImpl implements BlacklistClientRe
             final Long productId = JdbcSupport.getLong(rs, "productId");
             final String dpiNumber = rs.getString("dpiNumber");
             final String nitNumber = rs.getString("nitNumber");
-            final String agencyId = rs.getString("agencyId");
+            final String agencyName = rs.getString("agencyName");
             final String productCode = rs.getString("productCode");
             final String productName = rs.getString("productName");
             final BigDecimal balance = rs.getBigDecimal("balance");
@@ -226,7 +227,7 @@ public class BlacklistClientReadPlatformServiceImpl implements BlacklistClientRe
             final String year = rs.getString("year");
             final String description = rs.getString("description");
 
-            return BlacklistClientData.instance(id, displayName, status, typification, productId, dpiNumber, nitNumber, agencyId,
+            return BlacklistClientData.instance(id, displayName, status, typification, productId, dpiNumber, nitNumber, agencyName,
                     productCode, productName, balance, disbursementAmount, addedBy, year, description);
 
         }

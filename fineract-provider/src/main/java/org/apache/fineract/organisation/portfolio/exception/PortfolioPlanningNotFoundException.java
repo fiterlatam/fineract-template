@@ -27,12 +27,10 @@ import org.springframework.dao.EmptyResultDataAccessException;
 public class PortfolioPlanningNotFoundException extends AbstractPlatformResourceNotFoundException {
 
     public PortfolioPlanningNotFoundException(final Long id, final String username) {
-        super("error.msg.portfolio.planning.invalid",
-                "Portfolio planning for portfolio id: " + id + " does not exist for user: " + username, id, username);
+        super("error.msg.portfolio.planning.invalid", "Portfolio planning for portfolio id: " + id + " does not exist for user: "+username, id, username);
     }
 
     public PortfolioPlanningNotFoundException(Long id, String username, EmptyResultDataAccessException e) {
-        super("error.msg.portfolio.planning.invalid",
-                "Portfolio planning for portfolio id: " + id + " does not exist for user: " + username, id, username);
+        super("error.msg.portfolio.planning.invalid", "Portfolio planning for portfolio id: " + id + " does not exist for user: "+username, id, username);
     }
 }

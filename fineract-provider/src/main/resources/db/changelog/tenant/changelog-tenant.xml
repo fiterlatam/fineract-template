@@ -82,4 +82,5 @@
     <include file="parts/0065_add_age_limit_settings_to_loan_products.xml" relativeToChangelogFile="true"/>
     <include file="parts/0066_refactor_center_and_group.xml" relativeToChangelogFile="true"/>
     <include file="parts/0067_FBR_additional_fields_to_m_product_loan.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0068_FBR_change_agency_id_column_blacklist.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
