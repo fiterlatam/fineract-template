@@ -42,6 +42,7 @@ public final class AgeLimitStatusEnumerations {
             break;
             case BLOCK:
                 optionData = new EnumOptionData(AgeLimitStatus.BLOCK.getValue().longValue(), AgeLimitStatus.BLOCK.getCode(), "BLOCK");
+                break;
             case CONTINUE:
                 optionData = new EnumOptionData(AgeLimitStatus.CONTINUE.getValue().longValue(), AgeLimitStatus.CONTINUE.getCode(),
                         "CONTINUE");
