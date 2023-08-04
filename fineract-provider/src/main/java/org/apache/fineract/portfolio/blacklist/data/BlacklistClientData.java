@@ -51,7 +51,7 @@ public class BlacklistClientData {
     private final Collection<LoanProductData> loanProducts;
 
     public BlacklistClientData(final Long id, final Long clientId, final String clientName, final Long productId,
-            final CodeValueData typification, final String productCode, final String dpi, final String nit, final String agencyId,
+            final CodeValueData typification, final String productCode, final String dpi, final String nit, final String agencyName,
             final Integer year, final BigDecimal balance, final BigDecimal disbursementAmount, final String addedBy,
             final LocalDateTime createdAt, final String description, final String status,
             final Collection<CodeValueData> typificationOptions, final Collection<LoanProductData> loanProducts) {
@@ -66,7 +66,7 @@ public class BlacklistClientData {
         this.dpi = dpi;
         this.nit = nit;
         this.description = description;
-        this.agencyId = agencyId;
+        this.agencyId = agencyName;
         this.balance = balance;
         this.disbursementAmount = disbursementAmount;
         this.status = status;
@@ -82,9 +82,9 @@ public class BlacklistClientData {
     }
 
     public static BlacklistClientData instance(Long id, String displayName, EnumOptionData status, CodeValueData typification,
-            Long productId, String dpiNumber, String nitNumber, String agencyId, String productCode, String productName, BigDecimal balance,
+            Long productId, String dpiNumber, String nitNumber, String agencyName, String productCode, String productName, BigDecimal balance,
             BigDecimal disbursementAmount, String addedBy, String year, String description) {
-        return new BlacklistClientData(id, null, displayName, productId, typification, productCode, dpiNumber, nitNumber, agencyId,
+        return new BlacklistClientData(id, null, displayName, productId, typification, productCode, dpiNumber, nitNumber, agencyName,
                 Integer.valueOf(year), balance, disbursementAmount, addedBy, null, description, status.getValue(), null, null);
     }
 }

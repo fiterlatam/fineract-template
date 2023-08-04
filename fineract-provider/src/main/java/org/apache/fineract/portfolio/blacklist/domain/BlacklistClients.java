@@ -34,6 +34,7 @@ import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
+import org.apache.fineract.organisation.agency.domain.Agency;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProduct;
 import org.apache.fineract.useradministration.domain.AppUser;
 
@@ -59,8 +60,9 @@ public class BlacklistClients extends AbstractPersistableCustom {
     @Column(name = "description", nullable = false)
     private String description;
 
-    @Column(name = "agency_id", nullable = false)
-    private String agencyId;
+    @ManyToOne
+    @JoinColumn(name = "agency_id", nullable = false)
+    private Agency agencyId;
 
     @ManyToOne
     @JoinColumn(name = "product_id", nullable = false)
@@ -85,17 +87,16 @@ public class BlacklistClients extends AbstractPersistableCustom {
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
-    public static BlacklistClients fromJson(final AppUser appUser, final LoanProduct loanProduct, final CodeValueData typification,
+    public static BlacklistClients fromJson(final AppUser appUser, final LoanProduct loanProduct, final Agency agency, final CodeValueData typification,
             final JsonCommand command) {
         final String dpi = command.stringValueOfParameterNamed("dpiNumber").trim();
         final String clientName = command.stringValueOfParameterNamed("clientName").trim();
         final String nit = command.stringValueOfParameterNamed("nit");
         final String description = command.stringValueOfParameterNamed("description");
-        final String agencyId = command.stringValueOfParameterNamed("agencyId");
         final Integer year = command.integerValueOfParameterNamed("year");
         final BigDecimal balance = command.bigDecimalValueOfParameterNamed("balance");
         final BigDecimal disbursementAmount = command.bigDecimalValueOfParameterNamed("disbursementAmount");
-        return new BlacklistClients(appUser, typification, clientName, dpi, nit, description, agencyId, loanProduct, balance,
+        return new BlacklistClients(appUser, typification, clientName, dpi, nit, description, agency, loanProduct, balance,
                 disbursementAmount, year);
     }
 
@@ -104,7 +105,7 @@ public class BlacklistClients extends AbstractPersistableCustom {
     }
 
     private BlacklistClients(final AppUser appUser, final CodeValueData typification, final String clientName, final String dpi,
-            final String nit, final String description, final String agencyId, final LoanProduct loanProduct, final BigDecimal balance,
+            final String nit, final String description, final Agency agencyId, final LoanProduct loanProduct, final BigDecimal balance,
             final BigDecimal disbursementAmount, final Integer year) {
         this.addedBy = appUser;
         this.typeEnum = typification.getId().intValue();
