@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.fineract.infrastructure.core.service.database.DatabaseSpecificSQLGenerator;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.infrastructure.security.utils.ColumnValidator;
@@ -126,12 +127,28 @@ public class PortfolioReadPlatformServiceImpl implements PortfolioReadPlatformSe
     public PortfolioPlanningData retrievePlanningByPortfolio(Long portfolioId) {
         AppUser currentUser = this.context.authenticatedUser();
 
+        final List<Object> officeIds = new ArrayList<>();
+        final Collection<OfficeData> parentOfficesOptions = officeReadPlatformService
+                .retrieveOfficesByHierarchyLevel(Long.valueOf(OfficeHierarchyLevel.SUPERVISION.getValue()));
+        parentOfficesOptions.forEach(parentOffice -> officeIds.add(parentOffice.getId()));
+        String inSql = String.join(",", Collections.nCopies(officeIds.size(), "?"));
+
         try {
             PortfolioPlanningMapper portfolioPlanningMapper = new PortfolioPlanningMapper();
             String schemaSql = "select " + portfolioPlanningMapper.schema();
-            schemaSql += "where p.id = ? and p.responsible_user_id = ?";
+            schemaSql += "where p.id = ? ";
 
-            return this.jdbcTemplate.queryForObject(schemaSql, portfolioPlanningMapper, new Object[] { portfolioId, currentUser.getId() });
+            // check if the user has a role as FACILITATOR
+            Role facilitatorRole = currentUser.getRoles().stream().filter(x -> x.getName().startsWith(FACILITATOR_ROLE_START_WITH)) //
+                    .findFirst().orElse(null);
+            if (facilitatorRole != null) {
+                schemaSql += " and p.responsible_user_id = ?";
+                return this.jdbcTemplate.queryForObject(schemaSql, portfolioPlanningMapper, portfolioId, currentUser.getId());
+            } else {
+                schemaSql += " and p.linked_office_id in (%s)";
+                Object[] args = ArrayUtils.addAll(new Object[] { portfolioId }, officeIds.toArray());
+                return this.jdbcTemplate.queryForObject(String.format(schemaSql, inSql), portfolioPlanningMapper, args);
+            }
         } catch (EmptyResultDataAccessException e) {
             return null;
         }
