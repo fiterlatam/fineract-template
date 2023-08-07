@@ -45,11 +45,26 @@ public class PortfolioDetailedPlanningData {
 
     private final String meetingDayName;
 
-    private final LocalDate meetingDate;
+    private LocalDate meetingDate;
+
+    private final int meetingDayOfWeek;
+
+    private final int rangeStartDay;
+
+    private final int rangeEndDay;
+
+    private int numberOfClients;
+
+    private String loanShortProductName;
+
+    private BigDecimal totalRepayment;
+
+    private BigDecimal totalOverdue;
 
     public PortfolioDetailedPlanningData(Long centerGroupId, String centerGroupName, BigDecimal legacyGroupNumber,
             LocalTime meetingStartTime, LocalTime meetingEndTime, Long portfolioCenterId, String portfolioCenterName,
-            BigDecimal legacyCenterNumber, String meetingDayName, LocalDate meetingDate) {
+            BigDecimal legacyCenterNumber, String meetingDayName, LocalDate meetingDate, int meetingDayOfWeek, int rangeStartDay,
+            int rangeEndDay) {
         this.centerGroupId = centerGroupId;
         this.centerGroupName = centerGroupName;
         this.legacyGroupNumber = legacyGroupNumber;
@@ -60,13 +75,18 @@ public class PortfolioDetailedPlanningData {
         this.legacyCenterNumber = legacyCenterNumber;
         this.meetingDayName = meetingDayName;
         this.meetingDate = meetingDate;
+        this.meetingDayOfWeek = meetingDayOfWeek;
+        this.rangeStartDay = rangeStartDay;
+        this.rangeEndDay = rangeEndDay;
     }
 
     public static PortfolioDetailedPlanningData instance(Long centerGroupId, String centerGroupName, BigDecimal legacyGroupNumber,
             LocalTime meetingStartTime, LocalTime meetingEndTime, Long portfolioCenterId, String portfolioCenterName,
-            BigDecimal legacyCenterNumber, String meetingDayName, LocalDate meetingDate) {
+            BigDecimal legacyCenterNumber, String meetingDayName, LocalDate meetingDate, int meetingDayOfWeek, int rangeStartDay,
+            int rangeEndDay) {
         return new PortfolioDetailedPlanningData(centerGroupId, centerGroupName, legacyGroupNumber, meetingStartTime, meetingEndTime,
-                portfolioCenterId, portfolioCenterName, legacyCenterNumber, meetingDayName, meetingDate);
+                portfolioCenterId, portfolioCenterName, legacyCenterNumber, meetingDayName, meetingDate, meetingDayOfWeek, rangeStartDay,
+                rangeEndDay);
     }
 
     public LocalDate getMeetingDate() {
@@ -77,4 +97,67 @@ public class PortfolioDetailedPlanningData {
         return meetingStartTime;
     }
 
+    public int getMeetingDayOfWeek() {
+        return meetingDayOfWeek;
+    }
+
+    public int getRangeStartDay() {
+        return rangeStartDay;
+    }
+
+    public int getRangeEndDay() {
+        return rangeEndDay;
+    }
+
+    public void setMeetingDate(LocalDate meetingDate) {
+        this.meetingDate = meetingDate;
+    }
+
+    public Long getCenterGroupId() {
+        return centerGroupId;
+    }
+
+    public String getCenterGroupName() {
+        return centerGroupName;
+    }
+
+    public BigDecimal getLegacyGroupNumber() {
+        return legacyGroupNumber;
+    }
+
+    public LocalTime getMeetingEndTime() {
+        return meetingEndTime;
+    }
+
+    public Long getPortfolioCenterId() {
+        return portfolioCenterId;
+    }
+
+    public String getPortfolioCenterName() {
+        return portfolioCenterName;
+    }
+
+    public BigDecimal getLegacyCenterNumber() {
+        return legacyCenterNumber;
+    }
+
+    public String getMeetingDayName() {
+        return meetingDayName;
+    }
+
+    public void setNumberOfClients(int numberOfClients) {
+        this.numberOfClients = numberOfClients;
+    }
+
+    public void setLoanShortProductName(String loanShortProductName) {
+        this.loanShortProductName = loanShortProductName;
+    }
+
+    public void setTotalRepayment(BigDecimal totalRepayment) {
+        this.totalRepayment = totalRepayment;
+    }
+
+    public void setTotalOverdue(BigDecimal totalOverdue) {
+        this.totalOverdue = totalOverdue;
+    }
 }

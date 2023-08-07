@@ -82,8 +82,8 @@ public class BlacklistClientData {
     }
 
     public static BlacklistClientData instance(Long id, String displayName, EnumOptionData status, CodeValueData typification,
-            Long productId, String dpiNumber, String nitNumber, String agencyName, String productCode, String productName, BigDecimal balance,
-            BigDecimal disbursementAmount, String addedBy, String year, String description) {
+            Long productId, String dpiNumber, String nitNumber, String agencyName, String productCode, String productName,
+            BigDecimal balance, BigDecimal disbursementAmount, String addedBy, String year, String description) {
         return new BlacklistClientData(id, null, displayName, productId, typification, productCode, dpiNumber, nitNumber, agencyName,
                 Integer.valueOf(year), balance, disbursementAmount, addedBy, null, description, status.getValue(), null, null);
     }

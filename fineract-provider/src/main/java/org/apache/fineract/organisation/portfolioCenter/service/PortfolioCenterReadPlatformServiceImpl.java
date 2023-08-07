@@ -35,7 +35,6 @@ import org.apache.fineract.infrastructure.codes.service.CodeValueReadPlatformSer
 import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainServiceJpa;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
-import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.core.service.database.DatabaseSpecificSQLGenerator;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.infrastructure.security.utils.ColumnValidator;
@@ -45,12 +44,10 @@ import org.apache.fineract.organisation.centerGroup.service.GroupLocationEnumera
 import org.apache.fineract.organisation.office.data.OfficeData;
 import org.apache.fineract.organisation.office.domain.OfficeHierarchyLevel;
 import org.apache.fineract.organisation.office.service.OfficeReadPlatformService;
-import org.apache.fineract.organisation.portfolio.data.PortfolioDetailedPlanningData;
 import org.apache.fineract.organisation.portfolio.exception.PortfolioNotFoundException;
 import org.apache.fineract.organisation.portfolioCenter.data.AvailableMeetingTimes;
 import org.apache.fineract.organisation.portfolioCenter.data.PortfolioCenterAvailabilityForMeetings;
 import org.apache.fineract.organisation.portfolioCenter.data.PortfolioCenterData;
-import org.apache.fineract.organisation.portfolioCenter.domain.PortfolioCenterFrecuencyMeeting;
 import org.apache.fineract.organisation.portfolioCenter.domain.PortfolioCenterStatus;
 import org.apache.fineract.portfolio.group.domain.GroupTypes;
 import org.apache.fineract.useradministration.data.AppUserData;
@@ -235,23 +232,14 @@ public class PortfolioCenterReadPlatformServiceImpl implements PortfolioCenterRe
         return availabilityForMeetings;
     }
 
-    @Override
-    public Collection<PortfolioDetailedPlanningData> retrievePlanningByPortfolio(Long portfolioId) {
-        PortfolioDetailedPlanningMapper portfolioDetailedPlanningMapper = new PortfolioDetailedPlanningMapper();
-        String schemaSql = "select " + portfolioDetailedPlanningMapper.schema();
-        schemaSql += "where pc.portfolio_id = ? ";
-        schemaSql += "order by centerGroupName, position";
-
-        return this.jdbcTemplate.query(schemaSql, portfolioDetailedPlanningMapper, portfolioId);
-    }
-
     private static final class PortfolioCenterMapper implements RowMapper<PortfolioCenterData> {
 
         private final String schema;
 
         public PortfolioCenterMapper() {
             final StringBuilder sqlBuilder = new StringBuilder(300);
-            sqlBuilder.append("pc.id as id, pc.display_name as name, substring(pc.display_name, 1, 5) as centerCodeName, pc.portfolio_id as portfolioId, ");
+            sqlBuilder.append(
+                    "pc.id as id, pc.display_name as name, substring(pc.display_name, 1, 5) as centerCodeName, pc.portfolio_id as portfolioId, ");
             sqlBuilder.append("p.name as portfolioName, pc.legacy_number as legacyCenterNumber, ");
             sqlBuilder.append("pc.city_id as cityId, cvCity.code_value as cityValue, ");
             sqlBuilder.append("pc.state_province_id as stateId, cvState.code_value as stateValue, ");
@@ -326,61 +314,6 @@ public class PortfolioCenterReadPlatformServiceImpl implements PortfolioCenterRe
             return PortfolioCenterData.instance(id, name, portfolioId, portfolioName, legacyCenterNumber, city, state, type, statusEnum,
                     distance, createdDate, meetingStart, meetingEnd, meetingDay, meetingStartTime.toString(), meetingEndTime.toString(),
                     meetingDayValue, referencePoint, centerLocation);
-        }
-
-        public String schema() {
-            return this.schema;
-        }
-
-    }
-
-    private static final class PortfolioDetailedPlanningMapper implements RowMapper<PortfolioDetailedPlanningData> {
-
-        private final String schema;
-
-        public PortfolioDetailedPlanningMapper() {
-            final StringBuilder sqlBuilder = new StringBuilder(300);
-            sqlBuilder.append("cvMeetingDay.code_value as meetingDayName, cg.id as centerGroupId, cg.display_name as centerGroupName, ");
-            sqlBuilder.append("cg.legacy_number as legacyGroupNumber, cg.meeting_start_time as meetingStartTime, ");
-            sqlBuilder.append(" cg.meeting_end_time as meetingEndTime, pc.id as portfolioCenterId, ");
-            sqlBuilder.append(
-                    "pc.display_name as portfolioCenterName, pc.legacy_number as legacyCenterNumber,pc.meeting_day as meetingDay, ");
-            sqlBuilder.append(
-                    "cvMeetingDay.order_position as position, pc.meeting_start_date as rangeStartDay, pc.meeting_end_date as rangeEndDay ");
-            sqlBuilder.append("from m_group cg ");
-            sqlBuilder.append("left join m_group pc on pc.id = cg.parent_id ");
-            sqlBuilder.append("left join m_code_value cvMeetingDay on cvMeetingDay.id = pc.meeting_day ");
-
-            this.schema = sqlBuilder.toString();
-        }
-
-        @Override
-        public PortfolioDetailedPlanningData mapRow(final ResultSet rs, @SuppressWarnings("unused") final int rowNum) throws SQLException {
-
-            final Long centerGroupId = rs.getLong("centerGroupId");
-            final String centerGroupName = rs.getString("centerGroupName");
-            final BigDecimal legacyGroupNumber = rs.getBigDecimal("legacyGroupNumber");
-
-            final Long portfolioCenterId = rs.getLong("portfolioCenterId");
-            final String portfolioCenterName = rs.getString("portfolioCenterName");
-            final BigDecimal legacyCenterNumber = rs.getBigDecimal("legacyCenterNumber");
-
-            final LocalTime meetingStartTime = JdbcSupport.getLocalTime(rs, "meetingStartTime");
-            final LocalTime meetingEndTime = JdbcSupport.getLocalTime(rs, "meetingEndTime");
-
-            final String meetingDayName = rs.getString("meetingDayName");
-
-            // calculate the next meeting date
-            LocalDate currentTenantDate = DateUtils.getLocalDateOfTenant();
-            final int meetingDayOfWeek = rs.getInt("position");
-            final int rangeStartDay = rs.getInt("rangeStartDay");
-            final int rangeEndDay = rs.getInt("rangeEndDay");
-
-            final LocalDate nextMeetingDate = PortfolioCenterGroupUtil.calculateNextMeetingDate(currentTenantDate, rangeStartDay,
-                    rangeEndDay, meetingDayOfWeek, PortfolioCenterFrecuencyMeeting.MENSUAL);
-
-            return PortfolioDetailedPlanningData.instance(centerGroupId, centerGroupName, legacyGroupNumber, meetingStartTime,
-                    meetingEndTime, portfolioCenterId, portfolioCenterName, legacyCenterNumber, meetingDayName, nextMeetingDate);
         }
 
         public String schema() {
