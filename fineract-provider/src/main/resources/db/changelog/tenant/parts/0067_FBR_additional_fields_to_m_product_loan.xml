@@ -46,4 +46,10 @@
             </column>
         </addColumn>
     </changeSet>
+    <changeSet author="fineract" id="3">
+        <insert tableName="m_role_permission">
+            <column name="role_id" valueNumeric="5"/>
+            <column name="permission_id" valueNumeric="923"/>
+        </insert>
+    </changeSet>
 </databaseChangeLog>
