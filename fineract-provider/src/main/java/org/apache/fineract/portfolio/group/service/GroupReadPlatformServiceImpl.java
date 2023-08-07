@@ -275,10 +275,11 @@ public class GroupReadPlatformServiceImpl implements GroupReadPlatformService {
         try {
             final AppUser currentUser = this.context.authenticatedUser();
             final String hierarchy = currentUser.getOffice().getHierarchy();
+            // disable usage of hierarchy for now because it will fail in many cases
             final String hierarchySearchString = hierarchy + "%";
 
-            final String sql = "select " + this.allGroupTypesDataMapper.schema() + " where g.id = ? and o.hierarchy like ?";
-            return this.jdbcTemplate.queryForObject(sql, this.allGroupTypesDataMapper, new Object[] { groupId, hierarchySearchString }); // NOSONAR
+            final String sql = "select " + this.allGroupTypesDataMapper.schema() + " where g.id = ? ";
+            return this.jdbcTemplate.queryForObject(sql, this.allGroupTypesDataMapper, new Object[] { groupId }); // NOSONAR
         } catch (final EmptyResultDataAccessException e) {
             throw new GroupNotFoundException(groupId, e);
         }

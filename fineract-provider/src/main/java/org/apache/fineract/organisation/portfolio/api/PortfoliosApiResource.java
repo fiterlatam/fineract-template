@@ -28,6 +28,7 @@ import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.time.LocalDate;
 import java.util.Collection;
 import java.util.stream.Collectors;
 import javax.ws.rs.Consumes;
@@ -38,7 +39,11 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.UriInfo;
+import org.apache.fineract.accounting.journalentry.api.DateParam;
 import org.apache.fineract.commands.domain.CommandWrapper;
 import org.apache.fineract.commands.service.CommandWrapperBuilder;
 import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformService;
@@ -54,6 +59,7 @@ import org.apache.fineract.organisation.portfolio.service.PortfolioConstants;
 import org.apache.fineract.organisation.portfolio.service.PortfolioReadPlatformService;
 import org.apache.fineract.organisation.portfolioCenter.data.PortfolioCenterData;
 import org.apache.fineract.organisation.portfolioCenter.service.PortfolioCenterReadPlatformService;
+import org.apache.fineract.portfolio.group.service.CenterGroupPlanningService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
@@ -70,18 +76,21 @@ public class PortfoliosApiResource {
     private final ApiRequestParameterHelper apiRequestParameterHelper;
     private final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService;
     private final PortfolioCenterReadPlatformService centerReadPlatformService;
+    private final CenterGroupPlanningService centerGroupPlanningService;
 
     @Autowired
     public PortfoliosApiResource(final PlatformSecurityContext context, final PortfolioReadPlatformService readPlatformService,
             final DefaultToApiJsonSerializer<PortfolioData> toApiJsonSerializer, final ApiRequestParameterHelper apiRequestParameterHelper,
             final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService,
-            final PortfolioCenterReadPlatformService centerReadPlatformService) {
+            final PortfolioCenterReadPlatformService centerReadPlatformService,
+            final CenterGroupPlanningService centerGroupPlanningService) {
         this.context = context;
         this.readPlatformService = readPlatformService;
         this.toApiJsonSerializer = toApiJsonSerializer;
         this.apiRequestParameterHelper = apiRequestParameterHelper;
         this.commandsSourceWritePlatformService = commandsSourceWritePlatformService;
         this.centerReadPlatformService = centerReadPlatformService;
+        this.centerGroupPlanningService = centerGroupPlanningService;
     }
 
     @GET
@@ -169,19 +178,34 @@ public class PortfoliosApiResource {
 
     @GET
     @Path("{portfolioId}/planning")
+    @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
-    public String planning(@PathParam("portfolioId") final Long portfolioId) {
+    public String planning(@PathParam("portfolioId") final Long portfolioId, @Context final UriInfo uriInfo,
+            @QueryParam("locale") @Parameter(description = "locale") final String locale,
+            @QueryParam("dateFormat") @Parameter(description = "dateFormat") final String dateFormat,
+            @QueryParam("fromDate") @Parameter(description = "fromDate") final DateParam fromDateParam,
+            @QueryParam("toDate") @Parameter(description = "toDate") final DateParam toDateParam) {
         final String taskPermissionName = "PLANNING_PORTFOLIO";
         this.context.authenticatedUser().validateHasPermissionTo(taskPermissionName);
 
-        PortfolioPlanningData portfoliosPlanning = this.readPlatformService.retrievePlanningByPortfolio(portfolioId);
+        LocalDate startDateRange = null;
+        LocalDate endDateRange = null;
 
-        if (portfoliosPlanning==null){
+        if (fromDateParam != null) {
+            startDateRange = fromDateParam.getDate("fromDate", dateFormat, locale);
+        }
+        if (toDateParam != null) {
+            endDateRange = toDateParam.getDate("toDate", dateFormat, locale);
+        }
+
+        PortfolioPlanningData portfoliosPlanning = this.readPlatformService.retrievePlanningByPortfolio(portfolioId);
+        if (portfoliosPlanning == null) {
             throw new PortfolioPlanningNotFoundException(portfolioId, this.context.authenticatedUser().getUsername());
         }
 
         // get planning
-        Collection<PortfolioDetailedPlanningData> planning = centerReadPlatformService.retrievePlanningByPortfolio(portfolioId);
+        Collection<PortfolioDetailedPlanningData> planning = centerGroupPlanningService.retrievePlanningByPortfolio(portfolioId,
+                startDateRange, endDateRange);
         if (planning != null) {
             planning = planning.stream().sorted(createPortfolioDetailedPlanningComparator()).collect(Collectors.toList());
             portfoliosPlanning.setDetailedPlanningData(planning);

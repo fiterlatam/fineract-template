@@ -174,7 +174,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
             final StaffReadPlatformService staffReadPlatformService, final PaymentTypeReadPlatformService paymentTypeReadPlatformService,
             final LoanRepaymentScheduleTransactionProcessorFactory loanRepaymentScheduleTransactionProcessorFactory,
             final FloatingRatesReadPlatformService floatingRatesReadPlatformService, final LoanUtilService loanUtilService,
-            final ConfigurationDomainService configurationDomainService,final CodeValueRepositoryWrapper codeValueRepositoryWrapper,
+            final ConfigurationDomainService configurationDomainService, final CodeValueRepositoryWrapper codeValueRepositoryWrapper,
             final AccountDetailsReadPlatformService accountDetailsReadPlatformService, final LoanRepositoryWrapper loanRepositoryWrapper,
             final ColumnValidator columnValidator, DatabaseSpecificSQLGenerator sqlGenerator, PaginationHelper paginationHelper) {
         this.context = context;
@@ -1406,8 +1406,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
 
         String blacklistString = "select count(*) from m_client_blacklist where dpi=? and status=?";
         String dpiNumber = clientData.getDpiNumber();
-        Long blacklisted = jdbcTemplate.queryForObject(blacklistString, Long.class, dpiNumber,
-                BlacklistStatus.ACTIVE.getValue());
+        Long blacklisted = jdbcTemplate.queryForObject(blacklistString, Long.class, dpiNumber, BlacklistStatus.ACTIVE.getValue());
         if (blacklisted > 0) {
             String blacklistReason = "select type_enum from m_client_blacklist where dpi=? and status=?";
             Integer typification = jdbcTemplate.queryForObject(blacklistReason, Integer.class, dpiNumber,
@@ -1415,7 +1414,6 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
             CodeValue typificationCodeValue = this.codeValueRepositoryWrapper.findOneWithNotFoundDetection(typification.longValue());
             throw new ClientBlacklistedException(typificationCodeValue.getDescription());
         }
-
 
         final LoanProductData loanProduct = this.loanProductReadPlatformService.retrieveLoanProduct(productId);
         final Collection<EnumOptionData> loanTermFrequencyTypeOptions = this.loanDropdownReadPlatformService
