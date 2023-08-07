@@ -160,12 +160,18 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
 
     }
 
+    @Override
+    public GroupPrequalificationData prequalifyExistingGroup(Long groupId) {
+        return null;
+    }
+
     private String buildSqlStringFromBlacklistCriteria(final SearchParameters searchParameters, List<Object> paramList) {
 
         String sqlSearch = searchParameters.getSqlSearch();
         final Long officeId = searchParameters.getOfficeId();
         final String dpiNumber = searchParameters.getName();
         final String status = searchParameters.getStatus();
+        final String type = searchParameters.getType();
 
         String extraCriteria = "";
         if (sqlSearch != null) {
@@ -186,6 +192,13 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             PrequalificationStatus prequalificationStatus = PrequalificationStatus.fromString(status);
             extraCriteria += " and g.status = " + prequalificationStatus.getValue().toString() + " ";
         }
+        if (type != null) {
+            if (type.equals("existing")){
+                extraCriteria += " and g.group_id is not null ";
+            }else if (type.equals("new")){
+                extraCriteria += " and g.group_id is null ";
+            }
+        }
 
         if (StringUtils.isNotBlank(extraCriteria)) {
             extraCriteria = extraCriteria.substring(4);
@@ -201,7 +214,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             final StringBuilder builder = new StringBuilder(400);
 
             builder.append("g.id as id, g.prequalification_number as prequalificationNumber, g.status, g.created_at, g.comments, "
-                    + "ma.name as agencyName, cg.display_name as groupName, g.group_name as newGroupName, pc.display_name as centerName, ");
+                    + "ma.name as agencyName, cg.display_name as groupName, g.group_name as newGroupName, g.group_id as groupId, pc.display_name as centerName, ");
             builder.append("lp.name as productName, au.firstname, au.lastname ");
             builder.append("from m_prequalification_group g ");
             builder.append("inner join m_appuser au on au.id = g.added_by ");
@@ -229,6 +242,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             String groupName = rs.getString("groupName");
             final String agencyName = rs.getString("agencyName");
             final String centerName = rs.getString("centerName");
+            final Long groupId = rs.getLong("groupId");
             final String newGroupName = rs.getString("newGroupName");
             // final String portfolioName = rs.getString("portfolioName");
             final String productName = rs.getString("productName");
@@ -241,7 +255,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                 groupName = newGroupName;
             }
             return GroupPrequalificationData.instance(id, prequalificationNumber, status, agencyName, null, centerName, groupName,
-                    productName, addedBy, createdAt, comments);
+                    productName, addedBy, createdAt, comments,groupId);
 
         }
     }
@@ -254,8 +268,15 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             final StringBuilder builder = new StringBuilder(400);
 
             builder.append("m.id as id, m.name, m.status, m.dpi, m.dob, m.requested_amount as requestedAmount, ");
+            builder.append("coalesce((select sum(principal_disbursed_derived) from m_loan where client_id = m.client_id),0) as totalLoanAmount, ");
+            builder.append("coalesce((select sum(total_outstanding_derived) from m_loan where client_id = m.client_id),0) as totalLoanBalance, ");
+            builder.append("coalesce((select sum(ln.total_outstanding_derived) from m_loan ln inner join m_guarantor mg on mg.loan_id=ln.id where mg.entity_id = m.client_id),0) as totalGuaranteedLoanBalance, ");
+            builder.append("coalesce((select max(loan_counter) from m_loan where client_id = m.client_id),0) as noOfCycles, ");
+            builder.append("0 as additionalCreditsCount, ");
+            builder.append("0 as additionalCreditsSum, ");
             builder.append("(select count(*) from m_client_blacklist b where b.dpi = m.dpi) as blacklistCount, ");
-            builder.append("m.work_with_puente as puente from m_prequalification_group_members m");
+            builder.append("m.work_with_puente as puente ");
+            builder.append("from m_prequalification_group_members m");
 
             this.schema = builder.toString();
         }
@@ -278,8 +299,15 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             final String puente = rs.getString("puente");
             final Long blacklistCount = rs.getLong("blacklistCount");
             final LocalDate dob = JdbcSupport.getLocalDate(rs, "dob");
+            final BigDecimal totalLoanAmount = rs.getBigDecimal("totalLoanAmount");
+            final BigDecimal totalLoanBalance = rs.getBigDecimal("totalLoanBalance");
+            final BigDecimal totalGuaranteedLoanBalance = rs.getBigDecimal("totalGuaranteedLoanBalance");
+            final Long noOfCycles = rs.getLong("noOfCycles");
+            final Long additionalCreditsCount = rs.getLong("additionalCreditsCount");
+            final BigDecimal additionalCreditsSum = rs.getBigDecimal("additionalCreditsSum");
 
-            return MemberPrequalificationData.instance(id, name, dpi, dob, puente, requestedAmount, status, blacklistCount);
+            return MemberPrequalificationData.instance(id, name, dpi, dob, puente, requestedAmount, status, blacklistCount, totalLoanAmount,
+                    totalLoanBalance, totalGuaranteedLoanBalance, noOfCycles, additionalCreditsCount, additionalCreditsSum);
 
         }
     }

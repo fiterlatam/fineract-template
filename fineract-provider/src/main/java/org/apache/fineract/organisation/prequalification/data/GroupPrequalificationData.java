@@ -41,6 +41,7 @@ public class GroupPrequalificationData {
     private final EnumOptionData status;
     private final String addedBy;
     private final String comments;
+    private final Long groupId;
     private final LocalDate createdAt;
     private final Collection<AgencyData> agencies;
     private final Collection<CenterData> centerData;
@@ -49,10 +50,10 @@ public class GroupPrequalificationData {
     private Collection<MemberPrequalificationData> groupMembers;
 
     public GroupPrequalificationData(final Long id, final String productName, final String prequalificationNumber, final String agencyName,
-            final String portforlioName, final String centerName, final String groupName, final String addedBy, final LocalDate createdAt,
-            final EnumOptionData status, String comments, final Collection<MemberPrequalificationData> groupMembers,
-            final Collection<AgencyData> agencies, Collection<CenterData> centerData, Collection<LoanProductData> loanProducts,
-            Collection<AppUserData> appUsers) {
+                                     final String portforlioName, final String centerName, final String groupName, final String addedBy, final LocalDate createdAt,
+                                     final EnumOptionData status, String comments, Long groupId, final Collection<MemberPrequalificationData> groupMembers,
+                                     final Collection<AgencyData> agencies, Collection<CenterData> centerData, Collection<LoanProductData> loanProducts,
+                                     Collection<AppUserData> appUsers) {
         this.id = id;
         this.productName = productName;
         this.prequalificationNumber = prequalificationNumber;
@@ -69,19 +70,20 @@ public class GroupPrequalificationData {
         this.facilitators = appUsers;
         this.groupMembers = groupMembers;
         this.comments = comments;
+        this.groupId = groupId;
     }
 
     public static GroupPrequalificationData template(final Collection<AgencyData> agencies, Collection<CenterData> centerData,
             Collection<LoanProductData> loanProducts, Collection<AppUserData> appUsers) {
-        return new GroupPrequalificationData(null, null, null, null, null, null, null, null, null, null, null, null, agencies, centerData,
+        return new GroupPrequalificationData(null, null, null, null, null, null, null, null, null, null, null, null, null, agencies, centerData,
                 loanProducts, appUsers);
     }
 
     public static GroupPrequalificationData instance(Long id, String prequalificationNumber, EnumOptionData status, String agencyName,
-            String portfolioName, String centerName, String groupName, String productName, String addedBy, LocalDate createdAt,
-            String comments) {
+                                                     String portfolioName, String centerName, String groupName, String productName, String addedBy, LocalDate createdAt,
+                                                     String comments, Long groupId) {
         return new GroupPrequalificationData(id, productName, prequalificationNumber, agencyName, portfolioName, centerName, groupName,
-                addedBy, createdAt, status, comments, null, null, null, null, null);
+                addedBy, createdAt, status, comments, groupId,null, null, null, null, null);
     }
 
     public void updateMembers(Collection<MemberPrequalificationData> groupMembers) {
