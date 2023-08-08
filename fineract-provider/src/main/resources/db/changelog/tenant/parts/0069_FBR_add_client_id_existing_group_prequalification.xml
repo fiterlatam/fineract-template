@@ -25,31 +25,12 @@
     <changeSet author="fineract" id="1">
         <preConditions onFail="MARK_RAN">
             <not>
-                <columnExists tableName="m_product_loan" columnName="owner_type_enum"/>
+                <columnExists tableName="m_prequalification_group_members" columnName="client_id"/>
             </not>
         </preConditions>
-        <addColumn tableName="m_product_loan">
-            <column defaultValueNumeric="2" name="owner_type_enum" type="SMALLINT">
-                <constraints nullable="false"/>
+        <addColumn tableName="m_prequalification_group_members">
+            <column name="client_id" type="BIGINT">
             </column>
         </addColumn>
-    </changeSet>
-    <changeSet author="fineract" id="2">
-        <preConditions onFail="MARK_RAN">
-            <not>
-                <columnExists tableName="m_product_loan" columnName="add_new_cycles_enabled"/>
-            </not>
-        </preConditions>
-        <addColumn tableName="m_product_loan">
-            <column defaultValueBoolean="true" name="add_new_cycles_enabled" type="boolean">
-                <constraints nullable="false"/>
-            </column>
-        </addColumn>
-    </changeSet>
-    <changeSet author="fineract" id="3">
-        <insert tableName="m_role_permission">
-            <column name="role_id" valueNumeric="5"/>
-            <column name="permission_id" valueNumeric="923"/>
-        </insert>
     </changeSet>
 </databaseChangeLog>

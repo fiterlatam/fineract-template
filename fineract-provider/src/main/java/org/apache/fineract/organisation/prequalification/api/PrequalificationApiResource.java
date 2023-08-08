@@ -134,6 +134,7 @@ public class PrequalificationApiResource {
             @QueryParam("limit") @Parameter(description = "limit") final Integer limit,
             @QueryParam("orderBy") @Parameter(description = "orderBy") final String orderBy,
             @QueryParam("status") @Parameter(description = "status") final String status,
+            @QueryParam("type") @Parameter(description = "type") final String type,
             @QueryParam("searchText") @Parameter(description = "searchText") final String searchText,
             @QueryParam("sortOrder") @Parameter(description = "sortOrder") final String sortOrder) {
 
@@ -142,8 +143,7 @@ public class PrequalificationApiResource {
         MultivaluedMap<String, String> queryParameters = uriInfo.getQueryParameters();
 
         String clientName = queryParameters.getFirst("clientName");
-        String dpi = queryParameters.getFirst("dpi");
-        SearchParameters searchParameters = SearchParameters.forBlacklist(clientName, status, offset, limit, orderBy, sortOrder, dpi,
+        SearchParameters searchParameters = SearchParameters.forPrequalification(clientName, status, offset, limit, orderBy, sortOrder, type,
                 searchText);
         final Page<GroupPrequalificationData> clientData = this.prequalificationReadPlatformService.retrieveAll(searchParameters);
 
@@ -191,6 +191,27 @@ public class PrequalificationApiResource {
 
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
         return this.toApiJsonSerializer.serialize(settings, clientData, PRE_QUALIFICATION_DATA_PARAMETERS);
+    }
+
+    @POST
+    @Path("prequalifyGroup/{groupId}")
+    @Consumes({ MediaType.APPLICATION_JSON })
+    @Produces({ MediaType.APPLICATION_JSON })
+    @Operation(summary = "Retrieve Prequalification Details")
+    public String prequalifyExistingGroup(@Context final UriInfo uriInfo,
+            @PathParam("groupId") @Parameter(description = "groupId") final Long groupId,@Parameter(hidden = true) final String apiRequestBodyAsJson) {
+
+        try {
+            final CommandWrapper commandRequest = new CommandWrapperBuilder().createPrequalification().withGroupId(groupId).withJson(apiRequestBodyAsJson)
+                    .build();
+
+            final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
+
+            return this.toApiJsonSerializer.serialize(result);
+        } catch (final Exception e) {
+            e.printStackTrace();
+            throw e;
+        }
     }
 
     @POST

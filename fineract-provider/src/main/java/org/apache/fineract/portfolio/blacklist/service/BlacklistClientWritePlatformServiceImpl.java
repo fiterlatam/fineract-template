@@ -60,8 +60,9 @@ public class BlacklistClientWritePlatformServiceImpl implements BlacklistClientW
 
     @Autowired
     public BlacklistClientWritePlatformServiceImpl(final PlatformSecurityContext context, final BlacklistDataValidator dataValidator,
-            final LoanProductRepository loanProductRepository, final AgencyRepository agencyRepository, final ClientReadPlatformService clientReadPlatformService,
-            final CodeValueReadPlatformService codeValueReadPlatformService, final BlacklistClientsRepository blacklistClientsRepository) {
+            final LoanProductRepository loanProductRepository, final AgencyRepository agencyRepository,
+            final ClientReadPlatformService clientReadPlatformService, final CodeValueReadPlatformService codeValueReadPlatformService,
+            final BlacklistClientsRepository blacklistClientsRepository) {
         this.context = context;
         this.dataValidator = dataValidator;
         this.loanProductRepository = loanProductRepository;
@@ -86,7 +87,8 @@ public class BlacklistClientWritePlatformServiceImpl implements BlacklistClientW
 
         CodeValueData typification = codeValueReadPlatformService
                 .retrieveCodeValue(command.longValueOfParameterNamed(BlacklistApiConstants.typificationParamName));
-        BlacklistClients blacklistClient = BlacklistClients.fromJson(this.context.authenticatedUser(), loanProduct,agency, typification, command);
+        BlacklistClients blacklistClient = BlacklistClients.fromJson(this.context.authenticatedUser(), loanProduct, agency, typification,
+                command);
 
         this.blacklistClientsRepository.saveAndFlush(blacklistClient);
 

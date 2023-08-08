@@ -16,17 +16,15 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.organisation.prequalification.service;
+package org.apache.fineract.portfolio.group.service;
 
-import org.apache.fineract.infrastructure.core.service.Page;
-import org.apache.fineract.infrastructure.core.service.SearchParameters;
-import org.apache.fineract.organisation.prequalification.data.GroupPrequalificationData;
+import java.time.LocalDate;
+import java.util.Collection;
+import org.apache.fineract.organisation.portfolio.data.PortfolioDetailedPlanningData;
 
-public interface PrequalificationReadPlatformService {
+public interface CenterGroupPlanningService {
 
-    Page<GroupPrequalificationData> retrieveAll(SearchParameters searchParameters);
+    Collection<PortfolioDetailedPlanningData> retrievePlanningByPortfolio(Long portfolioId, LocalDate startDateRange,
+            LocalDate endDateRange);
 
-    GroupPrequalificationData retrieveOne(Long blacklistId);
-
-    GroupPrequalificationData prequalifyExistingGroup(Long groupId);
 }

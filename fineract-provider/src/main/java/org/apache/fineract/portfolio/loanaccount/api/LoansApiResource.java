@@ -516,8 +516,9 @@ public class LoansApiResource {
         AgeLimitStatus status = AgeLimitStatus.CONTINUE;
         if (dateOfBirth != null && ageLimitWarning != null && ageLimitBlock != null) {
             Integer age = businessLocalDate.getYear() - dateOfBirth.getYear();
-            if (age > ageLimitBlock) {
+            if (age >= ageLimitBlock) {
                 status = AgeLimitStatus.BLOCK;
+
             }
             if (age > ageLimitWarning && age < ageLimitBlock) {
                 status = AgeLimitStatus.WARNING;

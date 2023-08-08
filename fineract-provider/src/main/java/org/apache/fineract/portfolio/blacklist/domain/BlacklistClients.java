@@ -87,8 +87,8 @@ public class BlacklistClients extends AbstractPersistableCustom {
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
-    public static BlacklistClients fromJson(final AppUser appUser, final LoanProduct loanProduct, final Agency agency, final CodeValueData typification,
-            final JsonCommand command) {
+    public static BlacklistClients fromJson(final AppUser appUser, final LoanProduct loanProduct, final Agency agency,
+            final CodeValueData typification, final JsonCommand command) {
         final String dpi = command.stringValueOfParameterNamed("dpiNumber").trim();
         final String clientName = command.stringValueOfParameterNamed("clientName").trim();
         final String nit = command.stringValueOfParameterNamed("nit");

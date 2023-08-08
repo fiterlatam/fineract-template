@@ -83,5 +83,6 @@
     <include file="parts/0066_refactor_center_and_group.xml" relativeToChangelogFile="true"/>
     <include file="parts/0067_FBR_additional_fields_to_m_product_loan.xml" relativeToChangelogFile="true"/>
     <include file="parts/0068_FBR_change_agency_id_column_blacklist.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0069_FBR_add_client_id_existing_group_prequalification.xml" relativeToChangelogFile="true"/>
     <include file="parts/0070_FBR_add_active_loan_report.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
