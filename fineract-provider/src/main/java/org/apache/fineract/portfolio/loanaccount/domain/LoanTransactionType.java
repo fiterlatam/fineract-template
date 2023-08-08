@@ -55,7 +55,7 @@ public enum LoanTransactionType {
     CREDIT_BALANCE_REFUND(20, "loanTransactionType.creditBalanceRefund"), //
     MERCHANT_ISSUED_REFUND(21, "loanTransactionType.merchantIssuedRefund"), //
     PAYOUT_REFUND(22, "loanTransactionType.payoutRefund"), //
-    GOODWILL_CREDIT(23, "loanTransactionType.goodwillCredit");
+    GOODWILL_CREDIT(23, "loanTransactionType.goodwillCredit"), ACCRUAL_VAT(24, "loanTransactionType.accrualVat"),;
 
     private final Integer value;
     private final String code;
@@ -147,6 +147,9 @@ public enum LoanTransactionType {
             case 23:
                 loanTransactionType = LoanTransactionType.GOODWILL_CREDIT;
             break;
+            case 24:
+                loanTransactionType = LoanTransactionType.ACCRUAL_VAT;
+            break;
             default:
                 loanTransactionType = LoanTransactionType.INVALID;
             break;
@@ -195,7 +198,7 @@ public enum LoanTransactionType {
     }
 
     public boolean isAccrual() {
-        return this.value.equals(LoanTransactionType.ACCRUAL.getValue());
+        return this.value.equals(LoanTransactionType.ACCRUAL.getValue()) || this.value.equals(LoanTransactionType.ACCRUAL_VAT.getValue());
     }
 
     public boolean isWriteOff() {

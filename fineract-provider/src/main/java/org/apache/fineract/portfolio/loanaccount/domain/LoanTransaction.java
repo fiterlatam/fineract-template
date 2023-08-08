@@ -269,6 +269,24 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
         return applyCharge;
     }
 
+    public static LoanTransaction accrueLoanVatOnCharge(final Loan loan, final Office office, final Money amount, final LocalDate applyDate,
+            final Money vatOnCharge) {
+        String externalId = null;
+        final LoanTransaction applyCharge = new LoanTransaction(loan, office, LoanTransactionType.ACCRUAL_VAT, amount.getAmount(),
+                applyDate, externalId);
+        applyCharge.updateVatChargesComponents(null, vatOnCharge);
+        return applyCharge;
+    }
+
+    public static LoanTransaction accrueLoanVatOnInterest(final Loan loan, final Office office, final Money amount,
+            final LocalDate applyDate, final Money vatOnInterest) {
+        String externalId = null;
+        final LoanTransaction applyCharge = new LoanTransaction(loan, office, LoanTransactionType.ACCRUAL_VAT, amount.getAmount(),
+                applyDate, externalId);
+        applyCharge.updateVatChargesComponents(vatOnInterest, null);
+        return applyCharge;
+    }
+
     public static LoanTransaction creditBalanceRefund(final Loan loan, final Office office, final Money amount, final LocalDate paymentDate,
             final String externalId) {
         final PaymentDetail paymentDetail = null;
@@ -408,6 +426,17 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
         final MonetaryCurrency currency = feeCharges.getCurrency();
         this.feeChargesPortion = defaultToNullIfZero(getFeeChargesPortion(currency).plus(feeCharges).getAmount());
         this.penaltyChargesPortion = defaultToNullIfZero(getPenaltyChargesPortion(currency).plus(penaltyCharges).getAmount());
+    }
+
+    public void updateVatChargesComponents(final Money vatOnInterest, final Money vatOnCharges) {
+        MonetaryCurrency currency = null;
+        if (vatOnCharges != null) {
+            currency = vatOnCharges.getCurrency();
+            this.vatOnChargesPortion = defaultToNullIfZero(getVatOnChargesPortion(currency).plus(vatOnCharges).getAmount());
+        } else if (vatOnInterest != null) {
+            currency = vatOnInterest.getCurrency();
+            this.vatOnInterestPortion = defaultToNullIfZero(getVatOnInterestPortion(currency).plus(vatOnInterest).getAmount());
+        }
     }
 
     private void updateChargesComponents(final Money feeCharges, final Money penaltyCharges, final Money unrecognizedCharges) {
