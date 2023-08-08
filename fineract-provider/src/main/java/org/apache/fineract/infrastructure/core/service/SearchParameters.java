@@ -50,6 +50,7 @@ public final class SearchParameters {
     private final Long categoryId;
     private final boolean isSelfUser;
     private final String dpiNumber;
+    private final String type;
 
     public static SearchParameters from(final String sqlSearch, final Long officeId, final String externalId, final String name,
             final String hierarchy) {
@@ -89,6 +90,19 @@ public final class SearchParameters {
 
         return new SearchParameters(searchText, null, null, displayName, null, null, null, status, offset, maxLimitAllowed, orderBy,
                 sortOrder, staffId, accountNo, loanId, savingsId, null, false, dpiNumber);
+    }
+
+    public static SearchParameters forPrequalification(final String displayName, final String status, final Integer offset, final Integer limit,
+            final String orderBy, final String sortOrder, final String type, String searchText) {
+
+        final Integer maxLimitAllowed = getCheckedLimit(limit);
+        final Long staffId = null;
+        final String accountNo = null;
+        final Long loanId = null;
+        final Long savingsId = null;
+
+        return new SearchParameters(searchText, null, null, displayName, null, null, null, status, offset, maxLimitAllowed, orderBy,
+                sortOrder, staffId, accountNo, loanId, savingsId, null, false, null,type);
     }
 
     public static SearchParameters forGroups(final Long officeId, final Long staffId, final String externalId, final String name,
@@ -284,6 +298,7 @@ public final class SearchParameters {
         this.isSelfUser = isSelfUser;
         this.status = null;
         this.dpiNumber = null;
+        this.type = null;
 
     }
 
@@ -314,6 +329,38 @@ public final class SearchParameters {
         this.isSelfUser = isSelfUser;
         this.status = status;
         this.dpiNumber = dpiNumber;
+        this.type = null ;
+
+    }
+
+    private SearchParameters(final String sqlSearch, final Long officeId, final String externalId, final String name,
+            final String hierarchy, final String firstname, final String lastname, final String status, final Integer offset,
+            final Integer limit, final String orderBy, final String sortOrder, final Long staffId, final String accountNo,
+            final Long loanId, final Long savingsId, final Boolean orphansOnly, boolean isSelfUser, final String dpiNumber, final String type) {
+        this.sqlSearch = sqlSearch;
+        this.officeId = officeId;
+        this.externalId = externalId;
+        this.name = name;
+        this.hierarchy = hierarchy;
+        this.firstname = firstname;
+        this.lastname = lastname;
+        this.offset = offset;
+        this.limit = limit;
+        this.orderBy = orderBy;
+        this.sortOrder = sortOrder;
+        this.staffId = staffId;
+        this.accountNo = accountNo;
+        this.loanId = loanId;
+        this.savingsId = savingsId;
+        this.orphansOnly = orphansOnly;
+        this.currencyCode = null;
+        this.provisioningEntryId = null;
+        this.productId = null;
+        this.categoryId = null;
+        this.isSelfUser = isSelfUser;
+        this.status = status;
+        this.dpiNumber = dpiNumber;
+        this.type = type;
 
     }
 
@@ -344,6 +391,7 @@ public final class SearchParameters {
         this.isSelfUser = isSelfUser;
         this.status = null;
         this.dpiNumber = null;
+        this.type = null;
     }
 
     private SearchParameters(final Long provisioningEntryId, final Long officeId, final Long productId, final Long categoryId,
@@ -371,6 +419,7 @@ public final class SearchParameters {
         this.isSelfUser = false;
         this.status = null;
         this.dpiNumber = null;
+        this.type = null;
 
     }
 
@@ -401,6 +450,7 @@ public final class SearchParameters {
         this.isSelfUser = false;
         this.status = null;
         this.dpiNumber = null;
+        this.type = null;
 
     }
 
@@ -486,6 +536,10 @@ public final class SearchParameters {
 
     public String getStatus() {
         return this.status;
+    }
+
+    public String getType() {
+        return this.type;
     }
 
     public Integer getOffset() {
