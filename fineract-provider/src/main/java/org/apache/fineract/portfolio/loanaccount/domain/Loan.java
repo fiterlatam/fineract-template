@@ -723,7 +723,30 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 loanCharge.getAmount(getCurrency()).getAmount(), installmentNumber);
         applyLoanChargeTransaction.getLoanChargesPaid().add(loanChargePaidBy);
         addLoanTransaction(applyLoanChargeTransaction);
+
+        // Check if VAT is required in order to calculate the VAT amount for the charge and create the transaction
+        if (this.isVatRequired() && this.vatPercentage != null) {
+            Money vatOnCharge = calculateVatOnAmount(chargeAmount);
+
+            // generate transaction for accrual vat on charge
+            LoanTransaction applyLoanVatOnChargeTransaction = LoanTransaction.accrueLoanVatOnCharge(this, getOffice(), vatOnCharge,
+                    transactionDate, vatOnCharge);
+
+            addLoanTransaction(applyLoanVatOnChargeTransaction);
+        }
+
         return applyLoanChargeTransaction;
+    }
+
+    private Money calculateVatOnAmount(Money amountForVat) {
+        BigDecimal vatAmountAsBigDecimal;
+        Money vatAmount;
+
+        vatAmountAsBigDecimal = amountForVat.getAmount().multiply(this.vatPercentage).divide(BigDecimal.valueOf(100),
+                MathContext.DECIMAL32);
+        vatAmount = Money.of(loanCurrency(), vatAmountAsBigDecimal);
+
+        return vatAmount;
     }
 
     private void handleChargePaidTransaction(final LoanCharge charge, final LoanTransaction chargesPayment,
@@ -2543,10 +2566,19 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             final LoanTransaction interestAppliedTransaction = LoanTransaction.accrueInterest(getOffice(), this, interestApplied,
                     actualDisbursementDate);
             addLoanTransaction(interestAppliedTransaction);
+
+            // Check if VAT is required in order to calculate the VAT amount for the charge
+            if (this.isVatRequired() && this.vatPercentage != null) {
+                Money vatOnInterest = calculateVatOnAmount(interestApplied);
+
+                // generate transaction for accrual vat on charge
+                LoanTransaction applyLoanVatOnInterestTransaction = LoanTransaction.accrueLoanVatOnInterest(this, getOffice(),
+                        vatOnInterest, actualDisbursementDate, vatOnInterest);
+
+                addLoanTransaction(applyLoanVatOnInterestTransaction);
+            }
         }
-
         return reprocessTransactionForDisbursement();
-
     }
 
     private void regenerateRepaymentScheduleWithInterestRecalculationIfNeeded(boolean interestRecalculationEnabledParam,

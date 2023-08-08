@@ -427,6 +427,10 @@ public final class LoanEnumerations {
                 optionData = new LoanTransactionEnumData(LoanTransactionType.GOODWILL_CREDIT.getValue().longValue(),
                         LoanTransactionType.GOODWILL_CREDIT.getCode(), "Goodwill Credit");
             break;
+            case ACCRUAL_VAT:
+                optionData = new LoanTransactionEnumData(LoanTransactionType.ACCRUAL_VAT.getValue().longValue(),
+                        LoanTransactionType.ACCRUAL_VAT.getCode(), "Accrual VAT");
+            break;
         }
         return optionData;
     }
