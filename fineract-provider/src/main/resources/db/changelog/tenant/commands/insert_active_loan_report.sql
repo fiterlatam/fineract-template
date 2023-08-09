@@ -37,28 +37,59 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 INSERT INTO stretchy_report (report_name,report_type,report_category,report_sql,description,core_report,use_report,self_service_user_report)
-VALUES ("Active Loans (FBR)", "Table", "Loan", "SELECT g.account_no AS centerNumber,g.account_no AS groupNumber,l.account_no AS loanAgreementNumber, pl.name AS productName, c.fullname AS customerName , l.submittedon_date as firstDate,
-l.approved_principal AS approvedAmount, l.net_disbursal_amount AS amountDisbursed, l.approved_principal AS approvedAmount, 0 AS guaranteeAmount, 0 AS billsAdministrative,
-pl.description AS description, l.loan_status_id
-FROM m_loan l
-LEFT JOIN m_group g ON g.id = l.group_id
-LEFT JOIN m_product_loan pl ON pl.id = l.product_id
-LEFT JOIN m_client c ON c.id = l.client_id
-WHERE   l.loan_status_id = ${loanStatusId} AND l.disbursedon_date <= ${disbursedonStartDate} AND l.disbursedon_date >= ${disbursedonEndDate} AND g.account_no = ${groupNumber}
- AND g.account_no = ${centerNumber} AND c.account_no  = ${clientNumber}", "Get Active Loans", 1, 1, 0);
+VALUES ("Active Loans", "Table", "Loan", "SELECT '' AS 'Center No',g.account_no AS 'Group No',l.account_no AS 'No. Loan Agreement', pl.name AS 'Product', CONCAT(c.firstname,' ',c.lastname) AS 'Customer Name', l.submittedon_date as 'First Date',
+l.approved_principal AS 'Approved Amount', l.net_disbursal_amount AS 'Amount Disbursement', 0 AS 'Guarantee Amount', 0 AS 'Bills Administrative', pl.description AS 'Description'
+FROM m_office o
+JOIN m_office ounder on ounder.hierarchy like concat(o.hierarchy, '%')
+AND ounder.hierarchy like concat('${currentUserHierarchy}', '%')
+JOIN m_client c on c.office_id = ounder.id
+JOIN  m_loan l on l.client_id = c.id
+JOIN m_group g ON g.id = l.group_id
+JOIN m_product_loan pl ON pl.id = l.product_id
+WHERE
+o.id = ${officeId}
+AND (l.product_id = '${productId}' or '-1' = '${productId}')
+AND (l.client_id = '${clientId}' or '-1' = '${clientId}')
+AND (l.group_id = '${groupId}' or '-1' = '${groupId}')
+AND (l.disbursedon_date <= '${disbursedOnStartDate}' AND l.disbursedon_date >= '${disbursedOnEndDate}')
+AND l.loan_status_id = 100", "Get Active Loans", 1, 1, 0);
 
-INSERT INTO stretchy_parameter (parameter_name, parameter_variable, parameter_label, parameter_displayType, parameter_FormatType, parameter_default) VALUES("loanStatusId", "loanStatusId", "Loan Status Id", "number", "number", "n/a");
-INSERT INTO stretchy_parameter (parameter_name, parameter_variable, parameter_label, parameter_displayType, parameter_FormatType, parameter_default) VALUES("centerNumber", "centerNumber", "Center No", "text", "string", "n/a");
-INSERT INTO stretchy_parameter (parameter_name, parameter_variable, parameter_label, parameter_displayType, parameter_FormatType, parameter_default) VALUES("groupNumber", "groupNumber", "Group No", "text", "string", "n/a");
-INSERT INTO stretchy_parameter (parameter_name, parameter_variable, parameter_label, parameter_displayType, parameter_FormatType, parameter_default) VALUES("productNumber", "productNumber", "Product No", "text", "string", "n/a");
-INSERT INTO stretchy_parameter (parameter_name, parameter_variable, parameter_label, parameter_displayType, parameter_FormatType, parameter_default) VALUES("clientNumber", "clientNumber", "Client No", "text", "string", "n/a");
-INSERT INTO stretchy_parameter (parameter_name, parameter_variable, parameter_label, parameter_displayType, parameter_FormatType, parameter_default) VALUES("disbursedonStartDate", "disbursedonStartDate", "Disbursed Start Date", "date", "date", "n/a");
-INSERT INTO stretchy_parameter (parameter_name, parameter_variable, parameter_label, parameter_displayType, parameter_FormatType, parameter_default) VALUES("disbursedonEndDate", "disbursedonEndDate", "Disbursed End Date", "date", "date", "n/a");
 
-INSERT INTO stretchy_report_parameter (report_id, parameter_id, report_parameter_name) VALUES((SELECT sr.id FROM stretchy_report sr WHERE sr.report_name = "Active Loans"), (SELECT p.id FROM stretchy_parameter p WHERE parameter_name = "loanStatusId"), "loanStatusId");
-INSERT INTO stretchy_report_parameter (report_id, parameter_id, report_parameter_name) VALUES((SELECT sr.id FROM stretchy_report sr WHERE sr.report_name = "Active Loans"), (SELECT p.id FROM stretchy_parameter p WHERE parameter_name = "centerNumber"), "centerNumber");
-INSERT INTO stretchy_report_parameter (report_id, parameter_id, report_parameter_name) VALUES((SELECT sr.id FROM stretchy_report sr WHERE sr.report_name = "Active Loans"), (SELECT p.id FROM stretchy_parameter p WHERE parameter_name = "groupNumber"), "groupNumber");
-INSERT INTO stretchy_report_parameter (report_id, parameter_id, report_parameter_name) VALUES((SELECT sr.id FROM stretchy_report sr WHERE sr.report_name = "Active Loans"), (SELECT p.id FROM stretchy_parameter p WHERE parameter_name = "productNumber"), "productNumber");
-INSERT INTO stretchy_report_parameter (report_id, parameter_id, report_parameter_name) VALUES((SELECT sr.id FROM stretchy_report sr WHERE sr.report_name = "Active Loans"), (SELECT p.id FROM stretchy_parameter p WHERE parameter_name = "clientNumber"), "clientNumber");
-INSERT INTO stretchy_report_parameter (report_id, parameter_id, report_parameter_name) VALUES((SELECT sr.id FROM stretchy_report sr WHERE sr.report_name = "Active Loans"), (SELECT p.id FROM stretchy_parameter p WHERE parameter_name = "disbursedonStartDate"), "disbursedonStartDate");
-INSERT INTO stretchy_report_parameter (report_id, parameter_id, report_parameter_name) VALUES((SELECT sr.id FROM stretchy_report sr WHERE sr.report_name = "Active Loans"), (SELECT p.id FROM stretchy_parameter p WHERE parameter_name = "disbursedonEndDate"), "disbursedonEndDate");
+
+INSERT INTO stretchy_parameter (parameter_name, parameter_variable, parameter_label, parameter_displayType, parameter_FormatType, parameter_default, selectAll, parameter_sql)
+VALUES("productIdSelectAll", "productId", "Product", "select", "number", 0, "Y", "SELECT pl.id, pl.name as `Name` FROM m_product_loan pl");
+INSERT INTO stretchy_parameter (parameter_name, parameter_variable, parameter_label, parameter_displayType, parameter_FormatType, parameter_default, selectAll, parameter_sql,parent_id)
+VALUES("groupIdSelectAll", "groupId", "Group", "select", "number", 0, "Y", "(SELECT g.id,g.display_name as `Name`
+from m_office o
+join m_office ounder on ounder.hierarchy like concat(o.hierarchy, '%')
+join m_group g on g.office_id = ounder.id
+and o.id = ${officeId})
+union all
+(select -10, '-')
+order by 2",(SELECT p.id FROM stretchy_parameter p WHERE p.parameter_name = "OfficeIdSelectOne"));
+INSERT INTO stretchy_parameter (parameter_name, parameter_variable, parameter_label, parameter_displayType, parameter_FormatType, parameter_default, selectAll, parameter_sql,parent_id)
+VALUES("clientIdSelectAll", "clientId", "Client", "select", "number", 0, "Y", "(SELECT c.id,c.display_name as `Name`
+from m_office o
+join m_office ounder on ounder.hierarchy like concat(o.hierarchy, '%')
+join m_client c on c.office_id = ounder.id
+and o.id = ${officeId})
+union all
+(select -10, '-')
+order by 2",(SELECT p.id FROM stretchy_parameter p WHERE p.parameter_name = "OfficeIdSelectOne"));
+INSERT INTO stretchy_parameter (parameter_name, parameter_variable, parameter_label, parameter_displayType, parameter_FormatType, parameter_default) VALUES("disbursedOnStartDate", "disbursedOnStartDate", "Disbursed Start Date", "date", "date", "n/a");
+INSERT INTO stretchy_parameter (parameter_name, parameter_variable, parameter_label, parameter_displayType, parameter_FormatType, parameter_default) VALUES("disbursedOnEndDate", "disbursedOnEndDate", "Disbursed End Date", "date", "date", "n/a");
+
+
+
+INSERT INTO stretchy_report_parameter (report_id, parameter_id, report_parameter_name) VALUES((SELECT sr.id
+                                                                                               FROM stretchy_report sr WHERE sr.report_name = "Active Loans"), (SELECT p.id FROM stretchy_parameter p WHERE parameter_name = "productIdSelectAll"), "productIdSelectAll");
+INSERT INTO stretchy_report_parameter (report_id, parameter_id, report_parameter_name) VALUES((SELECT sr.id
+                                                                                               FROM stretchy_report sr WHERE sr.report_name = "Active Loans"), (SELECT p.id FROM stretchy_parameter p WHERE parameter_name = "OfficeIdSelectOne"), "OfficeIdSelectOne");
+INSERT INTO stretchy_report_parameter (report_id, parameter_id, report_parameter_name) VALUES((SELECT sr.id
+                                                                                               FROM stretchy_report sr WHERE sr.report_name = "Active Loans"), (SELECT p.id FROM stretchy_parameter p WHERE parameter_name = "groupIdSelectAll"), "groupIdSelectAll");
+INSERT INTO stretchy_report_parameter (report_id, parameter_id, report_parameter_name) VALUES((SELECT sr.id
+                                                                                               FROM stretchy_report sr WHERE sr.report_name = "Active Loans"), (SELECT p.id FROM stretchy_parameter p WHERE parameter_name = "clientIdSelectAll"), "clientIdSelectAll");
+INSERT INTO stretchy_report_parameter (report_id, parameter_id, report_parameter_name) VALUES((SELECT sr.id
+                                                                                               FROM stretchy_report sr WHERE sr.report_name = "Active Loans"), (SELECT p.id FROM stretchy_parameter p WHERE parameter_name = "disbursedOnStartDate"), "disbursedOnStartDate");
+INSERT INTO stretchy_report_parameter (report_id, parameter_id, report_parameter_name) VALUES((SELECT sr.id
+                                                                                               FROM stretchy_report sr WHERE sr.report_name = "Active Loans"), (SELECT p.id FROM stretchy_parameter p WHERE parameter_name = "disbursedOnEndDate"), "disbursedOnEndDate");
