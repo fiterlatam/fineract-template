@@ -35,6 +35,8 @@ import org.apache.fineract.infrastructure.core.data.DataValidatorBuilder;
 import org.apache.fineract.infrastructure.core.exception.InvalidJsonException;
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
+import org.apache.fineract.portfolio.client.api.ClientApiConstants;
+import org.apache.fineract.portfolio.client.validation.ClientIdentifierDocumentValidator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -67,8 +69,9 @@ public final class PrequalificationMemberCommandFromApiJsonDeserializer {
         final String name = this.fromApiJsonHelper.extractStringNamed("name", element);
         baseDataValidator.reset().parameter("name").value(name).notNull().notBlank().notExceedingLengthOf(100);
 
-        final String dpi = this.fromApiJsonHelper.extractStringNamed("dpi", element);
-        baseDataValidator.reset().parameter("dpi").value(dpi).notNull().notBlank().notExceedingLengthOf(20);
+        final String dpi = this.fromApiJsonHelper.extractStringNamed(ClientApiConstants.dpiParamName, element);
+        baseDataValidator.reset().parameter(ClientApiConstants.dpiParamName).value(dpi).notNull().notBlank().notExceedingLengthOf(20);
+        ClientIdentifierDocumentValidator.checkDPI(dpi, ClientApiConstants.dpiParamName);
 
         final BigDecimal requestedAmount = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed("amount", element);
         baseDataValidator.reset().parameter("amount").value(requestedAmount).notNull().positiveAmount();

@@ -43,7 +43,9 @@ public class MemberPrequalificationData {
     private final BigDecimal additionalCreditsSum;
 
     public MemberPrequalificationData(final Long id, final String name, final String dpi, final LocalDate dob, final String workWithPuente,
-                                      final BigDecimal requestedAmount, final EnumOptionData status, Long blacklistCount, BigDecimal totalLoanAmount, BigDecimal totalLoanBalance, BigDecimal totalGuaranteedLoanBalance, Long noOfCycles, Long additionalCreditsCount, BigDecimal additionalCreditsSum) {
+            final BigDecimal requestedAmount, final EnumOptionData status, Long blacklistCount, BigDecimal totalLoanAmount,
+            BigDecimal totalLoanBalance, BigDecimal totalGuaranteedLoanBalance, Long noOfCycles, Long additionalCreditsCount,
+            BigDecimal additionalCreditsSum) {
         this.id = id;
         this.name = name;
         this.dpi = dpi;
@@ -61,7 +63,10 @@ public class MemberPrequalificationData {
     }
 
     public static MemberPrequalificationData instance(final Long id, final String name, final String dpi, final LocalDate dob,
-                                                      final String workWithPuente, final BigDecimal requestedAmount, final EnumOptionData status, Long blacklistCount, BigDecimal totalLoanAmount, BigDecimal totalLoanBalance, BigDecimal totalGuaranteedLoanBalance, Long noOfCycles, Long additionalCreditsCount, BigDecimal additionalCreditsSum) {
-        return new MemberPrequalificationData(id, name, dpi, dob, workWithPuente, requestedAmount, status, blacklistCount,totalLoanAmount,totalLoanBalance,totalGuaranteedLoanBalance,noOfCycles,additionalCreditsCount,additionalCreditsSum);
+            final String workWithPuente, final BigDecimal requestedAmount, final EnumOptionData status, Long blacklistCount,
+            BigDecimal totalLoanAmount, BigDecimal totalLoanBalance, BigDecimal totalGuaranteedLoanBalance, Long noOfCycles,
+            Long additionalCreditsCount, BigDecimal additionalCreditsSum) {
+        return new MemberPrequalificationData(id, name, dpi, dob, workWithPuente, requestedAmount, status, blacklistCount, totalLoanAmount,
+                totalLoanBalance, totalGuaranteedLoanBalance, noOfCycles, additionalCreditsCount, additionalCreditsSum);
     }
 }

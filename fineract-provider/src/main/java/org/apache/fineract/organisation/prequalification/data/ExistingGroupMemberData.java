@@ -18,10 +18,9 @@
  */
 package org.apache.fineract.organisation.prequalification.data;
 
-import org.apache.fineract.infrastructure.core.data.EnumOptionData;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 
 /**
  * Immutable data object represent client identity data.
@@ -37,7 +36,7 @@ public class ExistingGroupMemberData {
     private BigDecimal requestedAmount;
 
     public ExistingGroupMemberData(final Long id, final String name, final LocalDate dob, final String dpi, final EnumOptionData status,
-                                   final String workWithPuente, final BigDecimal requestedAmount) {
+            final String workWithPuente, final BigDecimal requestedAmount) {
         this.id = id;
         this.name = name;
         this.dpi = dpi;
@@ -49,7 +48,7 @@ public class ExistingGroupMemberData {
     }
 
     public static ExistingGroupMemberData instance(final Long id, final String name, final LocalDate dob, final String dpi,
-                                                   final EnumOptionData status, final String workWithPuente, final BigDecimal requestedAmount) {
+            final EnumOptionData status, final String workWithPuente, final BigDecimal requestedAmount) {
         return new ExistingGroupMemberData(id, name, dob, dpi, status, workWithPuente, requestedAmount);
     }
 }

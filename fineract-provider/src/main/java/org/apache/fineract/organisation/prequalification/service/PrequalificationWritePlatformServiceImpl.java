@@ -199,8 +199,6 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
 
                 }
 
-
-
                 // get light indicator
                 String blistSql = "select count(*) from m_client_blacklist where dpi=? and status=?";
                 Long activeBlacklisted = jdbcTemplate.queryForObject(blistSql, Long.class, dpi, BlacklistStatus.ACTIVE.getValue());

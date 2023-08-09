@@ -92,8 +92,8 @@ public final class SearchParameters {
                 sortOrder, staffId, accountNo, loanId, savingsId, null, false, dpiNumber);
     }
 
-    public static SearchParameters forPrequalification(final String displayName, final String status, final Integer offset, final Integer limit,
-            final String orderBy, final String sortOrder, final String type, String searchText) {
+    public static SearchParameters forPrequalification(final String displayName, final String status, final Integer offset,
+            final Integer limit, final String orderBy, final String sortOrder, final String type, String searchText) {
 
         final Integer maxLimitAllowed = getCheckedLimit(limit);
         final Long staffId = null;
@@ -102,7 +102,7 @@ public final class SearchParameters {
         final Long savingsId = null;
 
         return new SearchParameters(searchText, null, null, displayName, null, null, null, status, offset, maxLimitAllowed, orderBy,
-                sortOrder, staffId, accountNo, loanId, savingsId, null, false, null,type);
+                sortOrder, staffId, accountNo, loanId, savingsId, null, false, null, type);
     }
 
     public static SearchParameters forGroups(final Long officeId, final Long staffId, final String externalId, final String name,
@@ -329,14 +329,15 @@ public final class SearchParameters {
         this.isSelfUser = isSelfUser;
         this.status = status;
         this.dpiNumber = dpiNumber;
-        this.type = null ;
+        this.type = null;
 
     }
 
     private SearchParameters(final String sqlSearch, final Long officeId, final String externalId, final String name,
             final String hierarchy, final String firstname, final String lastname, final String status, final Integer offset,
             final Integer limit, final String orderBy, final String sortOrder, final Long staffId, final String accountNo,
-            final Long loanId, final Long savingsId, final Boolean orphansOnly, boolean isSelfUser, final String dpiNumber, final String type) {
+            final Long loanId, final Long savingsId, final Boolean orphansOnly, boolean isSelfUser, final String dpiNumber,
+            final String type) {
         this.sqlSearch = sqlSearch;
         this.officeId = officeId;
         this.externalId = externalId;
