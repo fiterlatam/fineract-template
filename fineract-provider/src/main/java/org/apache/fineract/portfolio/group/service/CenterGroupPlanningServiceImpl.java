@@ -120,6 +120,23 @@ public class CenterGroupPlanningServiceImpl implements CenterGroupPlanningServic
                             portfolioPlanningDetailed.add(newPortfolioPlanning);
                         }
                     }
+                } else {
+                    if (currentNextMeetingDate.isBefore(endDateRange) || currentNextMeetingDate.isEqual(endDateRange)) {
+                        final PortfolioDetailedPlanningData newPortfolioPlanning = PortfolioDetailedPlanningData.instance(
+                                portfolioPlanning.getCenterGroupId(), portfolioPlanning.getCenterGroupName(),
+                                portfolioPlanning.getLegacyGroupNumber(), portfolioPlanning.getMeetingStartTime(),
+                                portfolioPlanning.getMeetingEndTime(), portfolioPlanning.getPortfolioCenterId(),
+                                portfolioPlanning.getPortfolioCenterName(), portfolioPlanning.getLegacyCenterNumber(),
+                                portfolioPlanning.getMeetingDayName(), currentNextMeetingDate, meetingDayOfWeek, rangeStartDay,
+                                rangeEndDay);
+
+                        newPortfolioPlanning.setLoanShortProductName("");
+                        newPortfolioPlanning.setTotalRepayment(BigDecimal.ZERO);
+                        newPortfolioPlanning.setTotalOverdue(BigDecimal.ZERO);
+                        newPortfolioPlanning.setNumberOfClients(0);
+
+                        portfolioPlanningDetailed.add(newPortfolioPlanning);
+                    }
                 }
 
                 // meetings with groups have a monthly frequency
