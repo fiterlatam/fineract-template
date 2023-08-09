@@ -963,6 +963,7 @@ public final class Group extends AbstractAuditableCustom {
     public void setGroupMembers(List<Group> groupMembers) {
         this.groupMembers = groupMembers;
     }
+
     public String getName() {
         return this.name;
     }

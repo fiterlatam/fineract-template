@@ -143,8 +143,8 @@ public class PrequalificationApiResource {
         MultivaluedMap<String, String> queryParameters = uriInfo.getQueryParameters();
 
         String clientName = queryParameters.getFirst("clientName");
-        SearchParameters searchParameters = SearchParameters.forPrequalification(clientName, status, offset, limit, orderBy, sortOrder, type,
-                searchText);
+        SearchParameters searchParameters = SearchParameters.forPrequalification(clientName, status, offset, limit, orderBy, sortOrder,
+                type, searchText);
         final Page<GroupPrequalificationData> clientData = this.prequalificationReadPlatformService.retrieveAll(searchParameters);
 
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(queryParameters);
@@ -199,11 +199,12 @@ public class PrequalificationApiResource {
     @Produces({ MediaType.APPLICATION_JSON })
     @Operation(summary = "Retrieve Prequalification Details")
     public String prequalifyExistingGroup(@Context final UriInfo uriInfo,
-            @PathParam("groupId") @Parameter(description = "groupId") final Long groupId,@Parameter(hidden = true) final String apiRequestBodyAsJson) {
+            @PathParam("groupId") @Parameter(description = "groupId") final Long groupId,
+            @Parameter(hidden = true) final String apiRequestBodyAsJson) {
 
         try {
-            final CommandWrapper commandRequest = new CommandWrapperBuilder().createPrequalification().withGroupId(groupId).withJson(apiRequestBodyAsJson)
-                    .build();
+            final CommandWrapper commandRequest = new CommandWrapperBuilder().createPrequalification().withGroupId(groupId)
+                    .withJson(apiRequestBodyAsJson).build();
 
             final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
 

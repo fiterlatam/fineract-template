@@ -193,9 +193,9 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             extraCriteria += " and g.status = " + prequalificationStatus.getValue().toString() + " ";
         }
         if (type != null) {
-            if (type.equals("existing")){
+            if (type.equals("existing")) {
                 extraCriteria += " and g.group_id is not null ";
-            }else if (type.equals("new")){
+            } else if (type.equals("new")) {
                 extraCriteria += " and g.group_id is null ";
             }
         }
@@ -255,7 +255,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                 groupName = newGroupName;
             }
             return GroupPrequalificationData.instance(id, prequalificationNumber, status, agencyName, null, centerName, groupName,
-                    productName, addedBy, createdAt, comments,groupId);
+                    productName, addedBy, createdAt, comments, groupId);
 
         }
     }
@@ -268,9 +268,12 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             final StringBuilder builder = new StringBuilder(400);
 
             builder.append("m.id as id, m.name, m.status, m.dpi, m.dob, m.requested_amount as requestedAmount, ");
-            builder.append("coalesce((select sum(principal_disbursed_derived) from m_loan where client_id = m.client_id),0) as totalLoanAmount, ");
-            builder.append("coalesce((select sum(total_outstanding_derived) from m_loan where client_id = m.client_id),0) as totalLoanBalance, ");
-            builder.append("coalesce((select sum(ln.total_outstanding_derived) from m_loan ln inner join m_guarantor mg on mg.loan_id=ln.id where mg.entity_id = m.client_id),0) as totalGuaranteedLoanBalance, ");
+            builder.append(
+                    "coalesce((select sum(principal_disbursed_derived) from m_loan where client_id = m.client_id),0) as totalLoanAmount, ");
+            builder.append(
+                    "coalesce((select sum(total_outstanding_derived) from m_loan where client_id = m.client_id),0) as totalLoanBalance, ");
+            builder.append(
+                    "coalesce((select sum(ln.total_outstanding_derived) from m_loan ln inner join m_guarantor mg on mg.loan_id=ln.id where mg.entity_id = m.client_id),0) as totalGuaranteedLoanBalance, ");
             builder.append("coalesce((select max(loan_counter) from m_loan where client_id = m.client_id),0) as noOfCycles, ");
             builder.append("0 as additionalCreditsCount, ");
             builder.append("0 as additionalCreditsSum, ");
