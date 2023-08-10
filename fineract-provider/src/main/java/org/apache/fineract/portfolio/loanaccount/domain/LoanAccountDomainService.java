@@ -82,4 +82,8 @@ public interface LoanAccountDomainService {
 
     CommandProcessingResultBuilder creditBalanceRefund(Long loanId, LocalDate transactionDate, BigDecimal transactionAmount,
             String noteText, String externalId);
+
+    LoanTransaction makeAccrualTransactionForVatOnCharge(Loan loan, LocalDate transactionDate, LoanTransaction newTransactionDetail);
+
+    LoanTransaction makeAccrualTransactionForVatOnInterest(Loan loan, LocalDate transactionDate, LoanTransaction newTransactionDetail);
 }

@@ -195,6 +195,33 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
                 defaultLoanLifecycleStateMachine(), existingTransactionIds, existingReversedTransactionIds, isRecoveryRepayment,
                 scheduleGeneratorDTO, isHolidayValidationDone);
 
+        // ABA-135 - Create separate transactions for VAT on interest and VAT on charge
+        // Check if VAT is required in order to calculate the VAT amount for the charge and create the transaction
+        MonetaryCurrency currency = loan.getCurrency();
+        if (loan.isVatRequired() && loan.getVatPercentage() != null && newRepaymentTransaction.isRepayment()) {
+
+            // generate transaction for accrual vat on charge
+            LoanTransaction applyLoanVatOnChargeTransaction = makeAccrualTransactionForVatOnCharge(loan, transactionDate,
+                    newRepaymentTransaction);
+            if (applyLoanVatOnChargeTransaction != null) {
+                saveLoanTransactionWithDataIntegrityViolationChecks(applyLoanVatOnChargeTransaction);
+            }
+
+            // generate transaction for accrual vat on interest
+            LoanTransaction applyLoanVatOnInterestTransaction = makeAccrualTransactionForVatOnInterest(loan, transactionDate,
+                    newRepaymentTransaction);
+            if (applyLoanVatOnInterestTransaction != null) {
+                saveLoanTransactionWithDataIntegrityViolationChecks(applyLoanVatOnInterestTransaction);
+            }
+
+            // vatOntInterest portion and vatOnCharges portion must be zero in the new repayment transaction
+            newRepaymentTransaction.updateVatComponents(Money.zero(currency), Money.zero(currency));
+
+            // update the total amount of the transaction
+            newRepaymentTransaction.updateTotal(currency);
+
+        }
+
         saveLoanTransactionWithDataIntegrityViolationChecks(newRepaymentTransaction);
 
         /***
@@ -270,6 +297,34 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         }
 
         return newRepaymentTransaction;
+    }
+
+    @Override
+    public LoanTransaction makeAccrualTransactionForVatOnCharge(Loan loan, LocalDate transactionDate,
+            LoanTransaction newRepaymentTransaction) {
+        LoanTransaction applyLoanVatOnChargeTransaction = null;
+
+        if (newRepaymentTransaction.getVatOnChargesPortion(loan.getCurrency()).isGreaterThanZero()) {
+            Money vatOnCharge = newRepaymentTransaction.getVatOnChargesPortion(loan.getCurrency());
+            applyLoanVatOnChargeTransaction = LoanTransaction.accrueLoanVatOnCharge(loan, loan.getOffice(), vatOnCharge, transactionDate,
+                    vatOnCharge);
+        }
+
+        return applyLoanVatOnChargeTransaction;
+    }
+
+    @Override
+    public LoanTransaction makeAccrualTransactionForVatOnInterest(Loan loan, LocalDate transactionDate,
+            LoanTransaction newRepaymentTransaction) {
+        LoanTransaction applyLoanVatOnInterestTransaction = null;
+
+        if (newRepaymentTransaction.getVatOnInterestPortion(loan.getCurrency()).isGreaterThanZero()) {
+            Money vatOnInterest = newRepaymentTransaction.getVatOnInterestPortion(loan.getCurrency());
+            applyLoanVatOnInterestTransaction = LoanTransaction.accrueLoanVatOnInterest(loan, loan.getOffice(), vatOnInterest,
+                    transactionDate, vatOnInterest);
+        }
+
+        return applyLoanVatOnInterestTransaction;
     }
 
     private LoanBusinessEvent getLoanRepaymentTypeBusinessEvent(LoanTransactionType repaymentTransactionType, boolean isRecoveryRepayment,
@@ -780,6 +835,31 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
                     payPrincipal.plus(interestPayable).plus(feePayable).plus(penaltyPayable).plus(vatOnInterest).plus(vatOnCharges),
                     paymentDetail, foreClosureDate, externalId);
             payment.updateLoan(loan);
+
+            // ABA-135 - Create separate transactions for VAT on interest and VAT on charge
+            // Check if VAT is required in order to calculate the VAT amount for the charge and create the transaction
+            if (loan.isVatRequired() && loan.getVatPercentage() != null && payment.isRepayment()) {
+
+                // generate transaction for accrual vat on charge
+                LoanTransaction applyLoanVatOnChargeTransaction = makeAccrualTransactionForVatOnCharge(loan, foreClosureDate, payment);
+                if (applyLoanVatOnChargeTransaction != null) {
+                    newTransactions.add(applyLoanVatOnChargeTransaction);
+                }
+
+                // generate transaction for accrual vat on interest
+                LoanTransaction applyLoanVatOnInterestTransaction = makeAccrualTransactionForVatOnInterest(loan, foreClosureDate, payment);
+                if (applyLoanVatOnInterestTransaction != null) {
+                    newTransactions.add(applyLoanVatOnInterestTransaction);
+                }
+
+                // vatOntInterest portion and vatOnCharges portion must be zero in the new repayment transaction
+                payment.updateVatComponents(Money.zero(currency), Money.zero(currency));
+
+                // update the total amount of the transaction
+                payment.updateTotal(currency);
+
+            }
+
             newTransactions.add(payment);
         }
 
