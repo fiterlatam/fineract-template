@@ -40,6 +40,7 @@ import org.apache.fineract.organisation.agency.domain.Agency;
 import org.apache.fineract.organisation.agency.domain.AgencyRepositoryWrapper;
 import org.apache.fineract.organisation.prequalification.command.PrequalificationDataValidator;
 import org.apache.fineract.organisation.prequalification.command.PrequalificatoinApiConstants;
+import org.apache.fineract.organisation.prequalification.domain.PreQualificationMemberRepository;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationGroup;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationGroupMember;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationGroupRepositoryWrapper;
@@ -75,6 +76,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
     private final ClientReadPlatformService clientReadPlatformService;
     private final CodeValueReadPlatformService codeValueReadPlatformService;
     private final PrequalificationGroupRepositoryWrapper prequalificationGroupRepositoryWrapper;
+    private final PreQualificationMemberRepository preQualificationMemberRepository;
     private final GroupRepositoryWrapper groupRepositoryWrapper;
     private final AppUserRepository appUserRepository;
     private final AgencyRepositoryWrapper agencyRepositoryWrapper;
@@ -87,6 +89,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             final AppUserRepository appUserRepository, final LoanProductRepository loanProductRepository,
             final ClientReadPlatformService clientReadPlatformService, final AgencyRepositoryWrapper agencyRepositoryWrapper,
             final PrequalificationMemberCommandFromApiJsonDeserializer apiJsonDeserializer,
+            final PreQualificationMemberRepository preQualificationMemberRepository,
             final CodeValueReadPlatformService codeValueReadPlatformService, final JdbcTemplate jdbcTemplate,
             final PrequalificationGroupRepositoryWrapper prequalificationGroupRepositoryWrapper) {
         this.context = context;
@@ -99,11 +102,18 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         this.appUserRepository = appUserRepository;
         this.agencyRepositoryWrapper = agencyRepositoryWrapper;
         this.apiJsonDeserializer = apiJsonDeserializer;
+        this.preQualificationMemberRepository = preQualificationMemberRepository;
         this.jdbcTemplate = jdbcTemplate;
     }
 
     @Override
     public CommandProcessingResult processPrequalification(JsonCommand command) {
+
+        final Boolean individualPrequalification = command.booleanPrimitiveValueOfParameterNamed("individual");
+        if (individualPrequalification){
+            return prequalifyIndividual(command);
+        }
+
         this.dataValidator.validateForCreate(command.json());
         final Long productId = command.longValueOfParameterNamed(PrequalificatoinApiConstants.productIdParamName);
         final Long centerGroupId = command.longValueOfParameterNamed(PrequalificatoinApiConstants.groupIdParamName);
@@ -146,6 +156,44 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                 .withCommandId(command.commandId()) //
                 .withResourceIdAsString(prequalificationGroup.getId().toString()) //
                 .withEntityId(prequalificationGroup.getId()) //
+                .build();
+    }
+
+    private CommandProcessingResult prequalifyIndividual(JsonCommand command) {
+        AppUser addedBy = this.context.getAuthenticatedUserIfPresent();
+
+        apiJsonDeserializer.validateForCreate(command.json());
+        final String clientName = command.stringValueOfParameterNamed("name");
+        final String dpi = command.stringValueOfParameterNamed("dpi");
+        final String puente = command.stringValueOfParameterNamed("puente");
+        final BigDecimal amount = command.bigDecimalValueOfParameterNamed("amount");
+        LocalDate dateOfBirth = command.localDateValueOfParameterNamed("dob");
+
+
+        // get light indicator
+        String blistSql = "select count(*) from m_client_blacklist where dpi=? and status=?";
+        Long activeBlacklisted = jdbcTemplate.queryForObject(blistSql, Long.class, dpi, BlacklistStatus.ACTIVE.getValue());
+        Long inactiveBlacklisted = jdbcTemplate.queryForObject(blistSql, Long.class, dpi, BlacklistStatus.INACTIVE.getValue());
+        Integer status = PrequalificationMemberIndication.NONE.getValue();
+        if (activeBlacklisted <= 0 && inactiveBlacklisted <= 0) {
+            status = PrequalificationMemberIndication.NONE.getValue();
+        }
+        if (activeBlacklisted <= 0 && inactiveBlacklisted > 0) {
+            status = PrequalificationMemberIndication.INACTIVE.getValue();
+        }
+
+        if (activeBlacklisted > 0) {
+            status = PrequalificationMemberIndication.ACTIVE.getValue();
+        }
+
+        PrequalificationGroupMember groupMember = PrequalificationGroupMember.fromJson( null, clientName, dpi, null, dateOfBirth,
+                amount, puente, addedBy, status);
+
+        this.preQualificationMemberRepository.saveAndFlush(groupMember);
+        return new CommandProcessingResultBuilder() //
+                .withCommandId(command.commandId()) //
+                .withResourceIdAsString(groupMember.getId().toString()) //
+                .withEntityId(groupMember.getId()) //
                 .build();
     }
 
