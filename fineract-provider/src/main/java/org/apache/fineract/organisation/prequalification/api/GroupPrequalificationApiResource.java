@@ -77,7 +77,7 @@ import org.springframework.stereotype.Component;
 @Component
 @Scope("singleton")
 @Tag(name = "Prequalification", description = "Prequalify clients that need loans against a blacklist")
-public class PrequalificationApiResource {
+public class GroupPrequalificationApiResource {
 
     private static final Set<String> PRE_QUALIFICATION_DATA_PARAMETERS = new HashSet<>(
             Arrays.asList("id", "productId", "productCode", "year", "typification", "dpi", "nit", "description", "agencyId", "balance",
@@ -100,16 +100,16 @@ public class PrequalificationApiResource {
     private final AppUserReadPlatformService appUserReadPlatformService;
 
     @Autowired
-    public PrequalificationApiResource(final PlatformSecurityContext context,
-            final CodeValueReadPlatformService codeValueReadPlatformService, final AgencyReadPlatformServiceImpl agencyReadPlatformService,
-            final PrequalificationWritePlatformService prequalificationWritePlatformService,
-            final CenterReadPlatformServiceImpl centerReadPlatformService,
-            final LoanProductReadPlatformService loanProductReadPlatformService,
-            final AppUserReadPlatformService appUserReadPlatformService,
-            final DefaultToApiJsonSerializer<GroupPrequalificationData> toApiJsonSerializer,
-            final PrequalificationReadPlatformService prequalificationReadPlatformService, final FileUploadValidator fileUploadValidator,
-            final DocumentWritePlatformService documentWritePlatformService, final ApiRequestParameterHelper apiRequestParameterHelper,
-            final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService) {
+    public GroupPrequalificationApiResource(final PlatformSecurityContext context,
+                                            final CodeValueReadPlatformService codeValueReadPlatformService, final AgencyReadPlatformServiceImpl agencyReadPlatformService,
+                                            final PrequalificationWritePlatformService prequalificationWritePlatformService,
+                                            final CenterReadPlatformServiceImpl centerReadPlatformService,
+                                            final LoanProductReadPlatformService loanProductReadPlatformService,
+                                            final AppUserReadPlatformService appUserReadPlatformService,
+                                            final DefaultToApiJsonSerializer<GroupPrequalificationData> toApiJsonSerializer,
+                                            final PrequalificationReadPlatformService prequalificationReadPlatformService, final FileUploadValidator fileUploadValidator,
+                                            final DocumentWritePlatformService documentWritePlatformService, final ApiRequestParameterHelper apiRequestParameterHelper,
+                                            final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService) {
         this.context = context;
         this.codeValueReadPlatformService = codeValueReadPlatformService;
         this.toApiJsonSerializer = toApiJsonSerializer;

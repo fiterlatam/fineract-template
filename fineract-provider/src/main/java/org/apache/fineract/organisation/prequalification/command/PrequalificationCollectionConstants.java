@@ -26,6 +26,6 @@ public class PrequalificationCollectionConstants extends PrequalificatoinApiCons
 
     protected static final Set<String> NEW_GROUP_PREQUALIFICATION_REQUEST_DATA_PARAMETERS = new HashSet<>(
             Arrays.asList(groupIdParamName, groupNameParamName, productIdParamName, portfolioIdParamName, centerIdParamName,
-                    membersParamName, dateFormatParamName, localeParamName, agencyIdParamName, facilitatorParamName));
+                    membersParamName, dateFormatParamName, localeParamName, agencyIdParamName, facilitatorParamName,"individual"));
 
 }

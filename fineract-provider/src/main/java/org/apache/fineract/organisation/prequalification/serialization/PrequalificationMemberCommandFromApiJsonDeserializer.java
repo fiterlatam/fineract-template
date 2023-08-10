@@ -45,7 +45,7 @@ public final class PrequalificationMemberCommandFromApiJsonDeserializer {
 
     private final FromJsonHelper fromApiJsonHelper;
     private final Set<String> supportedParameters = new HashSet<>(
-            Arrays.asList("id", "clientId", "name", "dpi", "dob", "locale", "dateFormat", "amount", "puente"));
+            Arrays.asList("id", "clientId", "name", "dpi", "dob", "locale", "dateFormat", "amount", "puente", "individual"));
 
     @Autowired
     public PrequalificationMemberCommandFromApiJsonDeserializer(final FromJsonHelper fromApiJsonHelper) {
