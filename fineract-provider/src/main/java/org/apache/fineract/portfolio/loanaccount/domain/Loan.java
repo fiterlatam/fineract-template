@@ -739,12 +739,18 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     }
 
     private Money calculateVatOnAmount(Money amountForVat) {
-        BigDecimal vatAmountAsBigDecimal;
         Money vatAmount;
+        BigDecimal decimalComparator = BigDecimal.valueOf(0.55);
+        BigDecimal scaledAmountForVat = amountForVat.getAmount().setScale(2, RoundingMode.HALF_UP);
+        BigDecimal fractionalPart = scaledAmountForVat.remainder(BigDecimal.ONE);
 
-        vatAmountAsBigDecimal = amountForVat.getAmount().multiply(this.vatPercentage).divide(BigDecimal.valueOf(100),
+        if (fractionalPart.compareTo(decimalComparator) > 0) {
+            scaledAmountForVat = amountForVat.getAmount().setScale(1, RoundingMode.HALF_UP);
+        }
+
+        BigDecimal vatOnInterestPortion = scaledAmountForVat.multiply(this.vatPercentage).divide(BigDecimal.valueOf(100),
                 MathContext.DECIMAL32);
-        vatAmount = Money.of(loanCurrency(), vatAmountAsBigDecimal);
+        vatAmount = Money.of(loanCurrency(), vatOnInterestPortion);
 
         return vatAmount;
     }
@@ -2567,11 +2573,11 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                     actualDisbursementDate);
             addLoanTransaction(interestAppliedTransaction);
 
-            // Check if VAT is required in order to calculate the VAT amount for the charge
+            // Check if VAT is required in order to calculate the VAT amount for the interest
             if (this.isVatRequired() && this.vatPercentage != null) {
                 Money vatOnInterest = calculateVatOnAmount(interestApplied);
 
-                // generate transaction for accrual vat on charge
+                // generate transaction for accrual vat on interest
                 LoanTransaction applyLoanVatOnInterestTransaction = LoanTransaction.accrueLoanVatOnInterest(this, getOffice(),
                         vatOnInterest, actualDisbursementDate, vatOnInterest);
 

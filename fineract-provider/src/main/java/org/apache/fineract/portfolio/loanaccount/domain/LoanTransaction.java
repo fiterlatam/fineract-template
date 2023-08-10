@@ -465,6 +465,12 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
                 .getAmount();
     }
 
+    public void updateTotal(final MonetaryCurrency currency) {
+        this.amount = getPrincipalPortion(currency).plus(getInterestPortion(currency)).plus(getFeeChargesPortion(currency))
+                .plus(getPenaltyChargesPortion(currency)).plus(getVatOnInterestPortion(currency)).plus(getVatOnChargesPortion(currency))
+                .getAmount();
+    }
+
     public void updateOverPayments(final Money overPayment) {
         final MonetaryCurrency currency = overPayment.getCurrency();
         this.overPaymentPortion = defaultToNullIfZero(getOverPaymentPortion(currency).plus(overPayment).getAmount());
