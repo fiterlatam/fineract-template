@@ -86,4 +86,5 @@
     <include file="parts/0069_FBR_add_client_id_existing_group_prequalification.xml" relativeToChangelogFile="true"/>
     <include file="parts/0070_FBR_add_active_loan_report.xml" relativeToChangelogFile="true"/>
     <include file="parts/0071_FBR_change_prequalification_member_groupid.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0072_FBR_update_active_loan_report.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
