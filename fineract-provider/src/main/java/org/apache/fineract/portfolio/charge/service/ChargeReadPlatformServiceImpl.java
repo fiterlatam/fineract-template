@@ -342,7 +342,7 @@ public class ChargeReadPlatformServiceImpl implements ChargeReadPlatformService 
 
             final boolean penalty = rs.getBoolean("penalty");
             final boolean active = rs.getBoolean("active");
-            final boolean isVatRequired = rs.getBoolean("is_vat_required");
+            final boolean isVatRequired = rs.getBoolean("isVatRequired");
 
             final Integer feeInterval = JdbcSupport.getInteger(rs, "feeInterval");
             EnumOptionData feeFrequencyType = null;
