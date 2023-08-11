@@ -49,4 +49,4 @@ AND (o.id = ${officeId} OR '-1' = '${officeId}')
 AND (pl.id = ${productId} OR '-1' = '${productId}')
 AND (g.id = ${groupId} OR '-1' = '${groupId}')
 AND (l.loan_status_id = 100)
-AND (l.disbursedon_date >= '${disbursedOnStartDate}' AND l.disbursedon_date <= '${disbursedOnEndDate}')" WHERE id = (SELECT sr.id FROM stretchy_report sr WHERE sr.report_name = "Active Loans");
+AND (l.disbursedon_date >= '${disbursedOnStartDate}' AND l.disbursedon_date <= '${disbursedOnEndDate}')" WHERE id = (SELECT tbl.id FROM (SELECT sr.id FROM stretchy_report sr WHERE sr.report_name = "Active Loans") AS tbl);
