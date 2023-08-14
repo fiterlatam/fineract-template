@@ -21,6 +21,22 @@ package org.apache.fineract.organisation.prequalification.api;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.io.InputStream;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
+import javax.ws.rs.HeaderParam;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.UriInfo;
 import org.apache.fineract.commands.domain.CommandWrapper;
 import org.apache.fineract.commands.service.CommandWrapperBuilder;
 import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformService;
@@ -48,23 +64,6 @@ import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
-
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.HeaderParam;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.UriInfo;
-import java.io.InputStream;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
 
 @Path("/individual/prequalification")
 @Component
@@ -94,15 +93,15 @@ public class IndividualPrequalificationApiResource {
 
     @Autowired
     public IndividualPrequalificationApiResource(final PlatformSecurityContext context,
-                                                 final CodeValueReadPlatformService codeValueReadPlatformService, final AgencyReadPlatformServiceImpl agencyReadPlatformService,
-                                                 final PrequalificationWritePlatformService prequalificationWritePlatformService,
-                                                 final CenterReadPlatformServiceImpl centerReadPlatformService,
-                                                 final LoanProductReadPlatformService loanProductReadPlatformService,
-                                                 final AppUserReadPlatformService appUserReadPlatformService,
-                                                 final DefaultToApiJsonSerializer<MemberPrequalificationData> toApiJsonSerializer,
-                                                 final PrequalificationReadPlatformService prequalificationReadPlatformService, final FileUploadValidator fileUploadValidator,
-                                                 final DocumentWritePlatformService documentWritePlatformService, final ApiRequestParameterHelper apiRequestParameterHelper,
-                                                 final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService) {
+            final CodeValueReadPlatformService codeValueReadPlatformService, final AgencyReadPlatformServiceImpl agencyReadPlatformService,
+            final PrequalificationWritePlatformService prequalificationWritePlatformService,
+            final CenterReadPlatformServiceImpl centerReadPlatformService,
+            final LoanProductReadPlatformService loanProductReadPlatformService,
+            final AppUserReadPlatformService appUserReadPlatformService,
+            final DefaultToApiJsonSerializer<MemberPrequalificationData> toApiJsonSerializer,
+            final PrequalificationReadPlatformService prequalificationReadPlatformService, final FileUploadValidator fileUploadValidator,
+            final DocumentWritePlatformService documentWritePlatformService, final ApiRequestParameterHelper apiRequestParameterHelper,
+            final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService) {
         this.context = context;
         this.codeValueReadPlatformService = codeValueReadPlatformService;
         this.toApiJsonSerializer = toApiJsonSerializer;
@@ -144,7 +143,6 @@ public class IndividualPrequalificationApiResource {
         return this.toApiJsonSerializer.serialize(settings, memberData, PRE_QUALIFICATION_DATA_PARAMETERS);
 
     }
-
 
     @GET
     @Path("/{clientId}")

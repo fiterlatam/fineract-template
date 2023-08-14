@@ -110,7 +110,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
     public CommandProcessingResult processPrequalification(JsonCommand command) {
 
         final Boolean individualPrequalification = command.booleanPrimitiveValueOfParameterNamed("individual");
-        if (individualPrequalification){
+        if (individualPrequalification) {
             return prequalifyIndividual(command);
         }
 
@@ -169,7 +169,6 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         final BigDecimal amount = command.bigDecimalValueOfParameterNamed("amount");
         LocalDate dateOfBirth = command.localDateValueOfParameterNamed("dob");
 
-
         // get light indicator
         String blistSql = "select count(*) from m_client_blacklist where dpi=? and status=?";
         Long activeBlacklisted = jdbcTemplate.queryForObject(blistSql, Long.class, dpi, BlacklistStatus.ACTIVE.getValue());
@@ -186,8 +185,8 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             status = PrequalificationMemberIndication.ACTIVE.getValue();
         }
 
-        PrequalificationGroupMember groupMember = PrequalificationGroupMember.fromJson( null, clientName, dpi, null, dateOfBirth,
-                amount, puente, addedBy, status);
+        PrequalificationGroupMember groupMember = PrequalificationGroupMember.fromJson(null, clientName, dpi, null, dateOfBirth, amount,
+                puente, addedBy, status);
 
         this.preQualificationMemberRepository.saveAndFlush(groupMember);
         return new CommandProcessingResultBuilder() //

@@ -101,15 +101,15 @@ public class GroupPrequalificationApiResource {
 
     @Autowired
     public GroupPrequalificationApiResource(final PlatformSecurityContext context,
-                                            final CodeValueReadPlatformService codeValueReadPlatformService, final AgencyReadPlatformServiceImpl agencyReadPlatformService,
-                                            final PrequalificationWritePlatformService prequalificationWritePlatformService,
-                                            final CenterReadPlatformServiceImpl centerReadPlatformService,
-                                            final LoanProductReadPlatformService loanProductReadPlatformService,
-                                            final AppUserReadPlatformService appUserReadPlatformService,
-                                            final DefaultToApiJsonSerializer<GroupPrequalificationData> toApiJsonSerializer,
-                                            final PrequalificationReadPlatformService prequalificationReadPlatformService, final FileUploadValidator fileUploadValidator,
-                                            final DocumentWritePlatformService documentWritePlatformService, final ApiRequestParameterHelper apiRequestParameterHelper,
-                                            final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService) {
+            final CodeValueReadPlatformService codeValueReadPlatformService, final AgencyReadPlatformServiceImpl agencyReadPlatformService,
+            final PrequalificationWritePlatformService prequalificationWritePlatformService,
+            final CenterReadPlatformServiceImpl centerReadPlatformService,
+            final LoanProductReadPlatformService loanProductReadPlatformService,
+            final AppUserReadPlatformService appUserReadPlatformService,
+            final DefaultToApiJsonSerializer<GroupPrequalificationData> toApiJsonSerializer,
+            final PrequalificationReadPlatformService prequalificationReadPlatformService, final FileUploadValidator fileUploadValidator,
+            final DocumentWritePlatformService documentWritePlatformService, final ApiRequestParameterHelper apiRequestParameterHelper,
+            final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService) {
         this.context = context;
         this.codeValueReadPlatformService = codeValueReadPlatformService;
         this.toApiJsonSerializer = toApiJsonSerializer;
