@@ -49,6 +49,8 @@ import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanDisbursementDetails;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleInstallment;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepository;
+import org.apache.fineract.portfolio.loanaccount.domain.LoanStatus;
+import org.apache.fineract.portfolio.loanaccount.exception.LoanDisbursalExistingActiveProduct;
 import org.apache.fineract.portfolio.loanaccount.exception.LoanNotFoundException;
 import org.apache.fineract.portfolio.loanaccount.exception.LoanRepaymentScheduleNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -185,6 +187,24 @@ public final class LoanEventApiJsonValidator {
                 throw new NotValidRecurringDateException("loan.actual.disbursement.date", errorMessage, actualDisbursementDate.toString(),
                         calendar.getTitle());
             }
+        }
+    }
+
+    public void validateDisbursementExistingActiveLoan(final Long loanId) {
+        final Loan loan = this.loanRepository.findById(loanId).orElseThrow(() -> new LoanNotFoundException(loanId));
+
+        Long loanProductCounter;
+        if (loan.isGroupLoan()) {
+            loanProductCounter = this.loanRepository.getCountActiveLoansByProductAndGroup(loan.productId(), loan.getGroupId(),
+                    LoanStatus.ACTIVE.getValue());
+        } else {
+            loanProductCounter = this.loanRepository.getCountActiveLoansByProductAndClient(loan.productId(), loan.getClientId(),
+                    LoanStatus.ACTIVE.getValue());
+        }
+
+        // Disbursement should be not allowed if maxLoanProductCounter is greater than zero
+        if (loan.getLoanProduct().useBorrowerCycle() && loanProductCounter > 0) {
+            throw new LoanDisbursalExistingActiveProduct(loan.getLoanProduct().getName());
         }
     }
 

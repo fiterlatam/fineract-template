@@ -161,6 +161,14 @@ public interface LoanRepository extends JpaRepository<Loan, Long>, JpaSpecificat
     @Query(FIND_BY_ACCOUNT_NUMBER)
     Loan findLoanAccountByAccountNumber(@Param("accountNumber") String accountNumber);
 
+    @Query("select count(loan.id) from Loan loan where loan.client.id = :clientId and loan.loanProduct.id = :productId and loan.loanStatus = :loanStatus")
+    Long getCountActiveLoansByProductAndClient(@Param("productId") Long productId, @Param("clientId") Long clientId,
+            @Param("loanStatus") Integer loanStatus);
+
+    @Query("select count(loan.id) from Loan loan where loan.group.id = :groupId and loan.loanProduct.id = :productId and loan.loanStatus = :loanStatus")
+    Long getCountActiveLoansByProductAndGroup(@Param("productId") Long productId, @Param("groupId") Long groupId,
+            @Param("loanStatus") Integer loanStatus);
+
     boolean existsByExternalId(@Param("externalId") String externalId);
 
 }
