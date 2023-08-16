@@ -20,6 +20,9 @@ package org.apache.fineract.infrastructure.documentmanagement.data;
 
 import org.apache.fineract.infrastructure.documentmanagement.domain.StorageType;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+
 /**
  * Immutable data object representing a user document being managed on the platform.
  */
@@ -35,9 +38,13 @@ public class DocumentData {
     private final String location;
     private final String description;
     private final Integer storageType;
+    private final String documentType;
+    private final String documentPurpose;
+    private final LocalDate dateCreated;
 
     public DocumentData(final Long id, final String parentEntityType, final Long parentEntityId, final String name, final String fileName,
-            final Long size, final String type, final String description, final String location, final Integer storageType) {
+                        final Long size, final String type, final String description, final String location, final Integer storageType,
+                        final String documentType, final String documentPurpose, LocalDateTime dateCreated) {
         this.id = id;
         this.parentEntityType = parentEntityType;
         this.parentEntityId = parentEntityId;
@@ -48,6 +55,9 @@ public class DocumentData {
         this.description = description;
         this.location = location;
         this.storageType = storageType;
+        this.documentType = documentType;
+        this.documentPurpose = documentPurpose;
+        this.dateCreated = dateCreated!=null?dateCreated.toLocalDate():null;
     }
 
     public String contentType() {

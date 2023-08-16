@@ -75,7 +75,8 @@ public class DocumentWritePlatformServiceJpaRepositoryImpl implements DocumentWr
 
             final Document document = Document.createNew(documentCommand.getParentEntityType(), documentCommand.getParentEntityId(),
                     documentCommand.getName(), documentCommand.getFileName(), documentCommand.getSize(), documentCommand.getType(),
-                    documentCommand.getDescription(), fileLocation, contentRepository.getStorageType());
+                    documentCommand.getDescription(), fileLocation, contentRepository.getStorageType(), documentCommand.getDocumentType(),
+                    documentCommand.getDocumentPurpose(), documentCommand.getDateCreated());
 
             this.documentRepository.saveAndFlush(document);
 

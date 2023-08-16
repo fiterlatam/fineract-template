@@ -88,4 +88,5 @@
     <include file="parts/0071_FBR_change_prequalification_member_groupid.xml" relativeToChangelogFile="true"/>
     <include file="parts/0072_FBR_update_active_loan_report.xml" relativeToChangelogFile="true"/>
     <include file="parts/0073_FBR_Add_m_sector_economico_m_actividad_economica_tables.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0074_FBR_Add_Document_purpose_Code.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

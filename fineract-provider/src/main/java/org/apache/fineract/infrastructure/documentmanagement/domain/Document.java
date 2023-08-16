@@ -25,6 +25,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
 import org.apache.fineract.infrastructure.documentmanagement.command.DocumentCommand;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Table(name = "m_document")
 public class Document extends AbstractPersistableCustom {
@@ -56,15 +58,24 @@ public class Document extends AbstractPersistableCustom {
     @Column(name = "storage_type_enum")
     private Integer storageType;
 
+    @Column(name = "document_type")
+    private Long documentType;
+
+    @Column(name = "document_purpose")
+    private Long documentPurpose;
+
+    @Column(name = "date_created")
+    private LocalDateTime dateCreated;
+
     public Document() {}
 
     public static Document createNew(final String parentEntityType, final Long parentEntityId, final String name, final String fileName,
-            final Long size, final String type, final String description, final String location, final StorageType storageType) {
-        return new Document(parentEntityType, parentEntityId, name, fileName, size, type, description, location, storageType);
+                                     final Long size, final String type, final String description, final String location, final StorageType storageType, String documentType, String documentPurpose, LocalDateTime dateCreated) {
+        return new Document(parentEntityType, parentEntityId, name, fileName, size, type, description, location, storageType, documentType, documentPurpose, dateCreated);
     }
 
     private Document(final String parentEntityType, final Long parentEntityId, final String name, final String fileName, final Long size,
-            final String type, final String description, final String location, final StorageType storageType) {
+                     final String type, final String description, final String location, final StorageType storageType, String documentType, String documentPurpose, LocalDateTime dateCreated) {
         this.parentEntityType = StringUtils.defaultIfEmpty(parentEntityType, null);
         this.parentEntityId = parentEntityId;
         this.name = StringUtils.defaultIfEmpty(name, null);
@@ -74,6 +85,9 @@ public class Document extends AbstractPersistableCustom {
         this.description = StringUtils.defaultIfEmpty(description, null);
         this.location = StringUtils.defaultIfEmpty(location, null);
         this.storageType = storageType.getValue();
+        this.documentType = documentType != null ? Long.valueOf(documentType) : null;
+        this.documentPurpose = documentPurpose != null ? Long.valueOf(documentPurpose) : null;
+        this.dateCreated = dateCreated;
     }
 
     public void update(final DocumentCommand command) {
@@ -163,5 +177,29 @@ public class Document extends AbstractPersistableCustom {
 
     public StorageType storageType() {
         return StorageType.fromInt(this.storageType);
+    }
+
+    public Long getDocumentType() {
+        return documentType;
+    }
+
+    public void setDocumentType(Long documentType) {
+        this.documentType = documentType;
+    }
+
+    public Long getDocumentPurpose() {
+        return documentPurpose;
+    }
+
+    public void setDocumentPurpose(Long documentPurpose) {
+        this.documentPurpose = documentPurpose;
+    }
+
+    public LocalDateTime getDateCreated() {
+        return dateCreated;
+    }
+
+    public void setDateCreated(LocalDateTime dateCreated) {
+        this.dateCreated = dateCreated;
     }
 }

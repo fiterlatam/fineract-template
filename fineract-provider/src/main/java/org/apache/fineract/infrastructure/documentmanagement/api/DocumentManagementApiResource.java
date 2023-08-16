@@ -28,6 +28,11 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.InputStream;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
+import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoField;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
@@ -45,10 +50,14 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
+
+import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.infrastructure.core.api.ApiRequestParameterHelper;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.serialization.ApiRequestJsonSerializationSettings;
+import org.apache.fineract.infrastructure.core.serialization.JsonParserHelper;
 import org.apache.fineract.infrastructure.core.serialization.ToApiJsonSerializer;
+import org.apache.fineract.infrastructure.core.service.migration.TenantDatabaseUpgradeService;
 import org.apache.fineract.infrastructure.documentmanagement.command.DocumentCommand;
 import org.apache.fineract.infrastructure.documentmanagement.data.DocumentData;
 import org.apache.fineract.infrastructure.documentmanagement.data.FileData;
@@ -58,6 +67,8 @@ import org.apache.fineract.infrastructure.security.service.PlatformSecurityConte
 import org.glassfish.jersey.media.multipart.FormDataBodyPart;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataParam;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
@@ -71,6 +82,7 @@ import org.springframework.stereotype.Component;
         + "Groups: URL Pattern as groups")
 public class DocumentManagementApiResource {
 
+    private static final Logger LOG = LoggerFactory.getLogger(TenantDatabaseUpgradeService.class);
     private final Set<String> responseDataParameters = new HashSet<>(
             Arrays.asList("id", "parentEntityType", "parentEntityId", "name", "fileName", "size", "type", "description"));
 
@@ -130,15 +142,32 @@ public class DocumentManagementApiResource {
             @PathParam("entityId") @Parameter(description = "entityId") final Long entityId,
             @HeaderParam("Content-Length") @Parameter(description = "Content-Length") final Long fileSize,
             @FormDataParam("file") final InputStream inputStream, @FormDataParam("file") final FormDataContentDisposition fileDetails,
-            @FormDataParam("file") final FormDataBodyPart bodyPart, @FormDataParam("name") final String name,
-            @FormDataParam("description") final String description) {
+            @FormDataParam("file") final FormDataBodyPart bodyPart, @FormDataParam("name") final String name, @FormDataParam("dateFormat") final String dateFormat,
+            @FormDataParam("description") final String description,@FormDataParam("locale") final String locale,@FormDataParam("dateCreated") final String dateCreated,
+            @FormDataParam("documentType") final String documentType,@FormDataParam("documentPurpose") final String documentPurpose) {
 
         // TODO: stop reading from stream after max size is reached to protect against malicious clients
         // TODO: need to extract the actual file type and determine if they are permissible
 
         fileUploadValidator.validate(fileSize, inputStream, fileDetails, bodyPart);
+
+        LocalDateTime date = null;
+
+        if (!StringUtils.isBlank(dateCreated)) {
+
+            DateTimeFormatter formatter = new DateTimeFormatterBuilder().appendPattern(dateFormat).optionalStart().appendPattern(" HH:mm:ss").optionalEnd()
+                    .parseDefaulting(ChronoField.HOUR_OF_DAY, 0).parseDefaulting(ChronoField.MINUTE_OF_HOUR, 0)
+                    .parseDefaulting(ChronoField.SECOND_OF_MINUTE, 0).toFormatter(JsonParserHelper.localeFromString(locale));
+            try {
+                date = LocalDateTime.parse(dateCreated, formatter);
+            } catch (DateTimeParseException e) {
+                LOG.info("Date parsing failed {}", e.getMessage());
+            }
+
+        }
+
         final DocumentCommand documentCommand = new DocumentCommand(null, null, entityType, entityId, name, fileDetails.getFileName(),
-                fileSize, bodyPart.getMediaType().toString(), description, null);
+                fileSize, bodyPart.getMediaType().toString(), description, null,locale,documentType,documentPurpose,date);
         final Long documentId = this.documentWritePlatformService.createDocument(documentCommand, inputStream);
         return this.toApiJsonSerializer.serialize(CommandProcessingResult.resourceResult(documentId, null));
     }
