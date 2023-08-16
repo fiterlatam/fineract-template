@@ -22,7 +22,6 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.Collection;
-
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.organisation.office.data.OfficeData;
 import org.apache.fineract.useradministration.data.AppUserData;
@@ -70,9 +69,10 @@ public class CenterGroupData {
     private EnumOptionData grouplocation;
 
     public CenterGroupData(Long id, String name, Long portfolioCenterId, String portfolioCenterName, Long legacyGroupNumber,
-                           BigDecimal latitude, BigDecimal longitude, LocalDate formationDate, EnumOptionData status, Integer size, Long responsibleUserId,
-                           LocalDate createdDate, LocalTime meetingStartTime, LocalTime meetingEndTime, Collection<OfficeData> parentOfficesOptions,
-                           Collection<AppUserData> responsibleUserOptions, Collection<EnumOptionData> statusOptions, Collection<EnumOptionData> centerGroupLocations, EnumOptionData locationEnum) {
+            BigDecimal latitude, BigDecimal longitude, LocalDate formationDate, EnumOptionData status, Integer size, Long responsibleUserId,
+            LocalDate createdDate, LocalTime meetingStartTime, LocalTime meetingEndTime, Collection<OfficeData> parentOfficesOptions,
+            Collection<AppUserData> responsibleUserOptions, Collection<EnumOptionData> statusOptions,
+            Collection<EnumOptionData> centerGroupLocations, EnumOptionData locationEnum) {
         this.id = id;
         this.name = name;
         this.portfolioCenterId = portfolioCenterId;
@@ -95,14 +95,14 @@ public class CenterGroupData {
     }
 
     public static CenterGroupData instance(Long id, String name, Long portfolioCenterId, String portfolioCenterName, Long legacyGroupNumber,
-                                           BigDecimal latitude, BigDecimal longitude, LocalDate formationDate, EnumOptionData status, Integer size, Long responsibleUserId,
-                                           LocalDate createdDate, LocalTime meetingStartTime, LocalTime meetingEndTime, EnumOptionData locationEnum) {
+            BigDecimal latitude, BigDecimal longitude, LocalDate formationDate, EnumOptionData status, Integer size, Long responsibleUserId,
+            LocalDate createdDate, LocalTime meetingStartTime, LocalTime meetingEndTime, EnumOptionData locationEnum) {
         return new CenterGroupData(id, name, portfolioCenterId, portfolioCenterName, legacyGroupNumber, latitude, longitude, formationDate,
                 status, size, responsibleUserId, createdDate, meetingStartTime, meetingEndTime, null, null, null, null, locationEnum);
     }
 
     public static CenterGroupData template(Collection<OfficeData> parentOfficesOptions, Collection<AppUserData> appUsers,
-                                           Collection<EnumOptionData> statusOptions, Collection<EnumOptionData> centerGroupLocations) {
+            Collection<EnumOptionData> statusOptions, Collection<EnumOptionData> centerGroupLocations) {
         return new CenterGroupData(null, null, null, null, null, null, null, null, null, null, null, null, null, null, parentOfficesOptions,
                 appUsers, statusOptions, centerGroupLocations, null);
     }

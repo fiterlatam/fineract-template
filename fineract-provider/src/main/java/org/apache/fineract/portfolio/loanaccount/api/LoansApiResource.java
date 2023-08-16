@@ -32,6 +32,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.InputStream;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -74,6 +75,7 @@ import org.apache.fineract.infrastructure.core.exception.UnrecognizedQueryParamE
 import org.apache.fineract.infrastructure.core.serialization.ApiRequestJsonSerializationSettings;
 import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
+import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.core.service.Page;
 import org.apache.fineract.infrastructure.core.service.SearchParameters;
 import org.apache.fineract.infrastructure.dataqueries.api.DataTableApiConstant;
@@ -98,6 +100,7 @@ import org.apache.fineract.portfolio.charge.data.ChargeData;
 import org.apache.fineract.portfolio.charge.domain.ChargeTimeType;
 import org.apache.fineract.portfolio.charge.service.ChargeReadPlatformService;
 import org.apache.fineract.portfolio.client.data.ClientData;
+import org.apache.fineract.portfolio.client.service.ClientReadPlatformService;
 import org.apache.fineract.portfolio.collateralmanagement.data.LoanCollateralResponseData;
 import org.apache.fineract.portfolio.collateralmanagement.service.LoanCollateralManagementReadPlatformService;
 import org.apache.fineract.portfolio.cupo.data.CupoData;
@@ -108,6 +111,8 @@ import org.apache.fineract.portfolio.fund.data.FundData;
 import org.apache.fineract.portfolio.fund.service.FundReadPlatformService;
 import org.apache.fineract.portfolio.group.data.GroupGeneralData;
 import org.apache.fineract.portfolio.group.service.GroupReadPlatformService;
+import org.apache.fineract.portfolio.loanaccount.data.AgeLimitStatus;
+import org.apache.fineract.portfolio.loanaccount.data.AgeLimitStatusEnumerations;
 import org.apache.fineract.portfolio.loanaccount.data.CollectionData;
 import org.apache.fineract.portfolio.loanaccount.data.DisbursementData;
 import org.apache.fineract.portfolio.loanaccount.data.GlimRepaymentTemplate;
@@ -232,6 +237,7 @@ public class LoansApiResource {
     private final String resourceNameForPermissions = "LOAN";
 
     private final PlatformSecurityContext context;
+    private final ClientReadPlatformService clientReadPlatformService;
     private final LoanReadPlatformService loanReadPlatformService;
     private final LoanProductReadPlatformService loanProductReadPlatformService;
     private final LoanDropdownReadPlatformService dropdownReadPlatformService;
@@ -245,6 +251,7 @@ public class LoansApiResource {
     private final DefaultToApiJsonSerializer<LoanAccountData> toApiJsonSerializer;
     private final DefaultToApiJsonSerializer<LoanApprovalData> loanApprovalDataToApiJsonSerializer;
     private final DefaultToApiJsonSerializer<LoanScheduleData> loanScheduleToApiJsonSerializer;
+    private final DefaultToApiJsonSerializer<EnumOptionData> ageLimitValidationJsonSerializer;
     private final ApiRequestParameterHelper apiRequestParameterHelper;
     private final FromJsonHelper fromJsonHelper;
     private final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService;
@@ -269,11 +276,12 @@ public class LoansApiResource {
             final LoanDropdownReadPlatformService dropdownReadPlatformService, final FundReadPlatformService fundReadPlatformService,
             final ChargeReadPlatformService chargeReadPlatformService, final LoanChargeReadPlatformService loanChargeReadPlatformService,
             final LoanScheduleCalculationPlatformService calculationPlatformService,
-            final GuarantorReadPlatformService guarantorReadPlatformService,
+            final GuarantorReadPlatformService guarantorReadPlatformService, final ClientReadPlatformService clientReadPlatformService,
             final CodeValueReadPlatformService codeValueReadPlatformService, final GroupReadPlatformService groupReadPlatformService,
             final DefaultToApiJsonSerializer<LoanAccountData> toApiJsonSerializer,
             final DefaultToApiJsonSerializer<LoanApprovalData> loanApprovalDataToApiJsonSerializer,
             final DefaultToApiJsonSerializer<LoanScheduleData> loanScheduleToApiJsonSerializer,
+            final DefaultToApiJsonSerializer<EnumOptionData> ageLimitValidationJsonSerializer,
             final ApiRequestParameterHelper apiRequestParameterHelper, final FromJsonHelper fromJsonHelper,
             final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService,
             final CalendarReadPlatformService calendarReadPlatformService, final NoteReadPlatformService noteReadPlatformService,
@@ -321,6 +329,8 @@ public class LoansApiResource {
         this.glimAccountInfoReadPlatformService = glimAccountInfoReadPlatformService;
         this.loanCollateralManagementReadPlatformService = loanCollateralManagementReadPlatformService;
         this.cupoReadService = cupoReadService;
+        this.clientReadPlatformService = clientReadPlatformService;
+        this.ageLimitValidationJsonSerializer = ageLimitValidationJsonSerializer;
     }
 
     /*
@@ -477,6 +487,47 @@ public class LoansApiResource {
 
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
         return this.toApiJsonSerializer.serialize(settings, newLoanAccount, this.loanDataParameters);
+    }
+
+    @GET
+    @Path("validateAgeLimits/{clientId}/{productId}")
+    @Consumes({ MediaType.APPLICATION_JSON })
+    @Produces({ MediaType.APPLICATION_JSON })
+    @Operation(summary = "Validate Client age limits", description = "This is a resource used for validating the age limits of the client on loan application:\n"
+            + "\n" + "Field Defaults\n" + "Allowed description Lists\n" + "Example Requests:\n" + "\n"
+            + "loans/validateAgeLimits?clientId=1\n" + "\n" + "\n" + "loans/validateAgeLimits?clientId=1&productId=1")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = LoansApiResourceSwagger.GetLoansTemplateResponse.class))) })
+    public String template(@PathParam("clientId") @Parameter(description = "clientId") final Long clientId,
+            @PathParam("productId") @Parameter(description = "productId") final Long productId, @Context final UriInfo uriInfo) {
+
+        this.context.authenticatedUser().validateHasReadPermission(this.resourceNameForPermissions);
+
+        // template
+        ClientData clientData = this.clientReadPlatformService.retrieveOne(clientId);
+        LocalDate dateOfBirth = clientData.getDateOfBirth();
+        LocalDate businessLocalDate = DateUtils.getBusinessLocalDate();
+
+        LoanProductData loanProductData = loanProductReadPlatformService.retrieveLoanProduct(productId);
+
+        Integer ageLimitWarning = loanProductData.getAgeLimitWarning();
+        Integer ageLimitBlock = loanProductData.getAgeLimitBlock();
+
+        AgeLimitStatus status = AgeLimitStatus.CONTINUE;
+        if (dateOfBirth != null && ageLimitWarning != null && ageLimitBlock != null) {
+            Integer age = businessLocalDate.getYear() - dateOfBirth.getYear();
+            if (age >= ageLimitBlock) {
+                status = AgeLimitStatus.BLOCK;
+
+            }
+            if (age > ageLimitWarning && age < ageLimitBlock) {
+                status = AgeLimitStatus.WARNING;
+            }
+        }
+
+        EnumOptionData enumSatus = AgeLimitStatusEnumerations.status(status);
+        final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
+        return this.ageLimitValidationJsonSerializer.serialize(settings, enumSatus, this.loanDataParameters);
     }
 
     private Collection<PortfolioAccountData> getaccountLinkingOptions(final LoanAccountData newLoanAccount, final Long clientId,

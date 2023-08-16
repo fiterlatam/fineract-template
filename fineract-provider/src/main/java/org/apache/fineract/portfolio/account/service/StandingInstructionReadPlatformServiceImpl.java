@@ -261,11 +261,13 @@ public class StandingInstructionReadPlatformServiceImpl implements StandingInstr
     public Page<StandingInstructionData> retrieveAll(final StandingInstructionDTO standingInstructionDTO) {
 
         final StringBuilder sqlBuilder = new StringBuilder(200);
+        boolean isWhereStatementAdded = false;
         sqlBuilder.append("select " + sqlGenerator.calcFoundRows() + " ");
         sqlBuilder.append(this.standingInstructionMapper.schema());
         if (standingInstructionDTO.transferType() != null || standingInstructionDTO.clientId() != null
                 || standingInstructionDTO.clientName() != null) {
             sqlBuilder.append(" where ");
+            isWhereStatementAdded = true;
         }
         boolean addAndCaluse = false;
         List<Object> paramObj = new ArrayList<>();
@@ -302,6 +304,9 @@ public class StandingInstructionReadPlatformServiceImpl implements StandingInstr
                 sqlBuilder.append(" fromsavacc.id=? ");
                 paramObj.add(standingInstructionDTO.fromAccount());
             } else if (accountType.isLoanAccount()) {
+                if (!isWhereStatementAdded) {
+                    sqlBuilder.append(" where ");
+                }
                 sqlBuilder.append(" fromloanacc.id=? ");
                 paramObj.add(standingInstructionDTO.fromAccount());
             }

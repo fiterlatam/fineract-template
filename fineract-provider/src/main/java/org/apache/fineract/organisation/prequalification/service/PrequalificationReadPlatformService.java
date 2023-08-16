@@ -21,10 +21,17 @@ package org.apache.fineract.organisation.prequalification.service;
 import org.apache.fineract.infrastructure.core.service.Page;
 import org.apache.fineract.infrastructure.core.service.SearchParameters;
 import org.apache.fineract.organisation.prequalification.data.GroupPrequalificationData;
+import org.apache.fineract.organisation.prequalification.data.MemberPrequalificationData;
 
 public interface PrequalificationReadPlatformService {
 
     Page<GroupPrequalificationData> retrieveAll(SearchParameters searchParameters);
 
     GroupPrequalificationData retrieveOne(Long blacklistId);
+
+    GroupPrequalificationData prequalifyExistingGroup(Long groupId);
+
+    Page<MemberPrequalificationData> retrieveAllMembers(SearchParameters searchParameters);
+
+    MemberPrequalificationData retrieveOneMember(Long clientId);
 }

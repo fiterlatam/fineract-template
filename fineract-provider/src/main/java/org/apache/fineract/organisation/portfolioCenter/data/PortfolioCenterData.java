@@ -90,11 +90,12 @@ public final class PortfolioCenterData {
     private final EnumOptionData centerLocation;
 
     public PortfolioCenterData(Long id, String name, Long portfolioId, String portfolioName, BigDecimal legacyCenterNumber,
-                               CodeValueData city, CodeValueData state, CodeValueData type, EnumOptionData status, Integer distance, LocalDate createdDate,
-                               Integer meetingStart, Integer meetingEnd, Integer meetingDay, String meetingStartTime, String meetingEndTime,
-                               String meetingDayName, String referencePoint, Collection<OfficeData> parentOfficesOptions,
-                               Collection<AppUserData> responsibleUserOptions, Collection<CodeValueData> cityOptions, Collection<CodeValueData> stateOptions,
-                               Collection<CodeValueData> typeOptions, Collection<EnumOptionData> statusOptions, Collection<CodeValueData> meetingDayOptions, EnumOptionData centerLocation) {
+            CodeValueData city, CodeValueData state, CodeValueData type, EnumOptionData status, Integer distance, LocalDate createdDate,
+            Integer meetingStart, Integer meetingEnd, Integer meetingDay, String meetingStartTime, String meetingEndTime,
+            String meetingDayName, String referencePoint, Collection<OfficeData> parentOfficesOptions,
+            Collection<AppUserData> responsibleUserOptions, Collection<CodeValueData> cityOptions, Collection<CodeValueData> stateOptions,
+            Collection<CodeValueData> typeOptions, Collection<EnumOptionData> statusOptions, Collection<CodeValueData> meetingDayOptions,
+            EnumOptionData centerLocation) {
         this.id = id;
         this.name = name;
         this.portfolioId = portfolioId;
@@ -124,9 +125,9 @@ public final class PortfolioCenterData {
     }
 
     public static PortfolioCenterData instance(Long id, String name, Long portfolioId, String portfolioName, BigDecimal legacyCenterNumber,
-                                               CodeValueData city, CodeValueData state, CodeValueData type, EnumOptionData status, Integer distance, LocalDate createdDate,
-                                               Integer meetingStart, Integer meetingEnd, Integer meetingDay, String meetingStartTime, String meetingEndTime,
-                                               String meetingDayName, String referencePoint, EnumOptionData centerLocation) {
+            CodeValueData city, CodeValueData state, CodeValueData type, EnumOptionData status, Integer distance, LocalDate createdDate,
+            Integer meetingStart, Integer meetingEnd, Integer meetingDay, String meetingStartTime, String meetingEndTime,
+            String meetingDayName, String referencePoint, EnumOptionData centerLocation) {
         return new PortfolioCenterData(id, name, portfolioId, portfolioName, legacyCenterNumber, city, state, type, status, distance,
                 createdDate, meetingStart, meetingEnd, meetingDay, meetingStartTime, meetingEndTime, meetingDayName, referencePoint, null,
                 null, null, null, null, null, null, centerLocation);

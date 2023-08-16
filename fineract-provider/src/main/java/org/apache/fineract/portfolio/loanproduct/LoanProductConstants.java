@@ -142,4 +142,7 @@ public interface LoanProductConstants {
     String OVER_APPLIED_CALCULATION_TYPE = "overAppliedCalculationType";
     String OVER_APPLIED_NUMBER = "overAppliedNumber";
 
+    String ADD_NEW_CYCLES_ENABLED = "addNewCyclesEnabled";
+    String LOAN_PRODUCT_OWNER_TYPE = "ownerType";
+
 }

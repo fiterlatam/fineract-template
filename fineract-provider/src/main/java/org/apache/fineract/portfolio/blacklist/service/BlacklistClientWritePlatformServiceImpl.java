@@ -26,6 +26,8 @@ import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuilder;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
+import org.apache.fineract.organisation.agency.domain.Agency;
+import org.apache.fineract.organisation.agency.domain.AgencyRepository;
 import org.apache.fineract.portfolio.blacklist.command.BlacklistApiConstants;
 import org.apache.fineract.portfolio.blacklist.command.BlacklistDataValidator;
 import org.apache.fineract.portfolio.blacklist.domain.BlacklistClients;
@@ -51,20 +53,23 @@ public class BlacklistClientWritePlatformServiceImpl implements BlacklistClientW
     private final PlatformSecurityContext context;
     private final BlacklistDataValidator dataValidator;
     private final LoanProductRepository loanProductRepository;
+    private final AgencyRepository agencyRepository;
     private final ClientReadPlatformService clientReadPlatformService;
     private final CodeValueReadPlatformService codeValueReadPlatformService;
     private final BlacklistClientsRepository blacklistClientsRepository;
 
     @Autowired
     public BlacklistClientWritePlatformServiceImpl(final PlatformSecurityContext context, final BlacklistDataValidator dataValidator,
-            final LoanProductRepository loanProductRepository, final ClientReadPlatformService clientReadPlatformService,
-            final CodeValueReadPlatformService codeValueReadPlatformService, final BlacklistClientsRepository blacklistClientsRepository) {
+            final LoanProductRepository loanProductRepository, final AgencyRepository agencyRepository,
+            final ClientReadPlatformService clientReadPlatformService, final CodeValueReadPlatformService codeValueReadPlatformService,
+            final BlacklistClientsRepository blacklistClientsRepository) {
         this.context = context;
         this.dataValidator = dataValidator;
         this.loanProductRepository = loanProductRepository;
         this.clientReadPlatformService = clientReadPlatformService;
         this.codeValueReadPlatformService = codeValueReadPlatformService;
         this.blacklistClientsRepository = blacklistClientsRepository;
+        this.agencyRepository = agencyRepository;
     }
 
     @Override
@@ -76,9 +81,14 @@ public class BlacklistClientWritePlatformServiceImpl implements BlacklistClientW
         if (productOption.isEmpty()) throw new LoanProductNotFoundException(productId);
         LoanProduct loanProduct = productOption.get();
 
+        Optional<Agency> agencyOption = this.agencyRepository.findById(productId);
+        if (agencyOption.isEmpty()) throw new LoanProductNotFoundException(productId);
+        Agency agency = agencyOption.get();
+
         CodeValueData typification = codeValueReadPlatformService
                 .retrieveCodeValue(command.longValueOfParameterNamed(BlacklistApiConstants.typificationParamName));
-        BlacklistClients blacklistClient = BlacklistClients.fromJson(this.context.authenticatedUser(), loanProduct, typification, command);
+        BlacklistClients blacklistClient = BlacklistClients.fromJson(this.context.authenticatedUser(), loanProduct, agency, typification,
+                command);
 
         this.blacklistClientsRepository.saveAndFlush(blacklistClient);
 

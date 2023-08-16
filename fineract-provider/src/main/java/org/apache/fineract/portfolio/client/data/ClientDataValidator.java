@@ -41,6 +41,7 @@ import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.portfolio.client.api.ClientApiConstants;
 import org.apache.fineract.portfolio.client.domain.ClientRepositoryWrapper;
+import org.apache.fineract.portfolio.client.validation.ClientIdentifierDocumentValidator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -88,6 +89,8 @@ public final class ClientDataValidator {
         baseDataValidator.reset().parameter(ClientApiConstants.officeIdParamName).value(officeId).notNull().integerGreaterThanZero();
 
         final String dpi = this.fromApiJsonHelper.extractStringNamed(ClientApiConstants.dpiParamName, element);
+
+        ClientIdentifierDocumentValidator.checkDPI(dpi, ClientApiConstants.dpiParamName);
         baseDataValidator.reset().parameter(ClientApiConstants.dpiParamName).value(dpi).notNull();
 
         if (this.fromApiJsonHelper.parameterExists(ClientApiConstants.groupIdParamName, element)) {
@@ -368,6 +371,11 @@ public final class ClientDataValidator {
                 this.fromApiJsonHelper.checkForUnsupportedParameters(typeOfMap, clientNonPersonJson,
                         ClientApiCollectionConstants.CLIENT_NON_PERSON_UPDATE_REQUEST_DATA_PARAMETERS);
             }
+        }
+
+        if (this.fromApiJsonHelper.parameterExists(ClientApiConstants.dpiParamName, element)) {
+            final String dpi = this.fromApiJsonHelper.extractStringNamed(ClientApiConstants.dpiParamName, element);
+            ClientIdentifierDocumentValidator.checkDPI(dpi, ClientApiConstants.dpiParamName);
         }
 
         final List<ApiParameterError> dataValidationErrors = new ArrayList<>();

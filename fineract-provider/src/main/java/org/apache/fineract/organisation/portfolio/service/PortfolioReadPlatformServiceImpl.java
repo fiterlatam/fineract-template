@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.fineract.infrastructure.core.service.database.DatabaseSpecificSQLGenerator;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.infrastructure.security.utils.ColumnValidator;
@@ -126,11 +127,31 @@ public class PortfolioReadPlatformServiceImpl implements PortfolioReadPlatformSe
     public PortfolioPlanningData retrievePlanningByPortfolio(Long portfolioId) {
         AppUser currentUser = this.context.authenticatedUser();
 
-        PortfolioPlanningMapper portfolioPlanningMapper = new PortfolioPlanningMapper();
-        String schemaSql = "select " + portfolioPlanningMapper.schema();
-        schemaSql += "where p.id = ? and p.responsible_user_id = ?";
+        final List<Object> officeIds = new ArrayList<>();
+        final Collection<OfficeData> parentOfficesOptions = officeReadPlatformService
+                .retrieveOfficesByHierarchyLevel(Long.valueOf(OfficeHierarchyLevel.SUPERVISION.getValue()));
+        parentOfficesOptions.forEach(parentOffice -> officeIds.add(parentOffice.getId()));
+        String inSql = String.join(",", Collections.nCopies(officeIds.size(), "?"));
 
-        return this.jdbcTemplate.queryForObject(schemaSql, portfolioPlanningMapper, new Object[] { portfolioId, currentUser.getId() });
+        try {
+            PortfolioPlanningMapper portfolioPlanningMapper = new PortfolioPlanningMapper();
+            String schemaSql = "select " + portfolioPlanningMapper.schema();
+            schemaSql += "where p.id = ? ";
+
+            // check if the user has a role as FACILITATOR
+            Role facilitatorRole = currentUser.getRoles().stream().filter(x -> x.getName().startsWith(FACILITATOR_ROLE_START_WITH)) //
+                    .findFirst().orElse(null);
+            if (facilitatorRole != null) {
+                schemaSql += " and p.responsible_user_id = ?";
+                return this.jdbcTemplate.queryForObject(schemaSql, portfolioPlanningMapper, portfolioId, currentUser.getId());
+            } else {
+                schemaSql += " and p.linked_office_id in (%s)";
+                Object[] args = ArrayUtils.addAll(new Object[] { portfolioId }, officeIds.toArray());
+                return this.jdbcTemplate.queryForObject(String.format(schemaSql, inSql), portfolioPlanningMapper, args);
+            }
+        } catch (EmptyResultDataAccessException e) {
+            return null;
+        }
     }
 
     private static final class PortfolioMapper implements RowMapper<PortfolioData> {
@@ -180,7 +201,7 @@ public class PortfolioReadPlatformServiceImpl implements PortfolioReadPlatformSe
             sqlBuilder.append("p.responsible_user_id as responsibleUserId, ru.firstname as userFirstName, ru.lastname as userLastName ");
             sqlBuilder.append("from m_portfolio p left join m_office AS supervision ON supervision.id = p.linked_office_id ");
             sqlBuilder.append("left join m_appuser ru on ru.id = p.responsible_user_id ");
-            sqlBuilder.append("left join fineract_default.m_office AS agency ON agency.id = supervision.parent_id ");
+            sqlBuilder.append("left join m_office AS agency ON agency.id = supervision.parent_id ");
             this.schema = sqlBuilder.toString();
         }
 
