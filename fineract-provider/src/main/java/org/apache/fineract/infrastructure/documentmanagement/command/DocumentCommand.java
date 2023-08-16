@@ -18,6 +18,7 @@
  */
 package org.apache.fineract.infrastructure.documentmanagement.command;
 
+import java.time.LocalDateTime;
 import java.util.Set;
 
 /**
@@ -36,6 +37,10 @@ public class DocumentCommand {
     private String type;
     private String location;
     private Integer storageType;
+    private String locale;
+    private String documentType;
+    private String documentPurpose;
+    private LocalDateTime dateCreated;
 
     private final Set<String> modifiedParameters;
 
@@ -51,6 +56,25 @@ public class DocumentCommand {
         this.type = type;
         this.description = description;
         this.location = location;
+    }
+
+    public DocumentCommand(final Set<String> modifiedParameters, final Long id, final String parentEntityType, final Long parentEntityId,
+            final String name, final String fileName, final Long size, final String type, final String description,
+                           final String location, final String locale, final String documentType, final String documentPurpose, final LocalDateTime dateCreated) {
+        this.modifiedParameters = modifiedParameters;
+        this.id = id;
+        this.parentEntityType = parentEntityType;
+        this.parentEntityId = parentEntityId;
+        this.name = name;
+        this.fileName = fileName;
+        this.size = size;
+        this.type = type;
+        this.description = description;
+        this.location = location;
+        this.locale = locale;
+        this.documentType = documentType;
+        this.documentPurpose = documentPurpose;
+        this.dateCreated = dateCreated;
     }
 
     public Long getId() {
@@ -141,4 +165,27 @@ public class DocumentCommand {
         return this.modifiedParameters.contains("location");
     }
 
+    public String getDocumentType() {
+        return documentType;
+    }
+
+    public void setDocumentType(String documentType) {
+        this.documentType = documentType;
+    }
+
+    public String getDocumentPurpose() {
+        return documentPurpose;
+    }
+
+    public void setDocumentPurpose(String documentPurpose) {
+        this.documentPurpose = documentPurpose;
+    }
+
+    public LocalDateTime getDateCreated() {
+        return dateCreated;
+    }
+
+    public void setDateCreated(LocalDateTime dateCreated) {
+        this.dateCreated = dateCreated;
+    }
 }
