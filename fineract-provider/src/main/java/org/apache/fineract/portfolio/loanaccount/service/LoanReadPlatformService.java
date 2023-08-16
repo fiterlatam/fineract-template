@@ -69,7 +69,7 @@ public interface LoanReadPlatformService {
 
     LoanAccountData retrieveTemplateWithCompleteGroupAndProductDetails(Long groupId, Long productId);
 
-    LoanAccountData retrieveLoanProductDetailsTemplate(Long productId, Long clientId, Long groupId);
+    LoanAccountData retrieveLoanProductDetailsTemplate(Long productId, Long clientId, Long groupId, String templateType);
 
     LoanAccountData retrieveClientDetailsTemplate(Long clientId);
 

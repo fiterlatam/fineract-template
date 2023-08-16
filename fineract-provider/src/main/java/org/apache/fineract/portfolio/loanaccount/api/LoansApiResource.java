@@ -396,7 +396,7 @@ public class LoansApiResource {
         boolean isRatesEnabled = this.configurationDomainService.isSubRatesEnabled();
 
         if (productId != null) {
-            newLoanAccount = this.loanReadPlatformService.retrieveLoanProductDetailsTemplate(productId, clientId, groupId);
+            newLoanAccount = this.loanReadPlatformService.retrieveLoanProductDetailsTemplate(productId, clientId, groupId, templateType);
         }
 
         if (templateType == null) {
