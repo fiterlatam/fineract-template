@@ -32,6 +32,7 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -222,6 +223,26 @@ public class GroupPrequalificationApiResource {
 
         try {
             final CommandWrapper commandRequest = new CommandWrapperBuilder().createPrequalification().withJson(apiRequestBodyAsJson)
+                    .build();
+
+            final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
+
+            return this.toApiJsonSerializer.serialize(result);
+        } catch (final Exception e) {
+            e.printStackTrace();
+            throw e;
+        }
+    }
+
+    @PUT
+    @Path("/{groupId}")
+    @Consumes({ MediaType.APPLICATION_JSON })
+    @Produces({ MediaType.APPLICATION_JSON })
+    public String updatePrequalification(@Parameter(hidden = true) final String apiRequestBodyAsJson,
+                                         @PathParam("groupId") @Parameter(description = "groupId") final Long groupId) {
+
+        try {
+            final CommandWrapper commandRequest = new CommandWrapperBuilder().updatePrequalification(groupId).withJson(apiRequestBodyAsJson)
                     .build();
 
             final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);

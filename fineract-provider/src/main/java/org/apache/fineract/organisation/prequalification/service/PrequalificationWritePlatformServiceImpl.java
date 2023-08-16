@@ -28,6 +28,7 @@ import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -279,4 +280,83 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         this.prequalificationGroupRepositoryWrapper.saveAndFlush(prequalificationGroup);
         return groupId;
     }
+
+    @Override
+    public CommandProcessingResult processUpdatePrequalification(Long groupId, JsonCommand command) {
+        final Boolean individualPrequalification = command.booleanPrimitiveValueOfParameterNamed("individual");
+        if (individualPrequalification){
+            return prequalifyIndividual(command);
+        }
+
+        PrequalificationGroup prequalificationGroup = prequalificationGroupRepositoryWrapper.findOneWithNotFoundDetection(groupId);
+
+        this.dataValidator.validateUpdate(command.json());
+
+        final Map<String, Object> changes = prequalificationGroup.update(command);
+
+        if (changes.containsKey(PrequalificatoinApiConstants.agencyIdParamName)) {
+
+            final Long newValue = command.longValueOfParameterNamed(PrequalificatoinApiConstants.agencyIdParamName);
+            Agency newAgency = null;
+            if (newValue != null) {
+                newAgency = this.agencyRepositoryWrapper.findOneWithNotFoundDetection(newValue);
+            }
+            prequalificationGroup.updateAgency(newAgency);
+        }
+
+        if (changes.containsKey(PrequalificatoinApiConstants.centerIdParamName)) {
+
+            final Long newValue = command.longValueOfParameterNamed(PrequalificatoinApiConstants.centerIdParamName);
+            Group newCenter = null;
+            if (newValue != null) {
+                newCenter = this.groupRepositoryWrapper.findOneWithNotFoundDetection(newValue);
+            }
+            prequalificationGroup.updateCenter(newCenter.getId());
+        }
+
+        if (changes.containsKey(PrequalificatoinApiConstants.productIdParamName)) {
+
+            final Long newValue = command.longValueOfParameterNamed(PrequalificatoinApiConstants.productIdParamName);
+            LoanProduct newLoanProduct = null;
+            if (newValue != null) {
+                Optional<LoanProduct> productOption = this.loanProductRepository.findById(newValue);
+                if (productOption.isEmpty()) throw new LoanProductNotFoundException(newValue);
+                newLoanProduct = productOption.get();
+            }
+            prequalificationGroup.updateProduct(newLoanProduct);
+        }
+
+        if (changes.containsKey(PrequalificatoinApiConstants.facilitatorParamName)) {
+
+            final Long newValue = command.longValueOfParameterNamed(PrequalificatoinApiConstants.facilitatorParamName);
+            AppUser newFacilitator = null;
+            if (newValue != null) {
+                newFacilitator = this.appUserRepository.findById(newValue).orElseThrow(() -> new UserNotFoundException(newValue));
+            }
+            prequalificationGroup.updateFacilitator(newFacilitator);
+        }
+
+        if (changes.containsKey(PrequalificatoinApiConstants.groupNameParamName)) {
+
+            final String newValue = command.stringValueOfParameterNamed(PrequalificatoinApiConstants.groupNameParamName);
+            if (newValue != null) {
+                prequalificationGroup.updateGroupName(newValue);
+            }
+        }
+
+
+        this.prequalificationGroupRepositoryWrapper.saveAndFlush(prequalificationGroup);
+
+        //TODO: FBR-220 process changes in members
+        //List<PrequalificationGroupMember> members = assembleMembers(command, prequalificationGroup, prequalificationGroup.getAddedBy());
+        //prequalificationGroup.updateMembers(members);
+        //this.prequalificationGroupRepositoryWrapper.saveAndFlush(prequalificationGroup);
+
+        return new CommandProcessingResultBuilder() //
+                .withCommandId(command.commandId()) //
+                .withResourceIdAsString(prequalificationGroup.getId().toString()) //
+                .withEntityId(prequalificationGroup.getId()) //
+                .build();
+    }
+
 }

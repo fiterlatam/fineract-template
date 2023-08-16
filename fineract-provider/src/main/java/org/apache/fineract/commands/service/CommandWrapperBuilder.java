@@ -3732,4 +3732,12 @@ public class CommandWrapperBuilder {
         this.href = "/centers/" + centerId;
         return this;
     }
+
+    public CommandWrapperBuilder updatePrequalification(final Long groupId) {
+        this.actionName = "UPDATE";
+        this.entityName = "PREQUALIFICATIONS";
+        this.entityId = groupId;
+        this.href = "/prequalification/" + groupId;
+        return this;
+    }
 }

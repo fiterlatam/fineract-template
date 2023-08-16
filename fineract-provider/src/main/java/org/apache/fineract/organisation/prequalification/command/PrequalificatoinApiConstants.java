@@ -37,4 +37,5 @@ public class PrequalificatoinApiConstants {
     public static final String typificationParamName = "typification";
     public static final String agencyIdParamName = "agencyId";
     public static final String facilitatorParamName = "facilitator";
+    public static final String prequalificationNumberParamName = "prequalificationNumber";
 }

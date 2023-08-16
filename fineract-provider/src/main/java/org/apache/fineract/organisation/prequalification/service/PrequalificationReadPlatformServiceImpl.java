@@ -287,7 +287,8 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             final StringBuilder builder = new StringBuilder(400);
 
             builder.append("g.id as id, g.prequalification_number as prequalificationNumber, g.status, g.created_at, g.comments, "
-                    + "ma.name as agencyName, cg.display_name as groupName, g.group_name as newGroupName, g.group_id as groupId, pc.display_name as centerName, ");
+                    + "ma.name as agencyName, ma.id as agencyId, cg.display_name as groupName, g.group_name as newGroupName, g.group_id as groupId, pc.display_name as centerName, "
+                    + " pc.id as centerId, lp.id as productId, fa.id as facilitatorId, concat(fa.firstname,' ',fa.lastname) as facilitatorName, ");
             builder.append("lp.name as productName, au.firstname, au.lastname ");
             builder.append("from m_prequalification_group g ");
             builder.append("inner join m_appuser au on au.id = g.added_by ");
@@ -295,7 +296,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             builder.append("inner join m_agency ma on g.agency_id = ma.id ");
             builder.append("left join m_group cg on cg.id = g.group_id ");
             builder.append("left join m_group pc on pc.id = g.center_id ");
-            // builder.append("left join m_portfolio mp on mp.id = pc.portfolio_id ");
+            builder.append("inner join m_appuser fa on fa.id = g.facilitator ");
 
             this.schema = builder.toString();
         }
@@ -323,12 +324,17 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             final LocalDate createdAt = JdbcSupport.getLocalDate(rs, "created_at");
 
             final String addedBy = rs.getString("firstname") + " " + rs.getString("lastname");
+            final Long agencyId = JdbcSupport.getLong(rs, "agencyId");
+            final Long centerId = JdbcSupport.getLong(rs, "centerId");
+            final Long productId = JdbcSupport.getLong(rs, "productId");
+            final Long facilitatorId = JdbcSupport.getLong(rs, "facilitatorId");
+            final String facilitatorName = rs.getString("facilitatorName");
 
             if (StringUtils.isBlank(groupName)) {
                 groupName = newGroupName;
             }
             return GroupPrequalificationData.instance(id, prequalificationNumber, status, agencyName, null, centerName, groupName,
-                    productName, addedBy, createdAt, comments, groupId);
+                    productName, addedBy, createdAt, comments, groupId, agencyId, centerId, productId, facilitatorId, facilitatorName);
 
         }
     }
