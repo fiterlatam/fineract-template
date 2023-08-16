@@ -33,7 +33,6 @@
         </addColumn>
     </changeSet>
 
-    <!--
     <changeSet author="brian@fiter.io" id="0061_2_FBR_migrate_m_potfolio_centers_and_centergroups_to_m_group">
         <sqlFile
                 encoding="utf8"
@@ -42,5 +41,5 @@
                 splitStatements="true"
                 stripComments="true"/>
     </changeSet>
-    -->
+
 </databaseChangeLog>
