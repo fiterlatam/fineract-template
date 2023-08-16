@@ -130,13 +130,13 @@ public class GroupPrequalificationApiResource {
     @Produces({ MediaType.APPLICATION_JSON })
     @Operation(summary = "List all prequalifications", description = "Example Requests:\n" + "prequalification\n")
     public String retrieveAllBlacklistItems(@Context final UriInfo uriInfo,
-            @QueryParam("offset") @Parameter(description = "offset") final Integer offset,
-            @QueryParam("limit") @Parameter(description = "limit") final Integer limit,
-            @QueryParam("orderBy") @Parameter(description = "orderBy") final String orderBy,
-            @QueryParam("status") @Parameter(description = "status") final String status,
-            @QueryParam("type") @Parameter(description = "type") final String type,
-            @QueryParam("searchText") @Parameter(description = "searchText") final String searchText,
-            @QueryParam("sortOrder") @Parameter(description = "sortOrder") final String sortOrder) {
+                                            @QueryParam("offset") @Parameter(description = "offset") final Integer offset,
+                                            @QueryParam("limit") @Parameter(description = "limit") final Integer limit,
+                                            @QueryParam("orderBy") @Parameter(description = "orderBy") final String orderBy,
+                                            @QueryParam("status") @Parameter(description = "status") final String status,
+                                            @QueryParam("type") @Parameter(description = "type") final String type,
+                                            @QueryParam("searchText") @Parameter(description = "searchText") final String searchText,
+                                            @QueryParam("sortOrder") @Parameter(description = "sortOrder") final String sortOrder) {
 
         this.context.authenticatedUser().validateHasViewPermission(this.resourceNameForPermissions);
 
@@ -183,7 +183,7 @@ public class GroupPrequalificationApiResource {
     @Produces({ MediaType.APPLICATION_JSON })
     @Operation(summary = "Retrieve Prequalification Details")
     public String getBlacklistDetails(@Context final UriInfo uriInfo,
-            @PathParam("groupId") @Parameter(description = "groupId") final Long groupId) {
+                                      @PathParam("groupId") @Parameter(description = "groupId") final Long groupId) {
 
         this.context.authenticatedUser().validateHasViewPermission(this.resourceNameForPermissions);
 
@@ -199,8 +199,8 @@ public class GroupPrequalificationApiResource {
     @Produces({ MediaType.APPLICATION_JSON })
     @Operation(summary = "Retrieve Prequalification Details")
     public String prequalifyExistingGroup(@Context final UriInfo uriInfo,
-            @PathParam("groupId") @Parameter(description = "groupId") final Long groupId,
-            @Parameter(hidden = true) final String apiRequestBodyAsJson) {
+                                          @PathParam("groupId") @Parameter(description = "groupId") final Long groupId,
+                                          @Parameter(hidden = true) final String apiRequestBodyAsJson) {
 
         try {
             final CommandWrapper commandRequest = new CommandWrapperBuilder().createPrequalification().withGroupId(groupId)
@@ -238,10 +238,10 @@ public class GroupPrequalificationApiResource {
     @Consumes({ MediaType.MULTIPART_FORM_DATA })
     @Produces({ MediaType.APPLICATION_JSON })
     public String createDocument(@PathParam("groupId") @Parameter(description = "groupId") final Long groupId,
-            @HeaderParam("Content-Length") @Parameter(description = "Content-Length") final Long fileSize,
-            @FormDataParam("file") final InputStream inputStream, @FormDataParam("file") final FormDataContentDisposition fileDetails,
-            @FormDataParam("file") final FormDataBodyPart bodyPart, @FormDataParam("name") final String name,
-            @FormDataParam("description") final String description, @FormDataParam("comment") final String comment) {
+                                 @HeaderParam("Content-Length") @Parameter(description = "Content-Length") final Long fileSize,
+                                 @FormDataParam("file") final InputStream inputStream, @FormDataParam("file") final FormDataContentDisposition fileDetails,
+                                 @FormDataParam("file") final FormDataBodyPart bodyPart, @FormDataParam("name") final String name,
+                                 @FormDataParam("description") final String description, @FormDataParam("comment") final String comment) {
 
         if (inputStream != null) {
             fileUploadValidator.validate(fileSize, inputStream, fileDetails, bodyPart);
