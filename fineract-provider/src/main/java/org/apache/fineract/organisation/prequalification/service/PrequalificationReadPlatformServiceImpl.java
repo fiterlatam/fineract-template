@@ -113,7 +113,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
 
         if (searchParameters != null) {
 
-            final String extraCriteria = buildSqlStringFromBlacklistCriteria(searchParameters, paramList);
+            final String extraCriteria = buildSqlStringFromBlacklistCriteria(searchParameters, paramList, true);
 
             if (StringUtils.isNotBlank(extraCriteria)) {
                 sqlBuilder.append(" and (").append(extraCriteria).append(")");
@@ -184,7 +184,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
 
         if (searchParameters != null) {
 
-            final String extraCriteria = buildSqlStringFromBlacklistCriteria(searchParameters, paramList);
+            final String extraCriteria = buildSqlStringFromBlacklistCriteria(searchParameters, paramList, false);
 
             if (StringUtils.isNotBlank(extraCriteria)) {
                 sqlBuilder.append(" and (").append(extraCriteria).append(")");
@@ -222,17 +222,23 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
         return clientData;
     }
 
-    private String buildSqlStringFromBlacklistCriteria(final SearchParameters searchParameters, List<Object> paramList) {
+    private String buildSqlStringFromBlacklistCriteria(final SearchParameters searchParameters, List<Object> paramList, boolean isGroup) {
 
         String sqlSearch = searchParameters.getSqlSearch();
         final Long officeId = searchParameters.getOfficeId();
         final String dpiNumber = searchParameters.getName();
         final String status = searchParameters.getStatus();
         final String type = searchParameters.getType();
+        final String groupName = searchParameters.getGroupName();
+        final String centerName = searchParameters.getCenterName();
 
         String extraCriteria = "";
-        if (sqlSearch != null) {
+        if (sqlSearch != null && !isGroup) {
             extraCriteria = " and (m.name like '%" + sqlSearch + "%' OR m.dpi='" + sqlSearch + "') ";
+        }
+
+        if (sqlSearch != null && isGroup) {
+            extraCriteria = " and (g.group_name like '%" + sqlSearch + "%' OR pc.display_name='%" + sqlSearch + "%') ";
         }
 
         if (officeId != null) {
@@ -243,6 +249,16 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
         if (dpiNumber != null) {
             paramList.add(dpiNumber);
             extraCriteria += " and g.prequalification_number like %?% ";
+        }
+
+        if (groupName != null) {
+            paramList.add(groupName);
+            extraCriteria += " and g.group_name like %?% ";
+        }
+
+        if (centerName != null) {
+            paramList.add(centerName);
+            extraCriteria += " and pc.display_name like %?% ";
         }
 
         if (status != null) {
