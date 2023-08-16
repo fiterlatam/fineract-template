@@ -21,6 +21,14 @@ package org.apache.fineract.organisation.prequalification.service;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
+import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.infrastructure.codes.service.CodeValueReadPlatformService;
@@ -30,10 +38,9 @@ import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuild
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.organisation.agency.domain.Agency;
 import org.apache.fineract.organisation.agency.domain.AgencyRepositoryWrapper;
-import org.apache.fineract.organisation.centerGroup.domain.CenterGroup;
-import org.apache.fineract.organisation.centerGroup.domain.CenterGroupRepositoryWrapper;
-import org.apache.fineract.organisation.prequalification.command.PrequalificatoinApiConstants;
 import org.apache.fineract.organisation.prequalification.command.PrequalificationDataValidator;
+import org.apache.fineract.organisation.prequalification.command.PrequalificatoinApiConstants;
+import org.apache.fineract.organisation.prequalification.domain.PreQualificationMemberRepository;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationGroup;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationGroupMember;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationGroupRepositoryWrapper;
@@ -42,6 +49,8 @@ import org.apache.fineract.organisation.prequalification.serialization.Prequalif
 import org.apache.fineract.portfolio.blacklist.domain.BlacklistStatus;
 import org.apache.fineract.portfolio.client.service.ClientChargeWritePlatformServiceJpaRepositoryImpl;
 import org.apache.fineract.portfolio.client.service.ClientReadPlatformService;
+import org.apache.fineract.portfolio.group.domain.Group;
+import org.apache.fineract.portfolio.group.domain.GroupRepositoryWrapper;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProduct;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductRepository;
 import org.apache.fineract.portfolio.loanproduct.exception.LoanProductNotFoundException;
@@ -55,15 +64,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.util.ObjectUtils;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeFormatterBuilder;
-import java.time.format.DateTimeParseException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-
 @Service
 @Slf4j
 public class PrequalificationWritePlatformServiceImpl implements PrequalificationWritePlatformService {
@@ -76,17 +76,20 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
     private final ClientReadPlatformService clientReadPlatformService;
     private final CodeValueReadPlatformService codeValueReadPlatformService;
     private final PrequalificationGroupRepositoryWrapper prequalificationGroupRepositoryWrapper;
-    private final CenterGroupRepositoryWrapper centerGroupRepositoryWrapper;
+    private final PreQualificationMemberRepository preQualificationMemberRepository;
+    private final GroupRepositoryWrapper groupRepositoryWrapper;
     private final AppUserRepository appUserRepository;
     private final AgencyRepositoryWrapper agencyRepositoryWrapper;
     private final PrequalificationMemberCommandFromApiJsonDeserializer apiJsonDeserializer;
     private final JdbcTemplate jdbcTemplate;
 
     @Autowired
-    public PrequalificationWritePlatformServiceImpl(final PlatformSecurityContext context, final PrequalificationDataValidator dataValidator,
-                                                    final CenterGroupRepositoryWrapper centerGroupRepositoryWrapper,final AppUserRepository appUserRepository,
-                                                    final LoanProductRepository loanProductRepository, final ClientReadPlatformService clientReadPlatformService,
-                                                    final AgencyRepositoryWrapper agencyRepositoryWrapper,final PrequalificationMemberCommandFromApiJsonDeserializer apiJsonDeserializer,
+    public PrequalificationWritePlatformServiceImpl(final PlatformSecurityContext context,
+                                                    final PrequalificationDataValidator dataValidator, final GroupRepositoryWrapper groupRepositoryWrapper,
+                                                    final AppUserRepository appUserRepository, final LoanProductRepository loanProductRepository,
+                                                    final ClientReadPlatformService clientReadPlatformService, final AgencyRepositoryWrapper agencyRepositoryWrapper,
+                                                    final PrequalificationMemberCommandFromApiJsonDeserializer apiJsonDeserializer,
+                                                    final PreQualificationMemberRepository preQualificationMemberRepository,
                                                     final CodeValueReadPlatformService codeValueReadPlatformService, final JdbcTemplate jdbcTemplate,
                                                     final PrequalificationGroupRepositoryWrapper prequalificationGroupRepositoryWrapper) {
         this.context = context;
@@ -95,15 +98,22 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         this.clientReadPlatformService = clientReadPlatformService;
         this.codeValueReadPlatformService = codeValueReadPlatformService;
         this.prequalificationGroupRepositoryWrapper = prequalificationGroupRepositoryWrapper;
-        this.centerGroupRepositoryWrapper = centerGroupRepositoryWrapper;
+        this.groupRepositoryWrapper = groupRepositoryWrapper;
         this.appUserRepository = appUserRepository;
         this.agencyRepositoryWrapper = agencyRepositoryWrapper;
         this.apiJsonDeserializer = apiJsonDeserializer;
+        this.preQualificationMemberRepository = preQualificationMemberRepository;
         this.jdbcTemplate = jdbcTemplate;
     }
 
     @Override
     public CommandProcessingResult processPrequalification(JsonCommand command) {
+
+        final Boolean individualPrequalification = command.booleanPrimitiveValueOfParameterNamed("individual");
+        if (individualPrequalification){
+            return prequalifyIndividual(command);
+        }
+
         this.dataValidator.validateForCreate(command.json());
         final Long productId = command.longValueOfParameterNamed(PrequalificatoinApiConstants.productIdParamName);
         final Long centerGroupId = command.longValueOfParameterNamed(PrequalificatoinApiConstants.groupIdParamName);
@@ -114,10 +124,10 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         LoanProduct loanProduct = productOption.get();
         String groupName = command.stringValueOfParameterNamed(PrequalificatoinApiConstants.groupNameParamName);
 
-        CenterGroup centerGroup = null;
+        Group group = null;
         if (centerGroupId != null) {
-            centerGroup = this.centerGroupRepositoryWrapper.findOneWithNotFoundDetection(centerGroupId);
-            groupName = centerGroup.getName();
+            group = this.groupRepositoryWrapper.findOneWithNotFoundDetection(centerGroupId);
+            groupName = group.getName();
         }
 
         Agency agency = this.agencyRepositoryWrapper.findOneWithNotFoundDetection(agencyId);
@@ -126,10 +136,10 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         Long facilitatorId = command.longValueOfParameterNamed(PrequalificatoinApiConstants.facilitatorParamName);
         AppUser facilitator = null;
         if (facilitatorId != null) {
-            facilitator = this.appUserRepository.findById(facilitatorId)
-                    .orElseThrow(() -> new UserNotFoundException(facilitatorId));
+            facilitator = this.appUserRepository.findById(facilitatorId).orElseThrow(() -> new UserNotFoundException(facilitatorId));
         }
-        PrequalificationGroup prequalificationGroup = PrequalificationGroup.fromJson(addedBy, facilitator, agency, centerGroup, loanProduct, command);
+        PrequalificationGroup prequalificationGroup = PrequalificationGroup.fromJson(addedBy, facilitator, agency, group, loanProduct,
+                command);
 
         this.prequalificationGroupRepositoryWrapper.saveAndFlush(prequalificationGroup);
         StringBuilder prequalSB = new StringBuilder();
@@ -149,10 +159,48 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                 .build();
     }
 
+    private CommandProcessingResult prequalifyIndividual(JsonCommand command) {
+        AppUser addedBy = this.context.getAuthenticatedUserIfPresent();
+
+        apiJsonDeserializer.validateForCreate(command.json());
+        final String clientName = command.stringValueOfParameterNamed("name");
+        final String dpi = command.stringValueOfParameterNamed("dpi");
+        final String puente = command.stringValueOfParameterNamed("puente");
+        final BigDecimal amount = command.bigDecimalValueOfParameterNamed("amount");
+        LocalDate dateOfBirth = command.localDateValueOfParameterNamed("dob");
+
+
+        // get light indicator
+        String blistSql = "select count(*) from m_client_blacklist where dpi=? and status=?";
+        Long activeBlacklisted = jdbcTemplate.queryForObject(blistSql, Long.class, dpi, BlacklistStatus.ACTIVE.getValue());
+        Long inactiveBlacklisted = jdbcTemplate.queryForObject(blistSql, Long.class, dpi, BlacklistStatus.INACTIVE.getValue());
+        Integer status = PrequalificationMemberIndication.NONE.getValue();
+        if (activeBlacklisted <= 0 && inactiveBlacklisted <= 0) {
+            status = PrequalificationMemberIndication.NONE.getValue();
+        }
+        if (activeBlacklisted <= 0 && inactiveBlacklisted > 0) {
+            status = PrequalificationMemberIndication.INACTIVE.getValue();
+        }
+
+        if (activeBlacklisted > 0) {
+            status = PrequalificationMemberIndication.ACTIVE.getValue();
+        }
+
+        PrequalificationGroupMember groupMember = PrequalificationGroupMember.fromJson( null, clientName, dpi, null, dateOfBirth,
+                amount, puente, addedBy, status);
+
+        this.preQualificationMemberRepository.saveAndFlush(groupMember);
+        return new CommandProcessingResultBuilder() //
+                .withCommandId(command.commandId()) //
+                .withResourceIdAsString(groupMember.getId().toString()) //
+                .withEntityId(groupMember.getId()) //
+                .build();
+    }
+
     private List<PrequalificationGroupMember> assembleMembers(JsonCommand command, PrequalificationGroup group, AppUser addedBy) {
         final List<PrequalificationGroupMember> allMembers = new ArrayList<>();
 
-            JsonArray groupMembers = command.arrayOfParameterNamed(PrequalificatoinApiConstants.membersParamName);
+        JsonArray groupMembers = command.arrayOfParameterNamed(PrequalificatoinApiConstants.membersParamName);
         if (!ObjectUtils.isEmpty(groupMembers)) {
             for (JsonElement members : groupMembers) {
 
@@ -179,6 +227,10 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                     puente = member.get("puente").getAsString();
                 }
 
+                Long clientId = null;
+                if (member.get("clientId") != null) {
+                    clientId = member.get("clientId").getAsLong();
+                }
 
                 LocalDate dateOfBirth = null;
                 if (member.get("dob") != null) {
@@ -195,24 +247,24 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
 
                 }
 
-                //get light indicator
+                // get light indicator
                 String blistSql = "select count(*) from m_client_blacklist where dpi=? and status=?";
                 Long activeBlacklisted = jdbcTemplate.queryForObject(blistSql, Long.class, dpi, BlacklistStatus.ACTIVE.getValue());
                 Long inactiveBlacklisted = jdbcTemplate.queryForObject(blistSql, Long.class, dpi, BlacklistStatus.INACTIVE.getValue());
                 Integer status = PrequalificationMemberIndication.NONE.getValue();
-                if (activeBlacklisted <=0 && inactiveBlacklisted<=0) {
+                if (activeBlacklisted <= 0 && inactiveBlacklisted <= 0) {
                     status = PrequalificationMemberIndication.NONE.getValue();
                 }
-                if (activeBlacklisted <=0 && inactiveBlacklisted>0) {
+                if (activeBlacklisted <= 0 && inactiveBlacklisted > 0) {
                     status = PrequalificationMemberIndication.INACTIVE.getValue();
                 }
 
-                if (activeBlacklisted >0) {
+                if (activeBlacklisted > 0) {
                     status = PrequalificationMemberIndication.ACTIVE.getValue();
                 }
 
-
-                PrequalificationGroupMember groupMember = PrequalificationGroupMember.fromJson(group, name, dpi, dateOfBirth, requestedAmount, puente, addedBy, status);
+                PrequalificationGroupMember groupMember = PrequalificationGroupMember.fromJson(group, name, dpi, clientId, dateOfBirth,
+                        requestedAmount, puente, addedBy, status);
                 allMembers.add(groupMember);
             }
         }

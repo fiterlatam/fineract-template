@@ -34,6 +34,7 @@ import org.apache.fineract.portfolio.loanproduct.domain.InterestCalculationPerio
 import org.apache.fineract.portfolio.loanproduct.domain.InterestMethod;
 import org.apache.fineract.portfolio.loanproduct.domain.InterestRecalculationCompoundingMethod;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanPreClosureInterestCalculationStrategy;
+import org.apache.fineract.portfolio.loanproduct.domain.LoanProductOwnerType;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductParamType;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductValueConditionType;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanRescheduleStrategyMethod;
@@ -758,4 +759,16 @@ public final class LoanEnumerations {
         return optionData;
     }
 
+    public static EnumOptionData loanProductOwnerType(LoanProductOwnerType loanProductOwnerType) {
+        EnumOptionData enumOptionData;
+        switch (loanProductOwnerType) {
+            case INDIVIDUAL -> enumOptionData = new EnumOptionData(LoanProductOwnerType.INDIVIDUAL.getValue().longValue(),
+                    LoanProductOwnerType.INDIVIDUAL.getCode(), "Individual");
+            case GROUP -> enumOptionData = new EnumOptionData(LoanProductOwnerType.GROUP.getValue().longValue(),
+                    LoanProductOwnerType.GROUP.getCode(), "Group");
+            default -> enumOptionData = new EnumOptionData(LoanProductOwnerType.INVALID.getValue().longValue(),
+                    LoanProductOwnerType.INVALID.getCode(), "Invalid");
+        }
+        return enumOptionData;
+    }
 }

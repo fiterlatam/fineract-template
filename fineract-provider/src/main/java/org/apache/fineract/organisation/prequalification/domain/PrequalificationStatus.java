@@ -67,7 +67,7 @@ public enum PrequalificationStatus {
             clientStatus = PrequalificationStatus.APPROVED;
         } else if (status.equalsIgnoreCase(ClientStatus.PENDING.toString())) {
             clientStatus = PrequalificationStatus.PENDING;
-        }else if (status.equalsIgnoreCase(ClientStatus.REJECTED.toString())) {
+        } else if (status.equalsIgnoreCase(ClientStatus.REJECTED.toString())) {
             clientStatus = PrequalificationStatus.REJECTED;
         }
 
@@ -94,6 +94,7 @@ public enum PrequalificationStatus {
     public boolean isApproved() {
         return this.value.equals(PrequalificationStatus.APPROVED.getValue());
     }
+
     public boolean isRejected() {
         return this.value.equals(PrequalificationStatus.REJECTED.getValue());
     }

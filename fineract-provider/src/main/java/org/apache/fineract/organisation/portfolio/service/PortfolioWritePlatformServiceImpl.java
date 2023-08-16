@@ -38,6 +38,7 @@ import org.apache.fineract.organisation.portfolio.domain.Portfolio;
 import org.apache.fineract.organisation.portfolio.domain.PortfolioRepositoryWrapper;
 import org.apache.fineract.organisation.portfolio.serialization.PortfolioCommandFromApiJsonDeserializer;
 import org.apache.fineract.organisation.portfolioCenter.service.PortfolioCenterWritePlatformService;
+import org.apache.fineract.portfolio.group.service.GroupingTypesWritePlatformService;
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.apache.fineract.useradministration.domain.AppUserRepository;
 import org.apache.fineract.useradministration.exception.UserNotFoundException;
@@ -60,18 +61,21 @@ public class PortfolioWritePlatformServiceImpl implements PortfolioWritePlatform
     private final OfficeRepositoryWrapper officeRepositoryWrapper;
     private final AppUserRepository appUserRepository;
     private final PortfolioCenterWritePlatformService portfolioCenterWritePlatformService;
+    private final GroupingTypesWritePlatformService groupingTypesWritePlatformService;
 
     @Autowired
     public PortfolioWritePlatformServiceImpl(PlatformSecurityContext context,
             PortfolioCommandFromApiJsonDeserializer fromApiJsonDeserializer, PortfolioRepositoryWrapper portfolioRepositoryWrapper,
             OfficeRepositoryWrapper officeRepositoryWrapper, AppUserRepository appUserRepository,
-            PortfolioCenterWritePlatformService portfolioCenterWritePlatformService) {
+            PortfolioCenterWritePlatformService portfolioCenterWritePlatformService,
+            GroupingTypesWritePlatformService groupingTypesWritePlatformService) {
         this.context = context;
         this.fromApiJsonDeserializer = fromApiJsonDeserializer;
         this.portfolioRepositoryWrapper = portfolioRepositoryWrapper;
         this.officeRepositoryWrapper = officeRepositoryWrapper;
         this.appUserRepository = appUserRepository;
         this.portfolioCenterWritePlatformService = portfolioCenterWritePlatformService;
+        this.groupingTypesWritePlatformService = groupingTypesWritePlatformService;
     }
 
     @Transactional
@@ -102,7 +106,7 @@ public class PortfolioWritePlatformServiceImpl implements PortfolioWritePlatform
             saveAndFlushPortfolioWithDataIntegrityViolationChecks(portfolio);
 
             // generate all centers for the portfolio
-            portfolioCenterWritePlatformService.generateAllCentersByPortfolio(portfolio);
+            groupingTypesWritePlatformService.generateCentersByPortfolio(portfolio);
 
             return new CommandProcessingResultBuilder() //
                     .withCommandId(command.commandId()) //

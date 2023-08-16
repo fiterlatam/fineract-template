@@ -18,12 +18,11 @@
  */
 package org.apache.fineract.organisation.prequalification.domain;
 
+import java.util.ArrayList;
+import java.util.List;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.portfolio.client.domain.ClientTransactionType;
 import org.apache.fineract.portfolio.client.domain.LegalForm;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public final class PreQualificationsEnumerations {
 
@@ -36,23 +35,24 @@ public final class PreQualificationsEnumerations {
     }
 
     public static EnumOptionData status(final PrequalificationStatus status) {
-        EnumOptionData optionData = new EnumOptionData(PrequalificationStatus.INVALID.getValue().longValue(), PrequalificationStatus.INVALID.getCode(),
-                "INVALID");
+        EnumOptionData optionData = new EnumOptionData(PrequalificationStatus.INVALID.getValue().longValue(),
+                PrequalificationStatus.INVALID.getCode(), "INVALID");
         switch (status) {
             case INVALID:
-                optionData = new EnumOptionData(PrequalificationStatus.INVALID.getValue().longValue(), PrequalificationStatus.INVALID.getCode(),
-                        "INVALID");
-            break;
+                optionData = new EnumOptionData(PrequalificationStatus.INVALID.getValue().longValue(),
+                        PrequalificationStatus.INVALID.getCode(), "INVALID");
+                break;
             case PENDING:
-                optionData = new EnumOptionData(PrequalificationStatus.PENDING.getValue().longValue(), PrequalificationStatus.PENDING.getCode(), "PENDING");
-            break;
+                optionData = new EnumOptionData(PrequalificationStatus.PENDING.getValue().longValue(),
+                        PrequalificationStatus.PENDING.getCode(), "PENDING");
+                break;
             case APPROVED:
-                optionData = new EnumOptionData(PrequalificationStatus.APPROVED.getValue().longValue(), PrequalificationStatus.APPROVED.getCode(),
-                        "APPROVED");
+                optionData = new EnumOptionData(PrequalificationStatus.APPROVED.getValue().longValue(),
+                        PrequalificationStatus.APPROVED.getCode(), "APPROVED");
             case REJECTED:
-                optionData = new EnumOptionData(PrequalificationStatus.REJECTED.getValue().longValue(), PrequalificationStatus.REJECTED.getCode(),
-                        "REJECTED");
-            break;
+                optionData = new EnumOptionData(PrequalificationStatus.REJECTED.getValue().longValue(),
+                        PrequalificationStatus.REJECTED.getCode(), "REJECTED");
+                break;
         }
 
         return optionData;

@@ -21,6 +21,12 @@ package org.apache.fineract.organisation.prequalification.command;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.reflect.TypeToken;
+import java.lang.reflect.Type;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.infrastructure.core.data.ApiParameterError;
 import org.apache.fineract.infrastructure.core.data.DataValidatorBuilder;
@@ -32,13 +38,6 @@ import org.apache.fineract.portfolio.client.api.ClientApiConstants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.lang.reflect.Type;
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 @Component
 public class PrequalificationDataValidator {
 
@@ -46,7 +45,8 @@ public class PrequalificationDataValidator {
     private final PreQualificationGroupRepository preQualificationGroupRepository;
 
     @Autowired
-    public PrequalificationDataValidator(final FromJsonHelper fromApiJsonHelper, final PreQualificationGroupRepository preQualificationGroupRepository) {
+    public PrequalificationDataValidator(final FromJsonHelper fromApiJsonHelper,
+                                         final PreQualificationGroupRepository preQualificationGroupRepository) {
         this.fromApiJsonHelper = fromApiJsonHelper;
         this.preQualificationGroupRepository = preQualificationGroupRepository;
     }
@@ -69,17 +69,18 @@ public class PrequalificationDataValidator {
         final Long centerId = this.fromApiJsonHelper.extractLongNamed(PrequalificatoinApiConstants.centerIdParamName, element);
         baseDataValidator.reset().parameter(PrequalificatoinApiConstants.centerIdParamName).value(centerId).notNull().longGreaterThanZero();
 
-
         if (this.fromApiJsonHelper.parameterExists(PrequalificatoinApiConstants.groupIdParamName, element)) {
             final Long groupId = this.fromApiJsonHelper.extractLongNamed(PrequalificatoinApiConstants.groupIdParamName, element);
-            baseDataValidator.reset().parameter(PrequalificatoinApiConstants.groupIdParamName).value(groupId).notNull().longGreaterThanZero();
-        }else{
+            baseDataValidator.reset().parameter(PrequalificatoinApiConstants.groupIdParamName).value(groupId).notNull()
+                    .longGreaterThanZero();
+        } else {
             final String groupName = this.fromApiJsonHelper.extractStringNamed(PrequalificatoinApiConstants.groupNameParamName, element);
             baseDataValidator.reset().parameter(PrequalificatoinApiConstants.groupNameParamName).value(groupName).notBlank();
         }
 
         final JsonArray members = this.fromApiJsonHelper.extractJsonArrayNamed(PrequalificatoinApiConstants.membersParamName, element);
-        baseDataValidator.reset().parameter(PrequalificatoinApiConstants.membersParamName).value(members).ignoreIfNull().jsonArrayNotEmpty();
+        baseDataValidator.reset().parameter(PrequalificatoinApiConstants.membersParamName).value(members).ignoreIfNull()
+                .jsonArrayNotEmpty();
 
         throwExceptionIfValidationWarningsExist(dataValidationErrors);
     }

@@ -78,4 +78,13 @@
     <include file="parts/0061_FBR_migrate_m_potfolio_centers_and_centergroups_to_m_group.xml" relativeToChangelogFile="true"/>
     <include file="parts/0062_Permission_for_Transfer_of_groups_in_m_group.xml" relativeToChangelogFile="true"/>
     <include file="parts/0063_add_group_name_prequalification_group_table.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0064_add_contract_field_to_loan_product.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0065_add_age_limit_settings_to_loan_products.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0066_refactor_center_and_group.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0067_FBR_additional_fields_to_m_product_loan.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0068_FBR_change_agency_id_column_blacklist.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0069_FBR_add_client_id_existing_group_prequalification.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0070_FBR_add_active_loan_report.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0071_FBR_change_prequalification_member_groupid.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0072_FBR_update_active_loan_report.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

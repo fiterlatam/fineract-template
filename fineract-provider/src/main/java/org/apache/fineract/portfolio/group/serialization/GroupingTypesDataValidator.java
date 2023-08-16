@@ -22,6 +22,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.reflect.TypeToken;
 import java.lang.reflect.Type;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -36,6 +37,7 @@ import org.apache.fineract.infrastructure.core.data.DataValidatorBuilder;
 import org.apache.fineract.infrastructure.core.exception.InvalidJsonException;
 import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidationException;
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
+import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.portfolio.client.api.ClientApiConstants;
 import org.apache.fineract.portfolio.group.api.GroupingTypesApiConstants;
 import org.apache.fineract.portfolio.group.domain.GroupRepositoryWrapper;
@@ -53,10 +55,14 @@ public final class GroupingTypesDataValidator {
             GroupingTypesApiConstants.externalIdParamName, GroupingTypesApiConstants.officeIdParamName,
             GroupingTypesApiConstants.staffIdParamName, GroupingTypesApiConstants.activeParamName,
             GroupingTypesApiConstants.activationDateParamName, GroupingTypesApiConstants.groupMembersParamName,
-            GroupingTypesApiConstants.submittedOnDateParamName, GroupingTypesApiConstants.datatables));
+            GroupingTypesApiConstants.submittedOnDateParamName, GroupingTypesApiConstants.datatables, GroupingTypesApiConstants.portfolioId,
+            GroupingTypesApiConstants.cityId, GroupingTypesApiConstants.stateId, GroupingTypesApiConstants.centerTypeId,
+            GroupingTypesApiConstants.distance, GroupingTypesApiConstants.meetingStart, GroupingTypesApiConstants.meetingEnd,
+            GroupingTypesApiConstants.meetingStartTime, GroupingTypesApiConstants.meetingEndTime, GroupingTypesApiConstants.meetingDay,
+            GroupingTypesApiConstants.referencePoint, GroupingTypesApiConstants.legacyNumber));
 
-    private static final Set<String> GROUP_TRANSFER_DATA_PARAMETERS = new HashSet<>(Arrays.asList(
-            GroupingTypesApiConstants.groupIdParamName,GroupingTypesApiConstants.toCenterIdParamname));
+    private static final Set<String> GROUP_TRANSFER_DATA_PARAMETERS = new HashSet<>(
+            Arrays.asList(GroupingTypesApiConstants.groupIdParamName, GroupingTypesApiConstants.toCenterIdParamName));
 
     private static final Set<String> GROUP_REQUEST_DATA_PARAMETERS = new HashSet<>(Arrays.asList(GroupingTypesApiConstants.localeParamName,
             GroupingTypesApiConstants.dateFormatParamName, GroupingTypesApiConstants.idParamName, GroupingTypesApiConstants.nameParamName,
@@ -64,7 +70,12 @@ public final class GroupingTypesDataValidator {
             GroupingTypesApiConstants.officeIdParamName, GroupingTypesApiConstants.staffIdParamName,
             GroupingTypesApiConstants.activeParamName, GroupingTypesApiConstants.activationDateParamName,
             GroupingTypesApiConstants.clientMembersParamName, GroupingTypesApiConstants.collectionMeetingCalendar,
-            GroupingTypesApiConstants.submittedOnDateParamName, GroupingTypesApiConstants.datatables));
+            GroupingTypesApiConstants.submittedOnDateParamName, GroupingTypesApiConstants.datatables,
+            GroupingTypesApiConstants.portfolioCenterId, GroupingTypesApiConstants.responsibleUserId,
+            GroupingTypesApiConstants.legacyNumber, GroupingTypesApiConstants.latitude, GroupingTypesApiConstants.longitude,
+            GroupingTypesApiConstants.formationDate, GroupingTypesApiConstants.size, GroupingTypesApiConstants.createdDate,
+            GroupingTypesApiConstants.meetingStartTime, GroupingTypesApiConstants.meetingEndTime,
+            GroupingTypesApiConstants.newPortfolioCenterId, GroupingTypesApiConstants.groupLocation));
 
     private static final Set<String> ACTIVATION_REQUEST_DATA_PARAMETERS = new HashSet<>(
             Arrays.asList(GroupingTypesApiConstants.localeParamName, GroupingTypesApiConstants.dateFormatParamName,
@@ -175,8 +186,9 @@ public final class GroupingTypesDataValidator {
         final Long groupId = this.fromApiJsonHelper.extractLongNamed(GroupingTypesApiConstants.groupIdParamName, element);
         baseDataValidator.reset().parameter(GroupingTypesApiConstants.groupIdParamName).value(groupId).notNull().integerGreaterThanZero();
 
-        final Long toCenter = this.fromApiJsonHelper.extractLongNamed(GroupingTypesApiConstants.toCenterIdParamname, element);
-        baseDataValidator.reset().parameter(GroupingTypesApiConstants.toCenterIdParamname).value(toCenter).notNull().integerGreaterThanZero();
+        final Long toCenter = this.fromApiJsonHelper.extractLongNamed(GroupingTypesApiConstants.toCenterIdParamName, element);
+        baseDataValidator.reset().parameter(GroupingTypesApiConstants.toCenterIdParamName).value(toCenter).notNull()
+                .integerGreaterThanZero();
 
         throwExceptionIfValidationWarningsExist(dataValidationErrors);
     }
@@ -315,6 +327,7 @@ public final class GroupingTypesDataValidator {
             final JsonArray datatables = this.fromApiJsonHelper.extractJsonArrayNamed(GroupingTypesApiConstants.datatables, element);
             baseDataValidator.reset().parameter(GroupingTypesApiConstants.datatables).value(datatables).notNull().jsonArrayNotEmpty();
         }
+        validateGroupAdditionalData(baseDataValidator, element);
 
         throwExceptionIfValidationWarningsExist(dataValidationErrors);
     }
@@ -420,6 +433,8 @@ public final class GroupingTypesDataValidator {
             baseDataValidator.reset().parameter(GroupingTypesApiConstants.activationDateParamName).value(joinedDate).notNull()
                     .validateDateAfter(submittedOnDate);
         }
+
+        validateGroupAdditionalData(baseDataValidator, element);
 
         throwExceptionIfValidationWarningsExist(dataValidationErrors);
     }
@@ -645,4 +660,34 @@ public final class GroupingTypesDataValidator {
 
         throwExceptionIfValidationWarningsExist(dataValidationErrors);
     }
+
+    private void validateGroupAdditionalData(DataValidatorBuilder baseDataValidator, JsonElement element) {
+        final Integer size = this.fromApiJsonHelper.extractIntegerWithLocaleNamed(GroupingTypesApiConstants.size, element);
+        baseDataValidator.reset().parameter(GroupingTypesApiConstants.size).value(size).notNull().integerZeroOrGreater();
+
+        if (this.fromApiJsonHelper.parameterExists(GroupingTypesApiConstants.legacyNumber, element)) {
+            final Long legacyCenterNumber = this.fromApiJsonHelper.extractLongNamed(GroupingTypesApiConstants.legacyNumber, element);
+            baseDataValidator.reset().parameter(GroupingTypesApiConstants.legacyNumber).value(legacyCenterNumber).ignoreIfNull()
+                    .longGreaterThanZero();
+        }
+
+        if (this.fromApiJsonHelper.parameterExists(GroupingTypesApiConstants.latitude, element)) {
+            final BigDecimal latitude = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed(GroupingTypesApiConstants.latitude,
+                    element);
+            baseDataValidator.reset().parameter(GroupingTypesApiConstants.latitude).value(latitude).ignoreIfNull().zeroOrPositiveAmount();
+        }
+
+        if (this.fromApiJsonHelper.parameterExists(GroupingTypesApiConstants.longitude, element)) {
+            final BigDecimal longitude = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed(GroupingTypesApiConstants.longitude,
+                    element);
+            baseDataValidator.reset().parameter(GroupingTypesApiConstants.longitude).value(longitude).ignoreIfNull().zeroOrPositiveAmount();
+        }
+
+        if (this.fromApiJsonHelper.parameterExists(GroupingTypesApiConstants.formationDate, element)) {
+            final LocalDate formationDate = this.fromApiJsonHelper.extractLocalDateNamed(GroupingTypesApiConstants.formationDate, element);
+            baseDataValidator.reset().parameter(GroupingTypesApiConstants.formationDate).value(formationDate).ignoreIfNull()
+                    .validateDateBefore(DateUtils.getBusinessLocalDate());
+        }
+    }
+
 }

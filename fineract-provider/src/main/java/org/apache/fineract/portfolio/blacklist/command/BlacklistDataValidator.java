@@ -37,6 +37,7 @@ import org.apache.fineract.portfolio.blacklist.domain.BlacklistClientsRepository
 import org.apache.fineract.portfolio.blacklist.domain.BlacklistStatus;
 import org.apache.fineract.portfolio.blacklist.exception.ClientBlacklistedException;
 import org.apache.fineract.portfolio.client.api.ClientApiConstants;
+import org.apache.fineract.portfolio.client.validation.ClientIdentifierDocumentValidator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -77,6 +78,8 @@ public class BlacklistDataValidator {
 
         final String dpi = this.fromApiJsonHelper.extractStringNamed(BlacklistApiConstants.dpiParamName, element);
         baseDataValidator.reset().parameter(BlacklistApiConstants.dpiParamName).value(dpi).notBlank();
+        ClientIdentifierDocumentValidator.checkDPI(dpi, ClientApiConstants.dpiParamName);
+
         BlacklistClients blacklist = this.blacklistClientsRepository.findBlacklistClientsByDpi(dpi, BlacklistStatus.ACTIVE.getValue());
         if (blacklist != null) {
             throw new ClientBlacklistedException(dpi);
