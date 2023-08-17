@@ -76,7 +76,7 @@ public class PrequalificationGroupMember extends AbstractPersistableCustom {
     }
 
     private PrequalificationGroupMember(final AppUser appUser, final String clientName, final String dpi, final LocalDate dob,
-            final String puente, final PrequalificationGroup groupId, final BigDecimal requestedAmount, final Integer status,
+            final String puente, final PrequalificationGroup group, final BigDecimal requestedAmount, final Integer status,
             final Long clientId) {
         this.status = PrequalificationStatus.PENDING.getValue();
         this.createdAt = DateUtils.getLocalDateTimeOfTenant();
@@ -84,17 +84,17 @@ public class PrequalificationGroupMember extends AbstractPersistableCustom {
         this.dpi = dpi;
         this.name = clientName;
         this.clientId = clientId;
-        this.prequalificationGroup = groupId;
+        this.prequalificationGroup = group;
         this.workWithPuente = puente;
         this.requestedAmount = requestedAmount;
         this.addedBy = appUser;
         this.status = status;
     }
 
-    public static PrequalificationGroupMember fromJson(PrequalificationGroup groupId, String name, String dpi, Long clientId,
+    public static PrequalificationGroupMember fromJson(PrequalificationGroup group, String name, String dpi, Long clientId,
             LocalDate dateOfBirth, BigDecimal requestedAmount, String puente, AppUser addedBy, Integer status) {
         // TODO Auto-generated method stub
-        return new PrequalificationGroupMember(addedBy, name, dpi, dateOfBirth, puente, groupId, requestedAmount, status, clientId);
+        return new PrequalificationGroupMember(addedBy, name, dpi, dateOfBirth, puente, group, requestedAmount, status, clientId);
     }
 
     public void updateStatus(final PrequalificationStatus prequalificationStatus) {

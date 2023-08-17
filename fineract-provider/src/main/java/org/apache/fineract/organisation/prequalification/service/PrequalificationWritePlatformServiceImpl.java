@@ -150,7 +150,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         String prequalificationNumber = StringUtils.leftPad(prequalificationGroup.getId().toString(), 4, '0');
         prequalSB.append(prequalificationNumber);
         prequalificationGroup.updatePrequalificationNumber(prequalSB.toString());
-        List<PrequalificationGroupMember> members = assembleMembers(command, prequalificationGroup, addedBy);
+        List<PrequalificationGroupMember> members = assembNewMembers(command, prequalificationGroup, addedBy);
         prequalificationGroup.updateMembers(members);
         this.prequalificationGroupRepositoryWrapper.saveAndFlush(prequalificationGroup);
 
@@ -199,7 +199,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                 .build();
     }
 
-    private List<PrequalificationGroupMember> assembleMembers(JsonCommand command, PrequalificationGroup group, AppUser addedBy) {
+    private List<PrequalificationGroupMember> assembNewMembers(JsonCommand command, PrequalificationGroup group, AppUser addedBy) {
         final List<PrequalificationGroupMember> allMembers = new ArrayList<>();
 
         JsonArray groupMembers = command.arrayOfParameterNamed(PrequalificatoinApiConstants.membersParamName);
@@ -272,73 +272,6 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         }
 
         return allMembers;
-    }
-
-    private List<PrequalificationGroupMember> assembleMembersForUpdate(JsonCommand command, PrequalificationGroup prequalificationGroup, AppUser addedBy) {
-
-        final List<PrequalificationGroupMember> allMembers = new ArrayList<>();
-
-        JsonArray groupMembers = command.arrayOfParameterNamed(PrequalificatoinApiConstants.membersParamName);
-        if (!ObjectUtils.isEmpty(groupMembers)) {
-            for (JsonElement memberElement : groupMembers) {
-
-                JsonObject member = memberElement.getAsJsonObject();
-                Optional<PrequalificationGroupMember> pMember = prequalificationGroup.getMembers().stream().filter(m -> m.getId() == member.get("id").getAsLong()).findFirst();
-
-                if(pMember.isPresent()){
-
-                    PrequalificationGroupMember editedMember = assembleMember(memberElement, pMember.get(), addedBy);
-
-                    allMembers.add(editedMember);
-                }
-            }
-        }
-
-        return allMembers;
-    }
-
-    private PrequalificationGroupMember assembleMember(JsonElement memberElement, PrequalificationGroupMember prequalificationGroupMember, AppUser addedBy){
-        apiJsonDeserializer.validateForUpdate(memberElement.toString());
-
-        JsonCommand command = JsonCommand.fromJsonElement(prequalificationGroupMember.getId(), memberElement, new FromJsonHelper());
-        final Map<String, Object> changes = prequalificationGroupMember.update(command);
-
-        if (changes.containsKey(PrequalificatoinApiConstants.memberNameParamName)) {
-            final String newValue = command.stringValueOfParameterNamed(PrequalificatoinApiConstants.memberNameParamName);
-            if (newValue != null) {
-                prequalificationGroupMember.updateName(newValue);
-            }
-        }
-
-        if (changes.containsKey(PrequalificatoinApiConstants.memberDpiParamName)) {
-            final String newValue = command.stringValueOfParameterNamed(PrequalificatoinApiConstants.memberDpiParamName);
-            if (newValue != null) {
-                prequalificationGroupMember.updateDPI(newValue);
-            }
-        }
-
-        if (changes.containsKey(PrequalificatoinApiConstants.memberDobParamName)) {
-            final LocalDate newValue = command.dateValueOfParameterNamed(PrequalificatoinApiConstants.memberDobParamName);
-            if (newValue != null) {
-                prequalificationGroupMember.updateDOB(newValue);
-            }
-        }
-
-        if (changes.containsKey(PrequalificatoinApiConstants.memberRequestedAmountParamName)) {
-            final BigDecimal newValue = command.bigDecimalValueOfParameterNamed(PrequalificatoinApiConstants.memberRequestedAmountParamName);
-            if (newValue != null) {
-                prequalificationGroupMember.updateAmountRequested(newValue);
-            }
-        }
-
-        if (changes.containsKey(PrequalificatoinApiConstants.memberWorkWithPuenteParamName)) {
-            final String newValue = command.stringValueOfParameterNamed(PrequalificatoinApiConstants.memberWorkWithPuenteParamName);
-            if (newValue != null) {
-                prequalificationGroupMember.updateWorkWithPuente(newValue);
-            }
-        }
-
-        return prequalificationGroupMember;
     }
 
     @Override
@@ -431,5 +364,146 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         return null;
     }
 
+    private List<PrequalificationGroupMember> assembleMembersForUpdate(JsonCommand command, PrequalificationGroup prequalificationGroup, AppUser addedBy) {
+
+        final List<PrequalificationGroupMember> allMembers = new ArrayList<>();
+
+        JsonArray groupMembers = command.arrayOfParameterNamed(PrequalificatoinApiConstants.membersParamName);
+        if (!ObjectUtils.isEmpty(groupMembers)) {
+            for (JsonElement memberElement : groupMembers) {
+
+                JsonObject member = memberElement.getAsJsonObject();
+
+                if(member.get("id") != null){
+                    Optional<PrequalificationGroupMember> pMember = prequalificationGroup.getMembers().stream().filter(m -> m.getId() == member.get("id").getAsLong()).findFirst();
+
+                    if(pMember.isPresent()){
+
+                        PrequalificationGroupMember editedMember = assembleMemberForUpdate(memberElement, pMember.get(), addedBy);
+
+                        allMembers.add(editedMember);
+                    }
+                }else{
+                    // Handle new members
+                    PrequalificationGroupMember newMember = assembleNewMember(memberElement, prequalificationGroup, addedBy);
+                    allMembers.add(newMember);
+                }
+
+            }
+        }
+
+        return allMembers;
+    }
+
+    private PrequalificationGroupMember assembleMemberForUpdate(JsonElement memberElement, PrequalificationGroupMember prequalificationGroupMember, AppUser addedBy){
+        apiJsonDeserializer.validateForUpdate(memberElement.toString());
+
+        JsonCommand command = JsonCommand.fromJsonElement(prequalificationGroupMember.getId(), memberElement, new FromJsonHelper());
+        final Map<String, Object> changes = prequalificationGroupMember.update(command);
+
+        if (changes.containsKey(PrequalificatoinApiConstants.memberNameParamName)) {
+            final String newValue = command.stringValueOfParameterNamed(PrequalificatoinApiConstants.memberNameParamName);
+            if (newValue != null) {
+                prequalificationGroupMember.updateName(newValue);
+            }
+        }
+
+        if (changes.containsKey(PrequalificatoinApiConstants.memberDpiParamName)) {
+            final String newValue = command.stringValueOfParameterNamed(PrequalificatoinApiConstants.memberDpiParamName);
+            if (newValue != null) {
+                prequalificationGroupMember.updateDPI(newValue);
+            }
+        }
+
+        if (changes.containsKey(PrequalificatoinApiConstants.memberDobParamName)) {
+            final LocalDate newValue = command.dateValueOfParameterNamed(PrequalificatoinApiConstants.memberDobParamName);
+            if (newValue != null) {
+                prequalificationGroupMember.updateDOB(newValue);
+            }
+        }
+
+        if (changes.containsKey(PrequalificatoinApiConstants.memberRequestedAmountParamName)) {
+            final BigDecimal newValue = command.bigDecimalValueOfParameterNamed(PrequalificatoinApiConstants.memberRequestedAmountParamName);
+            if (newValue != null) {
+                prequalificationGroupMember.updateAmountRequested(newValue);
+            }
+        }
+
+        if (changes.containsKey(PrequalificatoinApiConstants.memberWorkWithPuenteParamName)) {
+            final String newValue = command.stringValueOfParameterNamed(PrequalificatoinApiConstants.memberWorkWithPuenteParamName);
+            if (newValue != null) {
+                prequalificationGroupMember.updateWorkWithPuente(newValue);
+            }
+        }
+
+        return prequalificationGroupMember;
+    }
+
+    private PrequalificationGroupMember assembleNewMember(JsonElement memberElement, PrequalificationGroup group, AppUser addedBy){
+
+        apiJsonDeserializer.validateForCreate(memberElement.toString());
+
+        JsonObject member = memberElement.getAsJsonObject();
+
+        String name = null;
+        if (member.get("name") != null) {
+            name = member.get("name").getAsString();
+        }
+        String dpi = null;
+        if (member.get("dpi") != null) {
+            dpi = member.get("dpi").getAsString();
+        }
+
+        BigDecimal requestedAmount = null;
+        if (member.get("amount") != null) {
+            requestedAmount = new BigDecimal(member.get("amount").getAsString().replace(",", ""));
+        }
+
+        String puente = null;
+        if (member.get("puente") != null) {
+            puente = member.get("puente").getAsString();
+        }
+
+        Long clientId = null;
+        if (member.get("clientId") != null) {
+            clientId = member.get("clientId").getAsLong();
+        }
+
+        LocalDate dateOfBirth = null;
+        if (member.get("dob") != null) {
+
+            DateTimeFormatter formatter = new DateTimeFormatterBuilder().appendPattern(member.get("dateFormat").getAsString())
+                    .toFormatter();
+            LocalDate date;
+            try {
+                date = LocalDate.parse(member.get("dob").getAsString(), formatter);
+                dateOfBirth = date;
+            } catch (DateTimeParseException e) {
+                LOG.error("Problem occurred in addClientFamilyMember function", e);
+            }
+
+        }
+
+        // get light indicator
+        String blistSql = "select count(*) from m_client_blacklist where dpi=? and status=?";
+        Long activeBlacklisted = jdbcTemplate.queryForObject(blistSql, Long.class, dpi, BlacklistStatus.ACTIVE.getValue());
+        Long inactiveBlacklisted = jdbcTemplate.queryForObject(blistSql, Long.class, dpi, BlacklistStatus.INACTIVE.getValue());
+        Integer status = PrequalificationMemberIndication.NONE.getValue();
+        if (activeBlacklisted <= 0 && inactiveBlacklisted <= 0) {
+            status = PrequalificationMemberIndication.NONE.getValue();
+        }
+        if (activeBlacklisted <= 0 && inactiveBlacklisted > 0) {
+            status = PrequalificationMemberIndication.INACTIVE.getValue();
+        }
+
+        if (activeBlacklisted > 0) {
+            status = PrequalificationMemberIndication.ACTIVE.getValue();
+        }
+
+        PrequalificationGroupMember groupMember = PrequalificationGroupMember.fromJson(group, name, dpi, clientId, dateOfBirth,
+                requestedAmount, puente, addedBy, status);
+
+        return groupMember;
+    }
 
 }
