@@ -59,8 +59,8 @@ public class DocumentCommand {
     }
 
     public DocumentCommand(final Set<String> modifiedParameters, final Long id, final String parentEntityType, final Long parentEntityId,
-            final String name, final String fileName, final Long size, final String type, final String description,
-                           final String location, final String locale, final String documentType, final String documentPurpose, final LocalDateTime dateCreated) {
+            final String name, final String fileName, final Long size, final String type, final String description, final String location,
+            final String locale, final String documentType, final String documentPurpose, final LocalDateTime dateCreated) {
         this.modifiedParameters = modifiedParameters;
         this.id = id;
         this.parentEntityType = parentEntityType;

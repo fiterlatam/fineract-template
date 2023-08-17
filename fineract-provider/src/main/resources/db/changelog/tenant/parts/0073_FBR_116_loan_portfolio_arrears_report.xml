@@ -25,7 +25,7 @@
 <changeSet author="fineract" id="1">
     <sqlFile
             encoding="utf8"
-            path="db/changelog/tenant/commands/group_loan_in_arrears_report.sql"
+            path="db/changelog/tenant/commands/loan_arrears_portfolio_report.sql"
             relativeToChangelogFile="false"
             splitStatements="true"
             stripComments="true"/>
