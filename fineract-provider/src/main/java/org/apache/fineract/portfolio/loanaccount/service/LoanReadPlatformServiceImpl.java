@@ -1398,21 +1398,23 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
     }
 
     @Override
-    public LoanAccountData retrieveLoanProductDetailsTemplate(final Long productId, final Long clientId, final Long groupId) {
+    public LoanAccountData retrieveLoanProductDetailsTemplate(final Long productId, final Long clientId, final Long groupId,
+            String templateType) {
 
         this.context.authenticatedUser();
 
-        ClientData clientData = this.clientReadPlatformService.retrieveOne(clientId);
-
-        String blacklistString = "select count(*) from m_client_blacklist where dpi=? and status=?";
-        String dpiNumber = clientData.getDpiNumber();
-        Long blacklisted = jdbcTemplate.queryForObject(blacklistString, Long.class, dpiNumber, BlacklistStatus.ACTIVE.getValue());
-        if (blacklisted > 0) {
-            String blacklistReason = "select type_enum from m_client_blacklist where dpi=? and status=?";
-            Integer typification = jdbcTemplate.queryForObject(blacklistReason, Integer.class, dpiNumber,
-                    BlacklistStatus.ACTIVE.getValue());
-            CodeValue typificationCodeValue = this.codeValueRepositoryWrapper.findOneWithNotFoundDetection(typification.longValue());
-            throw new ClientBlacklistedException(typificationCodeValue.getDescription());
+        if (!"group".equals(templateType)) {
+            ClientData clientData = this.clientReadPlatformService.retrieveOne(clientId);
+            String blacklistString = "select count(*) from m_client_blacklist where dpi=? and status=?";
+            String dpiNumber = clientData.getDpiNumber();
+            Long blacklisted = jdbcTemplate.queryForObject(blacklistString, Long.class, dpiNumber, BlacklistStatus.ACTIVE.getValue());
+            if (blacklisted > 0) {
+                String blacklistReason = "select type_enum from m_client_blacklist where dpi=? and status=?";
+                Integer typification = jdbcTemplate.queryForObject(blacklistReason, Integer.class, dpiNumber,
+                        BlacklistStatus.ACTIVE.getValue());
+                CodeValue typificationCodeValue = this.codeValueRepositoryWrapper.findOneWithNotFoundDetection(typification.longValue());
+                throw new ClientBlacklistedException(typificationCodeValue.getDescription());
+            }
         }
 
         final LoanProductData loanProduct = this.loanProductReadPlatformService.retrieveLoanProduct(productId);
