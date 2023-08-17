@@ -120,6 +120,10 @@ public class PrequalificationGroup extends AbstractPersistableCustom {
         this.members = members;
     }
 
+    public List<PrequalificationGroupMember> getMembers() {
+        return members;
+    }
+
     public void updatePrequalificationNumber(final String prequalificationNumber) {
         ;
         this.prequalificationNumber = prequalificationNumber;

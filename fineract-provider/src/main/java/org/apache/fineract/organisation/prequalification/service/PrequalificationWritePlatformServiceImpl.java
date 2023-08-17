@@ -36,6 +36,7 @@ import org.apache.fineract.infrastructure.codes.service.CodeValueReadPlatformSer
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuilder;
+import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.organisation.agency.domain.Agency;
 import org.apache.fineract.organisation.agency.domain.AgencyRepositoryWrapper;
@@ -273,6 +274,73 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         return allMembers;
     }
 
+    private List<PrequalificationGroupMember> assembleMembersForUpdate(JsonCommand command, PrequalificationGroup prequalificationGroup, AppUser addedBy) {
+
+        final List<PrequalificationGroupMember> allMembers = new ArrayList<>();
+
+        JsonArray groupMembers = command.arrayOfParameterNamed(PrequalificatoinApiConstants.membersParamName);
+        if (!ObjectUtils.isEmpty(groupMembers)) {
+            for (JsonElement memberElement : groupMembers) {
+
+                JsonObject member = memberElement.getAsJsonObject();
+                Optional<PrequalificationGroupMember> pMember = prequalificationGroup.getMembers().stream().filter(m -> m.getId() == member.get("id").getAsLong()).findFirst();
+
+                if(pMember.isPresent()){
+
+                    PrequalificationGroupMember editedMember = assembleMember(memberElement, pMember.get(), addedBy);
+
+                    allMembers.add(editedMember);
+                }
+            }
+        }
+
+        return allMembers;
+    }
+
+    private PrequalificationGroupMember assembleMember(JsonElement memberElement, PrequalificationGroupMember prequalificationGroupMember, AppUser addedBy){
+        apiJsonDeserializer.validateForUpdate(memberElement.toString());
+
+        JsonCommand command = JsonCommand.fromJsonElement(prequalificationGroupMember.getId(), memberElement, new FromJsonHelper());
+        final Map<String, Object> changes = prequalificationGroupMember.update(command);
+
+        if (changes.containsKey(PrequalificatoinApiConstants.memberNameParamName)) {
+            final String newValue = command.stringValueOfParameterNamed(PrequalificatoinApiConstants.memberNameParamName);
+            if (newValue != null) {
+                prequalificationGroupMember.updateName(newValue);
+            }
+        }
+
+        if (changes.containsKey(PrequalificatoinApiConstants.memberDpiParamName)) {
+            final String newValue = command.stringValueOfParameterNamed(PrequalificatoinApiConstants.memberDpiParamName);
+            if (newValue != null) {
+                prequalificationGroupMember.updateDPI(newValue);
+            }
+        }
+
+        if (changes.containsKey(PrequalificatoinApiConstants.memberDobParamName)) {
+            final LocalDate newValue = command.dateValueOfParameterNamed(PrequalificatoinApiConstants.memberDobParamName);
+            if (newValue != null) {
+                prequalificationGroupMember.updateDOB(newValue);
+            }
+        }
+
+        if (changes.containsKey(PrequalificatoinApiConstants.memberRequestedAmountParamName)) {
+            final BigDecimal newValue = command.bigDecimalValueOfParameterNamed(PrequalificatoinApiConstants.memberRequestedAmountParamName);
+            if (newValue != null) {
+                prequalificationGroupMember.updateAmountRequested(newValue);
+            }
+        }
+
+        if (changes.containsKey(PrequalificatoinApiConstants.memberWorkWithPuenteParamName)) {
+            final String newValue = command.stringValueOfParameterNamed(PrequalificatoinApiConstants.memberWorkWithPuenteParamName);
+            if (newValue != null) {
+                prequalificationGroupMember.updateWorkWithPuente(newValue);
+            }
+        }
+
+        return prequalificationGroupMember;
+    }
+
     @Override
     public Long addCommentsToPrequalification(Long groupId, String comment) {
         PrequalificationGroup prequalificationGroup = this.prequalificationGroupRepositoryWrapper.findOneWithNotFoundDetection(groupId);
@@ -344,13 +412,12 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             }
         }
 
-
         this.prequalificationGroupRepositoryWrapper.saveAndFlush(prequalificationGroup);
 
         //TODO: FBR-220 process changes in members
-        //List<PrequalificationGroupMember> members = assembleMembers(command, prequalificationGroup, prequalificationGroup.getAddedBy());
-        //prequalificationGroup.updateMembers(members);
-        //this.prequalificationGroupRepositoryWrapper.saveAndFlush(prequalificationGroup);
+        List<PrequalificationGroupMember> members = assembleMembersForUpdate(command, prequalificationGroup, prequalificationGroup.getAddedBy());
+        prequalificationGroup.updateMembers(members);
+        this.prequalificationGroupRepositoryWrapper.saveAndFlush(prequalificationGroup);
 
         return new CommandProcessingResultBuilder() //
                 .withCommandId(command.commandId()) //
@@ -358,5 +425,11 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                 .withEntityId(prequalificationGroup.getId()) //
                 .build();
     }
+
+    @Override
+    public CommandProcessingResult updatePrequalificationGroupMember(Long memberId, JsonCommand command) {
+        return null;
+    }
+
 
 }

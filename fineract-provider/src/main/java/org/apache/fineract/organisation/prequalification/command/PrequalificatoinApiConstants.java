@@ -38,4 +38,13 @@ public class PrequalificatoinApiConstants {
     public static final String agencyIdParamName = "agencyId";
     public static final String facilitatorParamName = "facilitator";
     public static final String prequalificationNumberParamName = "prequalificationNumber";
+
+    // Members
+    public static final String memberNameParamName = "name";
+    public static final String memberDpiParamName = "dpi";
+    public static final String memberDobParamName = "dob";
+    public static final String memberRequestedAmountParamName = "requestedAmount";
+    public static final String memberWorkWithPuenteParamName = "workWithPuente";
+    public static final String memberStatusParamName = "status";
+    public static final String memberClientIdParamName = "clientId";
 }

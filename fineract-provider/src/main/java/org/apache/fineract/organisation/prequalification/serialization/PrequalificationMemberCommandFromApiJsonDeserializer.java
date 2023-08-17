@@ -35,6 +35,7 @@ import org.apache.fineract.infrastructure.core.data.DataValidatorBuilder;
 import org.apache.fineract.infrastructure.core.exception.InvalidJsonException;
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
+import org.apache.fineract.organisation.prequalification.command.PrequalificatoinApiConstants;
 import org.apache.fineract.portfolio.client.api.ClientApiConstants;
 import org.apache.fineract.portfolio.client.validation.ClientIdentifierDocumentValidator;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,6 +47,9 @@ public final class PrequalificationMemberCommandFromApiJsonDeserializer {
     private final FromJsonHelper fromApiJsonHelper;
     private final Set<String> supportedParameters = new HashSet<>(
             Arrays.asList("id", "clientId", "name", "dpi", "dob", "locale", "dateFormat", "amount", "puente", "individual"));
+
+    private final Set<String> supportedParametersForUpdate = new HashSet<>(
+            Arrays.asList("id", "clientId", "name", "dpi", "dob", "locale", "dateFormat", "requestedAmount", "workWithPuente", "individual", "status"));
 
     @Autowired
     public PrequalificationMemberCommandFromApiJsonDeserializer(final FromJsonHelper fromApiJsonHelper) {
@@ -82,6 +86,42 @@ public final class PrequalificationMemberCommandFromApiJsonDeserializer {
                     .validateDateBefore(DateUtils.getBusinessLocalDate());
 
         }
+
+    }
+
+    public void validateForUpdate(String json) {
+
+        if (StringUtils.isBlank(json)) {
+            throw new InvalidJsonException();
+        }
+
+        final Type typeOfMap = new TypeToken<Map<String, Object>>() {}.getType();
+        this.fromApiJsonHelper.checkForUnsupportedParameters(typeOfMap, json, this.supportedParametersForUpdate);
+
+        final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
+        final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors).resource("members");
+
+        final JsonElement element = this.fromApiJsonHelper.parse(json);
+
+        final String name = this.fromApiJsonHelper.extractStringNamed(PrequalificatoinApiConstants.memberNameParamName, element);
+        baseDataValidator.reset().parameter(PrequalificatoinApiConstants.memberNameParamName).value(name).notNull().notBlank().notExceedingLengthOf(100);
+
+        final String dpi = this.fromApiJsonHelper.extractStringNamed(PrequalificatoinApiConstants.memberDpiParamName, element);
+        baseDataValidator.reset().parameter(PrequalificatoinApiConstants.memberDpiParamName).value(dpi).notNull().notBlank().notExceedingLengthOf(20);
+        ClientIdentifierDocumentValidator.checkDPI(dpi, PrequalificatoinApiConstants.memberDpiParamName);
+
+        final BigDecimal requestedAmount = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed(PrequalificatoinApiConstants.memberRequestedAmountParamName, element);
+        baseDataValidator.reset().parameter(PrequalificatoinApiConstants.memberRequestedAmountParamName).value(requestedAmount).notNull().positiveAmount();
+
+        if (this.fromApiJsonHelper.extractLocalDateNamed(PrequalificatoinApiConstants.memberDobParamName, element) != null) {
+            final LocalDate dateOfBirth = this.fromApiJsonHelper.extractLocalDateNamed(PrequalificatoinApiConstants.memberDobParamName, element);
+            baseDataValidator.reset().parameter(PrequalificatoinApiConstants.memberDobParamName).value(dateOfBirth).value(dateOfBirth).notNull()
+                    .validateDateBefore(DateUtils.getBusinessLocalDate());
+
+        }
+
+        final String workWithPuente = this.fromApiJsonHelper.extractStringNamed(PrequalificatoinApiConstants.memberWorkWithPuenteParamName, element);
+        baseDataValidator.reset().parameter(PrequalificatoinApiConstants.memberWorkWithPuenteParamName).value(workWithPuente).notNull().notBlank().notExceedingLengthOf(100);
 
     }
 }

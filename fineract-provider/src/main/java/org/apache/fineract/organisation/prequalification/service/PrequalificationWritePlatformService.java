@@ -28,4 +28,6 @@ public interface PrequalificationWritePlatformService {
     CommandProcessingResult processUpdatePrequalification(Long groupId, JsonCommand command);
 
     Long addCommentsToPrequalification(Long blacklistId, String comment);
+
+    CommandProcessingResult updatePrequalificationGroupMember(Long memberId, JsonCommand command);
 }
