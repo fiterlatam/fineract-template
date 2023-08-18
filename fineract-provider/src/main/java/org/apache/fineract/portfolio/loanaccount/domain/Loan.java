@@ -116,6 +116,7 @@ import org.apache.fineract.portfolio.loanaccount.exception.InvalidRefundDateExce
 import org.apache.fineract.portfolio.loanaccount.exception.LoanApplicationDateException;
 import org.apache.fineract.portfolio.loanaccount.exception.LoanDisbursalException;
 import org.apache.fineract.portfolio.loanaccount.exception.LoanForeclosureException;
+import org.apache.fineract.portfolio.loanaccount.exception.LoanFuturePaymentException;
 import org.apache.fineract.portfolio.loanaccount.exception.LoanOfficerAssignmentDateException;
 import org.apache.fineract.portfolio.loanaccount.exception.LoanOfficerAssignmentException;
 import org.apache.fineract.portfolio.loanaccount.exception.LoanOfficerUnassignmentDateException;
@@ -6426,6 +6427,16 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 receivables[0].getAmount(), receivables[1].getAmount(), receivables[2].getAmount(), false, compoundingDetails);
     }
 
+    public LoanRepaymentScheduleInstallment fetchLoanFuturePaymentDetail(final LocalDate closureDate) {
+        Money[] receivables = retrieveIncomePrincipalAmountTillDate(closureDate);
+        Money totalPrincipal = receivables[4];
+        totalPrincipal = totalPrincipal.minus(receivables[3]);
+        final Set<LoanInterestRecalcualtionAdditionalDetails> compoundingDetails = null;
+        final LocalDate currentDate = DateUtils.getBusinessLocalDate();
+        return new LoanRepaymentScheduleInstallment(null, 0, currentDate, currentDate, totalPrincipal.getAmount(),
+                receivables[0].getAmount(), receivables[1].getAmount(), receivables[2].getAmount(), false, compoundingDetails);
+    }
+
     public Money[] retriveIncomeOutstandingTillDate(final LocalDate paymentDate) {
         Money[] balances = new Money[4];
         final MonetaryCurrency currency = getCurrency();
@@ -6468,6 +6479,47 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         balances[1] = fee;
         balances[2] = penalty;
         balances[3] = paidFromFutureInstallments;
+        return balances;
+    }
+
+    public Money[] retrieveIncomePrincipalAmountTillDate(final LocalDate paymentDate) {
+        Money[] balances = new Money[5];
+        final MonetaryCurrency currency = getCurrency();
+        Money interest = Money.zero(currency);
+        Money paidFromFutureInstallments = Money.zero(currency);
+        Money fee = Money.zero(currency);
+        Money penalty = Money.zero(currency);
+        Money principalAmountInstallments = Money.zero(currency);
+        for (final LoanRepaymentScheduleInstallment installment : this.repaymentScheduleInstallments) {
+            if (!installment.getDueDate().isAfter(paymentDate)) {
+                interest = interest.plus(installment.getInterestOutstanding(currency));
+                penalty = penalty.plus(installment.getPenaltyChargesOutstanding(currency));
+                fee = fee.plus(installment.getFeeChargesOutstanding(currency));
+                principalAmountInstallments = principalAmountInstallments.plus(installment.getPrincipalOutstanding(currency));
+            } else if (installment.getFromDate().isBefore(paymentDate)) {
+                Money[] balancesForCurrentPeroid = fetchInterestFeeAndPenaltyTillDate(paymentDate, currency, installment);
+                if (!balancesForCurrentPeroid[0].isGreaterThan(balancesForCurrentPeroid[5])) {
+                    paidFromFutureInstallments = paidFromFutureInstallments.plus(balancesForCurrentPeroid[5])
+                            .minus(balancesForCurrentPeroid[0]);
+                }
+                if (!balancesForCurrentPeroid[1].isGreaterThan(balancesForCurrentPeroid[3])) {
+                    paidFromFutureInstallments = paidFromFutureInstallments
+                            .plus(balancesForCurrentPeroid[3].minus(balancesForCurrentPeroid[1]));
+                }
+                if (!balancesForCurrentPeroid[2].isGreaterThan(balancesForCurrentPeroid[4])) {
+                    paidFromFutureInstallments = paidFromFutureInstallments.plus(balancesForCurrentPeroid[4])
+                            .minus(balancesForCurrentPeroid[2]);
+                }
+            } else if (installment.getDueDate().isAfter(paymentDate)) {
+                paidFromFutureInstallments = paidFromFutureInstallments.plus(installment.getInterestPaid(currency))
+                        .plus(installment.getPenaltyChargesPaid(currency)).plus(installment.getFeeChargesPaid(currency));
+            }
+        }
+        balances[0] = interest;
+        balances[1] = fee;
+        balances[2] = penalty;
+        balances[3] = paidFromFutureInstallments;
+        balances[4] = principalAmountInstallments;
         return balances;
     }
 
@@ -6646,6 +6698,15 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             final String defaultUserMessage = "The transactionDate cannot be in the future.";
             throw new LoanForeclosureException("loan.foreclosure.transaction.date.cannot.before.the.last.transaction.date",
                     defaultUserMessage, transactionDate);
+        }
+    }
+
+    public void validateForFuturePayment(final LocalDate transactionDate) {
+        LocalDate loanMaturityDate = this.getMaturityDate();
+
+        if (transactionDate.isAfter(loanMaturityDate)) {
+            final String defaultUserMessage = "The paymentDate cannot be in the future.";
+            throw new LoanFuturePaymentException("loan.payment.transaction.date.is.in.future", defaultUserMessage, transactionDate);
         }
     }
 
