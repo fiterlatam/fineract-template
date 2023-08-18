@@ -99,8 +99,7 @@ public class DocumentReadPlatformServiceImpl implements DocumentReadPlatformServ
                     + " d.file_name as fileName, d.size as fileSize, d.type as fileType, d.date_created as dateCreated, "
                     + "cvdt.code_value as documentTypeValue, cvdp.code_value as documentPurposeValue, "
                     + " d.description as description, d.location as location," + " d.storage_type_enum as storageType"
-                    + " from m_document d "
-                    + " left join m_code_value cvdt on d.document_type = cvdt.id "
+                    + " from m_document d " + " left join m_code_value cvdt on d.document_type = cvdt.id "
                     + " left join m_code_value cvdp on d.document_purpose = cvdp.id "
                     + "where d.parent_entity_type=? and d.parent_entity_id=?";
         }
@@ -117,7 +116,7 @@ public class DocumentReadPlatformServiceImpl implements DocumentReadPlatformServ
             final String description = rs.getString("description");
             final String documentTypeValue = rs.getString("documentTypeValue");
             final String documentPurposeValue = rs.getString("documentPurposeValue");
-            final LocalDateTime dateCreated = JdbcSupport.getLocalDateTime(rs,"dateCreated");
+            final LocalDateTime dateCreated = JdbcSupport.getLocalDateTime(rs, "dateCreated");
             String location = null;
             Integer storageType = null;
             if (!this.hideLocation) {
@@ -127,7 +126,7 @@ public class DocumentReadPlatformServiceImpl implements DocumentReadPlatformServ
                 storageType = rs.getInt("storageType");
             }
             return new DocumentData(id, parentEntityType, parentEntityId, name, fileName, fileSize, fileType, description, location,
-                    storageType, documentTypeValue,documentPurposeValue,dateCreated);
+                    storageType, documentTypeValue, documentPurposeValue, dateCreated);
         }
     }
 }
