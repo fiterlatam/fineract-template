@@ -242,11 +242,13 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
         final String firstname = searchParameters.getFirstname();
         final String lastname = searchParameters.getLastname();
         final String status = searchParameters.getStatus();
+        final String accountNumber = searchParameters.getAccountNo();
 
         String extraCriteria = "";
         if (sqlSearch != null) {
             sqlSearch = sqlSearch.replaceAll(" display_name ", " c.display_name ");
             sqlSearch = sqlSearch.replaceAll("display_name ", "c.display_name ");
+            sqlSearch = sqlSearch.replaceAll("account_no", "c.account_no");
             extraCriteria = " and (" + sqlSearch + ")";
             this.columnValidator.validateSqlInjection(schemaSql, sqlSearch);
         }
@@ -266,6 +268,11 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
             // if(c.firstname > '',' ', '') , coalesce(c.lastname, '')) like "
             paramList.add("%" + displayName + "%");
             extraCriteria += " and c.display_name like ? ";
+        }
+
+        if(accountNumber != null){
+            paramList.add("%" + accountNumber + "%");
+            extraCriteria += " and c.account_no like ? ";
         }
 
         if (status != null) {
