@@ -2461,4 +2461,143 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                     totalAmountOutStanding, productName, clientName, groupName, totalOverdueAmount);
         }
     }
+
+    private static final class LoanRepaymentScheduleInstallmentMapper implements RowMapper<LoanSchedulePeriodData> {
+
+        private final String sqlSchema;
+
+        public String getSchema() {
+            return this.sqlSchema;
+        }
+
+        LoanRepaymentScheduleInstallmentMapper() {
+            StringBuilder sb = new StringBuilder();
+            sb.append(" lrs.loan_id as loanId, lrs.id as installmentId, lrs.fromdate as fromDate, lrs.dueDate as dueDate, lrs.installment as installment, " +
+                    " lrs.principal_amount as principalOriginalDue, lrs.principal_completed_derived as principalPaid, " +
+                    " lrs.principal_writtenoff_derived as principalWrittenOff, lrs.interest_amount as interestAmount, " +
+                    " lrs.interest_completed_derived as interestPaid, lrs.interest_writtenoff_derived as interestWrittenOff, " +
+                    " lrs.interest_waived_derived as interestWaived, lrs.accrual_interest_derived as accrualInterest, lrs.reschedule_interest_portion as rescheduleInterest, " +
+                    " lrs.fee_charges_amount as feeChargesDue, lrs.fee_charges_completed_derived as feeChargesPaid, lrs.fee_charges_writtenoff_derived as feeChargesWrittenOff, " +
+                    " lrs.fee_charges_waived_derived as feeChargesWaived, lrs.accrual_fee_charges_derived as accrualFeeCharges, lrs.penalty_charges_amount as penaltyChargesDue, lrs.penalty_charges_completed_derived as penaltyChargesPaid, " +
+                    " lrs.penalty_charges_writtenoff_derived as penaltyChargesWrittenOff, lrs.penalty_charges_waived_derived as penaltyChargesWaived, lrs.accrual_penalty_charges_derived as accrualPenaltyCharges, " +
+                    " lrs.total_paid_in_advance_derived as totalPaidInAdvanceForPeriod, lrs.total_paid_late_derived as totalPaidLateForPeriod, lrs.completed_derived as completed, lrs.obligations_met_on_date as obligationsMetOnDate, " +
+                    " lrs.createdby_id as createdById, lrs.created_date as createdDate, lrs.lastmodified_date as lastModifiedDate, lrs.lastmodifiedby_id as lastModifiedById, " +
+                    "lrs.recalculated_interest_component as recalculatedInterestComponent");
+            sb.append(" from m_loan_repayment_schedule lrs ");
+            sb.append(" join m_loan l on l.id=loan_id ");
+            sqlSchema = sb.toString();
+        }
+
+        @Override
+        public LoanSchedulePeriodData mapRow(ResultSet rs, @SuppressWarnings("unused") int rowNum) throws SQLException {
+
+            final Integer installment = JdbcSupport.getInteger(rs, "installment");
+            final LocalDate dueDate = JdbcSupport.getLocalDate(rs, "dueDate");
+            //final BigDecimal interestWaived = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "interest_waived_derived");
+
+            final LocalDate fromDate = JdbcSupport.getLocalDate(rs, "fromDate");
+            final LocalDate obligationsMetOnDate = JdbcSupport.getLocalDate(rs, "obligationsMetOnDate");;
+            final Boolean complete = rs.getBoolean("completed");
+            final BigDecimal principalOriginalDue = rs.getBigDecimal("principalOriginalDue");
+            final BigDecimal principalPaid = rs.getBigDecimal("principalPaid");
+            final BigDecimal principalWrittenOff = rs.getBigDecimal("principalWrittenOff");
+            final BigDecimal principalOutstanding = null;
+            final BigDecimal interestAmount = rs.getBigDecimal("interestAmount");
+            final BigDecimal interestPaid = rs.getBigDecimal("interestPaid");
+            final BigDecimal interestWrittenOff = rs.getBigDecimal("interestWrittenOff");
+            final BigDecimal interestOutstanding = null;
+            final BigDecimal interestWaived = null;
+            final BigDecimal feeChargesDue = rs.getBigDecimal("feeChargesDue");
+            final BigDecimal feeChargesPaid = rs.getBigDecimal("feeChargesPaid");
+            final BigDecimal feeChargesWaived = rs.getBigDecimal("feeChargesWaived");
+            final BigDecimal feeChargesWrittenOff = rs.getBigDecimal("feeChargesWrittenOff");
+            final BigDecimal feeChargesOutstanding = null;
+            final BigDecimal penaltyChargesDue = rs.getBigDecimal("penaltyChargesDue");
+            final BigDecimal penaltyChargesPaid = rs.getBigDecimal("penaltyChargesPaid");
+            final BigDecimal penaltyChargesWaived = rs.getBigDecimal("penaltyChargesWaived");
+            final BigDecimal penaltyChargesWrittenOff = rs.getBigDecimal("penaltyChargesWrittenOff");
+            final BigDecimal penaltyChargesOutstanding = null;
+            final BigDecimal accrualPenaltyCharges = rs.getBigDecimal("accrualPenaltyCharges");
+
+            final BigDecimal totalDueForPeriod = null;
+            final BigDecimal totalPaidInAdvanceForPeriod = rs.getBigDecimal("totalPaidInAdvanceForPeriod");
+            final BigDecimal totalPaidLateForPeriod = rs.getBigDecimal("totalPaidLateForPeriod");
+            final BigDecimal totalActualCostOfLoanForPeriod = null;
+            final BigDecimal outstandingPrincipalBalanceOfLoan = null;
+            final BigDecimal interestDueOnPrincipalOutstanding = null;
+            final Long loanId = rs.getLong("loanId");
+            final Long installmentId = rs.getLong("installmentId");
+            final BigDecimal totalWaived = null;
+            final BigDecimal totalWrittenOff = null;
+            final BigDecimal totalOutstanding = null;
+            final BigDecimal totalPaid = null;
+            final BigDecimal totalInstallmentAmount = null;
+
+            return  LoanSchedulePeriodData.repaymentPeriodFull(loanId, installmentId ,installment, fromDate, dueDate, obligationsMetOnDate, complete,
+                    principalOriginalDue, principalPaid, principalWrittenOff, principalOutstanding, outstandingPrincipalBalanceOfLoan,
+                    interestDueOnPrincipalOutstanding, interestPaid, interestWaived, interestWrittenOff, interestOutstanding, feeChargesDue,
+                    feeChargesPaid, feeChargesWaived, feeChargesWrittenOff, feeChargesOutstanding, penaltyChargesDue, penaltyChargesPaid,
+                    penaltyChargesWaived, penaltyChargesWrittenOff, penaltyChargesOutstanding, totalDueForPeriod, totalPaid,
+                    totalPaidInAdvanceForPeriod, totalPaidLateForPeriod, totalWaived, totalWrittenOff, totalOutstanding,
+                    totalActualCostOfLoanForPeriod, totalInstallmentAmount);
+        }
+    }
+    @Override
+    public Page<LoanSchedulePeriodData> getAllLoanRepayments(SearchParameters searchParameters, boolean isCompleted) {
+
+        final AppUser currentUser = this.context.authenticatedUser();
+        final String hierarchy = currentUser.getOffice().getHierarchy();
+
+        final LoanRepaymentScheduleInstallmentMapper mapper = new LoanRepaymentScheduleInstallmentMapper();
+
+        final StringBuilder sqlBuilder = new StringBuilder(200);
+        sqlBuilder.append("select " + sqlGenerator.calcFoundRows() + " ");
+        sqlBuilder.append(mapper.getSchema());
+
+        List<Object> extraCriterias = new ArrayList<>();
+        int arrayPos = 0;
+
+        sqlBuilder.append(" where l.loan_status_id = 300 and ");
+
+        sqlBuilder.append(" lrs.completed_derived = " + isCompleted + " and  ");
+
+        if (searchParameters != null) {
+            if (searchParameters.getStartDueDate() != null) {
+                sqlBuilder.append("  lrs.duedate >= DATE(?)");
+                extraCriterias.add(searchParameters.getStartDueDate());
+                arrayPos = arrayPos + 1;
+            }
+
+            if (searchParameters.getEndDueDate() != null) {
+                sqlBuilder.append(" and lrs.duedate <= Date(?)");
+                extraCriterias.add(searchParameters.getEndDueDate());
+                arrayPos = arrayPos + 1;
+            }
+
+            if (searchParameters.isOrderByRequested()) {
+                sqlBuilder.append(" order by ").append(searchParameters.getOrderBy());
+                this.columnValidator.validateSqlInjection(sqlBuilder.toString(), searchParameters.getOrderBy());
+
+                if (searchParameters.isSortOrderProvided()) {
+                    sqlBuilder.append(' ').append(searchParameters.getSortOrder());
+                    this.columnValidator.validateSqlInjection(sqlBuilder.toString(), searchParameters.getSortOrder());
+                }
+            }
+
+            if (searchParameters.isLimited()) {
+                sqlBuilder.append(" ");
+                if (searchParameters.isOffset()) {
+                    sqlBuilder.append(sqlGenerator.limit(searchParameters.getLimit(), searchParameters.getOffset()));
+                } else {
+                    sqlBuilder.append(sqlGenerator.limit(searchParameters.getLimit()));
+                }
+            }
+        }
+
+        final Object[] objectArray = extraCriterias.toArray();
+        final Object[] finalObjectArray = Arrays.copyOf(objectArray, arrayPos);
+        return this.paginationHelper.fetchPage(this.jdbcTemplate, sqlBuilder.toString(), new Object[] {searchParameters.getStartDueDate(),
+                searchParameters.getEndDueDate()}, mapper);
+    }
+
 }

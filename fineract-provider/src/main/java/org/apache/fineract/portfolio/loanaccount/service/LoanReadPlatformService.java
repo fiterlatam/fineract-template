@@ -156,4 +156,6 @@ public interface LoanReadPlatformService {
     List<LoanAccountData> retrieveOverDueLoansForClient(Long client);
 
     List<LoanRepaymentReminderData> findLoanRepaymentReminderData(Integer numberOfDaysToDueDate);
+
+    Page<LoanSchedulePeriodData> getAllLoanRepayments(SearchParameters searchParameters, boolean isCompleted);
 }

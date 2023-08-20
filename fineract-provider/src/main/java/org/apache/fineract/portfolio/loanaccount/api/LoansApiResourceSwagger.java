@@ -269,7 +269,7 @@ final class LoansApiResourceSwagger {
             public Set<GetLoansLoanIdRepaymentPeriod> periods;
         }
 
-        static final class GetLoansLoanIdRepaymentPeriod {
+        public static final class GetLoansLoanIdRepaymentPeriod {
 
             private GetLoansLoanIdRepaymentPeriod() {}
 
