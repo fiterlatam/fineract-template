@@ -242,11 +242,13 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
         final String firstname = searchParameters.getFirstname();
         final String lastname = searchParameters.getLastname();
         final String status = searchParameters.getStatus();
+        final String accountNumber = searchParameters.getAccountNo();
 
         String extraCriteria = "";
         if (sqlSearch != null) {
             sqlSearch = sqlSearch.replaceAll(" display_name ", " c.display_name ");
             sqlSearch = sqlSearch.replaceAll("display_name ", "c.display_name ");
+            sqlSearch = sqlSearch.replaceAll("account_no", "c.account_no");
             extraCriteria = " and (" + sqlSearch + ")";
             this.columnValidator.validateSqlInjection(schemaSql, sqlSearch);
         }
@@ -265,7 +267,12 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
             // extraCriteria += " and concatcoalesce(c.firstname, ''),
             // if(c.firstname > '',' ', '') , coalesce(c.lastname, '')) like "
             paramList.add("%" + displayName + "%");
-            extraCriteria += " and c.display_name like ? ";
+            extraCriteria += " and (c.display_name like ? "; //For Carbon search should be by display_name or account_no so we use OR to support either
+        }
+
+        if(accountNumber != null){
+            paramList.add("%" + accountNumber + "%");
+            extraCriteria += " or c.account_no like ? ) "; //For Carbon search should be by display_name or account_no so we use OR to support either
         }
 
         if (status != null) {
