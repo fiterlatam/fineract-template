@@ -113,7 +113,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
 
         if (searchParameters != null) {
 
-            final String extraCriteria = buildSqlStringFromBlacklistCriteria(searchParameters, paramList);
+            final String extraCriteria = buildSqlStringFromBlacklistCriteria(searchParameters, paramList, true);
 
             if (StringUtils.isNotBlank(extraCriteria)) {
                 sqlBuilder.append(" and (").append(extraCriteria).append(")");
@@ -184,7 +184,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
 
         if (searchParameters != null) {
 
-            final String extraCriteria = buildSqlStringFromBlacklistCriteria(searchParameters, paramList);
+            final String extraCriteria = buildSqlStringFromBlacklistCriteria(searchParameters, paramList, false);
 
             if (StringUtils.isNotBlank(extraCriteria)) {
                 sqlBuilder.append(" and (").append(extraCriteria).append(")");
@@ -222,17 +222,23 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
         return clientData;
     }
 
-    private String buildSqlStringFromBlacklistCriteria(final SearchParameters searchParameters, List<Object> paramList) {
+    private String buildSqlStringFromBlacklistCriteria(final SearchParameters searchParameters, List<Object> paramList, boolean isGroup) {
 
         String sqlSearch = searchParameters.getSqlSearch();
         final Long officeId = searchParameters.getOfficeId();
         final String dpiNumber = searchParameters.getName();
         final String status = searchParameters.getStatus();
         final String type = searchParameters.getType();
+        final String groupName = searchParameters.getGroupName();
+        final String centerName = searchParameters.getCenterName();
 
         String extraCriteria = "";
-        if (sqlSearch != null) {
+        if (sqlSearch != null && !isGroup) {
             extraCriteria = " and (m.name like '%" + sqlSearch + "%' OR m.dpi='" + sqlSearch + "') ";
+        }
+
+        if (sqlSearch != null && isGroup) {
+            extraCriteria = " and (g.group_name like '%" + sqlSearch + "%' OR pc.display_name='%" + sqlSearch + "%') ";
         }
 
         if (officeId != null) {
@@ -243,6 +249,16 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
         if (dpiNumber != null) {
             paramList.add(dpiNumber);
             extraCriteria += " and g.prequalification_number like %?% ";
+        }
+
+        if (groupName != null) {
+            paramList.add(groupName);
+            extraCriteria += " and g.group_name like %?% ";
+        }
+
+        if (centerName != null) {
+            paramList.add(centerName);
+            extraCriteria += " and pc.display_name like %?% ";
         }
 
         if (status != null) {
@@ -271,7 +287,8 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             final StringBuilder builder = new StringBuilder(400);
 
             builder.append("g.id as id, g.prequalification_number as prequalificationNumber, g.status, g.created_at, g.comments, "
-                    + "ma.name as agencyName, cg.display_name as groupName, g.group_name as newGroupName, g.group_id as groupId, pc.display_name as centerName, ");
+                    + "ma.name as agencyName, ma.id as agencyId, cg.display_name as groupName, g.group_name as newGroupName, g.group_id as groupId, pc.display_name as centerName, "
+                    + " pc.id as centerId, lp.id as productId, fa.id as facilitatorId, concat(fa.firstname,' ',fa.lastname) as facilitatorName, ");
             builder.append("lp.name as productName, au.firstname, au.lastname ");
             builder.append("from m_prequalification_group g ");
             builder.append("inner join m_appuser au on au.id = g.added_by ");
@@ -279,7 +296,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             builder.append("inner join m_agency ma on g.agency_id = ma.id ");
             builder.append("left join m_group cg on cg.id = g.group_id ");
             builder.append("left join m_group pc on pc.id = g.center_id ");
-            // builder.append("left join m_portfolio mp on mp.id = pc.portfolio_id ");
+            builder.append("inner join m_appuser fa on fa.id = g.facilitator ");
 
             this.schema = builder.toString();
         }
@@ -307,12 +324,17 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             final LocalDate createdAt = JdbcSupport.getLocalDate(rs, "created_at");
 
             final String addedBy = rs.getString("firstname") + " " + rs.getString("lastname");
+            final Long agencyId = JdbcSupport.getLong(rs, "agencyId");
+            final Long centerId = JdbcSupport.getLong(rs, "centerId");
+            final Long productId = JdbcSupport.getLong(rs, "productId");
+            final Long facilitatorId = JdbcSupport.getLong(rs, "facilitatorId");
+            final String facilitatorName = rs.getString("facilitatorName");
 
             if (StringUtils.isBlank(groupName)) {
                 groupName = newGroupName;
             }
             return GroupPrequalificationData.instance(id, prequalificationNumber, status, agencyName, null, centerName, groupName,
-                    productName, addedBy, createdAt, comments, groupId);
+                    productName, addedBy, createdAt, comments, groupId, agencyId, centerId, productId, facilitatorId, facilitatorName);
 
         }
     }
