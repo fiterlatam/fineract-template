@@ -267,12 +267,12 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
             // extraCriteria += " and concatcoalesce(c.firstname, ''),
             // if(c.firstname > '',' ', '') , coalesce(c.lastname, '')) like "
             paramList.add("%" + displayName + "%");
-            extraCriteria += " and c.display_name like ? ";
+            extraCriteria += " and (c.display_name like ? "; //For Carbon search should be by display_name or account_no so we use OR to support either
         }
 
         if(accountNumber != null){
             paramList.add("%" + accountNumber + "%");
-            extraCriteria += " and c.account_no like ? ";
+            extraCriteria += " or c.account_no like ? ) "; //For Carbon search should be by display_name or account_no so we use OR to support either
         }
 
         if (status != null) {
