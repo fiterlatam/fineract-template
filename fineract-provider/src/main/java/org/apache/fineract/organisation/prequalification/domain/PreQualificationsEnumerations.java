@@ -49,10 +49,22 @@ public final class PreQualificationsEnumerations {
             case APPROVED:
                 optionData = new EnumOptionData(PrequalificationStatus.APPROVED.getValue().longValue(),
                         PrequalificationStatus.APPROVED.getCode(), "APPROVED");
+            break;
             case REJECTED:
                 optionData = new EnumOptionData(PrequalificationStatus.REJECTED.getValue().longValue(),
                         PrequalificationStatus.REJECTED.getCode(), "REJECTED");
             break;
+
+            case BLACKLIST_CHECKED:
+                optionData = new EnumOptionData(PrequalificationStatus.BLACKLIST_CHECKED.getValue().longValue(),
+                        PrequalificationStatus.BLACKLIST_CHECKED.getCode(), "Blacklist Checked");
+            break;
+
+            case BLACKLIST_REJECTED:
+                optionData = new EnumOptionData(PrequalificationStatus.BLACKLIST_REJECTED.getValue().longValue(),
+                        PrequalificationStatus.BLACKLIST_REJECTED.getCode(), "Blacklist Rejected");
+            break;
+
         }
 
         return optionData;

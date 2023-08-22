@@ -43,6 +43,7 @@ import org.apache.fineract.organisation.prequalification.data.MemberPrequalifica
 import org.apache.fineract.organisation.prequalification.domain.PreQualificationMemberRepository;
 import org.apache.fineract.organisation.prequalification.domain.PreQualificationsEnumerations;
 import org.apache.fineract.organisation.prequalification.domain.PreQualificationsMemberEnumerations;
+import org.apache.fineract.organisation.prequalification.domain.PrequalificationMemberIndication;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationStatus;
 import org.apache.fineract.portfolio.client.service.ClientChargeWritePlatformServiceJpaRepositoryImpl;
 import org.apache.fineract.portfolio.client.service.ClientReadPlatformService;
@@ -150,12 +151,39 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
         final GroupPrequalificationData clientData = this.jdbcTemplate.queryForObject(sql, this.prequalificationsGroupMapper,
                 new Object[] { groupId });
 
-        final String membersql = "select " + this.prequalificationsMemberMapper.schema() + " where m.group_id = ? ";
+        if (clientData != null) {
+            final String membersql = "select " + this.prequalificationsMemberMapper.schema() + " where m.group_id = ? ";
 
-        List<MemberPrequalificationData> members = this.jdbcTemplate.query(membersql, this.prequalificationsMemberMapper,
-                new Object[] { groupId });
+            List<MemberPrequalificationData> members = this.jdbcTemplate.query(membersql, this.prequalificationsMemberMapper,
+                    new Object[] { groupId });
 
-        clientData.updateMembers(members);
+            for (MemberPrequalificationData memberPrequalificationData : members) {
+                Integer status = PrequalificationMemberIndication.NONE.getValue();
+                if (memberPrequalificationData.getActiveBlacklistCount() > 0) {
+                    status = PrequalificationMemberIndication.ACTIVE.getValue();
+                }
+                if (memberPrequalificationData.getActiveBlacklistCount() <= 0
+                        && memberPrequalificationData.getInActiveBlacklistCount() > 0) {
+                    status = PrequalificationMemberIndication.INACTIVE.getValue();
+                }
+                if (memberPrequalificationData.getActiveBlacklistCount() <= 0
+                        && memberPrequalificationData.getInActiveBlacklistCount() <= 0) {
+                    status = PrequalificationMemberIndication.NONE.getValue();
+                }
+                final EnumOptionData enumOptionData = PreQualificationsMemberEnumerations.status(status);
+                memberPrequalificationData.setStatus(enumOptionData);
+            }
+
+            EnumOptionData prequalificationStatus;
+            if (members.stream()
+                    .anyMatch(m -> PrequalificationMemberIndication.ACTIVE.getValue().equals(m.getStatus().getId().intValue()))) {
+                prequalificationStatus = PreQualificationsEnumerations.status(PrequalificationStatus.BLACKLIST_REJECTED);
+            } else {
+                prequalificationStatus = PreQualificationsEnumerations.status(PrequalificationStatus.BLACKLIST_CHECKED);
+            }
+            clientData.setStatus(prequalificationStatus);
+            clientData.updateMembers(members);
+        }
         return clientData;
 
     }
@@ -357,6 +385,10 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             builder.append("0 as additionalCreditsCount, ");
             builder.append("0 as additionalCreditsSum, ");
             builder.append("(select count(*) from m_client_blacklist b where b.dpi = m.dpi) as blacklistCount, ");
+            builder.append(
+                    "(SELECT COUNT(*) FROM m_client_blacklist mcb WHERE mcb.dpi = m.dpi AND mcb.status = 200) AS activeBlacklistCount, ");
+            builder.append(
+                    "(SELECT COUNT(*) FROM m_client_blacklist mcb WHERE mcb.dpi = m.dpi AND mcb.status = 100) AS inActiveBlacklistCount, ");
             builder.append("m.work_with_puente as puente ");
             builder.append("from m_prequalification_group_members m");
 
@@ -380,6 +412,8 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             final BigDecimal requestedAmount = rs.getBigDecimal("requestedAmount");
             final String puente = rs.getString("puente");
             final Long blacklistCount = rs.getLong("blacklistCount");
+            final Long activeBlacklistCount = rs.getLong("activeBlacklistCount");
+            final Long inActiveBlacklistCount = rs.getLong("inActiveBlacklistCount");
             final LocalDate dob = JdbcSupport.getLocalDate(rs, "dob");
             final BigDecimal totalLoanAmount = rs.getBigDecimal("totalLoanAmount");
             final BigDecimal totalLoanBalance = rs.getBigDecimal("totalLoanBalance");
@@ -389,7 +423,8 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             final BigDecimal additionalCreditsSum = rs.getBigDecimal("additionalCreditsSum");
 
             return MemberPrequalificationData.instance(id, name, dpi, dob, puente, requestedAmount, status, blacklistCount, totalLoanAmount,
-                    totalLoanBalance, totalGuaranteedLoanBalance, noOfCycles, additionalCreditsCount, additionalCreditsSum);
+                    totalLoanBalance, totalGuaranteedLoanBalance, noOfCycles, additionalCreditsCount, additionalCreditsSum,
+                    activeBlacklistCount, inActiveBlacklistCount);
 
         }
     }

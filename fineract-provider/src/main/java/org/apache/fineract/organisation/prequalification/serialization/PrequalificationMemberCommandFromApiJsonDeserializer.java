@@ -104,24 +104,31 @@ public final class PrequalificationMemberCommandFromApiJsonDeserializer {
         final JsonElement element = this.fromApiJsonHelper.parse(json);
 
         final String name = this.fromApiJsonHelper.extractStringNamed(PrequalificatoinApiConstants.memberNameParamName, element);
-        baseDataValidator.reset().parameter(PrequalificatoinApiConstants.memberNameParamName).value(name).notNull().notBlank().notExceedingLengthOf(100);
+        baseDataValidator.reset().parameter(PrequalificatoinApiConstants.memberNameParamName).value(name).notNull().notBlank()
+                .notExceedingLengthOf(100);
 
         final String dpi = this.fromApiJsonHelper.extractStringNamed(PrequalificatoinApiConstants.memberDpiParamName, element);
-        baseDataValidator.reset().parameter(PrequalificatoinApiConstants.memberDpiParamName).value(dpi).notNull().notBlank().notExceedingLengthOf(20);
+        baseDataValidator.reset().parameter(PrequalificatoinApiConstants.memberDpiParamName).value(dpi).notNull().notBlank()
+                .notExceedingLengthOf(20);
         ClientIdentifierDocumentValidator.checkDPI(dpi, PrequalificatoinApiConstants.memberDpiParamName);
 
-        final BigDecimal requestedAmount = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed(PrequalificatoinApiConstants.memberRequestedAmountParamName, element);
-        baseDataValidator.reset().parameter(PrequalificatoinApiConstants.memberRequestedAmountParamName).value(requestedAmount).notNull().positiveAmount();
+        final BigDecimal requestedAmount = this.fromApiJsonHelper
+                .extractBigDecimalWithLocaleNamed(PrequalificatoinApiConstants.memberRequestedAmountParamName, element);
+        baseDataValidator.reset().parameter(PrequalificatoinApiConstants.memberRequestedAmountParamName).value(requestedAmount).notNull()
+                .positiveAmount();
 
         if (this.fromApiJsonHelper.extractLocalDateNamed(PrequalificatoinApiConstants.memberDobParamName, element) != null) {
-            final LocalDate dateOfBirth = this.fromApiJsonHelper.extractLocalDateNamed(PrequalificatoinApiConstants.memberDobParamName, element);
-            baseDataValidator.reset().parameter(PrequalificatoinApiConstants.memberDobParamName).value(dateOfBirth).value(dateOfBirth).notNull()
-                    .validateDateBefore(DateUtils.getBusinessLocalDate());
+            final LocalDate dateOfBirth = this.fromApiJsonHelper.extractLocalDateNamed(PrequalificatoinApiConstants.memberDobParamName,
+                    element);
+            baseDataValidator.reset().parameter(PrequalificatoinApiConstants.memberDobParamName).value(dateOfBirth).value(dateOfBirth)
+                    .notNull().validateDateBefore(DateUtils.getBusinessLocalDate());
 
         }
 
-        final String workWithPuente = this.fromApiJsonHelper.extractStringNamed(PrequalificatoinApiConstants.memberWorkWithPuenteParamName, element);
-        baseDataValidator.reset().parameter(PrequalificatoinApiConstants.memberWorkWithPuenteParamName).value(workWithPuente).notNull().notBlank().notExceedingLengthOf(100);
+        final String workWithPuente = this.fromApiJsonHelper.extractStringNamed(PrequalificatoinApiConstants.memberWorkWithPuenteParamName,
+                element);
+        baseDataValidator.reset().parameter(PrequalificatoinApiConstants.memberWorkWithPuenteParamName).value(workWithPuente).notNull()
+                .notBlank().notExceedingLengthOf(100);
 
     }
 }
