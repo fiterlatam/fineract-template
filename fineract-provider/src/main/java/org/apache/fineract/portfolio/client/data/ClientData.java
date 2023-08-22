@@ -99,6 +99,10 @@ public final class ClientData implements Comparable<ClientData>, Serializable {
     private final Collection<CodeValueData> clientClassificationOptions;
     private final Collection<CodeValueData> clientNonPersonConstitutionOptions;
     private final Collection<CodeValueData> clientNonPersonMainBusinessLineOptions;
+    private Collection<CodeValueData> clientAreaOptions;
+    private Collection<CodeValueData> clientLocationOptions;
+    private Collection<CodeValueData> publicServiceOptions;
+    private Collection<CodeValueData> housingTypeOptions;
     private final List<EnumOptionData> clientLegalFormOptions;
     private final ClientFamilyMembersData familyMemberOptions;
 
@@ -121,6 +125,8 @@ public final class ClientData implements Comparable<ClientData>, Serializable {
     private LocalDate submittedOnDate;
     private String dpiNumber;
     private String oldCustomerNumber;
+    private Collection<CodeValueData> departamentoOptions;
+    private Collection<CodeValueData> municipioOptions;
 
     public static ClientData importClientEntityInstance(Long legalFormId, Integer rowIndex, String fullname, Long officeId,
             Long clientTypeId, Long clientClassificationId, Long staffId, Boolean active, LocalDate activationDate,
@@ -717,4 +723,12 @@ public final class ClientData implements Comparable<ClientData>, Serializable {
         return this.dateOfBirth;
     }
 
+    public void updateClientAddressTemplate(Collection<CodeValueData> clientAreas, Collection<CodeValueData> clientLocation, Collection<CodeValueData> publicServices, Collection<CodeValueData> housingTypeOptions, Collection<CodeValueData> ldepartamento, Collection<CodeValueData> lmunicipio) {
+        this.clientAreaOptions = clientAreas;
+        this.clientLocationOptions = clientLocation;
+        this.publicServiceOptions = publicServices;
+        this.housingTypeOptions = housingTypeOptions;
+        this.departamentoOptions = ldepartamento;
+        this.municipioOptions = lmunicipio;
+    }
 }
