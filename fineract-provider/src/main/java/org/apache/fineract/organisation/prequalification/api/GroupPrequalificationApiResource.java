@@ -239,7 +239,7 @@ public class GroupPrequalificationApiResource {
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     public String updatePrequalification(@Parameter(hidden = true) final String apiRequestBodyAsJson,
-                                         @PathParam("groupId") @Parameter(description = "groupId") final Long groupId) {
+            @PathParam("groupId") @Parameter(description = "groupId") final Long groupId) {
 
         try {
             final CommandWrapper commandRequest = new CommandWrapperBuilder().updatePrequalification(groupId).withJson(apiRequestBodyAsJson)
