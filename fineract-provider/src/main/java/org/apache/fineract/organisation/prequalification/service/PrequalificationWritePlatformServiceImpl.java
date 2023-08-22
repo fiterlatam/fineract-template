@@ -284,7 +284,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
     @Override
     public CommandProcessingResult processUpdatePrequalification(Long groupId, JsonCommand command) {
         final Boolean individualPrequalification = command.booleanPrimitiveValueOfParameterNamed("individual");
-        if (individualPrequalification){
+        if (individualPrequalification) {
             return prequalifyIndividual(command);
         }
 
@@ -346,8 +346,9 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
 
         this.prequalificationGroupRepositoryWrapper.saveAndFlush(prequalificationGroup);
 
-        //TODO: FBR-220 process changes in members
-        List<PrequalificationGroupMember> members = assembleMembersForUpdate(command, prequalificationGroup, prequalificationGroup.getAddedBy());
+        // TODO: FBR-220 process changes in members
+        List<PrequalificationGroupMember> members = assembleMembersForUpdate(command, prequalificationGroup,
+                prequalificationGroup.getAddedBy());
         prequalificationGroup.updateMembers(members);
         this.prequalificationGroupRepositoryWrapper.saveAndFlush(prequalificationGroup);
 
@@ -363,7 +364,8 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         return null;
     }
 
-    private List<PrequalificationGroupMember> assembleMembersForUpdate(JsonCommand command, PrequalificationGroup prequalificationGroup, AppUser addedBy) {
+    private List<PrequalificationGroupMember> assembleMembersForUpdate(JsonCommand command, PrequalificationGroup prequalificationGroup,
+            AppUser addedBy) {
 
         final List<PrequalificationGroupMember> allMembers = new ArrayList<>();
 
@@ -373,16 +375,17 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
 
                 JsonObject member = memberElement.getAsJsonObject();
 
-                if(member.get("id") != null){
-                    Optional<PrequalificationGroupMember> pMember = prequalificationGroup.getMembers().stream().filter(m -> m.getId() == member.get("id").getAsLong()).findFirst();
+                if (member.get("id") != null) {
+                    Optional<PrequalificationGroupMember> pMember = prequalificationGroup.getMembers().stream()
+                            .filter(m -> m.getId() == member.get("id").getAsLong()).findFirst();
 
-                    if(pMember.isPresent()){
+                    if (pMember.isPresent()) {
 
                         PrequalificationGroupMember editedMember = assembleMemberForUpdate(memberElement, pMember.get(), addedBy);
 
                         allMembers.add(editedMember);
                     }
-                }else{
+                } else {
                     // Handle new members
                     PrequalificationGroupMember newMember = assembleNewMember(memberElement, prequalificationGroup, addedBy);
                     allMembers.add(newMember);
@@ -394,7 +397,8 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         return allMembers;
     }
 
-    private PrequalificationGroupMember assembleMemberForUpdate(JsonElement memberElement, PrequalificationGroupMember prequalificationGroupMember, AppUser addedBy){
+    private PrequalificationGroupMember assembleMemberForUpdate(JsonElement memberElement,
+            PrequalificationGroupMember prequalificationGroupMember, AppUser addedBy) {
         apiJsonDeserializer.validateForUpdate(memberElement.toString());
 
         JsonCommand command = JsonCommand.fromJsonElement(prequalificationGroupMember.getId(), memberElement, new FromJsonHelper());
@@ -422,7 +426,8 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         }
 
         if (changes.containsKey(PrequalificatoinApiConstants.memberRequestedAmountParamName)) {
-            final BigDecimal newValue = command.bigDecimalValueOfParameterNamed(PrequalificatoinApiConstants.memberRequestedAmountParamName);
+            final BigDecimal newValue = command
+                    .bigDecimalValueOfParameterNamed(PrequalificatoinApiConstants.memberRequestedAmountParamName);
             if (newValue != null) {
                 prequalificationGroupMember.updateAmountRequested(newValue);
             }
@@ -438,7 +443,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         return prequalificationGroupMember;
     }
 
-    private PrequalificationGroupMember assembleNewMember(JsonElement memberElement, PrequalificationGroup group, AppUser addedBy){
+    private PrequalificationGroupMember assembleNewMember(JsonElement memberElement, PrequalificationGroup group, AppUser addedBy) {
 
         apiJsonDeserializer.validateForCreate(memberElement.toString());
 

@@ -20,11 +20,13 @@ package org.apache.fineract.organisation.prequalification.data;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import lombok.Data;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 
 /**
  * Immutable data object represent client identity data.
  */
+@Data
 public class MemberPrequalificationData {
 
     private final Long id;
@@ -33,8 +35,10 @@ public class MemberPrequalificationData {
     private final LocalDate dob;
     private final String workWithPuente;
     private final BigDecimal requestedAmount;
-    private final EnumOptionData status;
+    private EnumOptionData status;
     private final Long blacklistCount;
+    private final Long activeBlacklistCount;
+    private final Long inActiveBlacklistCount;
     private final BigDecimal totalLoanAmount;
     private final BigDecimal totalLoanBalance;
     private final BigDecimal totalGuaranteedLoanBalance;
@@ -45,7 +49,7 @@ public class MemberPrequalificationData {
     public MemberPrequalificationData(final Long id, final String name, final String dpi, final LocalDate dob, final String workWithPuente,
             final BigDecimal requestedAmount, final EnumOptionData status, Long blacklistCount, BigDecimal totalLoanAmount,
             BigDecimal totalLoanBalance, BigDecimal totalGuaranteedLoanBalance, Long noOfCycles, Long additionalCreditsCount,
-            BigDecimal additionalCreditsSum) {
+            BigDecimal additionalCreditsSum, final Long activeBlacklistCount, final Long inActiveBlacklistCount) {
         this.id = id;
         this.name = name;
         this.dpi = dpi;
@@ -60,13 +64,17 @@ public class MemberPrequalificationData {
         this.noOfCycles = noOfCycles;
         this.additionalCreditsCount = additionalCreditsCount;
         this.additionalCreditsSum = additionalCreditsSum;
+        this.activeBlacklistCount = activeBlacklistCount;
+        this.inActiveBlacklistCount = inActiveBlacklistCount;
     }
 
     public static MemberPrequalificationData instance(final Long id, final String name, final String dpi, final LocalDate dob,
             final String workWithPuente, final BigDecimal requestedAmount, final EnumOptionData status, Long blacklistCount,
             BigDecimal totalLoanAmount, BigDecimal totalLoanBalance, BigDecimal totalGuaranteedLoanBalance, Long noOfCycles,
-            Long additionalCreditsCount, BigDecimal additionalCreditsSum) {
+            Long additionalCreditsCount, BigDecimal additionalCreditsSum, final Long activeBlacklistCount,
+            final Long inActiveBlacklistCount) {
         return new MemberPrequalificationData(id, name, dpi, dob, workWithPuente, requestedAmount, status, blacklistCount, totalLoanAmount,
-                totalLoanBalance, totalGuaranteedLoanBalance, noOfCycles, additionalCreditsCount, additionalCreditsSum);
+                totalLoanBalance, totalGuaranteedLoanBalance, noOfCycles, additionalCreditsCount, additionalCreditsSum,
+                activeBlacklistCount, inActiveBlacklistCount);
     }
 }

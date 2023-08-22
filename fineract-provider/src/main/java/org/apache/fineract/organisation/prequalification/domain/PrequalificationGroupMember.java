@@ -28,7 +28,6 @@ import javax.persistence.Entity;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
-
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
@@ -126,10 +125,10 @@ public class PrequalificationGroupMember extends AbstractPersistableCustom {
 
         final Map<String, Object> actualChanges = new LinkedHashMap<>(7);
 
-         if (command.isChangeInStringParameterNamed(PrequalificatoinApiConstants.memberNameParamName, this.name)) {
-             final String newValue = command.stringValueOfParameterNamed(PrequalificatoinApiConstants.memberNameParamName);
-             actualChanges.put(PrequalificatoinApiConstants.memberNameParamName, newValue);
-         }
+        if (command.isChangeInStringParameterNamed(PrequalificatoinApiConstants.memberNameParamName, this.name)) {
+            final String newValue = command.stringValueOfParameterNamed(PrequalificatoinApiConstants.memberNameParamName);
+            actualChanges.put(PrequalificatoinApiConstants.memberNameParamName, newValue);
+        }
 
         if (command.isChangeInStringParameterNamed(PrequalificatoinApiConstants.memberDpiParamName, this.dpi)) {
             final String newValue = command.stringValueOfParameterNamed(PrequalificatoinApiConstants.memberDpiParamName);
@@ -142,7 +141,8 @@ public class PrequalificationGroupMember extends AbstractPersistableCustom {
         }
 
         if (command.isChangeInBigDecimalParameterNamed(PrequalificatoinApiConstants.memberRequestedAmountParamName, this.requestedAmount)) {
-            final BigDecimal newValue = command.bigDecimalValueOfParameterNamed(PrequalificatoinApiConstants.memberRequestedAmountParamName);
+            final BigDecimal newValue = command
+                    .bigDecimalValueOfParameterNamed(PrequalificatoinApiConstants.memberRequestedAmountParamName);
             actualChanges.put(PrequalificatoinApiConstants.memberRequestedAmountParamName, newValue);
         }
 

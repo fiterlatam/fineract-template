@@ -28,8 +28,8 @@ public class PrequalificationCollectionConstants extends PrequalificatoinApiCons
             Arrays.asList(groupIdParamName, groupNameParamName, productIdParamName, portfolioIdParamName, centerIdParamName,
                     membersParamName, dateFormatParamName, localeParamName, agencyIdParamName, facilitatorParamName, "individual"));
 
-    protected static final Set<String> EDIT_GROUP_PREQUALIFICATION_REQUEST_DATA_PARAMETERS = new HashSet<>(
-            Arrays.asList(groupIdParamName, groupNameParamName, productIdParamName, portfolioIdParamName, centerIdParamName,
-                    membersParamName, dateFormatParamName, localeParamName, agencyIdParamName, facilitatorParamName,"individual", prequalificationNumberParamName));
+    protected static final Set<String> EDIT_GROUP_PREQUALIFICATION_REQUEST_DATA_PARAMETERS = new HashSet<>(Arrays.asList(groupIdParamName,
+            groupNameParamName, productIdParamName, portfolioIdParamName, centerIdParamName, membersParamName, dateFormatParamName,
+            localeParamName, agencyIdParamName, facilitatorParamName, "individual", prequalificationNumberParamName));
 
 }

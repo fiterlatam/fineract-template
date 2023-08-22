@@ -20,6 +20,7 @@ package org.apache.fineract.organisation.prequalification.data;
 
 import java.time.LocalDate;
 import java.util.Collection;
+import lombok.Data;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.organisation.agency.data.AgencyData;
 import org.apache.fineract.portfolio.group.data.CenterData;
@@ -29,6 +30,7 @@ import org.apache.fineract.useradministration.data.AppUserData;
 /**
  * Immutable data object represent client identity data.
  */
+@Data
 public class GroupPrequalificationData {
 
     private final Long id;
@@ -44,7 +46,7 @@ public class GroupPrequalificationData {
     private final String agencyName;
 
     private final Long agencyId;
-    private final EnumOptionData status;
+    private EnumOptionData status;
     private final String addedBy;
 
     private final String facilitatorName;
@@ -88,10 +90,11 @@ public class GroupPrequalificationData {
     }
 
     public GroupPrequalificationData(final Long id, final String productName, final String prequalificationNumber, final String agencyName,
-                                     final String portforlioName, final String centerName, final String groupName, final String addedBy, final LocalDate createdAt,
-                                     final EnumOptionData status, String comments, Long groupId, final Collection<MemberPrequalificationData> groupMembers,
-                                     final Collection<AgencyData> agencies, Collection<CenterData> centerData, Collection<LoanProductData> loanProducts,
-                                     Collection<AppUserData> appUsers, final Long agencyId, final Long centerId, final Long productId, final Long facilitatorId, final String facilitatorName) {
+            final String portforlioName, final String centerName, final String groupName, final String addedBy, final LocalDate createdAt,
+            final EnumOptionData status, String comments, Long groupId, final Collection<MemberPrequalificationData> groupMembers,
+            final Collection<AgencyData> agencies, Collection<CenterData> centerData, Collection<LoanProductData> loanProducts,
+            Collection<AppUserData> appUsers, final Long agencyId, final Long centerId, final Long productId, final Long facilitatorId,
+            final String facilitatorName) {
         this.id = id;
         this.productName = productName;
         this.prequalificationNumber = prequalificationNumber;
@@ -130,12 +133,12 @@ public class GroupPrequalificationData {
     }
 
     public static GroupPrequalificationData instance(Long id, String prequalificationNumber, EnumOptionData status, String agencyName,
-                                                     String portfolioName, String centerName, String groupName, String productName, String addedBy, LocalDate createdAt,
-                                                     String comments, Long groupId, final Long agencyId, final Long centerId, final Long productId, final Long facilitatorId,
-                                                     final String facilitatorName) {
+            String portfolioName, String centerName, String groupName, String productName, String addedBy, LocalDate createdAt,
+            String comments, Long groupId, final Long agencyId, final Long centerId, final Long productId, final Long facilitatorId,
+            final String facilitatorName) {
         return new GroupPrequalificationData(id, productName, prequalificationNumber, agencyName, portfolioName, centerName, groupName,
-                addedBy, createdAt, status, comments, groupId, null, null, null, null, null, agencyId,
-                centerId, productId, facilitatorId, facilitatorName);
+                addedBy, createdAt, status, comments, groupId, null, null, null, null, null, agencyId, centerId, productId, facilitatorId,
+                facilitatorName);
     }
 
     public void updateMembers(Collection<MemberPrequalificationData> groupMembers) {

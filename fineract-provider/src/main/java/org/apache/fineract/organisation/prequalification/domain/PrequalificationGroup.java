@@ -129,23 +129,23 @@ public class PrequalificationGroup extends AbstractPersistableCustom {
         this.prequalificationNumber = prequalificationNumber;
     }
 
-    public void updateAgency(final Agency agency){
+    public void updateAgency(final Agency agency) {
         this.agency = agency;
     }
 
-    public void updateCenter(final Long centerId){
+    public void updateCenter(final Long centerId) {
         this.centerId = centerId;
     }
 
-    public void updateProduct(final LoanProduct product){
+    public void updateProduct(final LoanProduct product) {
         this.loanProduct = product;
     }
 
-    public void updateFacilitator(final AppUser facilitator){
+    public void updateFacilitator(final AppUser facilitator) {
         this.facilitator = facilitator;
     }
 
-    public void updateGroupName(final String groupName){
+    public void updateGroupName(final String groupName) {
         this.groupName = groupName;
     }
 
@@ -166,7 +166,7 @@ public class PrequalificationGroup extends AbstractPersistableCustom {
         if (command.isChangeInLongParameterNamed(PrequalificatoinApiConstants.agencyIdParamName, this.agency.getId())) {
             final Long newValue = command.longValueOfParameterNamed(PrequalificatoinApiConstants.agencyIdParamName);
             actualChanges.put(PrequalificatoinApiConstants.agencyIdParamName, newValue);
-            //this.ag = newValue;
+            // this.ag = newValue;
         }
 
         if (command.isChangeInLongParameterNamed(PrequalificatoinApiConstants.centerIdParamName, this.centerId)) {
@@ -178,16 +178,16 @@ public class PrequalificationGroup extends AbstractPersistableCustom {
         if (command.isChangeInLongParameterNamed(PrequalificatoinApiConstants.productIdParamName, this.loanProduct.getId())) {
             final Long newValue = command.longValueOfParameterNamed(PrequalificatoinApiConstants.productIdParamName);
             actualChanges.put(PrequalificatoinApiConstants.productIdParamName, newValue);
-            //this.loanProduct. = newValue;
+            // this.loanProduct. = newValue;
         }
 
         if (command.isChangeInLongParameterNamed(PrequalificatoinApiConstants.facilitatorParamName, this.facilitator.getId())) {
             final Long newValue = command.longValueOfParameterNamed(PrequalificatoinApiConstants.facilitatorParamName);
             actualChanges.put(PrequalificatoinApiConstants.facilitatorParamName, newValue);
-            //this.centerId = newValue;
+            // this.centerId = newValue;
         }
 
-        //TODO: process changes in members
+        // TODO: process changes in members
 
         return actualChanges;
     }
