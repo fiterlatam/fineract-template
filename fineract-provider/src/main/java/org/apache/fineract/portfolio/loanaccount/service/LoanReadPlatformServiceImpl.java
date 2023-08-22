@@ -647,7 +647,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                     + " l.total_outstanding_derived as totalOutstanding," + " l.total_overpaid_derived as totalOverpaid,"
                     + " l.fixed_emi_amount as fixedEmiAmount," + " l.max_outstanding_loan_balance as outstandingLoanBalance,"
                     + " l.loan_sub_status_id as loanSubStatusId," + " la.principal_overdue_derived as principalOverdue,"
-                    + " la.interest_overdue_derived as interestOverdue," + " la.fee_charges_overdue_derived as feeChargesOverdue,"
+                    + " la.interest_overdue_derived as interestOverdue, la.interest_vat_overdue_derived as interestVatOverdue, "
+                    + " la.fee_charges_overdue_derived as feeChargesOverdue,"
                     + " la.penalty_charges_overdue_derived as penaltyChargesOverdue," + " la.total_overdue_derived as totalOverdue,"
                     + " la.overdue_since_date_derived as overdueSinceDate,"
                     + " l.sync_disbursement_with_meeting as syncDisbursementWithMeeting,"
@@ -874,6 +875,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                 final BigDecimal interestWrittenOff = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "interestWrittenOff");
                 final BigDecimal interestOutstanding = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "interestOutstanding");
                 final BigDecimal interestOverdue = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "interestOverdue");
+                final BigDecimal interestVatOverdue = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "interestVatOverdue");
 
                 final BigDecimal feeChargesCharged = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "feeChargesCharged");
                 final BigDecimal feeChargesPaid = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "feeChargesPaid");
@@ -936,7 +938,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                         totalRecovered, totalVatOnInterestCharged, totalVatOnInterestPaid, totalVatOnInterestWrittenOff,
                         totalVatOnInterestWaived, totalVatOnInterestOutstanding, totalVatOnInterestOverdue, totalVatOnChargeExpected,
                         totalVatOnChargePaid, totalVatOnChargeWrittenOff, totalVatOnChargeWaived, totalVatOnChargeOutstanding,
-                        totalVatOnChargeOverdue, originationFees);
+                        totalVatOnChargeOverdue, originationFees, interestVatOverdue);
             }
 
             GroupGeneralData groupData = null;

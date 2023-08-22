@@ -288,6 +288,8 @@ public final class LoanSummary {
                 .getAmount();
         this.totalVatOnInterestOutstanding = totalVatChargedOnInterest.minus(this.totalVatOnInterestPaid)
                 .minus(this.totalVatOnInterestWaived).minus(this.totalVatOnInterestWrittenOff).getAmount();
+        this.totalVatOnInterestOverdue = summaryWrapper.calculateTotalVatOnInterestOverdue(repaymentScheduleInstallments, currency)
+                .minus(this.totalVatOnInterestPaid).getAmount();
 
         final Money totalFeeChargesCharged = summaryWrapper.calculateTotalFeeChargesCharged(repaymentScheduleInstallments, currency)
                 .plus(this.totalFeeChargesDueAtDisbursement);

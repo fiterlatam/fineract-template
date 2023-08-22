@@ -53,4 +53,5 @@
     <include file="parts/0036_add_effective_interest_rate_with_vat_to_loan.xml" relativeToChangelogFile="true"/>
     <include file="parts/0037_default_loan_product.xml" relativeToChangelogFile="true"/>
     <include file="parts/0038_albo_loan_custom_params.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0039_add_new_vat_column_into_arrears_aging.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

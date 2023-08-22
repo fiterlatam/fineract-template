@@ -181,6 +181,7 @@ public class LoanArrearsAgingServiceImpl implements LoanArrearsAgingService {
         BigDecimal interestOverdue = BigDecimal.ZERO;
         BigDecimal feeOverdue = BigDecimal.ZERO;
         BigDecimal penaltyOverdue = BigDecimal.ZERO;
+        BigDecimal interestVatOverdue = BigDecimal.ZERO;
         LocalDate businessDate = DateUtils.getBusinessLocalDate();
         LocalDate overDueSince = businessDate;
         for (LoanRepaymentScheduleInstallment installment : installments) {
@@ -189,20 +190,24 @@ public class LoanArrearsAgingServiceImpl implements LoanArrearsAgingService {
                 interestOverdue = interestOverdue.add(installment.getInterestOutstanding(loan.getCurrency()).getAmount());
                 feeOverdue = feeOverdue.add(installment.getFeeChargesOutstanding(loan.getCurrency()).getAmount());
                 penaltyOverdue = penaltyOverdue.add(installment.getPenaltyChargesOutstanding(loan.getCurrency()).getAmount());
+                if (installment.getVatOnInterestCharged() != null) {
+                    interestVatOverdue = interestVatOverdue.add(installment.getVatOnInterestCharged(loan.getCurrency())
+                            .minus(installment.getVatOnInterestPaid(loan.getCurrency())).getAmount());
+                }
                 if (installment.isNotFullyPaidOff() && overDueSince.isAfter(installment.getDueDate())) {
                     overDueSince = installment.getDueDate();
                 }
             }
         }
 
-        BigDecimal totalOverDue = principalOverdue.add(interestOverdue).add(feeOverdue).add(penaltyOverdue);
+        BigDecimal totalOverDue = principalOverdue.add(interestOverdue).add(feeOverdue).add(penaltyOverdue).add(interestVatOverdue);
         if (totalOverDue.compareTo(BigDecimal.ZERO) > 0) {
             if (isInsertStatement) {
                 updateSql = constructInsertStatement(loan.getId(), principalOverdue, interestOverdue, feeOverdue, penaltyOverdue,
-                        overDueSince);
+                        interestVatOverdue, overDueSince);
             } else {
                 updateSql = constructUpdateStatement(loan.getId(), principalOverdue, interestOverdue, feeOverdue, penaltyOverdue,
-                        overDueSince);
+                        interestVatOverdue, overDueSince);
             }
         }
         return updateSql;
@@ -265,6 +270,7 @@ public class LoanArrearsAgingServiceImpl implements LoanArrearsAgingService {
         transactionMap.put("feeAmtWaived", loanSummary.getTotalFeeChargesWaived());
         transactionMap.put("penaltyAmtPaid", loanSummary.getTotalPenaltyChargesRepaid());
         transactionMap.put("penaltyAmtWaived", loanSummary.getTotalPenaltyChargesWaived());
+        transactionMap.put("interestVatAmtPaid", loanSummary.getTotalVatOnInterestOverdue());
         transactionDetail.add(transactionMap);
         return transactionDetail;
 
@@ -278,6 +284,7 @@ public class LoanArrearsAgingServiceImpl implements LoanArrearsAgingService {
             BigDecimal interestOverdue = BigDecimal.ZERO;
             BigDecimal feeOverdue = BigDecimal.ZERO;
             BigDecimal penaltyOverdue = BigDecimal.ZERO;
+            BigDecimal interestVatOverdue = BigDecimal.ZERO;
             LocalDate overDueSince = DateUtils.getBusinessLocalDate();
 
             for (LoanSchedulePeriodData loanSchedulePeriodData : entry.getValue()) {
@@ -299,10 +306,10 @@ public class LoanArrearsAgingServiceImpl implements LoanArrearsAgingService {
                 String sqlStatement = null;
                 if (isInsertStatement) {
                     sqlStatement = constructInsertStatement(loanId, principalOverdue, interestOverdue, feeOverdue, penaltyOverdue,
-                            overDueSince);
+                            interestVatOverdue, overDueSince);
                 } else {
                     sqlStatement = constructUpdateStatement(loanId, principalOverdue, interestOverdue, feeOverdue, penaltyOverdue,
-                            overDueSince);
+                            interestVatOverdue, overDueSince);
                 }
                 insertStatement.add(sqlStatement);
             }
@@ -311,30 +318,33 @@ public class LoanArrearsAgingServiceImpl implements LoanArrearsAgingService {
     }
 
     private String constructInsertStatement(final Long loanId, BigDecimal principalOverdue, BigDecimal interestOverdue,
-            BigDecimal feeOverdue, BigDecimal penaltyOverdue, LocalDate overDueSince) {
+            BigDecimal feeOverdue, BigDecimal penaltyOverdue, BigDecimal interestVatOverdue, LocalDate overDueSince) {
         final StringBuilder insertStatementBuilder = new StringBuilder(900);
         insertStatementBuilder.append("INSERT INTO m_loan_arrears_aging(loan_id,principal_overdue_derived,interest_overdue_derived,")
-                .append("fee_charges_overdue_derived,penalty_charges_overdue_derived,total_overdue_derived,overdue_since_date_derived) VALUES(");
+                .append("fee_charges_overdue_derived,penalty_charges_overdue_derived,total_overdue_derived,interest_vat_overdue_derived, ")
+                .append("overdue_since_date_derived) VALUES(");
         insertStatementBuilder.append(loanId).append(",");
         insertStatementBuilder.append(principalOverdue).append(",");
         insertStatementBuilder.append(interestOverdue).append(",");
         insertStatementBuilder.append(feeOverdue).append(",");
         insertStatementBuilder.append(penaltyOverdue).append(",");
-        BigDecimal totalOverDue = principalOverdue.add(interestOverdue).add(feeOverdue).add(penaltyOverdue);
-        insertStatementBuilder.append(totalOverDue).append(",'");
+        BigDecimal totalOverDue = principalOverdue.add(interestOverdue).add(feeOverdue).add(penaltyOverdue).add(interestVatOverdue);
+        insertStatementBuilder.append(totalOverDue).append(",");
+        insertStatementBuilder.append(interestVatOverdue).append(",'");
         insertStatementBuilder.append(this.formatter.format(overDueSince)).append("')");
         return insertStatementBuilder.toString();
     }
 
     private String constructUpdateStatement(final Long loanId, BigDecimal principalOverdue, BigDecimal interestOverdue,
-            BigDecimal feeOverdue, BigDecimal penaltyOverdue, LocalDate overDueSince) {
+            BigDecimal feeOverdue, BigDecimal penaltyOverdue, BigDecimal interestVatOverdue, LocalDate overDueSince) {
         final StringBuilder insertStatementBuilder = new StringBuilder(900);
         insertStatementBuilder.append("UPDATE m_loan_arrears_aging SET principal_overdue_derived=");
         insertStatementBuilder.append(principalOverdue).append(", interest_overdue_derived=");
-        insertStatementBuilder.append(interestOverdue).append(", fee_charges_overdue_derived=");
+        insertStatementBuilder.append(interestOverdue).append(", interest_vat_overdue_derived=");
+        insertStatementBuilder.append(interestVatOverdue).append(", fee_charges_overdue_derived=");
         insertStatementBuilder.append(feeOverdue).append(", penalty_charges_overdue_derived=");
         insertStatementBuilder.append(penaltyOverdue).append(", total_overdue_derived=");
-        BigDecimal totalOverDue = principalOverdue.add(interestOverdue).add(feeOverdue).add(penaltyOverdue);
+        BigDecimal totalOverDue = principalOverdue.add(interestOverdue).add(feeOverdue).add(penaltyOverdue).add(interestVatOverdue);
         insertStatementBuilder.append(totalOverDue).append(",overdue_since_date_derived= '");
         insertStatementBuilder.append(this.formatter.format(overDueSince)).append("' ");
         insertStatementBuilder.append("WHERE  loan_id=").append(loanId);
