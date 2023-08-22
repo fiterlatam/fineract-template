@@ -16,18 +16,20 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.organisation.prequalification.service;
+package org.apache.fineract.portfolio.loanaccount.data;
 
-import org.apache.fineract.infrastructure.core.api.JsonCommand;
-import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
+/**
+ * Immutable data object representing a loan bank agreement.
+ */
+@SuppressWarnings("unused")
+public class LoanBankAgreementsData {
 
-public interface PrequalificationWritePlatformService {
+    private final String bankName;
+    private final String agreementCode;
 
-    CommandProcessingResult processPrequalification(JsonCommand command);
+    public LoanBankAgreementsData(final String bankName, final String agreementCode) {
+        this.bankName = bankName;
+        this.agreementCode = agreementCode;
+    }
 
-    CommandProcessingResult processUpdatePrequalification(Long groupId, JsonCommand command);
-
-    Long addCommentsToPrequalification(Long blacklistId, String comment);
-
-    CommandProcessingResult updatePrequalificationGroupMember(Long memberId, JsonCommand command);
 }

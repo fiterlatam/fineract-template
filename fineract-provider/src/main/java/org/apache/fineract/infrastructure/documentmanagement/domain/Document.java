@@ -18,14 +18,13 @@
  */
 package org.apache.fineract.infrastructure.documentmanagement.domain;
 
+import java.time.LocalDateTime;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Table;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
 import org.apache.fineract.infrastructure.documentmanagement.command.DocumentCommand;
-
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "m_document")
@@ -70,12 +69,15 @@ public class Document extends AbstractPersistableCustom {
     public Document() {}
 
     public static Document createNew(final String parentEntityType, final Long parentEntityId, final String name, final String fileName,
-                                     final Long size, final String type, final String description, final String location, final StorageType storageType, String documentType, String documentPurpose, LocalDateTime dateCreated) {
-        return new Document(parentEntityType, parentEntityId, name, fileName, size, type, description, location, storageType, documentType, documentPurpose, dateCreated);
+            final Long size, final String type, final String description, final String location, final StorageType storageType,
+            String documentType, String documentPurpose, LocalDateTime dateCreated) {
+        return new Document(parentEntityType, parentEntityId, name, fileName, size, type, description, location, storageType, documentType,
+                documentPurpose, dateCreated);
     }
 
     private Document(final String parentEntityType, final Long parentEntityId, final String name, final String fileName, final Long size,
-                     final String type, final String description, final String location, final StorageType storageType, String documentType, String documentPurpose, LocalDateTime dateCreated) {
+            final String type, final String description, final String location, final StorageType storageType, String documentType,
+            String documentPurpose, LocalDateTime dateCreated) {
         this.parentEntityType = StringUtils.defaultIfEmpty(parentEntityType, null);
         this.parentEntityId = parentEntityId;
         this.name = StringUtils.defaultIfEmpty(name, null);

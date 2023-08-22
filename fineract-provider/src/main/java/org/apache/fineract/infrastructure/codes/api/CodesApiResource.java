@@ -82,7 +82,8 @@ public class CodesApiResource {
 
     @Autowired
     public CodesApiResource(final PlatformSecurityContext context, final CodeReadPlatformService readPlatformService,
-            final CodeValueReadPlatformService codeValueReadPlatformService,final DefaultToApiJsonSerializer<CodeValueData> codeValuesApiJsonSerializer,
+            final CodeValueReadPlatformService codeValueReadPlatformService,
+            final DefaultToApiJsonSerializer<CodeValueData> codeValuesApiJsonSerializer,
             final DefaultToApiJsonSerializer<CodeData> toApiJsonSerializer, final ApiRequestParameterHelper apiRequestParameterHelper,
             final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService) {
         this.context = context;
@@ -119,7 +120,7 @@ public class CodesApiResource {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "A List of code values for a given code", content = @Content(array = @ArraySchema(schema = @Schema(implementation = CodeValuesApiResourceSwagger.GetCodeValuesDataResponse.class)))) })
     public String retrieveAllCodeValues(@Context final UriInfo uriInfo,
-                                        @PathParam("codename") @Parameter(description = "codename") final String codename) {
+            @PathParam("codename") @Parameter(description = "codename") final String codename) {
 
         this.context.authenticatedUser().validateHasReadPermission(this.resourceNameForPermissions);
 

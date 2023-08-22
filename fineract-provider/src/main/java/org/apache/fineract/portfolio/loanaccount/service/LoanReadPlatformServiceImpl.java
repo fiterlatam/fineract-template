@@ -88,6 +88,7 @@ import org.apache.fineract.portfolio.loanaccount.data.LoanAccountData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanApplicationTimelineData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanApprovalData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanInterestRecalculationData;
+import org.apache.fineract.portfolio.loanaccount.data.LoanPaymentSimulationData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanRepaymentScheduleInstallmentData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanScheduleAccrualData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanStatusEnumData;
@@ -1398,21 +1399,23 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
     }
 
     @Override
-    public LoanAccountData retrieveLoanProductDetailsTemplate(final Long productId, final Long clientId, final Long groupId) {
+    public LoanAccountData retrieveLoanProductDetailsTemplate(final Long productId, final Long clientId, final Long groupId,
+            String templateType) {
 
         this.context.authenticatedUser();
 
-        ClientData clientData = this.clientReadPlatformService.retrieveOne(clientId);
-
-        String blacklistString = "select count(*) from m_client_blacklist where dpi=? and status=?";
-        String dpiNumber = clientData.getDpiNumber();
-        Long blacklisted = jdbcTemplate.queryForObject(blacklistString, Long.class, dpiNumber, BlacklistStatus.ACTIVE.getValue());
-        if (blacklisted > 0) {
-            String blacklistReason = "select type_enum from m_client_blacklist where dpi=? and status=?";
-            Integer typification = jdbcTemplate.queryForObject(blacklistReason, Integer.class, dpiNumber,
-                    BlacklistStatus.ACTIVE.getValue());
-            CodeValue typificationCodeValue = this.codeValueRepositoryWrapper.findOneWithNotFoundDetection(typification.longValue());
-            throw new ClientBlacklistedException(typificationCodeValue.getDescription());
+        if (!"group".equals(templateType)) {
+            ClientData clientData = this.clientReadPlatformService.retrieveOne(clientId);
+            String blacklistString = "select count(*) from m_client_blacklist where dpi=? and status=?";
+            String dpiNumber = clientData.getDpiNumber();
+            Long blacklisted = jdbcTemplate.queryForObject(blacklistString, Long.class, dpiNumber, BlacklistStatus.ACTIVE.getValue());
+            if (blacklisted > 0) {
+                String blacklistReason = "select type_enum from m_client_blacklist where dpi=? and status=?";
+                Integer typification = jdbcTemplate.queryForObject(blacklistReason, Integer.class, dpiNumber,
+                        BlacklistStatus.ACTIVE.getValue());
+                CodeValue typificationCodeValue = this.codeValueRepositoryWrapper.findOneWithNotFoundDetection(typification.longValue());
+                throw new ClientBlacklistedException(typificationCodeValue.getDescription());
+            }
         }
 
         final LoanProductData loanProduct = this.loanProductReadPlatformService.retrieveLoanProduct(productId);
@@ -2372,6 +2375,56 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
         return collectionData;
     }
 
+    @Override
+    public LoanPaymentSimulationData retrieveLoanFuturePaymentTemplate(Long loanId, LocalDate paymentDate, String paymentType) {
+        this.context.authenticatedUser();
+
+        final Loan loan = this.loanRepositoryWrapper.findOneWithNotFoundDetection(loanId, true);
+        loan.validateForFuturePayment(paymentDate);
+
+        final List<CodeValueData> bankAgreements = new ArrayList<>(
+                this.codeValueReadPlatformService.retrieveCodeValuesByCode(LoanApiConstants.BANKAGREEMENTS));
+
+        final MonetaryCurrency currency = loan.getCurrency();
+        final ApplicationCurrency applicationCurrency = this.applicationCurrencyRepository.findOneWithNotFoundDetection(currency);
+
+        final CurrencyData currencyData = applicationCurrency.toData();
+        final String paymentCode = loan.getLoanProduct().getName() + "(" + loan.getAccountNumber() + ")";
+
+        BigDecimal outstandingLoanBalance = BigDecimal.ZERO;
+        Money outStandingAmount = Money.zero(currency);
+        BigDecimal interestPortion = BigDecimal.ZERO;
+        BigDecimal lateInterestPortion = BigDecimal.ZERO;
+        BigDecimal availableGuaranteeAmount = BigDecimal.ZERO;
+        LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment = null;
+
+        LoanPaymentSimulationData loanPaymentSimulationData;
+        List<String> loanBankAgreementsDataList = new ArrayList<>();
+        for (CodeValueData bankAgreement : bankAgreements) {
+            loanBankAgreementsDataList.add(bankAgreement.getName());
+        }
+
+        if (paymentType.equals(LoanApiConstants.totalPayment)) {
+            loanRepaymentScheduleInstallment = loan.fetchLoanForeclosureDetail(paymentDate);
+            outstandingLoanBalance = loanRepaymentScheduleInstallment.getPrincipalOutstanding(currency).getAmount();
+            outStandingAmount = loanRepaymentScheduleInstallment.getTotalOutstanding(currency);
+            interestPortion = loanRepaymentScheduleInstallment.getInterestOutstanding(currency).getAmount();
+            lateInterestPortion = loanRepaymentScheduleInstallment.getPenaltyChargesCharged(currency).getAmount();
+        } else if (paymentType.equals(LoanApiConstants.partialPayment)) {
+            loanRepaymentScheduleInstallment = loan.fetchLoanFuturePaymentDetail(paymentDate);
+            outstandingLoanBalance = loanRepaymentScheduleInstallment.getPrincipalOutstanding(currency).getAmount();
+            outStandingAmount = loanRepaymentScheduleInstallment.getTotalOutstanding(currency);
+            interestPortion = loanRepaymentScheduleInstallment.getInterestOutstanding(currency).getAmount();
+            lateInterestPortion = loanRepaymentScheduleInstallment.getPenaltyChargesCharged(currency).getAmount();
+        }
+
+        loanPaymentSimulationData = new LoanPaymentSimulationData(paymentDate, paymentCode, outstandingLoanBalance, interestPortion,
+                lateInterestPortion, outStandingAmount.getAmount(), availableGuaranteeAmount, currencyData);
+        loanPaymentSimulationData.setLoanBankAgreements(loanBankAgreementsDataList);
+
+        return loanPaymentSimulationData;
+    }
+
     private static final class CollectionDataMapper implements RowMapper<CollectionData> {
 
         private final DatabaseSpecificSQLGenerator sqlGenerator;
@@ -2419,4 +2472,5 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                     delinquentAmount, lastPaymentDate, lastPaymentAmount);
         }
     }
+
 }

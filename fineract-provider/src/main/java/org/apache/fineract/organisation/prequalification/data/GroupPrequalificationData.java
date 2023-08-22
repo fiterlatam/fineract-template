@@ -33,13 +33,22 @@ public class GroupPrequalificationData {
 
     private final Long id;
     private final String productName;
+
+    private final Long productId;
     private final String prequalificationNumber;
     private final String groupName;
     private final String portforlioName;
     private final String centerName;
+
+    private final Long centerId;
     private final String agencyName;
+
+    private final Long agencyId;
     private final EnumOptionData status;
     private final String addedBy;
+
+    private final String facilitatorName;
+    private final Long facilitatorId;
     private final String comments;
     private final Long groupId;
     private final LocalDate createdAt;
@@ -71,6 +80,40 @@ public class GroupPrequalificationData {
         this.groupMembers = groupMembers;
         this.comments = comments;
         this.groupId = groupId;
+        this.agencyId = null;
+        this.centerId = null;
+        this.productId = null;
+        this.facilitatorId = null;
+        this.facilitatorName = null;
+    }
+
+    public GroupPrequalificationData(final Long id, final String productName, final String prequalificationNumber, final String agencyName,
+                                     final String portforlioName, final String centerName, final String groupName, final String addedBy, final LocalDate createdAt,
+                                     final EnumOptionData status, String comments, Long groupId, final Collection<MemberPrequalificationData> groupMembers,
+                                     final Collection<AgencyData> agencies, Collection<CenterData> centerData, Collection<LoanProductData> loanProducts,
+                                     Collection<AppUserData> appUsers, final Long agencyId, final Long centerId, final Long productId, final Long facilitatorId, final String facilitatorName) {
+        this.id = id;
+        this.productName = productName;
+        this.prequalificationNumber = prequalificationNumber;
+        this.agencyName = agencyName;
+        this.groupName = groupName;
+        this.portforlioName = portforlioName;
+        this.centerName = centerName;
+        this.status = status;
+        this.addedBy = addedBy;
+        this.createdAt = createdAt;
+        this.agencies = agencies;
+        this.centerData = centerData;
+        this.loanProducts = loanProducts;
+        this.facilitators = appUsers;
+        this.groupMembers = groupMembers;
+        this.comments = comments;
+        this.groupId = groupId;
+        this.agencyId = agencyId;
+        this.centerId = centerId;
+        this.productId = productId;
+        this.facilitatorId = facilitatorId;
+        this.facilitatorName = facilitatorName;
     }
 
     public static GroupPrequalificationData template(final Collection<AgencyData> agencies, Collection<CenterData> centerData,
@@ -84,6 +127,15 @@ public class GroupPrequalificationData {
             String comments, Long groupId) {
         return new GroupPrequalificationData(id, productName, prequalificationNumber, agencyName, portfolioName, centerName, groupName,
                 addedBy, createdAt, status, comments, groupId, null, null, null, null, null);
+    }
+
+    public static GroupPrequalificationData instance(Long id, String prequalificationNumber, EnumOptionData status, String agencyName,
+                                                     String portfolioName, String centerName, String groupName, String productName, String addedBy, LocalDate createdAt,
+                                                     String comments, Long groupId, final Long agencyId, final Long centerId, final Long productId, final Long facilitatorId,
+                                                     final String facilitatorName) {
+        return new GroupPrequalificationData(id, productName, prequalificationNumber, agencyName, portfolioName, centerName, groupName,
+                addedBy, createdAt, status, comments, groupId, null, null, null, null, null, agencyId,
+                centerId, productId, facilitatorId, facilitatorName);
     }
 
     public void updateMembers(Collection<MemberPrequalificationData> groupMembers) {

@@ -50,7 +50,6 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.infrastructure.core.api.ApiRequestParameterHelper;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
@@ -142,9 +141,10 @@ public class DocumentManagementApiResource {
             @PathParam("entityId") @Parameter(description = "entityId") final Long entityId,
             @HeaderParam("Content-Length") @Parameter(description = "Content-Length") final Long fileSize,
             @FormDataParam("file") final InputStream inputStream, @FormDataParam("file") final FormDataContentDisposition fileDetails,
-            @FormDataParam("file") final FormDataBodyPart bodyPart, @FormDataParam("name") final String name, @FormDataParam("dateFormat") final String dateFormat,
-            @FormDataParam("description") final String description,@FormDataParam("locale") final String locale,@FormDataParam("dateCreated") final String dateCreated,
-            @FormDataParam("documentType") final String documentType,@FormDataParam("documentPurpose") final String documentPurpose) {
+            @FormDataParam("file") final FormDataBodyPart bodyPart, @FormDataParam("name") final String name,
+            @FormDataParam("dateFormat") final String dateFormat, @FormDataParam("description") final String description,
+            @FormDataParam("locale") final String locale, @FormDataParam("dateCreated") final String dateCreated,
+            @FormDataParam("documentType") final String documentType, @FormDataParam("documentPurpose") final String documentPurpose) {
 
         // TODO: stop reading from stream after max size is reached to protect against malicious clients
         // TODO: need to extract the actual file type and determine if they are permissible
@@ -155,9 +155,10 @@ public class DocumentManagementApiResource {
 
         if (!StringUtils.isBlank(dateCreated)) {
 
-            DateTimeFormatter formatter = new DateTimeFormatterBuilder().appendPattern(dateFormat).optionalStart().appendPattern(" HH:mm:ss").optionalEnd()
-                    .parseDefaulting(ChronoField.HOUR_OF_DAY, 0).parseDefaulting(ChronoField.MINUTE_OF_HOUR, 0)
-                    .parseDefaulting(ChronoField.SECOND_OF_MINUTE, 0).toFormatter(JsonParserHelper.localeFromString(locale));
+            DateTimeFormatter formatter = new DateTimeFormatterBuilder().appendPattern(dateFormat).optionalStart()
+                    .appendPattern(" HH:mm:ss").optionalEnd().parseDefaulting(ChronoField.HOUR_OF_DAY, 0)
+                    .parseDefaulting(ChronoField.MINUTE_OF_HOUR, 0).parseDefaulting(ChronoField.SECOND_OF_MINUTE, 0)
+                    .toFormatter(JsonParserHelper.localeFromString(locale));
             try {
                 date = LocalDateTime.parse(dateCreated, formatter);
             } catch (DateTimeParseException e) {
@@ -167,7 +168,7 @@ public class DocumentManagementApiResource {
         }
 
         final DocumentCommand documentCommand = new DocumentCommand(null, null, entityType, entityId, name, fileDetails.getFileName(),
-                fileSize, bodyPart.getMediaType().toString(), description, null,locale,documentType,documentPurpose,date);
+                fileSize, bodyPart.getMediaType().toString(), description, null, locale, documentType, documentPurpose, date);
         final Long documentId = this.documentWritePlatformService.createDocument(documentCommand, inputStream);
         return this.toApiJsonSerializer.serialize(CommandProcessingResult.resourceResult(documentId, null));
     }

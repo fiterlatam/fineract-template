@@ -16,18 +16,13 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.organisation.prequalification.service;
+package org.apache.fineract.portfolio.loanaccount.exception;
 
-import org.apache.fineract.infrastructure.core.api.JsonCommand;
-import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
+import org.apache.fineract.infrastructure.core.exception.AbstractPlatformDomainRuleException;
 
-public interface PrequalificationWritePlatformService {
+public class LoanFuturePaymentException extends AbstractPlatformDomainRuleException {
 
-    CommandProcessingResult processPrequalification(JsonCommand command);
-
-    CommandProcessingResult processUpdatePrequalification(Long groupId, JsonCommand command);
-
-    Long addCommentsToPrequalification(Long blacklistId, String comment);
-
-    CommandProcessingResult updatePrequalificationGroupMember(Long memberId, JsonCommand command);
+    public LoanFuturePaymentException(final String errorCode, final String errorMessage, final Object... defaultUserMessageArgs) {
+        super(errorCode, errorMessage, defaultUserMessageArgs);
+    }
 }
