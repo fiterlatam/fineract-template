@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements. See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership. The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License. You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied. See the License for the
+    specific language governing permissions and limitations
+    under the License.
+
+-->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd">
+    <changeSet author="fineract" id="1">
+        <createTable tableName="m_client_contact_info">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="client_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="area" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="housing_type" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="years_of_residence" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="public_service_types" type="VARCHAR(255)">
+            </column>
+            <column name="department_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="municipality_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="village" type="VARCHAR(200)">
+            </column>
+            <column name="reference_housing_data" type="VARCHAR(200)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="street" type="VARCHAR(200)"></column>
+            <column name="avenue" type="VARCHAR(200)"></column>
+            <column name="home_number" type="VARCHAR(200)"></column>
+            <column name="colony" type="VARCHAR(200)"></column>
+            <column name="sector" type="VARCHAR(200)"></column>
+            <column name="batch" type="VARCHAR(200)"></column>
+            <column name="square" type="VARCHAR(200)"></column>
+            <column name="zone" type="VARCHAR(200)"></column>
+            <column name="light_meter_number" type="VARCHAR(10)"></column>
+            <column name="home_phone" type="VARCHAR(10)"></column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="2" author="fineract">
+        <insert tableName="m_code">
+            <column name="code_name" value="clientAreas"/>
+            <column name="is_system_defined" valueBoolean="true"/>
+        </insert>
+        <insert tableName="m_code">
+            <column name="code_name" value="clientLocation"/>
+            <column name="is_system_defined" valueBoolean="true"/>
+        </insert>
+        <insert tableName="m_code">
+            <column name="code_name" value="publicServices"/>
+            <column name="is_system_defined" valueBoolean="true"/>
+        </insert>
+        <insert tableName="m_code">
+            <column name="code_name" value="housingType"/>
+            <column name="is_system_defined" valueBoolean="true"/>
+        </insert>
+    </changeSet>
+</databaseChangeLog>

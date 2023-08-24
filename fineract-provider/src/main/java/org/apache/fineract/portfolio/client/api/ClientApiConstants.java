@@ -186,6 +186,24 @@ public class ClientApiConstants {
     public static final String obligeeData = "ObligeeDetails";
 
     public static final String clientEntityName = "clients";
+    public static final String homeNumberParamName = "homeNumber";
+    public static final String clientAreaParamName = "clientArea";
+    public static final String serviceIdParamName = "serviceId";
+    public static final String housingTypeIdParamName = "housingTypeId";
+    public static final String departmentIdParamName = "departmentId";
+    public static final String municipalIdParamName = "municipalId";
+    public static final String residenceYearsParamName = "residenceYears";
+    public static final String villageParamName = "village";
+    public static final String referenceDataParamName = "referenceData";
+    public static final String streetParamName = "street";
+    public static final String avenueParamName = "avenue";
+    public static final String houseNumberParamName = "houseNumber";
+    public static final String colonyParamName = "colony";
+    public static final String sectorParamName = "sector";
+    public static final String batchParamName = "batch";
+    public static final String squareParamName = "square";
+    public static final String zoneParamName = "zone";
+    public static final String lightDeviceNumberParamName = "lightDeviceNumber";
 
     /**
      * These parameters will match the class level parameters of {@link ClientData}. Where possible, we try to get

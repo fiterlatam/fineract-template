@@ -54,6 +54,8 @@ import org.apache.fineract.commands.service.CommandWrapperBuilder;
 import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformService;
 import org.apache.fineract.infrastructure.bulkimport.service.BulkImportWorkbookPopulatorService;
 import org.apache.fineract.infrastructure.bulkimport.service.BulkImportWorkbookService;
+import org.apache.fineract.infrastructure.codes.data.CodeValueData;
+import org.apache.fineract.infrastructure.codes.service.CodeValueReadPlatformService;
 import org.apache.fineract.infrastructure.core.api.ApiRequestParameterHelper;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.UploadRequest;
@@ -95,6 +97,7 @@ public class ClientsApiResource {
     private final BulkImportWorkbookService bulkImportWorkbookService;
     private final BulkImportWorkbookPopulatorService bulkImportWorkbookPopulatorService;
     private final GuarantorReadPlatformService guarantorReadPlatformService;
+    private final CodeValueReadPlatformService codeValueReadPlatformService;
 
     @GET
     @Path("template")
@@ -123,6 +126,14 @@ public class ClientsApiResource {
             clientData = this.clientReadPlatformService.retrieveAllNarrations(ClientApiConstants.CLIENT_WITHDRAW_REASON);
         } else {
             clientData = this.clientReadPlatformService.retrieveTemplate(officeId, staffInSelectedOfficeOnly);
+            Collection<CodeValueData> clientAreas = this.codeValueReadPlatformService.retrieveCodeValuesByCode("clientAreas");
+            Collection<CodeValueData> clientLocation = this.codeValueReadPlatformService.retrieveCodeValuesByCode("clientLocation");
+            Collection<CodeValueData> publicServices = this.codeValueReadPlatformService.retrieveCodeValuesByCode("publicServices");
+            Collection<CodeValueData> housingTypeOptions = this.codeValueReadPlatformService.retrieveCodeValuesByCode("housingType");
+            Collection<CodeValueData> Ldepartamento = this.codeValueReadPlatformService.retrieveCodeValuesByCode("Ldepartamento");
+            Collection<CodeValueData> Lmunicipio = this.codeValueReadPlatformService.retrieveCodeValuesByCode("Lmunicipio");
+            clientData.updateClientAddressTemplate(clientAreas,clientLocation,publicServices,housingTypeOptions,Ldepartamento,Lmunicipio);
+
         }
 
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());

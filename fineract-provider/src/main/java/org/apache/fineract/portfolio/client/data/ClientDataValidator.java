@@ -93,6 +93,22 @@ public final class ClientDataValidator {
         ClientIdentifierDocumentValidator.checkDPI(dpi, ClientApiConstants.dpiParamName);
         baseDataValidator.reset().parameter(ClientApiConstants.dpiParamName).value(dpi).notNull();
 
+        final Long clientArea = this.fromApiJsonHelper.extractLongNamed(ClientApiConstants.clientAreaParamName, element);
+        baseDataValidator.reset().parameter(ClientApiConstants.clientAreaParamName).value(clientArea).notNull();
+
+        final Long housingType = this.fromApiJsonHelper.extractLongNamed(ClientApiConstants.housingTypeIdParamName, element);
+        baseDataValidator.reset().parameter(ClientApiConstants.housingTypeIdParamName).value(housingType).notNull();
+
+        final Long residenceYears = this.fromApiJsonHelper.extractLongNamed(ClientApiConstants.residenceYearsParamName, element);
+        baseDataValidator.reset().parameter(ClientApiConstants.residenceYearsParamName).value(residenceYears).notNull();
+
+        final Long department = this.fromApiJsonHelper.extractLongNamed(ClientApiConstants.departmentIdParamName, element);
+        baseDataValidator.reset().parameter(ClientApiConstants.departmentIdParamName).value(department).notNull();
+
+        final Long municipal = this.fromApiJsonHelper.extractLongNamed(ClientApiConstants.municipalIdParamName, element);
+        baseDataValidator.reset().parameter(ClientApiConstants.municipalIdParamName).value(municipal).notNull();
+
+
         if (this.fromApiJsonHelper.parameterExists(ClientApiConstants.groupIdParamName, element)) {
             final Long groupId = this.fromApiJsonHelper.extractLongNamed(ClientApiConstants.groupIdParamName, element);
             baseDataValidator.reset().parameter(ClientApiConstants.groupIdParamName).value(groupId).notNull().integerGreaterThanZero();

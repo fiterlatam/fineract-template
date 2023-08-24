@@ -92,4 +92,6 @@
     <include file="parts/0073_FBR_116_loan_portfolio_arrears_report.xml" relativeToChangelogFile="true"/>
     <include file="parts/0075_FBR_36_add_code_for_bank_agreements.xml" relativeToChangelogFile="true"/>
     <include file="parts/0076_create_hard_policy_checklist_configurations.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0076_Add_Client_Contact_Information.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0073_FBR_update_query_loan_status_id.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
