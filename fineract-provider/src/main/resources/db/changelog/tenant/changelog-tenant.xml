@@ -91,4 +91,5 @@
     <include file="parts/0074_FBR_Add_Document_purpose_Code.xml" relativeToChangelogFile="true"/>
     <include file="parts/0073_FBR_116_loan_portfolio_arrears_report.xml" relativeToChangelogFile="true"/>
     <include file="parts/0075_FBR_36_add_code_for_bank_agreements.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0076_create_hard_policy_checklist_configurations.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
