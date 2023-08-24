@@ -333,4 +333,36 @@ public final class LoanSummaryWrapper {
         }
         return total;
     }
+
+    public Money calculateTotalVatOnChargeOverdue(List<LoanRepaymentScheduleInstallment> repaymentScheduleInstallments,
+            MonetaryCurrency currency) {
+        Money total = Money.zero(currency);
+        LocalDate businessDate = DateUtils.getBusinessLocalDate();
+        LocalDate overDueSince = businessDate;
+
+        for (final LoanRepaymentScheduleInstallment installment : repaymentScheduleInstallments) {
+            if (installment.getDueDate().isBefore(businessDate)) {
+                if (installment.getVatOnChargeExpected(currency).isGreaterThanZero()) {
+                    total = total.plus(installment.getVatOnChargeExpected(currency));
+                }
+            }
+        }
+        return total;
+    }
+
+    public Money calculateTotalPenaltyChargesOverdue(List<LoanRepaymentScheduleInstallment> repaymentScheduleInstallments,
+            MonetaryCurrency currency) {
+        Money total = Money.zero(currency);
+        LocalDate businessDate = DateUtils.getBusinessLocalDate();
+        LocalDate overDueSince = businessDate;
+
+        for (final LoanRepaymentScheduleInstallment installment : repaymentScheduleInstallments) {
+            if (installment.getDueDate().isBefore(businessDate)) {
+                if (installment.getPenaltyChargesCharged(currency).isGreaterThanZero()) {
+                    total = total.plus(installment.getPenaltyChargesCharged(currency));
+                }
+            }
+        }
+        return total;
+    }
 }
