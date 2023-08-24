@@ -31,7 +31,10 @@ public class ClientApiCollectionConstants extends ClientApiConstants {
                     lastnameParamName, fullnameParamName, officeIdParamName, activeParamName, activationDateParamName, staffIdParamName,
                     submittedOnDateParamName, savingsProductIdParamName, dateOfBirthParamName, genderIdParamName, clientTypeIdParamName,
                     clientClassificationIdParamName, clientNonPersonDetailsParamName, displaynameParamName, legalFormIdParamName,
-                    datatables, isStaffParamName, dpiParamName, oldCustomerNumberParamName));
+                    datatables, isStaffParamName, dpiParamName, oldCustomerNumberParamName,mobileNoParamName, homeNumberParamName,
+                    clientAreaParamName, serviceIdParamName, housingTypeIdParamName, departmentIdParamName, municipalIdParamName,
+                    residenceYearsParamName, villageParamName, referenceDataParamName, streetParamName, avenueParamName, houseNumberParamName,
+                    colonyParamName, sectorParamName, batchParamName, squareParamName, zoneParamName, lightDeviceNumberParamName));
 
     protected static final Set<String> CLIENT_NON_PERSON_CREATE_REQUEST_DATA_PARAMETERS = new HashSet<>(
             Arrays.asList(familyMembers, address, localeParamName, dateFormatParamName, incorpNumberParamName, remarksParamName,

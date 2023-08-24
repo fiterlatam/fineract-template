@@ -230,6 +230,9 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
     @Column(name = "old_customer_number", nullable = false)
     private String oldCustomerNumber;
 
+    @OneToOne(mappedBy = "client", cascade = CascadeType.ALL)
+    private ClientContactInformation contactInformation;
+
     public static Client createNew(final AppUser currentUser, final Office clientOffice, final Group clientParentGroup, final Staff staff,
             final Long savingsProductId, final CodeValue gender, final CodeValue clientType, final CodeValue clientClassification,
             final Integer legalForm, final JsonCommand command) {
@@ -814,6 +817,10 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
 
     public void updateOfficeJoiningDate(final LocalDate date) {
         this.officeJoiningDate = date;
+    }
+
+    public void updateClientInformation(ClientContactInformation contactInformation) {
+        this.contactInformation = contactInformation;
     }
 
     private Long staffId() {
