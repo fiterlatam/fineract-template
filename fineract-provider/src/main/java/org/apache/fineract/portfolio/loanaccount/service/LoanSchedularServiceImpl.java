@@ -52,6 +52,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.dao.CannotAcquireLockException;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
 @Service
@@ -69,8 +70,10 @@ public class LoanSchedularServiceImpl implements LoanSchedularService {
     private final ApplyChargeToOverdueLoansBusinessStep applyChargeToOverdueLoansBusinessStep;
     private final LoanRepository loanRepository;
 
+    @Transactional
     @Override
     @CronTarget(jobName = JobName.APPLY_CHARGE_TO_OVERDUE_LOAN_INSTALLMENT)
+
     public void applyChargeForOverdueLoans() throws JobExecutionException {
 
         final Long penaltyWaitPeriodValue = this.configurationDomainService.retrievePenaltyWaitPeriod();

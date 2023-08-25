@@ -2649,7 +2649,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
     @Override
     @Transactional
-    public void applyOverdueChargesForLoan(final Long loanId, Collection<OverdueLoanScheduleData> overdueLoanScheduleDatas) {
+    public void applyOverdueChargesForLoan(final Long loanId, final Collection<OverdueLoanScheduleData> overdueLoanScheduleDatas) {
 
         Loan loan = null;
         final List<Long> existingTransactionIds = new ArrayList<>();
@@ -2658,7 +2658,6 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         LocalDate recalculateFrom = DateUtils.getBusinessLocalDate();
         LocalDate lastChargeDate = null;
         for (final OverdueLoanScheduleData overdueInstallment : overdueLoanScheduleDatas) {
-
             final JsonElement parsedCommand = this.fromApiJsonHelper.parse(overdueInstallment.toString());
             final JsonCommand command = JsonCommand.from(overdueInstallment.toString(), parsedCommand, this.fromApiJsonHelper, null, null,
                     null, null, null, loanId, null, null, null, null, null, null);
@@ -2750,6 +2749,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             final List<Long> existingReversedTransactionIds) {
         boolean runInterestRecalculation = false;
         final Charge chargeDefinition = this.chargeRepository.findOneWithNotFoundDetection(loanChargeId);
+
+        log.info("Apply charge to overdue installment for loan ID: {} and period: {}", loanId, periodNumber);
 
         Collection<Integer> frequencyNumbers = loanChargeReadPlatformService.retrieveOverdueInstallmentChargeFrequencyNumber(loanId,
                 chargeDefinition.getId(), periodNumber);
