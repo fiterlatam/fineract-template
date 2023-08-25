@@ -723,7 +723,9 @@ public final class ClientData implements Comparable<ClientData>, Serializable {
         return this.dateOfBirth;
     }
 
-    public void updateClientAddressTemplate(Collection<CodeValueData> clientAreas, Collection<CodeValueData> clientLocation, Collection<CodeValueData> publicServices, Collection<CodeValueData> housingTypeOptions, Collection<CodeValueData> ldepartamento, Collection<CodeValueData> lmunicipio) {
+    public void updateClientAddressTemplate(Collection<CodeValueData> clientAreas, Collection<CodeValueData> clientLocation,
+            Collection<CodeValueData> publicServices, Collection<CodeValueData> housingTypeOptions, Collection<CodeValueData> ldepartamento,
+            Collection<CodeValueData> lmunicipio) {
         this.clientAreaOptions = clientAreas;
         this.clientLocationOptions = clientLocation;
         this.publicServiceOptions = publicServices;

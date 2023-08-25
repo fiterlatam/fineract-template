@@ -132,7 +132,8 @@ public class ClientsApiResource {
             Collection<CodeValueData> housingTypeOptions = this.codeValueReadPlatformService.retrieveCodeValuesByCode("housingType");
             Collection<CodeValueData> Ldepartamento = this.codeValueReadPlatformService.retrieveCodeValuesByCode("Ldepartamento");
             Collection<CodeValueData> Lmunicipio = this.codeValueReadPlatformService.retrieveCodeValuesByCode("Lmunicipio");
-            clientData.updateClientAddressTemplate(clientAreas,clientLocation,publicServices,housingTypeOptions,Ldepartamento,Lmunicipio);
+            clientData.updateClientAddressTemplate(clientAreas, clientLocation, publicServices, housingTypeOptions, Ldepartamento,
+                    Lmunicipio);
 
         }
 
