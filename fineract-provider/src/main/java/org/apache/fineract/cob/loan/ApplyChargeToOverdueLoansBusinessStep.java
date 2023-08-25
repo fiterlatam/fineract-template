@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.data.OverdueLoanScheduleData;
@@ -31,6 +32,7 @@ import org.apache.fineract.portfolio.loanaccount.service.LoanWritePlatformServic
 import org.springframework.stereotype.Component;
 
 @Component
+@Slf4j
 @RequiredArgsConstructor
 public class ApplyChargeToOverdueLoansBusinessStep implements LoanCOBBusinessStep {
 
@@ -43,12 +45,13 @@ public class ApplyChargeToOverdueLoansBusinessStep implements LoanCOBBusinessSte
         final Long penaltyWaitPeriodValue = configurationDomainService.retrievePenaltyWaitPeriod();
         final Boolean backdatePenalties = configurationDomainService.isBackdatePenaltiesEnabled();
         final Collection<OverdueLoanScheduleData> overdueLoanScheduledInstallments = loanReadPlatformService
-                .retrieveAllLoansWithOverdueInstallments(penaltyWaitPeriodValue, backdatePenalties);
+                .retrieveLoanWithOverdueInstallments(input.getId(), penaltyWaitPeriodValue, backdatePenalties);
         // TODO: this is very much not effective to get all overdue installments for each loan, a new method needs to be
         // implemented for it
         Map<Long, List<OverdueLoanScheduleData>> groupedOverdueData = overdueLoanScheduledInstallments.stream()
                 .collect(Collectors.groupingBy(OverdueLoanScheduleData::getLoanId));
         for (Long loanId : groupedOverdueData.keySet()) {
+            log.info("Processing Loans with Overdue Installments - Loan ID: {}", loanId);
             loanWritePlatformService.applyOverdueChargesForLoan(input.getId(), groupedOverdueData.get(loanId));
         }
         return input;
