@@ -18,14 +18,14 @@
  */
 package org.apache.fineract.portfolio.client.domain;
 
-import org.apache.fineract.infrastructure.core.api.JsonCommand;
-import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
-import org.apache.fineract.portfolio.client.api.ClientApiConstants;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
+import org.apache.fineract.infrastructure.core.api.JsonCommand;
+import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
+import org.apache.fineract.portfolio.client.api.ClientApiConstants;
 
 @Entity
 @Table(name = "m_client_contact_info")
@@ -89,16 +89,14 @@ public class ClientContactInformation extends AbstractPersistableCustom {
     @JoinColumn(name = "client_id")
     private Client client;
 
-
     protected ClientContactInformation() {
         //
     }
 
-    public ClientContactInformation(Integer area, Integer housingType, Integer yearsOfResidence, String serviceTypes,
-                                    Integer departmentId, Integer municipalityId, String village, String referenceHousingData,
-                                    String street, String avenue, String houseNumber, String colony, String sector,
-                                    String batch, String square, String zone, String lightMeterNumber, String homePhone,
-                                    Client newClient) {
+    public ClientContactInformation(Integer area, Integer housingType, Integer yearsOfResidence, String serviceTypes, Integer departmentId,
+            Integer municipalityId, String village, String referenceHousingData, String street, String avenue, String houseNumber,
+            String colony, String sector, String batch, String square, String zone, String lightMeterNumber, String homePhone,
+            Client newClient) {
         this.area = area;
         this.housingType = housingType;
         this.yearsOfResidence = yearsOfResidence;
@@ -142,6 +140,7 @@ public class ClientContactInformation extends AbstractPersistableCustom {
         final String lightMeterNumber = command.stringValueOfParameterNamed(ClientApiConstants.lightDeviceNumberParamName);
         final String homePhone = command.stringValueOfParameterNamed(ClientApiConstants.homeNumberParamName);
         return new ClientContactInformation(area, housingType, yearsOfResidence, serviceTypes, departmentId, municipalityId, village,
-                referenceHousingData, street, avenue, houseNumber, colony, sector, batch, square, zone, lightMeterNumber, homePhone, newClient);
+                referenceHousingData, street, avenue, houseNumber, colony, sector, batch, square, zone, lightMeterNumber, homePhone,
+                newClient);
     }
 }

@@ -25,16 +25,16 @@ import org.apache.fineract.portfolio.client.api.ClientApiConstants;
 
 public class ClientApiCollectionConstants extends ClientApiConstants {
 
-    protected static final Set<String> CLIENT_CREATE_REQUEST_DATA_PARAMETERS = new HashSet<>(
-            Arrays.asList(familyMembers, address, localeParamName, dateFormatParamName, groupIdParamName, accountNoParamName,
-                    externalIdParamName, mobileNoParamName, emailAddressParamName, firstnameParamName, middlenameParamName,
-                    lastnameParamName, fullnameParamName, officeIdParamName, activeParamName, activationDateParamName, staffIdParamName,
-                    submittedOnDateParamName, savingsProductIdParamName, dateOfBirthParamName, genderIdParamName, clientTypeIdParamName,
-                    clientClassificationIdParamName, clientNonPersonDetailsParamName, displaynameParamName, legalFormIdParamName,
-                    datatables, isStaffParamName, dpiParamName, oldCustomerNumberParamName,mobileNoParamName, homeNumberParamName,
-                    clientAreaParamName, serviceIdParamName, housingTypeIdParamName, departmentIdParamName, municipalIdParamName,
-                    residenceYearsParamName, villageParamName, referenceDataParamName, streetParamName, avenueParamName, houseNumberParamName,
-                    colonyParamName, sectorParamName, batchParamName, squareParamName, zoneParamName, lightDeviceNumberParamName));
+    protected static final Set<String> CLIENT_CREATE_REQUEST_DATA_PARAMETERS = new HashSet<>(Arrays.asList(familyMembers, address,
+            localeParamName, dateFormatParamName, groupIdParamName, accountNoParamName, externalIdParamName, mobileNoParamName,
+            emailAddressParamName, firstnameParamName, middlenameParamName, lastnameParamName, fullnameParamName, officeIdParamName,
+            activeParamName, activationDateParamName, staffIdParamName, submittedOnDateParamName, savingsProductIdParamName,
+            dateOfBirthParamName, genderIdParamName, clientTypeIdParamName, clientClassificationIdParamName,
+            clientNonPersonDetailsParamName, displaynameParamName, legalFormIdParamName, datatables, isStaffParamName, dpiParamName,
+            oldCustomerNumberParamName, mobileNoParamName, homeNumberParamName, clientAreaParamName, serviceIdParamName,
+            housingTypeIdParamName, departmentIdParamName, municipalIdParamName, residenceYearsParamName, villageParamName,
+            referenceDataParamName, streetParamName, avenueParamName, houseNumberParamName, colonyParamName, sectorParamName,
+            batchParamName, squareParamName, zoneParamName, lightDeviceNumberParamName));
 
     protected static final Set<String> CLIENT_NON_PERSON_CREATE_REQUEST_DATA_PARAMETERS = new HashSet<>(
             Arrays.asList(familyMembers, address, localeParamName, dateFormatParamName, incorpNumberParamName, remarksParamName,

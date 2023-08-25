@@ -108,7 +108,6 @@ public final class ClientDataValidator {
         final Long municipal = this.fromApiJsonHelper.extractLongNamed(ClientApiConstants.municipalIdParamName, element);
         baseDataValidator.reset().parameter(ClientApiConstants.municipalIdParamName).value(municipal).notNull();
 
-
         if (this.fromApiJsonHelper.parameterExists(ClientApiConstants.groupIdParamName, element)) {
             final Long groupId = this.fromApiJsonHelper.extractLongNamed(ClientApiConstants.groupIdParamName, element);
             baseDataValidator.reset().parameter(ClientApiConstants.groupIdParamName).value(groupId).notNull().integerGreaterThanZero();
