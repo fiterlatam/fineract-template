@@ -44,7 +44,8 @@ public class LoanRepaymentScheduleProcessingWrapper {
         LocalDate startDate = disbursementDate;
         for (final LoanRepaymentScheduleInstallment period : repaymentPeriods) {
 
-            if (disbursementDate.isEqual(period.getDueDate()) && loan.getInterestChargedFromDate().isAfter(loan.getDisbursementDate())) {
+            if (disbursementDate.isEqual(period.getDueDate()) && loan.getInterestChargedFromDate() != null
+                    && loan.getInterestChargedFromDate().isAfter(loan.getDisbursementDate())) {
                 continue;
             }
 
