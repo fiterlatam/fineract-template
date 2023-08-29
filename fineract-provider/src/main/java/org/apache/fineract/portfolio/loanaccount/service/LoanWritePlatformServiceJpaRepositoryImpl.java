@@ -33,6 +33,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -2649,6 +2650,14 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
     @Override
     @Transactional
+    public void applyOverdueChargesForLoan(final Long loanId, Long penaltyWaitPeriod, boolean backdatePenalties) {
+        Collection<OverdueLoanScheduleData> loanData = loanReadPlatformService.retrieveLoanWithOverdueInstallments(loanId,
+                penaltyWaitPeriod, backdatePenalties);
+        this.applyOverdueChargesForLoan(loanId, loanData);
+    }
+
+    @Override
+    @Transactional
     public void applyOverdueChargesForLoan(final Long loanId, final Collection<OverdueLoanScheduleData> overdueLoanScheduleDatas) {
 
         Loan loan = null;
@@ -2750,8 +2759,6 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         boolean runInterestRecalculation = false;
         final Charge chargeDefinition = this.chargeRepository.findOneWithNotFoundDetection(loanChargeId);
 
-        log.info("Apply charge to overdue installment for loan ID: {} and period: {}", loanId, periodNumber);
-
         Collection<Integer> frequencyNumbers = loanChargeReadPlatformService.retrieveOverdueInstallmentChargeFrequencyNumber(loanId,
                 chargeDefinition.getId(), periodNumber);
 
@@ -2759,23 +2766,46 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         final ScheduledDateGenerator scheduledDateGenerator = new DefaultScheduledDateGenerator();
         Map<Integer, LocalDate> scheduleDates = new HashMap<>();
         final Long penaltyWaitPeriodValue = this.configurationDomainService.retrievePenaltyWaitPeriod();
+        Integer chargePenaltyWaitPeriodValue = 0;
+
         final Long penaltyPostingWaitPeriodValue = this.configurationDomainService.retrieveGraceOnPenaltyPostingPeriod();
         final LocalDate dueDate = command.localDateValueOfParameterNamed("dueDate");
+
+        LocalDate overdueSinceDate = command.localDateValueOfParameterNamed("dueDate");
+        if (command.parameterExists("overdueSinceDate") && Objects.nonNull(command.localDateValueOfParameterNamed("overdueSinceDate"))) {
+            overdueSinceDate = command.localDateValueOfParameterNamed("overdueSinceDate");
+        }
+
         Long diff = penaltyWaitPeriodValue + 1 - penaltyPostingWaitPeriodValue;
         if (diff < 1) {
-            diff = 1L;
+            diff = 0L;
         }
-        LocalDate startDate = dueDate.plusDays(penaltyWaitPeriodValue.intValue() + 1);
-        Integer frequencyNunber = 1;
-        if (feeFrequency == null) {
-            scheduleDates.put(frequencyNunber++, startDate.minusDays(diff));
+        LocalDate startDate;
+        if (overdueSinceDate != null && dueDate.isEqual(overdueSinceDate)) {
+            startDate = dueDate.plusDays(penaltyWaitPeriodValue.intValue() + chargePenaltyWaitPeriodValue + 1);
         } else {
-            while (!startDate.isAfter(DateUtils.getBusinessLocalDate())) {
-                scheduleDates.put(frequencyNunber++, startDate.minusDays(diff));
-                LocalDate scheduleDate = scheduledDateGenerator.getRepaymentPeriodDate(PeriodFrequencyType.fromInt(feeFrequency),
-                        chargeDefinition.feeInterval(), startDate);
+            startDate = dueDate.plusDays(penaltyWaitPeriodValue.intValue() + 1);
+        }
+        Integer frequencyNunber = 1;
+        boolean applyPenalty = true;
+        final Integer chargePenaltyWaitInterval = 0;
+        if (chargePenaltyWaitInterval != null) {
+            if (!dueDate.isBefore(DateUtils.getLocalDateOfTenant().minusDays(chargePenaltyWaitInterval))) {
+                applyPenalty = false;
+            }
+        }
 
-                startDate = scheduleDate;
+        if (applyPenalty) {
+            if (feeFrequency == null) {
+                scheduleDates.put(frequencyNunber++, startDate.minusDays(diff.intValue()));
+            } else {
+                while (!startDate.isAfter(DateUtils.getLocalDateOfTenant())) {
+                    scheduleDates.put(frequencyNunber++, startDate.minusDays(diff.intValue()));
+                    LocalDate scheduleDate = scheduledDateGenerator.getRepaymentPeriodDate(PeriodFrequencyType.fromInt(feeFrequency),
+                            chargeDefinition.feeInterval(), startDate);
+
+                    startDate = scheduleDate;
+                }
             }
         }
 
@@ -2795,7 +2825,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             installment = loan.fetchRepaymentScheduleInstallment(periodNumber);
             lastChargeAppliedDate = installment.getDueDate();
         }
-        LocalDate recalculateFrom = DateUtils.getBusinessLocalDate();
+        LocalDate recalculateFrom = DateUtils.getLocalDateOfTenant();
 
         if (loan != null) {
             businessEventNotifierService.notifyPreBusinessEvent(new LoanApplyOverdueChargeBusinessEvent(loan));
@@ -2812,8 +2842,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
                 boolean isAppliedOnBackDate = addCharge(loan, chargeDefinition, loanCharge);
                 runInterestRecalculation = runInterestRecalculation || isAppliedOnBackDate;
-                if (entry.getValue().isBefore(recalculateFrom)) {
-                    recalculateFrom = entry.getValue();
+                if (loanCharge.getDueLocalDate() != null && loanCharge.getDueLocalDate().isBefore(recalculateFrom)) {
+                    recalculateFrom = loanCharge.getDueLocalDate();
                 }
                 if (entry.getValue().isAfter(lastChargeAppliedDate)) {
                     lastChargeAppliedDate = entry.getValue();

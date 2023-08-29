@@ -104,6 +104,8 @@ public interface LoanWritePlatformService {
 
     CommandProcessingResult addAndDeleteLoanDisburseDetails(Long loanId, JsonCommand command);
 
+    void applyOverdueChargesForLoan(Long loanId, Long penaltyWaitPeriodValue, boolean backdatePenalties);
+
     void applyOverdueChargesForLoan(Long loanId, Collection<OverdueLoanScheduleData> overdueLoanScheduleDatas);
 
     void recalculateInterest(long loanId);
