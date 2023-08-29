@@ -25,7 +25,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -36,9 +35,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.cob.loan.ApplyChargeToOverdueLoansBusinessStep;
 import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
-import org.apache.fineract.infrastructure.core.data.ApiParameterError;
-import org.apache.fineract.infrastructure.core.exception.AbstractPlatformDomainRuleException;
-import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidationException;
 import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.infrastructure.jobs.annotation.CronTarget;
 import org.apache.fineract.infrastructure.jobs.exception.JobExecutionException;
@@ -71,37 +67,69 @@ public class LoanSchedularServiceImpl implements LoanSchedularService {
 
     @Override
     @CronTarget(jobName = JobName.APPLY_CHARGE_TO_OVERDUE_LOAN_INSTALLMENT)
-
     public void applyChargeForOverdueLoans() throws JobExecutionException {
 
-        final Long penaltyWaitPeriodValue = this.configurationDomainService.retrievePenaltyWaitPeriod();
-        final Boolean backdatePenalties = this.configurationDomainService.isBackdatePenaltiesEnabled();
-        final Collection<OverdueLoanScheduleData> overdueLoanScheduledInstallments = this.loanReadPlatformService
-                .retrieveAllLoansWithOverdueInstallments(penaltyWaitPeriodValue, backdatePenalties);
+        Long penaltyWaitPeriodValue = 0L;
+        Boolean backdatePenalties = null;
+        Collection<OverdueLoanScheduleData> overdueLoanScheduledInstallments = null;
+        Integer maxNumberOfRetries = ThreadLocalContextUtil.getTenant().getConnection().getMaxRetriesOnDeadlock();
+        Integer maxIntervalBetweenRetries = ThreadLocalContextUtil.getTenant().getConnection().getMaxIntervalBetweenRetries();
 
-        Set<Long> loanIds = overdueLoanScheduledInstallments.stream().map(OverdueLoanScheduleData::getLoanId).collect(Collectors.toSet());
+        try {
+            penaltyWaitPeriodValue = this.configurationDomainService.retrievePenaltyWaitPeriod();
+            backdatePenalties = this.configurationDomainService.isBackdatePenaltiesEnabled();
+            overdueLoanScheduledInstallments = this.loanReadPlatformService.retrieveAllLoansWithOverdueInstallments(penaltyWaitPeriodValue,
+                    backdatePenalties);
+        } catch (Exception e) {
+            log.error("Failed to retrieve data to apply charge on loans", e);
+        } finally {
+            if (CollectionUtils.isEmpty(overdueLoanScheduledInstallments)) {
+                return;
+            }
+        }
+
+        List<Long> loanIds = overdueLoanScheduledInstallments.stream().map(OverdueLoanScheduleData::getLoanId).collect(Collectors.toList());
 
         if (!loanIds.isEmpty()) {
+            loanIds = Collections.synchronizedList(loanIds);
             List<Throwable> exceptions = new ArrayList<>();
             for (final Long loanId : loanIds) {
-                try {
-                    applyChargeToOverdueLoansBusinessStep.execute(loanRepository.getReferenceById(loanId));
-                } catch (final PlatformApiDataValidationException e) {
-                    final List<ApiParameterError> errors = e.getErrors();
-                    for (final ApiParameterError error : errors) {
-                        log.error("Apply Charges due for overdue loans failed for account {} with message: {}", loanId,
-                                error.getDeveloperMessage(), e);
+                Integer numberOfRetries = 0;
+                while (numberOfRetries <= maxNumberOfRetries) {
+                    try {
+                        log.info("Processing Loans with Overdue Installments - Loan ID: {}", loanId);
+                        loanWritePlatformService.applyOverdueChargesForLoan(loanId, penaltyWaitPeriodValue, backdatePenalties);
+                        numberOfRetries = maxNumberOfRetries + 1;
+                    } catch (CannotAcquireLockException | ObjectOptimisticLockingFailureException exception) {
+                        log.info("Apply Charges due for overdue loans job has been retried {} time(s)", numberOfRetries);
+                        // Fail if the transaction has been retried for
+                        // maxNumberOfRetries
+                        if (numberOfRetries >= maxNumberOfRetries) {
+                            log.error(
+                                    "Apply Charges due for overdue loans job has been retried for the max allowed attempts of {} and will be rolled back",
+                                    numberOfRetries);
+                            exceptions.add(exception);
+                            break;
+                        }
+                        // Else sleep for a random time (between 1 to 10
+                        // seconds) and continue
+                        try {
+                            int randomNum = RANDOM.nextInt(maxIntervalBetweenRetries + 1);
+                            Thread.sleep(1000 + (randomNum * 1000));
+                            numberOfRetries = numberOfRetries + 1;
+                        } catch (InterruptedException e) {
+                            log.error("Apply Charges due for overdue loans failed due to InterruptedException", e);
+                            exceptions.add(e);
+                            break;
+                        }
+                    } catch (Exception e) {
+                        log.error("Apply Charges due for overdue loans failed for account {}", loanId, e);
+                        exceptions.add(e);
+                        numberOfRetries = maxNumberOfRetries + 1;
                     }
-                    exceptions.add(e);
-                } catch (final AbstractPlatformDomainRuleException e) {
-                    log.error("Apply Charges due for overdue loans failed for account {} with message: {}", loanId,
-                            e.getDefaultUserMessage(), e);
-                    exceptions.add(e);
-                } catch (Exception e) {
-                    log.error("Apply Charges due for overdue loans failed for account {}", loanId, e);
-                    exceptions.add(e);
                 }
             }
+
             if (!exceptions.isEmpty()) {
                 throw new JobExecutionException(exceptions);
             }
