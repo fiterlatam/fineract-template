@@ -57,10 +57,12 @@ import org.apache.fineract.portfolio.address.data.AddressData;
 import org.apache.fineract.portfolio.address.service.AddressReadPlatformService;
 import org.apache.fineract.portfolio.client.api.ClientApiConstants;
 import org.apache.fineract.portfolio.client.data.ClientCollateralManagementData;
+import org.apache.fineract.portfolio.client.data.ClientContactInformationData;
 import org.apache.fineract.portfolio.client.data.ClientData;
 import org.apache.fineract.portfolio.client.data.ClientFamilyMembersData;
 import org.apache.fineract.portfolio.client.data.ClientNonPersonData;
 import org.apache.fineract.portfolio.client.data.ClientTimelineData;
+import org.apache.fineract.portfolio.client.domain.ClientContactInformationRepository;
 import org.apache.fineract.portfolio.client.domain.ClientEnumerations;
 import org.apache.fineract.portfolio.client.domain.ClientStatus;
 import org.apache.fineract.portfolio.client.domain.LegalForm;
@@ -94,6 +96,7 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
     private final ClientLookupMapper lookupMapper = new ClientLookupMapper();
     private final ClientMembersOfGroupMapper membersOfGroupMapper = new ClientMembersOfGroupMapper();
     private final ParentGroupsMapper clientGroupsMapper = new ParentGroupsMapper();
+    private final ContactInformationMapper contactInformationMapper = new ContactInformationMapper();
 
     private final AddressReadPlatformService addressReadPlatformService;
     private final ClientFamilyMembersReadPlatformService clientFamilyMembersReadPlatformService;
@@ -101,6 +104,7 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
     private final EntityDatatableChecksReadService entityDatatableChecksReadService;
     private final ColumnValidator columnValidator;
     private final ClientCollateralManagementRepositoryWrapper clientCollateralManagementRepositoryWrapper;
+    private final ClientContactInformationRepository clientContactInformationRepository;
 
     @Override
     public ClientData retrieveTemplate(final Long officeId, final boolean staffInSelectedOfficeOnly) {
@@ -317,7 +321,10 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
             final Collection<GroupGeneralData> parentGroups = this.jdbcTemplate.query(clientGroupsSql, this.clientGroupsMapper, // NOSONAR
                     clientId);
 
-            return ClientData.setParentGroups(clientData, parentGroups, clientCollateralManagementDataSet);
+            final String contactSql = "select " + this.contactInformationMapper.schema();
+            final ClientContactInformationData contactInformationData = this.jdbcTemplate.queryForObject(contactSql, this.contactInformationMapper, clientId);
+
+            return ClientData.setParentGroups(clientData, parentGroups, clientCollateralManagementDataSet,contactInformationData);
 
         } catch (final EmptyResultDataAccessException e) {
             throw new ClientNotFoundException(clientId, e);
@@ -758,6 +765,65 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
             final String accountNo = rs.getString("accountNo");
 
             return GroupGeneralData.lookup(groupId, accountNo, groupName);
+        }
+    }
+
+
+    private static final class ContactInformationMapper implements RowMapper<ClientContactInformationData> {
+
+        public String schema() {
+            return "ci.id , " +
+                    "acode.code_value as areaValue, " +
+                    "htype.code_value as housingValue, " +
+                    "ci.years_of_residence, " +
+                    "ci.public_service_types, " +
+                    "dep.code_value as department, " +
+                    "mun.code_value as municipality, " +
+                    "ci.village, " +
+                    "ci.reference_housing_data, " +
+                    "ci.street, " +
+                    "ci.avenue, " +
+                    "ci.home_number, " +
+                    "ci.colony, " +
+                    "ci.sector, " +
+                    "ci.batch, " +
+                    "ci.square, " +
+                    "ci.zone, " +
+                    "ci.light_meter_number, " +
+                    "ci.home_phone " +
+                    "from m_client_contact_info ci " +
+                    "left join m_code_value acode on acode.id = ci.area " +
+                    "left join m_code_value htype on htype.id = ci.housing_type " +
+                    "left join m_code_value dep on dep.id = ci.department_id " +
+                    "left join m_code_value mun on mun.id = ci.municipality_id " +
+                    "WHERE ci.client_id  = ?";
+        }
+
+        @Override
+        public ClientContactInformationData mapRow(final ResultSet rs, final int rowNum) throws SQLException {
+
+            final Long id = JdbcSupport.getLong(rs, "id");
+            final String area = rs.getString("areaValue");
+            final String housing = rs.getString("housingValue");
+            final String yearsOfResidence = rs.getString("years_of_residence");
+            final String publicServiceTypes = rs.getString("public_service_types");
+            final String department = rs.getString("department");
+            final String municipality = rs.getString("municipality");
+            final String village = rs.getString("village");
+            final String referenceHousingData = rs.getString("reference_housing_data");
+            final String street = rs.getString("street");
+            final String avenue = rs.getString("avenue");
+            final String homeNumber = rs.getString("home_number");
+            final String colony = rs.getString("colony");
+            final String sector = rs.getString("sector");
+            final String batch = rs.getString("batch");
+            final String square = rs.getString("square");
+            final String zone = rs.getString("zone");
+            final String lightMeterNumber = rs.getString("light_meter_number");
+            final String homePhone = rs.getString("home_phone");
+
+            return ClientContactInformationData.instance(area,housing,yearsOfResidence,publicServiceTypes,department,municipality,
+                    village,referenceHousingData,street,avenue,homeNumber,colony,sector,batch,square,zone,lightMeterNumber,homePhone);
         }
     }
 
