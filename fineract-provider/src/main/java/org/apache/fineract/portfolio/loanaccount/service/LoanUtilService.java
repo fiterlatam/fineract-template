@@ -386,7 +386,7 @@ public class LoanUtilService {
         double[] cash_flows = new double[loan.getRepaymentScheduleInstallments().size() + 1];
         cash_flows[0] = loan.getPrincpal().getAmount().doubleValue() * -1;
 
-        // for period = 0, sum the charges amount
+        // for period = 0, consider the charges amount
         for (LoanCharge charge : loan.charges()) {
             if (charge.isActive()) {
                 // check for Disbursement Charge
@@ -420,7 +420,6 @@ public class LoanUtilService {
 
     private void generateCashFlowsForInstallments(Loan loan, Boolean isVatRequired, List<CashFlowData> cashFlows, Money vatAmount) {
         double amount;
-        double vatAmountForInstallments = vatAmount.getAmount().doubleValue();
         LocalDate disbursementDate = loan.getDisbursementDate();
 
         // generate the list of pairs composed by amount and date
@@ -433,10 +432,6 @@ public class LoanUtilService {
             } else {
                 amount = per.getPrincipal(loan.getCurrency()).plus(per.getFeeChargesCharged(loan.getCurrency()).getAmount().doubleValue())
                         .plus(per.getPenaltyChargesCharged(loan.getCurrency())).getAmount().doubleValue();
-                // this removes the VAT portion from first installment
-                if (per.getInstallmentNumber() == 1 && vatAmountForInstallments > 0) {
-                    amount = amount - vatAmountForInstallments;
-                }
             }
             // calculate days since disbursement date
             int numberOfDays = Math.toIntExact(daysBetween(disbursementDate, per.getDueDate()));
