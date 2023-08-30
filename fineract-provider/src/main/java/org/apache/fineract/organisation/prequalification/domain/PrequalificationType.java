@@ -21,28 +21,24 @@ package org.apache.fineract.organisation.prequalification.domain;
 import lombok.Getter;
 
 @Getter
-public enum ChecklistConditionalOperator {
+public enum PrequalificationType {
 
-    INVALID(0), EQUAL(1), NOT_EQUAL(2), GREATER(3), GREATER_OR_EQUAL(4), LESS(5), LESS_OR_EQUAL(6), BETWEEN(7), NOT_BETWEEN(8);
+    INVALID(0, "prequalification.evaluation.status.invalid"), INDIVIDUAL(1, "prequalification.evaluation.status.individual"), GROUP(2,
+            "prequalification.evaluation.status.group");
 
     private final Integer value;
+    private final String code;
 
-    ChecklistConditionalOperator(Integer value) {
+    PrequalificationType(final Integer value, final String code) {
         this.value = value;
+        this.code = code;
     }
 
-    public static ChecklistConditionalOperator fromInt(final Integer statusValue) {
+    public static PrequalificationType fromInt(final Integer statusValue) {
         return switch (statusValue) {
-            case 1 -> ChecklistConditionalOperator.EQUAL;
-            case 2 -> ChecklistConditionalOperator.NOT_EQUAL;
-            case 3 -> ChecklistConditionalOperator.GREATER;
-            case 4 -> ChecklistConditionalOperator.GREATER_OR_EQUAL;
-            case 5 -> ChecklistConditionalOperator.LESS;
-            case 6 -> ChecklistConditionalOperator.LESS_OR_EQUAL;
-            case 7 -> ChecklistConditionalOperator.BETWEEN;
-            case 8 -> ChecklistConditionalOperator.NOT_BETWEEN;
-            default -> ChecklistConditionalOperator.INVALID;
+            case 1 -> PrequalificationType.INDIVIDUAL;
+            case 2 -> PrequalificationType.GROUP;
+            default -> PrequalificationType.INVALID;
         };
     }
-
 }

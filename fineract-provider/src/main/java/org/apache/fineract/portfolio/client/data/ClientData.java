@@ -362,7 +362,8 @@ public final class ClientData implements Comparable<ClientData>, Serializable {
                 templateData.clientClassificationOptions, templateData.clientNonPersonConstitutionOptions,
                 templateData.clientNonPersonMainBusinessLineOptions, clientData.clientNonPersonDetails, templateData.clientLegalFormOptions,
                 templateData.familyMemberOptions, clientData.legalForm, clientData.address, clientData.isAddressEnabled, null,
-                clientData.isStaff, clientCollateralManagements, clientData.dpiNumber, clientData.oldCustomerNumber, clientData.clientContactInformation);
+                clientData.isStaff, clientCollateralManagements, clientData.dpiNumber, clientData.oldCustomerNumber,
+                clientData.clientContactInformation);
 
     }
 
@@ -380,12 +381,13 @@ public final class ClientData implements Comparable<ClientData>, Serializable {
                 clientData.clientClassificationOptions, clientData.clientNonPersonConstitutionOptions,
                 clientData.clientNonPersonMainBusinessLineOptions, clientData.clientNonPersonDetails, clientData.clientLegalFormOptions,
                 clientData.familyMemberOptions, clientData.legalForm, clientData.address, clientData.isAddressEnabled, null,
-                clientData.isStaff, clientCollateralManagements, clientData.dpiNumber, clientData.oldCustomerNumber, clientData.clientContactInformation);
+                clientData.isStaff, clientCollateralManagements, clientData.dpiNumber, clientData.oldCustomerNumber,
+                clientData.clientContactInformation);
 
     }
 
     public static ClientData setParentGroups(final ClientData clientData, final Collection<GroupGeneralData> parentGroups,
-                                             final Set<ClientCollateralManagementData> clientCollateralManagements, ClientContactInformationData contactInformation) {
+            final Set<ClientCollateralManagementData> clientCollateralManagements, ClientContactInformationData contactInformation) {
         return new ClientData(clientData.accountNo, clientData.status, clientData.subStatus, clientData.officeId, clientData.officeName,
                 clientData.transferToOfficeId, clientData.transferToOfficeName, clientData.id, clientData.firstname, clientData.middlename,
                 clientData.lastname, clientData.fullname, clientData.displayName, clientData.externalId, clientData.mobileNo,
@@ -539,22 +541,23 @@ public final class ClientData implements Comparable<ClientData>, Serializable {
     }
 
     private ClientData(final String accountNo, final EnumOptionData status, final CodeValueData subStatus, final Long officeId,
-                       final String officeName, final Long transferToOfficeId, final String transferToOfficeName, final Long id,
-                       final String firstname, final String middlename, final String lastname, final String fullname, final String displayName,
-                       final String externalId, final String mobileNo, final String emailAddress, final LocalDate dateOfBirth,
-                       final CodeValueData gender, final LocalDate activationDate, final Long imageId, final Long staffId, final String staffName,
-                       final Collection<OfficeData> allowedOffices, final Collection<GroupGeneralData> groups,
-                       final Collection<StaffData> staffOptions, final Collection<CodeValueData> narrations,
-                       final Collection<CodeValueData> genderOptions, final ClientTimelineData timeline,
-                       final Collection<SavingsProductData> savingProductOptions, final Long savingsProductId, final String savingsProductName,
-                       final Long savingsAccountId, final Collection<SavingsAccountData> savingAccountOptions, final CodeValueData clientType,
-                       final CodeValueData clientClassification, final Collection<CodeValueData> clientTypeOptions,
-                       final Collection<CodeValueData> clientClassificationOptions, final Collection<CodeValueData> clientNonPersonConstitutionOptions,
-                       final Collection<CodeValueData> clientNonPersonMainBusinessLineOptions, final ClientNonPersonData clientNonPerson,
-                       final List<EnumOptionData> clientLegalFormOptions, final ClientFamilyMembersData familyMemberOptions,
-                       final EnumOptionData legalForm, final Collection<AddressData> address, final Boolean isAddressEnabled,
-                       final List<DatatableData> datatables, final Boolean isStaff,
-                       final Set<ClientCollateralManagementData> clientCollateralManagements, final String dpiNumber, final String oldCustomerNumber, ClientContactInformationData contactInformation) {
+            final String officeName, final Long transferToOfficeId, final String transferToOfficeName, final Long id,
+            final String firstname, final String middlename, final String lastname, final String fullname, final String displayName,
+            final String externalId, final String mobileNo, final String emailAddress, final LocalDate dateOfBirth,
+            final CodeValueData gender, final LocalDate activationDate, final Long imageId, final Long staffId, final String staffName,
+            final Collection<OfficeData> allowedOffices, final Collection<GroupGeneralData> groups,
+            final Collection<StaffData> staffOptions, final Collection<CodeValueData> narrations,
+            final Collection<CodeValueData> genderOptions, final ClientTimelineData timeline,
+            final Collection<SavingsProductData> savingProductOptions, final Long savingsProductId, final String savingsProductName,
+            final Long savingsAccountId, final Collection<SavingsAccountData> savingAccountOptions, final CodeValueData clientType,
+            final CodeValueData clientClassification, final Collection<CodeValueData> clientTypeOptions,
+            final Collection<CodeValueData> clientClassificationOptions, final Collection<CodeValueData> clientNonPersonConstitutionOptions,
+            final Collection<CodeValueData> clientNonPersonMainBusinessLineOptions, final ClientNonPersonData clientNonPerson,
+            final List<EnumOptionData> clientLegalFormOptions, final ClientFamilyMembersData familyMemberOptions,
+            final EnumOptionData legalForm, final Collection<AddressData> address, final Boolean isAddressEnabled,
+            final List<DatatableData> datatables, final Boolean isStaff,
+            final Set<ClientCollateralManagementData> clientCollateralManagements, final String dpiNumber, final String oldCustomerNumber,
+            ClientContactInformationData contactInformation) {
         this.accountNo = accountNo;
         this.status = status;
         if (status != null) {

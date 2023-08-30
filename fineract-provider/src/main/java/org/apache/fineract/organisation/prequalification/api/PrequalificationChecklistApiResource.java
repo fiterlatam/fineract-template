@@ -25,13 +25,20 @@ import java.util.HashSet;
 import java.util.Set;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.UriInfo;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.fineract.commands.domain.CommandWrapper;
+import org.apache.fineract.commands.service.CommandWrapperBuilder;
+import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformService;
 import org.apache.fineract.infrastructure.core.api.ApiRequestParameterHelper;
+import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.serialization.ApiRequestJsonSerializationSettings;
 import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
@@ -50,8 +57,8 @@ public class PrequalificationChecklistApiResource {
     private final ApiRequestParameterHelper apiRequestParameterHelper;
     private final PlatformSecurityContext context;
     private final DefaultToApiJsonSerializer<PrequalificationChecklistData> toApiJsonSerializer;
-
     private final PrequalificationChecklistReadPlatformService prequalificationChecklistReadPlatformService;
+    private final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService;
     private final String resourceNameForPermissions = "PREQUALIFICATION";
     private final Set<String> prequalificationChecklistDataParameters = new HashSet<>(
             Arrays.asList("id", "name", "description", "color", "loanProductId", "loanProductName", "prequalificationNumber",
@@ -60,25 +67,48 @@ public class PrequalificationChecklistApiResource {
     @Autowired
     public PrequalificationChecklistApiResource(final ApiRequestParameterHelper apiRequestParameterHelper,
             final PlatformSecurityContext context, DefaultToApiJsonSerializer<PrequalificationChecklistData> toApiJsonSerializer,
-            PrequalificationChecklistReadPlatformService prequalificationChecklistReadPlatformService) {
+            PrequalificationChecklistReadPlatformService prequalificationChecklistReadPlatformService,
+            PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService) {
         this.apiRequestParameterHelper = apiRequestParameterHelper;
         this.context = context;
         this.toApiJsonSerializer = toApiJsonSerializer;
         this.prequalificationChecklistReadPlatformService = prequalificationChecklistReadPlatformService;
+        this.commandsSourceWritePlatformService = commandsSourceWritePlatformService;
     }
 
     @GET
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
-    @Path("/{prequalificationNumber}")
-    public String retrievePrequalificationChecklists(@PathParam("prequalificationNumber") final String prequalificationNumber,
-            @Context final UriInfo uriInfo) {
+    public String retrievePrequalificationChecklists(@QueryParam("prequalificationId") final Integer prequalificationId,
+            @QueryParam("groupId") final Integer groupId, @QueryParam("clientId") final Integer clientId, @Context final UriInfo uriInfo) {
         this.context.authenticatedUser().validateHasReadPermission(this.resourceNameForPermissions);
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
         Collection<PrequalificationChecklistData> prequalificationChecklistDataList = prequalificationChecklistReadPlatformService
-                .retrievePrequalificationChecklists(prequalificationNumber);
+                .retrievePrequalificationChecklists(prequalificationId);
         return this.toApiJsonSerializer.serialize(settings, prequalificationChecklistDataList,
                 this.prequalificationChecklistDataParameters);
+    }
+
+    @POST
+    @Consumes({ MediaType.APPLICATION_JSON })
+    @Produces({ MediaType.APPLICATION_JSON })
+    @Path("/{prequalificationId}")
+    public String validateHardPolicyChecklist(@PathParam("prequalificationId") final Long prequalificationId,
+            @QueryParam("command") final String commandParam, final String apiRequestBodyAsJson) {
+        final CommandWrapperBuilder builder = new CommandWrapperBuilder().withJson(apiRequestBodyAsJson);
+        CommandProcessingResult result;
+        if (is(commandParam, "validateprequalification")) {
+            final CommandWrapper validateCommandRequest = builder.validatePrequalificationHardPolicies(prequalificationId).build();
+            result = this.commandsSourceWritePlatformService.logCommandSource(validateCommandRequest);
+        } else {
+            final CommandWrapper commandRequest = builder.validatePrequalificationHardPolicies(prequalificationId).build();
+            result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
+        }
+        return this.toApiJsonSerializer.serialize(result);
+    }
+
+    private boolean is(final String commandParam, final String commandValue) {
+        return StringUtils.isNotBlank(commandParam) && commandParam.trim().equalsIgnoreCase(commandValue);
     }
 
 }

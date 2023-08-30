@@ -30,7 +30,9 @@ public enum PrequalificationStatus {
     APPROVED(200, "prequalification.status.approved"), //
     REJECTED(300, "prequalification.status.rejected"), //
     BLACKLIST_CHECKED(400, "prequalification.status.blacklist.checked"), //
-    BLACKLIST_REJECTED(500, "prequalification.status.blacklist.rejected"), INVALID(0, "prequalification.status.invalid");
+    BLACKLIST_REJECTED(500, "prequalification.status.blacklist.rejected"), BURO_CHECKED(600,
+            "prequalification.status.buro.checked"), HARD_POLICY_CHECKED(700,
+                    "prequalification.status.hard.policy.checked"), INVALID(0, "prequalification.status.invalid");
 
     private final Integer value;
     private final String code;

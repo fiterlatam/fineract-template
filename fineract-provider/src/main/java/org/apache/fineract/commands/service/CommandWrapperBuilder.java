@@ -3740,4 +3740,12 @@ public class CommandWrapperBuilder {
         this.href = "/prequalification/" + groupId;
         return this;
     }
+
+    public CommandWrapperBuilder validatePrequalificationHardPolicies(final Long prequalificationId) {
+        this.actionName = "VALIDATEHARDPOLICIES";
+        this.entityName = "PREQUALIFICATION_CHECKLIST";
+        this.entityId = prequalificationId;
+        this.href = "/prequalification/checklist/" + prequalificationId;
+        return this;
+    }
 }

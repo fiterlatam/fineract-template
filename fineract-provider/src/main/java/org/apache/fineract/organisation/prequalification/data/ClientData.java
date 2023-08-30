@@ -16,13 +16,24 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.organisation.prequalification.service;
+package org.apache.fineract.organisation.prequalification.data;
 
-import java.util.Collection;
-import org.apache.fineract.organisation.prequalification.data.PrequalificationChecklistData;
+import java.math.BigDecimal;
+import java.util.Date;
+import lombok.Data;
+import lombok.RequiredArgsConstructor;
 
-public interface PrequalificationChecklistReadPlatformService {
+@Data
+@RequiredArgsConstructor
+public class ClientData {
 
-    Collection<PrequalificationChecklistData> retrievePrequalificationChecklists(final Integer prequalificationId);
-
+    private final Integer clientId;
+    private final Integer prequalificationId;
+    private final Integer prequalificationMemberId;
+    private final String name;
+    private final Date dateOfBirth;
+    private final String dpi;
+    private final BigDecimal requestedAmount;
+    private final String workWithPuente;
+    private Long noOfCompletedCycles;
 }

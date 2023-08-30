@@ -216,7 +216,7 @@ public class ClientApiConstants {
             officeNameParamName, transferToOfficeIdParamName, transferToOfficeNameParamName, hierarchyParamName, imageIdParamName,
             imagePresentParamName, staffIdParamName, staffNameParamName, timelineParamName, groupsParamName, officeOptionsParamName,
             staffOptionsParamName, dateOfBirthParamName, genderParamName, clientTypeParamName, clientClassificationParamName,
-            legalFormParamName, clientNonPersonDetailsParamName, isStaffParamName, dpiParamName,clientContactInformationParamname));
+            legalFormParamName, clientNonPersonDetailsParamName, isStaffParamName, dpiParamName, clientContactInformationParamname));
 
     protected static final Set<String> CLIENT_CHARGES_RESPONSE_DATA_PARAMETERS = new HashSet<>(Arrays.asList(chargeIdParamName,
             clientIdParamName, chargeNameParamName, penaltyParamName, chargeTimeTypeParamName, dueAsOfDateParamName,
