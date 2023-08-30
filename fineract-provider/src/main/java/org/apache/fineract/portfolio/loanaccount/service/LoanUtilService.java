@@ -426,11 +426,13 @@ public class LoanUtilService {
         for (int i = 0; i < loan.getRepaymentScheduleInstallments().size(); i++) {
             LoanRepaymentScheduleInstallment per = (LoanRepaymentScheduleInstallment) loan.getRepaymentScheduleInstallments().toArray()[i];
             if (isVatRequired) {
-                amount = per.getPrincipal(loan.getCurrency()).plus(per.getFeeChargesCharged(loan.getCurrency()).getAmount().doubleValue())
+                amount = per.getPrincipal(loan.getCurrency()).plus(per.getInterestCharged(loan.getCurrency()).getAmount().doubleValue())
+                        .plus(per.getFeeChargesCharged(loan.getCurrency()).getAmount().doubleValue())
                         .plus(per.getPenaltyChargesCharged(loan.getCurrency())).plus(per.getVatOnInterestCharged(loan.getCurrency()))
                         .plus(per.getVatOnChargeExpected(loan.getCurrency())).getAmount().doubleValue();
             } else {
-                amount = per.getPrincipal(loan.getCurrency()).plus(per.getFeeChargesCharged(loan.getCurrency()).getAmount().doubleValue())
+                amount = per.getPrincipal(loan.getCurrency()).plus(per.getInterestCharged(loan.getCurrency()).getAmount().doubleValue())
+                        .plus(per.getFeeChargesCharged(loan.getCurrency()).getAmount().doubleValue())
                         .plus(per.getPenaltyChargesCharged(loan.getCurrency())).getAmount().doubleValue();
             }
             // calculate days since disbursement date
