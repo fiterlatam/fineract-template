@@ -88,7 +88,8 @@ public class LoanSchedularServiceImpl implements LoanSchedularService {
             }
         }
 
-        List<Long> loanIds = overdueLoanScheduledInstallments.stream().map(OverdueLoanScheduleData::getLoanId).collect(Collectors.toList());
+        List<Long> loanIds = overdueLoanScheduledInstallments.stream().map(OverdueLoanScheduleData::getLoanId).distinct()
+                .collect(Collectors.toList());
 
         if (!loanIds.isEmpty()) {
             loanIds = Collections.synchronizedList(loanIds);
