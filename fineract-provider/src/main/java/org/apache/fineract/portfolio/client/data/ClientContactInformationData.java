@@ -18,7 +18,6 @@
  */
 package org.apache.fineract.portfolio.client.data;
 
-
 import java.io.Serializable;
 
 /**
@@ -26,6 +25,7 @@ import java.io.Serializable;
  */
 @SuppressWarnings("unused")
 public final class ClientContactInformationData implements Serializable {
+
     private final String area;
     private final String housingType;
     private final String yearsOfResidence;
@@ -45,37 +45,34 @@ public final class ClientContactInformationData implements Serializable {
     private final String lightMeterNumber;
     private final String homePhone;
 
-    public ClientContactInformationData(
-            String area, String housingType, String yearsOfResidence, String serviceTypes, String department,
-            String municipality, String village, String referenceHousingData, String street, String avenue,
-            String houseNumber, String colony, String sector, String batch, String square, String zone,
-            String lightMeterNumber, String homePhone) {
-        this.area=area;
-        this.housingType=housingType;
-        this.yearsOfResidence=yearsOfResidence;
-        this.serviceTypes=serviceTypes;
-        this.department=department;
-        this.municipality=municipality;
-        this.village=village;
-        this.referenceHousingData=referenceHousingData;
-        this.street=street;
-        this.avenue=avenue;
-        this.houseNumber=houseNumber;
-        this.colony=colony;
-        this.sector=sector;
-        this.batch=batch;
-        this.square=square;
-        this.zone=zone;
-        this.lightMeterNumber=lightMeterNumber;
-        this.homePhone=homePhone;
+    public ClientContactInformationData(String area, String housingType, String yearsOfResidence, String serviceTypes, String department,
+            String municipality, String village, String referenceHousingData, String street, String avenue, String houseNumber,
+            String colony, String sector, String batch, String square, String zone, String lightMeterNumber, String homePhone) {
+        this.area = area;
+        this.housingType = housingType;
+        this.yearsOfResidence = yearsOfResidence;
+        this.serviceTypes = serviceTypes;
+        this.department = department;
+        this.municipality = municipality;
+        this.village = village;
+        this.referenceHousingData = referenceHousingData;
+        this.street = street;
+        this.avenue = avenue;
+        this.houseNumber = houseNumber;
+        this.colony = colony;
+        this.sector = sector;
+        this.batch = batch;
+        this.square = square;
+        this.zone = zone;
+        this.lightMeterNumber = lightMeterNumber;
+        this.homePhone = homePhone;
     }
 
-
-    public static ClientContactInformationData instance(
-            String area, String housingType, String yearsOfResidence, String serviceTypes, String department, String municipality,
-            String village, String referenceHousingData, String street, String avenue,
-            String houseNumber, String colony, String sector, String batch,
-            String square, String zone, String lightMeterNumber, String homePhone) {
-        return new ClientContactInformationData(area,housingType,yearsOfResidence,serviceTypes,department,municipality,village,referenceHousingData,street,avenue,houseNumber,colony,sector,batch,square,zone,lightMeterNumber,homePhone);
+    public static ClientContactInformationData instance(String area, String housingType, String yearsOfResidence, String serviceTypes,
+            String department, String municipality, String village, String referenceHousingData, String street, String avenue,
+            String houseNumber, String colony, String sector, String batch, String square, String zone, String lightMeterNumber,
+            String homePhone) {
+        return new ClientContactInformationData(area, housingType, yearsOfResidence, serviceTypes, department, municipality, village,
+                referenceHousingData, street, avenue, houseNumber, colony, sector, batch, square, zone, lightMeterNumber, homePhone);
     }
 }

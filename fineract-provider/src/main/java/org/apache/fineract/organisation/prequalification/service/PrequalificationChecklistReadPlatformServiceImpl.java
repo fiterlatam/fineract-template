@@ -39,10 +39,10 @@ public class PrequalificationChecklistReadPlatformServiceImpl implements Prequal
     }
 
     @Override
-    public Collection<PrequalificationChecklistData> retrievePrequalificationChecklists(String prequalificationNumber) {
+    public Collection<PrequalificationChecklistData> retrievePrequalificationChecklists(final Integer prequalificationId) {
         final PrequalificationChecklistMapper rm = new PrequalificationChecklistMapper();
-        final String sql = "select " + rm.schema() + " WHERE mpg.prequalification_number = ?";
-        return this.jdbcTemplate.query(sql, rm, prequalificationNumber);
+        final String sql = "select " + rm.schema() + " WHERE mpg.id = ?";
+        return this.jdbcTemplate.query(sql, rm, prequalificationId);
     }
 
     private static final class PrequalificationChecklistMapper implements RowMapper<PrequalificationChecklistData> {

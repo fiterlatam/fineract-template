@@ -45,11 +45,16 @@ public class MemberPrequalificationData {
     private final Long noOfCycles;
     private final Long additionalCreditsCount;
     private final BigDecimal additionalCreditsSum;
+    private final Long greenValidationCount;
+    private final Long yellowValidationCount;
+    private final Long orangeValidationCount;
+    private final Long redValidationCount;
 
     public MemberPrequalificationData(final Long id, final String name, final String dpi, final LocalDate dob, final String workWithPuente,
             final BigDecimal requestedAmount, final EnumOptionData status, Long blacklistCount, BigDecimal totalLoanAmount,
             BigDecimal totalLoanBalance, BigDecimal totalGuaranteedLoanBalance, Long noOfCycles, Long additionalCreditsCount,
-            BigDecimal additionalCreditsSum, final Long activeBlacklistCount, final Long inActiveBlacklistCount) {
+            BigDecimal additionalCreditsSum, final Long activeBlacklistCount, final Long inActiveBlacklistCount, Long greenValidationCount,
+            Long yellowValidationCount, Long orangeValidationCount, Long redValidationCount) {
         this.id = id;
         this.name = name;
         this.dpi = dpi;
@@ -66,15 +71,21 @@ public class MemberPrequalificationData {
         this.additionalCreditsSum = additionalCreditsSum;
         this.activeBlacklistCount = activeBlacklistCount;
         this.inActiveBlacklistCount = inActiveBlacklistCount;
+        this.greenValidationCount = greenValidationCount;
+        this.yellowValidationCount = yellowValidationCount;
+        this.orangeValidationCount = orangeValidationCount;
+        this.redValidationCount = redValidationCount;
     }
 
     public static MemberPrequalificationData instance(final Long id, final String name, final String dpi, final LocalDate dob,
             final String workWithPuente, final BigDecimal requestedAmount, final EnumOptionData status, Long blacklistCount,
             BigDecimal totalLoanAmount, BigDecimal totalLoanBalance, BigDecimal totalGuaranteedLoanBalance, Long noOfCycles,
             Long additionalCreditsCount, BigDecimal additionalCreditsSum, final Long activeBlacklistCount,
-            final Long inActiveBlacklistCount) {
+            final Long inActiveBlacklistCount, final Long greenValidationCount, final Long yellowValidationCount,
+            final Long orangeValidationCount, final Long redValidationCount) {
         return new MemberPrequalificationData(id, name, dpi, dob, workWithPuente, requestedAmount, status, blacklistCount, totalLoanAmount,
                 totalLoanBalance, totalGuaranteedLoanBalance, noOfCycles, additionalCreditsCount, additionalCreditsSum,
-                activeBlacklistCount, inActiveBlacklistCount);
+                activeBlacklistCount, inActiveBlacklistCount, greenValidationCount, yellowValidationCount, orangeValidationCount,
+                redValidationCount);
     }
 }

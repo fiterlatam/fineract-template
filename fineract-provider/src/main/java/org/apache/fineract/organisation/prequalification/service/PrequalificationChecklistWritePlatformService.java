@@ -18,11 +18,10 @@
  */
 package org.apache.fineract.organisation.prequalification.service;
 
-import java.util.Collection;
-import org.apache.fineract.organisation.prequalification.data.PrequalificationChecklistData;
+import org.apache.fineract.infrastructure.core.api.JsonCommand;
+import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 
-public interface PrequalificationChecklistReadPlatformService {
+public interface PrequalificationChecklistWritePlatformService {
 
-    Collection<PrequalificationChecklistData> retrievePrequalificationChecklists(final Integer prequalificationId);
-
+    CommandProcessingResult validatePrequalificationHardPolicies(Long prequalificationId, JsonCommand command);
 }

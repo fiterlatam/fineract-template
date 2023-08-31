@@ -322,9 +322,10 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
                     clientId);
 
             final String contactSql = "select " + this.contactInformationMapper.schema();
-            final ClientContactInformationData contactInformationData = this.jdbcTemplate.queryForObject(contactSql, this.contactInformationMapper, clientId);
+            final ClientContactInformationData contactInformationData = this.jdbcTemplate.queryForObject(contactSql,
+                    this.contactInformationMapper, clientId);
 
-            return ClientData.setParentGroups(clientData, parentGroups, clientCollateralManagementDataSet,contactInformationData);
+            return ClientData.setParentGroups(clientData, parentGroups, clientCollateralManagementDataSet, contactInformationData);
 
         } catch (final EmptyResultDataAccessException e) {
             throw new ClientNotFoundException(clientId, e);
@@ -768,35 +769,17 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
         }
     }
 
-
     private static final class ContactInformationMapper implements RowMapper<ClientContactInformationData> {
 
         public String schema() {
-            return "ci.id , " +
-                    "acode.code_value as areaValue, " +
-                    "htype.code_value as housingValue, " +
-                    "ci.years_of_residence, " +
-                    "ci.public_service_types, " +
-                    "dep.code_value as department, " +
-                    "mun.code_value as municipality, " +
-                    "ci.village, " +
-                    "ci.reference_housing_data, " +
-                    "ci.street, " +
-                    "ci.avenue, " +
-                    "ci.home_number, " +
-                    "ci.colony, " +
-                    "ci.sector, " +
-                    "ci.batch, " +
-                    "ci.square, " +
-                    "ci.zone, " +
-                    "ci.light_meter_number, " +
-                    "ci.home_phone " +
-                    "from m_client_contact_info ci " +
-                    "left join m_code_value acode on acode.id = ci.area " +
-                    "left join m_code_value htype on htype.id = ci.housing_type " +
-                    "left join m_code_value dep on dep.id = ci.department_id " +
-                    "left join m_code_value mun on mun.id = ci.municipality_id " +
-                    "WHERE ci.client_id  = ?";
+            return "ci.id , " + "acode.code_value as areaValue, " + "htype.code_value as housingValue, " + "ci.years_of_residence, "
+                    + "ci.public_service_types, " + "dep.code_value as department, " + "mun.code_value as municipality, " + "ci.village, "
+                    + "ci.reference_housing_data, " + "ci.street, " + "ci.avenue, " + "ci.home_number, " + "ci.colony, " + "ci.sector, "
+                    + "ci.batch, " + "ci.square, " + "ci.zone, " + "ci.light_meter_number, " + "ci.home_phone "
+                    + "from m_client_contact_info ci " + "left join m_code_value acode on acode.id = ci.area "
+                    + "left join m_code_value htype on htype.id = ci.housing_type "
+                    + "left join m_code_value dep on dep.id = ci.department_id "
+                    + "left join m_code_value mun on mun.id = ci.municipality_id " + "WHERE ci.client_id  = ?";
         }
 
         @Override
@@ -822,8 +805,9 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
             final String lightMeterNumber = rs.getString("light_meter_number");
             final String homePhone = rs.getString("home_phone");
 
-            return ClientContactInformationData.instance(area,housing,yearsOfResidence,publicServiceTypes,department,municipality,
-                    village,referenceHousingData,street,avenue,homeNumber,colony,sector,batch,square,zone,lightMeterNumber,homePhone);
+            return ClientContactInformationData.instance(area, housing, yearsOfResidence, publicServiceTypes, department, municipality,
+                    village, referenceHousingData, street, avenue, homeNumber, colony, sector, batch, square, zone, lightMeterNumber,
+                    homePhone);
         }
     }
 
