@@ -117,7 +117,7 @@ public class OfficeReadPlatformServiceImpl implements OfficeReadPlatformService 
             return " ot.id as id, ot.transaction_date as transactionDate, ot.from_office_id as fromOfficeId, fromoff.name as fromOfficeName, "
                     + " ot.to_office_id as toOfficeId, tooff.name as toOfficeName, ot.transaction_amount as transactionAmount, ot.description as description, "
                     + " ot.currency_code as currencyCode, rc.decimal_places as currencyDigits, rc.currency_multiplesof as inMultiplesOf, "
-                    + " rc.name as currencyName, rc.internationalized_name_code as currencyNameCode, rc.display_symbol as currencyDisplaySymbol "
+                    + " rc.name as currencyName, rc.internationalized_name_code as currencyNameCode, rc.display_symbol as currencyDisplaySymbol, rc.int_code as intCode "
                     + " from m_office_transaction ot " + " left join m_office fromoff on fromoff.id = ot.from_office_id "
                     + " left join m_office tooff on tooff.id = ot.to_office_id " + " join m_currency rc on rc."
                     + sqlGenerator.escape("code") + " = ot.currency_code";

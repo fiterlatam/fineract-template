@@ -288,7 +288,7 @@ public class AccountTransfersReadPlatformServiceImpl implements AccountTransfers
             sqlBuilder.append("att.currency_code as currencyCode, att.currency_digits as currencyDigits,");
             sqlBuilder.append("att.currency_multiplesof as inMultiplesOf, ");
             sqlBuilder.append("curr.name as currencyName, curr.internationalized_name_code as currencyNameCode, ");
-            sqlBuilder.append("curr.display_symbol as currencyDisplaySymbol, ");
+            sqlBuilder.append("curr.display_symbol as currencyDisplaySymbol, curr.int_code as intCode, ");
             sqlBuilder.append("fromoff.id as fromOfficeId, fromoff.name as fromOfficeName,");
             sqlBuilder.append("tooff.id as toOfficeId, tooff.name as toOfficeName,");
             sqlBuilder.append("fromclient.id as fromClientId, fromclient.display_name as fromClientName,");

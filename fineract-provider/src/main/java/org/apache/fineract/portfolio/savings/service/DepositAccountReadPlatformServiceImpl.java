@@ -576,7 +576,7 @@ public class DepositAccountReadPlatformServiceImpl implements DepositAccountRead
             selectFieldsSqlBuilder.append(
                     "sa.currency_code as currencyCode, sa.currency_digits as currencyDigits, sa.currency_multiplesof as inMultiplesOf, ");
             selectFieldsSqlBuilder.append("curr.name as currencyName, curr.internationalized_name_code as currencyNameCode, ");
-            selectFieldsSqlBuilder.append("curr.display_symbol as currencyDisplaySymbol, ");
+            selectFieldsSqlBuilder.append("curr.display_symbol as currencyDisplaySymbol, curr.int_code as intCode, ");
             selectFieldsSqlBuilder.append("sa.nominal_annual_interest_rate as nominalAnnualInterestRate, ");
             selectFieldsSqlBuilder.append("sa.interest_compounding_period_enum as interestCompoundingPeriodType, ");
             selectFieldsSqlBuilder.append("sa.interest_posting_period_enum as interestPostingPeriodType, ");
@@ -994,7 +994,7 @@ public class DepositAccountReadPlatformServiceImpl implements DepositAccountRead
             sqlBuilder.append(
                     "sa.currency_code as currencyCode, sa.currency_digits as currencyDigits, sa.currency_multiplesof as inMultiplesOf, ");
             sqlBuilder.append("curr.name as currencyName, curr.internationalized_name_code as currencyNameCode, ");
-            sqlBuilder.append("curr.display_symbol as currencyDisplaySymbol, ");
+            sqlBuilder.append("curr.display_symbol as currencyDisplaySymbol, curr.int_code as intCode, ");
             sqlBuilder.append("pt.value as paymentTypeName ");
             sqlBuilder.append("from m_savings_account sa ");
             sqlBuilder.append("join m_savings_account_transaction tr on tr.savings_account_id = sa.id ");
@@ -1097,7 +1097,7 @@ public class DepositAccountReadPlatformServiceImpl implements DepositAccountRead
             selectFieldsSqlBuilder.append(
                     "sa.currency_code as currencyCode, sa.currency_digits as currencyDigits, sa.currency_multiplesof as inMultiplesOf, ");
             selectFieldsSqlBuilder.append("curr.name as currencyName, curr.internationalized_name_code as currencyNameCode, ");
-            selectFieldsSqlBuilder.append("curr.display_symbol as currencyDisplaySymbol, ");
+            selectFieldsSqlBuilder.append("curr.display_symbol as currencyDisplaySymbol, curr.int_code as intCode, ");
             selectFieldsSqlBuilder.append("sa.nominal_annual_interest_rate as nominalAnnualIterestRate, ");
             selectFieldsSqlBuilder.append("sa.interest_compounding_period_enum as interestCompoundingPeriodType, ");
             selectFieldsSqlBuilder.append("sa.interest_posting_period_enum as interestPostingPeriodType, ");
@@ -1426,7 +1426,7 @@ public class DepositAccountReadPlatformServiceImpl implements DepositAccountRead
             sqlBuilder.append(
                     "sa.currency_code as currencyCode, sa.currency_digits as currencyDigits, sa.currency_multiplesof as inMultiplesOf, ");
             sqlBuilder.append("curr.name as currencyName, curr.internationalized_name_code as currencyNameCode, ");
-            sqlBuilder.append("curr.display_symbol as currencyDisplaySymbol, ");
+            sqlBuilder.append("curr.display_symbol as currencyDisplaySymbol, curr.int_code as intCode, ");
             sqlBuilder.append("sa.account_balance_derived as runningBalance, ");
             sqlBuilder.append(
                     "mss.duedate as duedate, (mss.deposit_amount - coalesce(mss.deposit_amount_completed_derived,0)) as dueamount, ");
