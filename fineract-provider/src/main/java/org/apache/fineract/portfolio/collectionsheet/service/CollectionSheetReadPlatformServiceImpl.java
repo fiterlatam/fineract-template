@@ -232,7 +232,7 @@ public class CollectionSheetReadPlatformServiceImpl implements CollectionSheetRe
                     .append("pl.short_name As productShortName, ").append("ln.product_id As productId, ")
                     .append("ln.currency_code as currencyCode, ln.currency_digits as currencyDigits, ln.currency_multiplesof as inMultiplesOf, rc."
                             + sqlGenerator.escape("name")
-                            + " as currencyName, rc.display_symbol as currencyDisplaySymbol, rc.internationalized_name_code as currencyNameCode, ")
+                            + " as currencyName, rc.display_symbol as currencyDisplaySymbol, rc.internationalized_name_code as currencyNameCode, rc.int_code as intCode, ")
                     .append("(CASE WHEN ln.loan_status_id = 200  THEN  ln.principal_amount  ELSE  null END) As disbursementAmount, ")
                     .append("sum(COALESCE((CASE WHEN ln.loan_status_id = 300 THEN ls.principal_amount ELSE  0.0 END), 0.0) - COALESCE((CASE WHEN ln.loan_status_id = 300 THEN  ls.principal_completed_derived ELSE  0.0 END), 0.0)) As principalDue, ")
                     .append("ln.principal_repaid_derived As principalPaid, ")
@@ -512,6 +512,7 @@ public class CollectionSheetReadPlatformServiceImpl implements CollectionSheetRe
                     .append("sa.currency_code as currencyCode, ").append("sa.currency_digits as currencyDigits, ")
                     .append("sa.currency_multiplesof as inMultiplesOf, ").append("rc." + sqlGenerator.escape("name") + " as currencyName, ")
                     .append("rc.display_symbol as currencyDisplaySymbol, ")
+                    .append("rc.int_code as intCode,")
                     .append("(CASE WHEN sa.deposit_type_enum=100 THEN 'Saving Deposit' ELSE (CASE WHEN sa.deposit_type_enum=300 THEN 'Recurring Deposit' ELSE 'Current Deposit' END) END) as depositAccountType, ")
                     .append("rc.internationalized_name_code as currencyNameCode, ")
                     .append("SUM(COALESCE(mss.deposit_amount,0) - coalesce(mss.deposit_amount_completed_derived,0)) as dueAmount ")

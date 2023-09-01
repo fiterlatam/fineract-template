@@ -76,7 +76,7 @@ public class ClientTransactionReadPlatformServiceImpl implements ClientTransacti
             sqlBuilder.append(
                     "tr.currency_code as currencyCode, curr.decimal_places as currencyDigits, curr.currency_multiplesof as inMultiplesOf, ");
             sqlBuilder.append("curr.name as currencyName, curr.internationalized_name_code as currencyNameCode,  ");
-            sqlBuilder.append("curr.display_symbol as currencyDisplaySymbol,  ");
+            sqlBuilder.append("curr.display_symbol as currencyDisplaySymbol, curr.int_code as intCode, ");
             sqlBuilder.append("pt.value as paymentTypeName  ");
             sqlBuilder.append("from m_client c  ");
             sqlBuilder.append("join m_client_transaction tr on tr.client_id = c.id ");

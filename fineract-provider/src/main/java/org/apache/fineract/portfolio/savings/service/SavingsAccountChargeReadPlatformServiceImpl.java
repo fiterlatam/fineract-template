@@ -85,7 +85,7 @@ public class SavingsAccountChargeReadPlatformServiceImpl implements SavingsAccou
                     + "sc.charge_calculation_enum as chargeCalculation, "
                     + "sc.is_active as isActive, sc.inactivated_on_date as inactivationDate, "
                     + "c.is_free_withdrawal as isFreeWithdrawal, c.free_withdrawal_charge_frequency as freeWithdrawalChargeFrequency, c.restart_frequency as restartFrequency, c.restart_frequency_enum as restartFrequencyEnum, "
-                    + "c.currency_code as currencyCode, oc.name as currencyName, "
+                    + "c.currency_code as currencyCode, oc.name as currencyName, oc.int_code as intCode, "
                     + "oc.decimal_places as currencyDecimalPlaces, oc.currency_multiplesof as inMultiplesOf, oc.display_symbol as currencyDisplaySymbol, "
                     + "oc.internationalized_name_code as currencyNameCode from m_charge c "
                     + "join m_organisation_currency oc on c.currency_code = oc.code "

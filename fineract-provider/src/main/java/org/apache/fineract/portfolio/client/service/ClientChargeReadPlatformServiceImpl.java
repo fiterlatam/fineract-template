@@ -113,7 +113,7 @@ public class ClientChargeReadPlatformServiceImpl implements ClientChargeReadPlat
                     + "cc.charge_time_enum as chargeTime, cc.is_penalty as penalty, cc.charge_due_date as dueAsOfDate, "
                     + "cc.charge_calculation_enum as chargeCalculation, cc.is_paid_derived as isPaid, cc.waived as waived, "
                     + "cc.is_active as isActive, cc.inactivated_on_date as inactivationDate, "
-                    + "c.currency_code as currencyCode, oc.name as currencyName, "
+                    + "c.currency_code as currencyCode, oc.name as currencyName, oc.int_code as intCode, "
                     + "oc.decimal_places as currencyDecimalPlaces, oc.currency_multiplesof as inMultiplesOf, oc.display_symbol as currencyDisplaySymbol, "
                     + "oc.internationalized_name_code as currencyNameCode from m_charge c "
                     + "join m_organisation_currency oc on c.currency_code = oc.code join m_client_charge cc on cc.charge_id = c.id ";

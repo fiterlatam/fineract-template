@@ -284,7 +284,7 @@ public class GSIMReadPlatformServiceImpl implements GSIMReadPlatformService {
 
             accountsSummary.append(
                     "sa.currency_code as currencyCode, sa.currency_digits as currencyDigits, sa.currency_multiplesof as inMultiplesOf, ");
-            accountsSummary.append("curr.name as currencyName, curr.internationalized_name_code as currencyNameCode, ");
+            accountsSummary.append("curr.name as currencyName, curr.internationalized_name_code as currencyNameCode, curr.int_code as intCode, ");
             accountsSummary.append("curr.display_symbol as currencyDisplaySymbol, ");
             accountsSummary.append("sa.product_id as productId, p.name as productName, p.short_name as shortProductName, ");
             accountsSummary.append("sa.deposit_type_enum as depositType ");
