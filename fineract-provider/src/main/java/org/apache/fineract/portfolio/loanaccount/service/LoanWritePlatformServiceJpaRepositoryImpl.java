@@ -508,6 +508,15 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                     && loanCharge.isChargePending()) {
                 disBuLoanCharges.put(loanCharge.getId(), loanCharge.amountOutstanding());
             }
+
+            // ABA-156 - Check for origination fee in order to generate the transactions
+            if (loanCharge.isOriginationFee()) {
+                // Check if VAT is required in order to calculate the VAT amount for the charge and create the
+                // transaction
+                if (loan.isVatRequired() && loan != null) {
+                    loan.handleChargeAppliedTransaction(loanCharge, actualDisbursementDate);
+                }
+            }
         }
 
         final Locale locale = command.extractLocale();
