@@ -3748,4 +3748,12 @@ public class CommandWrapperBuilder {
         this.href = "/prequalification/checklist/" + prequalificationId;
         return this;
     }
+
+    public CommandWrapperBuilder createRestructureCreditsRequest(Long clientId) {
+        this.actionName = "ADD";
+        this.entityName = "RESTRUCTURE_CREDITS";
+        this.clientId = clientId;
+        this.href = "/restructurecredits/" + clientId;
+        return this;
+    }
 }
