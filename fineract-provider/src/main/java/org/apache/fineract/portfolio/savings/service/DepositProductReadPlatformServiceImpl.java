@@ -137,7 +137,8 @@ public class DepositProductReadPlatformServiceImpl implements DepositProductRead
             sqlBuilder.append("sp.id as id, sp.name as name, sp.short_name as shortName, sp.description as description, ");
             sqlBuilder.append(
                     "sp.currency_code as currencyCode, sp.currency_digits as currencyDigits, sp.currency_multiplesof as inMultiplesOf, ");
-            sqlBuilder.append("curr.name as currencyName, curr.internationalized_name_code as currencyNameCode, curr.int_code as intCode, ");
+            sqlBuilder
+                    .append("curr.name as currencyName, curr.internationalized_name_code as currencyNameCode, curr.int_code as intCode, ");
             sqlBuilder.append("curr.display_symbol as currencyDisplaySymbol, ");
             sqlBuilder.append("sp.nominal_annual_interest_rate as nominalAnnualInterestRate, ");
             sqlBuilder.append("sp.interest_compounding_period_enum as compoundingInterestPeriodType, ");
