@@ -3756,4 +3756,20 @@ public class CommandWrapperBuilder {
         this.href = "/restructurecredits/" + clientId;
         return this;
     }
+
+    public CommandWrapperBuilder approveRestructureCreditsRequest(String restructureCreditsResource, Long clientId) {
+        this.actionName = "APPROVE";
+        this.entityName = "RESTRUCTURE_CREDITS";
+        this.clientId = clientId;
+        this.href = "/restructurecredits/" + clientId;
+        return this;
+    }
+
+    public CommandWrapperBuilder rejectRestructureCreditsRequest(String restructureCreditsResource, Long clientId) {
+        this.actionName = "REJECT";
+        this.entityName = "RESTRUCTURE_CREDITS";
+        this.clientId = clientId;
+        this.href = "/restructurecredits/" + clientId;
+        return this;
+    }
 }

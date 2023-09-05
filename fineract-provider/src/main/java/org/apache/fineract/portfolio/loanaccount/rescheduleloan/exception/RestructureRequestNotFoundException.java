@@ -16,13 +16,25 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.portfolio.loanaccount.rescheduleloan.service;
+package org.apache.fineract.portfolio.loanaccount.rescheduleloan.exception;
 
-import org.apache.fineract.infrastructure.core.api.JsonCommand;
-import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
+import org.apache.fineract.infrastructure.core.exception.AbstractPlatformResourceNotFoundException;
 
-public interface RestructureCreditsWritePlatformService {
-    CommandProcessingResult create(JsonCommand jsonCommand);
+/**
+ * A {@link RuntimeException} thrown when loan reschedule request resources are not found.
+ **/
+public class RestructureRequestNotFoundException extends AbstractPlatformResourceNotFoundException {
 
-    CommandProcessingResult approve(JsonCommand jsonCommand);
+    /**
+     * LoanRescheduleRequestNotFoundException constructor
+     *
+     * @param requestId
+     *            the loan reschedule request identifier
+     *
+     **/
+    public RestructureRequestNotFoundException(final Long requestId) {
+        super("error.msg.loan.reschedule.request.id.invalid", "CreditRestructure request with identifier " + requestId + " does not exist",
+                requestId);
+    }
+
 }

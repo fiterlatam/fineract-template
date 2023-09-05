@@ -138,20 +138,20 @@ public class RestructureCreditsApiResource {
     }
 
     @POST
-    @Path("{scheduleId}")
+    @Path("{command}")
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
-    public String updateLoanRescheduleRequest(@PathParam("scheduleId") final Long scheduleId, @QueryParam("command") final String command,
+    public String updateLoanRescheduleRequest(@PathParam("clientId") final Long clientId, @PathParam("command") final String command,
             final String apiRequestBodyAsJson) {
         CommandWrapper commandWrapper = null;
 
         if (compareIgnoreCase(command, "approve")) {
-            commandWrapper = new CommandWrapperBuilder().approveLoanRescheduleRequest(RescheduleLoansApiConstants.ENTITY_NAME, scheduleId)
+            commandWrapper = new CommandWrapperBuilder().approveRestructureCreditsRequest(RescheduleLoansApiConstants.RESTRUCTURE_CREDITS_RESOURCE, clientId)
                     .withJson(apiRequestBodyAsJson).build();
         }
 
         else if (compareIgnoreCase(command, "reject")) {
-            commandWrapper = new CommandWrapperBuilder().rejectLoanRescheduleRequest(RescheduleLoansApiConstants.ENTITY_NAME, scheduleId)
+            commandWrapper = new CommandWrapperBuilder().rejectRestructureCreditsRequest(RescheduleLoansApiConstants.RESTRUCTURE_CREDITS_RESOURCE, clientId)
                     .withJson(apiRequestBodyAsJson).build();
         }
 

@@ -18,7 +18,6 @@
  */
 package org.apache.fineract.portfolio.loanaccount.rescheduleloan.data;
 
-import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.reflect.TypeToken;
 import org.apache.commons.lang3.StringUtils;
@@ -51,7 +50,8 @@ public class RescheduleCreditsDataValidator {
 
     private final FromJsonHelper fromJsonHelper;
     private static final Set<String> CREATE_REQUEST_DATA_PARAMETERS = new HashSet<>(
-            Arrays.asList("clientId","selectedLoanIds","disbursementDate","productId","comments"));
+            Arrays.asList("clientId","selectedLoanIds","disbursementDate","outstandingBalance",
+                    "productId","comments","locale","dateFormat"));
 
     private static final Set<String> REJECT_REQUEST_DATA_PARAMETERS = new HashSet<>(
             Arrays.asList(RescheduleLoansApiConstants.localeParamName, RescheduleLoansApiConstants.dateFormatParamName,
@@ -94,8 +94,8 @@ public class RescheduleCreditsDataValidator {
                 .extractLocalDateNamed("disbursementDate", jsonElement);
         dataValidatorBuilder.reset().parameter("disbursementDate").value(disbursementDate).notNull();
 
-        JsonArray selectedLoanIds = this.fromJsonHelper
-                .extractJsonArrayNamed("selectedLoanIds", jsonElement);
+        String[] selectedLoanIds = this.fromJsonHelper
+                .extractArrayNamed("selectedLoanIds", jsonElement);
         dataValidatorBuilder.reset().parameter("selectedLoanIds").value(selectedLoanIds).arrayNotEmpty();
 
         final Long productId = this.fromJsonHelper.extractLongNamed("productId", jsonElement);

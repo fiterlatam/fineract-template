@@ -28,20 +28,20 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@CommandType(entity = "RESTRUCTURE_CREDITS", action = "ADD")
-public class CreateResctructureCreditsCommandHandler implements NewCommandSourceHandler {
+@CommandType(entity = "RESTRUCTURE_CREDITS", action = "APPROVE")
+public class ApproveResctructureCreditsCommandHandler implements NewCommandSourceHandler {
 
     private final RestructureCreditsWritePlatformService restructureCreditsWritePlatformService;
 
     @Autowired
-    public CreateResctructureCreditsCommandHandler(RestructureCreditsWritePlatformService restructureCreditsWritePlatformService) {
+    public ApproveResctructureCreditsCommandHandler(RestructureCreditsWritePlatformService restructureCreditsWritePlatformService) {
         this.restructureCreditsWritePlatformService = restructureCreditsWritePlatformService;
     }
 
     @Transactional
     @Override
     public CommandProcessingResult processCommand(JsonCommand jsonCommand) {
-        return this.restructureCreditsWritePlatformService.create(jsonCommand);
+        return this.restructureCreditsWritePlatformService.approve(jsonCommand);
     }
 
 }

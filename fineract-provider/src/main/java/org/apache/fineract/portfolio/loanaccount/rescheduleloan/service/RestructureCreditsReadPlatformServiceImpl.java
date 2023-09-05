@@ -156,7 +156,7 @@ public class RestructureCreditsReadPlatformServiceImpl implements RestructureCre
                     "rcm.maturity_Date, " +
                     "rcm.status " +
                     "from m_restructure_credits_loans_mapping rcm "+
-                    "inner join m_loan ml on ml.id = rcm.loanId "+
+                    "inner join m_loan ml on ml.id = rcm.loan_id "+
                     "inner join m_product_loan mpl on mpl.id = ml.product_id ";
         }
 

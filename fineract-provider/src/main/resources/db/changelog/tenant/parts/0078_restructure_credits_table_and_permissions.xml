@@ -117,4 +117,14 @@
             <column name="can_maker_checker" valueBoolean="false" />
         </insert>
     </changeSet>
+
+    <changeSet id="4" author="fineract">
+        <insert tableName="m_permission">
+            <column name="grouping" value="portfolio" />
+            <column name="code" value="REJECT_RESTRUCTURE_CREDITS"/>
+            <column name="entity_name" value="RESTRUCTURE_CREDITS" />
+            <column name="action_name" value="REJECT" />
+            <column name="can_maker_checker" valueBoolean="false" />
+        </insert>
+    </changeSet>
 </databaseChangeLog>

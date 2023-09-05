@@ -34,9 +34,8 @@ import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.HashSet;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 @Entity
 @Table(name = "m_restructure_credit_requests")
@@ -83,8 +82,8 @@ public class RestructureCreditsRequest extends AbstractPersistableCustom {
     @JoinColumn(name = "lastmodifiedby_id")
     private AppUser modifiedByUser;
 
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER, mappedBy = "restructureCreditsRequest")
-    private Set<RestructureCreditsLoanMapping> restructureCreditsLoanMappings = new HashSet<>();
+    @OneToMany(mappedBy = "restructureCreditsRequest", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private List<RestructureCreditsLoanMapping> restructureCreditsLoanMappings = new ArrayList<>();
 
     /**
      * LoanRescheduleRequest constructor
@@ -98,7 +97,7 @@ public class RestructureCreditsRequest extends AbstractPersistableCustom {
                                       final BigDecimal totalLoanAmount, final LocalDateTime newDisbursementDate, final String comments,
                                       final LocalDateTime dateRequested, final AppUser requestedByUser, final LocalDateTime approvedOnDate,
                                       final AppUser approvedByUser, final LocalDateTime lastModifiedDate, final AppUser modifiedByUser,
-                                      final Set<RestructureCreditsLoanMapping> restructureCreditsLoanMappings) {
+                                      final List<RestructureCreditsLoanMapping> restructureCreditsLoanMappings) {
         this.client = client;
         this.statusEnum = statusEnum;
         this.loanProduct = product;
@@ -120,7 +119,7 @@ public class RestructureCreditsRequest extends AbstractPersistableCustom {
                                                      final BigDecimal totalLoanAmount, final LocalDateTime newDisbursementDate, final String comments,
                                                      final LocalDateTime dateRequested, final AppUser requestedByUser, final LocalDateTime approvedOnDate,
                                                      final AppUser approvedByUser, final LocalDateTime lastModifiedDate, final AppUser modifiedByUser,
-                                                     final Set<RestructureCreditsLoanMapping> restructureCreditsLoanMappings) {
+                                                     final List<RestructureCreditsLoanMapping> restructureCreditsLoanMappings) {
 
         return new RestructureCreditsRequest(client,statusEnum,product,totalLoanAmount,newDisbursementDate,
                 comments,dateRequested,requestedByUser,approvedOnDate,approvedByUser,lastModifiedDate,modifiedByUser,restructureCreditsLoanMappings);
@@ -191,7 +190,7 @@ public class RestructureCreditsRequest extends AbstractPersistableCustom {
         this.restructureCreditsLoanMappings.addAll(mapping);
     }
 
-    public Set<RestructureCreditsLoanMapping> getCreditMappings() {
+    public List<RestructureCreditsLoanMapping> getCreditMappings() {
         return this.restructureCreditsLoanMappings;
     }
 }
