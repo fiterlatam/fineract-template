@@ -154,4 +154,6 @@ public interface LoanReadPlatformService {
     CollectionData retrieveLoanCollectionData(Long loanId);
 
     LoanPaymentSimulationData retrieveLoanFuturePaymentTemplate(Long loanId, LocalDate paymentDate, String paymentType);
+
+    Collection<LoanAccountData> retrieveClientActiveLoans(Long clientId);
 }

@@ -30,6 +30,7 @@ public final class RescheduleLoansApiConstants {
     }
 
     public static final String ENTITY_NAME = "RESCHEDULELOAN";
+    public static final String RESTRUCTURE_CREDITS_RESOURCE = "RESTRUCTURE_CREDITS";
 
     public static final String LOAN_RESCHEDULE_REASON = "LoanRescheduleReason";
 

@@ -94,4 +94,5 @@
     <include file="parts/0075_FBR_36_add_code_for_bank_agreements.xml" relativeToChangelogFile="true"/>
     <include file="parts/0076_Add_Client_Contact_Information.xml" relativeToChangelogFile="true"/>
     <include file="parts/0077_create_hard_policy_checklist_configurations.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0078_restructure_credits_table_and_permissions.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
