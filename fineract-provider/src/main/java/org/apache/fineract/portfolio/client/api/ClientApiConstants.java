@@ -81,6 +81,7 @@ public class ClientApiConstants {
     public static final String accountNoParamName = "accountNo";
     public static final String externalIdParamName = "externalId";
     public static final String mobileNoParamName = "mobileNo";
+    public static final String HOME_NUMBER = "homeNumber";
     public static final String emailAddressParamName = "emailAddress";
     public static final String firstnameParamName = "firstname";
     public static final String middlenameParamName = "middlename";
@@ -205,6 +206,9 @@ public class ClientApiConstants {
     public static final String squareParamName = "square";
     public static final String zoneParamName = "zone";
     public static final String lightDeviceNumberParamName = "lightDeviceNumber";
+    public static final String STREET_NUMBER = "streetNumber";
+    public static final String PUBLIC_SERVICES = "publicServices";
+    public static final String COMMUNITY_YEARS = "communityYears";
 
     /**
      * These parameters will match the class level parameters of {@link ClientData}. Where possible, we try to get

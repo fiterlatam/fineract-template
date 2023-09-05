@@ -19,17 +19,20 @@
 package org.apache.fineract.portfolio.client.data;
 
 import java.io.Serializable;
+import java.util.List;
+import lombok.Data;
+import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 
 /**
  * Immutable data object representing client data.
  */
 @SuppressWarnings("unused")
+@Data
 public final class ClientContactInformationData implements Serializable {
 
     private final String area;
     private final String housingType;
     private final String yearsOfResidence;
-    private final String serviceTypes;
     private final String department;
     private final String municipality;
     private final String village;
@@ -44,14 +47,17 @@ public final class ClientContactInformationData implements Serializable {
     private final String zone;
     private final String lightMeterNumber;
     private final String homePhone;
+    private final Integer communityYears;
+    private final String streetNumber;
+    private List<CodeValueData> publicServiceTypes;
 
-    public ClientContactInformationData(String area, String housingType, String yearsOfResidence, String serviceTypes, String department,
-            String municipality, String village, String referenceHousingData, String street, String avenue, String houseNumber,
-            String colony, String sector, String batch, String square, String zone, String lightMeterNumber, String homePhone) {
+    public ClientContactInformationData(String area, String housingType, String yearsOfResidence, String department, String municipality,
+            String village, String referenceHousingData, String street, String avenue, String houseNumber, String colony, String sector,
+            String batch, String square, String zone, String lightMeterNumber, String homePhone, final Integer communityYears,
+            String streetNumber) {
         this.area = area;
         this.housingType = housingType;
         this.yearsOfResidence = yearsOfResidence;
-        this.serviceTypes = serviceTypes;
         this.department = department;
         this.municipality = municipality;
         this.village = village;
@@ -66,13 +72,16 @@ public final class ClientContactInformationData implements Serializable {
         this.zone = zone;
         this.lightMeterNumber = lightMeterNumber;
         this.homePhone = homePhone;
+        this.communityYears = communityYears;
+        this.streetNumber = streetNumber;
     }
 
-    public static ClientContactInformationData instance(String area, String housingType, String yearsOfResidence, String serviceTypes,
-            String department, String municipality, String village, String referenceHousingData, String street, String avenue,
-            String houseNumber, String colony, String sector, String batch, String square, String zone, String lightMeterNumber,
-            String homePhone) {
-        return new ClientContactInformationData(area, housingType, yearsOfResidence, serviceTypes, department, municipality, village,
-                referenceHousingData, street, avenue, houseNumber, colony, sector, batch, square, zone, lightMeterNumber, homePhone);
+    public static ClientContactInformationData instance(String area, String housingType, String yearsOfResidence, String department,
+            String municipality, String village, String referenceHousingData, String street, String avenue, String houseNumber,
+            String colony, String sector, String batch, String square, String zone, String lightMeterNumber, String homePhone,
+            final Integer communityYears, String streetNumber) {
+        return new ClientContactInformationData(area, housingType, yearsOfResidence, department, municipality, village,
+                referenceHousingData, street, avenue, houseNumber, colony, sector, batch, square, zone, lightMeterNumber, homePhone,
+                communityYears, streetNumber);
     }
 }

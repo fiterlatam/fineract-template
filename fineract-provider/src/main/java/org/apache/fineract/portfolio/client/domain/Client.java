@@ -230,8 +230,12 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
     @Column(name = "old_customer_number", nullable = false)
     private String oldCustomerNumber;
 
-    @OneToOne(mappedBy = "client", cascade = CascadeType.ALL)
+    @OneToOne(mappedBy = "client", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private ClientContactInformation contactInformation;
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(name = "m_client_public_service", joinColumns = @JoinColumn(name = "client_id"), inverseJoinColumns = @JoinColumn(name = "service_type_cv_id"))
+    private Set<CodeValue> publicServiceTypes;
 
     public static Client createNew(final AppUser currentUser, final Office clientOffice, final Group clientParentGroup, final Staff staff,
             final Long savingsProductId, final CodeValue gender, final CodeValue clientType, final CodeValue clientClassification,
@@ -1055,5 +1059,13 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
 
     public void updateDpiNumber(String dpiNumber) {
         this.dpiNumber = dpiNumber;
+    }
+
+    public Set<CodeValue> getPublicServiceTypes() {
+        return publicServiceTypes;
+    }
+
+    public void setPublicServiceTypes(Set<CodeValue> publicServiceTypes) {
+        this.publicServiceTypes = publicServiceTypes;
     }
 }

@@ -73,6 +73,7 @@ import org.apache.fineract.portfolio.group.data.GroupGeneralData;
 import org.apache.fineract.portfolio.savings.data.SavingsProductData;
 import org.apache.fineract.portfolio.savings.service.SavingsProductReadPlatformService;
 import org.apache.fineract.useradministration.domain.AppUser;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -97,6 +98,7 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
     private final ClientMembersOfGroupMapper membersOfGroupMapper = new ClientMembersOfGroupMapper();
     private final ParentGroupsMapper clientGroupsMapper = new ParentGroupsMapper();
     private final ContactInformationMapper contactInformationMapper = new ContactInformationMapper();
+    private final ClientPublicServiceMapper publicServiceMapper = new ClientPublicServiceMapper();
 
     private final AddressReadPlatformService addressReadPlatformService;
     private final ClientFamilyMembersReadPlatformService clientFamilyMembersReadPlatformService;
@@ -158,7 +160,6 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
 
         final List<DatatableData> datatableTemplates = this.entityDatatableChecksReadService
                 .retrieveTemplates(StatusEnum.CREATE.getCode().longValue(), EntityTables.CLIENT.getName(), null);
-
         return ClientData.template(defaultOfficeId, LocalDate.now(DateUtils.getDateTimeZoneOfTenant()), offices, staffOptions, null,
                 genderOptions, savingsProductDatas, clientTypeOptions, clientClassificationOptions, clientNonPersonConstitutionOptions,
                 clientNonPersonMainBusinessLineOptions, clientLegalFormOptions, familyMemberOptions,
@@ -322,9 +323,16 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
                     clientId);
 
             final String contactSql = "select " + this.contactInformationMapper.schema();
-            final ClientContactInformationData contactInformationData = this.jdbcTemplate.queryForObject(contactSql,
+            final List<ClientContactInformationData> contactInformationDatas = this.jdbcTemplate.query(contactSql,
                     this.contactInformationMapper, clientId);
-
+            ClientContactInformationData contactInformationData = null;
+            if (!contactInformationDatas.isEmpty()) {
+                contactInformationData = contactInformationDatas.get(0);
+                final String publicServiceSql = "SELECT " + this.publicServiceMapper.schema() + " WHERE mc.id = ?";
+                final List<CodeValueData> publicServiceTypes = this.jdbcTemplate.query(publicServiceSql, this.publicServiceMapper,
+                        clientId);
+                contactInformationData.setPublicServiceTypes(publicServiceTypes);
+            }
             return ClientData.setParentGroups(clientData, parentGroups, clientCollateralManagementDataSet, contactInformationData);
 
         } catch (final EmptyResultDataAccessException e) {
@@ -773,9 +781,9 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
 
         public String schema() {
             return "ci.id , " + "acode.code_value as areaValue, " + "htype.code_value as housingValue, " + "ci.years_of_residence, "
-                    + "ci.public_service_types, " + "dep.code_value as department, " + "mun.code_value as municipality, " + "ci.village, "
-                    + "ci.reference_housing_data, " + "ci.street, " + "ci.avenue, " + "ci.home_number, " + "ci.colony, " + "ci.sector, "
-                    + "ci.batch, " + "ci.square, " + "ci.zone, " + "ci.light_meter_number, " + "ci.home_phone "
+                    + "dep.code_value as department, " + "mun.code_value as municipality, " + "ci.village, " + "ci.reference_housing_data, "
+                    + "ci.street, " + "ci.avenue, " + "ci.home_number, " + "ci.colony, " + "ci.sector, " + "ci.batch, " + "ci.square, "
+                    + "ci.zone, " + "ci.light_meter_number, " + "ci.home_phone, ci.years_of_community, ci.street_number "
                     + "from m_client_contact_info ci " + "left join m_code_value acode on acode.id = ci.area "
                     + "left join m_code_value htype on htype.id = ci.housing_type "
                     + "left join m_code_value dep on dep.id = ci.department_id "
@@ -785,11 +793,9 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
         @Override
         public ClientContactInformationData mapRow(final ResultSet rs, final int rowNum) throws SQLException {
 
-            final Long id = JdbcSupport.getLong(rs, "id");
             final String area = rs.getString("areaValue");
             final String housing = rs.getString("housingValue");
             final String yearsOfResidence = rs.getString("years_of_residence");
-            final String publicServiceTypes = rs.getString("public_service_types");
             final String department = rs.getString("department");
             final String municipality = rs.getString("municipality");
             final String village = rs.getString("village");
@@ -804,10 +810,11 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
             final String zone = rs.getString("zone");
             final String lightMeterNumber = rs.getString("light_meter_number");
             final String homePhone = rs.getString("home_phone");
-
-            return ClientContactInformationData.instance(area, housing, yearsOfResidence, publicServiceTypes, department, municipality,
-                    village, referenceHousingData, street, avenue, homeNumber, colony, sector, batch, square, zone, lightMeterNumber,
-                    homePhone);
+            final Integer communityYears = JdbcSupport.getInteger(rs, "years_of_community");
+            final String streetNumber = rs.getString("street_number");
+            return ClientContactInformationData.instance(area, housing, yearsOfResidence, department, municipality, village,
+                    referenceHousingData, street, avenue, homeNumber, colony, sector, batch, square, zone, lightMeterNumber, homePhone,
+                    communityYears, streetNumber);
         }
     }
 
@@ -852,6 +859,27 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
             return this.jdbcTemplate.queryForObject(sql, mapper, identifierTypeId, identifierKey); // NOSONAR
         } catch (final EmptyResultDataAccessException e) {
             return null;
+        }
+    }
+
+    private static final class ClientPublicServiceMapper implements RowMapper<CodeValueData> {
+
+        public String schema() {
+            return """
+                    mcv.id AS id,
+                    mcv.code_value AS name
+                    FROM m_code_value mcv
+                    INNER JOIN m_client_public_service mcps ON mcps.service_type_cv_id = mcv.id
+                    INNER JOIN m_client mc ON mc.id = mcps.client_id
+                    """;
+        }
+
+        @Override
+        public CodeValueData mapRow(@NotNull ResultSet rs, int rowNum) throws SQLException {
+            final Long id = rs.getLong("id");
+            final String name = rs.getString("name");
+            return CodeValueData.instance(id, name);
+
         }
     }
 

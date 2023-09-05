@@ -21,7 +21,7 @@ package org.apache.fineract.portfolio.client.domain;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
+import javax.persistence.OneToOne;
 import javax.persistence.Table;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
@@ -39,9 +39,6 @@ public class ClientContactInformation extends AbstractPersistableCustom {
 
     @Column(name = "years_of_residence", nullable = false)
     private Integer yearsOfResidence;
-
-    @Column(name = "public_service_types", nullable = false)
-    private String serviceTypes;
 
     @Column(name = "department_id", nullable = false)
     private Integer departmentId;
@@ -85,22 +82,27 @@ public class ClientContactInformation extends AbstractPersistableCustom {
     @Column(name = "home_phone")
     private String homePhone;
 
-    @ManyToOne
+    @OneToOne(orphanRemoval = true)
     @JoinColumn(name = "client_id")
     private Client client;
+
+    @Column(name = "street_number")
+    private String streetNumber;
+
+    @Column(name = "years_of_community")
+    private String communityYears;
 
     protected ClientContactInformation() {
         //
     }
 
-    public ClientContactInformation(Integer area, Integer housingType, Integer yearsOfResidence, String serviceTypes, Integer departmentId,
+    public ClientContactInformation(Integer area, Integer housingType, Integer yearsOfResidence, Integer departmentId,
             Integer municipalityId, String village, String referenceHousingData, String street, String avenue, String houseNumber,
             String colony, String sector, String batch, String square, String zone, String lightMeterNumber, String homePhone,
-            Client newClient) {
+            Client newClient, final String streetNumber, final String communityYears) {
         this.area = area;
         this.housingType = housingType;
         this.yearsOfResidence = yearsOfResidence;
-        this.serviceTypes = serviceTypes;
         this.departmentId = departmentId;
         this.municipalityId = municipalityId;
         this.village = village;
@@ -116,7 +118,8 @@ public class ClientContactInformation extends AbstractPersistableCustom {
         this.lightMeterNumber = lightMeterNumber;
         this.homePhone = homePhone;
         this.client = newClient;
-
+        this.streetNumber = streetNumber;
+        this.communityYears = communityYears;
     }
 
     public static ClientContactInformation fromJson(Client newClient, JsonCommand command) {
@@ -124,7 +127,6 @@ public class ClientContactInformation extends AbstractPersistableCustom {
         final Integer area = command.integerValueOfParameterNamed(ClientApiConstants.clientAreaParamName);
         final Integer housingType = command.integerValueOfParameterNamed(ClientApiConstants.housingTypeIdParamName);
         final Integer yearsOfResidence = command.integerValueOfParameterNamed(ClientApiConstants.residenceYearsParamName);
-        final String serviceTypes = command.stringValueOfParameterNamed(ClientApiConstants.serviceIdParamName);
         final Integer departmentId = command.integerValueOfParameterNamed(ClientApiConstants.departmentIdParamName);
         final Integer municipalityId = command.integerValueOfParameterNamed(ClientApiConstants.municipalIdParamName);
         final String village = command.stringValueOfParameterNamed(ClientApiConstants.villageParamName);
@@ -139,8 +141,52 @@ public class ClientContactInformation extends AbstractPersistableCustom {
         final String zone = command.stringValueOfParameterNamed(ClientApiConstants.zoneParamName);
         final String lightMeterNumber = command.stringValueOfParameterNamed(ClientApiConstants.lightDeviceNumberParamName);
         final String homePhone = command.stringValueOfParameterNamed(ClientApiConstants.homeNumberParamName);
-        return new ClientContactInformation(area, housingType, yearsOfResidence, serviceTypes, departmentId, municipalityId, village,
+        final String streetNumber = command.stringValueOfParameterNamed(ClientApiConstants.STREET_NUMBER);
+        final String communityYears = command.stringValueOfParameterNamed(ClientApiConstants.COMMUNITY_YEARS);
+        return new ClientContactInformation(area, housingType, yearsOfResidence, departmentId, municipalityId, village,
                 referenceHousingData, street, avenue, houseNumber, colony, sector, batch, square, zone, lightMeterNumber, homePhone,
-                newClient);
+                newClient, streetNumber, communityYears);
+    }
+
+    public static ClientContactInformation updateJson(ClientContactInformation contactInformation, JsonCommand command) {
+        final Integer area = command.integerValueOfParameterNamed(ClientApiConstants.clientAreaParamName);
+        final Integer housingType = command.integerValueOfParameterNamed(ClientApiConstants.housingTypeIdParamName);
+        final Integer yearsOfResidence = command.integerValueOfParameterNamed(ClientApiConstants.residenceYearsParamName);
+        final Integer departmentId = command.integerValueOfParameterNamed(ClientApiConstants.departmentIdParamName);
+        final Integer municipalityId = command.integerValueOfParameterNamed(ClientApiConstants.municipalIdParamName);
+        final String village = command.stringValueOfParameterNamed(ClientApiConstants.villageParamName);
+        final String referenceHousingData = command.stringValueOfParameterNamed(ClientApiConstants.referenceDataParamName);
+        final String street = command.stringValueOfParameterNamed(ClientApiConstants.streetParamName);
+        final String avenue = command.stringValueOfParameterNamed(ClientApiConstants.avenueParamName);
+        final String houseNumber = command.stringValueOfParameterNamed(ClientApiConstants.houseNumberParamName);
+        final String colony = command.stringValueOfParameterNamed(ClientApiConstants.colonyParamName);
+        final String sector = command.stringValueOfParameterNamed(ClientApiConstants.sectorParamName);
+        final String batch = command.stringValueOfParameterNamed(ClientApiConstants.batchParamName);
+        final String square = command.stringValueOfParameterNamed(ClientApiConstants.squareParamName);
+        final String zone = command.stringValueOfParameterNamed(ClientApiConstants.zoneParamName);
+        final String lightMeterNumber = command.stringValueOfParameterNamed(ClientApiConstants.lightDeviceNumberParamName);
+        final String homePhone = command.stringValueOfParameterNamed(ClientApiConstants.homeNumberParamName);
+        final String streetNumber = command.stringValueOfParameterNamed(ClientApiConstants.STREET_NUMBER);
+        final String communityYears = command.stringValueOfParameterNamed(ClientApiConstants.COMMUNITY_YEARS);
+        contactInformation.area = area;
+        contactInformation.housingType = housingType;
+        contactInformation.yearsOfResidence = yearsOfResidence;
+        contactInformation.departmentId = departmentId;
+        contactInformation.municipalityId = municipalityId;
+        contactInformation.village = village;
+        contactInformation.referenceHousingData = referenceHousingData;
+        contactInformation.street = street;
+        contactInformation.avenue = avenue;
+        contactInformation.houseNumber = houseNumber;
+        contactInformation.colony = colony;
+        contactInformation.sector = sector;
+        contactInformation.batch = batch;
+        contactInformation.square = square;
+        contactInformation.zone = zone;
+        contactInformation.lightMeterNumber = lightMeterNumber;
+        contactInformation.homePhone = homePhone;
+        contactInformation.streetNumber = streetNumber;
+        contactInformation.communityYears = communityYears;
+        return contactInformation;
     }
 }

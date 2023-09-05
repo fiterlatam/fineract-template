@@ -209,6 +209,14 @@ public class ClientsApiResource {
             if (savingAccountOptions != null && savingAccountOptions.size() > 0) {
                 clientData = ClientData.templateWithSavingAccountOptions(clientData, savingAccountOptions);
             }
+            Collection<CodeValueData> clientAreas = this.codeValueReadPlatformService.retrieveCodeValuesByCode("clientAreas");
+            Collection<CodeValueData> clientLocation = this.codeValueReadPlatformService.retrieveCodeValuesByCode("clientLocation");
+            Collection<CodeValueData> publicServices = this.codeValueReadPlatformService.retrieveCodeValuesByCode("publicServices");
+            Collection<CodeValueData> housingTypeOptions = this.codeValueReadPlatformService.retrieveCodeValuesByCode("housingType");
+            Collection<CodeValueData> Ldepartamento = this.codeValueReadPlatformService.retrieveCodeValuesByCode("Ldepartamento");
+            Collection<CodeValueData> Lmunicipio = this.codeValueReadPlatformService.retrieveCodeValuesByCode("Lmunicipio");
+            clientData.updateClientAddressTemplate(clientAreas, clientLocation, publicServices, housingTypeOptions, Ldepartamento,
+                    Lmunicipio);
         }
 
         return this.toApiJsonSerializer.serialize(settings, clientData, ClientApiConstants.CLIENT_RESPONSE_DATA_PARAMETERS);
