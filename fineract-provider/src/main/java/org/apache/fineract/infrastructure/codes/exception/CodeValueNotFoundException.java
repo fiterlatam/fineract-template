@@ -43,4 +43,8 @@ public class CodeValueNotFoundException extends AbstractPlatformResourceNotFound
     public CodeValueNotFoundException(Long id, EmptyResultDataAccessException e) {
         super("error.msg.codevalue.id.invalid", "Code value with identifier " + id + " does not exist", id, e);
     }
+
+    public CodeValueNotFoundException(final String codeName) {
+        super("error.msg.codevalue.codename.invalid", "Code value does not exist for a code with name " + codeName, codeName);
+    }
 }

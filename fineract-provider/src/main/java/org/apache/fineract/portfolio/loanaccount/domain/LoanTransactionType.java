@@ -55,7 +55,7 @@ public enum LoanTransactionType {
     CREDIT_BALANCE_REFUND(20, "loanTransactionType.creditBalanceRefund"), //
     MERCHANT_ISSUED_REFUND(21, "loanTransactionType.merchantIssuedRefund"), //
     PAYOUT_REFUND(22, "loanTransactionType.payoutRefund"), //
-    GOODWILL_CREDIT(23, "loanTransactionType.goodwillCredit"), ACCRUAL_VAT(24, "loanTransactionType.accrualVat"),;
+    GOODWILL_CREDIT(23, "loanTransactionType.goodwillCredit"), ACCRUAL_VAT(24, "loanTransactionType.accrualVat");
 
     private final Integer value;
     private final String code;

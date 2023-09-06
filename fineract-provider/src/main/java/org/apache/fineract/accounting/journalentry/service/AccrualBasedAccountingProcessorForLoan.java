@@ -96,6 +96,11 @@ public class AccrualBasedAccountingProcessorForLoan implements AccountingProcess
             else if (loanTransactionDTO.getTransactionType().isRefundForActiveLoans()) {
                 createJournalEntriesForRefundForActiveLoan(loanDTO, loanTransactionDTO, office);
             }
+
+            /*** Handle VAT Accruals ***/
+            else if (loanTransactionDTO.getTransactionType().isVatAccrual()) {
+                createJournalEntriesForVatAccruals(loanDTO, loanTransactionDTO, office);
+            }
         }
     }
 
@@ -504,4 +509,24 @@ public class AccrualBasedAccountingProcessorForLoan implements AccountingProcess
                 loanProductId, paymentTypeId, loanId, transactionId, transactionDate, totalDebitAmount, !isReversal);
 
     }
+
+    private void createJournalEntriesForVatAccruals(LoanDTO loanDTO, LoanTransactionDTO loanTransactionDTO, Office office) {
+        // loan properties
+        final Long loanProductId = loanDTO.getLoanProductId();
+        final Long loanId = loanDTO.getLoanId();
+        final String currencyCode = loanDTO.getCurrencyCode();
+
+        // transaction properties
+        final String transactionId = loanTransactionDTO.getTransactionId();
+        final LocalDate transactionDate = loanTransactionDTO.getTransactionDate();
+        final BigDecimal vatAmount = loanTransactionDTO.getAmount();
+        final boolean isReversed = loanTransactionDTO.isReversed();
+        final Long paymentTypeId = loanTransactionDTO.getPaymentTypeId();
+
+        this.helper.createVatAccrualBasedJournalEntriesAndReversalsForLoan(office, currencyCode,
+                AccrualAccountsForLoan.FEES_RECEIVABLE.getValue(), loanProductId, paymentTypeId, loanId, transactionId, transactionDate,
+                vatAmount, isReversed);
+
+    }
+
 }
