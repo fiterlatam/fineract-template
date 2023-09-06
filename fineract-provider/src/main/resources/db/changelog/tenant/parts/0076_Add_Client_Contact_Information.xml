@@ -83,4 +83,45 @@
             <column name="is_system_defined" valueBoolean="true"/>
         </insert>
     </changeSet>
+
+    <changeSet author="fineract" id="3">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_contact_info" columnName="street_number"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_contact_info">
+            <column name="street_number" type="VARCHAR(200)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="years_of_community" type="INTEGER">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="4">
+        <createTable tableName="m_client_public_service">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="client_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="service_type_cv_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet author="fineract" id="5">
+        <dropColumn tableName="m_client_contact_info">
+            <column name="public_service_types"/>
+        </dropColumn>
+    </changeSet>
+
+    <changeSet id="6" author="fineract">
+        <modifyDataType tableName="m_client_contact_info" columnName="home_phone" newDataType="VARCHAR(200)"/>
+        <modifyDataType tableName="m_client_contact_info" columnName="light_meter_number" newDataType="VARCHAR(200)"/>
+    </changeSet>
 </databaseChangeLog>
