@@ -55,4 +55,5 @@
     <include file="parts/0038_albo_loan_custom_params.xml" relativeToChangelogFile="true"/>
     <include file="parts/0039_add_new_vat_column_into_arrears_aging.xml" relativeToChangelogFile="true"/>
     <include file="parts/0040_add_new_column_for_overdue.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0041_add_code_for_accrual_vat_accounting.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

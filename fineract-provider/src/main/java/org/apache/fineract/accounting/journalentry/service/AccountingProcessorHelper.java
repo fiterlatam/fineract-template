@@ -21,6 +21,7 @@ package org.apache.fineract.accounting.journalentry.service;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -56,6 +57,9 @@ import org.apache.fineract.accounting.producttoaccountmapping.domain.PortfolioPr
 import org.apache.fineract.accounting.producttoaccountmapping.domain.ProductToGLAccountMapping;
 import org.apache.fineract.accounting.producttoaccountmapping.domain.ProductToGLAccountMappingRepository;
 import org.apache.fineract.accounting.producttoaccountmapping.exception.ProductToGLAccountMappingNotFoundException;
+import org.apache.fineract.infrastructure.codes.data.CodeValueData;
+import org.apache.fineract.infrastructure.codes.exception.CodeValueNotFoundException;
+import org.apache.fineract.infrastructure.codes.service.CodeValueReadPlatformService;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.infrastructure.core.exception.PlatformDataIntegrityException;
 import org.apache.fineract.organisation.monetary.data.CurrencyData;
@@ -69,6 +73,7 @@ import org.apache.fineract.portfolio.client.domain.ClientTransactionRepositoryWr
 import org.apache.fineract.portfolio.loanaccount.data.LoanTransactionEnumData;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanTransaction;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionRepository;
+import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionType;
 import org.apache.fineract.portfolio.paymentdetail.domain.PaymentDetail;
 import org.apache.fineract.portfolio.savings.data.SavingsAccountTransactionEnumData;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountTransaction;
@@ -98,6 +103,7 @@ public class AccountingProcessorHelper {
     private final SavingsAccountTransactionRepository savingsAccountTransactionRepository;
     private final AccountTransfersReadPlatformService accountTransfersReadPlatformService;
     private final ChargeRepositoryWrapper chargeRepositoryWrapper;
+    private final CodeValueReadPlatformService codeValueReadPlatformService;
 
     public LoanDTO populateLoanDtoFromMap(final Map<String, Object> accountingBridgeData, final boolean cashBasedAccountingEnabled,
             final boolean upfrontAccrualBasedAccountingEnabled, final boolean periodicAccrualBasedAccountingEnabled) {
@@ -1301,4 +1307,50 @@ public class AccountingProcessorHelper {
     private GLAccount getGLAccountById(final Long accountId) {
         return this.accountRepositoryWrapper.findOneWithNotFoundDetection(accountId);
     }
+
+    private GLAccount getGLAccountForVat() {
+        GLAccount glAccount;
+        Collection<CodeValueData> glVatAccountValues = codeValueReadPlatformService
+                .retrieveCodeValuesByCode(LoanTransactionType.ACCRUAL_VAT.getCode());
+        if (glVatAccountValues == null || glVatAccountValues.isEmpty()) {
+            throw new CodeValueNotFoundException(LoanTransactionType.ACCRUAL_VAT.getCode());
+        }
+        glAccount = this.accountRepositoryWrapper.findOneByGlCodeWithNotFoundDetection(glVatAccountValues.iterator().next().getName());
+        return glAccount;
+    }
+
+    /**
+     * Convenience method that creates a pair of related Debits and Credits for Vat Accrual Based accounting.
+     *
+     * The target accounts for debits and credits are switched in case of a reversal
+     *
+     * @param office
+     * @param accountTypeToBeDebited
+     *            Enum of the placeholder GLAccount to be debited
+     * @param loanProductId
+     * @param paymentTypeId
+     * @param loanId
+     * @param transactionId
+     * @param transactionDate
+     * @param amount
+     * @param isReversal
+     */
+    public void createVatAccrualBasedJournalEntriesAndReversalsForLoan(final Office office, final String currencyCode,
+            final Integer accountTypeToBeDebited, final Long loanProductId, final Long paymentTypeId, final Long loanId,
+            final String transactionId, final LocalDate transactionDate, final BigDecimal amount, final Boolean isReversal) {
+
+        GLAccount receivableAccount = getLinkedGLAccountForLoanCharges(loanProductId, accountTypeToBeDebited, null);
+        GLAccount account = getGLAccountForVat();
+
+        // reverse debits and credits for reversals
+        if (isReversal) {
+            createDebitJournalEntryForLoan(office, currencyCode, account, loanId, transactionId, transactionDate, amount);
+            createCreditJournalEntryForLoan(office, currencyCode, receivableAccount, loanId, transactionId, transactionDate, amount);
+        } else {
+            createDebitJournalEntryForLoan(office, currencyCode, receivableAccount, loanId, transactionId, transactionDate, amount);
+            createCreditJournalEntryForLoan(office, currencyCode, account, loanId, transactionId, transactionDate, amount);
+        }
+
+    }
+
 }
