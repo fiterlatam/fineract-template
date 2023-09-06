@@ -36,6 +36,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.fineract.infrastructure.core.domain.AbstractAuditableCustom;
 import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
 import org.apache.fineract.organisation.monetary.domain.Money;
+import org.apache.fineract.organisation.monetary.domain.MoneyHelper;
 import org.apache.fineract.portfolio.repaymentwithpostdatedchecks.domain.PostDatedChecks;
 
 @Entity
@@ -489,7 +490,7 @@ public final class LoanRepaymentScheduleInstallment extends AbstractAuditableCus
 
         } else {
             BigDecimal percentageVatPlusOne = vatPercentage.add(BigDecimal.ONE);
-            BigDecimal feeChargesPortion = transactionAmountRemaining.getAmount().divide(percentageVatPlusOne);
+            BigDecimal feeChargesPortion = transactionAmountRemaining.getAmount().divide(percentageVatPlusOne, MoneyHelper.getMathContext());
             BigDecimal vatPortion = transactionAmountRemaining.getAmount().subtract(feeChargesPortion);
 
             this.penaltyChargesPaid = getPenaltyChargesPaid(currency).plus(transactionAmountRemaining).getAmount();
