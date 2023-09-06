@@ -209,6 +209,20 @@ public class ClientApiConstants {
     public static final String STREET_NUMBER = "streetNumber";
     public static final String PUBLIC_SERVICES = "publicServices";
     public static final String COMMUNITY_YEARS = "communityYears";
+    public static final String loanCycleParamName = "loanCycle";
+    public static final String groupNumberParamName = "groupNumber";
+    public static final String otherNamesParamName = "othernames";
+    public static final String maidenNameParamName = "maidenName";
+    public static final String groupMemberParamName = "groupMember";
+    public static final String statusInGroupParamName = "statusInGroup";
+    public static final String retirementReasonParamName = "retirementReason";
+    public static final String civilStatusParamName = "civilStatus";
+    public static final String educationLevelParamName = "educationLevel";
+    public static final String ethinicityParamName = "ethinicity";
+    public static final String nationalityParamName = "nationality";
+    public static final String languagesParamName = "languages";
+    public static final String economicSectorParamName = "economicSector";
+    public static final String economicActivityParamName = "economicActivity";
 
     /**
      * These parameters will match the class level parameters of {@link ClientData}. Where possible, we try to get

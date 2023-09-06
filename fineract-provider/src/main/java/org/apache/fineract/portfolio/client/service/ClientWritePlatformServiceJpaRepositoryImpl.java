@@ -67,6 +67,7 @@ import org.apache.fineract.portfolio.client.domain.AccountNumberGenerator;
 import org.apache.fineract.portfolio.client.domain.Client;
 import org.apache.fineract.portfolio.client.domain.ClientContactInformation;
 import org.apache.fineract.portfolio.client.domain.ClientContactInformationRepository;
+import org.apache.fineract.portfolio.client.domain.ClientInfoRelatedDetail;
 import org.apache.fineract.portfolio.client.domain.ClientNonPerson;
 import org.apache.fineract.portfolio.client.domain.ClientNonPersonRepositoryWrapper;
 import org.apache.fineract.portfolio.client.domain.ClientRepositoryWrapper;
@@ -324,10 +325,10 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
                     isEntity = legalForm.isEntity();
                 }
             }
-            String oldCustomerNumber = command.stringValueOfParameterNamed(ClientApiConstants.oldCustomerNumberParamName);
+            ClientInfoRelatedDetail clientRelatedDetails = ClientInfoRelatedDetail.createFrom(command);
 
             final Client newClient = Client.createNew(currentUser, clientOffice, clientParentGroup, staff, savingsProductId, gender,
-                    clientType, clientClassification, legalFormValue, command);
+                    clientType, clientClassification, legalFormValue,clientRelatedDetails, command);
             this.clientRepository.saveAndFlush(newClient);
             boolean rollbackTransaction = false;
             if (newClient.isActive()) {

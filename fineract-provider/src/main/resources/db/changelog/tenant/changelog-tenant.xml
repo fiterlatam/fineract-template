@@ -95,4 +95,5 @@
     <include file="parts/0076_Add_Client_Contact_Information.xml" relativeToChangelogFile="true"/>
     <include file="parts/0077_create_hard_policy_checklist_configurations.xml" relativeToChangelogFile="true"/>
     <include file="parts/0078_restructure_credits_table_and_permissions.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0079_add_extra_details_to_client_table.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
