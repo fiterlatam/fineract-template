@@ -639,8 +639,15 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
 
         deriveDisplayName();
 
+        if (this.clientInfoRelatedDetail==null){
+            clientInfoRelatedDetail = new ClientInfoRelatedDetail();
+        }
+
+        this.clientInfoRelatedDetail.update(command, actualChanges);
+
         return actualChanges;
     }
+
 
     private void validateNameParts(final List<ApiParameterError> dataValidationErrors) {
         final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors).resource("client");

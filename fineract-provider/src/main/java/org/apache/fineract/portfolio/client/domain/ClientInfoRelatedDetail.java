@@ -21,16 +21,17 @@ package org.apache.fineract.portfolio.client.domain;
 import javax.persistence.Column;
 import javax.persistence.Embeddable;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.portfolio.client.api.ClientApiConstants;
-import org.apache.fineract.portfolio.loanaccount.domain.Loan;
+
+import java.util.Map;
 
 /**
- * LoanRepaymentScheduleDetail encapsulates all the details of a {@link Client} that are also used and persisted by
- * a {@link Loan}.
+ * a {@link ClientInfoRelatedDetail}.
  */
 @Embeddable
-public class ClientInfoRelatedDetail {
+public class ClientInfoRelatedDetail{
     
     @Column(name = "loan_cycle", nullable = false)
     private Integer loanCycle;
@@ -74,10 +75,13 @@ public class ClientInfoRelatedDetail {
     @Column(name = "economic_activity", nullable = true)
     private String economicActivity;
 
+    @Column(name = "family_reference", nullable = true)
+    private String familyReference;
+
     public ClientInfoRelatedDetail(Integer loanCycle, String groupNumber, String maidenName, String othernames, String groupMember,
                                    String statusInGroup, String retirementReason, String civilStatus,
                                    String educationLevel, String ethinicity, String nationality, String languages,
-                                   String economicSector,String economicActivity) {
+                                   String economicSector, String economicActivity, String familyReference) {
         this.loanCycle=loanCycle;
         this.groupNumber = groupNumber;
         this.maidenName = maidenName;
@@ -92,6 +96,7 @@ public class ClientInfoRelatedDetail {
         this.languages = languages;
         this.economicSector = economicSector;
         this.economicActivity = economicActivity;
+        this.familyReference = familyReference;
     }
 
     protected ClientInfoRelatedDetail() {
@@ -113,8 +118,87 @@ public class ClientInfoRelatedDetail {
         final String languages= command.stringValueOfParameterNamed(ClientApiConstants.languagesParamName);
         final String economicSector= command.stringValueOfParameterNamed(ClientApiConstants.economicSectorParamName);
         final String economicActivity= command.stringValueOfParameterNamed(ClientApiConstants.economicActivityParamName);
+        final String familyReference= command.stringValueOfParameterNamed(ClientApiConstants.familyReferenceParamName);
 
         return new ClientInfoRelatedDetail(loanCycle,groupNumber, maidenName, othernames, groupMember, statusInGroup,
-                retirementReason, civilStatus, educationLevel, ethinicity, nationality, languages,economicSector, economicActivity);
+                retirementReason, civilStatus, educationLevel, ethinicity, nationality, languages,economicSector, economicActivity,familyReference);
+    }
+
+    public void update(JsonCommand command, Map<String, Object> actualChanges) {
+        if (command.isChangeInIntegerParameterNamed(ClientApiConstants.loanCycleParamName, this.loanCycle)) {
+            final Integer newValue = command.integerValueOfParameterNamed(ClientApiConstants.loanCycleParamName);
+            actualChanges.put(ClientApiConstants.loanCycleParamName, newValue);
+            this.loanCycle = newValue;
+        }
+        if (command.isChangeInStringParameterNamed(ClientApiConstants.groupMemberParamName, this.groupNumber)) {
+            final String newValue = command.stringValueOfParameterNamed(ClientApiConstants.groupMemberParamName);
+            actualChanges.put(ClientApiConstants.groupMemberParamName, newValue);
+            this.groupNumber = StringUtils.defaultIfEmpty(newValue, null);
+        }
+        if (command.isChangeInStringParameterNamed(ClientApiConstants.maidenNameParamName, this.maidenName)) {
+            final String newValue = command.stringValueOfParameterNamed(ClientApiConstants.maidenNameParamName);
+            actualChanges.put(ClientApiConstants.maidenNameParamName, newValue);
+            this.maidenName = StringUtils.defaultIfEmpty(newValue, null);
+        }
+        if (command.isChangeInStringParameterNamed(ClientApiConstants.otherNamesParamName, this.othernames)) {
+            final String newValue = command.stringValueOfParameterNamed(ClientApiConstants.maidenNameParamName);
+            actualChanges.put(ClientApiConstants.maidenNameParamName, newValue);
+            this.othernames = StringUtils.defaultIfEmpty(newValue, null);
+        }
+        if (command.isChangeInStringParameterNamed(ClientApiConstants.groupMemberParamName, this.groupMember)) {
+            final String newValue = command.stringValueOfParameterNamed(ClientApiConstants.groupMemberParamName);
+            actualChanges.put(ClientApiConstants.groupMemberParamName, newValue);
+            this.groupMember = StringUtils.defaultIfEmpty(newValue, null);
+        }
+        if (command.isChangeInStringParameterNamed(ClientApiConstants.statusInGroupParamName, this.statusInGroup)) {
+            final String newValue = command.stringValueOfParameterNamed(ClientApiConstants.statusInGroupParamName);
+            actualChanges.put(ClientApiConstants.statusInGroupParamName, newValue);
+            this.statusInGroup = StringUtils.defaultIfEmpty(newValue, null);
+        }
+        if (command.isChangeInStringParameterNamed(ClientApiConstants.retirementReasonParamName, this.retirementReason)) {
+            final String newValue = command.stringValueOfParameterNamed(ClientApiConstants.retirementReasonParamName);
+            actualChanges.put(ClientApiConstants.retirementReasonParamName, newValue);
+            this.retirementReason = StringUtils.defaultIfEmpty(newValue, null);
+        }
+        if (command.isChangeInStringParameterNamed(ClientApiConstants.civilStatusParamName, this.civilStatus)) {
+            final String newValue = command.stringValueOfParameterNamed(ClientApiConstants.civilStatusParamName);
+            actualChanges.put(ClientApiConstants.civilStatusParamName, newValue);
+            this.civilStatus = StringUtils.defaultIfEmpty(newValue, null);
+        }
+        if (command.isChangeInStringParameterNamed(ClientApiConstants.educationLevelParamName, this.educationLevel)) {
+            final String newValue = command.stringValueOfParameterNamed(ClientApiConstants.educationLevelParamName);
+            actualChanges.put(ClientApiConstants.educationLevelParamName, newValue);
+            this.educationLevel = StringUtils.defaultIfEmpty(newValue, null);
+        }
+        if (command.isChangeInStringParameterNamed(ClientApiConstants.ethinicityParamName, this.ethinicity)) {
+            final String newValue = command.stringValueOfParameterNamed(ClientApiConstants.ethinicityParamName);
+            actualChanges.put(ClientApiConstants.ethinicityParamName, newValue);
+            this.ethinicity = StringUtils.defaultIfEmpty(newValue, null);
+        }
+        if (command.isChangeInStringParameterNamed(ClientApiConstants.nationalityParamName, this.nationality)) {
+            final String newValue = command.stringValueOfParameterNamed(ClientApiConstants.nationalityParamName);
+            actualChanges.put(ClientApiConstants.nationalityParamName, newValue);
+            this.nationality = StringUtils.defaultIfEmpty(newValue, null);
+        }
+        if (command.isChangeInStringParameterNamed(ClientApiConstants.languagesParamName, this.languages)) {
+            final String newValue = command.stringValueOfParameterNamed(ClientApiConstants.languagesParamName);
+            actualChanges.put(ClientApiConstants.languagesParamName, newValue);
+            this.languages = StringUtils.defaultIfEmpty(newValue, null);
+        }
+        if (command.isChangeInStringParameterNamed(ClientApiConstants.economicSectorParamName, this.economicSector)) {
+            final String newValue = command.stringValueOfParameterNamed(ClientApiConstants.economicSectorParamName);
+            actualChanges.put(ClientApiConstants.economicSectorParamName, newValue);
+            this.economicSector = StringUtils.defaultIfEmpty(newValue, null);
+        }
+        if (command.isChangeInStringParameterNamed(ClientApiConstants.economicActivityParamName, this.economicActivity)) {
+            final String newValue = command.stringValueOfParameterNamed(ClientApiConstants.economicActivityParamName);
+            actualChanges.put(ClientApiConstants.economicActivityParamName, newValue);
+            this.economicActivity = StringUtils.defaultIfEmpty(newValue, null);
+        }
+        if (command.isChangeInStringParameterNamed(ClientApiConstants.familyReferenceParamName, this.familyReference)) {
+            final String newValue = command.stringValueOfParameterNamed(ClientApiConstants.familyReferenceParamName);
+            actualChanges.put(ClientApiConstants.familyReferenceParamName, newValue);
+            this.familyReference = StringUtils.defaultIfEmpty(newValue, null);
+        }
     }
 }
