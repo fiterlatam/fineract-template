@@ -19,7 +19,6 @@
 package org.apache.fineract.portfolio.loanaccount.domain;
 
 import java.math.BigDecimal;
-import java.math.MathContext;
 import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -489,13 +488,13 @@ public final class LoanRepaymentScheduleInstallment extends AbstractAuditableCus
             vatPortionOfTransaction = vatPortionOfTransaction.plus(vatOnPenaltiesPortion);
 
         } else {
-            BigDecimal percentageVatPlusOne = vatPercentage.add(BigDecimal.ONE);
+            BigDecimal percentageVatPlusOne = vatConverted.add(BigDecimal.ONE);
             BigDecimal feeChargesPortion = transactionAmountRemaining.getAmount().divide(percentageVatPlusOne, MoneyHelper.getMathContext());
             BigDecimal vatPortion = transactionAmountRemaining.getAmount().subtract(feeChargesPortion);
 
-            this.penaltyChargesPaid = getPenaltyChargesPaid(currency).plus(transactionAmountRemaining).getAmount();
+            this.penaltyChargesPaid = getPenaltyChargesPaid(currency).plus(feeChargesPortion).getAmount();
             this.vatOnChargePaid = getVatOnChargePaid(currency).plus(vatPortion).getAmount();
-            penaltyPortionOfTransaction = penaltyPortionOfTransaction.plus(transactionAmountRemaining);
+            penaltyPortionOfTransaction = penaltyPortionOfTransaction.plus(feeChargesPortion);
             vatPortionOfTransaction = vatPortionOfTransaction.plus(vatPortion);
         }
 
@@ -548,8 +547,8 @@ public final class LoanRepaymentScheduleInstallment extends AbstractAuditableCus
             feePortionOfTransaction = feePortionOfTransaction.plus(feeChargesDue);
             vatPortionOfTransaction = vatPortionOfTransaction.plus(vatOnFeesPortion);
         } else {
-            BigDecimal percentageVatPlusOne = vatPercentage.add(BigDecimal.ONE);
-            BigDecimal feeChargesPortion = transactionAmountRemaining.getAmount().divide(percentageVatPlusOne, MathContext.DECIMAL32);
+            BigDecimal percentageVatPlusOne = vatConverted.add(BigDecimal.ONE);
+            BigDecimal feeChargesPortion = transactionAmountRemaining.getAmount().divide(percentageVatPlusOne, MoneyHelper.getMathContext());
             BigDecimal vatPortion = transactionAmountRemaining.getAmount().subtract(feeChargesPortion);
 
             this.feeChargesPaid = getFeeChargesPaid(currency).plus(feeChargesPortion).getAmount();
@@ -612,8 +611,8 @@ public final class LoanRepaymentScheduleInstallment extends AbstractAuditableCus
             interestPortionOfTransaction = interestPortionOfTransaction.plus(interestDue);
             vatOnInterestPortionOfTransaction = vatOnInterestPortionOfTransaction.plus(vatOnInterestPortion);
         } else {
-            BigDecimal percentageVatPlusOne = vatPercentage.add(BigDecimal.ONE);
-            BigDecimal interestPort = transactionAmountRemaining.getAmount().divide(percentageVatPlusOne, MathContext.DECIMAL32);
+            BigDecimal percentageVatPlusOne = vatConverted.add(BigDecimal.ONE);
+            BigDecimal interestPort = transactionAmountRemaining.getAmount().divide(percentageVatPlusOne, MoneyHelper.getMathContext());
             BigDecimal vatPortion = transactionAmountRemaining.getAmount().subtract(interestPort);
 
             this.interestPaid = getInterestPaid(currency).plus(interestPort).getAmount();
