@@ -34,6 +34,7 @@ import org.apache.fineract.infrastructure.core.service.database.DatabaseSpecific
 import org.apache.fineract.organisation.monetary.domain.ApplicationCurrency;
 import org.apache.fineract.organisation.monetary.domain.ApplicationCurrencyRepositoryWrapper;
 import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
+import org.apache.fineract.organisation.monetary.domain.Money;
 import org.apache.fineract.organisation.monetary.domain.MoneyHelper;
 import org.apache.fineract.portfolio.loanaccount.data.LoanChargeData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanInstallmentChargeData;
@@ -209,6 +210,15 @@ public class LoanAccrualWritePlatformServiceImpl implements LoanAccrualWritePlat
         if (amount.compareTo(BigDecimal.ZERO) > 0) {
             addAccrualAccounting(accrualData, amount, interestportion, totalAccInterest, feeportion, totalAccFee, penaltyportion,
                     totalAccPenalty, tilldate);
+            // check if needed to generate accrual vat transaction for this accrual transaction
+            Loan loan = this.loanRepositoryWrapper.findOneWithNotFoundDetection(accrualData.getLoanId(), true);
+            if (loan != null && loan.isVatRequired() && loan.getVatPercentage() != null) {
+                final Money interestApplied = Money.of(loan.getCurrency(), interestportion);
+                Money vatOnInterest = loan.calculateVatOnAmount(interestApplied);
+                if (vatOnInterest.isGreaterThanZero()) {
+                    addAccrualVatAccounting(accrualData, vatOnInterest.getAmount(), tilldate);
+                }
+            }
         }
     }
 
@@ -260,6 +270,16 @@ public class LoanAccrualWritePlatformServiceImpl implements LoanAccrualWritePlat
         if (amount.compareTo(BigDecimal.ZERO) > 0) {
             addAccrualAccounting(scheduleAccrualData, amount, interestportion, totalAccInterest, feeportion, totalAccFee, penaltyportion,
                     totalAccPenalty, scheduleAccrualData.getDueDateAsLocaldate());
+
+            // check if needed to generate accrual vat transaction for this accrual transaction
+            Loan loan = this.loanRepositoryWrapper.findOneWithNotFoundDetection(scheduleAccrualData.getLoanId(), true);
+            if (loan != null && loan.isVatRequired() && loan.getVatPercentage() != null) {
+                final Money interestApplied = Money.of(loan.getCurrency(), interestportion);
+                Money vatOnInterest = loan.calculateVatOnAmount(interestApplied);
+                if (vatOnInterest.isGreaterThanZero()) {
+                    addAccrualVatAccounting(scheduleAccrualData, vatOnInterest.getAmount(), scheduleAccrualData.getDueDateAsLocaldate());
+                }
+            }
         }
     }
 
@@ -272,26 +292,41 @@ public class LoanAccrualWritePlatformServiceImpl implements LoanAccrualWritePlat
                 LoanTransactionType.ACCRUAL.getValue(), accruedTill, amount, interestportion, feeportion, penaltyportion,
                 DateUtils.getBusinessLocalDate());
         @SuppressWarnings("deprecation")
-        final Long transactonId = this.jdbcTemplate.queryForObject("SELECT " + sqlGenerator.lastInsertId(), Long.class); // NOSONAR
+        final Long transactionId = this.jdbcTemplate.queryForObject("SELECT " + sqlGenerator.lastInsertId(), Long.class); // NOSONAR
 
         Map<LoanChargeData, BigDecimal> applicableCharges = scheduleAccrualData.getApplicableCharges();
-        String chargespaidSql = "INSERT INTO m_loan_charge_paid_by (loan_transaction_id, loan_charge_id, amount,installment_number) VALUES (?,?,?,?)";
+        String chargesPaidSql = "INSERT INTO m_loan_charge_paid_by (loan_transaction_id, loan_charge_id, amount,installment_number) VALUES (?,?,?,?)";
         for (Map.Entry<LoanChargeData, BigDecimal> entry : applicableCharges.entrySet()) {
             LoanChargeData chargeData = entry.getKey();
-            this.jdbcTemplate.update(chargespaidSql, transactonId, chargeData.getId(), entry.getValue(),
+            this.jdbcTemplate.update(chargesPaidSql, transactionId, chargeData.getId(), entry.getValue(),
                     scheduleAccrualData.getInstallmentNumber());
         }
 
-        Map<String, Object> transactionMap = toMapData(transactonId, amount, interestportion, feeportion, penaltyportion,
+        Map<String, Object> transactionMap = toMapData(transactionId, amount, interestportion, feeportion, penaltyportion,
                 scheduleAccrualData, accruedTill);
 
-        String repaymetUpdatesql = "UPDATE m_loan_repayment_schedule SET accrual_interest_derived=?, accrual_fee_charges_derived=?, "
+        String repaymetUpdateSql = "UPDATE m_loan_repayment_schedule SET accrual_interest_derived=?, accrual_fee_charges_derived=?, "
                 + "accrual_penalty_charges_derived=? WHERE  id=?";
-        this.jdbcTemplate.update(repaymetUpdatesql, totalAccInterest, totalAccFee, totalAccPenalty,
+        this.jdbcTemplate.update(repaymetUpdateSql, totalAccInterest, totalAccFee, totalAccPenalty,
                 scheduleAccrualData.getRepaymentScheduleId());
 
         String updateLoan = "UPDATE m_loan  SET accrued_till=?  WHERE  id=?";
         this.jdbcTemplate.update(updateLoan, accruedTill, scheduleAccrualData.getLoanId());
+        final Map<String, Object> accountingBridgeData = deriveAccountingBridgeData(scheduleAccrualData, transactionMap);
+        this.journalEntryWritePlatformService.createJournalEntriesForLoan(accountingBridgeData);
+    }
+
+    private void addAccrualVatAccounting(LoanScheduleAccrualData scheduleAccrualData, BigDecimal amount, final LocalDate accruedTill)
+            throws DataAccessException {
+        String transactionSql = "INSERT INTO m_loan_transaction  (loan_id,office_id,is_reversed,transaction_type_enum,transaction_date,amount, "
+                + "vat_on_interest_portion, submitted_on_date) VALUES (?, ?, false, ?, ?, ?, ?, ?)";
+        this.jdbcTemplate.update(transactionSql, scheduleAccrualData.getLoanId(), scheduleAccrualData.getOfficeId(),
+                LoanTransactionType.ACCRUAL_VAT.getValue(), accruedTill, amount, amount, DateUtils.getBusinessLocalDate());
+        @SuppressWarnings("deprecation")
+        final Long transactionId = this.jdbcTemplate.queryForObject("SELECT " + sqlGenerator.lastInsertId(), Long.class); // NOSONAR
+
+        Map<String, Object> transactionMap = toMapAccrualData(transactionId, amount, scheduleAccrualData, accruedTill);
+
         final Map<String, Object> accountingBridgeData = deriveAccountingBridgeData(scheduleAccrualData, transactionMap);
         this.journalEntryWritePlatformService.createJournalEntriesForLoan(accountingBridgeData);
     }
@@ -351,6 +386,28 @@ public class LoanAccrualWritePlatformServiceImpl implements LoanAccrualWritePlat
             }
             thisTransactionData.put("loanChargesPaid", loanChargesPaidData);
         }
+
+        return thisTransactionData;
+    }
+
+    public Map<String, Object> toMapAccrualData(final Long id, final BigDecimal amount,
+            final LoanScheduleAccrualData loanScheduleAccrualData, final LocalDate accruredTill) {
+        final Map<String, Object> thisTransactionData = new LinkedHashMap<>();
+
+        final LoanTransactionEnumData transactionType = LoanEnumerations.transactionType(LoanTransactionType.ACCRUAL_VAT);
+
+        thisTransactionData.put("id", id);
+        thisTransactionData.put("officeId", loanScheduleAccrualData.getOfficeId());
+        thisTransactionData.put("type", transactionType);
+        thisTransactionData.put("reversed", false);
+        thisTransactionData.put("date", accruredTill);
+        thisTransactionData.put("currency", loanScheduleAccrualData.getCurrencyData());
+        thisTransactionData.put("amount", amount);
+        thisTransactionData.put("principalPortion", null);
+        thisTransactionData.put("interestPortion", null);
+        thisTransactionData.put("feeChargesPortion", null);
+        thisTransactionData.put("penaltyChargesPortion", null);
+        thisTransactionData.put("overPaymentPortion", null);
 
         return thisTransactionData;
     }

@@ -738,7 +738,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         return applyLoanChargeTransaction;
     }
 
-    private Money calculateVatOnAmount(Money amountForVat) {
+    public Money calculateVatOnAmount(Money amountForVat) {
         Money vatAmount;
         BigDecimal decimalComparator = BigDecimal.valueOf(0.55);
         BigDecimal scaledAmountForVat = amountForVat.getAmount().setScale(2, RoundingMode.HALF_UP);
