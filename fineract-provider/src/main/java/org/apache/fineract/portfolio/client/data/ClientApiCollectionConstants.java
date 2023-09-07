@@ -53,7 +53,7 @@ public class ClientApiCollectionConstants extends ClientApiConstants {
             referenceDataParamName, streetParamName, avenueParamName, houseNumberParamName, colonyParamName, sectorParamName,
             batchParamName, squareParamName, zoneParamName, lightDeviceNumberParamName, STREET_NUMBER, PUBLIC_SERVICES, COMMUNITY_YEARS,loanCycleParamName,
             groupNumberParamName, groupMemberParamName, statusInGroupParamName, retirementReasonParamName, civilStatusParamName, educationLevelParamName,
-            ethinicityParamName,nationalityParamName,languagesParamName,economicSectorParamName, economicActivityParamName,familyReferenceParamName));
+            ethinicityParamName,nationalityParamName,languagesParamName,economicSectorParamName, economicActivityParamName,familyReferenceParamName,maidenNameParamName,otherNamesParamName));
 
     protected static final Set<String> CLIENT_NON_PERSON_UPDATE_REQUEST_DATA_PARAMETERS = new HashSet<>(
             Arrays.asList(localeParamName, dateFormatParamName, incorpNumberParamName, remarksParamName, incorpValidityTillParamName,
