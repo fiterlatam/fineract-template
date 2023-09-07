@@ -18,11 +18,10 @@
  */
 package org.apache.fineract.organisation.prequalification.service;
 
-import java.util.Collection;
 import org.apache.fineract.organisation.prequalification.data.PrequalificationChecklistData;
 
 public interface PrequalificationChecklistReadPlatformService {
 
-    Collection<PrequalificationChecklistData> retrievePrequalificationChecklists(final Integer prequalificationId);
+    PrequalificationChecklistData retrieveHardPolicyValidationResults(final Integer prequalificationId);
 
 }

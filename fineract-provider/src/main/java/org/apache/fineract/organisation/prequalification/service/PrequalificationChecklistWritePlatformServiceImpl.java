@@ -91,7 +91,8 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
             prequalificationChecklistResult.setPrequalificationId(prequalificationId);
             prequalificationChecklistResult.setCategoryId(policyCategoryData.getId());
             prequalificationChecklistResult.setPrequalificationType(PrequalificationType.GROUP.getValue());
-            CheckValidationColor checkValidationColor = this.validateGenericPolicy(HardPolicyCategory.fromInt(policyCategoryData.getId()));
+            CheckValidationColor checkValidationColor = this.validateGenericPolicy(HardPolicyCategory.fromInt(policyCategoryData.getId()),
+                    null, prequalificationGroup);
             prequalificationChecklistResult.setValidationColor(checkValidationColor.getValue());
             AppUser authenticatedUser = platformSecurityContext.authenticatedUser();
             final LocalDateTime localDateTime = DateUtils.getLocalDateTimeOfSystem();
@@ -113,7 +114,7 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
                 validationChecklistResult.setPrequalificationMemberId(clientData.getPrequalificationMemberId());
                 validationChecklistResult.setPrequalificationType(PrequalificationType.INDIVIDUAL.getValue());
                 CheckValidationColor checkValidationColor = this
-                        .validateGenericPolicy(HardPolicyCategory.fromInt(policyCategoryData.getId()));
+                        .validateGenericPolicy(HardPolicyCategory.fromInt(policyCategoryData.getId()), clientData, prequalificationGroup);
                 validationChecklistResult.setValidationColor(checkValidationColor.getValue());
                 AppUser authenticatedUser = platformSecurityContext.authenticatedUser();
                 final LocalDateTime localDateTime = DateUtils.getLocalDateTimeOfSystem();
@@ -130,7 +131,7 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
         return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withEntityId(prequalificationId).build();
     }
 
-    private static final class CheckCategoryMapper implements RowMapper<HardPolicyCategoryData> {
+    static final class CheckCategoryMapper implements RowMapper<HardPolicyCategoryData> {
 
         public String schema() {
             return """
@@ -180,10 +181,11 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
         }
     }
 
-    private CheckValidationColor validateGenericPolicy(HardPolicyCategory hardPolicyCategory) {
+    private CheckValidationColor validateGenericPolicy(final HardPolicyCategory hardPolicyCategory, final ClientData clientData,
+            final PrequalificationGroup prequalificationGroup) {
         CheckValidationColor checkValidationColor;
         switch (hardPolicyCategory) {
-            case NEW_CLIENT -> checkValidationColor = this.handleNewClientCheck();
+            case NEW_CLIENT -> checkValidationColor = this.handleNewClientCheck(clientData);
             case RECURRING_CUSTOMER -> checkValidationColor = this.handleRecurringClientCheck();
             case INCREASE_PERCENTAGE -> checkValidationColor = this.handleIncreasePercentageCheck();
             case MANDATORY_PHOTO_GRAPH -> checkValidationColor = this.handleMandatoryPhotographCheck();
@@ -217,8 +219,18 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
         return checkValidationColor;
     }
 
-    private CheckValidationColor handleNewClientCheck() {
-        return CheckValidationColor.GREEN;
+    private CheckValidationColor handleNewClientCheck(final ClientData clientData) {
+        CheckValidationColor checkValidationColor = CheckValidationColor.GREEN;
+        final Integer clientId = clientData.getClientId();
+        if (clientId != null) {
+            final String sql = "SELECT COALESCE(MAX(ml.loan_counter), 0) FROM m_loan ml WHERE ml.client_id = ?";
+            Integer loanCycleCount = this.jdbcTemplate.queryForObject(sql, Integer.class, clientId);
+            if (0 == loanCycleCount) {
+                checkValidationColor = CheckValidationColor.GREEN;
+            }
+
+        }
+        return checkValidationColor;
     }
 
     private CheckValidationColor handleRecurringClientCheck() {

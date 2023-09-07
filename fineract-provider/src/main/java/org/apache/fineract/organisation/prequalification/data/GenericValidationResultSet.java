@@ -18,14 +18,14 @@
  */
 package org.apache.fineract.organisation.prequalification.data;
 
-import java.io.Serializable;
+import java.util.List;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 
-@Data
 @RequiredArgsConstructor
-public class PrequalificationChecklistData implements Serializable {
+@Data
+public class GenericValidationResultSet {
 
-    private final GenericValidationResultSet prequalification;
-    private final GenericValidationResultSet members;
+    private final List<String> columnHeaders;
+    private final List<List<String>> rows;
 }

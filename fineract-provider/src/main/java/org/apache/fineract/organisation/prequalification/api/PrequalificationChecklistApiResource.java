@@ -20,7 +20,6 @@ package org.apache.fineract.organisation.prequalification.api;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 import javax.ws.rs.Consumes;
@@ -79,12 +78,12 @@ public class PrequalificationChecklistApiResource {
     @GET
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
-    public String retrievePrequalificationChecklists(@QueryParam("prequalificationId") final Integer prequalificationId,
+    public String retrieveHardPolicyValidationResults(@QueryParam("prequalificationId") final Integer prequalificationId,
             @QueryParam("groupId") final Integer groupId, @QueryParam("clientId") final Integer clientId, @Context final UriInfo uriInfo) {
         this.context.authenticatedUser().validateHasReadPermission(this.resourceNameForPermissions);
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
-        Collection<PrequalificationChecklistData> prequalificationChecklistDataList = prequalificationChecklistReadPlatformService
-                .retrievePrequalificationChecklists(prequalificationId);
+        PrequalificationChecklistData prequalificationChecklistDataList = prequalificationChecklistReadPlatformService
+                .retrieveHardPolicyValidationResults(prequalificationId);
         return this.toApiJsonSerializer.serialize(settings, prequalificationChecklistDataList,
                 this.prequalificationChecklistDataParameters);
     }
