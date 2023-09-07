@@ -36,7 +36,8 @@ public class ClientApiCollectionConstants extends ClientApiConstants {
             referenceDataParamName, streetParamName, avenueParamName, houseNumberParamName, colonyParamName, sectorParamName,
             batchParamName, squareParamName, zoneParamName, lightDeviceNumberParamName, STREET_NUMBER, PUBLIC_SERVICES, COMMUNITY_YEARS,loanCycleParamName,
             groupNumberParamName, groupMemberParamName, statusInGroupParamName, retirementReasonParamName, civilStatusParamName, educationLevelParamName,
-            ethinicityParamName,nationalityParamName,languagesParamName,economicSectorParamName, economicActivityParamName,otherNamesParamName,maidenNameParamName));
+            ethinicityParamName,nationalityParamName,languagesParamName,economicSectorParamName, economicActivityParamName,otherNamesParamName,
+            maidenNameParamName,familyReferenceParamName));
 
     protected static final Set<String> CLIENT_NON_PERSON_CREATE_REQUEST_DATA_PARAMETERS = new HashSet<>(
             Arrays.asList(familyMembers, address, localeParamName, dateFormatParamName, incorpNumberParamName, remarksParamName,
@@ -52,7 +53,7 @@ public class ClientApiCollectionConstants extends ClientApiConstants {
             referenceDataParamName, streetParamName, avenueParamName, houseNumberParamName, colonyParamName, sectorParamName,
             batchParamName, squareParamName, zoneParamName, lightDeviceNumberParamName, STREET_NUMBER, PUBLIC_SERVICES, COMMUNITY_YEARS,loanCycleParamName,
             groupNumberParamName, groupMemberParamName, statusInGroupParamName, retirementReasonParamName, civilStatusParamName, educationLevelParamName,
-            ethinicityParamName,nationalityParamName,languagesParamName,economicSectorParamName, economicActivityParamName));
+            ethinicityParamName,nationalityParamName,languagesParamName,economicSectorParamName, economicActivityParamName,familyReferenceParamName));
 
     protected static final Set<String> CLIENT_NON_PERSON_UPDATE_REQUEST_DATA_PARAMETERS = new HashSet<>(
             Arrays.asList(localeParamName, dateFormatParamName, incorpNumberParamName, remarksParamName, incorpValidityTillParamName,

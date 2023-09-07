@@ -213,6 +213,7 @@ public class ClientApiConstants {
     public static final String groupNumberParamName = "groupNumber";
     public static final String otherNamesParamName = "othernames";
     public static final String maidenNameParamName = "maidenName";
+    public static final String familyReferenceParamName = "familyReference";
     public static final String groupMemberParamName = "groupMember";
     public static final String statusInGroupParamName = "statusInGroup";
     public static final String retirementReasonParamName = "retirementReason";
