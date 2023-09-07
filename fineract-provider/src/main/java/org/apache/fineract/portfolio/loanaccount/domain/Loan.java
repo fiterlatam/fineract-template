@@ -2573,7 +2573,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                     actualDisbursementDate);
             addLoanTransaction(interestAppliedTransaction);
 
-            // Check if VAT is required in order to calculate the VAT amount for the interest
+            // ABA-135 - Check if VAT is required in order to calculate the VAT amount for the interest
             if (this.isVatRequired() && this.vatPercentage != null) {
                 Money vatOnInterest = calculateVatOnAmount(interestApplied);
 

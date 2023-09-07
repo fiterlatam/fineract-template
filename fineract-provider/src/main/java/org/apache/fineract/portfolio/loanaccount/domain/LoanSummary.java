@@ -292,8 +292,13 @@ public final class LoanSummary {
                 .getAmount();
         this.totalVatOnInterestOutstanding = totalVatChargedOnInterest.minus(this.totalVatOnInterestPaid)
                 .minus(this.totalVatOnInterestWaived).minus(this.totalVatOnInterestWrittenOff).getAmount();
-        this.totalVatOnInterestOverdue = summaryWrapper.calculateTotalVatOnInterestOverdue(repaymentScheduleInstallments, currency)
-                .minus(this.totalVatOnInterestPaid).getAmount();
+
+        final Money totalVatOnInterestOverdue = summaryWrapper.calculateTotalVatOnInterestOverdue(repaymentScheduleInstallments, currency);
+        if (totalVatOnInterestOverdue.isGreaterThanZero()) {
+            this.totalVatOnInterestOverdue = totalVatOnInterestOverdue.minus(this.totalVatOnInterestPaid).getAmount();
+        } else {
+            this.totalVatOnInterestOverdue = BigDecimal.ZERO;
+        }
 
         // Calculation for charges
         final Money totalFeeChargesCharged = summaryWrapper.calculateTotalFeeChargesCharged(repaymentScheduleInstallments, currency)
@@ -343,8 +348,8 @@ public final class LoanSummary {
                 .minus(this.totalVatOnChargePaid).getAmount();
 
         final Money totalExpectedRepayment = Money.of(currency, this.totalPrincipalDisbursed).plus(originationFees)
-                .plus(this.totalInterestCharged).plus(this.totalFeeChargesCharged).plus(this.totalVatOnInterestCharged)
-                .plus(this.totalVatOnChargeExpected);
+                .plus(this.totalInterestCharged).plus(this.totalFeeChargesCharged).plus(totalPenaltyChargesCharged)
+                .plus(this.totalVatOnInterestCharged).plus(this.totalVatOnChargeExpected);
         this.totalExpectedRepayment = totalExpectedRepayment.getAmount();
 
         final Money totalRepayment = Money.of(currency, this.totalPrincipalRepaid).plus(this.totalInterestRepaid)
