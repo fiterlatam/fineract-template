@@ -773,6 +773,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         return newRefundTransaction;
     }
 
+    @Transactional
     @Override
     public Map<String, Object> foreCloseLoan(final Loan loan, final LocalDate foreClosureDate, final String noteText) {
         businessEventNotifierService.notifyPreBusinessEvent(new LoanForeClosurePreBusinessEvent(loan));
@@ -837,32 +838,28 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
             payment = LoanTransaction.repayment(loan.getOffice(),
                     payPrincipal.plus(interestPayable).plus(feePayable).plus(penaltyPayable).plus(vatOnInterest).plus(vatOnCharges),
                     paymentDetail, foreClosureDate, externalId);
-            payment.updateLoan(loan);
 
             // ABA-135 - Create separate transactions for VAT on interest and VAT on charge
             // Check if VAT is required in order to calculate the VAT amount for the charge and create the transaction
             if (loan.isVatRequired() && loan.getVatPercentage() != null && payment.isRepayment()) {
+                payment.updateVatComponents(vatOnInterest, vatOnCharges);
 
                 // generate transaction for accrual vat on charge
                 LoanTransaction applyLoanVatOnChargeTransaction = makeAccrualTransactionForVatOnCharge(loan, foreClosureDate, payment);
                 if (applyLoanVatOnChargeTransaction != null) {
-                    newTransactions.add(applyLoanVatOnChargeTransaction);
+                    saveLoanTransactionWithDataIntegrityViolationChecks(applyLoanVatOnChargeTransaction);
+                    loan.addLoanTransaction(applyLoanVatOnChargeTransaction);
                 }
 
                 // generate transaction for accrual vat on interest
                 LoanTransaction applyLoanVatOnInterestTransaction = makeAccrualTransactionForVatOnInterest(loan, foreClosureDate, payment);
                 if (applyLoanVatOnInterestTransaction != null) {
-                    newTransactions.add(applyLoanVatOnInterestTransaction);
+                    saveLoanTransactionWithDataIntegrityViolationChecks(applyLoanVatOnInterestTransaction);
+                    loan.addLoanTransaction(applyLoanVatOnInterestTransaction);
                 }
-
-                // vatOntInterest portion and vatOnCharges portion must be zero in the new repayment transaction
-                payment.updateVatComponents(Money.zero(currency), Money.zero(currency));
-
-                // update the total amount of the transaction
-                payment.updateTotal(currency);
-
             }
-
+            payment.updateVatComponents(Money.zero(currency), Money.zero(currency));
+            payment.updateLoan(loan);
             newTransactions.add(payment);
         }
 
