@@ -31,6 +31,7 @@ public final class RestructureCreditsRequestData {
     private final Long id;
     private String clientName;
     private String productName;
+    private Long productId;
     private BigDecimal totalLoanAmount;
     private EnumOptionData status;
     private LocalDateTime newDisbursementDate;
@@ -45,7 +46,7 @@ public final class RestructureCreditsRequestData {
 
 
     private RestructureCreditsRequestData(
-            final Long id,final String clientName, final String productName, final BigDecimal totalLoanAmount,
+            final Long id,final String clientName, final String productName, final Long productId, final BigDecimal totalLoanAmount,
             final EnumOptionData status,final LocalDateTime newDisbursementDate,final String comments,
             final LocalDateTime dateRequested,final String requestedByUser,final LocalDateTime approvedOnDate,
             final String approvedByUser,final LocalDateTime lastModifiedDate,final String modifiedByUser) {
@@ -63,18 +64,19 @@ public final class RestructureCreditsRequestData {
         this.approvedByUser=approvedByUser;
         this.lastModifiedDate=lastModifiedDate;
         this.modifiedByUser=modifiedByUser;
+        this.productId=productId;
     }
 
     /**
      * template of the restructure credits params
      * @return
      */
-    public static RestructureCreditsRequestData instance(final Long id,final String clientName, final String productName, final BigDecimal totalLoanAmount,
+    public static RestructureCreditsRequestData instance(final Long id,final String clientName, final String productName, final Long productId, final BigDecimal totalLoanAmount,
                                                          final EnumOptionData status,final LocalDateTime newDisbursementDate,final String comments,
                                                          final LocalDateTime dateRequested,final String requestedByUser,final LocalDateTime approvedOnDate,
                                                          final String approvedByUser,final LocalDateTime lastModifiedDate,final String modifiedByUser) {
 
-        return new RestructureCreditsRequestData(id, clientName, productName, totalLoanAmount, status,
+        return new RestructureCreditsRequestData(id, clientName, productName,productId, totalLoanAmount, status,
                 newDisbursementDate, comments, dateRequested, requestedByUser, approvedOnDate, approvedByUser,
                 lastModifiedDate, modifiedByUser);
     }

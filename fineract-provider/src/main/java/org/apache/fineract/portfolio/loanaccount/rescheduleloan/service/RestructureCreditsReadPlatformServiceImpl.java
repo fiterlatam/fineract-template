@@ -105,6 +105,7 @@ public class RestructureCreditsReadPlatformServiceImpl implements RestructureCre
                     "approver.username as approvedBy," +
                     "modifier.username as modifiedBy," +
                     "rcr.date_approved, " +
+                    "rcr.product_id as productId, " +
                     "rcr.lastmodified_date " +
                     "from m_restructure_credit_requests rcr " +
                     "inner join m_client mc on mc.id = rcr.client_id "+
@@ -122,6 +123,7 @@ public class RestructureCreditsReadPlatformServiceImpl implements RestructureCre
         public RestructureCreditsRequestData mapRow(final ResultSet rs, final int rowNum) throws SQLException {
 
             final Long id = JdbcSupport.getLong(rs, "id");
+            final Long productId = JdbcSupport.getLong(rs, "productId");
             final Integer statusEnum = JdbcSupport.getInteger(rs, "status");
             final EnumOptionData status = RestructureStatusEnumerations.status(statusEnum);
             String clientName = rs.getString("display_name");
@@ -136,7 +138,7 @@ public class RestructureCreditsReadPlatformServiceImpl implements RestructureCre
             final LocalDateTime newDisbursementDate = JdbcSupport.getLocalDateTime(rs, "new_disbursement_date");
             final BigDecimal totalLoanAmount = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "total_loan_amount");
 
-            return RestructureCreditsRequestData.instance(id, clientName, productName, totalLoanAmount, status, newDisbursementDate,
+            return RestructureCreditsRequestData.instance(id, clientName, productName, productId, totalLoanAmount, status, newDisbursementDate,
                     comments, dateRequested, createdBy, dateApproved, approvedBy, dateModified, modifiedBy);
 
         }

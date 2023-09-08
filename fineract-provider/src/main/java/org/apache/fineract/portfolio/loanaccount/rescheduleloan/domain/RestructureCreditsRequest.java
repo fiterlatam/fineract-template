@@ -190,7 +190,15 @@ public class RestructureCreditsRequest extends AbstractPersistableCustom {
         this.restructureCreditsLoanMappings.addAll(mapping);
     }
 
+    public LocalDateTime getNewDisbursementDate() {
+        return newDisbursementDate;
+    }
+
     public List<RestructureCreditsLoanMapping> getCreditMappings() {
         return this.restructureCreditsLoanMappings;
+    }
+
+    public BigDecimal getTotalLoanAmount() {
+        return totalLoanAmount;
     }
 }

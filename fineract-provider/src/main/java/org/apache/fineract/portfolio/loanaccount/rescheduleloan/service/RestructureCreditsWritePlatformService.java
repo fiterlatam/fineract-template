@@ -25,4 +25,6 @@ public interface RestructureCreditsWritePlatformService {
     CommandProcessingResult create(JsonCommand jsonCommand);
 
     CommandProcessingResult approve(JsonCommand jsonCommand);
+
+    CommandProcessingResult reject(JsonCommand jsonCommand);
 }
