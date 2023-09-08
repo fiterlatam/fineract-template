@@ -3772,4 +3772,28 @@ public class CommandWrapperBuilder {
         this.href = "/restructurecredits/" + clientId;
         return this;
     }
+
+    public CommandWrapperBuilder createBank() {
+        this.actionName = "CREATE";
+        this.entityName = "BANK";
+        this.entityId = null;
+        this.href = "/banks";
+        return this;
+    }
+
+    public CommandWrapperBuilder updateBank(final Long bankId) {
+        this.actionName = "UPDATE";
+        this.entityName = "BANK";
+        this.entityId = bankId;
+        this.href = "/banks/" + bankId;
+        return this;
+    }
+
+    public CommandWrapperBuilder deleteBank(final Long bankId) {
+        this.actionName = "DELETE";
+        this.entityName = "BANK";
+        this.entityId = bankId;
+        this.href = "/banks/" + bankId;
+        return this;
+    }
 }

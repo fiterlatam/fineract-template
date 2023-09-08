@@ -275,6 +275,19 @@ public final class SearchParameters {
                 staffId, accountNo, loanId, savingsId, orphansOnly, isSelfUser);
     }
 
+    public static SearchParameters forBanks(final Integer offset, final Integer limit,
+                                                final String orderBy, final String sortOrder, String searchText) {
+
+        final Integer maxLimitAllowed = getCheckedLimit(limit);
+        final Long staffId = null;
+        final String accountNo = null;
+        final Long loanId = null;
+        final Long savingsId = null;
+
+        return new SearchParameters(searchText, null, null, null, null, null, null, null, offset, maxLimitAllowed, orderBy,
+                sortOrder, staffId, accountNo, loanId, savingsId, null, false, null);
+    }
+
     private SearchParameters(final String sqlSearch, final Long officeId, final String externalId, final String name,
             final String hierarchy, final String firstname, final String lastname, final Integer offset, final Integer limit,
             final String orderBy, final String sortOrder, final Long staffId, final String accountNo, final Long loanId,
