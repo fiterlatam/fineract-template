@@ -57,10 +57,15 @@ import org.apache.fineract.portfolio.address.data.AddressData;
 import org.apache.fineract.portfolio.address.service.AddressReadPlatformService;
 import org.apache.fineract.portfolio.client.api.ClientApiConstants;
 import org.apache.fineract.portfolio.client.data.ClientCollateralManagementData;
+import org.apache.fineract.portfolio.client.data.ClientContactInformationData;
 import org.apache.fineract.portfolio.client.data.ClientData;
 import org.apache.fineract.portfolio.client.data.ClientFamilyMembersData;
+import org.apache.fineract.portfolio.client.data.ClientInfoRelatedDetailData;
 import org.apache.fineract.portfolio.client.data.ClientNonPersonData;
 import org.apache.fineract.portfolio.client.data.ClientTimelineData;
+import org.apache.fineract.portfolio.client.data.EconomicActivityData;
+import org.apache.fineract.portfolio.client.data.EconomicSectorData;
+import org.apache.fineract.portfolio.client.domain.ClientContactInformationRepository;
 import org.apache.fineract.portfolio.client.domain.ClientEnumerations;
 import org.apache.fineract.portfolio.client.domain.ClientStatus;
 import org.apache.fineract.portfolio.client.domain.LegalForm;
@@ -71,6 +76,7 @@ import org.apache.fineract.portfolio.group.data.GroupGeneralData;
 import org.apache.fineract.portfolio.savings.data.SavingsProductData;
 import org.apache.fineract.portfolio.savings.service.SavingsProductReadPlatformService;
 import org.apache.fineract.useradministration.domain.AppUser;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -94,6 +100,8 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
     private final ClientLookupMapper lookupMapper = new ClientLookupMapper();
     private final ClientMembersOfGroupMapper membersOfGroupMapper = new ClientMembersOfGroupMapper();
     private final ParentGroupsMapper clientGroupsMapper = new ParentGroupsMapper();
+    private final ContactInformationMapper contactInformationMapper = new ContactInformationMapper();
+    private final ClientPublicServiceMapper publicServiceMapper = new ClientPublicServiceMapper();
 
     private final AddressReadPlatformService addressReadPlatformService;
     private final ClientFamilyMembersReadPlatformService clientFamilyMembersReadPlatformService;
@@ -101,6 +109,8 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
     private final EntityDatatableChecksReadService entityDatatableChecksReadService;
     private final ColumnValidator columnValidator;
     private final ClientCollateralManagementRepositoryWrapper clientCollateralManagementRepositoryWrapper;
+    private final ClientContactInformationRepository clientContactInformationRepository;
+    private final EconomicActivityReadPlatformService economicActivityReadPlatformService;
 
     @Override
     public ClientData retrieveTemplate(final Long officeId, final boolean staffInSelectedOfficeOnly) {
@@ -152,13 +162,15 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
 
         final List<EnumOptionData> clientLegalFormOptions = ClientEnumerations.legalForm(LegalForm.values());
 
+        List<EconomicSectorData> economicSectorData = this.economicActivityReadPlatformService.retrieveSectorData();
+        List<EconomicActivityData> economicActivityData = this.economicActivityReadPlatformService.retrieveEconomicActivityData();
+
         final List<DatatableData> datatableTemplates = this.entityDatatableChecksReadService
                 .retrieveTemplates(StatusEnum.CREATE.getCode().longValue(), EntityTables.CLIENT.getName(), null);
-
         return ClientData.template(defaultOfficeId, LocalDate.now(DateUtils.getDateTimeZoneOfTenant()), offices, staffOptions, null,
                 genderOptions, savingsProductDatas, clientTypeOptions, clientClassificationOptions, clientNonPersonConstitutionOptions,
                 clientNonPersonMainBusinessLineOptions, clientLegalFormOptions, familyMemberOptions,
-                new ArrayList<AddressData>(Arrays.asList(address)), isAddressEnabled, datatableTemplates);
+                new ArrayList<AddressData>(Arrays.asList(address)), isAddressEnabled, datatableTemplates,economicSectorData,economicActivityData);
     }
 
     @Override
@@ -317,7 +329,18 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
             final Collection<GroupGeneralData> parentGroups = this.jdbcTemplate.query(clientGroupsSql, this.clientGroupsMapper, // NOSONAR
                     clientId);
 
-            return ClientData.setParentGroups(clientData, parentGroups, clientCollateralManagementDataSet);
+            final String contactSql = "select " + this.contactInformationMapper.schema();
+            final List<ClientContactInformationData> contactInformationDatas = this.jdbcTemplate.query(contactSql,
+                    this.contactInformationMapper, clientId);
+            ClientContactInformationData contactInformationData = null;
+            if (!contactInformationDatas.isEmpty()) {
+                contactInformationData = contactInformationDatas.get(0);
+                final String publicServiceSql = "SELECT " + this.publicServiceMapper.schema() + " WHERE mc.id = ?";
+                final List<CodeValueData> publicServiceTypes = this.jdbcTemplate.query(publicServiceSql, this.publicServiceMapper,
+                        clientId);
+                contactInformationData.setPublicServiceTypes(publicServiceTypes);
+            }
+            return ClientData.setParentGroups(clientData, parentGroups, clientCollateralManagementDataSet, contactInformationData);
 
         } catch (final EmptyResultDataAccessException e) {
             throw new ClientNotFoundException(clientId, e);
@@ -549,7 +572,7 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
             return ClientData.instance(accountNo, status, subStatus, officeId, officeName, transferToOfficeId, transferToOfficeName, id,
                     firstname, middlename, lastname, fullname, displayName, externalId, mobileNo, emailAddress, dateOfBirth, gender,
                     activationDate, imageId, staffId, staffName, timeline, savingsProductId, savingsProductName, savingsAccountId,
-                    clienttype, classification, legalForm, clientNonPerson, isStaff, dpiNumber, oldCustomerNumber);
+                    clienttype, classification, legalForm, clientNonPerson, isStaff, dpiNumber, oldCustomerNumber,null);
 
         }
     }
@@ -577,6 +600,11 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
 
             builder.append(
                     "c.id as id, c.account_no as accountNo, c.external_id as externalId, c.status_enum as statusEnum,c.sub_status as subStatus, c.dpi as dpiNumber, c.old_customer_number as oldCustomerNumber, ");
+            builder.append("c.loan_cycle as loanCycle, c.group_member as groupMember, c.group_number as groupNumber, " +
+                    "c.status_in_group as statusInGroup, c.retirement_reason as retirementReason, c.other_names as othernames, " +
+                    "c.maiden_name as maidenName, c.civil_status as civilStatus, c.family_reference as familyReference, " +
+                    "c.ethinicity, c.education_level as educationLevel, c.nationality, c.languages, c.economic_sector as economicSector, " +
+                    " c.economic_activity as economicActivity, ");
             builder.append(
                     "cvSubStatus.code_value as subStatusValue,cvSubStatus.code_description as subStatusDesc,c.office_id as officeId, o.name as officeName, ");
             builder.append("c.transfer_to_office_id as transferToOfficeId, transferToOffice.name as transferToOfficeName, ");
@@ -727,7 +755,25 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
             final String remarks = rs.getString("remarks");
             final String dpiNumber = rs.getString("dpiNumber");
             final String oldCustomerNumber = rs.getString("oldCustomerNumber");
+            final Integer loanCycle = rs.getInt("loanCycle");
+            final String groupMember = rs.getString("groupMember");
+            final String groupNumber = rs.getString("groupNumber");
+            final String statusInGroup = rs.getString("statusInGroup");
+            final String retirementReason = rs.getString("retirementReason");
+            final String othernames = rs.getString("othernames");
+            final String maidenName = rs.getString("maidenName");
+            final String civilStatus = rs.getString("civilStatus");
+            final String familyReference = rs.getString("familyReference");
+            final String ethinicity = rs.getString("ethinicity");
+            final String educationLevel = rs.getString("educationLevel");
+            final String nationality = rs.getString("nationality");
+            final String languages = rs.getString("languages");
+            final String economicSector = rs.getString("economicSector");
+            final String economicActivity = rs.getString("economicActivity");
 
+            ClientInfoRelatedDetailData detailData = ClientInfoRelatedDetailData.instance(
+                    loanCycle, groupNumber, maidenName, othernames, groupMember, statusInGroup, retirementReason,
+                    civilStatus, educationLevel, ethinicity, nationality, languages, economicSector, economicActivity, familyReference);
             final ClientNonPersonData clientNonPerson = new ClientNonPersonData(constitution, incorpNo, incorpValidityTill,
                     mainBusinessLine, remarks);
 
@@ -738,7 +784,7 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
             return ClientData.instance(accountNo, status, subStatus, officeId, officeName, transferToOfficeId, transferToOfficeName, id,
                     firstname, middlename, lastname, fullname, displayName, externalId, mobileNo, emailAddress, dateOfBirth, gender,
                     activationDate, imageId, staffId, staffName, timeline, savingsProductId, savingsProductName, savingsAccountId,
-                    clienttype, classification, legalForm, clientNonPerson, isStaff, dpiNumber, oldCustomerNumber);
+                    clienttype, classification, legalForm, clientNonPerson, isStaff, dpiNumber, oldCustomerNumber,detailData);
 
         }
     }
@@ -758,6 +804,47 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
             final String accountNo = rs.getString("accountNo");
 
             return GroupGeneralData.lookup(groupId, accountNo, groupName);
+        }
+    }
+
+    private static final class ContactInformationMapper implements RowMapper<ClientContactInformationData> {
+
+        public String schema() {
+            return "ci.id , " + "acode.code_value as areaValue, " + "htype.code_value as housingValue, " + "ci.years_of_residence, "
+                    + "dep.code_value as department, " + "mun.code_value as municipality, " + "ci.village, " + "ci.reference_housing_data, "
+                    + "ci.street, " + "ci.avenue, " + "ci.home_number, " + "ci.colony, " + "ci.sector, " + "ci.batch, " + "ci.square, "
+                    + "ci.zone, " + "ci.light_meter_number, " + "ci.home_phone, ci.years_of_community, ci.street_number "
+                    + "from m_client_contact_info ci " + "left join m_code_value acode on acode.id = ci.area "
+                    + "left join m_code_value htype on htype.id = ci.housing_type "
+                    + "left join m_code_value dep on dep.id = ci.department_id "
+                    + "left join m_code_value mun on mun.id = ci.municipality_id " + "WHERE ci.client_id  = ?";
+        }
+
+        @Override
+        public ClientContactInformationData mapRow(final ResultSet rs, final int rowNum) throws SQLException {
+
+            final String area = rs.getString("areaValue");
+            final String housing = rs.getString("housingValue");
+            final String yearsOfResidence = rs.getString("years_of_residence");
+            final String department = rs.getString("department");
+            final String municipality = rs.getString("municipality");
+            final String village = rs.getString("village");
+            final String referenceHousingData = rs.getString("reference_housing_data");
+            final String street = rs.getString("street");
+            final String avenue = rs.getString("avenue");
+            final String homeNumber = rs.getString("home_number");
+            final String colony = rs.getString("colony");
+            final String sector = rs.getString("sector");
+            final String batch = rs.getString("batch");
+            final String square = rs.getString("square");
+            final String zone = rs.getString("zone");
+            final String lightMeterNumber = rs.getString("light_meter_number");
+            final String homePhone = rs.getString("home_phone");
+            final Integer communityYears = JdbcSupport.getInteger(rs, "years_of_community");
+            final String streetNumber = rs.getString("street_number");
+            return ClientContactInformationData.instance(area, housing, yearsOfResidence, department, municipality, village,
+                    referenceHousingData, street, avenue, homeNumber, colony, sector, batch, square, zone, lightMeterNumber, homePhone,
+                    communityYears, streetNumber);
         }
     }
 
@@ -802,6 +889,27 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
             return this.jdbcTemplate.queryForObject(sql, mapper, identifierTypeId, identifierKey); // NOSONAR
         } catch (final EmptyResultDataAccessException e) {
             return null;
+        }
+    }
+
+    private static final class ClientPublicServiceMapper implements RowMapper<CodeValueData> {
+
+        public String schema() {
+            return """
+                    mcv.id AS id,
+                    mcv.code_value AS name
+                    FROM m_code_value mcv
+                    INNER JOIN m_client_public_service mcps ON mcps.service_type_cv_id = mcv.id
+                    INNER JOIN m_client mc ON mc.id = mcps.client_id
+                    """;
+        }
+
+        @Override
+        public CodeValueData mapRow(@NotNull ResultSet rs, int rowNum) throws SQLException {
+            final Long id = rs.getLong("id");
+            final String name = rs.getString("name");
+            return CodeValueData.instance(id, name);
+
         }
     }
 
@@ -851,7 +959,7 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
         final Collection<CodeValueData> clientNonPersonMainBusinessLineOptions = null;
         final List<EnumOptionData> clientLegalFormOptions = null;
         return ClientData.template(null, null, null, null, narrations, null, null, clientTypeOptions, clientClassificationOptions,
-                clientNonPersonConstitutionOptions, clientNonPersonMainBusinessLineOptions, clientLegalFormOptions, null, null, null, null);
+                clientNonPersonConstitutionOptions, clientNonPersonMainBusinessLineOptions, clientLegalFormOptions, null, null, null, null, null, null);
     }
 
     @Override

@@ -35,27 +35,26 @@ public final class PreQualificationsEnumerations {
     }
 
     public static EnumOptionData status(final PrequalificationStatus status) {
-        EnumOptionData optionData = new EnumOptionData(PrequalificationStatus.INVALID.getValue().longValue(),
-                PrequalificationStatus.INVALID.getCode(), "INVALID");
-        switch (status) {
-            case INVALID:
-                optionData = new EnumOptionData(PrequalificationStatus.INVALID.getValue().longValue(),
-                        PrequalificationStatus.INVALID.getCode(), "INVALID");
-                break;
-            case PENDING:
-                optionData = new EnumOptionData(PrequalificationStatus.PENDING.getValue().longValue(),
-                        PrequalificationStatus.PENDING.getCode(), "PENDING");
-                break;
-            case APPROVED:
-                optionData = new EnumOptionData(PrequalificationStatus.APPROVED.getValue().longValue(),
-                        PrequalificationStatus.APPROVED.getCode(), "APPROVED");
-            case REJECTED:
-                optionData = new EnumOptionData(PrequalificationStatus.REJECTED.getValue().longValue(),
-                        PrequalificationStatus.REJECTED.getCode(), "REJECTED");
-                break;
-        }
+        new EnumOptionData(PrequalificationStatus.INVALID.getValue().longValue(), PrequalificationStatus.INVALID.getCode(), "INVALID");
 
-        return optionData;
+        return switch (status) {
+            case PENDING -> new EnumOptionData(PrequalificationStatus.PENDING.getValue().longValue(),
+                    PrequalificationStatus.PENDING.getCode(), "PENDING");
+            case APPROVED -> new EnumOptionData(PrequalificationStatus.APPROVED.getValue().longValue(),
+                    PrequalificationStatus.APPROVED.getCode(), "APPROVED");
+            case REJECTED -> new EnumOptionData(PrequalificationStatus.REJECTED.getValue().longValue(),
+                    PrequalificationStatus.REJECTED.getCode(), "REJECTED");
+            case BLACKLIST_CHECKED -> new EnumOptionData(PrequalificationStatus.BLACKLIST_CHECKED.getValue().longValue(),
+                    PrequalificationStatus.BLACKLIST_CHECKED.getCode(), "Blacklist Checked");
+            case BLACKLIST_REJECTED -> new EnumOptionData(PrequalificationStatus.BLACKLIST_REJECTED.getValue().longValue(),
+                    PrequalificationStatus.BLACKLIST_REJECTED.getCode(), "Blacklist Rejected");
+            case HARD_POLICY_CHECKED -> new EnumOptionData(PrequalificationStatus.HARD_POLICY_CHECKED.getValue().longValue(),
+                    PrequalificationStatus.HARD_POLICY_CHECKED.getCode(), "Hard Policy Checked");
+            case BURO_CHECKED -> new EnumOptionData(PrequalificationStatus.BURO_CHECKED.getValue().longValue(),
+                    PrequalificationStatus.BURO_CHECKED.getCode(), "Buro Checked");
+            default -> new EnumOptionData(PrequalificationStatus.INVALID.getValue().longValue(), PrequalificationStatus.INVALID.getCode(),
+                    "INVALID");
+        };
     }
 
     public static EnumOptionData legalForm(final Integer statusId) {

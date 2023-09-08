@@ -1523,6 +1523,10 @@ public class LoanProduct extends AbstractPersistableCustom {
         return this.loanProductGuaranteeDetails;
     }
 
+    public String getName() {
+        return name;
+    }
+
     public String getShortName() {
         return this.shortName;
     }

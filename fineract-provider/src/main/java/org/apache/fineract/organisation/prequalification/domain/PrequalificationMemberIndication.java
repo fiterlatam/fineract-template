@@ -43,6 +43,7 @@ public enum PrequalificationMemberIndication {
                 break;
             case 200:
                 enumeration = PrequalificationMemberIndication.INACTIVE;
+                break;
             case 300:
                 enumeration = PrequalificationMemberIndication.NONE;
                 break;

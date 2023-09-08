@@ -358,6 +358,9 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         }
         checkClientOrGroupActive(loan);
 
+        // validate if lDisbursement is allowed for this loan product
+        this.loanEventApiJsonValidator.validateDisbursementExistingActiveLoan(loanId);
+
         final LocalDate nextPossibleRepaymentDate = loan.getNextPossibleRepaymentDateForRescheduling();
         final LocalDate rescheduledRepaymentDate = command.localDateValueOfParameterNamed("adjustRepaymentDate");
 

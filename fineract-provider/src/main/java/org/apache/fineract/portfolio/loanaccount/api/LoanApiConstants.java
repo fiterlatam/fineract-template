@@ -123,6 +123,13 @@ public interface LoanApiConstants {
     // loan write off
     String WRITEOFFREASONS = "WriteOffReasons";
 
+    // bank agreements for loans
+    String BANKAGREEMENTS = "BancoConvenio";
+
+    // payment type for future payment constants
+    String partialPayment = "partial";
+    String totalPayment = "full";
+
     // fore closure constants
     String transactionDateParamName = "transactionDate";
     String noteParamName = "note";

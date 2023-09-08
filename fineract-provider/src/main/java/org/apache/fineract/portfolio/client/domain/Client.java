@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.Set;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
+import javax.persistence.Embedded;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.JoinColumn;
@@ -230,9 +231,19 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
     @Column(name = "old_customer_number", nullable = false)
     private String oldCustomerNumber;
 
+    @OneToOne(mappedBy = "client", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    private ClientContactInformation contactInformation;
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(name = "m_client_public_service", joinColumns = @JoinColumn(name = "client_id"), inverseJoinColumns = @JoinColumn(name = "service_type_cv_id"))
+    private Set<CodeValue> publicServiceTypes;
+
+    @Embedded
+    private ClientInfoRelatedDetail clientInfoRelatedDetail;
+
     public static Client createNew(final AppUser currentUser, final Office clientOffice, final Group clientParentGroup, final Staff staff,
-            final Long savingsProductId, final CodeValue gender, final CodeValue clientType, final CodeValue clientClassification,
-            final Integer legalForm, final JsonCommand command) {
+                                   final Long savingsProductId, final CodeValue gender, final CodeValue clientType, final CodeValue clientClassification,
+                                   final Integer legalForm,final ClientInfoRelatedDetail clientInfoRelatedDetail, final JsonCommand command) {
 
         final String accountNo = command.stringValueOfParameterNamed(ClientApiConstants.accountNoParamName);
         final String externalId = command.stringValueOfParameterNamed(ClientApiConstants.externalIdParamName);
@@ -274,18 +285,18 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
         final Long savingsAccountId = null;
         return new Client(currentUser, status, clientOffice, clientParentGroup, accountNo, firstname, middlename, lastname, fullname,
                 activationDate, officeJoiningDate, externalId, mobileNo, emailAddress, staff, submittedOnDate, savingsProductId,
-                savingsAccountId, dataOfBirth, gender, clientType, clientClassification, legalForm, isStaff, dpiNumber, oldCustomerNumber);
+                savingsAccountId, dataOfBirth, gender, clientType, clientClassification, legalForm, isStaff, dpiNumber, oldCustomerNumber, clientInfoRelatedDetail);
     }
 
     protected Client() {}
 
     private Client(final AppUser currentUser, final ClientStatus status, final Office office, final Group clientParentGroup,
-            final String accountNo, final String firstname, final String middlename, final String lastname, final String fullname,
-            final LocalDate activationDate, final LocalDate officeJoiningDate, final String externalId, final String mobileNo,
-            final String emailAddress, final Staff staff, final LocalDate submittedOnDate, final Long savingsProductId,
-            final Long savingsAccountId, final LocalDate dateOfBirth, final CodeValue gender, final CodeValue clientType,
-            final CodeValue clientClassification, final Integer legalForm, final Boolean isStaff, final String dpiNumber,
-            final String oldCustomerNumber) {
+                   final String accountNo, final String firstname, final String middlename, final String lastname, final String fullname,
+                   final LocalDate activationDate, final LocalDate officeJoiningDate, final String externalId, final String mobileNo,
+                   final String emailAddress, final Staff staff, final LocalDate submittedOnDate, final Long savingsProductId,
+                   final Long savingsAccountId, final LocalDate dateOfBirth, final CodeValue gender, final CodeValue clientType,
+                   final CodeValue clientClassification, final Integer legalForm, final Boolean isStaff, final String dpiNumber,
+                   final String oldCustomerNumber, ClientInfoRelatedDetail clientInfoRelatedDetail) {
 
         if (StringUtils.isBlank(accountNo)) {
             this.accountNumber = new RandomPasswordGenerator(19).generate();
@@ -353,6 +364,7 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
         this.setLegalForm(legalForm);
         this.dpiNumber = dpiNumber;
         this.oldCustomerNumber = oldCustomerNumber;
+        this.clientInfoRelatedDetail = clientInfoRelatedDetail;
 
         deriveDisplayName();
         validate();
@@ -627,8 +639,15 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
 
         deriveDisplayName();
 
+        if (this.clientInfoRelatedDetail==null){
+            clientInfoRelatedDetail = new ClientInfoRelatedDetail();
+        }
+
+        this.clientInfoRelatedDetail.update(command, actualChanges);
+
         return actualChanges;
     }
+
 
     private void validateNameParts(final List<ApiParameterError> dataValidationErrors) {
         final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors).resource("client");
@@ -814,6 +833,10 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
 
     public void updateOfficeJoiningDate(final LocalDate date) {
         this.officeJoiningDate = date;
+    }
+
+    public void updateClientInformation(ClientContactInformation contactInformation) {
+        this.contactInformation = contactInformation;
     }
 
     private Long staffId() {
@@ -1048,5 +1071,21 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
 
     public void updateDpiNumber(String dpiNumber) {
         this.dpiNumber = dpiNumber;
+    }
+
+    public Set<CodeValue> getPublicServiceTypes() {
+        return publicServiceTypes;
+    }
+
+    public void setPublicServiceTypes(Set<CodeValue> publicServiceTypes) {
+        this.publicServiceTypes = publicServiceTypes;
+    }
+
+    public ClientInfoRelatedDetail getClientInfoRelatedDetail() {
+        return clientInfoRelatedDetail;
+    }
+
+    public void setClientInfoRelatedDetail(ClientInfoRelatedDetail clientInfoRelatedDetail) {
+        this.clientInfoRelatedDetail = clientInfoRelatedDetail;
     }
 }

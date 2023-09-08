@@ -18,13 +18,16 @@
  */
 package org.apache.fineract.portfolio.client.service;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import javax.persistence.PersistenceException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -62,6 +65,9 @@ import org.apache.fineract.portfolio.client.api.ClientApiConstants;
 import org.apache.fineract.portfolio.client.data.ClientDataValidator;
 import org.apache.fineract.portfolio.client.domain.AccountNumberGenerator;
 import org.apache.fineract.portfolio.client.domain.Client;
+import org.apache.fineract.portfolio.client.domain.ClientContactInformation;
+import org.apache.fineract.portfolio.client.domain.ClientContactInformationRepository;
+import org.apache.fineract.portfolio.client.domain.ClientInfoRelatedDetail;
 import org.apache.fineract.portfolio.client.domain.ClientNonPerson;
 import org.apache.fineract.portfolio.client.domain.ClientNonPersonRepositoryWrapper;
 import org.apache.fineract.portfolio.client.domain.ClientRepositoryWrapper;
@@ -124,6 +130,7 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
     private final BusinessEventNotifierService businessEventNotifierService;
     private final EntityDatatableChecksWritePlatformService entityDatatableChecksWritePlatformService;
     private final JdbcTemplate jdbcTemplate;
+    private final ClientContactInformationRepository clientContactInformationRepository;
 
     @Autowired
     public ClientWritePlatformServiceJpaRepositoryImpl(final PlatformSecurityContext context,
@@ -140,7 +147,8 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
             final AddressWritePlatformService addressWritePlatformService,
             final ClientFamilyMembersWritePlatformService clientFamilyMembersWritePlatformService,
             final BusinessEventNotifierService businessEventNotifierService, final JdbcTemplate jdbcTemplate,
-            final EntityDatatableChecksWritePlatformService entityDatatableChecksWritePlatformService) {
+            final EntityDatatableChecksWritePlatformService entityDatatableChecksWritePlatformService,
+            ClientContactInformationRepository clientContactInformationRepository) {
         this.context = context;
         this.clientRepository = clientRepository;
         this.clientNonPersonRepository = clientNonPersonRepository;
@@ -165,6 +173,7 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
         this.businessEventNotifierService = businessEventNotifierService;
         this.entityDatatableChecksWritePlatformService = entityDatatableChecksWritePlatformService;
         this.jdbcTemplate = jdbcTemplate;
+        this.clientContactInformationRepository = clientContactInformationRepository;
     }
 
     @Transactional
@@ -316,10 +325,10 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
                     isEntity = legalForm.isEntity();
                 }
             }
-            String oldCustomerNumber = command.stringValueOfParameterNamed(ClientApiConstants.oldCustomerNumberParamName);
+            ClientInfoRelatedDetail clientRelatedDetails = ClientInfoRelatedDetail.createFrom(command);
 
             final Client newClient = Client.createNew(currentUser, clientOffice, clientParentGroup, staff, savingsProductId, gender,
-                    clientType, clientClassification, legalFormValue, command);
+                    clientType, clientClassification, legalFormValue,clientRelatedDetails, command);
             this.clientRepository.saveAndFlush(newClient);
             boolean rollbackTransaction = false;
             if (newClient.isActive()) {
@@ -330,6 +339,27 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
             }
 
             this.clientRepository.saveAndFlush(newClient);
+
+            ClientContactInformation clientContactInformation = ClientContactInformation.fromJson(newClient, command);
+            newClient.updateClientInformation(clientContactInformation);
+
+            final Set<CodeValue> publicServiceTypes = new HashSet<>();
+            JsonArray publicServices = command.arrayOfParameterNamed(ClientApiConstants.PUBLIC_SERVICES);
+            if (publicServices != null && !publicServices.isEmpty()) {
+                for (JsonElement publicServiceJson : publicServices) {
+                    CodeValue publicServiceType;
+                    final Long codeValueId = this.fromApiJsonHelper.extractLongNamed("id", publicServiceJson);
+                    final Boolean isChecked = this.fromApiJsonHelper.extractBooleanNamed("checked", publicServiceJson);
+                    if (codeValueId != null && Boolean.TRUE.equals(isChecked)) {
+                        publicServiceType = this.codeValueRepository.findOneWithNotFoundDetection(codeValueId);
+                        publicServiceTypes.add(publicServiceType);
+                    }
+                }
+            }
+            newClient.setPublicServiceTypes(publicServiceTypes);
+
+            this.clientRepository.saveAndFlush(newClient);
+
             if (newClient.isActive()) {
                 businessEventNotifierService.notifyPostBusinessEvent(new ClientActivateBusinessEvent(newClient));
             }
@@ -525,6 +555,28 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
             if (!changes.isEmpty()) {
                 this.clientRepository.saveAndFlush(clientForUpdate);
             }
+            ClientContactInformation contactInformation = this.clientContactInformationRepository.findByClientId(clientId);
+            if (contactInformation == null) {
+                contactInformation = ClientContactInformation.fromJson(clientForUpdate, command);
+            } else {
+                ClientContactInformation.updateJson(contactInformation, command);
+            }
+            clientForUpdate.updateClientInformation(contactInformation);
+            final Set<CodeValue> publicServiceTypes = new HashSet<>();
+            JsonArray publicServices = command.arrayOfParameterNamed(ClientApiConstants.PUBLIC_SERVICES);
+            if (publicServices != null && !publicServices.isEmpty()) {
+                for (JsonElement publicServiceJson : publicServices) {
+                    CodeValue publicServiceType;
+                    final Long codeValueId = this.fromApiJsonHelper.extractLongNamed("id", publicServiceJson);
+                    final Boolean isChecked = this.fromApiJsonHelper.extractBooleanNamed("checked", publicServiceJson);
+                    if (codeValueId != null && Boolean.TRUE.equals(isChecked)) {
+                        publicServiceType = this.codeValueRepository.findOneWithNotFoundDetection(codeValueId);
+                        publicServiceTypes.add(publicServiceType);
+                    }
+                }
+            }
+            clientForUpdate.setPublicServiceTypes(publicServiceTypes);
+            this.clientRepository.saveAndFlush(clientForUpdate);
 
             if (changes.containsKey(ClientApiConstants.legalFormIdParamName)) {
                 Integer legalFormValue = clientForUpdate.getLegalForm();
