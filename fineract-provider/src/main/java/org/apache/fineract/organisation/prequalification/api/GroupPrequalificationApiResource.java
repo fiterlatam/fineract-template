@@ -32,6 +32,7 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -101,15 +102,15 @@ public class GroupPrequalificationApiResource {
 
     @Autowired
     public GroupPrequalificationApiResource(final PlatformSecurityContext context,
-                                            final CodeValueReadPlatformService codeValueReadPlatformService, final AgencyReadPlatformServiceImpl agencyReadPlatformService,
-                                            final PrequalificationWritePlatformService prequalificationWritePlatformService,
-                                            final CenterReadPlatformServiceImpl centerReadPlatformService,
-                                            final LoanProductReadPlatformService loanProductReadPlatformService,
-                                            final AppUserReadPlatformService appUserReadPlatformService,
-                                            final DefaultToApiJsonSerializer<GroupPrequalificationData> toApiJsonSerializer,
-                                            final PrequalificationReadPlatformService prequalificationReadPlatformService, final FileUploadValidator fileUploadValidator,
-                                            final DocumentWritePlatformService documentWritePlatformService, final ApiRequestParameterHelper apiRequestParameterHelper,
-                                            final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService) {
+            final CodeValueReadPlatformService codeValueReadPlatformService, final AgencyReadPlatformServiceImpl agencyReadPlatformService,
+            final PrequalificationWritePlatformService prequalificationWritePlatformService,
+            final CenterReadPlatformServiceImpl centerReadPlatformService,
+            final LoanProductReadPlatformService loanProductReadPlatformService,
+            final AppUserReadPlatformService appUserReadPlatformService,
+            final DefaultToApiJsonSerializer<GroupPrequalificationData> toApiJsonSerializer,
+            final PrequalificationReadPlatformService prequalificationReadPlatformService, final FileUploadValidator fileUploadValidator,
+            final DocumentWritePlatformService documentWritePlatformService, final ApiRequestParameterHelper apiRequestParameterHelper,
+            final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService) {
         this.context = context;
         this.codeValueReadPlatformService = codeValueReadPlatformService;
         this.toApiJsonSerializer = toApiJsonSerializer;
@@ -130,13 +131,13 @@ public class GroupPrequalificationApiResource {
     @Produces({ MediaType.APPLICATION_JSON })
     @Operation(summary = "List all prequalifications", description = "Example Requests:\n" + "prequalification\n")
     public String retrieveAllBlacklistItems(@Context final UriInfo uriInfo,
-                                            @QueryParam("offset") @Parameter(description = "offset") final Integer offset,
-                                            @QueryParam("limit") @Parameter(description = "limit") final Integer limit,
-                                            @QueryParam("orderBy") @Parameter(description = "orderBy") final String orderBy,
-                                            @QueryParam("status") @Parameter(description = "status") final String status,
-                                            @QueryParam("type") @Parameter(description = "type") final String type,
-                                            @QueryParam("searchText") @Parameter(description = "searchText") final String searchText,
-                                            @QueryParam("sortOrder") @Parameter(description = "sortOrder") final String sortOrder) {
+            @QueryParam("offset") @Parameter(description = "offset") final Integer offset,
+            @QueryParam("limit") @Parameter(description = "limit") final Integer limit,
+            @QueryParam("orderBy") @Parameter(description = "orderBy") final String orderBy,
+            @QueryParam("status") @Parameter(description = "status") final String status,
+            @QueryParam("type") @Parameter(description = "type") final String type,
+            @QueryParam("searchText") @Parameter(description = "searchText") final String searchText,
+            @QueryParam("sortOrder") @Parameter(description = "sortOrder") final String sortOrder) {
 
         this.context.authenticatedUser().validateHasViewPermission(this.resourceNameForPermissions);
 
@@ -183,7 +184,7 @@ public class GroupPrequalificationApiResource {
     @Produces({ MediaType.APPLICATION_JSON })
     @Operation(summary = "Retrieve Prequalification Details")
     public String getBlacklistDetails(@Context final UriInfo uriInfo,
-                                      @PathParam("groupId") @Parameter(description = "groupId") final Long groupId) {
+            @PathParam("groupId") @Parameter(description = "groupId") final Long groupId) {
 
         this.context.authenticatedUser().validateHasViewPermission(this.resourceNameForPermissions);
 
@@ -199,8 +200,8 @@ public class GroupPrequalificationApiResource {
     @Produces({ MediaType.APPLICATION_JSON })
     @Operation(summary = "Retrieve Prequalification Details")
     public String prequalifyExistingGroup(@Context final UriInfo uriInfo,
-                                          @PathParam("groupId") @Parameter(description = "groupId") final Long groupId,
-                                          @Parameter(hidden = true) final String apiRequestBodyAsJson) {
+            @PathParam("groupId") @Parameter(description = "groupId") final Long groupId,
+            @Parameter(hidden = true) final String apiRequestBodyAsJson) {
 
         try {
             final CommandWrapper commandRequest = new CommandWrapperBuilder().createPrequalification().withGroupId(groupId)
@@ -233,15 +234,35 @@ public class GroupPrequalificationApiResource {
         }
     }
 
+    @PUT
+    @Path("/{groupId}")
+    @Consumes({ MediaType.APPLICATION_JSON })
+    @Produces({ MediaType.APPLICATION_JSON })
+    public String updatePrequalification(@Parameter(hidden = true) final String apiRequestBodyAsJson,
+            @PathParam("groupId") @Parameter(description = "groupId") final Long groupId) {
+
+        try {
+            final CommandWrapper commandRequest = new CommandWrapperBuilder().updatePrequalification(groupId).withJson(apiRequestBodyAsJson)
+                    .build();
+
+            final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
+
+            return this.toApiJsonSerializer.serialize(result);
+        } catch (final Exception e) {
+            e.printStackTrace();
+            throw e;
+        }
+    }
+
     @POST
     @Path("/{groupId}/comment")
     @Consumes({ MediaType.MULTIPART_FORM_DATA })
     @Produces({ MediaType.APPLICATION_JSON })
     public String createDocument(@PathParam("groupId") @Parameter(description = "groupId") final Long groupId,
-                                 @HeaderParam("Content-Length") @Parameter(description = "Content-Length") final Long fileSize,
-                                 @FormDataParam("file") final InputStream inputStream, @FormDataParam("file") final FormDataContentDisposition fileDetails,
-                                 @FormDataParam("file") final FormDataBodyPart bodyPart, @FormDataParam("name") final String name,
-                                 @FormDataParam("description") final String description, @FormDataParam("comment") final String comment) {
+            @HeaderParam("Content-Length") @Parameter(description = "Content-Length") final Long fileSize,
+            @FormDataParam("file") final InputStream inputStream, @FormDataParam("file") final FormDataContentDisposition fileDetails,
+            @FormDataParam("file") final FormDataBodyPart bodyPart, @FormDataParam("name") final String name,
+            @FormDataParam("description") final String description, @FormDataParam("comment") final String comment) {
 
         if (inputStream != null) {
             fileUploadValidator.validate(fileSize, inputStream, fileDetails, bodyPart);

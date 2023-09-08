@@ -41,5 +41,8 @@
                 splitStatements="true"
                 stripComments="true"/>
     </changeSet>
+<<<<<<< HEAD
 
+=======
+>>>>>>> fiter/fb/dev
 </databaseChangeLog>

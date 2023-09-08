@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements. See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership. The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License. You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied. See the License for the
+    specific language governing permissions and limitations
+    under the License.
+
+-->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd">
+    <changeSet author="fineract" id="1">
+        <sqlFile
+                encoding="utf8"
+                path="db/changelog/tenant/commands/create_hardpolicy_checklist_configuration_tables.sql"
+                relativeToChangelogFile="false"
+                splitStatements="true"
+                stripComments="true"/>
+    </changeSet>
+
+    <changeSet author="fineract" id="2">
+        <dropTable tableName="checklist_decision_making"/>
+    </changeSet>
+
+    <changeSet author="fineract" id="3">
+        <createTable tableName="checklist_decision_making">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="checklist_category_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="sequence" type="INT">
+                <constraints nullable="true"/>
+            </column>
+            <column name="validation_type_enum" type="SMALLINT(6)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="reference" type="VARCHAR(255)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="conditional_operator" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="first_value" type="VARCHAR(50)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="second_value" type="VARCHAR(50)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="value_list" type="VARCHAR(50)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="color_enum" type="SMALLINT(6)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="VARCHAR(255)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="product_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet author="fineract" id="4">
+        <addForeignKeyConstraint baseColumnNames="product_id" baseTableName="checklist_decision_making"
+                                 constraintName="FK_checklist_loan_product_id_20230831" deferrable="false" initiallyDeferred="false"
+                                 onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="id"
+                                 referencedTableName="m_product_loan" validate="true"/>
+    </changeSet>
+
+
+
+    <changeSet author="fineract" id="5">
+        <sqlFile
+                encoding="utf8"
+                path="db/changelog/tenant/commands/edit_hardpolicy_checklist_configuration_tables.sql"
+                relativeToChangelogFile="false"
+                splitStatements="true"
+                stripComments="true"/>
+    </changeSet>
+
+    <changeSet author="fineract" id="6">
+        <createTable tableName="m_checklist_validation_result">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="checklist_category_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="prequalification_id" type="BIGINT">
+                <constraints nullable="true"/>
+            </column>
+            <column name="prequalification_member_id" type="BIGINT">
+                <constraints nullable="true"/>
+            </column>
+            <column name="client_id" type="BIGINT">
+                <constraints nullable="true"/>
+            </column>
+            <column name="prequalification_type" type="SMALLINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="custom_value" type="VARCHAR(50)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="validation_color_enum" type="SMALLINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="createdby_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_date" type="datetime">
+                <constraints nullable="false"/>
+            </column>
+            <column name="lastmodifiedby_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="lastmodified_date" type="datetime">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet id="7" author="fineract">
+        <insert tableName="m_permission">
+            <column name="grouping" value="portfolio" />
+            <column name="code" value="VALIDATEHARDPOLICIES_PREQUALIFICATION_CHECKLIST"/>
+            <column name="entity_name" value="PREQUALIFICATION_CHECKLIST" />
+            <column name="action_name" value="VALIDATEHARDPOLICIES" />
+            <column name="can_maker_checker" valueBoolean="false" />
+        </insert>
+    </changeSet>
+</databaseChangeLog>

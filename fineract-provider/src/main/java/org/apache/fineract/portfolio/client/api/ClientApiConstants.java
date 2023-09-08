@@ -81,6 +81,7 @@ public class ClientApiConstants {
     public static final String accountNoParamName = "accountNo";
     public static final String externalIdParamName = "externalId";
     public static final String mobileNoParamName = "mobileNo";
+    public static final String HOME_NUMBER = "homeNumber";
     public static final String emailAddressParamName = "emailAddress";
     public static final String firstnameParamName = "firstname";
     public static final String middlenameParamName = "middlename";
@@ -145,6 +146,7 @@ public class ClientApiConstants {
     public static final String imagePresentParamName = "imagePresent";
     public static final String timelineParamName = "timeline";
     public static final String dpiParamName = "dpi";
+    public static final String clientContactInformationParamname = "clientContactInformation";
     public static final String oldCustomerNumberParamName = "oldCustomerNumber";
 
     // client charges response parameters
@@ -186,6 +188,42 @@ public class ClientApiConstants {
     public static final String obligeeData = "ObligeeDetails";
 
     public static final String clientEntityName = "clients";
+    public static final String homeNumberParamName = "homeNumber";
+    public static final String clientAreaParamName = "clientArea";
+    public static final String serviceIdParamName = "serviceId";
+    public static final String housingTypeIdParamName = "housingTypeId";
+    public static final String departmentIdParamName = "departmentId";
+    public static final String municipalIdParamName = "municipalId";
+    public static final String residenceYearsParamName = "residenceYears";
+    public static final String villageParamName = "village";
+    public static final String referenceDataParamName = "referenceData";
+    public static final String streetParamName = "street";
+    public static final String avenueParamName = "avenue";
+    public static final String houseNumberParamName = "houseNumber";
+    public static final String colonyParamName = "colony";
+    public static final String sectorParamName = "sector";
+    public static final String batchParamName = "batch";
+    public static final String squareParamName = "square";
+    public static final String zoneParamName = "zone";
+    public static final String lightDeviceNumberParamName = "lightDeviceNumber";
+    public static final String STREET_NUMBER = "streetNumber";
+    public static final String PUBLIC_SERVICES = "publicServices";
+    public static final String COMMUNITY_YEARS = "communityYears";
+    public static final String loanCycleParamName = "loanCycle";
+    public static final String groupNumberParamName = "groupNumber";
+    public static final String otherNamesParamName = "othernames";
+    public static final String maidenNameParamName = "maidenName";
+    public static final String familyReferenceParamName = "familyReference";
+    public static final String groupMemberParamName = "groupMember";
+    public static final String statusInGroupParamName = "statusInGroup";
+    public static final String retirementReasonParamName = "retirementReason";
+    public static final String civilStatusParamName = "civilStatus";
+    public static final String educationLevelParamName = "educationLevel";
+    public static final String ethinicityParamName = "ethinicity";
+    public static final String nationalityParamName = "nationality";
+    public static final String languagesParamName = "languages";
+    public static final String economicSectorParamName = "economicSector";
+    public static final String economicActivityParamName = "economicActivity";
 
     /**
      * These parameters will match the class level parameters of {@link ClientData}. Where possible, we try to get
@@ -197,7 +235,7 @@ public class ClientApiConstants {
             officeNameParamName, transferToOfficeIdParamName, transferToOfficeNameParamName, hierarchyParamName, imageIdParamName,
             imagePresentParamName, staffIdParamName, staffNameParamName, timelineParamName, groupsParamName, officeOptionsParamName,
             staffOptionsParamName, dateOfBirthParamName, genderParamName, clientTypeParamName, clientClassificationParamName,
-            legalFormParamName, clientNonPersonDetailsParamName, isStaffParamName, dpiParamName));
+            legalFormParamName, clientNonPersonDetailsParamName, isStaffParamName, dpiParamName, clientContactInformationParamname));
 
     protected static final Set<String> CLIENT_CHARGES_RESPONSE_DATA_PARAMETERS = new HashSet<>(Arrays.asList(chargeIdParamName,
             clientIdParamName, chargeNameParamName, penaltyParamName, chargeTimeTypeParamName, dueAsOfDateParamName,

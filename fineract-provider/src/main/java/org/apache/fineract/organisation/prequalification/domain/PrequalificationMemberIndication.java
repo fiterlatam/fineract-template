@@ -40,12 +40,22 @@ public enum PrequalificationMemberIndication {
         switch (statusValue) {
             case 100:
                 enumeration = PrequalificationMemberIndication.ACTIVE;
+<<<<<<< HEAD
                 break;
             case 200:
                 enumeration = PrequalificationMemberIndication.INACTIVE;
             case 300:
                 enumeration = PrequalificationMemberIndication.NONE;
                 break;
+=======
+            break;
+            case 200:
+                enumeration = PrequalificationMemberIndication.INACTIVE;
+            break;
+            case 300:
+                enumeration = PrequalificationMemberIndication.NONE;
+            break;
+>>>>>>> fiter/fb/dev
         }
         return enumeration;
     }

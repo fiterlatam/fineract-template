@@ -42,11 +42,19 @@ public class PortfolioCenterConstants {
 
         PORTFOLIO_CENTER_ID("id"), NAME("name"), PORTFOLIO_ID("portfolioId"), PORTFOLIO_NAME("portfolioName"), OFFICE_PARENT_ID(
                 "parentId"), RESPONSIBLE_USER_ID("responsibleUserId"), CITY_ID("cityId"), STATE_ID("stateId"), CENTER_TYPE(
+<<<<<<< HEAD
                 "centerTypeId"), LEGACY_CENTER_NUMBER("legacyCenterNumber"), DISTANCE(
                 "distance"), CREATED_DATE("createdDate"), STATUS_ID("statusId"), MEETING_START("meetingStart"), MEETING_END(
                 "meetingEnd"), MEETING_DAY("meetingDay"), MEETING_START_TIME("meetingStartTime"), MEETING_END_TIME(
                 "meetingEndTime"), REFERENCE_POINT("referencePoint"), LOCALE(
                 "locale"), DATEFORMAT("dateFormat"), CENTER_LOCATION("centerLocation");
+=======
+                        "centerTypeId"), LEGACY_CENTER_NUMBER("legacyCenterNumber"), DISTANCE(
+                                "distance"), CREATED_DATE("createdDate"), STATUS_ID("statusId"), MEETING_START("meetingStart"), MEETING_END(
+                                        "meetingEnd"), MEETING_DAY("meetingDay"), MEETING_START_TIME("meetingStartTime"), MEETING_END_TIME(
+                                                "meetingEndTime"), REFERENCE_POINT("referencePoint"), LOCALE(
+                                                        "locale"), DATEFORMAT("dateFormat"), CENTER_LOCATION("centerLocation");
+>>>>>>> fiter/fb/dev
 
         private final String value;
 

@@ -20,11 +20,19 @@ package org.apache.fineract.organisation.prequalification.data;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+<<<<<<< HEAD
+=======
+import lombok.Data;
+>>>>>>> fiter/fb/dev
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 
 /**
  * Immutable data object represent client identity data.
  */
+<<<<<<< HEAD
+=======
+@Data
+>>>>>>> fiter/fb/dev
 public class MemberPrequalificationData {
 
     private final Long id;
@@ -33,19 +41,39 @@ public class MemberPrequalificationData {
     private final LocalDate dob;
     private final String workWithPuente;
     private final BigDecimal requestedAmount;
+<<<<<<< HEAD
     private final EnumOptionData status;
     private final Long blacklistCount;
+=======
+    private EnumOptionData status;
+    private final Long blacklistCount;
+    private final Long activeBlacklistCount;
+    private final Long inActiveBlacklistCount;
+>>>>>>> fiter/fb/dev
     private final BigDecimal totalLoanAmount;
     private final BigDecimal totalLoanBalance;
     private final BigDecimal totalGuaranteedLoanBalance;
     private final Long noOfCycles;
     private final Long additionalCreditsCount;
     private final BigDecimal additionalCreditsSum;
+<<<<<<< HEAD
 
     public MemberPrequalificationData(final Long id, final String name, final String dpi, final LocalDate dob, final String workWithPuente,
                                       final BigDecimal requestedAmount, final EnumOptionData status, Long blacklistCount, BigDecimal totalLoanAmount,
                                       BigDecimal totalLoanBalance, BigDecimal totalGuaranteedLoanBalance, Long noOfCycles, Long additionalCreditsCount,
                                       BigDecimal additionalCreditsSum) {
+=======
+    private final Long greenValidationCount;
+    private final Long yellowValidationCount;
+    private final Long orangeValidationCount;
+    private final Long redValidationCount;
+
+    public MemberPrequalificationData(final Long id, final String name, final String dpi, final LocalDate dob, final String workWithPuente,
+            final BigDecimal requestedAmount, final EnumOptionData status, Long blacklistCount, BigDecimal totalLoanAmount,
+            BigDecimal totalLoanBalance, BigDecimal totalGuaranteedLoanBalance, Long noOfCycles, Long additionalCreditsCount,
+            BigDecimal additionalCreditsSum, final Long activeBlacklistCount, final Long inActiveBlacklistCount, Long greenValidationCount,
+            Long yellowValidationCount, Long orangeValidationCount, Long redValidationCount) {
+>>>>>>> fiter/fb/dev
         this.id = id;
         this.name = name;
         this.dpi = dpi;
@@ -60,6 +88,7 @@ public class MemberPrequalificationData {
         this.noOfCycles = noOfCycles;
         this.additionalCreditsCount = additionalCreditsCount;
         this.additionalCreditsSum = additionalCreditsSum;
+<<<<<<< HEAD
     }
 
     public static MemberPrequalificationData instance(final Long id, final String name, final String dpi, final LocalDate dob,
@@ -68,5 +97,25 @@ public class MemberPrequalificationData {
                                                       Long additionalCreditsCount, BigDecimal additionalCreditsSum) {
         return new MemberPrequalificationData(id, name, dpi, dob, workWithPuente, requestedAmount, status, blacklistCount, totalLoanAmount,
                 totalLoanBalance, totalGuaranteedLoanBalance, noOfCycles, additionalCreditsCount, additionalCreditsSum);
+=======
+        this.activeBlacklistCount = activeBlacklistCount;
+        this.inActiveBlacklistCount = inActiveBlacklistCount;
+        this.greenValidationCount = greenValidationCount;
+        this.yellowValidationCount = yellowValidationCount;
+        this.orangeValidationCount = orangeValidationCount;
+        this.redValidationCount = redValidationCount;
+    }
+
+    public static MemberPrequalificationData instance(final Long id, final String name, final String dpi, final LocalDate dob,
+            final String workWithPuente, final BigDecimal requestedAmount, final EnumOptionData status, Long blacklistCount,
+            BigDecimal totalLoanAmount, BigDecimal totalLoanBalance, BigDecimal totalGuaranteedLoanBalance, Long noOfCycles,
+            Long additionalCreditsCount, BigDecimal additionalCreditsSum, final Long activeBlacklistCount,
+            final Long inActiveBlacklistCount, final Long greenValidationCount, final Long yellowValidationCount,
+            final Long orangeValidationCount, final Long redValidationCount) {
+        return new MemberPrequalificationData(id, name, dpi, dob, workWithPuente, requestedAmount, status, blacklistCount, totalLoanAmount,
+                totalLoanBalance, totalGuaranteedLoanBalance, noOfCycles, additionalCreditsCount, additionalCreditsSum,
+                activeBlacklistCount, inActiveBlacklistCount, greenValidationCount, yellowValidationCount, orangeValidationCount,
+                redValidationCount);
+>>>>>>> fiter/fb/dev
     }
 }

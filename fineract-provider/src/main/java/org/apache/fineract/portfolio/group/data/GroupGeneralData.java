@@ -263,11 +263,19 @@ public class GroupGeneralData implements Serializable {
     }
 
     public static GroupGeneralData template(final Long officeId, final Long centerId, final String accountNo, final String centerName,
+<<<<<<< HEAD
                                             final Long staffId, final String staffName, final Collection<CenterData> centerOptions,
                                             final Collection<OfficeData> officeOptions, final Collection<StaffData> staffOptions,
                                             final Collection<ClientData> clientOptions, final Collection<CodeValueData> availableRoles,
                                             final Collection<OfficeData> parentOfficesOptions, final Collection<AppUserData> responsibleUserOptions,
                                             final Collection<PortfolioCenterData> portfolioCenterOptions, Collection<EnumOptionData> centerGroupLocations) {
+=======
+            final Long staffId, final String staffName, final Collection<CenterData> centerOptions,
+            final Collection<OfficeData> officeOptions, final Collection<StaffData> staffOptions,
+            final Collection<ClientData> clientOptions, final Collection<CodeValueData> availableRoles,
+            final Collection<OfficeData> parentOfficesOptions, final Collection<AppUserData> responsibleUserOptions,
+            final Collection<PortfolioCenterData> portfolioCenterOptions, Collection<EnumOptionData> centerGroupLocations) {
+>>>>>>> fiter/fb/dev
 
         final Collection<ClientData> clientMembers = null;
         final Collection<GroupRoleData> groupRoles = null;
@@ -320,8 +328,13 @@ public class GroupGeneralData implements Serializable {
     }
 
     public static GroupGeneralData withAssocations(final GroupGeneralData grouping, final Collection<ClientData> membersOfGroup,
+<<<<<<< HEAD
                                                    final Collection<ClientData> activeClientMembers, final Collection<GroupRoleData> groupRoles,
                                                    final Collection<CalendarData> calendarsData, final CalendarData collectionMeetingCalendar) {
+=======
+            final Collection<ClientData> activeClientMembers, final Collection<GroupRoleData> groupRoles,
+            final Collection<CalendarData> calendarsData, final CalendarData collectionMeetingCalendar) {
+>>>>>>> fiter/fb/dev
         GroupGeneralData ret = new GroupGeneralData(grouping.id, grouping.accountNo, grouping.name, grouping.externalId, grouping.status,
                 grouping.activationDate, grouping.officeId, grouping.officeName, grouping.centerId, grouping.centerName, grouping.staffId,
                 grouping.staffName, grouping.hierarchy, grouping.groupLevel, membersOfGroup, activeClientMembers, grouping.centerOptions,
@@ -362,6 +375,7 @@ public class GroupGeneralData implements Serializable {
     }
 
     private GroupGeneralData(final Long id, final String accountNo, final String name, final String externalId, final EnumOptionData status,
+<<<<<<< HEAD
                              final LocalDate activationDate, final Long officeId, final String officeName, final Long centerId, final String centerName,
                              final Long staffId, final String staffName, final String hierarchy, final String groupLevel,
                              final Collection<ClientData> clientMembers, final Collection<ClientData> activeClientMembers,
@@ -372,6 +386,18 @@ public class GroupGeneralData implements Serializable {
                              final Collection<CodeValueData> closureReasons, final GroupTimelineData timeline,
                              final Collection<OfficeData> parentOfficesOptions, final Collection<AppUserData> responsibleUserOptions,
                              final Collection<PortfolioCenterData> portfolioCenterOptions, Collection<EnumOptionData> centerGroupLocations) {
+=======
+            final LocalDate activationDate, final Long officeId, final String officeName, final Long centerId, final String centerName,
+            final Long staffId, final String staffName, final String hierarchy, final String groupLevel,
+            final Collection<ClientData> clientMembers, final Collection<ClientData> activeClientMembers,
+            final Collection<CenterData> centerOptions, final Collection<OfficeData> officeOptions,
+            final Collection<StaffData> staffOptions, final Collection<ClientData> clientOptions,
+            final Collection<GroupRoleData> groupRoles, final Collection<CodeValueData> availableRoles, final GroupRoleData role,
+            final Collection<CalendarData> calendarsData, final CalendarData collectionMeetingCalendar,
+            final Collection<CodeValueData> closureReasons, final GroupTimelineData timeline,
+            final Collection<OfficeData> parentOfficesOptions, final Collection<AppUserData> responsibleUserOptions,
+            final Collection<PortfolioCenterData> portfolioCenterOptions, Collection<EnumOptionData> centerGroupLocations) {
+>>>>>>> fiter/fb/dev
         this.id = id;
         this.accountNo = accountNo;
         this.name = name;

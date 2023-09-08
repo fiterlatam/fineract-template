@@ -1737,9 +1737,9 @@ public class CommandWrapperBuilder {
     public CommandWrapperBuilder createNote(final CommandWrapper resourceDetails, final String resourceType, final Long resourceId) {
         this.actionName = "CREATE";
         this.entityName = resourceDetails.entityName();// Note supports multiple
-        // resources. Note
-        // Permissions are set
-        // for each resource.
+                                                       // resources. Note
+                                                       // Permissions are set
+                                                       // for each resource.
         this.clientId = resourceDetails.getClientId();
         this.loanId = resourceDetails.getLoanId();
         this.savingsId = resourceDetails.getSavingsId();
@@ -1753,9 +1753,9 @@ public class CommandWrapperBuilder {
             final Long noteId) {
         this.actionName = "UPDATE";
         this.entityName = resourceDetails.entityName();// Note supports multiple
-        // resources. Note
-        // Permissions are set
-        // for each resource.
+                                                       // resources. Note
+                                                       // Permissions are set
+                                                       // for each resource.
         this.entityId = noteId;
         this.clientId = resourceDetails.getClientId();
         this.loanId = resourceDetails.getLoanId();
@@ -1770,9 +1770,9 @@ public class CommandWrapperBuilder {
             final Long noteId) {
         this.actionName = "DELETE";
         this.entityName = resourceDetails.entityName();// Note supports multiple
-        // resources. Note
-        // Permissions are set
-        // for each resource.
+                                                       // resources. Note
+                                                       // Permissions are set
+                                                       // for each resource.
         this.entityId = noteId;
         this.clientId = resourceDetails.getClientId();
         this.loanId = resourceDetails.getLoanId();
@@ -3034,9 +3034,9 @@ public class CommandWrapperBuilder {
 
     public CommandWrapperBuilder createProduct(String productType) {
         this.entityName = productType.toUpperCase() + "PRODUCT"; // To Support
-        // different
-        // type of
-        // products
+                                                                 // different
+                                                                 // type of
+                                                                 // products
         this.actionName = "CREATE";
         this.entityId = null;
         this.href = "/products/" + productType;
@@ -3053,9 +3053,9 @@ public class CommandWrapperBuilder {
 
     public CommandWrapperBuilder createAccount(String accountType) {
         this.entityName = accountType.toUpperCase() + "ACCOUNT"; // To Support
-        // different
-        // type of
-        // Accounts
+                                                                 // different
+                                                                 // type of
+                                                                 // Accounts
         this.actionName = "CREATE";
         this.entityId = null;
         this.href = "/accounts/" + accountType;
@@ -3730,6 +3730,46 @@ public class CommandWrapperBuilder {
         this.entityName = "GROUP";
         this.entityId = centerId;
         this.href = "/centers/" + centerId;
+        return this;
+    }
+
+    public CommandWrapperBuilder updatePrequalification(final Long groupId) {
+        this.actionName = "UPDATE";
+        this.entityName = "PREQUALIFICATIONS";
+        this.entityId = groupId;
+        this.href = "/prequalification/" + groupId;
+        return this;
+    }
+
+    public CommandWrapperBuilder validatePrequalificationHardPolicies(final Long prequalificationId) {
+        this.actionName = "VALIDATEHARDPOLICIES";
+        this.entityName = "PREQUALIFICATION_CHECKLIST";
+        this.entityId = prequalificationId;
+        this.href = "/prequalification/checklist/" + prequalificationId;
+        return this;
+    }
+
+    public CommandWrapperBuilder createRestructureCreditsRequest(Long clientId) {
+        this.actionName = "ADD";
+        this.entityName = "RESTRUCTURE_CREDITS";
+        this.clientId = clientId;
+        this.href = "/restructurecredits/" + clientId;
+        return this;
+    }
+
+    public CommandWrapperBuilder approveRestructureCreditsRequest(String restructureCreditsResource, Long clientId) {
+        this.actionName = "APPROVE";
+        this.entityName = "RESTRUCTURE_CREDITS";
+        this.clientId = clientId;
+        this.href = "/restructurecredits/" + clientId;
+        return this;
+    }
+
+    public CommandWrapperBuilder rejectRestructureCreditsRequest(String restructureCreditsResource, Long clientId) {
+        this.actionName = "REJECT";
+        this.entityName = "RESTRUCTURE_CREDITS";
+        this.clientId = clientId;
+        this.href = "/restructurecredits/" + clientId;
         return this;
     }
 }

@@ -25,10 +25,18 @@ import java.util.Map;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+<<<<<<< HEAD
+=======
+import javax.persistence.FetchType;
+>>>>>>> fiter/fb/dev
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
+<<<<<<< HEAD
+=======
+import lombok.Getter;
+>>>>>>> fiter/fb/dev
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
@@ -39,6 +47,10 @@ import org.apache.fineract.portfolio.loanproduct.domain.LoanProduct;
 import org.apache.fineract.useradministration.domain.AppUser;
 
 @Entity
+<<<<<<< HEAD
+=======
+@Getter
+>>>>>>> fiter/fb/dev
 @Table(name = "m_prequalification_group")
 public class PrequalificationGroup extends AbstractPersistableCustom {
 
@@ -80,11 +92,19 @@ public class PrequalificationGroup extends AbstractPersistableCustom {
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
+<<<<<<< HEAD
     @OneToMany(mappedBy = "prequalificationGroup", cascade = CascadeType.ALL)
     private List<PrequalificationGroupMember> members;
 
     public static PrequalificationGroup fromJson(final AppUser appUser, final AppUser facilitator, final Agency agency, final Group group,
                                                  final LoanProduct loanProduct, final JsonCommand command) {
+=======
+    @OneToMany(mappedBy = "prequalificationGroup", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private List<PrequalificationGroupMember> members;
+
+    public static PrequalificationGroup fromJson(final AppUser appUser, final AppUser facilitator, final Agency agency, final Group group,
+            final LoanProduct loanProduct, final JsonCommand command) {
+>>>>>>> fiter/fb/dev
         String groupName = command.stringValueOfParameterNamed("groupName");
         Long center = command.longValueOfParameterNamed(PrequalificatoinApiConstants.centerIdParamName);
         if (group != null) {
@@ -98,7 +118,11 @@ public class PrequalificationGroup extends AbstractPersistableCustom {
     }
 
     private PrequalificationGroup(final AppUser appUser, final AppUser facilitator, final Agency agency, final Group group,
+<<<<<<< HEAD
                                   final String groupName, Long center, final LoanProduct loanProduct) {
+=======
+            final String groupName, Long center, final LoanProduct loanProduct) {
+>>>>>>> fiter/fb/dev
         this.addedBy = appUser;
         this.facilitator = facilitator;
         this.status = PrequalificationStatus.PENDING.getValue();
@@ -120,15 +144,84 @@ public class PrequalificationGroup extends AbstractPersistableCustom {
         this.members = members;
     }
 
+<<<<<<< HEAD
+=======
+    public List<PrequalificationGroupMember> getMembers() {
+        return members;
+    }
+
+>>>>>>> fiter/fb/dev
     public void updatePrequalificationNumber(final String prequalificationNumber) {
         ;
         this.prequalificationNumber = prequalificationNumber;
     }
 
+<<<<<<< HEAD
+=======
+    public void updateAgency(final Agency agency) {
+        this.agency = agency;
+    }
+
+    public void updateCenter(final Long centerId) {
+        this.centerId = centerId;
+    }
+
+    public void updateProduct(final LoanProduct product) {
+        this.loanProduct = product;
+    }
+
+    public void updateFacilitator(final AppUser facilitator) {
+        this.facilitator = facilitator;
+    }
+
+    public void updateGroupName(final String groupName) {
+        this.groupName = groupName;
+    }
+
+    public AppUser getAddedBy() {
+        return addedBy;
+    }
+
+>>>>>>> fiter/fb/dev
     public Map<String, Object> update(final JsonCommand command) {
 
         final Map<String, Object> actualChanges = new LinkedHashMap<>(7);
 
+<<<<<<< HEAD
+=======
+        if (command.isChangeInStringParameterNamed(PrequalificatoinApiConstants.groupNameParamName, this.groupName)) {
+            final String newValue = command.stringValueOfParameterNamed(PrequalificatoinApiConstants.groupNameParamName);
+            actualChanges.put(PrequalificatoinApiConstants.groupNameParamName, newValue);
+            this.groupName = newValue;
+        }
+
+        if (command.isChangeInLongParameterNamed(PrequalificatoinApiConstants.agencyIdParamName, this.agency.getId())) {
+            final Long newValue = command.longValueOfParameterNamed(PrequalificatoinApiConstants.agencyIdParamName);
+            actualChanges.put(PrequalificatoinApiConstants.agencyIdParamName, newValue);
+            // this.ag = newValue;
+        }
+
+        if (command.isChangeInLongParameterNamed(PrequalificatoinApiConstants.centerIdParamName, this.centerId)) {
+            final Long newValue = command.longValueOfParameterNamed(PrequalificatoinApiConstants.centerIdParamName);
+            actualChanges.put(PrequalificatoinApiConstants.centerIdParamName, newValue);
+            this.centerId = newValue;
+        }
+
+        if (command.isChangeInLongParameterNamed(PrequalificatoinApiConstants.productIdParamName, this.loanProduct.getId())) {
+            final Long newValue = command.longValueOfParameterNamed(PrequalificatoinApiConstants.productIdParamName);
+            actualChanges.put(PrequalificatoinApiConstants.productIdParamName, newValue);
+            // this.loanProduct. = newValue;
+        }
+
+        if (command.isChangeInLongParameterNamed(PrequalificatoinApiConstants.facilitatorParamName, this.facilitator.getId())) {
+            final Long newValue = command.longValueOfParameterNamed(PrequalificatoinApiConstants.facilitatorParamName);
+            actualChanges.put(PrequalificatoinApiConstants.facilitatorParamName, newValue);
+            // this.centerId = newValue;
+        }
+
+        // TODO: process changes in members
+
+>>>>>>> fiter/fb/dev
         return actualChanges;
     }
 

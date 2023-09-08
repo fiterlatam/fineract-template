@@ -29,7 +29,14 @@ public enum PrequalificationStatus {
     PENDING(100, "prequalification.status.pending"), //
     APPROVED(200, "prequalification.status.approved"), //
     REJECTED(300, "prequalification.status.rejected"), //
+<<<<<<< HEAD
     INVALID(0, "prequalification.invalid");
+=======
+    BLACKLIST_CHECKED(400, "prequalification.status.blacklist.checked"), //
+    BLACKLIST_REJECTED(500, "prequalification.status.blacklist.rejected"), BURO_CHECKED(600,
+            "prequalification.status.buro.checked"), HARD_POLICY_CHECKED(700,
+                    "prequalification.status.hard.policy.checked"), INVALID(0, "prequalification.status.invalid");
+>>>>>>> fiter/fb/dev
 
     private final Integer value;
     private final String code;
@@ -40,12 +47,22 @@ public enum PrequalificationStatus {
         switch (statusValue) {
             case 100:
                 enumeration = PrequalificationStatus.PENDING;
+<<<<<<< HEAD
                 break;
             case 200:
                 enumeration = PrequalificationStatus.APPROVED;
             case 300:
                 enumeration = PrequalificationStatus.REJECTED;
                 break;
+=======
+            break;
+            case 200:
+                enumeration = PrequalificationStatus.APPROVED;
+            break;
+            case 300:
+                enumeration = PrequalificationStatus.REJECTED;
+            break;
+>>>>>>> fiter/fb/dev
         }
         return enumeration;
     }

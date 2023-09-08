@@ -49,8 +49,12 @@ public final class SearchParameters {
     private final Long productId;
     private final Long categoryId;
     private final boolean isSelfUser;
+
+    // Prequalification Search Params
     private final String dpiNumber;
     private final String type;
+    private final String groupName;
+    private final String centerName;
 
     public static SearchParameters from(final String sqlSearch, final Long officeId, final String externalId, final String name,
             final String hierarchy) {
@@ -102,7 +106,7 @@ public final class SearchParameters {
         final Long savingsId = null;
 
         return new SearchParameters(searchText, null, null, displayName, null, null, null, status, offset, maxLimitAllowed, orderBy,
-                sortOrder, staffId, accountNo, loanId, savingsId, null, false, null, type);
+                sortOrder, staffId, accountNo, loanId, savingsId, null, false, null, type, null, null, null);
     }
 
     public static SearchParameters forGroups(final Long officeId, final Long staffId, final String externalId, final String name,
@@ -299,6 +303,8 @@ public final class SearchParameters {
         this.status = null;
         this.dpiNumber = null;
         this.type = null;
+        this.groupName = null;
+        this.centerName = null;
 
     }
 
@@ -330,6 +336,8 @@ public final class SearchParameters {
         this.status = status;
         this.dpiNumber = dpiNumber;
         this.type = null;
+        this.groupName = null;
+        this.centerName = null;
 
     }
 
@@ -337,7 +345,7 @@ public final class SearchParameters {
             final String hierarchy, final String firstname, final String lastname, final String status, final Integer offset,
             final Integer limit, final String orderBy, final String sortOrder, final Long staffId, final String accountNo,
             final Long loanId, final Long savingsId, final Boolean orphansOnly, boolean isSelfUser, final String dpiNumber,
-            final String type) {
+            final String type, final String groupName, final String groupNumber, final String centerName) {
         this.sqlSearch = sqlSearch;
         this.officeId = officeId;
         this.externalId = externalId;
@@ -362,6 +370,8 @@ public final class SearchParameters {
         this.status = status;
         this.dpiNumber = dpiNumber;
         this.type = type;
+        this.groupName = groupName;
+        this.centerName = centerName;
 
     }
 
@@ -393,6 +403,8 @@ public final class SearchParameters {
         this.status = null;
         this.dpiNumber = null;
         this.type = null;
+        this.groupName = null;
+        this.centerName = null;
     }
 
     private SearchParameters(final Long provisioningEntryId, final Long officeId, final Long productId, final Long categoryId,
@@ -421,6 +433,8 @@ public final class SearchParameters {
         this.status = null;
         this.dpiNumber = null;
         this.type = null;
+        this.groupName = null;
+        this.centerName = null;
 
     }
 
@@ -452,6 +466,8 @@ public final class SearchParameters {
         this.status = null;
         this.dpiNumber = null;
         this.type = null;
+        this.groupName = null;
+        this.centerName = null;
 
     }
 
@@ -521,6 +537,14 @@ public final class SearchParameters {
 
     public String getDpiNumber() {
         return this.dpiNumber;
+    }
+
+    public String getGroupName() {
+        return groupName;
+    }
+
+    public String getCenterName() {
+        return centerName;
     }
 
     public String getHierarchy() {
