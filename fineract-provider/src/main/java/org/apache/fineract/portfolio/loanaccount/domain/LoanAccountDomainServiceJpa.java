@@ -197,7 +197,6 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
 
         // ABA-135 - Create separate transactions for VAT on interest and VAT on charge
         // Check if VAT is required in order to calculate the VAT amount for the charge and create the transaction
-
         MonetaryCurrency currency = loan.getCurrency();
         if (loan.isVatRequired() && loan.getVatPercentage() != null && newRepaymentTransaction.isRepayment()) {
 
