@@ -2568,7 +2568,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
          **/
 
         if (((isMultiDisburmentLoan() && getDisbursedLoanDisbursementDetails().size() == 1) || !isMultiDisburmentLoan())
-                && isNoneOrCashOrUpfrontAccrualAccountingEnabledOnLoanProduct()) {
+                && isNoneOrCashOrUpfrontAccrualAccountingEnabledOnLoanProduct() && isPeriodicAccrualAccountingEnabledOnLoanProduct()) {
             final LoanTransaction interestAppliedTransaction = LoanTransaction.accrueInterest(getOffice(), this, interestApplied,
                     actualDisbursementDate);
             addLoanTransaction(interestAppliedTransaction);
@@ -2973,6 +2973,12 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                  * create a Charge applied transaction if Up front Accrual, None or Cash based accounting is enabled
                  **/
                 if (isNoneOrCashOrUpfrontAccrualAccountingEnabledOnLoanProduct()) {
+                    handleChargeAppliedTransaction(charge, disbursedOn);
+                }
+                /**
+                 * create a Charge applied transaction if Periodic Accrual based accounting is enabled
+                 **/
+                if (isPeriodicAccrualAccountingEnabledOnLoanProduct()) {
                     handleChargeAppliedTransaction(charge, disbursedOn);
                 }
             }
@@ -6501,7 +6507,8 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                         .plus(installment.getPenaltyChargesPaid(currency)).plus(installment.getFeeChargesPaid(currency))
                         .plus(installment.getVatOnChargePaid(currency)).plus(installment.getVatOnInterestPaid(currency));
 
-                if (this.actualDisbursementDate.isEqual(paymentDate) && this.interestChargedFromDate.isAfter(actualDisbursementDate)) {
+                if (this.actualDisbursementDate.isEqual(paymentDate) && this.interestChargedFromDate != null
+                        && this.interestChargedFromDate.isAfter(actualDisbursementDate)) {
                     if (installment.getInstallmentNumber().doubleValue() == 1) {
                         int totalPeriodDays = Math.toIntExact(ChronoUnit.DAYS.between(installment.getFromDate(), installment.getDueDate()));
                         Money interestForDisbursementDate = Money.of(getCurrency(), BigDecimal.valueOf(
