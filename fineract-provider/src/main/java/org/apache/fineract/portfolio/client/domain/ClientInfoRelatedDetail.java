@@ -70,10 +70,10 @@ public class ClientInfoRelatedDetail{
     private String languages;
     
     @Column(name = "economic_sector", nullable = true)
-    private String economicSector;
+    private Long economicSector;
     
     @Column(name = "economic_activity", nullable = true)
-    private String economicActivity;
+    private Long economicActivity;
 
     @Column(name = "family_reference", nullable = true)
     private String familyReference;
@@ -81,7 +81,7 @@ public class ClientInfoRelatedDetail{
     public ClientInfoRelatedDetail(Integer loanCycle, String groupNumber, String maidenName, String othernames, String groupMember,
                                    String statusInGroup, String retirementReason, String civilStatus,
                                    String educationLevel, String ethinicity, String nationality, String languages,
-                                   String economicSector, String economicActivity, String familyReference) {
+                                   Long economicSector, Long economicActivity, String familyReference) {
         this.loanCycle=loanCycle;
         this.groupNumber = groupNumber;
         this.maidenName = maidenName;
@@ -116,8 +116,8 @@ public class ClientInfoRelatedDetail{
         final String ethinicity= command.stringValueOfParameterNamed(ClientApiConstants.ethinicityParamName);
         final String nationality= command.stringValueOfParameterNamed(ClientApiConstants.nationalityParamName);
         final String languages= command.stringValueOfParameterNamed(ClientApiConstants.languagesParamName);
-        final String economicSector= command.stringValueOfParameterNamed(ClientApiConstants.economicSectorParamName);
-        final String economicActivity= command.stringValueOfParameterNamed(ClientApiConstants.economicActivityParamName);
+        final Long economicSector= command.longValueOfParameterNamed(ClientApiConstants.economicSectorParamName);
+        final Long economicActivity= command.longValueOfParameterNamed(ClientApiConstants.economicActivityParamName);
         final String familyReference= command.stringValueOfParameterNamed(ClientApiConstants.familyReferenceParamName);
 
         return new ClientInfoRelatedDetail(loanCycle,groupNumber, maidenName, othernames, groupMember, statusInGroup,
@@ -185,15 +185,15 @@ public class ClientInfoRelatedDetail{
             actualChanges.put(ClientApiConstants.languagesParamName, newValue);
             this.languages = StringUtils.defaultIfEmpty(newValue, null);
         }
-        if (command.isChangeInStringParameterNamed(ClientApiConstants.economicSectorParamName, this.economicSector)) {
-            final String newValue = command.stringValueOfParameterNamed(ClientApiConstants.economicSectorParamName);
+        if (command.isChangeInLongParameterNamed(ClientApiConstants.economicSectorParamName, this.economicSector)) {
+            final Long newValue = command.longValueOfParameterNamed(ClientApiConstants.economicSectorParamName);
             actualChanges.put(ClientApiConstants.economicSectorParamName, newValue);
-            this.economicSector = StringUtils.defaultIfEmpty(newValue, null);
+            this.economicSector = newValue;
         }
-        if (command.isChangeInStringParameterNamed(ClientApiConstants.economicActivityParamName, this.economicActivity)) {
-            final String newValue = command.stringValueOfParameterNamed(ClientApiConstants.economicActivityParamName);
+        if (command.isChangeInLongParameterNamed(ClientApiConstants.economicActivityParamName, this.economicActivity)) {
+            final Long newValue = command.longValueOfParameterNamed(ClientApiConstants.economicActivityParamName);
             actualChanges.put(ClientApiConstants.economicActivityParamName, newValue);
-            this.economicActivity = StringUtils.defaultIfEmpty(newValue, null);
+            this.economicActivity = newValue;
         }
         if (command.isChangeInStringParameterNamed(ClientApiConstants.familyReferenceParamName, this.familyReference)) {
             final String newValue = command.stringValueOfParameterNamed(ClientApiConstants.familyReferenceParamName);
