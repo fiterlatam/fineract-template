@@ -166,7 +166,6 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
 
     @Autowired
     public LoanReadPlatformServiceImpl(final PlatformSecurityContext context,
-<<<<<<< HEAD
                                        final ApplicationCurrencyRepositoryWrapper applicationCurrencyRepository,
                                        final LoanProductReadPlatformService loanProductReadPlatformService, final ClientReadPlatformService clientReadPlatformService,
                                        final GroupReadPlatformService groupReadPlatformService, final LoanDropdownReadPlatformService loanDropdownReadPlatformService,
@@ -179,20 +178,6 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                                        final ConfigurationDomainService configurationDomainService, final CodeValueRepositoryWrapper codeValueRepositoryWrapper,
                                        final AccountDetailsReadPlatformService accountDetailsReadPlatformService, final LoanRepositoryWrapper loanRepositoryWrapper,
                                        final ColumnValidator columnValidator, DatabaseSpecificSQLGenerator sqlGenerator, PaginationHelper paginationHelper) {
-=======
-            final ApplicationCurrencyRepositoryWrapper applicationCurrencyRepository,
-            final LoanProductReadPlatformService loanProductReadPlatformService, final ClientReadPlatformService clientReadPlatformService,
-            final GroupReadPlatformService groupReadPlatformService, final LoanDropdownReadPlatformService loanDropdownReadPlatformService,
-            final FundReadPlatformService fundReadPlatformService, final ChargeReadPlatformService chargeReadPlatformService,
-            final CodeValueReadPlatformService codeValueReadPlatformService, final JdbcTemplate jdbcTemplate,
-            final NamedParameterJdbcTemplate namedParameterJdbcTemplate, final CalendarReadPlatformService calendarReadPlatformService,
-            final StaffReadPlatformService staffReadPlatformService, final PaymentTypeReadPlatformService paymentTypeReadPlatformService,
-            final LoanRepaymentScheduleTransactionProcessorFactory loanRepaymentScheduleTransactionProcessorFactory,
-            final FloatingRatesReadPlatformService floatingRatesReadPlatformService, final LoanUtilService loanUtilService,
-            final ConfigurationDomainService configurationDomainService, final CodeValueRepositoryWrapper codeValueRepositoryWrapper,
-            final AccountDetailsReadPlatformService accountDetailsReadPlatformService, final LoanRepositoryWrapper loanRepositoryWrapper,
-            final ColumnValidator columnValidator, DatabaseSpecificSQLGenerator sqlGenerator, PaginationHelper paginationHelper) {
->>>>>>> fiter/fb/dev
         this.context = context;
         this.loanRepositoryWrapper = loanRepositoryWrapper;
         this.applicationCurrencyRepository = applicationCurrencyRepository;
@@ -1415,23 +1400,10 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
 
     @Override
     public LoanAccountData retrieveLoanProductDetailsTemplate(final Long productId, final Long clientId, final Long groupId,
-            String templateType) {
+                                                              String templateType) {
 
         this.context.authenticatedUser();
 
-<<<<<<< HEAD
-        ClientData clientData = this.clientReadPlatformService.retrieveOne(clientId);
-
-        String blacklistString = "select count(*) from m_client_blacklist where dpi=? and status=?";
-        String dpiNumber = clientData.getDpiNumber();
-        Long blacklisted = jdbcTemplate.queryForObject(blacklistString, Long.class, dpiNumber, BlacklistStatus.ACTIVE.getValue());
-        if (blacklisted > 0) {
-            String blacklistReason = "select type_enum from m_client_blacklist where dpi=? and status=?";
-            Integer typification = jdbcTemplate.queryForObject(blacklistReason, Integer.class, dpiNumber,
-                    BlacklistStatus.ACTIVE.getValue());
-            CodeValue typificationCodeValue = this.codeValueRepositoryWrapper.findOneWithNotFoundDetection(typification.longValue());
-            throw new ClientBlacklistedException(typificationCodeValue.getDescription());
-=======
         if (!"group".equals(templateType)) {
             ClientData clientData = this.clientReadPlatformService.retrieveOne(clientId);
             String blacklistString = "select count(*) from m_client_blacklist where dpi=? and status=?";
@@ -1444,7 +1416,6 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                 CodeValue typificationCodeValue = this.codeValueRepositoryWrapper.findOneWithNotFoundDetection(typification.longValue());
                 throw new ClientBlacklistedException(typificationCodeValue.getDescription());
             }
->>>>>>> fiter/fb/dev
         }
 
         final LoanProductData loanProduct = this.loanProductReadPlatformService.retrieveLoanProduct(productId);

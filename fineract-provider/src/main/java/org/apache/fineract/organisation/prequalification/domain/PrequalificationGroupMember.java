@@ -31,10 +31,7 @@ import javax.persistence.Table;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
-<<<<<<< HEAD
-=======
 import org.apache.fineract.organisation.prequalification.command.PrequalificatoinApiConstants;
->>>>>>> fiter/fb/dev
 import org.apache.fineract.useradministration.domain.AppUser;
 
 @Entity
@@ -78,41 +75,25 @@ public class PrequalificationGroupMember extends AbstractPersistableCustom {
     }
 
     private PrequalificationGroupMember(final AppUser appUser, final String clientName, final String dpi, final LocalDate dob,
-<<<<<<< HEAD
-                                        final String puente, final PrequalificationGroup groupId, final BigDecimal requestedAmount, final Integer status,
+                                        final String puente, final PrequalificationGroup group, final BigDecimal requestedAmount, final Integer status,
                                         final Long clientId) {
-=======
-            final String puente, final PrequalificationGroup group, final BigDecimal requestedAmount, final Integer status,
-            final Long clientId) {
->>>>>>> fiter/fb/dev
         this.status = PrequalificationStatus.PENDING.getValue();
         this.createdAt = DateUtils.getLocalDateTimeOfTenant();
         this.dob = dob;
         this.dpi = dpi;
         this.name = clientName;
         this.clientId = clientId;
-<<<<<<< HEAD
-        this.prequalificationGroup = groupId;
-=======
         this.prequalificationGroup = group;
->>>>>>> fiter/fb/dev
         this.workWithPuente = puente;
         this.requestedAmount = requestedAmount;
         this.addedBy = appUser;
         this.status = status;
     }
 
-<<<<<<< HEAD
-    public static PrequalificationGroupMember fromJson(PrequalificationGroup groupId, String name, String dpi, Long clientId,
+    public static PrequalificationGroupMember fromJson(PrequalificationGroup group, String name, String dpi, Long clientId,
                                                        LocalDate dateOfBirth, BigDecimal requestedAmount, String puente, AppUser addedBy, Integer status) {
         // TODO Auto-generated method stub
-        return new PrequalificationGroupMember(addedBy, name, dpi, dateOfBirth, puente, groupId, requestedAmount, status, clientId);
-=======
-    public static PrequalificationGroupMember fromJson(PrequalificationGroup group, String name, String dpi, Long clientId,
-            LocalDate dateOfBirth, BigDecimal requestedAmount, String puente, AppUser addedBy, Integer status) {
-        // TODO Auto-generated method stub
         return new PrequalificationGroupMember(addedBy, name, dpi, dateOfBirth, puente, group, requestedAmount, status, clientId);
->>>>>>> fiter/fb/dev
     }
 
     public void updateStatus(final PrequalificationStatus prequalificationStatus) {
@@ -120,39 +101,6 @@ public class PrequalificationGroupMember extends AbstractPersistableCustom {
         this.status = prequalificationStatus.getValue();
     }
 
-<<<<<<< HEAD
-    public Map<String, Object> update(final JsonCommand command) {
-
-        final Map<String, Object> actualChanges = new LinkedHashMap<>(7);
-
-        // final String documentTypeIdParamName = "documentTypeId";
-        // if (command.isChangeInLongParameterNamed(documentTypeIdParamName, this.documentType.getId())) {
-        // final Long newValue = command.longValueOfParameterNamed(documentTypeIdParamName);
-        // actualChanges.put(documentTypeIdParamName, newValue);
-        // }
-        //
-        // final String documentKeyParamName = "documentKey";
-        // if (command.isChangeInStringParameterNamed(documentKeyParamName, this.documentKey)) {
-        // final String newValue = command.stringValueOfParameterNamed(documentKeyParamName);
-        // actualChanges.put(documentKeyParamName, newValue);
-        // this.documentKey = StringUtils.defaultIfEmpty(newValue, null);
-        // }
-        //
-        // final String descriptionParamName = "description";
-        // if (command.isChangeInStringParameterNamed(descriptionParamName, this.description)) {
-        // final String newValue = command.stringValueOfParameterNamed(descriptionParamName);
-        // actualChanges.put(descriptionParamName, newValue);
-        // this.description = StringUtils.defaultIfEmpty(newValue, null);
-        // }
-        //
-        // final String statusParamName = "status";
-        // if (command.isChangeInStringParameterNamed(statusParamName,
-        // ClientIdentifierStatus.fromInt(this.status).getCode())) {
-        // final String newValue = command.stringValueOfParameterNamed(descriptionParamName);
-        // actualChanges.put(descriptionParamName, ClientIdentifierStatus.valueOf(newValue));
-        // this.status = ClientIdentifierStatus.valueOf(newValue).getValue();
-        // }
-=======
     public void updateName(final String name) {
         this.name = name;
     }
@@ -202,7 +150,6 @@ public class PrequalificationGroupMember extends AbstractPersistableCustom {
             final String newValue = command.stringValueOfParameterNamed(PrequalificatoinApiConstants.memberWorkWithPuenteParamName);
             actualChanges.put(PrequalificatoinApiConstants.memberWorkWithPuenteParamName, newValue);
         }
->>>>>>> fiter/fb/dev
 
         return actualChanges;
     }

@@ -148,19 +148,11 @@ public final class CenterData implements Serializable {
     }
 
     public static CenterData template(final Long officeId, final String accountNo, final LocalDate activationDate,
-<<<<<<< HEAD
                                       final Collection<OfficeData> officeOptions, final Collection<StaffData> staffOptions,
                                       final Collection<GroupGeneralData> groupMembersOptions, final BigDecimal totalCollected, final BigDecimal totalOverdue,
                                       final BigDecimal totaldue, final BigDecimal installmentDue, final Collection<CodeValueData> cityOptions,
                                       final Collection<CodeValueData> stateOptions, final Collection<CodeValueData> typeOptions,
                                       final Collection<CodeValueData> meetingDayOptions) {
-=======
-            final Collection<OfficeData> officeOptions, final Collection<StaffData> staffOptions,
-            final Collection<GroupGeneralData> groupMembersOptions, final BigDecimal totalCollected, final BigDecimal totalOverdue,
-            final BigDecimal totaldue, final BigDecimal installmentDue, final Collection<CodeValueData> cityOptions,
-            final Collection<CodeValueData> stateOptions, final Collection<CodeValueData> typeOptions,
-            final Collection<CodeValueData> meetingDayOptions) {
->>>>>>> fiter/fb/dev
         final CalendarData collectionMeetingCalendar = null;
         final Collection<CodeValueData> closureReasons = null;
         final GroupTimelineData timeline = null;
@@ -262,7 +254,6 @@ public final class CenterData implements Serializable {
     }
 
     private CenterData(final Long id, final String accountNo, final String name, final String externalId, final EnumOptionData status,
-<<<<<<< HEAD
                        final LocalDate activationDate, final Long officeId, final String officeName, final Long staffId, final String staffName,
                        final String hierarchy, final Collection<GroupGeneralData> groupMembers, final Collection<OfficeData> officeOptions,
                        final Collection<StaffData> staffOptions, final Collection<GroupGeneralData> groupMembersOptions,
@@ -270,15 +261,6 @@ public final class CenterData implements Serializable {
                        final BigDecimal totalCollected, final BigDecimal totalOverdue, final BigDecimal totaldue, final BigDecimal installmentDue,
                        final Collection<CodeValueData> cityOptions, final Collection<CodeValueData> stateOptions,
                        final Collection<CodeValueData> typeOptions, final Collection<CodeValueData> meetingDayOptions) {
-=======
-            final LocalDate activationDate, final Long officeId, final String officeName, final Long staffId, final String staffName,
-            final String hierarchy, final Collection<GroupGeneralData> groupMembers, final Collection<OfficeData> officeOptions,
-            final Collection<StaffData> staffOptions, final Collection<GroupGeneralData> groupMembersOptions,
-            final CalendarData collectionMeetingCalendar, final Collection<CodeValueData> closureReasons, final GroupTimelineData timeline,
-            final BigDecimal totalCollected, final BigDecimal totalOverdue, final BigDecimal totaldue, final BigDecimal installmentDue,
-            final Collection<CodeValueData> cityOptions, final Collection<CodeValueData> stateOptions,
-            final Collection<CodeValueData> typeOptions, final Collection<CodeValueData> meetingDayOptions) {
->>>>>>> fiter/fb/dev
         this.id = id;
         this.accountNo = accountNo;
         this.name = name;

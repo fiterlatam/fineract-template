@@ -87,9 +87,6 @@
     <include file="parts/0070_FBR_add_active_loan_report.xml" relativeToChangelogFile="true"/>
     <include file="parts/0071_FBR_change_prequalification_member_groupid.xml" relativeToChangelogFile="true"/>
     <include file="parts/0072_FBR_update_active_loan_report.xml" relativeToChangelogFile="true"/>
-<<<<<<< HEAD
-    <include file="parts/0073_FBR_update_query_loan_status_id.xml" relativeToChangelogFile="true"/>
-=======
     <include file="parts/0073_FBR_Add_m_sector_economico_m_actividad_economica_tables.xml" relativeToChangelogFile="true"/>
     <include file="parts/0074_FBR_Add_Document_purpose_Code.xml" relativeToChangelogFile="true"/>
     <include file="parts/0073_FBR_116_loan_portfolio_arrears_report.xml" relativeToChangelogFile="true"/>
@@ -99,5 +96,4 @@
     <include file="parts/0077_create_hard_policy_checklist_configurations.xml" relativeToChangelogFile="true"/>
     <include file="parts/0078_restructure_credits_table_and_permissions.xml" relativeToChangelogFile="true"/>
     <include file="parts/0079_add_extra_details_to_client_table.xml" relativeToChangelogFile="true"/>
->>>>>>> fiter/fb/dev
 </databaseChangeLog>

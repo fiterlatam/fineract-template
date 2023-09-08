@@ -35,10 +35,7 @@ import org.apache.fineract.infrastructure.core.data.DataValidatorBuilder;
 import org.apache.fineract.infrastructure.core.exception.InvalidJsonException;
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
-<<<<<<< HEAD
-=======
 import org.apache.fineract.organisation.prequalification.command.PrequalificatoinApiConstants;
->>>>>>> fiter/fb/dev
 import org.apache.fineract.portfolio.client.api.ClientApiConstants;
 import org.apache.fineract.portfolio.client.validation.ClientIdentifierDocumentValidator;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,16 +45,11 @@ import org.springframework.stereotype.Component;
 public final class PrequalificationMemberCommandFromApiJsonDeserializer {
 
     private final FromJsonHelper fromApiJsonHelper;
-<<<<<<< HEAD
-    private final Set<String> supportedParameters = new HashSet<>(
-            Arrays.asList("id", "clientId", "name", "dpi", "dob", "locale", "dateFormat", "amount", "puente", "individual"));
-=======
     private final Set<String> supportedParameters = new HashSet<>(Arrays.asList("id", "clientId", "name", "dpi", "dob", "locale",
             "dateFormat", "amount", "puente", "individual", "workWithPuente"));
 
     private final Set<String> supportedParametersForUpdate = new HashSet<>(
             Arrays.asList("id", "clientId", "name", "dpi", "dob", "locale", "dateFormat", "amount", "puente", "individual", "status"));
->>>>>>> fiter/fb/dev
 
     @Autowired
     public PrequalificationMemberCommandFromApiJsonDeserializer(final FromJsonHelper fromApiJsonHelper) {
@@ -96,8 +88,6 @@ public final class PrequalificationMemberCommandFromApiJsonDeserializer {
         }
 
     }
-<<<<<<< HEAD
-=======
 
     public void validateForUpdate(String json) {
 
@@ -141,5 +131,4 @@ public final class PrequalificationMemberCommandFromApiJsonDeserializer {
                 .notBlank().notExceedingLengthOf(100);
 
     }
->>>>>>> fiter/fb/dev
 }

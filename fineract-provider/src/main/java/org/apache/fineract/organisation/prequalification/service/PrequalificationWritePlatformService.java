@@ -25,13 +25,9 @@ public interface PrequalificationWritePlatformService {
 
     CommandProcessingResult processPrequalification(JsonCommand command);
 
-<<<<<<< HEAD
-    Long addCommentsToPrequalification(Long blacklistId, String comment);
-=======
     CommandProcessingResult processUpdatePrequalification(Long groupId, JsonCommand command);
 
     Long addCommentsToPrequalification(Long blacklistId, String comment);
 
     CommandProcessingResult updatePrequalificationGroupMember(Long memberId, JsonCommand command);
->>>>>>> fiter/fb/dev
 }

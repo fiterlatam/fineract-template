@@ -41,7 +41,6 @@ public final class PreQualificationsMemberEnumerations {
             case INVALID:
                 optionData = new EnumOptionData(PrequalificationMemberIndication.INVALID.getValue().longValue(),
                         PrequalificationMemberIndication.INVALID.getCode(), "INVALID");
-<<<<<<< HEAD
                 break;
             case ACTIVE:
                 optionData = new EnumOptionData(PrequalificationMemberIndication.ACTIVE.getValue().longValue(),
@@ -50,25 +49,11 @@ public final class PreQualificationsMemberEnumerations {
             case INACTIVE:
                 optionData = new EnumOptionData(PrequalificationMemberIndication.INACTIVE.getValue().longValue(),
                         PrequalificationMemberIndication.INACTIVE.getCode(), "INACTIVE");
+                break;
             case NONE:
                 optionData = new EnumOptionData(PrequalificationMemberIndication.NONE.getValue().longValue(),
                         PrequalificationMemberIndication.NONE.getCode(), "NONE");
                 break;
-=======
-            break;
-            case ACTIVE:
-                optionData = new EnumOptionData(PrequalificationMemberIndication.ACTIVE.getValue().longValue(),
-                        PrequalificationMemberIndication.ACTIVE.getCode(), "ACTIVE");
-            break;
-            case INACTIVE:
-                optionData = new EnumOptionData(PrequalificationMemberIndication.INACTIVE.getValue().longValue(),
-                        PrequalificationMemberIndication.INACTIVE.getCode(), "INACTIVE");
-            break;
-            case NONE:
-                optionData = new EnumOptionData(PrequalificationMemberIndication.NONE.getValue().longValue(),
-                        PrequalificationMemberIndication.NONE.getCode(), "NONE");
-            break;
->>>>>>> fiter/fb/dev
         }
 
         return optionData;

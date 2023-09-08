@@ -572,11 +572,7 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
             return ClientData.instance(accountNo, status, subStatus, officeId, officeName, transferToOfficeId, transferToOfficeName, id,
                     firstname, middlename, lastname, fullname, displayName, externalId, mobileNo, emailAddress, dateOfBirth, gender,
                     activationDate, imageId, staffId, staffName, timeline, savingsProductId, savingsProductName, savingsAccountId,
-<<<<<<< HEAD
-                    clienttype, classification, legalForm, clientNonPerson, isStaff, dpiNumber, oldCustomerNumber);
-=======
                     clienttype, classification, legalForm, clientNonPerson, isStaff, dpiNumber, oldCustomerNumber,null);
->>>>>>> fiter/fb/dev
 
         }
     }
@@ -788,11 +784,7 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
             return ClientData.instance(accountNo, status, subStatus, officeId, officeName, transferToOfficeId, transferToOfficeName, id,
                     firstname, middlename, lastname, fullname, displayName, externalId, mobileNo, emailAddress, dateOfBirth, gender,
                     activationDate, imageId, staffId, staffName, timeline, savingsProductId, savingsProductName, savingsAccountId,
-<<<<<<< HEAD
-                    clienttype, classification, legalForm, clientNonPerson, isStaff, dpiNumber, oldCustomerNumber);
-=======
                     clienttype, classification, legalForm, clientNonPerson, isStaff, dpiNumber, oldCustomerNumber,detailData);
->>>>>>> fiter/fb/dev
 
         }
     }

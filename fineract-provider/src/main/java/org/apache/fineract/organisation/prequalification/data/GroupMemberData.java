@@ -36,11 +36,7 @@ public class GroupMemberData {
     private BigDecimal requestedAmount;
 
     public GroupMemberData(final Long id, final String name, final LocalDate dob, final String dpi, final EnumOptionData status,
-<<<<<<< HEAD
                            final String workWithPuente, final BigDecimal requestedAmount) {
-=======
-            final String workWithPuente, final BigDecimal requestedAmount) {
->>>>>>> fiter/fb/dev
         this.id = id;
         this.name = name;
         this.dpi = dpi;
@@ -52,11 +48,7 @@ public class GroupMemberData {
     }
 
     public static GroupMemberData instance(final Long id, final String name, final LocalDate dob, final String dpi,
-<<<<<<< HEAD
                                            final EnumOptionData status, final String workWithPuente, final BigDecimal requestedAmount) {
-=======
-            final EnumOptionData status, final String workWithPuente, final BigDecimal requestedAmount) {
->>>>>>> fiter/fb/dev
         return new GroupMemberData(id, name, dob, dpi, status, workWithPuente, requestedAmount);
     }
 }

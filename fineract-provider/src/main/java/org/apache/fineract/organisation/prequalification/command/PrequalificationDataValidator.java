@@ -22,11 +22,6 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.reflect.TypeToken;
 import java.lang.reflect.Type;
-<<<<<<< HEAD
-import java.math.BigDecimal;
-import java.time.LocalDate;
-=======
->>>>>>> fiter/fb/dev
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -37,10 +32,6 @@ import org.apache.fineract.infrastructure.core.exception.InvalidJsonException;
 import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidationException;
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
 import org.apache.fineract.organisation.prequalification.domain.PreQualificationGroupRepository;
-<<<<<<< HEAD
-import org.apache.fineract.portfolio.client.api.ClientApiConstants;
-=======
->>>>>>> fiter/fb/dev
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -52,11 +43,7 @@ public class PrequalificationDataValidator {
 
     @Autowired
     public PrequalificationDataValidator(final FromJsonHelper fromApiJsonHelper,
-<<<<<<< HEAD
                                          final PreQualificationGroupRepository preQualificationGroupRepository) {
-=======
-            final PreQualificationGroupRepository preQualificationGroupRepository) {
->>>>>>> fiter/fb/dev
         this.fromApiJsonHelper = fromApiJsonHelper;
         this.preQualificationGroupRepository = preQualificationGroupRepository;
     }
@@ -99,28 +86,6 @@ public class PrequalificationDataValidator {
         if (StringUtils.isBlank(json)) {
             throw new InvalidJsonException();
         }
-<<<<<<< HEAD
-
-        final Type typeOfMap = new TypeToken<Map<String, Object>>() {}.getType();
-        this.fromApiJsonHelper.checkForUnsupportedParameters(typeOfMap, json,
-                PrequalificationCollectionConstants.NEW_GROUP_PREQUALIFICATION_REQUEST_DATA_PARAMETERS);
-
-        final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
-        final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors)
-                .resource(ClientApiConstants.CLIENT_CHARGES_RESOURCE_NAME);
-
-        final JsonElement element = this.fromApiJsonHelper.parse(json);
-
-        if (this.fromApiJsonHelper.parameterExists(ClientApiConstants.amountParamName, element)) {
-            final BigDecimal amount = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed(ClientApiConstants.amountParamName, element);
-            baseDataValidator.reset().parameter(ClientApiConstants.amountParamName).value(amount).notNull().positiveAmount();
-        }
-
-        if (this.fromApiJsonHelper.parameterExists(ClientApiConstants.dueAsOfDateParamName, element)) {
-            final LocalDate dueDate = this.fromApiJsonHelper.extractLocalDateNamed(ClientApiConstants.dueAsOfDateParamName, element);
-            baseDataValidator.reset().parameter(ClientApiConstants.dueAsOfDateParamName).value(dueDate).notNull();
-        }
-=======
         final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
 
         final Type typeOfMap = new TypeToken<Map<String, Object>>() {}.getType();
@@ -148,7 +113,6 @@ public class PrequalificationDataValidator {
         baseDataValidator.reset().parameter(PrequalificatoinApiConstants.membersParamName).value(members).ignoreIfNull()
                 .jsonArrayNotEmpty();
 
->>>>>>> fiter/fb/dev
         throwExceptionIfValidationWarningsExist(dataValidationErrors);
     }
 

@@ -28,10 +28,7 @@ import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
-<<<<<<< HEAD
-=======
 import java.util.Map;
->>>>>>> fiter/fb/dev
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -39,10 +36,7 @@ import org.apache.fineract.infrastructure.codes.service.CodeValueReadPlatformSer
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuilder;
-<<<<<<< HEAD
-=======
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
->>>>>>> fiter/fb/dev
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.organisation.agency.domain.Agency;
 import org.apache.fineract.organisation.agency.domain.AgencyRepositoryWrapper;
@@ -93,7 +87,6 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
 
     @Autowired
     public PrequalificationWritePlatformServiceImpl(final PlatformSecurityContext context,
-<<<<<<< HEAD
                                                     final PrequalificationDataValidator dataValidator, final GroupRepositoryWrapper groupRepositoryWrapper,
                                                     final AppUserRepository appUserRepository, final LoanProductRepository loanProductRepository,
                                                     final ClientReadPlatformService clientReadPlatformService, final AgencyRepositoryWrapper agencyRepositoryWrapper,
@@ -101,15 +94,6 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                                                     final PreQualificationMemberRepository preQualificationMemberRepository,
                                                     final CodeValueReadPlatformService codeValueReadPlatformService, final JdbcTemplate jdbcTemplate,
                                                     final PrequalificationGroupRepositoryWrapper prequalificationGroupRepositoryWrapper) {
-=======
-            final PrequalificationDataValidator dataValidator, final GroupRepositoryWrapper groupRepositoryWrapper,
-            final AppUserRepository appUserRepository, final LoanProductRepository loanProductRepository,
-            final ClientReadPlatformService clientReadPlatformService, final AgencyRepositoryWrapper agencyRepositoryWrapper,
-            final PrequalificationMemberCommandFromApiJsonDeserializer apiJsonDeserializer,
-            final PreQualificationMemberRepository preQualificationMemberRepository,
-            final CodeValueReadPlatformService codeValueReadPlatformService, final JdbcTemplate jdbcTemplate,
-            final PrequalificationGroupRepositoryWrapper prequalificationGroupRepositoryWrapper) {
->>>>>>> fiter/fb/dev
         this.context = context;
         this.dataValidator = dataValidator;
         this.loanProductRepository = loanProductRepository;
@@ -128,11 +112,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
     public CommandProcessingResult processPrequalification(JsonCommand command) {
 
         final Boolean individualPrequalification = command.booleanPrimitiveValueOfParameterNamed("individual");
-<<<<<<< HEAD
-        if (individualPrequalification){
-=======
         if (individualPrequalification) {
->>>>>>> fiter/fb/dev
             return prequalifyIndividual(command);
         }
 
@@ -170,11 +150,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         String prequalificationNumber = StringUtils.leftPad(prequalificationGroup.getId().toString(), 4, '0');
         prequalSB.append(prequalificationNumber);
         prequalificationGroup.updatePrequalificationNumber(prequalSB.toString());
-<<<<<<< HEAD
-        List<PrequalificationGroupMember> members = assembleMembers(command, prequalificationGroup, addedBy);
-=======
         List<PrequalificationGroupMember> members = assembNewMembers(command, prequalificationGroup, addedBy);
->>>>>>> fiter/fb/dev
         prequalificationGroup.updateMembers(members);
         this.prequalificationGroupRepositoryWrapper.saveAndFlush(prequalificationGroup);
 
@@ -195,10 +171,6 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         final BigDecimal amount = command.bigDecimalValueOfParameterNamed("amount");
         LocalDate dateOfBirth = command.localDateValueOfParameterNamed("dob");
 
-<<<<<<< HEAD
-
-=======
->>>>>>> fiter/fb/dev
         // get light indicator
         String blistSql = "select count(*) from m_client_blacklist where dpi=? and status=?";
         Long activeBlacklisted = jdbcTemplate.queryForObject(blistSql, Long.class, dpi, BlacklistStatus.ACTIVE.getValue());
@@ -215,13 +187,8 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             status = PrequalificationMemberIndication.ACTIVE.getValue();
         }
 
-<<<<<<< HEAD
-        PrequalificationGroupMember groupMember = PrequalificationGroupMember.fromJson( null, clientName, dpi, null, dateOfBirth,
-                amount, puente, addedBy, status);
-=======
         PrequalificationGroupMember groupMember = PrequalificationGroupMember.fromJson(null, clientName, dpi, null, dateOfBirth, amount,
                 puente, addedBy, status);
->>>>>>> fiter/fb/dev
 
         this.preQualificationMemberRepository.saveAndFlush(groupMember);
         return new CommandProcessingResultBuilder() //
@@ -231,11 +198,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                 .build();
     }
 
-<<<<<<< HEAD
-    private List<PrequalificationGroupMember> assembleMembers(JsonCommand command, PrequalificationGroup group, AppUser addedBy) {
-=======
     private List<PrequalificationGroupMember> assembNewMembers(JsonCommand command, PrequalificationGroup group, AppUser addedBy) {
->>>>>>> fiter/fb/dev
         final List<PrequalificationGroupMember> allMembers = new ArrayList<>();
 
         JsonArray groupMembers = command.arrayOfParameterNamed(PrequalificatoinApiConstants.membersParamName);
@@ -317,8 +280,6 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         this.prequalificationGroupRepositoryWrapper.saveAndFlush(prequalificationGroup);
         return groupId;
     }
-<<<<<<< HEAD
-=======
 
     @Override
     public CommandProcessingResult processUpdatePrequalification(Long groupId, JsonCommand command) {
@@ -404,7 +365,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
     }
 
     private List<PrequalificationGroupMember> assembleMembersForUpdate(JsonCommand command, PrequalificationGroup prequalificationGroup,
-            AppUser addedBy) {
+                                                                       AppUser addedBy) {
 
         final List<PrequalificationGroupMember> allMembers = new ArrayList<>();
 
@@ -437,7 +398,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
     }
 
     private PrequalificationGroupMember assembleMemberForUpdate(JsonElement memberElement,
-            PrequalificationGroupMember prequalificationGroupMember, AppUser addedBy) {
+                                                                PrequalificationGroupMember prequalificationGroupMember, AppUser addedBy) {
         apiJsonDeserializer.validateForUpdate(memberElement.toString());
 
         JsonCommand command = JsonCommand.fromJsonElement(prequalificationGroupMember.getId(), memberElement, new FromJsonHelper());
@@ -549,5 +510,4 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         return groupMember;
     }
 
->>>>>>> fiter/fb/dev
 }

@@ -43,10 +43,7 @@ import org.apache.fineract.organisation.prequalification.data.MemberPrequalifica
 import org.apache.fineract.organisation.prequalification.domain.PreQualificationMemberRepository;
 import org.apache.fineract.organisation.prequalification.domain.PreQualificationsEnumerations;
 import org.apache.fineract.organisation.prequalification.domain.PreQualificationsMemberEnumerations;
-<<<<<<< HEAD
-=======
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationMemberIndication;
->>>>>>> fiter/fb/dev
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationStatus;
 import org.apache.fineract.portfolio.client.service.ClientChargeWritePlatformServiceJpaRepositoryImpl;
 import org.apache.fineract.portfolio.client.service.ClientReadPlatformService;
@@ -79,19 +76,11 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
 
     @Autowired
     public PrequalificationReadPlatformServiceImpl(final PlatformSecurityContext context, final PaginationHelper paginationHelper,
-<<<<<<< HEAD
                                                    final DatabaseSpecificSQLGenerator sqlGenerator, final ColumnValidator columnValidator,
                                                    final PrequalificationDataValidator dataValidator, final LoanProductRepository loanProductRepository,
                                                    final PreQualificationMemberRepository preQualificationMemberRepository,
                                                    final ClientReadPlatformService clientReadPlatformService, final CodeValueReadPlatformService codeValueReadPlatformService,
                                                    final JdbcTemplate jdbcTemplate) {
-=======
-            final DatabaseSpecificSQLGenerator sqlGenerator, final ColumnValidator columnValidator,
-            final PrequalificationDataValidator dataValidator, final LoanProductRepository loanProductRepository,
-            final PreQualificationMemberRepository preQualificationMemberRepository,
-            final ClientReadPlatformService clientReadPlatformService, final CodeValueReadPlatformService codeValueReadPlatformService,
-            final JdbcTemplate jdbcTemplate) {
->>>>>>> fiter/fb/dev
         this.context = context;
         this.dataValidator = dataValidator;
         this.loanProductRepository = loanProductRepository;
@@ -125,11 +114,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
 
         if (searchParameters != null) {
 
-<<<<<<< HEAD
-            final String extraCriteria = buildSqlStringFromBlacklistCriteria(searchParameters, paramList);
-=======
             final String extraCriteria = buildSqlStringFromBlacklistCriteria(searchParameters, paramList, true);
->>>>>>> fiter/fb/dev
 
             if (StringUtils.isNotBlank(extraCriteria)) {
                 sqlBuilder.append(" and (").append(extraCriteria).append(")");
@@ -162,18 +147,6 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
     @Override
     public GroupPrequalificationData retrieveOne(Long groupId) {
 
-<<<<<<< HEAD
-        final String sql = "select " + this.prequalificationsGroupMapper.schema() + " where g.id = ? ";
-        final GroupPrequalificationData clientData = this.jdbcTemplate.queryForObject(sql, this.prequalificationsGroupMapper,
-                new Object[] { groupId });
-
-        final String membersql = "select " + this.prequalificationsMemberMapper.schema() + " where m.group_id = ? ";
-
-        List<MemberPrequalificationData> members = this.jdbcTemplate.query(membersql, this.prequalificationsMemberMapper,
-                new Object[] { groupId });
-
-        clientData.updateMembers(members);
-=======
         final String sql = "select " + this.prequalificationsGroupMapper.schema() + " WHERE g.id = ? ";
         final GroupPrequalificationData clientData = this.jdbcTemplate.queryForObject(sql, this.prequalificationsGroupMapper,
                 new Object[] { groupId });
@@ -211,7 +184,6 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             clientData.setStatus(prequalificationStatus);
             clientData.updateMembers(members);
         }
->>>>>>> fiter/fb/dev
         return clientData;
 
     }
@@ -240,11 +212,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
 
         if (searchParameters != null) {
 
-<<<<<<< HEAD
-            final String extraCriteria = buildSqlStringFromBlacklistCriteria(searchParameters, paramList);
-=======
             final String extraCriteria = buildSqlStringFromBlacklistCriteria(searchParameters, paramList, false);
->>>>>>> fiter/fb/dev
 
             if (StringUtils.isNotBlank(extraCriteria)) {
                 sqlBuilder.append(" and (").append(extraCriteria).append(")");
@@ -282,25 +250,13 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
         return clientData;
     }
 
-<<<<<<< HEAD
-    private String buildSqlStringFromBlacklistCriteria(final SearchParameters searchParameters, List<Object> paramList) {
-=======
     private String buildSqlStringFromBlacklistCriteria(final SearchParameters searchParameters, List<Object> paramList, boolean isGroup) {
->>>>>>> fiter/fb/dev
 
         String sqlSearch = searchParameters.getSqlSearch();
         final Long officeId = searchParameters.getOfficeId();
         final String dpiNumber = searchParameters.getName();
         final String status = searchParameters.getStatus();
         final String type = searchParameters.getType();
-<<<<<<< HEAD
-
-        String extraCriteria = "";
-        if (sqlSearch != null) {
-            extraCriteria = " and (m.name like '%" + sqlSearch + "%' OR m.dpi='" + sqlSearch + "') ";
-        }
-
-=======
         final String groupName = searchParameters.getGroupName();
         final String centerName = searchParameters.getCenterName();
 
@@ -313,7 +269,6 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             extraCriteria = " and (g.group_name like '%" + sqlSearch + "%' OR pc.display_name='%" + sqlSearch + "%') ";
         }
 
->>>>>>> fiter/fb/dev
         if (officeId != null) {
             extraCriteria += " and c.office_id = ? ";
             paramList.add(officeId);
@@ -324,8 +279,6 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             extraCriteria += " and g.prequalification_number like %?% ";
         }
 
-<<<<<<< HEAD
-=======
         if (groupName != null) {
             paramList.add(groupName);
             extraCriteria += " and g.group_name like %?% ";
@@ -336,7 +289,6 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             extraCriteria += " and pc.display_name like %?% ";
         }
 
->>>>>>> fiter/fb/dev
         if (status != null) {
             PrequalificationStatus prequalificationStatus = PrequalificationStatus.fromString(status);
             extraCriteria += " and g.status = " + prequalificationStatus.getValue().toString() + " ";
@@ -360,22 +312,6 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
         private final String schema;
 
         PrequalificationsGroupMapper() {
-<<<<<<< HEAD
-            final StringBuilder builder = new StringBuilder(400);
-
-            builder.append("g.id as id, g.prequalification_number as prequalificationNumber, g.status, g.created_at, g.comments, "
-                    + "ma.name as agencyName, cg.display_name as groupName, g.group_name as newGroupName, g.group_id as groupId, pc.display_name as centerName, ");
-            builder.append("lp.name as productName, au.firstname, au.lastname ");
-            builder.append("from m_prequalification_group g ");
-            builder.append("inner join m_appuser au on au.id = g.added_by ");
-            builder.append("inner join m_product_loan lp on g.product_id = lp.id ");
-            builder.append("inner join m_agency ma on g.agency_id = ma.id ");
-            builder.append("left join m_group cg on cg.id = g.group_id ");
-            builder.append("left join m_group pc on pc.id = g.center_id ");
-            // builder.append("left join m_portfolio mp on mp.id = pc.portfolio_id ");
-
-            this.schema = builder.toString();
-=======
             this.schema = """
                     	g.id AS id,
                     	g.prequalification_number AS prequalificationNumber,
@@ -446,7 +382,6 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                     INNER JOIN m_appuser fa ON
                     	fa.id = g.facilitator
                     """;
->>>>>>> fiter/fb/dev
         }
 
         public String schema() {
@@ -472,8 +407,6 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             final LocalDate createdAt = JdbcSupport.getLocalDate(rs, "created_at");
 
             final String addedBy = rs.getString("firstname") + " " + rs.getString("lastname");
-<<<<<<< HEAD
-=======
             final Long agencyId = JdbcSupport.getLong(rs, "agencyId");
             final Long centerId = JdbcSupport.getLong(rs, "centerId");
             final Long productId = JdbcSupport.getLong(rs, "productId");
@@ -483,18 +416,13 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             final Long orangeValidationCount = rs.getLong("orangeValidationCount");
             final Long greenValidationCount = rs.getLong("greenValidationCount");
             final Long yellowValidationCount = rs.getLong("yellowValidationCount");
->>>>>>> fiter/fb/dev
 
             if (StringUtils.isBlank(groupName)) {
                 groupName = newGroupName;
             }
             return GroupPrequalificationData.instance(id, prequalificationNumber, status, agencyName, null, centerName, groupName,
-<<<<<<< HEAD
-                    productName, addedBy, createdAt, comments, groupId);
-=======
                     productName, addedBy, createdAt, comments, groupId, agencyId, centerId, productId, facilitatorId, facilitatorName,
                     greenValidationCount, yellowValidationCount, orangeValidationCount, redValidationCount);
->>>>>>> fiter/fb/dev
 
         }
     }
@@ -504,25 +432,6 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
         private final String schema;
 
         PrequalificationsMemberMapper() {
-<<<<<<< HEAD
-            final StringBuilder builder = new StringBuilder(400);
-
-            builder.append("m.id as id, m.name, m.status, m.dpi, m.dob, m.requested_amount as requestedAmount, ");
-            builder.append(
-                    "coalesce((select sum(principal_disbursed_derived) from m_loan where client_id = m.client_id),0) as totalLoanAmount, ");
-            builder.append(
-                    "coalesce((select sum(total_outstanding_derived) from m_loan where client_id = m.client_id),0) as totalLoanBalance, ");
-            builder.append(
-                    "coalesce((select sum(ln.total_outstanding_derived) from m_loan ln inner join m_guarantor mg on mg.loan_id=ln.id where mg.entity_id = m.client_id),0) as totalGuaranteedLoanBalance, ");
-            builder.append("coalesce((select max(loan_counter) from m_loan where client_id = m.client_id),0) as noOfCycles, ");
-            builder.append("0 as additionalCreditsCount, ");
-            builder.append("0 as additionalCreditsSum, ");
-            builder.append("(select count(*) from m_client_blacklist b where b.dpi = m.dpi) as blacklistCount, ");
-            builder.append("m.work_with_puente as puente ");
-            builder.append("from m_prequalification_group_members m");
-
-            this.schema = builder.toString();
-=======
             this.schema = """
                     	m.id AS id,
                     	m.name,
@@ -601,7 +510,6 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                     LEFT JOIN m_client mc ON
                     	mc.dpi = m.dpi
                     """;
->>>>>>> fiter/fb/dev
         }
 
         public String schema() {
@@ -621,11 +529,8 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             final BigDecimal requestedAmount = rs.getBigDecimal("requestedAmount");
             final String puente = rs.getString("puente");
             final Long blacklistCount = rs.getLong("blacklistCount");
-<<<<<<< HEAD
-=======
             final Long activeBlacklistCount = rs.getLong("activeBlacklistCount");
             final Long inActiveBlacklistCount = rs.getLong("inActiveBlacklistCount");
->>>>>>> fiter/fb/dev
             final LocalDate dob = JdbcSupport.getLocalDate(rs, "dob");
             final BigDecimal totalLoanAmount = rs.getBigDecimal("totalLoanAmount");
             final BigDecimal totalLoanBalance = rs.getBigDecimal("totalLoanBalance");
@@ -633,11 +538,6 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             final Long noOfCycles = rs.getLong("noOfCycles");
             final Long additionalCreditsCount = rs.getLong("additionalCreditsCount");
             final BigDecimal additionalCreditsSum = rs.getBigDecimal("additionalCreditsSum");
-<<<<<<< HEAD
-
-            return MemberPrequalificationData.instance(id, name, dpi, dob, puente, requestedAmount, status, blacklistCount, totalLoanAmount,
-                    totalLoanBalance, totalGuaranteedLoanBalance, noOfCycles, additionalCreditsCount, additionalCreditsSum);
-=======
             final Long redValidationCount = rs.getLong("redValidationCount");
             final Long orangeValidationCount = rs.getLong("orangeValidationCount");
             final Long greenValidationCount = rs.getLong("greenValidationCount");
@@ -647,7 +547,6 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                     totalLoanBalance, totalGuaranteedLoanBalance, noOfCycles, additionalCreditsCount, additionalCreditsSum,
                     activeBlacklistCount, inActiveBlacklistCount, greenValidationCount, yellowValidationCount, orangeValidationCount,
                     redValidationCount);
->>>>>>> fiter/fb/dev
 
         }
     }

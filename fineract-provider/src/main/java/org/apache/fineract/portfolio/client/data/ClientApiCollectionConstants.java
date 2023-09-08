@@ -25,15 +25,6 @@ import org.apache.fineract.portfolio.client.api.ClientApiConstants;
 
 public class ClientApiCollectionConstants extends ClientApiConstants {
 
-<<<<<<< HEAD
-    protected static final Set<String> CLIENT_CREATE_REQUEST_DATA_PARAMETERS = new HashSet<>(
-            Arrays.asList(familyMembers, address, localeParamName, dateFormatParamName, groupIdParamName, accountNoParamName,
-                    externalIdParamName, mobileNoParamName, emailAddressParamName, firstnameParamName, middlenameParamName,
-                    lastnameParamName, fullnameParamName, officeIdParamName, activeParamName, activationDateParamName, staffIdParamName,
-                    submittedOnDateParamName, savingsProductIdParamName, dateOfBirthParamName, genderIdParamName, clientTypeIdParamName,
-                    clientClassificationIdParamName, clientNonPersonDetailsParamName, displaynameParamName, legalFormIdParamName,
-                    datatables, isStaffParamName, dpiParamName, oldCustomerNumberParamName));
-=======
     protected static final Set<String> CLIENT_CREATE_REQUEST_DATA_PARAMETERS = new HashSet<>(Arrays.asList(familyMembers, address,
             localeParamName, dateFormatParamName, groupIdParamName, accountNoParamName, externalIdParamName, mobileNoParamName,
             emailAddressParamName, firstnameParamName, middlenameParamName, lastnameParamName, fullnameParamName, officeIdParamName,
@@ -47,7 +38,6 @@ public class ClientApiCollectionConstants extends ClientApiConstants {
             groupNumberParamName, groupMemberParamName, statusInGroupParamName, retirementReasonParamName, civilStatusParamName, educationLevelParamName,
             ethinicityParamName,nationalityParamName,languagesParamName,economicSectorParamName, economicActivityParamName,otherNamesParamName,
             maidenNameParamName,familyReferenceParamName));
->>>>>>> fiter/fb/dev
 
     protected static final Set<String> CLIENT_NON_PERSON_CREATE_REQUEST_DATA_PARAMETERS = new HashSet<>(
             Arrays.asList(familyMembers, address, localeParamName, dateFormatParamName, incorpNumberParamName, remarksParamName,

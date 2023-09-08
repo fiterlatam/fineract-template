@@ -35,29 +35,6 @@ public final class PreQualificationsEnumerations {
     }
 
     public static EnumOptionData status(final PrequalificationStatus status) {
-<<<<<<< HEAD
-        EnumOptionData optionData = new EnumOptionData(PrequalificationStatus.INVALID.getValue().longValue(),
-                PrequalificationStatus.INVALID.getCode(), "INVALID");
-        switch (status) {
-            case INVALID:
-                optionData = new EnumOptionData(PrequalificationStatus.INVALID.getValue().longValue(),
-                        PrequalificationStatus.INVALID.getCode(), "INVALID");
-                break;
-            case PENDING:
-                optionData = new EnumOptionData(PrequalificationStatus.PENDING.getValue().longValue(),
-                        PrequalificationStatus.PENDING.getCode(), "PENDING");
-                break;
-            case APPROVED:
-                optionData = new EnumOptionData(PrequalificationStatus.APPROVED.getValue().longValue(),
-                        PrequalificationStatus.APPROVED.getCode(), "APPROVED");
-            case REJECTED:
-                optionData = new EnumOptionData(PrequalificationStatus.REJECTED.getValue().longValue(),
-                        PrequalificationStatus.REJECTED.getCode(), "REJECTED");
-                break;
-        }
-
-        return optionData;
-=======
         new EnumOptionData(PrequalificationStatus.INVALID.getValue().longValue(), PrequalificationStatus.INVALID.getCode(), "INVALID");
 
         return switch (status) {
@@ -78,7 +55,6 @@ public final class PreQualificationsEnumerations {
             default -> new EnumOptionData(PrequalificationStatus.INVALID.getValue().longValue(), PrequalificationStatus.INVALID.getCode(),
                     "INVALID");
         };
->>>>>>> fiter/fb/dev
     }
 
     public static EnumOptionData legalForm(final Integer statusId) {

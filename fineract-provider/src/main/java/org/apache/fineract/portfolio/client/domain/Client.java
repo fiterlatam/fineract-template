@@ -242,12 +242,8 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
     private ClientInfoRelatedDetail clientInfoRelatedDetail;
 
     public static Client createNew(final AppUser currentUser, final Office clientOffice, final Group clientParentGroup, final Staff staff,
-            final Long savingsProductId, final CodeValue gender, final CodeValue clientType, final CodeValue clientClassification,
-<<<<<<< HEAD
-            final Integer legalForm, final JsonCommand command) {
-=======
-            final Integer legalForm,final ClientInfoRelatedDetail clientInfoRelatedDetail, final JsonCommand command) {
->>>>>>> fiter/fb/dev
+                                   final Long savingsProductId, final CodeValue gender, final CodeValue clientType, final CodeValue clientClassification,
+                                   final Integer legalForm,final ClientInfoRelatedDetail clientInfoRelatedDetail, final JsonCommand command) {
 
         final String accountNo = command.stringValueOfParameterNamed(ClientApiConstants.accountNoParamName);
         final String externalId = command.stringValueOfParameterNamed(ClientApiConstants.externalIdParamName);
@@ -295,21 +291,12 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
     protected Client() {}
 
     private Client(final AppUser currentUser, final ClientStatus status, final Office office, final Group clientParentGroup,
-<<<<<<< HEAD
-            final String accountNo, final String firstname, final String middlename, final String lastname, final String fullname,
-            final LocalDate activationDate, final LocalDate officeJoiningDate, final String externalId, final String mobileNo,
-            final String emailAddress, final Staff staff, final LocalDate submittedOnDate, final Long savingsProductId,
-            final Long savingsAccountId, final LocalDate dateOfBirth, final CodeValue gender, final CodeValue clientType,
-            final CodeValue clientClassification, final Integer legalForm, final Boolean isStaff, final String dpiNumber,
-            final String oldCustomerNumber) {
-=======
                    final String accountNo, final String firstname, final String middlename, final String lastname, final String fullname,
                    final LocalDate activationDate, final LocalDate officeJoiningDate, final String externalId, final String mobileNo,
                    final String emailAddress, final Staff staff, final LocalDate submittedOnDate, final Long savingsProductId,
                    final Long savingsAccountId, final LocalDate dateOfBirth, final CodeValue gender, final CodeValue clientType,
                    final CodeValue clientClassification, final Integer legalForm, final Boolean isStaff, final String dpiNumber,
                    final String oldCustomerNumber, ClientInfoRelatedDetail clientInfoRelatedDetail) {
->>>>>>> fiter/fb/dev
 
         if (StringUtils.isBlank(accountNo)) {
             this.accountNumber = new RandomPasswordGenerator(19).generate();

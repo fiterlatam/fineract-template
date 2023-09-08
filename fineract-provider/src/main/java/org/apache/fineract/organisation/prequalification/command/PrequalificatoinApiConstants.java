@@ -37,8 +37,6 @@ public class PrequalificatoinApiConstants {
     public static final String typificationParamName = "typification";
     public static final String agencyIdParamName = "agencyId";
     public static final String facilitatorParamName = "facilitator";
-<<<<<<< HEAD
-=======
     public static final String prequalificationNumberParamName = "prequalificationNumber";
 
     // Members
@@ -49,5 +47,4 @@ public class PrequalificatoinApiConstants {
     public static final String memberWorkWithPuenteParamName = "workWithPuente";
     public static final String memberStatusParamName = "status";
     public static final String memberClientIdParamName = "clientId";
->>>>>>> fiter/fb/dev
 }
