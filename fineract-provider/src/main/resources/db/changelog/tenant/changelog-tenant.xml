@@ -96,4 +96,6 @@
     <include file="parts/0077_create_hard_policy_checklist_configurations.xml" relativeToChangelogFile="true"/>
     <include file="parts/0078_restructure_credits_table_and_permissions.xml" relativeToChangelogFile="true"/>
     <include file="parts/0079_add_extra_details_to_client_table.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0080_FBR_add_bank_table.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0081_FBR_add_bank_permissions.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
