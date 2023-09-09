@@ -128,6 +128,8 @@ public class AccountingProcessorHelper {
             final BigDecimal fees = (BigDecimal) map.get("feeChargesPortion");
             final BigDecimal penalties = (BigDecimal) map.get("penaltyChargesPortion");
             final BigDecimal overPayments = (BigDecimal) map.get("overPaymentPortion");
+            final BigDecimal vatOnInterestPortion = (BigDecimal) map.get("vatOnInterestPortion");
+            final BigDecimal vatOnChargesPortion = (BigDecimal) map.get("vatOnChargesPortion");
             final boolean reversed = (Boolean) map.get("reversed");
             final Long paymentTypeId = (Long) map.get("paymentTypeId");
 
@@ -163,6 +165,20 @@ public class AccountingProcessorHelper {
                 transaction.setLoanToLoanTransfer(true);
             } else {
                 transaction.setLoanToLoanTransfer(false);
+            }
+            if (transaction.getTransactionType().isVatAccrual()) {
+                if (map.containsKey("debitAccount")) {
+                    Integer debitAccount = (Integer) map.get("debitAccount");
+                    transaction.setDebitAccountForVat(debitAccount);
+                }
+
+                if (map.containsKey("isGeneratedVatTransactionFromRepayment")) {
+                    boolean isGeneratedVatTransactionFromRepayment = (boolean) map.get("isGeneratedVatTransactionFromRepayment");
+                    transaction.setGeneratedTransactionFromRepayment(isGeneratedVatTransactionFromRepayment);
+
+                    transaction.setVatOnCharges(vatOnChargesPortion);
+                    transaction.setVatOnInterest(vatOnInterestPortion);
+                }
             }
             newLoanTransactions.add(transaction);
 
@@ -1337,10 +1353,24 @@ public class AccountingProcessorHelper {
      */
     public void createVatAccrualBasedJournalEntriesAndReversalsForLoan(final Office office, final String currencyCode,
             final Integer accountTypeToBeDebited, final Long loanProductId, final Long paymentTypeId, final Long loanId,
-            final String transactionId, final LocalDate transactionDate, final BigDecimal amount, final Boolean isReversal) {
+            final String transactionId, final LocalDate transactionDate, final BigDecimal amount, final Boolean isReversal,
+            final Boolean isGeneratedFromRepayment, final Integer accounTypeToCredit) {
 
         GLAccount receivableAccount = getLinkedGLAccountForLoanCharges(loanProductId, accountTypeToBeDebited, null);
         GLAccount account = getGLAccountForVat();
+
+        if (isGeneratedFromRepayment) {
+            account = getLinkedGLAccountForLoanCharges(loanProductId, accounTypeToCredit, null);
+
+            final ProductToGLAccountMapping paymentChannelSpecificAccountMapping = this.accountMappingRepository
+                    .findByProductIdAndProductTypeAndFinancialAccountTypeAndPaymentTypeId(loanProductId,
+                            PortfolioProductType.LOAN.getValue(), AccrualAccountsForLoan.FUND_SOURCE.getValue(), paymentTypeId);
+            if (paymentChannelSpecificAccountMapping != null) {
+                receivableAccount = paymentChannelSpecificAccountMapping.getGlAccount();
+            }
+
+
+        }
 
         // reverse debits and credits for reversals
         if (isReversal) {

@@ -28,6 +28,8 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.apache.fineract.accounting.common.AccountingConstants;
 import org.apache.fineract.accounting.journalentry.service.JournalEntryWritePlatformService;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.core.service.database.DatabaseSpecificSQLGenerator;
@@ -326,6 +328,7 @@ public class LoanAccrualWritePlatformServiceImpl implements LoanAccrualWritePlat
         final Long transactionId = this.jdbcTemplate.queryForObject("SELECT " + sqlGenerator.lastInsertId(), Long.class); // NOSONAR
 
         Map<String, Object> transactionMap = toMapAccrualData(transactionId, amount, scheduleAccrualData, accruedTill);
+        transactionMap.put("debitAccount", AccountingConstants.AccrualAccountsForLoan.INTEREST_RECEIVABLE.getValue());
 
         final Map<String, Object> accountingBridgeData = deriveAccountingBridgeData(scheduleAccrualData, transactionMap);
         this.journalEntryWritePlatformService.createJournalEntriesForLoan(accountingBridgeData);

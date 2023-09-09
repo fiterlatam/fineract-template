@@ -730,7 +730,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
             // generate transaction for accrual vat on charge
             LoanTransaction applyLoanVatOnChargeTransaction = LoanTransaction.accrueLoanVatOnCharge(this, getOffice(), vatOnCharge,
-                    transactionDate, vatOnCharge);
+                    transactionDate, vatOnCharge, null);
 
             addLoanTransaction(applyLoanVatOnChargeTransaction);
         }
@@ -2579,7 +2579,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
                 // generate transaction for accrual vat on interest
                 LoanTransaction applyLoanVatOnInterestTransaction = LoanTransaction.accrueLoanVatOnInterest(this, getOffice(),
-                        vatOnInterest, actualDisbursementDate, vatOnInterest);
+                        vatOnInterest, actualDisbursementDate, vatOnInterest, null);
 
                 addLoanTransaction(applyLoanVatOnInterestTransaction);
             }

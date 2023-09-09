@@ -522,10 +522,24 @@ public class AccrualBasedAccountingProcessorForLoan implements AccountingProcess
         final BigDecimal vatAmount = loanTransactionDTO.getAmount();
         final boolean isReversed = loanTransactionDTO.isReversed();
         final Long paymentTypeId = loanTransactionDTO.getPaymentTypeId();
+        Integer debitAccount = AccrualAccountsForLoan.FEES_RECEIVABLE.getValue();
+        if (loanTransactionDTO.getDebitAccountForVat() != null) {
+            debitAccount = loanTransactionDTO.getDebitAccountForVat();
+        }
+
+        Integer creditTypeAccountForRepaymentAccrual = null;
+        if (loanTransactionDTO.isGeneratedTransactionFromRepayment()) {
+            if (loanTransactionDTO.getVatOnInterest() != null && loanTransactionDTO.getVatOnInterest().compareTo(BigDecimal.ZERO) > 0) {
+                creditTypeAccountForRepaymentAccrual = AccrualAccountsForLoan.INTEREST_RECEIVABLE.getValue();
+            }
+            if (loanTransactionDTO.getVatOnCharges() != null && loanTransactionDTO.getVatOnCharges().compareTo(BigDecimal.ZERO) > 0) {
+                creditTypeAccountForRepaymentAccrual = AccrualAccountsForLoan.FEES_RECEIVABLE.getValue();
+            }
+        }
 
         this.helper.createVatAccrualBasedJournalEntriesAndReversalsForLoan(office, currencyCode,
-                AccrualAccountsForLoan.FEES_RECEIVABLE.getValue(), loanProductId, paymentTypeId, loanId, transactionId, transactionDate,
-                vatAmount, isReversed);
+                debitAccount, loanProductId, paymentTypeId, loanId, transactionId, transactionDate,
+                vatAmount, isReversed, loanTransactionDTO.isGeneratedTransactionFromRepayment(), creditTypeAccountForRepaymentAccrual);
 
     }
 
