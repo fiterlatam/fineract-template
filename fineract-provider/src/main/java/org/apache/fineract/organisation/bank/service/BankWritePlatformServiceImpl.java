@@ -18,6 +18,8 @@
  */
 package org.apache.fineract.organisation.bank.service;
 
+import java.util.Map;
+import javax.persistence.PersistenceException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
@@ -34,19 +36,16 @@ import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.persistence.PersistenceException;
-import java.util.Map;
-
 @Service
 @Slf4j
-public class BankWritePlatformServiceImpl implements BankWritePlatformService{
+public class BankWritePlatformServiceImpl implements BankWritePlatformService {
 
     private final PlatformSecurityContext context;
     private final BankCommandFromApiJsonDeserializer fromApiJsonDeserializer;
     private final BankRepositoryWrapper bankRepositoryWrapper;
 
-    public BankWritePlatformServiceImpl(final PlatformSecurityContext context, final BankCommandFromApiJsonDeserializer fromApiJsonDeserializer,
-                                        final BankRepositoryWrapper bankRepositoryWrapper){
+    public BankWritePlatformServiceImpl(final PlatformSecurityContext context,
+            final BankCommandFromApiJsonDeserializer fromApiJsonDeserializer, final BankRepositoryWrapper bankRepositoryWrapper) {
         this.context = context;
         this.fromApiJsonDeserializer = fromApiJsonDeserializer;
         this.bankRepositoryWrapper = bankRepositoryWrapper;
@@ -115,7 +114,7 @@ public class BankWritePlatformServiceImpl implements BankWritePlatformService{
             return new CommandProcessingResultBuilder() //
                     .withEntityId(bank.getId()) //
                     .build();
-        }   catch (final JpaSystemException | DataIntegrityViolationException dve) {
+        } catch (final JpaSystemException | DataIntegrityViolationException dve) {
             Throwable throwable = ExceptionUtils.getRootCause(dve.getCause());
             log.error("Error occured.", throwable);
             throw new PlatformDataIntegrityException("error.msg.bank.unknown.data.integrity.issue",

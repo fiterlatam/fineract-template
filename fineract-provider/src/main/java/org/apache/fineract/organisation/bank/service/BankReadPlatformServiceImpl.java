@@ -18,6 +18,8 @@
  */
 package org.apache.fineract.organisation.bank.service;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import org.apache.fineract.infrastructure.core.service.Page;
 import org.apache.fineract.infrastructure.core.service.PaginationHelper;
 import org.apache.fineract.infrastructure.core.service.SearchParameters;
@@ -34,9 +36,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
-
 @Service
 public class BankReadPlatformServiceImpl implements BankReadPlatformService {
 
@@ -51,16 +50,15 @@ public class BankReadPlatformServiceImpl implements BankReadPlatformService {
 
     @Autowired
     public BankReadPlatformServiceImpl(final PlatformSecurityContext context, final JdbcTemplate jdbcTemplate,
-                                       final ColumnValidator columnValidator, final DatabaseSpecificSQLGenerator sqlGenerator,
-                                       final AppUserReadPlatformService appUserReadPlatformService,
-                                       final OfficeReadPlatformService officeReadPlatformService,
-                                       final PaginationHelper paginationHelper) {
+            final ColumnValidator columnValidator, final DatabaseSpecificSQLGenerator sqlGenerator,
+            final AppUserReadPlatformService appUserReadPlatformService, final OfficeReadPlatformService officeReadPlatformService,
+            final PaginationHelper paginationHelper) {
         this.context = context;
         this.columnValidator = columnValidator;
         this.jdbcTemplate = jdbcTemplate;
         this.sqlGenerator = sqlGenerator;
         this.appUserReadPlatformService = appUserReadPlatformService;
-        this.officeReadPlatformService =  officeReadPlatformService;
+        this.officeReadPlatformService = officeReadPlatformService;
         this.paginationHelper = paginationHelper;
     }
 

@@ -40,7 +40,8 @@ public class BankData {
         this.code = code;
         this.name = name;
     }
-    //TODO: complete
+
+    // TODO: complete
     public static BankData template() {
         return new BankData(null, null, null);
     }

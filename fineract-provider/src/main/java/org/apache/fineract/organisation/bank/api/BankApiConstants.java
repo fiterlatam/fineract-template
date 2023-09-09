@@ -18,11 +18,10 @@
  */
 package org.apache.fineract.organisation.bank.api;
 
-import org.apache.fineract.organisation.bank.data.BankData;
-
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
+import org.apache.fineract.organisation.bank.data.BankData;
 
 @SuppressWarnings({ "HideUtilityClassConstructor" })
 public class BankApiConstants {
@@ -36,6 +35,6 @@ public class BankApiConstants {
      * These parameters will match the class level parameters of {@link BankData}. Where possible, we try to get
      * response parameters to match those of request parameters.
      */
-    protected static final Set<String> BANK_RESPONSE_DATA_PARAMETERS = new HashSet<>(Arrays.asList(idParamName, codeParamName,
-            nameParamName));
+    protected static final Set<String> BANK_RESPONSE_DATA_PARAMETERS = new HashSet<>(
+            Arrays.asList(idParamName, codeParamName, nameParamName));
 }

@@ -34,7 +34,7 @@ public class NewBankCommandHandler implements NewCommandSourceHandler {
     private final BankWritePlatformService bankWritePlatformService;
 
     @Autowired
-    public NewBankCommandHandler(final BankWritePlatformService bankWritePlatformService){
+    public NewBankCommandHandler(final BankWritePlatformService bankWritePlatformService) {
         this.bankWritePlatformService = bankWritePlatformService;
     }
 

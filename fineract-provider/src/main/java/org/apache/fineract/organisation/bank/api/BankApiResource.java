@@ -26,6 +26,18 @@ import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.UriInfo;
 import org.apache.fineract.commands.domain.CommandWrapper;
 import org.apache.fineract.commands.service.CommandWrapperBuilder;
 import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformService;
@@ -42,19 +54,6 @@ import org.apache.fineract.organisation.bank.service.BankReadPlatformService;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.UriInfo;
-
 @Path("/banks")
 @Component
 @Scope("singleton")
@@ -68,10 +67,10 @@ public class BankApiResource {
     private final BankReadPlatformService bankReadPlatformService;
     private final ApiRequestParameterHelper apiRequestParameterHelper;
 
-
-    public BankApiResource(final PlatformSecurityContext platformSecurityContext, final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService,
-                           final DefaultToApiJsonSerializer<BankData> toApiJsonSerializer, final BankReadPlatformService bankReadPlatformService,
-                           final ApiRequestParameterHelper apiRequestParameterHelper){
+    public BankApiResource(final PlatformSecurityContext platformSecurityContext,
+            final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService,
+            final DefaultToApiJsonSerializer<BankData> toApiJsonSerializer, final BankReadPlatformService bankReadPlatformService,
+            final ApiRequestParameterHelper apiRequestParameterHelper) {
         this.platformSecurityContext = platformSecurityContext;
         this.commandsSourceWritePlatformService = commandsSourceWritePlatformService;
         this.toApiJsonSerializer = toApiJsonSerializer;
@@ -105,7 +104,7 @@ public class BankApiResource {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = BanksApiResourceSwagger.PutBanksBankIdResponse.class))) })
     public String updateAgency(@PathParam("bankId") @Parameter(description = "bankId") final Long bankId,
-                               @Parameter(hidden = true) final String apiRequestBodyAsJson) {
+            @Parameter(hidden = true) final String apiRequestBodyAsJson) {
         final CommandWrapper commandRequest = new CommandWrapperBuilder() //
                 .updateBank(bankId) //
                 .withJson(apiRequestBodyAsJson) //
@@ -133,11 +132,11 @@ public class BankApiResource {
     @GET
     @Produces({ MediaType.APPLICATION_JSON })
     public String retrieveAll(@Context final UriInfo uriInfo,
-                              @QueryParam("sqlSearch") @Parameter(description = "sqlSearch") final String sqlSearch,
-                              @QueryParam("offset") @Parameter(description = "offset") final Integer offset,
-                              @QueryParam("limit") @Parameter(description = "limit") final Integer limit,
-                              @QueryParam("orderBy") @Parameter(description = "orderBy") final String orderBy,
-                              @QueryParam("sortOrder") @Parameter(description = "sortOrder") final String sortOrder) {
+            @QueryParam("sqlSearch") @Parameter(description = "sqlSearch") final String sqlSearch,
+            @QueryParam("offset") @Parameter(description = "offset") final Integer offset,
+            @QueryParam("limit") @Parameter(description = "limit") final Integer limit,
+            @QueryParam("orderBy") @Parameter(description = "orderBy") final String orderBy,
+            @QueryParam("sortOrder") @Parameter(description = "sortOrder") final String sortOrder) {
 
         this.platformSecurityContext.authenticatedUser().validateHasReadPermission(BankConstants.BANK_RESOURCE_NAME);
 

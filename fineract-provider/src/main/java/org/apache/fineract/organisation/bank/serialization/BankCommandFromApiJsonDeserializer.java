@@ -20,6 +20,11 @@ package org.apache.fineract.organisation.bank.serialization;
 
 import com.google.gson.JsonElement;
 import com.google.gson.reflect.TypeToken;
+import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.infrastructure.core.data.ApiParameterError;
 import org.apache.fineract.infrastructure.core.data.DataValidatorBuilder;
@@ -29,12 +34,6 @@ import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
 import org.apache.fineract.organisation.bank.service.BankConstants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-
-import java.lang.reflect.Type;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * Deserializer of JSON for agency API.
@@ -69,10 +68,12 @@ public final class BankCommandFromApiJsonDeserializer {
         final JsonElement element = this.fromApiJsonHelper.parse(json);
 
         final String code = this.fromApiJsonHelper.extractStringNamed(BankConstants.BankSupportedParameters.CODE.getValue(), element);
-        baseDataValidator.reset().parameter(BankConstants.BankSupportedParameters.CODE.getValue()).value(code).notBlank().notExceedingLengthOf(2);
+        baseDataValidator.reset().parameter(BankConstants.BankSupportedParameters.CODE.getValue()).value(code).notBlank()
+                .notExceedingLengthOf(2);
 
         final String name = this.fromApiJsonHelper.extractStringNamed(BankConstants.BankSupportedParameters.NAME.getValue(), element);
-        baseDataValidator.reset().parameter(BankConstants.BankSupportedParameters.NAME.getValue()).value(name).notBlank().notExceedingLengthOf(100);
+        baseDataValidator.reset().parameter(BankConstants.BankSupportedParameters.NAME.getValue()).value(name).notBlank()
+                .notExceedingLengthOf(100);
 
         throwExceptionIfValidationWarningsExist(dataValidationErrors);
     }
@@ -86,15 +87,18 @@ public final class BankCommandFromApiJsonDeserializer {
         this.fromApiJsonHelper.checkForUnsupportedParameters(typeOfMap, json, this.supportedParameters);
 
         final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
-        final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors).resource(BankConstants.BANK_RESOURCE_NAME);
+        final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors)
+                .resource(BankConstants.BANK_RESOURCE_NAME);
 
         final JsonElement element = this.fromApiJsonHelper.parse(json);
 
         final String code = this.fromApiJsonHelper.extractStringNamed(BankConstants.BankSupportedParameters.CODE.getValue(), element);
-        baseDataValidator.reset().parameter(BankConstants.BankSupportedParameters.CODE.getValue()).value(code).notBlank().notExceedingLengthOf(2);
+        baseDataValidator.reset().parameter(BankConstants.BankSupportedParameters.CODE.getValue()).value(code).notBlank()
+                .notExceedingLengthOf(2);
 
         final String name = this.fromApiJsonHelper.extractStringNamed(BankConstants.BankSupportedParameters.NAME.getValue(), element);
-        baseDataValidator.reset().parameter(BankConstants.BankSupportedParameters.NAME.getValue()).value(name).notBlank().notExceedingLengthOf(100);
+        baseDataValidator.reset().parameter(BankConstants.BankSupportedParameters.NAME.getValue()).value(name).notBlank()
+                .notExceedingLengthOf(100);
 
         throwExceptionIfValidationWarningsExist(dataValidationErrors);
     }
