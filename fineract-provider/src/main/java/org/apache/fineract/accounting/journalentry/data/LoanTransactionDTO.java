@@ -56,4 +56,15 @@ public class LoanTransactionDTO {
 
     @Setter
     private boolean isLoanToLoanTransfer;
+
+    @Setter
+    private Integer debitAccountForVat;
+
+    @Setter
+    private boolean isGeneratedTransactionFromRepayment = false;
+
+    @Setter
+    private BigDecimal vatOnInterest;
+    @Setter
+    private BigDecimal vatOnCharges;
 }

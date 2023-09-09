@@ -204,6 +204,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
             LoanTransaction applyLoanVatOnChargeTransaction = makeAccrualTransactionForVatOnCharge(loan, transactionDate,
                     newRepaymentTransaction);
             if (applyLoanVatOnChargeTransaction != null) {
+                applyLoanVatOnChargeTransaction.setGeneratedVatTransactionFromRepayment(true);
                 saveLoanTransactionWithDataIntegrityViolationChecks(applyLoanVatOnChargeTransaction);
                 loan.addLoanTransaction(applyLoanVatOnChargeTransaction);
             }
@@ -212,6 +213,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
             LoanTransaction applyLoanVatOnInterestTransaction = makeAccrualTransactionForVatOnInterest(loan, transactionDate,
                     newRepaymentTransaction);
             if (applyLoanVatOnInterestTransaction != null) {
+                applyLoanVatOnInterestTransaction.setGeneratedVatTransactionFromRepayment(true);
                 saveLoanTransactionWithDataIntegrityViolationChecks(applyLoanVatOnInterestTransaction);
                 loan.addLoanTransaction(applyLoanVatOnInterestTransaction);
             }
@@ -309,7 +311,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         if (newRepaymentTransaction.getVatOnChargesPortion(loan.getCurrency()).isGreaterThanZero()) {
             Money vatOnCharge = newRepaymentTransaction.getVatOnChargesPortion(loan.getCurrency());
             applyLoanVatOnChargeTransaction = LoanTransaction.accrueLoanVatOnCharge(loan, loan.getOffice(), vatOnCharge, transactionDate,
-                    vatOnCharge);
+                    vatOnCharge, newRepaymentTransaction.getPaymentDetail());
         }
 
         return applyLoanVatOnChargeTransaction;
@@ -323,7 +325,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         if (newRepaymentTransaction.getVatOnInterestPortion(loan.getCurrency()).isGreaterThanZero()) {
             Money vatOnInterest = newRepaymentTransaction.getVatOnInterestPortion(loan.getCurrency());
             applyLoanVatOnInterestTransaction = LoanTransaction.accrueLoanVatOnInterest(loan, loan.getOffice(), vatOnInterest,
-                    transactionDate, vatOnInterest);
+                    transactionDate, vatOnInterest, newRepaymentTransaction.getPaymentDetail());
         }
 
         return applyLoanVatOnInterestTransaction;

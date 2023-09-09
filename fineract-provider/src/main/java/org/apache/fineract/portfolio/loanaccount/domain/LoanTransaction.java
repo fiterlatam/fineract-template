@@ -36,7 +36,10 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 import javax.persistence.UniqueConstraint;
+import lombok.Getter;
+import lombok.Setter;
 import org.apache.fineract.infrastructure.core.domain.AbstractAuditableWithUTCDateTimeCustom;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.organisation.monetary.data.CurrencyData;
@@ -126,6 +129,11 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
 
     @Column(name = "vat_on_charges_portion", scale = 6, precision = 19, nullable = true)
     private BigDecimal vatOnChargesPortion;
+
+    @Transient
+    @Setter
+    @Getter
+    private boolean isGeneratedVatTransactionFromRepayment = false;
 
     protected LoanTransaction() {}
 
@@ -270,18 +278,18 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
     }
 
     public static LoanTransaction accrueLoanVatOnCharge(final Loan loan, final Office office, final Money amount, final LocalDate applyDate,
-            final Money vatOnCharge) {
+            final Money vatOnCharge, final PaymentDetail paymentDetail) {
         String externalId = null;
-        final LoanTransaction applyCharge = new LoanTransaction(loan, office, LoanTransactionType.ACCRUAL_VAT, amount.getAmount(),
+        final LoanTransaction applyCharge = new LoanTransaction(loan, office, LoanTransactionType.ACCRUAL_VAT, paymentDetail, amount.getAmount(),
                 applyDate, externalId);
         applyCharge.updateVatChargesComponents(null, vatOnCharge);
         return applyCharge;
     }
 
     public static LoanTransaction accrueLoanVatOnInterest(final Loan loan, final Office office, final Money amount,
-            final LocalDate applyDate, final Money vatOnInterest) {
+            final LocalDate applyDate, final Money vatOnInterest, final PaymentDetail paymentDetail) {
         String externalId = null;
-        final LoanTransaction applyCharge = new LoanTransaction(loan, office, LoanTransactionType.ACCRUAL_VAT, amount.getAmount(),
+        final LoanTransaction applyCharge = new LoanTransaction(loan, office, LoanTransactionType.ACCRUAL_VAT, paymentDetail, amount.getAmount(),
                 applyDate, externalId);
         applyCharge.updateVatChargesComponents(vatOnInterest, null);
         return applyCharge;
@@ -701,6 +709,12 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
         thisTransactionData.put("feeChargesPortion", this.feeChargesPortion);
         thisTransactionData.put("penaltyChargesPortion", this.penaltyChargesPortion);
         thisTransactionData.put("overPaymentPortion", this.overPaymentPortion);
+        thisTransactionData.put("vatOnInterestPortion", this.vatOnInterestPortion);
+        thisTransactionData.put("vatOnChargesPortion", this.vatOnChargesPortion);
+
+        if (this.isGeneratedVatTransactionFromRepayment) {
+            thisTransactionData.put("isGeneratedVatTransactionFromRepayment", this.isGeneratedVatTransactionFromRepayment);
+        }
 
         if (this.paymentDetail != null) {
             thisTransactionData.put("paymentTypeId", this.paymentDetail.getPaymentType().getId());
@@ -890,5 +904,4 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
     public Money getVatOnChargesPortion(final MonetaryCurrency currency) {
         return Money.of(currency, this.vatOnChargesPortion);
     }
-
 }
