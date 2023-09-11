@@ -51,10 +51,9 @@ public class ClientInfoRelatedDetailData {
     private String familyReference;
 
     public ClientInfoRelatedDetailData(Integer loanCycle, String groupNumber, String maidenName, String othernames, String groupMember,
-                                       String statusInGroup, String retirementReason, String civilStatus,
-                                       String educationLevel, String ethinicity, String nationality, String languages,
-                                       String economicSector, String economicActivity, String familyReference) {
-        this.loanCycle=loanCycle;
+            String statusInGroup, String retirementReason, String civilStatus, String educationLevel, String ethinicity, String nationality,
+            String languages, String economicSector, String economicActivity, String familyReference) {
+        this.loanCycle = loanCycle;
         this.groupNumber = groupNumber;
         this.maidenName = maidenName;
         this.othernames = othernames;
@@ -64,22 +63,19 @@ public class ClientInfoRelatedDetailData {
         this.civilStatus = civilStatus;
         this.educationLevel = educationLevel;
         this.ethinicity = ethinicity;
-        this.nationality=nationality;
+        this.nationality = nationality;
         this.languages = languages;
         this.economicSector = economicSector;
         this.economicActivity = economicActivity;
         this.familyReference = familyReference;
     }
 
+    public static ClientInfoRelatedDetailData instance(Integer loanCycle, String groupNumber, String maidenName, String othernames,
+            String groupMember, String statusInGroup, String retirementReason, String civilStatus, String educationLevel, String ethinicity,
+            String nationality, String languages, String economicSector, String economicActivity, String familyReference) {
 
-
-    public static ClientInfoRelatedDetailData instance(Integer loanCycle, String groupNumber, String maidenName, String othernames, String groupMember,
-                                                         String statusInGroup, String retirementReason, String civilStatus,
-                                                         String educationLevel, String ethinicity, String nationality, String languages,
-                                                         String economicSector, String economicActivity, String familyReference) {
-
-        return new ClientInfoRelatedDetailData(loanCycle,groupNumber, maidenName, othernames, groupMember, statusInGroup,
-                retirementReason, civilStatus, educationLevel, ethinicity, nationality, languages,economicSector, economicActivity,familyReference);
+        return new ClientInfoRelatedDetailData(loanCycle, groupNumber, maidenName, othernames, groupMember, statusInGroup, retirementReason,
+                civilStatus, educationLevel, ethinicity, nationality, languages, economicSector, economicActivity, familyReference);
     }
 
 }

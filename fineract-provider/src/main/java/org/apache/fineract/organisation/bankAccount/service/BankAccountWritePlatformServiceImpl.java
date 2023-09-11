@@ -18,6 +18,8 @@
  */
 package org.apache.fineract.organisation.bankAccount.service;
 
+import java.util.Map;
+import javax.persistence.PersistenceException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.fineract.accounting.glaccount.domain.GLAccount;
@@ -41,9 +43,6 @@ import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.persistence.PersistenceException;
-import java.util.Map;
-
 @Service
 @Slf4j
 public class BankAccountWritePlatformServiceImpl implements BankAccountWritePlatformService {
@@ -56,13 +55,10 @@ public class BankAccountWritePlatformServiceImpl implements BankAccountWritePlat
 
     private final BankRepositoryWrapper bankRepositoryWrapper;
 
-
     public BankAccountWritePlatformServiceImpl(final PlatformSecurityContext context,
-                                               final BankAccountCommandFromApiJsonDeserializer fromApiJsonDeserializer,
-                                               final BankAccountRepositoryWrapper bankAccountRepositoryWrapper,
-                                               final AgencyRepositoryWrapper agencyRepositoryWrapper,
-                                               final GLAccountRepositoryWrapper glAccountRepositoryWrapper,
-                                               final BankRepositoryWrapper bankRepositoryWrapper) {
+            final BankAccountCommandFromApiJsonDeserializer fromApiJsonDeserializer,
+            final BankAccountRepositoryWrapper bankAccountRepositoryWrapper, final AgencyRepositoryWrapper agencyRepositoryWrapper,
+            final GLAccountRepositoryWrapper glAccountRepositoryWrapper, final BankRepositoryWrapper bankRepositoryWrapper) {
         this.context = context;
         this.fromApiJsonDeserializer = fromApiJsonDeserializer;
         this.bankAccountRepositoryWrapper = bankAccountRepositoryWrapper;
@@ -80,12 +76,14 @@ public class BankAccountWritePlatformServiceImpl implements BankAccountWritePlat
             this.fromApiJsonDeserializer.validateForCreate(command.json());
 
             Agency agency = null;
-            final Long agencyId = command.longValueOfParameterNamed(BankAccountConstants.BankAccountSupportedParameters.AGENCY_ID.getValue());
+            final Long agencyId = command
+                    .longValueOfParameterNamed(BankAccountConstants.BankAccountSupportedParameters.AGENCY_ID.getValue());
             if (agencyId != null) {
                 agency = agencyRepositoryWrapper.findOneWithNotFoundDetection(agencyId);
             }
 
-            final Long accountNumber = command.longValueOfParameterNamed(BankAccountConstants.BankAccountSupportedParameters.ACCOUNT_NUMBER.getValue());
+            final Long accountNumber = command
+                    .longValueOfParameterNamed(BankAccountConstants.BankAccountSupportedParameters.ACCOUNT_NUMBER.getValue());
             // validate Bank Account and Agency aren't duplicate
             validateDuplicateBankAccountAndAgency(accountNumber, agency);
 
@@ -96,7 +94,8 @@ public class BankAccountWritePlatformServiceImpl implements BankAccountWritePlat
             }
 
             GLAccount glAccount = null;
-            final Long glAccountId = command.longValueOfParameterNamed(BankAccountConstants.BankAccountSupportedParameters.GLACCOUNT_ID.getValue());
+            final Long glAccountId = command
+                    .longValueOfParameterNamed(BankAccountConstants.BankAccountSupportedParameters.GLACCOUNT_ID.getValue());
             if (glAccountId != null) {
                 glAccount = glAccountRepositoryWrapper.findOneWithNotFoundDetection(glAccountId);
             }
@@ -130,28 +129,32 @@ public class BankAccountWritePlatformServiceImpl implements BankAccountWritePlat
             final Map<String, Object> changes = bankAccountForUpdate.update(command);
 
             if (command.parameterExists(BankAccountConstants.BankAccountSupportedParameters.AGENCY_ID.getValue())) {
-                final Long agencyId = command.longValueOfParameterNamed(BankAccountConstants.BankAccountSupportedParameters.AGENCY_ID.getValue());
+                final Long agencyId = command
+                        .longValueOfParameterNamed(BankAccountConstants.BankAccountSupportedParameters.AGENCY_ID.getValue());
                 Agency agency = agencyRepositoryWrapper.findOneWithNotFoundDetection(agencyId);
                 bankAccountForUpdate.setAgency(agency);
                 changes.put(BankAccountConstants.BankAccountSupportedParameters.AGENCY_ID.getValue(), agencyId);
             }
 
             if (command.parameterExists(BankAccountConstants.BankAccountSupportedParameters.BANK_ID.getValue())) {
-                final Long bankId = command.longValueOfParameterNamed(BankAccountConstants.BankAccountSupportedParameters.BANK_ID.getValue());
+                final Long bankId = command
+                        .longValueOfParameterNamed(BankAccountConstants.BankAccountSupportedParameters.BANK_ID.getValue());
                 Bank bank = bankRepositoryWrapper.findOneWithNotFoundDetection(bankId);
                 bankAccountForUpdate.setBank(bank);
                 changes.put(BankAccountConstants.BankAccountSupportedParameters.BANK_ID.getValue(), bankId);
             }
 
-            if (command.parameterExists(BankAccountConstants.BankAccountSupportedParameters.GLACCOUNT_ID.getValue()) ) {
-                final Long glAccountId = command.longValueOfParameterNamed(BankAccountConstants.BankAccountSupportedParameters.GLACCOUNT_ID.getValue());
+            if (command.parameterExists(BankAccountConstants.BankAccountSupportedParameters.GLACCOUNT_ID.getValue())) {
+                final Long glAccountId = command
+                        .longValueOfParameterNamed(BankAccountConstants.BankAccountSupportedParameters.GLACCOUNT_ID.getValue());
                 GLAccount glAccount = glAccountRepositoryWrapper.findOneWithNotFoundDetection(glAccountId);
                 bankAccountForUpdate.setGlAccount(glAccount);
                 changes.put(BankAccountConstants.BankAccountSupportedParameters.GLACCOUNT_ID.getValue(), glAccountId);
             }
 
             if (changes.containsKey(BankAccountConstants.BankAccountSupportedParameters.ACCOUNT_NUMBER.getValue())) {
-                final Long accountNumber = command.longValueOfParameterNamed(BankAccountConstants.BankAccountSupportedParameters.ACCOUNT_NUMBER.getValue());
+                final Long accountNumber = command
+                        .longValueOfParameterNamed(BankAccountConstants.BankAccountSupportedParameters.ACCOUNT_NUMBER.getValue());
 
                 // validate Bank Account and Agency aren't duplicate
                 validateDuplicateBankAccountAndAgency(accountNumber, bankAccountForUpdate.getAgency());
@@ -160,7 +163,8 @@ public class BankAccountWritePlatformServiceImpl implements BankAccountWritePlat
             }
 
             if (changes.containsKey(BankAccountConstants.BankAccountSupportedParameters.DESCRIPTION.getValue())) {
-                final String description = command.stringValueOfParameterNamed(BankAccountConstants.BankAccountSupportedParameters.DESCRIPTION.getValue());
+                final String description = command
+                        .stringValueOfParameterNamed(BankAccountConstants.BankAccountSupportedParameters.DESCRIPTION.getValue());
                 bankAccountForUpdate.setDescription(description);
             }
 
@@ -219,10 +223,10 @@ public class BankAccountWritePlatformServiceImpl implements BankAccountWritePlat
                 "Unknown data integrity issue with resource.");
     }
 
-    private void validateDuplicateBankAccountAndAgency(Long accountNumber, Agency agency){
-        if(accountNumber != null && agency != null){
+    private void validateDuplicateBankAccountAndAgency(Long accountNumber, Agency agency) {
+        if (accountNumber != null && agency != null) {
             BankAccount bankAccount1 = bankAccountRepositoryWrapper.findOneByAccountAndAgency(accountNumber, agency);
-            if(bankAccount1 != null){
+            if (bankAccount1 != null) {
                 throw new BankAccountDuplicateException(accountNumber, agency);
             }
 

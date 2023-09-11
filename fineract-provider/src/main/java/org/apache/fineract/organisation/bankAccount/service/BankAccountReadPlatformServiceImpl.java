@@ -18,6 +18,11 @@
  */
 package org.apache.fineract.organisation.bankAccount.service;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.accounting.glaccount.data.GLAccountData;
 import org.apache.fineract.accounting.glaccount.service.GLAccountReadPlatformService;
@@ -41,12 +46,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-
 @Service
 public class BankAccountReadPlatformServiceImpl implements BankAccountReadPlatformService {
 
@@ -63,15 +62,12 @@ public class BankAccountReadPlatformServiceImpl implements BankAccountReadPlatfo
     private final BankReadPlatformService bankReadPlatformService;
     private final GLAccountReadPlatformService glAccountReadPlatformService;
 
-
     @Autowired
     public BankAccountReadPlatformServiceImpl(final PlatformSecurityContext context, final JdbcTemplate jdbcTemplate,
-                                              final ColumnValidator columnValidator, final DatabaseSpecificSQLGenerator sqlGenerator,
-                                              final AppUserReadPlatformService appUserReadPlatformService, final OfficeReadPlatformService officeReadPlatformService,
-                                              final PaginationHelper paginationHelper,
-                                              final AgencyReadPlatformService agencyReadPlatformService,
-                                              final BankReadPlatformService bankReadPlatformService,
-                                              final GLAccountReadPlatformService glAccountReadPlatformService) {
+            final ColumnValidator columnValidator, final DatabaseSpecificSQLGenerator sqlGenerator,
+            final AppUserReadPlatformService appUserReadPlatformService, final OfficeReadPlatformService officeReadPlatformService,
+            final PaginationHelper paginationHelper, final AgencyReadPlatformService agencyReadPlatformService,
+            final BankReadPlatformService bankReadPlatformService, final GLAccountReadPlatformService glAccountReadPlatformService) {
         this.context = context;
         this.columnValidator = columnValidator;
         this.jdbcTemplate = jdbcTemplate;
@@ -105,7 +101,7 @@ public class BankAccountReadPlatformServiceImpl implements BankAccountReadPlatfo
 
         Collection<AgencyData> agencies = agencyReadPlatformService.retrieveAllByUser();
         Page<BankData> pagedBanks = bankReadPlatformService.retrieveAll(null);
-        Collection<BankData> banks = pagedBanks != null ? pagedBanks.getPageItems(): new ArrayList<>();
+        Collection<BankData> banks = pagedBanks != null ? pagedBanks.getPageItems() : new ArrayList<>();
         Collection<GLAccountData> glAccounts = glAccountReadPlatformService.retrieveAllEnabledDetailGLAccounts();
 
         return BankAccountData.template(agencies, banks, glAccounts);
@@ -123,7 +119,7 @@ public class BankAccountReadPlatformServiceImpl implements BankAccountReadPlatfo
 
         List<Object> paramList = new ArrayList<>();
         String extraCriteria = null;
-        if(searchParameters != null){
+        if (searchParameters != null) {
             extraCriteria = buildSqlStringFromBankAccountCriteria(bankAccountMapper.schema(), searchParameters, paramList);
         }
 
@@ -158,8 +154,8 @@ public class BankAccountReadPlatformServiceImpl implements BankAccountReadPlatfo
 
         public BankAccountMapper() {
             final StringBuilder sqlBuilder = new StringBuilder(300);
-            sqlBuilder.append("ba.id as id, ba.account_number as accountNumber, ba.agency_id as agencyId, a.name as agencyName, " +
-                    "ba.bank_id as bankId, b.name as bankName, b.code as bankCode, ba.gl_account_id as glAccountId, gl.name as glAccountName, ba.description as description ");
+            sqlBuilder.append("ba.id as id, ba.account_number as accountNumber, ba.agency_id as agencyId, a.name as agencyName, "
+                    + "ba.bank_id as bankId, b.name as bankName, b.code as bankCode, ba.gl_account_id as glAccountId, gl.name as glAccountName, ba.description as description ");
 
             sqlBuilder.append("from m_bank_account ba ");
             sqlBuilder.append("join m_agency a on a.id = ba.agency_id ");
@@ -181,7 +177,7 @@ public class BankAccountReadPlatformServiceImpl implements BankAccountReadPlatfo
             final Long bankId = rs.getLong("bankId");
             final String bankName = rs.getString("bankName");
             final String bankCode = rs.getString("bankCode");
-            BankData bankData = BankData.instance(bankId, bankCode,bankName);
+            BankData bankData = BankData.instance(bankId, bankCode, bankName);
 
             final Long glAccountId = rs.getLong("glAccountId");
             final String glAccountName = rs.getString("glAccountName");
@@ -199,7 +195,8 @@ public class BankAccountReadPlatformServiceImpl implements BankAccountReadPlatfo
 
     }
 
-    private String buildSqlStringFromBankAccountCriteria(String schemaSql, final SearchParameters searchParameters, List<Object> paramList) {
+    private String buildSqlStringFromBankAccountCriteria(String schemaSql, final SearchParameters searchParameters,
+            List<Object> paramList) {
 
         String sqlSearch = searchParameters.getSqlSearch();
         final Long accountNumber = searchParameters.getAccountNumber();

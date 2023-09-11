@@ -106,10 +106,8 @@ public class AgencyData {
     }
 
     public static AgencyData instance(Long id, String name) {
-        return new AgencyData(id, name, null, null, null, null, null, null, null, null, null, null, null,
-                null, null, null, null, null, null, null,
-                null, null, null, null, null, null, null, null, null, null, null,
-                null, null, null, null);
+        return new AgencyData(id, name, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null,
+                null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null);
     }
 
     public AgencyData(Long id, String name, Long parentId, String parentName, String address, CodeValueData city, CodeValueData state,

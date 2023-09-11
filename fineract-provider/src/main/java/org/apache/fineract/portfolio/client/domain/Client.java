@@ -243,7 +243,7 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
 
     public static Client createNew(final AppUser currentUser, final Office clientOffice, final Group clientParentGroup, final Staff staff,
             final Long savingsProductId, final CodeValue gender, final CodeValue clientType, final CodeValue clientClassification,
-            final Integer legalForm,final ClientInfoRelatedDetail clientInfoRelatedDetail, final JsonCommand command) {
+            final Integer legalForm, final ClientInfoRelatedDetail clientInfoRelatedDetail, final JsonCommand command) {
 
         final String accountNo = command.stringValueOfParameterNamed(ClientApiConstants.accountNoParamName);
         final String externalId = command.stringValueOfParameterNamed(ClientApiConstants.externalIdParamName);
@@ -285,18 +285,19 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
         final Long savingsAccountId = null;
         return new Client(currentUser, status, clientOffice, clientParentGroup, accountNo, firstname, middlename, lastname, fullname,
                 activationDate, officeJoiningDate, externalId, mobileNo, emailAddress, staff, submittedOnDate, savingsProductId,
-                savingsAccountId, dataOfBirth, gender, clientType, clientClassification, legalForm, isStaff, dpiNumber, oldCustomerNumber, clientInfoRelatedDetail);
+                savingsAccountId, dataOfBirth, gender, clientType, clientClassification, legalForm, isStaff, dpiNumber, oldCustomerNumber,
+                clientInfoRelatedDetail);
     }
 
     protected Client() {}
 
     private Client(final AppUser currentUser, final ClientStatus status, final Office office, final Group clientParentGroup,
-                   final String accountNo, final String firstname, final String middlename, final String lastname, final String fullname,
-                   final LocalDate activationDate, final LocalDate officeJoiningDate, final String externalId, final String mobileNo,
-                   final String emailAddress, final Staff staff, final LocalDate submittedOnDate, final Long savingsProductId,
-                   final Long savingsAccountId, final LocalDate dateOfBirth, final CodeValue gender, final CodeValue clientType,
-                   final CodeValue clientClassification, final Integer legalForm, final Boolean isStaff, final String dpiNumber,
-                   final String oldCustomerNumber, ClientInfoRelatedDetail clientInfoRelatedDetail) {
+            final String accountNo, final String firstname, final String middlename, final String lastname, final String fullname,
+            final LocalDate activationDate, final LocalDate officeJoiningDate, final String externalId, final String mobileNo,
+            final String emailAddress, final Staff staff, final LocalDate submittedOnDate, final Long savingsProductId,
+            final Long savingsAccountId, final LocalDate dateOfBirth, final CodeValue gender, final CodeValue clientType,
+            final CodeValue clientClassification, final Integer legalForm, final Boolean isStaff, final String dpiNumber,
+            final String oldCustomerNumber, ClientInfoRelatedDetail clientInfoRelatedDetail) {
 
         if (StringUtils.isBlank(accountNo)) {
             this.accountNumber = new RandomPasswordGenerator(19).generate();
@@ -639,7 +640,7 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
 
         deriveDisplayName();
 
-        if (this.clientInfoRelatedDetail==null){
+        if (this.clientInfoRelatedDetail == null) {
             clientInfoRelatedDetail = new ClientInfoRelatedDetail();
         }
 
@@ -647,7 +648,6 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
 
         return actualChanges;
     }
-
 
     private void validateNameParts(final List<ApiParameterError> dataValidationErrors) {
         final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors).resource("client");

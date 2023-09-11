@@ -84,6 +84,11 @@ public final class PreQualificationsEnumerations {
         return optionData;
     }
 
+    public static EnumOptionData validationColor(final CheckValidationColor checkValidationColor) {
+        return new EnumOptionData(checkValidationColor.getValue().longValue(), checkValidationColor.getCode(),
+                checkValidationColor.name().toLowerCase());
+    }
+
     public static List<EnumOptionData> clientTransactionType(final ClientTransactionType[] clientTransactionTypes) {
         final List<EnumOptionData> optionDatas = new ArrayList<>();
         for (final ClientTransactionType clientTransaction : clientTransactionTypes) {

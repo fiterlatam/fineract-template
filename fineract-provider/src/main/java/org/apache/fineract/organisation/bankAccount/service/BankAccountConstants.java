@@ -42,8 +42,8 @@ public final class BankAccountConstants {
 
     public enum BankAccountSupportedParameters {
 
-        BANK_ACCOUNT_ID("id"), ACCOUNT_NUMBER("accountNumber"), AGENCY_ID("agencyId"), BANK_ID("bankId")
-        , GLACCOUNT_ID("glAccountId"), DESCRIPTION("description");
+        BANK_ACCOUNT_ID("id"), ACCOUNT_NUMBER("accountNumber"), AGENCY_ID("agencyId"), BANK_ID("bankId"), GLACCOUNT_ID(
+                "glAccountId"), DESCRIPTION("description");
 
         private final String value;
 
@@ -54,7 +54,8 @@ public final class BankAccountConstants {
         private static final Set<String> values = new HashSet<>();
 
         static {
-            for (final BankAccountConstants.BankAccountSupportedParameters param : BankAccountConstants.BankAccountSupportedParameters.values()) {
+            for (final BankAccountConstants.BankAccountSupportedParameters param : BankAccountConstants.BankAccountSupportedParameters
+                    .values()) {
                 values.add(param.value);
             }
         }

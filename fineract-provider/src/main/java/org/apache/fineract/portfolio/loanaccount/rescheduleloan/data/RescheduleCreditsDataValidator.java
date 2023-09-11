@@ -20,6 +20,15 @@ package org.apache.fineract.portfolio.loanaccount.rescheduleloan.data;
 
 import com.google.gson.JsonElement;
 import com.google.gson.reflect.TypeToken;
+import java.lang.reflect.Type;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.ApiParameterError;
@@ -35,23 +44,12 @@ import org.apache.fineract.portfolio.loanaccount.rescheduleloan.domain.LoanResch
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.lang.reflect.Type;
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 @Component
 public class RescheduleCreditsDataValidator {
 
     private final FromJsonHelper fromJsonHelper;
-    private static final Set<String> CREATE_REQUEST_DATA_PARAMETERS = new HashSet<>(
-            Arrays.asList("clientId","selectedLoanIds","disbursementDate","outstandingBalance",
-                    "productId","comments","locale","dateFormat"));
+    private static final Set<String> CREATE_REQUEST_DATA_PARAMETERS = new HashSet<>(Arrays.asList("clientId", "selectedLoanIds",
+            "disbursementDate", "outstandingBalance", "productId", "comments", "locale", "dateFormat"));
 
     private static final Set<String> REJECT_REQUEST_DATA_PARAMETERS = new HashSet<>(
             Arrays.asList(RescheduleLoansApiConstants.localeParamName, RescheduleLoansApiConstants.dateFormatParamName,
@@ -90,21 +88,17 @@ public class RescheduleCreditsDataValidator {
 
         final JsonElement jsonElement = jsonCommand.parsedJson();
 
-        final LocalDate disbursementDate = this.fromJsonHelper
-                .extractLocalDateNamed("disbursementDate", jsonElement);
+        final LocalDate disbursementDate = this.fromJsonHelper.extractLocalDateNamed("disbursementDate", jsonElement);
         dataValidatorBuilder.reset().parameter("disbursementDate").value(disbursementDate).notNull();
 
-        String[] selectedLoanIds = this.fromJsonHelper
-                .extractArrayNamed("selectedLoanIds", jsonElement);
+        String[] selectedLoanIds = this.fromJsonHelper.extractArrayNamed("selectedLoanIds", jsonElement);
         dataValidatorBuilder.reset().parameter("selectedLoanIds").value(selectedLoanIds).arrayNotEmpty();
 
         final Long productId = this.fromJsonHelper.extractLongNamed("productId", jsonElement);
         dataValidatorBuilder.reset().parameter("productId").value(productId).notNull();
 
-        final String comments = this.fromJsonHelper
-                .extractStringNamed("comments", jsonElement);
-        dataValidatorBuilder.reset().parameter("comments").value(comments)
-                .ignoreIfNull().notExceedingLengthOf(500);
+        final String comments = this.fromJsonHelper.extractStringNamed("comments", jsonElement);
+        dataValidatorBuilder.reset().parameter("comments").value(comments).ignoreIfNull().notExceedingLengthOf(500);
 
         if (!dataValidationErrors.isEmpty()) {
             throw new PlatformApiDataValidationException(dataValidationErrors);

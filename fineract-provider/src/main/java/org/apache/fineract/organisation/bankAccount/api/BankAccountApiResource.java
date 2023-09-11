@@ -26,6 +26,18 @@ import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.UriInfo;
 import org.apache.fineract.commands.domain.CommandWrapper;
 import org.apache.fineract.commands.service.CommandWrapperBuilder;
 import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformService;
@@ -42,19 +54,6 @@ import org.apache.fineract.organisation.bankAccount.service.BankAccountReadPlatf
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.UriInfo;
-
 @Path("/bankaccounts")
 @Component
 @Scope("singleton")
@@ -69,9 +68,9 @@ public class BankAccountApiResource {
     private final ApiRequestParameterHelper apiRequestParameterHelper;
 
     public BankAccountApiResource(final PlatformSecurityContext platformSecurityContext,
-                                  final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService,
-                                  final DefaultToApiJsonSerializer<BankAccountData> toApiJsonSerializer, final BankAccountReadPlatformService bankReadPlatformService,
-                                  final ApiRequestParameterHelper apiRequestParameterHelper) {
+            final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService,
+            final DefaultToApiJsonSerializer<BankAccountData> toApiJsonSerializer,
+            final BankAccountReadPlatformService bankReadPlatformService, final ApiRequestParameterHelper apiRequestParameterHelper) {
         this.platformSecurityContext = platformSecurityContext;
         this.commandsSourceWritePlatformService = commandsSourceWritePlatformService;
         this.toApiJsonSerializer = toApiJsonSerializer;
@@ -82,7 +81,8 @@ public class BankAccountApiResource {
     @POST
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
-    @Operation(summary = "Create a Bank Account", description = "Mandatory Fields\n" + "accountNumber, agencyId, bankId, glAccountId, description")
+    @Operation(summary = "Create a Bank Account", description = "Mandatory Fields\n"
+            + "accountNumber, agencyId, bankId, glAccountId, description")
     @RequestBody(required = true, content = @Content(schema = @Schema(implementation = BankAccountsApiResourceSwagger.PostBanksRequest.class)))
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = BankAccountsApiResourceSwagger.PostBanksResponse.class))) })
@@ -138,13 +138,14 @@ public class BankAccountApiResource {
             @QueryParam("limit") @Parameter(description = "limit") final Integer limit,
             @QueryParam("orderBy") @Parameter(description = "orderBy") final String orderBy,
             @QueryParam("sortOrder") @Parameter(description = "sortOrder") final String sortOrder,
-                              @QueryParam("accountNumber") @Parameter(description = "accountNumber") final Long accountNumber,
-                              @QueryParam("bankName") @Parameter(description = "bankName") final String bankName,
-                              @QueryParam("bankCode") @Parameter(description = "bankCode") final String bankCode) {
+            @QueryParam("accountNumber") @Parameter(description = "accountNumber") final Long accountNumber,
+            @QueryParam("bankName") @Parameter(description = "bankName") final String bankName,
+            @QueryParam("bankCode") @Parameter(description = "bankCode") final String bankCode) {
 
         this.platformSecurityContext.authenticatedUser().validateHasReadPermission(BankAccountConstants.BANK_ACCOUNT_RESOURCE_NAME);
 
-        final SearchParameters searchParameters = SearchParameters.forBankAccounts(offset, limit, orderBy, sortOrder, sqlSearch, accountNumber, bankName, bankCode);
+        final SearchParameters searchParameters = SearchParameters.forBankAccounts(offset, limit, orderBy, sortOrder, sqlSearch,
+                accountNumber, bankName, bankCode);
         Page<BankAccountData> bankAccounts = this.bankAccountReadPlatformService.retrieveAll(searchParameters);
 
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
@@ -164,13 +165,13 @@ public class BankAccountApiResource {
     @Path("template")
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
-    @Operation(summary = "Retrieve Bank Account Template", description = "This is a convenience resource. " +
-            "It can be useful when building maintenance user interface screens for client applications. The template data returned consists of any or all of:\n"
+    @Operation(summary = "Retrieve Bank Account Template", description = "This is a convenience resource. "
+            + "It can be useful when building maintenance user interface screens for client applications. The template data returned consists of any or all of:\n"
             + "\n" + "Field Defaults\n" + "Allowed Value Lists\n\n" + "Example Request:\n" + "\n" + "bankaccounts/template")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = BankAccountsApiResourceSwagger.GetBankAccountsTemplateResponse.class))) })
     public String retrieveTemplate(@Context final UriInfo uriInfo,
-                                   @QueryParam("commandParam") @Parameter(description = "commandParam") final String commandParam) {
+            @QueryParam("commandParam") @Parameter(description = "commandParam") final String commandParam) {
 
         this.platformSecurityContext.authenticatedUser().validateHasReadPermission(BankAccountConstants.BANK_ACCOUNT_RESOURCE_NAME);
 

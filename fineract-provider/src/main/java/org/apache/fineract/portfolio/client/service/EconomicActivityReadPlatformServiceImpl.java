@@ -18,6 +18,9 @@
  */
 package org.apache.fineract.portfolio.client.service;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.List;
 import org.apache.fineract.infrastructure.core.service.PaginationHelper;
 import org.apache.fineract.infrastructure.core.service.database.DatabaseSpecificSQLGenerator;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
@@ -28,9 +31,6 @@ import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.List;
 
 @Service
 public class EconomicActivityReadPlatformServiceImpl implements EconomicActivityReadPlatformService {
@@ -43,7 +43,7 @@ public class EconomicActivityReadPlatformServiceImpl implements EconomicActivity
 
     @Autowired
     public EconomicActivityReadPlatformServiceImpl(final PlatformSecurityContext context, final JdbcTemplate jdbcTemplate,
-                                                   DatabaseSpecificSQLGenerator sqlGenerator, PaginationHelper paginationHelper) {
+            DatabaseSpecificSQLGenerator sqlGenerator, PaginationHelper paginationHelper) {
         this.context = context;
         this.jdbcTemplate = jdbcTemplate;
         this.sqlGenerator = sqlGenerator;
@@ -76,7 +76,7 @@ public class EconomicActivityReadPlatformServiceImpl implements EconomicActivity
             final Long sectorId = rs.getLong("sector_id");
             final String name = rs.getString("name");
 
-            return EconomicActivityData.instance(id,sectorId, name);
+            return EconomicActivityData.instance(id, sectorId, name);
 
         }
 
@@ -98,7 +98,7 @@ public class EconomicActivityReadPlatformServiceImpl implements EconomicActivity
             return this.jdbcTemplate.query(sql, rm);
         } catch (final EmptyResultDataAccessException e) {
             e.printStackTrace();
-        return null;
+            return null;
         }
     }
 

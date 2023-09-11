@@ -18,22 +18,23 @@
  */
 package org.apache.fineract.portfolio.loanaccount.rescheduleloan.domain;
 
-import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
-import org.apache.fineract.portfolio.loanaccount.domain.Loan;
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
-import java.math.BigDecimal;
-import java.time.LocalDate;
+import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
+import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 
 @Entity
 @Table(name = "m_restructure_credits_loans_mapping")
 public class RestructureCreditsLoanMapping extends AbstractPersistableCustom {
-//    loan_id
-//
-//
+
+    // loan_id
+    //
+    //
     @ManyToOne
     @JoinColumn(name = "loan_id", nullable = false)
     private Loan loan;
@@ -44,7 +45,6 @@ public class RestructureCreditsLoanMapping extends AbstractPersistableCustom {
 
     @Column(name = "status")
     private Integer statusEnum;
-
 
     @Column(name = "outstanding_balance")
     private BigDecimal outstandingBalance;
@@ -61,9 +61,8 @@ public class RestructureCreditsLoanMapping extends AbstractPersistableCustom {
      * LoanRescheduleRequest constructor
      **/
     private RestructureCreditsLoanMapping(final Loan loan, final Integer statusEnum,
-                                          final RestructureCreditsRequest restructureCreditsRequest,
-                                          final BigDecimal outstandingBalance,
-                                          final LocalDate disbursementDate,final LocalDate maturityDate) {
+            final RestructureCreditsRequest restructureCreditsRequest, final BigDecimal outstandingBalance,
+            final LocalDate disbursementDate, final LocalDate maturityDate) {
         this.loan = loan;
         this.statusEnum = statusEnum;
         this.restructureCreditsRequest = restructureCreditsRequest;
@@ -77,9 +76,10 @@ public class RestructureCreditsLoanMapping extends AbstractPersistableCustom {
      * @return a new instance of the LoanRescheduleRequest class
      **/
     public static RestructureCreditsLoanMapping instance(final Loan loan, final Integer statusEnum,
-                                                         final RestructureCreditsRequest restructureCreditsRequest) {
+            final RestructureCreditsRequest restructureCreditsRequest) {
 
-        return new RestructureCreditsLoanMapping(loan, statusEnum, restructureCreditsRequest, loan.getSummary().getTotalOutstanding(),loan.getDisbursementDate(),loan.getMaturityDate());
+        return new RestructureCreditsLoanMapping(loan, statusEnum, restructureCreditsRequest, loan.getSummary().getTotalOutstanding(),
+                loan.getDisbursementDate(), loan.getMaturityDate());
     }
 
     /**

@@ -18,12 +18,13 @@
  */
 package org.apache.fineract.portfolio.client.service;
 
+import java.util.List;
 import org.apache.fineract.portfolio.client.data.EconomicActivityData;
 import org.apache.fineract.portfolio.client.data.EconomicSectorData;
 
-import java.util.List;
-
 public interface EconomicActivityReadPlatformService {
+
     List<EconomicSectorData> retrieveSectorData();
+
     List<EconomicActivityData> retrieveEconomicActivityData();
 }
