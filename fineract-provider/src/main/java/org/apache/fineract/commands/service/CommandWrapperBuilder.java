@@ -3796,4 +3796,28 @@ public class CommandWrapperBuilder {
         this.href = "/banks/" + bankId;
         return this;
     }
+
+    public CommandWrapperBuilder createBankAccount() {
+        this.actionName = "CREATE";
+        this.entityName = "BANKACCOUNT";
+        this.entityId = null;
+        this.href = "/bankaccounts";
+        return this;
+    }
+
+    public CommandWrapperBuilder updateBankAccount(final Long bankAccountId) {
+        this.actionName = "UPDATE";
+        this.entityName = "BANKACCOUNT";
+        this.entityId = bankAccountId;
+        this.href = "/bankaccounts/" + bankAccountId;
+        return this;
+    }
+
+    public CommandWrapperBuilder deleteBankAccount(final Long bankAccountId) {
+        this.actionName = "DELETE";
+        this.entityName = "BANKACCOUNT";
+        this.entityId = bankAccountId;
+        this.href = "/bankaccounts/" + bankAccountId;
+        return this;
+    }
 }

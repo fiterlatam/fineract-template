@@ -16,33 +16,45 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.organisation.bank.service;
+package org.apache.fineract.organisation.bankAccount.service;
 
 import java.util.HashSet;
 import java.util.Set;
 
-public final class BankConstants {
+public final class BankAccountConstants {
 
-    private BankConstants() {
+    private BankAccountConstants() {
 
     }
 
-    public static final String BANK_RESOURCE_NAME = "bank";
+    public static final String BANK_ACCOUNT_RESOURCE_NAME = "bankAccount";
 
-    public enum BankSupportedParameters {
+    // template
+    public static final String BANK_ACCOUNT = "Laccount";
 
-        BANK_ID("id"), CODE("code"), NAME("name");
+    public static final String AGENCY = "Ldepartamento";
+
+    public static final String BANK = "Lmunicipio";
+
+    public static final String GLACCOUNT = "Lpaises";
+
+    public static final String DESCRIPTION = "CódigoEntidad";
+
+    public enum BankAccountSupportedParameters {
+
+        BANK_ACCOUNT_ID("id"), ACCOUNT_NUMBER("accountNumber"), AGENCY_ID("agencyId"), BANK_ID("bankId")
+        , GLACCOUNT_ID("glAccountId"), DESCRIPTION("description");
 
         private final String value;
 
-        BankSupportedParameters(final String value) {
+        BankAccountSupportedParameters(final String value) {
             this.value = value;
         }
 
         private static final Set<String> values = new HashSet<>();
 
         static {
-            for (final BankConstants.BankSupportedParameters param : BankConstants.BankSupportedParameters.values()) {
+            for (final BankAccountConstants.BankAccountSupportedParameters param : BankAccountConstants.BankAccountSupportedParameters.values()) {
                 values.add(param.value);
             }
         }
