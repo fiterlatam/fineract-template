@@ -103,7 +103,7 @@ public class BankApiResource {
     @RequestBody(required = true, content = @Content(schema = @Schema(implementation = BanksApiResourceSwagger.PutBanksBankIdRequest.class)))
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = BanksApiResourceSwagger.PutBanksBankIdResponse.class))) })
-    public String updateAgency(@PathParam("bankId") @Parameter(description = "bankId") final Long bankId,
+    public String updateBank(@PathParam("bankId") @Parameter(description = "bankId") final Long bankId,
             @Parameter(hidden = true) final String apiRequestBodyAsJson) {
         final CommandWrapper commandRequest = new CommandWrapperBuilder() //
                 .updateBank(bankId) //
@@ -150,9 +150,9 @@ public class BankApiResource {
     @GET
     @Path("/{bankId}")
     @Produces({ MediaType.APPLICATION_JSON })
-    public String retrieveAgency(@PathParam("bankId") final Long agencyId) {
+    public String retrieveBank(@PathParam("bankId") final Long bankId) {
         this.platformSecurityContext.authenticatedUser().validateHasReadPermission(BankConstants.BANK_RESOURCE_NAME);
-        BankData bankData = this.bankReadPlatformService.findById(agencyId);
+        BankData bankData = this.bankReadPlatformService.findById(bankId);
         return this.toApiJsonSerializer.serialize(bankData);
     }
 }

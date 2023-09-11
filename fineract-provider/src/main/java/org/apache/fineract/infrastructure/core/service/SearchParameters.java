@@ -56,6 +56,10 @@ public final class SearchParameters {
     private final String groupName;
     private final String centerName;
 
+    private final Long accountNumber;
+    private final String bankName;
+    private final String bankCode;
+
     public static SearchParameters from(final String sqlSearch, final Long officeId, final String externalId, final String name,
             final String hierarchy) {
         final Long staffId = null;
@@ -288,6 +292,19 @@ public final class SearchParameters {
                 staffId, accountNo, loanId, savingsId, null, false, null);
     }
 
+    public static SearchParameters forBankAccounts(final Integer offset, final Integer limit, final String orderBy, final String sortOrder,
+                                            String searchText,  final Long accountNumber,final String bankName, final String bankCode) {
+
+        final Integer maxLimitAllowed = getCheckedLimit(limit);
+        final Long staffId = null;
+        final String accountNo = null;
+        final Long loanId = null;
+        final Long savingsId = null;
+
+        return new SearchParameters(searchText, null, null, null, null, null, null, null, offset, maxLimitAllowed, orderBy, sortOrder,
+                staffId, accountNo, loanId, savingsId, null, false, null, accountNumber, bankName, bankCode);
+    }
+
     private SearchParameters(final String sqlSearch, final Long officeId, final String externalId, final String name,
             final String hierarchy, final String firstname, final String lastname, final Integer offset, final Integer limit,
             final String orderBy, final String sortOrder, final Long staffId, final String accountNo, final Long loanId,
@@ -318,13 +335,16 @@ public final class SearchParameters {
         this.type = null;
         this.groupName = null;
         this.centerName = null;
+        this.accountNumber = null;
+        this.bankName = null;
+        this.bankCode = null;
 
     }
 
     private SearchParameters(final String sqlSearch, final Long officeId, final String externalId, final String name,
-            final String hierarchy, final String firstname, final String lastname, final String status, final Integer offset,
-            final Integer limit, final String orderBy, final String sortOrder, final Long staffId, final String accountNo,
-            final Long loanId, final Long savingsId, final Boolean orphansOnly, boolean isSelfUser, final String dpiNumber) {
+                             final String hierarchy, final String firstname, final String lastname, final String status, final Integer offset,
+                             final Integer limit, final String orderBy, final String sortOrder, final Long staffId, final String accountNo,
+                             final Long loanId, final Long savingsId, final Boolean orphansOnly, boolean isSelfUser, final String dpiNumber) {
         this.sqlSearch = sqlSearch;
         this.officeId = officeId;
         this.externalId = externalId;
@@ -351,6 +371,46 @@ public final class SearchParameters {
         this.type = null;
         this.groupName = null;
         this.centerName = null;
+        this.accountNumber = null;
+        this.bankName = null;
+        this.bankCode = null;
+
+    }
+
+    private SearchParameters(final String sqlSearch, final Long officeId, final String externalId, final String name,
+            final String hierarchy, final String firstname, final String lastname, final String status, final Integer offset,
+            final Integer limit, final String orderBy, final String sortOrder, final Long staffId, final String accountNo,
+            final Long loanId, final Long savingsId, final Boolean orphansOnly, boolean isSelfUser, final String dpiNumber, final Long accountNumber,
+                             final String bankName, final String bankCode) {
+        this.sqlSearch = sqlSearch;
+        this.officeId = officeId;
+        this.externalId = externalId;
+        this.name = name;
+        this.hierarchy = hierarchy;
+        this.firstname = firstname;
+        this.lastname = lastname;
+        this.offset = offset;
+        this.limit = limit;
+        this.orderBy = orderBy;
+        this.sortOrder = sortOrder;
+        this.staffId = staffId;
+        this.accountNo = accountNo;
+        this.loanId = loanId;
+        this.savingsId = savingsId;
+        this.orphansOnly = orphansOnly;
+        this.currencyCode = null;
+        this.provisioningEntryId = null;
+        this.productId = null;
+        this.categoryId = null;
+        this.isSelfUser = isSelfUser;
+        this.status = status;
+        this.dpiNumber = dpiNumber;
+        this.type = null;
+        this.groupName = null;
+        this.centerName = null;
+        this.accountNumber = accountNumber;
+        this.bankName = bankName;
+        this.bankCode = bankCode;
 
     }
 
@@ -385,6 +445,9 @@ public final class SearchParameters {
         this.type = type;
         this.groupName = groupName;
         this.centerName = centerName;
+        this.accountNumber = null;
+        this.bankName = null;
+        this.bankCode = null;
 
     }
 
@@ -418,6 +481,9 @@ public final class SearchParameters {
         this.type = null;
         this.groupName = null;
         this.centerName = null;
+        this.accountNumber = null;
+        this.bankName = null;
+        this.bankCode = null;
     }
 
     private SearchParameters(final Long provisioningEntryId, final Long officeId, final Long productId, final Long categoryId,
@@ -448,6 +514,9 @@ public final class SearchParameters {
         this.type = null;
         this.groupName = null;
         this.centerName = null;
+        this.accountNumber = null;
+        this.bankName = null;
+        this.bankCode = null;
 
     }
 
@@ -481,6 +550,9 @@ public final class SearchParameters {
         this.type = null;
         this.groupName = null;
         this.centerName = null;
+        this.accountNumber = null;
+        this.bankName = null;
+        this.bankCode = null;
 
     }
 
@@ -657,6 +729,18 @@ public final class SearchParameters {
 
     public boolean isSelfUser() {
         return this.isSelfUser;
+    }
+
+    public Long getAccountNumber() {
+        return accountNumber;
+    }
+
+    public String getBankName() {
+        return bankName;
+    }
+
+    public String getBankCode() {
+        return bankCode;
     }
 
     /**

@@ -94,7 +94,7 @@ public class BankReadPlatformServiceImpl implements BankReadPlatformService {
         final StringBuilder sqlBuilder = new StringBuilder(200);
         sqlBuilder.append(schemaSql);
 
-        if (searchParameters.isLimited()) {
+        if (searchParameters != null && searchParameters.isLimited()) {
             sqlBuilder.append(" ");
             if (searchParameters.isOffset()) {
                 sqlBuilder.append(sqlGenerator.limit(searchParameters.getLimit(), searchParameters.getOffset()));
