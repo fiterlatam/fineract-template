@@ -175,13 +175,16 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             }
 
             EnumOptionData prequalificationStatus;
-            if (members.stream()
-                    .anyMatch(m -> PrequalificationMemberIndication.ACTIVE.getValue().equals(m.getStatus().getId().intValue()))) {
-                prequalificationStatus = PreQualificationsEnumerations.status(PrequalificationStatus.BLACKLIST_REJECTED);
-            } else {
-                prequalificationStatus = PreQualificationsEnumerations.status(PrequalificationStatus.BLACKLIST_CHECKED);
+            if (!List.of(PrequalificationStatus.BURO_CHECKED.getValue(), PrequalificationStatus.HARD_POLICY_CHECKED.getValue())
+                    .contains(clientData.getStatus().getId().intValue())) {
+                if (members.stream()
+                        .anyMatch(m -> PrequalificationMemberIndication.ACTIVE.getValue().equals(m.getStatus().getId().intValue()))) {
+                    prequalificationStatus = PreQualificationsEnumerations.status(PrequalificationStatus.BLACKLIST_REJECTED);
+                } else {
+                    prequalificationStatus = PreQualificationsEnumerations.status(PrequalificationStatus.BLACKLIST_CHECKED);
+                }
+                clientData.setStatus(prequalificationStatus);
             }
-            clientData.setStatus(prequalificationStatus);
             clientData.updateMembers(members);
         }
         return clientData;

@@ -18,14 +18,13 @@
  */
 package org.apache.fineract.organisation.bankAccount.domain;
 
-import org.apache.commons.lang3.builder.EqualsBuilder;
-import org.apache.commons.lang3.builder.HashCodeBuilder;
-import org.apache.fineract.organisation.agency.domain.Agency;
-
+import java.io.Serializable;
 import javax.persistence.Column;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
-import java.io.Serializable;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
+import org.apache.fineract.organisation.agency.domain.Agency;
 
 public class BankAccountId implements Serializable {
 
@@ -36,7 +35,7 @@ public class BankAccountId implements Serializable {
     @JoinColumn(name = "agency_id", nullable = false)
     private Agency agency;
 
-    public BankAccountId(Long bankAccount, Agency agency){
+    public BankAccountId(Long bankAccount, Agency agency) {
         this.bankAccount = bankAccount;
         this.agency = agency;
     }

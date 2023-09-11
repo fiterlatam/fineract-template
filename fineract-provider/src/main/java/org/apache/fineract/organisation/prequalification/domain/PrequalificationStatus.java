@@ -50,6 +50,18 @@ public enum PrequalificationStatus {
             case 300:
                 enumeration = PrequalificationStatus.REJECTED;
             break;
+            case 400:
+                enumeration = PrequalificationStatus.BLACKLIST_CHECKED;
+            break;
+            case 500:
+                enumeration = PrequalificationStatus.BLACKLIST_REJECTED;
+            break;
+            case 600:
+                enumeration = PrequalificationStatus.BURO_CHECKED;
+            break;
+            case 700:
+                enumeration = PrequalificationStatus.HARD_POLICY_CHECKED;
+            break;
         }
         return enumeration;
     }

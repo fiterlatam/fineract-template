@@ -20,6 +20,11 @@ package org.apache.fineract.organisation.bankAccount.serialization;
 
 import com.google.gson.JsonElement;
 import com.google.gson.reflect.TypeToken;
+import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.infrastructure.core.data.ApiParameterError;
 import org.apache.fineract.infrastructure.core.data.DataValidatorBuilder;
@@ -29,12 +34,6 @@ import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
 import org.apache.fineract.organisation.bankAccount.service.BankAccountConstants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-
-import java.lang.reflect.Type;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * Deserializer of JSON for agency API.
@@ -68,22 +67,29 @@ public final class BankAccountCommandFromApiJsonDeserializer {
 
         final JsonElement element = this.fromApiJsonHelper.parse(json);
 
-        final Long bankAccount = this.fromApiJsonHelper.extractLongNamed(BankAccountConstants.BankAccountSupportedParameters.ACCOUNT_NUMBER.getValue(), element);
-        baseDataValidator.reset().parameter(BankAccountConstants.BankAccountSupportedParameters.ACCOUNT_NUMBER.getValue()).value(bankAccount).notBlank()
-                .notExceedingLengthOf(15);
+        final Long bankAccount = this.fromApiJsonHelper
+                .extractLongNamed(BankAccountConstants.BankAccountSupportedParameters.ACCOUNT_NUMBER.getValue(), element);
+        baseDataValidator.reset().parameter(BankAccountConstants.BankAccountSupportedParameters.ACCOUNT_NUMBER.getValue())
+                .value(bankAccount).notBlank().notExceedingLengthOf(15);
 
-        final Long bank = this.fromApiJsonHelper.extractLongNamed(BankAccountConstants.BankAccountSupportedParameters.BANK_ID.getValue(), element);
+        final Long bank = this.fromApiJsonHelper.extractLongNamed(BankAccountConstants.BankAccountSupportedParameters.BANK_ID.getValue(),
+                element);
         baseDataValidator.reset().parameter(BankAccountConstants.BankAccountSupportedParameters.BANK_ID.getValue()).value(bank).notBlank();
 
-        final Long agency = this.fromApiJsonHelper.extractLongNamed(BankAccountConstants.BankAccountSupportedParameters.AGENCY_ID.getValue(), element);
-        baseDataValidator.reset().parameter(BankAccountConstants.BankAccountSupportedParameters.AGENCY_ID.getValue()).value(agency).notBlank();
+        final Long agency = this.fromApiJsonHelper
+                .extractLongNamed(BankAccountConstants.BankAccountSupportedParameters.AGENCY_ID.getValue(), element);
+        baseDataValidator.reset().parameter(BankAccountConstants.BankAccountSupportedParameters.AGENCY_ID.getValue()).value(agency)
+                .notBlank();
 
-        final Long glAccount = this.fromApiJsonHelper.extractLongNamed(BankAccountConstants.BankAccountSupportedParameters.GLACCOUNT_ID.getValue(), element);
-        baseDataValidator.reset().parameter(BankAccountConstants.BankAccountSupportedParameters.GLACCOUNT_ID.getValue()).value(glAccount).notBlank();
+        final Long glAccount = this.fromApiJsonHelper
+                .extractLongNamed(BankAccountConstants.BankAccountSupportedParameters.GLACCOUNT_ID.getValue(), element);
+        baseDataValidator.reset().parameter(BankAccountConstants.BankAccountSupportedParameters.GLACCOUNT_ID.getValue()).value(glAccount)
+                .notBlank();
 
-        final String description = this.fromApiJsonHelper.extractStringNamed(BankAccountConstants.BankAccountSupportedParameters.DESCRIPTION.getValue(), element);
-        baseDataValidator.reset().parameter(BankAccountConstants.BankAccountSupportedParameters.ACCOUNT_NUMBER.getValue()).value(description).notBlank()
-                .notExceedingLengthOf(100);
+        final String description = this.fromApiJsonHelper
+                .extractStringNamed(BankAccountConstants.BankAccountSupportedParameters.DESCRIPTION.getValue(), element);
+        baseDataValidator.reset().parameter(BankAccountConstants.BankAccountSupportedParameters.ACCOUNT_NUMBER.getValue())
+                .value(description).notBlank().notExceedingLengthOf(100);
 
         throwExceptionIfValidationWarningsExist(dataValidationErrors);
     }
@@ -102,31 +108,40 @@ public final class BankAccountCommandFromApiJsonDeserializer {
 
         final JsonElement element = this.fromApiJsonHelper.parse(json);
 
-        if (this.fromApiJsonHelper.parameterExists(BankAccountConstants.BankAccountSupportedParameters.ACCOUNT_NUMBER.getValue(), element)) {
-            final Long accountNumber = this.fromApiJsonHelper.extractLongNamed(BankAccountConstants.BankAccountSupportedParameters.ACCOUNT_NUMBER.getValue(), element);
-            baseDataValidator.reset().parameter(BankAccountConstants.BankAccountSupportedParameters.ACCOUNT_NUMBER.getValue()).value(accountNumber).notBlank()
-                    .notExceedingLengthOf(15);
+        if (this.fromApiJsonHelper.parameterExists(BankAccountConstants.BankAccountSupportedParameters.ACCOUNT_NUMBER.getValue(),
+                element)) {
+            final Long accountNumber = this.fromApiJsonHelper
+                    .extractLongNamed(BankAccountConstants.BankAccountSupportedParameters.ACCOUNT_NUMBER.getValue(), element);
+            baseDataValidator.reset().parameter(BankAccountConstants.BankAccountSupportedParameters.ACCOUNT_NUMBER.getValue())
+                    .value(accountNumber).notBlank().notExceedingLengthOf(15);
         }
 
         if (this.fromApiJsonHelper.parameterExists(BankAccountConstants.BankAccountSupportedParameters.AGENCY_ID.getValue(), element)) {
-            final Long agencyId = this.fromApiJsonHelper.extractLongNamed(BankAccountConstants.BankAccountSupportedParameters.AGENCY_ID.getValue(), element);
-            baseDataValidator.reset().parameter(BankAccountConstants.BankAccountSupportedParameters.AGENCY_ID.getValue()).value(agencyId).notBlank();
+            final Long agencyId = this.fromApiJsonHelper
+                    .extractLongNamed(BankAccountConstants.BankAccountSupportedParameters.AGENCY_ID.getValue(), element);
+            baseDataValidator.reset().parameter(BankAccountConstants.BankAccountSupportedParameters.AGENCY_ID.getValue()).value(agencyId)
+                    .notBlank();
         }
 
         if (this.fromApiJsonHelper.parameterExists(BankAccountConstants.BankAccountSupportedParameters.BANK_ID.getValue(), element)) {
-            final Long bankId = this.fromApiJsonHelper.extractLongNamed(BankAccountConstants.BankAccountSupportedParameters.BANK_ID.getValue(), element);
-            baseDataValidator.reset().parameter(BankAccountConstants.BankAccountSupportedParameters.BANK_ID.getValue()).value(bankId).notBlank();
+            final Long bankId = this.fromApiJsonHelper
+                    .extractLongNamed(BankAccountConstants.BankAccountSupportedParameters.BANK_ID.getValue(), element);
+            baseDataValidator.reset().parameter(BankAccountConstants.BankAccountSupportedParameters.BANK_ID.getValue()).value(bankId)
+                    .notBlank();
         }
 
         if (this.fromApiJsonHelper.parameterExists(BankAccountConstants.BankAccountSupportedParameters.GLACCOUNT_ID.getValue(), element)) {
-            final Long glAccountId = this.fromApiJsonHelper.extractLongNamed(BankAccountConstants.BankAccountSupportedParameters.GLACCOUNT_ID.getValue(), element);
-            baseDataValidator.reset().parameter(BankAccountConstants.BankAccountSupportedParameters.GLACCOUNT_ID.getValue()).value(glAccountId).notBlank();
+            final Long glAccountId = this.fromApiJsonHelper
+                    .extractLongNamed(BankAccountConstants.BankAccountSupportedParameters.GLACCOUNT_ID.getValue(), element);
+            baseDataValidator.reset().parameter(BankAccountConstants.BankAccountSupportedParameters.GLACCOUNT_ID.getValue())
+                    .value(glAccountId).notBlank();
         }
 
         if (this.fromApiJsonHelper.parameterExists(BankAccountConstants.BankAccountSupportedParameters.DESCRIPTION.getValue(), element)) {
-            final String description = this.fromApiJsonHelper.extractStringNamed(BankAccountConstants.BankAccountSupportedParameters.DESCRIPTION.getValue(), element);
-            baseDataValidator.reset().parameter(BankAccountConstants.BankAccountSupportedParameters.DESCRIPTION.getValue()).value(description).notBlank()
-                    .notExceedingLengthOf(100);
+            final String description = this.fromApiJsonHelper
+                    .extractStringNamed(BankAccountConstants.BankAccountSupportedParameters.DESCRIPTION.getValue(), element);
+            baseDataValidator.reset().parameter(BankAccountConstants.BankAccountSupportedParameters.DESCRIPTION.getValue())
+                    .value(description).notBlank().notExceedingLengthOf(100);
         }
 
         throwExceptionIfValidationWarningsExist(dataValidationErrors);

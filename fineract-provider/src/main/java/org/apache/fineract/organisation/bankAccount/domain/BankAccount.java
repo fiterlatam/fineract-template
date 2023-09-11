@@ -18,6 +18,14 @@
  */
 package org.apache.fineract.organisation.bankAccount.domain;
 
+import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.Table;
 import lombok.Getter;
 import org.apache.fineract.accounting.glaccount.domain.GLAccount;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
@@ -27,15 +35,6 @@ import org.apache.fineract.organisation.agency.domain.Agency;
 import org.apache.fineract.organisation.bank.domain.Bank;
 import org.apache.fineract.organisation.bankAccount.service.BankAccountConstants;
 import org.apache.fineract.useradministration.domain.AppUser;
-
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.Table;
-import java.time.LocalDateTime;
-import java.util.LinkedHashMap;
-import java.util.Map;
 
 @Entity
 @Getter
@@ -67,7 +66,7 @@ public class BankAccount extends AbstractPersistableCustom {
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
-    public BankAccount(){
+    public BankAccount() {
         //
     }
 
@@ -91,7 +90,7 @@ public class BankAccount extends AbstractPersistableCustom {
         this.description = description;
     }
 
-    public BankAccount(Long accountNumber, Agency agency, Bank bank, GLAccount glAccount, String description, AppUser currentUser){
+    public BankAccount(Long accountNumber, Agency agency, Bank bank, GLAccount glAccount, String description, AppUser currentUser) {
         this.accountNumber = accountNumber;
         this.agency = agency;
         this.bank = bank;
@@ -102,8 +101,10 @@ public class BankAccount extends AbstractPersistableCustom {
     }
 
     public static BankAccount fromJson(AppUser currentUser, Agency agency, Bank bank, GLAccount glAccount, JsonCommand command) {
-        final String description = command.stringValueOfParameterNamed(BankAccountConstants.BankAccountSupportedParameters.DESCRIPTION.getValue());
-        final Long bankAccount = command.longValueOfParameterNamed(BankAccountConstants.BankAccountSupportedParameters.ACCOUNT_NUMBER.getValue());
+        final String description = command
+                .stringValueOfParameterNamed(BankAccountConstants.BankAccountSupportedParameters.DESCRIPTION.getValue());
+        final Long bankAccount = command
+                .longValueOfParameterNamed(BankAccountConstants.BankAccountSupportedParameters.ACCOUNT_NUMBER.getValue());
 
         return new BankAccount(bankAccount, agency, bank, glAccount, description, currentUser);
     }
@@ -111,14 +112,18 @@ public class BankAccount extends AbstractPersistableCustom {
     public Map<String, Object> update(JsonCommand command) {
         final Map<String, Object> actualChanges = new LinkedHashMap<>(2);
 
-        if (command.isChangeInLongParameterNamed(BankAccountConstants.BankAccountSupportedParameters.ACCOUNT_NUMBER.getValue(), this.accountNumber)) {
-            final Long newValue = command.longValueOfParameterNamed(BankAccountConstants.BankAccountSupportedParameters.ACCOUNT_NUMBER.getValue());
+        if (command.isChangeInLongParameterNamed(BankAccountConstants.BankAccountSupportedParameters.ACCOUNT_NUMBER.getValue(),
+                this.accountNumber)) {
+            final Long newValue = command
+                    .longValueOfParameterNamed(BankAccountConstants.BankAccountSupportedParameters.ACCOUNT_NUMBER.getValue());
             actualChanges.put(BankAccountConstants.BankAccountSupportedParameters.ACCOUNT_NUMBER.getValue(), newValue);
-            //this.accountNumber = newValue;
+            // this.accountNumber = newValue;
         }
 
-        if (command.isChangeInStringParameterNamed(BankAccountConstants.BankAccountSupportedParameters.DESCRIPTION.getValue(), this.description)) {
-            final String newValue = command.stringValueOfParameterNamed(BankAccountConstants.BankAccountSupportedParameters.DESCRIPTION.getValue());
+        if (command.isChangeInStringParameterNamed(BankAccountConstants.BankAccountSupportedParameters.DESCRIPTION.getValue(),
+                this.description)) {
+            final String newValue = command
+                    .stringValueOfParameterNamed(BankAccountConstants.BankAccountSupportedParameters.DESCRIPTION.getValue());
             actualChanges.put(BankAccountConstants.BankAccountSupportedParameters.DESCRIPTION.getValue(), newValue);
             this.description = newValue;
         }

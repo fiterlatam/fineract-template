@@ -328,7 +328,7 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
             ClientInfoRelatedDetail clientRelatedDetails = ClientInfoRelatedDetail.createFrom(command);
 
             final Client newClient = Client.createNew(currentUser, clientOffice, clientParentGroup, staff, savingsProductId, gender,
-                    clientType, clientClassification, legalFormValue,clientRelatedDetails, command);
+                    clientType, clientClassification, legalFormValue, clientRelatedDetails, command);
             this.clientRepository.saveAndFlush(newClient);
             boolean rollbackTransaction = false;
             if (newClient.isActive()) {

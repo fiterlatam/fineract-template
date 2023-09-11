@@ -27,8 +27,8 @@ import org.apache.fineract.organisation.agency.domain.Agency;
 public class BankAccountDuplicateException extends AbstractPlatformResourceNotFoundException {
 
     public BankAccountDuplicateException(final Long number, final Agency agency) {
-        super("error.msg.group.bankaccount.duplicate", "Bank Account with number " + number
-                + " and Agency " + agency.getName() + " already exists");
+        super("error.msg.group.bankaccount.duplicate",
+                "Bank Account with number " + number + " and Agency " + agency.getName() + " already exists");
     }
 
 }

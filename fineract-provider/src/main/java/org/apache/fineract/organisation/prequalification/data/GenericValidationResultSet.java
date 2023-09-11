@@ -16,42 +16,16 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.portfolio.client.domain;
+package org.apache.fineract.organisation.prequalification.data;
 
-/**
- * @author : mart
- * @project : fineract
- * @created : 9/6/23, Wednesday
- **/
-public interface ClientMinimumInfoRelatedDetails {
+import java.util.List;
+import lombok.Data;
+import lombok.RequiredArgsConstructor;
 
-    Integer getLoanCycle();
+@RequiredArgsConstructor
+@Data
+public class GenericValidationResultSet {
 
-    String getGroupNumber();
-
-    String getMaidenName();
-
-    String getOthernames();
-
-    String getGroupMember();
-
-    String getStatusInGroup();
-
-    String getRetirementReason();
-
-    String getCivilStatus();
-
-    String getEducationLevel();
-
-    String getEthinicity();
-
-    String getNationality();
-
-    String getLanguages();
-
-    String getEconomicSector();
-
-    String getEconomicActivity();
-
-    String getFamilyReference();
+    private final List<String> columnHeaders;
+    private final List<List<String>> rows;
 }

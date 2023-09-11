@@ -18,11 +18,10 @@
  */
 package org.apache.fineract.organisation.bankAccount.data;
 
+import java.util.Collection;
 import org.apache.fineract.accounting.glaccount.data.GLAccountData;
 import org.apache.fineract.organisation.agency.data.AgencyData;
 import org.apache.fineract.organisation.bank.data.BankData;
-
-import java.util.Collection;
 
 /**
  * Immutable data object for bank data.
@@ -45,14 +44,15 @@ public class BankAccountData {
 
     private final String description;
 
-
     // template
 
-    public static BankAccountData instance(Long id, Long accountNumber, AgencyData agencyData, BankData bankData, GLAccountData glAccountData, String description) {
+    public static BankAccountData instance(Long id, Long accountNumber, AgencyData agencyData, BankData bankData,
+            GLAccountData glAccountData, String description) {
         return new BankAccountData(id, accountNumber, agencyData, bankData, glAccountData, description);
     }
 
-    public BankAccountData(Long id, Long accountNumber, AgencyData agencyData, BankData bankData, GLAccountData glAccountData, String description) {
+    public BankAccountData(Long id, Long accountNumber, AgencyData agencyData, BankData bankData, GLAccountData glAccountData,
+            String description) {
         this.id = id;
         this.accountNumber = accountNumber;
         this.agency = agencyData;
@@ -65,7 +65,7 @@ public class BankAccountData {
     }
 
     public BankAccountData(Collection<AgencyData> agencyOptions, Collection<BankData> bankOptions,
-                           Collection<GLAccountData> glAccountOptions) {
+            Collection<GLAccountData> glAccountOptions) {
         this.id = null;
         this.accountNumber = null;
         this.agencyOptions = agencyOptions;
@@ -79,7 +79,7 @@ public class BankAccountData {
 
     // TODO: complete
     public static BankAccountData template(Collection<AgencyData> agencyData, Collection<BankData> bankData,
-                                           Collection<GLAccountData> glAccountData) {
+            Collection<GLAccountData> glAccountData) {
         return new BankAccountData(agencyData, bankData, glAccountData);
     }
 }

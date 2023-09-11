@@ -32,21 +32,19 @@ public final class RestructureCreditsLoanMappingData {
     private final LocalDate disbursementDate;
     private final LocalDate maturityDate;
 
-
-
-    private RestructureCreditsLoanMappingData(
-            final Long id,String loanProduct, BigDecimal outstandingBalance, LocalDate disbursementDate, LocalDate maturityDate) {
+    private RestructureCreditsLoanMappingData(final Long id, String loanProduct, BigDecimal outstandingBalance, LocalDate disbursementDate,
+            LocalDate maturityDate) {
 
         this.id = id;
         this.loanProduct = loanProduct;
-        this.maturityDate=maturityDate;
-        this.outstandingBalance=outstandingBalance;
-        this.disbursementDate=disbursementDate;
+        this.maturityDate = maturityDate;
+        this.outstandingBalance = outstandingBalance;
+        this.disbursementDate = disbursementDate;
     }
 
+    public static RestructureCreditsLoanMappingData instance(final Long id, String loanProduct, BigDecimal outstandingBalance,
+            LocalDate disbursementDate, LocalDate maturityDate) {
 
-    public static RestructureCreditsLoanMappingData instance(final Long id,String loanProduct, BigDecimal outstandingBalance, LocalDate disbursementDate, LocalDate maturityDate) {
-
-        return new RestructureCreditsLoanMappingData(id, loanProduct,outstandingBalance,disbursementDate,maturityDate);
+        return new RestructureCreditsLoanMappingData(id, loanProduct, outstandingBalance, disbursementDate, maturityDate);
     }
 }

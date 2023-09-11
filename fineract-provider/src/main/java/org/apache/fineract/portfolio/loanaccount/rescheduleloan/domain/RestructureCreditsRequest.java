@@ -18,12 +18,10 @@
  */
 package org.apache.fineract.portfolio.loanaccount.rescheduleloan.domain;
 
-import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
-import org.apache.fineract.portfolio.client.domain.Client;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanStatus;
-import org.apache.fineract.portfolio.loanproduct.domain.LoanProduct;
-import org.apache.fineract.useradministration.domain.AppUser;
-
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -32,10 +30,11 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
+import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
+import org.apache.fineract.portfolio.client.domain.Client;
+import org.apache.fineract.portfolio.loanaccount.domain.LoanStatus;
+import org.apache.fineract.portfolio.loanproduct.domain.LoanProduct;
+import org.apache.fineract.useradministration.domain.AppUser;
 
 @Entity
 @Table(name = "m_restructure_credit_requests")
@@ -94,10 +93,10 @@ public class RestructureCreditsRequest extends AbstractPersistableCustom {
      * LoanRescheduleRequest constructor
      **/
     private RestructureCreditsRequest(final Client client, final Integer statusEnum, final LoanProduct product,
-                                      final BigDecimal totalLoanAmount, final LocalDateTime newDisbursementDate, final String comments,
-                                      final LocalDateTime dateRequested, final AppUser requestedByUser, final LocalDateTime approvedOnDate,
-                                      final AppUser approvedByUser, final LocalDateTime lastModifiedDate, final AppUser modifiedByUser,
-                                      final List<RestructureCreditsLoanMapping> restructureCreditsLoanMappings) {
+            final BigDecimal totalLoanAmount, final LocalDateTime newDisbursementDate, final String comments,
+            final LocalDateTime dateRequested, final AppUser requestedByUser, final LocalDateTime approvedOnDate,
+            final AppUser approvedByUser, final LocalDateTime lastModifiedDate, final AppUser modifiedByUser,
+            final List<RestructureCreditsLoanMapping> restructureCreditsLoanMappings) {
         this.client = client;
         this.statusEnum = statusEnum;
         this.loanProduct = product;
@@ -114,23 +113,22 @@ public class RestructureCreditsRequest extends AbstractPersistableCustom {
 
     }
 
-
     public static RestructureCreditsRequest instance(final Client client, final Integer statusEnum, final LoanProduct product,
-                                                     final BigDecimal totalLoanAmount, final LocalDateTime newDisbursementDate, final String comments,
-                                                     final LocalDateTime dateRequested, final AppUser requestedByUser, final LocalDateTime approvedOnDate,
-                                                     final AppUser approvedByUser, final LocalDateTime lastModifiedDate, final AppUser modifiedByUser,
-                                                     final List<RestructureCreditsLoanMapping> restructureCreditsLoanMappings) {
+            final BigDecimal totalLoanAmount, final LocalDateTime newDisbursementDate, final String comments,
+            final LocalDateTime dateRequested, final AppUser requestedByUser, final LocalDateTime approvedOnDate,
+            final AppUser approvedByUser, final LocalDateTime lastModifiedDate, final AppUser modifiedByUser,
+            final List<RestructureCreditsLoanMapping> restructureCreditsLoanMappings) {
 
-        return new RestructureCreditsRequest(client,statusEnum,product,totalLoanAmount,newDisbursementDate,
-                comments,dateRequested,requestedByUser,approvedOnDate,approvedByUser,lastModifiedDate,modifiedByUser,restructureCreditsLoanMappings);
+        return new RestructureCreditsRequest(client, statusEnum, product, totalLoanAmount, newDisbursementDate, comments, dateRequested,
+                requestedByUser, approvedOnDate, approvedByUser, lastModifiedDate, modifiedByUser, restructureCreditsLoanMappings);
     }
 
     public static RestructureCreditsRequest fromJSON(Client client, Integer statusEnum, LoanProduct loanProduct,
-                                                     BigDecimal totalOutstanding, LocalDateTime disbursementDate,
-                                                     String comments, LocalDateTime localDateTimeOfSystem, AppUser appUser) {
+            BigDecimal totalOutstanding, LocalDateTime disbursementDate, String comments, LocalDateTime localDateTimeOfSystem,
+            AppUser appUser) {
 
-        return new RestructureCreditsRequest(client,statusEnum,loanProduct,totalOutstanding,disbursementDate,
-                comments,localDateTimeOfSystem,appUser,null,null,null,null,null);
+        return new RestructureCreditsRequest(client, statusEnum, loanProduct, totalOutstanding, disbursementDate, comments,
+                localDateTimeOfSystem, appUser, null, null, null, null, null);
     }
 
     /**
@@ -146,7 +144,6 @@ public class RestructureCreditsRequest extends AbstractPersistableCustom {
     public Integer getStatusEnum() {
         return this.statusEnum;
     }
-
 
     /**
      * change the status of the loan reschedule request to approved, also updating the approvedByUser and approvedOnDate

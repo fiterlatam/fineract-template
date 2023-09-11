@@ -20,9 +20,19 @@ package org.apache.fineract.organisation.prequalification.service;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Collection;
+import java.util.ArrayList;
+import java.util.List;
 import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
+import org.apache.fineract.organisation.prequalification.data.ChecklistValidationResult;
+import org.apache.fineract.organisation.prequalification.data.GenericValidationResultSet;
+import org.apache.fineract.organisation.prequalification.data.HardPolicyCategoryData;
 import org.apache.fineract.organisation.prequalification.data.PrequalificationChecklistData;
+import org.apache.fineract.organisation.prequalification.domain.CheckValidationColor;
+import org.apache.fineract.organisation.prequalification.domain.PrequalificationGroup;
+import org.apache.fineract.organisation.prequalification.domain.PrequalificationGroupMember;
+import org.apache.fineract.organisation.prequalification.domain.PrequalificationGroupRepositoryWrapper;
+import org.apache.fineract.organisation.prequalification.domain.PrequalificationType;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -32,52 +42,107 @@ import org.springframework.stereotype.Service;
 public class PrequalificationChecklistReadPlatformServiceImpl implements PrequalificationChecklistReadPlatformService {
 
     private final JdbcTemplate jdbcTemplate;
+    private final PrequalificationGroupRepositoryWrapper prequalificationGroupRepositoryWrapper;
 
     @Autowired
-    public PrequalificationChecklistReadPlatformServiceImpl(JdbcTemplate jdbcTemplate) {
+    public PrequalificationChecklistReadPlatformServiceImpl(JdbcTemplate jdbcTemplate,
+            PrequalificationGroupRepositoryWrapper prequalificationGroupRepositoryWrapper) {
         this.jdbcTemplate = jdbcTemplate;
+        this.prequalificationGroupRepositoryWrapper = prequalificationGroupRepositoryWrapper;
     }
 
     @Override
-    public Collection<PrequalificationChecklistData> retrievePrequalificationChecklists(final Integer prequalificationId) {
-        final PrequalificationChecklistMapper rm = new PrequalificationChecklistMapper();
-        final String sql = "select " + rm.schema() + " WHERE mpg.id = ?";
-        return this.jdbcTemplate.query(sql, rm, prequalificationId);
+    public PrequalificationChecklistData retrieveHardPolicyValidationResults(final Integer prequalificationId) {
+        PrequalificationGroup prequalificationGroup = this.prequalificationGroupRepositoryWrapper
+                .findOneWithNotFoundDetection(Long.valueOf(prequalificationId));
+        final Long productId = prequalificationGroup.getLoanProduct().getId();
+        final PrequalificationChecklistWritePlatformServiceImpl.CheckCategoryMapper checkCategoryMapper = new PrequalificationChecklistWritePlatformServiceImpl.CheckCategoryMapper();
+        final List<HardPolicyCategoryData> groupPolicies = this.jdbcTemplate.query(checkCategoryMapper.schema(), checkCategoryMapper,
+                productId, PrequalificationType.GROUP.getValue());
+        final List<String> prequalificationColumnHeaders = new ArrayList<>(List.of("label.heading.prequalification.name"));
+        final List<List<String>> prequalificationRows = new ArrayList<>();
+        final ValidationChecklistMapper validationChecklistMapper = new ValidationChecklistMapper();
+        final String sql = "SELECT " + validationChecklistMapper.schema() + " WHERE mcvr.prequalification_id = ? ";
+        final List<ChecklistValidationResult> validationResults = this.jdbcTemplate.query(sql, validationChecklistMapper,
+                prequalificationId);
+        final List<String> prequalificationRow = new ArrayList<>(List.of(prequalificationGroup.getGroupName()));
+        for (HardPolicyCategoryData policy : groupPolicies) {
+            prequalificationColumnHeaders.add(policy.getDescription());
+            for (ChecklistValidationResult validationResult : validationResults) {
+                if (policy.getId().equals(validationResult.getPolicyId())
+                        && PrequalificationType.GROUP.getValue().equals(validationResult.getPrequalificationTypeEnum())) {
+                    final String validationColor = CheckValidationColor.fromInt(validationResult.getColorEnum()).name();
+                    prequalificationRow.add(validationColor);
+                    break;
+                }
+            }
+        }
+        prequalificationRows.add(prequalificationRow);
+        final GenericValidationResultSet groupValidationResultSet = new GenericValidationResultSet(prequalificationColumnHeaders,
+                prequalificationRows);
+        final List<HardPolicyCategoryData> individualPolicies = this.jdbcTemplate.query(checkCategoryMapper.schema(), checkCategoryMapper,
+                productId, PrequalificationType.INDIVIDUAL.getValue());
+        final List<String> memberColumnHeaders = new ArrayList<>(
+                List.of("label.heading.clientid", "label.heading.clientname", "label.heading.dpi"));
+        individualPolicies.forEach(policy -> memberColumnHeaders.add(policy.getDescription()));
+        final List<List<String>> memberRows = new ArrayList<>();
+        for (PrequalificationGroupMember member : prequalificationGroup.getMembers()) {
+            final List<String> memberRow = new ArrayList<>();
+            String memberId = null;
+            String clientName;
+            String dpi;
+            for (HardPolicyCategoryData policy : individualPolicies) {
+                for (ChecklistValidationResult validationResult : validationResults) {
+                    if (policy.getId().equals(validationResult.getPolicyId())
+                            && PrequalificationType.INDIVIDUAL.getValue().equals(validationResult.getPrequalificationTypeEnum())
+                            && member.getId().equals(validationResult.getMemberId().longValue())) {
+                        final String validationColor = CheckValidationColor.fromInt(validationResult.getColorEnum()).name();
+                        if (memberId == null) {
+                            memberId = validationResult.getMemberId().toString();
+                            clientName = validationResult.getClientName();
+                            dpi = validationResult.getDpi();
+                            memberRow.addAll(List.of(memberId, clientName, dpi));
+                        }
+                        memberRow.add(validationColor);
+                        break;
+                    }
+                }
+            }
+            memberRows.add(memberRow);
+        }
+        final GenericValidationResultSet memberValidationResultSet = new GenericValidationResultSet(memberColumnHeaders, memberRows);
+        return new PrequalificationChecklistData(groupValidationResultSet, memberValidationResultSet);
     }
 
-    private static final class PrequalificationChecklistMapper implements RowMapper<PrequalificationChecklistData> {
+    private static final class ValidationChecklistMapper implements RowMapper<ChecklistValidationResult> {
 
         public String schema() {
-            return "cdm.id AS id, cc.name AS name, cc.description AS description, \n"
-                    + "LOWER(cdm.color) AS color, mpl.id AS loanProductId, mpl.name AS loanProductName, \n"
-                    + "mpg.prequalification_number AS prequalificationNumber, mpg.group_name AS prequalificationName,\n"
-                    + "cdm.reference AS reference, TRIM(cdm.`condition`) AS conditionalOperator, cdm.`first_value` firstValue,\n"
-                    + "cdm.second_value AS secondValue, cdm.value_list AS valueList\n" + "FROM m_prequalification_group mpg \n"
-                    + "LEFT JOIN m_product_loan mpl ON mpl.id = mpg.product_id \n"
-                    + "LEFT JOIN checklist_decision_making cdm ON cdm.product_id = mpl.id \n"
-                    + "LEFT JOIN checklist_categories cc ON cc.id = cdm.checklist_category_id \n";
+            return """
+                    mc.id AS clientId, IFNULL(mc.dpi, mpgm.dpi) AS dpi, mpgm.id AS memberId, IFNULL(mc.display_name, mpgm.name) AS clientName, cc.id AS policyId,\s
+                    cc.name AS policyName, mcvr.validation_color_enum AS colorEnum, mpg.id AS prequalificationId, mpg.group_name AS prequalificationName, mcvr.prequalification_type AS prequalificationTypeEnum
+                    FROM m_checklist_validation_result mcvr\s
+                    INNER JOIN checklist_categories cc ON cc.id =  mcvr.checklist_category_id\s
+                    LEFT JOIN m_prequalification_group mpg ON mpg.id = mcvr.prequalification_id\s
+                    LEFT JOIN m_group mg ON mg.id = mpg.group_id\s
+                    LEFT JOIN m_prequalification_group_members mpgm ON mpgm.id = mcvr.prequalification_member_id\s
+                    LEFT JOIN m_client mc ON mc.id = mcvr.client_id\s
+                    """;
         }
 
         @Override
-        public PrequalificationChecklistData mapRow(ResultSet rs, int rowNum) throws SQLException {
-            final Long id = JdbcSupport.getLong(rs, "id");
-            final String name = rs.getString("name");
-            final String description = rs.getString("description");
-            final String color = rs.getString("color");
-            final Long loanProductId = JdbcSupport.getLong(rs, "loanProductId");
-            final String loanProductName = rs.getString("loanProductName");
-            final String prequalificationNumber = rs.getString("prequalificationNumber");
+        public ChecklistValidationResult mapRow(@NotNull ResultSet rs, int rowNum) throws SQLException {
+            final Integer clientId = JdbcSupport.getInteger(rs, "clientId");
+            final String clientName = rs.getString("clientName");
+            final String dpi = rs.getString("dpi");
+            final Integer memberId = JdbcSupport.getInteger(rs, "memberId");
+            final Integer policyId = JdbcSupport.getInteger(rs, "policyId");
+            final String policyName = rs.getString("policyName");
+            final Integer colorEnum = JdbcSupport.getInteger(rs, "colorEnum");
+            final Integer prequalificationId = JdbcSupport.getInteger(rs, "prequalificationId");
             final String prequalificationName = rs.getString("prequalificationName");
-            final String reference = rs.getString("reference");
-            final String conditionalOperator = rs.getString("conditionalOperator");
-            final String firstValue = rs.getString("firstValue");
-            final String secondValue = rs.getString("secondValue");
-            final String valueList = rs.getString("valueList");
-
-            PrequalificationChecklistData prequalificationChecklistData = new PrequalificationChecklistData(id, name, description, color,
-                    loanProductId, loanProductName, prequalificationNumber, prequalificationName, reference, conditionalOperator,
-                    firstValue, secondValue, valueList);
-            return prequalificationChecklistData;
+            final Integer prequalificationTypeEnum = JdbcSupport.getInteger(rs, "prequalificationTypeEnum");
+            return new ChecklistValidationResult(clientId, clientName, dpi, memberId, policyId, policyName, colorEnum, prequalificationId,
+                    prequalificationName, prequalificationTypeEnum);
         }
     }
 }

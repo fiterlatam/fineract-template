@@ -18,11 +18,10 @@
  */
 package org.apache.fineract.organisation.bankAccount.api;
 
-import org.apache.fineract.organisation.bankAccount.data.BankAccountData;
-
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
+import org.apache.fineract.organisation.bankAccount.data.BankAccountData;
 
 @SuppressWarnings({ "HideUtilityClassConstructor" })
 public class BankAccountApiConstants {

@@ -170,7 +170,8 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
         return ClientData.template(defaultOfficeId, LocalDate.now(DateUtils.getDateTimeZoneOfTenant()), offices, staffOptions, null,
                 genderOptions, savingsProductDatas, clientTypeOptions, clientClassificationOptions, clientNonPersonConstitutionOptions,
                 clientNonPersonMainBusinessLineOptions, clientLegalFormOptions, familyMemberOptions,
-                new ArrayList<AddressData>(Arrays.asList(address)), isAddressEnabled, datatableTemplates,economicSectorData,economicActivityData);
+                new ArrayList<AddressData>(Arrays.asList(address)), isAddressEnabled, datatableTemplates, economicSectorData,
+                economicActivityData);
     }
 
     @Override
@@ -572,7 +573,7 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
             return ClientData.instance(accountNo, status, subStatus, officeId, officeName, transferToOfficeId, transferToOfficeName, id,
                     firstname, middlename, lastname, fullname, displayName, externalId, mobileNo, emailAddress, dateOfBirth, gender,
                     activationDate, imageId, staffId, staffName, timeline, savingsProductId, savingsProductName, savingsAccountId,
-                    clienttype, classification, legalForm, clientNonPerson, isStaff, dpiNumber, oldCustomerNumber,null);
+                    clienttype, classification, legalForm, clientNonPerson, isStaff, dpiNumber, oldCustomerNumber, null);
 
         }
     }
@@ -600,11 +601,11 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
 
             builder.append(
                     "c.id as id, c.account_no as accountNo, c.external_id as externalId, c.status_enum as statusEnum,c.sub_status as subStatus, c.dpi as dpiNumber, c.old_customer_number as oldCustomerNumber, ");
-            builder.append("c.loan_cycle as loanCycle, c.group_member as groupMember, c.group_number as groupNumber, " +
-                    "c.status_in_group as statusInGroup, c.retirement_reason as retirementReason, c.other_names as othernames, " +
-                    "c.maiden_name as maidenName, c.civil_status as civilStatus, c.family_reference as familyReference, " +
-                    "c.ethinicity, c.education_level as educationLevel, c.nationality, c.languages, c.economic_sector as economicSector, " +
-                    " c.economic_activity as economicActivity, ");
+            builder.append("c.loan_cycle as loanCycle, c.group_member as groupMember, c.group_number as groupNumber, "
+                    + "c.status_in_group as statusInGroup, c.retirement_reason as retirementReason, c.other_names as othernames, "
+                    + "c.maiden_name as maidenName, c.civil_status as civilStatus, c.family_reference as familyReference, "
+                    + "c.ethinicity, c.education_level as educationLevel, c.nationality, c.languages, c.economic_sector as economicSector, "
+                    + " c.economic_activity as economicActivity, ");
             builder.append(
                     "cvSubStatus.code_value as subStatusValue,cvSubStatus.code_description as subStatusDesc,c.office_id as officeId, o.name as officeName, ");
             builder.append("c.transfer_to_office_id as transferToOfficeId, transferToOffice.name as transferToOfficeName, ");
@@ -771,9 +772,9 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
             final String economicSector = rs.getString("economicSector");
             final String economicActivity = rs.getString("economicActivity");
 
-            ClientInfoRelatedDetailData detailData = ClientInfoRelatedDetailData.instance(
-                    loanCycle, groupNumber, maidenName, othernames, groupMember, statusInGroup, retirementReason,
-                    civilStatus, educationLevel, ethinicity, nationality, languages, economicSector, economicActivity, familyReference);
+            ClientInfoRelatedDetailData detailData = ClientInfoRelatedDetailData.instance(loanCycle, groupNumber, maidenName, othernames,
+                    groupMember, statusInGroup, retirementReason, civilStatus, educationLevel, ethinicity, nationality, languages,
+                    economicSector, economicActivity, familyReference);
             final ClientNonPersonData clientNonPerson = new ClientNonPersonData(constitution, incorpNo, incorpValidityTill,
                     mainBusinessLine, remarks);
 
@@ -784,7 +785,7 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
             return ClientData.instance(accountNo, status, subStatus, officeId, officeName, transferToOfficeId, transferToOfficeName, id,
                     firstname, middlename, lastname, fullname, displayName, externalId, mobileNo, emailAddress, dateOfBirth, gender,
                     activationDate, imageId, staffId, staffName, timeline, savingsProductId, savingsProductName, savingsAccountId,
-                    clienttype, classification, legalForm, clientNonPerson, isStaff, dpiNumber, oldCustomerNumber,detailData);
+                    clienttype, classification, legalForm, clientNonPerson, isStaff, dpiNumber, oldCustomerNumber, detailData);
 
         }
     }
@@ -959,7 +960,8 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
         final Collection<CodeValueData> clientNonPersonMainBusinessLineOptions = null;
         final List<EnumOptionData> clientLegalFormOptions = null;
         return ClientData.template(null, null, null, null, narrations, null, null, clientTypeOptions, clientClassificationOptions,
-                clientNonPersonConstitutionOptions, clientNonPersonMainBusinessLineOptions, clientLegalFormOptions, null, null, null, null, null, null);
+                clientNonPersonConstitutionOptions, clientNonPersonMainBusinessLineOptions, clientLegalFormOptions, null, null, null, null,
+                null, null);
     }
 
     @Override
