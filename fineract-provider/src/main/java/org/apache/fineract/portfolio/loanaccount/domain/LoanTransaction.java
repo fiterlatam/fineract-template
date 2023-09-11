@@ -135,6 +135,11 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
     @Getter
     private boolean isGeneratedVatTransactionFromRepayment = false;
 
+    @Transient
+    @Setter
+    @Getter
+    private boolean recalculateVat = true;
+
     protected LoanTransaction() {}
 
     public static LoanTransaction incomePosting(final Loan loan, final Office office, final LocalDate dateOf, final BigDecimal amount,
@@ -280,8 +285,8 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
     public static LoanTransaction accrueLoanVatOnCharge(final Loan loan, final Office office, final Money amount, final LocalDate applyDate,
             final Money vatOnCharge, final PaymentDetail paymentDetail) {
         String externalId = null;
-        final LoanTransaction applyCharge = new LoanTransaction(loan, office, LoanTransactionType.ACCRUAL_VAT, paymentDetail, amount.getAmount(),
-                applyDate, externalId);
+        final LoanTransaction applyCharge = new LoanTransaction(loan, office, LoanTransactionType.ACCRUAL_VAT, paymentDetail,
+                amount.getAmount(), applyDate, externalId);
         applyCharge.updateVatChargesComponents(null, vatOnCharge);
         return applyCharge;
     }
@@ -289,8 +294,8 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
     public static LoanTransaction accrueLoanVatOnInterest(final Loan loan, final Office office, final Money amount,
             final LocalDate applyDate, final Money vatOnInterest, final PaymentDetail paymentDetail) {
         String externalId = null;
-        final LoanTransaction applyCharge = new LoanTransaction(loan, office, LoanTransactionType.ACCRUAL_VAT, paymentDetail, amount.getAmount(),
-                applyDate, externalId);
+        final LoanTransaction applyCharge = new LoanTransaction(loan, office, LoanTransactionType.ACCRUAL_VAT, paymentDetail,
+                amount.getAmount(), applyDate, externalId);
         applyCharge.updateVatChargesComponents(vatOnInterest, null);
         return applyCharge;
     }

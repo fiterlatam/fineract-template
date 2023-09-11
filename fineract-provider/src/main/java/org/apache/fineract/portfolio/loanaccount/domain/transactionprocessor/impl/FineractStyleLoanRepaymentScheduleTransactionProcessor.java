@@ -101,7 +101,7 @@ public class FineractStyleLoanRepaymentScheduleTransactionProcessor extends Abst
             vatPercentage = loanTransaction.getLoan().getVatPercentage();
         }
 
-        if (isVatRequired) {
+        if (isVatRequired && loanTransaction.isRecalculateVat()) {
             if (loanTransaction.isChargesWaiver()) {
                 Pair<Money, Money> waivePenaltyChargesAndVatComponent = currentInstallment.waivePenaltyChargesAndVatComponents(
                         transactionDate, loanTransaction.getPenaltyChargesPortion(currency), vatPercentage);
