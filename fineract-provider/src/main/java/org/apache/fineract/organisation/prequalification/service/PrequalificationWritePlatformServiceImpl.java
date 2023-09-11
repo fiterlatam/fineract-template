@@ -37,6 +37,9 @@ import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuilder;
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
+import org.apache.fineract.infrastructure.jobs.annotation.CronTarget;
+import org.apache.fineract.infrastructure.jobs.exception.JobExecutionException;
+import org.apache.fineract.infrastructure.jobs.service.JobName;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.organisation.agency.domain.Agency;
 import org.apache.fineract.organisation.agency.domain.AgencyRepositoryWrapper;
@@ -47,6 +50,7 @@ import org.apache.fineract.organisation.prequalification.domain.Prequalification
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationGroupMember;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationGroupRepositoryWrapper;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationMemberIndication;
+import org.apache.fineract.organisation.prequalification.domain.PrequalificationStatus;
 import org.apache.fineract.organisation.prequalification.serialization.PrequalificationMemberCommandFromApiJsonDeserializer;
 import org.apache.fineract.portfolio.blacklist.domain.BlacklistStatus;
 import org.apache.fineract.portfolio.client.service.ClientChargeWritePlatformServiceJpaRepositoryImpl;
@@ -510,4 +514,24 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         return groupMember;
     }
 
+    @Override
+    @CronTarget(jobName = JobName.DISABLE_EXPIRED_PREQUALIFICATIONS)
+    public void disableExpiredPrequalifications() throws JobExecutionException {
+        try {
+            final String sql = "select m.id from m_prequalification_group m where m.status!=? and current_date > (SELECT DATE_ADD(m.created_at, INTERVAL m.prequalification_duration DAY))";
+            final List<Long> expiredPrequalificationIds = this.jdbcTemplate.queryForList(sql, Long.class, PrequalificationStatus.COMPLETED.getValue());
+            if (expiredPrequalificationIds.size() > 0) {
+                for (Long prequalificationId : expiredPrequalificationIds) {
+                    final String updateSql = "update m_prequalification_group m set m.status=? where m.id=?";
+                    this.jdbcTemplate.update(updateSql, PrequalificationStatus.TIME_EXPIRED.getValue(), prequalificationId);
+                }
+            }
+        }catch (Exception e){
+            e.printStackTrace();
+            List<Throwable> problems = new ArrayList<>();
+            problems.add(e);
+            throw new JobExecutionException(problems);
+        }
+
+    }
 }

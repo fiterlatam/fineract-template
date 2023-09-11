@@ -183,6 +183,9 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                 } else {
                     prequalificationStatus = PreQualificationsEnumerations.status(PrequalificationStatus.BLACKLIST_CHECKED);
                 }
+                if (clientData.getStatus().equals(PreQualificationsEnumerations.status(PrequalificationStatus.TIME_EXPIRED))){
+                    prequalificationStatus = PreQualificationsEnumerations.status(PrequalificationStatus.TIME_EXPIRED);
+                }
                 clientData.setStatus(prequalificationStatus);
             }
             clientData.updateMembers(members);
@@ -319,6 +322,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                     	g.id AS id,
                     	g.prequalification_number AS prequalificationNumber,
                     	g.status,
+                    	g.prequalification_duration as prequalilficationTimespan,
                     	g.created_at,
                     	g.comments,
                     	ma.name AS agencyName,
@@ -419,13 +423,14 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             final Long orangeValidationCount = rs.getLong("orangeValidationCount");
             final Long greenValidationCount = rs.getLong("greenValidationCount");
             final Long yellowValidationCount = rs.getLong("yellowValidationCount");
+            final Long prequalilficationTimespan = rs.getLong("prequalilficationTimespan");
 
             if (StringUtils.isBlank(groupName)) {
                 groupName = newGroupName;
             }
             return GroupPrequalificationData.instance(id, prequalificationNumber, status, agencyName, null, centerName, groupName,
                     productName, addedBy, createdAt, comments, groupId, agencyId, centerId, productId, facilitatorId, facilitatorName,
-                    greenValidationCount, yellowValidationCount, orangeValidationCount, redValidationCount);
+                    greenValidationCount, yellowValidationCount, orangeValidationCount, redValidationCount,prequalilficationTimespan);
 
         }
     }
