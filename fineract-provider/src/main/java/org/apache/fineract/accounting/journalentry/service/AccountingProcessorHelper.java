@@ -1369,7 +1369,6 @@ public class AccountingProcessorHelper {
                 receivableAccount = paymentChannelSpecificAccountMapping.getGlAccount();
             }
 
-
         }
 
         // reverse debits and credits for reversals

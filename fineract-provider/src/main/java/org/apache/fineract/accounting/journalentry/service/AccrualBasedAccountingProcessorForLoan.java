@@ -537,9 +537,9 @@ public class AccrualBasedAccountingProcessorForLoan implements AccountingProcess
             }
         }
 
-        this.helper.createVatAccrualBasedJournalEntriesAndReversalsForLoan(office, currencyCode,
-                debitAccount, loanProductId, paymentTypeId, loanId, transactionId, transactionDate,
-                vatAmount, isReversed, loanTransactionDTO.isGeneratedTransactionFromRepayment(), creditTypeAccountForRepaymentAccrual);
+        this.helper.createVatAccrualBasedJournalEntriesAndReversalsForLoan(office, currencyCode, debitAccount, loanProductId, paymentTypeId,
+                loanId, transactionId, transactionDate, vatAmount, isReversed, loanTransactionDTO.isGeneratedTransactionFromRepayment(),
+                creditTypeAccountForRepaymentAccrual);
 
     }
 

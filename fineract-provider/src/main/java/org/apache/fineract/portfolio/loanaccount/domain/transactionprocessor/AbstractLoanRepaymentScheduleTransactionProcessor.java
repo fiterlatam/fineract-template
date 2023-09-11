@@ -165,6 +165,9 @@ public abstract class AbstractLoanRepaymentScheduleTransactionProcessor implemen
                      **/
                     final LoanTransaction newLoanTransaction = LoanTransaction.copyTransactionProperties(loanTransaction);
 
+                    // Reset derived component of new loan transaction to not recalculate VAT on re-processing
+                    newLoanTransaction.setRecalculateVat(false);
+
                     // Reset derived component of new loan transaction and
                     // re-process transaction
                     handleTransaction(newLoanTransaction, currency, installments, charges);
