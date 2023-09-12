@@ -93,6 +93,12 @@ gradle clean bootRun'''
 ext['groovy.version'] = '3.0.10'
 ext['swaggerFile'] = "$rootDir/fineract-provider/build/classes/java/main/static/fineract.yaml".toString()
 
+def pentahoReportDir = System.properties['user.home'] + System.properties['file.separator'] + '.mifosx' + System.properties['file.separator'] + 'pentahoReports'
+copy {
+    from "fineract-provider/pentahoReports"
+    into pentahoReportDir
+}
+
 allprojects  {
     group = 'org.apache.fineract'
 
@@ -257,6 +263,15 @@ allprojects  {
             "**/git.properties",
             ".mailmap",
             '**/images/diag-*.svg',
+            // Pentaho reports
+            '**/*.prpt',
+            '**/*.properties',
+            '**/*.PROPERTIES',
+            '**/images/diag-*.svg',
+            '**/io/fiter/**',
+            '**/*.properties',
+            '**/*.js',
+            '**/target/**'
         ]
     }
 }
