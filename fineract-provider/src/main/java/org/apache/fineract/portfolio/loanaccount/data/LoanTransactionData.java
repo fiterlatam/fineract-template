@@ -22,6 +22,9 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
+
+import lombok.Getter;
+import lombok.Setter;
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 import org.apache.fineract.organisation.monetary.data.CurrencyData;
 import org.apache.fineract.portfolio.account.data.AccountTransferData;
@@ -88,6 +91,10 @@ public class LoanTransactionData {
     private BigDecimal originationFees;
     private BigDecimal vatOnCharges;
     private BigDecimal vatOnInterest;
+
+    @Getter
+    @Setter
+    private BigDecimal vatOnPenaltyCharges;
 
     public static LoanTransactionData importInstance(BigDecimal repaymentAmount, LocalDate lastRepaymentDate, Long repaymentTypeId,
             Integer rowIndex, String locale, String dateFormat) {

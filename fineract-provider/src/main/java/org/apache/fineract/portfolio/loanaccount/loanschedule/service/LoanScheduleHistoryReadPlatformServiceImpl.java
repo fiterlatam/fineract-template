@@ -109,7 +109,9 @@ public class LoanScheduleHistoryReadPlatformServiceImpl implements LoanScheduleH
             StringBuilder stringBuilder = new StringBuilder(200);
             stringBuilder.append(" ls.installment as period, ls.fromdate as fromDate, ls.duedate as dueDate, ");
             stringBuilder.append(
-                    "ls.principal_amount as principalDue, ls.interest_amount as interestDue, ls.fee_charges_amount as feeChargesDue, ls.penalty_charges_amount as penaltyChargesDue, ls.vat_on_interest as vatOnInterest, ls.vat_on_charges as vatOnCharges ");
+                    "ls.principal_amount as principalDue, ls.interest_amount as interestDue, ls.fee_charges_amount as feeChargesDue, " +
+                            "ls.penalty_charges_amount as penaltyChargesDue, ls.vat_on_interest as vatOnInterest, " +
+                            "ls.vat_on_charges as vatOnCharges, ls.vat_on_penalty_charges as vatOnPenaltyCharges");
             stringBuilder.append(" from m_loan_repayment_schedule_history ls ");
             return stringBuilder.toString();
         }
@@ -140,6 +142,7 @@ public class LoanScheduleHistoryReadPlatformServiceImpl implements LoanScheduleH
 
             Money totalVatOnInterestExpected = Money.zero(monCurrency);
             Money totalVatOnChargeExpected = Money.zero(monCurrency);
+            Money totalVatOnPenaltyChargeExpected = Money.zero(monCurrency);
 
             // update totals with details of fees charged during disbursement
             totalFeeChargesCharged = totalFeeChargesCharged.plus(disbursementPeriod.feeChargesDue());
@@ -152,6 +155,7 @@ public class LoanScheduleHistoryReadPlatformServiceImpl implements LoanScheduleH
                 final LocalDate dueDate = JdbcSupport.getLocalDate(rs, "dueDate");
                 final BigDecimal vatOnInterest = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "vatOnInterest");
                 final BigDecimal vatOnCharges = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "vatOnCharges");
+                final BigDecimal vatOnPenaltyCharges = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "vatOnPenaltyCharges");
                 if (disbursementData != null) {
                     BigDecimal principal = BigDecimal.ZERO;
                     for (DisbursementData data : disbursementData) {
@@ -196,9 +200,10 @@ public class LoanScheduleHistoryReadPlatformServiceImpl implements LoanScheduleH
 
                 totalVatOnInterestExpected = totalVatOnInterestExpected.plus(vatOnInterest);
                 totalVatOnChargeExpected = totalVatOnChargeExpected.plus(vatOnCharges);
+                totalVatOnPenaltyChargeExpected = totalVatOnPenaltyChargeExpected.plus(vatOnPenaltyCharges);
 
                 final BigDecimal totalExpectedCostOfLoanForPeriod = interestExpectedDue.add(feeChargesExpectedDue)
-                        .add(penaltyChargesExpectedDue).add(vatOnInterest).add(vatOnCharges);
+                        .add(penaltyChargesExpectedDue).add(vatOnInterest).add(vatOnCharges).add(vatOnPenaltyCharges);
 
                 final BigDecimal totalDueForPeriod = principalDue.add(totalExpectedCostOfLoanForPeriod);
 
@@ -215,14 +220,16 @@ public class LoanScheduleHistoryReadPlatformServiceImpl implements LoanScheduleH
 
                 final LoanSchedulePeriodData periodData = LoanSchedulePeriodData.repaymentOnlyPeriod(period, fromDate, dueDate,
                         principalDue, outstandingPrincipalBalanceOfLoan, interestExpectedDue, feeChargesExpectedDue,
-                        penaltyChargesExpectedDue, totalDueForPeriod, totalInstallmentAmount, vatOnInterest, vatOnCharges);
+                        penaltyChargesExpectedDue, totalDueForPeriod, totalInstallmentAmount, vatOnInterest, vatOnCharges,
+                        vatOnPenaltyCharges);
 
                 periods.add(periodData);
             }
 
             return new LoanScheduleData(this.currency, periods, loanTermInDays, totalPrincipalDisbursed, totalPrincipalExpected.getAmount(),
                     totalInterestCharged.getAmount(), totalFeeChargesCharged.getAmount(), totalPenaltyChargesCharged.getAmount(),
-                    totalRepaymentExpected.getAmount(), totalVatOnInterestExpected.getAmount(), totalVatOnChargeExpected.getAmount());
+                    totalRepaymentExpected.getAmount(), totalVatOnInterestExpected.getAmount(), totalVatOnChargeExpected.getAmount(),
+                    totalVatOnPenaltyChargeExpected.getAmount());
         }
 
     }

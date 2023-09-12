@@ -29,7 +29,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.fineract.organisation.monetary.domain.ApplicationCurrency;
 import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
 import org.apache.fineract.organisation.monetary.domain.Money;
@@ -1380,11 +1379,11 @@ public final class LoanApplicationTerms {
         Money totalFee = Money.of(principal.getCurrency(), collectionFee.add(instalmentFee));
 
         // calculate vat for next installments
-        Pair<Money, Money> vat = this.calculateVat(periodInterest, Money.zero(principal.getCurrency()), totalFee, mc);
+        Money[] vats = this.calculateVat(periodInterest, Money.zero(principal.getCurrency()), totalFee, mc);
 
         // set principle for period
         // vat and charges
-        Money vatAndAlboFeesForInstalment = vat.getLeft().add(vat.getRight())
+        Money vatAndAlboFeesForInstalment = vats[0].add(vats[1])
                 .add(cumulativeInstalmentAndCollectionFees(new HashSet<>(charges), periodInterest.getCurrency(), mc));
         Money calculatedPriciple = principal.minus(vatAndAlboFeesForInstalment);
 
@@ -1904,23 +1903,26 @@ public final class LoanApplicationTerms {
         this.repaymentDateList = repaymentDateList;
     }
 
-    public Pair<Money, Money> calculateVat(Money totalInterest, Money penalties, Money fees, final MathContext mc) {
+    public Money[] calculateVat(Money totalInterest, Money penalties, Money fees, final MathContext mc) {
         MonetaryCurrency currency = totalInterest.getCurrency();
-
+        Money[] vatTotals = new Money[3];
         Money vatOnInterestDue = Money.zero(currency);
         Money vatOnChargesDue = Money.zero(currency);
+        Money vatOnPenaltyChargesDue = Money.zero(currency);
         if (this.isVatRequired() && (this.getVatRate() != null) && (this.getVatRate().getPercentage() % 1 == 0)) {
             vatOnInterestDue = totalInterest.multipliedBy(BigDecimal.valueOf(this.getVatRate().getPercentage())).dividedBy(100,
                     mc.getRoundingMode());
 
-            // total charges is penalities and fees
-            Money charges = penalties.add(fees);
-
-            vatOnChargesDue = charges.multipliedBy(BigDecimal.valueOf(this.getVatRate().getPercentage())).dividedBy(100,
+            vatOnChargesDue = fees.multipliedBy(BigDecimal.valueOf(this.getVatRate().getPercentage())).dividedBy(100,
+                    mc.getRoundingMode());
+            vatOnPenaltyChargesDue = penalties.multipliedBy(BigDecimal.valueOf(this.getVatRate().getPercentage())).dividedBy(100,
                     mc.getRoundingMode());
         }
 
-        return Pair.of(vatOnInterestDue, vatOnChargesDue);
+        vatTotals[0] = vatOnInterestDue;
+        vatTotals[1] = vatOnChargesDue;
+        vatTotals[2] = vatOnPenaltyChargesDue;
+        return vatTotals;
     }
 
     public BigDecimal vatRatePercentage() {

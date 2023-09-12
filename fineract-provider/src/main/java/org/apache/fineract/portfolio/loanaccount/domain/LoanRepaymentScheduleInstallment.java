@@ -31,6 +31,8 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
+
+import lombok.Getter;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.fineract.infrastructure.core.domain.AbstractAuditableCustom;
 import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
@@ -173,6 +175,30 @@ public final class LoanRepaymentScheduleInstallment extends AbstractAuditableCus
     @Column(name = "vat_on_charges_overdue_derived", scale = 6, precision = 19)
     private BigDecimal vatOnChargeOverdue;
 
+    @Getter
+    @Column(name = "vat_on_penalty_charges_expected_derived", scale = 6, precision = 19, nullable = true)
+    private BigDecimal vatOnPenaltyChargeExpected;
+
+    @Getter
+    @Column(name = "vat_on_penalty_charges_paid_derived", scale = 6, precision = 19)
+    private BigDecimal vatOnPenaltyChargePaid;
+
+    @Getter
+    @Column(name = "vat_on_penalty_charges_writtenoff_derived", scale = 6, precision = 19)
+    private BigDecimal vatOnPenaltyChargeWrittenOff;
+
+    @Getter
+    @Column(name = "vat_on_penalty_charges_waived_derived", scale = 6, precision = 19)
+    private BigDecimal vatOnPenaltyChargeWaived;
+
+    @Getter
+    @Column(name = "vat_on_penalty_charges_outstanding_derived", scale = 6, precision = 19)
+    private BigDecimal vatOnPenaltyChargeOutstanding;
+
+    @Getter
+    @Column(name = "vat_on_penalty_charges_overdue_derived", scale = 6, precision = 19)
+    private BigDecimal vatOnPenaltyChargeOverdue;
+
     LoanRepaymentScheduleInstallment() {
         this.installmentNumber = null;
         this.fromDate = null;
@@ -184,7 +210,7 @@ public final class LoanRepaymentScheduleInstallment extends AbstractAuditableCus
             final LocalDate dueDate, final BigDecimal principal, final BigDecimal interest, final BigDecimal feeCharges,
             final BigDecimal penaltyCharges, final boolean recalculatedInterestComponent,
             final Set<LoanInterestRecalcualtionAdditionalDetails> compoundingDetails, final BigDecimal rescheduleInterestPortion,
-            final BigDecimal vatOnInterestCharged, final BigDecimal vatOnChargeExpected) {
+            final BigDecimal vatOnInterestCharged, final BigDecimal vatOnChargeExpected, final BigDecimal vatOnPenaltyChargeExpected) {
         this.loan = loan;
         this.installmentNumber = installmentNumber;
         this.fromDate = fromDate;
@@ -202,13 +228,14 @@ public final class LoanRepaymentScheduleInstallment extends AbstractAuditableCus
         this.rescheduleInterestPortion = rescheduleInterestPortion;
         this.vatOnInterestCharged = vatOnInterestCharged;
         this.vatOnChargeExpected = vatOnChargeExpected;
+        this.vatOnPenaltyChargeExpected = vatOnPenaltyChargeExpected;
     }
 
     public LoanRepaymentScheduleInstallment(final Loan loan, final Integer installmentNumber, final LocalDate fromDate,
             final LocalDate dueDate, final BigDecimal principal, final BigDecimal interest, final BigDecimal feeCharges,
             final BigDecimal penaltyCharges, final boolean recalculatedInterestComponent,
             final Set<LoanInterestRecalcualtionAdditionalDetails> compoundingDetails, final BigDecimal vatOnInterestCharged,
-            final BigDecimal vatOnChargeExpected) {
+            final BigDecimal vatOnChargeExpected, final BigDecimal vatOnPenaltyChargeExpected) {
         this.loan = loan;
         this.installmentNumber = installmentNumber;
         this.fromDate = fromDate;
@@ -225,6 +252,7 @@ public final class LoanRepaymentScheduleInstallment extends AbstractAuditableCus
         this.loanCompoundingDetails = compoundingDetails;
         this.vatOnInterestCharged = vatOnInterestCharged;
         this.vatOnChargeExpected = vatOnChargeExpected;
+        this.vatOnPenaltyChargeExpected = vatOnPenaltyChargeExpected;
     }
 
     public LoanRepaymentScheduleInstallment(final Loan loan) {
@@ -438,6 +466,12 @@ public final class LoanRepaymentScheduleInstallment extends AbstractAuditableCus
         this.vatOnChargeWaived = null;
         this.vatOnChargeOutstanding = null;
         this.vatOnChargeOverdue = null;
+
+        this.vatOnPenaltyChargePaid = null;
+        this.vatOnPenaltyChargeWrittenOff = null;
+        this.vatOnPenaltyChargeWaived = null;
+        this.vatOnPenaltyChargeOutstanding = null;
+        this.vatOnPenaltyChargeOverdue = null;
     }
 
     public void resetAccrualComponents() {
@@ -483,7 +517,7 @@ public final class LoanRepaymentScheduleInstallment extends AbstractAuditableCus
         if (transactionAmountRemaining.isGreaterThanOrEqualTo(penaltyAndVat)) {
 
             this.penaltyChargesPaid = getPenaltyChargesPaid(currency).plus(penaltyChargesDue).getAmount();
-            this.vatOnChargePaid = getVatOnChargePaid(currency).plus(vatOnPenaltiesPortion).getAmount();
+            this.vatOnPenaltyChargePaid = getVatOnPenaltyChargePaid(currency).plus(vatOnPenaltiesPortion).getAmount();
             penaltyPortionOfTransaction = penaltyPortionOfTransaction.plus(penaltyChargesDue);
             vatPortionOfTransaction = vatPortionOfTransaction.plus(vatOnPenaltiesPortion);
 
@@ -494,15 +528,18 @@ public final class LoanRepaymentScheduleInstallment extends AbstractAuditableCus
             BigDecimal vatPortion = transactionAmountRemaining.getAmount().subtract(feeChargesPortion);
 
             this.penaltyChargesPaid = getPenaltyChargesPaid(currency).plus(feeChargesPortion).getAmount();
-            this.vatOnChargePaid = getVatOnChargePaid(currency).plus(vatPortion).getAmount();
+            this.vatOnPenaltyChargePaid = getVatOnPenaltyChargePaid(currency).plus(vatPortion).getAmount();
             penaltyPortionOfTransaction = penaltyPortionOfTransaction.plus(feeChargesPortion);
             vatPortionOfTransaction = vatPortionOfTransaction.plus(vatPortion);
         }
 
         this.penaltyChargesPaid = defaultToNullIfZero(this.penaltyChargesPaid);
-        this.vatOnChargePaid = defaultToNullIfZero(this.vatOnChargePaid);
+        this.vatOnPenaltyChargePaid = defaultToNullIfZero(this.vatOnPenaltyChargePaid);
 
         checkIfRepaymentPeriodObligationsAreMet(transactionDate, currency);
+
+        trackAdvanceAndLateTotalsForRepaymentPeriod(transactionDate, currency, penaltyPortionOfTransaction);
+        trackAdvanceAndLateTotalsForRepaymentPeriod(transactionDate, currency, vatPortionOfTransaction);
 
         return Pair.of(penaltyPortionOfTransaction, vatPortionOfTransaction);
     }
@@ -566,7 +603,7 @@ public final class LoanRepaymentScheduleInstallment extends AbstractAuditableCus
 
         trackAdvanceAndLateTotalsForRepaymentPeriod(transactionDate, currency, feePortionOfTransaction);
 
-        trackAdvanceAndLateTotalsForRepaymentPeriod(transactionDate, currency, Money.of(currency, this.vatOnChargePaid));
+        trackAdvanceAndLateTotalsForRepaymentPeriod(transactionDate, currency, vatPortionOfTransaction);
 
         return Pair.of(feePortionOfTransaction, vatPortionOfTransaction);
     }
@@ -630,7 +667,7 @@ public final class LoanRepaymentScheduleInstallment extends AbstractAuditableCus
 
         trackAdvanceAndLateTotalsForRepaymentPeriod(transactionDate, currency, interestPortionOfTransaction);
 
-        trackAdvanceAndLateTotalsForRepaymentPeriod(transactionDate, currency, Money.of(currency, this.vatOnInterestPaid));
+        trackAdvanceAndLateTotalsForRepaymentPeriod(transactionDate, currency, vatOnInterestPortionOfTransaction);
 
         return Pair.of(interestPortionOfTransaction, vatOnInterestPortionOfTransaction);
     }
@@ -697,7 +734,7 @@ public final class LoanRepaymentScheduleInstallment extends AbstractAuditableCus
             waivedInterestPortionOfTransaction = waivedInterestPortionOfTransaction.plus(interestDue);
             vatOnInterestWaivedPortionOfTransaction = vatOnInterestWaivedPortionOfTransaction.plus(vatOnInterestPortion);
         } else {
-            BigDecimal percentageVatPlusOne = vatPercentage.add(BigDecimal.ONE);
+            BigDecimal percentageVatPlusOne = vatConverted.add(BigDecimal.ONE);
             BigDecimal interestPort = transactionAmountRemaining.getAmount().divide(percentageVatPlusOne);
             BigDecimal vatPortion = transactionAmountRemaining.getAmount().subtract(interestPort);
 
@@ -750,23 +787,23 @@ public final class LoanRepaymentScheduleInstallment extends AbstractAuditableCus
         if (transactionAmountRemaining.isGreaterThanOrEqualTo(penaltyAndVat)) {
 
             this.penaltyChargesWaived = getPenaltyChargesWaived(currency).plus(penanltiesDue).getAmount();
-            this.vatOnChargeWaived = getVatOnChargeWaived(currency).plus(vatOnPenaltiesPortion).getAmount();
+            this.vatOnPenaltyChargeWaived = getVatOnPenaltyChargeWaived(currency).plus(vatOnPenaltiesPortion).getAmount();
             waivedPenaltyChargesPortionOfTransaction = waivedPenaltyChargesPortionOfTransaction.plus(penanltiesDue);
             vatPortionOfTransaction = vatPortionOfTransaction.plus(vatOnPenaltiesPortion);
 
         } else {
-            BigDecimal percentageVatPlusOne = vatPercentage.add(BigDecimal.ONE);
+            BigDecimal percentageVatPlusOne = vatConverted.add(BigDecimal.ONE);
             BigDecimal feeChargesPortion = transactionAmountRemaining.getAmount().divide(percentageVatPlusOne);
             BigDecimal vatPortion = transactionAmountRemaining.getAmount().subtract(feeChargesPortion);
 
             this.penaltyChargesWaived = getPenaltyChargesWaived(currency).plus(transactionAmountRemaining).getAmount();
-            this.vatOnChargeWaived = getVatOnChargeWaived(currency).plus(vatPortion).getAmount();
+            this.vatOnPenaltyChargeWaived = getVatOnPenaltyChargeWaived(currency).plus(vatPortion).getAmount();
             waivedPenaltyChargesPortionOfTransaction = waivedPenaltyChargesPortionOfTransaction.plus(transactionAmountRemaining);
             vatPortionOfTransaction = vatPortionOfTransaction.plus(vatPortion);
         }
 
         this.penaltyChargesWaived = defaultToNullIfZero(this.penaltyChargesWaived);
-        this.vatOnChargeWaived = defaultToNullIfZero(this.vatOnChargeWaived);
+        this.vatOnPenaltyChargeWaived = defaultToNullIfZero(this.vatOnPenaltyChargeWaived);
 
         checkIfRepaymentPeriodObligationsAreMet(transactionDate, currency);
 
@@ -813,7 +850,7 @@ public final class LoanRepaymentScheduleInstallment extends AbstractAuditableCus
             waivedFeeChargesAndVatPortionOfTransaction = waivedFeeChargesAndVatPortionOfTransaction.plus(vatOnPenaltiesPortion);
 
         } else {
-            BigDecimal percentageVatPlusOne = vatPercentage.add(BigDecimal.ONE);
+            BigDecimal percentageVatPlusOne = vatConverted.add(BigDecimal.ONE);
             BigDecimal feeChargesPortion = transactionAmountRemaining.getAmount().divide(percentageVatPlusOne);
             BigDecimal vatPortion = transactionAmountRemaining.getAmount().subtract(feeChargesPortion);
 
@@ -875,7 +912,8 @@ public final class LoanRepaymentScheduleInstallment extends AbstractAuditableCus
 
     public void updateChargePortion(final Money feeChargesDue, final Money feeChargesWaived, final Money feeChargesWrittenOff,
             final Money penaltyChargesDue, final Money penaltyChargesWaived, final Money penaltyChargesWrittenOff,
-            final Money chargeAmountDueForVatCalculation, final Money vatOnChargeWaived, final Money vatOnChargeWrittenOff) {
+            final Money chargeAmountDueForVatCalculation, final Money vatOnChargeWaived, final Money vatOnChargeWrittenOff,
+                                    final Money vatOnPenaltyChargeExpected, final Money vatOnPenaltyChargeWaived, final Money vatOnPenaltyChargeWrittenOff) {
         this.feeChargesCharged = defaultToNullIfZero(feeChargesDue.getAmount());
         this.feeChargesWaived = defaultToNullIfZero(feeChargesWaived.getAmount());
         this.feeChargesWrittenOff = defaultToNullIfZero(feeChargesWrittenOff.getAmount());
@@ -885,6 +923,9 @@ public final class LoanRepaymentScheduleInstallment extends AbstractAuditableCus
         this.vatOnChargeExpected = defaultToNullIfZero(chargeAmountDueForVatCalculation.getAmount());
         this.vatOnChargeWaived = defaultToNullIfZero(vatOnChargeWaived.getAmount());
         this.vatOnChargeWrittenOff = defaultToNullIfZero(vatOnChargeWrittenOff.getAmount());
+        this.vatOnPenaltyChargeExpected = defaultToNullIfZero(vatOnPenaltyChargeExpected.getAmount());
+        this.vatOnPenaltyChargeWaived = defaultToNullIfZero(vatOnPenaltyChargeWaived.getAmount());
+        this.vatOnPenaltyChargeWrittenOff = defaultToNullIfZero(vatOnPenaltyChargeWrittenOff.getAmount());
     }
 
     public void updateAccrualPortion(final Money interest, final Money feeCharges, final Money penalityCharges) {
@@ -1248,6 +1289,32 @@ public final class LoanRepaymentScheduleInstallment extends AbstractAuditableCus
         return getVatOnChargeExpected(currency).minus(vatOnChargeAccountedFor);
     }
 
+    public Money getVatOnPenaltyChargeOverdue(final MonetaryCurrency currency) {
+        return Money.of(currency, this.vatOnPenaltyChargeOverdue);
+    }
+
+    public Money getVatOnPenaltyChargeExpected(final MonetaryCurrency currency) {
+        return Money.of(currency, this.vatOnPenaltyChargeExpected);
+    }
+
+    public Money getVatOnPenaltyChargePaid(final MonetaryCurrency currency) {
+        return Money.of(currency, this.vatOnPenaltyChargePaid);
+    }
+
+    public Money getVatOnPenaltyChargeWrittenOff(final MonetaryCurrency currency) {
+        return Money.of(currency, this.vatOnPenaltyChargeWrittenOff);
+    }
+
+    public Money getVatOnPenaltyChargeWaived(final MonetaryCurrency currency) {
+        return Money.of(currency, this.vatOnPenaltyChargeWaived);
+    }
+
+    public Money getVatOnPenaltyChargeOutstanding(final MonetaryCurrency currency) {
+        final Money vatOnPenaltyChargeAccountedFor = getVatOnPenaltyChargePaid(currency).plus(getVatOnPenaltyChargeWaived(currency))
+                .plus(getVatOnPenaltyChargeWrittenOff(currency));
+        return getVatOnPenaltyChargeExpected(currency).minus(vatOnPenaltyChargeAccountedFor);
+    }
+
     public Money getVatOnChargeOverdue(final MonetaryCurrency currency) {
         return Money.of(currency, this.vatOnChargeOverdue);
     }
@@ -1298,5 +1365,29 @@ public final class LoanRepaymentScheduleInstallment extends AbstractAuditableCus
 
     public void setVatOnChargeOverdue(BigDecimal vatOnChargeOverdue) {
         this.vatOnChargeOverdue = vatOnChargeOverdue;
+    }
+
+    public void setVatOnPenaltyChargeExpected(BigDecimal vatOnPenaltyChargeExpected) {
+        this.vatOnPenaltyChargeExpected = vatOnPenaltyChargeExpected;
+    }
+
+    public void setVatOnPenaltyChargePaid(BigDecimal vatOnPenaltyChargePaid) {
+        this.vatOnPenaltyChargePaid = vatOnPenaltyChargePaid;
+    }
+
+    public void setVatOnPenaltyChargeWrittenOff(BigDecimal vatOnPenaltyChargeWrittenOff) {
+        this.vatOnPenaltyChargeWrittenOff = vatOnPenaltyChargeWrittenOff;
+    }
+
+    public void setVatOnPenaltyChargeWaived(BigDecimal vatOnPenaltyChargeWaived) {
+        this.vatOnPenaltyChargeWaived = vatOnPenaltyChargeWaived;
+    }
+
+    public void setVatOnPenaltyChargeOutstanding(BigDecimal vatOnPenaltyChargeOutstanding) {
+        this.vatOnPenaltyChargeOutstanding = vatOnPenaltyChargeOutstanding;
+    }
+
+    public void setVatOnPenaltyChargeOverdue(BigDecimal vatOnPenaltyChargeOverdue) {
+        this.vatOnPenaltyChargeOverdue = vatOnPenaltyChargeOverdue;
     }
 }

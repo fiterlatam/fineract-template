@@ -500,9 +500,10 @@ public class LoanArrearsAgingServiceImpl implements LoanArrearsAgingService {
 
             final BigDecimal vatOnInterest = null;
             final BigDecimal vatOnCharges = null;
+            final BigDecimal vatOnPenaltyCharges = null;
             return LoanSchedulePeriodData.repaymentOnlyPeriod(periodNumber, fromDate, dueDate, principalDue, principalOutstanding,
                     interestDueOnPrincipalOutstanding, feeChargesDueForPeriod, penaltyChargesDueForPeriod, totalDueForPeriod,
-                    totalInstallmentAmount, vatOnInterest, vatOnCharges);
+                    totalInstallmentAmount, vatOnInterest, vatOnCharges, vatOnPenaltyCharges);
 
         }
     }

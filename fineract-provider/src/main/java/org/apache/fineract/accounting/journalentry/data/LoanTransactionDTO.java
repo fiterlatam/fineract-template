@@ -67,4 +67,6 @@ public class LoanTransactionDTO {
     private BigDecimal vatOnInterest;
     @Setter
     private BigDecimal vatOnCharges;
+    @Setter
+    private BigDecimal vatOnPenaltyCharges;
 }

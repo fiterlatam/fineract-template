@@ -535,6 +535,12 @@ public class AccrualBasedAccountingProcessorForLoan implements AccountingProcess
             if (loanTransactionDTO.getVatOnCharges() != null && loanTransactionDTO.getVatOnCharges().compareTo(BigDecimal.ZERO) > 0) {
                 creditTypeAccountForRepaymentAccrual = AccrualAccountsForLoan.FEES_RECEIVABLE.getValue();
             }
+            if (loanTransactionDTO.getVatOnPenaltyCharges() != null && loanTransactionDTO.getVatOnPenaltyCharges().compareTo(BigDecimal.ZERO) > 0) {
+                creditTypeAccountForRepaymentAccrual = AccrualAccountsForLoan.PENALTIES_RECEIVABLE.getValue();
+            }
+        } else if (loanTransactionDTO.getVatOnPenaltyCharges() != null && loanTransactionDTO.getVatOnPenaltyCharges().compareTo(BigDecimal.ZERO) > 0) {
+            //accrual VAT penalty
+            debitAccount = AccrualAccountsForLoan.PENALTIES_RECEIVABLE.getValue();
         }
 
         this.helper.createVatAccrualBasedJournalEntriesAndReversalsForLoan(office, currencyCode, debitAccount, loanProductId, paymentTypeId,
