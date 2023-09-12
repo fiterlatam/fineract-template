@@ -1,0 +1,222 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements. See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership. The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License. You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied. See the License for the
+    specific language governing permissions and limitations
+    under the License.
+
+-->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd">
+    <changeSet author="fineract" id="1">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="m_payment_batch"/>
+            </not>
+        </preConditions>
+        <createTable tableName="m_payment_batch">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="batch_no" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="back_acc_no" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="agency_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="from" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="to" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="createdby_id" type="BIGINT">
+                <constraints nullable="true"/>
+            </column>
+            <column name="created_date" type="datetime" defaultValueDate="NOW()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="lastmodifiedby_id" type="BIGINT">
+                <constraints nullable="true"/>
+            </column>
+            <column name="lastmodified_date" type="datetime" defaultValueDate="NOW()">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet author="fineract" id="2">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="m_bank_check"/>
+            </not>
+        </preConditions>
+        <createTable tableName="m_bank_check">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="check_no" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="batch_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="status_enum" type="SMALLINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="TEXT">
+                <constraints nullable="true"/>
+            </column>
+            <column name="voided_date" type="date">
+                <constraints nullable="true"/>
+            </column>
+            <column name="voidedby_id" type="BIGINT">
+                <constraints nullable="true"/>
+            </column>
+            <column name="void_authorized_date" type="date">
+                <constraints nullable="true"/>
+            </column>
+            <column name="void_authorizedby_id" type="BIGINT">
+                <constraints nullable="true"/>
+            </column>
+            <column name="printed_date" type="date">
+                <constraints nullable="true"/>
+            </column>
+            <column name="printedby_id" type="BIGINT">
+                <constraints nullable="true"/>
+            </column>
+            <column name="usedon_date" type="date">
+                <constraints nullable="true"/>
+            </column>
+            <column name="createdby_id" type="BIGINT">
+                <constraints nullable="true"/>
+            </column>
+            <column name="created_date" type="datetime" defaultValueDate="NOW()">
+                <constraints nullable="true"/>
+            </column>
+            <column name="lastmodifiedby_id" type="BIGINT">
+                <constraints nullable="true"/>
+            </column>
+            <column name="lastmodified_date" type="datetime" defaultValueDate="NOW()">
+                <constraints nullable="true"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet author="fineract" id="3">
+        <addForeignKeyConstraint baseColumnNames="agency_id" baseTableName="m_payment_batch"
+                                 constraintName="FK20230912_m_payment_batch_table_m_agency" deferrable="false"
+                                 initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT"
+                                 referencedColumnNames="id" referencedTableName="m_agency" validate="true"/>
+    </changeSet>
+    <changeSet author="fineract" id="4">
+        <addForeignKeyConstraint baseColumnNames="createdby_id" baseTableName="m_payment_batch"
+                                 constraintName="FK20230912_m_payment_batch_table_createdby_id" deferrable="false" initiallyDeferred="false"
+                                 onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="id"
+                                 referencedTableName="m_appuser" validate="true"/>
+    </changeSet>
+    <changeSet author="fineract" id="5">
+        <addForeignKeyConstraint baseColumnNames="lastmodifiedby_id" baseTableName="m_payment_batch"
+                                 constraintName="FK20230912_m_payment_batch_table_lastmodifiedby_id" deferrable="false" initiallyDeferred="false"
+                                 onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="id"
+                                 referencedTableName="m_appuser" validate="true"/>
+    </changeSet>
+    <changeSet author="fineract" id="6">
+        <addForeignKeyConstraint baseColumnNames="batch_id" baseTableName="m_bank_check"
+                                 constraintName="FK20230912_m_bank_check_table_batch_id" deferrable="false"
+                                 initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT"
+                                 referencedColumnNames="id" referencedTableName="m_payment_batch" validate="true"/>
+    </changeSet>
+    <changeSet author="fineract" id="7">
+        <addForeignKeyConstraint baseColumnNames="voidedby_id" baseTableName="m_bank_check"
+                                 constraintName="FK20230912_m_bank_check_table_voidedby_id" deferrable="false" initiallyDeferred="false"
+                                 onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="id"
+                                 referencedTableName="m_appuser" validate="true"/>
+    </changeSet>
+    <changeSet author="fineract" id="8">
+        <addForeignKeyConstraint baseColumnNames="void_authorizedby_id" baseTableName="m_bank_check"
+                                 constraintName="FK20230912_m_bank_check_table_void_authorizedby_id" deferrable="false" initiallyDeferred="false"
+                                 onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="id"
+                                 referencedTableName="m_appuser" validate="true"/>
+    </changeSet>
+    <changeSet author="fineract" id="9">
+        <addForeignKeyConstraint baseColumnNames="printedby_id" baseTableName="m_bank_check"
+                                 constraintName="FK20230912_m_bank_check_table_printedby_id" deferrable="false" initiallyDeferred="false"
+                                 onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="id"
+                                 referencedTableName="m_appuser" validate="true"/>
+    </changeSet>
+    <changeSet author="fineract" id="10">
+        <addForeignKeyConstraint baseColumnNames="createdby_id" baseTableName="m_bank_check"
+                                 constraintName="FK20230912_m_bank_check_table_createdby_id" deferrable="false" initiallyDeferred="false"
+                                 onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="id"
+                                 referencedTableName="m_appuser" validate="true"/>
+    </changeSet>
+    <changeSet author="fineract" id="11">
+        <addForeignKeyConstraint baseColumnNames="lastmodifiedby_id" baseTableName="m_bank_check"
+                                 constraintName="FK20230912_m_bank_check_table_lastmodifiedby_id" deferrable="false" initiallyDeferred="false"
+                                 onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="id"
+                                 referencedTableName="m_appuser" validate="true"/>
+    </changeSet>
+    <changeSet author="fineract" id="12">
+        <createIndex indexName="Index20230912_m_payment_batch_agency_id" tableName="m_payment_batch">
+            <column name="agency_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="fineract" id="13">
+        <createIndex indexName="Index20230912_m_payment_batch_createdby_id" tableName="m_payment_batch">
+            <column name="createdby_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="fineract" id="14">
+        <createIndex indexName="Index20230912_m_payment_batch_lastmodifiedby_id" tableName="m_payment_batch">
+            <column name="lastmodifiedby_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="fineract" id="15">
+        <createIndex indexName="Index20230912_m_bank_check_batch_id" tableName="m_bank_check">
+            <column name="batch_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="fineract" id="16">
+        <createIndex indexName="Index20230912_m_bank_check_voidedby_id" tableName="m_bank_check">
+            <column name="voidedby_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="fineract" id="17">
+        <createIndex indexName="Index20230912_m_bank_check_void_authorizedby_id" tableName="m_bank_check">
+            <column name="void_authorizedby_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="fineract" id="18">
+        <createIndex indexName="Index20230912_m_bank_check_void_printedby_id" tableName="m_bank_check">
+            <column name="printedby_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="fineract" id="19">
+        <createIndex indexName="Index20230912_m_bank_check_void_createdby_id" tableName="m_bank_check">
+            <column name="createdby_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="fineract" id="20">
+        <createIndex indexName="Index20230912_m_bank_check_void_lastmodifiedby_id" tableName="m_bank_check">
+            <column name="lastmodifiedby_id"/>
+        </createIndex>
+    </changeSet>
+</databaseChangeLog>
