@@ -138,6 +138,11 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
     @Getter
     private boolean isGeneratedVatTransactionFromRepayment = false;
 
+    @Transient
+    @Setter
+    @Getter
+    private boolean recalculateVat = true;
+
     protected LoanTransaction() {}
 
     public static LoanTransaction incomePosting(final Loan loan, final Office office, final LocalDate dateOf, final BigDecimal amount,
