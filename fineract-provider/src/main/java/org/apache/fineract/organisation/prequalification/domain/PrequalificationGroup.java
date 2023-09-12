@@ -80,6 +80,9 @@ public class PrequalificationGroup extends AbstractPersistableCustom {
     @Column(name = "comments", nullable = false)
     private String comments;
 
+    @Column(name = "prequalification_duration", nullable = false)
+    private Long prequalificationDuration;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
@@ -89,11 +92,12 @@ public class PrequalificationGroup extends AbstractPersistableCustom {
     public static PrequalificationGroup fromJson(final AppUser appUser, final AppUser facilitator, final Agency agency, final Group group,
             final LoanProduct loanProduct, final JsonCommand command) {
         String groupName = command.stringValueOfParameterNamed("groupName");
+        Long prequalilficationTimespan = command.longValueOfParameterNamed(PrequalificatoinApiConstants.prequalilficationTimespanParamName);
         Long center = command.longValueOfParameterNamed(PrequalificatoinApiConstants.centerIdParamName);
         if (group != null) {
             groupName = group.getName();
         }
-        return new PrequalificationGroup(appUser, facilitator, agency, group, groupName, center, loanProduct);
+        return new PrequalificationGroup(appUser, facilitator, agency, group, groupName, center, loanProduct, prequalilficationTimespan);
     }
 
     protected PrequalificationGroup() {
@@ -101,7 +105,7 @@ public class PrequalificationGroup extends AbstractPersistableCustom {
     }
 
     private PrequalificationGroup(final AppUser appUser, final AppUser facilitator, final Agency agency, final Group group,
-            final String groupName, Long center, final LoanProduct loanProduct) {
+            final String groupName, Long center, final LoanProduct loanProduct, Long prequalilficationTimespan) {
         this.addedBy = appUser;
         this.facilitator = facilitator;
         this.status = PrequalificationStatus.PENDING.getValue();
@@ -110,16 +114,15 @@ public class PrequalificationGroup extends AbstractPersistableCustom {
         this.groupName = groupName;
         this.centerId = center;
         this.agency = agency;
+        this.prequalificationDuration = prequalilficationTimespan;
         this.createdAt = DateUtils.getLocalDateTimeOfTenant();
     }
 
     public void updateStatus(final PrequalificationStatus prequalificationStatus) {
-        ;
         this.status = prequalificationStatus.getValue();
     }
 
     public void updateMembers(final List<PrequalificationGroupMember> members) {
-        ;
         this.members = members;
     }
 
@@ -128,7 +131,6 @@ public class PrequalificationGroup extends AbstractPersistableCustom {
     }
 
     public void updatePrequalificationNumber(final String prequalificationNumber) {
-        ;
         this.prequalificationNumber = prequalificationNumber;
     }
 
@@ -187,7 +189,12 @@ public class PrequalificationGroup extends AbstractPersistableCustom {
         if (command.isChangeInLongParameterNamed(PrequalificatoinApiConstants.facilitatorParamName, this.facilitator.getId())) {
             final Long newValue = command.longValueOfParameterNamed(PrequalificatoinApiConstants.facilitatorParamName);
             actualChanges.put(PrequalificatoinApiConstants.facilitatorParamName, newValue);
-            // this.centerId = newValue;
+        }
+        if (command.isChangeInLongParameterNamed(PrequalificatoinApiConstants.prequalilficationTimespanParamName,
+                this.prequalificationDuration)) {
+            final Long newValue = command.longValueOfParameterNamed(PrequalificatoinApiConstants.prequalilficationTimespanParamName);
+            actualChanges.put(PrequalificatoinApiConstants.prequalilficationTimespanParamName, newValue);
+            this.prequalificationDuration = newValue;
         }
 
         // TODO: process changes in members
