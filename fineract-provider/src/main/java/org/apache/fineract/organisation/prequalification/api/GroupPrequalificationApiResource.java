@@ -45,6 +45,8 @@ import org.apache.fineract.commands.domain.CommandWrapper;
 import org.apache.fineract.commands.service.CommandWrapperBuilder;
 import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformService;
 import org.apache.fineract.infrastructure.codes.service.CodeValueReadPlatformService;
+import org.apache.fineract.infrastructure.configuration.data.GlobalConfigurationPropertyData;
+import org.apache.fineract.infrastructure.configuration.service.ConfigurationReadPlatformService;
 import org.apache.fineract.infrastructure.core.api.ApiRequestParameterHelper;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.serialization.ApiRequestJsonSerializationSettings;
@@ -99,6 +101,7 @@ public class GroupPrequalificationApiResource {
     private final AgencyReadPlatformServiceImpl agencyReadPlatformService;
     private final LoanProductReadPlatformService loanProductReadPlatformService;
     private final AppUserReadPlatformService appUserReadPlatformService;
+    private final ConfigurationReadPlatformService configurationReadPlatformService;
 
     @Autowired
     public GroupPrequalificationApiResource(final PlatformSecurityContext context,
@@ -108,6 +111,7 @@ public class GroupPrequalificationApiResource {
             final LoanProductReadPlatformService loanProductReadPlatformService,
             final AppUserReadPlatformService appUserReadPlatformService,
             final DefaultToApiJsonSerializer<GroupPrequalificationData> toApiJsonSerializer,
+            final ConfigurationReadPlatformService configurationReadPlatformService,
             final PrequalificationReadPlatformService prequalificationReadPlatformService, final FileUploadValidator fileUploadValidator,
             final DocumentWritePlatformService documentWritePlatformService, final ApiRequestParameterHelper apiRequestParameterHelper,
             final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService) {
@@ -124,6 +128,7 @@ public class GroupPrequalificationApiResource {
         this.centerReadPlatformService = centerReadPlatformService;
         this.loanProductReadPlatformService = loanProductReadPlatformService;
         this.appUserReadPlatformService = appUserReadPlatformService;
+        this.configurationReadPlatformService = configurationReadPlatformService;
     }
 
     @GET
@@ -171,8 +176,9 @@ public class GroupPrequalificationApiResource {
         final List<AppUserData> appUsers = new ArrayList<>(
                 this.appUserReadPlatformService.retrieveUsersUnderHierarchy(Long.valueOf(OfficeHierarchyLevel.GRUPO.getValue())));
 
+        GlobalConfigurationPropertyData timespan = this.configurationReadPlatformService.retrieveGlobalConfiguration("Prequalification Timespan");
         final GroupPrequalificationData clientIdentifierData = GroupPrequalificationData.template(agencies, centerData, loanProducts,
-                appUsers);
+                appUsers, timespan);
 
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
         return this.toApiJsonSerializer.serialize(settings, clientIdentifierData, PRE_QUALIFICATION_DATA_PARAMETERS);

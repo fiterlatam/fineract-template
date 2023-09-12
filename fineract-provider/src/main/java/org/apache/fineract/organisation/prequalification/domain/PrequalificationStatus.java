@@ -30,9 +30,12 @@ public enum PrequalificationStatus {
     APPROVED(200, "prequalification.status.approved"), //
     REJECTED(300, "prequalification.status.rejected"), //
     BLACKLIST_CHECKED(400, "prequalification.status.blacklist.checked"), //
-    BLACKLIST_REJECTED(500, "prequalification.status.blacklist.rejected"), BURO_CHECKED(600,
-            "prequalification.status.buro.checked"), HARD_POLICY_CHECKED(700,
-                    "prequalification.status.hard.policy.checked"), INVALID(0, "prequalification.status.invalid");
+    BLACKLIST_REJECTED(500, "prequalification.status.blacklist.rejected"),
+    BURO_CHECKED(600, "prequalification.status.buro.checked"),
+    HARD_POLICY_CHECKED(700,"prequalification.status.hard.policy.checked"),
+    TIME_EXPIRED(800,"prequalification.status.expired"),
+    COMPLETED(900,"prequalification.status.completed"),
+    INVALID(0, "prequalification.status.invalid");
 
     private final Integer value;
     private final String code;
@@ -61,6 +64,12 @@ public enum PrequalificationStatus {
             break;
             case 700:
                 enumeration = PrequalificationStatus.HARD_POLICY_CHECKED;
+            break;
+            case 800:
+                enumeration = PrequalificationStatus.TIME_EXPIRED;
+            break;
+            case 900:
+                enumeration = PrequalificationStatus.COMPLETED;
             break;
         }
         return enumeration;

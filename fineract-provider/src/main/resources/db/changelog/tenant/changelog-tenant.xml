@@ -100,4 +100,5 @@
     <include file="parts/0081_FBR_add_bank_permissions.xml" relativeToChangelogFile="true"/>
     <include file="parts/0082_FBR_303_add_bank_account_table.xml" relativeToChangelogFile="true"/>
     <include file="parts/0083_FBR_add_bankaccount_permissions.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0084_Add_prequalification_expiry_duration.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
