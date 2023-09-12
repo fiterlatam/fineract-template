@@ -74,11 +74,6 @@ dependencies {
             'org.springdoc:springdoc-openapi-common',
             'org.springdoc:springdoc-openapi-security',
             'org.mapstruct:mapstruct',
-            fileTree('thirdparty') {
-                include '*.jar'
-            },
-            'org.openjdk.nashorn:nashorn-core',
-            'org.codehaus.groovy:groovy-all',
             )
 
     implementation ('org.apache.commons:commons-email') {

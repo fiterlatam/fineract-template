@@ -169,7 +169,7 @@ dependencyManagement {
         dependency 'org.owasp.esapi:esapi:2.4.0.0'
         dependency 'org.awaitility:awaitility:4.2.0'
 
-        dependencySet(group: 'org.apache.poi', version: '4.1.2') {
+        dependencySet(group: 'org.apache.poi', version: '5.2.2') {
             entry 'poi'
             entry 'poi-ooxml'
             entry 'poi-ooxml-schemas'
@@ -183,23 +183,5 @@ dependencyManagement {
 
         dependency 'org.mapstruct:mapstruct:1.5.2.Final'
         dependency 'org.mapstruct:mapstruct-processor:1.5.2.Final'
-
-        //Pentaho
-        dependency 'org.pentaho.reporting.engine:classic-core:9.2.0.0-SNAPSHOT'
-        dependency 'org.pentaho.reporting.engine:classic-extensions:9.2.0.0-SNAPSHOT'
-        dependency 'org.pentaho.reporting.engine:classic-extensions-scripting:9.2.0.0-SNAPSHOT'
-        dependency 'org.pentaho.reporting.engine:wizard-core:9.2.0.0-SNAPSHOT'
-        dependency 'org.pentaho.reporting.designer:wizard-xul:9.2.0.0-SNAPSHOT'
-        dependency 'org.pentaho.reporting.library:libbase:9.2.0.0-SNAPSHOT'
-        dependency 'org.pentaho.reporting.library:libdocbundle:9.2.0.0-SNAPSHOT'
-        dependency 'org.pentaho.reporting.library:libfonts:9.2.0.0-SNAPSHOT'
-        dependency 'org.pentaho.reporting.library:libformat:9.2.0.0-SNAPSHOT'
-        dependency 'org.pentaho.reporting.library:libformula:9.2.0.0-SNAPSHOT'
-        dependency 'org.pentaho.reporting.library:libloader:9.2.0.0-SNAPSHOT'
-        dependency 'org.pentaho.reporting.library:librepository:9.2.0.0-SNAPSHOT'
-        dependency 'org.pentaho.reporting.library:libserializer:9.2.0.0-SNAPSHOT'
-        dependency 'org.pentaho.reporting.library:libsparkline:9.2.0.0-SNAPSHOT'
-        dependency 'org.pentaho.reporting.library:libxml:9.2.0.0-SNAPSHOT'
-        dependency 'org.codehaus.groovy:groovy-all:3.0.8'
     }
 }
