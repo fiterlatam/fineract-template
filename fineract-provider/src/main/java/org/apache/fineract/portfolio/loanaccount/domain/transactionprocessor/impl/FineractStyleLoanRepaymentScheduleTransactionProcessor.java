@@ -92,7 +92,8 @@ public class FineractStyleLoanRepaymentScheduleTransactionProcessor extends Abst
         Money vatOnInterestPortion = Money.zero(transactionAmountRemaining.getCurrency());
         Money feeChargesPortion = Money.zero(transactionAmountRemaining.getCurrency());
         Money penaltyChargesPortion = Money.zero(transactionAmountRemaining.getCurrency());
-        Money vatOnChargesChargesPortion = Money.zero(transactionAmountRemaining.getCurrency());
+        Money vatOnFeeChargesPortion = Money.zero(transactionAmountRemaining.getCurrency());
+        Money vatOnPenaltyChargesPortion = Money.zero(transactionAmountRemaining.getCurrency());
 
         BigDecimal vatPercentage = BigDecimal.ZERO;
         Boolean isVatRequired = loanTransaction.getLoan().isVatRequired();
@@ -108,25 +109,28 @@ public class FineractStyleLoanRepaymentScheduleTransactionProcessor extends Abst
                 penaltyChargesPortion = waivePenaltyChargesAndVatComponent.getLeft();
                 transactionAmountRemaining = transactionAmountRemaining.minus(penaltyChargesPortion);
 
+                vatOnPenaltyChargesPortion = waivePenaltyChargesAndVatComponent.getRight();
+                transactionAmountRemaining = transactionAmountRemaining.minus(vatOnPenaltyChargesPortion);
+
                 Pair<Money, Money> waiveFeeChargesAndVatComponent = currentInstallment.waiveFeeChargesAndVatComponents(transactionDate,
                         loanTransaction.getFeeChargesPortion(currency), vatPercentage);
                 feeChargesPortion = waiveFeeChargesAndVatComponent.getLeft();
                 transactionAmountRemaining = transactionAmountRemaining.minus(feeChargesPortion);
 
-                vatOnChargesChargesPortion = waivePenaltyChargesAndVatComponent.getRight().plus(waiveFeeChargesAndVatComponent.getRight());
-                transactionAmountRemaining = transactionAmountRemaining.minus(vatOnChargesChargesPortion);
+                vatOnFeeChargesPortion = waiveFeeChargesAndVatComponent.getRight();
+                transactionAmountRemaining = transactionAmountRemaining.minus(vatOnFeeChargesPortion);
 
                 loanTransaction.updateComponents(principalPortion, interestPortion, feeChargesPortion, penaltyChargesPortion,
-                        vatOnInterestPortion, vatOnChargesChargesPortion);
+                        vatOnInterestPortion, vatOnFeeChargesPortion, vatOnPenaltyChargesPortion);
             } else if (loanTransaction.isInterestWaiver()) {
 
                 Pair<Money, Money> waiveInterestAndVatComponents = currentInstallment.waiveInterestAndVatComponents(transactionDate,
                         loanTransaction.getFeeChargesPortion(currency), vatPercentage);
                 interestPortion = waiveInterestAndVatComponents.getLeft();
                 transactionAmountRemaining = transactionAmountRemaining.minus(feeChargesPortion);
-                vatOnChargesChargesPortion = waiveInterestAndVatComponents.getRight();
+                vatOnInterestPortion = waiveInterestAndVatComponents.getRight();
                 loanTransaction.updateComponents(principalPortion, interestPortion, feeChargesPortion, penaltyChargesPortion,
-                        vatOnInterestPortion, vatOnChargesChargesPortion);
+                        vatOnInterestPortion, vatOnFeeChargesPortion, vatOnPenaltyChargesPortion);
 
             } else if (loanTransaction.isChargePayment()) {
                 if (loanTransaction.isPenaltyPayment()) {
@@ -134,24 +138,26 @@ public class FineractStyleLoanRepaymentScheduleTransactionProcessor extends Abst
                             transactionAmountRemaining, vatPercentage);
                     penaltyChargesPortion = payPenaltyChargesAndVat.getLeft();
                     transactionAmountRemaining = transactionAmountRemaining.minus(penaltyChargesPortion);
+                    vatOnPenaltyChargesPortion = payPenaltyChargesAndVat.getRight();
                     transactionAmountRemaining = transactionAmountRemaining.minus(payPenaltyChargesAndVat.getRight());
                 } else {
                     Pair<Money, Money> payFeeChargesAndVatComponent = currentInstallment.payFeeChargesAndVatComponent(transactionDate,
                             transactionAmountRemaining, vatPercentage);
                     feeChargesPortion = payFeeChargesAndVatComponent.getLeft();
                     transactionAmountRemaining = transactionAmountRemaining.minus(feeChargesPortion);
+                    vatOnFeeChargesPortion = payFeeChargesAndVatComponent.getRight();
                     transactionAmountRemaining = transactionAmountRemaining.minus(payFeeChargesAndVatComponent.getRight());
                 }
                 loanTransaction.updateComponents(principalPortion, interestPortion, feeChargesPortion, penaltyChargesPortion,
-                        vatOnInterestPortion, vatOnChargesChargesPortion);
+                        vatOnInterestPortion, vatOnFeeChargesPortion, vatOnPenaltyChargesPortion);
             } else {
                 Pair<Money, Money> payPenaltyChargesAndVat = currentInstallment.payPenaltyChargesAndVatComponent(transactionDate,
                         transactionAmountRemaining, vatPercentage);
                 penaltyChargesPortion = payPenaltyChargesAndVat.getLeft();
                 transactionAmountRemaining = transactionAmountRemaining.minus(penaltyChargesPortion);
 
-                vatOnChargesChargesPortion = payPenaltyChargesAndVat.getRight();
-                transactionAmountRemaining = transactionAmountRemaining.minus(vatOnChargesChargesPortion);
+                vatOnPenaltyChargesPortion = payPenaltyChargesAndVat.getRight();
+                transactionAmountRemaining = transactionAmountRemaining.minus(vatOnPenaltyChargesPortion);
 
                 Pair<Money, Money> payFeeChargesAndVatComponent = currentInstallment.payFeeChargesAndVatComponent(transactionDate,
                         transactionAmountRemaining, vatPercentage);
@@ -159,7 +165,7 @@ public class FineractStyleLoanRepaymentScheduleTransactionProcessor extends Abst
                 transactionAmountRemaining = transactionAmountRemaining.minus(feeChargesPortion);
 
                 // penalties and fees vat
-                vatOnChargesChargesPortion = vatOnChargesChargesPortion.plus(payFeeChargesAndVatComponent.getRight());
+                vatOnFeeChargesPortion = vatOnFeeChargesPortion.plus(payFeeChargesAndVatComponent.getRight());
                 transactionAmountRemaining = transactionAmountRemaining.minus(payFeeChargesAndVatComponent.getRight());
 
                 Pair<Money, Money> interestAndVatPortions = currentInstallment.payInterestAndVatComponents(transactionDate,
@@ -174,7 +180,7 @@ public class FineractStyleLoanRepaymentScheduleTransactionProcessor extends Abst
                 transactionAmountRemaining = transactionAmountRemaining.minus(principalPortion);
 
                 loanTransaction.updateComponents(principalPortion, interestPortion, feeChargesPortion, penaltyChargesPortion,
-                        vatOnInterestPortion, vatOnChargesChargesPortion);
+                        vatOnInterestPortion, vatOnFeeChargesPortion, vatOnPenaltyChargesPortion);
             }
         } else {
 
@@ -217,11 +223,11 @@ public class FineractStyleLoanRepaymentScheduleTransactionProcessor extends Abst
                 loanTransaction.updateComponents(principalPortion, interestPortion, feeChargesPortion, penaltyChargesPortion);
             }
         }
-        if (principalPortion.plus(interestPortion).plus(feeChargesPortion).plus(penaltyChargesPortion).plus(vatOnChargesChargesPortion)
-                .plus(vatOnInterestPortion).isGreaterThanZero()) {
+        if (principalPortion.plus(interestPortion).plus(feeChargesPortion).plus(penaltyChargesPortion).plus(vatOnFeeChargesPortion)
+                .plus(vatOnInterestPortion).plus(vatOnPenaltyChargesPortion).isGreaterThanZero()) {
             transactionMappings
                     .add(LoanTransactionToRepaymentScheduleMapping.createFrom(loanTransaction, currentInstallment, principalPortion,
-                            interestPortion, feeChargesPortion, penaltyChargesPortion, vatOnInterestPortion, vatOnChargesChargesPortion));
+                            interestPortion, feeChargesPortion, penaltyChargesPortion, vatOnInterestPortion, vatOnFeeChargesPortion, vatOnPenaltyChargesPortion));
         }
         return transactionAmountRemaining;
     }

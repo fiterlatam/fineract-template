@@ -66,7 +66,7 @@ public final class LoanRescheduleModelRepaymentPeriod implements LoanRescheduleM
         return LoanSchedulePeriodData.repaymentOnlyPeriod(this.periodNumber, this.fromDate, this.dueDate, this.principalDue.getAmount(),
                 this.outstandingLoanBalance.getAmount(), this.interestDue.getAmount(), this.feeChargesDue.getAmount(),
                 this.penaltyChargesDue.getAmount(), this.totalDue.getAmount(), this.principalDue.plus(this.interestDue).getAmount(), null,
-                null);
+                null, null);
     }
 
     @Override

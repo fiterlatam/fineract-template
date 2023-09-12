@@ -66,4 +66,6 @@ public interface LoanScheduleModelPeriod {
     Money getVatOnInterest();
 
     Money getVatOnCharges();
+
+    Money getVatOnPenaltyCharges();
 }

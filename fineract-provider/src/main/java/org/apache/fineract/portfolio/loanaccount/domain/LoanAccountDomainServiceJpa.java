@@ -218,8 +218,17 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
                 loan.addLoanTransaction(applyLoanVatOnInterestTransaction);
             }
 
+            // generate transaction for accrual vat on charge
+            LoanTransaction applyLoanVatOnPenaltyChargeTransaction = makeAccrualTransactionForVatOnPenaltyCharge(loan, transactionDate,
+                    newRepaymentTransaction);
+            if (applyLoanVatOnPenaltyChargeTransaction != null) {
+                applyLoanVatOnPenaltyChargeTransaction.setGeneratedVatTransactionFromRepayment(true);
+                saveLoanTransactionWithDataIntegrityViolationChecks(applyLoanVatOnPenaltyChargeTransaction);
+                loan.addLoanTransaction(applyLoanVatOnPenaltyChargeTransaction);
+            }
+
             // vatOntInterest portion and vatOnCharges portion must be zero in the new repayment transaction
-            newRepaymentTransaction.updateVatComponents(Money.zero(currency), Money.zero(currency));
+            newRepaymentTransaction.updateVatComponents(Money.zero(currency), Money.zero(currency), Money.zero(currency));
 
             // update the total amount of the transaction
             newRepaymentTransaction.updateTotal(currency);
@@ -312,6 +321,20 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
             Money vatOnCharge = newRepaymentTransaction.getVatOnChargesPortion(loan.getCurrency());
             applyLoanVatOnChargeTransaction = LoanTransaction.accrueLoanVatOnCharge(loan, loan.getOffice(), vatOnCharge, transactionDate,
                     vatOnCharge, newRepaymentTransaction.getPaymentDetail());
+        }
+
+        return applyLoanVatOnChargeTransaction;
+    }
+
+    @Override
+    public LoanTransaction makeAccrualTransactionForVatOnPenaltyCharge(Loan loan, LocalDate transactionDate,
+                                                                LoanTransaction newRepaymentTransaction) {
+        LoanTransaction applyLoanVatOnChargeTransaction = null;
+
+        if (newRepaymentTransaction.getVatOnPenaltyChargesPortion(loan.getCurrency()).isGreaterThanZero()) {
+            Money vatOnPenaltyCharge = newRepaymentTransaction.getVatOnPenaltyChargesPortion(loan.getCurrency());
+            applyLoanVatOnChargeTransaction = LoanTransaction.accrueLoanVatOnPenaltyCharge(loan, loan.getOffice(), vatOnPenaltyCharge, transactionDate,
+                    vatOnPenaltyCharge, newRepaymentTransaction.getPaymentDetail());
         }
 
         return applyLoanVatOnChargeTransaction;
@@ -827,6 +850,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         Money payPrincipal = foreCloseDetail.getPrincipal(currency);
         Money vatOnInterest = foreCloseDetail.getVatOnInterestCharged(currency);
         Money vatOnCharges = foreCloseDetail.getVatOnChargeExpected(currency);
+        Money vatOnPenaltyCharges = foreCloseDetail.getVatOnPenaltyChargeExpected(currency);
         loan.updateInstallmentsPostDate(foreClosureDate);
 
         LoanTransaction payment = null;
@@ -843,7 +867,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
             // ABA-135 - Create separate transactions for VAT on interest and VAT on charge
             // Check if VAT is required in order to calculate the VAT amount for the charge and create the transaction
             if (loan.isVatRequired() && loan.getVatPercentage() != null && payment.isRepayment()) {
-                payment.updateVatComponents(vatOnInterest, vatOnCharges);
+                payment.updateVatComponents(vatOnInterest, vatOnCharges, vatOnPenaltyCharges);
 
                 // generate transaction for accrual vat on charge
                 LoanTransaction applyLoanVatOnChargeTransaction = makeAccrualTransactionForVatOnCharge(loan, foreClosureDate, payment);
@@ -859,7 +883,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
                     loan.addLoanTransaction(applyLoanVatOnInterestTransaction);
                 }
             }
-            payment.updateVatComponents(Money.zero(currency), Money.zero(currency));
+            payment.updateVatComponents(Money.zero(currency), Money.zero(currency), Money.zero(currency));
             payment.updateLoan(loan);
             newTransactions.add(payment);
         }

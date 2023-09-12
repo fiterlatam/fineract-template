@@ -196,7 +196,7 @@ public class LoanScheduleCalculationPlatformServiceImpl implements LoanScheduleC
                         loanRepaymentScheduleInstallment.getFeeChargesCharged(currency).getAmount(),
                         loanRepaymentScheduleInstallment.getPenaltyChargesCharged(currency).getAmount(), totalAmount.getAmount(),
                         totalPrincipal.plus(interestDue).getAmount(), loanRepaymentScheduleInstallment.getVatOnInterestCharged(),
-                        loanRepaymentScheduleInstallment.getVatOnChargeExpected());
+                        loanRepaymentScheduleInstallment.getVatOnChargeExpected(), loanRepaymentScheduleInstallment.getVatOnPenaltyChargeExpected());
                 futureInstallments.add(loanSchedulePeriodData);
                 isNewPaymentRequired = false;
             } else if (periodData.periodDueDate().isAfter(today)) {
@@ -238,6 +238,7 @@ public class LoanScheduleCalculationPlatformServiceImpl implements LoanScheduleC
         Money totalPenalty = principal.zero();
         Money totalVatOnInterest = principal.zero();
         Money totalVatOnCharges = principal.zero();
+        Money totalVatOnPenaltyCharges = principal.zero();
 
         for (LoanRepaymentScheduleInstallment installment : installments) {
             if (loanDisbursementDetails != null
@@ -256,13 +257,15 @@ public class LoanScheduleCalculationPlatformServiceImpl implements LoanScheduleC
                     outstanding.getAmount(), installment.getInterestCharged(currency).getAmount(),
                     installment.getFeeChargesCharged(currency).getAmount(), installment.getPenaltyChargesCharged(currency).getAmount(),
                     installment.getDue(currency).getAmount(), installment.getTotalPrincipalAndInterest(currency).getAmount(),
-                    installment.getVatOnInterestCharged(), installment.getVatOnChargeExpected());
+                    installment.getVatOnInterestCharged(), installment.getVatOnChargeExpected(),
+                    installment.getVatOnPenaltyChargeExpected());
             installmentData.add(loanSchedulePeriodData);
             totalInterest = totalInterest.plus(installment.getInterestCharged(currency));
             totalCharge = totalCharge.plus(installment.getFeeChargesCharged(currency));
             totalPenalty = totalPenalty.plus(installment.getPenaltyChargesCharged(currency));
             totalVatOnInterest = totalVatOnInterest.plus(installment.getVatOnInterestCharged());
             totalVatOnCharges = totalVatOnCharges.plus(installment.getVatOnChargeExpected());
+            totalVatOnPenaltyCharges = totalVatOnPenaltyCharges.plus(installment.getVatOnPenaltyChargeExpected());
         }
 
         CurrencyData currencyData = this.currencyReadPlatformService.retrieveCurrency(currency.getCode());
@@ -271,7 +274,7 @@ public class LoanScheduleCalculationPlatformServiceImpl implements LoanScheduleC
                 loan.getLoanRepaymentScheduleDetail().getNumberOfRepayments(), principal.getAmount(), principal.getAmount(),
                 totalInterest.getAmount(), totalCharge.getAmount(), totalPenalty.getAmount(),
                 principal.plus(totalCharge).plus(totalInterest).plus(totalPenalty).getAmount(), totalVatOnInterest.getAmount(),
-                totalVatOnCharges.getAmount());
+                totalVatOnCharges.getAmount(), totalVatOnPenaltyCharges.getAmount());
 
         return scheduleData;
     }

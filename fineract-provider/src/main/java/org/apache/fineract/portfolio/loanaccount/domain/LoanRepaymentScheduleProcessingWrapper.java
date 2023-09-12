@@ -72,25 +72,31 @@ public class LoanRepaymentScheduleProcessingWrapper {
                 final Money penaltyChargesDueForRepaymentPeriod = cumulativePenaltyChargesDueWithin.getLeft();
                 final Money penaltyChargesDueForVatCalculation = cumulativePenaltyChargesDueWithin.getRight();
                 final Money vatOnChargeDue = calculateVatOnAmount(loan.getVatPercentage(),
-                        feeChargesDueForVatCalculation.plus(penaltyChargesDueForVatCalculation));
+                        feeChargesDueForVatCalculation);
+                final Money vatOnPenaltyChargeDue = calculateVatOnAmount(loan.getVatPercentage(),
+                        penaltyChargesDueForVatCalculation);
 
                 final Pair<Money, Money> penaltyChargesWaivedForRepaymentPeriod = cumulativePenaltyChargesAndVatWaivedWithin(startDate,
                         period.getDueDate(), loanCharges, currency, !period.isRecalculatedInterestComponent());
                 final Money penaltyChargesWaivedForRepayment = penaltyChargesWaivedForRepaymentPeriod.getLeft();
                 final Money penaltyChargesWaivedForVatCalculation = penaltyChargesWaivedForRepaymentPeriod.getRight();
                 final Money vatOnChargeWaived = calculateVatOnAmount(loan.getVatPercentage(),
-                        penaltyChargesWaivedForVatCalculation.plus(feeChargesWaivedForVatCalculation));
+                        feeChargesWaivedForVatCalculation);
+                final Money vatOnPenaltyChargeWaived = calculateVatOnAmount(loan.getVatPercentage(),
+                        penaltyChargesWaivedForVatCalculation);
 
                 final Pair<Money, Money> penaltyChargesWrittenOffForRepaymentPeriod = cumulativePenaltyChargesAndVatWrittenOffWithin(
                         startDate, period.getDueDate(), loanCharges, currency, !period.isRecalculatedInterestComponent());
                 final Money penaltyChargesWrittenOffForRepayment = penaltyChargesWrittenOffForRepaymentPeriod.getLeft();
                 final Money penaltyChargesWrittenOffForVatCalculation = penaltyChargesWrittenOffForRepaymentPeriod.getRight();
                 final Money vatOnChargeWrittenOff = calculateVatOnAmount(loan.getVatPercentage(),
-                        penaltyChargesWrittenOffForVatCalculation.plus(feeChargesWrittenForVatCalculation));
+                        feeChargesWrittenForVatCalculation);
+                final Money vatOnPenaltyChargeWrittenOff = calculateVatOnAmount(loan.getVatPercentage(),
+                        penaltyChargesWrittenOffForVatCalculation);
 
                 period.updateChargePortion(feeChargesDueForRepaymentPeriod, feeChargesWaivedForRepayment, feeChargesWrittenOffForRepayment,
                         penaltyChargesDueForRepaymentPeriod, penaltyChargesWaivedForRepayment, penaltyChargesWrittenOffForRepayment,
-                        vatOnChargeDue, vatOnChargeWaived, vatOnChargeWrittenOff);
+                        vatOnChargeDue, vatOnChargeWaived, vatOnChargeWrittenOff, vatOnPenaltyChargeDue, vatOnPenaltyChargeWaived, vatOnPenaltyChargeWrittenOff);
 
             } else {
                 final Pair<Money, Money> cumulativeFeeChargesDueWithin = cumulativeFeeChargesDueWithin(startDate, period.getDueDate(),
@@ -115,7 +121,8 @@ public class LoanRepaymentScheduleProcessingWrapper {
 
                 period.updateChargePortion(feeChargesDueForRepaymentPeriod, feeChargesWaivedForRepaymentPeriod,
                         feeChargesWrittenOffForRepaymentPeriod, penaltyChargesDueForRepaymentPeriod, penaltyChargesWaivedForRepaymentPeriod,
-                        penaltyChargesWrittenOffForRepaymentPeriod, Money.zero(currency), Money.zero(currency), Money.zero(currency));
+                        penaltyChargesWrittenOffForRepaymentPeriod, Money.zero(currency), Money.zero(currency), Money.zero(currency),
+                        Money.zero(currency), Money.zero(currency), Money.zero(currency));
             }
 
             startDate = period.getDueDate();

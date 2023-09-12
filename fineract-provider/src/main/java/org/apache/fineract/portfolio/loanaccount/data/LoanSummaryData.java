@@ -78,6 +78,13 @@ public class LoanSummaryData {
     private final BigDecimal totalVatOnChargeWaived;
     private final BigDecimal totalVatOnChargeOutstanding;
     private final BigDecimal totalVatOnChargeOverdue;
+
+    private final BigDecimal totalVatOnPenaltyChargeExpected;
+    private final BigDecimal totalVatOnPenaltyChargePaid;
+    private final BigDecimal totalVatOnPenaltyChargeWrittenOff;
+    private final BigDecimal totalVatOnPenaltyChargeWaived;
+    private final BigDecimal totalVatOnPenaltyChargeOutstanding;
+    private final BigDecimal totalVatOnPenaltyChargeOverdue;
     private final BigDecimal originationFees;
 
     private final BigDecimal interestVatOverdue;
@@ -99,7 +106,9 @@ public class LoanSummaryData {
             final BigDecimal totalVatOnInterestOutstanding, final BigDecimal totalVatOnInterestOverdue,
             final BigDecimal totalVatOnChargeExpected, final BigDecimal totalVatOnChargePaid, final BigDecimal totalVatOnChargeWrittenOff,
             final BigDecimal totalVatOnChargeWaived, final BigDecimal totalVatOnChargeOutstanding, final BigDecimal totalVatOnChargeOverdue,
-            final BigDecimal originationFees, final BigDecimal interestVatOverdue) {
+            final BigDecimal originationFees, final BigDecimal interestVatOverdue,
+           final BigDecimal totalVatOnPenaltyChargeExpected, final BigDecimal totalVatOnPenaltyChargePaid, final BigDecimal totalVatOnPenaltyChargeWrittenOff,
+           final BigDecimal totalVatOnPenaltyChargeWaived, final BigDecimal totalVatOnPenaltyChargeOutstanding, final BigDecimal totalVatOnPenaltyChargeOverdue) {
         this.currency = currency;
         this.principalDisbursed = principalDisbursed;
         this.principalPaid = principalPaid;
@@ -151,6 +160,13 @@ public class LoanSummaryData {
         this.totalVatOnChargeOverdue = totalVatOnChargeOverdue;
         this.originationFees = originationFees;
         this.interestVatOverdue = interestVatOverdue;
+
+        this.totalVatOnPenaltyChargeExpected = totalVatOnPenaltyChargeExpected;
+        this.totalVatOnPenaltyChargePaid = totalVatOnPenaltyChargePaid;
+        this.totalVatOnPenaltyChargeWrittenOff = totalVatOnPenaltyChargeWrittenOff;
+        this.totalVatOnPenaltyChargeWaived = totalVatOnPenaltyChargeWaived;
+        this.totalVatOnPenaltyChargeOutstanding = totalVatOnPenaltyChargeOutstanding;
+        this.totalVatOnPenaltyChargeOverdue = totalVatOnPenaltyChargeOverdue;
     }
 
     public BigDecimal getTotalOutstanding() {

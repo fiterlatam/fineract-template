@@ -156,6 +156,24 @@ public final class LoanSummary {
     @Column(name = "total_vatonpenalty_overdue", scale = 6, precision = 19)
     private BigDecimal totalPenaltyChargesOverdue;
 
+    @Column(name = "total_vaton_penaltycharge_expected", scale = 6, precision = 19)
+    private BigDecimal totalVatOnPenaltyChargeExpected;
+
+    @Column(name = "total_vaton_penaltycharge_paid", scale = 6, precision = 19)
+    private BigDecimal totalVatOnPenaltyChargePaid;
+
+    @Column(name = "total_vaton_penaltycharge_writtenoff", scale = 6, precision = 19)
+    private BigDecimal totalVatOnPenaltyChargeWrittenOff;
+
+    @Column(name = "total_vaton_penaltycharge_waived", scale = 6, precision = 19)
+    private BigDecimal totalVatOnPenaltyChargeWaived;
+
+    @Column(name = "total_vaton_penaltycharge_outstanding", scale = 6, precision = 19)
+    private BigDecimal totalVatOnPenaltyChargeOutstanding;
+
+    @Column(name = "total_vaton_penaltycharge_overdue", scale = 6, precision = 19)
+    private BigDecimal totalVatOnPenaltyChargeOverdue;
+
     public static LoanSummary create(final BigDecimal totalFeeChargesDueAtDisbursement) {
         return new LoanSummary(totalFeeChargesDueAtDisbursement);
     }
@@ -259,6 +277,13 @@ public final class LoanSummary {
         this.totalVatOnChargeWaived = BigDecimal.ZERO;
         this.totalVatOnChargeOutstanding = BigDecimal.ZERO;
         this.totalVatOnChargeOverdue = BigDecimal.ZERO;
+
+        this.totalVatOnPenaltyChargeExpected = BigDecimal.ZERO;
+        this.totalVatOnPenaltyChargePaid = BigDecimal.ZERO;
+        this.totalVatOnPenaltyChargeWrittenOff = BigDecimal.ZERO;
+        this.totalVatOnPenaltyChargeWaived = BigDecimal.ZERO;
+        this.totalVatOnPenaltyChargeOutstanding = BigDecimal.ZERO;
+        this.totalVatOnPenaltyChargeOverdue = BigDecimal.ZERO;
     }
 
     public void updateSummary(final MonetaryCurrency currency, final Money principal,
@@ -347,36 +372,51 @@ public final class LoanSummary {
         this.totalVatOnChargeOverdue = summaryWrapper.calculateTotalVatOnChargeOverdue(repaymentScheduleInstallments, currency)
                 .minus(this.totalVatOnChargePaid).getAmount();
 
+        // Calculations for vat on penalty charges
+        final Money totalVatChargedOnPenaltyCharges = summaryWrapper.calculateTotalVatOnPenaltyCharges(repaymentScheduleInstallments, currency);
+        this.totalVatOnPenaltyChargeExpected = totalVatChargedOnPenaltyCharges.getAmount();
+        this.totalVatOnPenaltyChargePaid = summaryWrapper.calculateTotalVatOnPenaltyChargesPaid(repaymentScheduleInstallments, currency).getAmount();
+        this.totalVatOnPenaltyChargeWaived = summaryWrapper.calculateTotalVatOnPenaltyChargesWaived(repaymentScheduleInstallments, currency).getAmount();
+        this.totalVatOnPenaltyChargeWrittenOff = summaryWrapper.calculateTotalVatOnPenaltyChargesWrittenOff(repaymentScheduleInstallments, currency)
+                .getAmount();
+        this.totalVatOnPenaltyChargeOutstanding = totalVatChargedOnPenaltyCharges.minus(this.totalVatOnPenaltyChargePaid).minus(this.totalVatOnPenaltyChargeWaived)
+                .minus(this.totalVatOnPenaltyChargeWrittenOff).getAmount();
+        this.totalVatOnPenaltyChargeOverdue = summaryWrapper.calculateTotalVatOnPenaltyChargeOverdue(repaymentScheduleInstallments, currency)
+                .minus(this.totalVatOnPenaltyChargePaid).getAmount();
+
         final Money totalExpectedRepayment = Money.of(currency, this.totalPrincipalDisbursed).plus(originationFees)
                 .plus(this.totalInterestCharged).plus(this.totalFeeChargesCharged).plus(totalPenaltyChargesCharged)
-                .plus(this.totalVatOnInterestCharged).plus(this.totalVatOnChargeExpected);
+                .plus(this.totalVatOnInterestCharged).plus(this.totalVatOnChargeExpected).plus(this.totalVatOnPenaltyChargeExpected);
         this.totalExpectedRepayment = totalExpectedRepayment.getAmount();
 
         final Money totalRepayment = Money.of(currency, this.totalPrincipalRepaid).plus(this.totalInterestRepaid)
                 .plus(this.totalFeeChargesRepaid).plus(this.totalPenaltyChargesRepaid).plus(this.totalVatOnInterestPaid)
-                .plus(this.totalVatOnChargePaid);
+                .plus(this.totalVatOnChargePaid).plus(this.totalVatOnPenaltyChargePaid);
         this.totalRepayment = totalRepayment.getAmount();
 
         final Money totalExpectedCostOfLoan = Money.of(currency, this.totalInterestCharged).plus(this.totalFeeChargesCharged)
-                .plus(this.totalPenaltyChargesCharged).plus(this.totalVatOnInterestCharged).plus(this.totalVatOnChargeExpected);
+                .plus(this.totalPenaltyChargesCharged).plus(this.totalVatOnInterestCharged).plus(this.totalVatOnChargeExpected)
+                .plus(this.totalVatOnPenaltyChargeExpected);
         this.totalExpectedCostOfLoan = totalExpectedCostOfLoan.getAmount();
 
         final Money totalCostOfLoan = Money.of(currency, this.totalInterestRepaid).plus(this.totalFeeChargesRepaid)
-                .plus(this.totalPenaltyChargesRepaid).plus(this.totalVatOnInterestPaid).plus(this.totalVatOnChargePaid);
+                .plus(this.totalPenaltyChargesRepaid).plus(this.totalVatOnInterestPaid).plus(this.totalVatOnChargePaid)
+                .plus(this.totalVatOnPenaltyChargePaid);
         this.totalCostOfLoan = totalCostOfLoan.getAmount();
 
         final Money totalWaived = Money.of(currency, this.totalInterestWaived).plus(this.totalFeeChargesWaived)
-                .plus(this.totalPenaltyChargesWaived).plus(this.totalVatOnInterestWaived).plus(this.totalVatOnChargeWaived);
+                .plus(this.totalPenaltyChargesWaived).plus(this.totalVatOnInterestWaived).plus(this.totalVatOnChargeWaived)
+                .plus(this.totalVatOnPenaltyChargeWaived);
         this.totalWaived = totalWaived.getAmount();
 
         final Money totalWrittenOff = Money.of(currency, this.totalPrincipalWrittenOff).plus(this.totalInterestWrittenOff)
                 .plus(this.totalFeeChargesWrittenOff).plus(this.totalPenaltyChargesWrittenOff).plus(this.totalVatOnInterestWrittenOff)
-                .plus(this.totalVatOnChargeWrittenOff);
+                .plus(this.totalVatOnChargeWrittenOff).plus(this.totalVatOnPenaltyChargeWrittenOff);
         this.totalWrittenOff = totalWrittenOff.getAmount();
 
         final Money totalOutstanding = Money.of(currency, this.totalPrincipalOutstanding).plus(this.totalInterestOutstanding)
                 .plus(this.totalFeeChargesOutstanding).plus(this.totalPenaltyChargesOutstanding).plus(this.totalVatOnInterestOutstanding)
-                .plus(this.totalVatOnChargeOutstanding);
+                .plus(this.totalVatOnChargeOutstanding).plus(this.totalVatOnPenaltyChargeOutstanding);
         this.totalOutstanding = totalOutstanding.getAmount();
 
     }

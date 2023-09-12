@@ -43,6 +43,7 @@ public final class LoanScheduleModel {
     private final BigDecimal totalPenaltyChargesCharged;
     private final BigDecimal totalVatOnInterestExpected;
     private final BigDecimal totalVatOnChargeExpected;
+    private final BigDecimal totalVatOnPenaltyChargeExpected;
     private final BigDecimal totalRepaymentExpected;
     private final BigDecimal totalOutstanding;
 
@@ -50,11 +51,12 @@ public final class LoanScheduleModel {
             final int loanTermInDays, final Money principalDisbursed, final BigDecimal totalPrincipalExpected,
             final BigDecimal totalPrincipalPaid, final BigDecimal totalInterestCharged, final BigDecimal totalFeeChargesCharged,
             final BigDecimal totalPenaltyChargesCharged, final BigDecimal totalVatOnInterestExpected,
-            final BigDecimal totalVatOnChargeExpected, final BigDecimal totalRepaymentExpected, final BigDecimal totalOutstanding) {
+            final BigDecimal totalVatOnChargeExpected, final BigDecimal totalRepaymentExpected, final BigDecimal totalOutstanding,
+                                         final BigDecimal totalVatOnPenaltyChargeExpected) {
 
         return new LoanScheduleModel(periods, applicationCurrency, loanTermInDays, principalDisbursed, totalPrincipalExpected,
                 totalPrincipalPaid, totalInterestCharged, totalFeeChargesCharged, totalPenaltyChargesCharged, totalVatOnInterestExpected,
-                totalVatOnChargeExpected, totalRepaymentExpected, totalOutstanding);
+                totalVatOnChargeExpected, totalRepaymentExpected, totalOutstanding, totalVatOnPenaltyChargeExpected);
     }
 
     public static LoanScheduleModel withOverdueChargeUpdation(final Collection<LoanScheduleModelPeriod> periods,
@@ -64,7 +66,8 @@ public final class LoanScheduleModel {
                 loanScheduleModel.totalPrincipalDisbursed, loanScheduleModel.totalPrincipalExpected, loanScheduleModel.totalPrincipalPaid,
                 loanScheduleModel.totalInterestCharged, loanScheduleModel.totalFeeChargesCharged, totalPenaltyChargesCharged,
                 loanScheduleModel.totalVatOnInterestExpected, loanScheduleModel.totalVatOnChargeExpected,
-                loanScheduleModel.totalRepaymentExpected, loanScheduleModel.totalOutstanding);
+                loanScheduleModel.totalRepaymentExpected, loanScheduleModel.totalOutstanding,
+                loanScheduleModel.totalVatOnPenaltyChargeExpected);
     }
 
     public static LoanScheduleModel withLoanScheduleModelPeriods(final Collection<LoanScheduleModelPeriod> periods,
@@ -74,14 +77,16 @@ public final class LoanScheduleModel {
                 loanScheduleModel.totalPrincipalDisbursed, loanScheduleModel.totalPrincipalExpected, loanScheduleModel.totalPrincipalPaid,
                 loanScheduleModel.totalInterestCharged, loanScheduleModel.totalFeeChargesCharged,
                 loanScheduleModel.totalPenaltyChargesCharged, loanScheduleModel.totalVatOnInterestExpected,
-                loanScheduleModel.totalVatOnChargeExpected, loanScheduleModel.totalRepaymentExpected, loanScheduleModel.totalOutstanding);
+                loanScheduleModel.totalVatOnChargeExpected, loanScheduleModel.totalRepaymentExpected, loanScheduleModel.totalOutstanding,
+                loanScheduleModel.totalVatOnPenaltyChargeExpected);
     }
 
     private LoanScheduleModel(final Collection<LoanScheduleModelPeriod> periods, final ApplicationCurrency applicationCurrency,
             final int loanTermInDays, final Money principalDisbursed, final BigDecimal totalPrincipalExpected,
             final BigDecimal totalPrincipalPaid, final BigDecimal totalInterestCharged, final BigDecimal totalFeeChargesCharged,
             final BigDecimal totalPenaltyChargesCharged, final BigDecimal totalVatOnChargeExpected,
-            final BigDecimal totalVatOnInterestExpected, final BigDecimal totalRepaymentExpected, final BigDecimal totalOutstanding) {
+            final BigDecimal totalVatOnInterestExpected, final BigDecimal totalRepaymentExpected, final BigDecimal totalOutstanding,
+                              final BigDecimal totalVatOnPenaltyChargeExpected) {
         this.periods = periods;
         this.applicationCurrency = applicationCurrency;
         this.loanTermInDays = loanTermInDays;
@@ -95,6 +100,7 @@ public final class LoanScheduleModel {
         this.totalVatOnInterestExpected = totalVatOnInterestExpected;
         this.totalRepaymentExpected = totalRepaymentExpected;
         this.totalOutstanding = totalOutstanding;
+        this.totalVatOnPenaltyChargeExpected = totalVatOnPenaltyChargeExpected;
     }
 
     public LoanScheduleData toData() {
@@ -117,7 +123,8 @@ public final class LoanScheduleModel {
         return new LoanScheduleData(currency, periodsData, this.loanTermInDays, this.totalPrincipalDisbursed.getAmount(),
                 this.totalPrincipalExpected, this.totalPrincipalPaid, this.totalInterestCharged, this.totalFeeChargesCharged,
                 this.totalPenaltyChargesCharged, totalWaived, totalWrittenOff, this.totalRepaymentExpected, totalRepayment,
-                totalPaidInAdvance, totalPaidLate, this.totalOutstanding, this.totalVatOnInterestExpected, this.totalVatOnInterestExpected);
+                totalPaidInAdvance, totalPaidLate, this.totalOutstanding, this.totalVatOnInterestExpected, this.totalVatOnInterestExpected,
+                this.totalVatOnPenaltyChargeExpected);
     }
 
     public Collection<LoanScheduleModelPeriod> getPeriods() {

@@ -54,6 +54,7 @@ public class LoanScheduleData {
     private final BigDecimal totalOutstanding;
     private final BigDecimal totalVatOnInterestExpected;
     private final BigDecimal totalVatOnChargeExpected;
+    private final BigDecimal totalVatOnPenaltyChargeExpected;
 
     /**
      * <code>periods</code> is collection of data objects containing specific information to each period of the loan
@@ -68,7 +69,8 @@ public class LoanScheduleData {
             final BigDecimal totalInterestCharged, final BigDecimal totalFeeChargesCharged, final BigDecimal totalPenaltyChargesCharged,
             final BigDecimal totalWaived, final BigDecimal totalWrittenOff, final BigDecimal totalRepaymentExpected,
             final BigDecimal totalRepayment, final BigDecimal totalPaidInAdvance, final BigDecimal totalPaidLate,
-            final BigDecimal totalOutstanding, final BigDecimal totalVatOnInterestExpected, final BigDecimal totalVatOnChargeExpected) {
+            final BigDecimal totalOutstanding, final BigDecimal totalVatOnInterestExpected, final BigDecimal totalVatOnChargeExpected,
+            final BigDecimal totalVatOnPenaltyChargeExpected) {
         this.currency = currency;
         this.periods = periods;
         this.loanTermInDays = loanTermInDays;
@@ -87,12 +89,13 @@ public class LoanScheduleData {
         this.totalOutstanding = totalOutstanding;
         this.totalVatOnInterestExpected = totalVatOnInterestExpected;
         this.totalVatOnChargeExpected = totalVatOnChargeExpected;
+        this.totalVatOnPenaltyChargeExpected = totalVatOnPenaltyChargeExpected;
     }
 
     public LoanScheduleData(final CurrencyData currency, final Collection<LoanSchedulePeriodData> periods, final Integer loanTermInDays,
             final BigDecimal totalPrincipalDisbursed, final BigDecimal totalPrincipalExpected, final BigDecimal totalInterestCharged,
             final BigDecimal totalFeeChargesCharged, final BigDecimal totalPenaltyChargesCharged, final BigDecimal totalRepaymentExpected,
-            final BigDecimal totalVatOnInterestExpected, final BigDecimal totalVatOnChargeExpected) {
+            final BigDecimal totalVatOnInterestExpected, final BigDecimal totalVatOnChargeExpected, final BigDecimal totalVatOnPenaltyChargeExpected) {
         this.currency = currency;
         this.periods = periods;
         this.loanTermInDays = loanTermInDays;
@@ -111,6 +114,7 @@ public class LoanScheduleData {
         this.totalOutstanding = null;
         this.totalVatOnInterestExpected = totalVatOnInterestExpected;
         this.totalVatOnChargeExpected = totalVatOnChargeExpected;
+        this.totalVatOnPenaltyChargeExpected = totalVatOnPenaltyChargeExpected;
     }
 
     public Collection<LoanSchedulePeriodData> getPeriods() {

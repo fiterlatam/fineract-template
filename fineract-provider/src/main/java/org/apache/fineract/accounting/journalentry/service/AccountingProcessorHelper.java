@@ -130,6 +130,7 @@ public class AccountingProcessorHelper {
             final BigDecimal overPayments = (BigDecimal) map.get("overPaymentPortion");
             final BigDecimal vatOnInterestPortion = (BigDecimal) map.get("vatOnInterestPortion");
             final BigDecimal vatOnChargesPortion = (BigDecimal) map.get("vatOnChargesPortion");
+            final BigDecimal vatOnPenaltyChargesPortion = (BigDecimal) map.get("vatOnPenaltyChargesPortion");
             final boolean reversed = (Boolean) map.get("reversed");
             final Long paymentTypeId = (Long) map.get("paymentTypeId");
 
@@ -175,10 +176,10 @@ public class AccountingProcessorHelper {
                 if (map.containsKey("isGeneratedVatTransactionFromRepayment")) {
                     boolean isGeneratedVatTransactionFromRepayment = (boolean) map.get("isGeneratedVatTransactionFromRepayment");
                     transaction.setGeneratedTransactionFromRepayment(isGeneratedVatTransactionFromRepayment);
-
-                    transaction.setVatOnCharges(vatOnChargesPortion);
-                    transaction.setVatOnInterest(vatOnInterestPortion);
                 }
+                transaction.setVatOnCharges(vatOnChargesPortion);
+                transaction.setVatOnInterest(vatOnInterestPortion);
+                transaction.setVatOnPenaltyCharges(vatOnPenaltyChargesPortion);
             }
             newLoanTransactions.add(transaction);
 

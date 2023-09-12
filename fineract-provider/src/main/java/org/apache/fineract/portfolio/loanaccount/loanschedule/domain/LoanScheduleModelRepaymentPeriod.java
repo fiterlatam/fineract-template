@@ -47,19 +47,22 @@ public final class LoanScheduleModelRepaymentPeriod implements LoanScheduleModel
     private final Money vatOnInterest;
     private final Money vatOnCharges;
 
+    private final Money vatOnPenaltyCharges;
+
     public static LoanScheduleModelRepaymentPeriod repayment(final int periodNumber, final LocalDate startDate,
             final LocalDate scheduledDueDate, final Money principalDue, final Money outstandingLoanBalance, final Money interestDue,
             final Money feeChargesDue, final Money penaltyChargesDue, final Money totalDue, boolean recalculatedInterestComponent,
-            final Money vatOnInterest, final Money vatOnCharges) {
+            final Money vatOnInterest, final Money vatOnCharges, final Money vatOnPenaltyCharges) {
 
         return new LoanScheduleModelRepaymentPeriod(periodNumber, startDate, scheduledDueDate, principalDue, outstandingLoanBalance,
-                interestDue, feeChargesDue, penaltyChargesDue, totalDue, recalculatedInterestComponent, vatOnInterest, vatOnCharges);
+                interestDue, feeChargesDue, penaltyChargesDue, totalDue, recalculatedInterestComponent, vatOnInterest, vatOnCharges,
+                vatOnPenaltyCharges);
     }
 
     public LoanScheduleModelRepaymentPeriod(final int periodNumber, final LocalDate fromDate, final LocalDate dueDate,
             final Money principalDue, final Money outstandingLoanBalance, final Money interestDue, final Money feeChargesDue,
             final Money penaltyChargesDue, final Money totalDue, final boolean recalculatedInterestComponent, final Money vatOnInterest,
-            final Money vatOnCharges) {
+            final Money vatOnCharges, final Money vatOnPenaltyCharges) {
         this.periodNumber = periodNumber;
         this.fromDate = fromDate;
         this.dueDate = dueDate;
@@ -72,6 +75,7 @@ public final class LoanScheduleModelRepaymentPeriod implements LoanScheduleModel
         this.recalculatedInterestComponent = recalculatedInterestComponent;
         this.vatOnInterest = vatOnInterest;
         this.vatOnCharges = vatOnCharges;
+        this.vatOnPenaltyCharges = vatOnPenaltyCharges;
     }
 
     @Override
@@ -79,7 +83,7 @@ public final class LoanScheduleModelRepaymentPeriod implements LoanScheduleModel
         return LoanSchedulePeriodData.repaymentOnlyPeriod(this.periodNumber, this.fromDate, this.dueDate, this.principalDue.getAmount(),
                 this.outstandingLoanBalance.getAmount(), this.interestDue.getAmount(), this.feeChargesDue.getAmount(),
                 this.penaltyChargesDue.getAmount(), this.totalDue.getAmount(), this.principalDue.plus(this.interestDue).getAmount(),
-                this.vatOnInterest.getAmount(), this.vatOnCharges.getAmount());
+                this.vatOnInterest.getAmount(), this.vatOnCharges.getAmount(), this.vatOnPenaltyCharges.getAmount());
     }
 
     @Override
@@ -199,5 +203,10 @@ public final class LoanScheduleModelRepaymentPeriod implements LoanScheduleModel
     @Override
     public Money getVatOnCharges() {
         return vatOnCharges;
+    }
+
+    @Override
+    public Money getVatOnPenaltyCharges() {
+        return vatOnPenaltyCharges;
     }
 }
