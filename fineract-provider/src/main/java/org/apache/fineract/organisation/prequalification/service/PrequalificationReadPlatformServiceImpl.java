@@ -183,7 +183,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                 } else {
                     prequalificationStatus = PreQualificationsEnumerations.status(PrequalificationStatus.BLACKLIST_CHECKED);
                 }
-                if (clientData.getStatus().equals(PreQualificationsEnumerations.status(PrequalificationStatus.TIME_EXPIRED))){
+                if (clientData.getStatus().equals(PreQualificationsEnumerations.status(PrequalificationStatus.TIME_EXPIRED))) {
                     prequalificationStatus = PreQualificationsEnumerations.status(PrequalificationStatus.TIME_EXPIRED);
                 }
                 clientData.setStatus(prequalificationStatus);
@@ -430,7 +430,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             }
             return GroupPrequalificationData.instance(id, prequalificationNumber, status, agencyName, null, centerName, groupName,
                     productName, addedBy, createdAt, comments, groupId, agencyId, centerId, productId, facilitatorId, facilitatorName,
-                    greenValidationCount, yellowValidationCount, orangeValidationCount, redValidationCount,prequalilficationTimespan);
+                    greenValidationCount, yellowValidationCount, orangeValidationCount, redValidationCount, prequalilficationTimespan);
 
         }
     }

@@ -519,14 +519,15 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
     public void disableExpiredPrequalifications() throws JobExecutionException {
         try {
             final String sql = "select m.id from m_prequalification_group m where m.status!=? and current_date > (SELECT DATE_ADD(m.created_at, INTERVAL m.prequalification_duration DAY))";
-            final List<Long> expiredPrequalificationIds = this.jdbcTemplate.queryForList(sql, Long.class, PrequalificationStatus.COMPLETED.getValue());
+            final List<Long> expiredPrequalificationIds = this.jdbcTemplate.queryForList(sql, Long.class,
+                    PrequalificationStatus.COMPLETED.getValue());
             if (expiredPrequalificationIds.size() > 0) {
                 for (Long prequalificationId : expiredPrequalificationIds) {
                     final String updateSql = "update m_prequalification_group m set m.status=? where m.id=?";
                     this.jdbcTemplate.update(updateSql, PrequalificationStatus.TIME_EXPIRED.getValue(), prequalificationId);
                 }
             }
-        }catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
             List<Throwable> problems = new ArrayList<>();
             problems.add(e);
