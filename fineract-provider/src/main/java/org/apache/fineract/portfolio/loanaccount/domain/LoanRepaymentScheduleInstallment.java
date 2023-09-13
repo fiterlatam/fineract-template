@@ -31,7 +31,6 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
-
 import lombok.Getter;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.fineract.infrastructure.core.domain.AbstractAuditableCustom;
@@ -672,6 +671,57 @@ public final class LoanRepaymentScheduleInstallment extends AbstractAuditableCus
         return Pair.of(interestPortionOfTransaction, vatOnInterestPortionOfTransaction);
     }
 
+    public Money updateVatInterestComponents(final LocalDate transactionDate, final Money transactionAmountRemaining,
+            final Money interestPortion) {
+
+        final MonetaryCurrency currency = transactionAmountRemaining.getCurrency();
+        Money interestPortionOfTransaction = Money.zero(currency);
+        Money vatOnInterestPortionOfTransaction = loan.calculateVatOnAmount(interestPortion);
+
+        interestPortionOfTransaction = interestPortionOfTransaction.plus(vatOnInterestPortionOfTransaction);
+        this.vatOnInterestPaid = getVatOnInterestPaid(currency).plus(vatOnInterestPortionOfTransaction).getAmount();
+
+        checkIfRepaymentPeriodObligationsAreMet(transactionDate, currency);
+
+        trackAdvanceAndLateTotalsForRepaymentPeriod(transactionDate, currency, interestPortionOfTransaction);
+
+        return vatOnInterestPortionOfTransaction;
+    }
+
+    public Money updateVatFeeChargeComponents(final LocalDate transactionDate, final Money transactionAmountRemaining,
+                                             final Money feeChargesPortion) {
+
+        final MonetaryCurrency currency = transactionAmountRemaining.getCurrency();
+        Money interestPortionOfTransaction = Money.zero(currency);
+        Money vatOnInterestPortionOfTransaction = loan.calculateVatOnAmount(feeChargesPortion);
+
+        interestPortionOfTransaction = interestPortionOfTransaction.plus(vatOnInterestPortionOfTransaction);
+        this.vatOnChargePaid = getVatOnChargePaid(currency).plus(vatOnInterestPortionOfTransaction).getAmount();
+
+        checkIfRepaymentPeriodObligationsAreMet(transactionDate, currency);
+
+        trackAdvanceAndLateTotalsForRepaymentPeriod(transactionDate, currency, interestPortionOfTransaction);
+
+        return vatOnInterestPortionOfTransaction;
+    }
+
+    public Money updateVatPenaltyComponents(final LocalDate transactionDate, final Money transactionAmountRemaining,
+            final Money penaltyChargesPortion) {
+
+        final MonetaryCurrency currency = transactionAmountRemaining.getCurrency();
+        Money interestPortionOfTransaction = Money.zero(currency);
+        Money vatOnInterestPortionOfTransaction = loan.calculateVatOnAmount(penaltyChargesPortion);
+
+        interestPortionOfTransaction = interestPortionOfTransaction.plus(vatOnInterestPortionOfTransaction);
+        this.vatOnPenaltyChargePaid = getVatOnPenaltyChargePaid(currency).plus(vatOnInterestPortionOfTransaction).getAmount();
+
+        checkIfRepaymentPeriodObligationsAreMet(transactionDate, currency);
+
+        trackAdvanceAndLateTotalsForRepaymentPeriod(transactionDate, currency, interestPortionOfTransaction);
+
+        return vatOnInterestPortionOfTransaction;
+    }
+
     public Money payPrincipalComponent(final LocalDate transactionDate, final Money transactionAmountRemaining) {
 
         final MonetaryCurrency currency = transactionAmountRemaining.getCurrency();
@@ -913,7 +963,7 @@ public final class LoanRepaymentScheduleInstallment extends AbstractAuditableCus
     public void updateChargePortion(final Money feeChargesDue, final Money feeChargesWaived, final Money feeChargesWrittenOff,
             final Money penaltyChargesDue, final Money penaltyChargesWaived, final Money penaltyChargesWrittenOff,
             final Money chargeAmountDueForVatCalculation, final Money vatOnChargeWaived, final Money vatOnChargeWrittenOff,
-                                    final Money vatOnPenaltyChargeExpected, final Money vatOnPenaltyChargeWaived, final Money vatOnPenaltyChargeWrittenOff) {
+            final Money vatOnPenaltyChargeExpected, final Money vatOnPenaltyChargeWaived, final Money vatOnPenaltyChargeWrittenOff) {
         this.feeChargesCharged = defaultToNullIfZero(feeChargesDue.getAmount());
         this.feeChargesWaived = defaultToNullIfZero(feeChargesWaived.getAmount());
         this.feeChargesWrittenOff = defaultToNullIfZero(feeChargesWrittenOff.getAmount());
