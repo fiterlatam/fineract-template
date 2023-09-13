@@ -220,7 +220,33 @@ public class FineractStyleLoanRepaymentScheduleTransactionProcessor extends Abst
                 principalPortion = currentInstallment.payPrincipalComponent(transactionDate, transactionAmountRemaining);
                 transactionAmountRemaining = transactionAmountRemaining.minus(principalPortion);
 
-                loanTransaction.updateComponents(principalPortion, interestPortion, feeChargesPortion, penaltyChargesPortion);
+                // This calculates the VAT amount and keep the total paid till this
+                //  is not to recalculate the VAT amount for existing transactions
+                if (isVatRequired) {
+                    if (interestPortion.isGreaterThanZero()){
+                        vatOnInterestPortion = currentInstallment.updateVatInterestComponents(transactionDate, transactionAmountRemaining,
+                                interestPortion);
+                        transactionAmountRemaining = transactionAmountRemaining.minus(vatOnInterestPortion);
+                    }
+
+                    if (feeChargesPortion.isGreaterThanZero()){
+                        vatOnFeeChargesPortion = currentInstallment.updateVatFeeChargeComponents(transactionDate, transactionAmountRemaining,
+                                feeChargesPortion);
+                        transactionAmountRemaining = transactionAmountRemaining.minus(vatOnFeeChargesPortion);
+                    }
+
+                    if (penaltyChargesPortion.isGreaterThanZero()){
+                        vatOnPenaltyChargesPortion = currentInstallment.updateVatPenaltyComponents(transactionDate, transactionAmountRemaining,
+                                penaltyChargesPortion);
+                        transactionAmountRemaining = transactionAmountRemaining.minus(vatOnPenaltyChargesPortion);
+                    }
+
+                    loanTransaction.updateComponents(principalPortion, interestPortion, feeChargesPortion, penaltyChargesPortion,
+                            vatOnInterestPortion, vatOnFeeChargesPortion, vatOnPenaltyChargesPortion);
+                }
+                else{
+                    loanTransaction.updateComponents(principalPortion, interestPortion, feeChargesPortion, penaltyChargesPortion);
+                }
             }
         }
         if (principalPortion.plus(interestPortion).plus(feeChargesPortion).plus(penaltyChargesPortion).plus(vatOnFeeChargesPortion)
