@@ -55,7 +55,7 @@ import org.springframework.stereotype.Service;
 public class PentahoReportingProcessServiceImpl implements ReportingProcessService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PentahoReportingProcessServiceImpl.class);
-    public static final String MIFOS_BASE_DIR = System.getProperty("user.home") + File.separator + ".mifosx";
+    public static final String MIFOS_BASE_DIR = System.getProperty("user.home") + File.separator + "mifos";
 
     private final PlatformSecurityContext context;
     private final FineractProperties fineractProperties;
