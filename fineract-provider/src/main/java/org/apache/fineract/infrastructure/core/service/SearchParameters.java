@@ -56,7 +56,7 @@ public final class SearchParameters {
     private final String groupName;
     private final String centerName;
 
-    private final Long accountNumber;
+    private final String accountNumber;
     private final String bankName;
     private final String bankCode;
 
@@ -293,7 +293,7 @@ public final class SearchParameters {
     }
 
     public static SearchParameters forBankAccounts(final Integer offset, final Integer limit, final String orderBy, final String sortOrder,
-            String searchText, final Long accountNumber, final String bankName, final String bankCode) {
+            String searchText, final String accountNumber, final String bankName, final String bankCode) {
 
         final Integer maxLimitAllowed = getCheckedLimit(limit);
         final Long staffId = null;
@@ -381,7 +381,7 @@ public final class SearchParameters {
             final String hierarchy, final String firstname, final String lastname, final String status, final Integer offset,
             final Integer limit, final String orderBy, final String sortOrder, final Long staffId, final String accountNo,
             final Long loanId, final Long savingsId, final Boolean orphansOnly, boolean isSelfUser, final String dpiNumber,
-            final Long accountNumber, final String bankName, final String bankCode) {
+            final String accountNumber, final String bankName, final String bankCode) {
         this.sqlSearch = sqlSearch;
         this.officeId = officeId;
         this.externalId = externalId;
@@ -731,7 +731,7 @@ public final class SearchParameters {
         return this.isSelfUser;
     }
 
-    public Long getAccountNumber() {
+    public String getAccountNumber() {
         return accountNumber;
     }
 
