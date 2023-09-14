@@ -75,7 +75,8 @@ public final class GroupingTypesDataValidator {
             GroupingTypesApiConstants.legacyNumber, GroupingTypesApiConstants.latitude, GroupingTypesApiConstants.longitude,
             GroupingTypesApiConstants.formationDate, GroupingTypesApiConstants.size, GroupingTypesApiConstants.createdDate,
             GroupingTypesApiConstants.meetingStartTime, GroupingTypesApiConstants.meetingEndTime,
-            GroupingTypesApiConstants.newPortfolioCenterId, GroupingTypesApiConstants.groupLocation));
+            GroupingTypesApiConstants.newPortfolioCenterId, GroupingTypesApiConstants.groupLocation,
+            GroupingTypesApiConstants.prequalificationId));
 
     private static final Set<String> ACTIVATION_REQUEST_DATA_PARAMETERS = new HashSet<>(
             Arrays.asList(GroupingTypesApiConstants.localeParamName, GroupingTypesApiConstants.dateFormatParamName,
@@ -292,6 +293,9 @@ public final class GroupingTypesDataValidator {
         // office is inherited from center
         final Long officeId = this.fromApiJsonHelper.extractLongNamed(GroupingTypesApiConstants.officeIdParamName, element);
         baseDataValidator.reset().parameter(GroupingTypesApiConstants.officeIdParamName).value(officeId).notNull().integerGreaterThanZero();
+
+        final Long prequalificationId = this.fromApiJsonHelper.extractLongNamed(GroupingTypesApiConstants.prequalificationId, element);
+        baseDataValidator.reset().parameter(GroupingTypesApiConstants.prequalificationId).value(prequalificationId).notNull().integerGreaterThanZero();
 
         if (this.fromApiJsonHelper.parameterExists(GroupingTypesApiConstants.staffIdParamName, element)) {
             final Long staffId = this.fromApiJsonHelper.extractLongNamed(GroupingTypesApiConstants.staffIdParamName, element);
