@@ -84,6 +84,7 @@ public interface LoanAccountDomainService {
             String noteText, String externalId);
 
     LoanTransaction makeAccrualTransactionForVatOnPenaltyCharge(Loan loan, LocalDate transactionDate, LoanTransaction newTransactionDetail);
+
     LoanTransaction makeAccrualTransactionForVatOnCharge(Loan loan, LocalDate transactionDate, LoanTransaction newTransactionDetail);
 
     LoanTransaction makeAccrualTransactionForVatOnInterest(Loan loan, LocalDate transactionDate, LoanTransaction newTransactionDetail);

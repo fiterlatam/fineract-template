@@ -53,7 +53,7 @@ public final class LoanRescheduleModel {
             final BigDecimal totalPrincipalPaid, final BigDecimal totalInterestCharged, final BigDecimal totalFeeChargesCharged,
             final BigDecimal totalPenaltyChargesCharged, final BigDecimal totalVatOnInterestExpected,
             final BigDecimal totalVatOnChargeExpected, final BigDecimal totalRepaymentExpected, final BigDecimal totalOutstanding,
-                                final BigDecimal totalVatOnPenaltyChargeExpected) {
+            final BigDecimal totalVatOnPenaltyChargeExpected) {
         this.periods = periods;
         this.oldPeriods = oldPeriods;
         this.applicationCurrency = applicationCurrency;
@@ -77,7 +77,7 @@ public final class LoanRescheduleModel {
             final BigDecimal totalPrincipalPaid, final BigDecimal totalInterestCharged, final BigDecimal totalFeeChargesCharged,
             final BigDecimal totalPenaltyChargesCharged, final BigDecimal totalVatOnInterestExpected,
             final BigDecimal totalVatOnChargeExpected, final BigDecimal totalRepaymentExpected, final BigDecimal totalOutstanding,
-                                               final BigDecimal totalVatOnPenaltyChargeExpected) {
+            final BigDecimal totalVatOnPenaltyChargeExpected) {
 
         return new LoanRescheduleModel(periods, oldPeriods, applicationCurrency, loanTermInDays, principalDisbursed, totalPrincipalExpected,
                 totalPrincipalPaid, totalInterestCharged, totalFeeChargesCharged, totalPenaltyChargesCharged, totalVatOnInterestExpected,
@@ -92,7 +92,8 @@ public final class LoanRescheduleModel {
                 loanRescheduleModel.totalPrincipalPaid, loanRescheduleModel.totalInterestCharged,
                 loanRescheduleModel.totalFeeChargesCharged, loanRescheduleModel.totalPenaltyChargesCharged,
                 loanRescheduleModel.totalVatOnInterestExpected, loanRescheduleModel.totalVatOnChargeExpected,
-                loanRescheduleModel.totalRepaymentExpected, loanRescheduleModel.totalOutstanding, loanRescheduleModel.totalVatOnPenaltyChargeExpected);
+                loanRescheduleModel.totalRepaymentExpected, loanRescheduleModel.totalOutstanding,
+                loanRescheduleModel.totalVatOnPenaltyChargeExpected);
     }
 
     public LoanScheduleData toData() {

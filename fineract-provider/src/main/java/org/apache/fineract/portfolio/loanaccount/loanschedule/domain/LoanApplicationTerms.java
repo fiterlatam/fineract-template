@@ -1913,8 +1913,7 @@ public final class LoanApplicationTerms {
             vatOnInterestDue = totalInterest.multipliedBy(BigDecimal.valueOf(this.getVatRate().getPercentage())).dividedBy(100,
                     mc.getRoundingMode());
 
-            vatOnChargesDue = fees.multipliedBy(BigDecimal.valueOf(this.getVatRate().getPercentage())).dividedBy(100,
-                    mc.getRoundingMode());
+            vatOnChargesDue = fees.multipliedBy(BigDecimal.valueOf(this.getVatRate().getPercentage())).dividedBy(100, mc.getRoundingMode());
             vatOnPenaltyChargesDue = penalties.multipliedBy(BigDecimal.valueOf(this.getVatRate().getPercentage())).dividedBy(100,
                     mc.getRoundingMode());
         }

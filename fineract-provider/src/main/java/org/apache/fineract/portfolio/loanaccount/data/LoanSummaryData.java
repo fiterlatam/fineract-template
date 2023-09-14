@@ -106,9 +106,10 @@ public class LoanSummaryData {
             final BigDecimal totalVatOnInterestOutstanding, final BigDecimal totalVatOnInterestOverdue,
             final BigDecimal totalVatOnChargeExpected, final BigDecimal totalVatOnChargePaid, final BigDecimal totalVatOnChargeWrittenOff,
             final BigDecimal totalVatOnChargeWaived, final BigDecimal totalVatOnChargeOutstanding, final BigDecimal totalVatOnChargeOverdue,
-            final BigDecimal originationFees, final BigDecimal interestVatOverdue,
-           final BigDecimal totalVatOnPenaltyChargeExpected, final BigDecimal totalVatOnPenaltyChargePaid, final BigDecimal totalVatOnPenaltyChargeWrittenOff,
-           final BigDecimal totalVatOnPenaltyChargeWaived, final BigDecimal totalVatOnPenaltyChargeOutstanding, final BigDecimal totalVatOnPenaltyChargeOverdue) {
+            final BigDecimal originationFees, final BigDecimal interestVatOverdue, final BigDecimal totalVatOnPenaltyChargeExpected,
+            final BigDecimal totalVatOnPenaltyChargePaid, final BigDecimal totalVatOnPenaltyChargeWrittenOff,
+            final BigDecimal totalVatOnPenaltyChargeWaived, final BigDecimal totalVatOnPenaltyChargeOutstanding,
+            final BigDecimal totalVatOnPenaltyChargeOverdue) {
         this.currency = currency;
         this.principalDisbursed = principalDisbursed;
         this.principalPaid = principalPaid;

@@ -95,7 +95,8 @@ public class LoanScheduleData {
     public LoanScheduleData(final CurrencyData currency, final Collection<LoanSchedulePeriodData> periods, final Integer loanTermInDays,
             final BigDecimal totalPrincipalDisbursed, final BigDecimal totalPrincipalExpected, final BigDecimal totalInterestCharged,
             final BigDecimal totalFeeChargesCharged, final BigDecimal totalPenaltyChargesCharged, final BigDecimal totalRepaymentExpected,
-            final BigDecimal totalVatOnInterestExpected, final BigDecimal totalVatOnChargeExpected, final BigDecimal totalVatOnPenaltyChargeExpected) {
+            final BigDecimal totalVatOnInterestExpected, final BigDecimal totalVatOnChargeExpected,
+            final BigDecimal totalVatOnPenaltyChargeExpected) {
         this.currency = currency;
         this.periods = periods;
         this.loanTermInDays = loanTermInDays;

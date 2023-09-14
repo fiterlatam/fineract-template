@@ -151,7 +151,7 @@ public class PentahoReportingProcessServiceImpl implements ReportingProcessServi
                 final String pValue = queryParams.get(paramName);
                 if (!(paramName.equals("tenantUrl")
                         || (paramName.equals("userhierarchy") || paramName.equals("username")
-                        || (paramName.equals("password") || paramName.equals("userid")))
+                                || (paramName.equals("password") || paramName.equals("userid")))
                         || (StringUtils.isBlank(pValue) && (paramName.equals("startDate") || paramName.equals("endDate"))))) {
                     LOGGER.info("paramName:" + paramName);
                     if (StringUtils.isBlank(pValue)) {

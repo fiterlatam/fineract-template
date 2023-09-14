@@ -221,39 +221,38 @@ public class FineractStyleLoanRepaymentScheduleTransactionProcessor extends Abst
                 transactionAmountRemaining = transactionAmountRemaining.minus(principalPortion);
 
                 // This calculates the VAT amount and keep the total paid till this
-                //  is not to recalculate the VAT amount for existing transactions
+                // is not to recalculate the VAT amount for existing transactions
                 if (isVatRequired) {
-                    if (interestPortion.isGreaterThanZero()){
+                    if (interestPortion.isGreaterThanZero()) {
                         vatOnInterestPortion = currentInstallment.updateVatInterestComponents(transactionDate, transactionAmountRemaining,
                                 interestPortion);
                         transactionAmountRemaining = transactionAmountRemaining.minus(vatOnInterestPortion);
                     }
 
-                    if (feeChargesPortion.isGreaterThanZero()){
-                        vatOnFeeChargesPortion = currentInstallment.updateVatFeeChargeComponents(transactionDate, transactionAmountRemaining,
-                                feeChargesPortion);
+                    if (feeChargesPortion.isGreaterThanZero()) {
+                        vatOnFeeChargesPortion = currentInstallment.updateVatFeeChargeComponents(transactionDate,
+                                transactionAmountRemaining, feeChargesPortion);
                         transactionAmountRemaining = transactionAmountRemaining.minus(vatOnFeeChargesPortion);
                     }
 
-                    if (penaltyChargesPortion.isGreaterThanZero()){
-                        vatOnPenaltyChargesPortion = currentInstallment.updateVatPenaltyComponents(transactionDate, transactionAmountRemaining,
-                                penaltyChargesPortion);
+                    if (penaltyChargesPortion.isGreaterThanZero()) {
+                        vatOnPenaltyChargesPortion = currentInstallment.updateVatPenaltyComponents(transactionDate,
+                                transactionAmountRemaining, penaltyChargesPortion);
                         transactionAmountRemaining = transactionAmountRemaining.minus(vatOnPenaltyChargesPortion);
                     }
 
                     loanTransaction.updateComponents(principalPortion, interestPortion, feeChargesPortion, penaltyChargesPortion,
                             vatOnInterestPortion, vatOnFeeChargesPortion, vatOnPenaltyChargesPortion);
-                }
-                else{
+                } else {
                     loanTransaction.updateComponents(principalPortion, interestPortion, feeChargesPortion, penaltyChargesPortion);
                 }
             }
         }
         if (principalPortion.plus(interestPortion).plus(feeChargesPortion).plus(penaltyChargesPortion).plus(vatOnFeeChargesPortion)
                 .plus(vatOnInterestPortion).plus(vatOnPenaltyChargesPortion).isGreaterThanZero()) {
-            transactionMappings
-                    .add(LoanTransactionToRepaymentScheduleMapping.createFrom(loanTransaction, currentInstallment, principalPortion,
-                            interestPortion, feeChargesPortion, penaltyChargesPortion, vatOnInterestPortion, vatOnFeeChargesPortion, vatOnPenaltyChargesPortion));
+            transactionMappings.add(LoanTransactionToRepaymentScheduleMapping.createFrom(loanTransaction, currentInstallment,
+                    principalPortion, interestPortion, feeChargesPortion, penaltyChargesPortion, vatOnInterestPortion,
+                    vatOnFeeChargesPortion, vatOnPenaltyChargesPortion));
         }
         return transactionAmountRemaining;
     }

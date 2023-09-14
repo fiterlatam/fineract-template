@@ -925,14 +925,18 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                 final BigDecimal totalVatOnChargeOverdue = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "total_vatoncharge_overdue");
 
                 // vat on penalty charges
-                final BigDecimal totalVatOnPenaltyChargeExpected = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "total_vaton_penaltycharge_expected");
-                final BigDecimal totalVatOnPenaltyChargePaid = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "total_vaton_penaltycharge_paid");
+                final BigDecimal totalVatOnPenaltyChargeExpected = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs,
+                        "total_vaton_penaltycharge_expected");
+                final BigDecimal totalVatOnPenaltyChargePaid = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs,
+                        "total_vaton_penaltycharge_paid");
                 final BigDecimal totalVatOnPenaltyChargeWrittenOff = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs,
                         "total_vaton_penaltycharge_writtenoff");
-                final BigDecimal totalVatOnPenaltyChargeWaived = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "total_vaton_penaltycharge_waived");
+                final BigDecimal totalVatOnPenaltyChargeWaived = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs,
+                        "total_vaton_penaltycharge_waived");
                 final BigDecimal totalVatOnPenaltyChargeOutstanding = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs,
                         "total_vaton_penaltycharge_outstanding");
-                final BigDecimal totalVatOnPenaltyChargeOverdue = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "total_vaton_penaltycharge_overdue");
+                final BigDecimal totalVatOnPenaltyChargeOverdue = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs,
+                        "total_vaton_penaltycharge_overdue");
 
                 final LocalDate overdueSinceDate = JdbcSupport.getLocalDate(rs, "overdueSinceDate");
                 if (overdueSinceDate != null) {
@@ -949,8 +953,9 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                         totalRecovered, totalVatOnInterestCharged, totalVatOnInterestPaid, totalVatOnInterestWrittenOff,
                         totalVatOnInterestWaived, totalVatOnInterestOutstanding, totalVatOnInterestOverdue, totalVatOnChargeExpected,
                         totalVatOnChargePaid, totalVatOnChargeWrittenOff, totalVatOnChargeWaived, totalVatOnChargeOutstanding,
-                        totalVatOnChargeOverdue, originationFees, interestVatOverdue, totalVatOnPenaltyChargeExpected, totalVatOnPenaltyChargePaid,
-                        totalVatOnPenaltyChargeWrittenOff, totalVatOnPenaltyChargeWaived, totalVatOnPenaltyChargeOutstanding, totalVatOnPenaltyChargeOverdue);
+                        totalVatOnChargeOverdue, originationFees, interestVatOverdue, totalVatOnPenaltyChargeExpected,
+                        totalVatOnPenaltyChargePaid, totalVatOnPenaltyChargeWrittenOff, totalVatOnPenaltyChargeWaived,
+                        totalVatOnPenaltyChargeOutstanding, totalVatOnPenaltyChargeOverdue);
             }
 
             GroupGeneralData groupData = null;
@@ -1299,7 +1304,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                 // vat on penalty charges
                 final BigDecimal vatOnPenaltyChargesPaid = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "vatOnPenaltyChargesPaid");
                 final BigDecimal vatOnPenaltyChargesWaived = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "vatOnPenaltyChargesWaived");
-                final BigDecimal vatOnPenaltyChargesWrittenOff = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "vatOnPenaltyChargesWrittenOff");
+                final BigDecimal vatOnPenaltyChargesWrittenOff = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs,
+                        "vatOnPenaltyChargesWrittenOff");
                 final BigDecimal vatOnPenaltyChargesOutstanding = vatOnPenaltyCharges.subtract(vatOnPenaltyChargesPaid);
 
                 // vat on interest
@@ -1327,10 +1333,12 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                         .add(vatOnChargesWaived).add(vatOnInterestWaived).add(vatOnPenaltyChargesWaived);
                 totalWaived = totalWaived.plus(totalWaivedForPeriod);
                 final BigDecimal totalWrittenOffForPeriod = principalWrittenOff.add(interestWrittenOff).add(feeChargesWrittenOff)
-                        .add(penaltyChargesWrittenOff).add(vatOnChargesWrittenOff).add(vatOnInterestWrittenOff).add(vatOnPenaltyChargesWrittenOff);
+                        .add(penaltyChargesWrittenOff).add(vatOnChargesWrittenOff).add(vatOnInterestWrittenOff)
+                        .add(vatOnPenaltyChargesWrittenOff);
                 totalWrittenOff = totalWrittenOff.plus(totalWrittenOffForPeriod);
                 final BigDecimal totalOutstandingForPeriod = principalOutstanding.add(interestOutstanding).add(feeChargesOutstanding)
-                        .add(penaltyChargesOutstanding).add(vatOnChargesOutstanding).add(vatOnInterestOutstanding).add(vatOnPenaltyChargesOutstanding);
+                        .add(penaltyChargesOutstanding).add(vatOnChargesOutstanding).add(vatOnInterestOutstanding)
+                        .add(vatOnPenaltyChargesOutstanding);
 
                 final BigDecimal totalActualCostOfLoanForPeriod = interestActualDue.add(feeChargesActualDue).add(penaltyChargesActualDue);
 
@@ -2360,8 +2368,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                 paymentTypeOptions, null, null, null, outstandingLoanBalance, isReversed);
         loanTransactionData.setVatOnInterest(loanRepaymentScheduleInstallment.getVatOnInterestOutstanding(currency).getAmount());
         loanTransactionData.setVatOnCharges(loanRepaymentScheduleInstallment.getVatOnChargeOutstanding(currency).getAmount());
-        loanTransactionData.setVatOnPenaltyCharges(
-                loanRepaymentScheduleInstallment.getVatOnPenaltyChargeOutstanding(currency).getAmount());
+        loanTransactionData.setVatOnPenaltyCharges(loanRepaymentScheduleInstallment.getVatOnPenaltyChargeOutstanding(currency).getAmount());
         loanTransactionData.setOriginationFees(loan.getTotalOriginationFees());
         return loanTransactionData;
     }

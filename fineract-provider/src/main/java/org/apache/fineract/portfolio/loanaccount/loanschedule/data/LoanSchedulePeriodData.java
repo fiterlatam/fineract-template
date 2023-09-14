@@ -90,7 +90,7 @@ public final class LoanSchedulePeriodData {
             final BigDecimal principalDue, final BigDecimal principalOutstanding, final BigDecimal interestDueOnPrincipalOutstanding,
             final BigDecimal feeChargesDueForPeriod, final BigDecimal penaltyChargesDueForPeriod, final BigDecimal totalDueForPeriod,
             final BigDecimal totalInstallmentAmountForPeriod, final BigDecimal vatOnInterest, final BigDecimal vatOnCharges,
-                                                             final BigDecimal vatOnPenaltyCharges) {
+            final BigDecimal vatOnPenaltyCharges) {
 
         return new LoanSchedulePeriodData(periodNumber, fromDate, dueDate, principalDue, principalOutstanding,
                 interestDueOnPrincipalOutstanding, feeChargesDueForPeriod, penaltyChargesDueForPeriod, totalDueForPeriod,
