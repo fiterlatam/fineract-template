@@ -3205,7 +3205,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                         scheduledLoanInstallment.interestDue(), scheduledLoanInstallment.feeChargesDue(),
                         scheduledLoanInstallment.penaltyChargesDue(), scheduledLoanInstallment.isRecalculatedInterestComponent(),
                         scheduledLoanInstallment.getLoanCompoundingDetails(), scheduledLoanInstallment.getVatOnInterest().getAmount(),
-                        scheduledLoanInstallment.getVatOnCharges().getAmount(), scheduledLoanInstallment.getVatOnPenaltyCharges().getAmount());
+                        scheduledLoanInstallment.getVatOnCharges().getAmount(),
+                        scheduledLoanInstallment.getVatOnPenaltyCharges().getAmount());
                 installments.add(installment);
             }
         }

@@ -373,16 +373,20 @@ public final class LoanSummary {
                 .minus(this.totalVatOnChargePaid).getAmount();
 
         // Calculations for vat on penalty charges
-        final Money totalVatChargedOnPenaltyCharges = summaryWrapper.calculateTotalVatOnPenaltyCharges(repaymentScheduleInstallments, currency);
+        final Money totalVatChargedOnPenaltyCharges = summaryWrapper.calculateTotalVatOnPenaltyCharges(repaymentScheduleInstallments,
+                currency);
         this.totalVatOnPenaltyChargeExpected = totalVatChargedOnPenaltyCharges.getAmount();
-        this.totalVatOnPenaltyChargePaid = summaryWrapper.calculateTotalVatOnPenaltyChargesPaid(repaymentScheduleInstallments, currency).getAmount();
-        this.totalVatOnPenaltyChargeWaived = summaryWrapper.calculateTotalVatOnPenaltyChargesWaived(repaymentScheduleInstallments, currency).getAmount();
-        this.totalVatOnPenaltyChargeWrittenOff = summaryWrapper.calculateTotalVatOnPenaltyChargesWrittenOff(repaymentScheduleInstallments, currency)
+        this.totalVatOnPenaltyChargePaid = summaryWrapper.calculateTotalVatOnPenaltyChargesPaid(repaymentScheduleInstallments, currency)
                 .getAmount();
-        this.totalVatOnPenaltyChargeOutstanding = totalVatChargedOnPenaltyCharges.minus(this.totalVatOnPenaltyChargePaid).minus(this.totalVatOnPenaltyChargeWaived)
-                .minus(this.totalVatOnPenaltyChargeWrittenOff).getAmount();
-        this.totalVatOnPenaltyChargeOverdue = summaryWrapper.calculateTotalVatOnPenaltyChargeOverdue(repaymentScheduleInstallments, currency)
-                .minus(this.totalVatOnPenaltyChargePaid).getAmount();
+        this.totalVatOnPenaltyChargeWaived = summaryWrapper.calculateTotalVatOnPenaltyChargesWaived(repaymentScheduleInstallments, currency)
+                .getAmount();
+        this.totalVatOnPenaltyChargeWrittenOff = summaryWrapper
+                .calculateTotalVatOnPenaltyChargesWrittenOff(repaymentScheduleInstallments, currency).getAmount();
+        this.totalVatOnPenaltyChargeOutstanding = totalVatChargedOnPenaltyCharges.minus(this.totalVatOnPenaltyChargePaid)
+                .minus(this.totalVatOnPenaltyChargeWaived).minus(this.totalVatOnPenaltyChargeWrittenOff).getAmount();
+        this.totalVatOnPenaltyChargeOverdue = summaryWrapper
+                .calculateTotalVatOnPenaltyChargeOverdue(repaymentScheduleInstallments, currency).minus(this.totalVatOnPenaltyChargePaid)
+                .getAmount();
 
         final Money totalExpectedRepayment = Money.of(currency, this.totalPrincipalDisbursed).plus(originationFees)
                 .plus(this.totalInterestCharged).plus(this.totalFeeChargesCharged).plus(totalPenaltyChargesCharged)

@@ -25,7 +25,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-
 import lombok.Getter;
 import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
 import org.apache.fineract.organisation.monetary.domain.Money;
@@ -115,7 +114,8 @@ public final class LoanScheduleParams {
             final Collection<RecalculationDetail> recalculationDetails,
             final LoanRepaymentScheduleTransactionProcessor loanRepaymentScheduleTransactionProcessor, final LocalDate scheduleTillDate,
             final boolean partialUpdate, final MonetaryCurrency currency, final boolean applyInterestRecalculation,
-            final Money totalCumulativeVatOnInterest, final Money totoalCumulativeVatOnCharges, final Money totalCumulativeVatOnPenaltyCharges) {
+            final Money totalCumulativeVatOnInterest, final Money totoalCumulativeVatOnCharges,
+            final Money totalCumulativeVatOnPenaltyCharges) {
         this.periodNumber = periodNumber;
         this.instalmentNumber = instalmentNumber;
         this.loanTermInDays = loanTermInDays;
@@ -160,8 +160,8 @@ public final class LoanScheduleParams {
             final Money principalToBeScheduled, final Money outstandingBalance, final Money outstandingBalanceAsPerRest,
             final List<LoanRepaymentScheduleInstallment> installments, final Collection<RecalculationDetail> recalculationDetails,
             final LoanRepaymentScheduleTransactionProcessor loanRepaymentScheduleTransactionProcessor, final LocalDate scheduleTillDate,
-            final MonetaryCurrency currency, final boolean applyInterestRecalculation, final Money vatOnInterest,
-            final Money vatOnCharges, final Money vatOnPenaltyCharges) {
+            final MonetaryCurrency currency, final boolean applyInterestRecalculation, final Money vatOnInterest, final Money vatOnCharges,
+            final Money vatOnPenaltyCharges) {
         final boolean partialUpdate = true;
         return new LoanScheduleParams(periodNumber, instalmentNumber, loanTermInDays, periodStartDate, actualRepaymentDate,
                 totalCumulativePrincipal, totalCumulativeInterest, totalFeeChargesCharged, totalPenaltyChargesCharged,
@@ -278,8 +278,7 @@ public final class LoanScheduleParams {
                 totalRepaymentExpected, totalOutstandingInterestPaymentDueToGrace, reducePrincipal, principalPortionMap, latePaymentMap,
                 compoundingMap, unCompoundedAmount, disburseDetailMap, principalToBeScheduled, outstandingBalance,
                 outstandingBalanceAsPerRest, installments, recalculationDetails, loanRepaymentScheduleTransactionProcessor,
-                scheduleTillDate, partialUpdate, currency, applyInterestRecalculation, vatOnInterest, vatOnCharges,
-                vatOnCharges.zero());
+                scheduleTillDate, partialUpdate, currency, applyInterestRecalculation, vatOnInterest, vatOnCharges, vatOnCharges.zero());
     }
 
     public int getPeriodNumber() {

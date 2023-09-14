@@ -22,7 +22,6 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
-
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;

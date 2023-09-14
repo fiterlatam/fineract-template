@@ -52,7 +52,7 @@ public final class LoanScheduleModel {
             final BigDecimal totalPrincipalPaid, final BigDecimal totalInterestCharged, final BigDecimal totalFeeChargesCharged,
             final BigDecimal totalPenaltyChargesCharged, final BigDecimal totalVatOnInterestExpected,
             final BigDecimal totalVatOnChargeExpected, final BigDecimal totalRepaymentExpected, final BigDecimal totalOutstanding,
-                                         final BigDecimal totalVatOnPenaltyChargeExpected) {
+            final BigDecimal totalVatOnPenaltyChargeExpected) {
 
         return new LoanScheduleModel(periods, applicationCurrency, loanTermInDays, principalDisbursed, totalPrincipalExpected,
                 totalPrincipalPaid, totalInterestCharged, totalFeeChargesCharged, totalPenaltyChargesCharged, totalVatOnInterestExpected,
@@ -86,7 +86,7 @@ public final class LoanScheduleModel {
             final BigDecimal totalPrincipalPaid, final BigDecimal totalInterestCharged, final BigDecimal totalFeeChargesCharged,
             final BigDecimal totalPenaltyChargesCharged, final BigDecimal totalVatOnChargeExpected,
             final BigDecimal totalVatOnInterestExpected, final BigDecimal totalRepaymentExpected, final BigDecimal totalOutstanding,
-                              final BigDecimal totalVatOnPenaltyChargeExpected) {
+            final BigDecimal totalVatOnPenaltyChargeExpected) {
         this.periods = periods;
         this.applicationCurrency = applicationCurrency;
         this.loanTermInDays = loanTermInDays;

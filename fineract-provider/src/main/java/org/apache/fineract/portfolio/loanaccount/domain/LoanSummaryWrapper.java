@@ -367,7 +367,7 @@ public final class LoanSummaryWrapper {
     }
 
     public Money calculateTotalVatOnPenaltyCharges(final List<LoanRepaymentScheduleInstallment> repaymentScheduleInstallments,
-                                            final MonetaryCurrency currency) {
+            final MonetaryCurrency currency) {
         Money total = Money.zero(currency);
         for (final LoanRepaymentScheduleInstallment installment : repaymentScheduleInstallments) {
             total = total.plus(installment.getVatOnPenaltyChargeExpected(currency));
@@ -376,7 +376,7 @@ public final class LoanSummaryWrapper {
     }
 
     public Money calculateTotalVatOnPenaltyChargesPaid(final List<LoanRepaymentScheduleInstallment> repaymentScheduleInstallments,
-                                                final MonetaryCurrency currency) {
+            final MonetaryCurrency currency) {
         Money total = Money.zero(currency);
         for (final LoanRepaymentScheduleInstallment installment : repaymentScheduleInstallments) {
             total = total.plus(installment.getVatOnPenaltyChargePaid(currency));
@@ -385,7 +385,7 @@ public final class LoanSummaryWrapper {
     }
 
     public Money calculateTotalVatOnPenaltyChargesWaived(final List<LoanRepaymentScheduleInstallment> repaymentScheduleInstallments,
-                                                  final MonetaryCurrency currency) {
+            final MonetaryCurrency currency) {
         Money total = Money.zero(currency);
         for (final LoanRepaymentScheduleInstallment installment : repaymentScheduleInstallments) {
             total = total.plus(installment.getVatOnPenaltyChargeWaived(currency));
@@ -394,7 +394,7 @@ public final class LoanSummaryWrapper {
     }
 
     public Money calculateTotalVatOnPenaltyChargesWrittenOff(final List<LoanRepaymentScheduleInstallment> repaymentScheduleInstallments,
-                                                      final MonetaryCurrency currency) {
+            final MonetaryCurrency currency) {
         Money total = Money.zero(currency);
         for (final LoanRepaymentScheduleInstallment installment : repaymentScheduleInstallments) {
             total = total.plus(installment.getVatOnPenaltyChargeWrittenOff(currency));
@@ -403,7 +403,7 @@ public final class LoanSummaryWrapper {
     }
 
     public Money calculateTotalVatOnPenaltyChargeOverdue(List<LoanRepaymentScheduleInstallment> repaymentScheduleInstallments,
-                                                  MonetaryCurrency currency) {
+            MonetaryCurrency currency) {
         Money total = Money.zero(currency);
         LocalDate businessDate = DateUtils.getBusinessLocalDate();
         LocalDate overDueSince = businessDate;

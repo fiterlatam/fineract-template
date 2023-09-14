@@ -288,17 +288,17 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
     public static LoanTransaction accrueLoanVatOnCharge(final Loan loan, final Office office, final Money amount, final LocalDate applyDate,
             final Money vatOnCharge, final PaymentDetail paymentDetail) {
         String externalId = null;
-        final LoanTransaction applyCharge = new LoanTransaction(loan, office, LoanTransactionType.ACCRUAL_VAT, paymentDetail, amount.getAmount(),
-                applyDate, externalId);
+        final LoanTransaction applyCharge = new LoanTransaction(loan, office, LoanTransactionType.ACCRUAL_VAT, paymentDetail,
+                amount.getAmount(), applyDate, externalId);
         applyCharge.updateVatChargesComponents(null, vatOnCharge, null);
         return applyCharge;
     }
 
-    public static LoanTransaction accrueLoanVatOnPenaltyCharge(final Loan loan, final Office office, final Money amount, final LocalDate applyDate,
-                                                        final Money vatOnPenaltyCharge, final PaymentDetail paymentDetail) {
+    public static LoanTransaction accrueLoanVatOnPenaltyCharge(final Loan loan, final Office office, final Money amount,
+            final LocalDate applyDate, final Money vatOnPenaltyCharge, final PaymentDetail paymentDetail) {
         String externalId = null;
-        final LoanTransaction applyCharge = new LoanTransaction(loan, office, LoanTransactionType.ACCRUAL_VAT, paymentDetail, amount.getAmount(),
-                applyDate, externalId);
+        final LoanTransaction applyCharge = new LoanTransaction(loan, office, LoanTransactionType.ACCRUAL_VAT, paymentDetail,
+                amount.getAmount(), applyDate, externalId);
         applyCharge.updateVatChargesComponents(null, null, vatOnPenaltyCharge);
         return applyCharge;
     }
@@ -306,8 +306,8 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
     public static LoanTransaction accrueLoanVatOnInterest(final Loan loan, final Office office, final Money amount,
             final LocalDate applyDate, final Money vatOnInterest, final PaymentDetail paymentDetail) {
         String externalId = null;
-        final LoanTransaction applyCharge = new LoanTransaction(loan, office, LoanTransactionType.ACCRUAL_VAT, paymentDetail, amount.getAmount(),
-                applyDate, externalId);
+        final LoanTransaction applyCharge = new LoanTransaction(loan, office, LoanTransactionType.ACCRUAL_VAT, paymentDetail,
+                amount.getAmount(), applyDate, externalId);
         applyCharge.updateVatChargesComponents(vatOnInterest, null, null);
         return applyCharge;
     }
@@ -444,7 +444,8 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
         this.interestPortion = defaultToNullIfZero(getInterestPortion(currency).plus(interest).getAmount());
         this.vatOnInterestPortion = defaultToNullIfZero(getVatOnInterestPortion(currency).plus(vatOnInterest).getAmount());
         this.vatOnChargesPortion = defaultToNullIfZero(getVatOnChargesPortion(currency).plus(vatOnCharges).getAmount());
-        this.vatOnPenaltyChargesPortion = defaultToNullIfZero(getVatOnPenaltyChargesPortion(currency).plus(vatOnPenaltyCharges).getAmount());
+        this.vatOnPenaltyChargesPortion = defaultToNullIfZero(
+                getVatOnPenaltyChargesPortion(currency).plus(vatOnPenaltyCharges).getAmount());
         updateChargesComponents(feeCharges, penaltyCharges);
     }
 
@@ -464,7 +465,8 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
             this.vatOnInterestPortion = defaultToNullIfZero(getVatOnInterestPortion(currency).plus(vatOnInterest).getAmount());
         } else if (vatOnPenaltyCharges != null) {
             currency = vatOnPenaltyCharges.getCurrency();
-            this.vatOnPenaltyChargesPortion = defaultToNullIfZero(getVatOnPenaltyChargesPortion(currency).plus(vatOnPenaltyCharges).getAmount());
+            this.vatOnPenaltyChargesPortion = defaultToNullIfZero(
+                    getVatOnPenaltyChargesPortion(currency).plus(vatOnPenaltyCharges).getAmount());
         }
     }
 
@@ -863,8 +865,8 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
                 repaymentScheduleMapping.setComponents(updatedrepaymentScheduleMapping.getPrincipalPortion(),
                         updatedrepaymentScheduleMapping.getInterestPortion(), updatedrepaymentScheduleMapping.getFeeChargesPortion(),
                         updatedrepaymentScheduleMapping.getPenaltyChargesPortion(),
-                        updatedrepaymentScheduleMapping.getVatOnInterestPortion(),
-                        updatedrepaymentScheduleMapping.getVatOnChargesPortion(), updatedrepaymentScheduleMapping.getVatOnPenaltyChargesPortion());
+                        updatedrepaymentScheduleMapping.getVatOnInterestPortion(), updatedrepaymentScheduleMapping.getVatOnChargesPortion(),
+                        updatedrepaymentScheduleMapping.getVatOnPenaltyChargesPortion());
                 isMappingUpdated = true;
                 retainMappings.add(repaymentScheduleMapping);
                 break;

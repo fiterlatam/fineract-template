@@ -196,7 +196,8 @@ public class LoanScheduleCalculationPlatformServiceImpl implements LoanScheduleC
                         loanRepaymentScheduleInstallment.getFeeChargesCharged(currency).getAmount(),
                         loanRepaymentScheduleInstallment.getPenaltyChargesCharged(currency).getAmount(), totalAmount.getAmount(),
                         totalPrincipal.plus(interestDue).getAmount(), loanRepaymentScheduleInstallment.getVatOnInterestCharged(),
-                        loanRepaymentScheduleInstallment.getVatOnChargeExpected(), loanRepaymentScheduleInstallment.getVatOnPenaltyChargeExpected());
+                        loanRepaymentScheduleInstallment.getVatOnChargeExpected(),
+                        loanRepaymentScheduleInstallment.getVatOnPenaltyChargeExpected());
                 futureInstallments.add(loanSchedulePeriodData);
                 isNewPaymentRequired = false;
             } else if (periodData.periodDueDate().isAfter(today)) {

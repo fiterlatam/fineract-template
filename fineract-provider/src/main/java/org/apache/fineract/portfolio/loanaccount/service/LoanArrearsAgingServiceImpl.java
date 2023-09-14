@@ -357,7 +357,7 @@ public class LoanArrearsAgingServiceImpl implements LoanArrearsAgingService {
 
     private String constructUpdateStatement(final Long loanId, BigDecimal principalOverdue, BigDecimal interestOverdue,
             BigDecimal feeOverdue, BigDecimal penaltyOverdue, BigDecimal interestVatOverdue, BigDecimal chargesVatOverdue,
-                                            BigDecimal penaltyChargeVatOverdue, LocalDate overDueSince) {
+            BigDecimal penaltyChargeVatOverdue, LocalDate overDueSince) {
         final StringBuilder insertStatementBuilder = new StringBuilder(900);
         insertStatementBuilder.append("UPDATE m_loan_arrears_aging SET principal_overdue_derived=");
         insertStatementBuilder.append(principalOverdue).append(", interest_overdue_derived=");

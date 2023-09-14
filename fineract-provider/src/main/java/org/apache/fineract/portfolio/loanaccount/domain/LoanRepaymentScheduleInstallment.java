@@ -689,7 +689,7 @@ public final class LoanRepaymentScheduleInstallment extends AbstractAuditableCus
     }
 
     public Money updateVatFeeChargeComponents(final LocalDate transactionDate, final Money transactionAmountRemaining,
-                                             final Money feeChargesPortion) {
+            final Money feeChargesPortion) {
 
         final MonetaryCurrency currency = transactionAmountRemaining.getCurrency();
         Money interestPortionOfTransaction = Money.zero(currency);

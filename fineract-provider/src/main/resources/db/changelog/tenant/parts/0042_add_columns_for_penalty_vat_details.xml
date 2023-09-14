@@ -30,7 +30,7 @@
             </column>
         </addColumn>
     </changeSet>
-    
+
     <changeSet author="fineract" id="2">
         <addColumn tableName="m_loan_repayment_schedule">
             <column name="vat_on_penalty_charges_paid_derived" type="DECIMAL(19, 6)">
@@ -38,7 +38,7 @@
             </column>
         </addColumn>
     </changeSet>
-    
+
     <changeSet author="fineract" id="3">
         <addColumn tableName="m_loan_repayment_schedule">
             <column name="vat_on_penalty_charges_writtenoff_derived" type="DECIMAL(19, 6)">

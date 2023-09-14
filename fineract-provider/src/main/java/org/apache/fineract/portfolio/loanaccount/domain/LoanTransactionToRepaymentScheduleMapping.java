@@ -25,7 +25,6 @@ import javax.persistence.Entity;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
-
 import lombok.Getter;
 import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
 import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
@@ -94,7 +93,8 @@ public class LoanTransactionToRepaymentScheduleMapping extends AbstractPersistab
             final Money vatOnChargesPortion, final Money vatOnPenaltyChargesPortion) {
         return new LoanTransactionToRepaymentScheduleMapping(loanTransaction, installment, defaultToNullIfZero(principalPortion),
                 defaultToNullIfZero(interestPortion), defaultToNullIfZero(feeChargesPortion), defaultToNullIfZero(penaltyChargesPortion),
-                defaultToNullIfZero(vatOnInterestPortion), defaultToNullIfZero(vatOnChargesPortion), defaultToNullIfZero(vatOnPenaltyChargesPortion),
+                defaultToNullIfZero(vatOnInterestPortion), defaultToNullIfZero(vatOnChargesPortion),
+                defaultToNullIfZero(vatOnPenaltyChargesPortion),
                 defaultToNullIfZero(principalPortion.plus(interestPortion).plus(feeChargesPortion).plus(penaltyChargesPortion)
                         .plus(vatOnChargesPortion).plus(vatOnInterestPortion).plus(vatOnPenaltyChargesPortion)));
     }
@@ -105,7 +105,8 @@ public class LoanTransactionToRepaymentScheduleMapping extends AbstractPersistab
         return new LoanTransactionToRepaymentScheduleMapping(loanTransaction, installment, defaultToNullIfZero(principalPortion),
                 defaultToNullIfZero(interestPortion), defaultToNullIfZero(feeChargesPortion), defaultToNullIfZero(penaltyChargesPortion),
                 defaultToNullIfZero(Money.zero(principalPortion.getCurrency())),
-                defaultToNullIfZero(Money.zero(principalPortion.getCurrency())),defaultToNullIfZero(Money.zero(principalPortion.getCurrency())),
+                defaultToNullIfZero(Money.zero(principalPortion.getCurrency())),
+                defaultToNullIfZero(Money.zero(principalPortion.getCurrency())),
                 defaultToNullIfZero(principalPortion.plus(interestPortion).plus(feeChargesPortion).plus(penaltyChargesPortion)));
     }
 
@@ -144,7 +145,7 @@ public class LoanTransactionToRepaymentScheduleMapping extends AbstractPersistab
 
     public void setComponents(final BigDecimal principal, final BigDecimal interest, final BigDecimal feeCharges,
             final BigDecimal penaltyCharges, final BigDecimal vatOnInterestPortion, final BigDecimal vatOnChargesPortion,
-                              final BigDecimal vatOnPenaltyChargesPortion) {
+            final BigDecimal vatOnPenaltyChargesPortion) {
         this.principalPortion = principal;
         this.interestPortion = interest;
         this.feeChargesPortion = feeCharges;
