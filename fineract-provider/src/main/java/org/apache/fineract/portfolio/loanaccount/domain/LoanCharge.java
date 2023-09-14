@@ -719,8 +719,13 @@ public class LoanCharge extends AbstractPersistableCustom {
         return this.loan.hasIdentifyOf(loanId);
     }
 
-    public boolean isDueForCollectionFromAndUpToAndIncluding(final LocalDate fromNotInclusive, final LocalDate upToAndInclusive) {
+    public boolean isDueForCollectionFromAndUpToAndIncluding(final LocalDate fromNotInclusive, final LocalDate upToAndInclusive,
+            final Integer installmentNumber) {
         final LocalDate dueDate = getDueLocalDate();
+        if (this.isOverdueInstallmentCharge() && this.isPenaltyCharge() && this.overdueInstallmentCharge != null
+                && installmentNumber != null) {
+            return this.overdueInstallmentCharge.getInstallment().getInstallmentNumber().equals(installmentNumber);
+        }
         return occursOnDayFromAndUpToAndIncluding(fromNotInclusive, upToAndInclusive, dueDate);
     }
 
