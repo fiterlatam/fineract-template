@@ -24,12 +24,13 @@ import java.util.Set;
 
 public class PrequalificationCollectionConstants extends PrequalificatoinApiConstants {
 
-    protected static final Set<String> NEW_GROUP_PREQUALIFICATION_REQUEST_DATA_PARAMETERS = new HashSet<>(
-            Arrays.asList(groupIdParamName, groupNameParamName, productIdParamName, portfolioIdParamName, centerIdParamName,
-                    membersParamName, dateFormatParamName, localeParamName, agencyIdParamName, facilitatorParamName, "individual",prequalilficationTimespanParamName));
-
-    protected static final Set<String> EDIT_GROUP_PREQUALIFICATION_REQUEST_DATA_PARAMETERS = new HashSet<>(Arrays.asList(groupIdParamName,
+    protected static final Set<String> NEW_GROUP_PREQUALIFICATION_REQUEST_DATA_PARAMETERS = new HashSet<>(Arrays.asList(groupIdParamName,
             groupNameParamName, productIdParamName, portfolioIdParamName, centerIdParamName, membersParamName, dateFormatParamName,
-            localeParamName, agencyIdParamName, facilitatorParamName, "individual", prequalificationNumberParamName, prequalilficationTimespanParamName));
+            localeParamName, agencyIdParamName, facilitatorParamName, "individual", prequalilficationTimespanParamName));
+
+    protected static final Set<String> EDIT_GROUP_PREQUALIFICATION_REQUEST_DATA_PARAMETERS = new HashSet<>(
+            Arrays.asList(groupIdParamName, groupNameParamName, productIdParamName, portfolioIdParamName, centerIdParamName,
+                    membersParamName, dateFormatParamName, localeParamName, agencyIdParamName, facilitatorParamName, "individual",
+                    prequalificationNumberParamName, prequalilficationTimespanParamName));
 
 }

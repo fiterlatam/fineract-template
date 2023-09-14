@@ -97,7 +97,7 @@ public class PrequalificationGroup extends AbstractPersistableCustom {
         if (group != null) {
             groupName = group.getName();
         }
-        return new PrequalificationGroup(appUser, facilitator, agency, group, groupName, center, loanProduct,prequalilficationTimespan);
+        return new PrequalificationGroup(appUser, facilitator, agency, group, groupName, center, loanProduct, prequalilficationTimespan);
     }
 
     protected PrequalificationGroup() {
@@ -105,7 +105,7 @@ public class PrequalificationGroup extends AbstractPersistableCustom {
     }
 
     private PrequalificationGroup(final AppUser appUser, final AppUser facilitator, final Agency agency, final Group group,
-                                  final String groupName, Long center, final LoanProduct loanProduct, Long prequalilficationTimespan) {
+            final String groupName, Long center, final LoanProduct loanProduct, Long prequalilficationTimespan) {
         this.addedBy = appUser;
         this.facilitator = facilitator;
         this.status = PrequalificationStatus.PENDING.getValue();
@@ -190,10 +190,11 @@ public class PrequalificationGroup extends AbstractPersistableCustom {
             final Long newValue = command.longValueOfParameterNamed(PrequalificatoinApiConstants.facilitatorParamName);
             actualChanges.put(PrequalificatoinApiConstants.facilitatorParamName, newValue);
         }
-        if (command.isChangeInLongParameterNamed(PrequalificatoinApiConstants.prequalilficationTimespanParamName, this.prequalificationDuration)) {
+        if (command.isChangeInLongParameterNamed(PrequalificatoinApiConstants.prequalilficationTimespanParamName,
+                this.prequalificationDuration)) {
             final Long newValue = command.longValueOfParameterNamed(PrequalificatoinApiConstants.prequalilficationTimespanParamName);
             actualChanges.put(PrequalificatoinApiConstants.prequalilficationTimespanParamName, newValue);
-             this.prequalificationDuration = newValue;
+            this.prequalificationDuration = newValue;
         }
 
         // TODO: process changes in members

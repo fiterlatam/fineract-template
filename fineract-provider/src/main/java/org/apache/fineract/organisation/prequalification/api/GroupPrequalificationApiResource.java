@@ -176,7 +176,8 @@ public class GroupPrequalificationApiResource {
         final List<AppUserData> appUsers = new ArrayList<>(
                 this.appUserReadPlatformService.retrieveUsersUnderHierarchy(Long.valueOf(OfficeHierarchyLevel.GRUPO.getValue())));
 
-        GlobalConfigurationPropertyData timespan = this.configurationReadPlatformService.retrieveGlobalConfiguration("Prequalification Timespan");
+        GlobalConfigurationPropertyData timespan = this.configurationReadPlatformService
+                .retrieveGlobalConfiguration("Prequalification Timespan");
         final GroupPrequalificationData clientIdentifierData = GroupPrequalificationData.template(agencies, centerData, loanProducts,
                 appUsers, timespan);
 
