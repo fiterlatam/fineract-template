@@ -57,4 +57,5 @@
     <include file="parts/0040_add_new_column_for_overdue.xml" relativeToChangelogFile="true"/>
     <include file="parts/0041_add_code_for_accrual_vat_accounting.xml" relativeToChangelogFile="true"/>
     <include file="parts/0042_add_columns_for_penalty_vat_details.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0043_add_new_column_for_penalty_vat_overdue.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
