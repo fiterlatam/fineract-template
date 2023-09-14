@@ -677,6 +677,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         this.loanTransactions.addAll(changedTransactionDetail.getNewTransactionMappings().values());
         updateLoanSummaryDerivedFields();
         this.loanTransactions.removeAll(changedTransactionDetail.getNewTransactionMappings().values());
+        applyAccurals();
         return changedTransactionDetail;
     }
 
