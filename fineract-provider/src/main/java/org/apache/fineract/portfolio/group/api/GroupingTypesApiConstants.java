@@ -107,6 +107,7 @@ public final class GroupingTypesApiConstants {
     public static final String newPortfolioCenterId = "newPortfolioCenterId";
     public static final String groupLocation = "groupLocation";
     public static final String groupLocationId = "groupLocationId";
+    public static final String prequalificationId = "prequalificationId";
 
     // center customized parameters
     public static final String portfolioId = "portfolioId";

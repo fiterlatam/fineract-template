@@ -79,7 +79,8 @@ public final class AllGroupTypesDataMapper implements RowMapper<GroupGeneralData
         sqlBuilder.append("g.meeting_start_date as meetingStart, g.meeting_end_date as meetingEnd, ");
         sqlBuilder.append("g.meeting_day as meetingDay, cvMeetingDay.code_value as meetingDayValue, ");
         sqlBuilder.append("cvMeetingDay.order_position as meetingDayOrderPosition, g.meeting_start_time as meetingStartTime, ");
-        sqlBuilder.append("g.meeting_end_time as meetingEndTime, g.reference_point as referencePoint ");
+        sqlBuilder.append("g.meeting_end_time as meetingEndTime, g.reference_point as referencePoint, ");
+        sqlBuilder.append("prequalGroup.prequalification_number as prequalificationNumber ");
 
         sqlBuilder.append("from m_group g ");
         sqlBuilder.append("join m_office o on o.id = g.office_id ");
@@ -94,6 +95,7 @@ public final class AllGroupTypesDataMapper implements RowMapper<GroupGeneralData
         sqlBuilder.append("left join m_code_value cvState on g.state_province_id = cvState.id ");
         sqlBuilder.append("left join m_code_value cvType on g.type_id = cvType.id ");
         sqlBuilder.append("left join m_code_value cvMeetingDay on g.meeting_day = cvMeetingDay.id ");
+        sqlBuilder.append("left join m_prequalification_group prequalGroup on g.prequalification_id = prequalGroup.id ");
 
         this.schemaSql = sqlBuilder.toString();
     }
@@ -175,6 +177,7 @@ public final class AllGroupTypesDataMapper implements RowMapper<GroupGeneralData
         final int meetingDay = rs.getInt("meetingDay");
         final String meetingDayValue = rs.getString("meetingDayValue");
         final String referencePoint = rs.getString("referencePoint");
+        final String prequalificationNumber = rs.getString("prequalificationNumber");
 
         final GroupTimelineData timeline = new GroupTimelineData(submittedOnDate, submittedByUsername, submittedByFirstname,
                 submittedByLastname, activationDate, activatedByUsername, activatedByFirstname, activatedByLastname, closedOnDate,
@@ -206,7 +209,7 @@ public final class AllGroupTypesDataMapper implements RowMapper<GroupGeneralData
         ret.setMeetingDay(meetingDay);
         ret.setMeetingDayName(meetingDayValue);
         ret.setReferencePoint(referencePoint);
-
+        ret.setPrequalificationNumber(prequalificationNumber);
         return ret;
     }
 }

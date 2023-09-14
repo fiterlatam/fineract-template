@@ -108,6 +108,7 @@ public class GroupGeneralData implements Serializable {
     private Integer meetingDay;
     private String meetingDayName;
     private String referencePoint;
+    private String prequalificationNumber;
 
     // import fields
     private transient Integer rowIndex;
@@ -259,7 +260,7 @@ public class GroupGeneralData implements Serializable {
         final Collection<CodeValueData> closureReasons = null;
         return new GroupGeneralData(groupId, accountNo, groupName, null, null, null, null, null, null, null, null, null, null, null,
                 clientMembers, null, null, null, null, null, groupRoles, null, null, null, null, closureReasons, null, null, null, null,
-                null);
+                null, null);
     }
 
     public static GroupGeneralData template(final Long officeId, final Long centerId, final String accountNo, final String centerName,
@@ -276,7 +277,7 @@ public class GroupGeneralData implements Serializable {
         return new GroupGeneralData(null, accountNo, null, null, null, null, officeId, null, centerId, centerName, staffId, staffName, null,
                 null, clientMembers, null, centerOptions, officeOptions, staffOptions, clientOptions, groupRoles, availableRoles, null,
                 null, null, closureReasons, null, parentOfficesOptions, responsibleUserOptions, portfolioCenterOptions,
-                centerGroupLocations);
+                centerGroupLocations, null);
     }
 
     public static GroupGeneralData withTemplate(final GroupGeneralData templatedGrouping, final GroupGeneralData grouping) {
@@ -287,7 +288,7 @@ public class GroupGeneralData implements Serializable {
                 templatedGrouping.clientOptions, grouping.groupRoles, templatedGrouping.availableRoles, grouping.selectedRole,
                 grouping.calendarsData, grouping.collectionMeetingCalendar, grouping.closureReasons, templatedGrouping.timeline,
                 templatedGrouping.parentOfficesOptions, templatedGrouping.responsibleUserOptions, templatedGrouping.portfolioCenterOptions,
-                templatedGrouping.centerGroupLocations);
+                templatedGrouping.centerGroupLocations, grouping.prequalificationNumber);
 
         return mapDTO(grouping, ret);
     }
@@ -328,7 +329,7 @@ public class GroupGeneralData implements Serializable {
                 grouping.officeOptions, grouping.staffOptions, grouping.clientOptions, groupRoles, grouping.availableRoles,
                 grouping.selectedRole, calendarsData, collectionMeetingCalendar, grouping.closureReasons, grouping.timeline,
                 grouping.parentOfficesOptions, grouping.responsibleUserOptions, grouping.portfolioCenterOptions,
-                grouping.centerGroupLocations);
+                grouping.centerGroupLocations, grouping.prequalificationNumber);
 
         return mapDTO(grouping, ret);
     }
@@ -358,20 +359,20 @@ public class GroupGeneralData implements Serializable {
         return new GroupGeneralData(id, accountNo, name, externalId, status, activationDate, officeId, officeName, centerId, centerName,
                 staffId, staffName, hierarchy, groupLevel, clientMembers, activeClientMembers, centerOptions, officeOptions, staffOptions,
                 clientOptions, groupRoles, availableRoles, role, calendarsData, collectionMeetingCalendar, closureReasons, timeline,
-                parentOfficesOptions, responsibleUserOptions, portfolioCenterOptions, centerGroupLocations);
+                parentOfficesOptions, responsibleUserOptions, portfolioCenterOptions, centerGroupLocations, null);
     }
 
     private GroupGeneralData(final Long id, final String accountNo, final String name, final String externalId, final EnumOptionData status,
-            final LocalDate activationDate, final Long officeId, final String officeName, final Long centerId, final String centerName,
-            final Long staffId, final String staffName, final String hierarchy, final String groupLevel,
-            final Collection<ClientData> clientMembers, final Collection<ClientData> activeClientMembers,
-            final Collection<CenterData> centerOptions, final Collection<OfficeData> officeOptions,
-            final Collection<StaffData> staffOptions, final Collection<ClientData> clientOptions,
-            final Collection<GroupRoleData> groupRoles, final Collection<CodeValueData> availableRoles, final GroupRoleData role,
-            final Collection<CalendarData> calendarsData, final CalendarData collectionMeetingCalendar,
-            final Collection<CodeValueData> closureReasons, final GroupTimelineData timeline,
-            final Collection<OfficeData> parentOfficesOptions, final Collection<AppUserData> responsibleUserOptions,
-            final Collection<PortfolioCenterData> portfolioCenterOptions, Collection<EnumOptionData> centerGroupLocations) {
+                             final LocalDate activationDate, final Long officeId, final String officeName, final Long centerId, final String centerName,
+                             final Long staffId, final String staffName, final String hierarchy, final String groupLevel,
+                             final Collection<ClientData> clientMembers, final Collection<ClientData> activeClientMembers,
+                             final Collection<CenterData> centerOptions, final Collection<OfficeData> officeOptions,
+                             final Collection<StaffData> staffOptions, final Collection<ClientData> clientOptions,
+                             final Collection<GroupRoleData> groupRoles, final Collection<CodeValueData> availableRoles, final GroupRoleData role,
+                             final Collection<CalendarData> calendarsData, final CalendarData collectionMeetingCalendar,
+                             final Collection<CodeValueData> closureReasons, final GroupTimelineData timeline,
+                             final Collection<OfficeData> parentOfficesOptions, final Collection<AppUserData> responsibleUserOptions,
+                             final Collection<PortfolioCenterData> portfolioCenterOptions, Collection<EnumOptionData> centerGroupLocations, String prequalificationNumber) {
         this.id = id;
         this.accountNo = accountNo;
         this.name = name;
@@ -417,6 +418,7 @@ public class GroupGeneralData implements Serializable {
         this.responsibleUserOptions = responsibleUserOptions;
         this.portfolioCenterOptions = portfolioCenterOptions;
         this.centerGroupLocations = centerGroupLocations;
+        this.prequalificationNumber = prequalificationNumber;
     }
 
     public Long getId() {
@@ -453,7 +455,7 @@ public class GroupGeneralData implements Serializable {
                 grouping.staffName, grouping.hierarchy, grouping.groupLevel, grouping.clientMembers, grouping.activeClientMembers,
                 grouping.centerOptions, grouping.officeOptions, grouping.staffOptions, grouping.clientOptions, grouping.groupRoles,
                 grouping.availableRoles, selectedRole, grouping.calendarsData, grouping.collectionMeetingCalendar, grouping.closureReasons,
-                null, null, null, null, null);
+                null, null, null, null, null, grouping.prequalificationNumber);
     }
 
     public static GroupGeneralData withClosureReasons(final Collection<CodeValueData> closureReasons) {
@@ -490,7 +492,7 @@ public class GroupGeneralData implements Serializable {
         return new GroupGeneralData(id, accountNo, name, externalId, status, activationDate, officeId, officeName, centerId, centerName,
                 staffId, staffName, hierarchy, groupLevel, clientMembers, activeClientMembers, centerOptions, officeOptions, staffOptions,
                 clientOptions, groupRoles, availableRoles, role, calendarsData, collectionMeetingCalendar, closureReasons, null,
-                parentOfficesOptions, responsibleUserOptions, portfolioCenterOptions, centerGroupLocations);
+                parentOfficesOptions, responsibleUserOptions, portfolioCenterOptions, centerGroupLocations, null);
     }
 
     public Collection<ClientData> clientMembers() {
@@ -622,5 +624,9 @@ public class GroupGeneralData implements Serializable {
 
     public void setGroupLocation(EnumOptionData groupLocation) {
         this.groupLocation = groupLocation;
+    }
+
+    public void setPrequalificationNumber(String prequalificationNumber) {
+        this.prequalificationNumber = prequalificationNumber;
     }
 }
