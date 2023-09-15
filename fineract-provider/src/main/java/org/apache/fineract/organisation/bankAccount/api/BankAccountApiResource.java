@@ -138,7 +138,7 @@ public class BankAccountApiResource {
             @QueryParam("limit") @Parameter(description = "limit") final Integer limit,
             @QueryParam("orderBy") @Parameter(description = "orderBy") final String orderBy,
             @QueryParam("sortOrder") @Parameter(description = "sortOrder") final String sortOrder,
-            @QueryParam("accountNumber") @Parameter(description = "accountNumber") final Long accountNumber,
+            @QueryParam("accountNumber") @Parameter(description = "accountNumber") final String accountNumber,
             @QueryParam("bankName") @Parameter(description = "bankName") final String bankName,
             @QueryParam("bankCode") @Parameter(description = "bankCode") final String bankCode) {
 

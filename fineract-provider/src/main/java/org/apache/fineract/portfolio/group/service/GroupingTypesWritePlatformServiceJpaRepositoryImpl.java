@@ -183,11 +183,10 @@ public class GroupingTypesWritePlatformServiceJpaRepositoryImpl implements Group
 
             final Long prequalificationId = command.longValueOfParameterNamed(GroupingTypesApiConstants.prequalificationId);
             String mappedPrequalification = "SELECT count(*) from m_group where prequalification_id=?";
-            Long existing = this.jdbcTemplate.queryForObject(mappedPrequalification, Long.class, new Object[]{prequalificationId});
-            if (existing > 0){
+            Long existing = this.jdbcTemplate.queryForObject(mappedPrequalification, Long.class, new Object[] { prequalificationId });
+            if (existing > 0) {
                 throw new PrequalificationMappedException(prequalificationId);
             }
-
 
             final Set<Client> clientMembers = assembleSetOfClients(officeId, command);
 
@@ -282,8 +281,8 @@ public class GroupingTypesWritePlatformServiceJpaRepositoryImpl implements Group
 
             final String referencePoint = command.stringValueOfParameterNamed(GroupingTypesApiConstants.referencePoint);
 
-            PrequalificationGroup prequalificationGroup = this.prequalificationGroupRepository.findById(prequalificationId).orElseThrow(
-                    () -> new GroupPreQualificationNotFound(prequalificationId));
+            PrequalificationGroup prequalificationGroup = this.prequalificationGroupRepository.findById(prequalificationId)
+                    .orElseThrow(() -> new GroupPreQualificationNotFound(prequalificationId));
 
             final Group newGroup = Group.newGroup(groupOffice, staff, parentGroup, groupLevel, name, externalId, active, activationDate,
                     clientMembers, groupMembers, submittedOnDate, currentUser, accountNo, legacyNumber, latitude, longitude, formationDate,
@@ -512,12 +511,12 @@ public class GroupingTypesWritePlatformServiceJpaRepositoryImpl implements Group
                 final Long newValue = command.longValueOfParameterNamed(GroupingTypesApiConstants.prequalificationId);
 
                 String mappedPrequalification = "SELECT count(*) from m_group where prequalification_id=?";
-                Long existing = this.jdbcTemplate.queryForObject(mappedPrequalification, Long.class, new Object[]{newValue});
-                if (existing > 0){
+                Long existing = this.jdbcTemplate.queryForObject(mappedPrequalification, Long.class, new Object[] { newValue });
+                if (existing > 0) {
                     throw new PrequalificationMappedException(newValue);
                 }
-                PrequalificationGroup prequalificationGroup = this.prequalificationGroupRepository.findById(newValue).orElseThrow(
-                        () -> new GroupPreQualificationNotFound(newValue));
+                PrequalificationGroup prequalificationGroup = this.prequalificationGroupRepository.findById(newValue)
+                        .orElseThrow(() -> new GroupPreQualificationNotFound(newValue));
                 groupForUpdate.updatePrequalification(prequalificationGroup);
 
             }

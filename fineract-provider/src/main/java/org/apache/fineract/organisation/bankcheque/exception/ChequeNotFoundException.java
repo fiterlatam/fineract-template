@@ -16,15 +16,13 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.portfolio.group.exception;
+package org.apache.fineract.organisation.bankcheque.exception;
 
 import org.apache.fineract.infrastructure.core.exception.AbstractPlatformDomainRuleException;
 
-public class PrequalificationMappedException extends AbstractPlatformDomainRuleException {
+public class ChequeNotFoundException extends AbstractPlatformDomainRuleException {
 
-    public PrequalificationMappedException(final Long prequalificationId) {
-        super("error.msg.prequalification.already.mapped.exception",
-                "The Prequalification with id `" + prequalificationId + "` is already mapped to another group", prequalificationId);
+    public ChequeNotFoundException(final Long chequeId) {
+        super("error.msg.cheque.id.invalid", "Cheque with identifier " + chequeId + " does not exist", chequeId);
     }
-
 }
