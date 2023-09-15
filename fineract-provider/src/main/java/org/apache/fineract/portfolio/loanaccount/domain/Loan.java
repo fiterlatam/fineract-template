@@ -6814,7 +6814,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                     .getAmount();
             vatOnPenaltyCharge = balances[2].multipliedBy(this.vatPercentage)
                     .dividedBy(BigDecimal.valueOf(100), MoneyHelper.getRoundingMode()).getAmount();
-            vatOnInterest = balances[0].getAmount().multiply(this.vatPercentage).divide(BigDecimal.valueOf(100), MathContext.DECIMAL32);
+            vatOnInterest = balances[0].multipliedBy(this.vatPercentage).dividedBy(BigDecimal.valueOf(100), MoneyHelper.getRoundingMode()).getAmount();
         }
 
         LoanRepaymentScheduleInstallment newInstallment = new LoanRepaymentScheduleInstallment(null, newInstallments.size() + 1,
