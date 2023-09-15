@@ -42,6 +42,7 @@ import org.apache.fineract.portfolio.loanaccount.data.LoanInstallmentChargeData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanScheduleAccrualData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanTransactionData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanTransactionEnumData;
+import org.apache.fineract.portfolio.loanaccount.data.LoanChargePaidByData;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionType;
@@ -451,7 +452,7 @@ public class LoanAccrualWritePlatformServiceImpl implements LoanAccrualWritePlat
                         }
                     }
                 }
-            } else if (loanCharge.getDueDate().isAfter(startDate) && !loanCharge.getDueDate().isAfter(endDate)) {
+            } else if (loanCharge.getDueDate().isAfter(startDate) && !loanCharge.getDueDate().isAfter(endDate) && !loanCharge.isPenalty()) {
                 chargeAmount = loanCharge.getAmount();
                 if (loanCharge.getAmountUnrecognized() != null) {
                     chargeAmount = chargeAmount.subtract(loanCharge.getAmountUnrecognized());
@@ -463,6 +464,27 @@ public class LoanAccrualWritePlatformServiceImpl implements LoanAccrualWritePlat
                         amountForAccrual = chargeAmount.subtract(loanCharge.getAmountAccrued());
                     }
                     applicableCharges.put(loanCharge, amountForAccrual);
+                }
+            } else {
+                Collection<LoanChargePaidByData> loanChargePaidByDatas = this.loanChargeReadPlatformService.retriveLoanChargesPaidBy(loanCharge.getId(), LoanTransactionType.ACCRUAL, accrualData.getInstallmentNumber());
+                if (loanChargePaidByDatas != null && !loanChargePaidByDatas.isEmpty()) {
+                    for (LoanChargePaidByData loanChargePaidByData : loanChargePaidByDatas) {
+                        if (loanChargePaidByData.getInstallmentNumber().equals(accrualData.getInstallmentNumber())) {
+                            chargeAmount = loanCharge.getAmount();
+                            if (loanCharge.getAmountUnrecognized() != null) {
+                                chargeAmount = chargeAmount.subtract(loanCharge.getAmountUnrecognized());
+                            }
+                            boolean canAddCharge = chargeAmount.compareTo(BigDecimal.ZERO) > 0;
+                            if (canAddCharge && (loanCharge.getAmountAccrued() == null || chargeAmount.compareTo(loanCharge.getAmountAccrued()) != 0)) {
+                                BigDecimal amountForAccrual = chargeAmount;
+                                if (loanCharge.getAmountAccrued() != null) {
+                                    amountForAccrual = chargeAmount.subtract(loanCharge.getAmountAccrued());
+                                }
+                                applicableCharges.put(loanCharge, amountForAccrual);
+                            }
+                            break;
+                        }
+                    }
                 }
             }
 

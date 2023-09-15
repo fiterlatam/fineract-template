@@ -720,6 +720,9 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 transactionDate, feeCharges, penaltyCharges);
 
         Integer installmentNumber = null;
+        if (loanCharge.isPenaltyCharge() && loanCharge.isOverdueInstallmentCharge() && loanCharge.getOverdueInstallmentCharge() != null) {
+            installmentNumber = loanCharge.getOverdueInstallmentCharge().getInstallment().getInstallmentNumber();
+        }
         final LoanChargePaidBy loanChargePaidBy = new LoanChargePaidBy(applyLoanChargeTransaction, loanCharge,
                 loanCharge.getAmount(getCurrency()).getAmount(), installmentNumber);
         applyLoanChargeTransaction.getLoanChargesPaid().add(loanChargePaidBy);
@@ -745,18 +748,9 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     }
 
     public Money calculateVatOnAmount(Money amountForVat) {
-        Money vatAmount;
-        BigDecimal decimalComparator = BigDecimal.valueOf(0.55);
-        BigDecimal scaledAmountForVat = amountForVat.getAmount().setScale(2, RoundingMode.HALF_UP);
-        BigDecimal fractionalPart = scaledAmountForVat.remainder(BigDecimal.ONE);
 
-        if (fractionalPart.compareTo(decimalComparator) > 0) {
-            scaledAmountForVat = amountForVat.getAmount().setScale(1, RoundingMode.HALF_UP);
-        }
-
-        BigDecimal vatOnInterestPortion = scaledAmountForVat.multiply(this.vatPercentage).divide(BigDecimal.valueOf(100),
-                MathContext.DECIMAL32);
-        vatAmount = Money.of(loanCurrency(), vatOnInterestPortion);
+        Money vatAmount = amountForVat.multipliedBy(this.vatPercentage).dividedBy(100,
+                MoneyHelper.getRoundingMode());
 
         return vatAmount;
     }
@@ -1378,7 +1372,15 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                         && loanTransaction.getTransactionDate().isBefore(installment.getDueDate())) {
                     interest = interest.plus(loanTransaction.getInterestPortion(getCurrency()));
                     fee = fee.plus(loanTransaction.getFeeChargesPortion(getCurrency()));
-                    penality = penality.plus(loanTransaction.getPenaltyChargesPortion(getCurrency()));
+                }
+
+                if (loanTransaction.getLoanChargesPaid() != null && loanTransaction.getPenaltyChargesPortion(getCurrency()).isGreaterThanZero()) {
+                    for (LoanChargePaidBy loanChargePaidBy : loanTransaction.getLoanChargesPaid()) {
+                        if (loanChargePaidBy.getLoanCharge().isPenaltyCharge() && loanChargePaidBy.getLoanCharge().isOverdueInstallmentCharge()
+                                && loanChargePaidBy.getLoanCharge().getOverdueInstallmentCharge().getInstallment().getInstallmentNumber().equals(installment.getInstallmentNumber())) {
+                            penality = penality.plus(loanChargePaidBy.getAmount());
+                        }
+                    }
                 }
             }
             installment.updateAccrualPortion(interest, fee, penality);
