@@ -1374,18 +1374,11 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             Money fee = Money.zero(getCurrency());
             Money penality = Money.zero(getCurrency());
             for (LoanTransaction loanTransaction : accruals) {
-                if (loanTransaction.getTransactionDate().isAfter(installment.getFromDate())
-                        && !loanTransaction.getTransactionDate().isAfter(installment.getDueDate())) {
+                if (!loanTransaction.getTransactionDate().isBefore(installment.getFromDate())
+                        && loanTransaction.getTransactionDate().isBefore(installment.getDueDate())) {
                     interest = interest.plus(loanTransaction.getInterestPortion(getCurrency()));
                     fee = fee.plus(loanTransaction.getFeeChargesPortion(getCurrency()));
                     penality = penality.plus(loanTransaction.getPenaltyChargesPortion(getCurrency()));
-                    if (!loanTransaction.getTransactionDate().isBefore(installment.getFromDate())
-                            && loanTransaction.getTransactionDate().isBefore(installment.getDueDate())) {
-                        interest = interest.minus(loanTransaction.getInterestPortion(getCurrency()));
-                        fee = fee.minus(loanTransaction.getFeeChargesPortion(getCurrency()));
-                        penality = penality.minus(loanTransaction.getPenaltyChargesPortion(getCurrency()));
-                        loanTransaction.reverse();
-                    }
                 }
             }
             installment.updateAccrualPortion(interest, fee, penality);
@@ -1393,7 +1386,8 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         LoanRepaymentScheduleInstallment lastInstallment = getRepaymentScheduleInstallments()
                 .get(getRepaymentScheduleInstallments().size() - 1);
         for (LoanTransaction loanTransaction : accruals) {
-            if (loanTransaction.getTransactionDate().isAfter(lastInstallment.getDueDate()) && !loanTransaction.isReversed()) {
+            if (loanTransaction.getTransactionDate().isAfter(lastInstallment.getDueDate()) && !loanTransaction.isReversed()
+                    && (getAccruedTill() == null || getAccruedTill().isAfter(lastInstallment.getDueDate()))) {
                 loanTransaction.reverse();
             }
         }
