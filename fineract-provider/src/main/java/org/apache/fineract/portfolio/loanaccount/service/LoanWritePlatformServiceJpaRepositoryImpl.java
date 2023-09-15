@@ -2697,7 +2697,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             }
 
             if (reprocessRequired) {
-                addInstallmentIfPenaltyAppliedAfterLastDueDate(loan, lastChargeDate);
+
                 ChangedTransactionDetail changedTransactionDetail = loan.reprocessTransactions();
                 if (changedTransactionDetail != null) {
                     for (final Map.Entry<Long, LoanTransaction> mapEntry : changedTransactionDetail.getNewTransactionMappings()
@@ -2723,6 +2723,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         }
     }
 
+    @SuppressWarnings("unused")
     private void addInstallmentIfPenaltyAppliedAfterLastDueDate(Loan loan, LocalDate lastChargeDate) {
         if (lastChargeDate != null) {
             List<LoanRepaymentScheduleInstallment> installments = loan.getRepaymentScheduleInstallments();
