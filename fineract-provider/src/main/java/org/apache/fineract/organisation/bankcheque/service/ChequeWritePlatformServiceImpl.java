@@ -70,9 +70,10 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
         BankAccount bankAccount = this.bankAccountRepositoryWrapper.findOneWithNotFoundDetection(bankAccId);
         Agency agency = bankAccount.getAgency();
         String maxBatchNoSql = "SELECT IFNULL(MAX(mpb.batch_no), 0) AS maxBatchNo FROM m_payment_batch mpb WHERE mpb.bank_acc_id = ?";
-        final Long maxBatchNo = this.jdbcTemplate.queryForObject(maxBatchNoSql, Long.class, new Object[] {bankAccId});
+        final Long maxBatchNo = this.jdbcTemplate.queryForObject(maxBatchNoSql, Long.class, new Object[] { bankAccId });
         final Long batchNo = ObjectUtils.defaultIfNull(maxBatchNo, 0L) + 1;
-        Batch batch = new Batch().setBatchNo(batchNo).setAgency(agency).setBankAccount(bankAccount).setBankAccNo(bankAccount.getAccountNumber()).setFrom(from).setTo(to);
+        Batch batch = new Batch().setBatchNo(batchNo).setAgency(agency).setBankAccount(bankAccount)
+                .setBankAccNo(bankAccount.getAccountNumber()).setFrom(from).setTo(to);
         final LocalDateTime localDateTime = DateUtils.getLocalDateTimeOfSystem();
         final Long currentUserId = currentUser.getId();
         batch.stampAudit(currentUserId, localDateTime);
@@ -92,7 +93,7 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
     }
 
     private void validateToAndFromValues(final Long from, final Long to, Long bankAccId) {
-       String maxChequeNoSql = """
+        String maxChequeNoSql = """
                 SELECT IFNULL(MAX(mbc.check_no), 0) AS maxChequeNo
                 FROM m_bank_check mbc
                 INNER JOIN m_payment_batch mpb ON mpb.id = mbc.batch_id
@@ -134,8 +135,7 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
             this.chequeBatchRepositoryWrapper.updateBatch(batchForUpdate);
         }
         return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withResourceIdAsString(batchId.toString())
-                .with(changes)
-                .withEntityId(batchId).build();
+                .with(changes).withEntityId(batchId).build();
     }
 
     @Override

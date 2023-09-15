@@ -18,6 +18,8 @@
  */
 package org.apache.fineract.portfolio.loanaccount.domain;
 
+import static java.time.temporal.ChronoUnit.DAYS;
+
 import com.google.common.base.Splitter;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -148,8 +150,6 @@ import org.apache.fineract.useradministration.domain.AppUser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
-
-import static java.time.temporal.ChronoUnit.DAYS;
 
 @Entity
 @Component
@@ -6449,9 +6449,10 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         // get the charges
         for (final LoanRepaymentScheduleInstallment installment : this.repaymentScheduleInstallments) {
             if (!installment.getDueDate().isAfter(paymentDate)) {
-                List<Charge> loanCharges = this.loanProduct.getLoanProductCharges().stream().filter(charge -> charge.isOverdueInstallment()).collect(Collectors.toList());
+                List<Charge> loanCharges = this.loanProduct.getLoanProductCharges().stream().filter(charge -> charge.isOverdueInstallment())
+                        .collect(Collectors.toList());
                 interest = interest.plus(installment.getInterestOutstanding(currency));
-                //TODO: FBR-309 The amount of late interest is not being generated
+                // TODO: FBR-309 The amount of late interest is not being generated
                 penalty = calculateOverduePenaltiesForFutureDate(loanCharges, paymentDate, installment);
                 fee = fee.plus(installment.getFeeChargesOutstanding(currency));
             } else if (installment.getFromDate().isBefore(paymentDate)) {
@@ -6488,19 +6489,20 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     }
 
     /*
-    * This method was created to be used to generate overdue penalty charges on loan for simulation endpoint
-    * Only overdue charges are passed
-    * */
-    private Money calculateOverduePenaltiesForFutureDate(List<Charge> charges, LocalDate paymentDate, LoanRepaymentScheduleInstallment installment){
+     * This method was created to be used to generate overdue penalty charges on loan for simulation endpoint Only
+     * overdue charges are passed
+     */
+    private Money calculateOverduePenaltiesForFutureDate(List<Charge> charges, LocalDate paymentDate,
+            LoanRepaymentScheduleInstallment installment) {
 
         BigDecimal penalty = BigDecimal.ZERO;
 
-        for(Charge charge : charges){
+        for (Charge charge : charges) {
             BigDecimal calculationAmount = getInstallmentChargeCalculationAmount(installment, charge);
             BigDecimal percent = charge.getAmount();
             BigDecimal rate = percent.divide(BigDecimal.valueOf(100));
 
-            Long timesOverDue =  Math.abs(DAYS.between(paymentDate, installment.getDueDate())) ;
+            Long timesOverDue = Math.abs(DAYS.between(paymentDate, installment.getDueDate()));
 
             BigDecimal overDuePeriod = BigDecimal.valueOf(timesOverDue);
             penalty = penalty.add(calculationAmount.multiply(rate).multiply(overDuePeriod));
@@ -6509,25 +6511,26 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         return Money.of(getCurrency(), penalty);
     }
 
-    private BigDecimal getInstallmentChargeCalculationAmount(LoanRepaymentScheduleInstallment installment, Charge charge){
+    private BigDecimal getInstallmentChargeCalculationAmount(LoanRepaymentScheduleInstallment installment, Charge charge) {
         Money money = null;
 
         switch (ChargeCalculationType.fromInt(charge.getChargeCalculation())) {
             case PERCENT_OF_AMOUNT:
                 money = installment.getPrincipalOutstanding(getCurrency());
-                break;
+            break;
             case PERCENT_OF_AMOUNT_AND_INTEREST:
                 money = installment.getPrincipalOutstanding(getCurrency()).add(installment.getInterestOutstanding(getCurrency()));
-                break;
+            break;
             case PERCENT_OF_INTEREST:
                 money = installment.getInterestOutstanding(getCurrency());
-                break;
+            break;
             default:
-                break;
+            break;
         }
 
         return money != null ? money.getAmount() : BigDecimal.ZERO;
     }
+
     public Money[] retrieveIncomePrincipalAmountTillDate(final LocalDate paymentDate) {
         Money[] balances = new Money[5];
         final MonetaryCurrency currency = getCurrency();
@@ -6538,9 +6541,10 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         Money principalAmountInstallments = Money.zero(currency);
         for (final LoanRepaymentScheduleInstallment installment : this.repaymentScheduleInstallments) {
             if (!installment.getDueDate().isAfter(paymentDate)) {
-                List<Charge> loanCharges = this.loanProduct.getLoanProductCharges().stream().filter(charge -> charge.isOverdueInstallment()).collect(Collectors.toList());
+                List<Charge> loanCharges = this.loanProduct.getLoanProductCharges().stream().filter(charge -> charge.isOverdueInstallment())
+                        .collect(Collectors.toList());
                 interest = interest.plus(installment.getInterestOutstanding(currency));
-                penalty =  penalty = calculateOverduePenaltiesForFutureDate(loanCharges, paymentDate, installment);
+                penalty = penalty = calculateOverduePenaltiesForFutureDate(loanCharges, paymentDate, installment);
                 fee = fee.plus(installment.getFeeChargesOutstanding(currency));
                 principalAmountInstallments = principalAmountInstallments.plus(installment.getPrincipalOutstanding(currency));
             } else if (installment.getFromDate().isBefore(paymentDate)) {

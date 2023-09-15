@@ -26,6 +26,18 @@ import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.UriInfo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.commands.domain.CommandWrapper;
@@ -40,19 +52,6 @@ import org.apache.fineract.organisation.bankcheque.data.BatchData;
 import org.apache.fineract.organisation.bankcheque.service.ChequeReadPlatformService;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
-
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.UriInfo;
 
 @Path("/bankcheques")
 @Component
@@ -93,8 +92,8 @@ public class BankChequeApiResource {
             @Context final UriInfo uriInfo) {
         this.context.authenticatedUser().validateHasReadPermission(BankChequeApiConstants.BANK_CHECK_RESOURCE_NAME);
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
-         BatchData batchData = this.chequeReadPlatformService.retrieveBatch(batchId);
-         return this.toApiJsonSerializer.serialize(settings, batchData, BankChequeApiConstants.BATCH_RESPONSE_DATA_PARAMETERS);
+        BatchData batchData = this.chequeReadPlatformService.retrieveBatch(batchId);
+        return this.toApiJsonSerializer.serialize(settings, batchData, BankChequeApiConstants.BATCH_RESPONSE_DATA_PARAMETERS);
     }
 
     @GET
@@ -102,10 +101,11 @@ public class BankChequeApiResource {
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     @Operation(summary = "Retrieve Cheque Batch Template", description = "This is a convenience resource. It can be useful when building maintenance user interface screens")
-    @ApiResponses({@ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = BankChequeApiSwagger.GetChequeBatchResponse.class))) })
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = BankChequeApiSwagger.GetChequeBatchResponse.class))) })
     public String retrieveTemplate(@Context final UriInfo uriInfo,
-                                   @Parameter(description = "officeId") @QueryParam("officeId") final Long officeId,
-                                   @QueryParam("bankAccId") @Parameter(description = "backAccId") final Long backAccId) {
+            @Parameter(description = "officeId") @QueryParam("officeId") final Long officeId,
+            @QueryParam("bankAccId") @Parameter(description = "backAccId") final Long backAccId) {
         this.context.authenticatedUser().validateHasReadPermission(BankChequeApiConstants.BANK_CHECK_RESOURCE_NAME);
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
         BatchData batchData = this.chequeReadPlatformService.retrieveTemplate(backAccId);

@@ -18,6 +18,8 @@
  */
 package org.apache.fineract.organisation.bankAccount.data;
 
+import java.util.Collection;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -27,9 +29,6 @@ import org.apache.fineract.organisation.agency.data.AgencyData;
 import org.apache.fineract.organisation.bank.data.BankData;
 import org.apache.fineract.organisation.bankcheque.data.BatchData;
 
-import java.util.Collection;
-import java.util.List;
-
 /**
  * Immutable data object for bank data.
  */
@@ -38,6 +37,7 @@ import java.util.List;
 @AllArgsConstructor
 @Data
 public class BankAccountData {
+
     private Long id;
     private Long accountNumber;
     private AgencyData agency;

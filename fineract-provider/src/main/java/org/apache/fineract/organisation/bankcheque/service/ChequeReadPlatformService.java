@@ -23,5 +23,6 @@ import org.apache.fineract.organisation.bankcheque.data.BatchData;
 public interface ChequeReadPlatformService {
 
     BatchData retrieveBatch(final Long batchId);
+
     BatchData retrieveTemplate(final Long bankAccId);
 }

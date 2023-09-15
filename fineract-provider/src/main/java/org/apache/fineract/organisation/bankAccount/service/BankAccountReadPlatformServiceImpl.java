@@ -90,8 +90,9 @@ public class BankAccountReadPlatformServiceImpl implements BankAccountReadPlatfo
             BankAccountMapper bankAccountMapper = new BankAccountMapper();
             String schemaSql = "select " + bankAccountMapper.schema();
             schemaSql += "where ba.id = ?";
-            BankAccountData bankAccountData =   this.jdbcTemplate.queryForObject(schemaSql, bankAccountMapper, new Object[] { bankAccountId });
-            if(bankAccountData != null){
+            BankAccountData bankAccountData = this.jdbcTemplate.queryForObject(schemaSql, bankAccountMapper,
+                    new Object[] { bankAccountId });
+            if (bankAccountData != null) {
                 final String batchSql = batchMapper.schema() + " WHERE mba.id = ?";
                 final List<BatchData> batchDataList = this.jdbcTemplate.query(batchSql, this.batchMapper, bankAccountId);
                 bankAccountData.setBatches(batchDataList);

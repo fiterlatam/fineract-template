@@ -18,14 +18,10 @@
  */
 package org.apache.fineract.organisation.bankcheque.domain;
 
-import lombok.Getter;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.fineract.infrastructure.core.api.JsonCommand;
-import org.apache.fineract.infrastructure.core.domain.AbstractAuditableCustom;
-import org.apache.fineract.organisation.agency.domain.Agency;
-import org.apache.fineract.organisation.bankAccount.domain.BankAccount;
-import org.apache.fineract.organisation.bankcheque.api.BankChequeApiConstants;
-
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Set;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -34,10 +30,13 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Set;
+import lombok.Getter;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.fineract.infrastructure.core.api.JsonCommand;
+import org.apache.fineract.infrastructure.core.domain.AbstractAuditableCustom;
+import org.apache.fineract.organisation.agency.domain.Agency;
+import org.apache.fineract.organisation.bankAccount.domain.BankAccount;
+import org.apache.fineract.organisation.bankcheque.api.BankChequeApiConstants;
 
 @Getter
 @Entity
@@ -69,7 +68,6 @@ public class Batch extends AbstractAuditableCustom {
 
     @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL, mappedBy = "batch", orphanRemoval = true)
     private Set<Cheque> cheques = new HashSet<>();
-
 
     public Batch setBatchNo(Long batchNo) {
         this.batchNo = batchNo;

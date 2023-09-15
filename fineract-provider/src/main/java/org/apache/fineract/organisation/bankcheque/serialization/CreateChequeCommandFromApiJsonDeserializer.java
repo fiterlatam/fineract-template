@@ -20,6 +20,10 @@ package org.apache.fineract.organisation.bankcheque.serialization;
 
 import com.google.gson.JsonElement;
 import com.google.gson.reflect.TypeToken;
+import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.apache.fineract.infrastructure.core.data.ApiParameterError;
 import org.apache.fineract.infrastructure.core.data.DataValidatorBuilder;
@@ -29,11 +33,6 @@ import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
 import org.apache.fineract.organisation.bankcheque.api.BankChequeApiConstants;
 import org.apache.fineract.organisation.bankcheque.command.CreateChequeCommand;
 import org.springframework.stereotype.Component;
-
-import java.lang.reflect.Type;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
 @Component
 @RequiredArgsConstructor
@@ -53,8 +52,7 @@ public class CreateChequeCommandFromApiJsonDeserializer extends AbstractFromApiJ
         final Long bankAccId = this.fromApiJsonHelper.extractLongNamed(BankChequeApiConstants.BANK_ACC_ID, element);
         baseDataValidator.reset().parameter(BankChequeApiConstants.BANK_ACC_ID).value(bankAccId).notBlank();
         final Long from = this.fromApiJsonHelper.extractLongNamed(BankChequeApiConstants.FROM, element);
-        baseDataValidator.reset().parameter(BankChequeApiConstants.FROM).value(from)
-                .notBlank();
+        baseDataValidator.reset().parameter(BankChequeApiConstants.FROM).value(from).notBlank();
         final Long to = this.fromApiJsonHelper.extractLongNamed(BankChequeApiConstants.TO, element);
         baseDataValidator.reset().parameter(BankChequeApiConstants.TO).value(to).notBlank();
         throwExceptionIfValidationWarningsExist(dataValidationErrors);

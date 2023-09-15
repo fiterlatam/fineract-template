@@ -18,17 +18,16 @@
  */
 package org.apache.fineract.organisation.bankcheque.domain;
 
-import lombok.Getter;
-import org.apache.fineract.infrastructure.core.domain.AbstractAuditableCustom;
-import org.apache.fineract.useradministration.domain.AppUser;
-
+import java.time.LocalDate;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
-import java.time.LocalDate;
+import lombok.Getter;
+import org.apache.fineract.infrastructure.core.domain.AbstractAuditableCustom;
+import org.apache.fineract.useradministration.domain.AppUser;
 
 @Getter
 @Entity
@@ -76,29 +75,36 @@ public class Cheque extends AbstractAuditableCustom {
         this.chequeNo = chequeNo;
         return this;
     }
+
     public Cheque setBatch(Batch batch) {
         this.batch = batch;
         return this;
     }
+
     public Cheque setStatus(Integer status) {
         this.status = status;
         return this;
     }
+
     public Cheque setDescription(String description) {
         this.description = description;
         return this;
     }
+
     public LocalDate getChequeedDate() {
         return voidedDate;
     }
+
     public Cheque setVoidedDate(LocalDate voidedDate) {
         this.voidedDate = voidedDate;
         return this;
     }
+
     public Cheque setVoidedBy(AppUser voidedBy) {
         this.voidedBy = voidedBy;
         return this;
     }
+
     public Cheque setVoidAuthorizedDate(LocalDate voidAuthorizedDate) {
         this.voidAuthorizedDate = voidAuthorizedDate;
         return this;
@@ -113,10 +119,12 @@ public class Cheque extends AbstractAuditableCustom {
         this.printedDate = printedDate;
         return this;
     }
+
     public Cheque setPrintedBy(AppUser printedBy) {
         this.printedBy = printedBy;
         return this;
     }
+
     public Cheque setUsedOnDate(LocalDate usedOnDate) {
         this.usedOnDate = usedOnDate;
         return this;

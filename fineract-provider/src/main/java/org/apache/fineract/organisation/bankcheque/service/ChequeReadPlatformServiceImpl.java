@@ -187,9 +187,9 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
             final LocalDate createdDate = JdbcSupport.getLocalDate(rs, "createdDate");
             final String createdByUsername = rs.getString("createdByUsername");
             final String description = rs.getString("description");
-            return BatchData.builder().id(batchId).batchNo(batchNo).bankAccNo(bankAccNo).bankAccId(bankAccId) .bankName(bankName).bankCode(bankCode)
-                    .agencyId(agencyId).agencyName(agencyName).description(description).from(from).to(to).createdDate(createdDate)
-                    .createdByUserId(createdByUserId).createdByUsername(createdByUsername).build();
+            return BatchData.builder().id(batchId).batchNo(batchNo).bankAccNo(bankAccNo).bankAccId(bankAccId).bankName(bankName)
+                    .bankCode(bankCode).agencyId(agencyId).agencyName(agencyName).description(description).from(from).to(to)
+                    .createdDate(createdDate).createdByUserId(createdByUserId).createdByUsername(createdByUsername).build();
 
         }
     }

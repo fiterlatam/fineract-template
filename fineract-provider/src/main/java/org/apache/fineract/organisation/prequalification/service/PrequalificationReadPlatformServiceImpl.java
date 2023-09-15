@@ -304,9 +304,9 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                 extraCriteria += " and g.group_id is not null ";
             } else if (type.equals("new")) {
                 extraCriteria += " and g.group_id is null ";
-            }else if (type.equals("checked")) {
-                extraCriteria += " and g.status = " + PrequalificationStatus.BURO_CHECKED.getValue().toString() + " " +
-                        "and (g.id not in (select prequalification_id from m_group where prequalification_id is not null)) ";
+            } else if (type.equals("checked")) {
+                extraCriteria += " and g.status = " + PrequalificationStatus.BURO_CHECKED.getValue().toString() + " "
+                        + "and (g.id not in (select prequalification_id from m_group where prequalification_id is not null)) ";
             }
         }
 

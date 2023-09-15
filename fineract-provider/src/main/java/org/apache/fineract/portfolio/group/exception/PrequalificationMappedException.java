@@ -23,7 +23,8 @@ import org.apache.fineract.infrastructure.core.exception.AbstractPlatformDomainR
 public class PrequalificationMappedException extends AbstractPlatformDomainRuleException {
 
     public PrequalificationMappedException(final Long prequalificationId) {
-        super("error.msg.prequalification.already.mapped.exception", "The Prequalification with id `" + prequalificationId + "` is already mapped to another group", prequalificationId);
+        super("error.msg.prequalification.already.mapped.exception",
+                "The Prequalification with id `" + prequalificationId + "` is already mapped to another group", prequalificationId);
     }
 
 }
