@@ -884,6 +884,14 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
                     saveLoanTransactionWithDataIntegrityViolationChecks(applyLoanVatOnInterestTransaction);
                     loan.addLoanTransaction(applyLoanVatOnInterestTransaction);
                 }
+
+                // generate transaction for accrual vat on penalties
+                LoanTransaction applyLoanVatOnPenaltiesTransaction = makeAccrualTransactionForVatOnPenaltyCharge(loan, foreClosureDate, payment);
+                if (applyLoanVatOnPenaltiesTransaction != null) {
+                    applyLoanVatOnPenaltiesTransaction.setGeneratedVatTransactionFromRepayment(true);
+                    saveLoanTransactionWithDataIntegrityViolationChecks(applyLoanVatOnPenaltiesTransaction);
+                    loan.addLoanTransaction(applyLoanVatOnPenaltiesTransaction);
+                }
             }
             // vatOntInterest portion and vatOnCharges portion must be zero in the new repayment transaction
             payment.updateVatComponents(Money.zero(currency), Money.zero(currency), Money.zero(currency));
