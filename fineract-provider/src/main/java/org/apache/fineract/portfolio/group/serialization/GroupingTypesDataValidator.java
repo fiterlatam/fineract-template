@@ -295,7 +295,8 @@ public final class GroupingTypesDataValidator {
         baseDataValidator.reset().parameter(GroupingTypesApiConstants.officeIdParamName).value(officeId).notNull().integerGreaterThanZero();
 
         final Long prequalificationId = this.fromApiJsonHelper.extractLongNamed(GroupingTypesApiConstants.prequalificationId, element);
-        baseDataValidator.reset().parameter(GroupingTypesApiConstants.prequalificationId).value(prequalificationId).notNull().integerGreaterThanZero();
+        baseDataValidator.reset().parameter(GroupingTypesApiConstants.prequalificationId).value(prequalificationId).notNull()
+                .integerGreaterThanZero();
 
         if (this.fromApiJsonHelper.parameterExists(GroupingTypesApiConstants.staffIdParamName, element)) {
             final Long staffId = this.fromApiJsonHelper.extractLongNamed(GroupingTypesApiConstants.staffIdParamName, element);

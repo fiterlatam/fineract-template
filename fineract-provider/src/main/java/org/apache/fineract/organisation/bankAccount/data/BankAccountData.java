@@ -19,30 +19,35 @@
 package org.apache.fineract.organisation.bankAccount.data;
 
 import java.util.Collection;
+import java.util.List;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.apache.fineract.accounting.glaccount.data.GLAccountData;
 import org.apache.fineract.organisation.agency.data.AgencyData;
 import org.apache.fineract.organisation.bank.data.BankData;
+import org.apache.fineract.organisation.bankcheque.data.BatchData;
 
 /**
  * Immutable data object for bank data.
  */
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Data
 public class BankAccountData {
 
-    private final Long id;
-
-    private final Long accountNumber;
-
-    private final AgencyData agency;
-    private final BankData bank;
-    private final GLAccountData glAccount;
-
-    private final Collection<AgencyData> agencyOptions;
-
-    private final Collection<BankData> bankOptions;
-
-    private final Collection<GLAccountData> glAccountOptions;
-
-    private final String description;
+    private Long id;
+    private Long accountNumber;
+    private AgencyData agency;
+    private BankData bank;
+    private GLAccountData glAccount;
+    private Collection<AgencyData> agencyOptions;
+    private Collection<BankData> bankOptions;
+    private Collection<GLAccountData> glAccountOptions;
+    private String description;
+    private List<BatchData> batches;
 
     // template
 

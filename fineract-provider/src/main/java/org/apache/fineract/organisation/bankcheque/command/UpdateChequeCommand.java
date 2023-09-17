@@ -16,15 +16,18 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.portfolio.group.exception;
+package org.apache.fineract.organisation.bankcheque.command;
 
-import org.apache.fineract.infrastructure.core.exception.AbstractPlatformDomainRuleException;
+import lombok.Builder;
+import lombok.Data;
 
-public class PrequalificationMappedException extends AbstractPlatformDomainRuleException {
+@Builder
+@Data
+public class UpdateChequeCommand {
 
-    public PrequalificationMappedException(final Long prequalificationId) {
-        super("error.msg.prequalification.already.mapped.exception",
-                "The Prequalification with id `" + prequalificationId + "` is already mapped to another group", prequalificationId);
-    }
-
+    private Long bankAccNo;
+    private Long agencyId;
+    private String description;
+    private Long from;
+    private Long to;
 }

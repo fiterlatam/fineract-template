@@ -38,6 +38,8 @@ import org.apache.fineract.organisation.bank.data.BankData;
 import org.apache.fineract.organisation.bank.service.BankReadPlatformService;
 import org.apache.fineract.organisation.bankAccount.data.BankAccountData;
 import org.apache.fineract.organisation.bankAccount.exception.BankAccountNotFoundException;
+import org.apache.fineract.organisation.bankcheque.data.BatchData;
+import org.apache.fineract.organisation.bankcheque.service.ChequeReadPlatformServiceImpl;
 import org.apache.fineract.organisation.office.service.OfficeReadPlatformService;
 import org.apache.fineract.useradministration.service.AppUserReadPlatformService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -61,6 +63,7 @@ public class BankAccountReadPlatformServiceImpl implements BankAccountReadPlatfo
     private final AgencyReadPlatformService agencyReadPlatformService;
     private final BankReadPlatformService bankReadPlatformService;
     private final GLAccountReadPlatformService glAccountReadPlatformService;
+    private final ChequeReadPlatformServiceImpl.BatchMapper batchMapper = new ChequeReadPlatformServiceImpl.BatchMapper();
 
     @Autowired
     public BankAccountReadPlatformServiceImpl(final PlatformSecurityContext context, final JdbcTemplate jdbcTemplate,
@@ -84,12 +87,17 @@ public class BankAccountReadPlatformServiceImpl implements BankAccountReadPlatfo
     public BankAccountData findById(Long bankAccountId) {
         try {
             this.context.authenticatedUser();
-
             BankAccountMapper bankAccountMapper = new BankAccountMapper();
             String schemaSql = "select " + bankAccountMapper.schema();
             schemaSql += "where ba.id = ?";
-
-            return this.jdbcTemplate.queryForObject(schemaSql, bankAccountMapper, new Object[] { bankAccountId });
+            BankAccountData bankAccountData = this.jdbcTemplate.queryForObject(schemaSql, bankAccountMapper,
+                    new Object[] { bankAccountId });
+            if (bankAccountData != null) {
+                final String batchSql = batchMapper.schema() + " WHERE mba.id = ?";
+                final List<BatchData> batchDataList = this.jdbcTemplate.query(batchSql, this.batchMapper, bankAccountId);
+                bankAccountData.setBatches(batchDataList);
+            }
+            return bankAccountData;
         } catch (final EmptyResultDataAccessException e) {
             throw new BankAccountNotFoundException(bankAccountId, e);
         }
@@ -199,7 +207,7 @@ public class BankAccountReadPlatformServiceImpl implements BankAccountReadPlatfo
             List<Object> paramList) {
 
         String sqlSearch = searchParameters.getSqlSearch();
-        final Long accountNumber = searchParameters.getAccountNumber();
+        final String accountNumber = searchParameters.getAccountNumber();
         final String bankName = searchParameters.getBankName();
         final String bankCode = searchParameters.getBankCode();
 

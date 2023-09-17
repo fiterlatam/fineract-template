@@ -20,6 +20,7 @@ package org.apache.fineract.commands.service;
 
 import org.apache.fineract.commands.domain.CommandWrapper;
 import org.apache.fineract.infrastructure.accountnumberformat.service.AccountNumberFormatConstants;
+import org.apache.fineract.organisation.bankcheque.api.BankChequeApiConstants;
 import org.apache.fineract.portfolio.client.api.ClientApiConstants;
 import org.apache.fineract.portfolio.paymenttype.api.PaymentTypeApiResourceConstants;
 import org.apache.fineract.portfolio.savings.DepositsApiConstants;
@@ -3818,6 +3819,30 @@ public class CommandWrapperBuilder {
         this.entityName = "BANKACCOUNT";
         this.entityId = bankAccountId;
         this.href = "/bankaccounts/" + bankAccountId;
+        return this;
+    }
+
+    public CommandWrapperBuilder createChequeBatch() {
+        this.entityName = BankChequeApiConstants.BANK_CHECK_RESOURCE_NAME;
+        this.actionName = BankChequeApiConstants.CHECK_ACTION_CREATE;
+        this.entityId = null;
+        this.href = "/bankcheques";
+        return this;
+    }
+
+    public CommandWrapperBuilder updateChequeBatch(Long batchId) {
+        this.entityName = BankChequeApiConstants.BANK_CHECK_RESOURCE_NAME;
+        this.actionName = BankChequeApiConstants.CHECK_ACTION_UPDATE;
+        this.entityId = batchId;
+        this.href = "/bankcheques/" + batchId;
+        return this;
+    }
+
+    public CommandWrapperBuilder deleteChequeBatch(Long batchId) {
+        this.entityName = BankChequeApiConstants.BANK_CHECK_RESOURCE_NAME;
+        this.actionName = BankChequeApiConstants.CHECK_ACTION_DELETE;
+        this.entityId = batchId;
+        this.href = "/bankcheques/" + batchId;
         return this;
     }
 }
