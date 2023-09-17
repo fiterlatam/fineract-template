@@ -41,8 +41,19 @@
             <column name="economic_activity" type="VARCHAR(200)" />
         </addColumn>
     </changeSet>
+
     <changeSet author="fineract" id="2">
             <modifyDataType tableName="m_client" columnName="economic_sector" newDataType="BIGINT"/>
             <modifyDataType tableName="m_client" columnName="economic_activity" newDataType="BIGINT"/>
     </changeSet>
+
+    <changeSet author="fineract" id="3">
+        <addColumn tableName="m_client">
+            <column name="municipality_dpi" type="BIGINT" />
+            <column name="department_dpi" type="BIGINT" />
+            <column name="firstlastname" type="VARCHAR(100)" />
+            <column name="secondlastname" type="VARCHAR(100)" />
+        </addColumn>
+    </changeSet>
+
 </databaseChangeLog>

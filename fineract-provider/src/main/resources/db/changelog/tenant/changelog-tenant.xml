@@ -103,4 +103,5 @@
     <include file="parts/0084_Add_prequalification_expiry_duration.xml" relativeToChangelogFile="true"/>
     <include file="parts/0085_FBR_306_add_check_migrations.xml" relativeToChangelogFile="true"/>
     <include file="parts/0086_Add_Prequalification_link_to_groups.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0087_Add_Buro_Check_Status_to_prequalification_group.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
