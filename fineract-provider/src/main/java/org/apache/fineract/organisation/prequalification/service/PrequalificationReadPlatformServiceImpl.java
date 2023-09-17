@@ -173,21 +173,6 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                 final EnumOptionData enumOptionData = PreQualificationsMemberEnumerations.status(status);
                 memberPrequalificationData.setStatus(enumOptionData);
             }
-
-            EnumOptionData prequalificationStatus;
-            if (!List.of(PrequalificationStatus.BURO_CHECKED.getValue(), PrequalificationStatus.HARD_POLICY_CHECKED.getValue())
-                    .contains(clientData.getStatus().getId().intValue())) {
-                if (members.stream()
-                        .anyMatch(m -> PrequalificationMemberIndication.ACTIVE.getValue().equals(m.getStatus().getId().intValue()))) {
-                    prequalificationStatus = PreQualificationsEnumerations.status(PrequalificationStatus.BLACKLIST_REJECTED);
-                } else {
-                    prequalificationStatus = PreQualificationsEnumerations.status(PrequalificationStatus.BLACKLIST_CHECKED);
-                }
-                if (clientData.getStatus().equals(PreQualificationsEnumerations.status(PrequalificationStatus.TIME_EXPIRED))) {
-                    prequalificationStatus = PreQualificationsEnumerations.status(PrequalificationStatus.TIME_EXPIRED);
-                }
-                clientData.setStatus(prequalificationStatus);
-            }
             clientData.updateMembers(members);
         }
         return clientData;
@@ -297,7 +282,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
 
         if (status != null) {
             PrequalificationStatus prequalificationStatus = PrequalificationStatus.fromString(status);
-            extraCriteria += " and g.status = " + prequalificationStatus.getValue().toString() + " ";
+            extraCriteria += " and g.status = " + prequalificationStatus.getValue() + " ";
         }
         if (type != null) {
             if (type.equals("existing")) {
@@ -449,6 +434,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                     	m.status,
                     	m.dpi,
                     	m.dob,
+                    	m.buro_check_status as buroCheckStatus,
                     	m.requested_amount AS requestedAmount,
                     	COALESCE((SELECT sum(principal_disbursed_derived) FROM m_loan WHERE client_id = mc.id), 0) AS totalLoanAmount,
                     	COALESCE((SELECT sum(total_outstanding_derived) FROM m_loan WHERE client_id = mc.id), 0) AS totalLoanBalance,
@@ -532,6 +518,11 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
 
             final Integer statusEnum = JdbcSupport.getInteger(rs, "status");
             final EnumOptionData status = PreQualificationsMemberEnumerations.status(statusEnum);
+            EnumOptionData bureauCheckStatus = null;
+            final Integer bureauStatus = rs.getInt("buroCheckStatus");
+            if (bureauStatus!=null){
+                bureauCheckStatus = PreQualificationsMemberEnumerations.status(bureauStatus.intValue());
+            }
 
             final Long id = JdbcSupport.getLong(rs, "id");
             final String name = rs.getString("name");
@@ -557,7 +548,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             return MemberPrequalificationData.instance(id, name, dpi, dob, puente, requestedAmount, status, blacklistCount, totalLoanAmount,
                     totalLoanBalance, totalGuaranteedLoanBalance, noOfCycles, additionalCreditsCount, additionalCreditsSum,
                     activeBlacklistCount, inActiveBlacklistCount, greenValidationCount, yellowValidationCount, orangeValidationCount,
-                    redValidationCount);
+                    redValidationCount,bureauCheckStatus);
 
         }
     }

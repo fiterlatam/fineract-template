@@ -18,11 +18,10 @@
  */
 package org.apache.fineract.organisation.prequalification.domain;
 
-import org.apache.fineract.portfolio.client.domain.ClientStatus;
 import org.springframework.util.StringUtils;
 
 /**
- * Enum representation of client identifier status states.
+ * Enum representation of prequalification status states.
  */
 public enum PrequalificationStatus {
 
@@ -92,12 +91,26 @@ public enum PrequalificationStatus {
             return clientStatus;
         }
 
-        if (status.equalsIgnoreCase(PrequalificationStatus.APPROVED.toString())) {
-            clientStatus = PrequalificationStatus.APPROVED;
-        } else if (status.equalsIgnoreCase(ClientStatus.PENDING.toString())) {
+        if (status.equalsIgnoreCase(PrequalificationStatus.PENDING.toString())) {
             clientStatus = PrequalificationStatus.PENDING;
-        } else if (status.equalsIgnoreCase(ClientStatus.REJECTED.toString())) {
+        } else if (status.equalsIgnoreCase(PrequalificationStatus.APPROVED.toString())) {
+            clientStatus = PrequalificationStatus.APPROVED;
+        } else if (status.equalsIgnoreCase(PrequalificationStatus.REJECTED.toString())) {
             clientStatus = PrequalificationStatus.REJECTED;
+        }else if (status.equalsIgnoreCase(PrequalificationStatus.BLACKLIST_CHECKED.toString())) {
+            clientStatus = PrequalificationStatus.BLACKLIST_CHECKED;
+        }else if (status.equalsIgnoreCase(PrequalificationStatus.BLACKLIST_REJECTED.toString())) {
+            clientStatus = PrequalificationStatus.BLACKLIST_REJECTED;
+        }else if (status.equalsIgnoreCase(PrequalificationStatus.BURO_CHECKED.toString())) {
+            clientStatus = PrequalificationStatus.BURO_CHECKED;
+        }else if (status.equalsIgnoreCase(PrequalificationStatus.HARD_POLICY_CHECKED.toString())) {
+            clientStatus = PrequalificationStatus.HARD_POLICY_CHECKED;
+        }else if (status.equalsIgnoreCase(PrequalificationStatus.TIME_EXPIRED.toString())) {
+            clientStatus = PrequalificationStatus.TIME_EXPIRED;
+        }else if (status.equalsIgnoreCase(PrequalificationStatus.COMPLETED.toString())) {
+            clientStatus = PrequalificationStatus.COMPLETED;
+        }else if (status.equalsIgnoreCase(PrequalificationStatus.CONSENT_ADDED.toString())) {
+            clientStatus = PrequalificationStatus.CONSENT_ADDED;
         }
 
         return clientStatus;

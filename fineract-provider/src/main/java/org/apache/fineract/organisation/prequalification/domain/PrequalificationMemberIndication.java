@@ -29,6 +29,7 @@ public enum PrequalificationMemberIndication {
     ACTIVE(100, "prequalification.member.blacklist.active"), //
     INACTIVE(200, "prequalification.member.blacklist.inactive"), //
     NONE(300, "prequalification.member.blacklist.none"), //
+    BUREAU_AVAILABLE(500, "prequalification.member..bureau.available"), //
     INVALID(0, "prequalification.invalid");
 
     private final Integer value;
@@ -46,6 +47,9 @@ public enum PrequalificationMemberIndication {
             break;
             case 300:
                 enumeration = PrequalificationMemberIndication.NONE;
+            break;
+            case 500:
+                enumeration = PrequalificationMemberIndication.BUREAU_AVAILABLE;
             break;
         }
         return enumeration;

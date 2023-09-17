@@ -102,7 +102,7 @@ public class PrequalificationGroupMember extends AbstractPersistableCustom {
         return new PrequalificationGroupMember(addedBy, name, dpi, dateOfBirth, puente, group, requestedAmount, status, clientId);
     }
 
-    public void updateStatus(final PrequalificationStatus prequalificationStatus) {
+    public void updateStatus(final PrequalificationMemberIndication prequalificationStatus) {
         ;
         this.status = prequalificationStatus.getValue();
     }

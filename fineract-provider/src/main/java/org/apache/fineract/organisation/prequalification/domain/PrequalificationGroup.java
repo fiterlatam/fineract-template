@@ -108,7 +108,7 @@ public class PrequalificationGroup extends AbstractPersistableCustom {
             final String groupName, Long center, final LoanProduct loanProduct, Long prequalilficationTimespan) {
         this.addedBy = appUser;
         this.facilitator = facilitator;
-        this.status = PrequalificationStatus.PENDING.getValue();
+        this.status = PrequalificationStatus.BLACKLIST_CHECKED.getValue();
         this.loanProduct = loanProduct;
         this.group = group;
         this.groupName = groupName;
