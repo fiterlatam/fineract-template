@@ -45,13 +45,19 @@ public final class PreQualificationsEnumerations {
             case REJECTED -> new EnumOptionData(PrequalificationStatus.REJECTED.getValue().longValue(),
                     PrequalificationStatus.REJECTED.getCode(), "REJECTED");
             case BLACKLIST_CHECKED -> new EnumOptionData(PrequalificationStatus.BLACKLIST_CHECKED.getValue().longValue(),
-                    PrequalificationStatus.BLACKLIST_CHECKED.getCode(), "Blacklist Checked");
+                    PrequalificationStatus.BLACKLIST_CHECKED.getCode(), "BLACKLIST_CHECKED");
             case BLACKLIST_REJECTED -> new EnumOptionData(PrequalificationStatus.BLACKLIST_REJECTED.getValue().longValue(),
-                    PrequalificationStatus.BLACKLIST_REJECTED.getCode(), "Blacklist Rejected");
+                    PrequalificationStatus.BLACKLIST_REJECTED.getCode(), "BLACKLIST_REJECTED");
             case HARD_POLICY_CHECKED -> new EnumOptionData(PrequalificationStatus.HARD_POLICY_CHECKED.getValue().longValue(),
-                    PrequalificationStatus.HARD_POLICY_CHECKED.getCode(), "Hard Policy Checked");
+                    PrequalificationStatus.HARD_POLICY_CHECKED.getCode(), "HARDPOLICY_CHECKED");
             case BURO_CHECKED -> new EnumOptionData(PrequalificationStatus.BURO_CHECKED.getValue().longValue(),
-                    PrequalificationStatus.BURO_CHECKED.getCode(), "Buro Checked");
+                    PrequalificationStatus.BURO_CHECKED.getCode(), "BURO_CHECKED");
+            case TIME_EXPIRED -> new EnumOptionData(PrequalificationStatus.TIME_EXPIRED.getValue().longValue(),
+                    PrequalificationStatus.TIME_EXPIRED.getCode(), "TIME_EXPIRED");
+            case COMPLETED -> new EnumOptionData(PrequalificationStatus.COMPLETED.getValue().longValue(),
+                    PrequalificationStatus.COMPLETED.getCode(), "COMPLETED");
+            case CONSENT_ADDED -> new EnumOptionData(PrequalificationStatus.CONSENT_ADDED.getValue().longValue(),
+                    PrequalificationStatus.CONSENT_ADDED.getCode(), "CONSENT_ADDED");
             default -> new EnumOptionData(PrequalificationStatus.INVALID.getValue().longValue(), PrequalificationStatus.INVALID.getCode(),
                     "INVALID");
         };

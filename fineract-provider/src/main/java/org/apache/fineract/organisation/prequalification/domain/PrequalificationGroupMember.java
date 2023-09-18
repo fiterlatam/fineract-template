@@ -70,6 +70,10 @@ public class PrequalificationGroupMember extends AbstractPersistableCustom {
     @JoinColumn(name = "added_by")
     private AppUser addedBy;
 
+    @Column(name = "buro_check_status", nullable = false)
+    private Integer buroCheckStatus;
+
+
     protected PrequalificationGroupMember() {
         //
     }
@@ -111,6 +115,10 @@ public class PrequalificationGroupMember extends AbstractPersistableCustom {
 
     public void updateDOB(final LocalDate dob) {
         this.dob = dob;
+    }
+
+    public void updateBuroCheckStatus(final Integer buroCheckStatus) {
+        this.buroCheckStatus = buroCheckStatus;
     }
 
     public void updateAmountRequested(final BigDecimal amountRequested) {
