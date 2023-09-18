@@ -18,6 +18,8 @@
  */
 package org.apache.fineract.organisation.prequalification.api;
 
+import static org.apache.fineract.organisation.prequalification.domain.PreQualificationsEnumerations.status;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -77,8 +79,6 @@ import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
-
-import static org.apache.fineract.organisation.prequalification.domain.PreQualificationsEnumerations.status;
 
 @Path("/prequalification")
 @Component
@@ -181,12 +181,13 @@ public class GroupPrequalificationApiResource {
                 this.appUserReadPlatformService.retrieveUsersUnderHierarchy(Long.valueOf(OfficeHierarchyLevel.GRUPO.getValue())));
 
         final List<EnumOptionData> statusOptions = Arrays.asList(status(PrequalificationStatus.CONSENT_ADDED),
-                status(PrequalificationStatus.BLACKLIST_CHECKED),status(PrequalificationStatus.COMPLETED),status(PrequalificationStatus.HARD_POLICY_CHECKED),status(PrequalificationStatus.TIME_EXPIRED));
+                status(PrequalificationStatus.BLACKLIST_CHECKED), status(PrequalificationStatus.COMPLETED),
+                status(PrequalificationStatus.HARD_POLICY_CHECKED), status(PrequalificationStatus.TIME_EXPIRED));
 
         GlobalConfigurationPropertyData timespan = this.configurationReadPlatformService
                 .retrieveGlobalConfiguration("Prequalification Timespan");
         final GroupPrequalificationData clientIdentifierData = GroupPrequalificationData.template(agencies, centerData, loanProducts,
-                appUsers, timespan,statusOptions);
+                appUsers, timespan, statusOptions);
 
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
         return this.toApiJsonSerializer.serialize(settings, clientIdentifierData, PRE_QUALIFICATION_DATA_PARAMETERS);

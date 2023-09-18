@@ -520,7 +520,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             final EnumOptionData status = PreQualificationsMemberEnumerations.status(statusEnum);
             EnumOptionData bureauCheckStatus = null;
             final Integer bureauStatus = rs.getInt("buroCheckStatus");
-            if (bureauStatus!=null){
+            if (bureauStatus != null) {
                 bureauCheckStatus = PreQualificationsMemberEnumerations.status(bureauStatus.intValue());
             }
 
@@ -548,7 +548,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             return MemberPrequalificationData.instance(id, name, dpi, dob, puente, requestedAmount, status, blacklistCount, totalLoanAmount,
                     totalLoanBalance, totalGuaranteedLoanBalance, noOfCycles, additionalCreditsCount, additionalCreditsSum,
                     activeBlacklistCount, inActiveBlacklistCount, greenValidationCount, yellowValidationCount, orangeValidationCount,
-                    redValidationCount,bureauCheckStatus);
+                    redValidationCount, bureauCheckStatus);
 
         }
     }

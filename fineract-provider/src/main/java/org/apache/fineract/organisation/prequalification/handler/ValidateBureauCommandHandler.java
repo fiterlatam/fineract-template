@@ -44,8 +44,8 @@ public class ValidateBureauCommandHandler implements NewCommandSourceHandler {
         try {
             return this.bureauValidationWritePlatformService.validatePrequalificationWithBureau(command.entityId(), command);
         } catch (final JpaSystemException | DataIntegrityViolationException dve) {
-            dataIntegrityErrorHandler.handleDataIntegrityIssues(command, dve.getMostSpecificCause(), dve, "prequalification.bureau.check.failed",
-                    "Bureau validation failed");
+            dataIntegrityErrorHandler.handleDataIntegrityIssues(command, dve.getMostSpecificCause(), dve,
+                    "prequalification.bureau.check.failed", "Bureau validation failed");
             return CommandProcessingResult.empty();
         }
     }

@@ -94,19 +94,19 @@ public enum PrequalificationStatus {
             clientStatus = PrequalificationStatus.APPROVED;
         } else if (status.equalsIgnoreCase(PrequalificationStatus.REJECTED.toString())) {
             clientStatus = PrequalificationStatus.REJECTED;
-        }else if (status.equalsIgnoreCase(PrequalificationStatus.BLACKLIST_CHECKED.toString())) {
+        } else if (status.equalsIgnoreCase(PrequalificationStatus.BLACKLIST_CHECKED.toString())) {
             clientStatus = PrequalificationStatus.BLACKLIST_CHECKED;
-        }else if (status.equalsIgnoreCase(PrequalificationStatus.BLACKLIST_REJECTED.toString())) {
+        } else if (status.equalsIgnoreCase(PrequalificationStatus.BLACKLIST_REJECTED.toString())) {
             clientStatus = PrequalificationStatus.BLACKLIST_REJECTED;
-        }else if (status.equalsIgnoreCase(PrequalificationStatus.BURO_CHECKED.toString())) {
+        } else if (status.equalsIgnoreCase(PrequalificationStatus.BURO_CHECKED.toString())) {
             clientStatus = PrequalificationStatus.BURO_CHECKED;
-        }else if (status.equalsIgnoreCase(PrequalificationStatus.HARD_POLICY_CHECKED.toString())) {
+        } else if (status.equalsIgnoreCase(PrequalificationStatus.HARD_POLICY_CHECKED.toString())) {
             clientStatus = PrequalificationStatus.HARD_POLICY_CHECKED;
-        }else if (status.equalsIgnoreCase(PrequalificationStatus.TIME_EXPIRED.toString())) {
+        } else if (status.equalsIgnoreCase(PrequalificationStatus.TIME_EXPIRED.toString())) {
             clientStatus = PrequalificationStatus.TIME_EXPIRED;
-        }else if (status.equalsIgnoreCase(PrequalificationStatus.COMPLETED.toString())) {
+        } else if (status.equalsIgnoreCase(PrequalificationStatus.COMPLETED.toString())) {
             clientStatus = PrequalificationStatus.COMPLETED;
-        }else if (status.equalsIgnoreCase(PrequalificationStatus.CONSENT_ADDED.toString())) {
+        } else if (status.equalsIgnoreCase(PrequalificationStatus.CONSENT_ADDED.toString())) {
             clientStatus = PrequalificationStatus.CONSENT_ADDED;
         }
 

@@ -18,6 +18,7 @@
  */
 package org.apache.fineract.organisation.prequalification.service;
 
+import java.util.List;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuilder;
@@ -33,7 +34,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
-import java.util.List;
 
 @Service
 public class BureauValidationWritePlatformServiceImpl implements BureauValidationWritePlatformService {
@@ -47,10 +47,10 @@ public class BureauValidationWritePlatformServiceImpl implements BureauValidatio
     private final JdbcTemplate jdbcTemplate;
 
     public BureauValidationWritePlatformServiceImpl(PlatformSecurityContext context,
-                                                    final PreQualificationMemberRepository preQualificationMemberRepository,
-                                                    PrequalificationGroupRepositoryWrapper prequalificationGroupRepositoryWrapper,
-                                                    ValidationChecklistResultRepository validationChecklistResultRepository, PlatformSecurityContext platformSecurityContext,
-                                                    JdbcTemplate jdbcTemplate) {
+            final PreQualificationMemberRepository preQualificationMemberRepository,
+            PrequalificationGroupRepositoryWrapper prequalificationGroupRepositoryWrapper,
+            ValidationChecklistResultRepository validationChecklistResultRepository, PlatformSecurityContext platformSecurityContext,
+            JdbcTemplate jdbcTemplate) {
         this.context = context;
         this.prequalificationGroupRepositoryWrapper = prequalificationGroupRepositoryWrapper;
         this.validationChecklistResultRepository = validationChecklistResultRepository;
@@ -62,13 +62,15 @@ public class BureauValidationWritePlatformServiceImpl implements BureauValidatio
     @Override
     public CommandProcessingResult validatePrequalificationWithBureau(Long prequalificationId, JsonCommand command) {
 
-        PrequalificationGroup prequalificationGroup = this.prequalificationGroupRepositoryWrapper.findOneWithNotFoundDetection(prequalificationId);
+        PrequalificationGroup prequalificationGroup = this.prequalificationGroupRepositoryWrapper
+                .findOneWithNotFoundDetection(prequalificationId);
 
-        //TODO --PROCESS THE PREQUALIFICATION GROUP WITH THE BUREAU AND UPDATE MEMBERS WITH THE RESULTS
-        List<PrequalificationGroupMember> members = this.preQualificationMemberRepository.findAllByPrequalificationGroup(prequalificationGroup);
+        // TODO --PROCESS THE PREQUALIFICATION GROUP WITH THE BUREAU AND UPDATE MEMBERS WITH THE RESULTS
+        List<PrequalificationGroupMember> members = this.preQualificationMemberRepository
+                .findAllByPrequalificationGroup(prequalificationGroup);
         for (PrequalificationGroupMember member : members) {
-            //TODO --PROCESS THE MEMBER WITH THE BUREAU AND UPDATE THE RESULTS
-            //TODO --UPDATE THE MEMBER WITH THE RESULTS
+            // TODO --PROCESS THE MEMBER WITH THE BUREAU AND UPDATE THE RESULTS
+            // TODO --UPDATE THE MEMBER WITH THE RESULTS
             member.updateBuroCheckStatus(PrequalificationMemberIndication.BUREAU_AVAILABLE.getValue());
             this.preQualificationMemberRepository.save(member);
         }
