@@ -253,7 +253,6 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
     @Column(name = "secondlastname", nullable = false)
     private String secondlastname;
 
-
     public static Client createNew(final AppUser currentUser, final Office clientOffice, final Group clientParentGroup, final Staff staff,
             final Long savingsProductId, final CodeValue gender, final CodeValue clientType, final CodeValue clientClassification,
             final Integer legalForm, final ClientInfoRelatedDetail clientInfoRelatedDetail, final JsonCommand command) {
@@ -303,19 +302,19 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
         return new Client(currentUser, status, clientOffice, clientParentGroup, accountNo, firstname, middlename, lastname, fullname,
                 activationDate, officeJoiningDate, externalId, mobileNo, emailAddress, staff, submittedOnDate, savingsProductId,
                 savingsAccountId, dataOfBirth, gender, clientType, clientClassification, legalForm, isStaff, dpiNumber, oldCustomerNumber,
-                clientInfoRelatedDetail,municipalityDpi, departmentDpi, firstlastname, secondlastname);
+                clientInfoRelatedDetail, municipalityDpi, departmentDpi, firstlastname, secondlastname);
     }
 
     protected Client() {}
 
     private Client(final AppUser currentUser, final ClientStatus status, final Office office, final Group clientParentGroup,
-                   final String accountNo, final String firstname, final String middlename, final String lastname, final String fullname,
-                   final LocalDate activationDate, final LocalDate officeJoiningDate, final String externalId, final String mobileNo,
-                   final String emailAddress, final Staff staff, final LocalDate submittedOnDate, final Long savingsProductId,
-                   final Long savingsAccountId, final LocalDate dateOfBirth, final CodeValue gender, final CodeValue clientType,
-                   final CodeValue clientClassification, final Integer legalForm, final Boolean isStaff, final String dpiNumber,
-                   final String oldCustomerNumber, ClientInfoRelatedDetail clientInfoRelatedDetail, Long municipalityDpi, Long departmentDpi,
-                   String firstlastname, String secondlastname) {
+            final String accountNo, final String firstname, final String middlename, final String lastname, final String fullname,
+            final LocalDate activationDate, final LocalDate officeJoiningDate, final String externalId, final String mobileNo,
+            final String emailAddress, final Staff staff, final LocalDate submittedOnDate, final Long savingsProductId,
+            final Long savingsAccountId, final LocalDate dateOfBirth, final CodeValue gender, final CodeValue clientType,
+            final CodeValue clientClassification, final Integer legalForm, final Boolean isStaff, final String dpiNumber,
+            final String oldCustomerNumber, ClientInfoRelatedDetail clientInfoRelatedDetail, Long municipalityDpi, Long departmentDpi,
+            String firstlastname, String secondlastname) {
 
         if (StringUtils.isBlank(accountNo)) {
             this.accountNumber = new RandomPasswordGenerator(19).generate();

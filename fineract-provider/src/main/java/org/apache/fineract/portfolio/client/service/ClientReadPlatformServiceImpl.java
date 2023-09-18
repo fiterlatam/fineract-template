@@ -573,8 +573,8 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
             return ClientData.instance(accountNo, status, subStatus, officeId, officeName, transferToOfficeId, transferToOfficeName, id,
                     firstname, middlename, lastname, fullname, displayName, externalId, mobileNo, emailAddress, dateOfBirth, gender,
                     activationDate, imageId, staffId, staffName, timeline, savingsProductId, savingsProductName, savingsAccountId,
-                    clienttype, classification, legalForm, clientNonPerson, isStaff, dpiNumber, oldCustomerNumber,
-                    null,null,null,null,null,null,null);
+                    clienttype, classification, legalForm, clientNonPerson, isStaff, dpiNumber, oldCustomerNumber, null, null, null, null,
+                    null, null, null);
 
         }
     }
@@ -600,9 +600,11 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
         ClientMapper() {
             final StringBuilder builder = new StringBuilder(400);
 
-            builder.append("c.id as id, c.account_no as accountNo, c.external_id as externalId, c.status_enum as statusEnum,c.sub_status as subStatus, c.dpi as dpiNumber, c.old_customer_number as oldCustomerNumber, ");
+            builder.append(
+                    "c.id as id, c.account_no as accountNo, c.external_id as externalId, c.status_enum as statusEnum,c.sub_status as subStatus, c.dpi as dpiNumber, c.old_customer_number as oldCustomerNumber, ");
             builder.append("c.firstlastname, c.secondlastname, municipalityDpiCV.code_value as municipalityDpiName, ");
-            builder.append("municipalityDpiCV.id as municipalityDpi, departmentDpiCV.code_value as departmentDpiName, departmentDpiCV.id as departmentDpi, ");
+            builder.append(
+                    "municipalityDpiCV.id as municipalityDpi, departmentDpiCV.code_value as departmentDpiName, departmentDpiCV.id as departmentDpi, ");
             builder.append("c.loan_cycle as loanCycle, c.group_member as groupMember, c.group_number as groupNumber, "
                     + "c.status_in_group as statusInGroup, c.retirement_reason as retirementReason, c.other_names as othernames, "
                     + "c.maiden_name as maidenName, c.civil_status as civilStatus, c.family_reference as familyReference, "
@@ -795,8 +797,8 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
             return ClientData.instance(accountNo, status, subStatus, officeId, officeName, transferToOfficeId, transferToOfficeName, id,
                     firstname, middlename, lastname, fullname, displayName, externalId, mobileNo, emailAddress, dateOfBirth, gender,
                     activationDate, imageId, staffId, staffName, timeline, savingsProductId, savingsProductName, savingsAccountId,
-                    clienttype, classification, legalForm, clientNonPerson, isStaff, dpiNumber, oldCustomerNumber, detailData,firstlastname,
-                    secondlastname, departmentDpiName, departmentDpi, municipalityDpiName, municipalityDpi);
+                    clienttype, classification, legalForm, clientNonPerson, isStaff, dpiNumber, oldCustomerNumber, detailData,
+                    firstlastname, secondlastname, departmentDpiName, departmentDpi, municipalityDpiName, municipalityDpi);
 
         }
     }
