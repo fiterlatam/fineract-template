@@ -256,20 +256,22 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                 String blistSql = "select count(*) from m_client_blacklist where dpi=? and status=?";
                 Long activeBlacklisted = jdbcTemplate.queryForObject(blistSql, Long.class, dpi, BlacklistStatus.ACTIVE.getValue());
                 Long inactiveBlacklisted = jdbcTemplate.queryForObject(blistSql, Long.class, dpi, BlacklistStatus.INACTIVE.getValue());
-                Integer status = PrequalificationMemberIndication.NONE.getValue();
+                Integer memberStatus = PrequalificationMemberIndication.NONE.getValue();
+                Integer groupStatus = PrequalificationStatus.BLACKLIST_CHECKED.getValue();
                 if (activeBlacklisted <= 0 && inactiveBlacklisted <= 0) {
-                    status = PrequalificationMemberIndication.NONE.getValue();
+                    memberStatus = PrequalificationMemberIndication.NONE.getValue();
                 }
                 if (activeBlacklisted <= 0 && inactiveBlacklisted > 0) {
-                    status = PrequalificationMemberIndication.INACTIVE.getValue();
+                    memberStatus = PrequalificationMemberIndication.INACTIVE.getValue();
                 }
 
                 if (activeBlacklisted > 0) {
-                    status = PrequalificationMemberIndication.ACTIVE.getValue();
+                    memberStatus = PrequalificationMemberIndication.ACTIVE.getValue();
+                    group.updateStatus(PrequalificationStatus.BLACKLIST_REJECTED);
                 }
 
                 PrequalificationGroupMember groupMember = PrequalificationGroupMember.fromJson(group, name, dpi, clientId, dateOfBirth,
-                        requestedAmount, puente, addedBy, status);
+                        requestedAmount, puente, addedBy, memberStatus);
                 allMembers.add(groupMember);
             }
         }
@@ -281,6 +283,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
     public Long addCommentsToPrequalification(Long groupId, String comment) {
         PrequalificationGroup prequalificationGroup = this.prequalificationGroupRepositoryWrapper.findOneWithNotFoundDetection(groupId);
         prequalificationGroup.updateComments(comment);
+        prequalificationGroup.updateStatus(PrequalificationStatus.CONSENT_ADDED);
         this.prequalificationGroupRepositoryWrapper.saveAndFlush(prequalificationGroup);
         return groupId;
     }
@@ -375,6 +378,8 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
 
         JsonArray groupMembers = command.arrayOfParameterNamed(PrequalificatoinApiConstants.membersParamName);
         if (!ObjectUtils.isEmpty(groupMembers)) {
+            prequalificationGroup.updateStatus(PrequalificationStatus.BLACKLIST_CHECKED);
+
             for (JsonElement memberElement : groupMembers) {
 
                 JsonObject member = memberElement.getAsJsonObject();
@@ -385,7 +390,8 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
 
                     if (pMember.isPresent()) {
 
-                        PrequalificationGroupMember editedMember = assembleMemberForUpdate(memberElement, pMember.get(), addedBy);
+                        PrequalificationGroupMember editedMember = assembleMemberForUpdate(memberElement, pMember.get(), addedBy,
+                                prequalificationGroup);
 
                         allMembers.add(editedMember);
                     }
@@ -402,7 +408,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
     }
 
     private PrequalificationGroupMember assembleMemberForUpdate(JsonElement memberElement,
-            PrequalificationGroupMember prequalificationGroupMember, AppUser addedBy) {
+            PrequalificationGroupMember prequalificationGroupMember, AppUser addedBy, PrequalificationGroup prequalificationGroup) {
         apiJsonDeserializer.validateForUpdate(memberElement.toString());
 
         JsonCommand command = JsonCommand.fromJsonElement(prequalificationGroupMember.getId(), memberElement, new FromJsonHelper());
@@ -443,6 +449,24 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                 prequalificationGroupMember.updateWorkWithPuente(newValue);
             }
         }
+        String blistSql = "select count(*) from m_client_blacklist where dpi=? and status=?";
+        Long activeBlacklisted = jdbcTemplate.queryForObject(blistSql, Long.class, prequalificationGroupMember.getDpi(),
+                BlacklistStatus.ACTIVE.getValue());
+        Long inactiveBlacklisted = jdbcTemplate.queryForObject(blistSql, Long.class, prequalificationGroupMember.getDpi(),
+                BlacklistStatus.INACTIVE.getValue());
+        PrequalificationMemberIndication status = PrequalificationMemberIndication.NONE;
+        if (activeBlacklisted <= 0 && inactiveBlacklisted <= 0) {
+            status = PrequalificationMemberIndication.NONE;
+        }
+        if (activeBlacklisted <= 0 && inactiveBlacklisted > 0) {
+            status = PrequalificationMemberIndication.INACTIVE;
+        }
+
+        if (activeBlacklisted > 0) {
+            status = PrequalificationMemberIndication.ACTIVE;
+            prequalificationGroup.updateStatus(PrequalificationStatus.BLACKLIST_REJECTED);
+        }
+        prequalificationGroupMember.updateStatus(status);
 
         return prequalificationGroupMember;
     }
@@ -506,6 +530,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
 
         if (activeBlacklisted > 0) {
             status = PrequalificationMemberIndication.ACTIVE.getValue();
+            group.updateStatus(PrequalificationStatus.BLACKLIST_REJECTED);
         }
 
         PrequalificationGroupMember groupMember = PrequalificationGroupMember.fromJson(group, name, dpi, clientId, dateOfBirth,

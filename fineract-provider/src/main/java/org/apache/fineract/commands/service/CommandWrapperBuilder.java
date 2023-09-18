@@ -3845,4 +3845,12 @@ public class CommandWrapperBuilder {
         this.href = "/bankcheques/" + batchId;
         return this;
     }
+
+    public CommandWrapperBuilder bureauValidationProcessing(Long prequalificationId) {
+        this.actionName = "VALIDATE";
+        this.entityName = "BUREAU";
+        this.entityId = prequalificationId;
+        this.href = "/prequalification/checklist/" + prequalificationId;
+        return this;
+    }
 }

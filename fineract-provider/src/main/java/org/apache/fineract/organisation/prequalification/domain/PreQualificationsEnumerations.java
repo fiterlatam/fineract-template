@@ -49,7 +49,7 @@ public final class PreQualificationsEnumerations {
             case BLACKLIST_REJECTED -> new EnumOptionData(PrequalificationStatus.BLACKLIST_REJECTED.getValue().longValue(),
                     PrequalificationStatus.BLACKLIST_REJECTED.getCode(), "BLACKLIST_REJECTED");
             case HARD_POLICY_CHECKED -> new EnumOptionData(PrequalificationStatus.HARD_POLICY_CHECKED.getValue().longValue(),
-                    PrequalificationStatus.HARD_POLICY_CHECKED.getCode(), "HARDPOLICY_CHECKED");
+                    PrequalificationStatus.HARD_POLICY_CHECKED.getCode(), "HARD_POLICY_CHECKED");
             case BURO_CHECKED -> new EnumOptionData(PrequalificationStatus.BURO_CHECKED.getValue().longValue(),
                     PrequalificationStatus.BURO_CHECKED.getCode(), "BURO_CHECKED");
             case TIME_EXPIRED -> new EnumOptionData(PrequalificationStatus.TIME_EXPIRED.getValue().longValue(),

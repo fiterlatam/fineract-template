@@ -20,6 +20,7 @@ package org.apache.fineract.organisation.prequalification.data;
 
 import java.time.LocalDate;
 import java.util.Collection;
+import java.util.List;
 import lombok.Data;
 import org.apache.fineract.infrastructure.configuration.data.GlobalConfigurationPropertyData;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
@@ -65,12 +66,13 @@ public class GroupPrequalificationData {
     private Long redValidationCount;
     private Long prequalilficationTimespan;
     private Collection<MemberPrequalificationData> groupMembers;
+    private Collection<EnumOptionData> groupStatusOptions;
 
     public GroupPrequalificationData(final Long id, final String productName, final String prequalificationNumber, final String agencyName,
             final String portforlioName, final String centerName, final String groupName, final String addedBy, final LocalDate createdAt,
             final EnumOptionData status, String comments, Long groupId, final Collection<MemberPrequalificationData> groupMembers,
             final Collection<AgencyData> agencies, Collection<CenterData> centerData, Collection<LoanProductData> loanProducts,
-            Collection<AppUserData> appUsers, Long prequalilficationTimespan) {
+            Collection<AppUserData> appUsers, Long prequalilficationTimespan, List<EnumOptionData> groupStatusOptions) {
         this.id = id;
         this.productName = productName;
         this.prequalificationNumber = prequalificationNumber;
@@ -94,6 +96,7 @@ public class GroupPrequalificationData {
         this.facilitatorId = null;
         this.facilitatorName = null;
         this.prequalilficationTimespan = prequalilficationTimespan;
+        this.groupStatusOptions = groupStatusOptions;
     }
 
     public GroupPrequalificationData(final Long id, final String productName, final String prequalificationNumber, final String agencyName,
@@ -133,19 +136,20 @@ public class GroupPrequalificationData {
     }
 
     public static GroupPrequalificationData template(final Collection<AgencyData> agencies, Collection<CenterData> centerData,
-            Collection<LoanProductData> loanProducts, Collection<AppUserData> appUsers, GlobalConfigurationPropertyData timespan) {
+            Collection<LoanProductData> loanProducts, Collection<AppUserData> appUsers, GlobalConfigurationPropertyData timespan,
+            List<EnumOptionData> statusOptions) {
 
         Long prequalilficationTimespan = null;
         if (timespan != null) prequalilficationTimespan = timespan.getValue();
         return new GroupPrequalificationData(null, null, null, null, null, null, null, null, null, null, null, null, null, agencies,
-                centerData, loanProducts, appUsers, prequalilficationTimespan);
+                centerData, loanProducts, appUsers, prequalilficationTimespan, statusOptions);
     }
 
     public static GroupPrequalificationData instance(Long id, String prequalificationNumber, EnumOptionData status, String agencyName,
             String portfolioName, String centerName, String groupName, String productName, String addedBy, LocalDate createdAt,
             String comments, Long groupId, Long prequalilficationTimespan) {
         return new GroupPrequalificationData(id, productName, prequalificationNumber, agencyName, portfolioName, centerName, groupName,
-                addedBy, createdAt, status, comments, groupId, null, null, null, null, null, prequalilficationTimespan);
+                addedBy, createdAt, status, comments, groupId, null, null, null, null, null, prequalilficationTimespan, null);
     }
 
     public static GroupPrequalificationData instance(Long id, String prequalificationNumber, EnumOptionData status, String agencyName,

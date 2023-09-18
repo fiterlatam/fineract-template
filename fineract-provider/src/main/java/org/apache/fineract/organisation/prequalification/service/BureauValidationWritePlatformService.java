@@ -16,15 +16,12 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.organisation.prequalification.domain;
+package org.apache.fineract.organisation.prequalification.service;
 
-import java.util.List;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.apache.fineract.infrastructure.core.api.JsonCommand;
+import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 
-public interface PreQualificationMemberRepository
-        extends JpaRepository<PrequalificationGroupMember, Long>, JpaSpecificationExecutor<PrequalificationGroupMember> {
+public interface BureauValidationWritePlatformService {
 
-    List<PrequalificationGroupMember> findAllByPrequalificationGroup(PrequalificationGroup prequalificationGroup);
-    // no behaviour
+    CommandProcessingResult validatePrequalificationWithBureau(Long prequalificationId, JsonCommand command);
 }
