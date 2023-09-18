@@ -6674,7 +6674,8 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                     receivableInterest = receivableInterest.plus(transaction.getInterestPortion(currency));
                     receivableFee = receivableFee.plus(transaction.getFeeChargesPortion(currency));
                     if (transaction.getFeeChargesPortion(currency).isGreaterThanZero() && transaction.getLoanChargesPaid() != null
-                    && transaction.getLoanChargesPaid().size() == 1 && transaction.getAmount(currency).isEqualTo(transaction.getFeeChargesPortion(currency))) {
+                            && transaction.getLoanChargesPaid().size() == 1
+                            && transaction.getAmount(currency).isEqualTo(transaction.getFeeChargesPortion(currency))) {
                         if (transaction.getLoanChargesPaid().stream().findFirst().get().getLoanCharge().isOriginationFee()) {
                             receivableFee = receivableFee.minus(transaction.getFeeChargesPortion(currency));
                         }

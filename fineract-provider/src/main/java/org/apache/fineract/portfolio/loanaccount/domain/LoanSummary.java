@@ -385,8 +385,7 @@ public final class LoanSummary {
         this.totalVatOnPenaltyChargeOutstanding = totalVatChargedOnPenaltyCharges.minus(this.totalVatOnPenaltyChargePaid)
                 .minus(this.totalVatOnPenaltyChargeWaived).minus(this.totalVatOnPenaltyChargeWrittenOff).getAmount();
         this.totalVatOnPenaltyChargeOverdue = summaryWrapper
-                .calculateTotalVatOnPenaltyChargeOverdue(repaymentScheduleInstallments, currency).minus(this.totalVatOnPenaltyChargePaid)
-                .getAmount();
+                .calculateTotalVatOnPenaltyChargeOverdue(repaymentScheduleInstallments, currency).getAmount();
 
         final Money totalExpectedRepayment = Money.of(currency, this.totalPrincipalDisbursed).plus(originationFees)
                 .plus(this.totalInterestCharged).plus(this.totalFeeChargesCharged).plus(totalPenaltyChargesCharged)
