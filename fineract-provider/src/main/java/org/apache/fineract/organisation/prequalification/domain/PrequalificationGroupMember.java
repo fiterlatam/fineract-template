@@ -75,7 +75,6 @@ public class PrequalificationGroupMember extends AbstractPersistableCustom {
     @Column(name = "buro_check_status", nullable = false)
     private Integer buroCheckStatus;
 
-
     protected PrequalificationGroupMember() {
         //
     }
