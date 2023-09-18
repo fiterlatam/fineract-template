@@ -886,7 +886,8 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
                 }
 
                 // generate transaction for accrual vat on penalties
-                LoanTransaction applyLoanVatOnPenaltiesTransaction = makeAccrualTransactionForVatOnPenaltyCharge(loan, foreClosureDate, payment);
+                LoanTransaction applyLoanVatOnPenaltiesTransaction = makeAccrualTransactionForVatOnPenaltyCharge(loan, foreClosureDate,
+                        payment);
                 if (applyLoanVatOnPenaltiesTransaction != null) {
                     applyLoanVatOnPenaltiesTransaction.setGeneratedVatTransactionFromRepayment(true);
                     saveLoanTransactionWithDataIntegrityViolationChecks(applyLoanVatOnPenaltiesTransaction);

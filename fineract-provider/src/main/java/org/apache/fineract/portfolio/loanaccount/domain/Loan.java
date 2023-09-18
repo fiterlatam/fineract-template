@@ -749,8 +749,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
     public Money calculateVatOnAmount(Money amountForVat) {
 
-        Money vatAmount = amountForVat.multipliedBy(this.vatPercentage).dividedBy(100,
-                MoneyHelper.getRoundingMode());
+        Money vatAmount = amountForVat.multipliedBy(this.vatPercentage).dividedBy(100, MoneyHelper.getRoundingMode());
 
         return vatAmount;
     }
@@ -1374,10 +1373,13 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                     fee = fee.plus(loanTransaction.getFeeChargesPortion(getCurrency()));
                 }
 
-                if (loanTransaction.getLoanChargesPaid() != null && loanTransaction.getPenaltyChargesPortion(getCurrency()).isGreaterThanZero()) {
+                if (loanTransaction.getLoanChargesPaid() != null
+                        && loanTransaction.getPenaltyChargesPortion(getCurrency()).isGreaterThanZero()) {
                     for (LoanChargePaidBy loanChargePaidBy : loanTransaction.getLoanChargesPaid()) {
-                        if (loanChargePaidBy.getLoanCharge().isPenaltyCharge() && loanChargePaidBy.getLoanCharge().isOverdueInstallmentCharge()
-                                && loanChargePaidBy.getLoanCharge().getOverdueInstallmentCharge().getInstallment().getInstallmentNumber().equals(installment.getInstallmentNumber())) {
+                        if (loanChargePaidBy.getLoanCharge().isPenaltyCharge()
+                                && loanChargePaidBy.getLoanCharge().isOverdueInstallmentCharge()
+                                && loanChargePaidBy.getLoanCharge().getOverdueInstallmentCharge().getInstallment().getInstallmentNumber()
+                                        .equals(installment.getInstallmentNumber())) {
                             penality = penality.plus(loanChargePaidBy.getAmount());
                         }
                     }
@@ -6809,7 +6811,8 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                     .getAmount();
             vatOnPenaltyCharge = balances[2].multipliedBy(this.vatPercentage)
                     .dividedBy(BigDecimal.valueOf(100), MoneyHelper.getRoundingMode()).getAmount();
-            vatOnInterest = balances[0].multipliedBy(this.vatPercentage).dividedBy(BigDecimal.valueOf(100), MoneyHelper.getRoundingMode()).getAmount();
+            vatOnInterest = balances[0].multipliedBy(this.vatPercentage).dividedBy(BigDecimal.valueOf(100), MoneyHelper.getRoundingMode())
+                    .getAmount();
         }
 
         LoanRepaymentScheduleInstallment newInstallment = new LoanRepaymentScheduleInstallment(null, newInstallments.size() + 1,
