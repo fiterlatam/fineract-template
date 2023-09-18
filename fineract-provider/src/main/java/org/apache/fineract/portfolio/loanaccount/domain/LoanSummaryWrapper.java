@@ -322,13 +322,10 @@ public final class LoanSummaryWrapper {
             MonetaryCurrency currency) {
         Money total = Money.zero(currency);
         LocalDate businessDate = DateUtils.getBusinessLocalDate();
-        LocalDate overDueSince = businessDate;
 
         for (final LoanRepaymentScheduleInstallment installment : repaymentScheduleInstallments) {
-            if (installment.getDueDate().isBefore(businessDate)) {
-                if (installment.getVatOnInterestCharged(currency).isGreaterThanZero()) {
-                    total = total.plus(installment.getVatOnInterestCharged(currency));
-                }
+            if (installment.getDueDate().isBefore(businessDate) && installment.getVatOnInterestOutstanding(currency).isGreaterThanZero()) {
+                total = total.plus(installment.getVatOnInterestOutstanding(currency));
             }
         }
         return total;
@@ -338,7 +335,6 @@ public final class LoanSummaryWrapper {
             MonetaryCurrency currency) {
         Money total = Money.zero(currency);
         LocalDate businessDate = DateUtils.getBusinessLocalDate();
-        LocalDate overDueSince = businessDate;
 
         for (final LoanRepaymentScheduleInstallment installment : repaymentScheduleInstallments) {
             if (installment.getDueDate().isBefore(businessDate)) {
@@ -354,7 +350,6 @@ public final class LoanSummaryWrapper {
             MonetaryCurrency currency) {
         Money total = Money.zero(currency);
         LocalDate businessDate = DateUtils.getBusinessLocalDate();
-        LocalDate overDueSince = businessDate;
 
         for (final LoanRepaymentScheduleInstallment installment : repaymentScheduleInstallments) {
             if (installment.getDueDate().isBefore(businessDate)) {
@@ -406,7 +401,6 @@ public final class LoanSummaryWrapper {
             MonetaryCurrency currency) {
         Money total = Money.zero(currency);
         LocalDate businessDate = DateUtils.getBusinessLocalDate();
-        LocalDate overDueSince = businessDate;
 
         for (final LoanRepaymentScheduleInstallment installment : repaymentScheduleInstallments) {
             if (installment.getDueDate().isBefore(businessDate)) {
