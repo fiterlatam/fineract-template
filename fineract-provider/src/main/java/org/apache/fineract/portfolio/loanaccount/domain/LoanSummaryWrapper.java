@@ -282,6 +282,18 @@ public final class LoanSummaryWrapper {
         return total;
     }
 
+    public Money calculateTotalVatOnInterestOverdue(List<LoanRepaymentScheduleInstallment> repaymentScheduleInstallments,
+            MonetaryCurrency currency) {
+        Money total = Money.zero(currency);
+
+        for (final LoanRepaymentScheduleInstallment installment : repaymentScheduleInstallments) {
+            if (installment.getVatOnInterestOverdue(currency).isGreaterThanZero()) {
+                total = total.plus(installment.getVatOnInterestOverdue(currency));
+            }
+        }
+        return total;
+    }
+
     public Money calculateTotalVatOnCharges(final List<LoanRepaymentScheduleInstallment> repaymentScheduleInstallments,
             final MonetaryCurrency currency) {
         Money total = Money.zero(currency);
@@ -318,29 +330,14 @@ public final class LoanSummaryWrapper {
         return total;
     }
 
-    public Money calculateTotalVatOnInterestOverdue(List<LoanRepaymentScheduleInstallment> repaymentScheduleInstallments,
-            MonetaryCurrency currency) {
-        Money total = Money.zero(currency);
-        LocalDate businessDate = DateUtils.getBusinessLocalDate();
-
-        for (final LoanRepaymentScheduleInstallment installment : repaymentScheduleInstallments) {
-            if (installment.getDueDate().isBefore(businessDate) && installment.getVatOnInterestOutstanding(currency).isGreaterThanZero()) {
-                total = total.plus(installment.getVatOnInterestOutstanding(currency));
-            }
-        }
-        return total;
-    }
-
     public Money calculateTotalVatOnChargeOverdue(List<LoanRepaymentScheduleInstallment> repaymentScheduleInstallments,
             MonetaryCurrency currency) {
         Money total = Money.zero(currency);
         LocalDate businessDate = DateUtils.getBusinessLocalDate();
 
         for (final LoanRepaymentScheduleInstallment installment : repaymentScheduleInstallments) {
-            if (installment.getDueDate().isBefore(businessDate)) {
-                if (installment.getVatOnChargeExpected(currency).isGreaterThanZero()) {
-                    total = total.plus(installment.getVatOnChargeExpected(currency));
-                }
+            if (installment.getVatOnChargeOverdue(currency).isGreaterThanZero()) {
+                total = total.plus(installment.getVatOnChargeOverdue(currency));
             }
         }
         return total;
@@ -349,13 +346,10 @@ public final class LoanSummaryWrapper {
     public Money calculateTotalPenaltyChargesOverdue(List<LoanRepaymentScheduleInstallment> repaymentScheduleInstallments,
             MonetaryCurrency currency) {
         Money total = Money.zero(currency);
-        LocalDate businessDate = DateUtils.getBusinessLocalDate();
 
         for (final LoanRepaymentScheduleInstallment installment : repaymentScheduleInstallments) {
-            if (installment.getDueDate().isBefore(businessDate)) {
-                if (installment.getPenaltyChargesCharged(currency).isGreaterThanZero()) {
-                    total = total.plus(installment.getPenaltyChargesCharged(currency));
-                }
+            if (installment.getPenaltyChargesCharged(currency).isGreaterThanZero()) {
+                total = total.plus(installment.getPenaltyChargesCharged(currency));
             }
         }
         return total;
@@ -400,13 +394,10 @@ public final class LoanSummaryWrapper {
     public Money calculateTotalVatOnPenaltyChargeOverdue(List<LoanRepaymentScheduleInstallment> repaymentScheduleInstallments,
             MonetaryCurrency currency) {
         Money total = Money.zero(currency);
-        LocalDate businessDate = DateUtils.getBusinessLocalDate();
 
         for (final LoanRepaymentScheduleInstallment installment : repaymentScheduleInstallments) {
-            if (installment.getDueDate().isBefore(businessDate)) {
-                if (installment.getVatOnPenaltyChargeExpected(currency).isGreaterThanZero()) {
-                    total = total.plus(installment.getVatOnPenaltyChargeExpected(currency));
-                }
+            if (installment.getVatOnPenaltyChargeOverdue(currency).isGreaterThanZero()) {
+                total = total.plus(installment.getVatOnPenaltyChargeOverdue(currency));
             }
         }
         return total;
