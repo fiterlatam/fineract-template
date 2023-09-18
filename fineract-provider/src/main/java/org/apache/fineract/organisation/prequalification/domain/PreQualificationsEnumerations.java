@@ -56,6 +56,8 @@ public final class PreQualificationsEnumerations {
                     PrequalificationStatus.TIME_EXPIRED.getCode(), "TIME_EXPIRED");
             case COMPLETED -> new EnumOptionData(PrequalificationStatus.COMPLETED.getValue().longValue(),
                     PrequalificationStatus.COMPLETED.getCode(), "COMPLETED");
+            case CONSENT_ADDED -> new EnumOptionData(PrequalificationStatus.CONSENT_ADDED.getValue().longValue(),
+                    PrequalificationStatus.CONSENT_ADDED.getCode(), "CONSENT_ADDED");
             default -> new EnumOptionData(PrequalificationStatus.INVALID.getValue().longValue(), PrequalificationStatus.INVALID.getCode(),
                     "INVALID");
         };
