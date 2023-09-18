@@ -30,9 +30,13 @@ public enum PrequalificationStatus {
     APPROVED(200, "prequalification.status.approved"), //
     REJECTED(300, "prequalification.status.rejected"), //
     BLACKLIST_CHECKED(400, "prequalification.status.blacklist.checked"), //
-    BLACKLIST_REJECTED(500, "prequalification.status.blacklist.rejected"), BURO_CHECKED(600,
-            "prequalification.status.buro.checked"), HARD_POLICY_CHECKED(700,
-            "prequalification.status.hard.policy.checked"), INVALID(0, "prequalification.status.invalid");
+    BLACKLIST_REJECTED(500, "prequalification.status.blacklist.rejected"),
+    BURO_CHECKED(600, "prequalification.status.buro.checked"),
+    HARD_POLICY_CHECKED(700, "prequalification.status.hard.policy.checked"),
+    TIME_EXPIRED(800, "prequalification.status.expired"),
+    COMPLETED(900, "prequalification.status.completed"),
+    CONSENT_ADDED(901, "prequalification.status.concent.added"),
+    INVALID(0, "prequalification.status.invalid");
 
     private final Integer value;
     private final String code;
@@ -49,6 +53,27 @@ public enum PrequalificationStatus {
                 break;
             case 300:
                 enumeration = PrequalificationStatus.REJECTED;
+                break;
+            case 400:
+                enumeration = PrequalificationStatus.BLACKLIST_CHECKED;
+                break;
+            case 500:
+                enumeration = PrequalificationStatus.BLACKLIST_REJECTED;
+                break;
+            case 600:
+                enumeration = PrequalificationStatus.BURO_CHECKED;
+                break;
+            case 700:
+                enumeration = PrequalificationStatus.HARD_POLICY_CHECKED;
+                break;
+            case 800:
+                enumeration = PrequalificationStatus.TIME_EXPIRED;
+                break;
+            case 900:
+                enumeration = PrequalificationStatus.COMPLETED;
+                break;
+            case 901:
+                enumeration = PrequalificationStatus.CONSENT_ADDED;
                 break;
         }
         return enumeration;

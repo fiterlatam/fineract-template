@@ -224,6 +224,10 @@ public class ClientApiConstants {
     public static final String languagesParamName = "languages";
     public static final String economicSectorParamName = "economicSector";
     public static final String economicActivityParamName = "economicActivity";
+    public static final String municipalityDpiParamName = "municipalDpi";
+    public static final String departmentDpiParamName = "departmentDpi";
+    public static final String firstlastnameParamName = "firstlastname";
+    public static final String secondlastnameParamName = "secondlastname";
 
     /**
      * These parameters will match the class level parameters of {@link ClientData}. Where possible, we try to get

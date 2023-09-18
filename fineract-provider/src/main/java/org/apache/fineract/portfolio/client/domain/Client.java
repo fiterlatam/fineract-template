@@ -241,9 +241,22 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
     @Embedded
     private ClientInfoRelatedDetail clientInfoRelatedDetail;
 
+    @Column(name = "municipality_dpi", nullable = false)
+    private Long municipalityDpi;
+
+    @Column(name = "department_dpi", nullable = false)
+    private Long departmentDpi;
+
+    @Column(name = "firstlastname", nullable = false)
+    private String firstlastname;
+
+    @Column(name = "secondlastname", nullable = false)
+    private String secondlastname;
+
+
     public static Client createNew(final AppUser currentUser, final Office clientOffice, final Group clientParentGroup, final Staff staff,
                                    final Long savingsProductId, final CodeValue gender, final CodeValue clientType, final CodeValue clientClassification,
-                                   final Integer legalForm,final ClientInfoRelatedDetail clientInfoRelatedDetail, final JsonCommand command) {
+                                   final Integer legalForm, final ClientInfoRelatedDetail clientInfoRelatedDetail, final JsonCommand command) {
 
         final String accountNo = command.stringValueOfParameterNamed(ClientApiConstants.accountNoParamName);
         final String externalId = command.stringValueOfParameterNamed(ClientApiConstants.externalIdParamName);
@@ -256,6 +269,10 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
         final String fullname = command.stringValueOfParameterNamed(ClientApiConstants.fullnameParamName);
         final String dpiNumber = command.stringValueOfParameterNamed(ClientApiConstants.dpiParamName);
         final String oldCustomerNumber = command.stringValueOfParameterNamed(ClientApiConstants.oldCustomerNumberParamName);
+        final Long municipalityDpi = command.longValueOfParameterNamed(ClientApiConstants.municipalityDpiParamName);
+        final Long departmentDpi = command.longValueOfParameterNamed(ClientApiConstants.departmentDpiParamName);
+        final String firstlastname = command.stringValueOfParameterNamed(ClientApiConstants.firstlastnameParamName);
+        final String secondlastname = command.stringValueOfParameterNamed(ClientApiConstants.secondlastnameParamName);
 
         final boolean isStaff = command.booleanPrimitiveValueOfParameterNamed(ClientApiConstants.isStaffParamName);
 
@@ -285,7 +302,8 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
         final Long savingsAccountId = null;
         return new Client(currentUser, status, clientOffice, clientParentGroup, accountNo, firstname, middlename, lastname, fullname,
                 activationDate, officeJoiningDate, externalId, mobileNo, emailAddress, staff, submittedOnDate, savingsProductId,
-                savingsAccountId, dataOfBirth, gender, clientType, clientClassification, legalForm, isStaff, dpiNumber, oldCustomerNumber, clientInfoRelatedDetail);
+                savingsAccountId, dataOfBirth, gender, clientType, clientClassification, legalForm, isStaff, dpiNumber, oldCustomerNumber,
+                clientInfoRelatedDetail,municipalityDpi, departmentDpi, firstlastname, secondlastname);
     }
 
     protected Client() {}
@@ -296,7 +314,8 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
                    final String emailAddress, final Staff staff, final LocalDate submittedOnDate, final Long savingsProductId,
                    final Long savingsAccountId, final LocalDate dateOfBirth, final CodeValue gender, final CodeValue clientType,
                    final CodeValue clientClassification, final Integer legalForm, final Boolean isStaff, final String dpiNumber,
-                   final String oldCustomerNumber, ClientInfoRelatedDetail clientInfoRelatedDetail) {
+                   final String oldCustomerNumber, ClientInfoRelatedDetail clientInfoRelatedDetail, Long municipalityDpi, Long departmentDpi,
+                   String firstlastname, String secondlastname) {
 
         if (StringUtils.isBlank(accountNo)) {
             this.accountNumber = new RandomPasswordGenerator(19).generate();
@@ -365,6 +384,10 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
         this.dpiNumber = dpiNumber;
         this.oldCustomerNumber = oldCustomerNumber;
         this.clientInfoRelatedDetail = clientInfoRelatedDetail;
+        this.municipalityDpi = municipalityDpi;
+        this.departmentDpi = departmentDpi;
+        this.firstlastname = firstlastname;
+        this.secondlastname = secondlastname;
 
         deriveDisplayName();
         validate();
@@ -635,11 +658,32 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
             this.dpiNumber = newValue;
         }
 
+        if (command.isChangeInLongParameterNamed(ClientApiConstants.departmentDpiParamName, this.departmentDpi)) {
+            final Long newValue = command.longValueOfParameterNamed(ClientApiConstants.departmentDpiParamName);
+            actualChanges.put(ClientApiConstants.departmentDpiParamName, newValue);
+            this.departmentDpi = newValue;
+        }
+        if (command.isChangeInLongParameterNamed(ClientApiConstants.municipalityDpiParamName, this.municipalityDpi)) {
+            final Long newValue = command.longValueOfParameterNamed(ClientApiConstants.municipalityDpiParamName);
+            actualChanges.put(ClientApiConstants.municipalityDpiParamName, newValue);
+            this.municipalityDpi = newValue;
+        }
+        if (command.isChangeInStringParameterNamed(ClientApiConstants.firstlastnameParamName, this.firstlastname)) {
+            final String newValue = command.stringValueOfParameterNamed(ClientApiConstants.firstlastnameParamName);
+            actualChanges.put(ClientApiConstants.firstlastnameParamName, newValue);
+            this.firstlastname = newValue;
+        }
+        if (command.isChangeInStringParameterNamed(ClientApiConstants.secondlastnameParamName, this.secondlastname)) {
+            final String newValue = command.stringValueOfParameterNamed(ClientApiConstants.secondlastnameParamName);
+            actualChanges.put(ClientApiConstants.secondlastnameParamName, newValue);
+            this.secondlastname = newValue;
+        }
+
         validateUpdate();
 
         deriveDisplayName();
 
-        if (this.clientInfoRelatedDetail==null){
+        if (this.clientInfoRelatedDetail == null) {
             clientInfoRelatedDetail = new ClientInfoRelatedDetail();
         }
 
@@ -647,7 +691,6 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
 
         return actualChanges;
     }
-
 
     private void validateNameParts(final List<ApiParameterError> dataValidationErrors) {
         final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors).resource("client");
