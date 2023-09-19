@@ -20,8 +20,10 @@ package org.apache.fineract.organisation.bankcheque.data;
 
 import java.time.LocalDate;
 import java.util.Collection;
+import java.util.List;
 import lombok.Builder;
 import lombok.Data;
+import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 
 @Builder
 @Data
@@ -42,4 +44,5 @@ public class BatchData {
     private Long createdByUserId;
     private String createdByUsername;
     private String description;
+    private List<EnumOptionData> statusOptions;
 }

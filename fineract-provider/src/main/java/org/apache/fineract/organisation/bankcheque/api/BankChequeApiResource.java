@@ -45,10 +45,14 @@ import org.apache.fineract.commands.service.CommandWrapperBuilder;
 import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformService;
 import org.apache.fineract.infrastructure.core.api.ApiRequestParameterHelper;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
+import org.apache.fineract.infrastructure.core.data.PaginationParameters;
 import org.apache.fineract.infrastructure.core.serialization.ApiRequestJsonSerializationSettings;
 import org.apache.fineract.infrastructure.core.serialization.ToApiJsonSerializer;
+import org.apache.fineract.infrastructure.core.service.Page;
+import org.apache.fineract.infrastructure.core.service.SearchParameters;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.organisation.bankcheque.data.BatchData;
+import org.apache.fineract.organisation.bankcheque.data.ChequeData;
 import org.apache.fineract.organisation.bankcheque.service.ChequeReadPlatformService;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
@@ -62,7 +66,7 @@ import org.springframework.stereotype.Component;
 public class BankChequeApiResource {
 
     private final PlatformSecurityContext context;
-    private final ToApiJsonSerializer<BatchData> toApiJsonSerializer;
+    private final ToApiJsonSerializer<Object> toApiJsonSerializer;
     private final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService;
     private final ApiRequestParameterHelper apiRequestParameterHelper;
     private final ChequeReadPlatformService chequeReadPlatformService;
@@ -110,6 +114,30 @@ public class BankChequeApiResource {
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
         BatchData batchData = this.chequeReadPlatformService.retrieveTemplate(backAccId);
         return this.toApiJsonSerializer.serialize(settings, batchData, BankChequeApiConstants.BATCH_RESPONSE_DATA_PARAMETERS);
+    }
+
+    @GET
+    @Path("/search")
+    @Consumes({ MediaType.APPLICATION_JSON })
+    @Produces({ MediaType.APPLICATION_JSON })
+    @Operation(summary = "List Cheques", description = "Search cheques by parameters")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = BankChequeApiSwagger.GetChequeBatchResponse.GetBankCheque.class))) })
+    public String retrieveAll(@Context final UriInfo uriInfo, @QueryParam("paged") @Parameter(description = "paged") final Boolean paged,
+            @QueryParam("status") @Parameter(description = "status") final String status,
+            @QueryParam("chequeNo") @Parameter(description = "chequeNo") final String chequeNo,
+            @QueryParam("batchId") @Parameter(description = "batchId") final Long batchId,
+            @QueryParam("offset") @Parameter(description = "offset") final Integer offset,
+            @QueryParam("limit") @Parameter(description = "limit") final Integer limit,
+            @QueryParam("orderBy") @Parameter(description = "orderBy") final String orderBy,
+            @QueryParam("sortOrder") @Parameter(description = "sortOrder") final String sortOrder) {
+        this.context.authenticatedUser().validateHasReadPermission(BankChequeApiConstants.BANK_CHECK_RESOURCE_NAME);
+        final PaginationParameters parameters = PaginationParameters.instance(paged, offset, limit, orderBy, sortOrder);
+        final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
+        final SearchParameters searchParameters = SearchParameters.forBankCheques(chequeNo, batchId, status, offset, limit, orderBy,
+                sortOrder);
+        final Page<ChequeData> cheques = this.chequeReadPlatformService.retrieveAll(searchParameters, parameters);
+        return this.toApiJsonSerializer.serialize(settings, cheques);
     }
 
     @PUT

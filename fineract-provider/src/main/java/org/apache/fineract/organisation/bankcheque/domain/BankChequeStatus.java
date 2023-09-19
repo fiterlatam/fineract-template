@@ -20,6 +20,7 @@ package org.apache.fineract.organisation.bankcheque.domain;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 
 @AllArgsConstructor
 @Getter
@@ -40,6 +41,17 @@ public enum BankChequeStatus {
             case 4 -> BankChequeStatus.PENDING_CANCELLATION;
             case 5 -> BankChequeStatus.PENDING_ISSUANCE;
             default -> BankChequeStatus.INVALID;
+        };
+    }
+
+    public static EnumOptionData status(final Integer statusInt) {
+        return switch (statusInt) {
+            case 1 -> new EnumOptionData(AVAILABLE.value.longValue(), AVAILABLE.code, AVAILABLE.name());
+            case 2 -> new EnumOptionData(ISSUED.value.longValue(), ISSUED.code, ISSUED.name());
+            case 3 -> new EnumOptionData(CANCELLED.value.longValue(), CANCELLED.code, CANCELLED.name());
+            case 4 -> new EnumOptionData(PENDING_CANCELLATION.value.longValue(), PENDING_CANCELLATION.code, PENDING_CANCELLATION.name());
+            case 5 -> new EnumOptionData(PENDING_ISSUANCE.value.longValue(), PENDING_ISSUANCE.code, PENDING_ISSUANCE.name());
+            default -> new EnumOptionData(INVALID.value.longValue(), INVALID.code, INVALID.name());
         };
     }
 }
