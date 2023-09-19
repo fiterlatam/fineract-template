@@ -50,7 +50,8 @@ public class PrequalificationChecklistReadPlatformServiceImpl implements Prequal
 
     @Autowired
     public PrequalificationChecklistReadPlatformServiceImpl(JdbcTemplate jdbcTemplate,
-            PrequalificationGroupRepositoryWrapper prequalificationGroupRepositoryWrapper,final PrequalificationGroupMemberRepositoryWrapper memberRepositoryWrapper) {
+            PrequalificationGroupRepositoryWrapper prequalificationGroupRepositoryWrapper,
+            final PrequalificationGroupMemberRepositoryWrapper memberRepositoryWrapper) {
         this.jdbcTemplate = jdbcTemplate;
         this.prequalificationGroupRepositoryWrapper = prequalificationGroupRepositoryWrapper;
         this.memberRepositoryWrapper = memberRepositoryWrapper;
@@ -125,19 +126,16 @@ public class PrequalificationChecklistReadPlatformServiceImpl implements Prequal
         PrequalificationGroup prequalificationGroup = groupMember.getPrequalificationGroup();
         LoanProduct loanProduct = prequalificationGroup.getLoanProduct();
 
-
         final PrequalificationChecklistWritePlatformServiceImpl.CheckCategoryMapper checkCategoryMapper = new PrequalificationChecklistWritePlatformServiceImpl.CheckCategoryMapper();
         final List<List<String>> memberRows = new ArrayList<>();
         final String sql = "SELECT " + validationChecklistMapper.schema() + " WHERE mcvr.prequalification_member_id = ?";
-        final List<ChecklistValidationResult> validationResults = this.jdbcTemplate.query(sql, validationChecklistMapper,
-                clientId);
+        final List<ChecklistValidationResult> validationResults = this.jdbcTemplate.query(sql, validationChecklistMapper, clientId);
         final List<HardPolicyCategoryData> individualPolicies = this.jdbcTemplate.query(checkCategoryMapper.schema(), checkCategoryMapper,
                 loanProduct.getId(), PrequalificationType.INDIVIDUAL.getValue());
 
         final List<String> memberColumnHeaders = new ArrayList<>(
                 List.of("label.heading.clientid", "label.heading.clientname", "label.heading.dpi"));
         individualPolicies.forEach(policy -> memberColumnHeaders.add(policy.getDescription()));
-
 
         final List<String> memberRow = new ArrayList<>();
         String memberId = null;
