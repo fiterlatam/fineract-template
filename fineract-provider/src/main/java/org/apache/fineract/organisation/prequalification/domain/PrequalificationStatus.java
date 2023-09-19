@@ -32,7 +32,8 @@ public enum PrequalificationStatus {
     BLACKLIST_REJECTED(500, "prequalification.status.blacklist.rejected"), BURO_CHECKED(600,
             "prequalification.status.buro.checked"), HARD_POLICY_CHECKED(700, "prequalification.status.hard.policy.checked"), TIME_EXPIRED(
                     800, "prequalification.status.expired"), COMPLETED(900, "prequalification.status.completed"), CONSENT_ADDED(901,
-                            "prequalification.status.concent.added"), INVALID(0, "prequalification.status.invalid");
+                            "prequalification.status.concent.added"), AGENCY_LEAD_PENDING_APPROVAL(902,
+                                    "prequalification.status.pending.approval"), INVALID(0, "prequalification.status.invalid");
 
     private final Integer value;
     private final String code;
@@ -71,6 +72,9 @@ public enum PrequalificationStatus {
             case 901:
                 enumeration = PrequalificationStatus.CONSENT_ADDED;
             break;
+            case 902:
+                enumeration = PrequalificationStatus.AGENCY_LEAD_PENDING_APPROVAL;
+            break;
         }
         return enumeration;
     }
@@ -108,6 +112,8 @@ public enum PrequalificationStatus {
             clientStatus = PrequalificationStatus.COMPLETED;
         } else if (status.equalsIgnoreCase(PrequalificationStatus.CONSENT_ADDED.toString())) {
             clientStatus = PrequalificationStatus.CONSENT_ADDED;
+        } else if (status.equalsIgnoreCase(PrequalificationStatus.AGENCY_LEAD_PENDING_APPROVAL.toString())) {
+            clientStatus = PrequalificationStatus.AGENCY_LEAD_PENDING_APPROVAL;
         }
 
         return clientStatus;
