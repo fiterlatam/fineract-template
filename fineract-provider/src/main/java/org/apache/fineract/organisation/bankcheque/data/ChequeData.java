@@ -21,6 +21,7 @@ package org.apache.fineract.organisation.bankcheque.data;
 import java.time.LocalDate;
 import lombok.Builder;
 import lombok.Data;
+import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 
 @Builder
 @Data
@@ -30,7 +31,7 @@ public class ChequeData {
     private Long chequeNo;
     private Long batchId;
     private Long batchNo;
-    private String status;
+    private EnumOptionData status;
     private String description;
     private LocalDate createdDate;
     private String createdByUsername;

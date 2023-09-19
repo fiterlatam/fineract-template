@@ -21,11 +21,22 @@ package org.apache.fineract.organisation.bankcheque.service;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
+import org.apache.fineract.infrastructure.core.data.EnumOptionData;
+import org.apache.fineract.infrastructure.core.data.PaginationParameters;
+import org.apache.fineract.infrastructure.core.data.PaginationParametersDataValidator;
 import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
+import org.apache.fineract.infrastructure.core.service.Page;
+import org.apache.fineract.infrastructure.core.service.PaginationHelper;
+import org.apache.fineract.infrastructure.core.service.SearchParameters;
+import org.apache.fineract.infrastructure.core.service.database.DatabaseSpecificSQLGenerator;
+import org.apache.fineract.infrastructure.security.utils.ColumnValidator;
+import org.apache.fineract.infrastructure.security.utils.SQLBuilder;
 import org.apache.fineract.organisation.bankcheque.data.BatchData;
 import org.apache.fineract.organisation.bankcheque.data.ChequeData;
 import org.apache.fineract.organisation.bankcheque.domain.BankChequeStatus;
@@ -42,16 +53,17 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
     private final JdbcTemplate jdbcTemplate;
     private final BatchMapper batchMapper = new BatchMapper();
     private final ChequeMapper chequeMapper = new ChequeMapper();
+    private final PaginationParametersDataValidator paginationParametersDataValidator;
+    private final ColumnValidator columnValidator;
+    private final PaginationHelper paginationHelper;
+    private final DatabaseSpecificSQLGenerator sqlGenerator;
 
     @Override
     public BatchData retrieveBatch(final Long batchId) {
         final String batchSql = batchMapper.schema() + " WHERE mpb.id = ?";
         final List<BatchData> batchDataList = this.jdbcTemplate.query(batchSql, this.batchMapper, batchId);
         if (!batchDataList.isEmpty()) {
-            final BatchData batchData = batchDataList.get(0);
-            List<ChequeData> chequeDataList = this.jdbcTemplate.query(chequeMapper.schema(), this.chequeMapper, batchId);
-            batchData.setCheques(chequeDataList);
-            return batchData;
+            return batchDataList.get(0);
         } else {
             throw new BatchNotFoundException(batchId);
         }
@@ -69,7 +81,10 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
                 """;
         final Long maxChequeNo = this.jdbcTemplate.queryForObject(maxChequeNoSql, Long.class, new Object[] { bankAccId });
         Long formValue = ObjectUtils.defaultIfNull(maxChequeNo, 0L) + 1;
-        return BatchData.builder().from(formValue).build();
+
+        List<EnumOptionData> chequeStatusOptions = List.of(BankChequeStatus.status(1), BankChequeStatus.status(2),
+                BankChequeStatus.status(3), BankChequeStatus.status(4), BankChequeStatus.status(4));
+        return BatchData.builder().from(formValue).statusOptions(chequeStatusOptions).build();
     }
 
     private static final class ChequeMapper implements RowMapper<ChequeData> {
@@ -78,7 +93,6 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
 
         ChequeMapper() {
             this.schema = """
-                    SELECT
                     	mbc.id AS chequeId,
                     	mbc.id as batchId,
                     	mbc.check_no AS chequeNo,
@@ -102,7 +116,6 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
                     LEFT JOIN m_appuser printedby ON printedby.id = mbc.printedby_id
                     LEFT JOIN m_appuser voidauthorizedby ON voidauthorizedby.id = mbc.void_authorizedby_id
                     LEFT JOIN m_appuser lastmodifiedby ON lastmodifiedby.id = mbc.lastmodifiedby_id
-                    WHERE mpb.id = ?
                     """;
         }
 
@@ -113,7 +126,7 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
         @Override
         public ChequeData mapRow(final ResultSet rs, final int rowNum) throws SQLException {
             final Integer statusEnum = JdbcSupport.getInteger(rs, "statusEnum");
-            String status = BankChequeStatus.fromInt(statusEnum).name();
+            EnumOptionData status = BankChequeStatus.status(statusEnum);
             final Long id = JdbcSupport.getLong(rs, "chequeId");
             final Long batchId = JdbcSupport.getLong(rs, "batchId");
             final Long chequeNo = JdbcSupport.getLong(rs, "chequeNo");
@@ -193,4 +206,42 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
 
         }
     }
+
+    @Override
+    public Page<ChequeData> retrieveAll(SearchParameters searchParameters, PaginationParameters parameters) {
+        final Set<String> supportedOrderByValues = new HashSet<>(List.of("chequeNo"));
+        this.paginationParametersDataValidator.validateParameterValues(parameters, supportedOrderByValues, "cheques");
+        final StringBuilder sqlBuilder = new StringBuilder(200);
+        sqlBuilder.append("SELECT ").append(this.sqlGenerator.calcFoundRows()).append(" ");
+        sqlBuilder.append(this.chequeMapper.schema());
+        final SQLBuilder extraCriteria = new SQLBuilder();
+        final Long batchId = searchParameters.getBatchId();
+        final String chequeNo = searchParameters.getChequeNo();
+        final String status = searchParameters.getStatus();
+        if (batchId != null) {
+            extraCriteria.addNonNullCriteria("mpb.id = ", batchId);
+        }
+        if (chequeNo != null) {
+            extraCriteria.addNonNullCriteria("mbc.check_no LIKE", "%" + chequeNo + "%");
+        }
+        if (status != null) {
+            extraCriteria.addNonNullCriteria("mbc.status_enum LIKE", "%" + status + "%");
+        }
+        sqlBuilder.append(" ").append(extraCriteria.getSQLTemplate());
+        if (parameters.isOrderByRequested()) {
+            sqlBuilder.append(" order by ").append(searchParameters.getOrderBy()).append(' ').append(searchParameters.getSortOrder());
+            this.columnValidator.validateSqlInjection(sqlBuilder.toString(), searchParameters.getOrderBy(),
+                    searchParameters.getSortOrder());
+        }
+
+        if (parameters.isLimited()) {
+            sqlBuilder.append(" limit ").append(searchParameters.getLimit());
+            if (searchParameters.isOffset()) {
+                sqlBuilder.append(" offset ").append(searchParameters.getOffset());
+            }
+        }
+        return this.paginationHelper.fetchPage(this.jdbcTemplate, sqlBuilder.toString(), extraCriteria.getArguments(), this.chequeMapper);
+
+    }
+
 }
