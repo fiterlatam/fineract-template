@@ -30,8 +30,10 @@ import org.apache.fineract.organisation.prequalification.data.PrequalificationCh
 import org.apache.fineract.organisation.prequalification.domain.CheckValidationColor;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationGroup;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationGroupMember;
+import org.apache.fineract.organisation.prequalification.domain.PrequalificationGroupMemberRepositoryWrapper;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationGroupRepositoryWrapper;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationType;
+import org.apache.fineract.portfolio.loanproduct.domain.LoanProduct;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -43,12 +45,15 @@ public class PrequalificationChecklistReadPlatformServiceImpl implements Prequal
 
     private final JdbcTemplate jdbcTemplate;
     private final PrequalificationGroupRepositoryWrapper prequalificationGroupRepositoryWrapper;
+    private final PrequalificationGroupMemberRepositoryWrapper memberRepositoryWrapper;
+    final ValidationChecklistMapper validationChecklistMapper = new ValidationChecklistMapper();
 
     @Autowired
     public PrequalificationChecklistReadPlatformServiceImpl(JdbcTemplate jdbcTemplate,
-            PrequalificationGroupRepositoryWrapper prequalificationGroupRepositoryWrapper) {
+            PrequalificationGroupRepositoryWrapper prequalificationGroupRepositoryWrapper,final PrequalificationGroupMemberRepositoryWrapper memberRepositoryWrapper) {
         this.jdbcTemplate = jdbcTemplate;
         this.prequalificationGroupRepositoryWrapper = prequalificationGroupRepositoryWrapper;
+        this.memberRepositoryWrapper = memberRepositoryWrapper;
     }
 
     @Override
@@ -61,7 +66,6 @@ public class PrequalificationChecklistReadPlatformServiceImpl implements Prequal
                 productId, PrequalificationType.GROUP.getValue());
         final List<String> prequalificationColumnHeaders = new ArrayList<>(List.of("label.heading.prequalification.name"));
         final List<List<String>> prequalificationRows = new ArrayList<>();
-        final ValidationChecklistMapper validationChecklistMapper = new ValidationChecklistMapper();
         final String sql = "SELECT " + validationChecklistMapper.schema() + " WHERE mcvr.prequalification_id = ? ";
         final List<ChecklistValidationResult> validationResults = this.jdbcTemplate.query(sql, validationChecklistMapper,
                 prequalificationId);
@@ -105,6 +109,7 @@ public class PrequalificationChecklistReadPlatformServiceImpl implements Prequal
                         }
                         memberRow.add(validationColor);
                         break;
+
                     }
                 }
             }
@@ -112,6 +117,51 @@ public class PrequalificationChecklistReadPlatformServiceImpl implements Prequal
         }
         final GenericValidationResultSet memberValidationResultSet = new GenericValidationResultSet(memberColumnHeaders, memberRows);
         return new PrequalificationChecklistData(groupValidationResultSet, memberValidationResultSet);
+    }
+
+    @Override
+    public GenericValidationResultSet retrieveClientHardPolicyDetails(Long clientId) {
+        PrequalificationGroupMember groupMember = this.memberRepositoryWrapper.findOneWithNotFoundDetection(clientId);
+        PrequalificationGroup prequalificationGroup = groupMember.getPrequalificationGroup();
+        LoanProduct loanProduct = prequalificationGroup.getLoanProduct();
+
+
+        final PrequalificationChecklistWritePlatformServiceImpl.CheckCategoryMapper checkCategoryMapper = new PrequalificationChecklistWritePlatformServiceImpl.CheckCategoryMapper();
+        final List<List<String>> memberRows = new ArrayList<>();
+        final String sql = "SELECT " + validationChecklistMapper.schema() + " WHERE mcvr.prequalification_member_id = ?";
+        final List<ChecklistValidationResult> validationResults = this.jdbcTemplate.query(sql, validationChecklistMapper,
+                clientId);
+        final List<HardPolicyCategoryData> individualPolicies = this.jdbcTemplate.query(checkCategoryMapper.schema(), checkCategoryMapper,
+                loanProduct.getId(), PrequalificationType.INDIVIDUAL.getValue());
+
+        final List<String> memberColumnHeaders = new ArrayList<>(
+                List.of("label.heading.clientid", "label.heading.clientname", "label.heading.dpi"));
+        individualPolicies.forEach(policy -> memberColumnHeaders.add(policy.getDescription()));
+
+
+        final List<String> memberRow = new ArrayList<>();
+        String memberId = null;
+        String clientName;
+        String dpi;
+        for (HardPolicyCategoryData policy : individualPolicies) {
+            for (ChecklistValidationResult validationResult : validationResults) {
+                if (policy.getId().equals(validationResult.getPolicyId())
+                        && PrequalificationType.INDIVIDUAL.getValue().equals(validationResult.getPrequalificationTypeEnum())) {
+                    final String validationColor = CheckValidationColor.fromInt(validationResult.getColorEnum()).name();
+                    if (memberId == null) {
+                        memberId = validationResult.getMemberId().toString();
+                        clientName = validationResult.getClientName();
+                        dpi = validationResult.getDpi();
+                        memberRow.addAll(List.of(memberId, clientName, dpi));
+                    }
+                    memberRow.add(validationColor);
+                    break;
+                }
+            }
+        }
+        memberRows.add(memberRow);
+        final GenericValidationResultSet memberValidationResultSet = new GenericValidationResultSet(memberColumnHeaders, memberRows);
+        return memberValidationResultSet;
     }
 
     private static final class ValidationChecklistMapper implements RowMapper<ChecklistValidationResult> {

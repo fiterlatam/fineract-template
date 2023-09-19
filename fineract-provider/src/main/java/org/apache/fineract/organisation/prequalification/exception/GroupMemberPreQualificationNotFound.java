@@ -16,14 +16,16 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.organisation.prequalification.service;
+package org.apache.fineract.organisation.prequalification.exception;
 
-import org.apache.fineract.organisation.prequalification.data.GenericValidationResultSet;
-import org.apache.fineract.organisation.prequalification.data.PrequalificationChecklistData;
+import org.apache.fineract.infrastructure.core.exception.AbstractPlatformResourceNotFoundException;
 
-public interface PrequalificationChecklistReadPlatformService {
+/**
+ * A {@link RuntimeException} thrown when client is already blacklisted.
+ */
+public class GroupMemberPreQualificationNotFound extends AbstractPlatformResourceNotFoundException {
 
-    PrequalificationChecklistData retrieveHardPolicyValidationResults(final Integer prequalificationId);
-
-    GenericValidationResultSet retrieveClientHardPolicyDetails(Long clientId);
+    public GroupMemberPreQualificationNotFound(Long id) {
+        super("error.msg.group.member.prequalification.not.found", "Group Member with id " + id + " was not found.", id);
+    }
 }
