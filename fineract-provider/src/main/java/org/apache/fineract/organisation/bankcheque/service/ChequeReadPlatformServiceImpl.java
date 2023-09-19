@@ -63,11 +63,7 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
         final String batchSql = batchMapper.schema() + " WHERE mpb.id = ?";
         final List<BatchData> batchDataList = this.jdbcTemplate.query(batchSql, this.batchMapper, batchId);
         if (!batchDataList.isEmpty()) {
-            final BatchData batchData = batchDataList.get(0);
-            final String chequeSql = "SELECT " + this.chequeMapper.schema() + " WHERE mpb.id = ?";
-            List<ChequeData> chequeDataList = this.jdbcTemplate.query(chequeSql, this.chequeMapper, batchId);
-            batchData.setCheques(chequeDataList);
-            return batchData;
+            return batchDataList.get(0);
         } else {
             throw new BatchNotFoundException(batchId);
         }
