@@ -785,6 +785,7 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
             ClientInfoRelatedDetailData detailData = ClientInfoRelatedDetailData.instance(loanCycle, groupNumber, maidenName, othernames,
                     groupMember, statusInGroup, retirementReason, civilStatus, educationLevel, ethinicity, nationality, languages,
                     economicSector, economicActivity, familyReference);
+
             final ClientNonPersonData clientNonPerson = new ClientNonPersonData(constitution, incorpNo, incorpValidityTill,
                     mainBusinessLine, remarks);
 
@@ -797,7 +798,6 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
                     activationDate, imageId, staffId, staffName, timeline, savingsProductId, savingsProductName, savingsAccountId,
                     clienttype, classification, legalForm, clientNonPerson, isStaff, dpiNumber, oldCustomerNumber, detailData,firstlastname,
                     secondlastname, departmentDpiName, departmentDpi, municipalityDpiName, municipalityDpi);
-
         }
     }
 

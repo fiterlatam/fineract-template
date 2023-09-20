@@ -94,6 +94,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                                                     final PreQualificationMemberRepository preQualificationMemberRepository,
                                                     final CodeValueReadPlatformService codeValueReadPlatformService, final JdbcTemplate jdbcTemplate,
                                                     final PrequalificationGroupRepositoryWrapper prequalificationGroupRepositoryWrapper) {
+
         this.context = context;
         this.dataValidator = dataValidator;
         this.loanProductRepository = loanProductRepository;

@@ -304,7 +304,6 @@ public class CentersApiResource {
     public String modify(@Parameter(hidden = true) final String apiRequestBodyAsJson,
                          @PathParam("centerId") @Parameter(description = "centerId") final Long centerId,
                          @PathParam("action") @Parameter(description = "action") final String action) {
-
         CommandWrapper commandRequest = null; //
         if (StringUtils.equals(action, "transfer")) {
             commandRequest = new CommandWrapperBuilder().transferGroup(centerId) //

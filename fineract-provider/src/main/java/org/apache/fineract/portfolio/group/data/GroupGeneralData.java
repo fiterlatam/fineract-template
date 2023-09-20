@@ -322,6 +322,7 @@ public class GroupGeneralData implements Serializable {
     public static GroupGeneralData withAssocations(final GroupGeneralData grouping, final Collection<ClientData> membersOfGroup,
                                                    final Collection<ClientData> activeClientMembers, final Collection<GroupRoleData> groupRoles,
                                                    final Collection<CalendarData> calendarsData, final CalendarData collectionMeetingCalendar) {
+
         GroupGeneralData ret = new GroupGeneralData(grouping.id, grouping.accountNo, grouping.name, grouping.externalId, grouping.status,
                 grouping.activationDate, grouping.officeId, grouping.officeName, grouping.centerId, grouping.centerName, grouping.staffId,
                 grouping.staffName, grouping.hierarchy, grouping.groupLevel, membersOfGroup, activeClientMembers, grouping.centerOptions,
@@ -372,6 +373,7 @@ public class GroupGeneralData implements Serializable {
                              final Collection<CodeValueData> closureReasons, final GroupTimelineData timeline,
                              final Collection<OfficeData> parentOfficesOptions, final Collection<AppUserData> responsibleUserOptions,
                              final Collection<PortfolioCenterData> portfolioCenterOptions, Collection<EnumOptionData> centerGroupLocations) {
+
         this.id = id;
         this.accountNo = accountNo;
         this.name = name;

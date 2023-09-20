@@ -37,7 +37,6 @@ public enum PrequalificationStatus {
     COMPLETED(900, "prequalification.status.completed"),
     CONSENT_ADDED(901, "prequalification.status.concent.added"),
     INVALID(0, "prequalification.status.invalid");
-
     private final Integer value;
     private final String code;
 

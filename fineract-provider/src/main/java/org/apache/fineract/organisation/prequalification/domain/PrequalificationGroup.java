@@ -88,6 +88,7 @@ public class PrequalificationGroup extends AbstractPersistableCustom {
 
     public static PrequalificationGroup fromJson(final AppUser appUser, final AppUser facilitator, final Agency agency, final Group group,
                                                  final LoanProduct loanProduct, final JsonCommand command) {
+
         String groupName = command.stringValueOfParameterNamed("groupName");
         Long center = command.longValueOfParameterNamed(PrequalificatoinApiConstants.centerIdParamName);
         if (group != null) {

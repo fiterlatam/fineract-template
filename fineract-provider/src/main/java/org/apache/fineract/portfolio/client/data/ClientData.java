@@ -217,6 +217,7 @@ public final class ClientData implements Comparable<ClientData>, Serializable {
         this.departmentDpi = null;
         this.municipalityDpiName = null;
         this.municipalDpi = null;
+
     }
 
     public static ClientData importClientPersonInstance(Long legalFormId, Integer rowIndex, String firstname, String lastname,
@@ -591,6 +592,7 @@ public final class ClientData implements Comparable<ClientData>, Serializable {
                        ClientContactInformationData contactInformation, ClientInfoRelatedDetailData detailData,
                        List<EconomicSectorData> economicSectorData, List<EconomicActivityData> economicActivityData, String firstlastname,
                        String secondlastname, String departmentDpiName, Long departmentDpi, String municipalityDpiName, Long municipalDpi) {
+
         this.accountNo = accountNo;
         this.status = status;
         if (status != null) {

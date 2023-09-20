@@ -153,6 +153,7 @@ public final class CenterData implements Serializable {
                                       final BigDecimal totaldue, final BigDecimal installmentDue, final Collection<CodeValueData> cityOptions,
                                       final Collection<CodeValueData> stateOptions, final Collection<CodeValueData> typeOptions,
                                       final Collection<CodeValueData> meetingDayOptions) {
+
         final CalendarData collectionMeetingCalendar = null;
         final Collection<CodeValueData> closureReasons = null;
         final GroupTimelineData timeline = null;

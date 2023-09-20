@@ -81,6 +81,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                                                    final PreQualificationMemberRepository preQualificationMemberRepository,
                                                    final ClientReadPlatformService clientReadPlatformService, final CodeValueReadPlatformService codeValueReadPlatformService,
                                                    final JdbcTemplate jdbcTemplate) {
+
         this.context = context;
         this.dataValidator = dataValidator;
         this.loanProductRepository = loanProductRepository;

@@ -388,7 +388,6 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
         this.departmentDpi = departmentDpi;
         this.firstlastname = firstlastname;
         this.secondlastname = secondlastname;
-
         deriveDisplayName();
         validate();
     }
@@ -691,6 +690,7 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
 
         return actualChanges;
     }
+
 
     private void validateNameParts(final List<ApiParameterError> dataValidationErrors) {
         final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors).resource("client");

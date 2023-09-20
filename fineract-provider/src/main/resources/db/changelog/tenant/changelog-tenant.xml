@@ -97,4 +97,5 @@
     <include file="parts/0078_restructure_credits_table_and_permissions.xml" relativeToChangelogFile="true"/>
     <include file="parts/0079_add_extra_details_to_client_table.xml" relativeToChangelogFile="true"/>
     <include file="parts/0087_Add_Buro_Check_Status_to_prequalification_group.xml" relativeToChangelogFile="true"/>
+
 </databaseChangeLog>

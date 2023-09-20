@@ -44,6 +44,7 @@ public class PrequalificationDataValidator {
     @Autowired
     public PrequalificationDataValidator(final FromJsonHelper fromApiJsonHelper,
                                          final PreQualificationGroupRepository preQualificationGroupRepository) {
+
         this.fromApiJsonHelper = fromApiJsonHelper;
         this.preQualificationGroupRepository = preQualificationGroupRepository;
     }

@@ -219,7 +219,6 @@ public final class Group extends AbstractAuditableCustom {
                                  final Integer size, final LocalTime meetingStartTime, final LocalTime meetingEndTime, final AppUser responsibleUser,
                                  final Portfolio portfolio, final CodeValue city, final CodeValue stateProvince, final CodeValue type, final Integer distance,
                                  final Integer meetingStart, final Integer meetingEnd, final Integer meetingDay, final String referencePoint) {
-
         // By default new group is created in PENDING status, unless explicitly
         // status is set to active
         GroupingTypeStatus status = GroupingTypeStatus.PENDING;
@@ -239,6 +238,7 @@ public final class Group extends AbstractAuditableCustom {
                                               final LocalDate activationDate, final LocalDate submittedOnDate, final AppUser currentUser, final LocalTime meetingStartTime,
                                               final LocalTime meetingEndTime, final Portfolio portfolio, final Integer meetingStart, final Integer meetingEnd,
                                               final Integer meetingDay) {
+
         // By default new group is created in PENDING status, unless explicitly
         // status is set to active
         GroupingTypeStatus status = GroupingTypeStatus.PENDING;

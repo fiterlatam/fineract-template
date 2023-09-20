@@ -55,5 +55,4 @@
             <column name="secondlastname" type="VARCHAR(100)" />
         </addColumn>
     </changeSet>
-
 </databaseChangeLog>
