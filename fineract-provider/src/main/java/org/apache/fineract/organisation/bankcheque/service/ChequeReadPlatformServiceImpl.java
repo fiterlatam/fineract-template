@@ -154,8 +154,8 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
             final String voidAuthorizedByUsername = rs.getString("voidAuthorizedByUsername");
             final String lastModifiedByUsername = rs.getString("lastModifiedByUsername");
             return ChequeData.builder().id(id).status(status).batchId(batchId).batchNo(batchNo).description(description)
-                    .agencyName(agencyName).bankAccNo(bankAccNo).bankName(bankName).bankAccId(bankAccId)
-                    .voidedDate(voidedDate).chequeNo(chequeNo).createdDate(createdDate).usedOnDate(usedOnDate).printedDate(printedDate)
+                    .agencyName(agencyName).bankAccNo(bankAccNo).bankName(bankName).bankAccId(bankAccId).voidedDate(voidedDate)
+                    .chequeNo(chequeNo).createdDate(createdDate).usedOnDate(usedOnDate).printedDate(printedDate)
                     .voidAuthorizedDate(voidAuthorizedDate).voidedByUsername(voidedByUsername).createdByUsername(createdByUsername)
                     .printedByUsername(printedByUsername).voidAuthorizedByUsername(voidAuthorizedByUsername)
                     .lastModifiedByUsername(lastModifiedByUsername).build();

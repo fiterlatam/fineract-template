@@ -20,6 +20,10 @@ package org.apache.fineract.organisation.bankcheque.serialization;
 
 import com.google.gson.JsonElement;
 import com.google.gson.reflect.TypeToken;
+import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.apache.fineract.infrastructure.core.data.ApiParameterError;
 import org.apache.fineract.infrastructure.core.data.DataValidatorBuilder;
@@ -30,11 +34,6 @@ import org.apache.fineract.organisation.bankcheque.api.BankChequeApiConstants;
 import org.apache.fineract.organisation.bankcheque.command.VoidChequeCommand;
 import org.springframework.stereotype.Component;
 
-import java.lang.reflect.Type;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 @Component
 @RequiredArgsConstructor
 public class VoidChequeCommandFromApiJsonDeserializer extends AbstractFromApiJsonDeserializer<VoidChequeCommand> {
@@ -44,8 +43,7 @@ public class VoidChequeCommandFromApiJsonDeserializer extends AbstractFromApiJso
     @Override
     public VoidChequeCommand commandFromApiJson(String json) {
         final Type typeOfMap = new TypeToken<Map<String, Object>>() {}.getType();
-        this.fromApiJsonHelper.checkForUnsupportedParameters(typeOfMap, json,
-                BankChequeApiConstants.SUPPORTED_VOID_CHEQUE_PARAMETERS);
+        this.fromApiJsonHelper.checkForUnsupportedParameters(typeOfMap, json, BankChequeApiConstants.SUPPORTED_VOID_CHEQUE_PARAMETERS);
         final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
         final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors)
                 .resource(BankChequeApiConstants.BANK_CHECK_RESOURCE_NAME.toLowerCase());

@@ -82,8 +82,8 @@ public class BankChequeApiResource {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = BankChequeApiSwagger.PostChequeBatchResponse.class))) })
     public String chequeRequest(@Parameter(hidden = true) final String apiRequestBodyAsJson,
-                              @QueryParam("commandParam") @Parameter(description = "commandParam") final String commandParam,
-                              @QueryParam("chequeId") @Parameter(description = "chequeId") final Long chequeId) {
+            @QueryParam("commandParam") @Parameter(description = "commandParam") final String commandParam,
+            @QueryParam("chequeId") @Parameter(description = "chequeId") final Long chequeId) {
         final CommandWrapperBuilder builder = new CommandWrapperBuilder().withJson(apiRequestBodyAsJson);
         CommandProcessingResult result = null;
         CommandWrapper commandRequest;
@@ -104,7 +104,8 @@ public class BankChequeApiResource {
             result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
         }
         if (result == null) {
-            throw new UnrecognizedQueryParamException("command", commandParam, "reassigncheque", "authorizereassignment", "createbatch", "voidcheque", "authorizevoidance");
+            throw new UnrecognizedQueryParamException("command", commandParam, "reassigncheque", "authorizereassignment", "createbatch",
+                    "voidcheque", "authorizevoidance");
         }
         return this.toApiJsonSerializer.serialize(result);
     }
@@ -159,8 +160,8 @@ public class BankChequeApiResource {
         this.context.authenticatedUser().validateHasReadPermission(BankChequeApiConstants.BANK_CHECK_RESOURCE_NAME);
         final PaginationParameters parameters = PaginationParameters.instance(paged, offset, limit, orderBy, sortOrder);
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
-        final SearchParameters searchParameters = SearchParameters.forBankCheques(chequeNo, batchId, chequeId, status, offset, limit, orderBy,
-                sortOrder);
+        final SearchParameters searchParameters = SearchParameters.forBankCheques(chequeNo, batchId, chequeId, status, offset, limit,
+                orderBy, sortOrder);
         final Page<ChequeData> cheques = this.chequeReadPlatformService.retrieveAll(searchParameters, parameters);
         return this.toApiJsonSerializer.serialize(settings, cheques);
     }

@@ -24,5 +24,6 @@ import lombok.Data;
 @Builder
 @Data
 public class VoidChequeCommand {
+
     private String description;
 }

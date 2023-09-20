@@ -26,8 +26,8 @@ import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 @Getter
 public enum BankChequeStatus {
 
-    INVALID(0, "bank.cheque.status.invalid"), AVAILABLE(1, "bank.cheque.status.available"), ISSUED(2,
-            "bank.cheque.status.issued"), VOIDED(3, "bank.cheque.status.canceled"), PENDING_VOIDANCE(4,
+    INVALID(0, "bank.cheque.status.invalid"), AVAILABLE(1, "bank.cheque.status.available"), ISSUED(2, "bank.cheque.status.issued"), VOIDED(
+            3, "bank.cheque.status.canceled"), PENDING_VOIDANCE(4,
                     "bank.cheque.status.pending.cancellation"), PENDING_ISSUANCE(5, "bank.cheque.status.pending.issuance");
 
     private final Integer value;

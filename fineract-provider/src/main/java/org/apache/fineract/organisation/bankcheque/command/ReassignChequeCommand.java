@@ -24,6 +24,7 @@ import lombok.Data;
 @Builder
 @Data
 public class ReassignChequeCommand {
+
     private Long chequeId;
     private Long oldChequeId;
 }

@@ -18,6 +18,7 @@
  */
 package org.apache.fineract.organisation.bankcheque.handler;
 
+import javax.persistence.PersistenceException;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.fineract.commands.annotation.CommandType;
@@ -32,17 +33,17 @@ import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.persistence.PersistenceException;
-
 @Service
 @CommandType(entity = BankChequeApiConstants.BANK_CHECK_RESOURCE_NAME, action = BankChequeApiConstants.CHECK_ACTION_AUTHORIZEVOID)
 @RequiredArgsConstructor
 public class AuthorizeChequeVoidanceCommandHandler implements NewCommandSourceHandler {
+
     private final ChequeWritePlatformService chequeWritePlatformService;
     private final DataIntegrityErrorHandler dataIntegrityErrorHandler;
+
     @Transactional
     @Override
-    public CommandProcessingResult processCommand(JsonCommand command)  {
+    public CommandProcessingResult processCommand(JsonCommand command) {
         try {
             return this.chequeWritePlatformService.authorizedChequeVoidance(command.entityId(), command);
         } catch (final JpaSystemException | DataIntegrityViolationException dve) {

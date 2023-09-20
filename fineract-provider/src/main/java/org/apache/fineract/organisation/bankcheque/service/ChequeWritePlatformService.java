@@ -28,10 +28,13 @@ public interface ChequeWritePlatformService {
     CommandProcessingResult updateBatch(final Long batchId, final JsonCommand command);
 
     CommandProcessingResult deleteBatch(final Long batchId, final JsonCommand command);
-    CommandProcessingResult reassignCheque(final Long chequeId, final JsonCommand command);
-    CommandProcessingResult voidCheque(final Long chequeId, final JsonCommand command);
-    CommandProcessingResult authorizedChequeReassignment(final Long chequeId,  final JsonCommand command);
-    CommandProcessingResult authorizedChequeVoidance(final Long chequeId, final JsonCommand command);
 
+    CommandProcessingResult reassignCheque(final Long chequeId, final JsonCommand command);
+
+    CommandProcessingResult voidCheque(final Long chequeId, final JsonCommand command);
+
+    CommandProcessingResult authorizedChequeReassignment(final Long chequeId, final JsonCommand command);
+
+    CommandProcessingResult authorizedChequeVoidance(final Long chequeId, final JsonCommand command);
 
 }

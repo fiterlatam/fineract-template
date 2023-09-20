@@ -116,8 +116,8 @@ public final class SearchParameters {
                 sortOrder, staffId, accountNo, loanId, savingsId, null, false, null, type, null, null, null);
     }
 
-    public static SearchParameters forBankCheques(final String chequeNo, final Long batchId, final Long chequeId, final String status, final Integer offset,
-            final Integer limit, final String orderBy, final String sortOrder) {
+    public static SearchParameters forBankCheques(final String chequeNo, final Long batchId, final Long chequeId, final String status,
+            final Integer offset, final Integer limit, final String orderBy, final String sortOrder) {
         final Integer maxLimitAllowed = getCheckedLimit(limit);
         final String accountNo = null;
         final String name = null;
@@ -486,7 +486,8 @@ public final class SearchParameters {
     private SearchParameters(final Long officeId, final String externalId, final String name, final String hierarchy,
             final String firstname, final String lastname, final Integer offset, final Integer limit, final String orderBy,
             final String sortOrder, final Long staffId, final String accountNo, final Long loanId, final Long savingsId,
-            final Boolean orphansOnly, boolean isSelfUser, final String chequeNo, final String status, final Long batchId, final Long chequeId) {
+            final Boolean orphansOnly, boolean isSelfUser, final String chequeNo, final String status, final Long batchId,
+            final Long chequeId) {
         this.sqlSearch = null;
         this.officeId = officeId;
         this.externalId = externalId;

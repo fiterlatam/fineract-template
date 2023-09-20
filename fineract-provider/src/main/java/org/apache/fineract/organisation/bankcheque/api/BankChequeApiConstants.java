@@ -45,15 +45,14 @@ public class BankChequeApiConstants {
     public static String TO = "to";
     public static String ACCOUNT_NAME = "accountName";
     public static String BATCH_ID = "batchId";
-    public static String OLD_CHEQUE_ID ="oldChequeId";
-    public static String CHEQUE_ID ="chequeId";
+    public static String OLD_CHEQUE_ID = "oldChequeId";
+    public static String CHEQUE_ID = "chequeId";
 
     public static final Set<String> BATCH_RESPONSE_DATA_PARAMETERS = new HashSet<>(
             Arrays.asList(ID_PARAM_NAME, BATCH_NO, AGENCY, BANK_ACCOUNT, CHEQUES, FROM, TO, BANK_ACC_ID, DESCRIPTION));
     public static final Set<String> SUPPORTED_BATCH_CREATE_OR_UPDATE_PARAMETERS = new HashSet<>(
             Arrays.asList(BANK_ACC_NO, BANK_ACC_ID, AGENCY_ID, FROM, TO, DESCRIPTION, ACCOUNT_NAME, BATCH_ID));
 
-    public static final Set<String> SUPPORTED_VOID_CHEQUE_PARAMETERS = new HashSet<>(
-            Arrays.asList(OLD_CHEQUE_ID, CHEQUE_ID, DESCRIPTION));
+    public static final Set<String> SUPPORTED_VOID_CHEQUE_PARAMETERS = new HashSet<>(Arrays.asList(OLD_CHEQUE_ID, CHEQUE_ID, DESCRIPTION));
 
 }

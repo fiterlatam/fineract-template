@@ -18,6 +18,12 @@
  */
 package org.apache.fineract.organisation.bankcheque.service;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
@@ -46,13 +52,6 @@ import org.apache.fineract.organisation.bankcheque.serialization.VoidChequeComma
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
-
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 @Service
 @Slf4j
@@ -177,15 +176,15 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
         newCheque.setPrintedDate(localDate);
         newCheque.setPrintedBy(currentUser);
         chequeJpaRepository.saveAll(List.of(oldCheque, newCheque));
-        return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withResourceIdAsString(reassignChequeCommand.getOldChequeId().toString()).withEntityId(reassignChequeCommand.getOldChequeId()).build();
+        return new CommandProcessingResultBuilder().withCommandId(command.commandId())
+                .withResourceIdAsString(reassignChequeCommand.getOldChequeId().toString())
+                .withEntityId(reassignChequeCommand.getOldChequeId()).build();
     }
 
     @Override
     public CommandProcessingResult authorizedChequeReassignment(final Long chequeId, JsonCommand command) {
         return new CommandProcessingResultBuilder().withCommandId(command.commandId())
-                .withResourceIdAsString(String.valueOf(command.entityId()))
-                .withEntityId(command.entityId())
-                .build();
+                .withResourceIdAsString(String.valueOf(command.entityId())).withEntityId(command.entityId()).build();
     }
 
     @Override
@@ -201,9 +200,7 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
         cheque.setStatus(BankChequeStatus.VOIDED.getValue());
         chequeJpaRepository.saveAndFlush(cheque);
         return new CommandProcessingResultBuilder().withCommandId(command.commandId())
-                .withResourceIdAsString(String.valueOf(command.entityId()))
-                .withEntityId(command.entityId())
-                .build();
+                .withResourceIdAsString(String.valueOf(command.entityId())).withEntityId(command.entityId()).build();
     }
 
     @Override
@@ -221,8 +218,6 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
         cheque.setStatus(BankChequeStatus.PENDING_VOIDANCE.getValue());
         chequeJpaRepository.saveAndFlush(cheque);
         return new CommandProcessingResultBuilder().withCommandId(command.commandId())
-                .withResourceIdAsString(String.valueOf(command.entityId()))
-                .withEntityId(command.entityId())
-                .build();
+                .withResourceIdAsString(String.valueOf(command.entityId())).withEntityId(command.entityId()).build();
     }
 }
