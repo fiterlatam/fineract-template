@@ -83,7 +83,7 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
         Long formValue = ObjectUtils.defaultIfNull(maxChequeNo, 0L) + 1;
 
         List<EnumOptionData> chequeStatusOptions = List.of(BankChequeStatus.status(1), BankChequeStatus.status(2),
-                BankChequeStatus.status(3), BankChequeStatus.status(4), BankChequeStatus.status(4));
+                BankChequeStatus.status(3), BankChequeStatus.status(4), BankChequeStatus.status(5));
         return BatchData.builder().from(formValue).statusOptions(chequeStatusOptions).build();
     }
 
@@ -94,11 +94,15 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
         ChequeMapper() {
             this.schema = """
                     	mbc.id AS chequeId,
-                    	mbc.id as batchId,
+                    	mpb.id as batchId,
                     	mbc.check_no AS chequeNo,
                     	mbc.status_enum AS statusEnum,
                     	mbc.description AS description,
                     	mpb.batch_no AS batchNo,
+                    	mba.account_number AS bankAccNo,
+                        mba.id AS bankAccId,
+                    	mb.name AS bankName,
+                    	mag.name AS agencyName,
                     	mbc.voided_date AS voidedDate,
                     	mbc.created_date AS createdDate,
                     	mbc.usedon_date AS usedOnDate,
@@ -111,6 +115,9 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
                     	lastmodifiedby.username AS lastModifiedByUsername
                     FROM m_bank_check mbc
                     LEFT JOIN m_payment_batch mpb ON mpb.id = mbc.batch_id
+                    LEFT JOIN m_bank_account mba ON mba.id = mpb.bank_acc_id
+                    LEFT JOIN m_bank mb ON mb.id = mba.bank_id
+                    LEFT JOIN m_agency mag ON mag.id = mba.agency_id
                     LEFT JOIN m_appuser voidedby ON voidedby.id = mbc.voidedby_id
                     LEFT JOIN m_appuser createdby ON createdby.id = mbc.createdby_id
                     LEFT JOIN m_appuser printedby ON printedby.id = mbc.printedby_id
@@ -132,6 +139,10 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
             final Long chequeNo = JdbcSupport.getLong(rs, "chequeNo");
             final Long batchNo = JdbcSupport.getLong(rs, "batchNo");
             final String description = rs.getString("description");
+            final String bankAccNo = rs.getString("bankAccNo");
+            final Long bankAccId = JdbcSupport.getLong(rs, "bankAccId");
+            final String agencyName = rs.getString("agencyName");
+            final String bankName = rs.getString("bankName");
             final LocalDate voidedDate = JdbcSupport.getLocalDate(rs, "voidedDate");
             final LocalDate createdDate = JdbcSupport.getLocalDate(rs, "createdDate");
             final LocalDate usedOnDate = JdbcSupport.getLocalDate(rs, "usedOnDate");
@@ -143,6 +154,7 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
             final String voidAuthorizedByUsername = rs.getString("voidAuthorizedByUsername");
             final String lastModifiedByUsername = rs.getString("lastModifiedByUsername");
             return ChequeData.builder().id(id).status(status).batchId(batchId).batchNo(batchNo).description(description)
+                    .agencyName(agencyName).bankAccNo(bankAccNo).bankName(bankName).bankAccId(bankAccId)
                     .voidedDate(voidedDate).chequeNo(chequeNo).createdDate(createdDate).usedOnDate(usedOnDate).printedDate(printedDate)
                     .voidAuthorizedDate(voidAuthorizedDate).voidedByUsername(voidedByUsername).createdByUsername(createdByUsername)
                     .printedByUsername(printedByUsername).voidAuthorizedByUsername(voidAuthorizedByUsername)
@@ -216,10 +228,14 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
         sqlBuilder.append(this.chequeMapper.schema());
         final SQLBuilder extraCriteria = new SQLBuilder();
         final Long batchId = searchParameters.getBatchId();
+        final Long chequeId = searchParameters.getChequeId();
         final String chequeNo = searchParameters.getChequeNo();
         final String status = searchParameters.getStatus();
         if (batchId != null) {
             extraCriteria.addNonNullCriteria("mpb.id = ", batchId);
+        }
+        if (chequeId != null) {
+            extraCriteria.addNonNullCriteria("mbc.id = ", chequeId);
         }
         if (chequeNo != null) {
             extraCriteria.addNonNullCriteria("mbc.check_no LIKE", "%" + chequeNo + "%");

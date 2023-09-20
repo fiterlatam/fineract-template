@@ -3829,6 +3829,37 @@ public class CommandWrapperBuilder {
         this.href = "/bankcheques";
         return this;
     }
+    public CommandWrapperBuilder reassignCheque(final Long chequeId) {
+        this.entityName = BankChequeApiConstants.BANK_CHECK_RESOURCE_NAME;
+        this.actionName = BankChequeApiConstants.CHECK_ACTION_REASSIGN;
+        this.entityId = chequeId;
+        this.href = "/bankcheques";
+        return this;
+    }
+
+    public CommandWrapperBuilder authorizedChequeReassignment(final Long chequeId) {
+        this.entityName = BankChequeApiConstants.BANK_CHECK_RESOURCE_NAME;
+        this.actionName = BankChequeApiConstants.CHECK_ACTION_AUTHORIZEREASSIGN;
+        this.entityId = chequeId;
+        this.href = "/bankcheques";
+        return this;
+    }
+    public CommandWrapperBuilder voidCheque(final Long chequeId) {
+        this.entityName = BankChequeApiConstants.BANK_CHECK_RESOURCE_NAME;
+        this.actionName = BankChequeApiConstants.CHECK_ACTION_VOID;
+        this.entityId = chequeId;
+        this.href = "/bankcheques";
+        return this;
+    }
+    public CommandWrapperBuilder authorizeChequeVoidance(final Long chequeId) {
+        this.entityName = BankChequeApiConstants.BANK_CHECK_RESOURCE_NAME;
+        this.actionName = BankChequeApiConstants.CHECK_ACTION_AUTHORIZEVOID;
+        this.entityId = chequeId;
+        this.href = "/bankcheques";
+        return this;
+    }
+
+
 
     public CommandWrapperBuilder updateChequeBatch(Long batchId) {
         this.entityName = BankChequeApiConstants.BANK_CHECK_RESOURCE_NAME;

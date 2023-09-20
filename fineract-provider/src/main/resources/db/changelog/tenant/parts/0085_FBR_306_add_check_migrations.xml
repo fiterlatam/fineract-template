@@ -280,4 +280,36 @@
         <renameColumn tableName="m_payment_batch" oldColumnName="back_acc_no" newColumnName="bank_acc_no" columnDataType="BIGINT"/>
     </changeSet>
 
+    <changeSet id="25" author="fineract">
+        <insert tableName="m_permission">
+            <column name="grouping" value="organisation" />
+            <column name="code" value="REASSIGN_BANKCHEQUE"/>
+            <column name="entity_name" value="BANKCHEQUE" />
+            <column name="action_name" value="REASSIGN" />
+            <column name="can_maker_checker" valueBoolean="false" />
+        </insert>
+        <insert tableName="m_permission">
+            <column name="grouping" value="organisation" />
+            <column name="code" value="AUTHORIZEREASSIGN_BANKCHEQUE"/>
+            <column name="entity_name" value="BANKCHEQUE" />
+            <column name="action_name" value="AUTHORIZEREASSIGN" />
+            <column name="can_maker_checker" valueBoolean="false" />
+        </insert>
+        <insert tableName="m_permission">
+            <column name="grouping" value="organisation" />
+            <column name="code" value="VOID_BANKCHEQUE"/>
+            <column name="entity_name" value="BANKCHEQUE" />
+            <column name="action_name" value="VOID" />
+            <column name="can_maker_checker" valueBoolean="false" />
+        </insert>
+        <insert tableName="m_permission">
+            <column name="grouping" value="organisation" />
+            <column name="code" value="AUTHORIZEVOID_BANKCHEQUE"/>
+            <column name="entity_name" value="BANKCHEQUE" />
+            <column name="action_name" value="AUTHORIZEVOID" />
+            <column name="can_maker_checker" valueBoolean="false" />
+        </insert>
+    </changeSet>
+
+
 </databaseChangeLog>

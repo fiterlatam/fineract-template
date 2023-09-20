@@ -18,10 +18,6 @@
  */
 package org.apache.fineract.organisation.bankcheque.service;
 
-import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
@@ -31,21 +27,32 @@ import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuild
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.organisation.agency.domain.Agency;
-import org.apache.fineract.organisation.agency.domain.AgencyRepositoryWrapper;
 import org.apache.fineract.organisation.bankAccount.domain.BankAccount;
 import org.apache.fineract.organisation.bankAccount.domain.BankAccountRepositoryWrapper;
 import org.apache.fineract.organisation.bankcheque.command.CreateChequeCommand;
+import org.apache.fineract.organisation.bankcheque.command.ReassignChequeCommand;
 import org.apache.fineract.organisation.bankcheque.command.UpdateChequeCommand;
+import org.apache.fineract.organisation.bankcheque.command.VoidChequeCommand;
 import org.apache.fineract.organisation.bankcheque.domain.BankChequeStatus;
 import org.apache.fineract.organisation.bankcheque.domain.Batch;
 import org.apache.fineract.organisation.bankcheque.domain.Cheque;
 import org.apache.fineract.organisation.bankcheque.domain.ChequeBatchRepositoryWrapper;
+import org.apache.fineract.organisation.bankcheque.domain.ChequeJpaRepository;
 import org.apache.fineract.organisation.bankcheque.exception.BankChequeException;
 import org.apache.fineract.organisation.bankcheque.serialization.CreateChequeCommandFromApiJsonDeserializer;
+import org.apache.fineract.organisation.bankcheque.serialization.ReassignChequeCommandFromApiJsonDeserializer;
 import org.apache.fineract.organisation.bankcheque.serialization.UpdateChequeCommandFromApiJsonDeserializer;
+import org.apache.fineract.organisation.bankcheque.serialization.VoidChequeCommandFromApiJsonDeserializer;
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @Service
 @Slf4j
@@ -56,9 +63,11 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
     private final CreateChequeCommandFromApiJsonDeserializer createChequeCommandFromApiJsonDeserializer;
     private final UpdateChequeCommandFromApiJsonDeserializer updateChequeCommandFromApiJsonDeserializer;
     private final BankAccountRepositoryWrapper bankAccountRepositoryWrapper;
-    private final AgencyRepositoryWrapper agencyRepositoryWrapper;
     private final JdbcTemplate jdbcTemplate;
     private final ChequeBatchRepositoryWrapper chequeBatchRepositoryWrapper;
+    private final ChequeJpaRepository chequeJpaRepository;
+    private final ReassignChequeCommandFromApiJsonDeserializer reassignChequeCommandFromApiJsonDeserializer;
+    private final VoidChequeCommandFromApiJsonDeserializer voidChequeCommandFromApiJsonDeserializer;
 
     @Override
     public CommandProcessingResult createBatch(JsonCommand command) {
@@ -144,5 +153,76 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
         this.chequeBatchRepositoryWrapper.deleteBatch(batchForUpdate);
         return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withResourceIdAsString(batchId.toString())
                 .withEntityId(batchId).build();
+    }
+
+    @Override
+    public CommandProcessingResult reassignCheque(final Long chequeId, JsonCommand command) {
+        final AppUser currentUser = this.context.authenticatedUser();
+        ReassignChequeCommand reassignChequeCommand = reassignChequeCommandFromApiJsonDeserializer.commandFromApiJson(command.json());
+        Cheque newCheque = chequeBatchRepositoryWrapper.findOneChequeWithNotFoundDetection(reassignChequeCommand.getChequeId());
+        Cheque oldCheque = chequeBatchRepositoryWrapper.findOneChequeWithNotFoundDetection(reassignChequeCommand.getOldChequeId());
+        final String newChequeDescription = "Emitido por sustitución de Desembolso cheque " + oldCheque.getChequeNo();
+        final String oldChequeDescription = "Cheque anulado por proceso de Reasignación, cheque nuevo " + newCheque.getChequeNo();
+        final LocalDateTime localDateTime = DateUtils.getLocalDateTimeOfSystem();
+        LocalDate localDate = DateUtils.getBusinessLocalDate();
+        final Long currentUserId = currentUser.getId();
+        oldCheque.setStatus(BankChequeStatus.PENDING_VOIDANCE.getValue());
+        oldCheque.setDescription(oldChequeDescription);
+        oldCheque.stampAudit(currentUserId, localDateTime);
+        oldCheque.setVoidedDate(localDate);
+        oldCheque.setVoidedBy(currentUser);
+        newCheque.setStatus(BankChequeStatus.PENDING_ISSUANCE.getValue());
+        newCheque.setDescription(newChequeDescription);
+        newCheque.stampAudit(currentUserId, localDateTime);
+        newCheque.setPrintedDate(localDate);
+        newCheque.setPrintedBy(currentUser);
+        chequeJpaRepository.saveAll(List.of(oldCheque, newCheque));
+        return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withResourceIdAsString(reassignChequeCommand.getOldChequeId().toString()).withEntityId(reassignChequeCommand.getOldChequeId()).build();
+    }
+
+    @Override
+    public CommandProcessingResult authorizedChequeReassignment(final Long chequeId, JsonCommand command) {
+        return new CommandProcessingResultBuilder().withCommandId(command.commandId())
+                .withResourceIdAsString(String.valueOf(command.entityId()))
+                .withEntityId(command.entityId())
+                .build();
+    }
+
+    @Override
+    public CommandProcessingResult authorizedChequeVoidance(final Long chequeId, JsonCommand command) {
+        final AppUser currentUser = this.context.authenticatedUser();
+        Cheque cheque = chequeBatchRepositoryWrapper.findOneChequeWithNotFoundDetection(chequeId);
+        final LocalDateTime localDateTime = DateUtils.getLocalDateTimeOfSystem();
+        LocalDate localDate = DateUtils.getBusinessLocalDate();
+        final Long currentUserId = currentUser.getId();
+        cheque.stampAudit(currentUserId, localDateTime);
+        cheque.setVoidAuthorizedDate(localDate);
+        cheque.setVoidAuthorizedBy(currentUser);
+        cheque.setStatus(BankChequeStatus.VOIDED.getValue());
+        chequeJpaRepository.saveAndFlush(cheque);
+        return new CommandProcessingResultBuilder().withCommandId(command.commandId())
+                .withResourceIdAsString(String.valueOf(command.entityId()))
+                .withEntityId(command.entityId())
+                .build();
+    }
+
+    @Override
+    public CommandProcessingResult voidCheque(final Long chequeId, JsonCommand command) {
+        final AppUser currentUser = this.context.authenticatedUser();
+        VoidChequeCommand voidChequeCommand = voidChequeCommandFromApiJsonDeserializer.commandFromApiJson(command.json());
+        Cheque cheque = chequeBatchRepositoryWrapper.findOneChequeWithNotFoundDetection(chequeId);
+        final LocalDateTime localDateTime = DateUtils.getLocalDateTimeOfSystem();
+        LocalDate localDate = DateUtils.getBusinessLocalDate();
+        final Long currentUserId = currentUser.getId();
+        cheque.stampAudit(currentUserId, localDateTime);
+        cheque.setVoidedDate(localDate);
+        cheque.setVoidedBy(currentUser);
+        cheque.setDescription(voidChequeCommand.getDescription());
+        cheque.setStatus(BankChequeStatus.PENDING_VOIDANCE.getValue());
+        chequeJpaRepository.saveAndFlush(cheque);
+        return new CommandProcessingResultBuilder().withCommandId(command.commandId())
+                .withResourceIdAsString(String.valueOf(command.entityId()))
+                .withEntityId(command.entityId())
+                .build();
     }
 }
