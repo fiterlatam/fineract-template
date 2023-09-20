@@ -61,6 +61,7 @@ public final class SearchParameters {
     private final String bankCode;
     private final String chequeNo;
     private final Long batchId;
+    private final Long chequeId;
 
     public static SearchParameters from(final String sqlSearch, final Long officeId, final String externalId, final String name,
             final String hierarchy) {
@@ -115,8 +116,8 @@ public final class SearchParameters {
                 sortOrder, staffId, accountNo, loanId, savingsId, null, false, null, type, null, null, null);
     }
 
-    public static SearchParameters forBankCheques(final String chequeNo, final Long batchId, final String status, final Integer offset,
-            final Integer limit, final String orderBy, final String sortOrder) {
+    public static SearchParameters forBankCheques(final String chequeNo, final Long batchId, final Long chequeId, final String status,
+            final Integer offset, final Integer limit, final String orderBy, final String sortOrder) {
         final Integer maxLimitAllowed = getCheckedLimit(limit);
         final String accountNo = null;
         final String name = null;
@@ -129,7 +130,7 @@ public final class SearchParameters {
         final boolean isSelfUser = false;
         final boolean orphansOnly = false;
         return new SearchParameters(officeId, externalId, name, hierarchy, null, null, offset, maxLimitAllowed, orderBy, sortOrder, staffId,
-                accountNo, loanId, savingsId, orphansOnly, isSelfUser, chequeNo, status, batchId);
+                accountNo, loanId, savingsId, orphansOnly, isSelfUser, chequeNo, status, batchId, chequeId);
     }
 
     public static SearchParameters forGroups(final Long officeId, final Long staffId, final String externalId, final String name,
@@ -143,10 +144,11 @@ public final class SearchParameters {
         final boolean isSelfUser = false;
         final String chequeNo = null;
         final Long batchId = null;
+        final Long chequeId = null;
         final String status = null;
 
         return new SearchParameters(officeId, externalId, name, hierarchy, null, null, offset, maxLimitAllowed, orderBy, sortOrder, staffId,
-                accountNo, loanId, savingsId, orphansOnly, isSelfUser, chequeNo, status, batchId);
+                accountNo, loanId, savingsId, orphansOnly, isSelfUser, chequeNo, status, batchId, chequeId);
     }
 
     public static SearchParameters forOffices(final String orderBy, final String sortOrder) {
@@ -362,7 +364,7 @@ public final class SearchParameters {
         this.bankCode = null;
         this.chequeNo = null;
         this.batchId = null;
-
+        this.chequeId = null;
     }
 
     private SearchParameters(final String sqlSearch, final Long officeId, final String externalId, final String name,
@@ -400,6 +402,7 @@ public final class SearchParameters {
         this.bankCode = null;
         this.chequeNo = null;
         this.batchId = null;
+        this.chequeId = null;
     }
 
     private SearchParameters(final String sqlSearch, final Long officeId, final String externalId, final String name,
@@ -438,6 +441,7 @@ public final class SearchParameters {
         this.bankCode = bankCode;
         this.chequeNo = null;
         this.batchId = null;
+        this.chequeId = null;
     }
 
     private SearchParameters(final String sqlSearch, final Long officeId, final String externalId, final String name,
@@ -476,13 +480,14 @@ public final class SearchParameters {
         this.bankCode = null;
         this.chequeNo = null;
         this.batchId = null;
-
+        this.chequeId = null;
     }
 
     private SearchParameters(final Long officeId, final String externalId, final String name, final String hierarchy,
             final String firstname, final String lastname, final Integer offset, final Integer limit, final String orderBy,
             final String sortOrder, final Long staffId, final String accountNo, final Long loanId, final Long savingsId,
-            final Boolean orphansOnly, boolean isSelfUser, final String chequeNo, final String status, final Long batchId) {
+            final Boolean orphansOnly, boolean isSelfUser, final String chequeNo, final String status, final Long batchId,
+            final Long chequeId) {
         this.sqlSearch = null;
         this.officeId = officeId;
         this.externalId = externalId;
@@ -514,6 +519,7 @@ public final class SearchParameters {
         this.bankCode = null;
         this.chequeNo = chequeNo;
         this.batchId = batchId;
+        this.chequeId = chequeId;
     }
 
     private SearchParameters(final Long provisioningEntryId, final Long officeId, final Long productId, final Long categoryId,
@@ -549,7 +555,7 @@ public final class SearchParameters {
         this.bankCode = null;
         this.chequeNo = null;
         this.batchId = null;
-
+        this.chequeId = null;
     }
 
     public SearchParameters(final String sqlSearch, final Long officeId, final String externalId, final String name, final String hierarchy,
@@ -587,7 +593,7 @@ public final class SearchParameters {
         this.bankCode = null;
         this.chequeNo = null;
         this.batchId = null;
-
+        this.chequeId = null;
     }
 
     public boolean isOrderByRequested() {
@@ -783,6 +789,10 @@ public final class SearchParameters {
 
     public Long getBatchId() {
         return batchId;
+    }
+
+    public Long getChequeId() {
+        return chequeId;
     }
 
     /**

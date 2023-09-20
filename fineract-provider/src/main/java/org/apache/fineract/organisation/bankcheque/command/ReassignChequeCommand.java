@@ -16,35 +16,15 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.organisation.bankcheque.data;
+package org.apache.fineract.organisation.bankcheque.command;
 
-import java.time.LocalDate;
 import lombok.Builder;
 import lombok.Data;
-import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 
 @Builder
 @Data
-public class ChequeData {
+public class ReassignChequeCommand {
 
-    private Long id;
-    private Long chequeNo;
-    private Long batchId;
-    private Long batchNo;
-    private String bankAccNo;
-    private Long bankAccId;
-    private String agencyName;
-    private String bankName;
-    private EnumOptionData status;
-    private String description;
-    private LocalDate createdDate;
-    private String createdByUsername;
-    private LocalDate voidedDate;
-    private String voidedByUsername;
-    private LocalDate voidAuthorizedDate;
-    private String voidAuthorizedByUsername;
-    private LocalDate printedDate;
-    private String printedByUsername;
-    private String lastModifiedByUsername;
-    private LocalDate usedOnDate;
+    private Long chequeId;
+    private Long oldChequeId;
 }

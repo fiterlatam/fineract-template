@@ -40,12 +40,14 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.UriInfo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.commands.domain.CommandWrapper;
 import org.apache.fineract.commands.service.CommandWrapperBuilder;
 import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformService;
 import org.apache.fineract.infrastructure.core.api.ApiRequestParameterHelper;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.PaginationParameters;
+import org.apache.fineract.infrastructure.core.exception.UnrecognizedQueryParamException;
 import org.apache.fineract.infrastructure.core.serialization.ApiRequestJsonSerializationSettings;
 import org.apache.fineract.infrastructure.core.serialization.ToApiJsonSerializer;
 import org.apache.fineract.infrastructure.core.service.Page;
@@ -79,9 +81,32 @@ public class BankChequeApiResource {
     @RequestBody(required = true, content = @Content(schema = @Schema(implementation = BankChequeApiSwagger.PostChequeBatchRequest.class)))
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = BankChequeApiSwagger.PostChequeBatchResponse.class))) })
-    public String createBatch(@Parameter(hidden = true) final String apiRequestBodyAsJson) {
-        final CommandWrapper commandRequest = new CommandWrapperBuilder().createChequeBatch().withJson(apiRequestBodyAsJson).build();
-        final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
+    public String chequeRequest(@Parameter(hidden = true) final String apiRequestBodyAsJson,
+            @QueryParam("commandParam") @Parameter(description = "commandParam") final String commandParam,
+            @QueryParam("chequeId") @Parameter(description = "chequeId") final Long chequeId) {
+        final CommandWrapperBuilder builder = new CommandWrapperBuilder().withJson(apiRequestBodyAsJson);
+        CommandProcessingResult result = null;
+        CommandWrapper commandRequest;
+        if (is(commandParam, "createbatch")) {
+            commandRequest = builder.createChequeBatch().withJson(apiRequestBodyAsJson).build();
+            result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
+        } else if (is(commandParam, "reassigncheque")) {
+            commandRequest = builder.reassignCheque(chequeId).build();
+            result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
+        } else if (is(commandParam, "authorizereassignment")) {
+            commandRequest = builder.authorizedChequeReassignment(chequeId).build();
+            result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
+        } else if (is(commandParam, "voidcheque")) {
+            commandRequest = builder.voidCheque(chequeId).build();
+            result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
+        } else if (is(commandParam, "authorizevoidance")) {
+            commandRequest = builder.authorizeChequeVoidance(chequeId).build();
+            result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
+        }
+        if (result == null) {
+            throw new UnrecognizedQueryParamException("command", commandParam, "reassigncheque", "authorizereassignment", "createbatch",
+                    "voidcheque", "authorizevoidance");
+        }
         return this.toApiJsonSerializer.serialize(result);
     }
 
@@ -127,6 +152,7 @@ public class BankChequeApiResource {
             @QueryParam("status") @Parameter(description = "status") final String status,
             @QueryParam("chequeNo") @Parameter(description = "chequeNo") final String chequeNo,
             @QueryParam("batchId") @Parameter(description = "batchId") final Long batchId,
+            @QueryParam("chequeId") @Parameter(description = "batchId") final Long chequeId,
             @QueryParam("offset") @Parameter(description = "offset") final Integer offset,
             @QueryParam("limit") @Parameter(description = "limit") final Integer limit,
             @QueryParam("orderBy") @Parameter(description = "orderBy") final String orderBy,
@@ -134,8 +160,8 @@ public class BankChequeApiResource {
         this.context.authenticatedUser().validateHasReadPermission(BankChequeApiConstants.BANK_CHECK_RESOURCE_NAME);
         final PaginationParameters parameters = PaginationParameters.instance(paged, offset, limit, orderBy, sortOrder);
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
-        final SearchParameters searchParameters = SearchParameters.forBankCheques(chequeNo, batchId, status, offset, limit, orderBy,
-                sortOrder);
+        final SearchParameters searchParameters = SearchParameters.forBankCheques(chequeNo, batchId, chequeId, status, offset, limit,
+                orderBy, sortOrder);
         final Page<ChequeData> cheques = this.chequeReadPlatformService.retrieveAll(searchParameters, parameters);
         return this.toApiJsonSerializer.serialize(settings, cheques);
     }
@@ -169,5 +195,9 @@ public class BankChequeApiResource {
         final CommandWrapper commandRequest = new CommandWrapperBuilder().deleteChequeBatch(batchId).withJson(apiRequestBodyAsJson).build();
         final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
         return this.toApiJsonSerializer.serialize(result);
+    }
+
+    private boolean is(final String commandParam, final String commandValue) {
+        return StringUtils.isNotBlank(commandParam) && commandParam.trim().equalsIgnoreCase(commandValue);
     }
 }
