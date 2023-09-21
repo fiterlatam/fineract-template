@@ -111,8 +111,8 @@ public class LoanArrearsAgingServiceImpl implements LoanArrearsAgingService {
         final String penaltyChargesVatOverdueCalculationSql = "SUM(COALESCE(mr.vat_on_penalty_charges_expected_derived, 0) - coalesce(mr.vat_on_penalty_charges_paid_derived, 0))";
 
         updateSqlBuilder.append(
-                "INSERT INTO m_loan_arrears_aging(loan_id,principal_overdue_derived,interest_overdue_derived,fee_charges_overdue_derived,penalty_charges_overdue_derived," +
-                        "interest_vat_overdue_derived, penalty_vat_overdue_derived, total_overdue_derived,overdue_since_date_derived)");
+                "INSERT INTO m_loan_arrears_aging(loan_id,principal_overdue_derived,interest_overdue_derived,fee_charges_overdue_derived,penalty_charges_overdue_derived,"
+                        + "interest_vat_overdue_derived, penalty_vat_overdue_derived, total_overdue_derived,overdue_since_date_derived)");
         updateSqlBuilder.append("select ml.id as loanId,");
         updateSqlBuilder.append(principalOverdueCalculationSql + " as principal_overdue_derived,");
         updateSqlBuilder.append(interestOverdueCalculationSql + " as interest_overdue_derived,");
@@ -122,7 +122,8 @@ public class LoanArrearsAgingServiceImpl implements LoanArrearsAgingService {
         updateSqlBuilder.append(penaltyChargesVatOverdueCalculationSql + " as penalty_vat_overdue_derived,");
         updateSqlBuilder.append(principalOverdueCalculationSql + "+" + interestOverdueCalculationSql + "+");
         updateSqlBuilder.append(feeChargesOverdueCalculationSql + "+" + penaltyChargesOverdueCalculationSql + "+");
-        updateSqlBuilder.append(interestVatOverdueCalculationSql + "+" + penaltyChargesVatOverdueCalculationSql + " as total_overdue_derived,");
+        updateSqlBuilder
+                .append(interestVatOverdueCalculationSql + "+" + penaltyChargesVatOverdueCalculationSql + " as total_overdue_derived,");
         updateSqlBuilder.append("MIN(mr.duedate) as overdue_since_date_derived ");
 
         updateSqlBuilder.append(" FROM m_loan ml ");

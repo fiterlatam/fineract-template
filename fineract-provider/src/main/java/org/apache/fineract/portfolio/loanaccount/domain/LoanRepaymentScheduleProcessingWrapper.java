@@ -188,7 +188,8 @@ public class LoanRepaymentScheduleProcessingWrapper {
                             amount = amount.add(totalPrincipal.getAmount());
                         }
                     }
-                    BigDecimal loanChargeAmt = amount.multiply(loanCharge.getPercentage()).divide(BigDecimal.valueOf(100), MoneyHelper.getRoundingMode());
+                    BigDecimal loanChargeAmt = amount.multiply(loanCharge.getPercentage()).divide(BigDecimal.valueOf(100),
+                            MoneyHelper.getRoundingMode());
                     cumulative = cumulative.plus(loanChargeAmt);
 
                     if (loanCharge.getCharge().isVatRequired()) {
