@@ -188,7 +188,7 @@ public class LoanRepaymentScheduleProcessingWrapper {
                             amount = amount.add(totalPrincipal.getAmount());
                         }
                     }
-                    BigDecimal loanChargeAmt = amount.multiply(loanCharge.getPercentage()).divide(BigDecimal.valueOf(100));
+                    BigDecimal loanChargeAmt = amount.multiply(loanCharge.getPercentage()).divide(BigDecimal.valueOf(100), MoneyHelper.getRoundingMode());
                     cumulative = cumulative.plus(loanChargeAmt);
 
                     if (loanCharge.getCharge().isVatRequired()) {
@@ -482,7 +482,7 @@ public class LoanRepaymentScheduleProcessingWrapper {
     }
 
     private Money calculateVatOnAmount(BigDecimal vatPercentage, Money amountSubjectToVat) {
-        BigDecimal vatConverted = vatPercentage.divide(BigDecimal.valueOf(100));
+        BigDecimal vatConverted = vatPercentage.divide(BigDecimal.valueOf(100), MoneyHelper.getRoundingMode());
         return amountSubjectToVat.multipliedBy(vatConverted);
     }
 

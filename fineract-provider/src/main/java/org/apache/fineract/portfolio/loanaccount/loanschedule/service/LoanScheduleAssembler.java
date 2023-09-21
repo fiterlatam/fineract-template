@@ -455,19 +455,6 @@ public class LoanScheduleAssembler {
             isVatRequired = Boolean.FALSE;
         }
 
-        // calculate effective annual interest rate
-        BigDecimal effectInterestAmount = this.loanUtilService.calculateEffectiveRate(interestRatePerPeriod).setScale(2,
-                MoneyHelper.getRoundingMode());
-
-        // if VAT is required, then calculates the effective annual rate with VAT
-        BigDecimal effectInterestAmountWithVat = BigDecimal.ZERO;
-        if (isVatRequired && client != null && client.getVatRate() != null && client.getVatRate().getPercentage() % 1 == 0) {
-            double vatPercentage = client.getVatRate().getPercentage();
-            effectInterestAmountWithVat = this.loanUtilService
-                    .calculateEffectiveRateWithVat(interestRatePerPeriod, BigDecimal.valueOf(vatPercentage))
-                    .setScale(2, MoneyHelper.getRoundingMode());
-        }
-
         final boolean isHolidayEnabled = this.configurationDomainService.isRescheduleRepaymentsOnHolidaysEnabled();
         final List<Holiday> holidays = this.holidayRepository.findByOfficeIdAndGreaterThanDate(officeId, expectedDisbursementDate,
                 HolidayStatusType.ACTIVE.getValue());
