@@ -141,7 +141,7 @@ public class SchedulerJobRunnerReadServiceImpl implements SchedulerJobRunnerRead
 
         JobDetailMapper(DatabaseSpecificSQLGenerator sqlGenerator) {
             sqlBuilder = new StringBuilder("select").append(
-                            " job.id,job.display_name as displayName,job.next_run_time as nextRunTime,job.initializing_errorlog as initializingError,job.cron_expression as cronExpression,job.is_active as active,job.currently_running as currentlyRunning,")
+                    " job.id,job.display_name as displayName,job.next_run_time as nextRunTime,job.initializing_errorlog as initializingError,job.cron_expression as cronExpression,job.is_active as active,job.currently_running as currentlyRunning,")
                     .append(" runHistory.version,runHistory.start_time as lastRunStartTime,runHistory.end_time as lastRunEndTime,runHistory."
                             + sqlGenerator.escape("status")
                             + ",runHistory.error_message as jobRunErrorMessage,runHistory.trigger_type as triggerType,")

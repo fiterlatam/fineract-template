@@ -413,8 +413,7 @@ public class LoanUtilService {
     }
 
     private Money calculateVatCharge(BigDecimal vatPercentage, Money chargeAmount) {
-        BigDecimal vatConverted = vatPercentage.divide(BigDecimal.valueOf(100));
-        final Money vatPortion = chargeAmount.multipliedBy(vatConverted);
+        final Money vatPortion = chargeAmount.multipliedBy(vatPercentage).dividedBy(100, MoneyHelper.getRoundingMode());
         return vatPortion;
     }
 
