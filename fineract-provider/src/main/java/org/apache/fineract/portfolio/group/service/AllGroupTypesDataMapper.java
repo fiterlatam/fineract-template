@@ -80,7 +80,7 @@ public final class AllGroupTypesDataMapper implements RowMapper<GroupGeneralData
         sqlBuilder.append("g.meeting_day as meetingDay, cvMeetingDay.code_value as meetingDayValue, ");
         sqlBuilder.append("cvMeetingDay.order_position as meetingDayOrderPosition, g.meeting_start_time as meetingStartTime, ");
         sqlBuilder.append("g.meeting_end_time as meetingEndTime, g.reference_point as referencePoint, ");
-        sqlBuilder.append("prequalGroup.prequalification_number as prequalificationNumber ");
+        sqlBuilder.append("prequalGroup.prequalification_number as prequalificationNumber, g.prequalification_id as prequalificationId ");
 
         sqlBuilder.append("from m_group g ");
         sqlBuilder.append("join m_office o on o.id = g.office_id ");
@@ -178,6 +178,7 @@ public final class AllGroupTypesDataMapper implements RowMapper<GroupGeneralData
         final String meetingDayValue = rs.getString("meetingDayValue");
         final String referencePoint = rs.getString("referencePoint");
         final String prequalificationNumber = rs.getString("prequalificationNumber");
+        final Long prequalificationId = rs.getLong("prequalificationId");
 
         final GroupTimelineData timeline = new GroupTimelineData(submittedOnDate, submittedByUsername, submittedByFirstname,
                 submittedByLastname, activationDate, activatedByUsername, activatedByFirstname, activatedByLastname, closedOnDate,
@@ -210,6 +211,7 @@ public final class AllGroupTypesDataMapper implements RowMapper<GroupGeneralData
         ret.setMeetingDayName(meetingDayValue);
         ret.setReferencePoint(referencePoint);
         ret.setPrequalificationNumber(prequalificationNumber);
+        ret.setPrequalificationId(prequalificationId);
         return ret;
     }
 }
