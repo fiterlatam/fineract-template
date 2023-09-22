@@ -18,18 +18,26 @@
  */
 package org.apache.fineract.portfolio.charge.domain;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.MonthDay;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 import org.apache.fineract.accounting.glaccount.data.GLAccountData;
@@ -40,6 +48,7 @@ import org.apache.fineract.infrastructure.core.data.DataValidatorBuilder;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
 import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidationException;
+import org.apache.fineract.infrastructure.core.serialization.JsonParserHelper;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.organisation.monetary.data.CurrencyData;
 import org.apache.fineract.portfolio.charge.api.ChargesApiConstants;
@@ -133,6 +142,12 @@ public class Charge extends AbstractPersistableCustom {
     @JoinColumn(name = "tax_group_id")
     private TaxGroup taxGroup;
 
+    @Column(name = "charge_disbursement_type_enum", nullable = false)
+    private Integer chargeDisbursementType;
+
+    @OneToMany(orphanRemoval = true, cascade = CascadeType.ALL, mappedBy = "charge")
+    private List<ChargeRange> chargeRanges;
+
     public static Charge fromJson(final JsonCommand command, final GLAccount account, final TaxGroup taxGroup,
             final PaymentType paymentType) {
 
@@ -173,9 +188,38 @@ public class Charge extends AbstractPersistableCustom {
             countFrequencyType = PeriodFrequencyType.fromInt(command.integerValueOfParameterNamed("countFrequencyType"));
         }
 
-        return new Charge(name, amount, currencyCode, chargeAppliesTo, chargeTimeType, chargeCalculationType, penalty, active, paymentMode,
-                feeOnMonthDay, feeInterval, minCap, maxCap, feeFrequency, enableFreeWithdrawalCharge, freeWithdrawalFrequency,
-                restartCountFrequency, countFrequencyType, account, taxGroup, enablePaymentType, paymentType);
+        final ChargeDisbursementType chargeDisbursementType = ChargeDisbursementType
+                .fromInt(command.integerValueOfParameterNamed("chargeDisbursementType"));
+
+        Charge charge = new Charge(name, amount, currencyCode, chargeAppliesTo, chargeTimeType, chargeCalculationType, penalty, active,
+                paymentMode, feeOnMonthDay, feeInterval, minCap, maxCap, feeFrequency, enableFreeWithdrawalCharge, freeWithdrawalFrequency,
+                restartCountFrequency, countFrequencyType, account, taxGroup, enablePaymentType, paymentType, chargeDisbursementType);
+
+        setChargeRanges(charge, command);
+
+        return charge;
+    }
+
+    private static void setChargeRanges(final Charge charge, final JsonCommand command) {
+        charge.setChargeRanges(new ArrayList());
+
+        if (command.hasParameter("adminFeeRanges")) {
+            JsonParserHelper helper = new JsonParserHelper();
+
+            JsonArray limits = command.arrayOfParameterNamed("adminFeeRanges");
+            Iterator<JsonElement> it = limits.iterator();
+            while (it.hasNext()) {
+                JsonElement el = it.next();
+
+                ChargeRange chargeRange = new ChargeRange();
+                chargeRange.setCharge(charge);
+                chargeRange.setMinDay(helper.extractIntegerWithLocaleNamed("adminFeeMin", el, new HashSet<>()));
+                chargeRange.setMaxDay(helper.extractIntegerWithLocaleNamed("adminFeeMax", el, new HashSet<>()));
+                chargeRange.setFeeRate(helper.extractBigDecimalWithLocaleNamed("adminFeeRate", el, new HashSet<>()));
+
+                charge.getChargeRanges().add(chargeRange);
+            }
+        }
     }
 
     protected Charge() {}
@@ -185,7 +229,8 @@ public class Charge extends AbstractPersistableCustom {
             final ChargePaymentMode paymentMode, final MonthDay feeOnMonthDay, final Integer feeInterval, final BigDecimal minCap,
             final BigDecimal maxCap, final Integer feeFrequency, final boolean enableFreeWithdrawalCharge,
             final Integer freeWithdrawalFrequency, final Integer restartFrequency, final PeriodFrequencyType restartFrequencyEnum,
-            final GLAccount account, final TaxGroup taxGroup, final boolean enablePaymentType, final PaymentType paymentType) {
+            final GLAccount account, final TaxGroup taxGroup, final boolean enablePaymentType, final PaymentType paymentType,
+            final ChargeDisbursementType chargeDisbursementType) {
         this.name = name;
         this.amount = amount;
         this.currencyCode = currencyCode;
@@ -197,6 +242,7 @@ public class Charge extends AbstractPersistableCustom {
         this.account = account;
         this.taxGroup = taxGroup;
         this.chargePaymentMode = paymentMode == null ? null : paymentMode.getValue();
+        this.chargeDisbursementType = chargeDisbursementType == null ? null : chargeDisbursementType.getValue();
 
         final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
         final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors).resource("charges");
@@ -543,6 +589,14 @@ public class Charge extends AbstractPersistableCustom {
                 actualChanges.put("locale", localeAsInput);
                 this.chargePaymentMode = ChargePaymentMode.fromInt(newValue).getValue();
             }
+
+            final String chargeDisbursementTypeParamName = "chargeDisbursementType";
+            if (command.isChangeInIntegerParameterNamed(chargeDisbursementTypeParamName, this.chargeDisbursementType)) {
+                final Integer newValue = command.integerValueOfParameterNamed(chargeDisbursementTypeParamName);
+                actualChanges.put(chargeDisbursementTypeParamName, newValue);
+                actualChanges.put("locale", localeAsInput);
+                this.chargeDisbursementType = ChargeDisbursementType.fromInt(newValue).getValue();
+            }
         }
 
         if (command.hasParameter("feeOnMonthDay")) {
@@ -635,6 +689,8 @@ public class Charge extends AbstractPersistableCustom {
             }
         }
 
+        setChargeRanges(this, command);
+
         if (!dataValidationErrors.isEmpty()) {
             throw new PlatformApiDataValidationException(dataValidationErrors);
         }
@@ -658,6 +714,7 @@ public class Charge extends AbstractPersistableCustom {
         final EnumOptionData chargeCalculationType = ChargeEnumerations.chargeCalculationType(this.chargeCalculation);
         final EnumOptionData chargePaymentmode = ChargeEnumerations.chargePaymentMode(this.chargePaymentMode);
         final EnumOptionData feeFrequencyType = ChargeEnumerations.chargePaymentMode(this.feeFrequency);
+        final EnumOptionData chargeDisbursementType = ChargeEnumerations.chargePaymentMode(this.chargePaymentMode);
         GLAccountData accountData = null;
         if (account != null) {
             accountData = new GLAccountData(account.getId(), account.getName(), account.getGlCode());
@@ -676,7 +733,7 @@ public class Charge extends AbstractPersistableCustom {
         return ChargeData.instance(getId(), this.name, this.amount, currency, chargeTimeType, chargeAppliesTo, chargeCalculationType,
                 chargePaymentmode, getFeeOnMonthDay(), this.feeInterval, this.penalty, this.active, this.enableFreeWithdrawal,
                 this.freeWithdrawalFrequency, this.restartFrequency, this.restartFrequencyEnum, this.enablePaymentType, paymentTypeData,
-                this.minCap, this.maxCap, feeFrequencyType, accountData, taxGroupData);
+                this.minCap, this.maxCap, feeFrequencyType, accountData, taxGroupData, chargeDisbursementType);
     }
 
     public Integer getChargePaymentMode() {
@@ -744,12 +801,41 @@ public class Charge extends AbstractPersistableCustom {
                 || ChargeTimeType.fromInt(this.chargeTimeType).equals(ChargeTimeType.TRANCHE_DISBURSEMENT);
     }
 
+    public boolean isAddOnDisbursementType() {
+        return ChargeDisbursementType.fromInt(this.chargeDisbursementType).equals(ChargeDisbursementType.ADD_ON);
+    }
+
     public TaxGroup getTaxGroup() {
         return this.taxGroup;
     }
 
     public void setTaxGroup(TaxGroup taxGroup) {
         this.taxGroup = taxGroup;
+    }
+
+    public List<ChargeRange> getChargeRanges() {
+        return chargeRanges;
+    }
+
+    public void setChargeRanges(List<ChargeRange> chargeRanges) {
+        this.chargeRanges = chargeRanges;
+    }
+
+    public BigDecimal getAddOnDisbursementChargeRate(LocalDate disbursementDate, LocalDate firstRepaymentDate) {
+        BigDecimal addOnDisbursementChargeRate = BigDecimal.ZERO;
+
+        if (isDisbursementCharge() && isAddOnDisbursementType() && this.chargeRanges != null && !this.chargeRanges.isEmpty()){
+            // calculate days since disbursement date
+            int numberOfDays = Math.toIntExact(daysBetween(disbursementDate, firstRepaymentDate));
+            for (ChargeRange chargeRange : this.chargeRanges) {
+                if (numberOfDays >= chargeRange.getMinDay() && numberOfDays <= chargeRange.getMaxDay()) {
+                    addOnDisbursementChargeRate = chargeRange.getFeeRate();
+                    break;
+                }
+            }
+        }
+
+        return addOnDisbursementChargeRate;
     }
 
     @Override
@@ -775,5 +861,9 @@ public class Charge extends AbstractPersistableCustom {
     public int hashCode() {
         return Objects.hash(name, amount, currencyCode, chargeAppliesTo, chargeTimeType, chargeCalculation, chargePaymentMode, feeOnDay,
                 feeInterval, feeOnMonth, penalty, active, deleted, minCap, maxCap, feeFrequency, account, taxGroup);
+    }
+
+    private static long daysBetween(LocalDate d1, LocalDate d2) {
+        return ChronoUnit.DAYS.between(d1, d2);
     }
 }

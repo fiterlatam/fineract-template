@@ -21,6 +21,7 @@ package org.apache.fineract.portfolio.charge.service;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.portfolio.charge.domain.ChargeAppliesTo;
 import org.apache.fineract.portfolio.charge.domain.ChargeCalculationType;
+import org.apache.fineract.portfolio.charge.domain.ChargeDisbursementType;
 import org.apache.fineract.portfolio.charge.domain.ChargePaymentMode;
 import org.apache.fineract.portfolio.charge.domain.ChargeTimeType;
 
@@ -186,6 +187,29 @@ public final class ChargeEnumerations {
             default:
                 optionData = new EnumOptionData(ChargePaymentMode.REGULAR.getValue().longValue(), ChargePaymentMode.REGULAR.getCode(),
                         "Regular");
+            break;
+        }
+        return optionData;
+    }
+
+    public static EnumOptionData chargeDisbursementType(final int id) {
+        return chargeDisbursementType(ChargeDisbursementType.fromInt(id));
+    }
+
+    public static EnumOptionData chargeDisbursementType(final ChargeDisbursementType type) {
+        EnumOptionData optionData = null;
+        switch (type) {
+            case REGULAR:
+                optionData = new EnumOptionData(ChargeDisbursementType.REGULAR.getValue().longValue(),
+                        ChargeDisbursementType.REGULAR.getCode(), "Regular");
+            break;
+            case ADD_ON:
+                optionData = new EnumOptionData(ChargeDisbursementType.ADD_ON.getValue().longValue(),
+                        ChargeDisbursementType.ADD_ON.getCode(), "Add-on");
+            break;
+            default:
+                optionData = new EnumOptionData(ChargeDisbursementType.INVALID.getValue().longValue(),
+                        ChargeDisbursementType.INVALID.getCode(), "Invalid");
             break;
         }
         return optionData;
