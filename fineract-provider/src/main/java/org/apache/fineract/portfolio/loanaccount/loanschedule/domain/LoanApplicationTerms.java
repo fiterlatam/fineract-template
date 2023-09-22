@@ -1909,13 +1909,12 @@ public final class LoanApplicationTerms {
         Money vatOnInterestDue = Money.zero(currency);
         Money vatOnChargesDue = Money.zero(currency);
         Money vatOnPenaltyChargesDue = Money.zero(currency);
-        if (this.isVatRequired() && (this.getVatRate() != null) && (this.getVatRate().getPercentage() % 1 == 0)) {
-            vatOnInterestDue = totalInterest.multipliedBy(BigDecimal.valueOf(this.getVatRate().getPercentage())).dividedBy(100,
-                    mc.getRoundingMode());
 
-            vatOnChargesDue = fees.multipliedBy(BigDecimal.valueOf(this.getVatRate().getPercentage())).dividedBy(100, mc.getRoundingMode());
-            vatOnPenaltyChargesDue = penalties.multipliedBy(BigDecimal.valueOf(this.getVatRate().getPercentage())).dividedBy(100,
-                    mc.getRoundingMode());
+        if (this.isVatRequired() && (this.getVatRate() != null) && (this.getVatRate().getPercentage() % 1 == 0)) {
+            BigDecimal vatPercentage = BigDecimal.valueOf(this.getVatRate().getPercentage());
+            vatOnInterestDue = calculateVatOnAmount(vatPercentage, totalInterest);
+            vatOnChargesDue = calculateVatOnAmount(vatPercentage, fees);
+            vatOnPenaltyChargesDue = calculateVatOnAmount(vatPercentage, penalties);
         }
 
         vatTotals[0] = vatOnInterestDue;
@@ -1957,6 +1956,11 @@ public final class LoanApplicationTerms {
 
     public Money originationFeesPerPeriod() {
         return originationFees().dividedBy(BigDecimal.valueOf(this.loanTermFrequency), MoneyHelper.getRoundingMode());
+    }
+
+    private Money calculateVatOnAmount(BigDecimal vatPercentage, Money amountSubjectToVat) {
+        Money vatAmount = amountSubjectToVat.multipliedBy(vatPercentage).dividedBy(100, MoneyHelper.getRoundingMode());
+        return vatAmount;
     }
 
 }

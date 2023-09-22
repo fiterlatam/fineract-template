@@ -640,7 +640,7 @@ public final class LoanRepaymentScheduleInstallment extends AbstractAuditableCus
         final Money interestDue = getInterestOutstanding(currency);
 
         BigDecimal vatConverted = vatPercentage.divide(BigDecimal.valueOf(100));
-        final Money vatOnInterestPortion = interestDue.multipliedBy(vatConverted);
+        final Money vatOnInterestPortion = loan.calculateVatOnAmount(interestDue);
         final Money interestDueAndVat = interestDue.plus(vatOnInterestPortion);
 
         if (transactionAmountRemaining.isGreaterThanOrEqualTo(interestDueAndVat)) {

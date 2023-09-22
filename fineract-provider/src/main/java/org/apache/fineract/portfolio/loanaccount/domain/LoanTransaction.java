@@ -332,7 +332,10 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
                 && loanTransaction.getInterestPortion(currency).isEqualTo(newLoanTransaction.getInterestPortion(currency))
                 && loanTransaction.getFeeChargesPortion(currency).isEqualTo(newLoanTransaction.getFeeChargesPortion(currency))
                 && loanTransaction.getPenaltyChargesPortion(currency).isEqualTo(newLoanTransaction.getPenaltyChargesPortion(currency))
-                && loanTransaction.getOverPaymentPortion(currency).isEqualTo(newLoanTransaction.getOverPaymentPortion(currency))) {
+                && loanTransaction.getOverPaymentPortion(currency).isEqualTo(newLoanTransaction.getOverPaymentPortion(currency))
+                && loanTransaction.getVatOnInterestPortion(currency).isEqualTo(newLoanTransaction.getVatOnInterestPortion(currency))
+                && loanTransaction.getVatOnChargesPortion(currency).isEqualTo(newLoanTransaction.getVatOnChargesPortion(currency))
+                && loanTransaction.getVatOnPenaltyChargesPortion(currency).isEqualTo(newLoanTransaction.getVatOnPenaltyChargesPortion(currency))) {
             return true;
         }
         return false;
