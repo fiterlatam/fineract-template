@@ -53,6 +53,8 @@ public interface LoanProductConstants {
     String INTEREST_RATE_VALUE_USAGE_CONDITION_PARAM_NAME = "interestRateValueUsageCondition";
     String INTEREST_RATE_CYCLE_NUMBER_PARAM_NAME = "interestRateCycleNumber";
 
+    String LIMIT_OF_DAYS_FOR_ADDON = "daysLimitAddOn";
+
     String PRINCIPAL = "principal";
     String MIN_PRINCIPAL = "minPrincipal";
     String MAX_PRINCIPAL = "maxPrincipalValue";
