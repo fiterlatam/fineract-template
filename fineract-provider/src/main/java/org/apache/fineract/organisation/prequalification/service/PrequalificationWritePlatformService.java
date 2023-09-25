@@ -33,4 +33,6 @@ public interface PrequalificationWritePlatformService {
     CommandProcessingResult updatePrequalificationGroupMember(Long memberId, JsonCommand command);
 
     void disableExpiredPrequalifications() throws JobExecutionException;
+
+    CommandProcessingResult requestUpdates(Long entityId, JsonCommand command);
 }

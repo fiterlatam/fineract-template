@@ -3885,4 +3885,12 @@ public class CommandWrapperBuilder {
         this.href = "/prequalification/checklist/" + prequalificationId;
         return this;
     }
+
+    public CommandWrapperBuilder requestUpdatePrequalification(Long prequalificationId) {
+        this.actionName = "REQUESTUPDATE";
+        this.entityName = "PREQUALIFICATIONS";
+        this.entityId = prequalificationId;
+        this.href = "/prequalification/checklist/" + prequalificationId;
+        return this;
+    }
 }

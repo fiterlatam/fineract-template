@@ -364,17 +364,17 @@ public class GroupGeneralData implements Serializable {
     }
 
     private GroupGeneralData(final Long id, final String accountNo, final String name, final String externalId, final EnumOptionData status,
-                             final LocalDate activationDate, final Long officeId, final String officeName, final Long centerId, final String centerName,
-                             final Long staffId, final String staffName, final String hierarchy, final String groupLevel,
-                             final Collection<ClientData> clientMembers, final Collection<ClientData> activeClientMembers,
-                             final Collection<CenterData> centerOptions, final Collection<OfficeData> officeOptions,
-                             final Collection<StaffData> staffOptions, final Collection<ClientData> clientOptions,
-                             final Collection<GroupRoleData> groupRoles, final Collection<CodeValueData> availableRoles, final GroupRoleData role,
-                             final Collection<CalendarData> calendarsData, final CalendarData collectionMeetingCalendar,
-                             final Collection<CodeValueData> closureReasons, final GroupTimelineData timeline,
-                             final Collection<OfficeData> parentOfficesOptions, final Collection<AppUserData> responsibleUserOptions,
-                             final Collection<PortfolioCenterData> portfolioCenterOptions, Collection<EnumOptionData> centerGroupLocations,
-                             String prequalificationNumber, Long prequalificationId) {
+            final LocalDate activationDate, final Long officeId, final String officeName, final Long centerId, final String centerName,
+            final Long staffId, final String staffName, final String hierarchy, final String groupLevel,
+            final Collection<ClientData> clientMembers, final Collection<ClientData> activeClientMembers,
+            final Collection<CenterData> centerOptions, final Collection<OfficeData> officeOptions,
+            final Collection<StaffData> staffOptions, final Collection<ClientData> clientOptions,
+            final Collection<GroupRoleData> groupRoles, final Collection<CodeValueData> availableRoles, final GroupRoleData role,
+            final Collection<CalendarData> calendarsData, final CalendarData collectionMeetingCalendar,
+            final Collection<CodeValueData> closureReasons, final GroupTimelineData timeline,
+            final Collection<OfficeData> parentOfficesOptions, final Collection<AppUserData> responsibleUserOptions,
+            final Collection<PortfolioCenterData> portfolioCenterOptions, Collection<EnumOptionData> centerGroupLocations,
+            String prequalificationNumber, Long prequalificationId) {
         this.id = id;
         this.accountNo = accountNo;
         this.name = name;
@@ -632,6 +632,7 @@ public class GroupGeneralData implements Serializable {
     public void setPrequalificationNumber(String prequalificationNumber) {
         this.prequalificationNumber = prequalificationNumber;
     }
+
     public void setPrequalificationId(Long prequalificationId) {
         this.prequalificationId = prequalificationId;
     }
