@@ -18,11 +18,10 @@
  */
 package org.apache.fineract.organisation.prequalification.domain;
 
-import org.apache.fineract.portfolio.client.domain.ClientStatus;
 import org.springframework.util.StringUtils;
 
 /**
- * Enum representation of client identifier status states.
+ * Enum representation of prequalification status states.
  */
 public enum PrequalificationStatus {
 
@@ -30,13 +29,12 @@ public enum PrequalificationStatus {
     APPROVED(200, "prequalification.status.approved"), //
     REJECTED(300, "prequalification.status.rejected"), //
     BLACKLIST_CHECKED(400, "prequalification.status.blacklist.checked"), //
-    BLACKLIST_REJECTED(500, "prequalification.status.blacklist.rejected"),
-    BURO_CHECKED(600, "prequalification.status.buro.checked"),
-    HARD_POLICY_CHECKED(700, "prequalification.status.hard.policy.checked"),
-    TIME_EXPIRED(800, "prequalification.status.expired"),
-    COMPLETED(900, "prequalification.status.completed"),
-    CONSENT_ADDED(901, "prequalification.status.concent.added"),
-    INVALID(0, "prequalification.status.invalid");
+    BLACKLIST_REJECTED(500, "prequalification.status.blacklist.rejected"), BURO_CHECKED(600,
+            "prequalification.status.buro.checked"), HARD_POLICY_CHECKED(700, "prequalification.status.hard.policy.checked"), TIME_EXPIRED(
+            800, "prequalification.status.expired"), COMPLETED(900, "prequalification.status.completed"), CONSENT_ADDED(901,
+            "prequalification.status.concent.added"), AGENCY_LEAD_PENDING_APPROVAL(902,
+            "prequalification.status.pending.approval"), INVALID(0, "prequalification.status.invalid");
+
     private final Integer value;
     private final String code;
 
@@ -74,6 +72,9 @@ public enum PrequalificationStatus {
             case 901:
                 enumeration = PrequalificationStatus.CONSENT_ADDED;
                 break;
+            case 902:
+                enumeration = PrequalificationStatus.AGENCY_LEAD_PENDING_APPROVAL;
+                break;
         }
         return enumeration;
     }
@@ -91,12 +92,28 @@ public enum PrequalificationStatus {
             return clientStatus;
         }
 
-        if (status.equalsIgnoreCase(PrequalificationStatus.APPROVED.toString())) {
-            clientStatus = PrequalificationStatus.APPROVED;
-        } else if (status.equalsIgnoreCase(ClientStatus.PENDING.toString())) {
+        if (status.equalsIgnoreCase(PrequalificationStatus.PENDING.toString())) {
             clientStatus = PrequalificationStatus.PENDING;
-        } else if (status.equalsIgnoreCase(ClientStatus.REJECTED.toString())) {
+        } else if (status.equalsIgnoreCase(PrequalificationStatus.APPROVED.toString())) {
+            clientStatus = PrequalificationStatus.APPROVED;
+        } else if (status.equalsIgnoreCase(PrequalificationStatus.REJECTED.toString())) {
             clientStatus = PrequalificationStatus.REJECTED;
+        } else if (status.equalsIgnoreCase(PrequalificationStatus.BLACKLIST_CHECKED.toString())) {
+            clientStatus = PrequalificationStatus.BLACKLIST_CHECKED;
+        } else if (status.equalsIgnoreCase(PrequalificationStatus.BLACKLIST_REJECTED.toString())) {
+            clientStatus = PrequalificationStatus.BLACKLIST_REJECTED;
+        } else if (status.equalsIgnoreCase(PrequalificationStatus.BURO_CHECKED.toString())) {
+            clientStatus = PrequalificationStatus.BURO_CHECKED;
+        } else if (status.equalsIgnoreCase(PrequalificationStatus.HARD_POLICY_CHECKED.toString())) {
+            clientStatus = PrequalificationStatus.HARD_POLICY_CHECKED;
+        } else if (status.equalsIgnoreCase(PrequalificationStatus.TIME_EXPIRED.toString())) {
+            clientStatus = PrequalificationStatus.TIME_EXPIRED;
+        } else if (status.equalsIgnoreCase(PrequalificationStatus.COMPLETED.toString())) {
+            clientStatus = PrequalificationStatus.COMPLETED;
+        } else if (status.equalsIgnoreCase(PrequalificationStatus.CONSENT_ADDED.toString())) {
+            clientStatus = PrequalificationStatus.CONSENT_ADDED;
+        } else if (status.equalsIgnoreCase(PrequalificationStatus.AGENCY_LEAD_PENDING_APPROVAL.toString())) {
+            clientStatus = PrequalificationStatus.AGENCY_LEAD_PENDING_APPROVAL;
         }
 
         return clientStatus;

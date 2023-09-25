@@ -18,7 +18,6 @@
  */
 package org.apache.fineract.portfolio.client.data;
 
-
 @SuppressWarnings("unused")
 public final class EconomicActivityData {
 
@@ -28,12 +27,9 @@ public final class EconomicActivityData {
 
     private final String name;
 
-
-    public static EconomicActivityData instance(Long id,Long sectorId, String name) {
-        return new EconomicActivityData(id,sectorId, name);
+    public static EconomicActivityData instance(Long id, Long sectorId, String name) {
+        return new EconomicActivityData(id, sectorId, name);
     }
-
-
 
     private EconomicActivityData(Long id, Long sectorId, String name) {
         this.id = id;

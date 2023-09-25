@@ -20,20 +20,21 @@ package org.apache.fineract.organisation.prequalification.data;
 
 import java.math.BigDecimal;
 import java.util.Date;
+import lombok.Builder;
 import lombok.Data;
-import lombok.RequiredArgsConstructor;
 
 @Data
-@RequiredArgsConstructor
+@Builder
 public class ClientData {
 
-    private final Integer clientId;
-    private final Integer prequalificationId;
-    private final Integer prequalificationMemberId;
-    private final String name;
-    private final Date dateOfBirth;
-    private final String dpi;
-    private final BigDecimal requestedAmount;
-    private final String workWithPuente;
+    private Integer clientId;
+    private Integer prequalificationId;
+    private Integer prequalificationMemberId;
+    private String name;
+    private Date dateOfBirth;
+    private String dpi;
+    private BigDecimal requestedAmount;
+    private String workWithPuente;
     private Long noOfCompletedCycles;
+    private String gender;
 }

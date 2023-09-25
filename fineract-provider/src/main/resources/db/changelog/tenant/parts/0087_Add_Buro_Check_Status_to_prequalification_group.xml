@@ -27,4 +27,15 @@
             <column name="buro_check_status" type="INTEGER" />
         </addColumn>
     </changeSet>
+
+    <changeSet author="fineract" id="2">
+        <insert tableName="m_permission">
+            <column name="grouping" value="portfolio" />
+            <column name="code" value="VALIDATE_BUREAU"/>
+            <column name="entity_name" value="BUREAU" />
+            <column name="action_name" value="VALIDATE" />
+            <column name="can_maker_checker" valueBoolean="false" />
+        </insert>
+    </changeSet>
+
 </databaseChangeLog>

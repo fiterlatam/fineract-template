@@ -28,6 +28,7 @@ import javax.persistence.Entity;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
+import lombok.Getter;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
@@ -36,6 +37,7 @@ import org.apache.fineract.useradministration.domain.AppUser;
 
 @Entity
 @Table(name = "m_prequalification_group_members")
+@Getter
 public class PrequalificationGroupMember extends AbstractPersistableCustom {
 
     @Column(name = "name", nullable = false)
@@ -73,7 +75,6 @@ public class PrequalificationGroupMember extends AbstractPersistableCustom {
     @Column(name = "buro_check_status", nullable = false)
     private Integer buroCheckStatus;
 
-
     protected PrequalificationGroupMember() {
         //
     }
@@ -100,7 +101,7 @@ public class PrequalificationGroupMember extends AbstractPersistableCustom {
         return new PrequalificationGroupMember(addedBy, name, dpi, dateOfBirth, puente, group, requestedAmount, status, clientId);
     }
 
-    public void updateStatus(final PrequalificationStatus prequalificationStatus) {
+    public void updateStatus(final PrequalificationMemberIndication prequalificationStatus) {
         ;
         this.status = prequalificationStatus.getValue();
     }

@@ -26,17 +26,6 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class PrequalificationChecklistData implements Serializable {
 
-    private final Long id;
-    private final String name;
-    private final String description;
-    private final String color;
-    private final Long loanProductId;
-    private final String loanProductName;
-    private final String prequalificationNumber;
-    private final String prequalificationName;
-    private final String reference;
-    private final String conditionalOperator;
-    private final String firstValue;
-    private final String secondValue;
-    private final String valueList;
+    private final GenericValidationResultSet prequalification;
+    private final GenericValidationResultSet members;
 }

@@ -20,6 +20,7 @@ package org.apache.fineract.commands.service;
 
 import org.apache.fineract.commands.domain.CommandWrapper;
 import org.apache.fineract.infrastructure.accountnumberformat.service.AccountNumberFormatConstants;
+import org.apache.fineract.organisation.bankcheque.api.BankChequeApiConstants;
 import org.apache.fineract.portfolio.client.api.ClientApiConstants;
 import org.apache.fineract.portfolio.paymenttype.api.PaymentTypeApiResourceConstants;
 import org.apache.fineract.portfolio.savings.DepositsApiConstants;
@@ -3770,6 +3771,118 @@ public class CommandWrapperBuilder {
         this.entityName = "RESTRUCTURE_CREDITS";
         this.clientId = clientId;
         this.href = "/restructurecredits/" + clientId;
+        return this;
+    }
+
+    public CommandWrapperBuilder createBank() {
+        this.actionName = "CREATE";
+        this.entityName = "BANK";
+        this.entityId = null;
+        this.href = "/banks";
+        return this;
+    }
+
+    public CommandWrapperBuilder updateBank(final Long bankId) {
+        this.actionName = "UPDATE";
+        this.entityName = "BANK";
+        this.entityId = bankId;
+        this.href = "/banks/" + bankId;
+        return this;
+    }
+
+    public CommandWrapperBuilder deleteBank(final Long bankId) {
+        this.actionName = "DELETE";
+        this.entityName = "BANK";
+        this.entityId = bankId;
+        this.href = "/banks/" + bankId;
+        return this;
+    }
+
+    public CommandWrapperBuilder createBankAccount() {
+        this.actionName = "CREATE";
+        this.entityName = "BANKACCOUNT";
+        this.entityId = null;
+        this.href = "/bankaccounts";
+        return this;
+    }
+
+    public CommandWrapperBuilder updateBankAccount(final Long bankAccountId) {
+        this.actionName = "UPDATE";
+        this.entityName = "BANKACCOUNT";
+        this.entityId = bankAccountId;
+        this.href = "/bankaccounts/" + bankAccountId;
+        return this;
+    }
+
+    public CommandWrapperBuilder deleteBankAccount(final Long bankAccountId) {
+        this.actionName = "DELETE";
+        this.entityName = "BANKACCOUNT";
+        this.entityId = bankAccountId;
+        this.href = "/bankaccounts/" + bankAccountId;
+        return this;
+    }
+
+    public CommandWrapperBuilder createChequeBatch() {
+        this.entityName = BankChequeApiConstants.BANK_CHECK_RESOURCE_NAME;
+        this.actionName = BankChequeApiConstants.CHECK_ACTION_CREATE;
+        this.entityId = null;
+        this.href = "/bankcheques";
+        return this;
+    }
+
+    public CommandWrapperBuilder reassignCheque(final Long chequeId) {
+        this.entityName = BankChequeApiConstants.BANK_CHECK_RESOURCE_NAME;
+        this.actionName = BankChequeApiConstants.CHECK_ACTION_REASSIGN;
+        this.entityId = chequeId;
+        this.href = "/bankcheques";
+        return this;
+    }
+
+    public CommandWrapperBuilder authorizedChequeReassignment(final Long chequeId) {
+        this.entityName = BankChequeApiConstants.BANK_CHECK_RESOURCE_NAME;
+        this.actionName = BankChequeApiConstants.CHECK_ACTION_AUTHORIZEREASSIGN;
+        this.entityId = chequeId;
+        this.href = "/bankcheques";
+        return this;
+    }
+
+    public CommandWrapperBuilder voidCheque(final Long chequeId) {
+        this.entityName = BankChequeApiConstants.BANK_CHECK_RESOURCE_NAME;
+        this.actionName = BankChequeApiConstants.CHECK_ACTION_VOID;
+        this.entityId = chequeId;
+        this.href = "/bankcheques";
+        return this;
+    }
+
+    public CommandWrapperBuilder authorizeChequeVoidance(final Long chequeId) {
+        this.entityName = BankChequeApiConstants.BANK_CHECK_RESOURCE_NAME;
+        this.actionName = BankChequeApiConstants.CHECK_ACTION_AUTHORIZEVOID;
+        this.entityId = chequeId;
+        this.href = "/bankcheques";
+        return this;
+    }
+
+    public CommandWrapperBuilder updateChequeBatch(Long batchId) {
+        this.entityName = BankChequeApiConstants.BANK_CHECK_RESOURCE_NAME;
+        this.actionName = BankChequeApiConstants.CHECK_ACTION_UPDATE;
+        this.entityId = batchId;
+        this.href = "/bankcheques/" + batchId;
+        return this;
+    }
+
+    public CommandWrapperBuilder deleteChequeBatch(Long batchId) {
+        this.entityName = BankChequeApiConstants.BANK_CHECK_RESOURCE_NAME;
+        this.actionName = BankChequeApiConstants.CHECK_ACTION_DELETE;
+        this.entityId = batchId;
+        this.href = "/bankcheques/" + batchId;
+        return this;
+    }
+
+    public CommandWrapperBuilder bureauValidationProcessing(Long prequalificationId) {
+        this.actionName = "VALIDATE";
+        this.entityName = "BUREAU";
+        this.entityId = prequalificationId;
+        this.href = "/prequalification/checklist/" + prequalificationId;
         return this;
     }
 }

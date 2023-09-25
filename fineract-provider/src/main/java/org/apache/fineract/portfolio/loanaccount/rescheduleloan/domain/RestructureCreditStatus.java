@@ -28,8 +28,7 @@ public enum RestructureCreditStatus {
 
     PENDING(100, "restructure.status.pending"), //
     APPROVED(200, "restructure.status.approved"), //
-    REJECTED(300, "restructure.status.rejected"),
-    INVALID(0, "prequalification.status.invalid");
+    REJECTED(300, "restructure.status.rejected"), INVALID(0, "prequalification.status.invalid");
 
     private final Integer value;
     private final String code;

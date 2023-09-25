@@ -18,6 +18,12 @@
  */
 package org.apache.fineract.portfolio.loanaccount.rescheduleloan.service;
 
+import java.math.BigDecimal;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleModel;
@@ -32,13 +38,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.List;
-
 @Service
 public class RestructureCreditsReadPlatformServiceImpl implements RestructureCreditsReadPlatformService {
 
@@ -46,8 +45,6 @@ public class RestructureCreditsReadPlatformServiceImpl implements RestructureCre
     private final RestructureCreditsRequestMapper restructureCreditsRequestMapper = new RestructureCreditsRequestMapper();
     private final RestructureCreditsLoanMappingsMapper creditsLoanMappingsMapper = new RestructureCreditsLoanMappingsMapper();
     private final JdbcTemplate jdbcTemplate;
-
-
 
     /**
      * LoanRescheduleRequestWritePlatformServiceImpl constructor
@@ -59,7 +56,6 @@ public class RestructureCreditsReadPlatformServiceImpl implements RestructureCre
         this.jdbcTemplate = jdbcTemplate;
     }
 
-
     @Override
     public LoanScheduleModel previewCreditRestructure(Long clientId) {
         return null;
@@ -70,7 +66,7 @@ public class RestructureCreditsReadPlatformServiceImpl implements RestructureCre
         final String sql = "select " + this.restructureCreditsRequestMapper.schema() + " WHERE rcr.client_id = ? and rcr.status = ?";
 
         final List<RestructureCreditsRequestData> requestDataList = this.jdbcTemplate.query(sql, this.restructureCreditsRequestMapper,
-                new Object[]{clientId, RestructureCreditStatus.PENDING.getValue()});
+                new Object[] { clientId, RestructureCreditStatus.PENDING.getValue() });
 
         RestructureCreditsRequestData requestData = null;
         if (requestDataList != null && requestDataList.size() > 0) {
@@ -79,8 +75,7 @@ public class RestructureCreditsReadPlatformServiceImpl implements RestructureCre
             final String membersql = "select " + this.creditsLoanMappingsMapper.schema() + " WHERE rcm.request_id = ? ";
 
             List<RestructureCreditsLoanMappingData> loans = this.jdbcTemplate.query(membersql, this.creditsLoanMappingsMapper,
-                    new Object[]{requestData.getId()});
-
+                    new Object[] { requestData.getId() });
 
             requestData.setLoanMappingData(loans);
         }
@@ -92,27 +87,14 @@ public class RestructureCreditsReadPlatformServiceImpl implements RestructureCre
         private final String schema;
 
         RestructureCreditsRequestMapper() {
-            this.schema = " " +
-                    "rcr.id, " +
-                    "rcr.total_loan_amount, " +
-                    "mc.display_name, " +
-                    "pl.name as productName, " +
-                    "rcr.status, " +
-                    "rcr.new_disbursement_date, " +
-                    "rcr.comments, " +
-                    "rcr.date_requested, " +
-                    "creator.username as createdBy, " +
-                    "approver.username as approvedBy," +
-                    "modifier.username as modifiedBy," +
-                    "rcr.date_approved, " +
-                    "rcr.product_id as productId, " +
-                    "rcr.lastmodified_date " +
-                    "from m_restructure_credit_requests rcr " +
-                    "inner join m_client mc on mc.id = rcr.client_id "+
-                    "inner join m_product_loan pl on pl.id = rcr.product_id "+
-                    "inner join m_appuser creator on creator.id = rcr.requested_by "+
-                    "left join m_appuser approver on rcr.approved_by = approver.id "+
-                    "left join m_appuser modifier on rcr.lastmodifiedby_id = modifier.id ";
+            this.schema = " " + "rcr.id, " + "rcr.total_loan_amount, " + "mc.display_name, " + "pl.name as productName, " + "rcr.status, "
+                    + "rcr.new_disbursement_date, " + "rcr.comments, " + "rcr.date_requested, " + "creator.username as createdBy, "
+                    + "approver.username as approvedBy," + "modifier.username as modifiedBy," + "rcr.date_approved, "
+                    + "rcr.product_id as productId, " + "rcr.lastmodified_date " + "from m_restructure_credit_requests rcr "
+                    + "inner join m_client mc on mc.id = rcr.client_id " + "inner join m_product_loan pl on pl.id = rcr.product_id "
+                    + "inner join m_appuser creator on creator.id = rcr.requested_by "
+                    + "left join m_appuser approver on rcr.approved_by = approver.id "
+                    + "left join m_appuser modifier on rcr.lastmodifiedby_id = modifier.id ";
         }
 
         public String schema() {
@@ -138,8 +120,8 @@ public class RestructureCreditsReadPlatformServiceImpl implements RestructureCre
             final LocalDateTime newDisbursementDate = JdbcSupport.getLocalDateTime(rs, "new_disbursement_date");
             final BigDecimal totalLoanAmount = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "total_loan_amount");
 
-            return RestructureCreditsRequestData.instance(id, clientName, productName, productId, totalLoanAmount, status, newDisbursementDate,
-                    comments, dateRequested, createdBy, dateApproved, approvedBy, dateModified, modifiedBy);
+            return RestructureCreditsRequestData.instance(id, clientName, productName, productId, totalLoanAmount, status,
+                    newDisbursementDate, comments, dateRequested, createdBy, dateApproved, approvedBy, dateModified, modifiedBy);
 
         }
     }
@@ -150,16 +132,9 @@ public class RestructureCreditsReadPlatformServiceImpl implements RestructureCre
 
         RestructureCreditsLoanMappingsMapper() {
 
-            this.mschema = " " +
-                    "rcm.id, " +
-                    "mpl.name as productName, " +
-                    "rcm.outstanding_balance, " +
-                    "rcm.disbursement_date, " +
-                    "rcm.maturity_Date, " +
-                    "rcm.status " +
-                    "from m_restructure_credits_loans_mapping rcm "+
-                    "inner join m_loan ml on ml.id = rcm.loan_id "+
-                    "inner join m_product_loan mpl on mpl.id = ml.product_id ";
+            this.mschema = " " + "rcm.id, " + "mpl.name as productName, " + "rcm.outstanding_balance, " + "rcm.disbursement_date, "
+                    + "rcm.maturity_Date, " + "rcm.status " + "from m_restructure_credits_loans_mapping rcm "
+                    + "inner join m_loan ml on ml.id = rcm.loan_id " + "inner join m_product_loan mpl on mpl.id = ml.product_id ";
         }
 
         public String schema() {
@@ -174,7 +149,7 @@ public class RestructureCreditsReadPlatformServiceImpl implements RestructureCre
             final BigDecimal outstandingBalance = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "outstanding_balance");
             String productName = rs.getString("productName");
 
-            return RestructureCreditsLoanMappingData.instance(id,productName,outstandingBalance,disbursementDate,maturityDate);
+            return RestructureCreditsLoanMappingData.instance(id, productName, outstandingBalance, disbursementDate, maturityDate);
 
         }
     }

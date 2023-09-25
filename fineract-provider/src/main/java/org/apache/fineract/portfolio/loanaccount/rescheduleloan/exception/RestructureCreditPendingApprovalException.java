@@ -33,8 +33,8 @@ public class RestructureCreditPendingApprovalException extends AbstractPlatformR
      *
      **/
     public RestructureCreditPendingApprovalException(final Long requestId) {
-        super("error.msg.credit.restructure.pending.processing", "Credit Restructure with id: " + requestId + " is still pending processing. Either approve or reject it before processing the next.",
-                requestId);
+        super("error.msg.credit.restructure.pending.processing", "Credit Restructure with id: " + requestId
+                + " is still pending processing. Either approve or reject it before processing the next.", requestId);
     }
 
 }

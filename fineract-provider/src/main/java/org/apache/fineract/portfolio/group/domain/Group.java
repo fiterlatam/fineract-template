@@ -37,6 +37,7 @@ import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 import org.apache.commons.lang3.StringUtils;
@@ -50,6 +51,7 @@ import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.security.service.RandomPasswordGenerator;
 import org.apache.fineract.organisation.office.domain.Office;
 import org.apache.fineract.organisation.portfolio.domain.Portfolio;
+import org.apache.fineract.organisation.prequalification.domain.PrequalificationGroup;
 import org.apache.fineract.organisation.staff.domain.Staff;
 import org.apache.fineract.portfolio.client.domain.Client;
 import org.apache.fineract.portfolio.group.api.GroupingTypesApiConstants;
@@ -205,6 +207,10 @@ public final class Group extends AbstractAuditableCustom {
     @Column(name = "group_location", nullable = false)
     private Integer location;
 
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "prequalification_id")
+    private PrequalificationGroup prequalificationGroup;
+
     // JPA default constructor for entity
     Group() {
         this.name = null;
@@ -218,7 +224,9 @@ public final class Group extends AbstractAuditableCustom {
                                  final Long legacyNumber, final BigDecimal latitude, final BigDecimal longitude, final LocalDate formationDate,
                                  final Integer size, final LocalTime meetingStartTime, final LocalTime meetingEndTime, final AppUser responsibleUser,
                                  final Portfolio portfolio, final CodeValue city, final CodeValue stateProvince, final CodeValue type, final Integer distance,
-                                 final Integer meetingStart, final Integer meetingEnd, final Integer meetingDay, final String referencePoint) {
+                                 final Integer meetingStart, final Integer meetingEnd, final Integer meetingDay, final String referencePoint,
+                                 PrequalificationGroup prequalificationGroup) {
+
         // By default new group is created in PENDING status, unless explicitly
         // status is set to active
         GroupingTypeStatus status = GroupingTypeStatus.PENDING;
@@ -231,14 +239,13 @@ public final class Group extends AbstractAuditableCustom {
         return new Group(office, staff, parent, groupLevel, name, externalId, status, groupActivationDate, clientMembers, groupMembers,
                 submittedOnDate, currentUser, accountNo, legacyNumber, latitude, longitude, formationDate, size, meetingStartTime,
                 meetingEndTime, responsibleUser, portfolio, city, stateProvince, type, distance, meetingStart, meetingEnd, meetingDay,
-                referencePoint);
+                referencePoint, prequalificationGroup);
     }
 
     public static Group assembleNewCenterFrom(final Office office, final GroupLevel groupLevel, final String name, final boolean active,
                                               final LocalDate activationDate, final LocalDate submittedOnDate, final AppUser currentUser, final LocalTime meetingStartTime,
                                               final LocalTime meetingEndTime, final Portfolio portfolio, final Integer meetingStart, final Integer meetingEnd,
                                               final Integer meetingDay) {
-
         // By default new group is created in PENDING status, unless explicitly
         // status is set to active
         GroupingTypeStatus status = GroupingTypeStatus.PENDING;
@@ -252,7 +259,7 @@ public final class Group extends AbstractAuditableCustom {
 
         return new Group(office, null, null, groupLevel, name, null, status, groupActivationDate, clientMembers, groupMembers,
                 submittedOnDate, currentUser, null, null, null, null, null, null, meetingStartTime, meetingEndTime, null, portfolio, null,
-                null, null, null, meetingStart, meetingEnd, meetingDay, null);
+                null, null, null, meetingStart, meetingEnd, meetingDay, null, null);
     }
 
     private Group(final Office office, final Staff staff, final Group parent, final GroupLevel groupLevel, final String name,
@@ -261,7 +268,8 @@ public final class Group extends AbstractAuditableCustom {
                   final Long legacyNumber, final BigDecimal latitude, final BigDecimal longitude, final LocalDate formationDate,
                   final Integer size, final LocalTime meetingStartTime, final LocalTime meetingEndTime, final AppUser responsibleUser,
                   final Portfolio portfolio, final CodeValue city, final CodeValue stateProvince, final CodeValue type, final Integer distance,
-                  final Integer meetingStart, final Integer meetingEnd, final Integer meetingDay, final String referencePoint) {
+                  final Integer meetingStart, final Integer meetingEnd, final Integer meetingDay, final String referencePoint,
+                  PrequalificationGroup prequalificationGroup) {
 
         final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
 
@@ -320,6 +328,7 @@ public final class Group extends AbstractAuditableCustom {
         this.meetingEnd = meetingEnd;
         this.meetingDay = meetingDay;
         this.referencePoint = referencePoint;
+        this.prequalificationGroup = prequalificationGroup;
 
         associateClients(clientMembers);
 
@@ -523,6 +532,10 @@ public final class Group extends AbstractAuditableCustom {
             this.referencePoint = StringUtils.defaultIfEmpty(newValue, null);
         }
 
+        if (command.isChangeInLongParameterNamed(GroupingTypesApiConstants.prequalificationId, prequalificationId())) {
+            final Long newValue = command.longValueOfParameterNamed(GroupingTypesApiConstants.prequalificationId);
+            actualChanges.put(GroupingTypesApiConstants.prequalificationId, newValue);
+        }
         return actualChanges;
     }
 
@@ -599,6 +612,14 @@ public final class Group extends AbstractAuditableCustom {
             staffId = this.staff.getId();
         }
         return staffId;
+    }
+
+    private Long prequalificationId() {
+        Long preqId = null;
+        if (this.prequalificationGroup != null) {
+            preqId = this.prequalificationGroup.getId();
+        }
+        return preqId;
     }
 
     private void addChild(final Group group) {
@@ -968,4 +989,7 @@ public final class Group extends AbstractAuditableCustom {
         return this.name;
     }
 
+    public void updatePrequalification(PrequalificationGroup prequalificationGroup) {
+        this.prequalificationGroup = prequalificationGroup;
+    }
 }

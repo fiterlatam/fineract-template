@@ -18,6 +18,8 @@
  */
 package org.apache.fineract.portfolio.loanaccount.domain;
 
+import static java.time.temporal.ChronoUnit.DAYS;
+
 import com.google.common.base.Splitter;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -29,7 +31,6 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -45,6 +46,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Embedded;
@@ -6444,10 +6446,14 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         Money paidFromFutureInstallments = Money.zero(currency);
         Money fee = Money.zero(currency);
         Money penalty = Money.zero(currency);
+        // get the charges
         for (final LoanRepaymentScheduleInstallment installment : this.repaymentScheduleInstallments) {
             if (!installment.getDueDate().isAfter(paymentDate)) {
+                List<Charge> loanCharges = this.loanProduct.getLoanProductCharges().stream().filter(charge -> charge.isOverdueInstallment())
+                        .collect(Collectors.toList());
                 interest = interest.plus(installment.getInterestOutstanding(currency));
-                penalty = penalty.plus(installment.getPenaltyChargesOutstanding(currency));
+                // TODO: FBR-309 The amount of late interest is not being generated
+                penalty = calculateOverduePenaltiesForFutureDate(loanCharges, paymentDate, installment);
                 fee = fee.plus(installment.getFeeChargesOutstanding(currency));
             } else if (installment.getFromDate().isBefore(paymentDate)) {
                 Money[] balancesForCurrentPeroid = fetchInterestFeeAndPenaltyTillDate(paymentDate, currency, installment);
@@ -6482,6 +6488,49 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         return balances;
     }
 
+    /*
+     * This method was created to be used to generate overdue penalty charges on loan for simulation endpoint Only
+     * overdue charges are passed
+     */
+    private Money calculateOverduePenaltiesForFutureDate(List<Charge> charges, LocalDate paymentDate,
+            LoanRepaymentScheduleInstallment installment) {
+
+        BigDecimal penalty = BigDecimal.ZERO;
+
+        for (Charge charge : charges) {
+            BigDecimal calculationAmount = getInstallmentChargeCalculationAmount(installment, charge);
+            BigDecimal percent = charge.getAmount();
+            BigDecimal rate = percent.divide(BigDecimal.valueOf(100));
+
+            Long timesOverDue = Math.abs(DAYS.between(paymentDate, installment.getDueDate()));
+
+            BigDecimal overDuePeriod = BigDecimal.valueOf(timesOverDue);
+            penalty = penalty.add(calculationAmount.multiply(rate).multiply(overDuePeriod));
+        }
+
+        return Money.of(getCurrency(), penalty);
+    }
+
+    private BigDecimal getInstallmentChargeCalculationAmount(LoanRepaymentScheduleInstallment installment, Charge charge) {
+        Money money = null;
+
+        switch (ChargeCalculationType.fromInt(charge.getChargeCalculation())) {
+            case PERCENT_OF_AMOUNT:
+                money = installment.getPrincipalOutstanding(getCurrency());
+            break;
+            case PERCENT_OF_AMOUNT_AND_INTEREST:
+                money = installment.getPrincipalOutstanding(getCurrency()).add(installment.getInterestOutstanding(getCurrency()));
+            break;
+            case PERCENT_OF_INTEREST:
+                money = installment.getInterestOutstanding(getCurrency());
+            break;
+            default:
+            break;
+        }
+
+        return money != null ? money.getAmount() : BigDecimal.ZERO;
+    }
+
     public Money[] retrieveIncomePrincipalAmountTillDate(final LocalDate paymentDate) {
         Money[] balances = new Money[5];
         final MonetaryCurrency currency = getCurrency();
@@ -6492,8 +6541,10 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         Money principalAmountInstallments = Money.zero(currency);
         for (final LoanRepaymentScheduleInstallment installment : this.repaymentScheduleInstallments) {
             if (!installment.getDueDate().isAfter(paymentDate)) {
+                List<Charge> loanCharges = this.loanProduct.getLoanProductCharges().stream().filter(charge -> charge.isOverdueInstallment())
+                        .collect(Collectors.toList());
                 interest = interest.plus(installment.getInterestOutstanding(currency));
-                penalty = penalty.plus(installment.getPenaltyChargesOutstanding(currency));
+                penalty = penalty = calculateOverduePenaltiesForFutureDate(loanCharges, paymentDate, installment);
                 fee = fee.plus(installment.getFeeChargesOutstanding(currency));
                 principalAmountInstallments = principalAmountInstallments.plus(installment.getPrincipalOutstanding(currency));
             } else if (installment.getFromDate().isBefore(paymentDate)) {
@@ -6531,8 +6582,8 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         Money feeAccountedForCurrentPeriod = Money.zero(getCurrency());
         Money interestForCurrentPeriod = Money.zero(getCurrency());
         Money interestAccountedForCurrentPeriod = Money.zero(getCurrency());
-        int totalPeriodDays = Math.toIntExact(ChronoUnit.DAYS.between(installment.getFromDate(), installment.getDueDate()));
-        int tillDays = Math.toIntExact(ChronoUnit.DAYS.between(installment.getFromDate(), paymentDate));
+        int totalPeriodDays = Math.toIntExact(DAYS.between(installment.getFromDate(), installment.getDueDate()));
+        int tillDays = Math.toIntExact(DAYS.between(installment.getFromDate(), paymentDate));
         interestForCurrentPeriod = Money.of(getCurrency(), BigDecimal
                 .valueOf(calculateInterestForDays(totalPeriodDays, installment.getInterestCharged(getCurrency()).getAmount(), tillDays)));
         interestAccountedForCurrentPeriod = installment.getInterestWaived(getCurrency()).plus(installment.getInterestPaid(getCurrency()));
@@ -6661,8 +6712,8 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             totalAmountAccrued = totalAmountAccrued.plus(installment.getInterestAccrued(getCurrency()));
 
             if (tillDate.isAfter(installment.getFromDate()) && tillDate.isBefore(installment.getDueDate())) {
-                int daysInPeriod = Math.toIntExact(ChronoUnit.DAYS.between(installment.getFromDate(), installment.getDueDate()));
-                int tillDays = Math.toIntExact(ChronoUnit.DAYS.between(installment.getFromDate(), tillDate));
+                int daysInPeriod = Math.toIntExact(DAYS.between(installment.getFromDate(), installment.getDueDate()));
+                int tillDays = Math.toIntExact(DAYS.between(installment.getFromDate(), tillDate));
                 double interest = calculateInterestForDays(daysInPeriod, installment.getInterestCharged(getCurrency()).getAmount(),
                         tillDays);
                 actualAmountTobeAccrued = actualAmountTobeAccrued.plus(interest);

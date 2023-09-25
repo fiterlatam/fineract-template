@@ -19,6 +19,17 @@
 package org.apache.fineract.portfolio.loanaccount.rescheduleloan.api;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.Collection;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.UriInfo;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.commands.domain.CommandWrapper;
 import org.apache.fineract.commands.service.CommandWrapperBuilder;
@@ -43,18 +54,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.UriInfo;
-import java.util.Collection;
-
 @Path("/restructurecredits/{clientId}")
 @Component
 @Scope("singleton")
@@ -71,14 +70,13 @@ public class RestructureCreditsApiResource {
     private final ApiRequestParameterHelper apiRequestParameterHelper;
 
     @Autowired
-    public RestructureCreditsApiResource(final DefaultToApiJsonSerializer<RestructureCreditsTemplateData> restructureCreditsRequestToApiJsonSerializer,
-                                         final PlatformSecurityContext platformSecurityContext,
-                                         final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService,
-                                         final RestructureCreditsReadPlatformService restructureCreditsReadPlatformService,
-                                         final ApiRequestParameterHelper apiRequestParameterHelper,
-                                         final LoanProductReadPlatformService loanProductReadPlatformService,
-                                         final LoanReadPlatformService loanReadPlatformService,
-                                         final ClientReadPlatformService clientReadPlatformService) {
+    public RestructureCreditsApiResource(
+            final DefaultToApiJsonSerializer<RestructureCreditsTemplateData> restructureCreditsRequestToApiJsonSerializer,
+            final PlatformSecurityContext platformSecurityContext,
+            final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService,
+            final RestructureCreditsReadPlatformService restructureCreditsReadPlatformService,
+            final ApiRequestParameterHelper apiRequestParameterHelper, final LoanProductReadPlatformService loanProductReadPlatformService,
+            final LoanReadPlatformService loanReadPlatformService, final ClientReadPlatformService clientReadPlatformService) {
         this.restructureCreditsRequestToApiJsonSerializer = restructureCreditsRequestToApiJsonSerializer;
         this.platformSecurityContext = platformSecurityContext;
         this.commandsSourceWritePlatformService = commandsSourceWritePlatformService;
@@ -95,14 +93,16 @@ public class RestructureCreditsApiResource {
     @Produces({ MediaType.APPLICATION_JSON })
     public String retrieveTemplate(@Context final UriInfo uriInfo, @PathParam("clientId") final Long clientId) {
 
-        this.platformSecurityContext.authenticatedUser().validateHasReadPermission(RescheduleLoansApiConstants.RESTRUCTURE_CREDITS_RESOURCE);
+        this.platformSecurityContext.authenticatedUser()
+                .validateHasReadPermission(RescheduleLoansApiConstants.RESTRUCTURE_CREDITS_RESOURCE);
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
         ClientData clientData = this.clientReadPlatformService.retrieveOneLookup(clientId);
         RestructureCreditsRequestData requestData = this.restructureCreditsReadPlatformService.retrievePendingRestructure(clientId);
         Collection<LoanAccountData> loanAccounts = this.loanReadPlatformService.retrieveClientActiveLoans(clientId);
         Collection<LoanProductData> loanProductData = this.loanProductReadPlatformService.retrieveAllLoanProducts();
 
-        RestructureCreditsTemplateData templateData = RestructureCreditsTemplateData.instance(clientData, loanAccounts,requestData, loanProductData);
+        RestructureCreditsTemplateData templateData = RestructureCreditsTemplateData.instance(clientData, loanAccounts, requestData,
+                loanProductData);
 
         return this.restructureCreditsRequestToApiJsonSerializer.serialize(settings, templateData);
     }
@@ -121,7 +121,6 @@ public class RestructureCreditsApiResource {
             return null;
         }
 
-
         return null;
     }
 
@@ -129,8 +128,8 @@ public class RestructureCreditsApiResource {
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     public String createLoanRescheduleRequest(final String apiRequestBodyAsJson, @PathParam("clientId") final Long clientId) {
-        final CommandWrapper commandWrapper = new CommandWrapperBuilder()
-                .createRestructureCreditsRequest(clientId).withJson(apiRequestBodyAsJson).build();
+        final CommandWrapper commandWrapper = new CommandWrapperBuilder().createRestructureCreditsRequest(clientId)
+                .withJson(apiRequestBodyAsJson).build();
 
         final CommandProcessingResult commandProcessingResult = this.commandsSourceWritePlatformService.logCommandSource(commandWrapper);
 
@@ -146,12 +145,14 @@ public class RestructureCreditsApiResource {
         CommandWrapper commandWrapper = null;
 
         if (compareIgnoreCase(command, "approve")) {
-            commandWrapper = new CommandWrapperBuilder().approveRestructureCreditsRequest(RescheduleLoansApiConstants.RESTRUCTURE_CREDITS_RESOURCE, clientId)
+            commandWrapper = new CommandWrapperBuilder()
+                    .approveRestructureCreditsRequest(RescheduleLoansApiConstants.RESTRUCTURE_CREDITS_RESOURCE, clientId)
                     .withJson(apiRequestBodyAsJson).build();
         }
 
         else if (compareIgnoreCase(command, "reject")) {
-            commandWrapper = new CommandWrapperBuilder().rejectRestructureCreditsRequest(RescheduleLoansApiConstants.RESTRUCTURE_CREDITS_RESOURCE, clientId)
+            commandWrapper = new CommandWrapperBuilder()
+                    .rejectRestructureCreditsRequest(RescheduleLoansApiConstants.RESTRUCTURE_CREDITS_RESOURCE, clientId)
                     .withJson(apiRequestBodyAsJson).build();
         }
 
