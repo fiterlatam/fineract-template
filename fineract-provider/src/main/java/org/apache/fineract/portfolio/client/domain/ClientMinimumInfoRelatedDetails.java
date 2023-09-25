@@ -24,19 +24,34 @@ package org.apache.fineract.portfolio.client.domain;
  * @created : 9/6/23, Wednesday
  **/
 public interface ClientMinimumInfoRelatedDetails {
+
     Integer getLoanCycle();
+
     String getGroupNumber();
+
     String getMaidenName();
+
     String getOthernames();
+
     String getGroupMember();
+
     String getStatusInGroup();
+
     String getRetirementReason();
+
     String getCivilStatus();
+
     String getEducationLevel();
+
     String getEthinicity();
+
     String getNationality();
+
     String getLanguages();
+
     String getEconomicSector();
+
     String getEconomicActivity();
+
     String getFamilyReference();
 }

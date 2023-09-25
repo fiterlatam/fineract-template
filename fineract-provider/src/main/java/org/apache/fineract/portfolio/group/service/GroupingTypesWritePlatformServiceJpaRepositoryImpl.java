@@ -66,6 +66,9 @@ import org.apache.fineract.organisation.office.exception.InvalidOfficeException;
 import org.apache.fineract.organisation.portfolio.domain.Portfolio;
 import org.apache.fineract.organisation.portfolio.domain.PortfolioRepositoryWrapper;
 import org.apache.fineract.organisation.portfolioCenter.service.PortfolioCenterConstants;
+import org.apache.fineract.organisation.prequalification.domain.PreQualificationGroupRepository;
+import org.apache.fineract.organisation.prequalification.domain.PrequalificationGroup;
+import org.apache.fineract.organisation.prequalification.exception.GroupPreQualificationNotFound;
 import org.apache.fineract.organisation.rangeTemplate.data.RangeTemplateData;
 import org.apache.fineract.organisation.rangeTemplate.service.RangeTemplateReadPlatformService;
 import org.apache.fineract.organisation.staff.domain.Staff;
@@ -96,6 +99,7 @@ import org.apache.fineract.portfolio.group.exception.GroupMemberCountNotInPermis
 import org.apache.fineract.portfolio.group.exception.GroupMustBePendingToBeDeletedException;
 import org.apache.fineract.portfolio.group.exception.InvalidGroupLevelException;
 import org.apache.fineract.portfolio.group.exception.InvalidGroupStateTransitionException;
+import org.apache.fineract.portfolio.group.exception.PrequalificationMappedException;
 import org.apache.fineract.portfolio.group.serialization.GroupingTypesDataValidator;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
@@ -145,6 +149,7 @@ public class GroupingTypesWritePlatformServiceJpaRepositoryImpl implements Group
     private final RangeTemplateReadPlatformService rangeTemplateReadPlatformService;
     private final GroupReadPlatformService groupReadPlatformService;
     private final JdbcTemplate jdbcTemplate;
+    private final PreQualificationGroupRepository prequalificationGroupRepository;
 
     private CommandProcessingResult createGroupingType(final JsonCommand command, final GroupTypes groupingType, final Long centerId) {
         try {
@@ -174,6 +179,13 @@ public class GroupingTypesWritePlatformServiceJpaRepositoryImpl implements Group
             final Long staffId = command.longValueOfParameterNamed(GroupingTypesApiConstants.staffIdParamName);
             if (staffId != null) {
                 staff = this.staffRepository.findByOfficeHierarchyWithNotFoundDetection(staffId, groupOffice.getHierarchy());
+            }
+
+            final Long prequalificationId = command.longValueOfParameterNamed(GroupingTypesApiConstants.prequalificationId);
+            String mappedPrequalification = "SELECT count(*) from m_group where prequalification_id=?";
+            Long existing = this.jdbcTemplate.queryForObject(mappedPrequalification, Long.class, new Object[] { prequalificationId });
+            if (existing > 0) {
+                throw new PrequalificationMappedException(prequalificationId);
             }
 
             final Set<Client> clientMembers = assembleSetOfClients(officeId, command);
@@ -269,10 +281,13 @@ public class GroupingTypesWritePlatformServiceJpaRepositoryImpl implements Group
 
             final String referencePoint = command.stringValueOfParameterNamed(GroupingTypesApiConstants.referencePoint);
 
+            PrequalificationGroup prequalificationGroup = this.prequalificationGroupRepository.findById(prequalificationId)
+                    .orElseThrow(() -> new GroupPreQualificationNotFound(prequalificationId));
+
             final Group newGroup = Group.newGroup(groupOffice, staff, parentGroup, groupLevel, name, externalId, active, activationDate,
                     clientMembers, groupMembers, submittedOnDate, currentUser, accountNo, legacyNumber, latitude, longitude, formationDate,
                     size, meetingStartTime, meetingEndTime, responsibleUser, portfolio, city, stateProvince, centerType, distance,
-                    meetingStart, meetingEnd, meetingDay, referencePoint);
+                    meetingStart, meetingEnd, meetingDay, referencePoint, prequalificationGroup);
 
             boolean rollbackTransaction = false;
             if (newGroup.isActive()) {
@@ -490,6 +505,20 @@ public class GroupingTypesWritePlatformServiceJpaRepositoryImpl implements Group
                     newStaff = this.staffRepository.findByOfficeHierarchyWithNotFoundDetection(newValue, groupHierarchy);
                 }
                 groupForUpdate.updateStaff(newStaff);
+            }
+
+            if (actualChanges.containsKey(GroupingTypesApiConstants.prequalificationId)) {
+                final Long newValue = command.longValueOfParameterNamed(GroupingTypesApiConstants.prequalificationId);
+
+                String mappedPrequalification = "SELECT count(*) from m_group where prequalification_id=?";
+                Long existing = this.jdbcTemplate.queryForObject(mappedPrequalification, Long.class, new Object[] { newValue });
+                if (existing > 0) {
+                    throw new PrequalificationMappedException(newValue);
+                }
+                PrequalificationGroup prequalificationGroup = this.prequalificationGroupRepository.findById(newValue)
+                        .orElseThrow(() -> new GroupPreQualificationNotFound(newValue));
+                groupForUpdate.updatePrequalification(prequalificationGroup);
+
             }
 
             final GroupLevel groupLevel = this.groupLevelRepository.findById(groupForUpdate.getGroupLevel().getId()).orElse(null);

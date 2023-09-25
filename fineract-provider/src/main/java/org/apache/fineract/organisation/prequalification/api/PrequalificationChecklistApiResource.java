@@ -20,7 +20,6 @@ package org.apache.fineract.organisation.prequalification.api;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 import javax.ws.rs.Consumes;
@@ -42,6 +41,7 @@ import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.serialization.ApiRequestJsonSerializationSettings;
 import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
+import org.apache.fineract.organisation.prequalification.data.GenericValidationResultSet;
 import org.apache.fineract.organisation.prequalification.data.PrequalificationChecklistData;
 import org.apache.fineract.organisation.prequalification.service.PrequalificationChecklistReadPlatformService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -57,6 +57,7 @@ public class PrequalificationChecklistApiResource {
     private final ApiRequestParameterHelper apiRequestParameterHelper;
     private final PlatformSecurityContext context;
     private final DefaultToApiJsonSerializer<PrequalificationChecklistData> toApiJsonSerializer;
+    private final DefaultToApiJsonSerializer<GenericValidationResultSet> memberToApiJsonSerializery;
     private final PrequalificationChecklistReadPlatformService prequalificationChecklistReadPlatformService;
     private final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService;
     private final String resourceNameForPermissions = "PREQUALIFICATION";
@@ -66,12 +67,14 @@ public class PrequalificationChecklistApiResource {
 
     @Autowired
     public PrequalificationChecklistApiResource(final ApiRequestParameterHelper apiRequestParameterHelper,
-            final PlatformSecurityContext context, DefaultToApiJsonSerializer<PrequalificationChecklistData> toApiJsonSerializer,
+            DefaultToApiJsonSerializer<GenericValidationResultSet> memberToApiJsonSerializery, final PlatformSecurityContext context,
+            DefaultToApiJsonSerializer<PrequalificationChecklistData> toApiJsonSerializer,
             PrequalificationChecklistReadPlatformService prequalificationChecklistReadPlatformService,
             PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService) {
         this.apiRequestParameterHelper = apiRequestParameterHelper;
         this.context = context;
         this.toApiJsonSerializer = toApiJsonSerializer;
+        this.memberToApiJsonSerializery = memberToApiJsonSerializery;
         this.prequalificationChecklistReadPlatformService = prequalificationChecklistReadPlatformService;
         this.commandsSourceWritePlatformService = commandsSourceWritePlatformService;
     }
@@ -79,14 +82,22 @@ public class PrequalificationChecklistApiResource {
     @GET
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
-    public String retrievePrequalificationChecklists(@QueryParam("prequalificationId") final Integer prequalificationId,
-            @QueryParam("groupId") final Integer groupId, @QueryParam("clientId") final Integer clientId, @Context final UriInfo uriInfo) {
+    public String retrieveHardPolicyValidationResults(@QueryParam("prequalificationId") final Integer prequalificationId,
+            @QueryParam("groupId") final Integer groupId, @QueryParam("clientId") final Long clientId, @Context final UriInfo uriInfo) {
         this.context.authenticatedUser().validateHasReadPermission(this.resourceNameForPermissions);
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
-        Collection<PrequalificationChecklistData> prequalificationChecklistDataList = prequalificationChecklistReadPlatformService
-                .retrievePrequalificationChecklists(prequalificationId);
+        if (clientId != null) {
+            return retrieveClientHardPolicyValidation(settings, clientId);
+        }
+        PrequalificationChecklistData prequalificationChecklistDataList = prequalificationChecklistReadPlatformService
+                .retrieveHardPolicyValidationResults(prequalificationId);
         return this.toApiJsonSerializer.serialize(settings, prequalificationChecklistDataList,
                 this.prequalificationChecklistDataParameters);
+    }
+
+    private String retrieveClientHardPolicyValidation(ApiRequestJsonSerializationSettings settings, Long clientId) {
+        GenericValidationResultSet resultSet = prequalificationChecklistReadPlatformService.retrieveClientHardPolicyDetails(clientId);
+        return this.memberToApiJsonSerializery.serialize(settings, resultSet, this.prequalificationChecklistDataParameters);
     }
 
     @POST
@@ -99,6 +110,10 @@ public class PrequalificationChecklistApiResource {
         CommandProcessingResult result;
         if (is(commandParam, "validateprequalification")) {
             final CommandWrapper validateCommandRequest = builder.validatePrequalificationHardPolicies(prequalificationId).build();
+            result = this.commandsSourceWritePlatformService.logCommandSource(validateCommandRequest);
+        }
+        if (is(commandParam, "bureauValidation")) {
+            final CommandWrapper validateCommandRequest = builder.bureauValidationProcessing(prequalificationId).build();
             result = this.commandsSourceWritePlatformService.logCommandSource(validateCommandRequest);
         } else {
             final CommandWrapper commandRequest = builder.validatePrequalificationHardPolicies(prequalificationId).build();

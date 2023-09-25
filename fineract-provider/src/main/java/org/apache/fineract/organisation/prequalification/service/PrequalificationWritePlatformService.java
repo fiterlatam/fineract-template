@@ -20,6 +20,7 @@ package org.apache.fineract.organisation.prequalification.service;
 
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
+import org.apache.fineract.infrastructure.jobs.exception.JobExecutionException;
 
 public interface PrequalificationWritePlatformService {
 
@@ -30,4 +31,6 @@ public interface PrequalificationWritePlatformService {
     Long addCommentsToPrequalification(Long blacklistId, String comment);
 
     CommandProcessingResult updatePrequalificationGroupMember(Long memberId, JsonCommand command);
+
+    void disableExpiredPrequalifications() throws JobExecutionException;
 }

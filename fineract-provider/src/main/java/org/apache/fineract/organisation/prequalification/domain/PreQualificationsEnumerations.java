@@ -49,7 +49,7 @@ public final class PreQualificationsEnumerations {
             case BLACKLIST_REJECTED -> new EnumOptionData(PrequalificationStatus.BLACKLIST_REJECTED.getValue().longValue(),
                     PrequalificationStatus.BLACKLIST_REJECTED.getCode(), "BLACKLIST_REJECTED");
             case HARD_POLICY_CHECKED -> new EnumOptionData(PrequalificationStatus.HARD_POLICY_CHECKED.getValue().longValue(),
-                    PrequalificationStatus.HARD_POLICY_CHECKED.getCode(), "HARDPOLICY_CHECKED");
+                    PrequalificationStatus.HARD_POLICY_CHECKED.getCode(), "HARD_POLICY_CHECKED");
             case BURO_CHECKED -> new EnumOptionData(PrequalificationStatus.BURO_CHECKED.getValue().longValue(),
                     PrequalificationStatus.BURO_CHECKED.getCode(), "BURO_CHECKED");
             case TIME_EXPIRED -> new EnumOptionData(PrequalificationStatus.TIME_EXPIRED.getValue().longValue(),
@@ -58,6 +58,9 @@ public final class PreQualificationsEnumerations {
                     PrequalificationStatus.COMPLETED.getCode(), "COMPLETED");
             case CONSENT_ADDED -> new EnumOptionData(PrequalificationStatus.CONSENT_ADDED.getValue().longValue(),
                     PrequalificationStatus.CONSENT_ADDED.getCode(), "CONSENT_ADDED");
+            case AGENCY_LEAD_PENDING_APPROVAL -> new EnumOptionData(
+                    PrequalificationStatus.AGENCY_LEAD_PENDING_APPROVAL.getValue().longValue(),
+                    PrequalificationStatus.AGENCY_LEAD_PENDING_APPROVAL.getCode(), "AGENCY_LEAD_PENDING_APPROVAL");
             default -> new EnumOptionData(PrequalificationStatus.INVALID.getValue().longValue(), PrequalificationStatus.INVALID.getCode(),
                     "INVALID");
         };
@@ -88,6 +91,11 @@ public final class PreQualificationsEnumerations {
         final EnumOptionData optionData = new EnumOptionData(clientTransactionType.getValue().longValue(), clientTransactionType.getCode(),
                 clientTransactionType.toString());
         return optionData;
+    }
+
+    public static EnumOptionData validationColor(final CheckValidationColor checkValidationColor) {
+        return new EnumOptionData(checkValidationColor.getValue().longValue(), checkValidationColor.getCode(),
+                checkValidationColor.name().toLowerCase());
     }
 
     public static List<EnumOptionData> clientTransactionType(final ClientTransactionType[] clientTransactionTypes) {

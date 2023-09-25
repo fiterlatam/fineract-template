@@ -18,11 +18,10 @@
  */
 package org.apache.fineract.portfolio.loanaccount.rescheduleloan.data;
 
+import java.util.Collection;
 import org.apache.fineract.portfolio.client.data.ClientData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanAccountData;
 import org.apache.fineract.portfolio.loanproduct.data.LoanProductData;
-
-import java.util.Collection;
 
 /**
  * Immutable data object representing restructure credits request data.
@@ -36,9 +35,8 @@ public final class RestructureCreditsTemplateData {
     private final Collection<LoanAccountData> activeLoans;
     private final Collection<LoanProductData> loanProductData;
 
-
     private RestructureCreditsTemplateData(Long id, Long clientId, ClientData clientData, Collection<LoanAccountData> activeLoans,
-                                           RestructureCreditsRequestData requestData, Collection<LoanProductData> loanProductData) {
+            RestructureCreditsRequestData requestData, Collection<LoanProductData> loanProductData) {
 
         this.id = id;
         this.clientId = clientId;
@@ -50,14 +48,16 @@ public final class RestructureCreditsTemplateData {
 
     /**
      * template of the restructure credits params
+     *
      * @param clientData
      * @param activeLoans
      * @param requestData
      * @param loanProductData
      * @return
      */
-    public static RestructureCreditsTemplateData instance(ClientData clientData, Collection<LoanAccountData> activeLoans, RestructureCreditsRequestData requestData, Collection<LoanProductData> loanProductData) {
+    public static RestructureCreditsTemplateData instance(ClientData clientData, Collection<LoanAccountData> activeLoans,
+            RestructureCreditsRequestData requestData, Collection<LoanProductData> loanProductData) {
 
-        return new RestructureCreditsTemplateData(null, null, clientData, activeLoans, requestData,loanProductData);
+        return new RestructureCreditsTemplateData(null, null, clientData, activeLoans, requestData, loanProductData);
     }
 }

@@ -20,6 +20,13 @@ package org.apache.fineract.portfolio.loanaccount.rescheduleloan.service;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuilder;
@@ -52,14 +59,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeFormatterBuilder;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-
 @Service
 public class RestructureCreditsWritePlatformServiceImpl implements RestructureCreditsWritePlatformService {
 
@@ -75,21 +74,19 @@ public class RestructureCreditsWritePlatformServiceImpl implements RestructureCr
     private final LoanApplicationWritePlatformService loanApplicationWritePlatformService;
     private final FromJsonHelper fromApiJsonHelper;
 
-
-
     /**
      * LoanRescheduleRequestWritePlatformServiceImpl constructor
      *
      *
      **/
     @Autowired
-    public RestructureCreditsWritePlatformServiceImpl(final JdbcTemplate jdbcTemplate,final LoanApplicationWritePlatformService loanApplicationWritePlatformService,
-                                                      final PlatformSecurityContext platformSecurityContext,
-                                                      final RescheduleCreditsDataValidator rescheduleCreditsDataValidator,
-                                                      final LoanProductRepository loanProductRepository,final FromJsonHelper fromApiJsonHelper,
-                                                      final LoanAssembler loanAssembler,final LoanWritePlatformService loanWritePlatformService,
-                                                      final RestructureCreditsRequestRepository restructureCreditsRequestRepository,
-                                                      final ClientRepositoryWrapper clientRepositoryWrapper) {
+    public RestructureCreditsWritePlatformServiceImpl(final JdbcTemplate jdbcTemplate,
+            final LoanApplicationWritePlatformService loanApplicationWritePlatformService,
+            final PlatformSecurityContext platformSecurityContext, final RescheduleCreditsDataValidator rescheduleCreditsDataValidator,
+            final LoanProductRepository loanProductRepository, final FromJsonHelper fromApiJsonHelper, final LoanAssembler loanAssembler,
+            final LoanWritePlatformService loanWritePlatformService,
+            final RestructureCreditsRequestRepository restructureCreditsRequestRepository,
+            final ClientRepositoryWrapper clientRepositoryWrapper) {
         this.jdbcTemplate = jdbcTemplate;
         this.clientRepositoryWrapper = clientRepositoryWrapper;
         this.rescheduleCreditsDataValidator = rescheduleCreditsDataValidator;
@@ -110,14 +107,13 @@ public class RestructureCreditsWritePlatformServiceImpl implements RestructureCr
         this.rescheduleCreditsDataValidator.validateForCreateAction(jsonCommand);
         String countsql = "select coalesce((select id from m_restructure_credit_requests where client_id = ? and status=? limit 1),0)";
         Long pendingApproval = this.jdbcTemplate.queryForObject(countsql, Long.class, clientId, RestructureCreditStatus.PENDING.getValue());
-        if(pendingApproval>0){
+        if (pendingApproval > 0) {
             throw new RestructureCreditPendingApprovalException(pendingApproval);
         }
 
-
         final Long productId = jsonCommand.longValueOfParameterNamed("productId");
         Optional<LoanProduct> loanProducts = this.loanProductRepository.findById(productId);
-        if (loanProducts.isEmpty()) throw new ProductNotFoundException(productId,"loan");
+        if (loanProducts.isEmpty()) throw new ProductNotFoundException(productId, "loan");
         String disbursementDateString = jsonCommand.stringValueOfParameterNamed("disbursementDate");
         String dateFormat = jsonCommand.stringValueOfParameterNamed("dateFormat");
         final DateTimeFormatter simpleDateFormat = new DateTimeFormatterBuilder().parseCaseInsensitive().parseLenient()
@@ -134,41 +130,38 @@ public class RestructureCreditsWritePlatformServiceImpl implements RestructureCr
         RestructureCreditsRequest request = RestructureCreditsRequest.fromJSON(client, RestructureCreditStatus.PENDING.getValue(),
                 loanProducts.get(), totalOutstanding, disbursementDate, comments, localDateTimeOfSystem, appUser);
         restructureCreditsRequestRepository.save(request);
-        List<RestructureCreditsLoanMapping> mappings = createRestructureMappings(loanAccounts,request);
+        List<RestructureCreditsLoanMapping> mappings = createRestructureMappings(loanAccounts, request);
         request.updateMappings(mappings);
         restructureCreditsRequestRepository.save(request);
-        return new CommandProcessingResultBuilder().withCommandId(jsonCommand.commandId()).
-                withEntityId(request.getId()).
-                withClientId(clientId).build();
+        return new CommandProcessingResultBuilder().withCommandId(jsonCommand.commandId()).withEntityId(request.getId())
+                .withClientId(clientId).build();
     }
 
     @Transactional
     @Override
     public CommandProcessingResult approve(JsonCommand command) {
         Long requestId = command.longValueOfParameterNamed("requestId");
-        RestructureCreditsRequest request = restructureCreditsRequestRepository.findById(requestId).orElseThrow(() ->
-                new RestructureRequestNotFoundException(requestId));
+        RestructureCreditsRequest request = restructureCreditsRequestRepository.findById(requestId)
+                .orElseThrow(() -> new RestructureRequestNotFoundException(requestId));
         List<RestructureCreditsLoanMapping> creditMappings = request.getCreditMappings();
         processLoanClosures(creditMappings, command);
-        Long loanId = openNewLoanAccount(request,command);
+        Long loanId = openNewLoanAccount(request, command);
         AppUser appUser = this.platformSecurityContext.authenticatedUser();
         request.approve(appUser, DateUtils.getLocalDateTimeOfSystem());
         restructureCreditsRequestRepository.save(request);
-        return new CommandProcessingResultBuilder().withCommandId(command.commandId()).
-                withEntityId(request.getId()).
-                withLoanId(loanId).build();
+        return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withEntityId(request.getId()).withLoanId(loanId)
+                .build();
     }
 
     @Override
     public CommandProcessingResult reject(JsonCommand command) {
         Long requestId = command.longValueOfParameterNamed("requestId");
-        RestructureCreditsRequest request = restructureCreditsRequestRepository.findById(requestId).orElseThrow(() ->
-                new RestructureRequestNotFoundException(requestId));
+        RestructureCreditsRequest request = restructureCreditsRequestRepository.findById(requestId)
+                .orElseThrow(() -> new RestructureRequestNotFoundException(requestId));
         AppUser appUser = this.platformSecurityContext.authenticatedUser();
         request.modify(appUser, DateUtils.getLocalDateTimeOfSystem());
         restructureCreditsRequestRepository.save(request);
-        return new CommandProcessingResultBuilder().withCommandId(command.commandId()).
-                withEntityId(request.getId()).build();
+        return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withEntityId(request.getId()).build();
     }
 
     private Long openNewLoanAccount(RestructureCreditsRequest request, JsonCommand command) {
@@ -184,8 +177,8 @@ public class RestructureCreditsWritePlatformServiceImpl implements RestructureCr
         loanObject.add("expectedDisbursementDate", parse);
         loanObject.add("submittedOnDate", parse);
         loanObject.add("principal", this.fromApiJsonHelper.parse(request.getTotalLoanAmount().toPlainString()));
-        loanObject.add("locale",command.jsonElement("locale"));
-        loanObject.add("dateFormat",command.jsonElement("dateFormat"));
+        loanObject.add("locale", command.jsonElement("locale"));
+        loanObject.add("dateFormat", command.jsonElement("dateFormat"));
         JsonElement finalCommand = this.fromApiJsonHelper.parse(loanObject.toString());
 
         JsonCommand jsonCommand = JsonCommand.fromExistingCommand(command, finalCommand);
@@ -194,16 +187,15 @@ public class RestructureCreditsWritePlatformServiceImpl implements RestructureCr
     }
 
     private void processLoanClosures(List<RestructureCreditsLoanMapping> creditMappings, JsonCommand command) {
-        JsonObject closeObject  = new JsonObject();
-        closeObject.add("transactionDate",command.jsonElement("transactionDate"));
-        closeObject.add("locale",command.jsonElement("locale"));
-        closeObject.add("note",command.jsonElement("notes"));
-        closeObject.add("dateFormat",command.jsonElement("dateFormat"));
+        JsonObject closeObject = new JsonObject();
+        closeObject.add("transactionDate", command.jsonElement("transactionDate"));
+        closeObject.add("locale", command.jsonElement("locale"));
+        closeObject.add("note", command.jsonElement("notes"));
+        closeObject.add("dateFormat", command.jsonElement("dateFormat"));
         JsonElement finalCommand = this.fromApiJsonHelper.parse(closeObject.toString());
 
         JsonCommand jsonCommand = JsonCommand.fromExistingCommand(command, finalCommand);
-        for (RestructureCreditsLoanMapping mapping :
-                creditMappings) {
+        for (RestructureCreditsLoanMapping mapping : creditMappings) {
             Loan loan = mapping.getLoan();
             loanWritePlatformService.closeAsRescheduled(loan.getId(), jsonCommand);
         }
@@ -211,9 +203,9 @@ public class RestructureCreditsWritePlatformServiceImpl implements RestructureCr
 
     private List<RestructureCreditsLoanMapping> createRestructureMappings(List<Loan> loanAccounts, RestructureCreditsRequest request) {
         List<RestructureCreditsLoanMapping> mappings = new ArrayList<>();
-        for (Loan loan :
-                loanAccounts) {
-            RestructureCreditsLoanMapping creditsLoanMapping = RestructureCreditsLoanMapping.instance(loan,RestructureCreditStatus.PENDING.getValue(),request);
+        for (Loan loan : loanAccounts) {
+            RestructureCreditsLoanMapping creditsLoanMapping = RestructureCreditsLoanMapping.instance(loan,
+                    RestructureCreditStatus.PENDING.getValue(), request);
             mappings.add(creditsLoanMapping);
         }
         return mappings;
@@ -221,21 +213,20 @@ public class RestructureCreditsWritePlatformServiceImpl implements RestructureCr
 
     private BigDecimal getTotalOutstanding(List<Loan> loanAccounts) {
         BigDecimal totalOutstanding = BigDecimal.ZERO;
-        for (Loan loan :
-                loanAccounts) {
+        for (Loan loan : loanAccounts) {
             totalOutstanding = totalOutstanding.add(loan.getSummary().getTotalOutstanding());
         }
         return totalOutstanding;
     }
 
     private List<Loan> resolveLoanAccounts(String[] selectedLoanIds) {
-        List<Loan> selectedLoans= new ArrayList<>();
-        for (String loanId: selectedLoanIds){
+        List<Loan> selectedLoans = new ArrayList<>();
+        for (String loanId : selectedLoanIds) {
 
             long loanIdLong = Long.valueOf(loanId);
             Loan loan = this.loanAssembler.assembleFrom(loanIdLong);
 
-            if (loan==null) throw new LoanNotFoundException(loanIdLong);
+            if (loan == null) throw new LoanNotFoundException(loanIdLong);
             selectedLoans.add(loan);
         }
 
