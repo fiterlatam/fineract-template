@@ -58,6 +58,7 @@ import org.apache.fineract.portfolio.charge.exception.ChargeMustBePenaltyExcepti
 import org.apache.fineract.portfolio.charge.exception.ChargeParameterUpdateNotSupportedException;
 import org.apache.fineract.portfolio.charge.service.ChargeEnumerations;
 import org.apache.fineract.portfolio.common.domain.PeriodFrequencyType;
+import org.apache.fineract.portfolio.loanproduct.LoanProductConstants;
 import org.apache.fineract.portfolio.paymenttype.data.PaymentTypeData;
 import org.apache.fineract.portfolio.paymenttype.domain.PaymentType;
 import org.apache.fineract.portfolio.tax.data.TaxGroupData;
@@ -813,6 +814,10 @@ public class Charge extends AbstractPersistableCustom {
         this.taxGroup = taxGroup;
     }
 
+    public Integer getChargeDisbursementType() {
+        return chargeDisbursementType;
+    }
+
     public List<ChargeRange> getChargeRanges() {
         return chargeRanges;
     }
@@ -823,12 +828,18 @@ public class Charge extends AbstractPersistableCustom {
 
     public BigDecimal getAddOnDisbursementChargeRate(LocalDate disbursementDate, LocalDate firstRepaymentDate) {
         BigDecimal addOnDisbursementChargeRate = BigDecimal.ZERO;
+        int defaultDays = LoanProductConstants.DEFAULT_LIMIT_OF_DAYS_FOR_ADDON;
 
-        if (isDisbursementCharge() && isAddOnDisbursementType() && this.chargeRanges != null && !this.chargeRanges.isEmpty()){
+        if (isDisbursementCharge() && isAddOnDisbursementType() && this.chargeRanges != null && !this.chargeRanges.isEmpty()) {
             // calculate days since disbursement date
             int numberOfDays = Math.toIntExact(daysBetween(disbursementDate, firstRepaymentDate));
+            int daysAddOnApplicable = 0;
+            if (numberOfDays > defaultDays) {
+                daysAddOnApplicable = numberOfDays - defaultDays;
+            }
             for (ChargeRange chargeRange : this.chargeRanges) {
-                if (numberOfDays >= chargeRange.getMinDay() && numberOfDays <= chargeRange.getMaxDay()) {
+                if ((chargeRange.getMinDay() != null && daysAddOnApplicable >= chargeRange.getMinDay())
+                        && (chargeRange.getMaxDay() != null && daysAddOnApplicable <= chargeRange.getMaxDay())) {
                     addOnDisbursementChargeRate = chargeRange.getFeeRate();
                     break;
                 }
@@ -836,6 +847,10 @@ public class Charge extends AbstractPersistableCustom {
         }
 
         return addOnDisbursementChargeRate;
+    }
+
+    private static long daysBetween(LocalDate d1, LocalDate d2) {
+        return ChronoUnit.DAYS.between(d1, d2);
     }
 
     @Override
@@ -863,7 +878,4 @@ public class Charge extends AbstractPersistableCustom {
                 feeInterval, feeOnMonth, penalty, active, deleted, minCap, maxCap, feeFrequency, account, taxGroup);
     }
 
-    private static long daysBetween(LocalDate d1, LocalDate d2) {
-        return ChronoUnit.DAYS.between(d1, d2);
-    }
 }

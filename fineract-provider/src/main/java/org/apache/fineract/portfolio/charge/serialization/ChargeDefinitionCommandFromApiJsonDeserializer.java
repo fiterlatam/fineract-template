@@ -18,6 +18,7 @@
  */
 package org.apache.fineract.portfolio.charge.serialization;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.reflect.TypeToken;
 import java.lang.reflect.Type;
@@ -27,10 +28,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.infrastructure.core.data.ApiParameterError;
 import org.apache.fineract.infrastructure.core.data.DataValidatorBuilder;
@@ -38,8 +42,10 @@ import org.apache.fineract.infrastructure.core.exception.InvalidJsonException;
 import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidationException;
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
 import org.apache.fineract.portfolio.charge.api.ChargesApiConstants;
+import org.apache.fineract.portfolio.charge.data.ChargeData;
 import org.apache.fineract.portfolio.charge.domain.ChargeAppliesTo;
 import org.apache.fineract.portfolio.charge.domain.ChargeCalculationType;
+import org.apache.fineract.portfolio.charge.domain.ChargeDisbursementType;
 import org.apache.fineract.portfolio.charge.domain.ChargePaymentMode;
 import org.apache.fineract.portfolio.charge.domain.ChargeTimeType;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -131,6 +137,10 @@ public final class ChargeDefinitionCommandFromApiJsonDeserializer {
         }
 
         final ChargeAppliesTo appliesTo = ChargeAppliesTo.fromInt(chargeAppliesTo);
+        
+        final ChargeDisbursementType chargeDisbursementType = ChargeDisbursementType
+                .fromInt(this.fromApiJsonHelper.extractIntegerSansLocaleNamed("chargeDisbursementType", element));
+        
         if (appliesTo.isLoanCharge()) {
             // loan applicable validation
             final Integer chargeTimeType = this.fromApiJsonHelper.extractIntegerSansLocaleNamed("chargeTimeType", element);
@@ -265,7 +275,11 @@ public final class ChargeDefinitionCommandFromApiJsonDeserializer {
             final Long taxGroupId = this.fromApiJsonHelper.extractLongNamed(ChargesApiConstants.taxGroupIdParamName, element);
             baseDataValidator.reset().parameter(ChargesApiConstants.taxGroupIdParamName).value(taxGroupId).notNull().longGreaterThanZero();
         }
-
+        
+        if (appliesTo.isLoanCharge() && chargeDisbursementType.isAddOn()) {
+            this.validateChargeLimits(false, dataValidationErrors, baseDataValidator, element); 
+        }
+        
         throwExceptionIfValidationWarningsExist(dataValidationErrors);
     }
 
@@ -351,8 +365,9 @@ public final class ChargeDefinitionCommandFromApiJsonDeserializer {
                     .isOneOfTheseValues(ChargeAppliesTo.validValues());
         }
 
+        Integer chargeAppliesTo = 0;
         if (this.fromApiJsonHelper.parameterExists("chargeAppliesTo", element)) {
-            final Integer chargeAppliesTo = this.fromApiJsonHelper.extractIntegerSansLocaleNamed("chargeAppliesTo", element);
+            chargeAppliesTo = this.fromApiJsonHelper.extractIntegerSansLocaleNamed("chargeAppliesTo", element);
             baseDataValidator.reset().parameter("chargeAppliesTo").value(chargeAppliesTo).notNull()
                     .isOneOfTheseValues(ChargeAppliesTo.validValues());
         }
@@ -427,6 +442,15 @@ public final class ChargeDefinitionCommandFromApiJsonDeserializer {
             baseDataValidator.reset().parameter(ChargesApiConstants.taxGroupIdParamName).value(taxGroupId).notNull().longGreaterThanZero();
         }
 
+        ChargeAppliesTo appliesTo = null;
+       if (chargeAppliesTo != null) {
+           appliesTo = ChargeAppliesTo.fromInt(chargeAppliesTo);
+       }
+        final ChargeDisbursementType chargeDisbursementType = ChargeDisbursementType
+                .fromInt(this.fromApiJsonHelper.extractIntegerSansLocaleNamed("chargeDisbursementType", element));
+        if (appliesTo != null && appliesTo.isLoanCharge() && chargeDisbursementType.isAddOn()) {
+            this.validateChargeLimits(false, dataValidationErrors, baseDataValidator, element);
+        }
         throwExceptionIfValidationWarningsExist(dataValidationErrors);
     }
 
@@ -457,5 +481,172 @@ public final class ChargeDefinitionCommandFromApiJsonDeserializer {
         if (!dataValidationErrors.isEmpty()) {
             throw new PlatformApiDataValidationException(dataValidationErrors);
         }
+    }
+
+    private void validateChargeLimits(final boolean isAmountNullable, final List<ApiParameterError> dataValidationErrors, final DataValidatorBuilder baseDataValidator, final JsonElement element) {
+        boolean hasRanges = false;
+
+        if (this.fromApiJsonHelper.parameterExists("adminFeeRanges", element)) {
+            JsonArray ranges = this.fromApiJsonHelper.extractJsonArrayNamed("adminFeeRanges", element);
+
+            hasRanges = ranges.size() > 0;
+
+            Iterator<JsonElement> it = ranges.iterator();
+            Set<ChargeData.ChargeRangeData> chargeLimits = new TreeSet<>((a, b) -> {
+                int result = this.compareIntegers(a.adminFeeMin, b.adminFeeMin);
+                if (result == 0) {
+                    result = this.compareIntegers(a.adminFeeMax, b.adminFeeMax);
+                    if (result == 0) {
+                        result = this.compareBigDecimals(a.adminFeeRate, b.adminFeeRate);
+                    }
+                }
+                return result;
+            });
+            while (it.hasNext()) {
+                JsonElement el = it.next();
+
+                BigDecimal a = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed("adminFeeRate", el);
+                baseDataValidator.reset().parameter("adminFeeRate").value(a).notNull().zeroOrPositiveAmount();
+
+                Integer min = null;
+                Integer max = null;
+                if (this.fromApiJsonHelper.parameterExists("adminFeeMin", el)) {
+                    min = this.fromApiJsonHelper.extractIntegerWithLocaleNamed("adminFeeMin", el);
+                    baseDataValidator.reset().parameter("adminFeeMin").value(min).ignoreIfNull().zeroOrPositiveAmount();
+                }
+                if (this.fromApiJsonHelper.parameterExists("adminFeeMax", el)) {
+                    max = this.fromApiJsonHelper.extractIntegerWithLocaleNamed("adminFeeMax", el);
+                    baseDataValidator.reset().parameter("adminFeeMax").value(max).ignoreIfNull().zeroOrPositiveAmount();
+                }
+                if (min != null && max != null) {
+                    if ((max - min) <= 0) {
+                        dataValidationErrors.add(ApiParameterError.parameterError(
+                                "validation.msg.charge.ranges.min.greaterorequal.to",
+                                "The parameter adminFeeMin must be less than " + max,
+                                "adminFeeMin",
+                                min, max
+                        ));
+                    }
+                }
+
+                chargeLimits.add(new ChargeData.ChargeRangeData(min, max, a));
+            }
+
+            Iterator<ChargeData.ChargeRangeData> itt = chargeLimits.iterator();
+            if (itt.hasNext()) {
+                ChargeData.ChargeRangeData prev = itt.next();
+                while (itt.hasNext()) {
+                    ChargeData.ChargeRangeData curr = itt.next();
+
+                    if (prev.adminFeeMin == null && curr.adminFeeMin == null) {
+                        dataValidationErrors.add(ApiParameterError.parameterError(
+                                "validation.msg.ranges.overlap",
+                                "Ranges cannot overlap",
+                                "adminFeeMin", prev.adminFeeMin, curr.adminFeeMin
+                        ));
+                    } else if ((prev.adminFeeMax == null || prev.adminFeeMax.doubleValue() == Double.POSITIVE_INFINITY)) {
+                        dataValidationErrors.add(ApiParameterError.parameterError(
+                                "validation.msg.ranges.overlap",
+                                "Ranges cannot overlap",
+                                "adminFeeMax", prev.adminFeeMax, curr.adminFeeMin
+                        ));
+                    } else if (prev.adminFeeMax >= curr.adminFeeMin) {
+                        dataValidationErrors.add(ApiParameterError.parameterError(
+                                "validation.msg.ranges.overlap",
+                                "Ranges cannot overlap",
+                                "adminFeeMin", prev.adminFeeMax, curr.adminFeeMin
+                        ));
+                    }
+
+                    prev = curr;
+                }
+            }
+        }
+
+        if (!hasRanges) {
+            if (this.fromApiJsonHelper.parameterExists("adminFeeRate", element) || !isAmountNullable) {
+                final BigDecimal feeRate = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed("adminFeeRate", element.getAsJsonObject());
+                DataValidatorBuilder bdv = baseDataValidator.reset();
+                bdv.parameter("adminFeeRate").value(feeRate);
+                if (isAmountNullable) {
+                    bdv.ignoreIfNull();
+                } else {
+                    bdv.notNull();
+                }
+                bdv.positiveAmount();
+            }
+        }
+    }
+
+    private int compareIntegers(final Integer a, final Integer b) {
+        int result = 0;
+        if (a == null || b == null) {
+            if (a == null) {
+                if (b == null) {
+                    result = 0;
+                } else {
+                    result = -1;
+                }
+            } else {
+                result = 1;
+            }
+        } else {
+            if ((a.intValue() == Double.POSITIVE_INFINITY && b.intValue() == Double.POSITIVE_INFINITY)) {
+                result = 0;
+            } else {
+                if ((a.intValue() == Double.NEGATIVE_INFINITY && b.intValue() == Double.NEGATIVE_INFINITY)) {
+                    result = 0;
+                } else {
+                    if (a.intValue() == Double.POSITIVE_INFINITY) {
+                        result = 1;
+                    } else if (b.intValue() == Double.POSITIVE_INFINITY) {
+                        result = -1;
+                    } else if (a.intValue() == Double.NEGATIVE_INFINITY) {
+                        result = -1;
+                    } else if (b.intValue() == Double.NEGATIVE_INFINITY) {
+                        result = 1;
+                    } else {
+                        result = a.compareTo(b);
+                    }
+                }
+            }
+        }
+        return result;
+    }
+
+    private int compareBigDecimals(final BigDecimal a, final BigDecimal b) {
+        int result = 0;
+        if (a == null || b == null) {
+            if (a == null) {
+                if (b == null) {
+                    result = 0;
+                } else {
+                    result = -1;
+                }
+            } else {
+                result = 1;
+            }
+        } else {
+            if ((a.doubleValue() == Double.POSITIVE_INFINITY && b.doubleValue() == Double.POSITIVE_INFINITY)) {
+                result = 0;
+            } else {
+                if ((a.doubleValue() == Double.NEGATIVE_INFINITY && b.doubleValue() == Double.NEGATIVE_INFINITY)) {
+                    result = 0;
+                } else {
+                    if (a.doubleValue() == Double.POSITIVE_INFINITY) {
+                        result = 1;
+                    } else if (b.doubleValue() == Double.POSITIVE_INFINITY) {
+                        result = -1;
+                    } else if (a.doubleValue() == Double.NEGATIVE_INFINITY) {
+                        result = -1;
+                    } else if (b.doubleValue() == Double.NEGATIVE_INFINITY) {
+                        result = 1;
+                    } else {
+                        result = Double.valueOf(a.doubleValue()).compareTo(b.doubleValue());
+                    }
+                }
+            }
+        }
+        return result;
     }
 }

@@ -214,7 +214,7 @@ public final class ChargeData implements Comparable<ChargeData>, Serializable {
         final List<GLAccountData> expenseAccountOptions = null;
         final List<GLAccountData> assetAccountOptions = null;
         final List<EnumOptionData> chargeDisbursementTypeOptions = null;
-        final List<ChargeRangeData> chargeRanges= null;
+        final List<ChargeRangeData> chargeRanges = null;
 
         return new ChargeData(id, name, amount, currency, chargeTimeType, chargeAppliesTo, chargeCalculationType, chargePaymentMode,
                 penalty, active, freeWithdrawal, freeWithdrawalChargeFrequency, restartFrequency, restartFrequencyEnum, isPaymentType,

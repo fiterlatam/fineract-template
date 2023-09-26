@@ -46,10 +46,10 @@ public enum ChargeDisbursementType {
             switch (chargeCalculation) {
                 case 1:
                     chargeCalculationType = REGULAR;
-                    break;
+                break;
                 case 2:
                     chargeCalculationType = ADD_ON;
-                    break;
+                break;
                 default:
                     chargeCalculationType = REGULAR;
             }

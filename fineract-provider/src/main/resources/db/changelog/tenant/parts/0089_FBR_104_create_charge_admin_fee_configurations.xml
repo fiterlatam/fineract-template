@@ -57,4 +57,20 @@
             </column>
         </addColumn>
     </changeSet>
+    <!--Add new column in table m_product_loan-->
+    <changeSet author="fineract" id="4">
+        <addColumn tableName="m_product_loan">
+            <column name="limit_of_days_for_addon" type="SMALLINT" defaultValue="35">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+    <!--Add new column in table m_loan_charge-->
+    <changeSet author="fineract" id="5">
+        <addColumn tableName="m_loan_charge">
+            <column name="charge_disbursement_type_enum" type="SMALLINT" defaultValue="1">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
 </databaseChangeLog>

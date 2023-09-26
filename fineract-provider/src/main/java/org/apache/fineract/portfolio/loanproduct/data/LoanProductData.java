@@ -42,6 +42,7 @@ import org.apache.fineract.portfolio.common.service.CommonEnumerations;
 import org.apache.fineract.portfolio.floatingrates.data.FloatingRateData;
 import org.apache.fineract.portfolio.fund.data.FundData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanInterestRecalculationData;
+import org.apache.fineract.portfolio.loanproduct.LoanProductConstants;
 import org.apache.fineract.portfolio.loanproduct.domain.AmortizationMethod;
 import org.apache.fineract.portfolio.loanproduct.domain.InterestCalculationPeriodMethod;
 import org.apache.fineract.portfolio.loanproduct.domain.InterestMethod;
@@ -309,7 +310,8 @@ public class LoanProductData implements Serializable {
                 floatingRateName, interestRateDifferential, minDifferentialLendingRate, defaultDifferentialLendingRate,
                 maxDifferentialLendingRate, isFloatingInterestRateCalculationAllowed, isVariableInstallmentsAllowed, minimumGap, maximumGap,
                 syncExpectedWithDisbursementDate, canUseForTopup, isEqualAmortization, rateOptions, rates, isRatesEnabled,
-                fixedPrincipalPercentagePerInstallment, ageLimitWarning, ageLimitBlock, ownerTypeOption, addNewCyclesEnabled, daysLimitAddOn);
+                fixedPrincipalPercentagePerInstallment, ageLimitWarning, ageLimitBlock, ownerTypeOption, addNewCyclesEnabled,
+                daysLimitAddOn);
 
     }
 
@@ -417,7 +419,8 @@ public class LoanProductData implements Serializable {
                 floatingRateName, interestRateDifferential, minDifferentialLendingRate, defaultDifferentialLendingRate,
                 maxDifferentialLendingRate, isFloatingInterestRateCalculationAllowed, isVariableInstallmentsAllowed, minimumGap, maximumGap,
                 syncExpectedWithDisbursementDate, canUseForTopup, isEqualAmortization, rateOptions, rates, isRatesEnabled,
-                fixedPrincipalPercentagePerInstallment, ageLimitWarning, ageLimitBlock, ownerTypeOption, addNewCyclesEnabled, daysLimitAddOn);
+                fixedPrincipalPercentagePerInstallment, ageLimitWarning, ageLimitBlock, ownerTypeOption, addNewCyclesEnabled,
+                daysLimitAddOn);
 
     }
 
@@ -514,7 +517,7 @@ public class LoanProductData implements Serializable {
         final Integer ageLimitBlock = null;
         final EnumOptionData ownerTypeOption = null;
         final boolean addNewCyclesEnabled = true;
-        final Integer daysLimitAddOn = null;
+        final Integer daysLimitAddOn = LoanProductConstants.DEFAULT_LIMIT_OF_DAYS_FOR_ADDON;
 
         return new LoanProductData(id, name, shortName, description, currency, principal, minPrincipal, maxPrincipal, tolerance,
                 numberOfRepayments, minNumberOfRepayments, maxNumberOfRepayments, repaymentEvery, interestRatePerPeriod,
@@ -532,7 +535,8 @@ public class LoanProductData implements Serializable {
                 floatingRateName, interestRateDifferential, minDifferentialLendingRate, defaultDifferentialLendingRate,
                 maxDifferentialLendingRate, isFloatingInterestRateCalculationAllowed, isVariableInstallmentsAllowed, minimumGap, maximumGap,
                 syncExpectedWithDisbursementDate, canUseForTopup, isEqualAmortization, rateOptions, rates, isRatesEnabled,
-                fixedPrincipalPercentagePerInstallment, ageLimitWarning, ageLimitBlock, ownerTypeOption, addNewCyclesEnabled, daysLimitAddOn);
+                fixedPrincipalPercentagePerInstallment, ageLimitWarning, ageLimitBlock, ownerTypeOption, addNewCyclesEnabled,
+                daysLimitAddOn);
 
     }
 
@@ -641,7 +645,8 @@ public class LoanProductData implements Serializable {
                 floatingRateName, interestRateDifferential, minDifferentialLendingRate, defaultDifferentialLendingRate,
                 maxDifferentialLendingRate, isFloatingInterestRateCalculationAllowed, isVariableInstallmentsAllowed, minimumGap, maximumGap,
                 syncExpectedWithDisbursementDate, canUseForTopup, isEqualAmortization, rateOptions, rates, isRatesEnabled,
-                fixedPrincipalPercentagePerInstallment, ageLimitWarning, ageLimitBlock, ownerTypeOption, addNewCyclesEnabled, daysLimitAddOn);
+                fixedPrincipalPercentagePerInstallment, ageLimitWarning, ageLimitBlock, ownerTypeOption, addNewCyclesEnabled,
+                daysLimitAddOn);
 
     }
 
