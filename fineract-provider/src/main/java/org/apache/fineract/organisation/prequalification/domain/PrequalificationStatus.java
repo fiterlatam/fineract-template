@@ -34,8 +34,9 @@ public enum PrequalificationStatus {
                     800, "prequalification.status.expired"), COMPLETED(900, "prequalification.status.completed"), CONSENT_ADDED(901,
                             "prequalification.status.concent.added"), AGENCY_LEAD_PENDING_APPROVAL(902,
                                     "prequalification.status.pending.approval"), PREQUALIFICATION_UPDATE_REQUESTED(903,
-                                            "prequalification.status.update.requested"),AGENCY_LEAD_PENDING_APPROVAL_WITH_EXCEPTIONS(904,
-            "prequalification.status.pending.approval.exceptions"), INVALID(0, "prequalification.status.invalid");
+                                            "prequalification.status.update.requested"), AGENCY_LEAD_PENDING_APPROVAL_WITH_EXCEPTIONS(904,
+                                                    "prequalification.status.pending.approval.exceptions"), INVALID(0,
+                                                            "prequalification.status.invalid");
 
     private final Integer value;
     private final String code;
@@ -124,7 +125,7 @@ public enum PrequalificationStatus {
             clientStatus = PrequalificationStatus.AGENCY_LEAD_PENDING_APPROVAL;
         } else if (status.equalsIgnoreCase(PrequalificationStatus.PREQUALIFICATION_UPDATE_REQUESTED.toString())) {
             clientStatus = PrequalificationStatus.PREQUALIFICATION_UPDATE_REQUESTED;
-        }else if (status.equalsIgnoreCase(PrequalificationStatus.AGENCY_LEAD_PENDING_APPROVAL_WITH_EXCEPTIONS.toString())) {
+        } else if (status.equalsIgnoreCase(PrequalificationStatus.AGENCY_LEAD_PENDING_APPROVAL_WITH_EXCEPTIONS.toString())) {
             clientStatus = PrequalificationStatus.AGENCY_LEAD_PENDING_APPROVAL_WITH_EXCEPTIONS;
         }
 

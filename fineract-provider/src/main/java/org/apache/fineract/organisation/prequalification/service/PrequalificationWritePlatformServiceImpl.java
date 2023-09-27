@@ -31,7 +31,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
-
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.infrastructure.codes.service.CodeValueReadPlatformService;
@@ -591,8 +590,8 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         final PrequalificationGroup prequalificationGroup = this.prequalificationGroupRepositoryWrapper
                 .findOneWithNotFoundDetection(entityId);
 
-        PrequalificationChecklistData prequalificationChecklistData = this.prequalificationChecklistReadPlatformService.
-                retrieveHardPolicyValidationResults(entityId);
+        PrequalificationChecklistData prequalificationChecklistData = this.prequalificationChecklistReadPlatformService
+                .retrieveHardPolicyValidationResults(entityId);
         GenericValidationResultSet prequalification = prequalificationChecklistData.getPrequalification();
 
         List<String> exceptionsList = List.of("ORANGE", "RED", "YELLOW");

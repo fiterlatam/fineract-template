@@ -111,16 +111,13 @@ public class PrequalificationChecklistApiResource {
         if (is(commandParam, "validateprequalification")) {
             final CommandWrapper validateCommandRequest = builder.validatePrequalificationHardPolicies(prequalificationId).build();
             result = this.commandsSourceWritePlatformService.logCommandSource(validateCommandRequest);
-        }
-        else if (is(commandParam, "bureauValidation")) {
+        } else if (is(commandParam, "bureauValidation")) {
             final CommandWrapper validateCommandRequest = builder.bureauValidationProcessing(prequalificationId).build();
             result = this.commandsSourceWritePlatformService.logCommandSource(validateCommandRequest);
-        }
-        else if (is(commandParam, "requestUpdates")) {
+        } else if (is(commandParam, "requestUpdates")) {
             final CommandWrapper validateCommandRequest = builder.requestUpdatePrequalification(prequalificationId).build();
             result = this.commandsSourceWritePlatformService.logCommandSource(validateCommandRequest);
-        }
-        else if (is(commandParam, "sendToAnalysis")) {
+        } else if (is(commandParam, "sendToAnalysis")) {
             final CommandWrapper validateCommandRequest = builder.sendGroupForAnalysis(prequalificationId).build();
             result = this.commandsSourceWritePlatformService.logCommandSource(validateCommandRequest);
         } else {

@@ -262,7 +262,7 @@ public class GroupGeneralData implements Serializable {
         final Collection<CodeValueData> closureReasons = null;
         return new GroupGeneralData(groupId, accountNo, groupName, null, null, null, null, null, null, null, null, null, null, null,
                 clientMembers, null, null, null, null, null, groupRoles, null, null, null, null, closureReasons, null, null, null, null,
-                null, null, null,null);
+                null, null, null, null);
     }
 
     public static GroupGeneralData template(final Long officeId, final Long centerId, final String accountNo, final String centerName,
@@ -279,7 +279,7 @@ public class GroupGeneralData implements Serializable {
         return new GroupGeneralData(null, accountNo, null, null, null, null, officeId, null, centerId, centerName, staffId, staffName, null,
                 null, clientMembers, null, centerOptions, officeOptions, staffOptions, clientOptions, groupRoles, availableRoles, null,
                 null, null, closureReasons, null, parentOfficesOptions, responsibleUserOptions, portfolioCenterOptions,
-                centerGroupLocations, null, null,null);
+                centerGroupLocations, null, null, null);
     }
 
     public static GroupGeneralData withTemplate(final GroupGeneralData templatedGrouping, final GroupGeneralData grouping) {
@@ -363,7 +363,7 @@ public class GroupGeneralData implements Serializable {
         return new GroupGeneralData(id, accountNo, name, externalId, status, activationDate, officeId, officeName, centerId, centerName,
                 staffId, staffName, hierarchy, groupLevel, clientMembers, activeClientMembers, centerOptions, officeOptions, staffOptions,
                 clientOptions, groupRoles, availableRoles, role, calendarsData, collectionMeetingCalendar, closureReasons, timeline,
-                parentOfficesOptions, responsibleUserOptions, portfolioCenterOptions, centerGroupLocations, null, null,null);
+                parentOfficesOptions, responsibleUserOptions, portfolioCenterOptions, centerGroupLocations, null, null, null);
     }
 
     private GroupGeneralData(final Long id, final String accountNo, final String name, final String externalId, final EnumOptionData status,
@@ -462,8 +462,8 @@ public class GroupGeneralData implements Serializable {
                 grouping.staffName, grouping.hierarchy, grouping.groupLevel, grouping.clientMembers, grouping.activeClientMembers,
                 grouping.centerOptions, grouping.officeOptions, grouping.staffOptions, grouping.clientOptions, grouping.groupRoles,
                 grouping.availableRoles, selectedRole, grouping.calendarsData, grouping.collectionMeetingCalendar, grouping.closureReasons,
-                null, null, null, null, null,
-                grouping.prequalificationNumber, grouping.prequalificationId, grouping.prequalificationStatus);
+                null, null, null, null, null, grouping.prequalificationNumber, grouping.prequalificationId,
+                grouping.prequalificationStatus);
     }
 
     public static GroupGeneralData withClosureReasons(final Collection<CodeValueData> closureReasons) {
@@ -500,7 +500,7 @@ public class GroupGeneralData implements Serializable {
         return new GroupGeneralData(id, accountNo, name, externalId, status, activationDate, officeId, officeName, centerId, centerName,
                 staffId, staffName, hierarchy, groupLevel, clientMembers, activeClientMembers, centerOptions, officeOptions, staffOptions,
                 clientOptions, groupRoles, availableRoles, role, calendarsData, collectionMeetingCalendar, closureReasons, null,
-                parentOfficesOptions, responsibleUserOptions, portfolioCenterOptions, centerGroupLocations, null, null,null);
+                parentOfficesOptions, responsibleUserOptions, portfolioCenterOptions, centerGroupLocations, null, null, null);
     }
 
     public Collection<ClientData> clientMembers() {
@@ -643,6 +643,6 @@ public class GroupGeneralData implements Serializable {
     }
 
     public void setPrequalificationStatus(EnumOptionData prequalificationStatus) {
-        this.prequalificationStatus= prequalificationStatus;
+        this.prequalificationStatus = prequalificationStatus;
     }
 }
