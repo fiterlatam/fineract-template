@@ -24,6 +24,8 @@ import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -320,6 +322,16 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
         extraCriterias.add(hierarchySearchString);
 
         if (searchParameters != null) {
+            final LocalDate disbursementStartDate = searchParameters.getDisbursementStartDate();
+            final LocalDate disbursementEndDate = searchParameters.getDisbursementEndDate();
+            final LocalDate approvalStartDate = searchParameters.getApprovalStartDate();
+            final LocalDate approvalEndDate = searchParameters.getApprovalEndDate();
+            final String clientNo = searchParameters.getClientNo();
+            final Long agencyId = searchParameters.getAgencyId();
+            final Long groupId = searchParameters.getGroupId();
+            final Long centerId = searchParameters.getCenterId();
+            final Long facilitatorId = searchParameters.getFacilitatorId();
+            final Boolean isIndividualBusinessLoan = searchParameters.getIndividualBusinessLoan();
 
             String sqlQueryCriteria = searchParameters.getSqlSearch();
             if (StringUtils.isNotBlank(sqlQueryCriteria)) {
@@ -330,7 +342,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
             }
 
             if (StringUtils.isNotBlank(searchParameters.getExternalId())) {
-                sqlBuilder.append(" and l.external_id = ?");
+                sqlBuilder.append(" and l.external_id = ? ");
                 extraCriterias.add(searchParameters.getExternalId());
                 arrayPos = arrayPos + 1;
             }
@@ -344,6 +356,73 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                 sqlBuilder.append(" and l.account_no = ?");
                 extraCriterias.add(searchParameters.getAccountNo());
                 arrayPos = arrayPos + 1;
+            }
+            if (StringUtils.isNotBlank(clientNo)) {
+                sqlBuilder.append(" and c.account_no = ?");
+                extraCriterias.add(clientNo);
+                arrayPos = arrayPos + 1;
+            }
+            if (agencyId != null) {
+                sqlBuilder.append(" and mpg.agency_id = ?");
+                extraCriterias.add(agencyId);
+                arrayPos = arrayPos + 1;
+            }
+
+            if (groupId != null) {
+                sqlBuilder.append(" and g.id = ? ");
+                extraCriterias.add(groupId);
+                arrayPos = arrayPos + 1;
+            }
+
+            if (centerId != null) {
+                sqlBuilder.append(" and center.id = ? ");
+                extraCriterias.add(centerId);
+                arrayPos = arrayPos + 1;
+            }
+
+            if (facilitatorId != null) {
+                sqlBuilder.append(" and mpg.facilitator = ? ");
+                extraCriterias.add(facilitatorId);
+                arrayPos = arrayPos + 1;
+            }
+
+            if (Boolean.TRUE.equals(isIndividualBusinessLoan)) {
+                sqlBuilder.append(" and ( c.id is not null and g.id is null ) ");
+            }
+
+            final DateTimeFormatter df = new DateTimeFormatterBuilder().appendPattern("yyyy-MM-dd").toFormatter();
+            if (disbursementStartDate != null || disbursementEndDate != null) {
+                String disbursementStartDateString;
+                String disbursementEndDateDateString;
+                if (disbursementStartDate != null && disbursementEndDate != null) {
+                    disbursementStartDateString = df.format(disbursementStartDate);
+                    disbursementEndDateDateString = df.format(disbursementEndDate);
+                    sqlBuilder.append(" and ( l.expected_disbursedon_date between '").append(disbursementStartDateString).append("' and '")
+                            .append(disbursementEndDateDateString).append("' ) ");
+                } else if (disbursementStartDate != null) {
+                    disbursementStartDateString = df.format(disbursementStartDate);
+                    sqlBuilder.append(" and ( l.expected_disbursedon_date >= '").append(disbursementStartDateString).append("' ) ");
+                } else {
+                    disbursementEndDateDateString = df.format(disbursementEndDate);
+                    sqlBuilder.append(" and ( l.expected_disbursedon_date <= '").append(disbursementEndDateDateString).append("' ) ");
+                }
+            }
+
+            if (approvalStartDate != null || approvalEndDate != null) {
+                String approvalStartDateString;
+                String approvalEndDateDateString;
+                if (approvalStartDate != null && approvalEndDate != null) {
+                    approvalStartDateString = df.format(approvalStartDate);
+                    approvalEndDateDateString = df.format(approvalEndDate);
+                    sqlBuilder.append(" and ( l.approvedon_date between '").append(approvalStartDateString).append("' and '")
+                            .append(approvalEndDateDateString).append("' ) ");
+                } else if (approvalStartDate != null) {
+                    approvalStartDateString = df.format(approvalStartDate);
+                    sqlBuilder.append(" and ( l.approvedon_date >= '").append(approvalStartDateString).append("' ) ");
+                } else {
+                    approvalEndDateDateString = df.format(approvalEndDate);
+                    sqlBuilder.append(" and ( l.approvedon_date <= '").append(approvalEndDateDateString).append("' ) ");
+                }
             }
 
             if (searchParameters.isOrderByRequested()) {
@@ -595,7 +674,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
         }
 
         public String loanSchema() {
-            return "l.id as id, l.account_no as accountNo, l.contract as contractNo, l.external_id as externalId, l.fund_id as fundId, f.name as fundName,"
+
+            return "l.id as id, mlrs.first_duedate As firstInstallmentDate, l.account_no as accountNo, l.contract as contractNo, l.external_id as externalId, l.fund_id as fundId, f.name as fundName,"
                     + " l.loan_type_enum as loanType, l.loanpurpose_cv_id as loanPurposeId, cv.code_value as loanPurposeName,"
                     + " lp.id as loanProductId, lp.name as loanProductName, lp.description as loanProductDescription,"
                     + " lp.is_linked_to_floating_interest_rates as isLoanProductLinkedToFloatingRate, "
@@ -680,6 +760,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                     + sqlGenerator.escape("code") + " = l.currency_code" //
                     + " left join m_client c on c.id = l.client_id" //
                     + " left join m_group g on g.id = l.group_id" //
+                    + " left join m_group center on center.id = g.parent_id" //
+                    + " left join m_prequalification_group mpg on mpg.id = g.prequalification_id" //
                     + " left join m_loan_arrears_aging la on la.loan_id = l.id" //
                     + " left join m_fund f on f.id = l.fund_id" //
                     + " left join m_staff s on s.id = l.loan_officer_id" //
@@ -692,7 +774,10 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                     + " left join ref_loan_transaction_processing_strategy lps on lps.id = l.loan_transaction_strategy_id"
                     + " left join m_product_loan_variable_installment_config lpvi on lpvi.loan_product_id = l.product_id"
                     + " left join m_loan_topup as topup on l.id = topup.loan_id"
-                    + " left join m_loan as topuploan on topuploan.id = topup.closure_loan_id";
+                    + " left join m_loan as topuploan on topuploan.id = topup.closure_loan_id"
+                    + " LEFT JOIN (SELECT DISTINCT sc.loan_id AS loan_id, sc.duedate AS first_duedate"
+                    + "            FROM m_loan_repayment_schedule sc " + "            WHERE sc.installment = 1 "
+                    + "            ORDER BY sc.duedate DESC " + "            ) mlrs ON mlrs.loan_id = l.id";
 
         }
 
@@ -851,7 +936,11 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
             }
 
             // settings
-            final LocalDate expectedFirstRepaymentOnDate = JdbcSupport.getLocalDate(rs, "expectedFirstRepaymentOnDate");
+            LocalDate expectedFirstRepaymentOnDate = JdbcSupport.getLocalDate(rs, "expectedFirstRepaymentOnDate");
+            if (expectedFirstRepaymentOnDate == null) {
+                expectedFirstRepaymentOnDate = JdbcSupport.getLocalDate(rs, "firstInstallmentDate");
+            }
+
             final LocalDate interestChargedFromDate = JdbcSupport.getLocalDate(rs, "interestChargedFromDate");
 
             final Boolean syncDisbursementWithMeeting = rs.getBoolean("syncDisbursementWithMeeting");

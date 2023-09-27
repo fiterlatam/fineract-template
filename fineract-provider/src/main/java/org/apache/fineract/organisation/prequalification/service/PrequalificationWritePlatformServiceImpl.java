@@ -124,7 +124,8 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         final Long productId = command.longValueOfParameterNamed(PrequalificatoinApiConstants.productIdParamName);
         final Long centerGroupId = command.longValueOfParameterNamed(PrequalificatoinApiConstants.groupIdParamName);
         final Long agencyId = command.longValueOfParameterNamed(PrequalificatoinApiConstants.agencyIdParamName);
-        final Long previousPrequalificationId = command.longValueOfParameterNamed(PrequalificatoinApiConstants.previousPrequalificationParamName);
+        final Long previousPrequalificationId = command
+                .longValueOfParameterNamed(PrequalificatoinApiConstants.previousPrequalificationParamName);
 
         PrequalificationGroup parentGroup = null;
         if (previousPrequalificationId != null) {
@@ -149,8 +150,8 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         if (facilitatorId != null) {
             facilitator = this.appUserRepository.findById(facilitatorId).orElseThrow(() -> new UserNotFoundException(facilitatorId));
         }
-        PrequalificationGroup prequalificationGroup = PrequalificationGroup.fromJson(addedBy, facilitator, agency, group, loanProduct, parentGroup,
-                command);
+        PrequalificationGroup prequalificationGroup = PrequalificationGroup.fromJson(addedBy, facilitator, agency, group, loanProduct,
+                parentGroup, command);
 
         this.prequalificationGroupRepositoryWrapper.saveAndFlush(prequalificationGroup);
         StringBuilder prequalSB = new StringBuilder();

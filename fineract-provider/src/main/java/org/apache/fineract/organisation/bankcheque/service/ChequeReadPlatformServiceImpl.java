@@ -229,10 +229,14 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
         final SQLBuilder extraCriteria = new SQLBuilder();
         final Long batchId = searchParameters.getBatchId();
         final Long chequeId = searchParameters.getChequeId();
+        final Long agencyId = searchParameters.getAgencyId();
         final String chequeNo = searchParameters.getChequeNo();
         final String status = searchParameters.getStatus();
         if (batchId != null) {
             extraCriteria.addNonNullCriteria("mpb.id = ", batchId);
+        }
+        if (agencyId != null) {
+            extraCriteria.addNonNullCriteria("mba.agency_id = ", agencyId);
         }
         if (chequeId != null) {
             extraCriteria.addNonNullCriteria("mbc.id = ", chequeId);
