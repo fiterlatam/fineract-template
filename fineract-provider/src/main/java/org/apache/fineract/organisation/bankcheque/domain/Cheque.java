@@ -18,6 +18,7 @@
  */
 package org.apache.fineract.organisation.bankcheque.domain;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -70,6 +71,9 @@ public class Cheque extends AbstractAuditableCustom {
 
     @Column(name = "usedon_date")
     private LocalDate usedOnDate;
+
+    @Column(name = "guarantee_amount")
+    private BigDecimal guaranteeAmount;
 
     public Cheque setChequeNo(Long chequeNo) {
         this.chequeNo = chequeNo;
@@ -128,5 +132,9 @@ public class Cheque extends AbstractAuditableCustom {
     public Cheque setUsedOnDate(LocalDate usedOnDate) {
         this.usedOnDate = usedOnDate;
         return this;
+    }
+
+    public void setGuaranteeAmount(BigDecimal guaranteeAmount) {
+        this.guaranteeAmount = guaranteeAmount;
     }
 }

@@ -26,6 +26,7 @@ public enum LoanStatus {
     INVALID(0, "loanStatusType.invalid"), //
     SUBMITTED_AND_PENDING_APPROVAL(100, "loanStatusType.submitted.and.pending.approval"), //
     APPROVED(200, "loanStatusType.approved"), //
+    DISBURSE_AUTHORIZATION_PENDING(201, "loanStatusType.disburse.authorization.pending"), //
     ACTIVE(300, "loanStatusType.active"), //
     TRANSFER_IN_PROGRESS(303, "loanStatusType.transfer.in.progress"), //
     TRANSFER_ON_HOLD(304, "loanStatusType.transfer.on.hold"), //

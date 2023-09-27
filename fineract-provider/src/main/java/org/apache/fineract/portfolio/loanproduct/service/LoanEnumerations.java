@@ -469,6 +469,10 @@ public final class LoanEnumerations {
                 optionData = new LoanStatusEnumData(LoanStatus.WITHDRAWN_BY_CLIENT.getValue().longValue(),
                         LoanStatus.WITHDRAWN_BY_CLIENT.getCode(), "Withdrawn by applicant");
             break;
+            case DISBURSE_AUTHORIZATION_PENDING:
+                optionData = new LoanStatusEnumData(LoanStatus.DISBURSE_AUTHORIZATION_PENDING.getValue().longValue(),
+                        LoanStatus.DISBURSE_AUTHORIZATION_PENDING.getCode(), "Pending Disbursement Authorization");
+            break;
             case CLOSED_OBLIGATIONS_MET:
                 optionData = new LoanStatusEnumData(LoanStatus.CLOSED_OBLIGATIONS_MET.getValue().longValue(),
                         LoanStatus.CLOSED_OBLIGATIONS_MET.getCode(), "Closed (obligations met)");

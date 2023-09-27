@@ -1086,6 +1086,15 @@ public class CommandWrapperBuilder {
         return this;
     }
 
+    public CommandWrapperBuilder disburseLoanByCheques() {
+        this.actionName = "DISBURSEBYCHEQUES";
+        this.entityName = "LOAN";
+        this.entityId = loanId;
+        this.loanId = null;
+        this.href = "/loans";
+        return this;
+    }
+
     public CommandWrapperBuilder disburseLoanToSavingsApplication(final Long loanId) {
         this.actionName = "DISBURSETOSAVINGS";
         this.entityName = "LOAN";
