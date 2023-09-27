@@ -38,11 +38,21 @@
             <column name="can_maker_checker" valueBoolean="false" />
         </insert>
         <insert tableName="m_permission">
-            <column name="grouping" value="portfolio" />
+                <column name="grouping" value="portfolio" />
             <column name="code" value="UPDATE_PREQUALIFICATIONS" />
             <column name="entity_name" value="PREQUALIFICATIONS" />
             <column name="action_name" value="UPDATE" />
             <column name="can_maker_checker" valueBoolean="false" />
         </insert>
     </changeSet>
+    <changeSet author="fineract" id="2">
+<insert tableName="m_permission">
+            <column name="grouping" value="portfolio" />
+            <column name="code" value="REQUESTUPDATE_PREQUALIFICATIONS" />
+            <column name="entity_name" value="PREQUALIFICATIONS" />
+            <column name="action_name" value="REQUESTUPDATE" />
+            <column name="can_maker_checker" valueBoolean="false" />
+        </insert>
+    </changeSet>
+
 </databaseChangeLog>

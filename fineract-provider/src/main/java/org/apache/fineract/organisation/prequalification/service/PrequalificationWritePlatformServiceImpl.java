@@ -51,6 +51,7 @@ import org.apache.fineract.organisation.prequalification.domain.Prequalification
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationGroupRepositoryWrapper;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationMemberIndication;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationStatus;
+import org.apache.fineract.organisation.prequalification.exception.GroupPreQualificationNotFound;
 import org.apache.fineract.organisation.prequalification.serialization.PrequalificationMemberCommandFromApiJsonDeserializer;
 import org.apache.fineract.portfolio.blacklist.domain.BlacklistStatus;
 import org.apache.fineract.portfolio.client.service.ClientChargeWritePlatformServiceJpaRepositoryImpl;
@@ -565,5 +566,20 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             throw new JobExecutionException(problems);
         }
 
+    }
+
+    @Override
+    public CommandProcessingResult requestUpdates(Long entityId, JsonCommand command) {
+        this.context.authenticatedUser();
+        final PrequalificationGroup prequalificationGroup = this.prequalificationGroupRepositoryWrapper
+                .findOneWithNotFoundDetection(entityId);
+        if (prequalificationGroup == null) {
+            throw new GroupPreQualificationNotFound(entityId);
+        }
+        prequalificationGroup.updateStatus(PrequalificationStatus.PREQUALIFICATION_UPDATE_REQUESTED);
+        prequalificationGroup.updateComments(command.stringValueOfParameterNamed("comments"));
+        this.prequalificationGroupRepositoryWrapper.save(prequalificationGroup);
+
+        return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withEntityId(prequalificationGroup.getId()).build();
     }
 }

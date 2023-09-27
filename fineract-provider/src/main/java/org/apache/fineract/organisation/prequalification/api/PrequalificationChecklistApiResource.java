@@ -115,6 +115,10 @@ public class PrequalificationChecklistApiResource {
         if (is(commandParam, "bureauValidation")) {
             final CommandWrapper validateCommandRequest = builder.bureauValidationProcessing(prequalificationId).build();
             result = this.commandsSourceWritePlatformService.logCommandSource(validateCommandRequest);
+        }
+        if (is(commandParam, "requestUpdates")) {
+            final CommandWrapper validateCommandRequest = builder.requestUpdatePrequalification(prequalificationId).build();
+            result = this.commandsSourceWritePlatformService.logCommandSource(validateCommandRequest);
         } else {
             final CommandWrapper commandRequest = builder.validatePrequalificationHardPolicies(prequalificationId).build();
             result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
