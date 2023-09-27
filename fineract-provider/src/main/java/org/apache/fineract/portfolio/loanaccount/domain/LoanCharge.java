@@ -46,6 +46,7 @@ import org.apache.fineract.organisation.monetary.domain.Money;
 import org.apache.fineract.organisation.monetary.domain.MoneyHelper;
 import org.apache.fineract.portfolio.charge.domain.Charge;
 import org.apache.fineract.portfolio.charge.domain.ChargeCalculationType;
+import org.apache.fineract.portfolio.charge.domain.ChargeDisbursementType;
 import org.apache.fineract.portfolio.charge.domain.ChargePaymentMode;
 import org.apache.fineract.portfolio.charge.domain.ChargeTimeType;
 import org.apache.fineract.portfolio.charge.exception.LoanChargeWithoutMandatoryFieldException;
@@ -123,6 +124,9 @@ public class LoanCharge extends AbstractPersistableCustom {
 
     @Column(name = "external_id")
     private String externalId;
+
+    @Column(name = "charge_disbursement_type_enum", nullable = false)
+    private Integer chargeDisbursementType;
 
     @OneToOne(mappedBy = "loancharge", cascade = CascadeType.ALL, optional = true, orphanRemoval = true, fetch = FetchType.EAGER)
     private LoanOverdueInstallmentCharge overdueInstallmentCharge;
@@ -205,6 +209,7 @@ public class LoanCharge extends AbstractPersistableCustom {
                 dueDate, chargePaymentMode, null, loanCharge);
         final String externalId = command.stringValueOfParameterNamedAllowingNull("externalId");
         newLoanCharge.setExternalId(externalId);
+        newLoanCharge.setChargeDisbursementType(chargeDefinition.getChargeDisbursementType());
         return newLoanCharge;
     }
 
@@ -230,6 +235,7 @@ public class LoanCharge extends AbstractPersistableCustom {
         this.penaltyCharge = chargeDefinition.isPenalty();
         this.minCap = chargeDefinition.getMinCap();
         this.maxCap = chargeDefinition.getMaxCap();
+        this.chargeDisbursementType = chargeDefinition.getChargeDisbursementType();
 
         this.chargeTime = chargeDefinition.getChargeTimeType();
         if (chargeTime != null) {
@@ -396,7 +402,8 @@ public class LoanCharge extends AbstractPersistableCustom {
             this.dueDate = dueDate;
         }
 
-        if (amount != null) {
+        BigDecimal updatedAmount = amount;
+        if (updatedAmount != null) {
             switch (ChargeCalculationType.fromInt(this.chargeCalculation)) {
                 case INVALID:
                 break;
@@ -405,16 +412,24 @@ public class LoanCharge extends AbstractPersistableCustom {
                         if (numberOfRepayments == null) {
                             numberOfRepayments = this.loan.fetchNumberOfInstallmensAfterExceptions();
                         }
-                        this.amount = amount.multiply(BigDecimal.valueOf(numberOfRepayments));
+                        this.amount = updatedAmount.multiply(BigDecimal.valueOf(numberOfRepayments));
                     } else {
-                        this.amount = amount;
+                        this.amount = updatedAmount;
                     }
                 break;
                 case PERCENT_OF_AMOUNT:
                 case PERCENT_OF_AMOUNT_AND_INTEREST:
                 case PERCENT_OF_INTEREST:
                 case PERCENT_OF_DISBURSEMENT_AMOUNT:
-                    this.percentage = amount;
+                    if (this.loan != null && isDisbursementCharge() && this.isAddOnDisbursementType()) {
+                        LocalDate disbursementDate = this.loan.getDisbursementDate();
+                        LocalDate firstRepaymentDate = this.loan.fetchRepaymentScheduleInstallment(1).getDueDate();
+                        BigDecimal feeRate = this.charge.getAddOnDisbursementChargeRate(disbursementDate, firstRepaymentDate);
+                        this.percentage = feeRate;
+                        updatedAmount = feeRate;
+                    } else {
+                        this.percentage = amount;
+                    }
                     this.amountPercentageAppliedTo = loanPrincipal;
                     if (loanCharge.compareTo(BigDecimal.ZERO) == 0) {
                         loanCharge = percentageOf(this.amountPercentageAppliedTo);
@@ -422,7 +437,7 @@ public class LoanCharge extends AbstractPersistableCustom {
                     this.amount = minimumAndMaximumCap(loanCharge);
                 break;
             }
-            this.amountOrPercentage = amount;
+            this.amountOrPercentage = updatedAmount;
             this.amountOutstanding = calculateOutstanding();
             if (this.loan != null && isInstalmentFee()) {
                 updateInstallmentCharges();
@@ -1073,6 +1088,18 @@ public class LoanCharge extends AbstractPersistableCustom {
 
     public void setExternalId(String externalId) {
         this.externalId = externalId;
+    }
+
+    public Integer getChargeDisbursementType() {
+        return chargeDisbursementType;
+    }
+
+    public void setChargeDisbursementType(Integer chargeDisbursementType) {
+        this.chargeDisbursementType = chargeDisbursementType;
+    }
+
+    public boolean isAddOnDisbursementType() {
+        return ChargeDisbursementType.fromInt(this.chargeDisbursementType).equals(ChargeDisbursementType.ADD_ON);
     }
 
 }

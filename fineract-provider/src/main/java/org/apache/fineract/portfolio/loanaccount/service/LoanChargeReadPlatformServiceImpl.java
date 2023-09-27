@@ -142,6 +142,7 @@ public class LoanChargeReadPlatformServiceImpl implements LoanChargeReadPlatform
                 .retrieveSavingsCollectionTimeTypes();
         final List<EnumOptionData> clientChargeCalculationTypeOptions = null;
         final List<EnumOptionData> clientChargeTimeTypeOptions = null;
+        final List<EnumOptionData> chargeDisbursementTypeOptions = null;
 
         final List<EnumOptionData> feeFrequencyOptions = this.dropdownReadPlatformService.retrievePeriodFrequencyTypeOptions();
         // this field is applicable only for client charges
@@ -158,7 +159,7 @@ public class LoanChargeReadPlatformServiceImpl implements LoanChargeReadPlatform
                 loansChargeCalculationTypeOptions, loansChargeTimeTypeOptions, savingsChargeCalculationTypeOptions,
                 savingsChargeTimeTypeOptions, clientChargeCalculationTypeOptions, clientChargeTimeTypeOptions, feeFrequencyOptions,
                 incomeOrLiabilityAccountOptions, taxGroupOptions, shareChargeCalculationTypeOptions, shareChargeTimeTypeOptions,
-                accountMappingForChargeConfig, expenseAccountOptions, assetAccountOptions);
+                accountMappingForChargeConfig, expenseAccountOptions, assetAccountOptions, chargeDisbursementTypeOptions);
     }
 
     @Override
