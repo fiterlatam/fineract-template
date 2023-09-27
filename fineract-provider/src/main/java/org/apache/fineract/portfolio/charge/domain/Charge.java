@@ -40,6 +40,8 @@ import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
+
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.fineract.accounting.glaccount.data.GLAccountData;
 import org.apache.fineract.accounting.glaccount.domain.GLAccount;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
@@ -826,14 +828,14 @@ public class Charge extends AbstractPersistableCustom {
         this.chargeRanges = chargeRanges;
     }
 
-    public BigDecimal getAddOnDisbursementChargeRate(LocalDate disbursementDate, LocalDate firstRepaymentDate) {
+    public Pair<Integer, BigDecimal> getAddOnDisbursementChargeRate(LocalDate disbursementDate, LocalDate firstRepaymentDate) {
         BigDecimal addOnDisbursementChargeRate = BigDecimal.ZERO;
         int defaultDays = LoanProductConstants.DEFAULT_LIMIT_OF_DAYS_FOR_ADDON;
+        int daysAddOnApplicable = 0;
 
         if (isDisbursementCharge() && isAddOnDisbursementType() && this.chargeRanges != null && !this.chargeRanges.isEmpty()) {
             // calculate days since disbursement date
             int numberOfDays = Math.toIntExact(daysBetween(disbursementDate, firstRepaymentDate));
-            int daysAddOnApplicable = 0;
             if (numberOfDays > defaultDays) {
                 daysAddOnApplicable = numberOfDays - defaultDays;
             }
@@ -846,7 +848,7 @@ public class Charge extends AbstractPersistableCustom {
             }
         }
 
-        return addOnDisbursementChargeRate;
+        return Pair.of(daysAddOnApplicable, addOnDisbursementChargeRate);
     }
 
     private static long daysBetween(LocalDate d1, LocalDate d2) {

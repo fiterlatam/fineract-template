@@ -39,6 +39,8 @@ import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
+
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
 import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
@@ -424,16 +426,19 @@ public class LoanCharge extends AbstractPersistableCustom {
                     if (this.loan != null && isDisbursementCharge() && this.isAddOnDisbursementType()) {
                         LocalDate disbursementDate = this.loan.getDisbursementDate();
                         LocalDate firstRepaymentDate = this.loan.fetchRepaymentScheduleInstallment(1).getDueDate();
-                        BigDecimal feeRate = this.charge.getAddOnDisbursementChargeRate(disbursementDate, firstRepaymentDate);
+                        Pair<Integer, BigDecimal> addOnDaysAndRate = this.charge.getAddOnDisbursementChargeRate(disbursementDate, firstRepaymentDate);
+                        Integer daysToApplyAddOn = addOnDaysAndRate.getLeft();
+                        BigDecimal feeRate = addOnDaysAndRate.getRight();
                         this.percentage = feeRate;
                         updatedAmount = feeRate;
+                        loanCharge = percentageOf(this.amountPercentageAppliedTo).multiply(BigDecimal.valueOf(daysToApplyAddOn), MoneyHelper.getMathContext());
                     } else {
                         this.percentage = amount;
+                        if (loanCharge.compareTo(BigDecimal.ZERO) == 0) {
+                            loanCharge = percentageOf(this.amountPercentageAppliedTo);
+                        }
                     }
                     this.amountPercentageAppliedTo = loanPrincipal;
-                    if (loanCharge.compareTo(BigDecimal.ZERO) == 0) {
-                        loanCharge = percentageOf(this.amountPercentageAppliedTo);
-                    }
                     this.amount = minimumAndMaximumCap(loanCharge);
                 break;
             }
