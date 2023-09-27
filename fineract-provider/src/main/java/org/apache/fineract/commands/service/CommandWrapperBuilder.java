@@ -3893,4 +3893,12 @@ public class CommandWrapperBuilder {
         this.href = "/prequalification/checklist/" + prequalificationId;
         return this;
     }
+
+    public CommandWrapperBuilder sendGroupForAnalysis(Long prequalificationId) {
+        this.actionName = "REQUESTANALYSIS";
+        this.entityName = "PREQUALIFICATIONS";
+        this.entityId = prequalificationId;
+        this.href = "/prequalification/checklist/" + prequalificationId;
+        return this;
+    }
 }

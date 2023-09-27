@@ -58,9 +58,9 @@ public class PrequalificationChecklistReadPlatformServiceImpl implements Prequal
     }
 
     @Override
-    public PrequalificationChecklistData retrieveHardPolicyValidationResults(final Integer prequalificationId) {
+    public PrequalificationChecklistData retrieveHardPolicyValidationResults(final Long prequalificationId) {
         PrequalificationGroup prequalificationGroup = this.prequalificationGroupRepositoryWrapper
-                .findOneWithNotFoundDetection(Long.valueOf(prequalificationId));
+                .findOneWithNotFoundDetection(prequalificationId);
         final Long productId = prequalificationGroup.getLoanProduct().getId();
         final PrequalificationChecklistWritePlatformServiceImpl.CheckCategoryMapper checkCategoryMapper = new PrequalificationChecklistWritePlatformServiceImpl.CheckCategoryMapper();
         final List<HardPolicyCategoryData> groupPolicies = this.jdbcTemplate.query(checkCategoryMapper.schema(), checkCategoryMapper,

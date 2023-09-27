@@ -82,7 +82,7 @@ public class PrequalificationChecklistApiResource {
     @GET
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
-    public String retrieveHardPolicyValidationResults(@QueryParam("prequalificationId") final Integer prequalificationId,
+    public String retrieveHardPolicyValidationResults(@QueryParam("prequalificationId") final Long prequalificationId,
             @QueryParam("groupId") final Integer groupId, @QueryParam("clientId") final Long clientId, @Context final UriInfo uriInfo) {
         this.context.authenticatedUser().validateHasReadPermission(this.resourceNameForPermissions);
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
@@ -112,12 +112,16 @@ public class PrequalificationChecklistApiResource {
             final CommandWrapper validateCommandRequest = builder.validatePrequalificationHardPolicies(prequalificationId).build();
             result = this.commandsSourceWritePlatformService.logCommandSource(validateCommandRequest);
         }
-        if (is(commandParam, "bureauValidation")) {
+        else if (is(commandParam, "bureauValidation")) {
             final CommandWrapper validateCommandRequest = builder.bureauValidationProcessing(prequalificationId).build();
             result = this.commandsSourceWritePlatformService.logCommandSource(validateCommandRequest);
         }
-        if (is(commandParam, "requestUpdates")) {
+        else if (is(commandParam, "requestUpdates")) {
             final CommandWrapper validateCommandRequest = builder.requestUpdatePrequalification(prequalificationId).build();
+            result = this.commandsSourceWritePlatformService.logCommandSource(validateCommandRequest);
+        }
+        else if (is(commandParam, "sendToAnalysis")) {
+            final CommandWrapper validateCommandRequest = builder.sendGroupForAnalysis(prequalificationId).build();
             result = this.commandsSourceWritePlatformService.logCommandSource(validateCommandRequest);
         } else {
             final CommandWrapper commandRequest = builder.validatePrequalificationHardPolicies(prequalificationId).build();
