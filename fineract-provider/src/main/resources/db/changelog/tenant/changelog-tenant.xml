@@ -106,4 +106,5 @@
     <include file="parts/0087_Add_Buro_Check_Status_to_prequalification_group.xml" relativeToChangelogFile="true"/>
     <include file="parts/0088_Add_Agency_Lead_approval_permissions.xml" relativeToChangelogFile="true"/>
     <include file="parts/0089_FBR_104_create_charge_admin_fee_configurations.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0090_FBR_313_Add_Prequalificatioin_Checklist_log.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
