@@ -16,14 +16,16 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.organisation.prequalification.service;
+package org.apache.fineract.portfolio.charge.domain;
 
-import org.apache.fineract.organisation.prequalification.data.GenericValidationResultSet;
-import org.apache.fineract.organisation.prequalification.data.PrequalificationChecklistData;
+import java.util.List;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
-public interface PrequalificationChecklistReadPlatformService {
+public interface ChargeRangeRepository extends JpaRepository<ChargeRange, Long>, JpaSpecificationExecutor<ChargeRange> {
 
-    PrequalificationChecklistData retrieveHardPolicyValidationResults(final Long prequalificationId);
-
-    GenericValidationResultSet retrieveClientHardPolicyDetails(Long clientId);
+    @Query("SELECT cr FROM ChargeRange cr WHERE cr.charge.id = :chargeId ORDER BY cr.minDay")
+    List<ChargeRange> findByChargeId(@Param("chargeId") Long chargeId);
 }

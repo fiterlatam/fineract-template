@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.infrastructure.codes.service.CodeValueReadPlatformService;
@@ -45,13 +46,14 @@ import org.apache.fineract.organisation.agency.domain.Agency;
 import org.apache.fineract.organisation.agency.domain.AgencyRepositoryWrapper;
 import org.apache.fineract.organisation.prequalification.command.PrequalificationDataValidator;
 import org.apache.fineract.organisation.prequalification.command.PrequalificatoinApiConstants;
+import org.apache.fineract.organisation.prequalification.data.GenericValidationResultSet;
+import org.apache.fineract.organisation.prequalification.data.PrequalificationChecklistData;
 import org.apache.fineract.organisation.prequalification.domain.PreQualificationMemberRepository;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationGroup;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationGroupMember;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationGroupRepositoryWrapper;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationMemberIndication;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationStatus;
-import org.apache.fineract.organisation.prequalification.exception.GroupPreQualificationNotFound;
 import org.apache.fineract.organisation.prequalification.serialization.PrequalificationMemberCommandFromApiJsonDeserializer;
 import org.apache.fineract.portfolio.blacklist.domain.BlacklistStatus;
 import org.apache.fineract.portfolio.client.service.ClientChargeWritePlatformServiceJpaRepositoryImpl;
@@ -83,6 +85,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
     private final ClientReadPlatformService clientReadPlatformService;
     private final CodeValueReadPlatformService codeValueReadPlatformService;
     private final PrequalificationGroupRepositoryWrapper prequalificationGroupRepositoryWrapper;
+    private final PrequalificationChecklistReadPlatformService prequalificationChecklistReadPlatformService;
     private final PreQualificationMemberRepository preQualificationMemberRepository;
     private final GroupRepositoryWrapper groupRepositoryWrapper;
     private final AppUserRepository appUserRepository;
@@ -97,6 +100,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             final ClientReadPlatformService clientReadPlatformService, final AgencyRepositoryWrapper agencyRepositoryWrapper,
             final PrequalificationMemberCommandFromApiJsonDeserializer apiJsonDeserializer,
             final PreQualificationMemberRepository preQualificationMemberRepository,
+            final PrequalificationChecklistReadPlatformService prequalificationChecklistReadPlatformService,
             final CodeValueReadPlatformService codeValueReadPlatformService, final JdbcTemplate jdbcTemplate,
             final PrequalificationGroupRepositoryWrapper prequalificationGroupRepositoryWrapper) {
         this.context = context;
@@ -110,6 +114,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         this.agencyRepositoryWrapper = agencyRepositoryWrapper;
         this.apiJsonDeserializer = apiJsonDeserializer;
         this.preQualificationMemberRepository = preQualificationMemberRepository;
+        this.prequalificationChecklistReadPlatformService = prequalificationChecklistReadPlatformService;
         this.jdbcTemplate = jdbcTemplate;
     }
 
@@ -573,12 +578,35 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         this.context.authenticatedUser();
         final PrequalificationGroup prequalificationGroup = this.prequalificationGroupRepositoryWrapper
                 .findOneWithNotFoundDetection(entityId);
-        if (prequalificationGroup == null) {
-            throw new GroupPreQualificationNotFound(entityId);
-        }
         prequalificationGroup.updateStatus(PrequalificationStatus.PREQUALIFICATION_UPDATE_REQUESTED);
         prequalificationGroup.updateComments(command.stringValueOfParameterNamed("comments"));
         this.prequalificationGroupRepositoryWrapper.save(prequalificationGroup);
+
+        return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withEntityId(prequalificationGroup.getId()).build();
+    }
+
+    @Override
+    public CommandProcessingResult sendForAnalysis(Long entityId, JsonCommand command) {
+        final PrequalificationGroup prequalificationGroup = this.prequalificationGroupRepositoryWrapper
+                .findOneWithNotFoundDetection(entityId);
+
+        PrequalificationChecklistData prequalificationChecklistData = this.prequalificationChecklistReadPlatformService
+                .retrieveHardPolicyValidationResults(entityId);
+        GenericValidationResultSet prequalification = prequalificationChecklistData.getPrequalification();
+
+        List<String> exceptionsList = List.of("ORANGE", "RED", "YELLOW");
+        List<List<String>> rows = prequalification.getRows();
+        AtomicReference<PrequalificationStatus> status = new AtomicReference<>(PrequalificationStatus.AGENCY_LEAD_PENDING_APPROVAL);
+        for (List<String> innerList : rows) {
+            innerList.forEach(item -> {
+                if (exceptionsList.contains(item)) {
+                    status.set(PrequalificationStatus.AGENCY_LEAD_PENDING_APPROVAL_WITH_EXCEPTIONS);
+                }
+            });
+        }
+
+        prequalificationGroup.updateStatus(status.get());
+        prequalificationGroupRepositoryWrapper.save(prequalificationGroup);
 
         return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withEntityId(prequalificationGroup.getId()).build();
     }
