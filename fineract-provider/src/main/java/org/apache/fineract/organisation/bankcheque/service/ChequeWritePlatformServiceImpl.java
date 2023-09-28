@@ -81,7 +81,7 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
         final Long maxBatchNo = this.jdbcTemplate.queryForObject(maxBatchNoSql, Long.class, new Object[] { bankAccId });
         final Long batchNo = ObjectUtils.defaultIfNull(maxBatchNo, 0L) + 1;
         Batch batch = new Batch().setBatchNo(batchNo).setAgency(agency).setBankAccount(bankAccount)
-                .setBankAccNo(bankAccount.getAccountNumber()).setFrom(from).setTo(to);
+                .setBankAccNo(bankAccount.getAccountNumber()).setFrom(from).setTo(to).setDescription(createChequeCommand.getDescription());
         final LocalDateTime localDateTime = DateUtils.getLocalDateTimeOfSystem();
         final Long currentUserId = currentUser.getId();
         batch.stampAudit(currentUserId, localDateTime);
