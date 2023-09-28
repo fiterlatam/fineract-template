@@ -138,10 +138,10 @@ public final class SearchParameters {
                 sortOrder, staffId, accountNo, loanId, savingsId, null, false, null, type, null, null, null);
     }
 
-    public static SearchParameters forBankCheques(final Long agencyId, final String chequeNo, final Long batchId, final Long chequeId,
-            final String status, final Integer offset, final Integer limit, final String orderBy, final String sortOrder) {
+    public static SearchParameters forBankCheques(final Long agencyId, final String chequeNo, final String bankAccNo, final Long batchId,
+            final Long chequeId, final String status, final Integer offset, final Integer limit, final String orderBy,
+            final String sortOrder) {
         final Integer maxLimitAllowed = getCheckedLimit(limit);
-        final String accountNo = null;
         final String name = null;
         final String hierarchy = null;
         final String externalId = null;
@@ -152,7 +152,7 @@ public final class SearchParameters {
         final boolean isSelfUser = false;
         final boolean orphansOnly = false;
         return new SearchParameters(officeId, externalId, name, hierarchy, null, null, offset, maxLimitAllowed, orderBy, sortOrder, staffId,
-                accountNo, loanId, savingsId, orphansOnly, isSelfUser, chequeNo, status, batchId, chequeId, agencyId);
+                bankAccNo, loanId, savingsId, orphansOnly, isSelfUser, chequeNo, status, batchId, chequeId, agencyId);
     }
 
     public static SearchParameters forGroups(final Long officeId, final Long staffId, final String externalId, final String name,

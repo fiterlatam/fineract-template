@@ -151,6 +151,7 @@ public class BankChequeApiResource {
     public String retrieveAll(@Context final UriInfo uriInfo, @QueryParam("paged") @Parameter(description = "paged") final Boolean paged,
             @QueryParam("status") @Parameter(description = "status") final String status,
             @QueryParam("chequeNo") @Parameter(description = "chequeNo") final String chequeNo,
+            @QueryParam("bankAccNo") @Parameter(description = "bankAccNo") final String bankAccNo,
             @QueryParam("batchId") @Parameter(description = "batchId") final Long batchId,
             @QueryParam("agencyId") @Parameter(description = "agencyId") final Long agencyId,
             @QueryParam("chequeId") @Parameter(description = "batchId") final Long chequeId,
@@ -161,8 +162,8 @@ public class BankChequeApiResource {
         this.context.authenticatedUser().validateHasReadPermission(BankChequeApiConstants.BANK_CHECK_RESOURCE_NAME);
         final PaginationParameters parameters = PaginationParameters.instance(paged, offset, limit, orderBy, sortOrder);
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
-        final SearchParameters searchParameters = SearchParameters.forBankCheques(agencyId, chequeNo, batchId, chequeId, status, offset,
-                limit, orderBy, sortOrder);
+        final SearchParameters searchParameters = SearchParameters.forBankCheques(agencyId, chequeNo, bankAccNo, batchId, chequeId, status,
+                offset, limit, orderBy, sortOrder);
         final Page<ChequeData> cheques = this.chequeReadPlatformService.retrieveAll(searchParameters, parameters);
         return this.toApiJsonSerializer.serialize(settings, cheques);
     }
