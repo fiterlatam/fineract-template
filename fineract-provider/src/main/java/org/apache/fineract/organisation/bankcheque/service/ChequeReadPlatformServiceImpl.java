@@ -21,6 +21,7 @@ package org.apache.fineract.organisation.bankcheque.service;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -37,6 +38,8 @@ import org.apache.fineract.infrastructure.core.service.SearchParameters;
 import org.apache.fineract.infrastructure.core.service.database.DatabaseSpecificSQLGenerator;
 import org.apache.fineract.infrastructure.security.utils.ColumnValidator;
 import org.apache.fineract.infrastructure.security.utils.SQLBuilder;
+import org.apache.fineract.organisation.agency.data.AgencyData;
+import org.apache.fineract.organisation.agency.service.AgencyReadPlatformServiceImpl;
 import org.apache.fineract.organisation.bankcheque.data.BatchData;
 import org.apache.fineract.organisation.bankcheque.data.ChequeData;
 import org.apache.fineract.organisation.bankcheque.domain.BankChequeStatus;
@@ -57,6 +60,7 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
     private final ColumnValidator columnValidator;
     private final PaginationHelper paginationHelper;
     private final DatabaseSpecificSQLGenerator sqlGenerator;
+    private final AgencyReadPlatformServiceImpl agencyReadPlatformService;
 
     @Override
     public BatchData retrieveBatch(final Long batchId) {
@@ -82,9 +86,9 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
         final Long maxChequeNo = this.jdbcTemplate.queryForObject(maxChequeNoSql, Long.class, new Object[] { bankAccId });
         Long formValue = ObjectUtils.defaultIfNull(maxChequeNo, 0L) + 1;
 
-        List<EnumOptionData> chequeStatusOptions = List.of(BankChequeStatus.status(1), BankChequeStatus.status(2),
-                BankChequeStatus.status(3), BankChequeStatus.status(4), BankChequeStatus.status(5));
-        return BatchData.builder().from(formValue).statusOptions(chequeStatusOptions).build();
+        List<EnumOptionData> chequeStatusOptions = BankChequeStatus.listAllChequeStatusOptions();
+        final Collection<AgencyData> agencyOptions = this.agencyReadPlatformService.retrieveAllByUser();
+        return BatchData.builder().from(formValue).statusOptions(chequeStatusOptions).agencyOptions(agencyOptions).build();
     }
 
     private static final class ChequeMapper implements RowMapper<ChequeData> {
@@ -232,6 +236,7 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
         final Long agencyId = searchParameters.getAgencyId();
         final String chequeNo = searchParameters.getChequeNo();
         final String status = searchParameters.getStatus();
+        final String bankAccNo = searchParameters.getAccountNo();
         if (batchId != null) {
             extraCriteria.addNonNullCriteria("mpb.id = ", batchId);
         }
@@ -243,6 +248,9 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
         }
         if (chequeNo != null) {
             extraCriteria.addNonNullCriteria("mbc.check_no LIKE", "%" + chequeNo + "%");
+        }
+        if (bankAccNo != null) {
+            extraCriteria.addNonNullCriteria("mba.account_number LIKE", "%" + bankAccNo + "%");
         }
         if (status != null) {
             extraCriteria.addNonNullCriteria("mbc.status_enum LIKE", "%" + status + "%");

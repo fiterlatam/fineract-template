@@ -16,35 +16,16 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.organisation.bankcheque.data;
+package org.apache.fineract.organisation.bankcheque.command;
 
-import java.time.LocalDate;
-import java.util.Collection;
-import java.util.List;
 import lombok.Builder;
 import lombok.Data;
-import org.apache.fineract.infrastructure.core.data.EnumOptionData;
-import org.apache.fineract.organisation.agency.data.AgencyData;
 
 @Builder
 @Data
-public class BatchData {
+public class ApproveChequeIssuanceCommand {
 
-    private Long id;
-    private Long batchNo;
-    private Long bankAccNo;
-    private Long bankAccId;
-    private Long agencyId;
-    private String bankName;
-    private String bankCode;
-    private String agencyName;
-    private Collection<ChequeData> cheques;
-    private Long from;
-    private Long to;
-    private LocalDate createdDate;
-    private Long createdByUserId;
-    private String createdByUsername;
+    private Long chequeId;
     private String description;
-    private List<EnumOptionData> statusOptions;
-    private Collection<AgencyData> agencyOptions;
+
 }

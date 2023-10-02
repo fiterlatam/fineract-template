@@ -210,7 +210,6 @@ public class LoanProduct extends AbstractPersistableCustom {
     @Column(name = "limit_of_days_for_addon", nullable = false)
     private Integer daysLimitAddOn;
 
-
     public static LoanProduct assembleFromJson(final Fund fund, final LoanTransactionProcessingStrategy loanTransactionProcessingStrategy,
             final List<Charge> productCharges, final JsonCommand command, final AprCalculator aprCalculator, FloatingRate floatingRate,
             final List<Rate> productRates) {

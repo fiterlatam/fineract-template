@@ -380,4 +380,60 @@
         </addColumn>
     </changeSet>
 
+    <changeSet author="fineract" id="32">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_bank_check" columnName="disbursed_by_cheque_date"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_bank_check">
+            <column defaultValueComputed="NULL" name="disbursed_by_cheque_date" type="date">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="33">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_bank_check" columnName="issuance_approvedby_id"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_bank_check">
+            <column defaultValueComputed="NULL" name="issuance_approvedby_id" type="BIGINT">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="34">
+        <addForeignKeyConstraint baseColumnNames="issuance_approvedby_id" baseTableName="m_bank_check"
+                                 constraintName="FK20231001_m_bank_check_table_issuance_approvedby_id" deferrable="false" initiallyDeferred="false"
+                                 onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="id"
+                                 referencedTableName="m_appuser" validate="true"/>
+    </changeSet>
+
+    <changeSet id="35" author="fineract">
+        <insert tableName="m_permission">
+            <column name="grouping" value="portfolio" />
+            <column name="code" value="APPROVEISSUANCE_BANKCHEQUE"/>
+            <column name="entity_name" value="BANKCHEQUE" />
+            <column name="action_name" value="APPROVEISSUANCE" />
+            <column name="can_maker_checker" valueBoolean="false" />
+        </insert>
+    </changeSet>
+
+    <changeSet author="fineract" id="36">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_bank_check" columnName="issuance_approvedon_date"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_bank_check">
+            <column defaultValueComputed="NULL" name="issuance_approvedon_date" type="date">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
 </databaseChangeLog>
