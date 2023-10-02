@@ -35,6 +35,7 @@ import org.apache.fineract.infrastructure.security.service.PlatformSecurityConte
 import org.apache.fineract.organisation.agency.domain.Agency;
 import org.apache.fineract.organisation.bankAccount.domain.BankAccount;
 import org.apache.fineract.organisation.bankAccount.domain.BankAccountRepositoryWrapper;
+import org.apache.fineract.organisation.bankcheque.command.ApproveChequeIssuanceCommand;
 import org.apache.fineract.organisation.bankcheque.command.CreateChequeCommand;
 import org.apache.fineract.organisation.bankcheque.command.ReassignChequeCommand;
 import org.apache.fineract.organisation.bankcheque.command.UpdateChequeCommand;
@@ -45,6 +46,7 @@ import org.apache.fineract.organisation.bankcheque.domain.Cheque;
 import org.apache.fineract.organisation.bankcheque.domain.ChequeBatchRepositoryWrapper;
 import org.apache.fineract.organisation.bankcheque.domain.ChequeJpaRepository;
 import org.apache.fineract.organisation.bankcheque.exception.BankChequeException;
+import org.apache.fineract.organisation.bankcheque.serialization.ApproveChequeIssuanceCommandFromApiJsonDeserializer;
 import org.apache.fineract.organisation.bankcheque.serialization.CreateChequeCommandFromApiJsonDeserializer;
 import org.apache.fineract.organisation.bankcheque.serialization.ReassignChequeCommandFromApiJsonDeserializer;
 import org.apache.fineract.organisation.bankcheque.serialization.UpdateChequeCommandFromApiJsonDeserializer;
@@ -52,6 +54,7 @@ import org.apache.fineract.organisation.bankcheque.serialization.VoidChequeComma
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Slf4j
@@ -67,6 +70,7 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
     private final ChequeJpaRepository chequeJpaRepository;
     private final ReassignChequeCommandFromApiJsonDeserializer reassignChequeCommandFromApiJsonDeserializer;
     private final VoidChequeCommandFromApiJsonDeserializer voidChequeCommandFromApiJsonDeserializer;
+    private final ApproveChequeIssuanceCommandFromApiJsonDeserializer approveChequeIssuanceCommandFromApiJsonDeserializer;
 
     @Override
     public CommandProcessingResult createBatch(JsonCommand command) {
@@ -204,6 +208,7 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
     }
 
     @Override
+    @Transactional
     public CommandProcessingResult voidCheque(final Long chequeId, JsonCommand command) {
         final AppUser currentUser = this.context.authenticatedUser();
         VoidChequeCommand voidChequeCommand = voidChequeCommandFromApiJsonDeserializer.commandFromApiJson(command.json());
@@ -219,5 +224,27 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
         chequeJpaRepository.saveAndFlush(cheque);
         return new CommandProcessingResultBuilder().withCommandId(command.commandId())
                 .withResourceIdAsString(String.valueOf(command.entityId())).withEntityId(command.entityId()).build();
+    }
+
+    @Transactional
+    @Override
+    public CommandProcessingResult approveChequeIssuance(JsonCommand command) {
+        final AppUser currentUser = this.context.authenticatedUser();
+        List<ApproveChequeIssuanceCommand> approveChequeIssuanceCommands = this.approveChequeIssuanceCommandFromApiJsonDeserializer
+                .commandFromApiJson(command.json());
+        for (final ApproveChequeIssuanceCommand approveChequeIssuanceCommand : approveChequeIssuanceCommands) {
+            final Cheque cheque = this.chequeBatchRepositoryWrapper
+                    .findOneChequeWithNotFoundDetection(approveChequeIssuanceCommand.getChequeId());
+            cheque.setStatus(BankChequeStatus.PENDING_AUTHORIZATION_BY_ACCOUNTING.getValue());
+            cheque.setDescription(approveChequeIssuanceCommand.getDescription());
+            final LocalDateTime localDateTime = DateUtils.getLocalDateTimeOfSystem();
+            LocalDate localDate = DateUtils.getBusinessLocalDate();
+            final Long currentUserId = currentUser.getId();
+            cheque.stampAudit(currentUserId, localDateTime);
+            cheque.setIssuanceApprovedBy(currentUser);
+            cheque.setIssuanceApprovedOnDate(localDate);
+            this.chequeBatchRepositoryWrapper.updateCheque(cheque);
+        }
+        return new CommandProcessingResultBuilder().withCommandId(command.commandId()).build();
     }
 }

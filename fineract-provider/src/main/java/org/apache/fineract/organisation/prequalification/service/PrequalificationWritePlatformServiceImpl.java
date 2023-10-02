@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
+import javax.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.infrastructure.codes.service.CodeValueReadPlatformService;
@@ -74,8 +75,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.util.ObjectUtils;
-
-import javax.transaction.Transactional;
 
 @Service
 @Slf4j
@@ -312,8 +311,8 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         prequalificationGroup.updateStatus(PrequalificationStatus.CONSENT_ADDED);
         this.prequalificationGroupRepositoryWrapper.saveAndFlush(prequalificationGroup);
         AppUser addedBy = this.context.getAuthenticatedUserIfPresent();
-        PrequalificationStatusLog statusLog = PrequalificationStatusLog.fromJson(addedBy,
-                fromStatus, prequalificationGroup.getStatus(), comment, prequalificationGroup);
+        PrequalificationStatusLog statusLog = PrequalificationStatusLog.fromJson(addedBy, fromStatus, prequalificationGroup.getStatus(),
+                comment, prequalificationGroup);
         this.preQualificationLogRepository.saveAndFlush(statusLog);
         return groupId;
     }
@@ -602,8 +601,8 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         prequalificationGroup.updateComments(comments);
         this.prequalificationGroupRepositoryWrapper.save(prequalificationGroup);
 
-        PrequalificationStatusLog statusLog = PrequalificationStatusLog.fromJson(addedBy, fromStatus,
-                prequalificationGroup.getStatus(),comments , prequalificationGroup);
+        PrequalificationStatusLog statusLog = PrequalificationStatusLog.fromJson(addedBy, fromStatus, prequalificationGroup.getStatus(),
+                comments, prequalificationGroup);
 
         this.preQualificationLogRepository.saveAndFlush(statusLog);
         return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withEntityId(prequalificationGroup.getId()).build();
@@ -635,8 +634,8 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
 
         this.prequalificationGroupRepositoryWrapper.save(prequalificationGroup);
 
-        PrequalificationStatusLog statusLog = PrequalificationStatusLog.fromJson(appUser, fromStatus,
-                prequalificationGroup.getStatus(),null , prequalificationGroup);
+        PrequalificationStatusLog statusLog = PrequalificationStatusLog.fromJson(appUser, fromStatus, prequalificationGroup.getStatus(),
+                null, prequalificationGroup);
 
         this.preQualificationLogRepository.saveAndFlush(statusLog);
 
