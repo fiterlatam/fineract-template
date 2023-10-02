@@ -292,6 +292,9 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             } else if (type.equals("checked")) {
                 extraCriteria += " and g.status = " + PrequalificationStatus.BURO_CHECKED.getValue().toString() + " "
                         + "and (g.id not in (select prequalification_id from m_group where prequalification_id is not null)) ";
+            }else if (type.equals("analysis")) {
+                extraCriteria += " and g.status IN( " + PrequalificationStatus.AGENCY_LEAD_PENDING_APPROVAL.getValue().toString() + ", "
+                        + PrequalificationStatus.AGENCY_LEAD_PENDING_APPROVAL_WITH_EXCEPTIONS.getValue().toString() + ") ";
             }
         }
 
@@ -311,8 +314,13 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                     	g.prequalification_number AS prequalificationNumber,
                     	g.status,
                     	g.prequalification_duration as prequalilficationTimespan,
-                    	g.created_at,
                     	g.comments,
+                    	g.created_at,
+                    	sl.from_status as previousStatus,
+                    	sl.date_created as statusChangedOn,
+                    	(case when g.previous_prequalification is not null THEN 'Recredito' ELSE 'Nuevo' END) as processType,
+                    	(case when (select count(*) from m_prequalification_status_log where prequalification_id = g.id and to_status = g.status )>0 THEN 'Reproceso' ELSE 'Nuevo' END) as processQuality, 
+                    	concat(mu.firstname, ' ', mu.lastname) as statusChangedBy,
                     	ma.name AS agencyName,
                     	ma.id AS agencyId,
                     	cg.display_name AS groupName,
@@ -373,7 +381,11 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                     LEFT JOIN m_group cg ON
                     	cg.id = g.group_id
                     LEFT JOIN m_group pc ON
-                    	pc.id = g.center_id
+                    	pc.id = g.center_id                    
+                    LEFT JOIN m_prequalification_status_log sl ON
+                    	sl.prequalification_id = g.id AND sl.to_status=g.status   
+                    LEFT JOIN m_appuser mu ON
+                    	mu.id = sl.updatedby_id
                     INNER JOIN m_appuser fa ON
                     	fa.id = g.facilitator
                     """;
@@ -412,13 +424,23 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             final Long greenValidationCount = rs.getLong("greenValidationCount");
             final Long yellowValidationCount = rs.getLong("yellowValidationCount");
             final Long prequalilficationTimespan = rs.getLong("prequalilficationTimespan");
+            final Integer previousStatus = rs.getInt("previousStatus");
+            final String statusChangedBy = rs.getString("statusChangedBy");
+            final LocalDate statusChangedOn = JdbcSupport.getLocalDate(rs, "statusChangedOn");
+            final String processType = rs.getString("processType");
+            final String processQuality = rs.getString("processQuality");
 
             if (StringUtils.isBlank(groupName)) {
                 groupName = newGroupName;
             }
+            EnumOptionData lastPrequalificationStatus = null;
+            if (previousStatus != null) {
+                lastPrequalificationStatus = PreQualificationsEnumerations.status(previousStatus);
+            }
             return GroupPrequalificationData.instance(id, prequalificationNumber, status, agencyName, null, centerName, groupName,
                     productName, addedBy, createdAt, comments, groupId, agencyId, centerId, productId, facilitatorId, facilitatorName,
-                    greenValidationCount, yellowValidationCount, orangeValidationCount, redValidationCount, prequalilficationTimespan);
+                    greenValidationCount, yellowValidationCount, orangeValidationCount, redValidationCount, prequalilficationTimespan, lastPrequalificationStatus, statusChangedBy,statusChangedOn,
+                    processType, processQuality);
 
         }
     }
