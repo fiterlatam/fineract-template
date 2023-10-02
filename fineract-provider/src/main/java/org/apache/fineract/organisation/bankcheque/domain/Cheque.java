@@ -75,6 +75,13 @@ public class Cheque extends AbstractAuditableCustom {
     @Column(name = "guarantee_amount")
     private BigDecimal guaranteeAmount;
 
+    @Column(name = "issuance_approvedon_date")
+    private LocalDate issuanceApprovedOnDate;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "issuance_approvedby_id")
+    private AppUser issuanceApprovedBy;
+
     public Cheque setChequeNo(Long chequeNo) {
         this.chequeNo = chequeNo;
         return this;
@@ -136,5 +143,13 @@ public class Cheque extends AbstractAuditableCustom {
 
     public void setGuaranteeAmount(BigDecimal guaranteeAmount) {
         this.guaranteeAmount = guaranteeAmount;
+    }
+
+    public void setIssuanceApprovedOnDate(LocalDate issuanceApprovedOnDate) {
+        this.issuanceApprovedOnDate = issuanceApprovedOnDate;
+    }
+
+    public void setIssuanceApprovedBy(AppUser issuanceApprovedBy) {
+        this.issuanceApprovedBy = issuanceApprovedBy;
     }
 }

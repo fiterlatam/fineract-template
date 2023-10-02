@@ -86,8 +86,7 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
         final Long maxChequeNo = this.jdbcTemplate.queryForObject(maxChequeNoSql, Long.class, new Object[] { bankAccId });
         Long formValue = ObjectUtils.defaultIfNull(maxChequeNo, 0L) + 1;
 
-        List<EnumOptionData> chequeStatusOptions = List.of(BankChequeStatus.status(1), BankChequeStatus.status(2),
-                BankChequeStatus.status(3), BankChequeStatus.status(4), BankChequeStatus.status(5));
+        List<EnumOptionData> chequeStatusOptions = BankChequeStatus.listAllChequeStatusOptions();
         final Collection<AgencyData> agencyOptions = this.agencyReadPlatformService.retrieveAllByUser();
         return BatchData.builder().from(formValue).statusOptions(chequeStatusOptions).agencyOptions(agencyOptions).build();
     }

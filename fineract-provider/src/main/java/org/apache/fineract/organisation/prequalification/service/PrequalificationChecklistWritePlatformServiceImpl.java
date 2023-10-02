@@ -147,8 +147,8 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
         prequalificationGroupRepositoryWrapper.saveAndFlush(prequalificationGroup);
         this.validationChecklistResultRepository.saveAll(validationChecklistResults);
 
-        PrequalificationStatusLog statusLog = PrequalificationStatusLog.fromJson(appUser, fromStatus,
-                prequalificationGroup.getStatus(), null, prequalificationGroup);
+        PrequalificationStatusLog statusLog = PrequalificationStatusLog.fromJson(appUser, fromStatus, prequalificationGroup.getStatus(),
+                null, prequalificationGroup);
 
         this.preQualificationStatusLogRepository.saveAndFlush(statusLog);
 

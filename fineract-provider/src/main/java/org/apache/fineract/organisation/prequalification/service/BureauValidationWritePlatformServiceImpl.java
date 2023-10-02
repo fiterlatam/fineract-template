@@ -86,8 +86,8 @@ public class BureauValidationWritePlatformServiceImpl implements BureauValidatio
         prequalificationGroup.updateStatus(PrequalificationStatus.BURO_CHECKED);
         this.prequalificationGroupRepositoryWrapper.save(prequalificationGroup);
 
-        PrequalificationStatusLog statusLog = PrequalificationStatusLog.fromJson(addedBy, fromStatus,
-                prequalificationGroup.getStatus(), null, prequalificationGroup);
+        PrequalificationStatusLog statusLog = PrequalificationStatusLog.fromJson(addedBy, fromStatus, prequalificationGroup.getStatus(),
+                null, prequalificationGroup);
 
         this.preQualificationStatusLogRepository.saveAndFlush(statusLog);
 

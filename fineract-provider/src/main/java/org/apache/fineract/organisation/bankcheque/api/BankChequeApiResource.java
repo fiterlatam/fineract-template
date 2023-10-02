@@ -81,7 +81,7 @@ public class BankChequeApiResource {
     @RequestBody(required = true, content = @Content(schema = @Schema(implementation = BankChequeApiSwagger.PostChequeBatchRequest.class)))
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = BankChequeApiSwagger.PostChequeBatchResponse.class))) })
-    public String chequeRequest(@Parameter(hidden = true) final String apiRequestBodyAsJson,
+    public String chequeRequests(@Parameter(hidden = true) final String apiRequestBodyAsJson,
             @QueryParam("commandParam") @Parameter(description = "commandParam") final String commandParam,
             @QueryParam("chequeId") @Parameter(description = "chequeId") final Long chequeId) {
         final CommandWrapperBuilder builder = new CommandWrapperBuilder().withJson(apiRequestBodyAsJson);
@@ -102,10 +102,14 @@ public class BankChequeApiResource {
         } else if (is(commandParam, "authorizevoidance")) {
             commandRequest = builder.authorizeChequeVoidance(chequeId).build();
             result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
+        } else if (is(commandParam, "approveissuance")) {
+            commandRequest = builder.approveChequesIssuance().build();
+            result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
         }
+
         if (result == null) {
             throw new UnrecognizedQueryParamException("command", commandParam, "reassigncheque", "authorizereassignment", "createbatch",
-                    "voidcheque", "authorizevoidance");
+                    "voidcheque", "authorizevoidance", "approveissuance");
         }
         return this.toApiJsonSerializer.serialize(result);
     }

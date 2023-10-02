@@ -18,17 +18,16 @@
  */
 package org.apache.fineract.organisation.prequalification.domain;
 
-import lombok.Getter;
-import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
-import org.apache.fineract.infrastructure.core.service.DateUtils;
-import org.apache.fineract.useradministration.domain.AppUser;
-
+import java.time.LocalDate;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
-import java.time.LocalDate;
+import lombok.Getter;
+import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
+import org.apache.fineract.infrastructure.core.service.DateUtils;
+import org.apache.fineract.useradministration.domain.AppUser;
 
 @Entity
 @Table(name = "m_prequalification_status_log")
@@ -60,7 +59,7 @@ public class PrequalificationStatusLog extends AbstractPersistableCustom {
     }
 
     private PrequalificationStatusLog(final AppUser appUser, final Integer fromStatus, final Integer toStatus, final String comments,
-                                      final PrequalificationGroup group) {
+            final PrequalificationGroup group) {
         this.dateCreated = DateUtils.getLocalDateOfTenant();
         this.fromStatus = fromStatus;
         this.toStatus = toStatus;
@@ -69,8 +68,8 @@ public class PrequalificationStatusLog extends AbstractPersistableCustom {
         this.addedBy = appUser;
     }
 
-    public static PrequalificationStatusLog fromJson(final AppUser appUser, final Integer fromStatus, final Integer toStatus, final String comments,
-                                                     final PrequalificationGroup group) {
+    public static PrequalificationStatusLog fromJson(final AppUser appUser, final Integer fromStatus, final Integer toStatus,
+            final String comments, final PrequalificationGroup group) {
         return new PrequalificationStatusLog(appUser, fromStatus, toStatus, comments, group);
     }
 }
