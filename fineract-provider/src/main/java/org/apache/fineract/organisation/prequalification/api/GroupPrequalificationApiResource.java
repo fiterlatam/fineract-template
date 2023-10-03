@@ -189,8 +189,8 @@ public class GroupPrequalificationApiResource {
                 status(PrequalificationStatus.BLACKLIST_CHECKED), status(PrequalificationStatus.COMPLETED),
                 status(PrequalificationStatus.HARD_POLICY_CHECKED), status(PrequalificationStatus.TIME_EXPIRED));
         if (StringUtils.equalsIgnoreCase(type,"analysis")){
-            statusOptions = Arrays.asList(status(PrequalificationStatus.AGENCY_LEAD_PENDING_APPROVAL),
-                    status(PrequalificationStatus.AGENCY_LEAD_PENDING_APPROVAL_WITH_EXCEPTIONS));
+            statusOptions = Arrays.asList(status(PrequalificationStatus.ANALYSIS_UNIT_PENDING_APPROVAL),
+                    status(PrequalificationStatus.ANALYSIS_UNIT_PENDING_APPROVAL_WITH_EXCEPTIONS));
         }
 
         GlobalConfigurationPropertyData timespan = this.configurationReadPlatformService

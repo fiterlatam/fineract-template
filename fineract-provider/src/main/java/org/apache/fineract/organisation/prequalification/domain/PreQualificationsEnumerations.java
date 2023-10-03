@@ -68,6 +68,14 @@ public final class PreQualificationsEnumerations {
                     PrequalificationStatus.AGENCY_LEAD_PENDING_APPROVAL_WITH_EXCEPTIONS.getValue().longValue(),
                     PrequalificationStatus.AGENCY_LEAD_PENDING_APPROVAL_WITH_EXCEPTIONS.getCode(),
                     "AGENCY_LEAD_PENDING_APPROVAL_WITH_EXCEPTIONS");
+            case ANALYSIS_UNIT_PENDING_APPROVAL -> new EnumOptionData(
+                    PrequalificationStatus.ANALYSIS_UNIT_PENDING_APPROVAL.getValue().longValue(),
+                    PrequalificationStatus.ANALYSIS_UNIT_PENDING_APPROVAL.getCode(),
+                    "ANALYSIS_UNIT_PENDING_APPROVAL");
+            case ANALYSIS_UNIT_PENDING_APPROVAL_WITH_EXCEPTIONS -> new EnumOptionData(
+                    PrequalificationStatus.ANALYSIS_UNIT_PENDING_APPROVAL_WITH_EXCEPTIONS.getValue().longValue(),
+                    PrequalificationStatus.ANALYSIS_UNIT_PENDING_APPROVAL_WITH_EXCEPTIONS.getCode(),
+                    "ANALYSIS_UNIT_PENDING_APPROVAL_WITH_EXCEPTIONS");
             default -> new EnumOptionData(PrequalificationStatus.INVALID.getValue().longValue(), PrequalificationStatus.INVALID.getCode(),
                     "INVALID");
         };
