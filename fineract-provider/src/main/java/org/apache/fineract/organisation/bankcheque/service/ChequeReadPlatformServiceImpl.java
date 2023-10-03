@@ -21,6 +21,7 @@ package org.apache.fineract.organisation.bankcheque.service;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -34,16 +35,24 @@ import org.apache.fineract.infrastructure.core.data.PaginationParametersDataVali
 import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
 import org.apache.fineract.infrastructure.core.service.Page;
 import org.apache.fineract.infrastructure.core.service.PaginationHelper;
-import org.apache.fineract.infrastructure.core.service.SearchParameters;
 import org.apache.fineract.infrastructure.core.service.database.DatabaseSpecificSQLGenerator;
+import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.infrastructure.security.utils.ColumnValidator;
 import org.apache.fineract.infrastructure.security.utils.SQLBuilder;
 import org.apache.fineract.organisation.agency.data.AgencyData;
 import org.apache.fineract.organisation.agency.service.AgencyReadPlatformServiceImpl;
 import org.apache.fineract.organisation.bankcheque.data.BatchData;
 import org.apache.fineract.organisation.bankcheque.data.ChequeData;
+import org.apache.fineract.organisation.bankcheque.data.ChequeSearchParams;
 import org.apache.fineract.organisation.bankcheque.domain.BankChequeStatus;
 import org.apache.fineract.organisation.bankcheque.exception.BatchNotFoundException;
+import org.apache.fineract.organisation.office.domain.OfficeHierarchyLevel;
+import org.apache.fineract.portfolio.group.data.CenterData;
+import org.apache.fineract.portfolio.group.data.GroupGeneralData;
+import org.apache.fineract.portfolio.group.service.CenterReadPlatformServiceImpl;
+import org.apache.fineract.portfolio.group.service.GroupReadPlatformService;
+import org.apache.fineract.useradministration.data.AppUserData;
+import org.apache.fineract.useradministration.service.AppUserReadPlatformService;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Component;
@@ -61,6 +70,10 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
     private final PaginationHelper paginationHelper;
     private final DatabaseSpecificSQLGenerator sqlGenerator;
     private final AgencyReadPlatformServiceImpl agencyReadPlatformService;
+    private final PlatformSecurityContext context;
+    private final CenterReadPlatformServiceImpl centerReadPlatformService;
+    private final AppUserReadPlatformService appUserReadPlatformService;
+    private final GroupReadPlatformService groupReadPlatformService;
 
     @Override
     public BatchData retrieveBatch(final Long batchId) {
@@ -88,7 +101,13 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
 
         List<EnumOptionData> chequeStatusOptions = BankChequeStatus.listAllChequeStatusOptions();
         final Collection<AgencyData> agencyOptions = this.agencyReadPlatformService.retrieveAllByUser();
-        return BatchData.builder().from(formValue).statusOptions(chequeStatusOptions).agencyOptions(agencyOptions).build();
+        final Collection<CenterData> centerOptions = this.centerReadPlatformService
+                .retrieveAllForDropdown(this.context.authenticatedUser().getOffice().getId());
+        final List<AppUserData> facilitatorOptions = new ArrayList<>(
+                this.appUserReadPlatformService.retrieveUsersUnderHierarchy(Long.valueOf(OfficeHierarchyLevel.GRUPO.getValue())));
+        final Collection<GroupGeneralData> groupOptions = this.groupReadPlatformService.retrieveAll(null, null);
+        return BatchData.builder().from(formValue).statusOptions(chequeStatusOptions).agencyOptions(agencyOptions)
+                .groupOptions(groupOptions).centerOptions(centerOptions).facilitatorOptions(facilitatorOptions).build();
     }
 
     private static final class ChequeMapper implements RowMapper<ChequeData> {
@@ -118,6 +137,9 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
                     	voidauthorizedby.username AS voidAuthorizedByUsername,
                     	lastmodifiedby.username AS lastModifiedByUsername
                     FROM m_bank_check mbc
+                    LEFT JOIN m_loan ml ON ml.cheque_id = mbc.id
+                    LEFT JOIN m_group mg ON mg.id = ml.group_id
+                    LEFT JOIN m_group mpg ON mpg.id = mg.parent_id
                     LEFT JOIN m_payment_batch mpb ON mpb.id = mbc.batch_id
                     LEFT JOIN m_bank_account mba ON mba.id = mpb.bank_acc_id
                     LEFT JOIN m_bank mb ON mb.id = mba.bank_id
@@ -224,19 +246,24 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
     }
 
     @Override
-    public Page<ChequeData> retrieveAll(SearchParameters searchParameters, PaginationParameters parameters) {
+    public Page<ChequeData> retrieveAll(final ChequeSearchParams chequeSearchParams, PaginationParameters parameters) {
         final Set<String> supportedOrderByValues = new HashSet<>(List.of("chequeNo"));
         this.paginationParametersDataValidator.validateParameterValues(parameters, supportedOrderByValues, "cheques");
         final StringBuilder sqlBuilder = new StringBuilder(200);
         sqlBuilder.append("SELECT ").append(this.sqlGenerator.calcFoundRows()).append(" ");
         sqlBuilder.append(this.chequeMapper.schema());
         final SQLBuilder extraCriteria = new SQLBuilder();
-        final Long batchId = searchParameters.getBatchId();
-        final Long chequeId = searchParameters.getChequeId();
-        final Long agencyId = searchParameters.getAgencyId();
-        final String chequeNo = searchParameters.getChequeNo();
-        final String status = searchParameters.getStatus();
-        final String bankAccNo = searchParameters.getAccountNo();
+        final Long batchId = chequeSearchParams.getBatchId();
+        final Long chequeId = chequeSearchParams.getChequeId();
+        final Long agencyId = chequeSearchParams.getAgencyId();
+        final String chequeNo = chequeSearchParams.getChequeNo();
+        final String status = chequeSearchParams.getStatus();
+        final String bankAccNo = chequeSearchParams.getBankAccNo();
+        final Long bankAccId = chequeSearchParams.getBankAccId();
+        final Long from = chequeSearchParams.getFrom();
+        final Long to = chequeSearchParams.getTo();
+        final Long groupId = chequeSearchParams.getGroupId();
+        final Long centerId = chequeSearchParams.getCenterId();
         if (batchId != null) {
             extraCriteria.addNonNullCriteria("mpb.id = ", batchId);
         }
@@ -255,17 +282,33 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
         if (status != null) {
             extraCriteria.addNonNullCriteria("mbc.status_enum LIKE", "%" + status + "%");
         }
+        if (bankAccId != null) {
+            extraCriteria.addNonNullCriteria("mba.id = ", bankAccId);
+        }
+        if (from != null) {
+            extraCriteria.addNonNullCriteria("mbc.check_no >= ", from);
+        }
+        if (to != null) {
+            extraCriteria.addNonNullCriteria("mbc.check_no <= ", to);
+        }
+        if (groupId != null) {
+            extraCriteria.addNonNullCriteria("mg.id = ", groupId);
+        }
+        if (centerId != null) {
+            extraCriteria.addNonNullCriteria("mpg.id = ", centerId);
+        }
+
         sqlBuilder.append(" ").append(extraCriteria.getSQLTemplate());
         if (parameters.isOrderByRequested()) {
-            sqlBuilder.append(" order by ").append(searchParameters.getOrderBy()).append(' ').append(searchParameters.getSortOrder());
-            this.columnValidator.validateSqlInjection(sqlBuilder.toString(), searchParameters.getOrderBy(),
-                    searchParameters.getSortOrder());
+            sqlBuilder.append(" order by ").append(chequeSearchParams.getOrderBy()).append(' ').append(chequeSearchParams.getSortOrder());
+            this.columnValidator.validateSqlInjection(sqlBuilder.toString(), chequeSearchParams.getOrderBy(),
+                    chequeSearchParams.getSortOrder());
         }
 
         if (parameters.isLimited()) {
-            sqlBuilder.append(" limit ").append(searchParameters.getLimit());
-            if (searchParameters.isOffset()) {
-                sqlBuilder.append(" offset ").append(searchParameters.getOffset());
+            sqlBuilder.append(" limit ").append(chequeSearchParams.getLimit());
+            if (chequeSearchParams.getOffset() != null) {
+                sqlBuilder.append(" offset ").append(chequeSearchParams.getOffset());
             }
         }
         return this.paginationHelper.fetchPage(this.jdbcTemplate, sqlBuilder.toString(), extraCriteria.getArguments(), this.chequeMapper);

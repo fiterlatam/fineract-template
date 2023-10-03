@@ -82,6 +82,13 @@ public class Cheque extends AbstractAuditableCustom {
     @JoinColumn(name = "issuance_approvedby_id")
     private AppUser issuanceApprovedBy;
 
+    @Column(name = "issuance_authorizedon_date")
+    private LocalDate issuanceAuthorizeOnDate;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "issuance_authorizedby_id")
+    private AppUser issuanceAuthorizeBy;
+
     public Cheque setChequeNo(Long chequeNo) {
         this.chequeNo = chequeNo;
         return this;
@@ -151,5 +158,13 @@ public class Cheque extends AbstractAuditableCustom {
 
     public void setIssuanceApprovedBy(AppUser issuanceApprovedBy) {
         this.issuanceApprovedBy = issuanceApprovedBy;
+    }
+
+    public void setIssuanceAuthorizeOnDate(LocalDate issuanceAuthorizeOnDate) {
+        this.issuanceAuthorizeOnDate = issuanceAuthorizeOnDate;
+    }
+
+    public void setIssuanceAuthorizeBy(AppUser issuanceAuthorizeBy) {
+        this.issuanceAuthorizeBy = issuanceAuthorizeBy;
     }
 }
