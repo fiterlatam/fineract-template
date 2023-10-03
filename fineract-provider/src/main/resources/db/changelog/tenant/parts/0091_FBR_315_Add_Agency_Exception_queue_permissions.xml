@@ -31,5 +31,14 @@
             <column name="can_maker_checker" valueBoolean="false" />
         </insert>
     </changeSet>
+    <changeSet author="fineract" id="2">
+        <insert tableName="m_permission">
+            <column name="grouping" value="portfolio" />
+            <column name="code" value="VIEW_ANALYSIS_QUEUE"/>
+            <column name="entity_name" value="ANALYSIS_QUEUE" />
+            <column name="action_name" value="VIEW" />
+            <column name="can_maker_checker" valueBoolean="false" />
+        </insert>
+    </changeSet>
 
 </databaseChangeLog>

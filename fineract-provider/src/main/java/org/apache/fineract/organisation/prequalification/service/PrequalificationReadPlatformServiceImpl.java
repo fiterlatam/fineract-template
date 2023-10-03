@@ -293,8 +293,8 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                 extraCriteria += " and g.status = " + PrequalificationStatus.BURO_CHECKED.getValue().toString() + " "
                         + "and (g.id not in (select prequalification_id from m_group where prequalification_id is not null)) ";
             }else if (type.equals("analysis")) {
-                extraCriteria += " and g.status IN( " + PrequalificationStatus.AGENCY_LEAD_PENDING_APPROVAL.getValue().toString() + ", "
-                        + PrequalificationStatus.AGENCY_LEAD_PENDING_APPROVAL_WITH_EXCEPTIONS.getValue().toString() + ") ";
+                extraCriteria += " and g.status IN( " + PrequalificationStatus.ANALYSIS_UNIT_PENDING_APPROVAL.getValue().toString() + ", "
+                        + PrequalificationStatus.ANALYSIS_UNIT_PENDING_APPROVAL_WITH_EXCEPTIONS.getValue().toString() + ") ";
             }
             else if (type.equals("exceptionsqueue")) {
                 extraCriteria += " and g.status IN( " + PrequalificationStatus.AGENCY_LEAD_PENDING_APPROVAL.getValue().toString() + ", "
