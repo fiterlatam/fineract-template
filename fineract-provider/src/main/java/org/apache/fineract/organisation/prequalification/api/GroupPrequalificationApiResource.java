@@ -43,7 +43,6 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.UriInfo;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.commands.domain.CommandWrapper;
 import org.apache.fineract.commands.service.CommandWrapperBuilder;
@@ -188,12 +187,12 @@ public class GroupPrequalificationApiResource {
         List<EnumOptionData> statusOptions = Arrays.asList(status(PrequalificationStatus.CONSENT_ADDED),
                 status(PrequalificationStatus.BLACKLIST_CHECKED), status(PrequalificationStatus.COMPLETED),
                 status(PrequalificationStatus.HARD_POLICY_CHECKED), status(PrequalificationStatus.TIME_EXPIRED));
-        if (StringUtils.equalsIgnoreCase(type,"analysis")){
-            statusOptions = Arrays.asList(status(PrequalificationStatus.AGENCY_LEAD_PENDING_APPROVAL),
-                    status(PrequalificationStatus.AGENCY_LEAD_PENDING_APPROVAL_WITH_EXCEPTIONS));
+        if (StringUtils.equalsIgnoreCase(type, "analysis")) {
+            statusOptions = Arrays.asList(status(PrequalificationStatus.ANALYSIS_UNIT_PENDING_APPROVAL),
+                    status(PrequalificationStatus.ANALYSIS_UNIT_PENDING_APPROVAL_WITH_EXCEPTIONS));
         }
 
-        if (StringUtils.equalsIgnoreCase(type,"exceptionsqueue")){
+        if (StringUtils.equalsIgnoreCase(type, "exceptionsqueue")) {
             statusOptions = Arrays.asList(status(PrequalificationStatus.AGENCY_LEAD_PENDING_APPROVAL),
                     status(PrequalificationStatus.AGENCY_LEAD_PENDING_APPROVAL_WITH_EXCEPTIONS));
         }
