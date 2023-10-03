@@ -292,11 +292,10 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             } else if (type.equals("checked")) {
                 extraCriteria += " and g.status = " + PrequalificationStatus.BURO_CHECKED.getValue().toString() + " "
                         + "and (g.id not in (select prequalification_id from m_group where prequalification_id is not null)) ";
-            }else if (type.equals("analysis")) {
+            } else if (type.equals("analysis")) {
                 extraCriteria += " and g.status IN( " + PrequalificationStatus.ANALYSIS_UNIT_PENDING_APPROVAL.getValue().toString() + ", "
                         + PrequalificationStatus.ANALYSIS_UNIT_PENDING_APPROVAL_WITH_EXCEPTIONS.getValue().toString() + ") ";
-            }
-            else if (type.equals("exceptionsqueue")) {
+            } else if (type.equals("exceptionsqueue")) {
                 extraCriteria += " and g.status IN( " + PrequalificationStatus.AGENCY_LEAD_PENDING_APPROVAL.getValue().toString() + ", "
                         + PrequalificationStatus.AGENCY_LEAD_PENDING_APPROVAL_WITH_EXCEPTIONS.getValue().toString() + ") ";
             }
@@ -323,7 +322,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                     	sl.from_status as previousStatus,
                     	sl.date_created as statusChangedOn,
                     	(case when g.previous_prequalification is not null THEN 'Recredito' ELSE 'Nuevo' END) as processType,
-                    	(case when (select count(*) from m_prequalification_status_log where prequalification_id = g.id and to_status = g.status )>0 THEN 'Reproceso' ELSE 'Nuevo' END) as processQuality, 
+                    	(case when (select count(*) from m_prequalification_status_log where prequalification_id = g.id and to_status = g.status )>0 THEN 'Reproceso' ELSE 'Nuevo' END) as processQuality,
                     	concat(mu.firstname, ' ', mu.lastname) as statusChangedBy,
                     	ma.name AS agencyName,
                     	ma.id AS agencyId,
@@ -385,9 +384,9 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                     LEFT JOIN m_group cg ON
                     	cg.id = g.group_id
                     LEFT JOIN m_group pc ON
-                    	pc.id = g.center_id                    
+                    	pc.id = g.center_id
                     LEFT JOIN m_prequalification_status_log sl ON
-                    	sl.prequalification_id = g.id AND sl.to_status=g.status   
+                    	sl.prequalification_id = g.id AND sl.to_status=g.status
                     LEFT JOIN m_appuser mu ON
                     	mu.id = sl.updatedby_id
                     INNER JOIN m_appuser fa ON
@@ -443,8 +442,8 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             }
             return GroupPrequalificationData.instance(id, prequalificationNumber, status, agencyName, null, centerName, groupName,
                     productName, addedBy, createdAt, comments, groupId, agencyId, centerId, productId, facilitatorId, facilitatorName,
-                    greenValidationCount, yellowValidationCount, orangeValidationCount, redValidationCount, prequalilficationTimespan, lastPrequalificationStatus, statusChangedBy,statusChangedOn,
-                    processType, processQuality);
+                    greenValidationCount, yellowValidationCount, orangeValidationCount, redValidationCount, prequalilficationTimespan,
+                    lastPrequalificationStatus, statusChangedBy, statusChangedOn, processType, processQuality);
 
         }
     }
