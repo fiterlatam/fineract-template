@@ -193,6 +193,11 @@ public class GroupPrequalificationApiResource {
                     status(PrequalificationStatus.ANALYSIS_UNIT_PENDING_APPROVAL_WITH_EXCEPTIONS));
         }
 
+        if (StringUtils.equalsIgnoreCase(type,"exceptionsqueue")){
+            statusOptions = Arrays.asList(status(PrequalificationStatus.AGENCY_LEAD_PENDING_APPROVAL),
+                    status(PrequalificationStatus.AGENCY_LEAD_PENDING_APPROVAL_WITH_EXCEPTIONS));
+        }
+
         GlobalConfigurationPropertyData timespan = this.configurationReadPlatformService
                 .retrieveGlobalConfiguration("Prequalification Timespan");
         final GroupPrequalificationData clientIdentifierData = GroupPrequalificationData.template(agencies, centerData, loanProducts,
