@@ -16,20 +16,29 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.organisation.bankcheque.service;
+package org.apache.fineract.organisation.bankcheque.data;
 
-import org.apache.fineract.infrastructure.core.data.PaginationParameters;
-import org.apache.fineract.infrastructure.core.service.Page;
-import org.apache.fineract.organisation.bankcheque.data.BatchData;
-import org.apache.fineract.organisation.bankcheque.data.ChequeData;
-import org.apache.fineract.organisation.bankcheque.data.ChequeSearchParams;
+import lombok.Builder;
+import lombok.Data;
 
-public interface ChequeReadPlatformService {
+@Data
+@Builder
+public class ChequeSearchParams {
 
-    BatchData retrieveBatch(final Long batchId);
-
-    BatchData retrieveTemplate(final Long bankAccId);
-
-    Page<ChequeData> retrieveAll(final ChequeSearchParams chequeSearchParams, final PaginationParameters parameters);
-
+    final Long bankAccId;
+    private Long agencyId;
+    private String chequeNo;
+    private String bankAccNo;
+    private Long batchId;
+    private Long chequeId;
+    private String status;
+    private Integer offset;
+    private Integer limit;
+    private String orderBy;
+    private String sortOrder;
+    private Long from;
+    private Long to;
+    private Long facilitatorId;
+    private Long groupId;
+    private Long centerId;
 }

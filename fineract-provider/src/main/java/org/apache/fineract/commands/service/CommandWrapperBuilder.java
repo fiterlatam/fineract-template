@@ -3879,6 +3879,14 @@ public class CommandWrapperBuilder {
         return this;
     }
 
+    public CommandWrapperBuilder authorizeChequesIssuance() {
+        this.entityName = BankChequeApiConstants.BANK_CHECK_RESOURCE_NAME;
+        this.actionName = BankChequeApiConstants.CHECK_ACTION_AUTHORIZE_ISSUANCE;
+        this.entityId = null;
+        this.href = "/bankcheques";
+        return this;
+    }
+
     public CommandWrapperBuilder updateChequeBatch(Long batchId) {
         this.entityName = BankChequeApiConstants.BANK_CHECK_RESOURCE_NAME;
         this.actionName = BankChequeApiConstants.CHECK_ACTION_UPDATE;
