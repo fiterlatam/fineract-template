@@ -3918,4 +3918,12 @@ public class CommandWrapperBuilder {
         this.href = "/prequalification/checklist/" + prequalificationId;
         return this;
     }
+
+    public CommandWrapperBuilder updatePrequalificationMemberDetails(Long memberId) {
+        this.actionName = "UPDATE";
+        this.entityName = "PREQUALIFICATIONMEMBER";
+        this.entityId = memberId;
+        this.href = "/prequalification/" + memberId;
+        return this;
+    }
 }

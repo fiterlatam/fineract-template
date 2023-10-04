@@ -49,10 +49,10 @@ import org.apache.fineract.organisation.prequalification.command.Prequalificatio
 import org.apache.fineract.organisation.prequalification.command.PrequalificatoinApiConstants;
 import org.apache.fineract.organisation.prequalification.data.GenericValidationResultSet;
 import org.apache.fineract.organisation.prequalification.data.PrequalificationChecklistData;
-import org.apache.fineract.organisation.prequalification.domain.PreQualificationMemberRepository;
 import org.apache.fineract.organisation.prequalification.domain.PreQualificationStatusLogRepository;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationGroup;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationGroupMember;
+import org.apache.fineract.organisation.prequalification.domain.PrequalificationGroupMemberRepositoryWrapper;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationGroupRepositoryWrapper;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationMemberIndication;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationStatus;
@@ -90,7 +90,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
     private final PrequalificationGroupRepositoryWrapper prequalificationGroupRepositoryWrapper;
     private final PreQualificationStatusLogRepository preQualificationLogRepository;
     private final PrequalificationChecklistReadPlatformService prequalificationChecklistReadPlatformService;
-    private final PreQualificationMemberRepository preQualificationMemberRepository;
+    private final PrequalificationGroupMemberRepositoryWrapper preQualificationMemberRepository;
     private final GroupRepositoryWrapper groupRepositoryWrapper;
     private final AppUserRepository appUserRepository;
     private final AgencyRepositoryWrapper agencyRepositoryWrapper;
@@ -103,7 +103,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             final AppUserRepository appUserRepository, final LoanProductRepository loanProductRepository,
             final ClientReadPlatformService clientReadPlatformService, final AgencyRepositoryWrapper agencyRepositoryWrapper,
             final PrequalificationMemberCommandFromApiJsonDeserializer apiJsonDeserializer,
-            final PreQualificationMemberRepository preQualificationMemberRepository,
+            final PrequalificationGroupMemberRepositoryWrapper preQualificationMemberRepository,
             final PreQualificationStatusLogRepository preQualificationLogRepository,
             final PrequalificationChecklistReadPlatformService prequalificationChecklistReadPlatformService,
             final CodeValueReadPlatformService codeValueReadPlatformService, final JdbcTemplate jdbcTemplate,
@@ -397,7 +397,20 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
 
     @Override
     public CommandProcessingResult updatePrequalificationGroupMember(Long memberId, JsonCommand command) {
-        return null;
+        PrequalificationGroupMember member = this.preQualificationMemberRepository.findOneWithNotFoundDetection(memberId);
+        this.dataValidator.validateUpdateMember(command.json());
+
+        final Map<String, Object> changes = member.update(command);
+        if (changes.containsKey(PrequalificatoinApiConstants.approvedAmountParamName)) {
+            final BigDecimal newValue = command.bigDecimalValueOfParameterNamed(PrequalificatoinApiConstants.approvedAmountParamName);
+            member.updateApprovedAmount(newValue);
+        }
+
+        this.preQualificationMemberRepository.saveAndFlush(member);
+        return new CommandProcessingResultBuilder() //
+                .withCommandId(command.commandId()) //
+                .withResourceIdAsString(memberId.toString()) //
+                .build();
     }
 
     private List<PrequalificationGroupMember> assembleMembersForUpdate(JsonCommand command, PrequalificationGroup prequalificationGroup,

@@ -18,6 +18,7 @@
  */
 package org.apache.fineract.organisation.prequalification.data;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
@@ -72,6 +73,8 @@ public class GroupPrequalificationData {
     private Long prequalilficationTimespan;
     private Collection<MemberPrequalificationData> groupMembers;
     private Collection<EnumOptionData> groupStatusOptions;
+    private BigDecimal totalRequestedAmount;
+    private BigDecimal totalApprovedAmount;
 
     public GroupPrequalificationData(final Long id, final String productName, final String prequalificationNumber, final String agencyName,
             final String portforlioName, final String centerName, final String groupName, final String addedBy, final LocalDate createdAt,
@@ -107,6 +110,8 @@ public class GroupPrequalificationData {
         this.statusChangedOn = null;
         this.processType = null;
         this.processQuality = null;
+        this.totalRequestedAmount = null;
+        this.totalApprovedAmount = null;
     }
 
     public GroupPrequalificationData(final Long id, final String productName, final String prequalificationNumber, final String agencyName,
@@ -116,7 +121,7 @@ public class GroupPrequalificationData {
             Collection<AppUserData> appUsers, final Long agencyId, final Long centerId, final Long productId, final Long facilitatorId,
             final String facilitatorName, Long greenValidationCount, Long yellowValidationCount, Long orangeValidationCount,
             Long redValidationCount, Long prequalilficationTimespan, EnumOptionData lastPrequalificationStatus, String statusChangedBy,
-            LocalDate statusChangedOn, String processType, String processQuality) {
+            LocalDate statusChangedOn, String processType, String processQuality, BigDecimal totalRequestedAmount, BigDecimal totalApprovedAmount) {
         this.id = id;
         this.productName = productName;
         this.prequalificationNumber = prequalificationNumber;
@@ -149,6 +154,8 @@ public class GroupPrequalificationData {
         this.statusChangedOn = statusChangedOn;
         this.processType = processType;
         this.processQuality = processQuality;
+        this.totalRequestedAmount = totalRequestedAmount;
+        this.totalApprovedAmount = totalApprovedAmount;
     }
 
     public static GroupPrequalificationData template(final Collection<AgencyData> agencies, Collection<CenterData> centerData,
@@ -169,15 +176,15 @@ public class GroupPrequalificationData {
     }
 
     public static GroupPrequalificationData instance(Long id, String prequalificationNumber, EnumOptionData status, String agencyName,
-            String portfolioName, String centerName, String groupName, String productName, String addedBy, LocalDate createdAt,
-            String comments, Long groupId, final Long agencyId, final Long centerId, final Long productId, final Long facilitatorId,
-            final String facilitatorName, Long greenValidationCount, Long yellowValidationCount, Long orangeValidationCount,
-            Long redValidationCount, Long prequalilficationTimespan, EnumOptionData lastPrequalificationStatus, String statusChangedBy,
-            LocalDate statusChangedOn, String processType, String processQuality) {
+                                                     String portfolioName, String centerName, String groupName, String productName, String addedBy, LocalDate createdAt,
+                                                     String comments, Long groupId, final Long agencyId, final Long centerId, final Long productId, final Long facilitatorId,
+                                                     final String facilitatorName, Long greenValidationCount, Long yellowValidationCount, Long orangeValidationCount,
+                                                     Long redValidationCount, Long prequalilficationTimespan, EnumOptionData lastPrequalificationStatus, String statusChangedBy,
+                                                     LocalDate statusChangedOn, String processType, String processQuality, BigDecimal totalRequestedAmount, BigDecimal totalApprovedAmount) {
         return new GroupPrequalificationData(id, productName, prequalificationNumber, agencyName, portfolioName, centerName, groupName,
                 addedBy, createdAt, status, comments, groupId, null, null, null, null, null, agencyId, centerId, productId, facilitatorId,
                 facilitatorName, greenValidationCount, yellowValidationCount, orangeValidationCount, redValidationCount,
-                prequalilficationTimespan, lastPrequalificationStatus, statusChangedBy, statusChangedOn, processType, processQuality);
+                prequalilficationTimespan, lastPrequalificationStatus, statusChangedBy, statusChangedOn, processType, processQuality,totalRequestedAmount,totalApprovedAmount);
     }
 
     public void updateMembers(Collection<MemberPrequalificationData> groupMembers) {
