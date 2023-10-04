@@ -299,13 +299,13 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
         }
 
         sqlBuilder.append(" ").append(extraCriteria.getSQLTemplate());
-        if (parameters.isOrderByRequested()) {
+        if (chequeSearchParams.getOrderBy() != null) {
             sqlBuilder.append(" order by ").append(chequeSearchParams.getOrderBy()).append(' ').append(chequeSearchParams.getSortOrder());
             this.columnValidator.validateSqlInjection(sqlBuilder.toString(), chequeSearchParams.getOrderBy(),
                     chequeSearchParams.getSortOrder());
         }
 
-        if (parameters.isLimited()) {
+        if (chequeSearchParams.getLimit() != null) {
             sqlBuilder.append(" limit ").append(chequeSearchParams.getLimit());
             if (chequeSearchParams.getOffset() != null) {
                 sqlBuilder.append(" offset ").append(chequeSearchParams.getOffset());
