@@ -436,4 +436,47 @@
         </addColumn>
     </changeSet>
 
+    <changeSet author="fineract" id="37">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_bank_check" columnName="issuance_authorizedby_id"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_bank_check">
+            <column defaultValueComputed="NULL" name="issuance_authorizedby_id" type="BIGINT">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="38">
+        <addForeignKeyConstraint baseColumnNames="issuance_authorizedby_id" baseTableName="m_bank_check"
+                                 constraintName="FK20231003_m_bank_check_table_issuance_authorizedby_id" deferrable="false" initiallyDeferred="false"
+                                 onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="id"
+                                 referencedTableName="m_appuser" validate="true"/>
+    </changeSet>
+
+    <changeSet author="fineract" id="39">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_bank_check" columnName="issuance_authorizedon_date"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_bank_check">
+            <column defaultValueComputed="NULL" name="issuance_authorizedon_date" type="date">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="40" author="fineract">
+        <insert tableName="m_permission">
+            <column name="grouping" value="portfolio" />
+            <column name="code" value="AUTHORIZEISSUANCE_BANKCHEQUE"/>
+            <column name="entity_name" value="BANKCHEQUE" />
+            <column name="action_name" value="AUTHORIZEISSUANCE" />
+            <column name="can_maker_checker" valueBoolean="false" />
+        </insert>
+    </changeSet>
+
 </databaseChangeLog>

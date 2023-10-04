@@ -39,4 +39,6 @@ public interface ChequeWritePlatformService {
 
     CommandProcessingResult approveChequeIssuance(final JsonCommand command);
 
+    CommandProcessingResult authorizeChequeIssuance(final JsonCommand command);
+
 }
