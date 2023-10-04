@@ -139,7 +139,8 @@ public class PrequalificationDataValidator {
         final JsonElement element = this.fromApiJsonHelper.parse(json);
 
         if (this.fromApiJsonHelper.parameterExists(PrequalificatoinApiConstants.approvedAmountParamName, element)) {
-            final BigDecimal approvedAmount = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed(PrequalificatoinApiConstants.approvedAmountParamName, element);
+            final BigDecimal approvedAmount = this.fromApiJsonHelper
+                    .extractBigDecimalWithLocaleNamed(PrequalificatoinApiConstants.approvedAmountParamName, element);
             baseDataValidator.reset().parameter(PrequalificatoinApiConstants.approvedAmountParamName).value(approvedAmount).notNull()
                     .longGreaterThanZero();
         }

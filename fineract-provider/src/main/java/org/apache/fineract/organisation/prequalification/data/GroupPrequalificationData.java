@@ -121,7 +121,8 @@ public class GroupPrequalificationData {
             Collection<AppUserData> appUsers, final Long agencyId, final Long centerId, final Long productId, final Long facilitatorId,
             final String facilitatorName, Long greenValidationCount, Long yellowValidationCount, Long orangeValidationCount,
             Long redValidationCount, Long prequalilficationTimespan, EnumOptionData lastPrequalificationStatus, String statusChangedBy,
-            LocalDate statusChangedOn, String processType, String processQuality, BigDecimal totalRequestedAmount, BigDecimal totalApprovedAmount) {
+            LocalDate statusChangedOn, String processType, String processQuality, BigDecimal totalRequestedAmount,
+            BigDecimal totalApprovedAmount) {
         this.id = id;
         this.productName = productName;
         this.prequalificationNumber = prequalificationNumber;
@@ -176,15 +177,17 @@ public class GroupPrequalificationData {
     }
 
     public static GroupPrequalificationData instance(Long id, String prequalificationNumber, EnumOptionData status, String agencyName,
-                                                     String portfolioName, String centerName, String groupName, String productName, String addedBy, LocalDate createdAt,
-                                                     String comments, Long groupId, final Long agencyId, final Long centerId, final Long productId, final Long facilitatorId,
-                                                     final String facilitatorName, Long greenValidationCount, Long yellowValidationCount, Long orangeValidationCount,
-                                                     Long redValidationCount, Long prequalilficationTimespan, EnumOptionData lastPrequalificationStatus, String statusChangedBy,
-                                                     LocalDate statusChangedOn, String processType, String processQuality, BigDecimal totalRequestedAmount, BigDecimal totalApprovedAmount) {
+            String portfolioName, String centerName, String groupName, String productName, String addedBy, LocalDate createdAt,
+            String comments, Long groupId, final Long agencyId, final Long centerId, final Long productId, final Long facilitatorId,
+            final String facilitatorName, Long greenValidationCount, Long yellowValidationCount, Long orangeValidationCount,
+            Long redValidationCount, Long prequalilficationTimespan, EnumOptionData lastPrequalificationStatus, String statusChangedBy,
+            LocalDate statusChangedOn, String processType, String processQuality, BigDecimal totalRequestedAmount,
+            BigDecimal totalApprovedAmount) {
         return new GroupPrequalificationData(id, productName, prequalificationNumber, agencyName, portfolioName, centerName, groupName,
                 addedBy, createdAt, status, comments, groupId, null, null, null, null, null, agencyId, centerId, productId, facilitatorId,
                 facilitatorName, greenValidationCount, yellowValidationCount, orangeValidationCount, redValidationCount,
-                prequalilficationTimespan, lastPrequalificationStatus, statusChangedBy, statusChangedOn, processType, processQuality,totalRequestedAmount,totalApprovedAmount);
+                prequalilficationTimespan, lastPrequalificationStatus, statusChangedBy, statusChangedOn, processType, processQuality,
+                totalRequestedAmount, totalApprovedAmount);
     }
 
     public void updateMembers(Collection<MemberPrequalificationData> groupMembers) {

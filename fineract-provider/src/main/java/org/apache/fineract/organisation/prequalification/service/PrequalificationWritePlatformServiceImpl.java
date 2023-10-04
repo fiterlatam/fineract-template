@@ -664,7 +664,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                 .findOneWithNotFoundDetection(entityId);
         Integer fromStatus = prequalificationGroup.getStatus();
         prequalificationGroup.updateStatus(resolveStatus(action));
-//        this.prequalificationGroupRepositoryWrapper.save(prequalificationGroup);
+        // this.prequalificationGroupRepositoryWrapper.save(prequalificationGroup);
 
         PrequalificationStatusLog statusLog = PrequalificationStatusLog.fromJson(addedBy, fromStatus, prequalificationGroup.getStatus(),
                 comments, prequalificationGroup);
@@ -679,11 +679,11 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             status = PrequalificationStatus.AGENCY_LEAD_PENDING_APPROVAL;
         } else if (action.equalsIgnoreCase("sendtoexception")) {
             status = PrequalificationStatus.AGENCY_LEAD_PENDING_APPROVAL_WITH_EXCEPTIONS;
-        }else if (action.equalsIgnoreCase("requestupdates")) {
+        } else if (action.equalsIgnoreCase("requestupdates")) {
             status = PrequalificationStatus.PREQUALIFICATION_UPDATE_REQUESTED;
-        }else if (action.equalsIgnoreCase("rejectanalysis")) {
+        } else if (action.equalsIgnoreCase("rejectanalysis")) {
             status = PrequalificationStatus.REJECTED;
-        }else if (action.equalsIgnoreCase("approveanalysis")) {
+        } else if (action.equalsIgnoreCase("approveanalysis")) {
             status = PrequalificationStatus.APPROVED;
         }
         return status;

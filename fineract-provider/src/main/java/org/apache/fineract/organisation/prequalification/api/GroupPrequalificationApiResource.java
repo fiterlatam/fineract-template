@@ -287,11 +287,12 @@ public class GroupPrequalificationApiResource {
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     public String updatePrequalificationMember(@Parameter(hidden = true) final String apiRequestBodyAsJson,
-            @PathParam("groupId") @Parameter(description = "groupId") final Long groupId, @PathParam("memberId") @Parameter(description = "memberId") final Long memberId) {
+            @PathParam("groupId") @Parameter(description = "groupId") final Long groupId,
+            @PathParam("memberId") @Parameter(description = "memberId") final Long memberId) {
 
         try {
-            final CommandWrapper commandRequest = new CommandWrapperBuilder().updatePrequalificationMemberDetails(memberId).withJson(apiRequestBodyAsJson)
-                    .build();
+            final CommandWrapper commandRequest = new CommandWrapperBuilder().updatePrequalificationMemberDetails(memberId)
+                    .withJson(apiRequestBodyAsJson).build();
 
             final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
 

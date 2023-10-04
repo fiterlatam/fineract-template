@@ -35,7 +35,7 @@ public class PrequalificationCollectionConstants extends PrequalificatoinApiCons
                     prequalificationNumberParamName, prequalilficationTimespanParamName, previousPrequalificationParamName));
 
     protected static final Set<String> EDIT_MEMBER_PREQUALIFICATION_REQUEST_DATA_PARAMETERS = new HashSet<>(
-            Arrays.asList(memberIdParamName,memberNameParamName, memberDpiParamName, memberDobParamName, memberRequestedAmountParamName, memberWorkWithPuenteParamName,
-                    memberStatusParamName, approvedAmountParamName,localeParamName,dateFormatParamName));
+            Arrays.asList(memberIdParamName, memberNameParamName, memberDpiParamName, memberDobParamName, memberRequestedAmountParamName,
+                    memberWorkWithPuenteParamName, memberStatusParamName, approvedAmountParamName, localeParamName, dateFormatParamName));
 
 }

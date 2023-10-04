@@ -53,10 +53,11 @@ public class MemberPrequalificationData {
     private final EnumOptionData bureauCheckStatus;
 
     public MemberPrequalificationData(final Long id, final String name, final String dpi, final LocalDate dob, final String workWithPuente,
-                                      final BigDecimal requestedAmount, final EnumOptionData status, Long blacklistCount, BigDecimal totalLoanAmount,
-                                      BigDecimal totalLoanBalance, BigDecimal totalGuaranteedLoanBalance, Long noOfCycles, Long additionalCreditsCount,
-                                      BigDecimal additionalCreditsSum, final Long activeBlacklistCount, final Long inActiveBlacklistCount, Long greenValidationCount,
-                                      Long yellowValidationCount, Long orangeValidationCount, Long redValidationCount, EnumOptionData bureauCheckStatus, BigDecimal approvedAmount) {
+            final BigDecimal requestedAmount, final EnumOptionData status, Long blacklistCount, BigDecimal totalLoanAmount,
+            BigDecimal totalLoanBalance, BigDecimal totalGuaranteedLoanBalance, Long noOfCycles, Long additionalCreditsCount,
+            BigDecimal additionalCreditsSum, final Long activeBlacklistCount, final Long inActiveBlacklistCount, Long greenValidationCount,
+            Long yellowValidationCount, Long orangeValidationCount, Long redValidationCount, EnumOptionData bureauCheckStatus,
+            BigDecimal approvedAmount) {
         this.id = id;
         this.name = name;
         this.dpi = dpi;
@@ -82,14 +83,14 @@ public class MemberPrequalificationData {
     }
 
     public static MemberPrequalificationData instance(final Long id, final String name, final String dpi, final LocalDate dob,
-                                                      final String workWithPuente, final BigDecimal requestedAmount, final EnumOptionData status, Long blacklistCount,
-                                                      BigDecimal totalLoanAmount, BigDecimal totalLoanBalance, BigDecimal totalGuaranteedLoanBalance, Long noOfCycles,
-                                                      Long additionalCreditsCount, BigDecimal additionalCreditsSum, final Long activeBlacklistCount,
-                                                      final Long inActiveBlacklistCount, final Long greenValidationCount, final Long yellowValidationCount,
-                                                      final Long orangeValidationCount, final Long redValidationCount, EnumOptionData bureauCheckStatus, BigDecimal approvedAmount) {
+            final String workWithPuente, final BigDecimal requestedAmount, final EnumOptionData status, Long blacklistCount,
+            BigDecimal totalLoanAmount, BigDecimal totalLoanBalance, BigDecimal totalGuaranteedLoanBalance, Long noOfCycles,
+            Long additionalCreditsCount, BigDecimal additionalCreditsSum, final Long activeBlacklistCount,
+            final Long inActiveBlacklistCount, final Long greenValidationCount, final Long yellowValidationCount,
+            final Long orangeValidationCount, final Long redValidationCount, EnumOptionData bureauCheckStatus, BigDecimal approvedAmount) {
         return new MemberPrequalificationData(id, name, dpi, dob, workWithPuente, requestedAmount, status, blacklistCount, totalLoanAmount,
                 totalLoanBalance, totalGuaranteedLoanBalance, noOfCycles, additionalCreditsCount, additionalCreditsSum,
                 activeBlacklistCount, inActiveBlacklistCount, greenValidationCount, yellowValidationCount, orangeValidationCount,
-                redValidationCount, bureauCheckStatus,approvedAmount);
+                redValidationCount, bureauCheckStatus, approvedAmount);
     }
 }
