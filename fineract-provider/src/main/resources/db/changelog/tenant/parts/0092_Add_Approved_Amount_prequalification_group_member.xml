@@ -42,4 +42,13 @@
             <column name="can_maker_checker" valueBoolean="false" />
         </insert>
     </changeSet>
+    <changeSet author="fineract" id="3">
+        <insert tableName="m_permission">
+            <column name="grouping" value="portfolio" />
+            <column name="code" value="PROCESSANALYSIS_PREQUALIFICATIONS"/>
+            <column name="entity_name" value="PREQUALIFICATIONS" />
+            <column name="action_name" value="PROCESSANALYSIS" />
+            <column name="can_maker_checker" valueBoolean="false" />
+        </insert>
+    </changeSet>
 </databaseChangeLog>

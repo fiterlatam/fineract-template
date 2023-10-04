@@ -120,10 +120,23 @@ public class PrequalificationChecklistApiResource {
         } else if (is(commandParam, "sendToAnalysis")) {
             final CommandWrapper validateCommandRequest = builder.sendGroupForAnalysis(prequalificationId).build();
             result = this.commandsSourceWritePlatformService.logCommandSource(validateCommandRequest);
+        }else if (is(commandParam, "sendtoexception")) {
+            final CommandWrapper validateCommandRequest = builder.processAnalysisRequest(prequalificationId).build();
+            result = this.commandsSourceWritePlatformService.logCommandSource(validateCommandRequest);
+        }else if (is(commandParam, "sendtoagency")) {
+            final CommandWrapper validateCommandRequest = builder.processAnalysisRequest(prequalificationId).build();
+            result = this.commandsSourceWritePlatformService.logCommandSource(validateCommandRequest);
+        }else if (is(commandParam, "rejectanalysis")) {
+            final CommandWrapper validateCommandRequest = builder.processAnalysisRequest(prequalificationId).build();
+            result = this.commandsSourceWritePlatformService.logCommandSource(validateCommandRequest);
+        }else if (is(commandParam, "approveanalysis")) {
+            final CommandWrapper validateCommandRequest = builder.processAnalysisRequest(prequalificationId).build();
+            result = this.commandsSourceWritePlatformService.logCommandSource(validateCommandRequest);
         } else {
-            final CommandWrapper commandRequest = builder.validatePrequalificationHardPolicies(prequalificationId).build();
+            final CommandWrapper commandRequest = builder.processAnalysisRequest(prequalificationId).build();
             result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
         }
+
         return this.toApiJsonSerializer.serialize(result);
     }
 

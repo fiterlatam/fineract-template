@@ -654,4 +654,38 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
 
         return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withEntityId(prequalificationGroup.getId()).build();
     }
+
+    @Override
+    public CommandProcessingResult processAnalysisRequest(Long entityId, JsonCommand command) {
+        String comments = command.stringValueOfParameterNamed("comments");
+        String action = command.stringValueOfParameterNamed("action");
+        AppUser addedBy = this.context.authenticatedUser();
+        final PrequalificationGroup prequalificationGroup = this.prequalificationGroupRepositoryWrapper
+                .findOneWithNotFoundDetection(entityId);
+        Integer fromStatus = prequalificationGroup.getStatus();
+        prequalificationGroup.updateStatus(resolveStatus(action));
+//        this.prequalificationGroupRepositoryWrapper.save(prequalificationGroup);
+
+        PrequalificationStatusLog statusLog = PrequalificationStatusLog.fromJson(addedBy, fromStatus, prequalificationGroup.getStatus(),
+                comments, prequalificationGroup);
+
+        this.preQualificationLogRepository.saveAndFlush(statusLog);
+        return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withEntityId(prequalificationGroup.getId()).build();
+    }
+
+    private PrequalificationStatus resolveStatus(String action) {
+        PrequalificationStatus status = null;
+        if (action.equalsIgnoreCase("sendtoagency")) {
+            status = PrequalificationStatus.AGENCY_LEAD_PENDING_APPROVAL;
+        } else if (action.equalsIgnoreCase("sendtoexception")) {
+            status = PrequalificationStatus.AGENCY_LEAD_PENDING_APPROVAL_WITH_EXCEPTIONS;
+        }else if (action.equalsIgnoreCase("requestupdates")) {
+            status = PrequalificationStatus.PREQUALIFICATION_UPDATE_REQUESTED;
+        }else if (action.equalsIgnoreCase("rejectanalysis")) {
+            status = PrequalificationStatus.REJECTED;
+        }else if (action.equalsIgnoreCase("approveanalysis")) {
+            status = PrequalificationStatus.APPROVED;
+        }
+        return status;
+    }
 }

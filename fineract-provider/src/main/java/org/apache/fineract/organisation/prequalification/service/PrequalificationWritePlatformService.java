@@ -37,4 +37,6 @@ public interface PrequalificationWritePlatformService {
     CommandProcessingResult requestUpdates(Long entityId, JsonCommand command);
 
     CommandProcessingResult sendForAnalysis(Long entityId, JsonCommand command);
+
+    CommandProcessingResult processAnalysisRequest(Long entityId, JsonCommand command);
 }
