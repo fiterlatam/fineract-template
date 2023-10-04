@@ -57,6 +57,7 @@ import org.apache.fineract.organisation.prequalification.domain.Prequalification
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationMemberIndication;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationStatus;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationStatusLog;
+import org.apache.fineract.organisation.prequalification.exception.PrequalificationStatusNotChangedException;
 import org.apache.fineract.organisation.prequalification.serialization.PrequalificationMemberCommandFromApiJsonDeserializer;
 import org.apache.fineract.portfolio.blacklist.domain.BlacklistStatus;
 import org.apache.fineract.portfolio.client.service.ClientChargeWritePlatformServiceJpaRepositoryImpl;
@@ -663,7 +664,11 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         final PrequalificationGroup prequalificationGroup = this.prequalificationGroupRepositoryWrapper
                 .findOneWithNotFoundDetection(entityId);
         Integer fromStatus = prequalificationGroup.getStatus();
-        prequalificationGroup.updateStatus(resolveStatus(action));
+        PrequalificationStatus prequalificationStatus = resolveStatus(action);
+        if (fromStatus == prequalificationStatus.getValue()) {
+            throw new PrequalificationStatusNotChangedException(prequalificationStatus.toString());
+        }
+        prequalificationGroup.updateStatus(prequalificationStatus);
         // this.prequalificationGroupRepositoryWrapper.save(prequalificationGroup);
 
         PrequalificationStatusLog statusLog = PrequalificationStatusLog.fromJson(addedBy, fromStatus, prequalificationGroup.getStatus(),
