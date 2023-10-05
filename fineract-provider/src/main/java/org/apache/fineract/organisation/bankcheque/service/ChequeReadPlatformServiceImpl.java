@@ -18,6 +18,7 @@
  */
 package org.apache.fineract.organisation.bankcheque.service;
 
+import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
@@ -121,6 +122,12 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
                     	mbc.check_no AS chequeNo,
                     	mbc.status_enum AS statusEnum,
                     	mbc.description AS description,
+                    	mbc.guarantee_amount As guaranteeAmount,
+                    	mc.account_no AS clientNo,
+                    	mc.display_name AS clientName,
+                    	mg.display_name AS groupName,
+                    	mg.account_no AS groupNo,
+                    	ml.account_no AS loanAccNo,
                     	mpb.batch_no AS batchNo,
                     	mba.account_number AS bankAccNo,
                         mba.id AS bankAccId,
@@ -135,7 +142,8 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
                     	createdby.username AS createdByUsername,
                     	printedby.username AS printedByUsername,
                     	voidauthorizedby.username AS voidAuthorizedByUsername,
-                    	lastmodifiedby.username AS lastModifiedByUsername
+                    	lastmodifiedby.username AS lastModifiedByUsername,
+                    	ml.approved_principal as loanAmount
                     FROM m_bank_check mbc
                     LEFT JOIN m_loan ml ON ml.cheque_id = mbc.id
                     LEFT JOIN m_group mg ON mg.id = ml.group_id
@@ -149,6 +157,7 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
                     LEFT JOIN m_appuser printedby ON printedby.id = mbc.printedby_id
                     LEFT JOIN m_appuser voidauthorizedby ON voidauthorizedby.id = mbc.void_authorizedby_id
                     LEFT JOIN m_appuser lastmodifiedby ON lastmodifiedby.id = mbc.lastmodifiedby_id
+                    LEFT JOIN m_client mc ON mc.id = ml.client_id
                     """;
         }
 
@@ -179,12 +188,20 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
             final String printedByUsername = rs.getString("printedByUsername");
             final String voidAuthorizedByUsername = rs.getString("voidAuthorizedByUsername");
             final String lastModifiedByUsername = rs.getString("lastModifiedByUsername");
+            final String clientName = rs.getString("clientName");
+            final String clientNo = rs.getString("clientNo");
+            final String groupName = rs.getString("groupName");
+            final String loanAccNo = rs.getString("loanAccNo");
+            final String groupNo = rs.getString("groupNo");
+            final BigDecimal loanAmount = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "loanAmount");
+            final BigDecimal guaranteeAmount = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "guaranteeAmount");
             return ChequeData.builder().id(id).status(status).batchId(batchId).batchNo(batchNo).description(description)
                     .agencyName(agencyName).bankAccNo(bankAccNo).bankName(bankName).bankAccId(bankAccId).voidedDate(voidedDate)
                     .chequeNo(chequeNo).createdDate(createdDate).usedOnDate(usedOnDate).printedDate(printedDate)
                     .voidAuthorizedDate(voidAuthorizedDate).voidedByUsername(voidedByUsername).createdByUsername(createdByUsername)
                     .printedByUsername(printedByUsername).voidAuthorizedByUsername(voidAuthorizedByUsername)
-                    .lastModifiedByUsername(lastModifiedByUsername).build();
+                    .lastModifiedByUsername(lastModifiedByUsername).clientName(clientName).clientNo(clientNo).groupName(groupName)
+                    .loanAccNo(loanAccNo).loanAmount(loanAmount).guaranteeAmount(guaranteeAmount).groupNo(groupNo).build();
 
         }
     }
