@@ -321,6 +321,8 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                     	g.created_at,
                     	sl.from_status as previousStatus,
                     	sl.date_created as statusChangedOn,
+                    	(select sum(requested_amount) from m_prequalification_group_members where group_id = g.id) as totalRequestedAmount,
+                    	(select sum(approved_amount) from m_prequalification_group_members where group_id = g.id) as totalApprovedAmount,
                     	(case when g.previous_prequalification is not null THEN 'Recredito' ELSE 'Nuevo' END) as processType,
                     	(case when (select count(*) from m_prequalification_status_log where prequalification_id = g.id and to_status = g.status )>0 THEN 'Reproceso' ELSE 'Nuevo' END) as processQuality,
                     	concat(mu.firstname, ' ', mu.lastname) as statusChangedBy,
@@ -386,7 +388,10 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                     LEFT JOIN m_group pc ON
                     	pc.id = g.center_id
                     LEFT JOIN m_prequalification_status_log sl ON
-                    	sl.prequalification_id = g.id AND sl.to_status=g.status
+                    	sl.prequalification_id = g.id AND sl.to_status=g.status 
+                    	AND sl.id = 
+                    	(SELECT MAX(id) 
+                    	FROM m_prequalification_status_log WHERE prequalification_id = g.id AND sl.to_status=g.status )
                     LEFT JOIN m_appuser mu ON
                     	mu.id = sl.updatedby_id
                     INNER JOIN m_appuser fa ON
@@ -432,6 +437,8 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             final LocalDate statusChangedOn = JdbcSupport.getLocalDate(rs, "statusChangedOn");
             final String processType = rs.getString("processType");
             final String processQuality = rs.getString("processQuality");
+            final BigDecimal totalRequestedAmount = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "totalRequestedAmount");
+            final BigDecimal totalApprovedAmount = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "totalApprovedAmount");
 
             if (StringUtils.isBlank(groupName)) {
                 groupName = newGroupName;
@@ -443,7 +450,8 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             return GroupPrequalificationData.instance(id, prequalificationNumber, status, agencyName, null, centerName, groupName,
                     productName, addedBy, createdAt, comments, groupId, agencyId, centerId, productId, facilitatorId, facilitatorName,
                     greenValidationCount, yellowValidationCount, orangeValidationCount, redValidationCount, prequalilficationTimespan,
-                    lastPrequalificationStatus, statusChangedBy, statusChangedOn, processType, processQuality);
+                    lastPrequalificationStatus, statusChangedBy, statusChangedOn, processType, processQuality, totalRequestedAmount,
+                    totalApprovedAmount);
 
         }
     }
@@ -461,6 +469,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                     	m.dob,
                     	m.buro_check_status as buroCheckStatus,
                     	m.requested_amount AS requestedAmount,
+                    	m.approved_amount AS approvedAmount,
                     	COALESCE((SELECT sum(principal_disbursed_derived) FROM m_loan WHERE client_id = mc.id), 0) AS totalLoanAmount,
                     	COALESCE((SELECT sum(total_outstanding_derived) FROM m_loan WHERE client_id = mc.id), 0) AS totalLoanBalance,
                     	COALESCE((SELECT sum(mloan.total_outstanding_derived) FROM m_loan mloan INNER JOIN m_guarantor mg ON mg.loan_id = mloan.id WHERE mg.entity_id = mc.id), 0) AS totalGuaranteedLoanBalance,
@@ -554,6 +563,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             ;
             final String dpi = rs.getString("dpi");
             final BigDecimal requestedAmount = rs.getBigDecimal("requestedAmount");
+            final BigDecimal approvedAmount = rs.getBigDecimal("approvedAmount");
             final String puente = rs.getString("puente");
             final Long blacklistCount = rs.getLong("blacklistCount");
             final Long activeBlacklistCount = rs.getLong("activeBlacklistCount");
@@ -573,7 +583,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             return MemberPrequalificationData.instance(id, name, dpi, dob, puente, requestedAmount, status, blacklistCount, totalLoanAmount,
                     totalLoanBalance, totalGuaranteedLoanBalance, noOfCycles, additionalCreditsCount, additionalCreditsSum,
                     activeBlacklistCount, inActiveBlacklistCount, greenValidationCount, yellowValidationCount, orangeValidationCount,
-                    redValidationCount, bureauCheckStatus);
+                    redValidationCount, bureauCheckStatus, approvedAmount);
 
         }
     }

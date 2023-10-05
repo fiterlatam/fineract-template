@@ -3926,4 +3926,20 @@ public class CommandWrapperBuilder {
         this.href = "/prequalification/checklist/" + prequalificationId;
         return this;
     }
+
+    public CommandWrapperBuilder updatePrequalificationMemberDetails(Long memberId) {
+        this.actionName = "UPDATE";
+        this.entityName = "PREQUALIFICATIONMEMBER";
+        this.entityId = memberId;
+        this.href = "/prequalification/" + memberId;
+        return this;
+    }
+
+    public CommandWrapperBuilder processAnalysisRequest(Long prequalificationId) {
+        this.actionName = "PROCESSANALYSIS";
+        this.entityName = "PREQUALIFICATIONS";
+        this.entityId = prequalificationId;
+        this.href = "/prequalification/checklist/" + prequalificationId;
+        return this;
+    }
 }

@@ -108,4 +108,5 @@
     <include file="parts/0089_FBR_104_create_charge_admin_fee_configurations.xml" relativeToChangelogFile="true"/>
     <include file="parts/0090_FBR_313_Add_Prequalificatioin_Checklist_log.xml" relativeToChangelogFile="true"/>
     <include file="parts/0091_FBR_315_Add_Agency_Exception_queue_permissions.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0092_Add_Approved_Amount_prequalification_group_member.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

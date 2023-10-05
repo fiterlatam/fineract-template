@@ -282,6 +282,27 @@ public class GroupPrequalificationApiResource {
         }
     }
 
+    @PUT
+    @Path("/{groupId}/{memberId}")
+    @Consumes({ MediaType.APPLICATION_JSON })
+    @Produces({ MediaType.APPLICATION_JSON })
+    public String updatePrequalificationMember(@Parameter(hidden = true) final String apiRequestBodyAsJson,
+            @PathParam("groupId") @Parameter(description = "groupId") final Long groupId,
+            @PathParam("memberId") @Parameter(description = "memberId") final Long memberId) {
+
+        try {
+            final CommandWrapper commandRequest = new CommandWrapperBuilder().updatePrequalificationMemberDetails(memberId)
+                    .withJson(apiRequestBodyAsJson).build();
+
+            final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
+
+            return this.toApiJsonSerializer.serialize(result);
+        } catch (final Exception e) {
+            e.printStackTrace();
+            throw e;
+        }
+    }
+
     @POST
     @Path("/{groupId}/comment")
     @Consumes({ MediaType.MULTIPART_FORM_DATA })
