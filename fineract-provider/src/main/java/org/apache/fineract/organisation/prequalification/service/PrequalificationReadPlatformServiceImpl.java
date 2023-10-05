@@ -388,7 +388,10 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                     LEFT JOIN m_group pc ON
                     	pc.id = g.center_id
                     LEFT JOIN m_prequalification_status_log sl ON
-                    	sl.prequalification_id = g.id AND sl.to_status=g.status
+                    	sl.prequalification_id = g.id AND sl.to_status=g.status 
+                    	AND sl.id = 
+                    	(SELECT MAX(id) 
+                    	FROM m_prequalification_status_log WHERE prequalification_id = g.id AND sl.to_status=g.status )
                     LEFT JOIN m_appuser mu ON
                     	mu.id = sl.updatedby_id
                     INNER JOIN m_appuser fa ON

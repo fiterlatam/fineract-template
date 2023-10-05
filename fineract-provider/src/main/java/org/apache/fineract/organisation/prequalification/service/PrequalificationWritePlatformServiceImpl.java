@@ -665,10 +665,11 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                 .findOneWithNotFoundDetection(entityId);
         Integer fromStatus = prequalificationGroup.getStatus();
         PrequalificationStatus prequalificationStatus = resolveStatus(action);
-        if (fromStatus == prequalificationStatus.getValue()) {
+        if (fromStatus.equals(prequalificationStatus.getValue())) {
             throw new PrequalificationStatusNotChangedException(prequalificationStatus.toString());
         }
         prequalificationGroup.updateStatus(prequalificationStatus);
+        prequalificationGroup.updateComments(comments);
         // this.prequalificationGroupRepositoryWrapper.save(prequalificationGroup);
 
         PrequalificationStatusLog statusLog = PrequalificationStatusLog.fromJson(addedBy, fromStatus, prequalificationGroup.getStatus(),
