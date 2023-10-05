@@ -479,4 +479,14 @@
         </insert>
     </changeSet>
 
+    <changeSet id="41" author="fineract">
+        <insert tableName="m_permission">
+            <column name="grouping" value="portfolio" />
+            <column name="code" value="PRINT_BANKCHEQUE"/>
+            <column name="entity_name" value="BANKCHEQUE" />
+            <column name="action_name" value="PRINT" />
+            <column name="can_maker_checker" valueBoolean="false" />
+        </insert>
+    </changeSet>
+
 </databaseChangeLog>
