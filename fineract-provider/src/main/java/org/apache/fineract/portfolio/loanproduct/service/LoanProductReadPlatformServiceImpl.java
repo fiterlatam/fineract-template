@@ -238,8 +238,9 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
                     + "lp.allow_variabe_installments as isVariableIntallmentsAllowed, " + "lvi.minimum_gap as minimumGap, "
                     + "lvi.maximum_gap as maximumGap, "
                     + "lp.can_use_for_topup as canUseForTopup, lp.is_equal_amortization as isEqualAmortization, "
-                    + "  lp.owner_type_enum as productOwnerType, lp.add_new_cycles_enabled as addNewCyclesEnabled "
-                    + " from m_product_loan lp " + " left join m_fund f on f.id = lp.fund_id "
+                    + "lp.owner_type_enum as productOwnerType, lp.add_new_cycles_enabled as addNewCyclesEnabled, "
+                    + " lp.limit_of_days_for_addon as daysLimitAddOn " + " from m_product_loan lp "
+                    + " left join m_fund f on f.id = lp.fund_id "
                     + " left join m_product_loan_recalculation_details lpr on lpr.product_id=lp.id "
                     + " left join m_product_loan_guarantee_details lpg on lpg.loan_product_id=lp.id "
                     + " left join ref_loan_transaction_processing_strategy ltps on ltps.id = lp.loan_transaction_strategy_id"
@@ -473,6 +474,7 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
             final boolean isRatesEnabled = false;
             final Integer ageLimitWarning = JdbcSupport.getInteger(rs, "ageLimitWarning");
             final Integer ageLimitBlock = JdbcSupport.getInteger(rs, "ageLimitBlock");
+            final Integer daysLimitAddOn = JdbcSupport.getInteger(rs, "daysLimitAddOn");
 
             return new LoanProductData(id, name, shortName, description, currency, principal, minPrincipal, maxPrincipal, tolerance,
                     numberOfRepayments, minNumberOfRepayments, maxNumberOfRepayments, repaymentEvery, interestRatePerPeriod,
@@ -492,7 +494,7 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
                     maxDifferentialLendingRate, isFloatingInterestRateCalculationAllowed, isVariableIntallmentsAllowed, minimumGap,
                     maximumGap, syncExpectedWithDisbursementDate, canUseForTopup, isEqualAmortization, rateOptions, this.rates,
                     isRatesEnabled, fixedPrincipalPercentagePerInstallment, ageLimitWarning, ageLimitBlock, ownerTypeOption,
-                    addNewCyclesEnabled);
+                    addNewCyclesEnabled, daysLimitAddOn);
         }
     }
 
