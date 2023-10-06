@@ -634,19 +634,16 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         Integer fromStatus = prequalificationGroup.getStatus();
         List<String> exceptionsList = List.of("ORANGE", "RED", "YELLOW");
         List<List<String>> rows = prequalification.getRows();
-        AtomicReference<PrequalificationStatus> status = new AtomicReference<>(PrequalificationStatus.AGENCY_LEAD_PENDING_APPROVAL);
+        AtomicReference<PrequalificationStatus> status = new AtomicReference<>(PrequalificationStatus.ANALYSIS_UNIT_PENDING_APPROVAL);
         for (List<String> innerList : rows) {
             innerList.forEach(item -> {
                 if (exceptionsList.contains(item)) {
-                    status.set(PrequalificationStatus.AGENCY_LEAD_PENDING_APPROVAL_WITH_EXCEPTIONS);
+                    status.set(PrequalificationStatus.ANALYSIS_UNIT_PENDING_APPROVAL_WITH_EXCEPTIONS);
                 }
             });
         }
 
         prequalificationGroup.updateStatus(status.get());
-        prequalificationGroupRepositoryWrapper.save(prequalificationGroup);
-
-        this.prequalificationGroupRepositoryWrapper.save(prequalificationGroup);
 
         PrequalificationStatusLog statusLog = PrequalificationStatusLog.fromJson(appUser, fromStatus, prequalificationGroup.getStatus(),
                 null, prequalificationGroup);
