@@ -48,6 +48,7 @@ public final class ExternalServicesConstants {
     public static final String SMS_TENANT_APP_KEY = "tenant_app_key";
 
     public static final String NOTIFICATION_SERVICE_NAME = "NOTIFICATION";
+    public static final String GUARANTEE_SERVICE_NAME = "GUARANTEE";
     public static final String NOTIFICATION_SERVER_KEY = "server_key";
     public static final String NOTIFICATION_GCM_END_POINT = "gcm_end_point";
     public static final String NOTIFICATION_FCM_END_POINT = "fcm_end_point";

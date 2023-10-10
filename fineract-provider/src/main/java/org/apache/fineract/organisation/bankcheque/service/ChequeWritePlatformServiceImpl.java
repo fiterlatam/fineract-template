@@ -38,6 +38,7 @@ import org.apache.fineract.organisation.bankAccount.domain.BankAccountRepository
 import org.apache.fineract.organisation.bankcheque.command.ApproveChequeIssuanceCommand;
 import org.apache.fineract.organisation.bankcheque.command.AuthorizeChequeIssuanceCommand;
 import org.apache.fineract.organisation.bankcheque.command.CreateChequeCommand;
+import org.apache.fineract.organisation.bankcheque.command.PayGuaranteeByChequeCommand;
 import org.apache.fineract.organisation.bankcheque.command.ReassignChequeCommand;
 import org.apache.fineract.organisation.bankcheque.command.UpdateChequeCommand;
 import org.apache.fineract.organisation.bankcheque.command.VoidChequeCommand;
@@ -50,6 +51,7 @@ import org.apache.fineract.organisation.bankcheque.exception.BankChequeException
 import org.apache.fineract.organisation.bankcheque.serialization.ApproveChequeIssuanceCommandFromApiJsonDeserializer;
 import org.apache.fineract.organisation.bankcheque.serialization.AuthorizeChequeIssuanceCommandFromApiJsonDeserializer;
 import org.apache.fineract.organisation.bankcheque.serialization.CreateChequeCommandFromApiJsonDeserializer;
+import org.apache.fineract.organisation.bankcheque.serialization.PayGuaranteeByChequeCommandFromApiJsonDeserializer;
 import org.apache.fineract.organisation.bankcheque.serialization.ReassignChequeCommandFromApiJsonDeserializer;
 import org.apache.fineract.organisation.bankcheque.serialization.UpdateChequeCommandFromApiJsonDeserializer;
 import org.apache.fineract.organisation.bankcheque.serialization.VoidChequeCommandFromApiJsonDeserializer;
@@ -74,6 +76,7 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
     private final VoidChequeCommandFromApiJsonDeserializer voidChequeCommandFromApiJsonDeserializer;
     private final ApproveChequeIssuanceCommandFromApiJsonDeserializer approveChequeIssuanceCommandFromApiJsonDeserializer;
     private final AuthorizeChequeIssuanceCommandFromApiJsonDeserializer authorizeChequeIssuanceCommandFromApiJsonDeserializer;
+    private final PayGuaranteeByChequeCommandFromApiJsonDeserializer payGuaranteeByChequeCommandFromApiJsonDeserializer;
 
     @Override
     public CommandProcessingResult createBatch(JsonCommand command) {
@@ -275,6 +278,28 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
             cheque.stampAudit(currentUserId, localDateTime);
             cheque.setIssuanceAuthorizeBy(currentUser);
             cheque.setIssuanceAuthorizeOnDate(localDate);
+            this.chequeBatchRepositoryWrapper.updateCheque(cheque);
+        }
+        return new CommandProcessingResultBuilder().withCommandId(command.commandId()).build();
+    }
+
+    @Override
+    @Transactional
+    public CommandProcessingResult payGuaranteeByCheque(JsonCommand command) {
+        final AppUser currentUser = this.context.authenticatedUser();
+        List<PayGuaranteeByChequeCommand> payGuaranteeByChequeCommands = this.payGuaranteeByChequeCommandFromApiJsonDeserializer
+                .commandFromApiJson(command.json());
+        for (final PayGuaranteeByChequeCommand payGuaranteeByChequeCommand : payGuaranteeByChequeCommands) {
+            final Cheque cheque = this.chequeBatchRepositoryWrapper
+                    .findOneChequeWithNotFoundDetection(payGuaranteeByChequeCommand.getChequeId());
+            cheque.setStatus(BankChequeStatus.PENDING_ISSUANCE.getValue());
+            cheque.setCaseId(payGuaranteeByChequeCommand.getCaseId());
+            cheque.setGuaranteeId(payGuaranteeByChequeCommand.getGuaranteeId());
+            cheque.setDescription(payGuaranteeByChequeCommand.getDescription());
+            cheque.setGuaranteeAmount(payGuaranteeByChequeCommand.getGuaranteeAmount());
+            final LocalDateTime localDateTime = DateUtils.getLocalDateTimeOfSystem();
+            final Long currentUserId = currentUser.getId();
+            cheque.stampAudit(currentUserId, localDateTime);
             this.chequeBatchRepositoryWrapper.updateCheque(cheque);
         }
         return new CommandProcessingResultBuilder().withCommandId(command.commandId()).build();

@@ -19,42 +19,19 @@
 package org.apache.fineract.organisation.bankcheque.data;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import lombok.Builder;
 import lombok.Data;
-import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 
 @Builder
 @Data
-public class ChequeData {
+public class GuaranteeData {
 
     private Long id;
-    private Long chequeNo;
-    private Long batchId;
-    private Long batchNo;
-    private String bankAccNo;
-    private Long bankAccId;
-    private String agencyName;
-    private String bankName;
-    private EnumOptionData status;
-    private String description;
-    private LocalDate createdDate;
-    private String createdByUsername;
-    private LocalDate voidedDate;
-    private String voidedByUsername;
-    private LocalDate voidAuthorizedDate;
-    private String voidAuthorizedByUsername;
-    private LocalDate printedDate;
-    private String printedByUsername;
-    private String lastModifiedByUsername;
-    private LocalDate usedOnDate;
-    private BigDecimal guaranteeAmount;
-    private BigDecimal loanAmount;
-    private String clientName;
     private String clientNo;
-    private String groupName;
-    private String groupNo;
-    private String loanAccNo;
+    private String clientName;
+    private String withdrawalReason;
     private String caseId;
-    private Long guaranteeId;
+    private BigDecimal requestedAmount;
+    private String status;
+    private Long chequeId;
 }

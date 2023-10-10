@@ -18,17 +18,21 @@
  */
 package org.apache.fineract.organisation.bankcheque.service;
 
+import java.util.List;
 import org.apache.fineract.infrastructure.core.data.PaginationParameters;
 import org.apache.fineract.infrastructure.core.service.Page;
 import org.apache.fineract.organisation.bankcheque.data.BatchData;
 import org.apache.fineract.organisation.bankcheque.data.ChequeData;
 import org.apache.fineract.organisation.bankcheque.data.ChequeSearchParams;
+import org.apache.fineract.organisation.bankcheque.data.GuaranteeData;
 
 public interface ChequeReadPlatformService {
 
     BatchData retrieveBatch(final Long batchId);
 
     BatchData retrieveTemplate(final Long bankAccId);
+
+    List<GuaranteeData> retrieveGuarantees(final String caseId, final String locale);
 
     Page<ChequeData> retrieveAll(final ChequeSearchParams chequeSearchParams, final PaginationParameters parameters);
 
