@@ -3942,4 +3942,12 @@ public class CommandWrapperBuilder {
         this.href = "/prequalification/checklist/" + prequalificationId;
         return this;
     }
+
+    public CommandWrapperBuilder payGuaranteesByCheques() {
+        this.entityName = BankChequeApiConstants.BANK_CHECK_RESOURCE_NAME;
+        this.actionName = BankChequeApiConstants.CHECK_ACTION_PAY_GUARANTEE_BY_CHEQUE;
+        this.entityId = null;
+        this.href = "/bankcheques";
+        return this;
+    }
 }

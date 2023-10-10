@@ -16,17 +16,19 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.organisation.prequalification.exception;
+package org.apache.fineract.organisation.bankcheque.command;
 
-import org.apache.fineract.infrastructure.core.exception.AbstractPlatformResourceNotFoundException;
+import java.math.BigDecimal;
+import lombok.Builder;
+import lombok.Data;
 
-/**
- * A {@link RuntimeException} thrown when client is already blacklisted.
- */
-public class PrequalificationStatusNotChangedException extends AbstractPlatformResourceNotFoundException {
+@Builder
+@Data
+public class PayGuaranteeByChequeCommand {
 
-    public PrequalificationStatusNotChangedException(String status) {
-        super("error.msg.group.prequalification.status.not.changed", "Group Prequalificaiton status " + status + " was not changed.",
-                status);
-    }
+    private Long chequeId;
+    private Long guaranteeId;
+    private BigDecimal guaranteeAmount;
+    private String caseId;
+    private String description;
 }

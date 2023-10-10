@@ -89,6 +89,12 @@ public class Cheque extends AbstractAuditableCustom {
     @JoinColumn(name = "issuance_authorizedby_id")
     private AppUser issuanceAuthorizeBy;
 
+    @Column(name = "case_id")
+    private String caseId;
+
+    @Column(name = "guarantee_id")
+    private Long guaranteeId;
+
     public Cheque setChequeNo(Long chequeNo) {
         this.chequeNo = chequeNo;
         return this;
@@ -166,5 +172,13 @@ public class Cheque extends AbstractAuditableCustom {
 
     public void setIssuanceAuthorizeBy(AppUser issuanceAuthorizeBy) {
         this.issuanceAuthorizeBy = issuanceAuthorizeBy;
+    }
+
+    public void setCaseId(String caseId) {
+        this.caseId = caseId;
+    }
+
+    public void setGuaranteeId(Long guaranteeId) {
+        this.guaranteeId = guaranteeId;
     }
 }

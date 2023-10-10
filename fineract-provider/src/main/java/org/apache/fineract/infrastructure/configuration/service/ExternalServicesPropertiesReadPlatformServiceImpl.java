@@ -189,6 +189,10 @@ public class ExternalServicesPropertiesReadPlatformServiceImpl implements Extern
                 serviceNameToUse = ExternalServicesConstants.NOTIFICATION_SERVICE_NAME;
             break;
 
+            case "GUARANTEE":
+                serviceNameToUse = ExternalServicesConstants.GUARANTEE_SERVICE_NAME;
+            break;
+
             default:
                 throw new ExternalServiceConfigurationNotFoundException(serviceName);
         }
