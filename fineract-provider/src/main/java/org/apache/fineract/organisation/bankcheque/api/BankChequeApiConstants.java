@@ -34,6 +34,7 @@ public class BankChequeApiConstants {
     public static final String CHECK_ACTION_AUTHORIZEVOID = "AUTHORIZEVOID";
     public static final String CHECK_ACTION_APPROVE_ISSUANCE = "APPROVEISSUANCE";
     public static final String CHECK_ACTION_AUTHORIZE_ISSUANCE = "AUTHORIZEISSUANCE";
+    public static final String CHECK_ACTION_PAY_GUARANTEE_BY_CHEQUE = "PAYGUARANTEEBYCHEQUE";
     public static final String CHECK_ACTION_DISBURSEBYCHEQUES = "DISBURSEBYCHEQUES";
     public static String ID_PARAM_NAME = "id";
     public static String BATCH_NO = "batchNo";
@@ -50,6 +51,9 @@ public class BankChequeApiConstants {
     public static String BATCH_ID = "batchId";
     public static String OLD_CHEQUE_ID = "oldChequeId";
     public static String CHEQUE_ID = "chequeId";
+    public static String GUARANTEE_CASE_ID = "caseId";
+    public static String GUARANTEE_ID = "guaranteeId";
+    public static String GUARANTEE_AMOUNT = "guaranteeAmount";
 
     public static final Set<String> BATCH_RESPONSE_DATA_PARAMETERS = new HashSet<>(
             Arrays.asList(ID_PARAM_NAME, BATCH_NO, AGENCY, BANK_ACCOUNT, CHEQUES, FROM, TO, BANK_ACC_ID, DESCRIPTION));

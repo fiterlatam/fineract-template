@@ -18,7 +18,10 @@
  */
 package org.apache.fineract.organisation.bankcheque.service;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import java.math.BigDecimal;
+import java.nio.charset.Charset;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
@@ -26,14 +29,20 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.ObjectUtils;
+import org.apache.fineract.infrastructure.configuration.data.ExternalServicesPropertiesData;
+import org.apache.fineract.infrastructure.configuration.service.ExternalServicesConstants;
+import org.apache.fineract.infrastructure.configuration.service.ExternalServicesPropertiesReadPlatformService;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.infrastructure.core.data.PaginationParameters;
 import org.apache.fineract.infrastructure.core.data.PaginationParametersDataValidator;
 import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
+import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
 import org.apache.fineract.infrastructure.core.service.Page;
 import org.apache.fineract.infrastructure.core.service.PaginationHelper;
 import org.apache.fineract.infrastructure.core.service.database.DatabaseSpecificSQLGenerator;
@@ -45,6 +54,7 @@ import org.apache.fineract.organisation.agency.service.AgencyReadPlatformService
 import org.apache.fineract.organisation.bankcheque.data.BatchData;
 import org.apache.fineract.organisation.bankcheque.data.ChequeData;
 import org.apache.fineract.organisation.bankcheque.data.ChequeSearchParams;
+import org.apache.fineract.organisation.bankcheque.data.GuaranteeData;
 import org.apache.fineract.organisation.bankcheque.domain.BankChequeStatus;
 import org.apache.fineract.organisation.bankcheque.exception.BatchNotFoundException;
 import org.apache.fineract.organisation.office.domain.OfficeHierarchyLevel;
@@ -54,9 +64,15 @@ import org.apache.fineract.portfolio.group.service.CenterReadPlatformServiceImpl
 import org.apache.fineract.portfolio.group.service.GroupReadPlatformService;
 import org.apache.fineract.useradministration.data.AppUserData;
 import org.apache.fineract.useradministration.service.AppUserReadPlatformService;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestTemplate;
 
 @Component
 @Slf4j
@@ -75,6 +91,9 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
     private final CenterReadPlatformServiceImpl centerReadPlatformService;
     private final AppUserReadPlatformService appUserReadPlatformService;
     private final GroupReadPlatformService groupReadPlatformService;
+    private final RestTemplate restTemplate = new RestTemplate();
+    private final FromJsonHelper fromApiJsonHelper;
+    private final ExternalServicesPropertiesReadPlatformService externalServicePropertiesReadPlatformService;
 
     @Override
     public BatchData retrieveBatch(final Long batchId) {
@@ -123,6 +142,8 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
                     	mbc.status_enum AS statusEnum,
                     	mbc.description AS description,
                     	mbc.guarantee_amount As guaranteeAmount,
+                    	mbc.case_id AS caseId,
+                    	mbc.guarantee_id AS guaranteeId,
                     	mc.account_no AS clientNo,
                     	mc.display_name AS clientName,
                     	mg.display_name AS groupName,
@@ -171,12 +192,14 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
             EnumOptionData status = BankChequeStatus.status(statusEnum);
             final Long id = JdbcSupport.getLong(rs, "chequeId");
             final Long batchId = JdbcSupport.getLong(rs, "batchId");
+            final Long guaranteeId = JdbcSupport.getLong(rs, "guaranteeId");
             final Long chequeNo = JdbcSupport.getLong(rs, "chequeNo");
             final Long batchNo = JdbcSupport.getLong(rs, "batchNo");
             final String description = rs.getString("description");
             final String bankAccNo = rs.getString("bankAccNo");
             final Long bankAccId = JdbcSupport.getLong(rs, "bankAccId");
             final String agencyName = rs.getString("agencyName");
+            final String caseId = rs.getString("caseId");
             final String bankName = rs.getString("bankName");
             final LocalDate voidedDate = JdbcSupport.getLocalDate(rs, "voidedDate");
             final LocalDate createdDate = JdbcSupport.getLocalDate(rs, "createdDate");
@@ -201,7 +224,8 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
                     .voidAuthorizedDate(voidAuthorizedDate).voidedByUsername(voidedByUsername).createdByUsername(createdByUsername)
                     .printedByUsername(printedByUsername).voidAuthorizedByUsername(voidAuthorizedByUsername)
                     .lastModifiedByUsername(lastModifiedByUsername).clientName(clientName).clientNo(clientNo).groupName(groupName)
-                    .loanAccNo(loanAccNo).loanAmount(loanAmount).guaranteeAmount(guaranteeAmount).groupNo(groupNo).build();
+                    .loanAccNo(loanAccNo).loanAmount(loanAmount).guaranteeAmount(guaranteeAmount).groupNo(groupNo).guaranteeId(guaranteeId)
+                    .caseId(caseId).build();
 
         }
     }
@@ -332,4 +356,67 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
 
     }
 
+    @Override
+    public List<GuaranteeData> retrieveGuarantees(String caseId, final String locale) {
+        final Locale reqLocale = new Locale(locale);
+        GuaranteeData guaranteeData = GuaranteeData.builder().caseId(caseId).build();
+        final Collection<ExternalServicesPropertiesData> externalServicesPropertiesDatas = this.externalServicePropertiesReadPlatformService
+                .retrieveOne(ExternalServicesConstants.GUARANTEE_SERVICE_NAME);
+
+        String guaranteeApiUsername = null;
+        String guaranteeApiPassword = null;
+        String guaranteeApiHost = null;
+
+        for (final ExternalServicesPropertiesData externalServicesPropertiesData : externalServicesPropertiesDatas) {
+            if ("guaranteeApiUsername".equalsIgnoreCase(externalServicesPropertiesData.getName())) {
+                guaranteeApiUsername = externalServicesPropertiesData.getValue();
+            } else if ("guaranteeApiPassword".equalsIgnoreCase(externalServicesPropertiesData.getName())) {
+                guaranteeApiPassword = externalServicesPropertiesData.getValue();
+            } else if ("guaranteeApiHost".equalsIgnoreCase(externalServicesPropertiesData.getName())) {
+                guaranteeApiHost = externalServicesPropertiesData.getValue();
+            }
+        }
+        final String credentials = guaranteeApiUsername + ":" + guaranteeApiPassword;
+        final String basicAuth = new String(Base64.encodeBase64(credentials.getBytes(Charset.defaultCharset())), Charset.defaultCharset());
+        final HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.setContentType(MediaType.APPLICATION_JSON);
+        httpHeaders.setAccept(List.of(MediaType.ALL));
+        httpHeaders.add("Authorization", "Basic " + basicAuth);
+        final String url = guaranteeApiHost + "?caseid=" + caseId;
+        ResponseEntity<String> responseEntity = restTemplate.exchange(url, HttpMethod.POST, new HttpEntity<>(guaranteeData, httpHeaders),
+                String.class);
+        final List<GuaranteeData> guaranteeDataList = new ArrayList<>();
+        if (responseEntity.hasBody()) {
+            final JsonElement jsonElement = this.fromApiJsonHelper.parse(responseEntity.getBody());
+            if (jsonElement.isJsonArray()) {
+                JsonArray jsonArray = jsonElement.getAsJsonArray();
+                for (int i = 0; i < jsonArray.size(); i++) {
+                    final JsonElement element = jsonArray.get(i);
+                    final Long id = this.fromApiJsonHelper.extractLongNamed("id", element);
+                    final JsonElement data = this.fromApiJsonHelper.extractJsonObjectNamed("datos", element);
+                    final String clientNo = this.fromApiJsonHelper.extractStringNamed("numero_cliente", data);
+                    final String clientName = this.fromApiJsonHelper.extractStringNamed("name", data);
+                    final String withdrawalReason = this.fromApiJsonHelper.extractStringNamed("razon_retiro", data);
+                    final String status = this.fromApiJsonHelper.extractStringNamed("razon_retiro", data);
+                    final BigDecimal requestedAmount = this.fromApiJsonHelper.extractBigDecimalNamed("monto", data, reqLocale);
+                    final GuaranteeData guarantee = GuaranteeData.builder().id(id).caseId(caseId).clientNo(clientNo).clientName(clientName)
+                            .withdrawalReason(withdrawalReason).requestedAmount(requestedAmount).status(status).build();
+                    guaranteeDataList.add(guarantee);
+                }
+            }
+        }
+
+        final String query = "SELECT " + this.chequeMapper.schema() + " WHERE mbc.case_id = ? ";
+        List<ChequeData> chequeDataList = this.jdbcTemplate.query(query, this.chequeMapper, caseId);
+        int index = 0;
+        for (final GuaranteeData data : List.copyOf(guaranteeDataList)) {
+            for (final ChequeData chequeData : chequeDataList) {
+                if (chequeData.getGuaranteeId().equals(data.getId())) {
+                    guaranteeDataList.remove(index);
+                }
+            }
+            index++;
+        }
+        return guaranteeDataList;
+    }
 }

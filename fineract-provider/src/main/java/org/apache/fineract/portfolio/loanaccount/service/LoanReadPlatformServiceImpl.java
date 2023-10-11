@@ -363,7 +363,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                 arrayPos = arrayPos + 1;
             }
             if (agencyId != null) {
-                sqlBuilder.append(" and mpg.agency_id = ?");
+                sqlBuilder.append(" and agency.id = ?");
                 extraCriterias.add(agencyId);
                 arrayPos = arrayPos + 1;
             }
@@ -424,7 +424,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                     sqlBuilder.append(" and ( l.approvedon_date <= '").append(approvalEndDateDateString).append("' ) ");
                 }
             }
-
+            sqlBuilder.append(" group by l.id");
             if (searchParameters.isOrderByRequested()) {
                 sqlBuilder.append(" order by ").append(searchParameters.getOrderBy());
                 this.columnValidator.validateSqlInjection(sqlBuilder.toString(), searchParameters.getOrderBy());
@@ -443,6 +443,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                     sqlBuilder.append(sqlGenerator.limit(searchParameters.getLimit()));
                 }
             }
+        } else {
+            sqlBuilder.append(" group by l.id");
         }
         final Object[] objectArray = extraCriterias.toArray();
         final Object[] finalObjectArray = Arrays.copyOf(objectArray, arrayPos);
@@ -761,6 +763,10 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                     + " left join m_client c on c.id = l.client_id" //
                     + " left join m_group g on g.id = l.group_id" //
                     + " left join m_group center on center.id = g.parent_id" //
+                    + " left join m_office centeroffice on centeroffice.id = center.office_id"
+                    + " left join m_office centerounder on centeroffice.hierarchy LIKE CONCAT(centerounder.hierarchy, '%')"
+                    + " left join m_agency agency on agency.linked_office_id = centerounder.id"
+                    + " left join m_agency mag on mag.responsible_user_id = center.responsible_user_id "
                     + " left join m_prequalification_group mpg on mpg.id = g.prequalification_id" //
                     + " left join m_loan_arrears_aging la on la.loan_id = l.id" //
                     + " left join m_fund f on f.id = l.fund_id" //

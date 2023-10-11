@@ -489,4 +489,49 @@
         </insert>
     </changeSet>
 
+    <changeSet author="fineract" id="42">
+        <sqlFile
+                encoding="utf8"
+                path="db/changelog/tenant/commands/insert_guarantee_external_service_configs.sql"
+                relativeToChangelogFile="false"
+                splitStatements="true"
+                stripComments="true"/>
+    </changeSet>
+
+    <changeSet author="fineract" id="43">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_bank_check" columnName="guarantee_id"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_bank_check">
+            <column defaultValueComputed="NULL" name="guarantee_id" type="BIGINT">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="44">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_bank_check" columnName="case_id"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_bank_check">
+            <column defaultValueComputed="NULL" name="case_id" type="VARCHAR(100)">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="45" author="fineract">
+        <insert tableName="m_permission">
+            <column name="grouping" value="portfolio" />
+            <column name="code" value="PAYGUARANTEEBYCHEQUE_BANKCHEQUE"/>
+            <column name="entity_name" value="BANKCHEQUE" />
+            <column name="action_name" value="PAYGUARANTEEBYCHEQUE" />
+            <column name="can_maker_checker" valueBoolean="false" />
+        </insert>
+    </changeSet>
+
 </databaseChangeLog>
