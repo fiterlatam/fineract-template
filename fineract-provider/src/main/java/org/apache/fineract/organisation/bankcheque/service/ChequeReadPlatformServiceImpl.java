@@ -142,6 +142,8 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
                     	mbc.status_enum AS statusEnum,
                     	mbc.description AS description,
                     	mbc.guarantee_amount As guaranteeAmount,
+                    	ml.approved_principal as loanAmount,
+                    	(case when ml.approved_principal>0 then ml.approved_principal else mbc.guarantee_amount end) as chequeAmount,
                     	mbc.case_id AS caseId,
                     	mbc.guarantee_id AS guaranteeId,
                     	mc.account_no AS clientNo,
@@ -163,8 +165,7 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
                     	createdby.username AS createdByUsername,
                     	printedby.username AS printedByUsername,
                     	voidauthorizedby.username AS voidAuthorizedByUsername,
-                    	lastmodifiedby.username AS lastModifiedByUsername,
-                    	ml.approved_principal as loanAmount
+                    	lastmodifiedby.username AS lastModifiedByUsername 
                     FROM m_bank_check mbc
                     LEFT JOIN m_loan ml ON ml.cheque_id = mbc.id
                     LEFT JOIN m_group mg ON mg.id = ml.group_id
@@ -218,6 +219,7 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
             final String groupNo = rs.getString("groupNo");
             final BigDecimal loanAmount = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "loanAmount");
             final BigDecimal guaranteeAmount = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "guaranteeAmount");
+            final BigDecimal chequeAmount = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "chequeAmount");
             return ChequeData.builder().id(id).status(status).batchId(batchId).batchNo(batchNo).description(description)
                     .agencyName(agencyName).bankAccNo(bankAccNo).bankName(bankName).bankAccId(bankAccId).voidedDate(voidedDate)
                     .chequeNo(chequeNo).createdDate(createdDate).usedOnDate(usedOnDate).printedDate(printedDate)
@@ -225,7 +227,7 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
                     .printedByUsername(printedByUsername).voidAuthorizedByUsername(voidAuthorizedByUsername)
                     .lastModifiedByUsername(lastModifiedByUsername).clientName(clientName).clientNo(clientNo).groupName(groupName)
                     .loanAccNo(loanAccNo).loanAmount(loanAmount).guaranteeAmount(guaranteeAmount).groupNo(groupNo).guaranteeId(guaranteeId)
-                    .caseId(caseId).build();
+                    .caseId(caseId).chequeAmount(chequeAmount).build();
 
         }
     }
