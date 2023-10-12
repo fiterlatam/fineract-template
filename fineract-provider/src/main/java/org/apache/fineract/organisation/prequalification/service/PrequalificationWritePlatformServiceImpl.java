@@ -692,7 +692,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         final PrequalificationGroup prequalificationGroup = this.prequalificationGroupRepositoryWrapper
                 .findOneWithNotFoundDetection(entityId);
         Integer fromStatus = prequalificationGroup.getStatus();
-        if (action.equals("sendtoagency")){
+        if (action.equals("sendtoagency")) {
             return sendToAgency(entityId, command);
         }
         PrequalificationStatus prequalificationStatus = resolveStatus(action);

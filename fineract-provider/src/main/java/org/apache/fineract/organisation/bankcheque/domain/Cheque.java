@@ -75,6 +75,12 @@ public class Cheque extends AbstractAuditableCustom {
     @Column(name = "guarantee_amount")
     private BigDecimal guaranteeAmount;
 
+    @Column(name = "required_guarantee_amount")
+    private BigDecimal requiredGuaranteeAmount;
+
+    @Column(name = "guarantee_deposit_no")
+    private String depositGuaranteeNo;
+
     @Column(name = "issuance_approvedon_date")
     private LocalDate issuanceApprovedOnDate;
 
@@ -180,5 +186,13 @@ public class Cheque extends AbstractAuditableCustom {
 
     public void setGuaranteeId(Long guaranteeId) {
         this.guaranteeId = guaranteeId;
+    }
+
+    public void setRequiredGuaranteeAmount(BigDecimal requiredGuaranteeAmount) {
+        this.requiredGuaranteeAmount = requiredGuaranteeAmount;
+    }
+
+    public void setDepositGuaranteeNo(String depositGuaranteeNo) {
+        this.depositGuaranteeNo = depositGuaranteeNo;
     }
 }
