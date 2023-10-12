@@ -165,7 +165,7 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
                     	createdby.username AS createdByUsername,
                     	printedby.username AS printedByUsername,
                     	voidauthorizedby.username AS voidAuthorizedByUsername,
-                    	lastmodifiedby.username AS lastModifiedByUsername 
+                    	lastmodifiedby.username AS lastModifiedByUsername
                     FROM m_bank_check mbc
                     LEFT JOIN m_loan ml ON ml.cheque_id = mbc.id
                     LEFT JOIN m_group mg ON mg.id = ml.group_id

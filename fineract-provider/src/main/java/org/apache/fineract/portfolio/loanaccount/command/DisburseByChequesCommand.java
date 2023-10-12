@@ -29,5 +29,7 @@ public class DisburseByChequesCommand {
     private Long chequeId;
     private Long loanId;
     private String description;
-    private BigDecimal guaranteeAmount;
+    private BigDecimal actualGuaranteeAmount;
+    private BigDecimal requiredGuaranteeAmount;
+    private String depositGuaranteeNo;
 }
