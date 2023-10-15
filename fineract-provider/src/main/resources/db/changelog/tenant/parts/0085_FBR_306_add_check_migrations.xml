@@ -560,4 +560,15 @@
         </addColumn>
     </changeSet>
 
+    <changeSet author="fineract" id="48">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_bank_check" columnName="guarantee_name"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_bank_check">
+            <column name="guarantee_name" type="VARCHAR(200)"></column>
+        </addColumn>
+    </changeSet>
+
 </databaseChangeLog>

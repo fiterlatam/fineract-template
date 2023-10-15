@@ -295,6 +295,7 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
             cheque.setStatus(BankChequeStatus.PENDING_ISSUANCE.getValue());
             cheque.setCaseId(payGuaranteeByChequeCommand.getCaseId());
             cheque.setGuaranteeId(payGuaranteeByChequeCommand.getGuaranteeId());
+            cheque.setGuaranteeName(payGuaranteeByChequeCommand.getGuaranteeName());
             cheque.setDescription(payGuaranteeByChequeCommand.getDescription());
             cheque.setGuaranteeAmount(payGuaranteeByChequeCommand.getGuaranteeAmount());
             final LocalDateTime localDateTime = DateUtils.getLocalDateTimeOfSystem();

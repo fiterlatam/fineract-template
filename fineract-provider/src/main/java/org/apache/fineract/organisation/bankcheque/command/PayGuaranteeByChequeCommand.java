@@ -28,6 +28,7 @@ public class PayGuaranteeByChequeCommand {
 
     private Long chequeId;
     private Long guaranteeId;
+    private String guaranteeName;
     private BigDecimal guaranteeAmount;
     private String caseId;
     private String description;

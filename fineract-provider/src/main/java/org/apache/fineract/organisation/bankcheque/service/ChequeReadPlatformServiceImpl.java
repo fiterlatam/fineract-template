@@ -35,6 +35,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.infrastructure.configuration.data.ExternalServicesPropertiesData;
 import org.apache.fineract.infrastructure.configuration.service.ExternalServicesConstants;
 import org.apache.fineract.infrastructure.configuration.service.ExternalServicesPropertiesReadPlatformService;
@@ -148,6 +149,7 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
                     	mbc.guarantee_id AS guaranteeId,
                     	mc.account_no AS clientNo,
                     	mc.display_name AS clientName,
+                    	mbc.guarantee_name AS guaranteeName,
                     	mg.display_name AS groupName,
                     	mg.account_no AS groupNo,
                     	ml.account_no AS loanAccNo,
@@ -212,7 +214,11 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
             final String printedByUsername = rs.getString("printedByUsername");
             final String voidAuthorizedByUsername = rs.getString("voidAuthorizedByUsername");
             final String lastModifiedByUsername = rs.getString("lastModifiedByUsername");
-            final String clientName = rs.getString("clientName");
+            String clientName = rs.getString("clientName");
+            final String guaranteeName = rs.getString("guaranteeName");
+            if (StringUtils.isBlank(clientName)) {
+                clientName = guaranteeName;
+            }
             final String clientNo = rs.getString("clientNo");
             final String groupName = rs.getString("groupName");
             final String loanAccNo = rs.getString("loanAccNo");
