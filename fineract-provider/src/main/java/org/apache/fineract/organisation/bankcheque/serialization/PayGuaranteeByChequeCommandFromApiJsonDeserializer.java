@@ -61,8 +61,10 @@ public class PayGuaranteeByChequeCommandFromApiJsonDeserializer extends Abstract
                     element, locale);
             baseDataValidator.reset().parameter(BankChequeApiConstants.GUARANTEE_AMOUNT).value(guaranteeAmount).longGreaterThanZero()
                     .notNull();
+            final String guaranteeName = this.fromApiJsonHelper.extractStringNamed(BankChequeApiConstants.GUARANTEE_NAME, element);
+
             final PayGuaranteeByChequeCommand payGuaranteeByChequeCommand = PayGuaranteeByChequeCommand.builder().chequeId(chequeId)
-                    .caseId(caseId).guaranteeId(guaranteeId).guaranteeAmount(guaranteeAmount).build();
+                    .caseId(caseId).guaranteeId(guaranteeId).guaranteeAmount(guaranteeAmount).guaranteeName(guaranteeName).build();
             payGuaranteeByChequeCommands.add(payGuaranteeByChequeCommand);
         }
         throwExceptionIfValidationWarningsExist(dataValidationErrors);

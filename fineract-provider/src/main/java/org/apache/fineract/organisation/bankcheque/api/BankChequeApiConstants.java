@@ -52,6 +52,7 @@ public class BankChequeApiConstants {
     public static String OLD_CHEQUE_ID = "oldChequeId";
     public static String CHEQUE_ID = "chequeId";
     public static String GUARANTEE_CASE_ID = "caseId";
+    public static String GUARANTEE_NAME = "guaranteeName";
     public static String GUARANTEE_ID = "guaranteeId";
     public static String GUARANTEE_AMOUNT = "guaranteeAmount";
 
