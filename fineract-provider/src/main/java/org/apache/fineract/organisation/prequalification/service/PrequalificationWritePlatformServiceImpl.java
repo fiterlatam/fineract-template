@@ -654,6 +654,37 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
     }
 
     @Override
+    public CommandProcessingResult sendToAgency(Long entityId, JsonCommand command) {
+        final PrequalificationGroup prequalificationGroup = this.prequalificationGroupRepositoryWrapper
+                .findOneWithNotFoundDetection(entityId);
+
+        AppUser appUser = this.context.authenticatedUser();
+        PrequalificationChecklistData prequalificationChecklistData = this.prequalificationChecklistReadPlatformService
+                .retrieveHardPolicyValidationResults(entityId);
+        GenericValidationResultSet prequalification = prequalificationChecklistData.getPrequalification();
+        Integer fromStatus = prequalificationGroup.getStatus();
+        List<String> exceptionsList = List.of("ORANGE", "RED", "YELLOW");
+        List<List<String>> rows = prequalification.getRows();
+        AtomicReference<PrequalificationStatus> status = new AtomicReference<>(PrequalificationStatus.AGENCY_LEAD_PENDING_APPROVAL);
+        for (List<String> innerList : rows) {
+            innerList.forEach(item -> {
+                if (exceptionsList.contains(item)) {
+                    status.set(PrequalificationStatus.AGENCY_LEAD_PENDING_APPROVAL_WITH_EXCEPTIONS);
+                }
+            });
+        }
+
+        prequalificationGroup.updateStatus(status.get());
+
+        PrequalificationStatusLog statusLog = PrequalificationStatusLog.fromJson(appUser, fromStatus, prequalificationGroup.getStatus(),
+                null, prequalificationGroup);
+
+        this.preQualificationLogRepository.saveAndFlush(statusLog);
+
+        return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withEntityId(prequalificationGroup.getId()).build();
+    }
+
+    @Override
     public CommandProcessingResult processAnalysisRequest(Long entityId, JsonCommand command) {
         String comments = command.stringValueOfParameterNamed("comments");
         String action = command.stringValueOfParameterNamed("action");
@@ -661,6 +692,9 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         final PrequalificationGroup prequalificationGroup = this.prequalificationGroupRepositoryWrapper
                 .findOneWithNotFoundDetection(entityId);
         Integer fromStatus = prequalificationGroup.getStatus();
+        if (action.equals("sendtoagency")) {
+            return sendToAgency(entityId, command);
+        }
         PrequalificationStatus prequalificationStatus = resolveStatus(action);
         if (fromStatus.equals(prequalificationStatus.getValue())) {
             throw new PrequalificationStatusNotChangedException(prequalificationStatus.toString());

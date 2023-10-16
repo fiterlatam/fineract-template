@@ -534,4 +534,30 @@
         </insert>
     </changeSet>
 
+    <changeSet author="fineract" id="46">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_bank_check" columnName="guarantee_deposit_no"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_bank_check">
+            <column defaultValueComputed="NULL" name="guarantee_deposit_no" type="VARCHAR(100)">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="47">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_bank_check" columnName="required_guarantee_amount"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_bank_check">
+            <column defaultValueNumeric="0.000000" name="required_guarantee_amount" type="DECIMAL(19, 6)">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
 </databaseChangeLog>

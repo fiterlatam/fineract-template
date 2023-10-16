@@ -52,14 +52,23 @@ public class DisburseByChequesCommandFromApiJsonDeserializer extends AbstractFro
             baseDataValidator.reset().parameter(LoanApiConstants.CHEQUE_ID).value(chequeId).notBlank();
             final Long loanId = this.fromApiJsonHelper.extractLongNamed(LoanApiConstants.LOAN_ID, element);
             baseDataValidator.reset().parameter(LoanApiConstants.LOAN_ID).value(loanId).notBlank();
-            final BigDecimal guaranteeAmount = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed(LoanApiConstants.GUARANTEE_AMOUNT,
-                    element);
-            baseDataValidator.reset().parameter(LoanApiConstants.GUARANTEE_AMOUNT).value(guaranteeAmount).notBlank().positiveAmount();
+            final BigDecimal actualGuaranteeAmount = this.fromApiJsonHelper
+                    .extractBigDecimalWithLocaleNamed(LoanApiConstants.ACTUAL_GUARANTEE_AMOUNT, element);
+            baseDataValidator.reset().parameter(LoanApiConstants.ACTUAL_GUARANTEE_AMOUNT).value(actualGuaranteeAmount).notBlank()
+                    .positiveAmount();
+            final BigDecimal requiredGuaranteeAmount = this.fromApiJsonHelper
+                    .extractBigDecimalWithLocaleNamed(LoanApiConstants.REQUIRED_GUARANTEE_AMOUNT, element);
+            baseDataValidator.reset().parameter(LoanApiConstants.REQUIRED_GUARANTEE_AMOUNT).value(requiredGuaranteeAmount).notBlank()
+                    .positiveAmount();
             final String description = this.fromApiJsonHelper.extractStringNamed(LoanApiConstants.CHEQUE_DESCRIPTION, element);
             baseDataValidator.reset().parameter(LoanApiConstants.CHEQUE_DESCRIPTION).value(description).notBlank()
                     .notExceedingLengthOf(1000);
+            final String depositGuaranteeNo = this.fromApiJsonHelper.extractStringNamed(LoanApiConstants.DEPOSIT_GUARANTEE_NUMBER, element);
+            baseDataValidator.reset().parameter(LoanApiConstants.DEPOSIT_GUARANTEE_NUMBER).value(depositGuaranteeNo).notBlank()
+                    .notExceedingLengthOf(1000);
             final DisburseByChequesCommand disburseByChequesCommand = DisburseByChequesCommand.builder().chequeId(chequeId).loanId(loanId)
-                    .guaranteeAmount(guaranteeAmount).description(description).build();
+                    .actualGuaranteeAmount(actualGuaranteeAmount).requiredGuaranteeAmount(requiredGuaranteeAmount).description(description)
+                    .depositGuaranteeNo(depositGuaranteeNo).build();
             disburseByChequesCommands.add(disburseByChequesCommand);
         }
         throwExceptionIfValidationWarningsExist(dataValidationErrors);

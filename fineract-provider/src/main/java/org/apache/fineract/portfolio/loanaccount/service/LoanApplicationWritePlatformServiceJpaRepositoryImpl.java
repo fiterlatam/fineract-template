@@ -1916,7 +1916,9 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             loanAccount.setLoanStatus(LoanStatus.DISBURSE_AUTHORIZATION_PENDING.getValue());
             cheque.setStatus(BankChequeStatus.PENDING_ISSUANCE.getValue());
             cheque.setDescription(disburseByChequesCommand.getDescription());
-            cheque.setGuaranteeAmount(disburseByChequesCommand.getGuaranteeAmount());
+            cheque.setGuaranteeAmount(disburseByChequesCommand.getActualGuaranteeAmount());
+            cheque.setRequiredGuaranteeAmount(disburseByChequesCommand.getRequiredGuaranteeAmount());
+            cheque.setDepositGuaranteeNo(disburseByChequesCommand.getDepositGuaranteeNo());
             final LocalDateTime localDateTime = DateUtils.getLocalDateTimeOfSystem();
             LocalDate localDate = DateUtils.getBusinessLocalDate();
             final Long currentUserId = currentUser.getId();
