@@ -27,6 +27,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -39,6 +40,13 @@ import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuilder;
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
+import org.apache.fineract.infrastructure.documentmanagement.contentrepository.ContentRepository;
+import org.apache.fineract.infrastructure.documentmanagement.contentrepository.ContentRepositoryFactory;
+import org.apache.fineract.infrastructure.documentmanagement.data.DocumentData;
+import org.apache.fineract.infrastructure.documentmanagement.domain.Document;
+import org.apache.fineract.infrastructure.documentmanagement.domain.DocumentRepository;
+import org.apache.fineract.infrastructure.documentmanagement.exception.DocumentNotFoundException;
+import org.apache.fineract.infrastructure.documentmanagement.service.DocumentReadPlatformService;
 import org.apache.fineract.infrastructure.jobs.annotation.CronTarget;
 import org.apache.fineract.infrastructure.jobs.exception.JobExecutionException;
 import org.apache.fineract.infrastructure.jobs.service.JobName;
@@ -97,6 +105,9 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
     private final AgencyRepositoryWrapper agencyRepositoryWrapper;
     private final PrequalificationMemberCommandFromApiJsonDeserializer apiJsonDeserializer;
     private final JdbcTemplate jdbcTemplate;
+    private final DocumentRepository documentRepository;
+    private final ContentRepositoryFactory contentRepositoryFactory;
+    private final DocumentReadPlatformService documentReadPlatformService;
 
     @Autowired
     public PrequalificationWritePlatformServiceImpl(final PlatformSecurityContext context,
@@ -108,6 +119,8 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             final PreQualificationStatusLogRepository preQualificationLogRepository,
             final PrequalificationChecklistReadPlatformService prequalificationChecklistReadPlatformService,
             final CodeValueReadPlatformService codeValueReadPlatformService, final JdbcTemplate jdbcTemplate,
+            final ContentRepositoryFactory contentRepositoryFactory,final DocumentRepository documentRepository,
+            final DocumentReadPlatformService documentReadPlatformService,
             final PrequalificationGroupRepositoryWrapper prequalificationGroupRepositoryWrapper) {
         this.context = context;
         this.dataValidator = dataValidator;
@@ -123,6 +136,9 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         this.prequalificationChecklistReadPlatformService = prequalificationChecklistReadPlatformService;
         this.preQualificationLogRepository = preQualificationLogRepository;
         this.jdbcTemplate = jdbcTemplate;
+        this.contentRepositoryFactory = contentRepositoryFactory;
+        this.documentRepository = documentRepository;
+        this.documentReadPlatformService = documentReadPlatformService;
     }
 
     @Transactional
@@ -318,6 +334,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         return groupId;
     }
 
+    @Transactional
     @Override
     public CommandProcessingResult processUpdatePrequalification(Long groupId, JsonCommand command) {
         final Boolean individualPrequalification = command.booleanPrimitiveValueOfParameterNamed("individual");
@@ -380,7 +397,11 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                 prequalificationGroup.updateGroupName(newValue);
             }
         }
-
+        Collection<DocumentData> prequalificationDocs = this.documentReadPlatformService.retrieveAllDocuments("prequalifications", prequalificationGroup.getId());
+        if (!prequalificationDocs.isEmpty()) {
+            DocumentData documentData = prequalificationDocs.iterator().next();
+            deletePrequalificationDocument(documentData);
+        }
         this.prequalificationGroupRepositoryWrapper.saveAndFlush(prequalificationGroup);
 
         // TODO: FBR-220 process changes in members
@@ -394,6 +415,16 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                 .withResourceIdAsString(prequalificationGroup.getId().toString()) //
                 .withEntityId(prequalificationGroup.getId()) //
                 .build();
+    }
+
+    public void deletePrequalificationDocument (DocumentData documentData){
+        final Document document = this.documentRepository.findById(documentData.getId())
+                .orElseThrow(() -> new DocumentNotFoundException("prequalification",
+                        documentData.getParentEntityId(), documentData.getId()));
+        this.documentRepository.delete(document);
+
+        final ContentRepository contentRepository = this.contentRepositoryFactory.getRepository(document.storageType());
+        contentRepository.deleteFile(document.getLocation());
     }
 
     @Override
