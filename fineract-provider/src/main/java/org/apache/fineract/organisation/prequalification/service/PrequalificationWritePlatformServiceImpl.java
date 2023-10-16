@@ -119,7 +119,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             final PreQualificationStatusLogRepository preQualificationLogRepository,
             final PrequalificationChecklistReadPlatformService prequalificationChecklistReadPlatformService,
             final CodeValueReadPlatformService codeValueReadPlatformService, final JdbcTemplate jdbcTemplate,
-            final ContentRepositoryFactory contentRepositoryFactory,final DocumentRepository documentRepository,
+            final ContentRepositoryFactory contentRepositoryFactory, final DocumentRepository documentRepository,
             final DocumentReadPlatformService documentReadPlatformService,
             final PrequalificationGroupRepositoryWrapper prequalificationGroupRepositoryWrapper) {
         this.context = context;
@@ -397,7 +397,8 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                 prequalificationGroup.updateGroupName(newValue);
             }
         }
-        Collection<DocumentData> prequalificationDocs = this.documentReadPlatformService.retrieveAllDocuments("prequalifications", prequalificationGroup.getId());
+        Collection<DocumentData> prequalificationDocs = this.documentReadPlatformService.retrieveAllDocuments("prequalifications",
+                prequalificationGroup.getId());
         if (!prequalificationDocs.isEmpty()) {
             DocumentData documentData = prequalificationDocs.iterator().next();
             deletePrequalificationDocument(documentData);
@@ -417,10 +418,9 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                 .build();
     }
 
-    public void deletePrequalificationDocument (DocumentData documentData){
-        final Document document = this.documentRepository.findById(documentData.getId())
-                .orElseThrow(() -> new DocumentNotFoundException("prequalification",
-                        documentData.getParentEntityId(), documentData.getId()));
+    public void deletePrequalificationDocument(DocumentData documentData) {
+        final Document document = this.documentRepository.findById(documentData.getId()).orElseThrow(
+                () -> new DocumentNotFoundException("prequalification", documentData.getParentEntityId(), documentData.getId()));
         this.documentRepository.delete(document);
 
         final ContentRepository contentRepository = this.contentRepositoryFactory.getRepository(document.storageType());
