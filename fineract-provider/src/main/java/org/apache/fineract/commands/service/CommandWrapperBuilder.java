@@ -3950,4 +3950,28 @@ public class CommandWrapperBuilder {
         this.href = "/bankcheques";
         return this;
     }
+
+    public CommandWrapperBuilder createCommittee() {
+        this.actionName = "CREATE";
+        this.entityName = "COMMITTEE";
+        this.entityId = null;
+        this.href = "/committees";
+        return this;
+    }
+
+    public CommandWrapperBuilder updateCommittee(Long committeeId) {
+        this.actionName = "UPDATE";
+        this.entityName = "COMMITTEE";
+        this.entityId = committeeId;
+        this.href = "/committees" + committeeId;
+        return this;
+    }
+
+    public CommandWrapperBuilder deleteCommittee(Long committeeId) {
+        this.actionName = "DELETE";
+        this.entityName = "COMMITTEE";
+        this.entityId = committeeId;
+        this.href = "/committees" + committeeId;
+        return this;
+    }
 }

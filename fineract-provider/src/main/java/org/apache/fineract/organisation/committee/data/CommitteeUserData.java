@@ -16,24 +16,31 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.useradministration.service;
+package org.apache.fineract.organisation.committee.data;
 
-import java.util.Collection;
-import org.apache.fineract.useradministration.data.AppUserData;
+/**
+ * Immutable data object for committee users data.
+ */
+public class CommitteeUserData {
 
-public interface AppUserReadPlatformService {
+    private final Long userId;
 
-    Collection<AppUserData> retrieveAllUsers();
+    private final String firstname;
 
-    Collection<AppUserData> retrieveSearchTemplate();
+    private final String lastname;
 
-    AppUserData retrieveNewUserDetails();
+    public static CommitteeUserData instance(Long userId, String firstname, String lastname) {
+        return new CommitteeUserData(userId, firstname, lastname);
+    }
 
-    AppUserData retrieveUser(Long userId);
+    public CommitteeUserData(Long userId, String firstname, String lastname) {
+        this.userId = userId;
+        this.firstname = firstname;
+        this.lastname = lastname;
+    }
 
-    boolean isUsernameExist(String username);
-
-    Collection<AppUserData> retrieveUsersUnderHierarchy(Long hierarchyLevel);
-
-    Collection<AppUserData> retrieveUsersForCommittees();
+    // TODO: complete
+    public static CommitteeUserData template() {
+        return new CommitteeUserData(null, null, null);
+    }
 }

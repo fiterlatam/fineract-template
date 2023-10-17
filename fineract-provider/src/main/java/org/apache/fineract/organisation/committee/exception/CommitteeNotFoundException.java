@@ -16,24 +16,21 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.useradministration.service;
+package org.apache.fineract.organisation.committee.exception;
 
-import java.util.Collection;
-import org.apache.fineract.useradministration.data.AppUserData;
+import org.apache.fineract.infrastructure.core.exception.AbstractPlatformResourceNotFoundException;
+import org.springframework.dao.EmptyResultDataAccessException;
 
-public interface AppUserReadPlatformService {
+/**
+ * A {@link RuntimeException} thrown when committee is not found.
+ */
+public class CommitteeNotFoundException extends AbstractPlatformResourceNotFoundException {
 
-    Collection<AppUserData> retrieveAllUsers();
+    public CommitteeNotFoundException(Long id) {
+        super("error.msg.committee.id.invalid", "Committee with id " + id + " was not found.", id);
+    }
 
-    Collection<AppUserData> retrieveSearchTemplate();
-
-    AppUserData retrieveNewUserDetails();
-
-    AppUserData retrieveUser(Long userId);
-
-    boolean isUsernameExist(String username);
-
-    Collection<AppUserData> retrieveUsersUnderHierarchy(Long hierarchyLevel);
-
-    Collection<AppUserData> retrieveUsersForCommittees();
+    public CommitteeNotFoundException(Long id, EmptyResultDataAccessException e) {
+        super("error.msg.committee.id.invalid", "Committee with identifier " + id + " does not exist", id, e);
+    }
 }
