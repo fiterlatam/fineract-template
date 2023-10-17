@@ -16,24 +16,16 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.useradministration.service;
+package org.apache.fineract.organisation.committee.service;
 
-import java.util.Collection;
-import org.apache.fineract.useradministration.data.AppUserData;
+import org.apache.fineract.infrastructure.core.api.JsonCommand;
+import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 
-public interface AppUserReadPlatformService {
+public interface CommitteeWritePlatformService {
 
-    Collection<AppUserData> retrieveAllUsers();
+    CommandProcessingResult createCommittee(JsonCommand command);
 
-    Collection<AppUserData> retrieveSearchTemplate();
+    CommandProcessingResult updateCommittee(Long committeeId, JsonCommand command);
 
-    AppUserData retrieveNewUserDetails();
-
-    AppUserData retrieveUser(Long userId);
-
-    boolean isUsernameExist(String username);
-
-    Collection<AppUserData> retrieveUsersUnderHierarchy(Long hierarchyLevel);
-
-    Collection<AppUserData> retrieveUsersForCommittees();
+    CommandProcessingResult deleteCommittee(Long committeeId);
 }

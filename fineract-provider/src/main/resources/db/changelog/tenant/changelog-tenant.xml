@@ -109,4 +109,6 @@
     <include file="parts/0090_FBR_313_Add_Prequalificatioin_Checklist_log.xml" relativeToChangelogFile="true"/>
     <include file="parts/0091_FBR_315_Add_Agency_Exception_queue_permissions.xml" relativeToChangelogFile="true"/>
     <include file="parts/0092_Add_Approved_Amount_prequalification_group_member.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0093_FBR_327_Add_code_for_committees.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0094_FBR_327_Add_committees_permissions.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

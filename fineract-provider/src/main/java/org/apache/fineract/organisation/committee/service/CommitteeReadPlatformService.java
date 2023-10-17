@@ -16,24 +16,21 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.useradministration.service;
+package org.apache.fineract.organisation.committee.service;
 
 import java.util.Collection;
-import org.apache.fineract.useradministration.data.AppUserData;
+import org.apache.fineract.infrastructure.core.service.Page;
+import org.apache.fineract.infrastructure.core.service.SearchParameters;
+import org.apache.fineract.organisation.committee.data.CommitteeData;
+import org.apache.fineract.organisation.committee.data.CommitteeUserData;
 
-public interface AppUserReadPlatformService {
+public interface CommitteeReadPlatformService {
 
-    Collection<AppUserData> retrieveAllUsers();
+    CommitteeData findByCommitteeId(Long committeeId);
 
-    Collection<AppUserData> retrieveSearchTemplate();
+    CommitteeData retrieveNewCommitteeTemplate();
 
-    AppUserData retrieveNewUserDetails();
+    Page<CommitteeData> retrieveAll(SearchParameters searchParameters);
 
-    AppUserData retrieveUser(Long userId);
-
-    boolean isUsernameExist(String username);
-
-    Collection<AppUserData> retrieveUsersUnderHierarchy(Long hierarchyLevel);
-
-    Collection<AppUserData> retrieveUsersForCommittees();
+    Collection<CommitteeUserData> retrieveCommitteeUsers(Long committeeId);
 }
