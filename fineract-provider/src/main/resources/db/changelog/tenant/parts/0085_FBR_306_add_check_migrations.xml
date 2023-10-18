@@ -571,4 +571,13 @@
         </addColumn>
     </changeSet>
 
+    <changeSet author="fineract" id="49">
+        <sqlFile
+                encoding="utf8"
+                path="db/changelog/tenant/commands/insert_buro_check_external_service_configs.sql"
+                relativeToChangelogFile="false"
+                splitStatements="true"
+                stripComments="true"/>
+    </changeSet>
+
 </databaseChangeLog>
