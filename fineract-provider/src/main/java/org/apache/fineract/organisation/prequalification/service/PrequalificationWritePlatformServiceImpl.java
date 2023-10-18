@@ -65,6 +65,7 @@ import org.apache.fineract.organisation.prequalification.domain.Prequalification
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationMemberIndication;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationStatus;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationStatusLog;
+import org.apache.fineract.organisation.prequalification.domain.PrequalificationType;
 import org.apache.fineract.organisation.prequalification.exception.PrequalificationStatusNotChangedException;
 import org.apache.fineract.organisation.prequalification.serialization.PrequalificationMemberCommandFromApiJsonDeserializer;
 import org.apache.fineract.portfolio.blacklist.domain.BlacklistStatus;
@@ -73,6 +74,7 @@ import org.apache.fineract.portfolio.client.service.ClientReadPlatformService;
 import org.apache.fineract.portfolio.group.domain.Group;
 import org.apache.fineract.portfolio.group.domain.GroupRepositoryWrapper;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProduct;
+import org.apache.fineract.portfolio.loanproduct.domain.LoanProductOwnerType;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductRepository;
 import org.apache.fineract.portfolio.loanproduct.exception.LoanProductNotFoundException;
 import org.apache.fineract.useradministration.domain.AppUser;
@@ -182,6 +184,9 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         }
         PrequalificationGroup prequalificationGroup = PrequalificationGroup.fromJson(addedBy, facilitator, agency, group, loanProduct,
                 parentGroup, command);
+
+        PrequalificationType prequalificationType = resolvePrequalificationType(loanProduct);
+        prequalificationGroup.setPrequalificationType(prequalificationType.getValue());
 
         this.prequalificationGroupRepositoryWrapper.saveAndFlush(prequalificationGroup);
         StringBuilder prequalSB = new StringBuilder();
@@ -378,6 +383,9 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                 newLoanProduct = productOption.get();
             }
             prequalificationGroup.updateProduct(newLoanProduct);
+
+            PrequalificationType prequalificationType = resolvePrequalificationType(newLoanProduct);
+            prequalificationGroup.setPrequalificationType(prequalificationType.getValue());
         }
 
         if (changes.containsKey(PrequalificatoinApiConstants.facilitatorParamName)) {
@@ -756,4 +764,18 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         }
         return status;
     }
+
+    private PrequalificationType resolvePrequalificationType(LoanProduct loanProduct) {
+        if (loanProduct.getOwnerType() != null) {
+            LoanProductOwnerType ownerType = LoanProductOwnerType.fromInt(loanProduct.getOwnerType());
+            if (ownerType.equals(LoanProductOwnerType.INDIVIDUAL)) {
+                return PrequalificationType.INDIVIDUAL;
+            }
+            if (ownerType.equals(LoanProductOwnerType.GROUP)) {
+                return PrequalificationType.GROUP;
+            }
+        }
+        return PrequalificationType.INVALID;
+    }
+
 }

@@ -86,6 +86,9 @@ public class PrequalificationGroup extends AbstractPersistableCustom {
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
+    @Column(name = "prequalification_type_enum")
+    private Integer prequalificationType;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "previous_prequalification")
     private PrequalificationGroup parent;
@@ -211,5 +214,13 @@ public class PrequalificationGroup extends AbstractPersistableCustom {
 
     public void updateComments(String comment) {
         this.comments = comment;
+    }
+
+    public Integer getPrequalificationType() {
+        return prequalificationType;
+    }
+
+    public void setPrequalificationType(Integer prequalificationType) {
+        this.prequalificationType = prequalificationType;
     }
 }
