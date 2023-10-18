@@ -40,6 +40,7 @@ import org.apache.fineract.infrastructure.security.utils.ColumnValidator;
 import org.apache.fineract.organisation.prequalification.command.PrequalificationDataValidator;
 import org.apache.fineract.organisation.prequalification.data.GroupPrequalificationData;
 import org.apache.fineract.organisation.prequalification.data.MemberPrequalificationData;
+import org.apache.fineract.organisation.prequalification.domain.BuroCheckClassification;
 import org.apache.fineract.organisation.prequalification.domain.PreQualificationMemberRepository;
 import org.apache.fineract.organisation.prequalification.domain.PreQualificationsEnumerations;
 import org.apache.fineract.organisation.prequalification.domain.PreQualificationsMemberEnumerations;
@@ -552,12 +553,8 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
 
             final Integer statusEnum = JdbcSupport.getInteger(rs, "status");
             final EnumOptionData status = PreQualificationsMemberEnumerations.status(statusEnum);
-            EnumOptionData bureauCheckStatus = null;
             final Integer bureauStatus = rs.getInt("buroCheckStatus");
-            if (bureauStatus != null) {
-                bureauCheckStatus = PreQualificationsMemberEnumerations.status(bureauStatus.intValue());
-            }
-
+            EnumOptionData bureauCheckStatus = BuroCheckClassification.status(BuroCheckClassification.fromInt(bureauStatus).getId());
             final Long id = JdbcSupport.getLong(rs, "id");
             final String name = rs.getString("name");
             ;
