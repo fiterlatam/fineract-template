@@ -32,7 +32,8 @@ dependencies {
             'org.springframework.boot:spring-boot-starter-cache',
             'org.springframework.boot:spring-boot-starter-oauth2-resource-server',
             'org.springframework.boot:spring-boot-starter-actuator',
-
+            'org.apache.poi:poi',
+            'org.apache.poi:poi-ooxml',
             'org.glassfish.jersey.media:jersey-media-multipart:2.36',
 
             'org.springframework:spring-jms',
@@ -74,6 +75,10 @@ dependencies {
             'org.springdoc:springdoc-openapi-common',
             'org.springdoc:springdoc-openapi-security',
             'org.mapstruct:mapstruct',
+            'org.codehaus.groovy:groovy-all',
+            'org.openjdk.nashorn:nashorn-core',
+            fileTree('thirdparty') {
+                include '*.jar' }
             )
 
     implementation ('org.apache.commons:commons-email') {
