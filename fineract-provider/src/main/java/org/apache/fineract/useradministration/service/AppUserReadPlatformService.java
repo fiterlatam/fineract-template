@@ -34,4 +34,6 @@ public interface AppUserReadPlatformService {
     boolean isUsernameExist(String username);
 
     Collection<AppUserData> retrieveUsersUnderHierarchy(Long hierarchyLevel);
+
+    Collection<AppUserData> retrieveUsersForCommittees();
 }

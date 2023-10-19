@@ -1651,4 +1651,7 @@ public class LoanProduct extends AbstractPersistableCustom {
         this.loanProducTrancheDetails = loanProducTrancheDetails;
     }
 
+    public Integer getOwnerType() {
+        return ownerType;
+    }
 }

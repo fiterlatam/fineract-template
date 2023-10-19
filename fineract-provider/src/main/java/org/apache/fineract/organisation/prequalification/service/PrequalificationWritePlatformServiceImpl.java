@@ -27,6 +27,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -39,6 +40,13 @@ import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuilder;
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
+import org.apache.fineract.infrastructure.documentmanagement.contentrepository.ContentRepository;
+import org.apache.fineract.infrastructure.documentmanagement.contentrepository.ContentRepositoryFactory;
+import org.apache.fineract.infrastructure.documentmanagement.data.DocumentData;
+import org.apache.fineract.infrastructure.documentmanagement.domain.Document;
+import org.apache.fineract.infrastructure.documentmanagement.domain.DocumentRepository;
+import org.apache.fineract.infrastructure.documentmanagement.exception.DocumentNotFoundException;
+import org.apache.fineract.infrastructure.documentmanagement.service.DocumentReadPlatformService;
 import org.apache.fineract.infrastructure.jobs.annotation.CronTarget;
 import org.apache.fineract.infrastructure.jobs.exception.JobExecutionException;
 import org.apache.fineract.infrastructure.jobs.service.JobName;
@@ -57,6 +65,7 @@ import org.apache.fineract.organisation.prequalification.domain.Prequalification
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationMemberIndication;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationStatus;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationStatusLog;
+import org.apache.fineract.organisation.prequalification.domain.PrequalificationType;
 import org.apache.fineract.organisation.prequalification.exception.PrequalificationStatusNotChangedException;
 import org.apache.fineract.organisation.prequalification.serialization.PrequalificationMemberCommandFromApiJsonDeserializer;
 import org.apache.fineract.portfolio.blacklist.domain.BlacklistStatus;
@@ -65,6 +74,7 @@ import org.apache.fineract.portfolio.client.service.ClientReadPlatformService;
 import org.apache.fineract.portfolio.group.domain.Group;
 import org.apache.fineract.portfolio.group.domain.GroupRepositoryWrapper;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProduct;
+import org.apache.fineract.portfolio.loanproduct.domain.LoanProductOwnerType;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductRepository;
 import org.apache.fineract.portfolio.loanproduct.exception.LoanProductNotFoundException;
 import org.apache.fineract.useradministration.domain.AppUser;
@@ -97,6 +107,9 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
     private final AgencyRepositoryWrapper agencyRepositoryWrapper;
     private final PrequalificationMemberCommandFromApiJsonDeserializer apiJsonDeserializer;
     private final JdbcTemplate jdbcTemplate;
+    private final DocumentRepository documentRepository;
+    private final ContentRepositoryFactory contentRepositoryFactory;
+    private final DocumentReadPlatformService documentReadPlatformService;
 
     @Autowired
     public PrequalificationWritePlatformServiceImpl(final PlatformSecurityContext context,
@@ -108,6 +121,8 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             final PreQualificationStatusLogRepository preQualificationLogRepository,
             final PrequalificationChecklistReadPlatformService prequalificationChecklistReadPlatformService,
             final CodeValueReadPlatformService codeValueReadPlatformService, final JdbcTemplate jdbcTemplate,
+            final ContentRepositoryFactory contentRepositoryFactory, final DocumentRepository documentRepository,
+            final DocumentReadPlatformService documentReadPlatformService,
             final PrequalificationGroupRepositoryWrapper prequalificationGroupRepositoryWrapper) {
         this.context = context;
         this.dataValidator = dataValidator;
@@ -123,6 +138,9 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         this.prequalificationChecklistReadPlatformService = prequalificationChecklistReadPlatformService;
         this.preQualificationLogRepository = preQualificationLogRepository;
         this.jdbcTemplate = jdbcTemplate;
+        this.contentRepositoryFactory = contentRepositoryFactory;
+        this.documentRepository = documentRepository;
+        this.documentReadPlatformService = documentReadPlatformService;
     }
 
     @Transactional
@@ -166,6 +184,9 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         }
         PrequalificationGroup prequalificationGroup = PrequalificationGroup.fromJson(addedBy, facilitator, agency, group, loanProduct,
                 parentGroup, command);
+
+        PrequalificationType prequalificationType = resolvePrequalificationType(loanProduct);
+        prequalificationGroup.setPrequalificationType(prequalificationType.getValue());
 
         this.prequalificationGroupRepositoryWrapper.saveAndFlush(prequalificationGroup);
         StringBuilder prequalSB = new StringBuilder();
@@ -318,6 +339,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         return groupId;
     }
 
+    @Transactional
     @Override
     public CommandProcessingResult processUpdatePrequalification(Long groupId, JsonCommand command) {
         final Boolean individualPrequalification = command.booleanPrimitiveValueOfParameterNamed("individual");
@@ -361,6 +383,9 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                 newLoanProduct = productOption.get();
             }
             prequalificationGroup.updateProduct(newLoanProduct);
+
+            PrequalificationType prequalificationType = resolvePrequalificationType(newLoanProduct);
+            prequalificationGroup.setPrequalificationType(prequalificationType.getValue());
         }
 
         if (changes.containsKey(PrequalificatoinApiConstants.facilitatorParamName)) {
@@ -380,7 +405,12 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                 prequalificationGroup.updateGroupName(newValue);
             }
         }
-
+        Collection<DocumentData> prequalificationDocs = this.documentReadPlatformService.retrieveAllDocuments("prequalifications",
+                prequalificationGroup.getId());
+        if (!prequalificationDocs.isEmpty()) {
+            DocumentData documentData = prequalificationDocs.iterator().next();
+            deletePrequalificationDocument(documentData);
+        }
         this.prequalificationGroupRepositoryWrapper.saveAndFlush(prequalificationGroup);
 
         // TODO: FBR-220 process changes in members
@@ -394,6 +424,15 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                 .withResourceIdAsString(prequalificationGroup.getId().toString()) //
                 .withEntityId(prequalificationGroup.getId()) //
                 .build();
+    }
+
+    public void deletePrequalificationDocument(DocumentData documentData) {
+        final Document document = this.documentRepository.findById(documentData.getId()).orElseThrow(
+                () -> new DocumentNotFoundException("prequalification", documentData.getParentEntityId(), documentData.getId()));
+        this.documentRepository.delete(document);
+
+        final ContentRepository contentRepository = this.contentRepositoryFactory.getRepository(document.storageType());
+        contentRepository.deleteFile(document.getLocation());
     }
 
     @Override
@@ -725,4 +764,18 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         }
         return status;
     }
+
+    private PrequalificationType resolvePrequalificationType(LoanProduct loanProduct) {
+        if (loanProduct.getOwnerType() != null) {
+            LoanProductOwnerType ownerType = LoanProductOwnerType.fromInt(loanProduct.getOwnerType());
+            if (ownerType.equals(LoanProductOwnerType.INDIVIDUAL)) {
+                return PrequalificationType.INDIVIDUAL;
+            }
+            if (ownerType.equals(LoanProductOwnerType.GROUP)) {
+                return PrequalificationType.GROUP;
+            }
+        }
+        return PrequalificationType.INVALID;
+    }
+
 }

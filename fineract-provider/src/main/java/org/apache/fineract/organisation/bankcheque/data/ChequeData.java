@@ -34,6 +34,7 @@ public class ChequeData {
     private Long batchNo;
     private String bankAccNo;
     private Long bankAccId;
+    private Long agencyId;
     private String agencyName;
     private String bankName;
     private EnumOptionData status;

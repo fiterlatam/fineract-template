@@ -16,20 +16,16 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.organisation.bankcheque.command;
+package org.apache.fineract.organisation.prequalification.exception;
 
-import java.math.BigDecimal;
-import lombok.Builder;
-import lombok.Data;
+import org.apache.fineract.infrastructure.core.exception.AbstractPlatformResourceNotFoundException;
 
-@Builder
-@Data
-public class PayGuaranteeByChequeCommand {
+/**
+ * A {@link RuntimeException} thrown when client is already blacklisted.
+ */
+public class DpiBuroChequeException extends AbstractPlatformResourceNotFoundException {
 
-    private Long chequeId;
-    private Long guaranteeId;
-    private String guaranteeName;
-    private BigDecimal guaranteeAmount;
-    private String caseId;
-    private String description;
+    public DpiBuroChequeException(final String dpi) {
+        super("error.msg.group.prequalification.dpi.not.found", "DPI with " + dpi + " buro check not found!");
+    }
 }

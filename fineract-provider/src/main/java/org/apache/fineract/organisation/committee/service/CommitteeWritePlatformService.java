@@ -16,20 +16,16 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.organisation.bankcheque.command;
+package org.apache.fineract.organisation.committee.service;
 
-import java.math.BigDecimal;
-import lombok.Builder;
-import lombok.Data;
+import org.apache.fineract.infrastructure.core.api.JsonCommand;
+import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 
-@Builder
-@Data
-public class PayGuaranteeByChequeCommand {
+public interface CommitteeWritePlatformService {
 
-    private Long chequeId;
-    private Long guaranteeId;
-    private String guaranteeName;
-    private BigDecimal guaranteeAmount;
-    private String caseId;
-    private String description;
+    CommandProcessingResult createCommittee(JsonCommand command);
+
+    CommandProcessingResult updateCommittee(Long committeeId, JsonCommand command);
+
+    CommandProcessingResult deleteCommittee(Long committeeId);
 }

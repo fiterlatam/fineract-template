@@ -193,6 +193,10 @@ public class ExternalServicesPropertiesReadPlatformServiceImpl implements Extern
                 serviceNameToUse = ExternalServicesConstants.GUARANTEE_SERVICE_NAME;
             break;
 
+            case "DPI_BURO_CHECK":
+                serviceNameToUse = ExternalServicesConstants.DPI_BURO_CHECK_SERVICE_NAME;
+            break;
+
             default:
                 throw new ExternalServiceConfigurationNotFoundException(serviceName);
         }

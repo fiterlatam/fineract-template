@@ -31,10 +31,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.infrastructure.configuration.data.ExternalServicesPropertiesData;
 import org.apache.fineract.infrastructure.configuration.service.ExternalServicesConstants;
 import org.apache.fineract.infrastructure.configuration.service.ExternalServicesPropertiesReadPlatformService;
@@ -148,6 +150,7 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
                     	mbc.guarantee_id AS guaranteeId,
                     	mc.account_no AS clientNo,
                     	mc.display_name AS clientName,
+                    	mbc.guarantee_name AS guaranteeName,
                     	mg.display_name AS groupName,
                     	mg.account_no AS groupNo,
                     	ml.account_no AS loanAccNo,
@@ -156,6 +159,7 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
                         mba.id AS bankAccId,
                     	mb.name AS bankName,
                     	mag.name AS agencyName,
+                    	mag.id AS agencyId,
                     	mbc.voided_date AS voidedDate,
                     	mbc.created_date AS createdDate,
                     	mbc.usedon_date AS usedOnDate,
@@ -199,6 +203,7 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
             final String description = rs.getString("description");
             final String bankAccNo = rs.getString("bankAccNo");
             final Long bankAccId = JdbcSupport.getLong(rs, "bankAccId");
+            final Long agencyId = JdbcSupport.getLong(rs, "agencyId");
             final String agencyName = rs.getString("agencyName");
             final String caseId = rs.getString("caseId");
             final String bankName = rs.getString("bankName");
@@ -212,7 +217,11 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
             final String printedByUsername = rs.getString("printedByUsername");
             final String voidAuthorizedByUsername = rs.getString("voidAuthorizedByUsername");
             final String lastModifiedByUsername = rs.getString("lastModifiedByUsername");
-            final String clientName = rs.getString("clientName");
+            String clientName = rs.getString("clientName");
+            final String guaranteeName = rs.getString("guaranteeName");
+            if (StringUtils.isBlank(clientName)) {
+                clientName = guaranteeName;
+            }
             final String clientNo = rs.getString("clientNo");
             final String groupName = rs.getString("groupName");
             final String loanAccNo = rs.getString("loanAccNo");
@@ -227,7 +236,7 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
                     .printedByUsername(printedByUsername).voidAuthorizedByUsername(voidAuthorizedByUsername)
                     .lastModifiedByUsername(lastModifiedByUsername).clientName(clientName).clientNo(clientNo).groupName(groupName)
                     .loanAccNo(loanAccNo).loanAmount(loanAmount).guaranteeAmount(guaranteeAmount).groupNo(groupNo).guaranteeId(guaranteeId)
-                    .caseId(caseId).chequeAmount(chequeAmount).build();
+                    .caseId(caseId).chequeAmount(chequeAmount).agencyId(agencyId).build();
 
         }
     }
@@ -323,7 +332,7 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
             extraCriteria.addNonNullCriteria("mba.account_number LIKE", "%" + bankAccNo + "%");
         }
         if (status != null) {
-            extraCriteria.addNonNullCriteria("mbc.status_enum LIKE", "%" + status + "%");
+            extraCriteria.addNonNullCriteria("mbc.status_enum = ", status);
         }
         if (bankAccId != null) {
             extraCriteria.addNonNullCriteria("mba.id = ", bankAccId);
@@ -342,6 +351,10 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
         }
 
         sqlBuilder.append(" ").append(extraCriteria.getSQLTemplate());
+        final Collection<AgencyData> agencyOptions = this.agencyReadPlatformService.retrieveAllByUser();
+        final Set<Long> agencyIds = agencyOptions.stream().map(AgencyData::getId).collect(Collectors.toSet());
+        final String agencyIdParams = StringUtils.join(agencyIds, ", ");
+        sqlBuilder.append(" AND mba.agency_id IN ( ").append(agencyIdParams).append(")");
         if (chequeSearchParams.getOrderBy() != null) {
             sqlBuilder.append(" order by ").append(chequeSearchParams.getOrderBy()).append(' ').append(chequeSearchParams.getSortOrder());
             this.columnValidator.validateSqlInjection(sqlBuilder.toString(), chequeSearchParams.getOrderBy(),

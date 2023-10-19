@@ -16,20 +16,21 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.organisation.bankcheque.command;
+package org.apache.fineract.organisation.committee.exception;
 
-import java.math.BigDecimal;
-import lombok.Builder;
-import lombok.Data;
+import org.apache.fineract.infrastructure.core.exception.AbstractPlatformResourceNotFoundException;
+import org.springframework.dao.EmptyResultDataAccessException;
 
-@Builder
-@Data
-public class PayGuaranteeByChequeCommand {
+/**
+ * A {@link RuntimeException} thrown when committee is not found.
+ */
+public class CommitteeNotFoundException extends AbstractPlatformResourceNotFoundException {
 
-    private Long chequeId;
-    private Long guaranteeId;
-    private String guaranteeName;
-    private BigDecimal guaranteeAmount;
-    private String caseId;
-    private String description;
+    public CommitteeNotFoundException(Long id) {
+        super("error.msg.committee.id.invalid", "Committee with id " + id + " was not found.", id);
+    }
+
+    public CommitteeNotFoundException(Long id, EmptyResultDataAccessException e) {
+        super("error.msg.committee.id.invalid", "Committee with identifier " + id + " does not exist", id, e);
+    }
 }

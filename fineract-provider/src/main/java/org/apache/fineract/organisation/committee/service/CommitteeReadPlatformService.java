@@ -16,20 +16,21 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.organisation.bankcheque.command;
+package org.apache.fineract.organisation.committee.service;
 
-import java.math.BigDecimal;
-import lombok.Builder;
-import lombok.Data;
+import java.util.Collection;
+import org.apache.fineract.infrastructure.core.service.Page;
+import org.apache.fineract.infrastructure.core.service.SearchParameters;
+import org.apache.fineract.organisation.committee.data.CommitteeData;
+import org.apache.fineract.organisation.committee.data.CommitteeUserData;
 
-@Builder
-@Data
-public class PayGuaranteeByChequeCommand {
+public interface CommitteeReadPlatformService {
 
-    private Long chequeId;
-    private Long guaranteeId;
-    private String guaranteeName;
-    private BigDecimal guaranteeAmount;
-    private String caseId;
-    private String description;
+    CommitteeData findByCommitteeId(Long committeeId);
+
+    CommitteeData retrieveNewCommitteeTemplate();
+
+    Page<CommitteeData> retrieveAll(SearchParameters searchParameters);
+
+    Collection<CommitteeUserData> retrieveCommitteeUsers(Long committeeId);
 }

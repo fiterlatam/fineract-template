@@ -560,4 +560,24 @@
         </addColumn>
     </changeSet>
 
+    <changeSet author="fineract" id="48">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_bank_check" columnName="guarantee_name"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_bank_check">
+            <column name="guarantee_name" type="VARCHAR(200)"></column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="49">
+        <sqlFile
+                encoding="utf8"
+                path="db/changelog/tenant/commands/insert_buro_check_external_service_configs.sql"
+                relativeToChangelogFile="false"
+                splitStatements="true"
+                stripComments="true"/>
+    </changeSet>
+
 </databaseChangeLog>

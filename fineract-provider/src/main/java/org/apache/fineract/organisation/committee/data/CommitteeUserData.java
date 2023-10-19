@@ -16,20 +16,31 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.organisation.bankcheque.command;
+package org.apache.fineract.organisation.committee.data;
 
-import java.math.BigDecimal;
-import lombok.Builder;
-import lombok.Data;
+/**
+ * Immutable data object for committee users data.
+ */
+public class CommitteeUserData {
 
-@Builder
-@Data
-public class PayGuaranteeByChequeCommand {
+    private final Long userId;
 
-    private Long chequeId;
-    private Long guaranteeId;
-    private String guaranteeName;
-    private BigDecimal guaranteeAmount;
-    private String caseId;
-    private String description;
+    private final String firstname;
+
+    private final String lastname;
+
+    public static CommitteeUserData instance(Long userId, String firstname, String lastname) {
+        return new CommitteeUserData(userId, firstname, lastname);
+    }
+
+    public CommitteeUserData(Long userId, String firstname, String lastname) {
+        this.userId = userId;
+        this.firstname = firstname;
+        this.lastname = lastname;
+    }
+
+    // TODO: complete
+    public static CommitteeUserData template() {
+        return new CommitteeUserData(null, null, null);
+    }
 }
