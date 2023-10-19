@@ -128,7 +128,8 @@ public class IndividualPrequalificationApiResource {
             @QueryParam("status") @Parameter(description = "status") final String status,
             @QueryParam("type") @Parameter(description = "type") final String type,
             @QueryParam("searchText") @Parameter(description = "searchText") final String searchText,
-            @QueryParam("sortOrder") @Parameter(description = "sortOrder") final String sortOrder) {
+            @QueryParam("sortOrder") @Parameter(description = "sortOrder") final String sortOrder,
+            @QueryParam("groupingType") @Parameter(description = "groupingType") final String groupingType) {
 
         this.context.authenticatedUser().validateHasViewPermission(this.resourceNameForPermissions);
 
@@ -136,7 +137,7 @@ public class IndividualPrequalificationApiResource {
 
         String clientName = queryParameters.getFirst("clientName");
         SearchParameters searchParameters = SearchParameters.forPrequalification(clientName, status, offset, limit, orderBy, sortOrder,
-                type, searchText);
+                type, searchText, groupingType);
         final Page<MemberPrequalificationData> memberData = this.prequalificationReadPlatformService.retrieveAllMembers(searchParameters);
 
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(queryParameters);

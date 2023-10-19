@@ -120,4 +120,14 @@ public final class PreQualificationsEnumerations {
         return optionDatas;
     }
 
+    public static EnumOptionData prequalificationType(final Integer prequalificationTypeId) {
+        return prequalificationType(PrequalificationType.fromInt(prequalificationTypeId));
+    }
+
+    public static EnumOptionData prequalificationType(final PrequalificationType prequalificationType) {
+        final EnumOptionData optionData = new EnumOptionData(prequalificationType.getValue().longValue(), prequalificationType.getCode(),
+                prequalificationType.toString());
+        return optionData;
+    }
+
 }
