@@ -112,4 +112,5 @@
     <include file="parts/0093_FBR_327_Add_code_for_committees.xml" relativeToChangelogFile="true"/>
     <include file="parts/0094_FBR_327_Add_committees_permissions.xml" relativeToChangelogFile="true"/>
     <include file="parts/0095_Add_fields_to_prequalification_group.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0096_Add_Funds_Mfund_table.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
