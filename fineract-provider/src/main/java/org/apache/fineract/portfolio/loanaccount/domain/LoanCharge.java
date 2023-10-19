@@ -427,12 +427,10 @@ public class LoanCharge extends AbstractPersistableCustom {
                         LocalDate firstRepaymentDate = this.loan.fetchRepaymentScheduleInstallment(1).getDueDate();
                         Pair<Integer, BigDecimal> addOnDaysAndRate = this.charge.getAddOnDisbursementChargeRate(disbursementDate,
                                 firstRepaymentDate);
-                        Integer daysToApplyAddOn = addOnDaysAndRate.getLeft();
                         BigDecimal feeRate = addOnDaysAndRate.getRight();
                         this.percentage = feeRate;
                         updatedAmount = feeRate;
-                        loanCharge = percentageOf(this.amountPercentageAppliedTo).multiply(BigDecimal.valueOf(daysToApplyAddOn),
-                                MoneyHelper.getMathContext());
+                        loanCharge = percentageOf(this.amountPercentageAppliedTo);
                     } else {
                         this.percentage = amount;
                         if (loanCharge.compareTo(BigDecimal.ZERO) == 0) {
