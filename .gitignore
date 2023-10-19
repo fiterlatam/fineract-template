@@ -1,5 +1,5 @@
 *.class
-*.jar
+#*.jar
 *.war
 *.ear
 .classpath
