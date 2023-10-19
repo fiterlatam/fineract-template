@@ -249,15 +249,6 @@ jib {
         image = 'azul/zulu-openjdk-alpine:17'
     }
 
-//    extraDirectories {
-//        paths {
-//            path {
-//                from = 'pentahoReports'
-//                into = '/root/.mifosx/pentahoReports'
-//            }
-//        }
-//    }
-
     to {
         image = 'fineract'
         tags = [
