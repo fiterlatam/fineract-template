@@ -18,7 +18,6 @@
  */
 package org.apache.fineract.infrastructure.report.service;
 
-import static org.apache.fineract.infrastructure.core.domain.FineractPlatformTenantConnection.toJdbcUrl;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -156,7 +155,7 @@ public class PentahoReportingProcessServiceImpl implements ReportingProcessServi
                 final String pValue = queryParams.get(paramName);
                 if (!(paramName.equals("tenantUrl")
                         || (paramName.equals("userhierarchy") || paramName.equals("username")
-                                || (paramName.equals("password") || paramName.equals("userid")))
+                        || (paramName.equals("password") || paramName.equals("userid")))
                         || (StringUtils.isBlank(pValue) && (paramName.equals("startDate") || paramName.equals("endDate"))))) {
                     LOGGER.info("paramName:" + paramName);
                     if (StringUtils.isBlank(pValue)) {
@@ -183,14 +182,15 @@ public class PentahoReportingProcessServiceImpl implements ReportingProcessServi
             // and data scoping
             final var tenant = ThreadLocalContextUtil.getTenant();
             final var tenantConnection = tenant.getConnection();
-            final var tenantUrl = toJdbcUrl(
-                    fineractProperties.getTenant().getProtocol() + ":" + fineractProperties.getTenant().getSubprotocol(),
-                    tenantConnection.getSchemaServer(), tenantConnection.getSchemaServerPort(), tenantConnection.getSchemaName(),
-                    tenantConnection.getSchemaConnectionParameters());
-            /*
-             * var tenantUrl = "jdbc:mariadb://" + tenantConnection.getSchemaServer() + ":" +
-             * tenantConnection.getSchemaServerPort() + "/" + tenantConnection.getSchemaName() + "?useSSL=false";
-             */
+            // final var tenantUrl = toJdbcUrl(
+            // fineractProperties.getTenant().getProtocol() + ":" + fineractProperties.getTenant().getSubprotocol(),
+            // tenantConnection.getSchemaServer(), tenantConnection.getSchemaServerPort(),
+            // tenantConnection.getSchemaName(),
+            // tenantConnection.getSchemaConnectionParameters());
+            //
+            var tenantUrl = "jdbc:mariadb://" + tenantConnection.getSchemaServer() + ":" + tenantConnection.getSchemaServerPort() + "/"
+                    + tenantConnection.getSchemaName() + "?useSSL=false";
+
             final var userhierarchy = currentUser.getOffice().getHierarchy();
             var outPutInfo4 = "db URL:" + tenantUrl + "      userhierarchy:" + userhierarchy;
             LOGGER.info(outPutInfo4);
