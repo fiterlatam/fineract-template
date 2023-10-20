@@ -204,6 +204,7 @@ public class LoanProductData implements Serializable {
     private final EnumOptionData ownerTypeOption;
     private final boolean addNewCyclesEnabled;
     private final Integer daysLimitAddOn;
+    private final BigDecimal guaranteePercentage;
 
     /**
      * Used when returning lookup information about loan product for dropdowns.
@@ -311,7 +312,7 @@ public class LoanProductData implements Serializable {
                 maxDifferentialLendingRate, isFloatingInterestRateCalculationAllowed, isVariableInstallmentsAllowed, minimumGap, maximumGap,
                 syncExpectedWithDisbursementDate, canUseForTopup, isEqualAmortization, rateOptions, rates, isRatesEnabled,
                 fixedPrincipalPercentagePerInstallment, ageLimitWarning, ageLimitBlock, ownerTypeOption, addNewCyclesEnabled,
-                daysLimitAddOn);
+                daysLimitAddOn, null);
 
     }
 
@@ -420,7 +421,7 @@ public class LoanProductData implements Serializable {
                 maxDifferentialLendingRate, isFloatingInterestRateCalculationAllowed, isVariableInstallmentsAllowed, minimumGap, maximumGap,
                 syncExpectedWithDisbursementDate, canUseForTopup, isEqualAmortization, rateOptions, rates, isRatesEnabled,
                 fixedPrincipalPercentagePerInstallment, ageLimitWarning, ageLimitBlock, ownerTypeOption, addNewCyclesEnabled,
-                daysLimitAddOn);
+                daysLimitAddOn, null);
 
     }
 
@@ -536,7 +537,7 @@ public class LoanProductData implements Serializable {
                 maxDifferentialLendingRate, isFloatingInterestRateCalculationAllowed, isVariableInstallmentsAllowed, minimumGap, maximumGap,
                 syncExpectedWithDisbursementDate, canUseForTopup, isEqualAmortization, rateOptions, rates, isRatesEnabled,
                 fixedPrincipalPercentagePerInstallment, ageLimitWarning, ageLimitBlock, ownerTypeOption, addNewCyclesEnabled,
-                daysLimitAddOn);
+                daysLimitAddOn, null);
 
     }
 
@@ -646,7 +647,7 @@ public class LoanProductData implements Serializable {
                 maxDifferentialLendingRate, isFloatingInterestRateCalculationAllowed, isVariableInstallmentsAllowed, minimumGap, maximumGap,
                 syncExpectedWithDisbursementDate, canUseForTopup, isEqualAmortization, rateOptions, rates, isRatesEnabled,
                 fixedPrincipalPercentagePerInstallment, ageLimitWarning, ageLimitBlock, ownerTypeOption, addNewCyclesEnabled,
-                daysLimitAddOn);
+                daysLimitAddOn, null);
 
     }
 
@@ -692,7 +693,8 @@ public class LoanProductData implements Serializable {
             final boolean syncExpectedWithDisbursementDate, final boolean canUseForTopup, final boolean isEqualAmortization,
             Collection<RateData> rateOptions, Collection<RateData> rates, final boolean isRatesEnabled,
             final BigDecimal fixedPrincipalPercentagePerInstallmen, final Integer ageLimitWarning, final Integer ageLimitBlock,
-            final EnumOptionData ownerTypeOption, final boolean addNewCyclesEnabled, final Integer daysLimitAddOn) {
+            final EnumOptionData ownerTypeOption, final boolean addNewCyclesEnabled, final Integer daysLimitAddOn,
+            BigDecimal guaranteePercentage) {
         this.id = id;
         this.name = name;
         this.shortName = shortName;
@@ -812,6 +814,7 @@ public class LoanProductData implements Serializable {
         this.ageLimitBlock = ageLimitBlock;
         this.ageLimitWarning = ageLimitWarning;
         this.daysLimitAddOn = daysLimitAddOn;
+        this.guaranteePercentage = guaranteePercentage;
 
     }
 
@@ -966,6 +969,7 @@ public class LoanProductData implements Serializable {
         this.ageLimitBlock = productData.ageLimitBlock;
         this.ageLimitWarning = productData.ageLimitWarning;
         this.daysLimitAddOn = productData.daysLimitAddOn;
+        this.guaranteePercentage = productData.guaranteePercentage;
     }
 
     private Collection<ChargeData> nullIfEmpty(final Collection<ChargeData> charges) {

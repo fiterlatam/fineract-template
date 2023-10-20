@@ -210,6 +210,9 @@ public class LoanProduct extends AbstractPersistableCustom {
     @Column(name = "limit_of_days_for_addon", nullable = false)
     private Integer daysLimitAddOn;
 
+    @Column(name = "required_guarantee_percent", nullable = false)
+    private BigDecimal requiredGuaranteePercent;
+
     public static LoanProduct assembleFromJson(final Fund fund, final LoanTransactionProcessingStrategy loanTransactionProcessingStrategy,
             final List<Charge> productCharges, final JsonCommand command, final AprCalculator aprCalculator, FloatingRate floatingRate,
             final List<Rate> productRates) {
@@ -228,6 +231,7 @@ public class LoanProduct extends AbstractPersistableCustom {
         final Integer ageLimitWarning = command.integerValueOfParameterNamed("ageLimitWarning");
         final Integer ageLimitBlock = command.integerValueOfParameterNamed("ageLimitBlock");
         final Integer daysLimitAddOn = command.integerValueOfParameterNamed("daysLimitAddOn");
+        final BigDecimal requiredGuaranteePercent = command.bigDecimalValueOfParameterNamed("guaranteePercentage");
 
         final InterestMethod interestMethod = InterestMethod.fromInt(command.integerValueOfParameterNamed("interestType"));
         final InterestCalculationPeriodMethod interestCalculationPeriodMethod = InterestCalculationPeriodMethod
@@ -412,7 +416,7 @@ public class LoanProduct extends AbstractPersistableCustom {
                 minimumGapBetweenInstallments, maximumGapBetweenInstallments, syncExpectedWithDisbursementDate, canUseForTopup,
                 isEqualAmortization, productRates, fixedPrincipalPercentagePerInstallment, disallowExpectedDisbursements,
                 allowApprovedDisbursedAmountsOverApplied, overAppliedCalculationType, overAppliedNumber, ageLimitWarning, ageLimitBlock,
-                addNewCyclesEnabled, loanProductOwnerType, daysLimitAddOn);
+                addNewCyclesEnabled, loanProductOwnerType, daysLimitAddOn, requiredGuaranteePercent);
 
     }
 
@@ -650,7 +654,7 @@ public class LoanProduct extends AbstractPersistableCustom {
             final List<Rate> rates, final BigDecimal fixedPrincipalPercentagePerInstallment, final boolean disallowExpectedDisbursements,
             final boolean allowApprovedDisbursedAmountsOverApplied, final String overAppliedCalculationType,
             final Integer overAppliedNumber, final Integer ageLimitWarning, final Integer ageLimitBlock, final boolean addNewCyclesEnabled,
-            final LoanProductOwnerType loanProductOwnerType, final Integer daysLimitAddOn) {
+            final LoanProductOwnerType loanProductOwnerType, final Integer daysLimitAddOn, BigDecimal requiredGuaranteePercent) {
         this.fund = fund;
         this.transactionProcessingStrategy = transactionProcessingStrategy;
         this.name = name.trim();
@@ -732,6 +736,7 @@ public class LoanProduct extends AbstractPersistableCustom {
         this.ageLimitWarning = ageLimitWarning;
         this.addNewCycledEnabled = addNewCyclesEnabled;
         this.daysLimitAddOn = daysLimitAddOn;
+        this.requiredGuaranteePercent = requiredGuaranteePercent;
 
         if (loanProductOwnerType != null) {
             this.ownerType = loanProductOwnerType.getValue();
@@ -1255,6 +1260,13 @@ public class LoanProduct extends AbstractPersistableCustom {
             final Integer newValue = command.integerValueOfParameterNamed(daysLimitAddOn);
             actualChanges.put(daysLimitAddOn, newValue);
             this.daysLimitAddOn = newValue;
+        }
+
+        final String guaranteePercentage = "guaranteePercentage";
+        if (command.isChangeInBigDecimalParameterNamed(guaranteePercentage, this.requiredGuaranteePercent)) {
+            final BigDecimal newValue = command.bigDecimalValueOfParameterNamed(guaranteePercentage);
+            actualChanges.put(guaranteePercentage, newValue);
+            this.requiredGuaranteePercent = newValue;
         }
 
         if (command.isChangeInIntegerParameterNamed(LoanProductConstants.LOAN_PRODUCT_OWNER_TYPE, this.ownerType)) {
