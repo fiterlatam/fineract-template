@@ -27,7 +27,7 @@ RUN mv /fineract/fineract-provider/build/libs/*.jar /fineract/fineract-provider/
 
 # https://issues.apache.org/jira/browse/LEGAL-462
 # https://issues.apache.org/jira/browse/FINERACT-762
-# We include an alternative JDBC driver (which is faster, but not allowed to be default in Apache distribution)
+# We include an alternative JDBC driver (which is faster, but not allowed  to be default in Apache distribution)
 # allowing implementations to switch the driver used by changing start-up parameters (for both tenants and each tenant DB)
 # The commented out lines in the docker-compose.yml illustrate how to do this.
 WORKDIR /app/libs
