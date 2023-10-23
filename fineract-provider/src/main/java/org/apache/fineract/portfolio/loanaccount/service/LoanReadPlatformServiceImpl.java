@@ -680,6 +680,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
             return "l.id as id, mlrs.first_duedate As firstInstallmentDate, l.account_no as accountNo, l.contract as contractNo, l.external_id as externalId, l.fund_id as fundId, f.name as fundName,"
                     + " l.loan_type_enum as loanType, l.loanpurpose_cv_id as loanPurposeId, cv.code_value as loanPurposeName,"
                     + " lp.id as loanProductId, lp.name as loanProductName, lp.description as loanProductDescription,"
+                    + " (coalesce(lp.required_guarantee_percent,0)*l.principal_amount) as requiredGuaranteeAmount ,"
                     + " lp.is_linked_to_floating_interest_rates as isLoanProductLinkedToFloatingRate, "
                     + " lp.allow_variabe_installments as isvariableInstallmentsAllowed, "
                     + " lp.allow_multiple_disbursals as multiDisburseLoan,"
@@ -953,6 +954,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
 
             final BigDecimal feeChargesDueAtDisbursementCharged = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs,
                     "feeChargesDueAtDisbursementCharged");
+
             LoanSummaryData loanSummary = null;
             Boolean inArrears = false;
             if (status.id().intValue() >= 300) {
@@ -1093,6 +1095,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
             final String closureLoanAccountNo = rs.getString("closureLoanAccountNo");
             final BigDecimal topupAmount = rs.getBigDecimal("topupAmount");
             final String contractNo = rs.getString("contractNo");
+            final BigDecimal requiredGuaranteeAmount = rs.getBigDecimal("requiredGuaranteeAmount");
+            final BigDecimal requiredGuaranteeAmountPercent=requiredGuaranteeAmount.compareTo(BigDecimal.ZERO)>0? requiredGuaranteeAmount.divide(new BigDecimal(100)):BigDecimal.ZERO;
 
             return LoanAccountData.basicLoanDetails(id, accountNo, status, externalId, clientId, clientAccountNo, clientName,
                     clientOfficeId, groupData, loanType, loanProductId, loanProductName, loanProductDescription,
@@ -1108,7 +1112,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                     isNPA, daysInMonthType, daysInYearType, isInterestRecalculationEnabled, interestRecalculationData,
                     createStandingInstructionAtDisbursement, isvariableInstallmentsAllowed, minimumGap, maximumGap, loanSubStatus,
                     canUseForTopup, isTopup, closureLoanId, closureLoanAccountNo, topupAmount, isEqualAmortization,
-                    fixedPrincipalPercentagePerInstallment, contractNo);
+                    fixedPrincipalPercentagePerInstallment, contractNo,requiredGuaranteeAmountPercent);
         }
     }
 
