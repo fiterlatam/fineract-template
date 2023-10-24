@@ -256,7 +256,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
 
         String extraCriteria = "";
 
-        if (StringUtils.isNotBlank(groupingType)){
+        if (StringUtils.isNotBlank(groupingType)) {
             if (groupingType.equals("group")) {
                 extraCriteria += " and g.prequalification_type_enum = ? ";
                 paramList.add(PrequalificationType.GROUP.getValue());
@@ -398,7 +398,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                     	au.id = g.added_by
                     INNER JOIN m_product_loan lp ON
                     	g.product_id = lp.id
-                    INNER JOIN m_agency ma ON
+                    LEFT JOIN m_agency ma ON
                     	g.agency_id = ma.id
                     LEFT JOIN m_group cg ON
                     	cg.id = g.group_id
@@ -411,7 +411,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                     	FROM m_prequalification_status_log WHERE prequalification_id = g.id AND sl.to_status=g.status )
                     LEFT JOIN m_appuser mu ON
                     	mu.id = sl.updatedby_id
-                    INNER JOIN m_appuser fa ON
+                    LEFT JOIN m_appuser fa ON
                     	fa.id = g.facilitator
                     """;
         }

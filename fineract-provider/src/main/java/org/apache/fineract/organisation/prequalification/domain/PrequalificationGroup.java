@@ -172,22 +172,30 @@ public class PrequalificationGroup extends AbstractPersistableCustom {
 
         final Map<String, Object> actualChanges = new LinkedHashMap<>(7);
 
-        if (command.isChangeInStringParameterNamed(PrequalificatoinApiConstants.groupNameParamName, this.groupName)) {
-            final String newValue = command.stringValueOfParameterNamed(PrequalificatoinApiConstants.groupNameParamName);
-            actualChanges.put(PrequalificatoinApiConstants.groupNameParamName, newValue);
-            this.groupName = newValue;
-        }
+        final Boolean individualPrequalification = command.booleanPrimitiveValueOfParameterNamed("individual");
 
-        if (command.isChangeInLongParameterNamed(PrequalificatoinApiConstants.agencyIdParamName, this.agency.getId())) {
-            final Long newValue = command.longValueOfParameterNamed(PrequalificatoinApiConstants.agencyIdParamName);
-            actualChanges.put(PrequalificatoinApiConstants.agencyIdParamName, newValue);
-            // this.ag = newValue;
-        }
+        if (!individualPrequalification) {
+            if (command.isChangeInStringParameterNamed(PrequalificatoinApiConstants.groupNameParamName, this.groupName)) {
+                final String newValue = command.stringValueOfParameterNamed(PrequalificatoinApiConstants.groupNameParamName);
+                actualChanges.put(PrequalificatoinApiConstants.groupNameParamName, newValue);
+                this.groupName = newValue;
+            }
 
-        if (command.isChangeInLongParameterNamed(PrequalificatoinApiConstants.centerIdParamName, this.centerId)) {
-            final Long newValue = command.longValueOfParameterNamed(PrequalificatoinApiConstants.centerIdParamName);
-            actualChanges.put(PrequalificatoinApiConstants.centerIdParamName, newValue);
-            this.centerId = newValue;
+            if (command.isChangeInLongParameterNamed(PrequalificatoinApiConstants.agencyIdParamName, this.agency.getId())) {
+                final Long newValue = command.longValueOfParameterNamed(PrequalificatoinApiConstants.agencyIdParamName);
+                actualChanges.put(PrequalificatoinApiConstants.agencyIdParamName, newValue);
+            }
+
+            if (command.isChangeInLongParameterNamed(PrequalificatoinApiConstants.centerIdParamName, this.centerId)) {
+                final Long newValue = command.longValueOfParameterNamed(PrequalificatoinApiConstants.centerIdParamName);
+                actualChanges.put(PrequalificatoinApiConstants.centerIdParamName, newValue);
+                this.centerId = newValue;
+            }
+
+            if (command.isChangeInLongParameterNamed(PrequalificatoinApiConstants.facilitatorParamName, this.facilitator.getId())) {
+                final Long newValue = command.longValueOfParameterNamed(PrequalificatoinApiConstants.facilitatorParamName);
+                actualChanges.put(PrequalificatoinApiConstants.facilitatorParamName, newValue);
+            }
         }
 
         if (command.isChangeInLongParameterNamed(PrequalificatoinApiConstants.productIdParamName, this.loanProduct.getId())) {
@@ -196,10 +204,6 @@ public class PrequalificationGroup extends AbstractPersistableCustom {
             // this.loanProduct. = newValue;
         }
 
-        if (command.isChangeInLongParameterNamed(PrequalificatoinApiConstants.facilitatorParamName, this.facilitator.getId())) {
-            final Long newValue = command.longValueOfParameterNamed(PrequalificatoinApiConstants.facilitatorParamName);
-            actualChanges.put(PrequalificatoinApiConstants.facilitatorParamName, newValue);
-        }
         if (command.isChangeInLongParameterNamed(PrequalificatoinApiConstants.prequalilficationTimespanParamName,
                 this.prequalificationDuration)) {
             final Long newValue = command.longValueOfParameterNamed(PrequalificatoinApiConstants.prequalilficationTimespanParamName);

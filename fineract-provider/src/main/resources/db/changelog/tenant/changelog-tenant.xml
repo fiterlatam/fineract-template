@@ -114,4 +114,5 @@
     <include file="parts/0095_Add_fields_to_prequalification_group.xml" relativeToChangelogFile="true"/>
     <include file="parts/0096_Add_Funds_Mfund_table.xml" relativeToChangelogFile="true"/>
     <include file="parts/0097_Add_Required_Guarantee_Percentage_on_Loan.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0098_Alter_table_prequalification_group.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
