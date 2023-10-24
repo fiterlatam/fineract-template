@@ -80,6 +80,7 @@ import org.apache.fineract.portfolio.loanproduct.exception.LoanProductNotFoundEx
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.apache.fineract.useradministration.domain.AppUserRepository;
 import org.apache.fineract.useradministration.exception.UserNotFoundException;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -148,9 +149,6 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
     public CommandProcessingResult processPrequalification(JsonCommand command) {
 
         final Boolean individualPrequalification = command.booleanPrimitiveValueOfParameterNamed("individual");
-        if (individualPrequalification) {
-            return prequalifyIndividual(command);
-        }
 
         this.dataValidator.validateForCreate(command.json());
         final Long productId = command.longValueOfParameterNamed(PrequalificatoinApiConstants.productIdParamName);
@@ -166,22 +164,29 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         Optional<LoanProduct> productOption = this.loanProductRepository.findById(productId);
         if (productOption.isEmpty()) throw new LoanProductNotFoundException(productId);
         LoanProduct loanProduct = productOption.get();
-        String groupName = command.stringValueOfParameterNamed(PrequalificatoinApiConstants.groupNameParamName);
 
+        AppUser facilitator = null;
+        Agency agency = null;
         Group group = null;
-        if (centerGroupId != null) {
-            group = this.groupRepositoryWrapper.findOneWithNotFoundDetection(centerGroupId);
-            groupName = group.getName();
-        }
 
-        Agency agency = this.agencyRepositoryWrapper.findOneWithNotFoundDetection(agencyId);
+        if (!individualPrequalification) {
+            String groupName = command.stringValueOfParameterNamed(PrequalificatoinApiConstants.groupNameParamName);
+
+            if (centerGroupId != null) {
+                group = this.groupRepositoryWrapper.findOneWithNotFoundDetection(centerGroupId);
+                groupName = group.getName();
+            }
+
+            agency = this.agencyRepositoryWrapper.findOneWithNotFoundDetection(agencyId);
+
+            Long facilitatorId = command.longValueOfParameterNamed(PrequalificatoinApiConstants.facilitatorParamName);
+            if (facilitatorId != null) {
+                facilitator = this.appUserRepository.findById(facilitatorId).orElseThrow(() -> new UserNotFoundException(facilitatorId));
+            }
+        }
 
         AppUser addedBy = this.context.getAuthenticatedUserIfPresent();
-        Long facilitatorId = command.longValueOfParameterNamed(PrequalificatoinApiConstants.facilitatorParamName);
-        AppUser facilitator = null;
-        if (facilitatorId != null) {
-            facilitator = this.appUserRepository.findById(facilitatorId).orElseThrow(() -> new UserNotFoundException(facilitatorId));
-        }
+
         PrequalificationGroup prequalificationGroup = PrequalificationGroup.fromJson(addedBy, facilitator, agency, group, loanProduct,
                 parentGroup, command);
 
@@ -189,12 +194,9 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         prequalificationGroup.setPrequalificationType(prequalificationType.getValue());
 
         this.prequalificationGroupRepositoryWrapper.saveAndFlush(prequalificationGroup);
-        StringBuilder prequalSB = new StringBuilder();
-        prequalSB.append("PRECAL-");
-        prequalSB.append(agency.getId()).append("-");
-        String prequalificationNumber = StringUtils.leftPad(prequalificationGroup.getId().toString(), 4, '0');
-        prequalSB.append(prequalificationNumber);
-        prequalificationGroup.updatePrequalificationNumber(prequalSB.toString());
+
+        String prequalificationNumberAsString = resolvePrequalificationNumber(individualPrequalification, agency, prequalificationGroup);
+        prequalificationGroup.updatePrequalificationNumber(prequalificationNumberAsString);
         List<PrequalificationGroupMember> members = assembNewMembers(command, prequalificationGroup, addedBy);
         prequalificationGroup.updateMembers(members);
         this.prequalificationGroupRepositoryWrapper.saveAndFlush(prequalificationGroup);
@@ -211,15 +213,46 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                 .build();
     }
 
+    @NotNull
+    private String resolvePrequalificationNumber(Boolean individualPrequalification, Agency agency,
+            PrequalificationGroup prequalificationGroup) {
+        StringBuilder prequalSB = new StringBuilder();
+        prequalSB.append("PRECAL-");
+        String prequalificationNumber = StringUtils.leftPad(prequalificationGroup.getId().toString(), 4, '0');
+
+        if (!individualPrequalification) {
+            prequalSB.append(agency.getId()).append("-");
+        }
+        prequalSB.append(prequalificationNumber);
+        return prequalSB.toString();
+    }
+
+    @SuppressWarnings("unused")
     private CommandProcessingResult prequalifyIndividual(JsonCommand command) {
         AppUser addedBy = this.context.getAuthenticatedUserIfPresent();
 
         apiJsonDeserializer.validateForCreate(command.json());
-        final String clientName = command.stringValueOfParameterNamed("name");
-        final String dpi = command.stringValueOfParameterNamed("dpi");
-        final String puente = command.stringValueOfParameterNamed("puente");
-        final BigDecimal amount = command.bigDecimalValueOfParameterNamed("amount");
-        LocalDate dateOfBirth = command.localDateValueOfParameterNamed("dob");
+
+        final JsonArray members = command.arrayOfParameterNamed(PrequalificatoinApiConstants.membersParamName);
+        final JsonObject jsonObject = members.get(0).getAsJsonObject();
+
+        final String clientName = jsonObject.get("name").getAsString();
+        final String dpi = jsonObject.get("dpi").getAsString();
+        final String puente = jsonObject.get("puente").getAsString();
+        final BigDecimal amount = jsonObject.get("amount").getAsBigDecimal();
+
+        LocalDate dateOfBirth = null;
+        if (jsonObject.has("dob")) {
+            DateTimeFormatter formatter = new DateTimeFormatterBuilder().appendPattern(jsonObject.get("dateFormat").getAsString())
+                    .toFormatter();
+            LocalDate date;
+            try {
+                date = LocalDate.parse(jsonObject.get("dob").getAsString(), formatter);
+                dateOfBirth = date;
+            } catch (DateTimeParseException e) {
+                LOG.error("Problem occurred in processing pre qualification for Individual", e);
+            }
+        }
 
         // get light indicator
         String blistSql = "select count(*) from m_client_blacklist where dpi=? and status=?";
@@ -343,9 +376,6 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
     @Override
     public CommandProcessingResult processUpdatePrequalification(Long groupId, JsonCommand command) {
         final Boolean individualPrequalification = command.booleanPrimitiveValueOfParameterNamed("individual");
-        if (individualPrequalification) {
-            return prequalifyIndividual(command);
-        }
 
         PrequalificationGroup prequalificationGroup = prequalificationGroupRepositoryWrapper.findOneWithNotFoundDetection(groupId);
 
@@ -353,24 +383,44 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
 
         final Map<String, Object> changes = prequalificationGroup.update(command);
 
-        if (changes.containsKey(PrequalificatoinApiConstants.agencyIdParamName)) {
+        if (!individualPrequalification) {
+            if (changes.containsKey(PrequalificatoinApiConstants.agencyIdParamName)) {
 
-            final Long newValue = command.longValueOfParameterNamed(PrequalificatoinApiConstants.agencyIdParamName);
-            Agency newAgency = null;
-            if (newValue != null) {
-                newAgency = this.agencyRepositoryWrapper.findOneWithNotFoundDetection(newValue);
+                final Long newValue = command.longValueOfParameterNamed(PrequalificatoinApiConstants.agencyIdParamName);
+                Agency newAgency = null;
+                if (newValue != null) {
+                    newAgency = this.agencyRepositoryWrapper.findOneWithNotFoundDetection(newValue);
+                }
+                prequalificationGroup.updateAgency(newAgency);
             }
-            prequalificationGroup.updateAgency(newAgency);
-        }
 
-        if (changes.containsKey(PrequalificatoinApiConstants.centerIdParamName)) {
+            if (changes.containsKey(PrequalificatoinApiConstants.centerIdParamName)) {
 
-            final Long newValue = command.longValueOfParameterNamed(PrequalificatoinApiConstants.centerIdParamName);
-            Group newCenter = null;
-            if (newValue != null) {
-                newCenter = this.groupRepositoryWrapper.findOneWithNotFoundDetection(newValue);
+                final Long newValue = command.longValueOfParameterNamed(PrequalificatoinApiConstants.centerIdParamName);
+                Group newCenter = null;
+                if (newValue != null) {
+                    newCenter = this.groupRepositoryWrapper.findOneWithNotFoundDetection(newValue);
+                }
+                prequalificationGroup.updateCenter(newCenter.getId());
             }
-            prequalificationGroup.updateCenter(newCenter.getId());
+
+            if (changes.containsKey(PrequalificatoinApiConstants.facilitatorParamName)) {
+
+                final Long newValue = command.longValueOfParameterNamed(PrequalificatoinApiConstants.facilitatorParamName);
+                AppUser newFacilitator = null;
+                if (newValue != null) {
+                    newFacilitator = this.appUserRepository.findById(newValue).orElseThrow(() -> new UserNotFoundException(newValue));
+                }
+                prequalificationGroup.updateFacilitator(newFacilitator);
+            }
+
+            if (changes.containsKey(PrequalificatoinApiConstants.groupNameParamName)) {
+
+                final String newValue = command.stringValueOfParameterNamed(PrequalificatoinApiConstants.groupNameParamName);
+                if (newValue != null) {
+                    prequalificationGroup.updateGroupName(newValue);
+                }
+            }
         }
 
         if (changes.containsKey(PrequalificatoinApiConstants.productIdParamName)) {
@@ -388,23 +438,6 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             prequalificationGroup.setPrequalificationType(prequalificationType.getValue());
         }
 
-        if (changes.containsKey(PrequalificatoinApiConstants.facilitatorParamName)) {
-
-            final Long newValue = command.longValueOfParameterNamed(PrequalificatoinApiConstants.facilitatorParamName);
-            AppUser newFacilitator = null;
-            if (newValue != null) {
-                newFacilitator = this.appUserRepository.findById(newValue).orElseThrow(() -> new UserNotFoundException(newValue));
-            }
-            prequalificationGroup.updateFacilitator(newFacilitator);
-        }
-
-        if (changes.containsKey(PrequalificatoinApiConstants.groupNameParamName)) {
-
-            final String newValue = command.stringValueOfParameterNamed(PrequalificatoinApiConstants.groupNameParamName);
-            if (newValue != null) {
-                prequalificationGroup.updateGroupName(newValue);
-            }
-        }
         Collection<DocumentData> prequalificationDocs = this.documentReadPlatformService.retrieveAllDocuments("prequalifications",
                 prequalificationGroup.getId());
         if (!prequalificationDocs.isEmpty()) {

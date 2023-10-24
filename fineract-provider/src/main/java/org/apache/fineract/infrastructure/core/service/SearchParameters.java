@@ -56,6 +56,7 @@ public final class SearchParameters {
     private final String type;
     private final String groupName;
     private final String centerName;
+    private final String groupingType;
 
     private final String accountNumber;
     private final String bankName;
@@ -126,7 +127,8 @@ public final class SearchParameters {
     }
 
     public static SearchParameters forPrequalification(final String displayName, final String status, final Integer offset,
-            final Integer limit, final String orderBy, final String sortOrder, final String type, String searchText) {
+            final Integer limit, final String orderBy, final String sortOrder, final String type, String searchText,
+            final String groupingType) {
 
         final Integer maxLimitAllowed = getCheckedLimit(limit);
         final Long staffId = null;
@@ -135,7 +137,7 @@ public final class SearchParameters {
         final Long savingsId = null;
 
         return new SearchParameters(searchText, null, null, displayName, null, null, null, status, offset, maxLimitAllowed, orderBy,
-                sortOrder, staffId, accountNo, loanId, savingsId, null, false, null, type, null, null, null);
+                sortOrder, staffId, accountNo, loanId, savingsId, null, false, null, type, null, null, null, groupingType);
     }
 
     public static SearchParameters forBankCheques(final Long agencyId, final String chequeNo, final String bankAccNo, final Long batchId,
@@ -511,6 +513,7 @@ public final class SearchParameters {
         this.centerId = centerId;
         this.facilitatorId = facilitatorId;
         this.isIndividualBusinessLoan = isIndividualBusinessLoan;
+        this.groupingType = null;
     }
 
     private SearchParameters(final String sqlSearch, final Long officeId, final String externalId, final String name,
@@ -559,6 +562,7 @@ public final class SearchParameters {
         this.centerId = null;
         this.facilitatorId = null;
         this.isIndividualBusinessLoan = null;
+        this.groupingType = null;
     }
 
     private SearchParameters(final String sqlSearch, final Long officeId, final String externalId, final String name,
@@ -608,13 +612,14 @@ public final class SearchParameters {
         this.centerId = null;
         this.facilitatorId = null;
         this.isIndividualBusinessLoan = null;
+        this.groupingType = null;
     }
 
     private SearchParameters(final String sqlSearch, final Long officeId, final String externalId, final String name,
             final String hierarchy, final String firstname, final String lastname, final String status, final Integer offset,
             final Integer limit, final String orderBy, final String sortOrder, final Long staffId, final String accountNo,
             final Long loanId, final Long savingsId, final Boolean orphansOnly, boolean isSelfUser, final String dpiNumber,
-            final String type, final String groupName, final String groupNumber, final String centerName) {
+            final String type, final String groupName, final String groupNumber, final String centerName, final String groupingType) {
         this.sqlSearch = sqlSearch;
         this.officeId = officeId;
         this.externalId = externalId;
@@ -657,6 +662,7 @@ public final class SearchParameters {
         this.centerId = null;
         this.facilitatorId = null;
         this.isIndividualBusinessLoan = null;
+        this.groupingType = groupingType;
     }
 
     private SearchParameters(final Long officeId, final String externalId, final String name, final String hierarchy,
@@ -706,6 +712,7 @@ public final class SearchParameters {
         this.centerId = null;
         this.facilitatorId = null;
         this.isIndividualBusinessLoan = null;
+        this.groupingType = null;
     }
 
     private SearchParameters(final Long provisioningEntryId, final Long officeId, final Long productId, final Long categoryId,
@@ -752,6 +759,7 @@ public final class SearchParameters {
         this.centerId = null;
         this.facilitatorId = null;
         this.isIndividualBusinessLoan = null;
+        this.groupingType = null;
     }
 
     public SearchParameters(final String sqlSearch, final Long officeId, final String externalId, final String name, final String hierarchy,
@@ -800,6 +808,7 @@ public final class SearchParameters {
         this.centerId = null;
         this.facilitatorId = null;
         this.isIndividualBusinessLoan = null;
+        this.groupingType = null;
     }
 
     public boolean isOrderByRequested() {
@@ -1111,4 +1120,9 @@ public final class SearchParameters {
     public Boolean getIndividualBusinessLoan() {
         return isIndividualBusinessLoan;
     }
+
+    public String getGroupingType() {
+        return groupingType;
+    }
+
 }

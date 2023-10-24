@@ -46,6 +46,7 @@ import org.apache.fineract.organisation.prequalification.domain.PreQualification
 import org.apache.fineract.organisation.prequalification.domain.PreQualificationsMemberEnumerations;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationMemberIndication;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationStatus;
+import org.apache.fineract.organisation.prequalification.domain.PrequalificationType;
 import org.apache.fineract.portfolio.client.service.ClientChargeWritePlatformServiceJpaRepositoryImpl;
 import org.apache.fineract.portfolio.client.service.ClientReadPlatformService;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductRepository;
@@ -251,14 +252,28 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
         final String type = searchParameters.getType();
         final String groupName = searchParameters.getGroupName();
         final String centerName = searchParameters.getCenterName();
+        final String groupingType = searchParameters.getGroupingType();
 
         String extraCriteria = "";
+
+        if (StringUtils.isNotBlank(groupingType)) {
+            if (groupingType.equals("group")) {
+                extraCriteria += " and g.prequalification_type_enum = ? ";
+                paramList.add(PrequalificationType.GROUP.getValue());
+            }
+
+            if (groupingType.equals("individual")) {
+                extraCriteria += " and g.prequalification_type_enum = ? ";
+                paramList.add(PrequalificationType.INDIVIDUAL.getValue());
+            }
+        }
+
         if (sqlSearch != null && !isGroup) {
-            extraCriteria = " and (m.name like '%" + sqlSearch + "%' OR m.dpi='" + sqlSearch + "') ";
+            extraCriteria += " and (m.name like '%" + sqlSearch + "%' OR m.dpi='" + sqlSearch + "') ";
         }
 
         if (sqlSearch != null && isGroup) {
-            extraCriteria = " and (g.group_name like '%" + sqlSearch + "%' OR pc.display_name='%" + sqlSearch + "%') ";
+            extraCriteria += " and (g.group_name like '%" + sqlSearch + "%' OR pc.display_name='%" + sqlSearch + "%') ";
         }
 
         if (officeId != null) {
@@ -320,6 +335,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                     	g.prequalification_duration as prequalilficationTimespan,
                     	g.comments,
                     	g.created_at,
+                    	g.prequalification_type_enum as prequalificationType,
                     	sl.from_status as previousStatus,
                     	sl.date_created as statusChangedOn,
                     	(select sum(requested_amount) from m_prequalification_group_members where group_id = g.id) as totalRequestedAmount,
@@ -382,7 +398,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                     	au.id = g.added_by
                     INNER JOIN m_product_loan lp ON
                     	g.product_id = lp.id
-                    INNER JOIN m_agency ma ON
+                    LEFT JOIN m_agency ma ON
                     	g.agency_id = ma.id
                     LEFT JOIN m_group cg ON
                     	cg.id = g.group_id
@@ -395,7 +411,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                     	FROM m_prequalification_status_log WHERE prequalification_id = g.id AND sl.to_status=g.status )
                     LEFT JOIN m_appuser mu ON
                     	mu.id = sl.updatedby_id
-                    INNER JOIN m_appuser fa ON
+                    LEFT JOIN m_appuser fa ON
                     	fa.id = g.facilitator
                     """;
         }
@@ -448,11 +464,15 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             if (previousStatus != null) {
                 lastPrequalificationStatus = PreQualificationsEnumerations.status(previousStatus);
             }
+
+            final Integer prequalificationTypeEnum = JdbcSupport.getInteger(rs, "prequalificationType");
+            final EnumOptionData prequalificationType = PreQualificationsEnumerations.prequalificationType(prequalificationTypeEnum);
+
             return GroupPrequalificationData.instance(id, prequalificationNumber, status, agencyName, null, centerName, groupName,
                     productName, addedBy, createdAt, comments, groupId, agencyId, centerId, productId, facilitatorId, facilitatorName,
                     greenValidationCount, yellowValidationCount, orangeValidationCount, redValidationCount, prequalilficationTimespan,
                     lastPrequalificationStatus, statusChangedBy, statusChangedOn, processType, processQuality, totalRequestedAmount,
-                    totalApprovedAmount);
+                    totalApprovedAmount, prequalificationType);
 
         }
     }

@@ -66,6 +66,7 @@ import org.apache.fineract.organisation.agency.service.AgencyReadPlatformService
 import org.apache.fineract.organisation.office.domain.OfficeHierarchyLevel;
 import org.apache.fineract.organisation.prequalification.data.GroupPrequalificationData;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationStatus;
+import org.apache.fineract.organisation.prequalification.domain.PrequalificationType;
 import org.apache.fineract.organisation.prequalification.service.PrequalificationReadPlatformService;
 import org.apache.fineract.organisation.prequalification.service.PrequalificationWritePlatformService;
 import org.apache.fineract.portfolio.group.data.CenterData;
@@ -147,7 +148,8 @@ public class GroupPrequalificationApiResource {
             @QueryParam("status") @Parameter(description = "status") final String status,
             @QueryParam("type") @Parameter(description = "type") final String type,
             @QueryParam("searchText") @Parameter(description = "searchText") final String searchText,
-            @QueryParam("sortOrder") @Parameter(description = "sortOrder") final String sortOrder) {
+            @QueryParam("sortOrder") @Parameter(description = "sortOrder") final String sortOrder,
+            @QueryParam("groupingType") @Parameter(description = "groupingType") final String groupingType) {
 
         this.context.authenticatedUser().validateHasViewPermission(this.resourceNameForPermissions);
 
@@ -155,7 +157,7 @@ public class GroupPrequalificationApiResource {
 
         String clientName = queryParameters.getFirst("clientName");
         SearchParameters searchParameters = SearchParameters.forPrequalification(clientName, status, offset, limit, orderBy, sortOrder,
-                type, searchText);
+                type, searchText, groupingType);
         final Page<GroupPrequalificationData> clientData = this.prequalificationReadPlatformService.retrieveAll(searchParameters);
 
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(queryParameters);
@@ -176,11 +178,29 @@ public class GroupPrequalificationApiResource {
         MultivaluedMap<String, String> queryParameters = uriInfo.getQueryParameters();
 
         String type = queryParameters.getFirst("type");
+        String groupingType = queryParameters.getFirst("groupingType");
+
+        Collection<LoanProductData> loanProducts = this.loanProductReadPlatformService.retrieveAllLoanProducts();
+        Integer prequalificationType = null;
+        if (StringUtils.isNotBlank(groupingType)) {
+            if (groupingType.equals("group")) {
+                prequalificationType = PrequalificationType.GROUP.getValue();
+            }
+
+            if (groupingType.equals("individual")) {
+                prequalificationType = PrequalificationType.INDIVIDUAL.getValue();
+            }
+
+            if (prequalificationType != null) {
+                loanProducts = this.loanProductReadPlatformService.retrieveAllLoanProductsForOwner(prequalificationType);
+            }
+        }
+
         Collection<CenterData> centerData = this.centerReadPlatformService
                 .retrieveAllForDropdown(this.context.authenticatedUser().getOffice().getId());
 
         Collection<AgencyData> agencies = this.agencyReadPlatformService.retrieveAllByUser();
-        Collection<LoanProductData> loanProducts = this.loanProductReadPlatformService.retrieveAllLoanProducts();
+
         final List<AppUserData> appUsers = new ArrayList<>(
                 this.appUserReadPlatformService.retrieveUsersUnderHierarchy(Long.valueOf(OfficeHierarchyLevel.GRUPO.getValue())));
 

@@ -56,6 +56,7 @@ public class GroupPrequalificationData {
     private final String processQuality;
     private EnumOptionData status;
     private final String addedBy;
+    private EnumOptionData prequalificationType;
 
     private final String facilitatorName;
     private final Long facilitatorId;
@@ -122,7 +123,7 @@ public class GroupPrequalificationData {
             final String facilitatorName, Long greenValidationCount, Long yellowValidationCount, Long orangeValidationCount,
             Long redValidationCount, Long prequalilficationTimespan, EnumOptionData lastPrequalificationStatus, String statusChangedBy,
             LocalDate statusChangedOn, String processType, String processQuality, BigDecimal totalRequestedAmount,
-            BigDecimal totalApprovedAmount) {
+            BigDecimal totalApprovedAmount, EnumOptionData prequalificationType) {
         this.id = id;
         this.productName = productName;
         this.prequalificationNumber = prequalificationNumber;
@@ -157,6 +158,7 @@ public class GroupPrequalificationData {
         this.processQuality = processQuality;
         this.totalRequestedAmount = totalRequestedAmount;
         this.totalApprovedAmount = totalApprovedAmount;
+        this.prequalificationType = prequalificationType;
     }
 
     public static GroupPrequalificationData template(final Collection<AgencyData> agencies, Collection<CenterData> centerData,
@@ -182,12 +184,12 @@ public class GroupPrequalificationData {
             final String facilitatorName, Long greenValidationCount, Long yellowValidationCount, Long orangeValidationCount,
             Long redValidationCount, Long prequalilficationTimespan, EnumOptionData lastPrequalificationStatus, String statusChangedBy,
             LocalDate statusChangedOn, String processType, String processQuality, BigDecimal totalRequestedAmount,
-            BigDecimal totalApprovedAmount) {
+            BigDecimal totalApprovedAmount, EnumOptionData prequalificationType) {
         return new GroupPrequalificationData(id, productName, prequalificationNumber, agencyName, portfolioName, centerName, groupName,
                 addedBy, createdAt, status, comments, groupId, null, null, null, null, null, agencyId, centerId, productId, facilitatorId,
                 facilitatorName, greenValidationCount, yellowValidationCount, orangeValidationCount, redValidationCount,
                 prequalilficationTimespan, lastPrequalificationStatus, statusChangedBy, statusChangedOn, processType, processQuality,
-                totalRequestedAmount, totalApprovedAmount);
+                totalRequestedAmount, totalApprovedAmount, prequalificationType);
     }
 
     public void updateMembers(Collection<MemberPrequalificationData> groupMembers) {

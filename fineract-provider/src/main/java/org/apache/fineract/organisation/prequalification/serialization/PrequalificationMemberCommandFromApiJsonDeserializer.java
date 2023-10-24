@@ -45,11 +45,12 @@ import org.springframework.stereotype.Component;
 public final class PrequalificationMemberCommandFromApiJsonDeserializer {
 
     private final FromJsonHelper fromApiJsonHelper;
-    private final Set<String> supportedParameters = new HashSet<>(Arrays.asList("id", "clientId", "name", "dpi", "dob", "locale",
-            "dateFormat", "amount", "puente", "individual", "workWithPuente"));
+    private final Set<String> supportedParameters = new HashSet<>(
+            Arrays.asList("id", "clientId", "name", "dpi", "dob", "locale", "dateFormat", "amount", "puente", "individual",
+                    "workWithPuente", "productId", "members", "prequalilficationTimespan", "status"));
 
-    private final Set<String> supportedParametersForUpdate = new HashSet<>(
-            Arrays.asList("id", "clientId", "name", "dpi", "dob", "locale", "dateFormat", "amount", "puente", "individual", "status"));
+    private final Set<String> supportedParametersForUpdate = new HashSet<>(Arrays.asList("id", "clientId", "name", "dpi", "dob", "locale",
+            "dateFormat", "amount", "puente", "individual", "productId", "members", "prequalilficationTimespan", "status"));
 
     @Autowired
     public PrequalificationMemberCommandFromApiJsonDeserializer(final FromJsonHelper fromApiJsonHelper) {
@@ -75,6 +76,7 @@ public final class PrequalificationMemberCommandFromApiJsonDeserializer {
 
         final String dpi = this.fromApiJsonHelper.extractStringNamed(ClientApiConstants.dpiParamName, element);
         baseDataValidator.reset().parameter(ClientApiConstants.dpiParamName).value(dpi).notNull().notBlank().notExceedingLengthOf(20);
+
         ClientIdentifierDocumentValidator.checkDPI(dpi, ClientApiConstants.dpiParamName);
 
         final BigDecimal requestedAmount = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed("amount", element);
@@ -84,9 +86,7 @@ public final class PrequalificationMemberCommandFromApiJsonDeserializer {
             final LocalDate dateOfBirth = this.fromApiJsonHelper.extractLocalDateNamed("dob", element);
             baseDataValidator.reset().parameter("dob").value(dateOfBirth).value(dateOfBirth).notNull()
                     .validateDateBefore(DateUtils.getBusinessLocalDate());
-
         }
-
     }
 
     public void validateForUpdate(String json) {
@@ -122,7 +122,6 @@ public final class PrequalificationMemberCommandFromApiJsonDeserializer {
                     element);
             baseDataValidator.reset().parameter(PrequalificatoinApiConstants.memberDobParamName).value(dateOfBirth).value(dateOfBirth)
                     .notNull().validateDateBefore(DateUtils.getBusinessLocalDate());
-
         }
 
         final String workWithPuente = this.fromApiJsonHelper.extractStringNamed(PrequalificatoinApiConstants.memberWorkWithPuenteParamName,
