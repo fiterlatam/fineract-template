@@ -580,4 +580,13 @@
                 stripComments="true"/>
     </changeSet>
 
+    <changeSet author="fineract" id="50">
+        <sqlFile
+                encoding="utf8"
+                path="db/changelog/tenant/commands/print_bank_cheque_pentaho_report.sql"
+                relativeToChangelogFile="false"
+                splitStatements="true"
+                stripComments="true"/>
+    </changeSet>
+
 </databaseChangeLog>

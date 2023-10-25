@@ -3951,6 +3951,14 @@ public class CommandWrapperBuilder {
         return this;
     }
 
+    public CommandWrapperBuilder printCheques() {
+        this.entityName = BankChequeApiConstants.BANK_CHECK_RESOURCE_NAME;
+        this.actionName = BankChequeApiConstants.CHECK_ACTION_PRINT;
+        this.entityId = null;
+        this.href = "/bankcheques";
+        return this;
+    }
+
     public CommandWrapperBuilder createCommittee() {
         this.actionName = "CREATE";
         this.entityName = "COMMITTEE";
