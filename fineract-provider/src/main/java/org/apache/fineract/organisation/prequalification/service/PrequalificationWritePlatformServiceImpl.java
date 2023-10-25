@@ -57,6 +57,8 @@ import org.apache.fineract.organisation.prequalification.command.Prequalificatio
 import org.apache.fineract.organisation.prequalification.command.PrequalificatoinApiConstants;
 import org.apache.fineract.organisation.prequalification.data.GenericValidationResultSet;
 import org.apache.fineract.organisation.prequalification.data.PrequalificationChecklistData;
+import org.apache.fineract.organisation.prequalification.domain.GroupPrequalificationRelationship;
+import org.apache.fineract.organisation.prequalification.domain.GroupPrequalificationRelationshipRepository;
 import org.apache.fineract.organisation.prequalification.domain.PreQualificationStatusLogRepository;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationGroup;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationGroupMember;
@@ -67,6 +69,7 @@ import org.apache.fineract.organisation.prequalification.domain.Prequalification
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationStatusLog;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationType;
 import org.apache.fineract.organisation.prequalification.exception.PrequalificationStatusNotChangedException;
+import org.apache.fineract.organisation.prequalification.exception.PrequalificationStatusNotCompletedException;
 import org.apache.fineract.organisation.prequalification.serialization.PrequalificationMemberCommandFromApiJsonDeserializer;
 import org.apache.fineract.portfolio.blacklist.domain.BlacklistStatus;
 import org.apache.fineract.portfolio.client.service.ClientChargeWritePlatformServiceJpaRepositoryImpl;
@@ -104,6 +107,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
     private final PrequalificationChecklistReadPlatformService prequalificationChecklistReadPlatformService;
     private final PrequalificationGroupMemberRepositoryWrapper preQualificationMemberRepository;
     private final GroupRepositoryWrapper groupRepositoryWrapper;
+    private final GroupPrequalificationRelationshipRepository groupPrequalificationRelationshipRepository;
     private final AppUserRepository appUserRepository;
     private final AgencyRepositoryWrapper agencyRepositoryWrapper;
     private final PrequalificationMemberCommandFromApiJsonDeserializer apiJsonDeserializer;
@@ -124,6 +128,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             final CodeValueReadPlatformService codeValueReadPlatformService, final JdbcTemplate jdbcTemplate,
             final ContentRepositoryFactory contentRepositoryFactory, final DocumentRepository documentRepository,
             final DocumentReadPlatformService documentReadPlatformService,
+            final GroupPrequalificationRelationshipRepository groupPrequalificationRelationshipRepository,
             final PrequalificationGroupRepositoryWrapper prequalificationGroupRepositoryWrapper) {
         this.context = context;
         this.dataValidator = dataValidator;
@@ -142,6 +147,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         this.contentRepositoryFactory = contentRepositoryFactory;
         this.documentRepository = documentRepository;
         this.documentReadPlatformService = documentReadPlatformService;
+        this.groupPrequalificationRelationshipRepository = groupPrequalificationRelationshipRepository;
     }
 
     @Transactional
@@ -158,8 +164,15 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                 .longValueOfParameterNamed(PrequalificatoinApiConstants.previousPrequalificationParamName);
 
         PrequalificationGroup parentGroup = null;
+        Group existingGroupParentGroup = null;
         if (previousPrequalificationId != null) {
             parentGroup = this.prequalificationGroupRepositoryWrapper.findOneWithNotFoundDetection(previousPrequalificationId);
+            if (!parentGroup.getStatus().equals(PrequalificationStatus.COMPLETED.getValue())
+                    && !parentGroup.getStatus().equals(PrequalificationStatus.REJECTED.getValue())) {
+                throw new PrequalificationStatusNotCompletedException(PrequalificationStatus.fromInt(parentGroup.getStatus()).toString());
+            }
+            existingGroupParentGroup = this.groupRepositoryWrapper.findOneWithPrequalificationIdNotFoundDetection(parentGroup);
+
         }
         Optional<LoanProduct> productOption = this.loanProductRepository.findById(productId);
         if (productOption.isEmpty()) throw new LoanProductNotFoundException(productId);
@@ -205,6 +218,14 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                 prequalificationGroup.getStatus(), null, prequalificationGroup);
 
         this.preQualificationLogRepository.saveAndFlush(statusLog);
+
+        if (existingGroupParentGroup != null) {
+            existingGroupParentGroup.updatePrequalification(prequalificationGroup);
+            this.groupRepositoryWrapper.saveAndFlush(existingGroupParentGroup);
+            GroupPrequalificationRelationship relationship = GroupPrequalificationRelationship.addRelationship(addedBy,
+                    existingGroupParentGroup, prequalificationGroup);
+            this.groupPrequalificationRelationshipRepository.saveAndFlush(relationship);
+        }
 
         return new CommandProcessingResultBuilder() //
                 .withCommandId(command.commandId()) //

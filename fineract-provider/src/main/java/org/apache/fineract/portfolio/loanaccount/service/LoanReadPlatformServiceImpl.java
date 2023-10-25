@@ -1096,7 +1096,9 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
             final BigDecimal topupAmount = rs.getBigDecimal("topupAmount");
             final String contractNo = rs.getString("contractNo");
             final BigDecimal requiredGuaranteeAmount = rs.getBigDecimal("requiredGuaranteeAmount");
-            final BigDecimal requiredGuaranteeAmountPercent=requiredGuaranteeAmount.compareTo(BigDecimal.ZERO)>0? requiredGuaranteeAmount.divide(new BigDecimal(100)):BigDecimal.ZERO;
+            final BigDecimal requiredGuaranteeAmountPercent = requiredGuaranteeAmount.compareTo(BigDecimal.ZERO) > 0
+                    ? requiredGuaranteeAmount.divide(new BigDecimal(100))
+                    : BigDecimal.ZERO;
 
             return LoanAccountData.basicLoanDetails(id, accountNo, status, externalId, clientId, clientAccountNo, clientName,
                     clientOfficeId, groupData, loanType, loanProductId, loanProductName, loanProductDescription,
@@ -1112,7 +1114,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                     isNPA, daysInMonthType, daysInYearType, isInterestRecalculationEnabled, interestRecalculationData,
                     createStandingInstructionAtDisbursement, isvariableInstallmentsAllowed, minimumGap, maximumGap, loanSubStatus,
                     canUseForTopup, isTopup, closureLoanId, closureLoanAccountNo, topupAmount, isEqualAmortization,
-                    fixedPrincipalPercentagePerInstallment, contractNo,requiredGuaranteeAmountPercent);
+                    fixedPrincipalPercentagePerInstallment, contractNo, requiredGuaranteeAmountPercent);
         }
     }
 
