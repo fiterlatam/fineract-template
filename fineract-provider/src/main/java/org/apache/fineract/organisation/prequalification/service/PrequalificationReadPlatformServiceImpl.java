@@ -23,6 +23,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -72,6 +73,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
     private final PaginationHelper paginationHelper;
     private final ColumnValidator columnValidator;
     private final PrequalificationsGroupMapper prequalificationsGroupMapper = new PrequalificationsGroupMapper();
+    private final PrequalificationsGroupMappingsMapper mappingsMapper = new PrequalificationsGroupMappingsMapper();
     private final PrequalificationsMemberMapper prequalificationsMemberMapper = new PrequalificationsMemberMapper();
     private final DatabaseSpecificSQLGenerator sqlGenerator;
     private final PreQualificationMemberRepository preQualificationMemberRepository;
@@ -241,6 +243,14 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
         final MemberPrequalificationData clientData = this.jdbcTemplate.queryForObject(sql, this.prequalificationsMemberMapper,
                 new Object[] { clientId });
         return clientData;
+    }
+
+    @Override
+    public Collection<GroupPrequalificationData> retrievePrequalificationGroupsMappings(Long groupId) {
+        final String sql = "select " + this.mappingsMapper.schema() + " where GR.group_id = ? ";
+        Collection<GroupPrequalificationData> prequalificationGroups = this.jdbcTemplate.query(sql, this.mappingsMapper,
+                new Object[] { groupId });
+        return prequalificationGroups;
     }
 
     private String buildSqlStringFromBlacklistCriteria(final SearchParameters searchParameters, List<Object> paramList, boolean isGroup) {
@@ -473,6 +483,41 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                     greenValidationCount, yellowValidationCount, orangeValidationCount, redValidationCount, prequalilficationTimespan,
                     lastPrequalificationStatus, statusChangedBy, statusChangedOn, processType, processQuality, totalRequestedAmount,
                     totalApprovedAmount, prequalificationType);
+
+        }
+    }
+
+    private static final class PrequalificationsGroupMappingsMapper implements RowMapper<GroupPrequalificationData> {
+
+        private final String schema;
+
+        PrequalificationsGroupMappingsMapper() {
+            this.schema = " PG.id AS id, PG.prequalification_number AS prequalificationNumber, PG.group_name AS groupName, "
+                    + "PG.status, LP.name AS productName, " + "PG.created_at, AU.firstname, AU.lastname "
+                    + "from m_group_prequalification_relationship GR " + "inner join m_group MG on MG.id = GR.group_id "
+                    + "inner join m_prequalification_group PG on PG.id = GR.prequalification_id "
+                    + "inner join m_product_loan LP on LP.id = PG.product_id " + "INNER JOIN m_appuser AU ON AU.id = PG.added_by " + "";
+        }
+
+        public String schema() {
+            return this.schema;
+        }
+
+        @Override
+        public GroupPrequalificationData mapRow(final ResultSet rs, final int rowNum) throws SQLException {
+
+            final Integer statusEnum = JdbcSupport.getInteger(rs, "status");
+            final EnumOptionData status = PreQualificationsEnumerations.status(statusEnum);
+
+            final Long id = JdbcSupport.getLong(rs, "id");
+            final String prequalificationNumber = rs.getString("prequalificationNumber");
+            String groupName = rs.getString("groupName");
+            final String productName = rs.getString("productName");
+            final LocalDate createdAt = JdbcSupport.getLocalDate(rs, "created_at");
+
+            final String addedBy = rs.getString("firstname") + " " + rs.getString("lastname");
+
+            return GroupPrequalificationData.simpeGroupData(id, prequalificationNumber, status, groupName, productName, addedBy, createdAt);
 
         }
     }

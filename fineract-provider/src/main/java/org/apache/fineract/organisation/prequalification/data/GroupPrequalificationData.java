@@ -192,6 +192,13 @@ public class GroupPrequalificationData {
                 totalRequestedAmount, totalApprovedAmount, prequalificationType);
     }
 
+    public static GroupPrequalificationData simpeGroupData(Long id, String prequalificationNumber, EnumOptionData status, String groupName,
+            String productName, String addedBy, LocalDate createdAt) {
+
+        return new GroupPrequalificationData(id, productName, prequalificationNumber, null, null, null, groupName, addedBy, createdAt,
+                status, null, null, null, null, null, null, null, null, null);
+    }
+
     public void updateMembers(Collection<MemberPrequalificationData> groupMembers) {
         this.groupMembers = groupMembers;
     }
