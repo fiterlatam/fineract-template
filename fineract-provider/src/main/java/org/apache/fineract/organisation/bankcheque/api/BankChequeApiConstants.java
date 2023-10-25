@@ -36,6 +36,7 @@ public class BankChequeApiConstants {
     public static final String CHECK_ACTION_AUTHORIZE_ISSUANCE = "AUTHORIZEISSUANCE";
     public static final String CHECK_ACTION_PAY_GUARANTEE_BY_CHEQUE = "PAYGUARANTEEBYCHEQUE";
     public static final String CHECK_ACTION_DISBURSEBYCHEQUES = "DISBURSEBYCHEQUES";
+    public static final String CHECK_ACTION_PRINT = "PRINT";
     public static String ID_PARAM_NAME = "id";
     public static String BATCH_NO = "batchNo";
     public static String AGENCY = "agency";

@@ -50,6 +50,9 @@ public enum LoanStatus {
             case 200:
                 enumeration = LoanStatus.APPROVED;
             break;
+            case 201:
+                enumeration = LoanStatus.DISBURSE_AUTHORIZATION_PENDING;
+            break;
             case 300:
                 enumeration = LoanStatus.ACTIVE;
             break;
@@ -103,7 +106,7 @@ public enum LoanStatus {
     }
 
     public boolean isApproved() {
-        return this.value.equals(LoanStatus.APPROVED.getValue());
+        return this.value.equals(LoanStatus.APPROVED.getValue()) || this.value.equals(LoanStatus.DISBURSE_AUTHORIZATION_PENDING.getValue());
     }
 
     public boolean isActive() {
