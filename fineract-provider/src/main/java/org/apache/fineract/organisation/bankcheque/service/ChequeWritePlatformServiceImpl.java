@@ -39,9 +39,11 @@ import org.apache.fineract.organisation.bankcheque.command.ApproveChequeIssuance
 import org.apache.fineract.organisation.bankcheque.command.AuthorizeChequeIssuanceCommand;
 import org.apache.fineract.organisation.bankcheque.command.CreateChequeCommand;
 import org.apache.fineract.organisation.bankcheque.command.PayGuaranteeByChequeCommand;
+import org.apache.fineract.organisation.bankcheque.command.PrintChequeCommand;
 import org.apache.fineract.organisation.bankcheque.command.ReassignChequeCommand;
 import org.apache.fineract.organisation.bankcheque.command.UpdateChequeCommand;
 import org.apache.fineract.organisation.bankcheque.command.VoidChequeCommand;
+import org.apache.fineract.organisation.bankcheque.data.ChequeData;
 import org.apache.fineract.organisation.bankcheque.domain.BankChequeStatus;
 import org.apache.fineract.organisation.bankcheque.domain.Batch;
 import org.apache.fineract.organisation.bankcheque.domain.Cheque;
@@ -52,9 +54,11 @@ import org.apache.fineract.organisation.bankcheque.serialization.ApproveChequeIs
 import org.apache.fineract.organisation.bankcheque.serialization.AuthorizeChequeIssuanceCommandFromApiJsonDeserializer;
 import org.apache.fineract.organisation.bankcheque.serialization.CreateChequeCommandFromApiJsonDeserializer;
 import org.apache.fineract.organisation.bankcheque.serialization.PayGuaranteeByChequeCommandFromApiJsonDeserializer;
+import org.apache.fineract.organisation.bankcheque.serialization.PrintChequeCommandFromApiJsonDeserializer;
 import org.apache.fineract.organisation.bankcheque.serialization.ReassignChequeCommandFromApiJsonDeserializer;
 import org.apache.fineract.organisation.bankcheque.serialization.UpdateChequeCommandFromApiJsonDeserializer;
 import org.apache.fineract.organisation.bankcheque.serialization.VoidChequeCommandFromApiJsonDeserializer;
+import org.apache.fineract.portfolio.loanaccount.service.LoanWritePlatformService;
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -77,6 +81,9 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
     private final ApproveChequeIssuanceCommandFromApiJsonDeserializer approveChequeIssuanceCommandFromApiJsonDeserializer;
     private final AuthorizeChequeIssuanceCommandFromApiJsonDeserializer authorizeChequeIssuanceCommandFromApiJsonDeserializer;
     private final PayGuaranteeByChequeCommandFromApiJsonDeserializer payGuaranteeByChequeCommandFromApiJsonDeserializer;
+    private final PrintChequeCommandFromApiJsonDeserializer printChequeCommandFromApiJsonDeserializer;
+    private final ChequeReadPlatformServiceImpl.ChequeMapper chequeMapper = new ChequeReadPlatformServiceImpl.ChequeMapper();
+    private final LoanWritePlatformService loanWritePlatformService;
 
     @Override
     public CommandProcessingResult createBatch(JsonCommand command) {
@@ -301,6 +308,37 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
             final LocalDateTime localDateTime = DateUtils.getLocalDateTimeOfSystem();
             final Long currentUserId = currentUser.getId();
             cheque.stampAudit(currentUserId, localDateTime);
+            this.chequeBatchRepositoryWrapper.updateCheque(cheque);
+        }
+        return new CommandProcessingResultBuilder().withCommandId(command.commandId()).build();
+    }
+
+    @Override
+    @Transactional
+    public CommandProcessingResult printCheques(JsonCommand command) {
+        final AppUser currentUser = this.context.authenticatedUser();
+        List<PrintChequeCommand> printChequeCommandList = this.printChequeCommandFromApiJsonDeserializer.commandFromApiJson(command.json());
+        for (final PrintChequeCommand printChequeCommand : printChequeCommandList) {
+            final Cheque cheque = this.chequeBatchRepositoryWrapper.findOneChequeWithNotFoundDetection(printChequeCommand.getChequeId());
+            if (!BankChequeStatus.READY_TO_BE_PRINTED.getValue().equals(cheque.getStatus())) {
+                throw new BankChequeException("status", "invalid.loan.status.for.cheque.print");
+            }
+            final String query = "SELECT " + this.chequeMapper.schema() + " WHERE mbc.id = ? ";
+            ChequeData chequeData = this.jdbcTemplate.queryForObject(query, this.chequeMapper, cheque.getId());
+            final Long loanAccId = chequeData.getLoanAccId();
+            if (loanAccId != null && chequeData.getLoanAmount() != null) {
+                CommandProcessingResult result = this.loanWritePlatformService.disburseLoan(loanAccId, command, false);
+                if (result.getLoanId() == null) {
+                    throw new BankChequeException("print.cheques", "failed.to.disburse.loan " + loanAccId);
+                }
+            }
+            cheque.setStatus(BankChequeStatus.ISSUED.getValue());
+            final LocalDateTime localDateTime = DateUtils.getLocalDateTimeOfSystem();
+            LocalDate localDate = DateUtils.getBusinessLocalDate();
+            final Long currentUserId = currentUser.getId();
+            cheque.stampAudit(currentUserId, localDateTime);
+            cheque.setPrintedBy(currentUser);
+            cheque.setPrintedDate(localDate);
             this.chequeBatchRepositoryWrapper.updateCheque(cheque);
         }
         return new CommandProcessingResultBuilder().withCommandId(command.commandId()).build();
