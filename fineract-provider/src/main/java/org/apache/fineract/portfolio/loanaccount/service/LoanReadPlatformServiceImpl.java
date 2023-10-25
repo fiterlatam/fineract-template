@@ -223,6 +223,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
             sqlBuilder.append(" join m_office o on (o.id = c.office_id or o.id = g.office_id) ");
             sqlBuilder.append(" left join m_office transferToOffice on transferToOffice.id = c.transfer_to_office_id ");
             sqlBuilder.append(" where l.id=? and ( o.hierarchy like ? or transferToOffice.hierarchy like ?)");
+            sqlBuilder.append(" GROUP BY l.id");
 
             return this.jdbcTemplate.queryForObject(sqlBuilder.toString(), rm, loanId, hierarchySearchString, hierarchySearchString);
         } catch (final EmptyResultDataAccessException e) {
@@ -1096,7 +1097,9 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
             final BigDecimal topupAmount = rs.getBigDecimal("topupAmount");
             final String contractNo = rs.getString("contractNo");
             final BigDecimal requiredGuaranteeAmount = rs.getBigDecimal("requiredGuaranteeAmount");
-            final BigDecimal requiredGuaranteeAmountPercent=requiredGuaranteeAmount.compareTo(BigDecimal.ZERO)>0? requiredGuaranteeAmount.divide(new BigDecimal(100)):BigDecimal.ZERO;
+            final BigDecimal requiredGuaranteeAmountPercent = requiredGuaranteeAmount.compareTo(BigDecimal.ZERO) > 0
+                    ? requiredGuaranteeAmount.divide(new BigDecimal(100))
+                    : BigDecimal.ZERO;
 
             return LoanAccountData.basicLoanDetails(id, accountNo, status, externalId, clientId, clientAccountNo, clientName,
                     clientOfficeId, groupData, loanType, loanProductId, loanProductName, loanProductDescription,
@@ -1112,7 +1115,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                     isNPA, daysInMonthType, daysInYearType, isInterestRecalculationEnabled, interestRecalculationData,
                     createStandingInstructionAtDisbursement, isvariableInstallmentsAllowed, minimumGap, maximumGap, loanSubStatus,
                     canUseForTopup, isTopup, closureLoanId, closureLoanAccountNo, topupAmount, isEqualAmortization,
-                    fixedPrincipalPercentagePerInstallment, contractNo,requiredGuaranteeAmountPercent);
+                    fixedPrincipalPercentagePerInstallment, contractNo, requiredGuaranteeAmountPercent);
         }
     }
 

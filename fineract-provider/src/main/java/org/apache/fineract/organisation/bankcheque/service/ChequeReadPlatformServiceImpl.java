@@ -133,7 +133,7 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
                 .groupOptions(groupOptions).centerOptions(centerOptions).facilitatorOptions(facilitatorOptions).build();
     }
 
-    private static final class ChequeMapper implements RowMapper<ChequeData> {
+    static final class ChequeMapper implements RowMapper<ChequeData> {
 
         private final String schema;
 
@@ -155,6 +155,7 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
                     	mg.display_name AS groupName,
                     	mg.account_no AS groupNo,
                     	ml.account_no AS loanAccNo,
+                    	ml.id AS loanAccId,
                     	mpb.batch_no AS batchNo,
                     	mba.account_number AS bankAccNo,
                         mba.id AS bankAccId,
@@ -226,6 +227,7 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
             final String clientNo = rs.getString("clientNo");
             final String groupName = rs.getString("groupName");
             final String loanAccNo = rs.getString("loanAccNo");
+            final Long loanAccId = JdbcSupport.getLong(rs, "loanAccId");
             final String groupNo = rs.getString("groupNo");
             final BigDecimal loanAmount = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "loanAmount");
             final BigDecimal guaranteeAmount = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "guaranteeAmount");
@@ -237,7 +239,7 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
                     .printedByUsername(printedByUsername).voidAuthorizedByUsername(voidAuthorizedByUsername)
                     .lastModifiedByUsername(lastModifiedByUsername).clientName(clientName).clientNo(clientNo).groupName(groupName)
                     .loanAccNo(loanAccNo).loanAmount(loanAmount).guaranteeAmount(guaranteeAmount).groupNo(groupNo).guaranteeId(guaranteeId)
-                    .caseId(caseId).chequeAmount(chequeAmount).agencyId(agencyId).build();
+                    .caseId(caseId).chequeAmount(chequeAmount).agencyId(agencyId).loanAccId(loanAccId).build();
 
         }
     }

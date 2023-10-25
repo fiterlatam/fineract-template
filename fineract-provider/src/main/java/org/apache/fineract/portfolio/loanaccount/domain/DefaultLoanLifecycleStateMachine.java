@@ -55,7 +55,7 @@ public class DefaultLoanLifecycleStateMachine implements LoanLifecycleStateMachi
                 }
             break;
             case LOAN_DISBURSED:
-                if (from.hasStateOf(LoanStatus.APPROVED)) {
+                if (from.hasStateOf(LoanStatus.APPROVED) || from.hasStateOf(LoanStatus.DISBURSE_AUTHORIZATION_PENDING)) {
                     newState = stateOf(LoanStatus.ACTIVE, this.allowedLoanStatuses);
                 }
             break;

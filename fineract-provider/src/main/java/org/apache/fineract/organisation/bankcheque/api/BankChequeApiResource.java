@@ -113,11 +113,14 @@ public class BankChequeApiResource {
         } else if (is(commandParam, "payguaranteesbycheques")) {
             commandRequest = builder.payGuaranteesByCheques().build();
             result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
+        } else if (is(commandParam, "printcheques")) {
+            commandRequest = builder.printCheques().build();
+            result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
         }
 
         if (result == null) {
             throw new UnrecognizedQueryParamException("command", commandParam, "reassigncheque", "authorizereassignment", "createbatch",
-                    "voidcheque", "authorizevoidance", "approveissuance", "payguaranteesbycheques");
+                    "voidcheque", "authorizevoidance", "approveissuance", "payguaranteesbycheques", "printcheques");
         }
         return this.toApiJsonSerializer.serialize(result);
     }

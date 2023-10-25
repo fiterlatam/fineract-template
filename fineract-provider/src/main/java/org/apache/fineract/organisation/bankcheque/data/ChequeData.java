@@ -56,6 +56,7 @@ public class ChequeData {
     private String groupName;
     private String groupNo;
     private String loanAccNo;
+    private Long loanAccId;
     private String caseId;
     private Long guaranteeId;
     private BigDecimal chequeAmount;

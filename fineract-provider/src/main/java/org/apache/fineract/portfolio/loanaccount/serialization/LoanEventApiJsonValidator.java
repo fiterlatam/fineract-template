@@ -87,13 +87,13 @@ public final class LoanEventApiJsonValidator {
         Set<String> disbursementParameters = null;
 
         if (isAccountTransfer) {
-            disbursementParameters = new HashSet<>(Arrays.asList("actualDisbursementDate", "externalId", "note", "locale", "dateFormat",
-                    LoanApiConstants.principalDisbursedParameterName, LoanApiConstants.emiAmountParameterName,
+            disbursementParameters = new HashSet<>(Arrays.asList("actualDisbursementDate", "selectedCheques", "externalId", "note",
+                    "locale", "dateFormat", LoanApiConstants.principalDisbursedParameterName, LoanApiConstants.emiAmountParameterName,
                     LoanApiConstants.disbursementNetDisbursalAmountParameterName));
         } else {
-            disbursementParameters = new HashSet<>(Arrays.asList("actualDisbursementDate", "externalId", "note", "locale", "dateFormat",
-                    "paymentTypeId", "accountNumber", "checkNumber", "routingCode", "receiptNumber", "bankNumber", "adjustRepaymentDate",
-                    LoanApiConstants.principalDisbursedParameterName, LoanApiConstants.emiAmountParameterName,
+            disbursementParameters = new HashSet<>(Arrays.asList("actualDisbursementDate", "selectedCheques", "externalId", "note",
+                    "locale", "dateFormat", "paymentTypeId", "accountNumber", "checkNumber", "routingCode", "receiptNumber", "bankNumber",
+                    "adjustRepaymentDate", LoanApiConstants.principalDisbursedParameterName, LoanApiConstants.emiAmountParameterName,
                     LoanApiConstants.postDatedChecks, LoanApiConstants.disbursementNetDisbursalAmountParameterName));
         }
 
