@@ -18,6 +18,7 @@
  */
 package org.apache.fineract.organisation.prequalification.domain;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -226,5 +227,17 @@ public class PrequalificationGroup extends AbstractPersistableCustom {
 
     public void setPrequalificationType(Integer prequalificationType) {
         this.prequalificationType = prequalificationType;
+    }
+
+    public boolean isPrequalificationTypeIndividual() {
+        return this.prequalificationType.equals(PrequalificationType.INDIVIDUAL.getValue());
+    }
+
+    public boolean isPrequalificationTypeGroup() {
+        return this.prequalificationType.equals(PrequalificationType.GROUP.getValue());
+    }
+
+    public BigDecimal getTotalRequestedAmount() {
+        return this.getMembers().stream().map(PrequalificationGroupMember::getRequestedAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 }

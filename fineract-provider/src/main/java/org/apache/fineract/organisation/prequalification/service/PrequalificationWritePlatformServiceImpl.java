@@ -56,6 +56,7 @@ import org.apache.fineract.organisation.agency.domain.AgencyRepositoryWrapper;
 import org.apache.fineract.organisation.prequalification.command.PrequalificationDataValidator;
 import org.apache.fineract.organisation.prequalification.command.PrequalificatoinApiConstants;
 import org.apache.fineract.organisation.prequalification.data.GenericValidationResultSet;
+import org.apache.fineract.organisation.prequalification.data.GroupPrequalificationData;
 import org.apache.fineract.organisation.prequalification.data.PrequalificationChecklistData;
 import org.apache.fineract.organisation.prequalification.domain.GroupPrequalificationRelationship;
 import org.apache.fineract.organisation.prequalification.domain.GroupPrequalificationRelationshipRepository;
@@ -67,6 +68,8 @@ import org.apache.fineract.organisation.prequalification.domain.Prequalification
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationMemberIndication;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationStatus;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationStatusLog;
+import org.apache.fineract.organisation.prequalification.domain.PrequalificationStatusRange;
+import org.apache.fineract.organisation.prequalification.domain.PrequalificationStatusRangeRepository;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationType;
 import org.apache.fineract.organisation.prequalification.exception.PrequalificationStatusNotChangedException;
 import org.apache.fineract.organisation.prequalification.exception.PrequalificationStatusNotCompletedException;
@@ -115,6 +118,8 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
     private final DocumentRepository documentRepository;
     private final ContentRepositoryFactory contentRepositoryFactory;
     private final DocumentReadPlatformService documentReadPlatformService;
+    private final PrequalificationStatusRangeRepository prequalificationStatusRangeRepository;
+    private final PrequalificationReadPlatformService prequalificationReadPlatformService;
 
     @Autowired
     public PrequalificationWritePlatformServiceImpl(final PlatformSecurityContext context,
@@ -129,7 +134,9 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             final ContentRepositoryFactory contentRepositoryFactory, final DocumentRepository documentRepository,
             final DocumentReadPlatformService documentReadPlatformService,
             final GroupPrequalificationRelationshipRepository groupPrequalificationRelationshipRepository,
-            final PrequalificationGroupRepositoryWrapper prequalificationGroupRepositoryWrapper) {
+            final PrequalificationGroupRepositoryWrapper prequalificationGroupRepositoryWrapper,
+            final PrequalificationStatusRangeRepository prequalificationStatusRangeRepository,
+            PrequalificationReadPlatformService prequalificationReadPlatformService) {
         this.context = context;
         this.dataValidator = dataValidator;
         this.loanProductRepository = loanProductRepository;
@@ -148,6 +155,8 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         this.documentRepository = documentRepository;
         this.documentReadPlatformService = documentReadPlatformService;
         this.groupPrequalificationRelationshipRepository = groupPrequalificationRelationshipRepository;
+        this.prequalificationStatusRangeRepository = prequalificationStatusRangeRepository;
+        this.prequalificationReadPlatformService = prequalificationReadPlatformService;
     }
 
     @Transactional
@@ -792,6 +801,15 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         if (fromStatus.equals(prequalificationStatus.getValue())) {
             throw new PrequalificationStatusNotChangedException(prequalificationStatus.toString());
         }
+
+        if (prequalificationGroup.isPrequalificationTypeIndividual() && action.equals("approveanalysis")) {
+            prequalificationStatus = resolveIndividualStatus(prequalificationGroup, action);
+
+            if (fromStatus.equals(prequalificationStatus.getValue())) {
+                throw new PrequalificationStatusNotChangedException(prequalificationStatus.toString());
+            }
+        }
+
         prequalificationGroup.updateStatus(prequalificationStatus);
         prequalificationGroup.updateComments(comments);
         // this.prequalificationGroupRepositoryWrapper.save(prequalificationGroup);
@@ -816,6 +834,36 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         } else if (action.equalsIgnoreCase("approveanalysis")) {
             status = PrequalificationStatus.APPROVED;
         }
+        return status;
+    }
+
+    private PrequalificationStatus resolveIndividualStatus(PrequalificationGroup prequalificationGroup, String action) {
+        PrequalificationStatus status = null;
+
+        if (action.equalsIgnoreCase("approveanalysis")) {
+
+            GroupPrequalificationData prequalificationData = prequalificationReadPlatformService.retrieveOne(prequalificationGroup.getId());
+            int numberOfErrors = prequalificationData.getRedValidationCount() > 0
+                    ? Math.toIntExact(prequalificationData.getRedValidationCount())
+                    : 0;
+
+            BigDecimal amount = prequalificationGroup.getTotalRequestedAmount();
+
+            List<PrequalificationStatusRange> statusRangeList = this.prequalificationStatusRangeRepository
+                    .findByPrequalificationTypeAndNumberOfErrors(prequalificationGroup.getPrequalificationType(), numberOfErrors);
+
+            for (PrequalificationStatusRange statusRange : statusRangeList) {
+                if (amount.compareTo(statusRange.getMinAmount()) >= 0
+                        && (statusRange.getMaxAmount() != null && amount.compareTo(statusRange.getMaxAmount()) <= 0)) {
+                    status = PrequalificationStatus.fromInt(statusRange.getStatus());
+                    break;
+                } else if (amount.compareTo(statusRange.getMinAmount()) >= 0 && statusRange.getMaxAmount() == null) {
+                    status = PrequalificationStatus.fromInt(statusRange.getStatus());
+                    break;
+                }
+            }
+        }
+
         return status;
     }
 
