@@ -18,6 +18,7 @@
  */
 package org.apache.fineract.organisation.bankcheque.service;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.HashSet;
@@ -58,6 +59,7 @@ import org.apache.fineract.organisation.bankcheque.serialization.PrintChequeComm
 import org.apache.fineract.organisation.bankcheque.serialization.ReassignChequeCommandFromApiJsonDeserializer;
 import org.apache.fineract.organisation.bankcheque.serialization.UpdateChequeCommandFromApiJsonDeserializer;
 import org.apache.fineract.organisation.bankcheque.serialization.VoidChequeCommandFromApiJsonDeserializer;
+import org.apache.fineract.organisation.monetary.domain.NumberToWordsConverter;
 import org.apache.fineract.portfolio.loanaccount.service.LoanWritePlatformService;
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -325,13 +327,18 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
             }
             final String query = "SELECT " + this.chequeMapper.schema() + " WHERE mbc.id = ? ";
             ChequeData chequeData = this.jdbcTemplate.queryForObject(query, this.chequeMapper, cheque.getId());
+            BigDecimal chequeAmount = chequeData.getGuaranteeAmount();
             final Long loanAccId = chequeData.getLoanAccId();
             if (loanAccId != null && chequeData.getLoanAmount() != null) {
                 CommandProcessingResult result = this.loanWritePlatformService.disburseLoan(loanAccId, command, false);
                 if (result.getLoanId() == null) {
                     throw new BankChequeException("print.cheques", "failed.to.disburse.loan " + loanAccId);
                 }
+                chequeAmount = chequeData.getLoanAmount();
             }
+            final String amountInWords = NumberToWordsConverter.convertToWords(chequeAmount.intValue(),
+                    NumberToWordsConverter.Language.SPANISH);
+            cheque.setAmountInWords(amountInWords);
             cheque.setStatus(BankChequeStatus.ISSUED.getValue());
             final LocalDateTime localDateTime = DateUtils.getLocalDateTimeOfSystem();
             LocalDate localDate = DateUtils.getBusinessLocalDate();
