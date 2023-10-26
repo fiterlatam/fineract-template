@@ -589,4 +589,31 @@
                 stripComments="true"/>
     </changeSet>
 
+    <changeSet author="fineract" id="51">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_bank_check" columnName="amount_in_words"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_bank_check">
+            <column name="amount_in_words" type="VARCHAR(200)" />
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="53" author="fineract">
+        <update tableName="stretchy_parameter">
+            <column name="parameter_name" value="selectedCheques"/>
+            <column name="parameter_variable" value="selectedCheques"/>
+            <column name="parameter_label" value="Selected Cheques"/>
+            <where>parameter_name='chequeId'</where>
+        </update>
+    </changeSet>
+
+    <changeSet id="54" author="fineract">
+        <update tableName="stretchy_report_parameter">
+            <column name="report_parameter_name" value="selectedCheques"/>
+            <where>report_parameter_name='chequeId'</where>
+        </update>
+    </changeSet>
+
 </databaseChangeLog>

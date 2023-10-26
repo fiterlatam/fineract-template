@@ -104,6 +104,9 @@ public class Cheque extends AbstractAuditableCustom {
     @Column(name = "guarantee_name")
     private String guaranteeName;
 
+    @Column(name = "amount_in_words")
+    private String amountInWords;
+
     public Cheque setChequeNo(Long chequeNo) {
         this.chequeNo = chequeNo;
         return this;
@@ -201,5 +204,9 @@ public class Cheque extends AbstractAuditableCustom {
 
     public void setGuaranteeName(String guaranteeName) {
         this.guaranteeName = guaranteeName;
+    }
+
+    public void setAmountInWords(String amountInWords) {
+        this.amountInWords = amountInWords;
     }
 }
