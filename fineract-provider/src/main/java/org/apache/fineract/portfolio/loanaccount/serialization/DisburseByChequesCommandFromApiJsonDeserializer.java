@@ -59,7 +59,9 @@ public class DisburseByChequesCommandFromApiJsonDeserializer extends AbstractFro
                     .extractBigDecimalWithLocaleNamed(LoanApiConstants.REQUIRED_GUARANTEE_AMOUNT, element);
             baseDataValidator.reset().parameter(LoanApiConstants.REQUIRED_GUARANTEE_AMOUNT).value(requiredGuaranteeAmount).notBlank();
             final String depositGuaranteeNo = this.fromApiJsonHelper.extractStringNamed(LoanApiConstants.DEPOSIT_GUARANTEE_NUMBER, element);
-            if(actualGuaranteeAmount.compareTo(requiredGuaranteeAmount) > 0){
+            final BigDecimal depositGuaranteeAmount = this.fromApiJsonHelper
+                    .extractBigDecimalWithLocaleNamed(LoanApiConstants.DEPOSIT_GUARANTEE_AMOUNT, element);
+            if(requiredGuaranteeAmount.compareTo(actualGuaranteeAmount) > 0 || depositGuaranteeAmount.compareTo(BigDecimal.ZERO) > 0){
                 baseDataValidator.reset().parameter(LoanApiConstants.DEPOSIT_GUARANTEE_NUMBER).value(depositGuaranteeNo).notBlank()
                         .notExceedingLengthOf(1000);
             }
