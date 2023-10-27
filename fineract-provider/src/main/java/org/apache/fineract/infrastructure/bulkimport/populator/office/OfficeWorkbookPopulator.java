@@ -69,6 +69,7 @@ public class OfficeWorkbookPopulator extends AbstractWorkbookPopulator {
         worksheet.setColumnWidth(OfficeConstants.PARENT_OFFICE_ID_COL, TemplatePopulateImportConstants.SMALL_COL_SIZE);
         worksheet.setColumnWidth(OfficeConstants.OPENED_ON_COL, TemplatePopulateImportConstants.SMALL_COL_SIZE);
         worksheet.setColumnWidth(OfficeConstants.EXTERNAL_ID_COL, TemplatePopulateImportConstants.SMALL_COL_SIZE);
+        worksheet.setColumnWidth(OfficeConstants.OFFICE_CODE_COL, TemplatePopulateImportConstants.SMALL_COL_SIZE);
         worksheet.setColumnWidth(OfficeConstants.LOOKUP_OFFICE_COL, TemplatePopulateImportConstants.SMALL_COL_SIZE);
         worksheet.setColumnWidth(OfficeConstants.LOOKUP_OFFICE_ID_COL, TemplatePopulateImportConstants.SMALL_COL_SIZE);
 
@@ -77,6 +78,7 @@ public class OfficeWorkbookPopulator extends AbstractWorkbookPopulator {
         writeString(OfficeConstants.PARENT_OFFICE_ID_COL, rowHeader, "Parent OfficeId*");
         writeString(OfficeConstants.OPENED_ON_COL, rowHeader, "Opened On Date*");
         writeString(OfficeConstants.EXTERNAL_ID_COL, rowHeader, "External Id*");
+        writeString(OfficeConstants.OFFICE_CODE_COL, rowHeader, "Office Code*");
         writeString(OfficeConstants.LOOKUP_OFFICE_COL, rowHeader, "Lookup Offices");
         writeString(OfficeConstants.LOOKUP_OFFICE_ID_COL, rowHeader, "Lookup OfficeId*");
     }
