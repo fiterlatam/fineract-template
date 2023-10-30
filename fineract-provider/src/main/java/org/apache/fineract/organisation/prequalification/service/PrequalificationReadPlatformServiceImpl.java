@@ -27,6 +27,7 @@ import java.util.Collection;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 import org.apache.fineract.infrastructure.codes.service.CodeValueReadPlatformService;
 import org.apache.fineract.infrastructure.core.data.ApiParameterError;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
@@ -51,6 +52,7 @@ import org.apache.fineract.organisation.prequalification.domain.Prequalification
 import org.apache.fineract.portfolio.client.service.ClientChargeWritePlatformServiceJpaRepositoryImpl;
 import org.apache.fineract.portfolio.client.service.ClientReadPlatformService;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductRepository;
+import org.apache.fineract.useradministration.domain.AppUser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -255,6 +257,14 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
 
     private String buildSqlStringFromBlacklistCriteria(final SearchParameters searchParameters, List<Object> paramList, boolean isGroup) {
 
+        AppUser appUser = this.context.authenticatedUser();
+        String committeeQuery = "select committee_id from m_committee_user where user_id = ? order by committee_id asc limit 1";
+        final List<Long> committeeIdList = this.jdbcTemplate.queryForList(committeeQuery, Long.class, appUser.getId());
+
+        CodeValueData committeeValueData = null;
+        if (!committeeIdList.isEmpty()) {
+            committeeValueData = this.codeValueReadPlatformService.retrieveCodeValue(committeeIdList.get(0));
+        }
         String sqlSearch = searchParameters.getSqlSearch();
         final Long officeId = searchParameters.getOfficeId();
         final String dpiNumber = searchParameters.getName();
@@ -324,6 +334,13 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             } else if (type.equals("exceptionsqueue")) {
                 extraCriteria += " and g.status IN( " + PrequalificationStatus.AGENCY_LEAD_PENDING_APPROVAL.getValue().toString() + ", "
                         + PrequalificationStatus.AGENCY_LEAD_PENDING_APPROVAL_WITH_EXCEPTIONS.getValue().toString() + ") ";
+            } else if (type.equals("committeeapprovals")) {
+
+                if (committeeValueData == null) {
+                    extraCriteria += " and g.status IN( " + PrequalificationStatus.INVALID.getValue().toString()+ ") ";
+                }else {
+                    extraCriteria += " and g.status IN( " + resolveCommitteeGroupStatus(committeeValueData) + ") ";
+                }
             }
         }
 
@@ -331,6 +348,22 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             extraCriteria = extraCriteria.substring(4);
         }
         return extraCriteria;
+    }
+
+    private String resolveCommitteeGroupStatus(CodeValueData committeeValueData) {
+        String name = committeeValueData.getName();
+
+        String statusValues = "";
+        switch (name) {
+            case "A" -> statusValues = PrequalificationStatus.PRE_COMMITTEE_B_PENDING_APPROVAL.getValue().toString();
+            case "B" -> statusValues = PrequalificationStatus.PRE_COMMITTEE_C_PENDING_APPROVAL.getValue().toString()+", "
+                    + PrequalificationStatus.PRE_COMMITTEE_C_PENDING_APPROVAL.getValue().toString();
+            case "C" -> statusValues = PrequalificationStatus.PRE_COMMITTEE_C_PENDING_APPROVAL.getValue().toString()+", "
+                    + PrequalificationStatus.PRE_COMMITTEE_D_PENDING_APPROVAL.getValue().toString();
+            case "D" -> statusValues = PrequalificationStatus.PRE_COMMITTEE_D_PENDING_APPROVAL.getValue().toString();
+            default -> statusValues = PrequalificationStatus.INVALID.getValue().toString();
+        }
+        return statusValues;
     }
 
     private static final class PrequalificationsGroupMapper implements RowMapper<GroupPrequalificationData> {
