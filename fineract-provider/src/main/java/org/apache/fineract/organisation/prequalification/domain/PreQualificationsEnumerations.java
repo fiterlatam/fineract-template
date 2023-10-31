@@ -84,6 +84,9 @@ public final class PreQualificationsEnumerations {
             case PRE_COMMITTEE_C_PENDING_APPROVAL -> new EnumOptionData(
                     PrequalificationStatus.PRE_COMMITTEE_C_PENDING_APPROVAL.getValue().longValue(),
                     PrequalificationStatus.PRE_COMMITTEE_C_PENDING_APPROVAL.getCode(), "PRE_COMMITTEE_C_PENDING_APPROVAL");
+            case PRE_COMMITTEE_A_PENDING_APPROVAL -> new EnumOptionData(
+                    PrequalificationStatus.PRE_COMMITTEE_A_PENDING_APPROVAL.getValue().longValue(),
+                    PrequalificationStatus.PRE_COMMITTEE_A_PENDING_APPROVAL.getCode(), "PRE_COMMITTEE_A_PENDING_APPROVAL");
             default -> new EnumOptionData(PrequalificationStatus.INVALID.getValue().longValue(), PrequalificationStatus.INVALID.getCode(),
                     "INVALID");
         };
