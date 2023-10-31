@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License. You may obtain a copy of the License at
- *
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -30,6 +30,7 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import javax.transaction.Transactional;
+
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
@@ -71,10 +72,10 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
     private final JdbcTemplate jdbcTemplate;
 
     public PrequalificationChecklistWritePlatformServiceImpl(PlatformSecurityContext context,
-            PrequalificationGroupRepositoryWrapper prequalificationGroupRepositoryWrapper,
-            final PreQualificationStatusLogRepository preQualificationStatusLogRepository,
-            ValidationChecklistResultRepository validationChecklistResultRepository, PlatformSecurityContext platformSecurityContext,
-            JdbcTemplate jdbcTemplate) {
+                                                             PrequalificationGroupRepositoryWrapper prequalificationGroupRepositoryWrapper,
+                                                             final PreQualificationStatusLogRepository preQualificationStatusLogRepository,
+                                                             ValidationChecklistResultRepository validationChecklistResultRepository, PlatformSecurityContext platformSecurityContext,
+                                                             JdbcTemplate jdbcTemplate) {
         this.context = context;
         this.prequalificationGroupRepositoryWrapper = prequalificationGroupRepositoryWrapper;
         this.validationChecklistResultRepository = validationChecklistResultRepository;
@@ -99,11 +100,13 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
                 PrequalificationType.GROUP.getValue());
         List<HardPolicyCategoryData> individualPolicies = this.jdbcTemplate.query(checkCategoryMapper.schema(), checkCategoryMapper,
                 productId, PrequalificationType.INDIVIDUAL.getValue());
+
         final String deleteStatement = "DELETE FROM m_checklist_validation_result WHERE prequalification_id = ?";
         this.jdbcTemplate.update(deleteStatement, prequalificationId);
         BigDecimal totalAmount = prequalificationGroup.getMembers().stream().map(PrequalificationGroupMember::getRequestedAmount)
                 .reduce(BigDecimal.ONE, BigDecimal::add);
-        final ClientData groupData = ClientData.builder().requestedAmount(totalAmount).build();
+        Boolean recredito = prequalificationGroup.getParent() != null;
+        final ClientData groupData = ClientData.builder().requestedAmount(totalAmount).recredito(recredito).build();
         for (HardPolicyCategoryData policyCategoryData : groupPolicies) {
             ValidationChecklistResult prequalificationChecklistResult = new ValidationChecklistResult();
             prequalificationChecklistResult.setPrequalificationId(prequalificationId);
@@ -123,6 +126,7 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
 
         for (HardPolicyCategoryData policyCategoryData : individualPolicies) {
             final ClientDataMapper clientDataMapper = new ClientDataMapper();
+
             List<ClientData> clientDatas = this.jdbcTemplate.query(clientDataMapper.schema(), clientDataMapper, prequalificationId);
             for (final ClientData clientData : clientDatas) {
                 ValidationChecklistResult validationChecklistResult = new ValidationChecklistResult();
@@ -180,11 +184,16 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
 
         public String schema() {
             return """
-                    SELECT mc.id AS clientId, mpgm.id AS prequalificationMemberId, IFNULL(mc.display_name,mpgm.name) AS name, mpg.id AS prequalificationId,\s
-                    mpgm.requested_amount AS requestedAmount, IFNULL(mc.date_of_birth, mpgm.dob) AS dateOfBirth, IFNULL(mc.dpi, mpgm.dpi) AS dpi,
+                    SELECT mc.id AS clientId, mpgm.id AS prequalificationMemberId, IFNULL(mc.display_name,mpgm.name) AS name, 
+                    mpg.id AS prequalificationId, 
+                    (select count(id) from m_loan where client_id = mc.id and loan_status_id = 100)as pendingLoansCount,
+                    mpgm.requested_amount AS requestedAmount, IFNULL(mc.date_of_birth, mpgm.dob) AS dateOfBirth, 
+                    IFNULL(mc.dpi, mpgm.dpi) AS dpi, mca.code_value as clientArea,
                     mpgm.work_with_puente AS workWithPuente, mcv.code_value As gender
-                    FROM m_prequalification_group_members mpgm\s
-                    LEFT JOIN m_client mc ON mc.dpi = mpgm.dpi\s
+                    FROM m_prequalification_group_members mpgm 
+                    LEFT JOIN m_client mc ON mc.dpi = mpgm.dpi 
+                    LEFT JOIN m_client_contact_info mci ON mci.client_id = mc.id 
+                    LEFT JOIN m_code_value mca ON mca.id = mci.area
                     LEFT JOIN m_code_value mcv ON mcv.id = mc.gender_cv_id
                     LEFT JOIN m_prequalification_group mpg ON mpg.id = mpgm.group_id
                     WHERE mpg.id = ?
@@ -196,20 +205,23 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
             final Integer clientId = JdbcSupport.getInteger(rs, "clientId");
             final Integer prequalificationMemberId = JdbcSupport.getInteger(rs, "prequalificationMemberId");
             final Integer prequalificationId = JdbcSupport.getInteger(rs, "prequalificationId");
+            final Integer pendingLoansCount = JdbcSupport.getInteger(rs, "pendingLoansCount");
             final String name = rs.getString("name");
             final Date dateOfBirth = rs.getDate("dateOfBirth");
             final String dpi = rs.getString("dpi");
             final BigDecimal requestedAmount = rs.getBigDecimal("requestedAmount");
             final String workWithPuente = rs.getString("workWithPuente");
             final String gender = rs.getString("gender");
+            final String clientArea = rs.getString("clientArea");
+
             return ClientData.builder().clientId(clientId).prequalificationId(prequalificationId)
                     .prequalificationMemberId(prequalificationMemberId).name(name).dateOfBirth(dateOfBirth).dpi(dpi)
-                    .requestedAmount(requestedAmount).gender(gender).workWithPuente(workWithPuente).build();
+                    .requestedAmount(requestedAmount).gender(gender).workWithPuente(workWithPuente).ruralUrban(clientArea).recredito(pendingLoansCount > 0).build();
         }
     }
 
     private CheckValidationColor validateGenericPolicy(final HardPolicyCategory hardPolicyCategory, final ClientData clientData,
-            final PrequalificationGroup prequalificationGroup) {
+                                                       final PrequalificationGroup prequalificationGroup) {
         CheckValidationColor checkValidationColor;
         switch (hardPolicyCategory) {
             case NEW_CLIENT -> checkValidationColor = this.handleNewClientCheck(clientData);
@@ -218,7 +230,7 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
             case MANDATORY_PHOTO_GRAPH -> checkValidationColor = this.handleMandatoryPhotographCheck();
             case CLIENT_AGE -> checkValidationColor = this.handleClientAgeCheck(clientData);
             case NUMBER_OF_MEMBERS_ACCORDING_TO_POLICY -> checkValidationColor = this
-                    .handleNumberOfMembersAccordingToPolicyCheck(prequalificationGroup);
+                    .handleNumberOfMembersAccordingToPolicyCheck(clientData,prequalificationGroup);
             case MINIMUM_AND_MAXIMUM_AMOUNT -> checkValidationColor = this.handleMinAndMaxAmountCheck(prequalificationGroup, clientData);
             case DISPARITY_OF_VALUES -> checkValidationColor = this.handleDisparitiesOfValuesCheck();
             case PERCENTAGE_OF_MEMBERS_STARTING_BUSINESS -> checkValidationColor = this.handlePercentageOfMemberStartingBusinessCheck();
@@ -269,7 +281,7 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
     }
 
     private CheckValidationColor handleRecurringClientCheck(final ClientData clientData,
-            final PrequalificationGroup prequalificationGroup) {
+                                                            final PrequalificationGroup prequalificationGroup) {
         final CheckValidationColor checkValidationColor;
         final String loanCycle = "SELECT COALESCE(MAX(ml.loan_counter), 0) FROM m_loan ml WHERE ml.client_id = ?";
         final Integer clientId = clientData.getClientId();
@@ -286,7 +298,7 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
     }
 
     private CheckValidationColor handleIncreasePercentageCheck(final ClientData clientData,
-            final PrequalificationGroup prequalificationGroup) {
+                                                               final PrequalificationGroup prequalificationGroup) {
         final CheckValidationColor checkValidationColor;
         final Integer clientId = clientData.getClientId();
         final Long productId = prequalificationGroup.getLoanProduct().getId();
@@ -336,24 +348,47 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
         return checkValidationColor;
     }
 
-    private CheckValidationColor handleNumberOfMembersAccordingToPolicyCheck(final PrequalificationGroup prequalificationGroup) {
+    private CheckValidationColor handleNumberOfMembersAccordingToPolicyCheck(ClientData clientData, final PrequalificationGroup prequalificationGroup) {
         final CheckValidationColor checkValidationColor;
         final int membersCount = prequalificationGroup.getMembers().size();
-        if (membersCount > 10) {
+        //default for new
+        int maximumNumber = 10;
+        int minimumNumber = 4;
+        //check if recredito urban and rural
+        if (clientData.getRecredito()){
+            maximumNumber = clientData.getRuralUrban().equals("Rural") ? 10 : 15;
+            minimumNumber = clientData.getRuralUrban().equals("Rural") ? 3 : 4;
+        }
+
+        if (membersCount > maximumNumber) {
             checkValidationColor = CheckValidationColor.GREEN;
-        } else if (membersCount < 4) {
+        } else if (membersCount < minimumNumber) {
             checkValidationColor = CheckValidationColor.ORANGE;
         } else {
             checkValidationColor = CheckValidationColor.RED;
         }
+
         return checkValidationColor;
     }
 
     private CheckValidationColor handleMinAndMaxAmountCheck(final PrequalificationGroup prequalificationGroup,
-            final ClientData clientData) {
+                                                            final ClientData clientData) {
         final CheckValidationColor checkValidationColor;
-        if (BigDecimal.valueOf(1000).compareTo(ObjectUtils.defaultIfNull(clientData.getRequestedAmount(), BigDecimal.ZERO)) > 0
-                && BigDecimal.valueOf(20000).compareTo(ObjectUtils.defaultIfNull(clientData.getRequestedAmount(), BigDecimal.ZERO)) < 0) {
+
+
+        //TODO -RESOLVE MAX AND MIN AMOUNTS FROM PRODUCT
+        BigDecimal minimumAmount = BigDecimal.valueOf(1000);
+        BigDecimal maximumAmount = BigDecimal.valueOf(20000);
+
+        //check for recredit urban and rural
+        if (clientData.getRecredito()){
+            minimumAmount = new BigDecimal(clientData.getRuralUrban().equals("Rural") ? 5000 : 6000);
+            maximumAmount = new BigDecimal(clientData.getRuralUrban().equals("Rural") ? 15000 : 20000);
+        }
+
+        BigDecimal requestedAmount = ObjectUtils.defaultIfNull(clientData.getRequestedAmount(), BigDecimal.ZERO);
+
+        if (minimumAmount.compareTo(requestedAmount) > 0 && maximumAmount.compareTo(requestedAmount) < 0) {
             checkValidationColor = CheckValidationColor.GREEN;
         } else {
             checkValidationColor = CheckValidationColor.RED;
@@ -362,6 +397,7 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
     }
 
     private CheckValidationColor handleDisparitiesOfValuesCheck() {
+        //TODO -RESOLVE DISPARITIES OF VALUES
         return CheckValidationColor.GREEN;
     }
 
@@ -387,7 +423,17 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
 
     private CheckValidationColor handleRequestedAmountCheck(final ClientData clientData) {
         final CheckValidationColor checkValidationColor;
-        if (BigDecimal.valueOf(3000).compareTo(ObjectUtils.defaultIfNull(clientData.getRequestedAmount(), BigDecimal.ZERO)) <= 0) {
+        BigDecimal minimumAmount = BigDecimal.valueOf(0);
+        BigDecimal maximumAmount = BigDecimal.valueOf(3000);
+
+        //check for recredit client.
+        if (clientData.getRecredito()){
+            minimumAmount = new BigDecimal(1000);
+            maximumAmount = new BigDecimal(200000);
+        }
+
+        BigDecimal requestedAmount = ObjectUtils.defaultIfNull(clientData.getRequestedAmount(), BigDecimal.ZERO);
+        if (requestedAmount.compareTo(minimumAmount) >= 0 && requestedAmount.compareTo(maximumAmount) <= 0) {
             checkValidationColor = CheckValidationColor.GREEN;
         } else {
             checkValidationColor = CheckValidationColor.RED;

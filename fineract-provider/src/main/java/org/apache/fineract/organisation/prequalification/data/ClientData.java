@@ -37,4 +37,6 @@ public class ClientData {
     private String workWithPuente;
     private Long noOfCompletedCycles;
     private String gender;
+    private Boolean recredito;
+    private String ruralUrban;
 }
