@@ -798,28 +798,22 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             return sendToAgency(entityId, command);
         }
         PrequalificationStatus prequalificationStatus = resolveStatus(action);
-        if (fromStatus.equals(prequalificationStatus.getValue())) {
-            throw new PrequalificationStatusNotChangedException(prequalificationStatus.toString());
-        }
 
         if (prequalificationGroup.isPrequalificationTypeIndividual() && action.equals("approveanalysis")) {
             prequalificationStatus = resolveIndividualStatus(prequalificationGroup, action);
 
-            if (fromStatus.equals(prequalificationStatus.getValue())) {
-                throw new PrequalificationStatusNotChangedException(prequalificationStatus.toString());
-            }
         }
         if (prequalificationGroup.isPrequalificationTypeIndividual() && action.equals("approveCommittee")) {
             prequalificationStatus = resolveCommitteeStatus(prequalificationGroup, action);
+        }
 
-            if (fromStatus.equals(prequalificationStatus.getValue())) {
-                throw new PrequalificationStatusNotChangedException(prequalificationStatus.toString());
-            }
+        //check if status has changed after resolving the new status
+        if (fromStatus.equals(prequalificationStatus.getValue())) {
+            throw new PrequalificationStatusNotChangedException(prequalificationStatus.toString());
         }
 
         prequalificationGroup.updateStatus(prequalificationStatus);
         prequalificationGroup.updateComments(comments);
-        // this.prequalificationGroupRepositoryWrapper.save(prequalificationGroup);
 
         PrequalificationStatusLog statusLog = PrequalificationStatusLog.fromJson(addedBy, fromStatus, prequalificationGroup.getStatus(),
                 comments, prequalificationGroup);
@@ -860,6 +854,8 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         } else if (action.equalsIgnoreCase("rejectanalysis")) {
             status = PrequalificationStatus.REJECTED;
         } else if (action.equalsIgnoreCase("approveanalysis")) {
+            status = PrequalificationStatus.APPROVED;
+        }else if (action.equalsIgnoreCase("approveanalysis")) {
             status = PrequalificationStatus.APPROVED;
         }
         return status;
