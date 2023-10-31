@@ -337,8 +337,8 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             } else if (type.equals("committeeapprovals")) {
 
                 if (committeeValueData == null) {
-                    extraCriteria += " and g.status IN( " + PrequalificationStatus.INVALID.getValue().toString()+ ") ";
-                }else {
+                    extraCriteria += " and g.status IN( " + PrequalificationStatus.INVALID.getValue().toString() + ") ";
+                } else {
                     extraCriteria += " and g.status IN( " + resolveCommitteeGroupStatus(committeeValueData) + ") ";
                 }
             }
@@ -356,9 +356,9 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
         String statusValues = "";
         switch (name) {
             case "A" -> statusValues = PrequalificationStatus.PRE_COMMITTEE_B_PENDING_APPROVAL.getValue().toString();
-            case "B" -> statusValues = PrequalificationStatus.PRE_COMMITTEE_C_PENDING_APPROVAL.getValue().toString()+", "
+            case "B" -> statusValues = PrequalificationStatus.PRE_COMMITTEE_C_PENDING_APPROVAL.getValue().toString() + ", "
                     + PrequalificationStatus.PRE_COMMITTEE_C_PENDING_APPROVAL.getValue().toString();
-            case "C" -> statusValues = PrequalificationStatus.PRE_COMMITTEE_C_PENDING_APPROVAL.getValue().toString()+", "
+            case "C" -> statusValues = PrequalificationStatus.PRE_COMMITTEE_C_PENDING_APPROVAL.getValue().toString() + ", "
                     + PrequalificationStatus.PRE_COMMITTEE_D_PENDING_APPROVAL.getValue().toString();
             case "D" -> statusValues = PrequalificationStatus.PRE_COMMITTEE_D_PENDING_APPROVAL.getValue().toString();
             default -> statusValues = PrequalificationStatus.INVALID.getValue().toString();

@@ -809,6 +809,13 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                 throw new PrequalificationStatusNotChangedException(prequalificationStatus.toString());
             }
         }
+        if (prequalificationGroup.isPrequalificationTypeIndividual() && action.equals("approveCommittee")) {
+            prequalificationStatus = resolveCommitteeStatus(prequalificationGroup, action);
+
+            if (fromStatus.equals(prequalificationStatus.getValue())) {
+                throw new PrequalificationStatusNotChangedException(prequalificationStatus.toString());
+            }
+        }
 
         prequalificationGroup.updateStatus(prequalificationStatus);
         prequalificationGroup.updateComments(comments);
@@ -819,6 +826,27 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
 
         this.preQualificationLogRepository.saveAndFlush(statusLog);
         return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withEntityId(prequalificationGroup.getId()).build();
+    }
+
+    private PrequalificationStatus resolveCommitteeStatus(PrequalificationGroup prequalificationGroup, String action) {
+        // TODO ---CHECK IF THE COMMITTEE IS THE LAST COMMITTEE
+        PrequalificationStatus status;
+        BigDecimal amount = prequalificationGroup.getTotalRequestedAmount();
+        if (amount.compareTo(BigDecimal.valueOf(20000)) <= 0) {
+            return prequalificationGroup.getStatus().equals(PrequalificationStatus.PRE_COMMITTEE_D_PENDING_APPROVAL.getValue())
+                    ? PrequalificationStatus.PRE_COMMITTEE_C_PENDING_APPROVAL
+                    : PrequalificationStatus.COMPLETED;
+        } else if (amount.compareTo(BigDecimal.valueOf(20000)) > 0 && amount.compareTo(BigDecimal.valueOf(75000)) <= 0) {
+            return prequalificationGroup.getStatus().equals(PrequalificationStatus.PRE_COMMITTEE_C_PENDING_APPROVAL.getValue())
+                    ? PrequalificationStatus.PRE_COMMITTEE_B_PENDING_APPROVAL
+                    : PrequalificationStatus.COMPLETED;
+        } else if (amount.compareTo(BigDecimal.valueOf(75000)) > 0) {
+            return prequalificationGroup.getStatus().equals(PrequalificationStatus.PRE_COMMITTEE_B_PENDING_APPROVAL.getValue())
+                    ? PrequalificationStatus.PRE_COMMITTEE_A_PENDING_APPROVAL
+                    : PrequalificationStatus.COMPLETED;
+        }
+
+        return null;
     }
 
     private PrequalificationStatus resolveStatus(String action) {
