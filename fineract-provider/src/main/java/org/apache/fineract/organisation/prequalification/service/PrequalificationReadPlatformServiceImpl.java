@@ -355,8 +355,9 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
 
         String statusValues = "";
         switch (name) {
-            case "A" -> statusValues = PrequalificationStatus.PRE_COMMITTEE_B_PENDING_APPROVAL.getValue().toString();
-            case "B" -> statusValues = PrequalificationStatus.PRE_COMMITTEE_C_PENDING_APPROVAL.getValue().toString() + ", "
+            case "A" -> statusValues = PrequalificationStatus.PRE_COMMITTEE_A_PENDING_APPROVAL.getValue().toString() + ", "
+                    + PrequalificationStatus.PRE_COMMITTEE_B_PENDING_APPROVAL.getValue().toString();
+            case "B" -> statusValues = PrequalificationStatus.PRE_COMMITTEE_B_PENDING_APPROVAL.getValue().toString() + ", "
                     + PrequalificationStatus.PRE_COMMITTEE_C_PENDING_APPROVAL.getValue().toString();
             case "C" -> statusValues = PrequalificationStatus.PRE_COMMITTEE_C_PENDING_APPROVAL.getValue().toString() + ", "
                     + PrequalificationStatus.PRE_COMMITTEE_D_PENDING_APPROVAL.getValue().toString();
