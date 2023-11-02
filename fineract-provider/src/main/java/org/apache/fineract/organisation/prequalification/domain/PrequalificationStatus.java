@@ -111,6 +111,7 @@ public enum PrequalificationStatus {
             break;
             case 1005:
                 enumeration = PrequalificationStatus.PRE_COMMITTEE_B_PENDING_APPROVAL;
+            break;
             case 1006:
                 enumeration = PrequalificationStatus.PRE_COMMITTEE_A_PENDING_APPROVAL;
             break;

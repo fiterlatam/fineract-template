@@ -798,28 +798,23 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             return sendToAgency(entityId, command);
         }
         PrequalificationStatus prequalificationStatus = resolveStatus(action);
+
+        if (prequalificationGroup.isPrequalificationTypeIndividual() && action.equals("approveanalysis")) {
+            PrequalificationStatusRange statusRange = resolveIndividualStatusRange(prequalificationGroup, action);
+            prequalificationStatus = PrequalificationStatus.fromInt(statusRange.getStatus());
+
+        }
+        if (prequalificationGroup.isPrequalificationTypeIndividual() && action.equals("approveCommittee")) {
+            prequalificationStatus = resolveCommitteeStatus(prequalificationGroup, action);
+        }
+
+        // check if status has changed after resolving the new status
         if (fromStatus.equals(prequalificationStatus.getValue())) {
             throw new PrequalificationStatusNotChangedException(prequalificationStatus.toString());
         }
 
-        if (prequalificationGroup.isPrequalificationTypeIndividual() && action.equals("approveanalysis")) {
-            prequalificationStatus = resolveIndividualStatus(prequalificationGroup, action);
-
-            if (fromStatus.equals(prequalificationStatus.getValue())) {
-                throw new PrequalificationStatusNotChangedException(prequalificationStatus.toString());
-            }
-        }
-        if (prequalificationGroup.isPrequalificationTypeIndividual() && action.equals("approveCommittee")) {
-            prequalificationStatus = resolveCommitteeStatus(prequalificationGroup, action);
-
-            if (fromStatus.equals(prequalificationStatus.getValue())) {
-                throw new PrequalificationStatusNotChangedException(prequalificationStatus.toString());
-            }
-        }
-
         prequalificationGroup.updateStatus(prequalificationStatus);
         prequalificationGroup.updateComments(comments);
-        // this.prequalificationGroupRepositoryWrapper.save(prequalificationGroup);
 
         PrequalificationStatusLog statusLog = PrequalificationStatusLog.fromJson(addedBy, fromStatus, prequalificationGroup.getStatus(),
                 comments, prequalificationGroup);
@@ -830,23 +825,27 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
 
     private PrequalificationStatus resolveCommitteeStatus(PrequalificationGroup prequalificationGroup, String action) {
         // TODO ---CHECK IF THE COMMITTEE IS THE LAST COMMITTEE
-        PrequalificationStatus status;
-        BigDecimal amount = prequalificationGroup.getTotalRequestedAmount();
-        if (amount.compareTo(BigDecimal.valueOf(20000)) <= 0) {
-            return prequalificationGroup.getStatus().equals(PrequalificationStatus.PRE_COMMITTEE_D_PENDING_APPROVAL.getValue())
-                    ? PrequalificationStatus.PRE_COMMITTEE_C_PENDING_APPROVAL
-                    : PrequalificationStatus.COMPLETED;
-        } else if (amount.compareTo(BigDecimal.valueOf(20000)) > 0 && amount.compareTo(BigDecimal.valueOf(75000)) <= 0) {
-            return prequalificationGroup.getStatus().equals(PrequalificationStatus.PRE_COMMITTEE_C_PENDING_APPROVAL.getValue())
-                    ? PrequalificationStatus.PRE_COMMITTEE_B_PENDING_APPROVAL
-                    : PrequalificationStatus.COMPLETED;
-        } else if (amount.compareTo(BigDecimal.valueOf(75000)) > 0) {
-            return prequalificationGroup.getStatus().equals(PrequalificationStatus.PRE_COMMITTEE_B_PENDING_APPROVAL.getValue())
-                    ? PrequalificationStatus.PRE_COMMITTEE_A_PENDING_APPROVAL
-                    : PrequalificationStatus.COMPLETED;
+        PrequalificationStatusRange initialStatusRange = resolveIndividualStatusRange(prequalificationGroup, action);
+
+        PrequalificationStatus initialStatus = PrequalificationStatus.fromInt(initialStatusRange.getStatus());
+        PrequalificationStatus currentStatus = PrequalificationStatus.fromInt(prequalificationGroup.getStatus());
+
+        PrequalificationStatus finalStatus = currentStatus;
+        if (initialStatus.getValue().equals(currentStatus.getValue())) {
+            if (currentStatus.equals(PrequalificationStatus.PRE_COMMITTEE_D_PENDING_APPROVAL)) {
+                finalStatus = PrequalificationStatus.PRE_COMMITTEE_C_PENDING_APPROVAL;
+            } else if (currentStatus.equals(PrequalificationStatus.PRE_COMMITTEE_C_PENDING_APPROVAL)) {
+                finalStatus = PrequalificationStatus.PRE_COMMITTEE_B_PENDING_APPROVAL;
+            } else if (currentStatus.equals(PrequalificationStatus.PRE_COMMITTEE_B_PENDING_APPROVAL)) {
+                finalStatus = PrequalificationStatus.PRE_COMMITTEE_A_PENDING_APPROVAL;
+            } else if (currentStatus.equals(PrequalificationStatus.PRE_COMMITTEE_A_PENDING_APPROVAL)) {
+                finalStatus = PrequalificationStatus.COMPLETED;
+            }
+        } else {
+            finalStatus = PrequalificationStatus.COMPLETED;
         }
 
-        return null;
+        return finalStatus;
     }
 
     private PrequalificationStatus resolveStatus(String action) {
@@ -865,10 +864,10 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         return status;
     }
 
-    private PrequalificationStatus resolveIndividualStatus(PrequalificationGroup prequalificationGroup, String action) {
-        PrequalificationStatus status = null;
+    private PrequalificationStatusRange resolveIndividualStatusRange(PrequalificationGroup prequalificationGroup, String action) {
+        PrequalificationStatusRange finalRange = null;
 
-        if (action.equalsIgnoreCase("approveanalysis")) {
+        if (action.equalsIgnoreCase("approveanalysis") || action.equalsIgnoreCase("approveCommittee")) {
 
             GroupPrequalificationData prequalificationData = prequalificationReadPlatformService.retrieveOne(prequalificationGroup.getId());
             int numberOfErrors = prequalificationData.getRedValidationCount() > 0
@@ -883,16 +882,16 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             for (PrequalificationStatusRange statusRange : statusRangeList) {
                 if (amount.compareTo(statusRange.getMinAmount()) >= 0
                         && (statusRange.getMaxAmount() != null && amount.compareTo(statusRange.getMaxAmount()) <= 0)) {
-                    status = PrequalificationStatus.fromInt(statusRange.getStatus());
+                    finalRange = statusRange;
                     break;
                 } else if (amount.compareTo(statusRange.getMinAmount()) >= 0 && statusRange.getMaxAmount() == null) {
-                    status = PrequalificationStatus.fromInt(statusRange.getStatus());
+                    finalRange = statusRange;
                     break;
                 }
             }
         }
 
-        return status;
+        return finalRange;
     }
 
     private PrequalificationType resolvePrequalificationType(LoanProduct loanProduct) {
