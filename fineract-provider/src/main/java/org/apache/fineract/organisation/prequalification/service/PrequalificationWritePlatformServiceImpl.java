@@ -808,7 +808,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             prequalificationStatus = resolveCommitteeStatus(prequalificationGroup, action);
         }
 
-        //check if status has changed after resolving the new status
+        // check if status has changed after resolving the new status
         if (fromStatus.equals(prequalificationStatus.getValue())) {
             throw new PrequalificationStatusNotChangedException(prequalificationStatus.toString());
         }
@@ -841,7 +841,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             } else if (currentStatus.equals(PrequalificationStatus.PRE_COMMITTEE_A_PENDING_APPROVAL)) {
                 finalStatus = PrequalificationStatus.COMPLETED;
             }
-        }else{
+        } else {
             finalStatus = PrequalificationStatus.COMPLETED;
         }
 
@@ -867,7 +867,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
     private PrequalificationStatusRange resolveIndividualStatusRange(PrequalificationGroup prequalificationGroup, String action) {
         PrequalificationStatusRange finalRange = null;
 
-        if (action.equalsIgnoreCase("approveanalysis")|| action.equalsIgnoreCase("approveCommittee")) {
+        if (action.equalsIgnoreCase("approveanalysis") || action.equalsIgnoreCase("approveCommittee")) {
 
             GroupPrequalificationData prequalificationData = prequalificationReadPlatformService.retrieveOne(prequalificationGroup.getId());
             int numberOfErrors = prequalificationData.getRedValidationCount() > 0
