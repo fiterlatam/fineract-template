@@ -178,4 +178,8 @@ public class PrequalificationGroupMember extends AbstractPersistableCustom {
     public void updateApprovedAmount(BigDecimal newValue) {
         this.approvedAmount = newValue;
     }
+
+    public void updatePresident(Boolean newValue) {
+        this.groupPresident = newValue;
+    }
 }

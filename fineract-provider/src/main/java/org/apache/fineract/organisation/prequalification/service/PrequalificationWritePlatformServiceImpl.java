@@ -600,6 +600,12 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                 prequalificationGroupMember.updateWorkWithPuente(newValue);
             }
         }
+        if (changes.containsKey(PrequalificatoinApiConstants.groupPresidentParamName)) {
+            final Boolean newValue = command.booleanObjectValueOfParameterNamed(PrequalificatoinApiConstants.groupPresidentParamName);
+            if (newValue != null) {
+                prequalificationGroupMember.updatePresident(newValue);
+            }
+        }
         String blistSql = "select count(*) from m_client_blacklist where dpi=? and status=?";
         Long activeBlacklisted = jdbcTemplate.queryForObject(blistSql, Long.class, prequalificationGroupMember.getDpi(),
                 BlacklistStatus.ACTIVE.getValue());
