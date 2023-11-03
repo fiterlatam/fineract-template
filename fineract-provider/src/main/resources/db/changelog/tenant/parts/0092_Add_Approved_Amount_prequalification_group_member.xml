@@ -51,4 +51,15 @@
             <column name="can_maker_checker" valueBoolean="false" />
         </insert>
     </changeSet>
+
+    <changeSet author="fineract" id="4">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists columnName="is_president" tableName="m_prequalification_group_members"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_prequalification_group_members">
+            <column name="is_president" type="BOOLEAN" defaultValueBoolean="false" />
+        </addColumn>
+    </changeSet>
 </databaseChangeLog>

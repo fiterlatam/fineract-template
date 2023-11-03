@@ -28,7 +28,7 @@ public interface PrequalificationReadPlatformService {
 
     Page<GroupPrequalificationData> retrieveAll(SearchParameters searchParameters);
 
-    GroupPrequalificationData retrieveOne(Long blacklistId);
+    GroupPrequalificationData retrieveOne(Long groupId);
 
     GroupPrequalificationData prequalifyExistingGroup(Long groupId);
 

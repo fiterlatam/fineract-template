@@ -270,6 +270,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         final String dpi = jsonObject.get("dpi").getAsString();
         final String puente = jsonObject.get("puente").getAsString();
         final BigDecimal amount = jsonObject.get("amount").getAsBigDecimal();
+        final Boolean groupPresident = jsonObject.get("groupPresident").getAsBoolean();
 
         LocalDate dateOfBirth = null;
         if (jsonObject.has("dob")) {
@@ -301,7 +302,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         }
 
         PrequalificationGroupMember groupMember = PrequalificationGroupMember.fromJson(null, clientName, dpi, null, dateOfBirth, amount,
-                puente, addedBy, status);
+                puente, addedBy, status, groupPresident);
 
         this.preQualificationMemberRepository.saveAndFlush(groupMember);
         return new CommandProcessingResultBuilder() //
@@ -346,6 +347,11 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                     clientId = member.get("clientId").getAsLong();
                 }
 
+                Boolean groupPresident = null;
+                if (member.get("groupPresident") != null) {
+                    groupPresident = member.get("groupPresident").getAsBoolean();
+                }
+
                 LocalDate dateOfBirth = null;
                 if (member.get("dob") != null) {
 
@@ -380,7 +386,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                 }
 
                 PrequalificationGroupMember groupMember = PrequalificationGroupMember.fromJson(group, name, dpi, clientId, dateOfBirth,
-                        requestedAmount, puente, addedBy, memberStatus);
+                        requestedAmount, puente, addedBy, memberStatus, groupPresident);
                 allMembers.add(groupMember);
             }
         }
@@ -594,6 +600,12 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                 prequalificationGroupMember.updateWorkWithPuente(newValue);
             }
         }
+        if (changes.containsKey(PrequalificatoinApiConstants.groupPresidentParamName)) {
+            final Boolean newValue = command.booleanObjectValueOfParameterNamed(PrequalificatoinApiConstants.groupPresidentParamName);
+            if (newValue != null) {
+                prequalificationGroupMember.updatePresident(newValue);
+            }
+        }
         String blistSql = "select count(*) from m_client_blacklist where dpi=? and status=?";
         Long activeBlacklisted = jdbcTemplate.queryForObject(blistSql, Long.class, prequalificationGroupMember.getDpi(),
                 BlacklistStatus.ACTIVE.getValue());
@@ -645,6 +657,10 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         if (member.get("clientId") != null) {
             clientId = member.get("clientId").getAsLong();
         }
+        Boolean groupPresident = null;
+        if (member.get("groupPresident") != null) {
+            groupPresident = member.get("groupPresident").getAsBoolean();
+        }
 
         LocalDate dateOfBirth = null;
         if (member.get("dob") != null) {
@@ -679,7 +695,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         }
 
         PrequalificationGroupMember groupMember = PrequalificationGroupMember.fromJson(group, name, dpi, clientId, dateOfBirth,
-                requestedAmount, puente, addedBy, status);
+                requestedAmount, puente, addedBy, status, groupPresident);
 
         return groupMember;
     }
