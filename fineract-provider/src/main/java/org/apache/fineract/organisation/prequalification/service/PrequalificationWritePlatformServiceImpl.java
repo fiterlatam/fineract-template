@@ -215,11 +215,28 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         AppUser addedBy = this.context.getAuthenticatedUserIfPresent();
 
         apiJsonDeserializer.validateForCreate(command.json());
-        final String clientName = command.stringValueOfParameterNamed("name");
-        final String dpi = command.stringValueOfParameterNamed("dpi");
-        final String puente = command.stringValueOfParameterNamed("puente");
-        final BigDecimal amount = command.bigDecimalValueOfParameterNamed("amount");
-        LocalDate dateOfBirth = command.localDateValueOfParameterNamed("dob");
+
+        final JsonArray members = command.arrayOfParameterNamed(PrequalificatoinApiConstants.membersParamName);
+        final JsonObject jsonObject = members.get(0).getAsJsonObject();
+
+        final String clientName = jsonObject.get("name").getAsString();
+        final String dpi = jsonObject.get("dpi").getAsString();
+        final String puente = jsonObject.get("puente").getAsString();
+        final BigDecimal amount = jsonObject.get("amount").getAsBigDecimal();
+        final Boolean groupPresident = jsonObject.get("groupPresident").getAsBoolean();
+
+        LocalDate dateOfBirth = null;
+        if (jsonObject.has("dob")) {
+            DateTimeFormatter formatter = new DateTimeFormatterBuilder().appendPattern(jsonObject.get("dateFormat").getAsString())
+                    .toFormatter();
+            LocalDate date;
+            try {
+                date = LocalDate.parse(jsonObject.get("dob").getAsString(), formatter);
+                dateOfBirth = date;
+            } catch (DateTimeParseException e) {
+                LOG.error("Problem occurred in processing pre qualification for Individual", e);
+            }
+        }
 
         // get light indicator
         String blistSql = "select count(*) from m_client_blacklist where dpi=? and status=?";
@@ -238,7 +255,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         }
 
         PrequalificationGroupMember groupMember = PrequalificationGroupMember.fromJson(null, clientName, dpi, null, dateOfBirth, amount,
-                puente, addedBy, status);
+                puente, addedBy, status, groupPresident);
 
         this.preQualificationMemberRepository.saveAndFlush(groupMember);
         return new CommandProcessingResultBuilder() //
@@ -283,6 +300,11 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                     clientId = member.get("clientId").getAsLong();
                 }
 
+                Boolean groupPresident = null;
+                if (member.get("groupPresident") != null) {
+                    groupPresident = member.get("groupPresident").getAsBoolean();
+                }
+
                 LocalDate dateOfBirth = null;
                 if (member.get("dob") != null) {
 
@@ -317,7 +339,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                 }
 
                 PrequalificationGroupMember groupMember = PrequalificationGroupMember.fromJson(group, name, dpi, clientId, dateOfBirth,
-                        requestedAmount, puente, addedBy, memberStatus);
+                        requestedAmount, puente, addedBy, memberStatus, groupPresident);
                 allMembers.add(groupMember);
             }
         }
@@ -531,6 +553,12 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                 prequalificationGroupMember.updateWorkWithPuente(newValue);
             }
         }
+        if (changes.containsKey(PrequalificatoinApiConstants.groupPresidentParamName)) {
+            final Boolean newValue = command.booleanObjectValueOfParameterNamed(PrequalificatoinApiConstants.groupPresidentParamName);
+            if (newValue != null) {
+                prequalificationGroupMember.updatePresident(newValue);
+            }
+        }
         String blistSql = "select count(*) from m_client_blacklist where dpi=? and status=?";
         Long activeBlacklisted = jdbcTemplate.queryForObject(blistSql, Long.class, prequalificationGroupMember.getDpi(),
                 BlacklistStatus.ACTIVE.getValue());
@@ -582,6 +610,10 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         if (member.get("clientId") != null) {
             clientId = member.get("clientId").getAsLong();
         }
+        Boolean groupPresident = null;
+        if (member.get("groupPresident") != null) {
+            groupPresident = member.get("groupPresident").getAsBoolean();
+        }
 
         LocalDate dateOfBirth = null;
         if (member.get("dob") != null) {
@@ -616,7 +648,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         }
 
         PrequalificationGroupMember groupMember = PrequalificationGroupMember.fromJson(group, name, dpi, clientId, dateOfBirth,
-                requestedAmount, puente, addedBy, status);
+                requestedAmount, puente, addedBy, status, groupPresident);
 
         return groupMember;
     }

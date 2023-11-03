@@ -239,7 +239,7 @@ public class AppUserReadPlatformServiceImpl implements AppUserReadPlatformServic
         final String hierarchySearchString = hierarchy + "%";
 
         final AppUserMapper mapper = new AppUserMapper(this.roleReadPlatformService, this.staffReadPlatformService);
-        final String sql = "select " + mapper.schema() + " order by u.username";
+        final String sql = "select " + mapper.schema() + " GROUP BY u.id order by u.username";
 
         Collection<AppUserData> usersDataList = this.jdbcTemplate.query(sql, mapper, new Object[] { hierarchySearchString });
 
@@ -289,11 +289,14 @@ public class AppUserReadPlatformServiceImpl implements AppUserReadPlatformServic
     private void findUserWithRoleLike(Collection<AppUserData> usersDataList, Collection<AppUserData> usersforDropdown,
             String gerenteRoleStartWith) {
         for (AppUserData userData : usersDataList) {
-            AppUser user = this.appUserRepository.findById(userData.getId()).orElseThrow(() -> new UserNotFoundException(userData.getId()));
-            final Set<Role> userRoles = user.getRoles();
-            for (final Role role : userRoles) {
-                if (role.getName().startsWith(gerenteRoleStartWith)) {
-                    usersforDropdown.add(userData);
+            if (usersforDropdown.stream().noneMatch(u -> u.getId().equals(userData.getId()))) {
+                AppUser user = this.appUserRepository.findById(userData.getId())
+                        .orElseThrow(() -> new UserNotFoundException(userData.getId()));
+                final Set<Role> userRoles = user.getRoles();
+                for (final Role role : userRoles) {
+                    if (role.getName().startsWith(gerenteRoleStartWith)) {
+                        usersforDropdown.add(userData);
+                    }
                 }
             }
         }
