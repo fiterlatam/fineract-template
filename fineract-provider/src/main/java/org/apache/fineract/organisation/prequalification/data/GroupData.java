@@ -18,14 +18,16 @@
  */
 package org.apache.fineract.organisation.prequalification.data;
 
+import java.math.BigDecimal;
+import lombok.Builder;
 import lombok.Data;
-import lombok.RequiredArgsConstructor;
 
 @Data
-@RequiredArgsConstructor
-public class HardPolicyCategoryData {
+@Builder
+public class GroupData {
 
-    private final Integer id;
-    private final String name;
-    private final String description;
+    private Long id;
+    private Long productId;
+    private BigDecimal requestedAmount;
+    private Integer noOfMembers;
 }

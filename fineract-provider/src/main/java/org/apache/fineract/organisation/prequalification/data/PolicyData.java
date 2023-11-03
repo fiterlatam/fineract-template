@@ -18,25 +18,15 @@
  */
 package org.apache.fineract.organisation.prequalification.data;
 
-import java.math.BigDecimal;
-import java.util.Date;
 import lombok.Builder;
 import lombok.Data;
 
 @Data
 @Builder
-public class ClientData {
+public class PolicyData {
 
-    private String clientCategorization;
-    private Long clientId;
-    private Integer prequalificationId;
-    private Long productId;
-    private Integer prequalificationMemberId;
-    private String name;
-    private Date dateOfBirth;
-    private String dpi;
-    private BigDecimal requestedAmount;
-    private String workWithPuente;
-    private Long noOfCompletedCycles;
-    private String gender;
+    private final Integer id;
+    private final String name;
+    private final String label;
+    private final String description;
 }

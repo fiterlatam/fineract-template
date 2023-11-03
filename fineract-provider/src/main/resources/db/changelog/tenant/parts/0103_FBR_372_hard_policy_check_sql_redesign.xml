@@ -23,23 +23,109 @@
                    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd">
 
-
     <changeSet author="fineract" id="1">
-        <preConditions onFail="MARK_RAN">
-            <not>
-                <columnExists tableName="checklist_categories" columnName="check_sql"/>
-            </not>
-        </preConditions>
-        <addColumn tableName="checklist_categories">
-            <column name="check_sql" type="text"/>
-        </addColumn>
+        <createTable tableName="m_product_policy">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="policy_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="product_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="evaluation_type" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
     </changeSet>
 
-<!--    <changeSet author="fineract" id="2">-->
-<!--        <sql>-->
-<!--            INSERT INTO m_prequalification_status_range(prequalification_type_enum, min_amount, max_amount, min_error, max_error, status)-->
-<!--            VALUES (1, 0, 20000.00, 0, 0, 1003)-->
-<!--        </sql>-->
-<!--    </changeSet>-->
+
+    <changeSet author="fineract" id="2">
+        <createTable tableName="m_policy">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="label" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet author="fineract" id="3">
+        <addForeignKeyConstraint baseColumnNames="policy_id" baseTableName="m_product_policy"
+                                 constraintName="FK20231102_m_policy_product_policy" deferrable="false"
+                                 initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT"
+                                 referencedColumnNames="id" referencedTableName="m_policy" validate="true"/>
+    </changeSet>
+
+    <changeSet author="fineract" id="4">
+        <addForeignKeyConstraint baseColumnNames="product_id" baseTableName="m_product_policy"
+                                 constraintName="FK20231102_m_product_loan_product_policy" deferrable="false"
+                                 initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT"
+                                 referencedColumnNames="id" referencedTableName="m_product_loan" validate="true"/>
+    </changeSet>
+
+    <changeSet author="fineract" id="5">
+        <sqlFile
+                encoding="utf8"
+                path="db/changelog/tenant/commands/insert_initial_policy_data.sql"
+                relativeToChangelogFile="false"
+                splitStatements="true"
+                stripComments="true"/>
+    </changeSet>
+
+    <changeSet author="fineract" id="6">
+        <sqlFile
+                encoding="utf8"
+                path="db/changelog/tenant/commands/policy_run_1_2.sql"
+                relativeToChangelogFile="false"
+                splitStatements="true"
+                stripComments="true"/>
+    </changeSet>
+
+    <changeSet author="fineract" id="7">
+        <sqlFile
+                encoding="utf8"
+                path="db/changelog/tenant/commands/policy_run_3_.sql"
+                relativeToChangelogFile="false"
+                splitStatements="true"
+                stripComments="true"/>
+    </changeSet>
+
+    <changeSet author="fineract" id="8">
+        <sqlFile
+                encoding="utf8"
+                path="db/changelog/tenant/commands/policy_run_4.sql"
+                relativeToChangelogFile="false"
+                splitStatements="true"
+                stripComments="true"/>
+    </changeSet>
+
+    <changeSet author="fineract" id="9">
+        <sqlFile
+                encoding="utf8"
+                path="db/changelog/tenant/commands/policy_run_5.sql"
+                relativeToChangelogFile="false"
+                splitStatements="true"
+                stripComments="true"/>
+    </changeSet>
+
+    <changeSet author="fineract" id="10">
+        <renameColumn tableName="m_checklist_validation_result" oldColumnName="checklist_category_id" newColumnName="policy_id" columnDataType="BIGINT"/>
+    </changeSet>
+
+    <changeSet author="fineract" id="11">
+        <addForeignKeyConstraint baseColumnNames="policy_id" baseTableName="m_checklist_validation_result"
+                                 constraintName="FK20231103_m_checklist_validation_result_policy" deferrable="false"
+                                 initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT"
+                                 referencedColumnNames="id" referencedTableName="m_policy" validate="true"/>
+    </changeSet>
 
 </databaseChangeLog>
