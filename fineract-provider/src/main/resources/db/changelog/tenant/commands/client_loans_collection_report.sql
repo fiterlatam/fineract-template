@@ -37,6 +37,8 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 -- Client loan collection report --
+DELETE FROM stretchy_report
+WHERE report_name = 'Reporte por Clienta de Cobranzas y Saldos por Financista';
 INSERT INTO stretchy_report (report_name,report_type,report_category,report_sql,description,core_report,use_report,self_service_user_report)
 VALUES ("Reporte por Clienta de Cobranzas y Saldos por Financista", "Table", "Loan",  "SELECT
 mc.account_no  AS 'Codigo Cliente',
