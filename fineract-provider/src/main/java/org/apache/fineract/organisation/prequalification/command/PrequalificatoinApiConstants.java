@@ -41,6 +41,7 @@ public class PrequalificatoinApiConstants {
     public static final String prequalilficationTimespanParamName = "prequalilficationTimespan";
     public static final String previousPrequalificationParamName = "previousPrequalification";
     public static final String documentIdParamName = "documentId";
+    public static final String groupPresidentParamName = "groupPresident";
 
     // Members
     public static final String memberIdParamName = "id";
