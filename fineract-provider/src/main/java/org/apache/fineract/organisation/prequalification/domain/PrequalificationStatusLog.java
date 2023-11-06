@@ -54,6 +54,14 @@ public class PrequalificationStatusLog extends AbstractPersistableCustom {
     @Column(name = "comments", nullable = false)
     private String comments;
 
+    @Column(name = "sub_status", nullable = false)
+    private Integer subStatus;
+
+    @ManyToOne
+    @JoinColumn(name = "assigned_to", nullable = false)
+    private AppUser assignedTo;
+
+
     protected PrequalificationStatusLog() {
         //
     }
@@ -71,5 +79,12 @@ public class PrequalificationStatusLog extends AbstractPersistableCustom {
     public static PrequalificationStatusLog fromJson(final AppUser appUser, final Integer fromStatus, final Integer toStatus,
             final String comments, final PrequalificationGroup group) {
         return new PrequalificationStatusLog(appUser, fromStatus, toStatus, comments, group);
+    }
+
+    public void updateAssignedTo(final AppUser assignedTo) {
+        this.assignedTo = assignedTo;
+    }
+    public void updateSubStatus(final Integer subStatus) {
+        this.subStatus = subStatus;
     }
 }

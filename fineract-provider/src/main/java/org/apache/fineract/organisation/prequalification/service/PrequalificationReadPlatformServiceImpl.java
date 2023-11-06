@@ -381,6 +381,9 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                     	g.created_at,
                     	g.prequalification_type_enum as prequalificationType,
                     	sl.from_status as previousStatus,
+                    	sl.sub_status as substatus,
+                    	assigned.username as assignedUser,
+                    	concat(assigned.firstname, ' ', assigned.lastname) as assignedUserName,
                     	sl.date_created as statusChangedOn,
                     	(select sum(requested_amount) from m_prequalification_group_members where group_id = g.id) as totalRequestedAmount,
                     	(select sum(approved_amount) from m_prequalification_group_members where group_id = g.id) as totalApprovedAmount,
@@ -453,6 +456,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                     	AND sl.id =
                     	(SELECT MAX(id)
                     	FROM m_prequalification_status_log WHERE prequalification_id = g.id AND sl.to_status=g.status )
+                    LEFT JOIN m_appuser assigned ON assigned.id = sl.assigned_to
                     LEFT JOIN m_appuser mu ON
                     	mu.id = sl.updatedby_id
                     LEFT JOIN m_appuser fa ON
@@ -498,6 +502,9 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             final LocalDate statusChangedOn = JdbcSupport.getLocalDate(rs, "statusChangedOn");
             final String processType = rs.getString("processType");
             final String processQuality = rs.getString("processQuality");
+            final Long substatus = rs.getLong("substatus");
+            final String assignedUser = rs.getString("assignedUser");
+            final String assignedUserName = rs.getString("assignedUserName");
             final BigDecimal totalRequestedAmount = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "totalRequestedAmount");
             final BigDecimal totalApprovedAmount = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "totalApprovedAmount");
 
