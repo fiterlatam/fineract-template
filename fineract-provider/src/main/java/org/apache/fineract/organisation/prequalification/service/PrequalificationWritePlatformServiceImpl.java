@@ -302,7 +302,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         }
 
         PrequalificationGroupMember groupMember = PrequalificationGroupMember.fromJson(null, clientName, dpi, null, dateOfBirth, amount,
-                puente, addedBy, status,groupPresident);
+                puente, addedBy, status, groupPresident);
 
         this.preQualificationMemberRepository.saveAndFlush(groupMember);
         return new CommandProcessingResultBuilder() //
@@ -386,7 +386,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                 }
 
                 PrequalificationGroupMember groupMember = PrequalificationGroupMember.fromJson(group, name, dpi, clientId, dateOfBirth,
-                        requestedAmount, puente, addedBy, memberStatus,groupPresident);
+                        requestedAmount, puente, addedBy, memberStatus, groupPresident);
                 allMembers.add(groupMember);
             }
         }
@@ -695,7 +695,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         }
 
         PrequalificationGroupMember groupMember = PrequalificationGroupMember.fromJson(group, name, dpi, clientId, dateOfBirth,
-                requestedAmount, puente, addedBy, status,groupPresident);
+                requestedAmount, puente, addedBy, status, groupPresident);
 
         return groupMember;
     }

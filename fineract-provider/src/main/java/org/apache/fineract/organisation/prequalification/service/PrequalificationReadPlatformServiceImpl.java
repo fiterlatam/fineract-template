@@ -689,7 +689,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             return MemberPrequalificationData.instance(id, name, dpi, dob, puente, requestedAmount, status, blacklistCount, totalLoanAmount,
                     totalLoanBalance, totalGuaranteedLoanBalance, noOfCycles, additionalCreditsCount, additionalCreditsSum,
                     activeBlacklistCount, inActiveBlacklistCount, greenValidationCount, yellowValidationCount, orangeValidationCount,
-                    redValidationCount, bureauCheckStatus, approvedAmount,groupPresident);
+                    redValidationCount, bureauCheckStatus, approvedAmount, groupPresident);
 
         }
     }
