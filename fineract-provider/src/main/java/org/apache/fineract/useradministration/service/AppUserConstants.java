@@ -32,7 +32,7 @@ public final class AppUserConstants {
     public static final String GERENTE_ROLE_START_WITH = "Gerente";
     public static final String COORDINADOR_REGIONAL_ROLE_START_WITH = "Coordinador";
     public static final String REGIONAL_ROLE_START_WITH = "Regional";
-    public static final String LIDER_AGENCIA_ROLE_START_WITH = "Lider de agencia";
+    public static final String LIDER_AGENCIA_ROLE_START_WITH = "Líder de agencia";
     public static final String SUPERVISOR_ROLE_START_WITH = "Supervisor";
     public static final String FACILITATOR_ROLE_START_WITH = "Facilitador";
 
