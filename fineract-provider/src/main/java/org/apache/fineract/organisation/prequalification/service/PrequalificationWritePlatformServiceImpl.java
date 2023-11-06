@@ -70,6 +70,7 @@ import org.apache.fineract.organisation.prequalification.domain.Prequalification
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationStatusLog;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationStatusRange;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationStatusRangeRepository;
+import org.apache.fineract.organisation.prequalification.domain.PrequalificationSubStatus;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationType;
 import org.apache.fineract.organisation.prequalification.exception.PrequalificationStatusNotChangedException;
 import org.apache.fineract.organisation.prequalification.exception.PrequalificationStatusNotCompletedException;
@@ -832,10 +833,35 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         prequalificationGroup.updateStatus(prequalificationStatus);
         prequalificationGroup.updateComments(comments);
 
-        PrequalificationStatusLog statusLog = PrequalificationStatusLog.fromJson(addedBy, fromStatus, prequalificationGroup.getStatus(),
+        PrequalificationStatusLog newStatusLog = PrequalificationStatusLog.fromJson(addedBy, fromStatus, prequalificationGroup.getStatus(),
                 comments, prequalificationGroup);
 
-        this.preQualificationLogRepository.saveAndFlush(statusLog);
+        this.preQualificationLogRepository.saveAndFlush(newStatusLog);
+
+        List<PrequalificationStatusLog> currentLogs = this.preQualificationLogRepository.groupStatusLogs(fromStatus, prequalificationGroup);
+        if (!currentLogs.isEmpty()){
+            PrequalificationStatusLog currentStatusLog = currentLogs.get(0);
+            currentStatusLog.updateSubStatus(PrequalificationSubStatus.COMPLETED.getValue());
+            this.preQualificationLogRepository.save(currentStatusLog);
+        }
+        return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withEntityId(prequalificationGroup.getId()).build();
+    }
+
+    @Override
+    public CommandProcessingResult assignPrequalification(Long entityId, JsonCommand command) {
+        final PrequalificationGroup prequalificationGroup = this.prequalificationGroupRepositoryWrapper
+                .findOneWithNotFoundDetection(entityId);
+        AppUser currentUser = this.context.getAuthenticatedUserIfPresent();
+
+        Integer status = prequalificationGroup.getStatus();
+        List<PrequalificationStatusLog> statusLogList = this.preQualificationLogRepository.groupStatusLogs(status, prequalificationGroup);
+        if (statusLogList.isEmpty()) throw new PrequalificationStatusNotCompletedException(PrequalificationStatus.fromInt(status).toString());
+
+        //retrieve latest log update assignee
+        PrequalificationStatusLog prequalificationStatusLog = statusLogList.get(0);
+        prequalificationStatusLog.updateSubStatus(PrequalificationSubStatus.IN_PROGRESS.getValue());
+        prequalificationStatusLog.updateAssignedTo(currentUser);
+        this.preQualificationLogRepository.saveAndFlush(prequalificationStatusLog);
         return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withEntityId(prequalificationGroup.getId()).build();
     }
 

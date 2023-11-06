@@ -3982,4 +3982,12 @@ public class CommandWrapperBuilder {
         this.href = "/committees" + committeeId;
         return this;
     }
+
+    public CommandWrapperBuilder assigntoPrequalificationSelf(Long prequalificationId) {
+        this.actionName = "ASSIGN";
+        this.entityName = "PREQUALIFICATIONS";
+        this.entityId = prequalificationId;
+        this.href = "/prequalification/assign/" + prequalificationId;
+        return this;
+    }
 }

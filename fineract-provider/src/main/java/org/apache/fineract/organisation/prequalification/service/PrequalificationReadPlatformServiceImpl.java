@@ -48,6 +48,7 @@ import org.apache.fineract.organisation.prequalification.domain.PreQualification
 import org.apache.fineract.organisation.prequalification.domain.PreQualificationsMemberEnumerations;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationMemberIndication;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationStatus;
+import org.apache.fineract.organisation.prequalification.domain.PrequalificationSubStatus;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationType;
 import org.apache.fineract.portfolio.client.service.ClientChargeWritePlatformServiceJpaRepositoryImpl;
 import org.apache.fineract.portfolio.client.service.ClientReadPlatformService;
@@ -502,7 +503,11 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             final LocalDate statusChangedOn = JdbcSupport.getLocalDate(rs, "statusChangedOn");
             final String processType = rs.getString("processType");
             final String processQuality = rs.getString("processQuality");
-            final Long substatus = rs.getLong("substatus");
+            final Integer substatus = rs.getInt("substatus");
+            PrequalificationSubStatus prequalificationSubStatus =null;
+            if (substatus != null){
+                prequalificationSubStatus = PrequalificationSubStatus.fromInt(substatus);
+            }
             final String assignedUser = rs.getString("assignedUser");
             final String assignedUserName = rs.getString("assignedUserName");
             final BigDecimal totalRequestedAmount = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "totalRequestedAmount");
@@ -523,7 +528,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                     productName, addedBy, createdAt, comments, groupId, agencyId, centerId, productId, facilitatorId, facilitatorName,
                     greenValidationCount, yellowValidationCount, orangeValidationCount, redValidationCount, prequalilficationTimespan,
                     lastPrequalificationStatus, statusChangedBy, statusChangedOn, processType, processQuality, totalRequestedAmount,
-                    totalApprovedAmount, prequalificationType);
+                    totalApprovedAmount, prequalificationType,prequalificationSubStatus,assignedUser,assignedUserName);
 
         }
     }
