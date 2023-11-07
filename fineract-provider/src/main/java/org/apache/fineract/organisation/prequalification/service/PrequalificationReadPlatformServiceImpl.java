@@ -48,6 +48,7 @@ import org.apache.fineract.organisation.prequalification.domain.PreQualification
 import org.apache.fineract.organisation.prequalification.domain.PreQualificationsMemberEnumerations;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationMemberIndication;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationStatus;
+import org.apache.fineract.organisation.prequalification.domain.PrequalificationSubStatus;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationType;
 import org.apache.fineract.portfolio.client.service.ClientChargeWritePlatformServiceJpaRepositoryImpl;
 import org.apache.fineract.portfolio.client.service.ClientReadPlatformService;
@@ -381,6 +382,9 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                     	g.created_at,
                     	g.prequalification_type_enum as prequalificationType,
                     	sl.from_status as previousStatus,
+                    	sl.sub_status as substatus,
+                    	assigned.username as assignedUser,
+                    	concat(assigned.firstname, ' ', assigned.lastname) as assignedUserName,
                     	sl.date_created as statusChangedOn,
                     	(select sum(requested_amount) from m_prequalification_group_members where group_id = g.id) as totalRequestedAmount,
                     	(select sum(approved_amount) from m_prequalification_group_members where group_id = g.id) as totalApprovedAmount,
@@ -453,6 +457,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                     	AND sl.id =
                     	(SELECT MAX(id)
                     	FROM m_prequalification_status_log WHERE prequalification_id = g.id AND sl.to_status=g.status )
+                    LEFT JOIN m_appuser assigned ON assigned.id = sl.assigned_to
                     LEFT JOIN m_appuser mu ON
                     	mu.id = sl.updatedby_id
                     LEFT JOIN m_appuser fa ON
@@ -498,6 +503,13 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             final LocalDate statusChangedOn = JdbcSupport.getLocalDate(rs, "statusChangedOn");
             final String processType = rs.getString("processType");
             final String processQuality = rs.getString("processQuality");
+            final Integer substatus = rs.getInt("substatus");
+            PrequalificationSubStatus prequalificationSubStatus = null;
+            if (substatus != null) {
+                prequalificationSubStatus = PrequalificationSubStatus.fromInt(substatus);
+            }
+            final String assignedUser = rs.getString("assignedUser");
+            final String assignedUserName = rs.getString("assignedUserName");
             final BigDecimal totalRequestedAmount = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "totalRequestedAmount");
             final BigDecimal totalApprovedAmount = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "totalApprovedAmount");
 
@@ -516,7 +528,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                     productName, addedBy, createdAt, comments, groupId, agencyId, centerId, productId, facilitatorId, facilitatorName,
                     greenValidationCount, yellowValidationCount, orangeValidationCount, redValidationCount, prequalilficationTimespan,
                     lastPrequalificationStatus, statusChangedBy, statusChangedOn, processType, processQuality, totalRequestedAmount,
-                    totalApprovedAmount, prequalificationType);
+                    totalApprovedAmount, prequalificationType, prequalificationSubStatus, assignedUser, assignedUserName);
 
         }
     }
@@ -682,7 +694,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             return MemberPrequalificationData.instance(id, name, dpi, dob, puente, requestedAmount, status, blacklistCount, totalLoanAmount,
                     totalLoanBalance, totalGuaranteedLoanBalance, noOfCycles, additionalCreditsCount, additionalCreditsSum,
                     activeBlacklistCount, inActiveBlacklistCount, greenValidationCount, yellowValidationCount, orangeValidationCount,
-                    redValidationCount, bureauCheckStatus, approvedAmount,groupPresident);
+                    redValidationCount, bureauCheckStatus, approvedAmount, groupPresident);
 
         }
     }

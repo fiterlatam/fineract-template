@@ -45,6 +45,7 @@ import org.apache.fineract.portfolio.charge.data.ChargeData;
 import org.apache.fineract.portfolio.charge.domain.ChargeAppliesTo;
 import org.apache.fineract.portfolio.charge.domain.ChargeCalculationType;
 import org.apache.fineract.portfolio.charge.domain.ChargeDisbursementType;
+import org.apache.fineract.portfolio.charge.domain.ChargeInstallmentFeeType;
 import org.apache.fineract.portfolio.charge.domain.ChargePaymentMode;
 import org.apache.fineract.portfolio.charge.domain.ChargeTimeType;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -61,7 +62,7 @@ public final class ChargeDefinitionCommandFromApiJsonDeserializer {
             "active", "chargePaymentMode", "feeOnMonthDay", "feeInterval", "monthDayFormat", "minCap", "maxCap", "feeFrequency",
             "enableFreeWithdrawalCharge", "freeWithdrawalFrequency", "restartCountFrequency", "countFrequencyType", "paymentTypeId",
             "enablePaymentType", ChargesApiConstants.glAccountIdParamName, ChargesApiConstants.taxGroupIdParamName, "adminFeeRanges",
-            "chargeDisbursementType", "chargeDisbursementTypeOptions"));
+            "chargeDisbursementType", "chargeDisbursementTypeOptions","chargeInstallmentFeeType", "chargeInstallmentFeeTypeOptions"));
 
     private final FromJsonHelper fromApiJsonHelper;
 
@@ -139,6 +140,9 @@ public final class ChargeDefinitionCommandFromApiJsonDeserializer {
 
         final ChargeDisbursementType chargeDisbursementType = ChargeDisbursementType
                 .fromInt(this.fromApiJsonHelper.extractIntegerSansLocaleNamed("chargeDisbursementType", element));
+
+        final ChargeInstallmentFeeType chargeInstallmentFeeType = ChargeInstallmentFeeType
+                .fromInt(this.fromApiJsonHelper.extractIntegerSansLocaleNamed("chargeInstallmentFeeType", element));
 
         if (appliesTo.isLoanCharge()) {
             // loan applicable validation
@@ -275,7 +279,7 @@ public final class ChargeDefinitionCommandFromApiJsonDeserializer {
             baseDataValidator.reset().parameter(ChargesApiConstants.taxGroupIdParamName).value(taxGroupId).notNull().longGreaterThanZero();
         }
 
-        if (appliesTo.isLoanCharge() && chargeDisbursementType.isAddOn()) {
+        if (appliesTo.isLoanCharge() && (chargeDisbursementType.isAddOn() || chargeInstallmentFeeType.isAddOn()) ) {
             this.validateChargeLimits(false, dataValidationErrors, baseDataValidator, element);
         }
 
@@ -447,7 +451,9 @@ public final class ChargeDefinitionCommandFromApiJsonDeserializer {
         }
         final ChargeDisbursementType chargeDisbursementType = ChargeDisbursementType
                 .fromInt(this.fromApiJsonHelper.extractIntegerSansLocaleNamed("chargeDisbursementType", element));
-        if (appliesTo != null && appliesTo.isLoanCharge() && chargeDisbursementType.isAddOn()) {
+        final ChargeInstallmentFeeType chargeInstallmentFeeType = ChargeInstallmentFeeType
+                .fromInt(this.fromApiJsonHelper.extractIntegerSansLocaleNamed("chargeInstallmentFeeType", element));
+        if (appliesTo != null && appliesTo.isLoanCharge() && (chargeDisbursementType.isAddOn() || chargeInstallmentFeeType.isAddOn())) {
             this.validateChargeLimits(false, dataValidationErrors, baseDataValidator, element);
         }
         throwExceptionIfValidationWarningsExist(dataValidationErrors);

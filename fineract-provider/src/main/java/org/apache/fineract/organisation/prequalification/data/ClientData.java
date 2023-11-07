@@ -27,8 +27,9 @@ import lombok.Data;
 @Builder
 public class ClientData {
 
-    private Integer clientId;
+    private Long clientId;
     private Integer prequalificationId;
+    private Long productId;
     private Integer prequalificationMemberId;
     private String name;
     private Date dateOfBirth;
@@ -37,4 +38,7 @@ public class ClientData {
     private String workWithPuente;
     private Long noOfCompletedCycles;
     private String gender;
+    private String clientCategorization;
+    private String clientArea;
+    private String recreditCategorization;
 }

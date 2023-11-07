@@ -149,6 +149,9 @@ public class Charge extends AbstractPersistableCustom {
     @Column(name = "charge_disbursement_type_enum", nullable = false)
     private Integer chargeDisbursementType;
 
+    @Column(name = "charge_installment_fee_type_enum", nullable = false)
+    private Integer chargeInstallmentFeeType;
+
     @OneToMany(orphanRemoval = true, cascade = CascadeType.ALL, mappedBy = "charge")
     private List<ChargeRange> chargeRanges;
 
@@ -195,9 +198,11 @@ public class Charge extends AbstractPersistableCustom {
         final ChargeDisbursementType chargeDisbursementType = ChargeDisbursementType
                 .fromInt(command.integerValueOfParameterNamed("chargeDisbursementType"));
 
+        final ChargeInstallmentFeeType chargeInstallmentFeeType = ChargeInstallmentFeeType.fromInt(command.integerValueOfParameterNamed("chargeInstallmentFeeType"));
+
         Charge charge = new Charge(name, amount, currencyCode, chargeAppliesTo, chargeTimeType, chargeCalculationType, penalty, active,
                 paymentMode, feeOnMonthDay, feeInterval, minCap, maxCap, feeFrequency, enableFreeWithdrawalCharge, freeWithdrawalFrequency,
-                restartCountFrequency, countFrequencyType, account, taxGroup, enablePaymentType, paymentType, chargeDisbursementType);
+                restartCountFrequency, countFrequencyType, account, taxGroup, enablePaymentType, paymentType, chargeDisbursementType, chargeInstallmentFeeType);
 
         setChargeRanges(charge, command);
 
@@ -234,7 +239,7 @@ public class Charge extends AbstractPersistableCustom {
             final BigDecimal maxCap, final Integer feeFrequency, final boolean enableFreeWithdrawalCharge,
             final Integer freeWithdrawalFrequency, final Integer restartFrequency, final PeriodFrequencyType restartFrequencyEnum,
             final GLAccount account, final TaxGroup taxGroup, final boolean enablePaymentType, final PaymentType paymentType,
-            final ChargeDisbursementType chargeDisbursementType) {
+            final ChargeDisbursementType chargeDisbursementType, final ChargeInstallmentFeeType chargeInstallmentFeeType) {
         this.name = name;
         this.amount = amount;
         this.currencyCode = currencyCode;
@@ -247,6 +252,7 @@ public class Charge extends AbstractPersistableCustom {
         this.taxGroup = taxGroup;
         this.chargePaymentMode = paymentMode == null ? null : paymentMode.getValue();
         this.chargeDisbursementType = chargeDisbursementType == null ? null : chargeDisbursementType.getValue();
+        this.chargeInstallmentFeeType = chargeInstallmentFeeType == null ? null : chargeInstallmentFeeType.getValue();
 
         final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
         final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors).resource("charges");
@@ -601,6 +607,14 @@ public class Charge extends AbstractPersistableCustom {
                 actualChanges.put("locale", localeAsInput);
                 this.chargeDisbursementType = ChargeDisbursementType.fromInt(newValue).getValue();
             }
+
+            final String chargeInstallmentFeeTypeParamName = "chargeInstallmentFeeType";
+            if (command.isChangeInIntegerParameterNamed(chargeInstallmentFeeTypeParamName, this.chargeInstallmentFeeType)) {
+                final Integer newValue = command.integerValueOfParameterNamed(chargeInstallmentFeeTypeParamName);
+                actualChanges.put(chargeInstallmentFeeTypeParamName, newValue);
+                actualChanges.put("locale", localeAsInput);
+                this.chargeInstallmentFeeType = ChargeInstallmentFeeType.fromInt(newValue).getValue();
+            }
         }
 
         if (command.hasParameter("feeOnMonthDay")) {
@@ -719,6 +733,7 @@ public class Charge extends AbstractPersistableCustom {
         final EnumOptionData chargePaymentmode = ChargeEnumerations.chargePaymentMode(this.chargePaymentMode);
         final EnumOptionData feeFrequencyType = ChargeEnumerations.chargePaymentMode(this.feeFrequency);
         final EnumOptionData chargeDisbursementType = ChargeEnumerations.chargePaymentMode(this.chargePaymentMode);
+        final EnumOptionData chargeInstallmentFeeType = ChargeEnumerations.chargePaymentMode(this.chargePaymentMode);
         GLAccountData accountData = null;
         if (account != null) {
             accountData = new GLAccountData(account.getId(), account.getName(), account.getGlCode());
@@ -737,7 +752,7 @@ public class Charge extends AbstractPersistableCustom {
         return ChargeData.instance(getId(), this.name, this.amount, currency, chargeTimeType, chargeAppliesTo, chargeCalculationType,
                 chargePaymentmode, getFeeOnMonthDay(), this.feeInterval, this.penalty, this.active, this.enableFreeWithdrawal,
                 this.freeWithdrawalFrequency, this.restartFrequency, this.restartFrequencyEnum, this.enablePaymentType, paymentTypeData,
-                this.minCap, this.maxCap, feeFrequencyType, accountData, taxGroupData, chargeDisbursementType);
+                this.minCap, this.maxCap, feeFrequencyType, accountData, taxGroupData, chargeDisbursementType, chargeInstallmentFeeType);
     }
 
     public Integer getChargePaymentMode() {
@@ -809,6 +824,14 @@ public class Charge extends AbstractPersistableCustom {
         return ChargeDisbursementType.fromInt(this.chargeDisbursementType).equals(ChargeDisbursementType.ADD_ON);
     }
 
+    public boolean isInstallmentFeeCharge() {
+        return ChargeTimeType.fromInt(this.chargeTimeType).equals(ChargeTimeType.INSTALMENT_FEE);
+    }
+
+    public boolean isAddOnInstallmentFeeType() {
+        return ChargeInstallmentFeeType.fromInt(this.chargeInstallmentFeeType).equals(ChargeInstallmentFeeType.ADD_ON);
+    }
+
     public TaxGroup getTaxGroup() {
         return this.taxGroup;
     }
@@ -819,6 +842,10 @@ public class Charge extends AbstractPersistableCustom {
 
     public Integer getChargeDisbursementType() {
         return chargeDisbursementType;
+    }
+
+    public Integer getChargeInstallmentFeeType() {
+        return chargeInstallmentFeeType;
     }
 
     public List<ChargeRange> getChargeRanges() {
@@ -838,7 +865,7 @@ public class Charge extends AbstractPersistableCustom {
         final Comparator<ChargeRange> orderByMinDay = Comparator.comparing(ChargeRange::getMinDay);
         Collections.sort(this.chargeRanges, orderByMinDay);
 
-        if (isDisbursementCharge() && isAddOnDisbursementType() && this.chargeRanges != null && !this.chargeRanges.isEmpty()) {
+        if (( (isDisbursementCharge() && isAddOnDisbursementType()) || (isInstallmentFeeCharge() && isAddOnInstallmentFeeType())) && this.chargeRanges != null && !this.chargeRanges.isEmpty()) {
             // calculate days since disbursement date
             int numberOfDays = Math.toIntExact(daysBetween(disbursementDate, firstRepaymentDate));
             if (numberOfDays > defaultDays) {

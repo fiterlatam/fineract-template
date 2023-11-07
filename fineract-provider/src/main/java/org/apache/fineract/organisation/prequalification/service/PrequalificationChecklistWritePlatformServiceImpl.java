@@ -19,29 +19,32 @@
 package org.apache.fineract.organisation.prequalification.service;
 
 import java.math.BigDecimal;
-import java.math.MathContext;
 import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.time.Instant;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import javax.transaction.Transactional;
-import org.apache.commons.lang3.ObjectUtils;
+import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuilder;
 import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
+import org.apache.fineract.infrastructure.dataqueries.data.GenericResultsetData;
+import org.apache.fineract.infrastructure.dataqueries.data.ResultsetColumnHeaderData;
+import org.apache.fineract.infrastructure.dataqueries.data.ResultsetRowData;
+import org.apache.fineract.infrastructure.dataqueries.service.ReadReportingService;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
-import org.apache.fineract.organisation.monetary.domain.MoneyHelper;
 import org.apache.fineract.organisation.prequalification.data.ClientData;
-import org.apache.fineract.organisation.prequalification.data.HardPolicyCategoryData;
+import org.apache.fineract.organisation.prequalification.data.GroupData;
+import org.apache.fineract.organisation.prequalification.data.PolicyData;
 import org.apache.fineract.organisation.prequalification.domain.CheckValidationColor;
-import org.apache.fineract.organisation.prequalification.domain.HardPolicyCategory;
+import org.apache.fineract.organisation.prequalification.domain.Policies;
 import org.apache.fineract.organisation.prequalification.domain.PreQualificationStatusLogRepository;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationGroup;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationGroupMember;
@@ -58,8 +61,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 
 @Service
+@AllArgsConstructor
 public class PrequalificationChecklistWritePlatformServiceImpl implements PrequalificationChecklistWritePlatformService {
 
     private static final Logger LOG = LoggerFactory.getLogger(PrequalificationChecklistWritePlatformServiceImpl.class);
@@ -69,19 +74,9 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
     private final PreQualificationStatusLogRepository preQualificationStatusLogRepository;
     private final PlatformSecurityContext platformSecurityContext;
     private final JdbcTemplate jdbcTemplate;
-
-    public PrequalificationChecklistWritePlatformServiceImpl(PlatformSecurityContext context,
-            PrequalificationGroupRepositoryWrapper prequalificationGroupRepositoryWrapper,
-            final PreQualificationStatusLogRepository preQualificationStatusLogRepository,
-            ValidationChecklistResultRepository validationChecklistResultRepository, PlatformSecurityContext platformSecurityContext,
-            JdbcTemplate jdbcTemplate) {
-        this.context = context;
-        this.prequalificationGroupRepositoryWrapper = prequalificationGroupRepositoryWrapper;
-        this.validationChecklistResultRepository = validationChecklistResultRepository;
-        this.preQualificationStatusLogRepository = preQualificationStatusLogRepository;
-        this.platformSecurityContext = platformSecurityContext;
-        this.jdbcTemplate = jdbcTemplate;
-    }
+    final PolicyMapper policyMapper = new PolicyMapper();
+    final ClientDataMapper clientDataMapper = new ClientDataMapper();
+    private final ReadReportingService readReportingService;
 
     @Override
     @Transactional
@@ -89,55 +84,57 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
         AppUser appUser = this.context.authenticatedUser();
         PrequalificationGroup prequalificationGroup = this.prequalificationGroupRepositoryWrapper
                 .findOneWithNotFoundDetection(prequalificationId);
+        List<ClientData> clientDatas = this.jdbcTemplate.query(clientDataMapper.schema(), clientDataMapper, prequalificationId);
         final Long productId = prequalificationGroup.getLoanProduct().getId();
-
+        final Integer noOfMembers = prequalificationGroup.getMembers().size();
+        final BigDecimal totalAmountRequested = prequalificationGroup.getMembers().stream()
+                .map(PrequalificationGroupMember::getRequestedAmount).reduce(BigDecimal.ONE, BigDecimal::add);
+        final GroupData groupData = GroupData.builder().id(prequalificationId).productId(productId).numberOfMembers(noOfMembers)
+                .requestedAmount(totalAmountRequested).members(clientDatas).build();
         Integer fromStatus = prequalificationGroup.getStatus();
-
         List<ValidationChecklistResult> validationChecklistResults = new ArrayList<>();
-        CheckCategoryMapper checkCategoryMapper = new CheckCategoryMapper();
-        List<HardPolicyCategoryData> groupPolicies = this.jdbcTemplate.query(checkCategoryMapper.schema(), checkCategoryMapper, productId,
-                PrequalificationType.GROUP.getValue());
-        List<HardPolicyCategoryData> individualPolicies = this.jdbcTemplate.query(checkCategoryMapper.schema(), checkCategoryMapper,
-                productId, PrequalificationType.INDIVIDUAL.getValue());
+        final List<PolicyData> groupPolicies = this.jdbcTemplate.query(this.policyMapper.schema(), this.policyMapper, productId,
+                PrequalificationType.GROUP.name());
+        final List<PolicyData> individualPolicies = this.jdbcTemplate.query(policyMapper.schema(), policyMapper, productId,
+                PrequalificationType.INDIVIDUAL.name());
         final String deleteStatement = "DELETE FROM m_checklist_validation_result WHERE prequalification_id = ?";
         this.jdbcTemplate.update(deleteStatement, prequalificationId);
-        BigDecimal totalAmount = prequalificationGroup.getMembers().stream().map(PrequalificationGroupMember::getRequestedAmount)
-                .reduce(BigDecimal.ONE, BigDecimal::add);
-        final ClientData groupData = ClientData.builder().requestedAmount(totalAmount).build();
-        for (HardPolicyCategoryData policyCategoryData : groupPolicies) {
+        for (final PolicyData groupPolicy : groupPolicies) {
             ValidationChecklistResult prequalificationChecklistResult = new ValidationChecklistResult();
             prequalificationChecklistResult.setPrequalificationId(prequalificationId);
-            prequalificationChecklistResult.setCategoryId(policyCategoryData.getId());
+            prequalificationChecklistResult.setPolicyId(groupPolicy.getId());
             prequalificationChecklistResult.setPrequalificationType(PrequalificationType.GROUP.getValue());
-            CheckValidationColor checkValidationColor = this.validateGenericPolicy(HardPolicyCategory.fromInt(policyCategoryData.getId()),
-                    groupData, prequalificationGroup);
+            CheckValidationColor checkValidationColor = this.validateGenericPolicy(Policies.fromInt(groupPolicy.getId()), null, groupData);
             prequalificationChecklistResult.setValidationColor(checkValidationColor.getValue());
-            AppUser authenticatedUser = platformSecurityContext.authenticatedUser();
+            AppUser authenticatedUser = platformSecurityContext.getAuthenticatedUserIfPresent();
             final LocalDateTime localDateTime = DateUtils.getLocalDateTimeOfSystem();
-            prequalificationChecklistResult.setCreatedBy(authenticatedUser.getId());
-            prequalificationChecklistResult.setLastModifiedBy(authenticatedUser.getId());
+            if (authenticatedUser != null && authenticatedUser.getId() != null) {
+                prequalificationChecklistResult.setCreatedBy(authenticatedUser.getId());
+                prequalificationChecklistResult.setLastModifiedBy(authenticatedUser.getId());
+            }
             prequalificationChecklistResult.setCreatedDate(localDateTime);
             prequalificationChecklistResult.setLastModifiedDate(localDateTime);
             validationChecklistResults.add(prequalificationChecklistResult);
         }
 
-        for (HardPolicyCategoryData policyCategoryData : individualPolicies) {
-            final ClientDataMapper clientDataMapper = new ClientDataMapper();
-            List<ClientData> clientDatas = this.jdbcTemplate.query(clientDataMapper.schema(), clientDataMapper, prequalificationId);
+        for (PolicyData policyCategoryData : individualPolicies) {
             for (final ClientData clientData : clientDatas) {
+                clientData.setProductId(productId);
                 ValidationChecklistResult validationChecklistResult = new ValidationChecklistResult();
                 validationChecklistResult.setPrequalificationId(prequalificationId);
-                validationChecklistResult.setCategoryId(policyCategoryData.getId());
+                validationChecklistResult.setPolicyId(policyCategoryData.getId());
                 validationChecklistResult.setClientId(clientData.getClientId());
                 validationChecklistResult.setPrequalificationMemberId(clientData.getPrequalificationMemberId());
                 validationChecklistResult.setPrequalificationType(PrequalificationType.INDIVIDUAL.getValue());
-                CheckValidationColor checkValidationColor = this
-                        .validateGenericPolicy(HardPolicyCategory.fromInt(policyCategoryData.getId()), clientData, prequalificationGroup);
+                CheckValidationColor checkValidationColor = this.validateGenericPolicy(Policies.fromInt(policyCategoryData.getId()),
+                        clientData, groupData);
                 validationChecklistResult.setValidationColor(checkValidationColor.getValue());
                 AppUser authenticatedUser = platformSecurityContext.authenticatedUser();
                 final LocalDateTime localDateTime = DateUtils.getLocalDateTimeOfSystem();
-                validationChecklistResult.setCreatedBy(authenticatedUser.getId());
-                validationChecklistResult.setLastModifiedBy(authenticatedUser.getId());
+                if (authenticatedUser != null && authenticatedUser.getId() != null) {
+                    validationChecklistResult.setCreatedBy(authenticatedUser.getId());
+                    validationChecklistResult.setLastModifiedBy(authenticatedUser.getId());
+                }
                 validationChecklistResult.setCreatedDate(localDateTime);
                 validationChecklistResult.setLastModifiedDate(localDateTime);
                 validationChecklistResults.add(validationChecklistResult);
@@ -149,30 +146,34 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
 
         PrequalificationStatusLog statusLog = PrequalificationStatusLog.fromJson(appUser, fromStatus, prequalificationGroup.getStatus(),
                 null, prequalificationGroup);
-
         this.preQualificationStatusLogRepository.saveAndFlush(statusLog);
-
         return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withEntityId(prequalificationId).build();
     }
 
-    static final class CheckCategoryMapper implements RowMapper<HardPolicyCategoryData> {
+    static final class PolicyMapper implements RowMapper<PolicyData> {
 
         public String schema() {
             return """
-                    SELECT cc.id, cc.name, cc.description \s
-                    FROM checklist_decision_making cdm\s
-                    INNER JOIN checklist_categories cc ON cc.id = cdm.checklist_category_id\s
-                    INNER JOIN m_product_loan mpl ON mpl.id = cdm.product_id\s
-                    WHERE mpl.id = ? AND cdm.validation_type_enum = ?
-                    GROUP BY cc.id""";
+                    SELECT mp.id AS id,\s
+                    mp.name AS name,\s
+                    mp.label AS label,
+                    mp.description AS description,
+                    mpl.name AS productName
+                    FROM m_policy mp\s
+                    INNER JOIN m_product_policy mpp ON mpp.policy_id = mp.id\s
+                    INNER JOIN m_product_loan mpl ON mpl.id = mpp.product_id\s
+                    WHERE mpl.id = ? AND mpp.evaluation_type = ?
+                    GROUP BY mp.id
+                    """;
         }
 
         @Override
-        public HardPolicyCategoryData mapRow(@NotNull ResultSet rs, int rowNum) throws SQLException {
+        public PolicyData mapRow(@NotNull ResultSet rs, int rowNum) throws SQLException {
             final Integer id = JdbcSupport.getInteger(rs, "id");
             final String name = rs.getString("name");
+            final String label = rs.getString("label");
             final String description = rs.getString("description");
-            return new HardPolicyCategoryData(id, name, description);
+            return PolicyData.builder().id(id).name(name).label(label).description(description).build();
         }
     }
 
@@ -193,7 +194,7 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
 
         @Override
         public ClientData mapRow(@NotNull ResultSet rs, int rowNum) throws SQLException {
-            final Integer clientId = JdbcSupport.getInteger(rs, "clientId");
+            final Long clientId = JdbcSupport.getLong(rs, "clientId");
             final Integer prequalificationMemberId = JdbcSupport.getInteger(rs, "prequalificationMemberId");
             final Integer prequalificationId = JdbcSupport.getInteger(rs, "prequalificationId");
             final String name = rs.getString("name");
@@ -208,256 +209,374 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
         }
     }
 
-    private CheckValidationColor validateGenericPolicy(final HardPolicyCategory hardPolicyCategory, final ClientData clientData,
-            final PrequalificationGroup prequalificationGroup) {
+    private CheckValidationColor validateGenericPolicy(final Policies policy, final ClientData clientData, final GroupData groupData) {
         CheckValidationColor checkValidationColor;
-        switch (hardPolicyCategory) {
-            case NEW_CLIENT -> checkValidationColor = this.handleNewClientCheck(clientData);
-            case RECURRING_CUSTOMER -> checkValidationColor = this.handleRecurringClientCheck(clientData, prequalificationGroup);
-            case INCREASE_PERCENTAGE -> checkValidationColor = this.handleIncreasePercentageCheck(clientData, prequalificationGroup);
-            case MANDATORY_PHOTO_GRAPH -> checkValidationColor = this.handleMandatoryPhotographCheck();
-            case CLIENT_AGE -> checkValidationColor = this.handleClientAgeCheck(clientData);
-            case NUMBER_OF_MEMBERS_ACCORDING_TO_POLICY -> checkValidationColor = this
-                    .handleNumberOfMembersAccordingToPolicyCheck(prequalificationGroup);
-            case MINIMUM_AND_MAXIMUM_AMOUNT -> checkValidationColor = this.handleMinAndMaxAmountCheck(prequalificationGroup, clientData);
-            case DISPARITY_OF_VALUES -> checkValidationColor = this.handleDisparitiesOfValuesCheck();
-            case PERCENTAGE_OF_MEMBERS_STARTING_BUSINESS -> checkValidationColor = this.handlePercentageOfMemberStartingBusinessCheck();
-            case PERCENTAGE_OF_MEMBERS_WITH_THEIR_OWN_HOME -> checkValidationColor = this.handlePercentageOfMemberWithHomeCheck();
-            case CHAIRMAN_OF_THE_BC_BOARD_OF_DIRECTORS -> checkValidationColor = this.handleChairmanBoardOfDirectorsCheck();
-            case OVERALL_CONDITION -> checkValidationColor = this.handleOverallConditionCheck();
-            case CATEGORIES_OF_CLIENT_TO_ACCEPT -> checkValidationColor = this.handleCategoriesOfClientToAcceptCheck();
-            case REQUESTED_AMOUNT -> checkValidationColor = this.handleRequestedAmountCheck(clientData);
-            case ADD_ENDORSEMENT -> checkValidationColor = this.handleAddEndorsementCheck();
-            case PAYMENTS_OUTSIDE_CURRENT_TERM -> checkValidationColor = this.handlePaymentOutsideCurrentTermCheck();
-            case PERCENTAGE_OF_MEMBERS_THAT_CAN_HAVE_PRODUCT -> checkValidationColor = this.handPercentageOfProductMemberCheck();
-            case GENDER -> checkValidationColor = this.handleGenderCheck(clientData);
-            case NATIONALITY -> checkValidationColor = this.handleNationalityCheck();
-            case INTERNAL_CREDIT_HISTORY -> checkValidationColor = this.handleInternalCreditHistoryCheck();
-            case EXTERNAL_CREDIT_HISTORY -> checkValidationColor = this.handleExternalCreditHistoryCheck();
-            case CLAIMS_REGISTERED -> checkValidationColor = this.handleClaimedRegisteredCheck();
-            case HOUSING_TYPE -> checkValidationColor = this.handleHousingTypeCheck();
-            case RENTAL_AGE -> checkValidationColor = this.handleRentalAgeCheck();
-            case AGE_OF_BUSINESS -> checkValidationColor = this.handleBusinessAgeCheck();
-            case CREDITS -> checkValidationColor = this.handleCreditCheck();
-            case CANCELLED_CYCLES_COUNT -> checkValidationColor = this.handleCancelledCyclesCheck();
-            case SUBMIT_AGRICULTURAL_TECHNICAL_DIAGNOSIS -> checkValidationColor = this.handleAgriculturalDiagnosisCheck();
-            case ACCEPTANCE_OF_NEW_CLIENTS -> checkValidationColor = this.handleAcceptanceOfNewClientCheck();
+        switch (policy) {
+            case ONE -> checkValidationColor = this.runCheck1();
+            case TWO -> checkValidationColor = this.runCheck2();
+            case THREE -> checkValidationColor = this.runCheck3(clientData);
+            case FOUR -> checkValidationColor = this.runCheck4(clientData);
+            case FIVE -> checkValidationColor = this.runCheck5(clientData);
+            case SIX -> checkValidationColor = this.runCheck6(groupData);
+            case SEVEN -> checkValidationColor = this.runCheck7(groupData, clientData);
+            case EIGHT -> checkValidationColor = this.runCheck8();
+            case NINE -> checkValidationColor = this.runCheck9();
+            case TEN -> checkValidationColor = this.runCheck10();
+            case ELEVEN -> checkValidationColor = this.runCheck11();
+            case TWELVE -> checkValidationColor = this.runCheck12();
+            case THIRTEEN -> checkValidationColor = this.runCheck13();
+            case FOURTEEN -> checkValidationColor = this.runCheck14(clientData);
+            case FIFTEEN -> checkValidationColor = this.runCheck15();
+            case SIXTEEN -> checkValidationColor = this.runCheck16();
+            case SEVENTEEN -> checkValidationColor = this.runCheck17();
+            case EIGHTEEN -> checkValidationColor = this.runCheck18(clientData);
+            case NINETEEN -> checkValidationColor = this.runCheck19();
+            case TWENTY -> checkValidationColor = this.runCheck20();
+            case TWENTY_ONE -> checkValidationColor = this.runCheck21();
+            case TWENTY_TWO -> checkValidationColor = this.runCheck22();
+            case TWENTY_THREE -> checkValidationColor = this.runCheck23();
+            case TWENTY_FOUR -> checkValidationColor = this.runCheck24();
+            case TWENTY_FIVE -> checkValidationColor = this.runCheck25();
+            case TWENTY_SIX -> checkValidationColor = this.runCheck26();
+            case TWENTY_SEVEN -> checkValidationColor = this.runCheck27();
+            case TWENTY_EIGHT -> checkValidationColor = this.runCheck28();
+            case TWENTY_NINE -> checkValidationColor = this.runCheck29();
+            case THIRTY -> checkValidationColor = this.runCheck30();
+            case THIRTY_ONE -> checkValidationColor = this.runCheck31();
+            case THIRTY_TWO -> checkValidationColor = this.runCheck32();
+            case THIRTY_THREE -> checkValidationColor = this.runCheck33();
             default -> checkValidationColor = CheckValidationColor.INVALID;
         }
         return checkValidationColor;
     }
 
-    private CheckValidationColor handleNewClientCheck(final ClientData clientData) {
-        CheckValidationColor checkValidationColor;
-        final Integer clientId = clientData.getClientId();
-        final String loanCycle = "SELECT COALESCE(MAX(ml.loan_counter), 0) FROM m_loan ml WHERE ml.client_id = ?";
-        final Integer loanCycleCount = this.jdbcTemplate.queryForObject(loanCycle, Integer.class, clientId);
-        final String closedLoanCountSql = "SELECT COALESCE(COUNT(*), 0) FROM m_loan ml WHERE ml.loan_status_id IN (700, 600) AND  ml.client_id = ?  ";
-        final Integer closedLoanCount = this.jdbcTemplate.queryForObject(closedLoanCountSql, Integer.class, clientId);
-        final String notActiveSql = "SELECT COALESCE(COUNT(*), 0) FROM m_loan ml WHERE ml.loan_status_id NOT IN (100, 200, 300, 303, 304, 400, 500, 601, 602) AND  ml.client_id = ?  ";
-        final Integer notActiveCount = this.jdbcTemplate.queryForObject(notActiveSql, Integer.class, clientId);
-        if (ObjectUtils.defaultIfNull(loanCycleCount, 0) == 0) {
-            checkValidationColor = CheckValidationColor.GREEN;
-        } else if (ObjectUtils.defaultIfNull(closedLoanCount, 0) > 0) {
-            checkValidationColor = CheckValidationColor.GREEN;
-        } else if (ObjectUtils.defaultIfNull(notActiveCount, 0) == 1) {
-            checkValidationColor = CheckValidationColor.GREEN;
-        } else {
-            checkValidationColor = CheckValidationColor.RED;
+    /**
+     * New client categorization
+     */
+    private CheckValidationColor runCheck1() {
+        return CheckValidationColor.GREEN;
+    }
+
+    /**
+     * Recurring customer categorization
+     */
+    private CheckValidationColor runCheck2() {
+        return CheckValidationColor.GREEN;
+    }
+
+    /**
+     * Increase percentage
+     */
+    private CheckValidationColor runCheck3(final ClientData clientData) {
+        final String clientId = String.valueOf(clientData.getClientId());
+        final String reportName = Policies.THREE.getName() + " Policy Check";
+        final String productId = Long.toString(clientData.getProductId());
+        final Map<String, String> reportParams = new HashMap<>();
+        reportParams.put("${clientId}", clientId);
+        reportParams.put("${loanProductId}", productId);
+        reportParams.put("${requestedAmount}", String.valueOf(clientData.getRequestedAmount()));
+        final GenericResultsetData result = this.readReportingService.retrieveGenericResultset(reportName, "report", reportParams, false);
+        return extractColorFromResultset(result);
+    }
+
+    /**
+     * Mandatory to attach photographs and investment plan
+     */
+    private CheckValidationColor runCheck4(final ClientData clientData) {
+        final String clientId = String.valueOf(clientData.getClientId());
+        final String reportName = Policies.FOUR.getName() + " Policy Check";
+        final String productId = Long.toString(clientData.getProductId());
+        final Map<String, String> reportParams = new HashMap<>();
+        reportParams.put("${clientId}", clientId);
+        reportParams.put("${loanProductId}", productId);
+        reportParams.put("${requestedAmount}", String.valueOf(clientData.getRequestedAmount()));
+        final GenericResultsetData result = this.readReportingService.retrieveGenericResultset(reportName, "report", reportParams, false);
+        return extractColorFromResultset(result);
+    }
+
+    /**
+     * Client age check
+     */
+    private CheckValidationColor runCheck5(final ClientData clientData) {
+        final String clientId = String.valueOf(clientData.getClientId());
+        final String reportName = Policies.FIVE.getName() + " Policy Check";
+        final String productId = Long.toString(clientData.getProductId());
+        final ClientData params = retrieveClientParams(clientData.getClientId(), clientData.getProductId());
+        final Map<String, String> reportParams = new HashMap<>();
+        reportParams.put("${clientId}", clientId);
+        reportParams.put("${loanProductId}", productId);
+        reportParams.put("${clientCategorization}", params.getClientCategorization());
+        final GenericResultsetData result = this.readReportingService.retrieveGenericResultset(reportName, "report", reportParams, false);
+        return extractColorFromResultset(result);
+    }
+
+    private ClientData retrieveClientParams(final Long clientId, final Long productId) {
+        final String reportName = "Client Categorization Policy Check";
+        Map<String, String> reportParams = new HashMap<>();
+        reportParams.put("${clientId}", String.valueOf(clientId));
+        reportParams.put("${loanProductId}", String.valueOf(productId));
+        final GenericResultsetData result = this.readReportingService.retrieveGenericResultset(reportName, "report", reportParams, false);
+        final List<ResultsetColumnHeaderData> columnHeaders = result.getColumnHeaders();
+        List<ResultsetRowData> rowDataList = result.getData();
+        String clientCategorization = "NEW";
+        String clientArea = "RURAL";
+        String recreditCategorization = "NUEVO";
+        if (!rowDataList.isEmpty()) {
+            for (int i = 0; i < columnHeaders.size(); i++) {
+                final ResultsetColumnHeaderData columnHeaderData = columnHeaders.get(i);
+                if ("clientCategorization".equals(columnHeaderData.getColumnName())) {
+                    List<String> rowList = rowDataList.get(0).getRow();
+                    clientCategorization = rowList.get(i);
+                }
+                if ("clientArea".equals(columnHeaderData.getColumnName())) {
+                    List<String> rowList = rowDataList.get(0).getRow();
+                    clientArea = rowList.get(i);
+                }
+                if ("recreditCategorization".equals(columnHeaderData.getColumnName())) {
+                    List<String> rowList = rowDataList.get(0).getRow();
+                    recreditCategorization = rowList.get(i);
+                }
+            }
         }
-        return checkValidationColor;
+        return ClientData.builder().clientArea(clientArea).clientCategorization(clientCategorization)
+                .recreditCategorization(recreditCategorization).build();
     }
 
-    private CheckValidationColor handleRecurringClientCheck(final ClientData clientData,
-            final PrequalificationGroup prequalificationGroup) {
-        final CheckValidationColor checkValidationColor;
-        final String loanCycle = "SELECT COALESCE(MAX(ml.loan_counter), 0) FROM m_loan ml WHERE ml.client_id = ?";
-        final Integer clientId = clientData.getClientId();
-        final Long productId = prequalificationGroup.getLoanProduct().getId();
-        final Integer loanCycleCount = this.jdbcTemplate.queryForObject(loanCycle, Integer.class, clientId);
-        if (List.of(2L, 8L, 9L).contains(productId) && ObjectUtils.defaultIfNull(loanCycleCount, 0) > 0) {
-            checkValidationColor = CheckValidationColor.GREEN;
-        } else if (List.of(4L, 5L).contains(productId) && ObjectUtils.defaultIfNull(loanCycleCount, 0) > 3) {
-            checkValidationColor = CheckValidationColor.GREEN;
-        } else {
-            checkValidationColor = CheckValidationColor.RED;
+    private CheckValidationColor extractColorFromResultset(final GenericResultsetData resultset) {
+        final List<ResultsetColumnHeaderData> columnHeaders = resultset.getColumnHeaders();
+        final List<ResultsetRowData> rowDataList = resultset.getData();
+        CheckValidationColor colorResult = CheckValidationColor.RED;
+        if (!rowDataList.isEmpty()) {
+            for (int i = 0; i < columnHeaders.size(); i++) {
+                final ResultsetColumnHeaderData columnHeaderData = columnHeaders.get(i);
+                if ("color".equals(columnHeaderData.getColumnName())) {
+                    final List<String> rowList = rowDataList.get(0).getRow();
+                    final String color = rowList.get(i);
+                    if (StringUtils.isNotEmpty(color)) {
+                        colorResult = CheckValidationColor.valueOf(color);
+                    }
+
+                }
+            }
         }
-        return checkValidationColor;
+        return colorResult;
     }
 
-    private CheckValidationColor handleIncreasePercentageCheck(final ClientData clientData,
-            final PrequalificationGroup prequalificationGroup) {
-        final CheckValidationColor checkValidationColor;
-        final Integer clientId = clientData.getClientId();
-        final Long productId = prequalificationGroup.getLoanProduct().getId();
-        BigDecimal requestedAmount = clientData.getRequestedAmount();
-        final String principalAmtSql = "SELECT COALESCE(ml.principal_amount, 0) AS principalAmount FROM m_loan ml WHERE ml.client_id = ? "
-                + "AND ml.loan_status_id IN (700, 600) ORDER BY ml.disbursedon_date DESC";
-        final List<BigDecimal> principalAmounts = jdbcTemplate.queryForList(principalAmtSql, BigDecimal.class, clientId);
-        BigDecimal previousPrincipalAmount = !principalAmounts.isEmpty() ? principalAmounts.get(0) : BigDecimal.ZERO;
-        BigDecimal percentageIncrease = BigDecimal.valueOf(100);
-        final MathContext mc = new MathContext(8, MoneyHelper.getRoundingMode());
-        if (previousPrincipalAmount.compareTo(BigDecimal.ZERO) > 0) {
-            percentageIncrease = requestedAmount.subtract(previousPrincipalAmount).multiply(BigDecimal.valueOf(100))
-                    .divide(previousPrincipalAmount, mc);
+    /**
+     * Number of members according to policy
+     */
+    private CheckValidationColor runCheck6(final GroupData groupData) {
+        String clientArea = "RURAL";
+        String clientCategorization = "NEW";
+        String recreditCategorization = "NUEVO";
+        if (!CollectionUtils.isEmpty(groupData.getMembers())) {
+            final ClientData clientData = groupData.getMembers().get(0);
+            final ClientData params = retrieveClientParams(clientData.getClientId(), clientData.getProductId());
+            clientArea = params.getClientArea();
+            recreditCategorization = params.getRecreditCategorization();
+            clientCategorization = params.getClientCategorization();
         }
-        if (List.of(2L, 9L).contains(productId) && percentageIncrease.compareTo(BigDecimal.valueOf(200)) == 0) {
-            checkValidationColor = CheckValidationColor.GREEN;
-        } else if (List.of(2L, 9L).contains(productId) && percentageIncrease.compareTo(BigDecimal.valueOf(201)) >= 0
-                && percentageIncrease.compareTo(BigDecimal.valueOf(500)) <= 0) {
-            checkValidationColor = CheckValidationColor.YELLOW;
-        } else if (List.of(2L, 9L).contains(productId) && percentageIncrease.compareTo(BigDecimal.valueOf(500)) >= 0) {
-            checkValidationColor = CheckValidationColor.RED;
-        } else if (List.of(4L, 5L).contains(productId) && percentageIncrease.compareTo(BigDecimal.valueOf(60)) <= 0) {
-            checkValidationColor = CheckValidationColor.GREEN;
-        } else if (List.of(4L, 5L).contains(productId) && percentageIncrease.compareTo(BigDecimal.valueOf(60)) > 0) {
-            checkValidationColor = CheckValidationColor.ORANGE;
-        } else {
-            checkValidationColor = CheckValidationColor.RED;
-        }
-        return checkValidationColor;
+        final String prequalificationId = String.valueOf(groupData.getId());
+        final String reportName = Policies.SIX.getName() + " Policy Check";
+        final String productId = Long.toString(groupData.getProductId());
+        final String numberOfMembers = String.valueOf(groupData.getNumberOfMembers());
+        final Map<String, String> reportParams = new HashMap<>();
+        reportParams.put("${prequalificationId}", prequalificationId);
+        reportParams.put("${loanProductId}", productId);
+        reportParams.put("${clientCategorization}", clientCategorization);
+        reportParams.put("${clientArea}", clientArea);
+        reportParams.put("${recreditCategorization}", recreditCategorization);
+        reportParams.put("${numberOfMembers}", numberOfMembers);
+        final GenericResultsetData result = this.readReportingService.retrieveGenericResultset(reportName, "report", reportParams, false);
+        return extractColorFromResultset(result);
     }
 
-    private CheckValidationColor handleMandatoryPhotographCheck() {
+    /**
+     * Minimum and maximum amount
+     */
+    private CheckValidationColor runCheck7(final GroupData groupData, final ClientData clientData) {
+        return CheckValidationColor.RED;
+    }
+
+    /**
+     * Value disparity
+     */
+    private CheckValidationColor runCheck8() {
         return CheckValidationColor.GREEN;
     }
 
-    private CheckValidationColor handleClientAgeCheck(final ClientData clientData) {
-        final CheckValidationColor checkValidationColor;
-        java.util.Date dateOfBirth = clientData.getDateOfBirth(); // .toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
-        LocalDate localDate = Instant.ofEpochMilli(dateOfBirth.getTime()).atZone(ZoneId.systemDefault()).toLocalDate();
-        LocalDate businessDate = DateUtils.getBusinessLocalDate();
-        int age = businessDate.getYear() - localDate.getYear();
-        if (age >= 20 && age <= 60) {
-            checkValidationColor = CheckValidationColor.GREEN;
-        } else {
-            checkValidationColor = CheckValidationColor.RED;
-        }
-        return checkValidationColor;
-    }
-
-    private CheckValidationColor handleNumberOfMembersAccordingToPolicyCheck(final PrequalificationGroup prequalificationGroup) {
-        final CheckValidationColor checkValidationColor;
-        final int membersCount = prequalificationGroup.getMembers().size();
-        if (membersCount > 10) {
-            checkValidationColor = CheckValidationColor.GREEN;
-        } else if (membersCount < 4) {
-            checkValidationColor = CheckValidationColor.ORANGE;
-        } else {
-            checkValidationColor = CheckValidationColor.RED;
-        }
-        return checkValidationColor;
-    }
-
-    private CheckValidationColor handleMinAndMaxAmountCheck(final PrequalificationGroup prequalificationGroup,
-            final ClientData clientData) {
-        final CheckValidationColor checkValidationColor;
-        if (BigDecimal.valueOf(1000).compareTo(ObjectUtils.defaultIfNull(clientData.getRequestedAmount(), BigDecimal.ZERO)) > 0
-                && BigDecimal.valueOf(20000).compareTo(ObjectUtils.defaultIfNull(clientData.getRequestedAmount(), BigDecimal.ZERO)) < 0) {
-            checkValidationColor = CheckValidationColor.GREEN;
-        } else {
-            checkValidationColor = CheckValidationColor.RED;
-        }
-        return checkValidationColor;
-    }
-
-    private CheckValidationColor handleDisparitiesOfValuesCheck() {
+    /**
+     * Percentage of members starting business
+     */
+    private CheckValidationColor runCheck9() {
         return CheckValidationColor.GREEN;
     }
 
-    private CheckValidationColor handlePercentageOfMemberStartingBusinessCheck() {
+    /**
+     * Percentage of members with their own home
+     */
+    private CheckValidationColor runCheck10() {
         return CheckValidationColor.GREEN;
     }
 
-    private CheckValidationColor handlePercentageOfMemberWithHomeCheck() {
+    /**
+     * President of the Board of Directors of the BC
+     */
+    private CheckValidationColor runCheck11() {
         return CheckValidationColor.GREEN;
     }
 
-    private CheckValidationColor handleChairmanBoardOfDirectorsCheck() {
+    /**
+     * General condition
+     */
+    private CheckValidationColor runCheck12() {
         return CheckValidationColor.GREEN;
     }
 
-    private CheckValidationColor handleOverallConditionCheck() {
+    /**
+     * Categories of clients to accept
+     */
+    private CheckValidationColor runCheck13() {
         return CheckValidationColor.GREEN;
     }
 
-    private CheckValidationColor handleCategoriesOfClientToAcceptCheck() {
+    /**
+     * Amount requested in relation to the current amount of main products
+     */
+    private CheckValidationColor runCheck14(final ClientData clientData) {
+        return CheckValidationColor.RED;
+    }
+
+    /**
+     * Add endorsement
+     */
+    private CheckValidationColor runCheck15() {
         return CheckValidationColor.GREEN;
     }
 
-    private CheckValidationColor handleRequestedAmountCheck(final ClientData clientData) {
-        final CheckValidationColor checkValidationColor;
-        if (BigDecimal.valueOf(3000).compareTo(ObjectUtils.defaultIfNull(clientData.getRequestedAmount(), BigDecimal.ZERO)) <= 0) {
-            checkValidationColor = CheckValidationColor.GREEN;
-        } else {
-            checkValidationColor = CheckValidationColor.RED;
-        }
-        return checkValidationColor;
-    }
-
-    private CheckValidationColor handleAddEndorsementCheck() {
+    /**
+     * Payments outside the current term of the main product
+     */
+    private CheckValidationColor runCheck16() {
         return CheckValidationColor.GREEN;
     }
 
-    private CheckValidationColor handlePaymentOutsideCurrentTermCheck() {
+    /**
+     * Percentage of members of the same group who they can have parallel product
+     */
+    private CheckValidationColor runCheck17() {
         return CheckValidationColor.GREEN;
     }
 
-    private CheckValidationColor handPercentageOfProductMemberCheck() {
+    /**
+     * Gender
+     */
+    private CheckValidationColor runCheck18(final ClientData clientData) {
+        return CheckValidationColor.RED;
+    }
+
+    /**
+     * Nationality
+     */
+    private CheckValidationColor runCheck19() {
         return CheckValidationColor.GREEN;
     }
 
-    private CheckValidationColor handleGenderCheck(final ClientData clientData) {
-        final CheckValidationColor checkValidationColor;
-        if ("Mujer".equalsIgnoreCase(clientData.getGender())) {
-            checkValidationColor = CheckValidationColor.GREEN;
-        } else {
-            checkValidationColor = CheckValidationColor.ORANGE;
-        }
-        return checkValidationColor;
-    }
-
-    private CheckValidationColor handleNationalityCheck() {
+    /**
+     * Internal Credit History
+     */
+    private CheckValidationColor runCheck20() {
         return CheckValidationColor.GREEN;
     }
 
-    private CheckValidationColor handleInternalCreditHistoryCheck() {
+    /**
+     * External Credit History
+     */
+    private CheckValidationColor runCheck21() {
         return CheckValidationColor.GREEN;
     }
 
-    private CheckValidationColor handleExternalCreditHistoryCheck() {
+    /**
+     * Do you register any lawsuit?
+     */
+    private CheckValidationColor runCheck22() {
         return CheckValidationColor.GREEN;
     }
 
-    private CheckValidationColor handleClaimedRegisteredCheck() {
+    /**
+     * Housing Type
+     */
+    private CheckValidationColor runCheck23() {
         return CheckValidationColor.GREEN;
     }
 
-    private CheckValidationColor handleHousingTypeCheck() {
+    /**
+     * Rental Age
+     */
+    private CheckValidationColor runCheck24() {
         return CheckValidationColor.GREEN;
     }
 
-    private CheckValidationColor handleRentalAgeCheck() {
+    /**
+     * Age Of Business
+     */
+    private CheckValidationColor runCheck25() {
         return CheckValidationColor.GREEN;
     }
 
-    private CheckValidationColor handleBusinessAgeCheck() {
+    /**
+     * Credits
+     */
+    private CheckValidationColor runCheck26() {
         return CheckValidationColor.GREEN;
     }
 
-    private CheckValidationColor handleCreditCheck() {
+    /**
+     * Cancelled Cycles Count
+     */
+    private CheckValidationColor runCheck27() {
         return CheckValidationColor.GREEN;
     }
 
-    private CheckValidationColor handleCancelledCyclesCheck() {
+    /**
+     * Acceptance of new clients
+     */
+    private CheckValidationColor runCheck28() {
         return CheckValidationColor.GREEN;
     }
 
-    private CheckValidationColor handleAgriculturalDiagnosisCheck() {
+    /**
+     * Present agricultural technical diagnosis (Commcare)
+     */
+    private CheckValidationColor runCheck29() {
         return CheckValidationColor.GREEN;
     }
 
-    private CheckValidationColor handleAcceptanceOfNewClientCheck() {
+    /**
+     * Age
+     */
+    private CheckValidationColor runCheck30() {
+        return CheckValidationColor.GREEN;
+    }
+
+    /**
+     * Amount
+     */
+    private CheckValidationColor runCheck31() {
+        return CheckValidationColor.GREEN;
+    }
+
+    /**
+     * Percentage of members with agricultural business
+     */
+    private CheckValidationColor runCheck32() {
+        return CheckValidationColor.GREEN;
+    }
+
+    /**
+     * Percentage of members with their own business
+     */
+    private CheckValidationColor runCheck33() {
         return CheckValidationColor.GREEN;
     }
 }

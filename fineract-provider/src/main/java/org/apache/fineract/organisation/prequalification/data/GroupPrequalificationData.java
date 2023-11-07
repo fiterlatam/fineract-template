@@ -26,6 +26,7 @@ import lombok.Data;
 import org.apache.fineract.infrastructure.configuration.data.GlobalConfigurationPropertyData;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.organisation.agency.data.AgencyData;
+import org.apache.fineract.organisation.prequalification.domain.PrequalificationSubStatus;
 import org.apache.fineract.portfolio.group.data.CenterData;
 import org.apache.fineract.portfolio.loanproduct.data.LoanProductData;
 import org.apache.fineract.useradministration.data.AppUserData;
@@ -76,6 +77,9 @@ public class GroupPrequalificationData {
     private Collection<EnumOptionData> groupStatusOptions;
     private BigDecimal totalRequestedAmount;
     private BigDecimal totalApprovedAmount;
+    private PrequalificationSubStatus substatus;
+    private String assignedUser;
+    private String assignedUserName;
 
     public GroupPrequalificationData(final Long id, final String productName, final String prequalificationNumber, final String agencyName,
             final String portforlioName, final String centerName, final String groupName, final String addedBy, final LocalDate createdAt,
@@ -113,6 +117,9 @@ public class GroupPrequalificationData {
         this.processQuality = null;
         this.totalRequestedAmount = null;
         this.totalApprovedAmount = null;
+        this.substatus = null;
+        this.assignedUser = null;
+        this.assignedUserName = null;
     }
 
     public GroupPrequalificationData(final Long id, final String productName, final String prequalificationNumber, final String agencyName,
@@ -123,7 +130,8 @@ public class GroupPrequalificationData {
             final String facilitatorName, Long greenValidationCount, Long yellowValidationCount, Long orangeValidationCount,
             Long redValidationCount, Long prequalilficationTimespan, EnumOptionData lastPrequalificationStatus, String statusChangedBy,
             LocalDate statusChangedOn, String processType, String processQuality, BigDecimal totalRequestedAmount,
-            BigDecimal totalApprovedAmount, EnumOptionData prequalificationType) {
+            BigDecimal totalApprovedAmount, EnumOptionData prequalificationType, PrequalificationSubStatus substatus, String assignedUser,
+            String assignedUserName) {
         this.id = id;
         this.productName = productName;
         this.prequalificationNumber = prequalificationNumber;
@@ -159,6 +167,9 @@ public class GroupPrequalificationData {
         this.totalRequestedAmount = totalRequestedAmount;
         this.totalApprovedAmount = totalApprovedAmount;
         this.prequalificationType = prequalificationType;
+        this.substatus = substatus;
+        this.assignedUser = assignedUser;
+        this.assignedUserName = assignedUserName;
     }
 
     public static GroupPrequalificationData template(final Collection<AgencyData> agencies, Collection<CenterData> centerData,
@@ -184,12 +195,13 @@ public class GroupPrequalificationData {
             final String facilitatorName, Long greenValidationCount, Long yellowValidationCount, Long orangeValidationCount,
             Long redValidationCount, Long prequalilficationTimespan, EnumOptionData lastPrequalificationStatus, String statusChangedBy,
             LocalDate statusChangedOn, String processType, String processQuality, BigDecimal totalRequestedAmount,
-            BigDecimal totalApprovedAmount, EnumOptionData prequalificationType) {
+            BigDecimal totalApprovedAmount, EnumOptionData prequalificationType, PrequalificationSubStatus substatus, String assignedUser,
+            String assignedUserName) {
         return new GroupPrequalificationData(id, productName, prequalificationNumber, agencyName, portfolioName, centerName, groupName,
                 addedBy, createdAt, status, comments, groupId, null, null, null, null, null, agencyId, centerId, productId, facilitatorId,
                 facilitatorName, greenValidationCount, yellowValidationCount, orangeValidationCount, redValidationCount,
                 prequalilficationTimespan, lastPrequalificationStatus, statusChangedBy, statusChangedOn, processType, processQuality,
-                totalRequestedAmount, totalApprovedAmount, prequalificationType);
+                totalRequestedAmount, totalApprovedAmount, prequalificationType, substatus, assignedUser, assignedUserName);
     }
 
     public static GroupPrequalificationData simpeGroupData(Long id, String prequalificationNumber, EnumOptionData status, String groupName,
