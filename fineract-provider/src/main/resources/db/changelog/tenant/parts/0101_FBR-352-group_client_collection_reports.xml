@@ -40,7 +40,7 @@
                 stripComments="true"/>
     </changeSet>
 
-    <changeSet author="fineract" id="5">
+    <changeSet author="fineract" id="7">
         <sql>
             UPDATE stretchy_report SET report_sql = "SELECT
             t.clientId AS 'Nro Solicitud',
