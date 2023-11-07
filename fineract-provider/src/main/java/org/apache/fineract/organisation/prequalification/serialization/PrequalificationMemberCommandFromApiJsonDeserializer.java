@@ -49,8 +49,9 @@ public final class PrequalificationMemberCommandFromApiJsonDeserializer {
             Arrays.asList("id", "clientId", "name", "dpi", "dob", "locale", "dateFormat", "amount", "puente", "individual",
                     "workWithPuente", "productId", "members", "prequalilficationTimespan", "status", "groupPresident"));
 
-    private final Set<String> supportedParametersForUpdate = new HashSet<>(Arrays.asList("id", "clientId", "name", "dpi", "dob", "locale",
-            "dateFormat", "amount", "puente", "individual", "productId", "members", "prequalilficationTimespan", "status", "groupPresident"));
+    private final Set<String> supportedParametersForUpdate = new HashSet<>(
+            Arrays.asList("id", "clientId", "name", "dpi", "dob", "locale", "dateFormat", "amount", "puente", "individual", "productId",
+                    "members", "prequalilficationTimespan", "status", "groupPresident"));
 
     @Autowired
     public PrequalificationMemberCommandFromApiJsonDeserializer(final FromJsonHelper fromApiJsonHelper) {

@@ -33,8 +33,8 @@ import org.apache.fineract.infrastructure.core.domain.AbstractAuditableCustom;
 @Table(name = "m_checklist_validation_result")
 public class ValidationChecklistResult extends AbstractAuditableCustom {
 
-    @Column(name = "checklist_category_id")
-    private Integer categoryId;
+    @Column(name = "policy_id")
+    private Integer policyId;
 
     @Column(name = "prequalification_id")
     private Long prequalificationId;
@@ -43,7 +43,7 @@ public class ValidationChecklistResult extends AbstractAuditableCustom {
     private Integer prequalificationMemberId;
 
     @Column(name = "client_id")
-    private Integer clientId;
+    private Long clientId;
 
     @Column(name = "prequalification_type")
     private Integer prequalificationType;

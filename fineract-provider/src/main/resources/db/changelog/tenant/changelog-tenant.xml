@@ -119,5 +119,6 @@
     <include file="parts/0100_FBR_348_create_prequalification_status_range.xml" relativeToChangelogFile="true"/>
     <include file="parts/0101_FBR-352-group_client_collection_reports.xml" relativeToChangelogFile="true"/>
     <include file="parts/0102_FBR_366_Add_sub_status_prequalifications.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0103_FBR_372_hard_policy_check_sql_redesign.xml" relativeToChangelogFile="true"/>
     <include file="parts/0104_FBR_369_create_charge_admin_fee_configurations.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

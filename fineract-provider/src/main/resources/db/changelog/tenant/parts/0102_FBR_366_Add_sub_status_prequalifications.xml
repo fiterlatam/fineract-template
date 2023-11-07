@@ -34,4 +34,16 @@
         </addColumn>
     </changeSet>
 
+
+
+    <changeSet id="2" author="fineract">
+        <insert tableName="m_permission">
+            <column name="grouping" value="organisation" />
+            <column name="code" value="ASSIGN_PREQUALIFICATIONS"/>
+            <column name="entity_name" value="PREQUALIFICATIONS" />
+            <column name="action_name" value="ASSIGN" />
+            <column name="can_maker_checker" valueBoolean="false" />
+        </insert>
+    </changeSet>
+
 </databaseChangeLog>
