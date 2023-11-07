@@ -27,8 +27,7 @@ public enum PrequalificationSubStatus {
 
     PENDING(100, "prequalification.status.pending"), //
     IN_PROGRESS(200, "prequalification.status.approved"), //
-    COMPLETED(300, "prequalification.status.rejected"),
-    INVALID(999, "prequalification.status.rejected");
+    COMPLETED(300, "prequalification.status.rejected"), INVALID(999, "prequalification.status.rejected");
 
     private final Integer value;
     private final String code;
@@ -67,7 +66,7 @@ public enum PrequalificationSubStatus {
             clientStatus = PrequalificationSubStatus.PENDING;
         } else if (status.equalsIgnoreCase(PrequalificationSubStatus.IN_PROGRESS.toString())) {
             clientStatus = PrequalificationSubStatus.IN_PROGRESS;
-        }  else if (status.equalsIgnoreCase(PrequalificationSubStatus.COMPLETED.toString())) {
+        } else if (status.equalsIgnoreCase(PrequalificationSubStatus.COMPLETED.toString())) {
             clientStatus = PrequalificationSubStatus.COMPLETED;
         } else {
             clientStatus = PrequalificationSubStatus.INVALID;

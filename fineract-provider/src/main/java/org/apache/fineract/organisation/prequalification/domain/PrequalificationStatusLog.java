@@ -61,7 +61,6 @@ public class PrequalificationStatusLog extends AbstractPersistableCustom {
     @JoinColumn(name = "assigned_to", nullable = false)
     private AppUser assignedTo;
 
-
     protected PrequalificationStatusLog() {
         //
     }
@@ -84,6 +83,7 @@ public class PrequalificationStatusLog extends AbstractPersistableCustom {
     public void updateAssignedTo(final AppUser assignedTo) {
         this.assignedTo = assignedTo;
     }
+
     public void updateSubStatus(final Integer subStatus) {
         this.subStatus = subStatus;
     }

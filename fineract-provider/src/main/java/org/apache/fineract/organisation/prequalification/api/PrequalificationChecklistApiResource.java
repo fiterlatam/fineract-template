@@ -132,14 +132,13 @@ public class PrequalificationChecklistApiResource {
         } else if (is(commandParam, "approveanalysis")) {
             final CommandWrapper validateCommandRequest = builder.processAnalysisRequest(prequalificationId).build();
             result = this.commandsSourceWritePlatformService.logCommandSource(validateCommandRequest);
-        }else if (is(commandParam, "assigntoself")) {
+        } else if (is(commandParam, "assigntoself")) {
             final CommandWrapper validateCommandRequest = builder.assigntoPrequalificationSelf(prequalificationId).build();
             result = this.commandsSourceWritePlatformService.logCommandSource(validateCommandRequest);
         } else {
             final CommandWrapper commandRequest = builder.processAnalysisRequest(prequalificationId).build();
             result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
         }
-
 
         return this.toApiJsonSerializer.serialize(result);
     }
