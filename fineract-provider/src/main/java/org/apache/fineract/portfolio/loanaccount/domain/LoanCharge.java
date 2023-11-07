@@ -48,6 +48,7 @@ import org.apache.fineract.organisation.monetary.domain.MoneyHelper;
 import org.apache.fineract.portfolio.charge.domain.Charge;
 import org.apache.fineract.portfolio.charge.domain.ChargeCalculationType;
 import org.apache.fineract.portfolio.charge.domain.ChargeDisbursementType;
+import org.apache.fineract.portfolio.charge.domain.ChargeInstallmentFeeType;
 import org.apache.fineract.portfolio.charge.domain.ChargePaymentMode;
 import org.apache.fineract.portfolio.charge.domain.ChargeTimeType;
 import org.apache.fineract.portfolio.charge.exception.LoanChargeWithoutMandatoryFieldException;
@@ -128,6 +129,9 @@ public class LoanCharge extends AbstractPersistableCustom {
 
     @Column(name = "charge_disbursement_type_enum", nullable = false)
     private Integer chargeDisbursementType;
+
+    @Column(name = "charge_installment_fee_type_enum", nullable = false)
+    private Integer chargeInstallmentFeeType;
 
     @OneToOne(mappedBy = "loancharge", cascade = CascadeType.ALL, optional = true, orphanRemoval = true, fetch = FetchType.EAGER)
     private LoanOverdueInstallmentCharge overdueInstallmentCharge;
@@ -211,6 +215,7 @@ public class LoanCharge extends AbstractPersistableCustom {
         final String externalId = command.stringValueOfParameterNamedAllowingNull("externalId");
         newLoanCharge.setExternalId(externalId);
         newLoanCharge.setChargeDisbursementType(chargeDefinition.getChargeDisbursementType());
+        newLoanCharge.setChargeInstallmentFeeType(chargeDefinition.getChargeInstallmentFeeType());
         return newLoanCharge;
     }
 
@@ -235,9 +240,10 @@ public class LoanCharge extends AbstractPersistableCustom {
         this.charge = chargeDefinition;
         this.penaltyCharge = chargeDefinition.isPenalty();
         this.minCap = chargeDefinition.getMinCap();
+        this.minCap = chargeDefinition.getMinCap();
         this.maxCap = chargeDefinition.getMaxCap();
         this.chargeDisbursementType = chargeDefinition.getChargeDisbursementType();
-
+        this.chargeInstallmentFeeType = chargeDefinition.getChargeInstallmentFeeType();
         this.chargeTime = chargeDefinition.getChargeTimeType();
         if (chargeTime != null) {
             this.chargeTime = chargeTime.getValue();
@@ -1102,8 +1108,20 @@ public class LoanCharge extends AbstractPersistableCustom {
         this.chargeDisbursementType = chargeDisbursementType;
     }
 
+    public Integer getChargeInstallmentFeeType() {
+        return chargeInstallmentFeeType;
+    }
+
+    public void setChargeInstallmentFeeType(Integer chargeInstallmentFeeType) {
+        this.chargeInstallmentFeeType = chargeInstallmentFeeType;
+    }
+
     public boolean isAddOnDisbursementType() {
         return ChargeDisbursementType.fromInt(this.chargeDisbursementType).equals(ChargeDisbursementType.ADD_ON);
+    }
+
+    public boolean isAddOnInstallmentFeeType() {
+        return ChargeInstallmentFeeType.fromInt(this.chargeInstallmentFeeType).equals(ChargeInstallmentFeeType.ADD_ON);
     }
 
 }
