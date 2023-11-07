@@ -839,7 +839,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         this.preQualificationLogRepository.saveAndFlush(newStatusLog);
 
         List<PrequalificationStatusLog> currentLogs = this.preQualificationLogRepository.groupStatusLogs(fromStatus, prequalificationGroup);
-        if (!currentLogs.isEmpty()){
+        if (!currentLogs.isEmpty()) {
             PrequalificationStatusLog currentStatusLog = currentLogs.get(0);
             currentStatusLog.updateSubStatus(PrequalificationSubStatus.COMPLETED.getValue());
             this.preQualificationLogRepository.save(currentStatusLog);
@@ -855,9 +855,10 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
 
         Integer status = prequalificationGroup.getStatus();
         List<PrequalificationStatusLog> statusLogList = this.preQualificationLogRepository.groupStatusLogs(status, prequalificationGroup);
-        if (statusLogList.isEmpty()) throw new PrequalificationStatusNotCompletedException(PrequalificationStatus.fromInt(status).toString());
+        if (statusLogList.isEmpty())
+            throw new PrequalificationStatusNotCompletedException(PrequalificationStatus.fromInt(status).toString());
 
-        //retrieve latest log update assignee
+        // retrieve latest log update assignee
         PrequalificationStatusLog prequalificationStatusLog = statusLogList.get(0);
         prequalificationStatusLog.updateSubStatus(PrequalificationSubStatus.IN_PROGRESS.getValue());
         prequalificationStatusLog.updateAssignedTo(currentUser);

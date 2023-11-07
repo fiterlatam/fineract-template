@@ -19,6 +19,7 @@
 package org.apache.fineract.organisation.prequalification.data;
 
 import java.math.BigDecimal;
+import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 
@@ -29,5 +30,6 @@ public class GroupData {
     private Long id;
     private Long productId;
     private BigDecimal requestedAmount;
-    private Integer noOfMembers;
+    private Integer numberOfMembers;
+    private List<ClientData> members;
 }

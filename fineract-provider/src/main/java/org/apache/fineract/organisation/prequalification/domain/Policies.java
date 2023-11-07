@@ -53,19 +53,17 @@ public enum Policies {
                                                                                                                                                     27,
                                                                                                                                                     "Cancelled Cycles Count"), TWENTY_EIGHT(
                                                                                                                                                             28,
-                                                                                                                                                            "Mandatory to attach photographs and investment plan"), TWENTY_NINE(
+                                                                                                                                                            " Acceptance of new clients"), TWENTY_NINE(
                                                                                                                                                                     29,
-                                                                                                                                                                    " Acceptance of new clients"), THIRTY(
+                                                                                                                                                                    "Present agricultural technical diagnosis (Commcare)"), THIRTY(
                                                                                                                                                                             30,
-                                                                                                                                                                            "Present agricultural technical diagnosis (Commcare)"), THIRTY_ONE(
+                                                                                                                                                                            "Age"), THIRTY_ONE(
                                                                                                                                                                                     31,
-                                                                                                                                                                                    "Age"), THIRTY_TWO(
+                                                                                                                                                                                    "Amount"), THIRTY_TWO(
                                                                                                                                                                                             32,
-                                                                                                                                                                                            "Amount"), THIRTY_THREE(
+                                                                                                                                                                                            "Percentage of members with agricultural business"), THIRTY_THREE(
                                                                                                                                                                                                     33,
-                                                                                                                                                                                                    "Percentage of members with agricultural business"), THIRTY_FOUR(
-                                                                                                                                                                                                            34,
-                                                                                                                                                                                                            "Percentage of members with their own business");
+                                                                                                                                                                                                    "Percentage of members with their own business");
 
     private final Integer id;
     private final String name;

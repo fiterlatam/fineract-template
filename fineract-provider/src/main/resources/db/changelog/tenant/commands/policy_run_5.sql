@@ -63,7 +63,7 @@ VALUES ("Client age Policy Check", "Table", "Prequalification",
       WHEN (${loanProductId} = 8) AND ('${clientCategorization}' = 'NEW') AND (IFNULL(client_age.client_age, 0) BETWEEN 71 AND 75) THEN 'YELLOW'
       WHEN (${loanProductId} = 8) AND ('${clientCategorization}' = 'NEW') AND (IFNULL(client_age.client_age, 0) NOT BETWEEN 18 AND 75) THEN 'RED'
       WHEN (${loanProductId} = 8) AND ('${clientCategorization}' = 'RECURRING') AND (IFNULL(client_age.client_age, 0) BETWEEN 18 AND 75) THEN 'GREEN'
-      WHEN (${loanProductId} = 9) AND ('${clientCategorization}' = 'RECURRING') AND (IFNULL(client_age.client_age, 0) NOT BETWEEN 18 AND 75) THEN 'RED'
+      WHEN (${loanProductId} = 8) AND ('${clientCategorization}' = 'RECURRING') AND (IFNULL(client_age.client_age, 0) NOT BETWEEN 18 AND 75) THEN 'RED'
 
 
       -- Grupo Solidario

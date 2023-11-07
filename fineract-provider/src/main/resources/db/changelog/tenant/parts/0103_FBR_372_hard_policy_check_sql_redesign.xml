@@ -127,5 +127,13 @@
                                  initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT"
                                  referencedColumnNames="id" referencedTableName="m_policy" validate="true"/>
     </changeSet>
+    <changeSet author="fineract" id="12">
+        <sqlFile
+                encoding="utf8"
+                path="db/changelog/tenant/commands/policy_run_6.sql"
+                relativeToChangelogFile="false"
+                splitStatements="true"
+                stripComments="true"/>
+    </changeSet>
 
 </databaseChangeLog>

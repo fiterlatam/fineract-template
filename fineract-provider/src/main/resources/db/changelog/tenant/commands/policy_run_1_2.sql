@@ -40,67 +40,69 @@
 INSERT INTO stretchy_report (report_name,report_type,report_category,report_sql,description,core_report,use_report,self_service_user_report)
 VALUES ("Client Categorization Policy Check", "Table", "Prequalification",
 "SELECT CASE
-      -- Banco Comunal normal
-      WHEN (${loanProductId} = 2) AND (IFNULL(client_cycles.number_of_loan_cycles, 0) > 0) THEN 'RECURRING'
-      WHEN (${loanProductId} = 2) AND (IFNULL(client_cycles.number_of_loan_cycles, 0) = 0) THEN 'NEW'
-      WHEN (${loanProductId} = 2) AND (IFNULL(client_years.rejoining_years, 0) >= 1 OR IFNULL(client_closed_loans.number_of_closed_loans, 0) <= 2) THEN 'NEW'
+       WHEN (${loanProductId} = 2) AND (IFNULL(client_loan_details.number_of_loan_cycles, 0) > 0) THEN 'RECURRING'
+       WHEN (${loanProductId} = 2) AND (IFNULL(client_loan_details.number_of_loan_cycles, 0) = 0) THEN 'NEW'
+       WHEN (${loanProductId} = 2) AND (IFNULL(client_loan_details.rejoining_years, 0) >= 1 OR IFNULL(client_loan_details.number_of_closed_loans, 0) <= 2) THEN 'NEW'
 
-      -- Banco Comunal temporal
-      WHEN (${loanProductId} = 9) AND (IFNULL(client_cycles.number_of_loan_cycles, 0) > 0) THEN 'RECURRING'
-      WHEN (${loanProductId} = 9) AND (IFNULL(client_cycles.number_of_loan_cycles, 0) = 0) THEN 'NEW'
-      WHEN (${loanProductId} = 9) AND (IFNULL(client_years.rejoining_years, 0) >= 1) THEN 'NEW'
-      WHEN (${loanProductId} = 9) AND (IFNULL(client_closed_loans.number_of_closed_loans, 0) > 0) THEN 'NEW'
+       WHEN (${loanProductId} = 9) AND (IFNULL(client_loan_details.number_of_loan_cycles, 0) > 0) THEN 'RECURRING'
+       WHEN (${loanProductId} = 9) AND (IFNULL(client_loan_details.number_of_loan_cycles, 0) = 0) THEN 'NEW'
+       WHEN (${loanProductId} = 9) AND (IFNULL(client_loan_details.rejoining_years, 0) >= 1) THEN 'NEW'
+       WHEN (${loanProductId} = 9) AND (IFNULL(client_loan_details.number_of_closed_loans, 0) > 0) THEN 'NEW'
 
-      -- Banco Comunal Agricola
-      WHEN (${loanProductId} = 8) AND (IFNULL(client_cycles.number_of_loan_cycles, 0) > 0) THEN 'RECURRING'
-      WHEN (${loanProductId} = 8) AND (IFNULL(client_cycles.number_of_loan_cycles, 0) = 0) THEN 'NEW'
-      WHEN (${loanProductId} = 8) AND (IFNULL(client_years.rejoining_years, 0) >= 1) THEN 'NEW'
-      WHEN (${loanProductId} = 8) AND (IFNULL(client_closed_loans.number_of_closed_loans, 0) > 0) THEN 'NEW'
+       WHEN (${loanProductId} = 8) AND (IFNULL(client_loan_details.number_of_loan_cycles, 0) > 0) THEN 'RECURRING'
+       WHEN (${loanProductId} = 8) AND (IFNULL(client_loan_details.number_of_loan_cycles, 0) = 0) THEN 'NEW'
+       WHEN (${loanProductId} = 8) AND (IFNULL(client_loan_details.rejoining_years, 0) >= 1) THEN 'NEW'
+       WHEN (${loanProductId} = 8) AND (IFNULL(client_loan_details.number_of_closed_loans, 0) > 0) THEN 'NEW'
 
-      -- Grupo Solidario
-      WHEN (${loanProductId} = 4) AND (IFNULL(client_closed_loans.number_of_closed_loans, 0) >= 3) THEN 'RECURRING'
-      WHEN (${loanProductId} = 4) AND (IFNULL(client_cycles.number_of_loan_cycles, 0) = 0) THEN 'NEW'
-      WHEN (${loanProductId} = 4) AND (IFNULL(client_years.rejoining_years, 0) >= 1) THEN 'NEW'
-      WHEN (${loanProductId} = 4) AND (IFNULL(client_closed_loans.number_of_closed_loans, 0) > 0) THEN 'NEW'
+       WHEN (${loanProductId} = 4) AND (IFNULL(client_loan_details.number_of_closed_loans, 0) >= 3) THEN 'RECURRING'
+       WHEN (${loanProductId} = 4) AND (IFNULL(client_loan_details.number_of_loan_cycles, 0) = 0) THEN 'NEW'
+       WHEN (${loanProductId} = 4) AND (IFNULL(client_loan_details.rejoining_years, 0) >= 1) THEN 'NEW'
+       WHEN (${loanProductId} = 4) AND (IFNULL(client_loan_details.number_of_closed_loans, 0) > 0) THEN 'NEW'
 
-      -- Grupo Solidario Agricola
-      WHEN (${loanProductId} = 5) AND (IFNULL(client_closed_loans.number_of_closed_loans, 0) >= 3) THEN 'RECURRING'
-      WHEN (${loanProductId} = 5) AND (IFNULL(client_cycles.number_of_loan_cycles, 0) = 0) THEN 'NEW'
-      WHEN (${loanProductId} = 5) AND (IFNULL(client_years.rejoining_years, 0) >= 1) THEN 'NEW'
-      WHEN (${loanProductId} = 5) AND (IFNULL(client_closed_loans.number_of_closed_loans, 0) > 0) THEN 'NEW'
+       WHEN (${loanProductId} = 5) AND (IFNULL(client_loan_details.number_of_closed_loans, 0) >= 3) THEN 'RECURRING'
+       WHEN (${loanProductId} = 5) AND (IFNULL(client_loan_details.number_of_loan_cycles, 0) = 0) THEN 'NEW'
+       WHEN (${loanProductId} = 5) AND (IFNULL(client_loan_details.rejoining_years, 0) >= 1) THEN 'NEW'
+       WHEN (${loanProductId} = 5) AND (IFNULL(client_loan_details.number_of_closed_loans, 0) > 0) THEN 'NEW'
 
-      -- PARALELO
-      WHEN (${loanProductId} = 7) AND (IFNULL(client_closed_loans.number_of_closed_loans, 0) >= 3) THEN 'RECURRING'
-      WHEN (${loanProductId} = 7) AND (IFNULL(client_closed_loans.number_of_closed_loans, 0) = 2) THEN 'RECURRING'
-      WHEN (${loanProductId} = 7) AND (IFNULL(client_closed_loans.number_of_closed_loans, 0) < 2) THEN 'RECURRING'
+       WHEN (${loanProductId} = 7) AND (IFNULL(client_loan_details.number_of_closed_loans, 0) >= 3) THEN 'RECURRING'
+       WHEN (${loanProductId} = 7) AND (IFNULL(client_loan_details.number_of_closed_loans, 0) = 2) THEN 'RECURRING'
+       WHEN (${loanProductId} = 7) AND (IFNULL(client_loan_details.number_of_closed_loans, 0) < 2) THEN 'RECURRING'
 
-      -- CHANIM-CHANIM
-      WHEN (${loanProductId} = 3) AND (IFNULL(client_closed_loans.number_of_closed_loans, 0) >= 1) THEN 'RECURRING'
-      WHEN (${loanProductId} = 3) AND (IFNULL(client_closed_loans.number_of_closed_loans, 0) = 0) THEN 'RECURRING'
+       WHEN (${loanProductId} = 3) AND (IFNULL(client_loan_details.number_of_closed_loans, 0) >= 1) THEN 'RECURRING'
+       WHEN (${loanProductId} = 3) AND (IFNULL(client_loan_details.number_of_closed_loans, 0) = 0) THEN 'RECURRING'
 
-      ELSE 'NEW'
- END AS clientCategorization,
- 'GREEN' AS color,
- client_years.submittedon_years,
- client_years.rejoining_years,
- client_cycles.number_of_loan_cycles,
- client_closed_loans.number_of_closed_loans
- FROM m_client mc
- LEFT JOIN (
-     SELECT mcl.id AS client_id,
-     TIMESTAMPDIFF(YEAR, mcl.submittedon_date, CURDATE()) AS submittedon_years,
-     IFNULL(TIMESTAMPDIFF(YEAR, mcl.submittedon_date, mcl.reactivated_on_date), 0) AS rejoining_years
-     FROM  m_client mcl
- )client_years ON client_years.client_id = mc.id
- LEFT JOIN (
-     SELECT COALESCE(MAX(mcl.loan_counter), 0) AS number_of_loan_cycles , mcl.client_id AS client_id FROM m_loan mcl GROUP BY mcl.client_id
- )client_cycles ON client_cycles.client_id = mc.id
- LEFT JOIN (
-     SELECT COALESCE(COUNT(*), 0) AS number_of_closed_loans, mln.client_id AS client_id FROM m_loan mln WHERE mln.loan_status_id IN (700, 600, 602, 601) GROUP BY mln.client_id
- ) client_closed_loans ON client_closed_loans.client_id = mc.id
- WHERE mc.id = ${clientId}
- GROUP BY mc.id
-", "Client Categorization Policy Check", 0, 0, 0);
+       ELSE 'NEW'
+  END AS clientCategorization,
+  'GREEN' AS color,
+  CASE
+          WHEN client_area.code_value = 'Urbana' THEN 'URBANA'
+          WHEN client_area.code_value = 'Rural' THEN 'RURAL'
+          WHEN client_area.code_value = 'PeriUrbana' THEN 'PERI_URBANA'
+          ELSE 'RURAL'
+  END AS clientArea,
+  CASE
+          WHEN COALESCE(client_loan_details.number_of_submitted_loans, 0) > 0 THEN 'RECREDITO'
+          ELSE 'NUEVO'
+  END AS recreditCategorization,
+  client_loan_details.submittedon_years,
+  client_loan_details.rejoining_years,
+  client_loan_details.number_of_loan_cycles,
+  client_loan_details.number_of_closed_loans,
+  client_loan_details.number_of_submitted_loans
+  FROM m_client mc
+  INNER JOIN (
+      SELECT mcl.id AS client_id,
+      TIMESTAMPDIFF(YEAR, mcl.submittedon_date, CURDATE()) AS submittedon_years,
+      IFNULL(TIMESTAMPDIFF(YEAR, mcl.submittedon_date, mcl.reactivated_on_date), 0) AS rejoining_years,
+      COALESCE((SELECT COUNT(*) FROM m_loan WHERE client_id =  ${clientId} AND approvedon_date IS NOT NULL), 0) AS number_of_loan_cycles,
+      COALESCE((SELECT COUNT(*) FROM m_loan WHERE client_id =  ${clientId} AND loan_status_id >= 600), 0) AS number_of_closed_loans,
+      COALESCE((SELECT COUNT(*) FROM m_loan WHERE client_id =  ${clientId} AND loan_status_id = 100), 0) AS number_of_submitted_loans
+      FROM  m_client mcl
+  )client_loan_details ON client_loan_details.client_id = mc.id
+  LEFT JOIN m_client_contact_info mcci ON mcci.client_id = mc.id
+  LEFT JOIN m_code_value client_area ON client_area.id = mcci.area
+  WHERE mc.id = ${clientId}
+  GROUP BY mc.id", "Client Categorization Policy Check", 0, 0, 0);
 
 INSERT INTO stretchy_report_parameter
 (report_id, parameter_id, report_parameter_name)

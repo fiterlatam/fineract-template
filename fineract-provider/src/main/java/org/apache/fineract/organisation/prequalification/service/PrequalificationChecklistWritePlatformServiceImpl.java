@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import javax.transaction.Transactional;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuilder;
@@ -60,6 +61,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 
 @Service
 @AllArgsConstructor
@@ -73,6 +75,7 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
     private final PlatformSecurityContext platformSecurityContext;
     private final JdbcTemplate jdbcTemplate;
     final PolicyMapper policyMapper = new PolicyMapper();
+    final ClientDataMapper clientDataMapper = new ClientDataMapper();
     private final ReadReportingService readReportingService;
 
     @Override
@@ -81,12 +84,13 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
         AppUser appUser = this.context.authenticatedUser();
         PrequalificationGroup prequalificationGroup = this.prequalificationGroupRepositoryWrapper
                 .findOneWithNotFoundDetection(prequalificationId);
+        List<ClientData> clientDatas = this.jdbcTemplate.query(clientDataMapper.schema(), clientDataMapper, prequalificationId);
         final Long productId = prequalificationGroup.getLoanProduct().getId();
         final Integer noOfMembers = prequalificationGroup.getMembers().size();
         final BigDecimal totalAmountRequested = prequalificationGroup.getMembers().stream()
                 .map(PrequalificationGroupMember::getRequestedAmount).reduce(BigDecimal.ONE, BigDecimal::add);
-        final GroupData groupData = GroupData.builder().id(prequalificationId).productId(productId).noOfMembers(noOfMembers)
-                .requestedAmount(totalAmountRequested).build();
+        final GroupData groupData = GroupData.builder().id(prequalificationId).productId(productId).numberOfMembers(noOfMembers)
+                .requestedAmount(totalAmountRequested).members(clientDatas).build();
         Integer fromStatus = prequalificationGroup.getStatus();
         List<ValidationChecklistResult> validationChecklistResults = new ArrayList<>();
         final List<PolicyData> groupPolicies = this.jdbcTemplate.query(this.policyMapper.schema(), this.policyMapper, productId,
@@ -114,8 +118,6 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
         }
 
         for (PolicyData policyCategoryData : individualPolicies) {
-            final ClientDataMapper clientDataMapper = new ClientDataMapper();
-            List<ClientData> clientDatas = this.jdbcTemplate.query(clientDataMapper.schema(), clientDataMapper, prequalificationId);
             for (final ClientData clientData : clientDatas) {
                 clientData.setProductId(productId);
                 ValidationChecklistResult validationChecklistResult = new ValidationChecklistResult();
@@ -243,7 +245,6 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
             case THIRTY_ONE -> checkValidationColor = this.runCheck31();
             case THIRTY_TWO -> checkValidationColor = this.runCheck32();
             case THIRTY_THREE -> checkValidationColor = this.runCheck33();
-            case THIRTY_FOUR -> checkValidationColor = this.runCheck34();
             default -> checkValidationColor = CheckValidationColor.INVALID;
         }
         return checkValidationColor;
@@ -300,18 +301,17 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
         final String clientId = String.valueOf(clientData.getClientId());
         final String reportName = Policies.FIVE.getName() + " Policy Check";
         final String productId = Long.toString(clientData.getProductId());
-        final String clientCategorization = retrieveClientCategorization(clientData.getClientId(), clientData.getProductId());
+        final ClientData params = retrieveClientParams(clientData.getClientId(), clientData.getProductId());
         final Map<String, String> reportParams = new HashMap<>();
         reportParams.put("${clientId}", clientId);
         reportParams.put("${loanProductId}", productId);
-        reportParams.put("${clientCategorization}", clientCategorization);
+        reportParams.put("${clientCategorization}", params.getClientCategorization());
         final GenericResultsetData result = this.readReportingService.retrieveGenericResultset(reportName, "report", reportParams, false);
         return extractColorFromResultset(result);
     }
 
-    private String retrieveClientCategorization(final Long clientId, final Long productId) {
+    private ClientData retrieveClientParams(final Long clientId, final Long productId) {
         final String reportName = "Client Categorization Policy Check";
-        ;
         Map<String, String> reportParams = new HashMap<>();
         reportParams.put("${clientId}", String.valueOf(clientId));
         reportParams.put("${loanProductId}", String.valueOf(productId));
@@ -319,6 +319,8 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
         final List<ResultsetColumnHeaderData> columnHeaders = result.getColumnHeaders();
         List<ResultsetRowData> rowDataList = result.getData();
         String clientCategorization = "NEW";
+        String clientArea = "RURAL";
+        String recreditCategorization = "NUEVO";
         if (!rowDataList.isEmpty()) {
             for (int i = 0; i < columnHeaders.size(); i++) {
                 final ResultsetColumnHeaderData columnHeaderData = columnHeaders.get(i);
@@ -326,9 +328,18 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
                     List<String> rowList = rowDataList.get(0).getRow();
                     clientCategorization = rowList.get(i);
                 }
+                if ("clientArea".equals(columnHeaderData.getColumnName())) {
+                    List<String> rowList = rowDataList.get(0).getRow();
+                    clientArea = rowList.get(i);
+                }
+                if ("recreditCategorization".equals(columnHeaderData.getColumnName())) {
+                    List<String> rowList = rowDataList.get(0).getRow();
+                    recreditCategorization = rowList.get(i);
+                }
             }
         }
-        return clientCategorization;
+        return ClientData.builder().clientArea(clientArea).clientCategorization(clientCategorization)
+                .recreditCategorization(recreditCategorization).build();
     }
 
     private CheckValidationColor extractColorFromResultset(final GenericResultsetData resultset) {
@@ -341,7 +352,10 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
                 if ("color".equals(columnHeaderData.getColumnName())) {
                     final List<String> rowList = rowDataList.get(0).getRow();
                     final String color = rowList.get(i);
-                    colorResult = CheckValidationColor.valueOf(color);
+                    if (StringUtils.isNotEmpty(color)) {
+                        colorResult = CheckValidationColor.valueOf(color);
+                    }
+
                 }
             }
         }
@@ -352,7 +366,29 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
      * Number of members according to policy
      */
     private CheckValidationColor runCheck6(final GroupData groupData) {
-        return CheckValidationColor.RED;
+        String clientArea = "RURAL";
+        String clientCategorization = "NEW";
+        String recreditCategorization = "NUEVO";
+        if (!CollectionUtils.isEmpty(groupData.getMembers())) {
+            final ClientData clientData = groupData.getMembers().get(0);
+            final ClientData params = retrieveClientParams(clientData.getClientId(), clientData.getProductId());
+            clientArea = params.getClientArea();
+            recreditCategorization = params.getRecreditCategorization();
+            clientCategorization = params.getClientCategorization();
+        }
+        final String prequalificationId = String.valueOf(groupData.getId());
+        final String reportName = Policies.SIX.getName() + " Policy Check";
+        final String productId = Long.toString(groupData.getProductId());
+        final String numberOfMembers = String.valueOf(groupData.getNumberOfMembers());
+        final Map<String, String> reportParams = new HashMap<>();
+        reportParams.put("${prequalificationId}", prequalificationId);
+        reportParams.put("${loanProductId}", productId);
+        reportParams.put("${clientCategorization}", clientCategorization);
+        reportParams.put("${clientArea}", clientArea);
+        reportParams.put("${recreditCategorization}", recreditCategorization);
+        reportParams.put("${numberOfMembers}", numberOfMembers);
+        final GenericResultsetData result = this.readReportingService.retrieveGenericResultset(reportName, "report", reportParams, false);
+        return extractColorFromResultset(result);
     }
 
     /**
@@ -503,51 +539,44 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
     }
 
     /**
-     * Mandatory to attach photographs and investment plan
+     * Acceptance of new clients
      */
     private CheckValidationColor runCheck28() {
         return CheckValidationColor.GREEN;
     }
 
     /**
-     * Acceptance of new clients
+     * Present agricultural technical diagnosis (Commcare)
      */
     private CheckValidationColor runCheck29() {
         return CheckValidationColor.GREEN;
     }
 
     /**
-     * Present agricultural technical diagnosis (Commcare)
+     * Age
      */
     private CheckValidationColor runCheck30() {
         return CheckValidationColor.GREEN;
     }
 
     /**
-     * Age
+     * Amount
      */
     private CheckValidationColor runCheck31() {
         return CheckValidationColor.GREEN;
     }
 
     /**
-     * Amount
+     * Percentage of members with agricultural business
      */
     private CheckValidationColor runCheck32() {
         return CheckValidationColor.GREEN;
     }
 
     /**
-     * Percentage of members with agricultural business
-     */
-    private CheckValidationColor runCheck33() {
-        return CheckValidationColor.GREEN;
-    }
-
-    /**
      * Percentage of members with their own business
      */
-    private CheckValidationColor runCheck34() {
+    private CheckValidationColor runCheck33() {
         return CheckValidationColor.GREEN;
     }
 }

@@ -69,13 +69,12 @@ INSERT INTO m_policy (id, name, label, description) VALUES(24, 'Rental Age', 'la
 INSERT INTO m_policy (id, name, label, description) VALUES(25, 'Age Of Business', 'label.category.businessage', 'Antigüedad del negocio');
 INSERT INTO m_policy (id, name, label, description) VALUES(26, 'Credits', 'label.category.credits', 'Recréditos');
 INSERT INTO m_policy (id, name, label, description) VALUES(27, 'Cancelled Cycles Count', 'label.category.cyclescount', 'Cantidade ciclos cancelados como grupo');
-INSERT INTO m_policy (id, name, label, description) VALUES(28, 'Mandatory to attach photographs and investment plan', 'label.category.mandatoryphotos', 'Obligatorio adjuntar fotografías y plan de inversión');
-INSERT INTO m_policy (id, name, label, description) VALUES(29, ' Acceptance of new clients', 'label.category.newclientsacceptance', 'Aceptación de clientas nuevas');
-INSERT INTO m_policy (id, name, label, description) VALUES(30, 'Present agricultural technical diagnosis (Commcare)', 'label.category.agricultural.diagnosis', 'Presentar diagnótico técnico agrícola (Commcare)');
-INSERT INTO m_policy (id, name, label, description) VALUES(31, 'Age', 'label.category.clientage', 'Edad');
-INSERT INTO m_policy (id, name, label, description) VALUES(32, 'Amount', 'label.category.amount', 'Monto');
-INSERT INTO m_policy (id, name, label, description) VALUES(33, 'Percentage of members with agricultural business', 'label.agribusiness.percentage', 'Porcentaje de integrantes con negocio agrícola');
-INSERT INTO m_policy (id, name, label, description) VALUES(34, 'Percentage of members with their own business', 'label.own.business.percentage', 'Porcentaje de integrantes con negocio propia');
+INSERT INTO m_policy (id, name, label, description) VALUES(28, ' Acceptance of new clients', 'label.category.newclientsacceptance', 'Aceptación de clientas nuevas');
+INSERT INTO m_policy (id, name, label, description) VALUES(29, 'Present agricultural technical diagnosis (Commcare)', 'label.category.agricultural.diagnosis', 'Presentar diagnótico técnico agrícola (Commcare)');
+INSERT INTO m_policy (id, name, label, description) VALUES(30, 'Age', 'label.category.clientage', 'Edad');
+INSERT INTO m_policy (id, name, label, description) VALUES(31, 'Amount', 'label.category.amount', 'Monto');
+INSERT INTO m_policy (id, name, label, description) VALUES(32, 'Percentage of members with agricultural business', 'label.agribusiness.percentage', 'Porcentaje de integrantes con negocio agrícola');
+INSERT INTO m_policy (id, name, label, description) VALUES(33, 'Percentage of members with their own business', 'label.own.business.percentage', 'Porcentaje de integrantes con negocio propia');
 
 -- Insert product policy data --
 INSERT INTO m_product_policy (product_id, evaluation_type, policy_id) VALUES(2, 'INDIVIDUAL', 1);
@@ -146,15 +145,15 @@ INSERT INTO m_product_policy (product_id, evaluation_type, policy_id) VALUES(6, 
 INSERT INTO m_product_policy (product_id, evaluation_type, policy_id) VALUES(6, 'INDIVIDUAL', 25);
 INSERT INTO m_product_policy (product_id, evaluation_type, policy_id) VALUES(6, 'INDIVIDUAL', 26);
 INSERT INTO m_product_policy (product_id, evaluation_type, policy_id) VALUES(9, 'GROUP', 27);
-INSERT INTO m_product_policy (product_id, evaluation_type, policy_id) VALUES(8, 'INDIVIDUAL', 28);
-INSERT INTO m_product_policy (product_id, evaluation_type, policy_id) VALUES(4, 'INDIVIDUAL', 28);
-INSERT INTO m_product_policy (product_id, evaluation_type, policy_id) VALUES(5, 'INDIVIDUAL', 28);
-INSERT INTO m_product_policy (product_id, evaluation_type, policy_id) VALUES(7, 'INDIVIDUAL', 28);
-INSERT INTO m_product_policy (product_id, evaluation_type, policy_id) VALUES(4, 'GROUP', 29);
+INSERT INTO m_product_policy (product_id, evaluation_type, policy_id) VALUES(8, 'INDIVIDUAL', 4);
+INSERT INTO m_product_policy (product_id, evaluation_type, policy_id) VALUES(4, 'INDIVIDUAL', 4);
+INSERT INTO m_product_policy (product_id, evaluation_type, policy_id) VALUES(5, 'INDIVIDUAL', 4);
+INSERT INTO m_product_policy (product_id, evaluation_type, policy_id) VALUES(7, 'INDIVIDUAL', 4);
+INSERT INTO m_product_policy (product_id, evaluation_type, policy_id) VALUES(4, 'GROUP', 28);
+INSERT INTO m_product_policy (product_id, evaluation_type, policy_id) VALUES(6, 'INDIVIDUAL', 29);
+INSERT INTO m_product_policy (product_id, evaluation_type, policy_id) VALUES(8, 'INDIVIDUAL', 29);
+INSERT INTO m_product_policy (product_id, evaluation_type, policy_id) VALUES(5, 'INDIVIDUAL', 29);
 INSERT INTO m_product_policy (product_id, evaluation_type, policy_id) VALUES(6, 'INDIVIDUAL', 30);
-INSERT INTO m_product_policy (product_id, evaluation_type, policy_id) VALUES(8, 'INDIVIDUAL', 30);
-INSERT INTO m_product_policy (product_id, evaluation_type, policy_id) VALUES(5, 'INDIVIDUAL', 30);
 INSERT INTO m_product_policy (product_id, evaluation_type, policy_id) VALUES(6, 'INDIVIDUAL', 31);
-INSERT INTO m_product_policy (product_id, evaluation_type, policy_id) VALUES(6, 'INDIVIDUAL', 32);
-INSERT INTO m_product_policy (product_id, evaluation_type, policy_id) VALUES(5, 'GROUP', 33);
-INSERT INTO m_product_policy (product_id, evaluation_type, policy_id) VALUES(4, 'GROUP', 34);
+INSERT INTO m_product_policy (product_id, evaluation_type, policy_id) VALUES(5, 'GROUP', 32);
+INSERT INTO m_product_policy (product_id, evaluation_type, policy_id) VALUES(4, 'GROUP', 33);
