@@ -18,6 +18,7 @@
  */
 package org.apache.fineract.organisation.bankcheque.domain;
 
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
@@ -27,8 +28,10 @@ import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 public enum BankChequeStatus {
 
     INVALID(0, "bank.cheque.status.invalid"), AVAILABLE(1, "bank.cheque.status.available"), ISSUED(2, "bank.cheque.status.issued"), VOIDED(
-            3, "bank.cheque.status.canceled"), PENDING_VOIDANCE(4,
-                    "bank.cheque.status.pending.cancellation"), PENDING_ISSUANCE(5, "bank.cheque.status.pending.issuance");
+            3, "bank.cheque.status.canceled"), PENDING_VOIDANCE(4, "bank.cheque.status.pending.cancellation"), PENDING_ISSUANCE(5,
+                    "bank.cheque.status.pending.issuance"), PENDING_AUTHORIZATION_BY_ACCOUNTING(6,
+                            "bank.cheque.status.pending.authorization.by.accounting"), READY_TO_BE_PRINTED(7,
+                                    "bank.cheque.status.ready.to.be.printed");
 
     private final Integer value;
     private final String code;
@@ -40,6 +43,8 @@ public enum BankChequeStatus {
             case 3 -> BankChequeStatus.VOIDED;
             case 4 -> BankChequeStatus.PENDING_VOIDANCE;
             case 5 -> BankChequeStatus.PENDING_ISSUANCE;
+            case 6 -> BankChequeStatus.PENDING_AUTHORIZATION_BY_ACCOUNTING;
+            case 7 -> BankChequeStatus.READY_TO_BE_PRINTED;
             default -> BankChequeStatus.INVALID;
         };
     }
@@ -51,7 +56,15 @@ public enum BankChequeStatus {
             case 3 -> new EnumOptionData(VOIDED.value.longValue(), VOIDED.code, VOIDED.name());
             case 4 -> new EnumOptionData(PENDING_VOIDANCE.value.longValue(), PENDING_VOIDANCE.code, PENDING_VOIDANCE.name());
             case 5 -> new EnumOptionData(PENDING_ISSUANCE.value.longValue(), PENDING_ISSUANCE.code, PENDING_ISSUANCE.name());
+            case 6 -> new EnumOptionData(PENDING_AUTHORIZATION_BY_ACCOUNTING.value.longValue(), PENDING_AUTHORIZATION_BY_ACCOUNTING.code,
+                    PENDING_AUTHORIZATION_BY_ACCOUNTING.name());
+            case 7 -> new EnumOptionData(READY_TO_BE_PRINTED.value.longValue(), READY_TO_BE_PRINTED.code, READY_TO_BE_PRINTED.name());
             default -> new EnumOptionData(INVALID.value.longValue(), INVALID.code, INVALID.name());
         };
+    }
+
+    public static List<EnumOptionData> listAllChequeStatusOptions() {
+        return List.of(BankChequeStatus.status(1), BankChequeStatus.status(2), BankChequeStatus.status(3), BankChequeStatus.status(4),
+                BankChequeStatus.status(5), BankChequeStatus.status(6), BankChequeStatus.status(7));
     }
 }

@@ -58,6 +58,9 @@ public class PrequalificationGroupMember extends AbstractPersistableCustom {
     @Column(name = "requested_amount", nullable = false)
     private BigDecimal requestedAmount;
 
+    @Column(name = "approved_amount", nullable = false)
+    private BigDecimal approvedAmount;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
@@ -159,7 +162,15 @@ public class PrequalificationGroupMember extends AbstractPersistableCustom {
             final String newValue = command.stringValueOfParameterNamed(PrequalificatoinApiConstants.memberWorkWithPuenteParamName);
             actualChanges.put(PrequalificatoinApiConstants.memberWorkWithPuenteParamName, newValue);
         }
+        if (command.isChangeInBigDecimalParameterNamed(PrequalificatoinApiConstants.approvedAmountParamName, this.approvedAmount)) {
+            final BigDecimal newValue = command.bigDecimalValueOfParameterNamed(PrequalificatoinApiConstants.approvedAmountParamName);
+            actualChanges.put(PrequalificatoinApiConstants.approvedAmountParamName, newValue);
+        }
 
         return actualChanges;
+    }
+
+    public void updateApprovedAmount(BigDecimal newValue) {
+        this.approvedAmount = newValue;
     }
 }

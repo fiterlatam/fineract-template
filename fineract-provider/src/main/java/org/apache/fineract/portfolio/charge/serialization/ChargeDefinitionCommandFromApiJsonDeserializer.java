@@ -34,7 +34,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.infrastructure.core.data.ApiParameterError;
 import org.apache.fineract.infrastructure.core.data.DataValidatorBuilder;
@@ -137,10 +136,10 @@ public final class ChargeDefinitionCommandFromApiJsonDeserializer {
         }
 
         final ChargeAppliesTo appliesTo = ChargeAppliesTo.fromInt(chargeAppliesTo);
-        
+
         final ChargeDisbursementType chargeDisbursementType = ChargeDisbursementType
                 .fromInt(this.fromApiJsonHelper.extractIntegerSansLocaleNamed("chargeDisbursementType", element));
-        
+
         if (appliesTo.isLoanCharge()) {
             // loan applicable validation
             final Integer chargeTimeType = this.fromApiJsonHelper.extractIntegerSansLocaleNamed("chargeTimeType", element);
@@ -275,11 +274,11 @@ public final class ChargeDefinitionCommandFromApiJsonDeserializer {
             final Long taxGroupId = this.fromApiJsonHelper.extractLongNamed(ChargesApiConstants.taxGroupIdParamName, element);
             baseDataValidator.reset().parameter(ChargesApiConstants.taxGroupIdParamName).value(taxGroupId).notNull().longGreaterThanZero();
         }
-        
+
         if (appliesTo.isLoanCharge() && chargeDisbursementType.isAddOn()) {
-            this.validateChargeLimits(false, dataValidationErrors, baseDataValidator, element); 
+            this.validateChargeLimits(false, dataValidationErrors, baseDataValidator, element);
         }
-        
+
         throwExceptionIfValidationWarningsExist(dataValidationErrors);
     }
 
@@ -443,9 +442,9 @@ public final class ChargeDefinitionCommandFromApiJsonDeserializer {
         }
 
         ChargeAppliesTo appliesTo = null;
-       if (chargeAppliesTo != null) {
-           appliesTo = ChargeAppliesTo.fromInt(chargeAppliesTo);
-       }
+        if (chargeAppliesTo != null) {
+            appliesTo = ChargeAppliesTo.fromInt(chargeAppliesTo);
+        }
         final ChargeDisbursementType chargeDisbursementType = ChargeDisbursementType
                 .fromInt(this.fromApiJsonHelper.extractIntegerSansLocaleNamed("chargeDisbursementType", element));
         if (appliesTo != null && appliesTo.isLoanCharge() && chargeDisbursementType.isAddOn()) {
@@ -483,7 +482,8 @@ public final class ChargeDefinitionCommandFromApiJsonDeserializer {
         }
     }
 
-    private void validateChargeLimits(final boolean isAmountNullable, final List<ApiParameterError> dataValidationErrors, final DataValidatorBuilder baseDataValidator, final JsonElement element) {
+    private void validateChargeLimits(final boolean isAmountNullable, final List<ApiParameterError> dataValidationErrors,
+            final DataValidatorBuilder baseDataValidator, final JsonElement element) {
         boolean hasRanges = false;
 
         if (this.fromApiJsonHelper.parameterExists("adminFeeRanges", element)) {
@@ -520,12 +520,9 @@ public final class ChargeDefinitionCommandFromApiJsonDeserializer {
                 }
                 if (min != null && max != null) {
                     if ((max - min) <= 0) {
-                        dataValidationErrors.add(ApiParameterError.parameterError(
-                                "validation.msg.charge.ranges.min.greaterorequal.to",
-                                "The parameter adminFeeMin must be less than " + max,
-                                "adminFeeMin",
-                                min, max
-                        ));
+
+                        dataValidationErrors.add(ApiParameterError.parameterError("validation.msg.charge.ranges.min.greaterorequal.to",
+                                "The parameter adminFeeMin must be less than " + max, "adminFeeMin", min, max));
                     }
                 }
 
@@ -539,23 +536,15 @@ public final class ChargeDefinitionCommandFromApiJsonDeserializer {
                     ChargeData.ChargeRangeData curr = itt.next();
 
                     if (prev.adminFeeMin == null && curr.adminFeeMin == null) {
-                        dataValidationErrors.add(ApiParameterError.parameterError(
-                                "validation.msg.ranges.overlap",
-                                "Ranges cannot overlap",
-                                "adminFeeMin", prev.adminFeeMin, curr.adminFeeMin
-                        ));
+
+                        dataValidationErrors.add(ApiParameterError.parameterError("validation.msg.ranges.overlap", "Ranges cannot overlap",
+                                "adminFeeMin", prev.adminFeeMin, curr.adminFeeMin));
                     } else if ((prev.adminFeeMax == null || prev.adminFeeMax.doubleValue() == Double.POSITIVE_INFINITY)) {
-                        dataValidationErrors.add(ApiParameterError.parameterError(
-                                "validation.msg.ranges.overlap",
-                                "Ranges cannot overlap",
-                                "adminFeeMax", prev.adminFeeMax, curr.adminFeeMin
-                        ));
+                        dataValidationErrors.add(ApiParameterError.parameterError("validation.msg.ranges.overlap", "Ranges cannot overlap",
+                                "adminFeeMax", prev.adminFeeMax, curr.adminFeeMin));
                     } else if (prev.adminFeeMax >= curr.adminFeeMin) {
-                        dataValidationErrors.add(ApiParameterError.parameterError(
-                                "validation.msg.ranges.overlap",
-                                "Ranges cannot overlap",
-                                "adminFeeMin", prev.adminFeeMax, curr.adminFeeMin
-                        ));
+                        dataValidationErrors.add(ApiParameterError.parameterError("validation.msg.ranges.overlap", "Ranges cannot overlap",
+                                "adminFeeMin", prev.adminFeeMax, curr.adminFeeMin));
                     }
 
                     prev = curr;
@@ -565,7 +554,8 @@ public final class ChargeDefinitionCommandFromApiJsonDeserializer {
 
         if (!hasRanges) {
             if (this.fromApiJsonHelper.parameterExists("adminFeeRate", element) || !isAmountNullable) {
-                final BigDecimal feeRate = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed("adminFeeRate", element.getAsJsonObject());
+                final BigDecimal feeRate = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed("adminFeeRate",
+                        element.getAsJsonObject());
                 DataValidatorBuilder bdv = baseDataValidator.reset();
                 bdv.parameter("adminFeeRate").value(feeRate);
                 if (isAmountNullable) {

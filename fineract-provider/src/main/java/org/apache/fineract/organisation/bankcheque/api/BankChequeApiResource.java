@@ -26,6 +26,7 @@ import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.List;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -51,10 +52,11 @@ import org.apache.fineract.infrastructure.core.exception.UnrecognizedQueryParamE
 import org.apache.fineract.infrastructure.core.serialization.ApiRequestJsonSerializationSettings;
 import org.apache.fineract.infrastructure.core.serialization.ToApiJsonSerializer;
 import org.apache.fineract.infrastructure.core.service.Page;
-import org.apache.fineract.infrastructure.core.service.SearchParameters;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.organisation.bankcheque.data.BatchData;
 import org.apache.fineract.organisation.bankcheque.data.ChequeData;
+import org.apache.fineract.organisation.bankcheque.data.ChequeSearchParams;
+import org.apache.fineract.organisation.bankcheque.data.GuaranteeData;
 import org.apache.fineract.organisation.bankcheque.service.ChequeReadPlatformService;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
@@ -81,7 +83,7 @@ public class BankChequeApiResource {
     @RequestBody(required = true, content = @Content(schema = @Schema(implementation = BankChequeApiSwagger.PostChequeBatchRequest.class)))
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = BankChequeApiSwagger.PostChequeBatchResponse.class))) })
-    public String chequeRequest(@Parameter(hidden = true) final String apiRequestBodyAsJson,
+    public String chequeRequests(@Parameter(hidden = true) final String apiRequestBodyAsJson,
             @QueryParam("commandParam") @Parameter(description = "commandParam") final String commandParam,
             @QueryParam("chequeId") @Parameter(description = "chequeId") final Long chequeId) {
         final CommandWrapperBuilder builder = new CommandWrapperBuilder().withJson(apiRequestBodyAsJson);
@@ -102,10 +104,20 @@ public class BankChequeApiResource {
         } else if (is(commandParam, "authorizevoidance")) {
             commandRequest = builder.authorizeChequeVoidance(chequeId).build();
             result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
+        } else if (is(commandParam, "approveissuance")) {
+            commandRequest = builder.approveChequesIssuance().build();
+            result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
+        } else if (is(commandParam, "authorizeissuance")) {
+            commandRequest = builder.authorizeChequesIssuance().build();
+            result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
+        } else if (is(commandParam, "payguaranteesbycheques")) {
+            commandRequest = builder.payGuaranteesByCheques().build();
+            result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
         }
+
         if (result == null) {
             throw new UnrecognizedQueryParamException("command", commandParam, "reassigncheque", "authorizereassignment", "createbatch",
-                    "voidcheque", "authorizevoidance");
+                    "voidcheque", "authorizevoidance", "approveissuance", "payguaranteesbycheques");
         }
         return this.toApiJsonSerializer.serialize(result);
     }
@@ -142,6 +154,23 @@ public class BankChequeApiResource {
     }
 
     @GET
+
+    @Path("guarantees")
+    @Consumes({ MediaType.APPLICATION_JSON })
+    @Produces({ MediaType.APPLICATION_JSON })
+    @Operation(summary = "Retrieve Guarantees", description = "Retrieve Guarantees by search parameters")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = BankChequeApiSwagger.GetChequeBatchResponse.class))) })
+    public String retrieveGuarantees(@Context final UriInfo uriInfo,
+            @QueryParam("caseId") @Parameter(description = "caseId") final String caseId,
+            @QueryParam("locale") @Parameter(description = "locale") final String locale) {
+        this.context.authenticatedUser().validateHasReadPermission(BankChequeApiConstants.BANK_CHECK_RESOURCE_NAME);
+        final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
+        List<GuaranteeData> garanteeDataList = this.chequeReadPlatformService.retrieveGuarantees(caseId, locale);
+        return this.toApiJsonSerializer.serialize(settings, garanteeDataList);
+    }
+
+    @GET
     @Path("/search")
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
@@ -151,7 +180,15 @@ public class BankChequeApiResource {
     public String retrieveAll(@Context final UriInfo uriInfo, @QueryParam("paged") @Parameter(description = "paged") final Boolean paged,
             @QueryParam("status") @Parameter(description = "status") final String status,
             @QueryParam("chequeNo") @Parameter(description = "chequeNo") final String chequeNo,
+            @QueryParam("bankAccNo") @Parameter(description = "bankAccNo") final String bankAccNo,
+            @QueryParam("bankAccId") @Parameter(description = "bankAccId") final Long bankAccId,
+            @QueryParam("from") @Parameter(description = "from") final Long from,
+            @QueryParam("to") @Parameter(description = "from") final Long to,
+            @QueryParam("facilitatorId") @Parameter(description = "facilitatorId") final Long facilitatorId,
+            @QueryParam("groupId") @Parameter(description = "groupId") final Long groupId,
+            @QueryParam("centerId") @Parameter(description = "centerId") final Long centerId,
             @QueryParam("batchId") @Parameter(description = "batchId") final Long batchId,
+            @QueryParam("agencyId") @Parameter(description = "agencyId") final Long agencyId,
             @QueryParam("chequeId") @Parameter(description = "batchId") final Long chequeId,
             @QueryParam("offset") @Parameter(description = "offset") final Integer offset,
             @QueryParam("limit") @Parameter(description = "limit") final Integer limit,
@@ -160,9 +197,11 @@ public class BankChequeApiResource {
         this.context.authenticatedUser().validateHasReadPermission(BankChequeApiConstants.BANK_CHECK_RESOURCE_NAME);
         final PaginationParameters parameters = PaginationParameters.instance(paged, offset, limit, orderBy, sortOrder);
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
-        final SearchParameters searchParameters = SearchParameters.forBankCheques(chequeNo, batchId, chequeId, status, offset, limit,
-                orderBy, sortOrder);
-        final Page<ChequeData> cheques = this.chequeReadPlatformService.retrieveAll(searchParameters, parameters);
+        final ChequeSearchParams chequeSearchParams = ChequeSearchParams.builder().bankAccId(bankAccId).agencyId(agencyId)
+                .chequeNo(chequeNo).bankAccNo(bankAccNo).batchId(batchId).chequeId(chequeId).status(status).offset(offset).limit(limit)
+                .orderBy(orderBy).sortOrder(sortOrder).from(from).to(to).facilitatorId(facilitatorId).groupId(groupId).centerId(centerId)
+                .build();
+        final Page<ChequeData> cheques = this.chequeReadPlatformService.retrieveAll(chequeSearchParams, parameters);
         return this.toApiJsonSerializer.serialize(settings, cheques);
     }
 

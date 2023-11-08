@@ -56,6 +56,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.fineract.accounting.journalentry.api.DateParam;
 import org.apache.fineract.commands.domain.CommandWrapper;
 import org.apache.fineract.commands.service.CommandWrapperBuilder;
 import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformService;
@@ -84,7 +85,10 @@ import org.apache.fineract.infrastructure.dataqueries.data.EntityTables;
 import org.apache.fineract.infrastructure.dataqueries.data.StatusEnum;
 import org.apache.fineract.infrastructure.dataqueries.service.EntityDatatableChecksReadService;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
+import org.apache.fineract.organisation.agency.data.AgencyData;
+import org.apache.fineract.organisation.agency.service.AgencyReadPlatformServiceImpl;
 import org.apache.fineract.organisation.monetary.data.CurrencyData;
+import org.apache.fineract.organisation.office.domain.OfficeHierarchyLevel;
 import org.apache.fineract.organisation.staff.data.StaffData;
 import org.apache.fineract.portfolio.account.PortfolioAccountType;
 import org.apache.fineract.portfolio.account.data.PortfolioAccountDTO;
@@ -109,7 +113,9 @@ import org.apache.fineract.portfolio.cupo.service.CupoReadService;
 import org.apache.fineract.portfolio.floatingrates.data.InterestRatePeriodData;
 import org.apache.fineract.portfolio.fund.data.FundData;
 import org.apache.fineract.portfolio.fund.service.FundReadPlatformService;
+import org.apache.fineract.portfolio.group.data.CenterData;
 import org.apache.fineract.portfolio.group.data.GroupGeneralData;
+import org.apache.fineract.portfolio.group.service.CenterReadPlatformServiceImpl;
 import org.apache.fineract.portfolio.group.service.GroupReadPlatformService;
 import org.apache.fineract.portfolio.loanaccount.data.AgeLimitStatus;
 import org.apache.fineract.portfolio.loanaccount.data.AgeLimitStatusEnumerations;
@@ -124,6 +130,7 @@ import org.apache.fineract.portfolio.loanaccount.data.LoanTermVariationsData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanTransactionData;
 import org.apache.fineract.portfolio.loanaccount.data.PaidInAdvanceData;
 import org.apache.fineract.portfolio.loanaccount.data.RepaymentScheduleRelatedLoanData;
+import org.apache.fineract.portfolio.loanaccount.domain.LoanDisbursementMethod;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanTermVariationType;
 import org.apache.fineract.portfolio.loanaccount.exception.LoanTemplateTypeRequiredException;
 import org.apache.fineract.portfolio.loanaccount.exception.NotSupportedLoanTemplateTypeException;
@@ -149,6 +156,8 @@ import org.apache.fineract.portfolio.rate.data.RateData;
 import org.apache.fineract.portfolio.rate.service.RateReadService;
 import org.apache.fineract.portfolio.savings.DepositAccountType;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountStatusType;
+import org.apache.fineract.useradministration.data.AppUserData;
+import org.apache.fineract.useradministration.service.AppUserReadPlatformService;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.springframework.context.annotation.Scope;
@@ -270,6 +279,9 @@ public class LoansApiResource {
     private final GLIMAccountInfoReadPlatformService glimAccountInfoReadPlatformService;
     private final LoanCollateralManagementReadPlatformService loanCollateralManagementReadPlatformService;
     private final CupoReadService cupoReadService;
+    private final AppUserReadPlatformService appUserReadPlatformService;
+    private final AgencyReadPlatformServiceImpl agencyReadPlatformService;
+    private final CenterReadPlatformServiceImpl centerReadPlatformService;
 
     public LoansApiResource(final PlatformSecurityContext context, final LoanReadPlatformService loanReadPlatformService,
             final LoanProductReadPlatformService loanProductReadPlatformService,
@@ -296,7 +308,8 @@ public class LoansApiResource {
             final DefaultToApiJsonSerializer<GlimRepaymentTemplate> glimTemplateToApiJsonSerializer,
             final GLIMAccountInfoReadPlatformService glimAccountInfoReadPlatformService,
             final LoanCollateralManagementReadPlatformService loanCollateralManagementReadPlatformService,
-            final CupoReadService cupoReadService) {
+            final CupoReadService cupoReadService, AppUserReadPlatformService appUserReadPlatformService,
+            AgencyReadPlatformServiceImpl agencyReadPlatformService, CenterReadPlatformServiceImpl centerReadPlatformService) {
         this.context = context;
         this.loanReadPlatformService = loanReadPlatformService;
         this.loanProductReadPlatformService = loanProductReadPlatformService;
@@ -331,6 +344,9 @@ public class LoansApiResource {
         this.cupoReadService = cupoReadService;
         this.clientReadPlatformService = clientReadPlatformService;
         this.ageLimitValidationJsonSerializer = ageLimitValidationJsonSerializer;
+        this.appUserReadPlatformService = appUserReadPlatformService;
+        this.agencyReadPlatformService = agencyReadPlatformService;
+        this.centerReadPlatformService = centerReadPlatformService;
     }
 
     /*
@@ -405,6 +421,18 @@ public class LoansApiResource {
         } else if (templateType.equals("collateral")) {
             loanCollateralOptions = this.codeValueReadPlatformService.retrieveCodeValuesByCode("LoanCollateral");
             newLoanAccount = LoanAccountData.collateralTemplate(loanCollateralOptions);
+        } else if ("cheque".equalsIgnoreCase(templateType)) {
+            final Collection<CenterData> centerOptions = this.centerReadPlatformService
+                    .retrieveAllForDropdown(this.context.authenticatedUser().getOffice().getId());
+            final Collection<AgencyData> agencyOptions = this.agencyReadPlatformService.retrieveAllByUser();
+            final List<AppUserData> facilitatorOptions = new ArrayList<>(
+                    this.appUserReadPlatformService.retrieveUsersUnderHierarchy(Long.valueOf(OfficeHierarchyLevel.GRUPO.getValue())));
+            final Collection<GroupGeneralData> groupOptions = this.groupReadPlatformService.retrieveAll(null, null);
+            final Collection<EnumOptionData> disbursementMethodOptions = List.of(LoanDisbursementMethod.status(1),
+                    LoanDisbursementMethod.status(2), LoanDisbursementMethod.status(3));
+            newLoanAccount = LoanAccountData.disburseLoanByCheques(agencyOptions, centerOptions, groupOptions, facilitatorOptions,
+                    disbursementMethodOptions);
+
         } else {
             // for JLG loan both client and group details are required
             if (templateType.equals("individual") || templateType.equals("jlg")) {
@@ -855,12 +883,40 @@ public class LoansApiResource {
             @QueryParam("limit") @Parameter(description = "limit") final Integer limit,
             @QueryParam("orderBy") @Parameter(description = "orderBy") final String orderBy,
             @QueryParam("sortOrder") @Parameter(description = "sortOrder") final String sortOrder,
-            @QueryParam("accountNo") @Parameter(description = "accountNo") final String accountNo) {
-
+            @QueryParam("accountNo") @Parameter(description = "accountNo") final String accountNo,
+            @QueryParam("clientNo") @Parameter(description = "accountNo") final String clientNo,
+            @QueryParam("agencyId") @Parameter(description = "agencyId") final Long agencyId,
+            @QueryParam("groupId") @Parameter(description = "groupId") final Long groupId,
+            @QueryParam("centerId") @Parameter(description = "centerId") final Long centerId,
+            @QueryParam("facilitatorId") @Parameter(description = "facilitatorId") final Long facilitatorId,
+            @DefaultValue("false") @QueryParam("isIndividualBusinessLoan") @Parameter(description = "isIndividualBusinessLoan") final boolean isIndividualBusinessLoan,
+            @QueryParam("approvalEndDate") @Parameter(description = "approvalEndDate") final DateParam approvalEndDateParam,
+            @QueryParam("approvalStartDate") @Parameter(description = "approvalStartDate") final DateParam approvalStartDateParam,
+            @QueryParam("disbursementStartDate") @Parameter(description = "disbursementStartDate") final DateParam disbursementStartDateParam,
+            @QueryParam("disbursementEndDate") @Parameter(description = "disbursementEndDate") final DateParam disbursementEndDateParam,
+            @QueryParam("locale") @Parameter(description = "locale") final String locale,
+            @QueryParam("dateFormat") @Parameter(description = "dateFormat") final String dateFormat) {
         this.context.authenticatedUser().validateHasReadPermission(this.resourceNameForPermissions);
+        LocalDate approvalStartDate = null;
+        if (approvalStartDateParam != null) {
+            approvalStartDate = approvalStartDateParam.getDate("approvalStartDate", dateFormat, locale);
+        }
+        LocalDate approvalEndDate = null;
+        if (approvalEndDateParam != null) {
+            approvalEndDate = approvalEndDateParam.getDate("approvalEndDate", dateFormat, locale);
+        }
+        LocalDate disbursementStartDate = null;
+        if (disbursementStartDateParam != null) {
+            disbursementStartDate = disbursementStartDateParam.getDate("disbursementStartDate", dateFormat, locale);
+        }
+        LocalDate disbursementEndDate = null;
+        if (disbursementEndDateParam != null) {
+            disbursementEndDate = disbursementEndDateParam.getDate("disbursementStartDate", dateFormat, locale);
+        }
 
         final SearchParameters searchParameters = SearchParameters.forLoans(sqlSearch, externalId, offset, limit, orderBy, sortOrder,
-                accountNo);
+                accountNo, disbursementStartDate, disbursementEndDate, approvalStartDate, approvalEndDate, clientNo, agencyId, groupId,
+                centerId, facilitatorId, isIndividualBusinessLoan);
 
         final Page<LoanAccountData> loanBasicDetails = this.loanReadPlatformService.retrieveAll(searchParameters);
 
@@ -885,22 +941,24 @@ public class LoansApiResource {
             @QueryParam("command") @Parameter(description = "command") final String commandParam, @Context final UriInfo uriInfo,
             @Parameter(hidden = true) final String apiRequestBodyAsJson) {
 
+        final CommandWrapperBuilder builder = new CommandWrapperBuilder().withJson(apiRequestBodyAsJson);
+        final CommandWrapper commandRequest;
+        final CommandProcessingResult result;
         if (is(commandParam, "calculateLoanSchedule")) {
-
             final JsonElement parsedQuery = this.fromJsonHelper.parse(apiRequestBodyAsJson);
             final JsonQuery query = JsonQuery.from(apiRequestBodyAsJson, parsedQuery, this.fromJsonHelper);
-
             final LoanScheduleModel loanSchedule = this.calculationPlatformService.calculateLoanSchedule(query, true);
-
             final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
             return this.loanScheduleToApiJsonSerializer.serialize(settings, loanSchedule.toData(), new HashSet<String>());
+        } else if (is(commandParam, "disbursebycheques")) {
+            commandRequest = builder.disburseLoanByCheques().build();
+            result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
+        } else {
+            commandRequest = builder.createLoanApplication().withJson(apiRequestBodyAsJson).build();
+            result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
         }
-
-        final CommandWrapper commandRequest = new CommandWrapperBuilder().createLoanApplication().withJson(apiRequestBodyAsJson).build();
-
-        final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
-
         return this.toApiJsonSerializer.serialize(result);
+
     }
 
     @PUT

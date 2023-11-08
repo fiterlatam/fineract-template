@@ -23,6 +23,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.temporal.ChronoField;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -56,6 +57,7 @@ import org.apache.fineract.infrastructure.core.exception.GeneralPlatformDomainRu
 import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidationException;
 import org.apache.fineract.infrastructure.core.exception.PlatformDataIntegrityException;
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
+import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.dataqueries.data.EntityTables;
 import org.apache.fineract.infrastructure.dataqueries.data.StatusEnum;
 import org.apache.fineract.infrastructure.dataqueries.service.EntityDatatableChecksWritePlatformService;
@@ -67,6 +69,9 @@ import org.apache.fineract.infrastructure.entityaccess.domain.FineractEntityToEn
 import org.apache.fineract.infrastructure.entityaccess.domain.FineractEntityToEntityMappingRepository;
 import org.apache.fineract.infrastructure.entityaccess.exception.NotOfficeSpecificProductException;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
+import org.apache.fineract.organisation.bankcheque.domain.BankChequeStatus;
+import org.apache.fineract.organisation.bankcheque.domain.Cheque;
+import org.apache.fineract.organisation.bankcheque.domain.ChequeBatchRepositoryWrapper;
 import org.apache.fineract.organisation.staff.domain.Staff;
 import org.apache.fineract.portfolio.account.domain.AccountAssociationType;
 import org.apache.fineract.portfolio.account.domain.AccountAssociations;
@@ -105,6 +110,7 @@ import org.apache.fineract.portfolio.group.domain.GroupRepositoryWrapper;
 import org.apache.fineract.portfolio.group.exception.GroupMemberNotFoundInGSIMException;
 import org.apache.fineract.portfolio.group.exception.GroupNotActiveException;
 import org.apache.fineract.portfolio.loanaccount.api.LoanApiConstants;
+import org.apache.fineract.portfolio.loanaccount.command.DisburseByChequesCommand;
 import org.apache.fineract.portfolio.loanaccount.data.LoanChargeData;
 import org.apache.fineract.portfolio.loanaccount.data.ScheduleGeneratorDTO;
 import org.apache.fineract.portfolio.loanaccount.domain.DefaultLoanLifecycleStateMachine;
@@ -132,6 +138,7 @@ import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanApplica
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleModel;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.service.LoanScheduleAssembler;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.service.LoanScheduleCalculationPlatformService;
+import org.apache.fineract.portfolio.loanaccount.serialization.DisburseByChequesCommandFromApiJsonDeserializer;
 import org.apache.fineract.portfolio.loanaccount.serialization.LoanApplicationCommandFromApiJsonHelper;
 import org.apache.fineract.portfolio.loanaccount.serialization.LoanApplicationTransitionApiJsonValidator;
 import org.apache.fineract.portfolio.loanproduct.LoanProductConstants;
@@ -215,6 +222,8 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
     private final LumaAccountingProcessorForLoan lumaAccountingProcessorForLoan;
     private final JdbcTemplate jdbcTemplate;
     private final CodeValueRepositoryWrapper codeValueRepository;
+    private final DisburseByChequesCommandFromApiJsonDeserializer disburseByChequesCommandFromApiJsonDeserializer;
+    private final ChequeBatchRepositoryWrapper chequeBatchRepositoryWrapper;
     @Autowired
     private BitaCoraMasterRepository bitaCoraMasterRepository;
 
@@ -246,7 +255,9 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             final LoanProductReadPlatformService loanProductReadPlatformService, final JdbcTemplate jdbcTemplate,
             final LoanCollateralManagementRepository loanCollateralManagementRepository,
             final ClientCollateralManagementRepository clientCollateralManagementRepository,
-            final CupoRepositoryWrapper cupoRepositoryWrapper, final LumaAccountingProcessorForLoan lumaAccountingProcessorForLoan) {
+            final CupoRepositoryWrapper cupoRepositoryWrapper, final LumaAccountingProcessorForLoan lumaAccountingProcessorForLoan,
+            DisburseByChequesCommandFromApiJsonDeserializer disburseByChequesCommandFromApiJsonDeserializer,
+            ChequeBatchRepositoryWrapper chequeBatchRepositoryWrapper) {
         this.context = context;
         this.fromJsonHelper = fromJsonHelper;
         this.loanApplicationTransitionApiJsonValidator = loanApplicationTransitionApiJsonValidator;
@@ -293,6 +304,8 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
         this.lumaAccountingProcessorForLoan = lumaAccountingProcessorForLoan;
         this.jdbcTemplate = jdbcTemplate;
         this.codeValueRepository = codeValueRepository;
+        this.disburseByChequesCommandFromApiJsonDeserializer = disburseByChequesCommandFromApiJsonDeserializer;
+        this.chequeBatchRepositoryWrapper = chequeBatchRepositoryWrapper;
     }
 
     private LoanLifecycleStateMachine defaultLoanLifecycleStateMachine() {
@@ -1889,4 +1902,32 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
         }
     }
 
+    @Transactional
+    @Override
+    public CommandProcessingResult disburseLoanByCheques(JsonCommand command) {
+        final AppUser currentUser = this.context.authenticatedUser();
+        List<DisburseByChequesCommand> disburseByChequesCommands = this.disburseByChequesCommandFromApiJsonDeserializer
+                .commandFromApiJson(command.json());
+        for (final DisburseByChequesCommand disburseByChequesCommand : disburseByChequesCommands) {
+            final Loan loanAccount = this.loanRepositoryWrapper.findOneWithNotFoundDetection(disburseByChequesCommand.getLoanId());
+            final Cheque cheque = this.chequeBatchRepositoryWrapper
+                    .findOneChequeWithNotFoundDetection(disburseByChequesCommand.getChequeId());
+            loanAccount.setCheque(cheque);
+            loanAccount.setLoanStatus(LoanStatus.DISBURSE_AUTHORIZATION_PENDING.getValue());
+            cheque.setStatus(BankChequeStatus.PENDING_ISSUANCE.getValue());
+            cheque.setDescription(disburseByChequesCommand.getDescription());
+            cheque.setGuaranteeAmount(disburseByChequesCommand.getActualGuaranteeAmount());
+            cheque.setRequiredGuaranteeAmount(disburseByChequesCommand.getRequiredGuaranteeAmount());
+            cheque.setDepositGuaranteeNo(disburseByChequesCommand.getDepositGuaranteeNo());
+            final LocalDateTime localDateTime = DateUtils.getLocalDateTimeOfSystem();
+            LocalDate localDate = DateUtils.getBusinessLocalDate();
+            final Long currentUserId = currentUser.getId();
+            cheque.stampAudit(currentUserId, localDateTime);
+            loanAccount.setDisbursedByChequeDate(localDate);
+            loanAccount.setDisbursedByChequeAppUser(currentUser);
+            this.loanRepositoryWrapper.saveAndFlush(loanAccount);
+            this.chequeBatchRepositoryWrapper.updateCheque(cheque);
+        }
+        return new CommandProcessingResultBuilder().withCommandId(command.commandId()).build();
+    }
 }

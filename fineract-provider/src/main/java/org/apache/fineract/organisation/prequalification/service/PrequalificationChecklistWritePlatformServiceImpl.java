@@ -42,10 +42,12 @@ import org.apache.fineract.organisation.prequalification.data.ClientData;
 import org.apache.fineract.organisation.prequalification.data.HardPolicyCategoryData;
 import org.apache.fineract.organisation.prequalification.domain.CheckValidationColor;
 import org.apache.fineract.organisation.prequalification.domain.HardPolicyCategory;
+import org.apache.fineract.organisation.prequalification.domain.PreQualificationStatusLogRepository;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationGroup;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationGroupMember;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationGroupRepositoryWrapper;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationStatus;
+import org.apache.fineract.organisation.prequalification.domain.PrequalificationStatusLog;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationType;
 import org.apache.fineract.organisation.prequalification.domain.ValidationChecklistResult;
 import org.apache.fineract.organisation.prequalification.domain.ValidationChecklistResultRepository;
@@ -64,16 +66,19 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
     private final PlatformSecurityContext context;
     private final PrequalificationGroupRepositoryWrapper prequalificationGroupRepositoryWrapper;
     private final ValidationChecklistResultRepository validationChecklistResultRepository;
+    private final PreQualificationStatusLogRepository preQualificationStatusLogRepository;
     private final PlatformSecurityContext platformSecurityContext;
     private final JdbcTemplate jdbcTemplate;
 
     public PrequalificationChecklistWritePlatformServiceImpl(PlatformSecurityContext context,
             PrequalificationGroupRepositoryWrapper prequalificationGroupRepositoryWrapper,
+            final PreQualificationStatusLogRepository preQualificationStatusLogRepository,
             ValidationChecklistResultRepository validationChecklistResultRepository, PlatformSecurityContext platformSecurityContext,
             JdbcTemplate jdbcTemplate) {
         this.context = context;
         this.prequalificationGroupRepositoryWrapper = prequalificationGroupRepositoryWrapper;
         this.validationChecklistResultRepository = validationChecklistResultRepository;
+        this.preQualificationStatusLogRepository = preQualificationStatusLogRepository;
         this.platformSecurityContext = platformSecurityContext;
         this.jdbcTemplate = jdbcTemplate;
     }
@@ -81,10 +86,13 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
     @Override
     @Transactional
     public CommandProcessingResult validatePrequalificationHardPolicies(Long prequalificationId, JsonCommand command) {
-        this.context.authenticatedUser();
+        AppUser appUser = this.context.authenticatedUser();
         PrequalificationGroup prequalificationGroup = this.prequalificationGroupRepositoryWrapper
                 .findOneWithNotFoundDetection(prequalificationId);
         final Long productId = prequalificationGroup.getLoanProduct().getId();
+
+        Integer fromStatus = prequalificationGroup.getStatus();
+
         List<ValidationChecklistResult> validationChecklistResults = new ArrayList<>();
         CheckCategoryMapper checkCategoryMapper = new CheckCategoryMapper();
         List<HardPolicyCategoryData> groupPolicies = this.jdbcTemplate.query(checkCategoryMapper.schema(), checkCategoryMapper, productId,
@@ -138,6 +146,12 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
         prequalificationGroup.updateStatus(PrequalificationStatus.HARD_POLICY_CHECKED);
         prequalificationGroupRepositoryWrapper.saveAndFlush(prequalificationGroup);
         this.validationChecklistResultRepository.saveAll(validationChecklistResults);
+
+        PrequalificationStatusLog statusLog = PrequalificationStatusLog.fromJson(appUser, fromStatus, prequalificationGroup.getStatus(),
+                null, prequalificationGroup);
+
+        this.preQualificationStatusLogRepository.saveAndFlush(statusLog);
+
         return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withEntityId(prequalificationId).build();
     }
 

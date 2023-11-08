@@ -47,10 +47,10 @@ public enum PrequalificationMemberIndication {
                 break;
             case 300:
                 enumeration = PrequalificationMemberIndication.NONE;
-                break;
+            break;
             case 500:
                 enumeration = PrequalificationMemberIndication.BUREAU_AVAILABLE;
-                break;
+            break;
         }
         return enumeration;
     }

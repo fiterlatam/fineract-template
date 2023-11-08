@@ -24,25 +24,44 @@
                    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd">
     <changeSet author="brian@fiter.io" id="0059_FBR_add_prequalification_permissions">
         <insert tableName="m_permission">
-            <column name="grouping" value="portfolio" />
-            <column name="code" value="CREATE_PREQUALIFICATIONS" />
-            <column name="entity_name" value="PREQUALIFICATIONS" />
-            <column name="action_name" value="CREATE" />
-            <column name="can_maker_checker" valueBoolean="false" />
+            <column name="grouping" value="portfolio"/>
+            <column name="code" value="CREATE_PREQUALIFICATIONS"/>
+            <column name="entity_name" value="PREQUALIFICATIONS"/>
+            <column name="action_name" value="CREATE"/>
+            <column name="can_maker_checker" valueBoolean="false"/>
         </insert>
         <insert tableName="m_permission">
-            <column name="grouping" value="portfolio" />
-            <column name="code" value="VIEW_PREQUALIFICATIONS" />
-            <column name="entity_name" value="PREQUALIFICATIONS" />
-            <column name="action_name" value="VIEW" />
-            <column name="can_maker_checker" valueBoolean="false" />
+            <column name="grouping" value="portfolio"/>
+            <column name="code" value="VIEW_PREQUALIFICATIONS"/>
+            <column name="entity_name" value="PREQUALIFICATIONS"/>
+            <column name="action_name" value="VIEW"/>
+            <column name="can_maker_checker" valueBoolean="false"/>
         </insert>
         <insert tableName="m_permission">
-            <column name="grouping" value="portfolio" />
-            <column name="code" value="UPDATE_PREQUALIFICATIONS" />
-            <column name="entity_name" value="PREQUALIFICATIONS" />
-            <column name="action_name" value="UPDATE" />
-            <column name="can_maker_checker" valueBoolean="false" />
+            <column name="grouping" value="portfolio"/>
+            <column name="code" value="UPDATE_PREQUALIFICATIONS"/>
+            <column name="entity_name" value="PREQUALIFICATIONS"/>
+            <column name="action_name" value="UPDATE"/>
+            <column name="can_maker_checker" valueBoolean="false"/>
         </insert>
     </changeSet>
+    <changeSet author="fineract" id="2">
+        <insert tableName="m_permission">
+            <column name="grouping" value="portfolio"/>
+            <column name="code" value="REQUESTUPDATE_PREQUALIFICATIONS"/>
+            <column name="entity_name" value="PREQUALIFICATIONS"/>
+            <column name="action_name" value="REQUESTUPDATE"/>
+            <column name="can_maker_checker" valueBoolean="false"/>
+        </insert>
+    </changeSet>
+    <changeSet author="fineract" id="3">
+        <insert tableName="m_permission">
+            <column name="grouping" value="portfolio"/>
+            <column name="code" value="REQUESTANALYSIS_PREQUALIFICATIONS"/>
+            <column name="entity_name" value="PREQUALIFICATIONS"/>
+            <column name="action_name" value="REQUESTANALYSIS"/>
+            <column name="can_maker_checker" valueBoolean="false"/>
+        </insert>
+    </changeSet>
+
 </databaseChangeLog>

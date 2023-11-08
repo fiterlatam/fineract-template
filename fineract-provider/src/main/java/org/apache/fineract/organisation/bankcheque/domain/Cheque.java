@@ -18,6 +18,7 @@
  */
 package org.apache.fineract.organisation.bankcheque.domain;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -70,6 +71,38 @@ public class Cheque extends AbstractAuditableCustom {
 
     @Column(name = "usedon_date")
     private LocalDate usedOnDate;
+
+    @Column(name = "guarantee_amount")
+    private BigDecimal guaranteeAmount;
+
+    @Column(name = "required_guarantee_amount")
+    private BigDecimal requiredGuaranteeAmount;
+
+    @Column(name = "guarantee_deposit_no")
+    private String depositGuaranteeNo;
+
+    @Column(name = "issuance_approvedon_date")
+    private LocalDate issuanceApprovedOnDate;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "issuance_approvedby_id")
+    private AppUser issuanceApprovedBy;
+
+    @Column(name = "issuance_authorizedon_date")
+    private LocalDate issuanceAuthorizeOnDate;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "issuance_authorizedby_id")
+    private AppUser issuanceAuthorizeBy;
+
+    @Column(name = "case_id")
+    private String caseId;
+
+    @Column(name = "guarantee_id")
+    private Long guaranteeId;
+
+    @Column(name = "guarantee_name")
+    private String guaranteeName;
 
     public Cheque setChequeNo(Long chequeNo) {
         this.chequeNo = chequeNo;
@@ -128,5 +161,45 @@ public class Cheque extends AbstractAuditableCustom {
     public Cheque setUsedOnDate(LocalDate usedOnDate) {
         this.usedOnDate = usedOnDate;
         return this;
+    }
+
+    public void setGuaranteeAmount(BigDecimal guaranteeAmount) {
+        this.guaranteeAmount = guaranteeAmount;
+    }
+
+    public void setIssuanceApprovedOnDate(LocalDate issuanceApprovedOnDate) {
+        this.issuanceApprovedOnDate = issuanceApprovedOnDate;
+    }
+
+    public void setIssuanceApprovedBy(AppUser issuanceApprovedBy) {
+        this.issuanceApprovedBy = issuanceApprovedBy;
+    }
+
+    public void setIssuanceAuthorizeOnDate(LocalDate issuanceAuthorizeOnDate) {
+        this.issuanceAuthorizeOnDate = issuanceAuthorizeOnDate;
+    }
+
+    public void setIssuanceAuthorizeBy(AppUser issuanceAuthorizeBy) {
+        this.issuanceAuthorizeBy = issuanceAuthorizeBy;
+    }
+
+    public void setCaseId(String caseId) {
+        this.caseId = caseId;
+    }
+
+    public void setGuaranteeId(Long guaranteeId) {
+        this.guaranteeId = guaranteeId;
+    }
+
+    public void setRequiredGuaranteeAmount(BigDecimal requiredGuaranteeAmount) {
+        this.requiredGuaranteeAmount = requiredGuaranteeAmount;
+    }
+
+    public void setDepositGuaranteeNo(String depositGuaranteeNo) {
+        this.depositGuaranteeNo = depositGuaranteeNo;
+    }
+
+    public void setGuaranteeName(String guaranteeName) {
+        this.guaranteeName = guaranteeName;
     }
 }

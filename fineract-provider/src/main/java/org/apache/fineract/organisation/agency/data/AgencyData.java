@@ -21,6 +21,7 @@ package org.apache.fineract.organisation.agency.data;
 import java.time.LocalTime;
 import java.util.Collection;
 import java.util.List;
+import lombok.Getter;
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 import org.apache.fineract.organisation.monetary.data.CurrencyData;
 import org.apache.fineract.organisation.office.data.OfficeData;
@@ -29,6 +30,7 @@ import org.apache.fineract.useradministration.data.AppUserData;
 /**
  * Immutable data object for agency data.
  */
+@Getter
 public class AgencyData {
 
     private final Long id;

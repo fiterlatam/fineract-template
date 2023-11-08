@@ -1086,6 +1086,15 @@ public class CommandWrapperBuilder {
         return this;
     }
 
+    public CommandWrapperBuilder disburseLoanByCheques() {
+        this.actionName = "DISBURSEBYCHEQUES";
+        this.entityName = "LOAN";
+        this.entityId = loanId;
+        this.loanId = null;
+        this.href = "/loans";
+        return this;
+    }
+
     public CommandWrapperBuilder disburseLoanToSavingsApplication(final Long loanId) {
         this.actionName = "DISBURSETOSAVINGS";
         this.entityName = "LOAN";
@@ -3862,6 +3871,22 @@ public class CommandWrapperBuilder {
         return this;
     }
 
+    public CommandWrapperBuilder approveChequesIssuance() {
+        this.entityName = BankChequeApiConstants.BANK_CHECK_RESOURCE_NAME;
+        this.actionName = BankChequeApiConstants.CHECK_ACTION_APPROVE_ISSUANCE;
+        this.entityId = null;
+        this.href = "/bankcheques";
+        return this;
+    }
+
+    public CommandWrapperBuilder authorizeChequesIssuance() {
+        this.entityName = BankChequeApiConstants.BANK_CHECK_RESOURCE_NAME;
+        this.actionName = BankChequeApiConstants.CHECK_ACTION_AUTHORIZE_ISSUANCE;
+        this.entityId = null;
+        this.href = "/bankcheques";
+        return this;
+    }
+
     public CommandWrapperBuilder updateChequeBatch(Long batchId) {
         this.entityName = BankChequeApiConstants.BANK_CHECK_RESOURCE_NAME;
         this.actionName = BankChequeApiConstants.CHECK_ACTION_UPDATE;
@@ -3883,6 +3908,70 @@ public class CommandWrapperBuilder {
         this.entityName = "BUREAU";
         this.entityId = prequalificationId;
         this.href = "/prequalification/checklist/" + prequalificationId;
+        return this;
+    }
+
+    public CommandWrapperBuilder requestUpdatePrequalification(Long prequalificationId) {
+        this.actionName = "REQUESTUPDATE";
+        this.entityName = "PREQUALIFICATIONS";
+        this.entityId = prequalificationId;
+        this.href = "/prequalification/checklist/" + prequalificationId;
+        return this;
+    }
+
+    public CommandWrapperBuilder sendGroupForAnalysis(Long prequalificationId) {
+        this.actionName = "REQUESTANALYSIS";
+        this.entityName = "PREQUALIFICATIONS";
+        this.entityId = prequalificationId;
+        this.href = "/prequalification/checklist/" + prequalificationId;
+        return this;
+    }
+
+    public CommandWrapperBuilder updatePrequalificationMemberDetails(Long memberId) {
+        this.actionName = "UPDATE";
+        this.entityName = "PREQUALIFICATIONMEMBER";
+        this.entityId = memberId;
+        this.href = "/prequalification/" + memberId;
+        return this;
+    }
+
+    public CommandWrapperBuilder processAnalysisRequest(Long prequalificationId) {
+        this.actionName = "PROCESSANALYSIS";
+        this.entityName = "PREQUALIFICATIONS";
+        this.entityId = prequalificationId;
+        this.href = "/prequalification/checklist/" + prequalificationId;
+        return this;
+    }
+
+    public CommandWrapperBuilder payGuaranteesByCheques() {
+        this.entityName = BankChequeApiConstants.BANK_CHECK_RESOURCE_NAME;
+        this.actionName = BankChequeApiConstants.CHECK_ACTION_PAY_GUARANTEE_BY_CHEQUE;
+        this.entityId = null;
+        this.href = "/bankcheques";
+        return this;
+    }
+
+    public CommandWrapperBuilder createCommittee() {
+        this.actionName = "CREATE";
+        this.entityName = "COMMITTEE";
+        this.entityId = null;
+        this.href = "/committees";
+        return this;
+    }
+
+    public CommandWrapperBuilder updateCommittee(Long committeeId) {
+        this.actionName = "UPDATE";
+        this.entityName = "COMMITTEE";
+        this.entityId = committeeId;
+        this.href = "/committees" + committeeId;
+        return this;
+    }
+
+    public CommandWrapperBuilder deleteCommittee(Long committeeId) {
+        this.actionName = "DELETE";
+        this.entityName = "COMMITTEE";
+        this.entityId = committeeId;
+        this.href = "/committees" + committeeId;
         return this;
     }
 }

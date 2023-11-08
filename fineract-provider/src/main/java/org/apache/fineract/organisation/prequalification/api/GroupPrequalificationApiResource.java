@@ -43,6 +43,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.UriInfo;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.commands.domain.CommandWrapper;
 import org.apache.fineract.commands.service.CommandWrapperBuilder;
 import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformService;
@@ -172,6 +173,9 @@ public class GroupPrequalificationApiResource {
 
         this.context.authenticatedUser().validateHasViewPermission(this.resourceNameForPermissions);
 
+        MultivaluedMap<String, String> queryParameters = uriInfo.getQueryParameters();
+
+        String type = queryParameters.getFirst("type");
         Collection<CenterData> centerData = this.centerReadPlatformService
                 .retrieveAllForDropdown(this.context.authenticatedUser().getOffice().getId());
 
@@ -180,16 +184,25 @@ public class GroupPrequalificationApiResource {
         final List<AppUserData> appUsers = new ArrayList<>(
                 this.appUserReadPlatformService.retrieveUsersUnderHierarchy(Long.valueOf(OfficeHierarchyLevel.GRUPO.getValue())));
 
-        final List<EnumOptionData> statusOptions = Arrays.asList(status(PrequalificationStatus.CONSENT_ADDED),
+        List<EnumOptionData> statusOptions = Arrays.asList(status(PrequalificationStatus.CONSENT_ADDED),
                 status(PrequalificationStatus.BLACKLIST_CHECKED), status(PrequalificationStatus.COMPLETED),
                 status(PrequalificationStatus.HARD_POLICY_CHECKED), status(PrequalificationStatus.TIME_EXPIRED));
+        if (StringUtils.equalsIgnoreCase(type, "analysis")) {
+            statusOptions = Arrays.asList(status(PrequalificationStatus.ANALYSIS_UNIT_PENDING_APPROVAL),
+                    status(PrequalificationStatus.ANALYSIS_UNIT_PENDING_APPROVAL_WITH_EXCEPTIONS));
+        }
+
+        if (StringUtils.equalsIgnoreCase(type, "exceptionsqueue")) {
+            statusOptions = Arrays.asList(status(PrequalificationStatus.AGENCY_LEAD_PENDING_APPROVAL),
+                    status(PrequalificationStatus.AGENCY_LEAD_PENDING_APPROVAL_WITH_EXCEPTIONS));
+        }
 
         GlobalConfigurationPropertyData timespan = this.configurationReadPlatformService
                 .retrieveGlobalConfiguration("Prequalification Timespan");
         final GroupPrequalificationData clientIdentifierData = GroupPrequalificationData.template(agencies, centerData, loanProducts,
                 appUsers, timespan, statusOptions);
 
-        final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
+        final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(queryParameters);
         return this.toApiJsonSerializer.serialize(settings, clientIdentifierData, PRE_QUALIFICATION_DATA_PARAMETERS);
     }
 
@@ -259,6 +272,27 @@ public class GroupPrequalificationApiResource {
         try {
             final CommandWrapper commandRequest = new CommandWrapperBuilder().updatePrequalification(groupId).withJson(apiRequestBodyAsJson)
                     .build();
+
+            final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
+
+            return this.toApiJsonSerializer.serialize(result);
+        } catch (final Exception e) {
+            e.printStackTrace();
+            throw e;
+        }
+    }
+
+    @PUT
+    @Path("/{groupId}/{memberId}")
+    @Consumes({ MediaType.APPLICATION_JSON })
+    @Produces({ MediaType.APPLICATION_JSON })
+    public String updatePrequalificationMember(@Parameter(hidden = true) final String apiRequestBodyAsJson,
+            @PathParam("groupId") @Parameter(description = "groupId") final Long groupId,
+            @PathParam("memberId") @Parameter(description = "memberId") final Long memberId) {
+
+        try {
+            final CommandWrapper commandRequest = new CommandWrapperBuilder().updatePrequalificationMemberDetails(memberId)
+                    .withJson(apiRequestBodyAsJson).build();
 
             final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
 
