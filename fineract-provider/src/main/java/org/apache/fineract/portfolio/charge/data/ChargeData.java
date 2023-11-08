@@ -115,7 +115,8 @@ public final class ChargeData implements Comparable<ChargeData>, Serializable {
                 savingsChargeCalculationTypeOptions, savingsChargeTimeTypeOptions, clientChargeCalculationTypeOptions,
                 clientChargeTimeTypeOptions, null, null, null, null, null, feeFrequencyOptions, account, incomeOrLiabilityAccountOptions,
                 taxGroupOptions, shareChargeCalculationTypeOptions, shareChargeTimeTypeOptions, accountMappingForChargeConfig,
-                expenseAccountOptions, assetAccountOptions, chargeDisbursementTypeOptions, null, null, chargeInstallmentFeeTypeOptions, null);
+                expenseAccountOptions, assetAccountOptions, chargeDisbursementTypeOptions, null, null, chargeInstallmentFeeTypeOptions,
+                null);
     }
 
     public static ChargeData withTemplate(final ChargeData charge, final ChargeData template) {
@@ -130,7 +131,8 @@ public final class ChargeData implements Comparable<ChargeData>, Serializable {
                 charge.incomeOrLiabilityAccount, template.incomeOrLiabilityAccountOptions, template.taxGroupOptions,
                 template.shareChargeCalculationTypeOptions, template.shareChargeTimeTypeOptions, template.accountMappingForChargeConfig,
                 template.expenseAccountOptions, template.assetAccountOptions, template.chargeDisbursementTypeOptions,
-                charge.chargeDisbursementType, charge.chargeRanges, template.chargeInstallmentFeeTypeOptions, charge.chargeInstallmentFeeType);
+                charge.chargeDisbursementType, charge.chargeRanges, template.chargeInstallmentFeeTypeOptions,
+                charge.chargeInstallmentFeeType);
     }
 
     public static ChargeData instance(final Long id, final String name, final BigDecimal amount, final CurrencyData currency,
@@ -249,8 +251,8 @@ public final class ChargeData implements Comparable<ChargeData>, Serializable {
             final List<EnumOptionData> shareChargeCalculationTypeOptions, final List<EnumOptionData> shareChargeTimeTypeOptions,
             final String accountMappingForChargeConfig, final List<GLAccountData> expenseAccountOptions,
             final List<GLAccountData> assetAccountOptions, final List<EnumOptionData> chargeDisbursementTypeOptions,
-            final EnumOptionData chargeDisbursementType, final List<ChargeRangeData> chargeRanges, final List<EnumOptionData> chargeInstallmentFeeTypeOptions,
-                       final EnumOptionData chargeInstallmentFeeType) {
+            final EnumOptionData chargeDisbursementType, final List<ChargeRangeData> chargeRanges,
+            final List<EnumOptionData> chargeInstallmentFeeTypeOptions, final EnumOptionData chargeInstallmentFeeType) {
         this.id = id;
         this.name = name;
         this.amount = amount;

@@ -62,7 +62,7 @@ public final class ChargeDefinitionCommandFromApiJsonDeserializer {
             "active", "chargePaymentMode", "feeOnMonthDay", "feeInterval", "monthDayFormat", "minCap", "maxCap", "feeFrequency",
             "enableFreeWithdrawalCharge", "freeWithdrawalFrequency", "restartCountFrequency", "countFrequencyType", "paymentTypeId",
             "enablePaymentType", ChargesApiConstants.glAccountIdParamName, ChargesApiConstants.taxGroupIdParamName, "adminFeeRanges",
-            "chargeDisbursementType", "chargeDisbursementTypeOptions","chargeInstallmentFeeType", "chargeInstallmentFeeTypeOptions"));
+            "chargeDisbursementType", "chargeDisbursementTypeOptions", "chargeInstallmentFeeType", "chargeInstallmentFeeTypeOptions"));
 
     private final FromJsonHelper fromApiJsonHelper;
 
@@ -279,7 +279,7 @@ public final class ChargeDefinitionCommandFromApiJsonDeserializer {
             baseDataValidator.reset().parameter(ChargesApiConstants.taxGroupIdParamName).value(taxGroupId).notNull().longGreaterThanZero();
         }
 
-        if (appliesTo.isLoanCharge() && (chargeDisbursementType.isAddOn() || chargeInstallmentFeeType.isAddOn()) ) {
+        if (appliesTo.isLoanCharge() && (chargeDisbursementType.isAddOn() || chargeInstallmentFeeType.isAddOn())) {
             this.validateChargeLimits(false, dataValidationErrors, baseDataValidator, element);
         }
 

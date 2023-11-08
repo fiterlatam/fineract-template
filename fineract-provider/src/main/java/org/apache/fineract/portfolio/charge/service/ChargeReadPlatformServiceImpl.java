@@ -170,7 +170,8 @@ public class ChargeReadPlatformServiceImpl implements ChargeReadPlatformService 
         final List<GLAccountData> expenseAccountOptions = this.accountingDropdownReadPlatformService.retrieveExpenseAccountOptions();
         final List<GLAccountData> assetAccountOptions = this.accountingDropdownReadPlatformService.retrieveAssetAccountOptions();
         final List<EnumOptionData> chargeDisbursementTypeOptions = this.chargeDropdownReadPlatformService.retrieveDisbursementTypeOptions();
-        final List<EnumOptionData> chargeInstallmentFeeTypeOptions = this.chargeDropdownReadPlatformService.retrieveInstallmentFeeTypeOptions();
+        final List<EnumOptionData> chargeInstallmentFeeTypeOptions = this.chargeDropdownReadPlatformService
+                .retrieveInstallmentFeeTypeOptions();
 
         return ChargeData.template(currencyOptions, allowedChargeCalculationTypeOptions, allowedChargeAppliesToOptions,
                 allowedChargeTimeOptions, chargePaymentOptions, loansChargeCalculationTypeOptions, loansChargeTimeTypeOptions,

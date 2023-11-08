@@ -226,15 +226,15 @@ public final class ChargeEnumerations {
             case REGULAR:
                 optionData = new EnumOptionData(ChargeInstallmentFeeType.REGULAR.getValue().longValue(),
                         ChargeInstallmentFeeType.REGULAR.getCode(), "Regular");
-                break;
+            break;
             case ADD_ON:
                 optionData = new EnumOptionData(ChargeInstallmentFeeType.ADD_ON.getValue().longValue(),
                         ChargeInstallmentFeeType.ADD_ON.getCode(), "Add-on");
-                break;
+            break;
             default:
                 optionData = new EnumOptionData(ChargeInstallmentFeeType.INVALID.getValue().longValue(),
                         ChargeInstallmentFeeType.INVALID.getCode(), "Invalid");
-                break;
+            break;
         }
         return optionData;
     }

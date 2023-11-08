@@ -198,11 +198,13 @@ public class Charge extends AbstractPersistableCustom {
         final ChargeDisbursementType chargeDisbursementType = ChargeDisbursementType
                 .fromInt(command.integerValueOfParameterNamed("chargeDisbursementType"));
 
-        final ChargeInstallmentFeeType chargeInstallmentFeeType = ChargeInstallmentFeeType.fromInt(command.integerValueOfParameterNamed("chargeInstallmentFeeType"));
+        final ChargeInstallmentFeeType chargeInstallmentFeeType = ChargeInstallmentFeeType
+                .fromInt(command.integerValueOfParameterNamed("chargeInstallmentFeeType"));
 
         Charge charge = new Charge(name, amount, currencyCode, chargeAppliesTo, chargeTimeType, chargeCalculationType, penalty, active,
                 paymentMode, feeOnMonthDay, feeInterval, minCap, maxCap, feeFrequency, enableFreeWithdrawalCharge, freeWithdrawalFrequency,
-                restartCountFrequency, countFrequencyType, account, taxGroup, enablePaymentType, paymentType, chargeDisbursementType, chargeInstallmentFeeType);
+                restartCountFrequency, countFrequencyType, account, taxGroup, enablePaymentType, paymentType, chargeDisbursementType,
+                chargeInstallmentFeeType);
 
         setChargeRanges(charge, command);
 
@@ -865,7 +867,8 @@ public class Charge extends AbstractPersistableCustom {
         final Comparator<ChargeRange> orderByMinDay = Comparator.comparing(ChargeRange::getMinDay);
         Collections.sort(this.chargeRanges, orderByMinDay);
 
-        if (( (isDisbursementCharge() && isAddOnDisbursementType()) || (isInstallmentFeeCharge() && isAddOnInstallmentFeeType())) && this.chargeRanges != null && !this.chargeRanges.isEmpty()) {
+        if (((isDisbursementCharge() && isAddOnDisbursementType()) || (isInstallmentFeeCharge() && isAddOnInstallmentFeeType()))
+                && this.chargeRanges != null && !this.chargeRanges.isEmpty()) {
             // calculate days since disbursement date
             int numberOfDays = Math.toIntExact(daysBetween(disbursementDate, firstRepaymentDate));
             if (numberOfDays > defaultDays) {

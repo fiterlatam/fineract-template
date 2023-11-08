@@ -185,7 +185,8 @@ public class SavingsAccountChargeReadPlatformServiceImpl implements SavingsAccou
                 loansChargeCalculationTypeOptions, loansChargeTimeTypeOptions, savingsChargeCalculationTypeOptions,
                 savingsChargeTimeTypeOptions, clientChargeCalculationTypeOptions, clientChargeTimeTypeOptions, feeFrequencyOptions,
                 incomeOrLiabilityAccountOptions, taxGroupOptions, shareChargeCalculationTypeOptions, shareChargeTimeTypeOptions,
-                accountMappingForChargeConfig, expenseAccountOptions, assetAccountOptions, chargeDisbursementTypeOptions, chargeInstallmentFeeTypeOptions);
+                accountMappingForChargeConfig, expenseAccountOptions, assetAccountOptions, chargeDisbursementTypeOptions,
+                chargeInstallmentFeeTypeOptions);
     }
 
     @Override

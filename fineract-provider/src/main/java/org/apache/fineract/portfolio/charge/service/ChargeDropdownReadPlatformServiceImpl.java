@@ -19,10 +19,10 @@
 package org.apache.fineract.portfolio.charge.service;
 
 import static org.apache.fineract.portfolio.charge.service.ChargeEnumerations.chargeCalculationType;
-import static org.apache.fineract.portfolio.charge.service.ChargeEnumerations.chargePaymentMode;
-import static org.apache.fineract.portfolio.charge.service.ChargeEnumerations.chargeTimeType;
 import static org.apache.fineract.portfolio.charge.service.ChargeEnumerations.chargeDisbursementType;
 import static org.apache.fineract.portfolio.charge.service.ChargeEnumerations.chargeInstallmentFeeType;
+import static org.apache.fineract.portfolio.charge.service.ChargeEnumerations.chargePaymentMode;
+import static org.apache.fineract.portfolio.charge.service.ChargeEnumerations.chargeTimeType;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -35,7 +35,6 @@ import org.apache.fineract.portfolio.charge.domain.ChargeInstallmentFeeType;
 import org.apache.fineract.portfolio.charge.domain.ChargePaymentMode;
 import org.apache.fineract.portfolio.charge.domain.ChargeTimeType;
 import org.springframework.stereotype.Service;
-
 
 @Service
 public class ChargeDropdownReadPlatformServiceImpl implements ChargeDropdownReadPlatformService {
@@ -139,7 +138,8 @@ public class ChargeDropdownReadPlatformServiceImpl implements ChargeDropdownRead
 
     @Override
     public List<EnumOptionData> retrieveInstallmentFeeTypeOptions() {
-        return Arrays.asList(chargeInstallmentFeeType(ChargeInstallmentFeeType.REGULAR), chargeInstallmentFeeType(ChargeInstallmentFeeType.ADD_ON));
+        return Arrays.asList(chargeInstallmentFeeType(ChargeInstallmentFeeType.REGULAR),
+                chargeInstallmentFeeType(ChargeInstallmentFeeType.ADD_ON));
     }
 
 }
