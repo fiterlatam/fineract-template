@@ -5003,21 +5003,20 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                     continue;
                 }
                 BigDecimal amount = BigDecimal.ZERO;
-                //FBR-369: Apply Administrative Fee as Installment Fee
+                // FBR-369: Apply Administrative Fee as Installment Fee
                 BigDecimal chargeRate = loanCharge.getPercentage();
 
-                if(loanCharge.getCharge().isAddOnInstallmentFeeType()){
+                if (loanCharge.getCharge().isAddOnInstallmentFeeType()) {
                     LocalDate firstRepaymentDate = this.fetchRepaymentScheduleInstallment(1).getDueDate();
-                    Pair<Integer, BigDecimal> addOnDaysAndRate = loanCharge.getCharge().getAddOnDisbursementChargeRate(this.getDisbursementDate(),
-                            firstRepaymentDate);
+                    Pair<Integer, BigDecimal> addOnDaysAndRate = loanCharge.getCharge()
+                            .getAddOnDisbursementChargeRate(this.getDisbursementDate(), firstRepaymentDate);
                     chargeRate = addOnDaysAndRate.getRight();
                 }
 
                 if (loanCharge.getChargeCalculation().isFlat()) {
                     amount = loanCharge.amountOrPercentage();
                 } else {
-                    amount = calculateInstallmentChargeAmount(loanCharge.getChargeCalculation(), chargeRate, installment)
-                            .getAmount();
+                    amount = calculateInstallmentChargeAmount(loanCharge.getChargeCalculation(), chargeRate, installment).getAmount();
                 }
                 final LoanInstallmentCharge loanInstallmentCharge = new LoanInstallmentCharge(amount, loanCharge, installment);
                 installment.getInstallmentCharges().add(loanInstallmentCharge);

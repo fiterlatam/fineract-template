@@ -53,7 +53,7 @@ public enum Policies {
                                                                                                                                                     27,
                                                                                                                                                     "Cancelled Cycles Count"), TWENTY_EIGHT(
                                                                                                                                                             28,
-                                                                                                                                                            " Acceptance of new clients"), TWENTY_NINE(
+                                                                                                                                                            "Acceptance of new clients"), TWENTY_NINE(
                                                                                                                                                                     29,
                                                                                                                                                                     "Present agricultural technical diagnosis (Commcare)"), THIRTY(
                                                                                                                                                                             30,

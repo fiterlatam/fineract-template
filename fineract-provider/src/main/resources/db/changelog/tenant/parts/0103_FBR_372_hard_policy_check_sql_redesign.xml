@@ -135,5 +135,205 @@
                 splitStatements="true"
                 stripComments="true"/>
     </changeSet>
+    <changeSet author="fineract" id="13">
+        <sqlFile
+                encoding="utf8"
+                path="db/changelog/tenant/commands/policy_run_7.sql"
+                relativeToChangelogFile="false"
+                splitStatements="true"
+                stripComments="true"/>
+    </changeSet>
+    <changeSet id="14" author="fineract">
+        <sql>
+            UPDATE stretchy_report SET report_sql = "SELECT mc.id,
+            client_age.client_age AS client_age,
+            mc.date_of_birth AS date_of_birth,
+            CASE
+            -- Banco Comunal normal
+            WHEN (${loanProductId} = 2) AND ('${clientCategorization}' = 'NEW') AND (IFNULL(client_age.client_age, 0) BETWEEN 18 AND 70) THEN 'GREEN'
+            WHEN (${loanProductId} = 2) AND ('${clientCategorization}' = 'NEW') AND (IFNULL(client_age.client_age, 0) BETWEEN 71 AND 75) THEN 'YELLOW'
+            WHEN (${loanProductId} = 2) AND ('${clientCategorization}' = 'NEW') AND (IFNULL(client_age.client_age, 0) NOT BETWEEN 18 AND 75) THEN 'RED'
+            WHEN (${loanProductId} = 2) AND ('${clientCategorization}' = 'RECURRING') AND (IFNULL(client_age.client_age, 0) BETWEEN 18 AND 75) THEN 'GREEN'
+            WHEN (${loanProductId} = 2) AND ('${clientCategorization}' = 'RECURRING') AND (IFNULL(client_age.client_age, 0) NOT BETWEEN 18 AND 75) THEN 'RED'
+
+            -- Banco Comunal temporal
+            WHEN (${loanProductId} = 9) AND ('${clientCategorization}' = 'NEW') AND (IFNULL(client_age.client_age, 0) BETWEEN 18 AND 70) THEN 'GREEN'
+            WHEN (${loanProductId} = 9) AND ('${clientCategorization}' = 'NEW') AND (IFNULL(client_age.client_age, 0) BETWEEN 71 AND 75) THEN 'YELLOW'
+            WHEN (${loanProductId} = 9) AND ('${clientCategorization}' = 'NEW') AND (IFNULL(client_age.client_age, 0) NOT BETWEEN 18 AND 75) THEN 'RED'
+            WHEN (${loanProductId} = 9) AND ('${clientCategorization}' = 'RECURRING') AND (IFNULL(client_age.client_age, 0) BETWEEN 18 AND 75) THEN 'GREEN'
+            WHEN (${loanProductId} = 9) AND ('${clientCategorization}' = 'RECURRING') AND (IFNULL(client_age.client_age, 0) NOT BETWEEN 18 AND 75) THEN 'RED'
+
+
+            -- Banco Comunal Agricola
+            WHEN (${loanProductId} = 8) AND ('${clientCategorization}' = 'NEW') AND (IFNULL(client_age.client_age, 0) BETWEEN 18 AND 70) THEN 'GREEN'
+            WHEN (${loanProductId} = 8) AND ('${clientCategorization}' = 'NEW') AND (IFNULL(client_age.client_age, 0) BETWEEN 71 AND 75) THEN 'YELLOW'
+            WHEN (${loanProductId} = 8) AND ('${clientCategorization}' = 'NEW') AND (IFNULL(client_age.client_age, 0) NOT BETWEEN 18 AND 75) THEN 'RED'
+            WHEN (${loanProductId} = 8) AND ('${clientCategorization}' = 'RECURRING') AND (IFNULL(client_age.client_age, 0) BETWEEN 18 AND 75) THEN 'GREEN'
+            WHEN (${loanProductId} = 8) AND ('${clientCategorization}' = 'RECURRING') AND (IFNULL(client_age.client_age, 0) NOT BETWEEN 18 AND 75) THEN 'RED'
+
+
+            -- Grupo Solidario
+            WHEN (${loanProductId} = 4) AND ('${clientCategorization}' = 'NEW') AND (IFNULL(client_age.client_age, 0) BETWEEN 18 AND 70) THEN 'GREEN'
+            WHEN (${loanProductId} = 4) AND ('${clientCategorization}' = 'NEW') AND (IFNULL(client_age.client_age, 0) BETWEEN 71 AND 75) THEN 'YELLOW'
+            WHEN (${loanProductId} = 4) AND ('${clientCategorization}' = 'NEW') AND (IFNULL(client_age.client_age, 0) NOT BETWEEN 18 AND 75) THEN 'RED'
+            WHEN (${loanProductId} = 4) AND ('${clientCategorization}' = 'RECURRING') AND (IFNULL(client_age.client_age, 0) BETWEEN 18 AND 75) THEN 'GREEN'
+            WHEN (${loanProductId} = 4) AND ('${clientCategorization}' = 'RECURRING') AND (IFNULL(client_age.client_age, 0) NOT BETWEEN 18 AND 75) THEN 'RED'
+
+
+            -- Grupo Solidario Agricola
+            WHEN (${loanProductId} = 5) AND ('${clientCategorization}' = 'NEW') AND (IFNULL(client_age.client_age, 0) BETWEEN 18 AND 70) THEN 'GREEN'
+            WHEN (${loanProductId} = 5) AND ('${clientCategorization}' = 'NEW') AND (IFNULL(client_age.client_age, 0) BETWEEN 71 AND 75) THEN 'YELLOW'
+            WHEN (${loanProductId} = 5) AND ('${clientCategorization}' = 'NEW') AND (IFNULL(client_age.client_age, 0) NOT BETWEEN 18 AND 75) THEN 'RED'
+            WHEN (${loanProductId} = 5) AND ('${clientCategorization}' = 'RECURRING') AND (IFNULL(client_age.client_age, 0) BETWEEN 18 AND 75) THEN 'GREEN'
+            WHEN (${loanProductId} = 5) AND ('${clientCategorization}' = 'RECURRING') AND (IFNULL(client_age.client_age, 0) NOT BETWEEN 18 AND 75) THEN 'RED'
+            END AS color
+            FROM m_client mc
+            INNER JOIN (
+            SELECT mct.id AS client_id, mct.date_of_birth AS date_of_birth, IFNULL(TIMESTAMPDIFF(YEAR, mct.date_of_birth, CURDATE()), 0) AS client_age
+            FROM m_client mct
+            ) client_age ON client_age.client_id = mc.id
+            WHERE mc.id = ${clientId}" WHERE report_name = "Client age Policy Check";
+        </sql>
+    </changeSet>
+    <changeSet author="fineract" id="15">
+        <update tableName="m_policy">
+            <column name="description" value="¿Registra alguna demanda?"/>
+            <where>id='22'</where>
+        </update>
+    </changeSet>
+
+    <changeSet author="fineract" id="16">
+        <sqlFile
+                encoding="utf8"
+                path="db/changelog/tenant/commands/policy_run_23.sql"
+                relativeToChangelogFile="false"
+                splitStatements="true"
+                stripComments="true"/>
+    </changeSet>
+
+    <changeSet author="fineract" id="17">
+        <sqlFile
+                encoding="utf8"
+                path="db/changelog/tenant/commands/policy_run_24.sql"
+                relativeToChangelogFile="false"
+                splitStatements="true"
+                stripComments="true"/>
+    </changeSet>
+
+    <changeSet author="fineract" id="18">
+        <sqlFile
+                encoding="utf8"
+                path="db/changelog/tenant/commands/policy_run_25.sql"
+                relativeToChangelogFile="false"
+                splitStatements="true"
+                stripComments="true"/>
+    </changeSet>
+
+    <changeSet author="fineract" id="19">
+        <sqlFile
+                encoding="utf8"
+                path="db/changelog/tenant/commands/policy_run_27.sql"
+                relativeToChangelogFile="false"
+                splitStatements="true"
+                stripComments="true"/>
+    </changeSet>
+
+    <changeSet author="fineract" id="20">
+        <sqlFile
+                encoding="utf8"
+                path="db/changelog/tenant/commands/policy_run_28.sql"
+                relativeToChangelogFile="false"
+                splitStatements="true"
+                stripComments="true"/>
+    </changeSet>
+
+    <changeSet id="21" author="fineract">
+        <sql>
+            <![CDATA[
+                UPDATE stretchy_report SET report_sql = "SELECT CASE
+                WHEN (${loanProductId} = 2) AND (IFNULL(client_loan_details.number_of_loan_cycles, 0) > 0) THEN 'RECURRING'
+                WHEN (${loanProductId} = 2) AND (IFNULL(client_loan_details.number_of_loan_cycles, 0) = 0) THEN 'NEW'
+                WHEN (${loanProductId} = 2) AND (IFNULL(client_loan_details.rejoining_years, 0) >= 1 OR IFNULL(client_loan_details.number_of_closed_loans, 0) <= 2) THEN 'NEW'
+
+                WHEN (${loanProductId} = 9) AND (IFNULL(client_loan_details.number_of_loan_cycles, 0) > 0) THEN 'RECURRING'
+                WHEN (${loanProductId} = 9) AND (IFNULL(client_loan_details.number_of_loan_cycles, 0) = 0) THEN 'NEW'
+                WHEN (${loanProductId} = 9) AND (IFNULL(client_loan_details.rejoining_years, 0) >= 1) THEN 'NEW'
+                WHEN (${loanProductId} = 9) AND (IFNULL(client_loan_details.number_of_closed_loans, 0) > 0) THEN 'NEW'
+
+                WHEN (${loanProductId} = 8) AND (IFNULL(client_loan_details.number_of_loan_cycles, 0) > 0) THEN 'RECURRING'
+                WHEN (${loanProductId} = 8) AND (IFNULL(client_loan_details.number_of_loan_cycles, 0) = 0) THEN 'NEW'
+                WHEN (${loanProductId} = 8) AND (IFNULL(client_loan_details.rejoining_years, 0) >= 1) THEN 'NEW'
+                WHEN (${loanProductId} = 8) AND (IFNULL(client_loan_details.number_of_closed_loans, 0) > 0) THEN 'NEW'
+
+                WHEN (${loanProductId} = 4) AND (IFNULL(client_loan_details.number_of_closed_loans, 0) >= 3) THEN 'RECURRING'
+                WHEN (${loanProductId} = 4) AND (IFNULL(client_loan_details.number_of_loan_cycles, 0) = 0) THEN 'NEW'
+                WHEN (${loanProductId} = 4) AND (IFNULL(client_loan_details.rejoining_years, 0) >= 1) THEN 'NEW'
+                WHEN (${loanProductId} = 4) AND (IFNULL(client_loan_details.number_of_closed_loans, 0) > 0) THEN 'NEW'
+
+                WHEN (${loanProductId} = 5) AND (IFNULL(client_loan_details.number_of_closed_loans, 0) >= 3) THEN 'RECURRING'
+                WHEN (${loanProductId} = 5) AND (IFNULL(client_loan_details.number_of_loan_cycles, 0) = 0) THEN 'NEW'
+                WHEN (${loanProductId} = 5) AND (IFNULL(client_loan_details.rejoining_years, 0) >= 1) THEN 'NEW'
+                WHEN (${loanProductId} = 5) AND (IFNULL(client_loan_details.number_of_closed_loans, 0) > 0) THEN 'NEW'
+
+                WHEN (${loanProductId} = 7) AND (IFNULL(client_loan_details.number_of_closed_loans, 0) >= 3) THEN 'RECURRING'
+                WHEN (${loanProductId} = 7) AND (IFNULL(client_loan_details.number_of_closed_loans, 0) = 2) THEN 'RECURRING'
+                WHEN (${loanProductId} = 7) AND (IFNULL(client_loan_details.number_of_closed_loans, 0) < 2) THEN 'RECURRING'
+
+                WHEN (${loanProductId} = 3) AND (IFNULL(client_loan_details.number_of_closed_loans, 0) >= 1) THEN 'RECURRING'
+                WHEN (${loanProductId} = 3) AND (IFNULL(client_loan_details.number_of_closed_loans, 0) = 0) THEN 'RECURRING'
+
+                ELSE 'NEW'
+                END AS clientCategorization,
+                'GREEN' AS color,
+                CASE
+                WHEN client_area.code_value = 'Urbana' THEN 'URBANA'
+                WHEN client_area.code_value = 'Rural' THEN 'RURAL'
+                WHEN client_area.code_value = 'PeriUrbana' THEN 'PERI_URBANA'
+                ELSE 'RURAL'
+                END AS clientArea,
+                CASE
+                WHEN COALESCE(client_loan_details.number_of_submitted_loans, 0) > 0 THEN 'RECREDITO'
+                ELSE 'NUEVO'
+                END AS recreditCategorization,
+                client_loan_details.submittedon_years,
+                client_loan_details.rejoining_years,
+                client_loan_details.number_of_loan_cycles,
+                client_loan_details.number_of_closed_loans,
+                client_loan_details.number_of_submitted_loans
+                FROM m_client mc
+                INNER JOIN (
+                SELECT mcl.id AS client_id,
+                TIMESTAMPDIFF(YEAR, mcl.submittedon_date, CURDATE()) AS submittedon_years,
+                IFNULL(TIMESTAMPDIFF(YEAR, mcl.submittedon_date, mcl.reactivated_on_date), 0) AS rejoining_years,
+                COALESCE((SELECT COUNT(*) FROM m_loan WHERE client_id = mcl.id AND approvedon_date IS NOT NULL), 0) AS number_of_loan_cycles,
+                COALESCE((SELECT COUNT(*) FROM m_loan WHERE client_id = mcl.id AND loan_status_id >= 600), 0) AS number_of_closed_loans,
+                COALESCE((SELECT COUNT(*) FROM m_loan WHERE client_id = mcl.id AND loan_status_id = 100), 0) AS number_of_submitted_loans
+                FROM  m_client mcl
+                )client_loan_details ON client_loan_details.client_id = mc.id
+                LEFT JOIN m_client_contact_info mcci ON mcci.client_id = mc.id
+                LEFT JOIN m_code_value client_area ON client_area.id = mcci.area
+                WHERE mc.id = ${clientId}
+                GROUP BY mc.id" WHERE report_name = "Client Categorization Policy Check";
+            ]]>
+        </sql>
+    </changeSet>
+
+    <changeSet author="fineract" id="22">
+        <sqlFile
+                encoding="utf8"
+                path="db/changelog/tenant/commands/policy_run_30.sql"
+                relativeToChangelogFile="false"
+                splitStatements="true"
+                stripComments="true"/>
+    </changeSet>
+
+    <changeSet author="fineract" id="23">
+        <sqlFile
+                encoding="utf8"
+                path="db/changelog/tenant/commands/policy_run_31.sql"
+                relativeToChangelogFile="false"
+                splitStatements="true"
+                stripComments="true"/>
+    </changeSet>
 
 </databaseChangeLog>
