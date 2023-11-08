@@ -24,6 +24,10 @@ import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
+import org.apache.fineract.organisation.agency.data.AgencyData;
+import org.apache.fineract.portfolio.group.data.CenterData;
+import org.apache.fineract.portfolio.group.data.GroupGeneralData;
+import org.apache.fineract.useradministration.data.AppUserData;
 
 @Builder
 @Data
@@ -45,4 +49,8 @@ public class BatchData {
     private String createdByUsername;
     private String description;
     private List<EnumOptionData> statusOptions;
+    private Collection<AgencyData> agencyOptions;
+    private final Collection<CenterData> centerOptions;
+    private final Collection<GroupGeneralData> groupOptions;
+    private final Collection<AppUserData> facilitatorOptions;
 }

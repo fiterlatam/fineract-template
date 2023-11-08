@@ -49,11 +49,11 @@ public final class PreQualificationsMemberEnumerations {
             case INACTIVE:
                 optionData = new EnumOptionData(PrequalificationMemberIndication.INACTIVE.getValue().longValue(),
                         PrequalificationMemberIndication.INACTIVE.getCode(), "INACTIVE");
-                break;
+            break;
             case BUREAU_AVAILABLE:
                 optionData = new EnumOptionData(PrequalificationMemberIndication.BUREAU_AVAILABLE.getValue().longValue(),
                         PrequalificationMemberIndication.BUREAU_AVAILABLE.getCode(), "BUREAU_AVAILABLE");
-                break;
+            break;
             case NONE:
                 optionData = new EnumOptionData(PrequalificationMemberIndication.NONE.getValue().longValue(),
                         PrequalificationMemberIndication.NONE.getCode(), "NONE");

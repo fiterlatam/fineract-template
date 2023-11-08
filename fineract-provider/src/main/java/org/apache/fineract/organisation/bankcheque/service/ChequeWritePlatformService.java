@@ -37,4 +37,12 @@ public interface ChequeWritePlatformService {
 
     CommandProcessingResult authorizedChequeVoidance(final Long chequeId, final JsonCommand command);
 
+    CommandProcessingResult approveChequeIssuance(final JsonCommand command);
+
+    CommandProcessingResult authorizeChequeIssuance(final JsonCommand command);
+
+    CommandProcessingResult printCheques(final JsonCommand command);
+
+    CommandProcessingResult payGuaranteeByCheque(final JsonCommand command);
+
 }

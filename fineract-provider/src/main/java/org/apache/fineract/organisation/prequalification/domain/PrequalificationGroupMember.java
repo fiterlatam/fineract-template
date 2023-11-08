@@ -58,6 +58,9 @@ public class PrequalificationGroupMember extends AbstractPersistableCustom {
     @Column(name = "requested_amount", nullable = false)
     private BigDecimal requestedAmount;
 
+    @Column(name = "approved_amount", nullable = false)
+    private BigDecimal approvedAmount;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
@@ -75,13 +78,16 @@ public class PrequalificationGroupMember extends AbstractPersistableCustom {
     @Column(name = "buro_check_status", nullable = false)
     private Integer buroCheckStatus;
 
+    @Column(name = "is_president", nullable = false)
+    private Boolean groupPresident;
+
     protected PrequalificationGroupMember() {
         //
     }
 
     private PrequalificationGroupMember(final AppUser appUser, final String clientName, final String dpi, final LocalDate dob,
-                                        final String puente, final PrequalificationGroup group, final BigDecimal requestedAmount, final Integer status,
-                                        final Long clientId) {
+            final String puente, final PrequalificationGroup group, final BigDecimal requestedAmount, final Integer status,
+            final Long clientId, final Boolean groupPresident) {
         this.status = PrequalificationStatus.PENDING.getValue();
         this.createdAt = DateUtils.getLocalDateTimeOfTenant();
         this.dob = dob;
@@ -93,12 +99,14 @@ public class PrequalificationGroupMember extends AbstractPersistableCustom {
         this.requestedAmount = requestedAmount;
         this.addedBy = appUser;
         this.status = status;
+        this.groupPresident = groupPresident;
     }
 
     public static PrequalificationGroupMember fromJson(PrequalificationGroup group, String name, String dpi, Long clientId,
-                                                       LocalDate dateOfBirth, BigDecimal requestedAmount, String puente, AppUser addedBy, Integer status) {
+            LocalDate dateOfBirth, BigDecimal requestedAmount, String puente, AppUser addedBy, Integer status, Boolean groupPresident) {
         // TODO Auto-generated method stub
-        return new PrequalificationGroupMember(addedBy, name, dpi, dateOfBirth, puente, group, requestedAmount, status, clientId);
+        return new PrequalificationGroupMember(addedBy, name, dpi, dateOfBirth, puente, group, requestedAmount, status, clientId,
+                groupPresident);
     }
 
     public void updateStatus(final PrequalificationMemberIndication prequalificationStatus) {
@@ -160,6 +168,19 @@ public class PrequalificationGroupMember extends AbstractPersistableCustom {
             actualChanges.put(PrequalificatoinApiConstants.memberWorkWithPuenteParamName, newValue);
         }
 
+        if (command.isChangeInBooleanParameterNamed(PrequalificatoinApiConstants.groupPresidentParamName, this.groupPresident)) {
+            final Boolean newValue = command.booleanObjectValueOfParameterNamed(PrequalificatoinApiConstants.groupPresidentParamName);
+            actualChanges.put(PrequalificatoinApiConstants.groupPresidentParamName, newValue);
+        }
+
         return actualChanges;
+    }
+
+    public void updateApprovedAmount(BigDecimal newValue) {
+        this.approvedAmount = newValue;
+    }
+
+    public void updatePresident(Boolean newValue) {
+        this.groupPresident = newValue;
     }
 }

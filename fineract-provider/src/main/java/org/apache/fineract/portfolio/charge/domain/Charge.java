@@ -25,6 +25,8 @@ import java.time.LocalDate;
 import java.time.MonthDay;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -40,7 +42,6 @@ import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
-
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.fineract.accounting.glaccount.data.GLAccountData;
 import org.apache.fineract.accounting.glaccount.domain.GLAccount;
@@ -833,6 +834,10 @@ public class Charge extends AbstractPersistableCustom {
         int defaultDays = LoanProductConstants.DEFAULT_LIMIT_OF_DAYS_FOR_ADDON;
         int daysAddOnApplicable = 0;
 
+        // Sort the list by the minDay attribute
+        final Comparator<ChargeRange> orderByMinDay = Comparator.comparing(ChargeRange::getMinDay);
+        Collections.sort(this.chargeRanges, orderByMinDay);
+
         if (isDisbursementCharge() && isAddOnDisbursementType() && this.chargeRanges != null && !this.chargeRanges.isEmpty()) {
             // calculate days since disbursement date
             int numberOfDays = Math.toIntExact(daysBetween(disbursementDate, firstRepaymentDate));
@@ -842,6 +847,10 @@ public class Charge extends AbstractPersistableCustom {
             for (ChargeRange chargeRange : this.chargeRanges) {
                 if ((chargeRange.getMinDay() != null && daysAddOnApplicable >= chargeRange.getMinDay())
                         && (chargeRange.getMaxDay() != null && daysAddOnApplicable <= chargeRange.getMaxDay())) {
+                    addOnDisbursementChargeRate = chargeRange.getFeeRate();
+                    break;
+                } else if (chargeRange.getMinDay() != null && daysAddOnApplicable >= chargeRange.getMinDay()
+                        && (chargeRange.getMaxDay() == null)) {
                     addOnDisbursementChargeRate = chargeRange.getFeeRate();
                     break;
                 }

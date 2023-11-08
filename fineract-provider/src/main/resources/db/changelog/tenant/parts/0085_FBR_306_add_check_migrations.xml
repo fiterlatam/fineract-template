@@ -311,5 +311,309 @@
         </insert>
     </changeSet>
 
+    <changeSet id="26" author="fineract">
+        <insert tableName="m_permission">
+            <column name="grouping" value="portfolio" />
+            <column name="code" value="DISBURSEBYCHEQUES_LOAN"/>
+            <column name="entity_name" value="LOAN" />
+            <column name="action_name" value="DISBURSEBYCHEQUES" />
+            <column name="can_maker_checker" valueBoolean="false" />
+        </insert>
+    </changeSet>
+
+    <changeSet author="fineract" id="27">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_loan" columnName="cheque_id"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_loan">
+            <column name="cheque_id" type="BIGINT" defaultValueComputed="NULL">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="28">
+        <addForeignKeyConstraint baseColumnNames="cheque_id" baseTableName="m_loan"
+                                 constraintName="FK2023092611_m_loan_cheque_id" deferrable="false"
+                                 initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT"
+                                 referencedColumnNames="id" referencedTableName="m_bank_check" validate="true"/>
+    </changeSet>
+
+    <changeSet author="fineract" id="29">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_bank_check" columnName="guarantee_amount"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_bank_check">
+            <column defaultValueNumeric="0.000000" name="guarantee_amount" type="DECIMAL(19, 6)">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="30">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_loan" columnName="disbursed_by_cheque_date"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_loan">
+            <column defaultValueComputed="NULL" name="disbursed_by_cheque_date" type="date">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="31">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_loan" columnName="disbursed_by_cheque_userid"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_loan">
+            <column defaultValueComputed="NULL" name="disbursed_by_cheque_userid" type="BIGINT">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="32">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_bank_check" columnName="disbursed_by_cheque_date"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_bank_check">
+            <column defaultValueComputed="NULL" name="disbursed_by_cheque_date" type="date">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="33">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_bank_check" columnName="issuance_approvedby_id"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_bank_check">
+            <column defaultValueComputed="NULL" name="issuance_approvedby_id" type="BIGINT">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="34">
+        <addForeignKeyConstraint baseColumnNames="issuance_approvedby_id" baseTableName="m_bank_check"
+                                 constraintName="FK20231001_m_bank_check_table_issuance_approvedby_id" deferrable="false" initiallyDeferred="false"
+                                 onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="id"
+                                 referencedTableName="m_appuser" validate="true"/>
+    </changeSet>
+
+    <changeSet id="35" author="fineract">
+        <insert tableName="m_permission">
+            <column name="grouping" value="portfolio" />
+            <column name="code" value="APPROVEISSUANCE_BANKCHEQUE"/>
+            <column name="entity_name" value="BANKCHEQUE" />
+            <column name="action_name" value="APPROVEISSUANCE" />
+            <column name="can_maker_checker" valueBoolean="false" />
+        </insert>
+    </changeSet>
+
+    <changeSet author="fineract" id="36">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_bank_check" columnName="issuance_approvedon_date"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_bank_check">
+            <column defaultValueComputed="NULL" name="issuance_approvedon_date" type="date">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="37">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_bank_check" columnName="issuance_authorizedby_id"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_bank_check">
+            <column defaultValueComputed="NULL" name="issuance_authorizedby_id" type="BIGINT">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="38">
+        <addForeignKeyConstraint baseColumnNames="issuance_authorizedby_id" baseTableName="m_bank_check"
+                                 constraintName="FK20231003_m_bank_check_table_issuance_authorizedby_id" deferrable="false" initiallyDeferred="false"
+                                 onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="id"
+                                 referencedTableName="m_appuser" validate="true"/>
+    </changeSet>
+
+    <changeSet author="fineract" id="39">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_bank_check" columnName="issuance_authorizedon_date"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_bank_check">
+            <column defaultValueComputed="NULL" name="issuance_authorizedon_date" type="date">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="40" author="fineract">
+        <insert tableName="m_permission">
+            <column name="grouping" value="portfolio" />
+            <column name="code" value="AUTHORIZEISSUANCE_BANKCHEQUE"/>
+            <column name="entity_name" value="BANKCHEQUE" />
+            <column name="action_name" value="AUTHORIZEISSUANCE" />
+            <column name="can_maker_checker" valueBoolean="false" />
+        </insert>
+    </changeSet>
+
+    <changeSet id="41" author="fineract">
+        <insert tableName="m_permission">
+            <column name="grouping" value="portfolio" />
+            <column name="code" value="PRINT_BANKCHEQUE"/>
+            <column name="entity_name" value="BANKCHEQUE" />
+            <column name="action_name" value="PRINT" />
+            <column name="can_maker_checker" valueBoolean="false" />
+        </insert>
+    </changeSet>
+
+    <changeSet author="fineract" id="42">
+        <sqlFile
+                encoding="utf8"
+                path="db/changelog/tenant/commands/insert_guarantee_external_service_configs.sql"
+                relativeToChangelogFile="false"
+                splitStatements="true"
+                stripComments="true"/>
+    </changeSet>
+
+    <changeSet author="fineract" id="43">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_bank_check" columnName="guarantee_id"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_bank_check">
+            <column defaultValueComputed="NULL" name="guarantee_id" type="BIGINT">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="44">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_bank_check" columnName="case_id"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_bank_check">
+            <column defaultValueComputed="NULL" name="case_id" type="VARCHAR(100)">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="45" author="fineract">
+        <insert tableName="m_permission">
+            <column name="grouping" value="portfolio" />
+            <column name="code" value="PAYGUARANTEEBYCHEQUE_BANKCHEQUE"/>
+            <column name="entity_name" value="BANKCHEQUE" />
+            <column name="action_name" value="PAYGUARANTEEBYCHEQUE" />
+            <column name="can_maker_checker" valueBoolean="false" />
+        </insert>
+    </changeSet>
+
+    <changeSet author="fineract" id="46">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_bank_check" columnName="guarantee_deposit_no"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_bank_check">
+            <column defaultValueComputed="NULL" name="guarantee_deposit_no" type="VARCHAR(100)">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="47">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_bank_check" columnName="required_guarantee_amount"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_bank_check">
+            <column defaultValueNumeric="0.000000" name="required_guarantee_amount" type="DECIMAL(19, 6)">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="48">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_bank_check" columnName="guarantee_name"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_bank_check">
+            <column name="guarantee_name" type="VARCHAR(200)"></column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="49">
+        <sqlFile
+                encoding="utf8"
+                path="db/changelog/tenant/commands/insert_buro_check_external_service_configs.sql"
+                relativeToChangelogFile="false"
+                splitStatements="true"
+                stripComments="true"/>
+    </changeSet>
+
+    <changeSet author="fineract" id="50">
+        <sqlFile
+                encoding="utf8"
+                path="db/changelog/tenant/commands/print_bank_cheque_pentaho_report.sql"
+                relativeToChangelogFile="false"
+                splitStatements="true"
+                stripComments="true"/>
+    </changeSet>
+
+    <changeSet author="fineract" id="51">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_bank_check" columnName="amount_in_words"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_bank_check">
+            <column name="amount_in_words" type="VARCHAR(200)" />
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="53" author="fineract">
+        <update tableName="stretchy_parameter">
+            <column name="parameter_name" value="selectedCheques"/>
+            <column name="parameter_variable" value="selectedCheques"/>
+            <column name="parameter_label" value="Selected Cheques"/>
+            <where>parameter_name='chequeId'</where>
+        </update>
+    </changeSet>
+
+    <changeSet id="54" author="fineract">
+        <update tableName="stretchy_report_parameter">
+            <column name="report_parameter_name" value="selectedCheques"/>
+            <where>report_parameter_name='chequeId'</where>
+        </update>
+    </changeSet>
 
 </databaseChangeLog>

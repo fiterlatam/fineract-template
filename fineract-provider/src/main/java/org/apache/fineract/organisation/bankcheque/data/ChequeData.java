@@ -18,6 +18,7 @@
  */
 package org.apache.fineract.organisation.bankcheque.data;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import lombok.Builder;
 import lombok.Data;
@@ -33,6 +34,7 @@ public class ChequeData {
     private Long batchNo;
     private String bankAccNo;
     private Long bankAccId;
+    private Long agencyId;
     private String agencyName;
     private String bankName;
     private EnumOptionData status;
@@ -47,4 +49,15 @@ public class ChequeData {
     private String printedByUsername;
     private String lastModifiedByUsername;
     private LocalDate usedOnDate;
+    private BigDecimal guaranteeAmount;
+    private BigDecimal loanAmount;
+    private String clientName;
+    private String clientNo;
+    private String groupName;
+    private String groupNo;
+    private String loanAccNo;
+    private Long loanAccId;
+    private String caseId;
+    private Long guaranteeId;
+    private BigDecimal chequeAmount;
 }

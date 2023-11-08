@@ -71,6 +71,7 @@ import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidati
 import org.apache.fineract.infrastructure.core.serialization.JsonParserHelper;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.security.service.RandomPasswordGenerator;
+import org.apache.fineract.organisation.bankcheque.domain.Cheque;
 import org.apache.fineract.organisation.holiday.domain.Holiday;
 import org.apache.fineract.organisation.holiday.service.HolidayUtil;
 import org.apache.fineract.organisation.monetary.data.CurrencyData;
@@ -405,6 +406,17 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
     @Column(name = "contract")
     private String contract;
+
+    @ManyToOne
+    @JoinColumn(name = "cheque_id")
+    private Cheque cheque;
+
+    @ManyToOne()
+    @JoinColumn(name = "disbursed_by_cheque_userid")
+    private AppUser disbursedByChequeAppUser;
+
+    @Column(name = "disbursed_by_cheque_date")
+    private LocalDate disbursedByChequeDate;
 
     public static Loan newIndividualLoanApplication(final String accountNo, final Client client, final Integer loanType,
             final LoanProduct loanProduct, final Fund fund, final Staff officer, final CodeValue loanPurpose,
@@ -6995,4 +7007,27 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         this.contract = contract;
     }
 
+    public Cheque getCheque() {
+        return cheque;
+    }
+
+    public void setCheque(Cheque cheque) {
+        this.cheque = cheque;
+    }
+
+    public AppUser getDisbursedByChequeAppUser() {
+        return disbursedByChequeAppUser;
+    }
+
+    public void setDisbursedByChequeAppUser(AppUser disbursedByChequeAppUser) {
+        this.disbursedByChequeAppUser = disbursedByChequeAppUser;
+    }
+
+    public LocalDate getDisbursedByChequeDate() {
+        return disbursedByChequeDate;
+    }
+
+    public void setDisbursedByChequeDate(LocalDate disbursedByChequeDate) {
+        this.disbursedByChequeDate = disbursedByChequeDate;
+    }
 }

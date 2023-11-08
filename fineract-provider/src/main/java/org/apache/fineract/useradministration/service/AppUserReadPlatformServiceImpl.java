@@ -90,7 +90,7 @@ public class AppUserReadPlatformServiceImpl implements AppUserReadPlatformServic
         final String hierarchySearchString = hierarchy + "%";
 
         final AppUserMapper mapper = new AppUserMapper(this.roleReadPlatformService, this.staffReadPlatformService);
-        final String sql = "select " + mapper.schema();
+        final String sql = "select " + mapper.schema() + " order by u.username";
 
         return this.jdbcTemplate.query(sql, mapper, new Object[] { hierarchySearchString }); // NOSONAR
     }
@@ -199,7 +199,7 @@ public class AppUserReadPlatformServiceImpl implements AppUserReadPlatformServic
         public String schema() {
             return " u.id as id, u.username as username, u.firstname as firstname, u.lastname as lastname, u.email as email, u.password_never_expires as passwordNeverExpires, "
                     + " u.office_id as officeId, o.name as officeName, u.staff_id as staffId, u.is_self_service_user as isSelfServiceUser from m_appuser u "
-                    + " join m_office o on o.id = u.office_id where o.hierarchy like ? and u.is_deleted=false order by u.username";
+                    + " join m_office o on o.id = u.office_id where o.hierarchy like ? and u.is_deleted=false";
         }
 
     }
@@ -239,7 +239,7 @@ public class AppUserReadPlatformServiceImpl implements AppUserReadPlatformServic
         final String hierarchySearchString = hierarchy + "%";
 
         final AppUserMapper mapper = new AppUserMapper(this.roleReadPlatformService, this.staffReadPlatformService);
-        final String sql = "select " + mapper.schema();
+        final String sql = "select " + mapper.schema() + " GROUP BY u.id order by u.username";
 
         Collection<AppUserData> usersDataList = this.jdbcTemplate.query(sql, mapper, new Object[] { hierarchySearchString });
 
@@ -273,16 +273,33 @@ public class AppUserReadPlatformServiceImpl implements AppUserReadPlatformServic
         return usersforDropdown;
     }
 
+    @Override
+    public Collection<AppUserData> retrieveUsersForCommittees() {
+        final AppUser currentUser = this.context.authenticatedUser();
+        final String hierarchy = currentUser.getOffice().getHierarchy();
+        final String hierarchySearchString = hierarchy + "%";
+        final String filterUsersAssignedToCommittees = " and u.id not in (select user_id from m_committee_user) ";
+
+        final AppUserMapper mapper = new AppUserMapper(this.roleReadPlatformService, this.staffReadPlatformService);
+        final String sql = "select " + mapper.schema() + filterUsersAssignedToCommittees + " order by u.username";
+
+        return this.jdbcTemplate.query(sql, mapper, new Object[] { hierarchySearchString });
+    }
+
     private void findUserWithRoleLike(Collection<AppUserData> usersDataList, Collection<AppUserData> usersforDropdown,
             String gerenteRoleStartWith) {
         for (AppUserData userData : usersDataList) {
-            AppUser user = this.appUserRepository.findById(userData.getId()).orElseThrow(() -> new UserNotFoundException(userData.getId()));
-            final Set<Role> userRoles = user.getRoles();
-            for (final Role role : userRoles) {
-                if (role.getName().startsWith(gerenteRoleStartWith)) {
-                    usersforDropdown.add(userData);
+            if (usersforDropdown.stream().noneMatch(u -> u.getId().equals(userData.getId()))) {
+                AppUser user = this.appUserRepository.findById(userData.getId())
+                        .orElseThrow(() -> new UserNotFoundException(userData.getId()));
+                final Set<Role> userRoles = user.getRoles();
+                for (final Role role : userRoles) {
+                    if (role.getName().startsWith(gerenteRoleStartWith)) {
+                        usersforDropdown.add(userData);
+                    }
                 }
             }
         }
     }
+
 }

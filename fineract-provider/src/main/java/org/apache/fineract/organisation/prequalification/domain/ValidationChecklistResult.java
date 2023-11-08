@@ -44,6 +44,7 @@ public class ValidationChecklistResult extends AbstractAuditableCustom {
 
     @Column(name = "client_id")
     private Integer clientId;
+
     @Column(name = "prequalification_type")
     private Integer prequalificationType;
 

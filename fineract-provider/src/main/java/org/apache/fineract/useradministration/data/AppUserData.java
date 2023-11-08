@@ -176,4 +176,11 @@ public final class AppUserData {
         return this.isSelfServiceUser == null ? false : this.isSelfServiceUser;
     }
 
+    public String getFirstname() {
+        return this.firstname;
+    }
+
+    public String getLastname() {
+        return this.lastname;
+    }
 }

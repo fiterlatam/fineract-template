@@ -86,6 +86,9 @@ public class PrequalificationGroup extends AbstractPersistableCustom {
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
+    @Column(name = "prequalification_type_enum")
+    private Integer prequalificationType;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "previous_prequalification")
     private PrequalificationGroup parent;
@@ -94,14 +97,15 @@ public class PrequalificationGroup extends AbstractPersistableCustom {
     private List<PrequalificationGroupMember> members;
 
     public static PrequalificationGroup fromJson(final AppUser appUser, final AppUser facilitator, final Agency agency, final Group group,
-                                                 final LoanProduct loanProduct, PrequalificationGroup parentGroup, final JsonCommand command) {
+            final LoanProduct loanProduct, PrequalificationGroup parentGroup, final JsonCommand command) {
         String groupName = command.stringValueOfParameterNamed("groupName");
         Long prequalilficationTimespan = command.longValueOfParameterNamed(PrequalificatoinApiConstants.prequalilficationTimespanParamName);
         Long center = command.longValueOfParameterNamed(PrequalificatoinApiConstants.centerIdParamName);
         if (group != null) {
             groupName = group.getName();
         }
-        return new PrequalificationGroup(appUser, facilitator, agency, group, groupName, center, loanProduct, prequalilficationTimespan, parentGroup);
+        return new PrequalificationGroup(appUser, facilitator, agency, group, groupName, center, loanProduct, prequalilficationTimespan,
+                parentGroup);
     }
 
     protected PrequalificationGroup() {
@@ -109,7 +113,8 @@ public class PrequalificationGroup extends AbstractPersistableCustom {
     }
 
     private PrequalificationGroup(final AppUser appUser, final AppUser facilitator, final Agency agency, final Group group,
-                                  final String groupName, Long center, final LoanProduct loanProduct, Long prequalilficationTimespan, PrequalificationGroup parentGroup) {
+            final String groupName, Long center, final LoanProduct loanProduct, Long prequalilficationTimespan,
+            PrequalificationGroup parentGroup) {
         this.addedBy = appUser;
         this.facilitator = facilitator;
         this.status = PrequalificationStatus.BLACKLIST_CHECKED.getValue();
@@ -209,5 +214,13 @@ public class PrequalificationGroup extends AbstractPersistableCustom {
 
     public void updateComments(String comment) {
         this.comments = comment;
+    }
+
+    public Integer getPrequalificationType() {
+        return prequalificationType;
+    }
+
+    public void setPrequalificationType(Integer prequalificationType) {
+        this.prequalificationType = prequalificationType;
     }
 }

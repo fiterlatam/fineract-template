@@ -22,6 +22,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.reflect.TypeToken;
 import java.lang.reflect.Type;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -123,4 +124,27 @@ public class PrequalificationDataValidator {
         }
     }
 
+    public void validateUpdateMember(String json) {
+        if (StringUtils.isBlank(json)) {
+            throw new InvalidJsonException();
+        }
+        final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
+
+        final Type typeOfMap = new TypeToken<Map<String, Object>>() {}.getType();
+        this.fromApiJsonHelper.checkForUnsupportedParameters(typeOfMap, json,
+                PrequalificationCollectionConstants.EDIT_MEMBER_PREQUALIFICATION_REQUEST_DATA_PARAMETERS);
+
+        final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors)
+                .resource(PrequalificatoinApiConstants.PREQUALIFICATION_RESOURCE_NAME);
+
+        final JsonElement element = this.fromApiJsonHelper.parse(json);
+
+        if (this.fromApiJsonHelper.parameterExists(PrequalificatoinApiConstants.approvedAmountParamName, element)) {
+            final BigDecimal approvedAmount = this.fromApiJsonHelper
+                    .extractBigDecimalWithLocaleNamed(PrequalificatoinApiConstants.approvedAmountParamName, element);
+            baseDataValidator.reset().parameter(PrequalificatoinApiConstants.approvedAmountParamName).value(approvedAmount).notNull()
+                    .longGreaterThanZero();
+        }
+        throwExceptionIfValidationWarningsExist(dataValidationErrors);
+    }
 }

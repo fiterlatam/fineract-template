@@ -27,6 +27,7 @@ import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
 import org.apache.fineract.organisation.centerGroup.service.GroupLocationEnumerations;
+import org.apache.fineract.organisation.prequalification.domain.PreQualificationsEnumerations;
 import org.apache.fineract.portfolio.client.domain.ClientEnumerations;
 import org.apache.fineract.portfolio.group.data.GroupGeneralData;
 import org.apache.fineract.portfolio.group.data.GroupTimelineData;
@@ -80,8 +81,8 @@ public final class AllGroupTypesDataMapper implements RowMapper<GroupGeneralData
         sqlBuilder.append("g.meeting_day as meetingDay, cvMeetingDay.code_value as meetingDayValue, ");
         sqlBuilder.append("cvMeetingDay.order_position as meetingDayOrderPosition, g.meeting_start_time as meetingStartTime, ");
         sqlBuilder.append("g.meeting_end_time as meetingEndTime, g.reference_point as referencePoint, ");
-        sqlBuilder.append("prequalGroup.prequalification_number as prequalificationNumber, g.prequalification_id as prequalificationId ");
-
+        sqlBuilder.append("prequalGroup.prequalification_number as prequalificationNumber, "
+                + "prequalGroup.status as prequalificationStatus, g.prequalification_id as prequalificationId ");
         sqlBuilder.append("from m_group g ");
         sqlBuilder.append("join m_office o on o.id = g.office_id ");
         sqlBuilder.append("left join m_staff s on s.id = g.staff_id ");
@@ -179,6 +180,11 @@ public final class AllGroupTypesDataMapper implements RowMapper<GroupGeneralData
         final String referencePoint = rs.getString("referencePoint");
         final String prequalificationNumber = rs.getString("prequalificationNumber");
         final Long prequalificationId = rs.getLong("prequalificationId");
+        final Long prequalificationStatusId = rs.getLong("prequalificationStatus");
+        EnumOptionData prequalificationStatus = null;
+        if (prequalificationStatusId != null) {
+            prequalificationStatus = PreQualificationsEnumerations.status(prequalificationStatusId.intValue());
+        }
 
         final GroupTimelineData timeline = new GroupTimelineData(submittedOnDate, submittedByUsername, submittedByFirstname,
                 submittedByLastname, activationDate, activatedByUsername, activatedByFirstname, activatedByLastname, closedOnDate,
@@ -212,6 +218,7 @@ public final class AllGroupTypesDataMapper implements RowMapper<GroupGeneralData
         ret.setReferencePoint(referencePoint);
         ret.setPrequalificationNumber(prequalificationNumber);
         ret.setPrequalificationId(prequalificationId);
+        ret.setPrequalificationStatus(prequalificationStatus);
         return ret;
     }
 }

@@ -219,13 +219,13 @@ public final class Group extends AbstractAuditableCustom {
     }
 
     public static Group newGroup(final Office office, final Staff staff, final Group parent, final GroupLevel groupLevel, final String name,
-                                 final String externalId, final boolean active, final LocalDate activationDate, final Set<Client> clientMembers,
-                                 final Set<Group> groupMembers, final LocalDate submittedOnDate, final AppUser currentUser, final String accountNo,
-                                 final Long legacyNumber, final BigDecimal latitude, final BigDecimal longitude, final LocalDate formationDate,
-                                 final Integer size, final LocalTime meetingStartTime, final LocalTime meetingEndTime, final AppUser responsibleUser,
-                                 final Portfolio portfolio, final CodeValue city, final CodeValue stateProvince, final CodeValue type, final Integer distance,
-                                 final Integer meetingStart, final Integer meetingEnd, final Integer meetingDay, final String referencePoint,
-                                 PrequalificationGroup prequalificationGroup) {
+            final String externalId, final boolean active, final LocalDate activationDate, final Set<Client> clientMembers,
+            final Set<Group> groupMembers, final LocalDate submittedOnDate, final AppUser currentUser, final String accountNo,
+            final Long legacyNumber, final BigDecimal latitude, final BigDecimal longitude, final LocalDate formationDate,
+            final Integer size, final LocalTime meetingStartTime, final LocalTime meetingEndTime, final AppUser responsibleUser,
+            final Portfolio portfolio, final CodeValue city, final CodeValue stateProvince, final CodeValue type, final Integer distance,
+            final Integer meetingStart, final Integer meetingEnd, final Integer meetingDay, final String referencePoint,
+            PrequalificationGroup prequalificationGroup) {
 
         // By default new group is created in PENDING status, unless explicitly
         // status is set to active
@@ -263,13 +263,13 @@ public final class Group extends AbstractAuditableCustom {
     }
 
     private Group(final Office office, final Staff staff, final Group parent, final GroupLevel groupLevel, final String name,
-                  final String externalId, final GroupingTypeStatus status, final LocalDate activationDate, final Set<Client> clientMembers,
-                  final Set<Group> groupMembers, final LocalDate submittedOnDate, final AppUser currentUser, final String accountNo,
-                  final Long legacyNumber, final BigDecimal latitude, final BigDecimal longitude, final LocalDate formationDate,
-                  final Integer size, final LocalTime meetingStartTime, final LocalTime meetingEndTime, final AppUser responsibleUser,
-                  final Portfolio portfolio, final CodeValue city, final CodeValue stateProvince, final CodeValue type, final Integer distance,
-                  final Integer meetingStart, final Integer meetingEnd, final Integer meetingDay, final String referencePoint,
-                  PrequalificationGroup prequalificationGroup) {
+            final String externalId, final GroupingTypeStatus status, final LocalDate activationDate, final Set<Client> clientMembers,
+            final Set<Group> groupMembers, final LocalDate submittedOnDate, final AppUser currentUser, final String accountNo,
+            final Long legacyNumber, final BigDecimal latitude, final BigDecimal longitude, final LocalDate formationDate,
+            final Integer size, final LocalTime meetingStartTime, final LocalTime meetingEndTime, final AppUser responsibleUser,
+            final Portfolio portfolio, final CodeValue city, final CodeValue stateProvince, final CodeValue type, final Integer distance,
+            final Integer meetingStart, final Integer meetingEnd, final Integer meetingDay, final String referencePoint,
+            PrequalificationGroup prequalificationGroup) {
 
         final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
 

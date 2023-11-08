@@ -106,4 +106,13 @@
     <include file="parts/0087_Add_Buro_Check_Status_to_prequalification_group.xml" relativeToChangelogFile="true"/>
     <include file="parts/0088_Add_Agency_Lead_approval_permissions.xml" relativeToChangelogFile="true"/>
     <include file="parts/0089_FBR_104_create_charge_admin_fee_configurations.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0090_FBR_313_Add_Prequalificatioin_Checklist_log.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0091_FBR_315_Add_Agency_Exception_queue_permissions.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0092_Add_Approved_Amount_prequalification_group_member.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0093_FBR_327_Add_code_for_committees.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0094_FBR_327_Add_committees_permissions.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0095_Add_fields_to_prequalification_group.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0096_Add_Funds_Mfund_table.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0097_Add_Required_Guarantee_Percentage_on_Loan.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0101_FBR-352-group_client_collection_reports.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

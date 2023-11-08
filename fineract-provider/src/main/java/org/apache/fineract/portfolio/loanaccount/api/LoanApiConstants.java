@@ -150,4 +150,11 @@ public interface LoanApiConstants {
 
     String LOAN_ASSOCIATIONS_ALL = "all";
     String cupoIdParameterName = "cupoId";
+    String LOAN_ID = "loanId";
+    String ACTUAL_GUARANTEE_AMOUNT = "actualGuaranteeAmount";
+    String REQUIRED_GUARANTEE_AMOUNT = "requiredGuaranteeAmount";
+    String DEPOSIT_GUARANTEE_AMOUNT = "depositGuaranteeAmount";
+    String DEPOSIT_GUARANTEE_NUMBER = "depositGuaranteeNo";
+    String CHEQUE_DESCRIPTION = "description";
+    String CHEQUE_ID = "chequeId";
 }
