@@ -229,8 +229,8 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
             case NINE -> checkValidationColor = this.runCheck9();
             case TEN -> checkValidationColor = this.runCheck10();
             case ELEVEN -> checkValidationColor = this.runCheck11(groupData);
-            case TWELVE -> checkValidationColor = this.runCheck12();
-            case THIRTEEN -> checkValidationColor = this.runCheck13();
+            case TWELVE -> checkValidationColor = this.runCheck12(clientData);
+            case THIRTEEN -> checkValidationColor = this.runCheck13(clientData);
             case FOURTEEN -> checkValidationColor = this.runCheck14(clientData);
             case FIFTEEN -> checkValidationColor = this.runCheck15();
             case SIXTEEN -> checkValidationColor = this.runCheck16();
@@ -243,7 +243,7 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
             case TWENTY_THREE -> checkValidationColor = this.runCheck23(clientData);
             case TWENTY_FOUR -> checkValidationColor = this.runCheck24(clientData);
             case TWENTY_FIVE -> checkValidationColor = this.runCheck25(clientData);
-            case TWENTY_SIX -> checkValidationColor = this.runCheck26();
+            case TWENTY_SIX -> checkValidationColor = this.runCheck26(clientData);
             case TWENTY_SEVEN -> checkValidationColor = this.runCheck27(groupData);
             case TWENTY_EIGHT -> checkValidationColor = this.runCheck28(groupData);
             case TWENTY_NINE -> checkValidationColor = this.runCheck29();
@@ -501,15 +501,38 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
     /**
      * General condition
      */
-    private CheckValidationColor runCheck12() {
-        return CheckValidationColor.RED;
+    private CheckValidationColor runCheck12(final ClientData clientData) {
+        final String clientId = String.valueOf(clientData.getClientId());
+        final String reportName = Policies.TWELVE.getName() + " Policy Check";
+        final String productId = Long.toString(clientData.getProductId());
+        final ClientData params = retrieveClientParams(clientData.getClientId(), clientData.getProductId());
+        final Map<String, String> reportParams = new HashMap<>();
+        reportParams.put("${clientId}", clientId);
+        reportParams.put("${loanProductId}", productId);
+        reportParams.put("${clientCategorization}", params.getClientCategorization());
+        reportParams.put("${recreditCategorization}", params.getRecreditCategorization());
+        final GenericResultsetData result = this.readReportingService.retrieveGenericResultset(reportName, "report", reportParams, false);
+        return extractColorFromResultset(result);
     }
 
     /**
      * Categories of clients to accept
      */
-    private CheckValidationColor runCheck13() {
-        return CheckValidationColor.RED;
+    private CheckValidationColor runCheck13(final ClientData clientData) {
+        final String clientId = String.valueOf(clientData.getClientId());
+        final String reportName = Policies.THIRTEEN.getName() + " Policy Check";
+        final String productId = Long.toString(clientData.getProductId());
+        final ClientData params = retrieveClientParams(clientData.getClientId(), clientData.getProductId());
+        final Integer bureauStatus = clientData.getBuroCheckStatus();
+        final BuroCheckClassification buroCheckClassification = BuroCheckClassification.fromInt(bureauStatus);
+        final Map<String, String> reportParams = new HashMap<>();
+        reportParams.put("${clientId}", clientId);
+        reportParams.put("${loanProductId}", productId);
+        reportParams.put("${clientCategorization}", params.getClientCategorization());
+        reportParams.put("${recreditCategorization}", params.getRecreditCategorization());
+        reportParams.put("${buroCheckClassification}", buroCheckClassification.getLetter());
+        final GenericResultsetData result = this.readReportingService.retrieveGenericResultset(reportName, "report", reportParams, false);
+        return extractColorFromResultset(result);
     }
 
     /**
@@ -686,8 +709,18 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
     /**
      * Credits
      */
-    private CheckValidationColor runCheck26() {
-        return CheckValidationColor.RED;
+    private CheckValidationColor runCheck26(final ClientData clientData) {
+        final String clientId = String.valueOf(clientData.getClientId());
+        final String reportName = Policies.TWENTY_SIX.getName() + " Policy Check";
+        final String productId = Long.toString(clientData.getProductId());
+        final ClientData params = retrieveClientParams(clientData.getClientId(), clientData.getProductId());
+        final Map<String, String> reportParams = new HashMap<>();
+        reportParams.put("${clientId}", clientId);
+        reportParams.put("${loanProductId}", productId);
+        reportParams.put("${clientCategorization}", params.getClientCategorization());
+        reportParams.put("${recreditCategorization}", params.getRecreditCategorization());
+        final GenericResultsetData result = this.readReportingService.retrieveGenericResultset(reportName, "report", reportParams, false);
+        return extractColorFromResultset(result);
     }
 
     /**
