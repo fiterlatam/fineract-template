@@ -335,8 +335,9 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             } else if (type.equals("agency")) {
                 extraCriteria += " and g.status IN( " + PrequalificationStatus.AGENCY_LEAD_PENDING_APPROVAL.getValue().toString() + ", "
                         + PrequalificationStatus.AGENCY_LEAD_PENDING_APPROVAL_WITH_EXCEPTIONS.getValue().toString() + ") ";
-            }else if (type.equals("exceptionsqueue")) {
-                extraCriteria += " and g.status IN( " + PrequalificationStatus.ANALYSIS_UNIT_PENDING_APPROVAL_WITH_EXCEPTIONS.getValue().toString() + ", "
+            } else if (type.equals("exceptionsqueue")) {
+                extraCriteria += " and g.status IN( "
+                        + PrequalificationStatus.ANALYSIS_UNIT_PENDING_APPROVAL_WITH_EXCEPTIONS.getValue().toString() + ", "
                         + PrequalificationStatus.AGENCY_LEAD_PENDING_APPROVAL_WITH_EXCEPTIONS.getValue().toString() + ") ";
             } else if (type.equals("committeeapprovals")) {
 
