@@ -41,4 +41,6 @@ public class ClientData {
     private String clientCategorization;
     private String clientArea;
     private String recreditCategorization;
+    private Boolean president;
+    private Integer buroCheckStatus;
 }

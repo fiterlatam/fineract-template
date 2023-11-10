@@ -336,4 +336,115 @@
                 stripComments="true"/>
     </changeSet>
 
+    <changeSet id="24" author="fineract">
+        <sql>
+            <![CDATA[
+                UPDATE stretchy_report SET report_sql = "SELECT
+                 CASE
+                     WHEN (${loanProductId} = 6) AND ('${recreditCategorization}' = 'NUEVO') AND (${requestedAmount} NOT BETWEEN 10000 AND 200000) THEN 'RED'
+                     WHEN (${loanProductId} = 6) AND ('${recreditCategorization}' = 'RECREDITO') AND (${requestedAmount} NOT BETWEEN 10000 AND 200000) THEN 'RED'
+                     WHEN (${loanProductId} = 6) AND (mc.status_enum = 300) THEN 'GREEN'
+                 END AS color
+                 FROM m_client mc
+                 WHERE mc.id = ${clientId}" WHERE report_name = "Amount Policy Check";
+            ]]>
+        </sql>
+    </changeSet>
+
+    <changeSet id="24" author="fineract">
+        <sql>
+            <![CDATA[
+                UPDATE stretchy_report SET report_sql = "SELECT
+                 CASE
+                     WHEN (${loanProductId} = 6) AND ('${recreditCategorization}' = 'NUEVO') AND (${requestedAmount} NOT BETWEEN 10000 AND 200000) THEN 'RED'
+                     WHEN (${loanProductId} = 6) AND ('${recreditCategorization}' = 'RECREDITO') AND (${requestedAmount} NOT BETWEEN 10000 AND 200000) THEN 'RED'
+                     WHEN (${loanProductId} = 6) AND (mc.status_enum = 300) THEN 'GREEN'
+                 END AS color
+                 FROM m_client mc
+                 WHERE mc.id = ${clientId}" WHERE report_name = "Amount Policy Check";
+            ]]>
+        </sql>
+    </changeSet>
+    <changeSet id="25" author="fineract">
+        <sql>
+            <![CDATA[
+                UPDATE stretchy_report SET report_sql = "SELECT mc.id,
+                 COALESCE(client_details.client_age, 0) AS client_age,
+                 mc.date_of_birth AS date_of_birth,
+                 CASE
+                     WHEN (${loanProductId} = 6) AND ('${recreditCategorization}' = 'NUEVO') AND (COALESCE(client_details.client_age, 0) BETWEEN 20 AND 60) THEN 'GREEN'
+                     WHEN (${loanProductId} = 6) AND ('${recreditCategorization}' = 'RECREDITO') AND (COALESCE(client_details.client_age, 0) NOT BETWEEN 20 AND 60) THEN 'RED'
+                     WHEN (${loanProductId} = 6) AND (mc.status_enum = 300) THEN 'GREEN'
+                 END AS color
+                 FROM m_client mc
+                 INNER JOIN (
+                     SELECT mct.id AS client_id, mct.date_of_birth AS date_of_birth, IFNULL(TIMESTAMPDIFF(YEAR, mct.date_of_birth, CURDATE()), 0) AS client_age
+                     FROM m_client mct
+                 ) client_details ON client_details.client_id = mc.id
+                 WHERE mc.id = ${clientId}" WHERE report_name = "Age Policy Check";
+            ]]>
+        </sql>
+    </changeSet>
+
+    <changeSet author="fineract" id="26">
+        <sqlFile
+                encoding="utf8"
+                path="db/changelog/tenant/commands/policy_run_20.sql"
+                relativeToChangelogFile="false"
+                splitStatements="true"
+                stripComments="true"/>
+    </changeSet>
+
+
+    <changeSet author="fineract" id="27">
+        <sqlFile
+                encoding="utf8"
+                path="db/changelog/tenant/commands/policy_run_21.sql"
+                relativeToChangelogFile="false"
+                splitStatements="true"
+                stripComments="true"/>
+    </changeSet>
+
+    <changeSet author="fineract" id="28">
+        <sqlFile
+                encoding="utf8"
+                path="db/changelog/tenant/commands/policy_run_19.sql"
+                relativeToChangelogFile="false"
+                splitStatements="true"
+                stripComments="true"/>
+    </changeSet>
+
+    <changeSet author="fineract" id="29">
+        <sqlFile
+                encoding="utf8"
+                path="db/changelog/tenant/commands/policy_run_18.sql"
+                relativeToChangelogFile="false"
+                splitStatements="true"
+                stripComments="true"/>
+    </changeSet>
+    <changeSet author="fineract" id="30">
+        <sqlFile
+                encoding="utf8"
+                path="db/changelog/tenant/commands/policy_run_11.sql"
+                relativeToChangelogFile="false"
+                splitStatements="true"
+                stripComments="true"/>
+    </changeSet>
+    <changeSet author="fineract" id="31">
+        <sqlFile
+                encoding="utf8"
+                path="db/changelog/tenant/commands/policy_run_8.sql"
+                relativeToChangelogFile="false"
+                splitStatements="true"
+                stripComments="true"/>
+    </changeSet>
+    <changeSet author="fineract" id="32">
+        <sqlFile
+                encoding="utf8"
+                path="db/changelog/tenant/commands/policy_run_17.sql"
+                relativeToChangelogFile="false"
+                splitStatements="true"
+                stripComments="true"/>
+    </changeSet>
+
 </databaseChangeLog>
