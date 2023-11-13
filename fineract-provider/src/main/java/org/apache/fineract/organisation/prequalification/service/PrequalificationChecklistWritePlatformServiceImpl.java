@@ -577,8 +577,6 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
         final String clientId = String.valueOf(clientData.getClientId());
         final String reportName = Policies.SIXTEEN.getName() + " Policy Check";
         final String productId = Long.toString(clientData.getProductId());
-        final String requestedAmount = clientData.getRequestedAmount().toPlainString();
-        final ClientData params = retrieveClientParams(clientData.getClientId(), clientData.getProductId());
         final Map<String, String> reportParams = new HashMap<>();
         reportParams.put("${clientId}", clientId);
         reportParams.put("${loanProductId}", productId);
