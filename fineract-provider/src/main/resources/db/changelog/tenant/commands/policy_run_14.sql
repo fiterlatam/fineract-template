@@ -38,9 +38,9 @@
 
 -- Amount requested in relation to the current amount of main products --
 INSERT INTO stretchy_report (report_name,report_type,report_category,report_sql,description,core_report,use_report,self_service_user_report)
-VALUES ("Amount requested in relation to the current amount of main products", "Table", "Prequalification",
+VALUES ("Amount requested in relation to the current amount of main products Policy Check", "Table", "Prequalification",
         "SELECT
-         client_details.number_of_principal_loans,
+         client_details.current_loan_amount,
          CASE
              WHEN ('${loanProductId}' = 7) AND ((client_details.current_loan_amount)/${requestedAmount} <= 4) THEN 'GREEN'
              WHEN ('${loanProductId}' = 7) AND ((client_details.current_loan_amount)/${requestedAmount} = 5) THEN 'GREEN'
@@ -53,4 +53,4 @@ VALUES ("Amount requested in relation to the current amount of main products", "
          INNER JOIN (
             SELECT mc.id AS client_id, (select COALESCE(ml.principal_amount,0) from m_loan ml where ml.client_id = mc.id and ml.product_id = ${loanProductId} and ml.loan_status_id = 300 ORDER BY id desc limit 1 ) as current_loan_amount FROM m_client mc
          )client_details ON client_details.client_id = mc.id
-         WHERE mc.id = ${clientId}", "Amount requested in relation to the current amount of main products", 0, 0, 0);
+         WHERE mc.id = ${clientId}", "Amount requested in relation to the current amount of main products Policy Check", 0, 0, 0);
