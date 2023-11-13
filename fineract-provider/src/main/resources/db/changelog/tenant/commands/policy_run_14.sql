@@ -40,7 +40,7 @@
 INSERT INTO stretchy_report (report_name,report_type,report_category,report_sql,description,core_report,use_report,self_service_user_report)
 VALUES ("Amount requested in relation to the current amount of main products Policy Check", "Table", "Prequalification",
         "SELECT
-         client_details.number_of_principal_loans,
+         client_details.current_loan_amount,
          CASE
              WHEN ('${loanProductId}' = 7) AND ((client_details.current_loan_amount)/${requestedAmount} <= 4) THEN 'GREEN'
              WHEN ('${loanProductId}' = 7) AND ((client_details.current_loan_amount)/${requestedAmount} = 5) THEN 'GREEN'

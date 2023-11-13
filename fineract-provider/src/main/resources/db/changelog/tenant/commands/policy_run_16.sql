@@ -40,7 +40,7 @@
 INSERT INTO stretchy_report (report_name,report_type,report_category,report_sql,description,core_report,use_report,self_service_user_report)
 VALUES ("Payments outside the current term of the main product Policy Check", "Table", "Prequalification",
 "SELECT
- client_details.number_of_principal_loans,
+ client_details.number_of_pending_installments,
  CASE
      WHEN ('${loanProductId}' = 7) AND (client_details.number_of_pending_installments = 4) THEN 'GREEN'
      WHEN ('${loanProductId}' = 7) AND (client_details.number_of_pending_installments > 4) THEN 'ORANGE'
