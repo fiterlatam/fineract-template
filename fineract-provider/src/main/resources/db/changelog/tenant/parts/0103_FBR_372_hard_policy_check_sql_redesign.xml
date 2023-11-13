@@ -496,5 +496,4 @@
                 stripComments="true"/>
     </changeSet>
 
-
 </databaseChangeLog>
