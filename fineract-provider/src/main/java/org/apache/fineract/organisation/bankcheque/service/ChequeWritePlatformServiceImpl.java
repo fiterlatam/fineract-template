@@ -31,7 +31,9 @@ import org.apache.commons.lang3.ObjectUtils;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuilder;
+import org.apache.fineract.infrastructure.core.data.PaginationParameters;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
+import org.apache.fineract.infrastructure.core.service.Page;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.organisation.agency.domain.Agency;
 import org.apache.fineract.organisation.bankAccount.domain.BankAccount;
@@ -45,6 +47,7 @@ import org.apache.fineract.organisation.bankcheque.command.ReassignChequeCommand
 import org.apache.fineract.organisation.bankcheque.command.UpdateChequeCommand;
 import org.apache.fineract.organisation.bankcheque.command.VoidChequeCommand;
 import org.apache.fineract.organisation.bankcheque.data.ChequeData;
+import org.apache.fineract.organisation.bankcheque.data.ChequeSearchParams;
 import org.apache.fineract.organisation.bankcheque.domain.BankChequeStatus;
 import org.apache.fineract.organisation.bankcheque.domain.Batch;
 import org.apache.fineract.organisation.bankcheque.domain.Cheque;
@@ -60,11 +63,14 @@ import org.apache.fineract.organisation.bankcheque.serialization.ReassignChequeC
 import org.apache.fineract.organisation.bankcheque.serialization.UpdateChequeCommandFromApiJsonDeserializer;
 import org.apache.fineract.organisation.bankcheque.serialization.VoidChequeCommandFromApiJsonDeserializer;
 import org.apache.fineract.organisation.monetary.domain.NumberToWordsConverter;
+import org.apache.fineract.portfolio.loanaccount.domain.Loan;
+import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
 import org.apache.fineract.portfolio.loanaccount.service.LoanWritePlatformService;
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 
 @Service
 @Slf4j
@@ -86,6 +92,8 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
     private final PrintChequeCommandFromApiJsonDeserializer printChequeCommandFromApiJsonDeserializer;
     private final ChequeReadPlatformServiceImpl.ChequeMapper chequeMapper = new ChequeReadPlatformServiceImpl.ChequeMapper();
     private final LoanWritePlatformService loanWritePlatformService;
+    private final LoanRepositoryWrapper loanRepositoryWrapper;
+    private final ChequeReadPlatformService chequeReadPlatformService;
 
     @Override
     public CommandProcessingResult createBatch(JsonCommand command) {
@@ -179,6 +187,22 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
         ReassignChequeCommand reassignChequeCommand = reassignChequeCommandFromApiJsonDeserializer.commandFromApiJson(command.json());
         Cheque newCheque = chequeBatchRepositoryWrapper.findOneChequeWithNotFoundDetection(reassignChequeCommand.getChequeId());
         Cheque oldCheque = chequeBatchRepositoryWrapper.findOneChequeWithNotFoundDetection(reassignChequeCommand.getOldChequeId());
+        if (!BankChequeStatus.AVAILABLE.getValue().equals(newCheque.getStatus())) {
+            throw new BankChequeException("status", "invalid.loan.status.for.cheque.reassignment");
+        }
+
+        final PaginationParameters parameters = PaginationParameters.instance(null, null, null, null, null);
+        final ChequeSearchParams chequeSearchParams = ChequeSearchParams.builder().chequeId(reassignChequeCommand.getOldChequeId()).build();
+        final Page<ChequeData> cheques = this.chequeReadPlatformService.retrieveAll(chequeSearchParams, parameters);
+        if (!CollectionUtils.isEmpty(cheques.getPageItems())) {
+            final ChequeData chequeData = cheques.getPageItems().get(0);
+            if (chequeData.getId().equals(reassignChequeCommand.getOldChequeId()) && chequeData.getLoanAccId() != null) {
+                final Long loanId = chequeData.getLoanAccId();
+                final Loan loan = this.loanRepositoryWrapper.findOneWithNotFoundDetection(loanId);
+                loan.setCheque(newCheque);
+                this.loanRepositoryWrapper.saveAndFlush(loan);
+            }
+        }
         final String newChequeDescription = "Emitido por sustitución de Desembolso cheque " + oldCheque.getChequeNo();
         final String oldChequeDescription = "Cheque anulado por proceso de Reasignación, cheque nuevo " + newCheque.getChequeNo();
         final LocalDateTime localDateTime = DateUtils.getLocalDateTimeOfSystem();
@@ -194,7 +218,14 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
         newCheque.stampAudit(currentUserId, localDateTime);
         newCheque.setPrintedDate(localDate);
         newCheque.setPrintedBy(currentUser);
-        chequeJpaRepository.saveAll(List.of(oldCheque, newCheque));
+        newCheque.setGuaranteeAmount(oldCheque.getGuaranteeAmount());
+        newCheque.setRequiredGuaranteeAmount(oldCheque.getRequiredGuaranteeAmount());
+        newCheque.setDepositGuaranteeNo(oldCheque.getDepositGuaranteeNo());
+        newCheque.setCaseId(oldCheque.getCaseId());
+        newCheque.setGuaranteeId(oldCheque.getGuaranteeId());
+        newCheque.setGuaranteeName(oldCheque.getGuaranteeName());
+        newCheque.setAmountInWords(oldCheque.getAmountInWords());
+        this.chequeJpaRepository.saveAll(List.of(oldCheque, newCheque));
         return new CommandProcessingResultBuilder().withCommandId(command.commandId())
                 .withResourceIdAsString(reassignChequeCommand.getOldChequeId().toString())
                 .withEntityId(reassignChequeCommand.getOldChequeId()).build();

@@ -428,7 +428,8 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
         int index = 0;
         for (final GuaranteeData data : List.copyOf(guaranteeDataList)) {
             for (final ChequeData chequeData : chequeDataList) {
-                if (chequeData.getGuaranteeId().equals(data.getId())) {
+                if (!(chequeData.getStatus().getId().equals(BankChequeStatus.VOIDED.getValue().longValue())
+                        && chequeData.getGuaranteeId().equals(data.getId()))) {
                     guaranteeDataList.remove(index);
                 }
             }

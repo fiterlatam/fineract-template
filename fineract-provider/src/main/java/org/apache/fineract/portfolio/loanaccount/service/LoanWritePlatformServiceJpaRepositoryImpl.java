@@ -23,6 +23,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -60,6 +61,9 @@ import org.apache.fineract.infrastructure.jobs.annotation.CronTarget;
 import org.apache.fineract.infrastructure.jobs.exception.JobExecutionException;
 import org.apache.fineract.infrastructure.jobs.service.JobName;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
+import org.apache.fineract.organisation.bankcheque.domain.BankChequeStatus;
+import org.apache.fineract.organisation.bankcheque.domain.Cheque;
+import org.apache.fineract.organisation.bankcheque.domain.ChequeJpaRepository;
 import org.apache.fineract.organisation.holiday.domain.Holiday;
 import org.apache.fineract.organisation.holiday.domain.HolidayRepositoryWrapper;
 import org.apache.fineract.organisation.monetary.domain.ApplicationCurrency;
@@ -273,6 +277,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     private final PostDatedChecksRepository postDatedChecksRepository;
     private final LumaAccountingProcessorForLoan lumaAccountingProcessorForLoan;
     private final BitaCoraMasterRepository bitaCoraMasterRepository;
+    private final ChequeJpaRepository chequeJpaRepository;
 
     private LoanLifecycleStateMachine defaultLoanLifecycleStateMachine() {
         final List<LoanStatus> allowedLoanStatuses = Arrays.asList(LoanStatus.values());
@@ -848,6 +853,18 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                         .retrieveLoanPrePaymentTemplate(LoanTransactionType.REPAYMENT, loanIdToClose, expectedDisbursementDate).getAmount();
                 BigDecimal netDisbursalAmount = loan.getApprovedPrincipal().subtract(loanOutstanding);
                 loan.adjustNetDisbursalAmount(netDisbursalAmount);
+            }
+
+            if (loan.getCheque() != null) {
+                Long userId = currentUser.getId();
+                final LocalDateTime localDateTime = DateUtils.getLocalDateTimeOfSystem();
+                LocalDate localDate = DateUtils.getBusinessLocalDate();
+                Cheque cheque = loan.getCheque();
+                cheque.setStatus(BankChequeStatus.VOIDED.getValue());
+                cheque.stampAudit(userId, localDateTime);
+                cheque.setVoidedBy(currentUser);
+                cheque.setVoidedDate(localDate);
+                this.chequeJpaRepository.saveAndFlush(cheque);
             }
             saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
             this.accountTransfersWritePlatformService.reverseAllTransactions(loanId, PortfolioAccountType.LOAN);
