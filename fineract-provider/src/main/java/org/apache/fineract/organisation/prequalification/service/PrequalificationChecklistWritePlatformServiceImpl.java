@@ -472,7 +472,7 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
         final String reportName = Policies.TEN.getName() + " Policy Check";
 
         final String prequalificationId = String.valueOf(groupData.getId());
-        final String productId = String.valueOf(groupData.getId());
+        final String productId = String.valueOf(groupData.getProductId());
         final Map<String, String> reportParams = new HashMap<>();
         reportParams.put("${prequalificationId}", prequalificationId);
         reportParams.put("${loanProductId}", productId);
