@@ -51,7 +51,7 @@ VALUES ("Percentage of members with their own home Policy Check", "Table", "Preq
    END AS color
    FROM m_prequalification_group mpg
    INNER JOIN ( select (((select count(*) from m_prequalification_group_members mpm INNER JOIN m_client mc on mc.dpi = mpm.dpi
-    INNER JOIN m_client_contact_info mcinf on mcinf.client_id = mc.id INNER JOIN m_code_value mcv on mcv.id = mcinf.housing_type where mcv.code_value = 'Propia' and mpm.group_id = ${groupId})/
+    INNER JOIN m_client_contact_info mcinf on mcinf.client_id = mc.id INNER JOIN m_code_value mcv on mcv.id = mcinf.housing_type where mcv.code_value = 'Propia' and mpm.group_id = ${prequalificationId})/
     (select count(*) from m_prequalification_group_members mpg where mpg.group_id = ${prequalificationId}))*100) as owner_percent, ${prequalificationId} as grp_id )
     housing_type ON housing_type.grp_id = mpg.id
    WHERE mpg.id = ${prequalificationId}", "Percentage of members with their own home Policy Check", 0, 0, 0);
