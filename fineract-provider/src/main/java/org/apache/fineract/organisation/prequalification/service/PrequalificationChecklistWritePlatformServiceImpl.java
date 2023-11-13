@@ -466,6 +466,7 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
 
     /**
      * Percentage of members with their own home
+     *
      * @param groupData
      */
     private CheckValidationColor runCheck10(GroupData groupData) {
@@ -476,8 +477,7 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
         final Map<String, String> reportParams = new HashMap<>();
         reportParams.put("${prequalificationId}", prequalificationId);
         reportParams.put("${loanProductId}", productId);
-        final GenericResultsetData result = this.readReportingService.retrieveGenericResultset(reportName, "report", reportParams,
-                false);
+        final GenericResultsetData result = this.readReportingService.retrieveGenericResultset(reportName, "report", reportParams, false);
         return extractColorFromResultset(result);
     }
 
@@ -571,6 +571,7 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
 
     /**
      * Payments outside the current term of the main product
+     *
      * @param clientData
      */
     private CheckValidationColor runCheck16(ClientData clientData) {

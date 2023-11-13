@@ -112,6 +112,20 @@ public final class AppUserData {
                 selectedRoles, null, staff, passwordNeverExpire, isSelfServiceUser);
     }
 
+    public static AppUserData instance(final Long id, final String username, String firstname, final String lastname) {
+        final Long officeId = null;
+        final String officeName = null;
+        final String email = null;
+        final Boolean passwordNeverExpires = null;
+        final Collection<RoleData> availableRoles = null;
+        final Collection<RoleData> selfServiceRoles = null;
+        final Collection<RoleData> selectedRoles = null;
+        final StaffData staff = null;
+        final Boolean isSelfServiceUser = null;
+        return new AppUserData(id, username, email, officeId, officeName, firstname, lastname, availableRoles, selfServiceRoles,
+                selectedRoles, null, staff, passwordNeverExpires, isSelfServiceUser);
+    }
+
     private AppUserData(final Long id, final String username, final String email, final Long officeId, final String officeName,
             final String firstname, final String lastname, final Collection<RoleData> availableRoles,
             final Collection<RoleData> selfServiceRoles, final Collection<RoleData> selectedRoles,

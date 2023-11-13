@@ -172,6 +172,36 @@ public final class CenterData implements Serializable {
         return mapDTO(center, centerWithTemplate);
     }
 
+    public static CenterData instance(final Long id, final String name) {
+        final String accountNo = null;
+        final String externalId = null;
+        final EnumOptionData status = null;
+        final LocalDate activationDate = null;
+        final Long officeId = null;
+        final String officeName = null;
+        final Long staffId = null;
+        final String staffName = null;
+        final String hierarchy = null;
+        final Collection<GroupGeneralData> groupMembers = null;
+        final Collection<OfficeData> officeOptions = null;
+        final Collection<StaffData> staffOptions = null;
+        final Collection<GroupGeneralData> groupMembersOptions = null;
+        final CalendarData collectionMeetingCalendar = null;
+        final GroupTimelineData timeline = null;
+        final BigDecimal totalCollected = null;
+        final BigDecimal totalOverdue = null;
+        final BigDecimal totaldue = null;
+        final BigDecimal installmentDue = null;
+        final Collection<CodeValueData> cityOptions = null;
+        final Collection<CodeValueData> stateOptions = null;
+        final Collection<CodeValueData> typeOptions = null;
+        final Collection<CodeValueData> meetingDayOptions = null;
+        final Collection<CodeValueData> closureReasons = null;
+        return new CenterData(id, accountNo, name, externalId, status, activationDate, officeId, officeName, staffId, staffName, hierarchy,
+                groupMembers, officeOptions, staffOptions, groupMembersOptions, collectionMeetingCalendar, closureReasons, timeline,
+                totalCollected, totalOverdue, totaldue, installmentDue, cityOptions, stateOptions, typeOptions, meetingDayOptions);
+    }
+
     public static CenterData instance(final Long id, final String accountNo, final String name, final String externalId,
             final EnumOptionData status, final LocalDate activationDate, final Long officeId, final String officeName, final Long staffId,
             final String staffName, final String hierarchy, final GroupTimelineData timeline, final CalendarData collectionMeetingCalendar,

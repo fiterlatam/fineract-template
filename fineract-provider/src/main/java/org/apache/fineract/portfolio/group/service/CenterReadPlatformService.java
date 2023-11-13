@@ -35,6 +35,8 @@ public interface CenterReadPlatformService {
 
     Collection<CenterData> retrieveAllForDropdown(Long officeId);
 
+    Collection<CenterData> retrieveByOfficeHierarchy(final String hierarchy, final Long agencyId);
+
     Page<CenterData> retrievePagedAll(SearchParameters searchParameters, PaginationParameters parameters);
 
     Collection<CenterData> retrieveAll(SearchParameters searchParameters, PaginationParameters parameters);
