@@ -471,4 +471,29 @@
                 stripComments="true"/>
     </changeSet>
 
+    <changeSet author="fineract" id="36">
+        <sqlFile
+                encoding="utf8"
+                path="db/changelog/tenant/commands/policy_run_10.sql"
+                relativeToChangelogFile="false"
+                splitStatements="true"
+                stripComments="true"/>
+    </changeSet>
+    <changeSet author="fineract" id="37">
+        <sqlFile
+                encoding="utf8"
+                path="db/changelog/tenant/commands/policy_run_14.sql"
+                relativeToChangelogFile="false"
+                splitStatements="true"
+                stripComments="true"/>
+    </changeSet>
+    <changeSet author="fineract" id="38">
+        <sqlFile
+                encoding="utf8"
+                path="db/changelog/tenant/commands/policy_run_16.sql"
+                relativeToChangelogFile="false"
+                splitStatements="true"
+                stripComments="true"/>
+    </changeSet>
+
 </databaseChangeLog>
