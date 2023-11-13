@@ -233,7 +233,7 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
             case THIRTEEN -> checkValidationColor = this.runCheck13(clientData);
             case FOURTEEN -> checkValidationColor = this.runCheck14(clientData);
             case FIFTEEN -> checkValidationColor = this.runCheck15();
-            case SIXTEEN -> checkValidationColor = this.runCheck16();
+            case SIXTEEN -> checkValidationColor = this.runCheck16(clientData);
             case SEVENTEEN -> checkValidationColor = this.runCheck17(groupData);
             case EIGHTEEN -> checkValidationColor = this.runCheck18(clientData);
             case NINETEEN -> checkValidationColor = this.runCheck19(clientData);
@@ -571,9 +571,19 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
 
     /**
      * Payments outside the current term of the main product
+     * @param clientData
      */
-    private CheckValidationColor runCheck16() {
-        return CheckValidationColor.RED;
+    private CheckValidationColor runCheck16(ClientData clientData) {
+        final String clientId = String.valueOf(clientData.getClientId());
+        final String reportName = Policies.SIXTEEN.getName() + " Policy Check";
+        final String productId = Long.toString(clientData.getProductId());
+        final String requestedAmount = clientData.getRequestedAmount().toPlainString();
+        final ClientData params = retrieveClientParams(clientData.getClientId(), clientData.getProductId());
+        final Map<String, String> reportParams = new HashMap<>();
+        reportParams.put("${clientId}", clientId);
+        reportParams.put("${loanProductId}", productId);
+        final GenericResultsetData result = this.readReportingService.retrieveGenericResultset(reportName, "report", reportParams, false);
+        return extractColorFromResultset(result);
     }
 
     /**

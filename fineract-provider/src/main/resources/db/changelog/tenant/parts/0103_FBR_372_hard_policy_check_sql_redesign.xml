@@ -487,5 +487,13 @@
                 splitStatements="true"
                 stripComments="true"/>
     </changeSet>
+    <changeSet author="fineract" id="38">
+        <sqlFile
+                encoding="utf8"
+                path="db/changelog/tenant/commands/policy_run_16.sql"
+                relativeToChangelogFile="false"
+                splitStatements="true"
+                stripComments="true"/>
+    </changeSet>
 
 </databaseChangeLog>
