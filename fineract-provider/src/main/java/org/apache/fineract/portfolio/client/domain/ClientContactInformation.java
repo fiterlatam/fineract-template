@@ -90,7 +90,7 @@ public class ClientContactInformation extends AbstractPersistableCustom {
     private String streetNumber;
 
     @Column(name = "years_of_community")
-    private String communityYears;
+    private Integer communityYears;
 
     protected ClientContactInformation() {
         //
@@ -99,7 +99,7 @@ public class ClientContactInformation extends AbstractPersistableCustom {
     public ClientContactInformation(Integer area, Integer housingType, Integer yearsOfResidence, Integer departmentId,
             Integer municipalityId, String village, String referenceHousingData, String street, String avenue, String houseNumber,
             String colony, String sector, String batch, String square, String zone, String lightMeterNumber, String homePhone,
-            Client newClient, final String streetNumber, final String communityYears) {
+            Client newClient, final String streetNumber, final Integer communityYears) {
         this.area = area;
         this.housingType = housingType;
         this.yearsOfResidence = yearsOfResidence;
@@ -142,7 +142,7 @@ public class ClientContactInformation extends AbstractPersistableCustom {
         final String lightMeterNumber = command.stringValueOfParameterNamed(ClientApiConstants.lightDeviceNumberParamName);
         final String homePhone = command.stringValueOfParameterNamed(ClientApiConstants.homeNumberParamName);
         final String streetNumber = command.stringValueOfParameterNamed(ClientApiConstants.STREET_NUMBER);
-        final String communityYears = command.stringValueOfParameterNamed(ClientApiConstants.COMMUNITY_YEARS);
+        final Integer communityYears = command.integerValueOfParameterNamed(ClientApiConstants.COMMUNITY_YEARS);
         return new ClientContactInformation(area, housingType, yearsOfResidence, departmentId, municipalityId, village,
                 referenceHousingData, street, avenue, houseNumber, colony, sector, batch, square, zone, lightMeterNumber, homePhone,
                 newClient, streetNumber, communityYears);
@@ -167,7 +167,7 @@ public class ClientContactInformation extends AbstractPersistableCustom {
         final String lightMeterNumber = command.stringValueOfParameterNamed(ClientApiConstants.lightDeviceNumberParamName);
         final String homePhone = command.stringValueOfParameterNamed(ClientApiConstants.homeNumberParamName);
         final String streetNumber = command.stringValueOfParameterNamed(ClientApiConstants.STREET_NUMBER);
-        final String communityYears = command.stringValueOfParameterNamed(ClientApiConstants.COMMUNITY_YEARS);
+        final Integer communityYears = command.integerValueOfParameterNamed(ClientApiConstants.COMMUNITY_YEARS);
         contactInformation.area = area;
         contactInformation.housingType = housingType;
         contactInformation.yearsOfResidence = yearsOfResidence;
