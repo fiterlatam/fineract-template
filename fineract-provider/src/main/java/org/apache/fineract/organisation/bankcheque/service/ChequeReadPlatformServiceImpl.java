@@ -410,11 +410,11 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
                 for (int i = 0; i < jsonArray.size(); i++) {
                     final JsonElement element = jsonArray.get(i);
                     final Long id = this.fromApiJsonHelper.extractLongNamed("id", element);
+                    final String status = ObjectUtils.defaultIfNull(this.fromApiJsonHelper.extractStringNamed("estado", element), "");
                     final JsonElement data = this.fromApiJsonHelper.extractJsonObjectNamed("datos", element);
                     final String clientNo = this.fromApiJsonHelper.extractStringNamed("numero_cliente", data);
                     final String clientName = this.fromApiJsonHelper.extractStringNamed("name", data);
                     final String withdrawalReason = this.fromApiJsonHelper.extractStringNamed("razon_retiro", data);
-                    final String status = this.fromApiJsonHelper.extractStringNamed("razon_retiro", data);
                     final BigDecimal requestedAmount = this.fromApiJsonHelper.extractBigDecimalNamed("monto", data, reqLocale);
                     final GuaranteeData guarantee = GuaranteeData.builder().id(id).caseId(caseId).clientNo(clientNo).clientName(clientName)
                             .withdrawalReason(withdrawalReason).requestedAmount(requestedAmount).status(status).build();
