@@ -267,7 +267,24 @@ public class AgencyReadPlatformServiceImpl implements AgencyReadPlatformService 
         public String schema() {
             return this.schema;
         }
-
     }
 
+    @Override
+    public Collection<AgencyData> retrieveByOfficeHierarchy(final String hierarchy) {
+        final String sql = """
+                        SELECT
+                        ma.id AS id,
+                        ma.name AS name
+                        FROM
+                        m_office mo
+                        INNER JOIN m_office office_under ON
+                        office_under.hierarchy LIKE CONCAT(mo.hierarchy, '%')AND office_under.hierarchy LIKE CONCAT(?, '%')
+                        INNER JOIN m_appuser agency_responsible_user ON agency_responsible_user.office_id = office_under.id
+                        INNER JOIN m_office agency_responsible_user_office ON agency_responsible_user_office.id = agency_responsible_user.office_id
+                        INNER JOIN m_agency ma ON ma.responsible_user_id = agency_responsible_user.id
+                        GROUP BY ma.id
+                """;
+        return this.jdbcTemplate.query(sql, (rs, rowNum) -> AgencyData.instance(rs.getLong("id"), rs.getString("name")),
+                new Object[] { hierarchy });
+    }
 }

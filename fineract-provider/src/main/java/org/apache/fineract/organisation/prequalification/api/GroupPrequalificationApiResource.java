@@ -24,7 +24,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
@@ -44,6 +43,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.UriInfo;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.fineract.commands.domain.CommandWrapper;
 import org.apache.fineract.commands.service.CommandWrapperBuilder;
 import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformService;
@@ -63,7 +63,6 @@ import org.apache.fineract.infrastructure.documentmanagement.service.DocumentWri
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.organisation.agency.data.AgencyData;
 import org.apache.fineract.organisation.agency.service.AgencyReadPlatformServiceImpl;
-import org.apache.fineract.organisation.office.domain.OfficeHierarchyLevel;
 import org.apache.fineract.organisation.prequalification.data.GroupPrequalificationData;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationStatus;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationType;
@@ -179,7 +178,14 @@ public class GroupPrequalificationApiResource {
 
         String type = queryParameters.getFirst("type");
         String groupingType = queryParameters.getFirst("groupingType");
-
+        Long agencyId = null;
+        Long centerId = null;
+        if (queryParameters.getFirst("agencyId") != null) {
+            agencyId = NumberUtils.toLong(queryParameters.getFirst("agencyId"), Long.MAX_VALUE);
+        }
+        if (queryParameters.getFirst("centerId") != null) {
+            centerId = NumberUtils.toLong(queryParameters.getFirst("centerId"), Long.MAX_VALUE);
+        }
         Collection<LoanProductData> loanProducts = this.loanProductReadPlatformService.retrieveAllLoanProducts();
         Integer prequalificationType = null;
         if (StringUtils.isNotBlank(groupingType)) {
@@ -196,13 +202,10 @@ public class GroupPrequalificationApiResource {
             }
         }
 
-        Collection<CenterData> centerData = this.centerReadPlatformService
-                .retrieveAllForDropdown(this.context.authenticatedUser().getOffice().getId());
-
-        Collection<AgencyData> agencies = this.agencyReadPlatformService.retrieveAllByUser();
-
-        final List<AppUserData> appUsers = new ArrayList<>(
-                this.appUserReadPlatformService.retrieveUsersUnderHierarchy(Long.valueOf(OfficeHierarchyLevel.GRUPO.getValue())));
+        final String hierarchy = this.context.authenticatedUser().getOffice().getHierarchy();
+        final Collection<CenterData> centerData = this.centerReadPlatformService.retrieveByOfficeHierarchy(hierarchy, agencyId);
+        final Collection<AgencyData> agencies = this.agencyReadPlatformService.retrieveByOfficeHierarchy(hierarchy);
+        final Collection<AppUserData> appUsers = this.appUserReadPlatformService.retrieveByOfficeHierarchy(hierarchy, centerId);
 
         List<EnumOptionData> statusOptions = Arrays.asList(status(PrequalificationStatus.CONSENT_ADDED),
                 status(PrequalificationStatus.BLACKLIST_CHECKED), status(PrequalificationStatus.COMPLETED),

@@ -512,6 +512,37 @@ public class CenterReadPlatformServiceImpl implements CenterReadPlatformService 
     }
 
     @Override
+    public Collection<CenterData> retrieveByOfficeHierarchy(final String hierarchy, final Long agencyId) {
+        String sql = """
+                SELECT
+                center.id AS id,
+                center.display_name AS name
+                FROM
+                m_office mo
+                INNER JOIN m_office office_under ON office_under.hierarchy LIKE CONCAT(mo.hierarchy, '%')AND office_under.hierarchy LIKE CONCAT(?, '%')
+                INNER JOIN m_appuser agency_responsible_user ON agency_responsible_user.office_id = office_under.id
+                INNER JOIN m_office agency_responsible_user_office ON agency_responsible_user_office.id = agency_responsible_user.office_id
+                INNER JOIN m_agency ma ON ma.responsible_user_id = agency_responsible_user.id
+                INNER JOIN m_office agency_office_under ON agency_office_under.hierarchy LIKE CONCAT(agency_responsible_user_office.hierarchy, '%')
+                INNER JOIN m_appuser supervison_responsible_user ON agency_responsible_user.office_id = agency_office_under.id
+                INNER JOIN m_office supervision_responsible_user_office ON supervision_responsible_user_office.id = supervison_responsible_user.office_id
+                INNER JOIN m_supervision ms ON ms.responsible_user_id = supervison_responsible_user.id
+                INNER JOIN m_office supervison_office_under ON supervison_office_under.hierarchy LIKE CONCAT(supervision_responsible_user_office.hierarchy, '%')
+                INNER JOIN m_appuser portfolio_responsible_user ON portfolio_responsible_user.office_id = supervison_office_under.id
+                INNER JOIN m_portfolio mp ON mp.responsible_user_id = portfolio_responsible_user.id
+                INNER JOIN m_group center ON center.portfolio_id = mp.id
+                WHERE center.parent_id IS NULL AND center.level_id = 1
+                """;
+        List<Object> params = new ArrayList<>(List.of(hierarchy));
+        if (agencyId != null) {
+            sql = sql + " AND ma.id = ?";
+            params.add(agencyId);
+        }
+        sql = sql + " GROUP BY center.id";
+        return this.jdbcTemplate.query(sql, (rs, rowNum) -> CenterData.instance(rs.getLong("id"), rs.getString("name")), params.toArray());
+    }
+
+    @Override
     public CenterData retrieveTemplate(final Long officeId, final boolean staffInSelectedOfficeOnly) {
 
         final Long officeIdDefaulted = defaultToUsersOfficeIfNull(officeId);
