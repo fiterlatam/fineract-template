@@ -410,7 +410,8 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
                 for (int i = 0; i < jsonArray.size(); i++) {
                     final JsonElement element = jsonArray.get(i);
                     final Long id = this.fromApiJsonHelper.extractLongNamed("id", element);
-                    final String status = ObjectUtils.defaultIfNull(this.fromApiJsonHelper.extractStringNamed("estado", element), "");
+                    final String status = ObjectUtils.defaultIfNull(this.fromApiJsonHelper.extractStringNamed("estado", element),
+                            "Nueva Solicitud");
                     final JsonElement data = this.fromApiJsonHelper.extractJsonObjectNamed("datos", element);
                     final String clientNo = this.fromApiJsonHelper.extractStringNamed("numero_cliente", data);
                     final String clientName = this.fromApiJsonHelper.extractStringNamed("name", data);
