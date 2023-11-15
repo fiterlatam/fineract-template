@@ -32,4 +32,14 @@
         </insert>
     </changeSet>
 
+    <changeSet author="fineract" id="2">
+        <insert tableName="m_permission">
+            <column name="grouping" value="portfolio" />
+            <column name="code" value="VIEW_GROUP_PREQUALIFICATIONS"/>
+            <column name="entity_name" value="GROUP_PREQUALIFICATIONS" />
+            <column name="action_name" value="VIEW" />
+            <column name="can_maker_checker" valueBoolean="false" />
+        </insert>
+    </changeSet>
+
 </databaseChangeLog>
