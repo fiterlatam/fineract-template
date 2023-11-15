@@ -122,4 +122,5 @@
     <include file="parts/0103_FBR_372_hard_policy_check_sql_redesign.xml" relativeToChangelogFile="true"/>
     <include file="parts/0104_FBR_369_create_charge_admin_fee_configurations.xml" relativeToChangelogFile="true"/>
     <include file="parts/0105_FBR_395_alter_bank_table.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0106_Add_Prequalification_Permissions.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
