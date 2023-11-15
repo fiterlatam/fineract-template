@@ -41,6 +41,7 @@
     </changeSet>
 
     <changeSet author="fineract" id="3">
+
         <sql>
             UPDATE stretchy_report SET report_sql='SELECT
             t.clientId AS ''Nro Solicitud'',
