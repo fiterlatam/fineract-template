@@ -27,6 +27,8 @@ import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuild
 import org.apache.fineract.infrastructure.core.exception.PlatformDataIntegrityException;
 import org.apache.fineract.infrastructure.security.exception.NoAuthorizationException;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
+import org.apache.fineract.organisation.agency.domain.Agency;
+import org.apache.fineract.organisation.agency.domain.AgencyRepositoryWrapper;
 import org.apache.fineract.organisation.office.domain.Office;
 import org.apache.fineract.organisation.office.domain.OfficeRepositoryWrapper;
 import org.apache.fineract.organisation.supervision.domain.Supervision;
@@ -53,16 +55,19 @@ public class SupervisionWritePlatformServiceImpl implements SupervisionWritePlat
     private final SupervisionRepositoryWrapper supervisionRepositoryWrapper;
     private final OfficeRepositoryWrapper officeRepositoryWrapper;
     private final AppUserRepository appUserRepository;
+    private final AgencyRepositoryWrapper agencyRepositoryWrapper;
 
     @Autowired
     public SupervisionWritePlatformServiceImpl(PlatformSecurityContext context,
             SupervisionCommandFromApiJsonDeserializer fromApiJsonDeserializer, SupervisionRepositoryWrapper supervisionRepositoryWrapper,
-            OfficeRepositoryWrapper officeRepositoryWrapper, AppUserRepository appUserRepository) {
+            OfficeRepositoryWrapper officeRepositoryWrapper, AppUserRepository appUserRepository,
+            AgencyRepositoryWrapper agencyRepositoryWrapper) {
         this.context = context;
         this.fromApiJsonDeserializer = fromApiJsonDeserializer;
         this.supervisionRepositoryWrapper = supervisionRepositoryWrapper;
         this.officeRepositoryWrapper = officeRepositoryWrapper;
         this.appUserRepository = appUserRepository;
+        this.agencyRepositoryWrapper = agencyRepositoryWrapper;
     }
 
     @Transactional
@@ -89,7 +94,10 @@ public class SupervisionWritePlatformServiceImpl implements SupervisionWritePlat
                         .orElseThrow(() -> new UserNotFoundException(responsibleUserId));
             }
 
-            final Supervision supervision = Supervision.fromJson(parentOffice, responsibleUser, command);
+            final Long agencyId = command
+                    .longValueOfParameterNamed(SupervisionConstants.SupervisionSupportedParameters.AGENCY_ID.getValue());
+            final Agency agency = agencyRepositoryWrapper.findOneWithNotFoundDetection(agencyId);
+            final Supervision supervision = Supervision.fromJson(parentOffice, responsibleUser, command, agency);
 
             this.supervisionRepositoryWrapper.saveAndFlush(supervision);
 
@@ -138,6 +146,13 @@ public class SupervisionWritePlatformServiceImpl implements SupervisionWritePlat
                             .orElseThrow(() -> new UserNotFoundException(responsibleUserId));
                     supervision.setResponsibleUser(responsibleUser);
                     changes.put(SupervisionConstants.SupervisionSupportedParameters.RESPONSIBLE_USER_ID.getValue(), responsibleUserId);
+                }
+                if (command.parameterExists(SupervisionConstants.SupervisionSupportedParameters.AGENCY_ID.getValue())) {
+                    final Long agencyId = command
+                            .longValueOfParameterNamed(SupervisionConstants.SupervisionSupportedParameters.AGENCY_ID.getValue());
+                    final Agency agency = agencyRepositoryWrapper.findOneWithNotFoundDetection(agencyId);
+                    supervision.setAgency(agency);
+                    changes.put(SupervisionConstants.SupervisionSupportedParameters.AGENCY_ID.getValue(), agencyId);
                 }
             }
 
