@@ -112,7 +112,8 @@ public final class LoanProductDataValidator {
             LoanProductConstants.CAN_USE_FOR_TOPUP, LoanProductConstants.IS_EQUAL_AMORTIZATION_PARAM, LoanProductConstants.RATES_PARAM_NAME,
             LoanProductConstants.fixedPrincipalPercentagePerInstallmentParamName, LoanProductConstants.DISALLOW_EXPECTED_DISBURSEMENTS,
             LoanProductConstants.ALLOW_APPROVED_DISBURSED_AMOUNTS_OVER_APPLIED, LoanProductConstants.OVER_APPLIED_CALCULATION_TYPE,
-            LoanProductConstants.OVER_APPLIED_NUMBER, LoanProductConstants.LIMIT_OF_DAYS_FOR_ADDON));
+            LoanProductConstants.OVER_APPLIED_NUMBER, LoanProductConstants.LIMIT_OF_DAYS_FOR_ADDON,
+            LoanProductConstants.PAYMENT_TOLERANCE_LIMIT));
 
     private static final String[] supportedloanConfigurableAttributes = { LoanProductConstants.amortizationTypeParamName,
             LoanProductConstants.interestTypeParamName, LoanProductConstants.transactionProcessingStrategyIdParamName,
@@ -167,6 +168,11 @@ public final class LoanProductDataValidator {
             baseDataValidator.reset().parameter(LoanProductConstants.MINIMUM_DAYS_BETWEEN_DISBURSAL_AND_FIRST_REPAYMENT)
                     .value(minimumDaysBetweenDisbursalAndFirstRepayment).ignoreIfNull().integerGreaterThanZero();
         }
+
+        final BigDecimal paymentToleranceLimit = this.fromApiJsonHelper.extractBigDecimalNamed(LoanProductConstants.PAYMENT_TOLERANCE_LIMIT,
+                element, Locale.getDefault());
+        baseDataValidator.reset().parameter("paymentToleranceLimit").value(paymentToleranceLimit).notNull()
+                .inMinAndMaxAmountRange(BigDecimal.ZERO, BigDecimal.valueOf(100L));
 
         final Boolean includeInBorrowerCycle = this.fromApiJsonHelper.extractBooleanNamed("includeInBorrowerCycle", element);
         baseDataValidator.reset().parameter("includeInBorrowerCycle").value(includeInBorrowerCycle).ignoreIfNull()
@@ -1106,6 +1112,15 @@ public final class LoanProductDataValidator {
                     .inMinMaxRange(0, 1);
         }
 
+        /**
+         * { @link paymentToleranceLimit }
+         */
+        if (this.fromApiJsonHelper.parameterExists(LoanProductConstants.PAYMENT_TOLERANCE_LIMIT, element)) {
+            final BigDecimal paymentToleranceLimit = this.fromApiJsonHelper
+                    .extractBigDecimalNamed(LoanProductConstants.PAYMENT_TOLERANCE_LIMIT, element, Locale.getDefault());
+            baseDataValidator.reset().parameter(LoanProductConstants.PAYMENT_TOLERANCE_LIMIT).value(paymentToleranceLimit).notNull()
+                    .inMinAndMaxAmountRange(BigDecimal.ZERO, BigDecimal.valueOf(100L));
+        }
         /**
          * { @link DaysInYearType }
          */
