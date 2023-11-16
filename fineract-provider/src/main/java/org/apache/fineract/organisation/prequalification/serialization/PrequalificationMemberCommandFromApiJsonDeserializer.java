@@ -77,6 +77,7 @@ public final class PrequalificationMemberCommandFromApiJsonDeserializer {
 
         final String dpi = this.fromApiJsonHelper.extractStringNamed(ClientApiConstants.dpiParamName, element);
         baseDataValidator.reset().parameter(ClientApiConstants.dpiParamName).value(dpi).notNull().notBlank().notExceedingLengthOf(20);
+
         ClientIdentifierDocumentValidator.checkDPI(dpi, ClientApiConstants.dpiParamName);
 
         final BigDecimal requestedAmount = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed("amount", element);
@@ -86,9 +87,7 @@ public final class PrequalificationMemberCommandFromApiJsonDeserializer {
             final LocalDate dateOfBirth = this.fromApiJsonHelper.extractLocalDateNamed("dob", element);
             baseDataValidator.reset().parameter("dob").value(dateOfBirth).value(dateOfBirth).notNull()
                     .validateDateBefore(DateUtils.getBusinessLocalDate());
-
         }
-
     }
 
     public void validateForUpdate(String json) {
@@ -124,7 +123,6 @@ public final class PrequalificationMemberCommandFromApiJsonDeserializer {
                     element);
             baseDataValidator.reset().parameter(PrequalificatoinApiConstants.memberDobParamName).value(dateOfBirth).value(dateOfBirth)
                     .notNull().validateDateBefore(DateUtils.getBusinessLocalDate());
-
         }
 
         final String workWithPuente = this.fromApiJsonHelper.extractStringNamed(PrequalificatoinApiConstants.memberWorkWithPuenteParamName,

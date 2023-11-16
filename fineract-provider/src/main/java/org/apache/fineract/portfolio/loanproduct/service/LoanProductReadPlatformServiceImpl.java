@@ -659,6 +659,25 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
     }
 
     @Override
+    public Collection<LoanProductData> retrieveAllLoanProductsForOwner(Integer ownerType) {
+        this.context.authenticatedUser();
+
+        final LoanProductMapper rm = new LoanProductMapper(null, null, null);
+
+        String sql = "select " + rm.loanProductSchema() + " where lp.owner_type_enum= ? ";
+
+        // Check if branch specific products are enabled. If yes, fetch only
+        // products mapped to current user's office
+        String inClause = fineractEntityAccessUtil
+                .getSQLWhereClauseForProductIDsForUserOffice_ifGlobalConfigEnabled(FineractEntityType.LOAN_PRODUCT);
+        if (inClause != null && !inClause.trim().isEmpty()) {
+            sql += " and id in (" + inClause + ") ";
+        }
+
+        return this.jdbcTemplate.query(sql, rm, new Object[] { ownerType }); // NOSONAR
+    }
+
+    @Override
     public LoanProductData retrieveLoanProductFloatingDetails(final Long loanProductId) {
 
         try {

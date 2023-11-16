@@ -170,13 +170,15 @@ public class ChargeReadPlatformServiceImpl implements ChargeReadPlatformService 
         final List<GLAccountData> expenseAccountOptions = this.accountingDropdownReadPlatformService.retrieveExpenseAccountOptions();
         final List<GLAccountData> assetAccountOptions = this.accountingDropdownReadPlatformService.retrieveAssetAccountOptions();
         final List<EnumOptionData> chargeDisbursementTypeOptions = this.chargeDropdownReadPlatformService.retrieveDisbursementTypeOptions();
+        final List<EnumOptionData> chargeInstallmentFeeTypeOptions = this.chargeDropdownReadPlatformService
+                .retrieveInstallmentFeeTypeOptions();
 
         return ChargeData.template(currencyOptions, allowedChargeCalculationTypeOptions, allowedChargeAppliesToOptions,
                 allowedChargeTimeOptions, chargePaymentOptions, loansChargeCalculationTypeOptions, loansChargeTimeTypeOptions,
                 savingsChargeCalculationTypeOptions, savingsChargeTimeTypeOptions, clientChargeCalculationTypeOptions,
                 clientChargeTimeTypeOptions, feeFrequencyOptions, incomeOrLiabilityAccountOptions, taxGroupOptions,
                 shareChargeCalculationTypeOptions, shareChargeTimeTypeOptions, accountMappingForChargeConfig, expenseAccountOptions,
-                assetAccountOptions, chargeDisbursementTypeOptions);
+                assetAccountOptions, chargeDisbursementTypeOptions, chargeInstallmentFeeTypeOptions);
     }
 
     @Override
@@ -301,6 +303,7 @@ public class ChargeReadPlatformServiceImpl implements ChargeReadPlatformService 
                     + "c.is_active as active, c.is_free_withdrawal as isFreeWithdrawal, c.free_withdrawal_charge_frequency as freeWithdrawalChargeFrequency, "
                     + "c.restart_frequency as restartFrequency, c.restart_frequency_enum as restartFrequencyEnum, "
                     + "c.charge_disbursement_type_enum as chargeDisbursementType, "
+                    + "c.charge_installment_fee_type_enum as chargeInstallmentFeeType, "
                     + "oc.name as currencyName, oc.decimal_places as currencyDecimalPlaces, "
                     + "oc.currency_multiplesof as inMultiplesOf, oc.display_symbol as currencyDisplaySymbol, "
                     + "oc.internationalized_name_code as currencyNameCode, oc.int_code as intCode, c.fee_on_day as feeOnDay, c.fee_on_month as feeOnMonth, "
@@ -349,6 +352,9 @@ public class ChargeReadPlatformServiceImpl implements ChargeReadPlatformService 
 
             final int chargeDisbursementTypeId = rs.getInt("chargeDisbursementType");
             final EnumOptionData chargeDisbursementType = ChargeEnumerations.chargeDisbursementType(chargeDisbursementTypeId);
+
+            final int chargeInstallmentFeeTypeId = rs.getInt("chargeInstallmentFeeType");
+            final EnumOptionData chargeInstallmentFeeType = ChargeEnumerations.chargeInstallmentFeeType(chargeInstallmentFeeTypeId);
 
             final int chargeCalculation = rs.getInt("chargeCalculation");
             final EnumOptionData chargeCalculationType = ChargeEnumerations.chargeCalculationType(chargeCalculation);
@@ -407,7 +413,7 @@ public class ChargeReadPlatformServiceImpl implements ChargeReadPlatformService 
             return ChargeData.instance(id, name, amount, currency, chargeTimeType, chargeAppliesToType, chargeCalculationType,
                     chargePaymentMode, feeOnMonthDay, feeInterval, penalty, active, isFreeWithdrawal, freeWithdrawalChargeFrequency,
                     restartFrequency, restartFrequencyEnum, isPaymentType, paymentTypeData, minCap, maxCap, feeFrequencyType, glAccountData,
-                    taxGroupData, chargeDisbursementType);
+                    taxGroupData, chargeDisbursementType, chargeInstallmentFeeType);
         }
     }
 

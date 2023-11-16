@@ -63,6 +63,7 @@ import javax.persistence.Transient;
 import javax.persistence.UniqueConstraint;
 import javax.persistence.Version;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.fineract.infrastructure.codes.domain.CodeValue;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.ApiParameterError;
@@ -5002,11 +5003,20 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                     continue;
                 }
                 BigDecimal amount = BigDecimal.ZERO;
+                // FBR-369: Apply Administrative Fee as Installment Fee
+                BigDecimal chargeRate = loanCharge.getPercentage();
+
+                if (loanCharge.getCharge().isAddOnInstallmentFeeType()) {
+                    LocalDate firstRepaymentDate = this.fetchRepaymentScheduleInstallment(1).getDueDate();
+                    Pair<Integer, BigDecimal> addOnDaysAndRate = loanCharge.getCharge()
+                            .getAddOnDisbursementChargeRate(this.getDisbursementDate(), firstRepaymentDate);
+                    chargeRate = addOnDaysAndRate.getRight();
+                }
+
                 if (loanCharge.getChargeCalculation().isFlat()) {
                     amount = loanCharge.amountOrPercentage();
                 } else {
-                    amount = calculateInstallmentChargeAmount(loanCharge.getChargeCalculation(), loanCharge.getPercentage(), installment)
-                            .getAmount();
+                    amount = calculateInstallmentChargeAmount(loanCharge.getChargeCalculation(), chargeRate, installment).getAmount();
                 }
                 final LoanInstallmentCharge loanInstallmentCharge = new LoanInstallmentCharge(amount, loanCharge, installment);
                 installment.getInstallmentCharges().add(loanInstallmentCharge);

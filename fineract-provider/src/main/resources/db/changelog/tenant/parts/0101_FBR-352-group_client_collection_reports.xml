@@ -103,7 +103,6 @@
             ) client_loan ON client_loan.client_id = ml.client_id
             WHERE (ml.submittedon_date BETWEEN ''${submittedOnStartDate}'' AND ''${submittedOnEndDate}'') AND (ml.fund_id = ''${fundId}'' OR ''-1'' = ''${fundId}'') AND (mgc.client_id IS NOT NULL)
             GROUP BY group_client.id
-
             UNION ALL
             SELECT
             mc.id AS clientId,

@@ -24,7 +24,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
@@ -44,6 +43,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.UriInfo;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.fineract.commands.domain.CommandWrapper;
 import org.apache.fineract.commands.service.CommandWrapperBuilder;
 import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformService;
@@ -63,9 +63,9 @@ import org.apache.fineract.infrastructure.documentmanagement.service.DocumentWri
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.organisation.agency.data.AgencyData;
 import org.apache.fineract.organisation.agency.service.AgencyReadPlatformServiceImpl;
-import org.apache.fineract.organisation.office.domain.OfficeHierarchyLevel;
 import org.apache.fineract.organisation.prequalification.data.GroupPrequalificationData;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationStatus;
+import org.apache.fineract.organisation.prequalification.domain.PrequalificationType;
 import org.apache.fineract.organisation.prequalification.service.PrequalificationReadPlatformService;
 import org.apache.fineract.organisation.prequalification.service.PrequalificationWritePlatformService;
 import org.apache.fineract.portfolio.group.data.CenterData;
@@ -147,7 +147,8 @@ public class GroupPrequalificationApiResource {
             @QueryParam("status") @Parameter(description = "status") final String status,
             @QueryParam("type") @Parameter(description = "type") final String type,
             @QueryParam("searchText") @Parameter(description = "searchText") final String searchText,
-            @QueryParam("sortOrder") @Parameter(description = "sortOrder") final String sortOrder) {
+            @QueryParam("sortOrder") @Parameter(description = "sortOrder") final String sortOrder,
+            @QueryParam("groupingType") @Parameter(description = "groupingType") final String groupingType) {
 
         this.context.authenticatedUser().validateHasViewPermission(this.resourceNameForPermissions);
 
@@ -155,7 +156,7 @@ public class GroupPrequalificationApiResource {
 
         String clientName = queryParameters.getFirst("clientName");
         SearchParameters searchParameters = SearchParameters.forPrequalification(clientName, status, offset, limit, orderBy, sortOrder,
-                type, searchText);
+                type, searchText, groupingType);
         final Page<GroupPrequalificationData> clientData = this.prequalificationReadPlatformService.retrieveAll(searchParameters);
 
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(queryParameters);
@@ -176,17 +177,40 @@ public class GroupPrequalificationApiResource {
         MultivaluedMap<String, String> queryParameters = uriInfo.getQueryParameters();
 
         String type = queryParameters.getFirst("type");
-        Collection<CenterData> centerData = this.centerReadPlatformService
-                .retrieveAllForDropdown(this.context.authenticatedUser().getOffice().getId());
-
-        Collection<AgencyData> agencies = this.agencyReadPlatformService.retrieveAllByUser();
+        String groupingType = queryParameters.getFirst("groupingType");
+        Long agencyId = null;
+        Long centerId = null;
+        if (queryParameters.getFirst("agencyId") != null) {
+            agencyId = NumberUtils.toLong(queryParameters.getFirst("agencyId"), Long.MAX_VALUE);
+        }
+        if (queryParameters.getFirst("centerId") != null) {
+            centerId = NumberUtils.toLong(queryParameters.getFirst("centerId"), Long.MAX_VALUE);
+        }
         Collection<LoanProductData> loanProducts = this.loanProductReadPlatformService.retrieveAllLoanProducts();
-        final List<AppUserData> appUsers = new ArrayList<>(
-                this.appUserReadPlatformService.retrieveUsersUnderHierarchy(Long.valueOf(OfficeHierarchyLevel.GRUPO.getValue())));
+        Integer prequalificationType = null;
+        if (StringUtils.isNotBlank(groupingType)) {
+            if (groupingType.equals("group")) {
+                prequalificationType = PrequalificationType.GROUP.getValue();
+            }
+
+            if (groupingType.equals("individual")) {
+                prequalificationType = PrequalificationType.INDIVIDUAL.getValue();
+            }
+
+            if (prequalificationType != null) {
+                loanProducts = this.loanProductReadPlatformService.retrieveAllLoanProductsForOwner(prequalificationType);
+            }
+        }
+
+        final String hierarchy = this.context.authenticatedUser().getOffice().getHierarchy();
+        final Collection<CenterData> centerData = this.centerReadPlatformService.retrieveByOfficeHierarchy(hierarchy, agencyId);
+        final Collection<AgencyData> agencies = this.agencyReadPlatformService.retrieveByOfficeHierarchy(hierarchy);
+        final Collection<AppUserData> appUsers = this.appUserReadPlatformService.retrieveByOfficeHierarchy(hierarchy, centerId);
 
         List<EnumOptionData> statusOptions = Arrays.asList(status(PrequalificationStatus.CONSENT_ADDED),
                 status(PrequalificationStatus.BLACKLIST_CHECKED), status(PrequalificationStatus.COMPLETED),
-                status(PrequalificationStatus.HARD_POLICY_CHECKED), status(PrequalificationStatus.TIME_EXPIRED));
+                status(PrequalificationStatus.HARD_POLICY_CHECKED), status(PrequalificationStatus.TIME_EXPIRED),
+                status(PrequalificationStatus.PREQUALIFICATION_UPDATE_REQUESTED));
         if (StringUtils.equalsIgnoreCase(type, "analysis")) {
             statusOptions = Arrays.asList(status(PrequalificationStatus.ANALYSIS_UNIT_PENDING_APPROVAL),
                     status(PrequalificationStatus.ANALYSIS_UNIT_PENDING_APPROVAL_WITH_EXCEPTIONS));

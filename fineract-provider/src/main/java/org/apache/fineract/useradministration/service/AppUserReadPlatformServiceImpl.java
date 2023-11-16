@@ -29,6 +29,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
@@ -302,4 +303,33 @@ public class AppUserReadPlatformServiceImpl implements AppUserReadPlatformServic
         }
     }
 
+    @Override
+    public Collection<AppUserData> retrieveByOfficeHierarchy(String hierarchy, final Long centerId) {
+        String sql = """
+                SELECT
+                	facilitator.id AS id,
+                	facilitator.username AS username,
+                	facilitator.firstname AS firstname,
+                	facilitator.lastname AS lastname,
+                	facilitator.email AS email,
+                	facilitator.office_id AS officeId,
+                	mo.name AS officeName,
+                	facilitator.is_self_service_user AS isSelfServiceUser
+                FROM m_office mo
+                INNER JOIN m_office office_under ON office_under.hierarchy LIKE CONCAT(mo.hierarchy, '%')AND office_under.hierarchy LIKE CONCAT(?, '%')
+                LEFT JOIN m_group center ON center.office_id = office_under.id
+                LEFT JOIN m_office center_office ON center_office.id = center.office_id
+                LEFT JOIN m_office center_office_under ON center_office_under.hierarchy LIKE CONCAT(center_office.hierarchy, '%')
+                LEFT JOIN m_appuser facilitator ON facilitator.office_id = center_office_under.id
+                WHERE facilitator.is_deleted = FALSE AND center.parent_id IS NULL AND center.level_id = 1
+                """;
+        final List<Object> params = new ArrayList<>(List.of(hierarchy));
+        if (centerId != null) {
+            sql = sql + " AND center.id = ? ";
+            params.add(centerId);
+        }
+        sql = sql + " GROUP BY facilitator.id  ORDER BY facilitator.username";
+        return this.jdbcTemplate.query(sql, (rs, rowNum) -> AppUserData.instance(rs.getLong("id"), rs.getString("username"),
+                rs.getString("firstname"), rs.getString("lastname")), params.toArray());
+    }
 }

@@ -66,6 +66,8 @@ import org.apache.fineract.organisation.office.exception.InvalidOfficeException;
 import org.apache.fineract.organisation.portfolio.domain.Portfolio;
 import org.apache.fineract.organisation.portfolio.domain.PortfolioRepositoryWrapper;
 import org.apache.fineract.organisation.portfolioCenter.service.PortfolioCenterConstants;
+import org.apache.fineract.organisation.prequalification.domain.GroupPrequalificationRelationship;
+import org.apache.fineract.organisation.prequalification.domain.GroupPrequalificationRelationshipRepository;
 import org.apache.fineract.organisation.prequalification.domain.PreQualificationGroupRepository;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationGroup;
 import org.apache.fineract.organisation.prequalification.exception.GroupPreQualificationNotFound;
@@ -150,6 +152,7 @@ public class GroupingTypesWritePlatformServiceJpaRepositoryImpl implements Group
     private final GroupReadPlatformService groupReadPlatformService;
     private final JdbcTemplate jdbcTemplate;
     private final PreQualificationGroupRepository prequalificationGroupRepository;
+    private final GroupPrequalificationRelationshipRepository groupPrequalificationRelationshipRepository;
 
     private CommandProcessingResult createGroupingType(final JsonCommand command, final GroupTypes groupingType, final Long centerId) {
         try {
@@ -314,6 +317,10 @@ public class GroupingTypesWritePlatformServiceJpaRepositoryImpl implements Group
             // pre-save to generate id for use in group hierarchy
             this.groupRepository.saveAndFlush(newGroup);
 
+            GroupPrequalificationRelationship relationship = GroupPrequalificationRelationship.addRelationship(currentUser, newGroup,
+                    prequalificationGroup);
+
+            this.groupPrequalificationRelationshipRepository.save(relationship);
             /*
              * Generate hierarchy for a new center/group and all the child groups if they exist
              */
@@ -483,7 +490,7 @@ public class GroupingTypesWritePlatformServiceJpaRepositoryImpl implements Group
     private CommandProcessingResult updateGroupingType(final Long groupId, final JsonCommand command, final GroupTypes groupingType) {
 
         try {
-            this.context.authenticatedUser();
+            AppUser appUser = this.context.authenticatedUser();
             final Group groupForUpdate = this.groupRepository.findOneWithNotFoundDetection(groupId);
             final Long officeId = groupForUpdate.officeId();
             final Office groupOffice = groupForUpdate.getOffice();
@@ -519,6 +526,9 @@ public class GroupingTypesWritePlatformServiceJpaRepositoryImpl implements Group
                         .orElseThrow(() -> new GroupPreQualificationNotFound(newValue));
                 groupForUpdate.updatePrequalification(prequalificationGroup);
 
+                GroupPrequalificationRelationship relationship = GroupPrequalificationRelationship.addRelationship(appUser, groupForUpdate,
+                        prequalificationGroup);
+                this.groupPrequalificationRelationshipRepository.save(relationship);
             }
 
             final GroupLevel groupLevel = this.groupLevelRepository.findById(groupForUpdate.getGroupLevel().getId()).orElse(null);

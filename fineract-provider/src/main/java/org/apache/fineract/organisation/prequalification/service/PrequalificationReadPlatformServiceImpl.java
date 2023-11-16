@@ -23,9 +23,11 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 import org.apache.fineract.infrastructure.codes.service.CodeValueReadPlatformService;
 import org.apache.fineract.infrastructure.core.data.ApiParameterError;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
@@ -46,9 +48,12 @@ import org.apache.fineract.organisation.prequalification.domain.PreQualification
 import org.apache.fineract.organisation.prequalification.domain.PreQualificationsMemberEnumerations;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationMemberIndication;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationStatus;
+import org.apache.fineract.organisation.prequalification.domain.PrequalificationSubStatus;
+import org.apache.fineract.organisation.prequalification.domain.PrequalificationType;
 import org.apache.fineract.portfolio.client.service.ClientChargeWritePlatformServiceJpaRepositoryImpl;
 import org.apache.fineract.portfolio.client.service.ClientReadPlatformService;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductRepository;
+import org.apache.fineract.useradministration.domain.AppUser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -71,6 +76,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
     private final PaginationHelper paginationHelper;
     private final ColumnValidator columnValidator;
     private final PrequalificationsGroupMapper prequalificationsGroupMapper = new PrequalificationsGroupMapper();
+    private final PrequalificationsGroupMappingsMapper mappingsMapper = new PrequalificationsGroupMappingsMapper();
     private final PrequalificationsMemberMapper prequalificationsMemberMapper = new PrequalificationsMemberMapper();
     private final DatabaseSpecificSQLGenerator sqlGenerator;
     private final PreQualificationMemberRepository preQualificationMemberRepository;
@@ -243,8 +249,24 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
         return clientData;
     }
 
+    @Override
+    public Collection<GroupPrequalificationData> retrievePrequalificationGroupsMappings(Long groupId) {
+        final String sql = "select " + this.mappingsMapper.schema() + " where GR.group_id = ? ";
+        Collection<GroupPrequalificationData> prequalificationGroups = this.jdbcTemplate.query(sql, this.mappingsMapper,
+                new Object[] { groupId });
+        return prequalificationGroups;
+    }
+
     private String buildSqlStringFromBlacklistCriteria(final SearchParameters searchParameters, List<Object> paramList, boolean isGroup) {
 
+        AppUser appUser = this.context.authenticatedUser();
+        String committeeQuery = "select committee_id from m_committee_user where user_id = ? order by committee_id asc limit 1";
+        final List<Long> committeeIdList = this.jdbcTemplate.queryForList(committeeQuery, Long.class, appUser.getId());
+
+        CodeValueData committeeValueData = null;
+        if (!committeeIdList.isEmpty()) {
+            committeeValueData = this.codeValueReadPlatformService.retrieveCodeValue(committeeIdList.get(0));
+        }
         String sqlSearch = searchParameters.getSqlSearch();
         final Long officeId = searchParameters.getOfficeId();
         final String dpiNumber = searchParameters.getName();
@@ -252,14 +274,28 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
         final String type = searchParameters.getType();
         final String groupName = searchParameters.getGroupName();
         final String centerName = searchParameters.getCenterName();
+        final String groupingType = searchParameters.getGroupingType();
 
         String extraCriteria = "";
+
+        if (StringUtils.isNotBlank(groupingType)) {
+            if (groupingType.equals("group")) {
+                extraCriteria += " and g.prequalification_type_enum = ? ";
+                paramList.add(PrequalificationType.GROUP.getValue());
+            }
+
+            if (groupingType.equals("individual")) {
+                extraCriteria += " and g.prequalification_type_enum = ? ";
+                paramList.add(PrequalificationType.INDIVIDUAL.getValue());
+            }
+        }
+
         if (sqlSearch != null && !isGroup) {
-            extraCriteria = " and (m.name like '%" + sqlSearch + "%' OR m.dpi='" + sqlSearch + "') ";
+            extraCriteria += " and (m.name like '%" + sqlSearch + "%' OR m.dpi='" + sqlSearch + "') ";
         }
 
         if (sqlSearch != null && isGroup) {
-            extraCriteria = " and (g.group_name like '%" + sqlSearch + "%' OR pc.display_name='%" + sqlSearch + "%') ";
+            extraCriteria += " and (g.group_name like '%" + sqlSearch + "%' OR pc.display_name='%" + sqlSearch + "%') ";
         }
 
         if (officeId != null) {
@@ -297,9 +333,20 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             } else if (type.equals("analysis")) {
                 extraCriteria += " and g.status IN( " + PrequalificationStatus.ANALYSIS_UNIT_PENDING_APPROVAL.getValue().toString() + ", "
                         + PrequalificationStatus.ANALYSIS_UNIT_PENDING_APPROVAL_WITH_EXCEPTIONS.getValue().toString() + ") ";
-            } else if (type.equals("exceptionsqueue")) {
+            } else if (type.equals("agency")) {
                 extraCriteria += " and g.status IN( " + PrequalificationStatus.AGENCY_LEAD_PENDING_APPROVAL.getValue().toString() + ", "
                         + PrequalificationStatus.AGENCY_LEAD_PENDING_APPROVAL_WITH_EXCEPTIONS.getValue().toString() + ") ";
+            } else if (type.equals("exceptionsqueue")) {
+                extraCriteria += " and g.status IN( "
+                        + PrequalificationStatus.ANALYSIS_UNIT_PENDING_APPROVAL_WITH_EXCEPTIONS.getValue().toString() + ", "
+                        + PrequalificationStatus.AGENCY_LEAD_PENDING_APPROVAL_WITH_EXCEPTIONS.getValue().toString() + ") ";
+            } else if (type.equals("committeeapprovals")) {
+
+                if (committeeValueData == null) {
+                    extraCriteria += " and g.status IN( " + PrequalificationStatus.INVALID.getValue().toString() + ") ";
+                } else {
+                    extraCriteria += " and g.status IN( " + resolveCommitteeGroupStatus(committeeValueData) + ") ";
+                }
             }
         }
 
@@ -307,6 +354,23 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             extraCriteria = extraCriteria.substring(4);
         }
         return extraCriteria;
+    }
+
+    private String resolveCommitteeGroupStatus(CodeValueData committeeValueData) {
+        String name = committeeValueData.getName();
+
+        String statusValues = "";
+        switch (name) {
+            case "A" -> statusValues = PrequalificationStatus.PRE_COMMITTEE_A_PENDING_APPROVAL.getValue().toString() + ", "
+                    + PrequalificationStatus.PRE_COMMITTEE_B_PENDING_APPROVAL.getValue().toString();
+            case "B" -> statusValues = PrequalificationStatus.PRE_COMMITTEE_B_PENDING_APPROVAL.getValue().toString() + ", "
+                    + PrequalificationStatus.PRE_COMMITTEE_C_PENDING_APPROVAL.getValue().toString();
+            case "C" -> statusValues = PrequalificationStatus.PRE_COMMITTEE_C_PENDING_APPROVAL.getValue().toString() + ", "
+                    + PrequalificationStatus.PRE_COMMITTEE_D_PENDING_APPROVAL.getValue().toString();
+            case "D" -> statusValues = PrequalificationStatus.PRE_COMMITTEE_D_PENDING_APPROVAL.getValue().toString();
+            default -> statusValues = PrequalificationStatus.INVALID.getValue().toString();
+        }
+        return statusValues;
     }
 
     private static final class PrequalificationsGroupMapper implements RowMapper<GroupPrequalificationData> {
@@ -321,7 +385,11 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                     	g.prequalification_duration as prequalilficationTimespan,
                     	g.comments,
                     	g.created_at,
+                    	g.prequalification_type_enum as prequalificationType,
                     	sl.from_status as previousStatus,
+                    	sl.sub_status as substatus,
+                    	assigned.username as assignedUser,
+                    	concat(assigned.firstname, ' ', assigned.lastname) as assignedUserName,
                     	sl.date_created as statusChangedOn,
                     	(select sum(requested_amount) from m_prequalification_group_members where group_id = g.id) as totalRequestedAmount,
                     	(select sum(approved_amount) from m_prequalification_group_members where group_id = g.id) as totalApprovedAmount,
@@ -383,7 +451,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                     	au.id = g.added_by
                     INNER JOIN m_product_loan lp ON
                     	g.product_id = lp.id
-                    INNER JOIN m_agency ma ON
+                    LEFT JOIN m_agency ma ON
                     	g.agency_id = ma.id
                     LEFT JOIN m_group cg ON
                     	cg.id = g.group_id
@@ -394,9 +462,10 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                     	AND sl.id =
                     	(SELECT MAX(id)
                     	FROM m_prequalification_status_log WHERE prequalification_id = g.id AND sl.to_status=g.status )
+                    LEFT JOIN m_appuser assigned ON assigned.id = sl.assigned_to
                     LEFT JOIN m_appuser mu ON
                     	mu.id = sl.updatedby_id
-                    INNER JOIN m_appuser fa ON
+                    LEFT JOIN m_appuser fa ON
                     	fa.id = g.facilitator
                     """;
         }
@@ -439,6 +508,13 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             final LocalDate statusChangedOn = JdbcSupport.getLocalDate(rs, "statusChangedOn");
             final String processType = rs.getString("processType");
             final String processQuality = rs.getString("processQuality");
+            final Integer substatus = rs.getInt("substatus");
+            PrequalificationSubStatus prequalificationSubStatus = null;
+            if (substatus != null) {
+                prequalificationSubStatus = PrequalificationSubStatus.fromInt(substatus);
+            }
+            final String assignedUser = rs.getString("assignedUser");
+            final String assignedUserName = rs.getString("assignedUserName");
             final BigDecimal totalRequestedAmount = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "totalRequestedAmount");
             final BigDecimal totalApprovedAmount = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "totalApprovedAmount");
 
@@ -449,11 +525,50 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             if (previousStatus != null) {
                 lastPrequalificationStatus = PreQualificationsEnumerations.status(previousStatus);
             }
+
+            final Integer prequalificationTypeEnum = JdbcSupport.getInteger(rs, "prequalificationType");
+            final EnumOptionData prequalificationType = PreQualificationsEnumerations.prequalificationType(prequalificationTypeEnum);
+
             return GroupPrequalificationData.instance(id, prequalificationNumber, status, agencyName, null, centerName, groupName,
                     productName, addedBy, createdAt, comments, groupId, agencyId, centerId, productId, facilitatorId, facilitatorName,
                     greenValidationCount, yellowValidationCount, orangeValidationCount, redValidationCount, prequalilficationTimespan,
                     lastPrequalificationStatus, statusChangedBy, statusChangedOn, processType, processQuality, totalRequestedAmount,
-                    totalApprovedAmount);
+                    totalApprovedAmount, prequalificationType, prequalificationSubStatus, assignedUser, assignedUserName);
+
+        }
+    }
+
+    private static final class PrequalificationsGroupMappingsMapper implements RowMapper<GroupPrequalificationData> {
+
+        private final String schema;
+
+        PrequalificationsGroupMappingsMapper() {
+            this.schema = " PG.id AS id, PG.prequalification_number AS prequalificationNumber, PG.group_name AS groupName, "
+                    + "PG.status, LP.name AS productName, " + "PG.created_at, AU.firstname, AU.lastname "
+                    + "from m_group_prequalification_relationship GR " + "inner join m_group MG on MG.id = GR.group_id "
+                    + "inner join m_prequalification_group PG on PG.id = GR.prequalification_id "
+                    + "inner join m_product_loan LP on LP.id = PG.product_id " + "INNER JOIN m_appuser AU ON AU.id = PG.added_by " + "";
+        }
+
+        public String schema() {
+            return this.schema;
+        }
+
+        @Override
+        public GroupPrequalificationData mapRow(final ResultSet rs, final int rowNum) throws SQLException {
+
+            final Integer statusEnum = JdbcSupport.getInteger(rs, "status");
+            final EnumOptionData status = PreQualificationsEnumerations.status(statusEnum);
+
+            final Long id = JdbcSupport.getLong(rs, "id");
+            final String prequalificationNumber = rs.getString("prequalificationNumber");
+            String groupName = rs.getString("groupName");
+            final String productName = rs.getString("productName");
+            final LocalDate createdAt = JdbcSupport.getLocalDate(rs, "created_at");
+
+            final String addedBy = rs.getString("firstname") + " " + rs.getString("lastname");
+
+            return GroupPrequalificationData.simpeGroupData(id, prequalificationNumber, status, groupName, productName, addedBy, createdAt);
 
         }
     }

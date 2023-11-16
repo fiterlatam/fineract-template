@@ -45,8 +45,9 @@ public class OfficeData implements Serializable {
     private String locale;
     private String dateFormat;
 
-    public static OfficeData importInstance(final String name, final Long parentId, final LocalDate openingDate, final String externalId) {
-        return new OfficeData(null, name, null, externalId, openingDate, null, parentId, null, null, null);
+    public static OfficeData importInstance(final String name, final Long parentId, final LocalDate openingDate, final String externalId,
+            final String officeCode) {
+        return new OfficeData(null, name, null, externalId, openingDate, null, parentId, null, null, officeCode);
     }
 
     public void setImportFields(final Integer rowIndex, final String locale, final String dateFormat) {
