@@ -23,4 +23,5 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
 public interface SavingsProductRepository extends JpaRepository<SavingsProduct, Long>, JpaSpecificationExecutor<SavingsProduct> {
     //
+    SavingsProduct findByName(String name);
 }
