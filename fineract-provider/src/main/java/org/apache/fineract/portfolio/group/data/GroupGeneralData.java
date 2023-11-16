@@ -31,6 +31,7 @@ import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.infrastructure.dataqueries.data.DatatableData;
 import org.apache.fineract.organisation.office.data.OfficeData;
 import org.apache.fineract.organisation.portfolioCenter.data.PortfolioCenterData;
+import org.apache.fineract.organisation.prequalification.data.GroupPrequalificationData;
 import org.apache.fineract.organisation.staff.data.StaffData;
 import org.apache.fineract.portfolio.calendar.data.CalendarData;
 import org.apache.fineract.portfolio.client.data.ClientData;
@@ -110,6 +111,7 @@ public class GroupGeneralData implements Serializable {
     private String referencePoint;
     private String prequalificationNumber;
     private EnumOptionData prequalificationStatus;
+    private Collection<GroupPrequalificationData> prequalificationGroups;
     private Long prequalificationId;
 
     // import fields
@@ -644,5 +646,9 @@ public class GroupGeneralData implements Serializable {
 
     public void setPrequalificationStatus(EnumOptionData prequalificationStatus) {
         this.prequalificationStatus = prequalificationStatus;
+    }
+
+    public void setPrequalificationGroups(Collection<GroupPrequalificationData> prequalificationData) {
+        this.prequalificationGroups = prequalificationData;
     }
 }

@@ -28,4 +28,6 @@ public interface AgencyReadPlatformService {
     AgencyData retrieveNewAgencyTemplate();
 
     Collection<AgencyData> retrieveAllByUser();
+
+    Collection<AgencyData> retrieveByOfficeHierarchy(final String hierarchy);
 }

@@ -38,8 +38,18 @@ public enum PrequalificationStatus {
                                                     "prequalification.status.pending.approval.exceptions"), ANALYSIS_UNIT_PENDING_APPROVAL(
                                                             1001,
                                                             "prequalification.status.pending.approval.exceptions"), ANALYSIS_UNIT_PENDING_APPROVAL_WITH_EXCEPTIONS(
-                                                                    1002, "prequalification.status.pending.approval.exceptions"), INVALID(0,
-                                                                            "prequalification.status.invalid");
+                                                                    1002,
+                                                                    "prequalification.status.pending.approval.exceptions"), PRE_COMMITTEE_D_PENDING_APPROVAL(
+                                                                            1003,
+                                                                            "prequalification.status.pre.committee.d.pending.approval"), PRE_COMMITTEE_C_PENDING_APPROVAL(
+                                                                                    1004,
+                                                                                    "prequalification.status.pre.committee.c.pending.approval"), PRE_COMMITTEE_B_PENDING_APPROVAL(
+                                                                                            1005,
+                                                                                            "prequalification.status.committee.b.pending.approval"), PRE_COMMITTEE_A_PENDING_APPROVAL(
+                                                                                                    1006,
+                                                                                                    "prequalification.status.committee.a.pending.approval"), INVALID(
+                                                                                                            0,
+                                                                                                            "prequalification.status.invalid");
 
     private final Integer value;
     private final String code;
@@ -93,6 +103,18 @@ public enum PrequalificationStatus {
             case 1002:
                 enumeration = PrequalificationStatus.ANALYSIS_UNIT_PENDING_APPROVAL_WITH_EXCEPTIONS;
             break;
+            case 1003:
+                enumeration = PrequalificationStatus.PRE_COMMITTEE_D_PENDING_APPROVAL;
+            break;
+            case 1004:
+                enumeration = PrequalificationStatus.PRE_COMMITTEE_C_PENDING_APPROVAL;
+            break;
+            case 1005:
+                enumeration = PrequalificationStatus.PRE_COMMITTEE_B_PENDING_APPROVAL;
+            break;
+            case 1006:
+                enumeration = PrequalificationStatus.PRE_COMMITTEE_A_PENDING_APPROVAL;
+            break;
         }
         return enumeration;
     }
@@ -140,6 +162,16 @@ public enum PrequalificationStatus {
             clientStatus = PrequalificationStatus.ANALYSIS_UNIT_PENDING_APPROVAL_WITH_EXCEPTIONS;
         } else if (status.equalsIgnoreCase(PrequalificationStatus.ANALYSIS_UNIT_PENDING_APPROVAL.toString())) {
             clientStatus = PrequalificationStatus.ANALYSIS_UNIT_PENDING_APPROVAL;
+        } else if (status.equalsIgnoreCase(PrequalificationStatus.PRE_COMMITTEE_B_PENDING_APPROVAL.toString())) {
+            clientStatus = PrequalificationStatus.PRE_COMMITTEE_B_PENDING_APPROVAL;
+        } else if (status.equalsIgnoreCase(PrequalificationStatus.PRE_COMMITTEE_C_PENDING_APPROVAL.toString())) {
+            clientStatus = PrequalificationStatus.PRE_COMMITTEE_C_PENDING_APPROVAL;
+        } else if (status.equalsIgnoreCase(PrequalificationStatus.PRE_COMMITTEE_D_PENDING_APPROVAL.toString())) {
+            clientStatus = PrequalificationStatus.PRE_COMMITTEE_D_PENDING_APPROVAL;
+        } else if (status.equalsIgnoreCase(PrequalificationStatus.PRE_COMMITTEE_A_PENDING_APPROVAL.toString())) {
+            clientStatus = PrequalificationStatus.PRE_COMMITTEE_A_PENDING_APPROVAL;
+        } else {
+            clientStatus = PrequalificationStatus.INVALID;
         }
 
         return clientStatus;

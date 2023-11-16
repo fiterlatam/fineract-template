@@ -453,8 +453,8 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
 
             // contract number generation
             StringBuilder contractBuilder = new StringBuilder();
-            String countLoansSql = "select count(*) from m_loan where product_id = ? ";
-            Long productLoansCount = this.jdbcTemplate.queryForObject(countLoansSql, Long.class, loanProduct.getId());
+            String countLoansSql = "select count(*) from m_loan where product_id = ? and client_id =? and approvedon_date is not null";
+            Long productLoansCount = this.jdbcTemplate.queryForObject(countLoansSql, Long.class, loanProduct.getId(), clientId);
             contractBuilder.append(loanProduct.getShortName());
             if (clientId != null) {
                 contractBuilder.append(StringUtils.leftPad(clientId.toString(), 8, '0'));
@@ -878,8 +878,10 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             /**
              * Stores all charges which are passed in during modify loan application
              **/
+            //TODO: FBR-369 we need the expected disbursement date and first repayment date. This is hack to get hose but should be considered for improvement
+            final LoanApplicationTerms loanApplicationTermsCharges = this.loanScheduleAssembler.assembleLoanTerms(command.parsedJson());
             final Set<LoanCharge> possiblyModifedLoanCharges = this.loanChargeAssembler.fromParsedJson(command.parsedJson(),
-                    disbursementDetails);
+                    disbursementDetails, loanApplicationTermsCharges);
             /** Boolean determines if any charge has been modified **/
             boolean isChargeModified = false;
 

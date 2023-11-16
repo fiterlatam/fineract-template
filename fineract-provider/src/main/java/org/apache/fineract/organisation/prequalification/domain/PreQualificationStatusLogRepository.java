@@ -18,10 +18,15 @@
  */
 package org.apache.fineract.organisation.prequalification.domain;
 
+import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 public interface PreQualificationStatusLogRepository
         extends JpaRepository<PrequalificationStatusLog, Long>, JpaSpecificationExecutor<PrequalificationStatusLog> {
-    // no behaviour
+
+    @Query("SELECT sl FROM PrequalificationStatusLog sl WHERE sl.prequalificationGroup = :preqGroup AND sl.toStatus = :status ORDER BY sl.id desc")
+    List<PrequalificationStatusLog> groupStatusLogs(@Param("status") Integer status, @Param("preqGroup") PrequalificationGroup preqGroup);
 }

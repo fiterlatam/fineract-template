@@ -18,6 +18,7 @@
  */
 package org.apache.fineract.organisation.prequalification.service;
 
+import java.util.Collection;
 import org.apache.fineract.infrastructure.core.service.Page;
 import org.apache.fineract.infrastructure.core.service.SearchParameters;
 import org.apache.fineract.organisation.prequalification.data.GroupPrequalificationData;
@@ -34,4 +35,6 @@ public interface PrequalificationReadPlatformService {
     Page<MemberPrequalificationData> retrieveAllMembers(SearchParameters searchParameters);
 
     MemberPrequalificationData retrieveOneMember(Long clientId);
+
+    Collection<GroupPrequalificationData> retrievePrequalificationGroupsMappings(Long groupId);
 }

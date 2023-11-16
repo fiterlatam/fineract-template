@@ -75,6 +75,18 @@ public final class PreQualificationsEnumerations {
                     PrequalificationStatus.ANALYSIS_UNIT_PENDING_APPROVAL_WITH_EXCEPTIONS.getValue().longValue(),
                     PrequalificationStatus.ANALYSIS_UNIT_PENDING_APPROVAL_WITH_EXCEPTIONS.getCode(),
                     "ANALYSIS_UNIT_PENDING_APPROVAL_WITH_EXCEPTIONS");
+            case PRE_COMMITTEE_D_PENDING_APPROVAL -> new EnumOptionData(
+                    PrequalificationStatus.PRE_COMMITTEE_D_PENDING_APPROVAL.getValue().longValue(),
+                    PrequalificationStatus.PRE_COMMITTEE_D_PENDING_APPROVAL.getCode(), "PRE_COMMITTEE_D_PENDING_APPROVAL");
+            case PRE_COMMITTEE_B_PENDING_APPROVAL -> new EnumOptionData(
+                    PrequalificationStatus.PRE_COMMITTEE_B_PENDING_APPROVAL.getValue().longValue(),
+                    PrequalificationStatus.PRE_COMMITTEE_B_PENDING_APPROVAL.getCode(), "PRE_COMMITTEE_B_PENDING_APPROVAL");
+            case PRE_COMMITTEE_C_PENDING_APPROVAL -> new EnumOptionData(
+                    PrequalificationStatus.PRE_COMMITTEE_C_PENDING_APPROVAL.getValue().longValue(),
+                    PrequalificationStatus.PRE_COMMITTEE_C_PENDING_APPROVAL.getCode(), "PRE_COMMITTEE_C_PENDING_APPROVAL");
+            case PRE_COMMITTEE_A_PENDING_APPROVAL -> new EnumOptionData(
+                    PrequalificationStatus.PRE_COMMITTEE_A_PENDING_APPROVAL.getValue().longValue(),
+                    PrequalificationStatus.PRE_COMMITTEE_A_PENDING_APPROVAL.getCode(), "PRE_COMMITTEE_A_PENDING_APPROVAL");
             default -> new EnumOptionData(PrequalificationStatus.INVALID.getValue().longValue(), PrequalificationStatus.INVALID.getCode(),
                     "INVALID");
         };
@@ -118,6 +130,16 @@ public final class PreQualificationsEnumerations {
             optionDatas.add(clientTransactionType(clientTransaction));
         }
         return optionDatas;
+    }
+
+    public static EnumOptionData prequalificationType(final Integer prequalificationTypeId) {
+        return prequalificationType(PrequalificationType.fromInt(prequalificationTypeId));
+    }
+
+    public static EnumOptionData prequalificationType(final PrequalificationType prequalificationType) {
+        final EnumOptionData optionData = new EnumOptionData(prequalificationType.getValue().longValue(), prequalificationType.getCode(),
+                prequalificationType.toString());
+        return optionData;
     }
 
 }

@@ -52,4 +52,14 @@
             <column name="can_maker_checker" valueBoolean="false" />
         </insert>
     </changeSet>
+
+    <changeSet id="2" author="fineract">
+        <insert tableName="m_permission">
+            <column name="grouping" value="organisation" />
+            <column name="code" value="VIEW_COMMITTEE_APPROVALS"/>
+            <column name="entity_name" value="COMMITTEE_APPROVALS" />
+            <column name="action_name" value="VIEW" />
+            <column name="can_maker_checker" valueBoolean="false" />
+        </insert>
+    </changeSet>
 </databaseChangeLog>

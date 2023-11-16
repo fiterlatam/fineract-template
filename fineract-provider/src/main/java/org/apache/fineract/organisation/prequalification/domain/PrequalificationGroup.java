@@ -18,6 +18,7 @@
  */
 package org.apache.fineract.organisation.prequalification.domain;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -172,22 +173,30 @@ public class PrequalificationGroup extends AbstractPersistableCustom {
 
         final Map<String, Object> actualChanges = new LinkedHashMap<>(7);
 
-        if (command.isChangeInStringParameterNamed(PrequalificatoinApiConstants.groupNameParamName, this.groupName)) {
-            final String newValue = command.stringValueOfParameterNamed(PrequalificatoinApiConstants.groupNameParamName);
-            actualChanges.put(PrequalificatoinApiConstants.groupNameParamName, newValue);
-            this.groupName = newValue;
-        }
+        final Boolean individualPrequalification = command.booleanPrimitiveValueOfParameterNamed("individual");
 
-        if (command.isChangeInLongParameterNamed(PrequalificatoinApiConstants.agencyIdParamName, this.agency.getId())) {
-            final Long newValue = command.longValueOfParameterNamed(PrequalificatoinApiConstants.agencyIdParamName);
-            actualChanges.put(PrequalificatoinApiConstants.agencyIdParamName, newValue);
-            // this.ag = newValue;
-        }
+        if (!individualPrequalification) {
+            if (command.isChangeInStringParameterNamed(PrequalificatoinApiConstants.groupNameParamName, this.groupName)) {
+                final String newValue = command.stringValueOfParameterNamed(PrequalificatoinApiConstants.groupNameParamName);
+                actualChanges.put(PrequalificatoinApiConstants.groupNameParamName, newValue);
+                this.groupName = newValue;
+            }
 
-        if (command.isChangeInLongParameterNamed(PrequalificatoinApiConstants.centerIdParamName, this.centerId)) {
-            final Long newValue = command.longValueOfParameterNamed(PrequalificatoinApiConstants.centerIdParamName);
-            actualChanges.put(PrequalificatoinApiConstants.centerIdParamName, newValue);
-            this.centerId = newValue;
+            if (command.isChangeInLongParameterNamed(PrequalificatoinApiConstants.agencyIdParamName, this.agency.getId())) {
+                final Long newValue = command.longValueOfParameterNamed(PrequalificatoinApiConstants.agencyIdParamName);
+                actualChanges.put(PrequalificatoinApiConstants.agencyIdParamName, newValue);
+            }
+
+            if (command.isChangeInLongParameterNamed(PrequalificatoinApiConstants.centerIdParamName, this.centerId)) {
+                final Long newValue = command.longValueOfParameterNamed(PrequalificatoinApiConstants.centerIdParamName);
+                actualChanges.put(PrequalificatoinApiConstants.centerIdParamName, newValue);
+                this.centerId = newValue;
+            }
+
+            if (command.isChangeInLongParameterNamed(PrequalificatoinApiConstants.facilitatorParamName, this.facilitator.getId())) {
+                final Long newValue = command.longValueOfParameterNamed(PrequalificatoinApiConstants.facilitatorParamName);
+                actualChanges.put(PrequalificatoinApiConstants.facilitatorParamName, newValue);
+            }
         }
 
         if (command.isChangeInLongParameterNamed(PrequalificatoinApiConstants.productIdParamName, this.loanProduct.getId())) {
@@ -196,10 +205,6 @@ public class PrequalificationGroup extends AbstractPersistableCustom {
             // this.loanProduct. = newValue;
         }
 
-        if (command.isChangeInLongParameterNamed(PrequalificatoinApiConstants.facilitatorParamName, this.facilitator.getId())) {
-            final Long newValue = command.longValueOfParameterNamed(PrequalificatoinApiConstants.facilitatorParamName);
-            actualChanges.put(PrequalificatoinApiConstants.facilitatorParamName, newValue);
-        }
         if (command.isChangeInLongParameterNamed(PrequalificatoinApiConstants.prequalilficationTimespanParamName,
                 this.prequalificationDuration)) {
             final Long newValue = command.longValueOfParameterNamed(PrequalificatoinApiConstants.prequalilficationTimespanParamName);
@@ -222,5 +227,17 @@ public class PrequalificationGroup extends AbstractPersistableCustom {
 
     public void setPrequalificationType(Integer prequalificationType) {
         this.prequalificationType = prequalificationType;
+    }
+
+    public boolean isPrequalificationTypeIndividual() {
+        return this.prequalificationType.equals(PrequalificationType.INDIVIDUAL.getValue());
+    }
+
+    public boolean isPrequalificationTypeGroup() {
+        return this.prequalificationType.equals(PrequalificationType.GROUP.getValue());
+    }
+
+    public BigDecimal getTotalRequestedAmount() {
+        return this.getMembers().stream().map(PrequalificationGroupMember::getRequestedAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 }

@@ -25,7 +25,7 @@ import java.util.List;
 import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
 import org.apache.fineract.organisation.prequalification.data.ChecklistValidationResult;
 import org.apache.fineract.organisation.prequalification.data.GenericValidationResultSet;
-import org.apache.fineract.organisation.prequalification.data.HardPolicyCategoryData;
+import org.apache.fineract.organisation.prequalification.data.PolicyData;
 import org.apache.fineract.organisation.prequalification.data.PrequalificationChecklistData;
 import org.apache.fineract.organisation.prequalification.domain.CheckValidationColor;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationGroup;
@@ -62,16 +62,16 @@ public class PrequalificationChecklistReadPlatformServiceImpl implements Prequal
         PrequalificationGroup prequalificationGroup = this.prequalificationGroupRepositoryWrapper
                 .findOneWithNotFoundDetection(prequalificationId);
         final Long productId = prequalificationGroup.getLoanProduct().getId();
-        final PrequalificationChecklistWritePlatformServiceImpl.CheckCategoryMapper checkCategoryMapper = new PrequalificationChecklistWritePlatformServiceImpl.CheckCategoryMapper();
-        final List<HardPolicyCategoryData> groupPolicies = this.jdbcTemplate.query(checkCategoryMapper.schema(), checkCategoryMapper,
-                productId, PrequalificationType.GROUP.getValue());
+        final PrequalificationChecklistWritePlatformServiceImpl.PolicyMapper policyMapper = new PrequalificationChecklistWritePlatformServiceImpl.PolicyMapper();
+        final List<PolicyData> groupPolicies = this.jdbcTemplate.query(policyMapper.schema(), policyMapper, productId,
+                PrequalificationType.GROUP.name());
         final List<String> prequalificationColumnHeaders = new ArrayList<>(List.of("label.heading.prequalification.name"));
         final List<List<String>> prequalificationRows = new ArrayList<>();
         final String sql = "SELECT " + validationChecklistMapper.schema() + " WHERE mcvr.prequalification_id = ? ";
         final List<ChecklistValidationResult> validationResults = this.jdbcTemplate.query(sql, validationChecklistMapper,
                 prequalificationId);
         final List<String> prequalificationRow = new ArrayList<>(List.of(prequalificationGroup.getGroupName()));
-        for (HardPolicyCategoryData policy : groupPolicies) {
+        for (PolicyData policy : groupPolicies) {
             prequalificationColumnHeaders.add(policy.getDescription());
             for (ChecklistValidationResult validationResult : validationResults) {
                 if (policy.getId().equals(validationResult.getPolicyId())
@@ -85,8 +85,8 @@ public class PrequalificationChecklistReadPlatformServiceImpl implements Prequal
         prequalificationRows.add(prequalificationRow);
         final GenericValidationResultSet groupValidationResultSet = new GenericValidationResultSet(prequalificationColumnHeaders,
                 prequalificationRows);
-        final List<HardPolicyCategoryData> individualPolicies = this.jdbcTemplate.query(checkCategoryMapper.schema(), checkCategoryMapper,
-                productId, PrequalificationType.INDIVIDUAL.getValue());
+        final List<PolicyData> individualPolicies = this.jdbcTemplate.query(policyMapper.schema(), policyMapper, productId,
+                PrequalificationType.INDIVIDUAL.name());
         final List<String> memberColumnHeaders = new ArrayList<>(
                 List.of("label.heading.clientid", "label.heading.clientname", "label.heading.dpi"));
         individualPolicies.forEach(policy -> memberColumnHeaders.add(policy.getDescription()));
@@ -96,7 +96,7 @@ public class PrequalificationChecklistReadPlatformServiceImpl implements Prequal
             String memberId = null;
             String clientName;
             String dpi;
-            for (HardPolicyCategoryData policy : individualPolicies) {
+            for (PolicyData policy : individualPolicies) {
                 for (ChecklistValidationResult validationResult : validationResults) {
                     if (policy.getId().equals(validationResult.getPolicyId())
                             && PrequalificationType.INDIVIDUAL.getValue().equals(validationResult.getPrequalificationTypeEnum())
@@ -126,12 +126,12 @@ public class PrequalificationChecklistReadPlatformServiceImpl implements Prequal
         PrequalificationGroup prequalificationGroup = groupMember.getPrequalificationGroup();
         LoanProduct loanProduct = prequalificationGroup.getLoanProduct();
 
-        final PrequalificationChecklistWritePlatformServiceImpl.CheckCategoryMapper checkCategoryMapper = new PrequalificationChecklistWritePlatformServiceImpl.CheckCategoryMapper();
+        final PrequalificationChecklistWritePlatformServiceImpl.PolicyMapper policyMapper = new PrequalificationChecklistWritePlatformServiceImpl.PolicyMapper();
         final List<List<String>> memberRows = new ArrayList<>();
         final String sql = "SELECT " + validationChecklistMapper.schema() + " WHERE mcvr.prequalification_member_id = ?";
         final List<ChecklistValidationResult> validationResults = this.jdbcTemplate.query(sql, validationChecklistMapper, clientId);
-        final List<HardPolicyCategoryData> individualPolicies = this.jdbcTemplate.query(checkCategoryMapper.schema(), checkCategoryMapper,
-                loanProduct.getId(), PrequalificationType.INDIVIDUAL.getValue());
+        final List<PolicyData> individualPolicies = this.jdbcTemplate.query(policyMapper.schema(), policyMapper, loanProduct.getId(),
+                PrequalificationType.INDIVIDUAL.name());
 
         final List<String> memberColumnHeaders = new ArrayList<>(
                 List.of("label.heading.clientid", "label.heading.clientname", "label.heading.dpi"));
@@ -141,7 +141,7 @@ public class PrequalificationChecklistReadPlatformServiceImpl implements Prequal
         String memberId = null;
         String clientName;
         String dpi;
-        for (HardPolicyCategoryData policy : individualPolicies) {
+        for (PolicyData policy : individualPolicies) {
             for (ChecklistValidationResult validationResult : validationResults) {
                 if (policy.getId().equals(validationResult.getPolicyId())
                         && PrequalificationType.INDIVIDUAL.getValue().equals(validationResult.getPrequalificationTypeEnum())) {
@@ -166,10 +166,10 @@ public class PrequalificationChecklistReadPlatformServiceImpl implements Prequal
 
         public String schema() {
             return """
-                    mc.id AS clientId, IFNULL(mc.dpi, mpgm.dpi) AS dpi, mpgm.id AS memberId, IFNULL(mc.display_name, mpgm.name) AS clientName, cc.id AS policyId,\s
-                    cc.name AS policyName, mcvr.validation_color_enum AS colorEnum, mpg.id AS prequalificationId, mpg.group_name AS prequalificationName, mcvr.prequalification_type AS prequalificationTypeEnum
+                    mc.id AS clientId, IFNULL(mc.dpi, mpgm.dpi) AS dpi, mpgm.id AS memberId, IFNULL(mc.display_name, mpgm.name) AS clientName, mp.id AS policyId,\s
+                    mp.name AS policyName, mcvr.validation_color_enum AS colorEnum, mpg.id AS prequalificationId, mpg.group_name AS prequalificationName, mcvr.prequalification_type AS prequalificationTypeEnum
                     FROM m_checklist_validation_result mcvr\s
-                    INNER JOIN checklist_categories cc ON cc.id =  mcvr.checklist_category_id\s
+                    INNER JOIN m_policy mp ON mp.id =  mcvr.policy_id\s
                     LEFT JOIN m_prequalification_group mpg ON mpg.id = mcvr.prequalification_id\s
                     LEFT JOIN m_group mg ON mg.id = mpg.group_id\s
                     LEFT JOIN m_prequalification_group_members mpgm ON mpgm.id = mcvr.prequalification_member_id\s

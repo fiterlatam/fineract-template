@@ -69,7 +69,7 @@ public final class BankCommandFromApiJsonDeserializer {
 
         final String code = this.fromApiJsonHelper.extractStringNamed(BankConstants.BankSupportedParameters.CODE.getValue(), element);
         baseDataValidator.reset().parameter(BankConstants.BankSupportedParameters.CODE.getValue()).value(code).notBlank()
-                .notExceedingLengthOf(2);
+                .notExceedingLengthOf(5);
 
         final String name = this.fromApiJsonHelper.extractStringNamed(BankConstants.BankSupportedParameters.NAME.getValue(), element);
         baseDataValidator.reset().parameter(BankConstants.BankSupportedParameters.NAME.getValue()).value(name).notBlank()
@@ -94,7 +94,7 @@ public final class BankCommandFromApiJsonDeserializer {
 
         final String code = this.fromApiJsonHelper.extractStringNamed(BankConstants.BankSupportedParameters.CODE.getValue(), element);
         baseDataValidator.reset().parameter(BankConstants.BankSupportedParameters.CODE.getValue()).value(code).notBlank()
-                .notExceedingLengthOf(2);
+                .notExceedingLengthOf(5);
 
         final String name = this.fromApiJsonHelper.extractStringNamed(BankConstants.BankSupportedParameters.NAME.getValue(), element);
         baseDataValidator.reset().parameter(BankConstants.BankSupportedParameters.NAME.getValue()).value(name).notBlank()
