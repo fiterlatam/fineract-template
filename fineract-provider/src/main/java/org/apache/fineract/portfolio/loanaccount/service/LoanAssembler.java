@@ -250,7 +250,7 @@ public class LoanAssembler {
             }
         }
 
-        //TODO: FBR-369 get range rate and generate charge
+        // TODO: FBR-369 get range rate and generate charge
         LoanApplicationTerms loanApplicationTerms = this.loanScheduleAssembler.assembleLoanTerms(element);
 
         final Set<LoanCharge> loanCharges = this.loanChargeAssembler.fromParsedJson(element, disbursementDetails, loanApplicationTerms);
