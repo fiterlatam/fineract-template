@@ -109,6 +109,10 @@ public enum LoanStatus {
         return this.value.equals(LoanStatus.APPROVED.getValue()) || this.value.equals(LoanStatus.DISBURSE_AUTHORIZATION_PENDING.getValue());
     }
 
+    public boolean isPendingDisbursementAuthorization() {
+        return this.value.equals(LoanStatus.DISBURSE_AUTHORIZATION_PENDING.getValue());
+    }
+
     public boolean isActive() {
         return this.value.equals(LoanStatus.ACTIVE.getValue());
     }
