@@ -523,7 +523,7 @@ public class CenterReadPlatformServiceImpl implements CenterReadPlatformService 
                 LEFT JOIN m_portfolio mp ON mp.id = center.portfolio_id
                 LEFT JOIN m_supervision ms ON ms.id = mp.supervision_id
                 LEFT JOIN m_agency ma ON ma.id = ms.agency_id
-                WHERE center.parent_id IS NULL AND center.level_id = 1  
+                WHERE center.parent_id IS NULL AND center.level_id = 1
                 """;
         List<Object> params = new ArrayList<>(List.of(hierarchy));
         if (agencyId != null) {
