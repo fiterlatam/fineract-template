@@ -32,7 +32,7 @@ public class SupervisionConstants {
     public enum SupervisionSupportedParameters {
 
         SUPERVISION_ID("id"), NAME("name"), OFFICE_PARENT_ID("parentId"), RESPONSIBLE_USER_ID("responsibleUserId"), LOCALE(
-                "locale"), DATEFORMAT("dateFormat");
+                "locale"), DATEFORMAT("dateFormat"), AGENCY_ID("agencyId");
 
         private final String value;
 

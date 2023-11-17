@@ -18,6 +18,8 @@
  */
 package org.apache.fineract.portfolio.client.service;
 
+import static org.apache.fineract.portfolio.savings.SavingsApiConstants.GURANTEE_PRODUCT_NAME;
+
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import java.time.LocalDate;
@@ -102,8 +104,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import static org.apache.fineract.portfolio.savings.SavingsApiConstants.GURANTEE_PRODUCT_NAME;
 
 @Service
 @Slf4j
@@ -686,10 +686,10 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
 
             // FBR-402 create savings account for gurantees
             SavingsProduct product = this.savingsProductRepository.findByName(GURANTEE_PRODUCT_NAME);
-            if(product != null){
+            if (product != null) {
                 client.updateSavingsProduct(product.getId());
                 CommandProcessingResult accountResult = openSavingsAccount(client, fmt);
-                if(accountResult != null && accountResult.getSavingsId() != null){
+                if (accountResult != null && accountResult.getSavingsId() != null) {
                     this.clientRepository.saveAndFlush(client);
                 }
             }

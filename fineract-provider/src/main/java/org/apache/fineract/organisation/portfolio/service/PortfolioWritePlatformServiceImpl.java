@@ -38,6 +38,8 @@ import org.apache.fineract.organisation.portfolio.domain.Portfolio;
 import org.apache.fineract.organisation.portfolio.domain.PortfolioRepositoryWrapper;
 import org.apache.fineract.organisation.portfolio.serialization.PortfolioCommandFromApiJsonDeserializer;
 import org.apache.fineract.organisation.portfolioCenter.service.PortfolioCenterWritePlatformService;
+import org.apache.fineract.organisation.supervision.domain.Supervision;
+import org.apache.fineract.organisation.supervision.domain.SupervisionRepositoryWrapper;
 import org.apache.fineract.portfolio.group.service.GroupingTypesWritePlatformService;
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.apache.fineract.useradministration.domain.AppUserRepository;
@@ -61,6 +63,7 @@ public class PortfolioWritePlatformServiceImpl implements PortfolioWritePlatform
     private final OfficeRepositoryWrapper officeRepositoryWrapper;
     private final AppUserRepository appUserRepository;
     private final PortfolioCenterWritePlatformService portfolioCenterWritePlatformService;
+    private final SupervisionRepositoryWrapper supervisionRepositoryWrapper;
     private final GroupingTypesWritePlatformService groupingTypesWritePlatformService;
 
     @Autowired
@@ -68,6 +71,7 @@ public class PortfolioWritePlatformServiceImpl implements PortfolioWritePlatform
             PortfolioCommandFromApiJsonDeserializer fromApiJsonDeserializer, PortfolioRepositoryWrapper portfolioRepositoryWrapper,
             OfficeRepositoryWrapper officeRepositoryWrapper, AppUserRepository appUserRepository,
             PortfolioCenterWritePlatformService portfolioCenterWritePlatformService,
+            SupervisionRepositoryWrapper supervisionRepositoryWrapper,
             GroupingTypesWritePlatformService groupingTypesWritePlatformService) {
         this.context = context;
         this.fromApiJsonDeserializer = fromApiJsonDeserializer;
@@ -75,6 +79,7 @@ public class PortfolioWritePlatformServiceImpl implements PortfolioWritePlatform
         this.officeRepositoryWrapper = officeRepositoryWrapper;
         this.appUserRepository = appUserRepository;
         this.portfolioCenterWritePlatformService = portfolioCenterWritePlatformService;
+        this.supervisionRepositoryWrapper = supervisionRepositoryWrapper;
         this.groupingTypesWritePlatformService = groupingTypesWritePlatformService;
     }
 
@@ -101,7 +106,11 @@ public class PortfolioWritePlatformServiceImpl implements PortfolioWritePlatform
                         .orElseThrow(() -> new UserNotFoundException(responsibleUserId));
             }
 
+            final Long supervisionId = command
+                    .longValueOfParameterNamed(PortfolioConstants.PortfolioSupportedParameters.SUPERVISION_ID.getValue());
+            final Supervision supervision = this.supervisionRepositoryWrapper.findOneWithNotFoundDetection(supervisionId);
             final Portfolio portfolio = Portfolio.fromJson(parentOffice, responsibleUser, command);
+            portfolio.setSupervision(supervision);
 
             saveAndFlushPortfolioWithDataIntegrityViolationChecks(portfolio);
 
@@ -152,6 +161,14 @@ public class PortfolioWritePlatformServiceImpl implements PortfolioWritePlatform
                     portfolio.setResponsibleUser(responsibleUser);
                     changes.put(PortfolioConstants.PortfolioSupportedParameters.RESPONSIBLE_USER_ID.getValue(), responsibleUserId);
                 }
+            }
+
+            if (command.parameterExists(PortfolioConstants.PortfolioSupportedParameters.SUPERVISION_ID.getValue())) {
+                final Long supervisionId = command
+                        .longValueOfParameterNamed(PortfolioConstants.PortfolioSupportedParameters.SUPERVISION_ID.getValue());
+                final Supervision supervision = this.supervisionRepositoryWrapper.findOneWithNotFoundDetection(supervisionId);
+                portfolio.setSupervision(supervision);
+                changes.put(PortfolioConstants.PortfolioSupportedParameters.SUPERVISION_ID.getValue(), supervisionId);
             }
 
             this.portfolioRepositoryWrapper.saveAndFlush(portfolio);

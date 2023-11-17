@@ -79,6 +79,11 @@ public class PortfolioCommandFromApiJsonDeserializer {
                     .notNull().integerGreaterThanZero();
         }
 
+        final Long supervisionId = this.fromApiJsonHelper
+                .extractLongNamed(PortfolioConstants.PortfolioSupportedParameters.SUPERVISION_ID.getValue(), element);
+        baseDataValidator.reset().parameter(PortfolioConstants.PortfolioSupportedParameters.SUPERVISION_ID.getValue()).value(supervisionId)
+                .notNull().integerGreaterThanZero();
+
         throwExceptionIfValidationWarningsExist(dataValidationErrors);
     }
 
@@ -105,6 +110,13 @@ public class PortfolioCommandFromApiJsonDeserializer {
                     .extractLongNamed(PortfolioConstants.PortfolioSupportedParameters.OFFICE_PARENT_ID.getValue(), element);
             baseDataValidator.reset().parameter(PortfolioConstants.PortfolioSupportedParameters.OFFICE_PARENT_ID.getValue()).value(parentId)
                     .notNull().integerGreaterThanZero();
+        }
+
+        if (this.fromApiJsonHelper.parameterExists(PortfolioConstants.PortfolioSupportedParameters.SUPERVISION_ID.getValue(), element)) {
+            final Long supervisionId = this.fromApiJsonHelper
+                    .extractLongNamed(PortfolioConstants.PortfolioSupportedParameters.SUPERVISION_ID.getValue(), element);
+            baseDataValidator.reset().parameter(PortfolioConstants.PortfolioSupportedParameters.SUPERVISION_ID.getValue())
+                    .value(supervisionId).notNull().integerGreaterThanZero();
         }
 
         throwExceptionIfValidationWarningsExist(dataValidationErrors);

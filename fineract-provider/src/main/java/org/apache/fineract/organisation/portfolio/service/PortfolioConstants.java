@@ -32,7 +32,7 @@ public class PortfolioConstants {
     public enum PortfolioSupportedParameters {
 
         PORTFOLIO_ID("id"), NAME("name"), OFFICE_PARENT_ID("parentId"), RESPONSIBLE_USER_ID("responsibleUserId"), LOCALE(
-                "locale"), DATEFORMAT("dateFormat");
+                "locale"), DATEFORMAT("dateFormat"), SUPERVISION_ID("supervisionId");
 
         private final String value;
 
