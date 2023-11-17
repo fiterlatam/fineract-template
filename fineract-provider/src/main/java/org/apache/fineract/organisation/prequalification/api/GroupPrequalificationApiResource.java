@@ -203,7 +203,10 @@ public class GroupPrequalificationApiResource {
         }
 
         final String hierarchy = this.context.authenticatedUser().getOffice().getHierarchy();
-        final Collection<CenterData> centerData = this.centerReadPlatformService.retrieveByOfficeHierarchy(hierarchy, agencyId);
+        Collection<CenterData> centerData =null;
+        if (agencyId != null) {
+            centerData = this.centerReadPlatformService.retrieveByOfficeHierarchy(hierarchy, agencyId);
+        }
         final Collection<AgencyData> agencies = this.agencyReadPlatformService.retrieveByOfficeHierarchy(hierarchy);
         final Collection<AppUserData> appUsers = this.appUserReadPlatformService.retrieveByOfficeHierarchy(hierarchy, centerId);
 
