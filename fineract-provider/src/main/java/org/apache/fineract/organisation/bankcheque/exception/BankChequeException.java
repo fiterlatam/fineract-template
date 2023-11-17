@@ -22,7 +22,11 @@ import org.apache.fineract.infrastructure.core.exception.AbstractPlatformDomainR
 
 public class BankChequeException extends AbstractPlatformDomainRuleException {
 
+    public BankChequeException(String message) {
+        super("error.msg.cheque." + message, message);
+    }
+
     public BankChequeException(String parameterName, String message) {
-        super("error.msg.cheque." + parameterName, message);
+        super("error.msg.cheque." + parameterName + message, message);
     }
 }

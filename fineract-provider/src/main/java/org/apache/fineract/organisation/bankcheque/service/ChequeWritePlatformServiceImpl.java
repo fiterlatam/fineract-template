@@ -367,12 +367,12 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
             final Long loanAccId = chequeData.getLoanAccId();
             if (loanAccId != null && chequeData.getLoanAmount() != null) {
                 final Loan loan = this.loanRepositoryWrapper.findOneWithNotFoundDetection(loanAccId);
-                if (loan.getCheque() != null) {
+                if (loan.getCheque() != null && (loan.getCheque().getId() != null && !loan.getCheque().getId().equals(cheque.getId()))) {
                     throw new BankChequeException("print.cheques", "Loan: " + loan.getAccountNumber() + " has a cheque assigned already");
                 }
                 if (!loan.isPendingDisbursementAuthorization()) {
-                    throw new BankChequeException("print.cheques",
-                            "Loan: " + loan.getAccountNumber() + " is.not.in.disbursement.authorization.status");
+                    throw new BankChequeException(
+                            "print.cheques.loan:" + loan.getAccountNumber() + " is.not.in.disbursement.authorization.status");
                 }
                 CommandProcessingResult result = this.loanWritePlatformService.disburseLoan(loanAccId, command, false);
                 if (result.getLoanId() == null) {
