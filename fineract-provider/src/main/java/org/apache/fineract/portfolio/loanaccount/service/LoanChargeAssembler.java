@@ -22,6 +22,7 @@ import com.google.common.base.Splitter;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -29,8 +30,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
-
-import com.google.gson.JsonPrimitive;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
 import org.apache.fineract.portfolio.charge.domain.Charge;
@@ -68,7 +67,8 @@ public class LoanChargeAssembler {
         this.loanProductRepository = loanProductRepository;
     }
 
-    public Set<LoanCharge> fromParsedJson(JsonElement element, List<LoanDisbursementDetails> disbursementDetails, final LoanApplicationTerms loanApplicationTermsCharges) {
+    public Set<LoanCharge> fromParsedJson(JsonElement element, List<LoanDisbursementDetails> disbursementDetails,
+            final LoanApplicationTerms loanApplicationTermsCharges) {
         JsonArray jsonDisbursement = this.fromApiJsonHelper.extractJsonArrayNamed("disbursementData", element);
         List<Long> disbursementChargeIds = new ArrayList<>();
 
@@ -123,7 +123,7 @@ public class LoanChargeAssembler {
                             locale);
                     if (id == null) {
                         final Charge chargeDefinition = this.chargeRepository.findOneWithNotFoundDetection(chargeId);
-                        //TODO: FBR-369 Added to generate rate from range for installment fee and add on.
+                        // TODO: FBR-369 Added to generate rate from range for installment fee and add on.
                         amount = generateInstallmentFeeRate(chargeDefinition, loanChargeElement, loanApplicationTermsCharges, amount);
 
                         if (chargeDefinition.isOverdueInstallment()) {
@@ -209,7 +209,7 @@ public class LoanChargeAssembler {
                     } else {
                         final Long loanChargeId = id;
                         final LoanCharge loanCharge = this.loanChargeRepository.findById(loanChargeId).orElse(null);
-                        //TODO: FBR-369 Added to generate rate from range for installment fee and add on.
+                        // TODO: FBR-369 Added to generate rate from range for installment fee and add on.
                         amount = generateInstallmentFeeRate(loanCharge.getCharge(), loanChargeElement, loanApplicationTermsCharges, amount);
 
                         if (loanCharge != null) {
@@ -226,15 +226,16 @@ public class LoanChargeAssembler {
         return loanCharges;
     }
 
-    private BigDecimal generateInstallmentFeeRate(Charge charge, JsonObject loanChargeElement, LoanApplicationTerms loanApplicationTermsCharges, BigDecimal amount){
+    private BigDecimal generateInstallmentFeeRate(Charge charge, JsonObject loanChargeElement,
+            LoanApplicationTerms loanApplicationTermsCharges, BigDecimal amount) {
         BigDecimal rate = amount;
-        //TODO: FBR-369 Added to generate rate from range for installment fee and add on. Necessary to make the check here before more loan processing happens
-        if(charge.isInstallmentFeeCharge() && charge.isAddOnInstallmentFeeType()
-                && loanApplicationTermsCharges != null){
-            if(ChargeCalculationType.fromInt(charge.getChargeCalculation()).isPercentageBased()){
+        // TODO: FBR-369 Added to generate rate from range for installment fee and add on. Necessary to make the check
+        // here before more loan processing happens
+        if (charge.isInstallmentFeeCharge() && charge.isAddOnInstallmentFeeType() && loanApplicationTermsCharges != null) {
+            if (ChargeCalculationType.fromInt(charge.getChargeCalculation()).isPercentageBased()) {
                 // update rate
-                Pair<Integer, BigDecimal> addOnDaysAndRate = charge.getAddOnDisbursementChargeRate(loanApplicationTermsCharges.getExpectedDisbursementDate(),
-                                loanApplicationTermsCharges.getRepaymentStartFromDate());
+                Pair<Integer, BigDecimal> addOnDaysAndRate = charge.getAddOnDisbursementChargeRate(
+                        loanApplicationTermsCharges.getExpectedDisbursementDate(), loanApplicationTermsCharges.getRepaymentStartFromDate());
                 rate = addOnDaysAndRate.getRight();
                 loanChargeElement.add("amount", new JsonPrimitive(rate));
             }

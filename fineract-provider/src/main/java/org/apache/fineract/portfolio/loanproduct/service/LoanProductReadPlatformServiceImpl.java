@@ -192,7 +192,7 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
         }
 
         public String loanProductSchema() {
-            return "lp.id as id, lp.fund_id as fundId, f.name as fundName, lp.loan_transaction_strategy_id as transactionStrategyId, ltps.name as transactionStrategyName, lp.required_guarantee_percent as guaranteePercentage , "
+            return "lp.id as id, lp.fund_id as fundId, f.name as fundName, lp.loan_transaction_strategy_id as transactionStrategyId, ltps.name as transactionStrategyName, lp.required_guarantee_percent as guaranteePercentage, lp.payment_tolerance_limit as paymentToleranceLimit, "
                     + "lp.name as name, lp.short_name as shortName, lp.description as description, lp.age_limit_warning as ageLimitWarning, lp.age_limit_block as ageLimitBlock, "
                     + "lp.principal_amount as principal, lp.min_principal_amount as minPrincipal, lp.max_principal_amount as maxPrincipal, lp.currency_code as currencyCode, lp.currency_digits as currencyDigits, lp.currency_multiplesof as inMultiplesOf, "
                     + "lp.nominal_interest_rate_per_period as interestRatePerPeriod, lp.min_nominal_interest_rate_per_period as minInterestRatePerPeriod, lp.max_nominal_interest_rate_per_period as maxInterestRatePerPeriod, lp.interest_period_frequency_enum as interestRatePerPeriodFreq, "
@@ -476,6 +476,7 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
             final Integer ageLimitBlock = JdbcSupport.getInteger(rs, "ageLimitBlock");
             final Integer daysLimitAddOn = JdbcSupport.getInteger(rs, "daysLimitAddOn");
             final BigDecimal guaranteePercentage = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "guaranteePercentage");
+            final BigDecimal paymentToleranceLimit = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "paymentToleranceLimit");
 
             return new LoanProductData(id, name, shortName, description, currency, principal, minPrincipal, maxPrincipal, tolerance,
                     numberOfRepayments, minNumberOfRepayments, maxNumberOfRepayments, repaymentEvery, interestRatePerPeriod,
@@ -495,7 +496,7 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
                     maxDifferentialLendingRate, isFloatingInterestRateCalculationAllowed, isVariableIntallmentsAllowed, minimumGap,
                     maximumGap, syncExpectedWithDisbursementDate, canUseForTopup, isEqualAmortization, rateOptions, this.rates,
                     isRatesEnabled, fixedPrincipalPercentagePerInstallment, ageLimitWarning, ageLimitBlock, ownerTypeOption,
-                    addNewCyclesEnabled, daysLimitAddOn, guaranteePercentage);
+                    addNewCyclesEnabled, daysLimitAddOn, guaranteePercentage, paymentToleranceLimit);
         }
     }
 

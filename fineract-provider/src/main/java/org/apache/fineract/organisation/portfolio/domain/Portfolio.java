@@ -31,6 +31,7 @@ import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.domain.AbstractAuditableCustom;
 import org.apache.fineract.organisation.office.domain.Office;
 import org.apache.fineract.organisation.portfolio.service.PortfolioConstants;
+import org.apache.fineract.organisation.supervision.domain.Supervision;
 import org.apache.fineract.useradministration.domain.AppUser;
 
 @Entity
@@ -47,6 +48,10 @@ public class Portfolio extends AbstractAuditableCustom {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "responsible_user_id")
     private AppUser responsibleUser;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "supervision_id")
+    private Supervision supervision;
 
     protected Portfolio() {
 
@@ -98,5 +103,13 @@ public class Portfolio extends AbstractAuditableCustom {
 
     public void setResponsibleUser(AppUser responsibleUser) {
         this.responsibleUser = responsibleUser;
+    }
+
+    public Supervision getSupervision() {
+        return supervision;
+    }
+
+    public void setSupervision(Supervision supervision) {
+        this.supervision = supervision;
     }
 }

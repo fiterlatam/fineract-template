@@ -130,7 +130,6 @@ public class SupervisionsApiResource {
                 .updateSupervision(supervisionId) //
                 .withJson(apiRequestBodyAsJson) //
                 .build();
-
         final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
         return this.toApiJsonSerializer.serialize(result);
     }

@@ -19,6 +19,7 @@
 package org.apache.fineract.organisation.supervision.data;
 
 import java.util.Collection;
+import org.apache.fineract.organisation.agency.data.AgencyData;
 import org.apache.fineract.organisation.office.data.OfficeData;
 import org.apache.fineract.useradministration.data.AppUserData;
 
@@ -34,19 +35,25 @@ public class SupervisionData {
     private final Long parentId;
 
     private final String parentName;
+    private final String agencyName;
 
     private final Long responsibleUserId;
+
+    private Long agencyId;
 
     // template
     private final Collection<OfficeData> parentOfficesOptions;
     private final Collection<AppUserData> responsibleUserOptions;
+    private final Collection<AgencyData> agencyOptions;
 
-    public static SupervisionData instance(Long id, String name, Long parentId, String parentName, Long responsibleUserId) {
-        return new SupervisionData(id, name, parentId, parentName, responsibleUserId, null, null);
+    public static SupervisionData instance(Long id, String name, Long parentId, String parentName, Long responsibleUserId,
+            final String agencyName) {
+        return new SupervisionData(id, name, parentId, parentName, responsibleUserId, null, null, null, agencyName);
     }
 
     public SupervisionData(Long id, String name, Long parentId, String parentName, Long responsibleUserId,
-            Collection<OfficeData> parentOfficesOptions, Collection<AppUserData> responsibleUserOptions) {
+            Collection<OfficeData> parentOfficesOptions, Collection<AppUserData> responsibleUserOptions,
+            final Collection<AgencyData> agencyOptions, final String agencyName) {
         this.id = id;
         this.name = name;
         this.parentId = parentId;
@@ -55,10 +62,20 @@ public class SupervisionData {
         // template
         this.parentOfficesOptions = parentOfficesOptions;
         this.responsibleUserOptions = responsibleUserOptions;
+        this.agencyOptions = agencyOptions;
+        this.agencyName = agencyName;
     }
 
-    public static SupervisionData template(Collection<OfficeData> parentOfficesOptions, Collection<AppUserData> responsibleUserOptions) {
-        return new SupervisionData(null, null, null, null, null, parentOfficesOptions, responsibleUserOptions);
+    public static SupervisionData template(Collection<OfficeData> parentOfficesOptions, Collection<AppUserData> responsibleUserOptions,
+            final Collection<AgencyData> agencyOptions) {
+        return new SupervisionData(null, null, null, null, null, parentOfficesOptions, responsibleUserOptions, agencyOptions, null);
     }
 
+    public Long getAgencyId() {
+        return agencyId;
+    }
+
+    public void setAgencyId(Long agencyId) {
+        this.agencyId = agencyId;
+    }
 }

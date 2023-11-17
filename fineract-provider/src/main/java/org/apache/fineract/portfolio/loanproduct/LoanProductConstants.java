@@ -147,5 +147,6 @@ public interface LoanProductConstants {
 
     String ADD_NEW_CYCLES_ENABLED = "addNewCyclesEnabled";
     String LOAN_PRODUCT_OWNER_TYPE = "ownerType";
+    String PAYMENT_TOLERANCE_LIMIT = "paymentToleranceLimit";
 
 }

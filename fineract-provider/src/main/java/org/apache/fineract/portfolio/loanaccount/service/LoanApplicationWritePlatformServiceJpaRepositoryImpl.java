@@ -878,7 +878,8 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             /**
              * Stores all charges which are passed in during modify loan application
              **/
-            //TODO: FBR-369 we need the expected disbursement date and first repayment date. This is hack to get hose but should be considered for improvement
+            // TODO: FBR-369 we need the expected disbursement date and first repayment date. This is hack to get hose
+            // but should be considered for improvement
             final LoanApplicationTerms loanApplicationTermsCharges = this.loanScheduleAssembler.assembleLoanTerms(command.parsedJson());
             final Set<LoanCharge> possiblyModifedLoanCharges = this.loanChargeAssembler.fromParsedJson(command.parsedJson(),
                     disbursementDetails, loanApplicationTermsCharges);

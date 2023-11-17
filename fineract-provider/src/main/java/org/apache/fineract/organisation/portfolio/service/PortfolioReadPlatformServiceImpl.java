@@ -27,6 +27,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
 import org.apache.fineract.infrastructure.core.service.database.DatabaseSpecificSQLGenerator;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.infrastructure.security.utils.ColumnValidator;
@@ -36,6 +37,8 @@ import org.apache.fineract.organisation.office.service.OfficeReadPlatformService
 import org.apache.fineract.organisation.portfolio.data.PortfolioData;
 import org.apache.fineract.organisation.portfolio.data.PortfolioPlanningData;
 import org.apache.fineract.organisation.portfolio.exception.PortfolioNotFoundException;
+import org.apache.fineract.organisation.supervision.data.SupervisionData;
+import org.apache.fineract.organisation.supervision.service.SupervisionReadPlatformService;
 import org.apache.fineract.useradministration.data.AppUserData;
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.apache.fineract.useradministration.domain.Role;
@@ -55,17 +58,20 @@ public class PortfolioReadPlatformServiceImpl implements PortfolioReadPlatformSe
     private final ColumnValidator columnValidator;
     private final OfficeReadPlatformService officeReadPlatformService;
     private final AppUserReadPlatformService appUserReadPlatformService;
+    private final SupervisionReadPlatformService supervisionReadPlatformService;
 
     @Autowired
     public PortfolioReadPlatformServiceImpl(final PlatformSecurityContext context, final JdbcTemplate jdbcTemplate,
             final ColumnValidator columnValidator, final DatabaseSpecificSQLGenerator sqlGenerator,
-            final OfficeReadPlatformService officeReadPlatformService, final AppUserReadPlatformService appUserReadPlatformService) {
+            final OfficeReadPlatformService officeReadPlatformService, final AppUserReadPlatformService appUserReadPlatformService,
+            SupervisionReadPlatformService supervisionReadPlatformService) {
         this.context = context;
         this.jdbcTemplate = jdbcTemplate;
         this.columnValidator = columnValidator;
         this.sqlGenerator = sqlGenerator;
         this.officeReadPlatformService = officeReadPlatformService;
         this.appUserReadPlatformService = appUserReadPlatformService;
+        this.supervisionReadPlatformService = supervisionReadPlatformService;
     }
 
     @Override
@@ -92,8 +98,8 @@ public class PortfolioReadPlatformServiceImpl implements PortfolioReadPlatformSe
         // retrieve list of users under agency hierarchy level as this is the user role to access these feature
         final List<AppUserData> appUsers = new ArrayList<>(
                 this.appUserReadPlatformService.retrieveUsersUnderHierarchy(Long.valueOf(OfficeHierarchyLevel.CARTERA.getValue())));
-
-        return PortfolioData.template(parentOfficesOptions, appUsers);
+        final Collection<SupervisionData> supervisionOptions = this.supervisionReadPlatformService.retrieveAllByUser();
+        return PortfolioData.template(parentOfficesOptions, appUsers, supervisionOptions);
     }
 
     @Override
@@ -160,27 +166,29 @@ public class PortfolioReadPlatformServiceImpl implements PortfolioReadPlatformSe
 
         public PortfolioMapper() {
             final StringBuilder sqlBuilder = new StringBuilder(300);
-            sqlBuilder.append("p.id as id, p.name as name, ");
+            sqlBuilder.append("p.id as id, p.name as name, ms.name as supervisionName, ms.id as supervisionId, ");
             sqlBuilder.append("p.linked_office_id as parentRegionId, region.name as parentRegionName, ");
             sqlBuilder.append("p.responsible_user_id as responsibleUserId, ru.firstname as userFirstName, ru.lastname as userLastName ");
             sqlBuilder.append("from m_portfolio p left join m_office AS region ON region.id = p.linked_office_id ");
             sqlBuilder.append("left join m_appuser ru on ru.id = p.responsible_user_id ");
+            sqlBuilder.append("left join m_supervision ms on ms.id = p.supervision_id ");
             this.schema = sqlBuilder.toString();
         }
 
         @Override
         public PortfolioData mapRow(final ResultSet rs, @SuppressWarnings("unused") final int rowNum) throws SQLException {
-
             final Long id = rs.getLong("id");
             final String name = rs.getString("name");
-
+            final String supervisionName = rs.getString("supervisionName");
+            final Long supervisionId = JdbcSupport.getLong(rs, "supervisionId");
             final long parentId = rs.getLong("parentRegionId");
             final String parentName = rs.getString("parentRegionName");
-
             final long responsibleUserId = rs.getLong("responsibleUserId");
             final String responsibleUserName = rs.getString("userFirstName") + " " + rs.getString("userLastName");
-
-            return PortfolioData.instance(id, name, parentId, parentName, responsibleUserId, responsibleUserName);
+            final PortfolioData portfolioData = PortfolioData.instance(id, name, parentId, parentName, responsibleUserId,
+                    responsibleUserName, supervisionName);
+            portfolioData.setSupervisionId(supervisionId);
+            return portfolioData;
         }
 
         public String schema() {

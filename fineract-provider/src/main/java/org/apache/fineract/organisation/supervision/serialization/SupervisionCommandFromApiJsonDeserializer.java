@@ -80,6 +80,13 @@ public class SupervisionCommandFromApiJsonDeserializer {
                     .value(parentId).notNull().integerGreaterThanZero();
         }
 
+        if (this.fromApiJsonHelper.parameterExists(SupervisionConstants.SupervisionSupportedParameters.AGENCY_ID.getValue(), element)) {
+            final Long agencyId = this.fromApiJsonHelper
+                    .extractLongNamed(SupervisionConstants.SupervisionSupportedParameters.AGENCY_ID.getValue(), element);
+            baseDataValidator.reset().parameter(SupervisionConstants.SupervisionSupportedParameters.AGENCY_ID.getValue()).value(agencyId)
+                    .notNull().integerGreaterThanZero();
+        }
+
         throwExceptionIfValidationWarningsExist(dataValidationErrors);
     }
 
@@ -107,6 +114,13 @@ public class SupervisionCommandFromApiJsonDeserializer {
                     .extractLongNamed(SupervisionConstants.SupervisionSupportedParameters.OFFICE_PARENT_ID.getValue(), element);
             baseDataValidator.reset().parameter(SupervisionConstants.SupervisionSupportedParameters.OFFICE_PARENT_ID.getValue())
                     .value(parentId).notNull().integerGreaterThanZero();
+        }
+
+        if (this.fromApiJsonHelper.parameterExists(SupervisionConstants.SupervisionSupportedParameters.AGENCY_ID.getValue(), element)) {
+            final Long agencyId = this.fromApiJsonHelper
+                    .extractLongNamed(SupervisionConstants.SupervisionSupportedParameters.AGENCY_ID.getValue(), element);
+            baseDataValidator.reset().parameter(SupervisionConstants.SupervisionSupportedParameters.AGENCY_ID.getValue()).value(agencyId)
+                    .notNull().integerGreaterThanZero();
         }
 
         throwExceptionIfValidationWarningsExist(dataValidationErrors);

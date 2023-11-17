@@ -18,6 +18,8 @@
  */
 package org.apache.fineract.portfolio.client.service;
 
+import static org.apache.fineract.portfolio.savings.SavingsApiConstants.GURANTEE_PRODUCT_NAME;
+
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import java.time.LocalDate;
@@ -91,6 +93,7 @@ import org.apache.fineract.portfolio.note.domain.NoteRepository;
 import org.apache.fineract.portfolio.savings.data.SavingsAccountDataDTO;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccount;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountRepositoryWrapper;
+import org.apache.fineract.portfolio.savings.domain.SavingsProduct;
 import org.apache.fineract.portfolio.savings.domain.SavingsProductRepository;
 import org.apache.fineract.portfolio.savings.exception.SavingsProductNotFoundException;
 import org.apache.fineract.portfolio.savings.service.SavingsApplicationProcessWritePlatformService;
@@ -394,7 +397,6 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
                         EntityTables.CLIENT.getName(), newClient.getId(), null,
                         command.arrayOfParameterNamed(ClientApiConstants.datatables));
             }
-
             businessEventNotifierService.notifyPostBusinessEvent(new ClientCreateBusinessEvent(newClient));
 
             entityDatatableChecksWritePlatformService.runTheCheck(newClient.getId(), EntityTables.CLIENT.getName(),
@@ -679,7 +681,19 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
 
             final AppUser currentUser = this.context.authenticatedUser();
             client.activate(currentUser, fmt, activationDate);
+
             CommandProcessingResult result = openSavingsAccount(client, fmt);
+
+            // FBR-402 create savings account for gurantees
+            SavingsProduct product = this.savingsProductRepository.findByName(GURANTEE_PRODUCT_NAME);
+            if (product != null) {
+                client.updateSavingsProduct(product.getId());
+                CommandProcessingResult accountResult = openSavingsAccount(client, fmt);
+                if (accountResult != null && accountResult.getSavingsId() != null) {
+                    this.clientRepository.saveAndFlush(client);
+                }
+            }
+
             clientRepository.saveAndFlush(client);
             businessEventNotifierService.notifyPostBusinessEvent(new ClientActivateBusinessEvent(client));
             return new CommandProcessingResultBuilder() //

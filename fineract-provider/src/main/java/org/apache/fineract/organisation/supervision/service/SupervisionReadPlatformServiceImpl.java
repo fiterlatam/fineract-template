@@ -24,9 +24,12 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
 import org.apache.fineract.infrastructure.core.service.database.DatabaseSpecificSQLGenerator;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.infrastructure.security.utils.ColumnValidator;
+import org.apache.fineract.organisation.agency.data.AgencyData;
+import org.apache.fineract.organisation.agency.service.AgencyReadPlatformServiceImpl;
 import org.apache.fineract.organisation.office.data.OfficeData;
 import org.apache.fineract.organisation.office.domain.OfficeHierarchyLevel;
 import org.apache.fineract.organisation.office.service.OfficeReadPlatformService;
@@ -49,17 +52,20 @@ public class SupervisionReadPlatformServiceImpl implements SupervisionReadPlatfo
     private final ColumnValidator columnValidator;
     private final OfficeReadPlatformService officeReadPlatformService;
     private final AppUserReadPlatformService appUserReadPlatformService;
+    private final AgencyReadPlatformServiceImpl agencyReadPlatformService;
 
     @Autowired
     public SupervisionReadPlatformServiceImpl(final PlatformSecurityContext context, final JdbcTemplate jdbcTemplate,
             final ColumnValidator columnValidator, final DatabaseSpecificSQLGenerator sqlGenerator,
-            final OfficeReadPlatformService officeReadPlatformService, final AppUserReadPlatformService appUserReadPlatformService) {
+            final OfficeReadPlatformService officeReadPlatformService, final AppUserReadPlatformService appUserReadPlatformService,
+            AgencyReadPlatformServiceImpl agencyReadPlatformService) {
         this.context = context;
         this.jdbcTemplate = jdbcTemplate;
         this.columnValidator = columnValidator;
         this.sqlGenerator = sqlGenerator;
         this.officeReadPlatformService = officeReadPlatformService;
         this.appUserReadPlatformService = appUserReadPlatformService;
+        this.agencyReadPlatformService = agencyReadPlatformService;
     }
 
     @Override
@@ -86,8 +92,9 @@ public class SupervisionReadPlatformServiceImpl implements SupervisionReadPlatfo
 
         final List<AppUserData> appUsers = new ArrayList<>(
                 this.appUserReadPlatformService.retrieveUsersUnderHierarchy(Long.valueOf(OfficeHierarchyLevel.SUPERVISION.getValue())));
-
-        return SupervisionData.template(parentOfficesOptions, appUsers);
+        final String hierarchy = this.context.authenticatedUser().getOffice().getHierarchy();
+        final Collection<AgencyData> agencyOptions = this.agencyReadPlatformService.retrieveByOfficeHierarchy(hierarchy);
+        return SupervisionData.template(parentOfficesOptions, appUsers, agencyOptions);
     }
 
     @Override
@@ -113,26 +120,28 @@ public class SupervisionReadPlatformServiceImpl implements SupervisionReadPlatfo
 
         public SupervisionMapper() {
             final StringBuilder sqlBuilder = new StringBuilder(300);
-            sqlBuilder.append("s.id as id, s.name as name, ");
+            sqlBuilder.append("s.id as id, s.name as name, ma.name as agencyName, ma.id as agencyId, ");
             sqlBuilder.append("s.linked_office_id as parentRegionId, region.name as parentRegionName, ");
             sqlBuilder.append("s.responsible_user_id as responsibleUserId, ru.firstname as userFirstName, ru.lastname as userLastName ");
             sqlBuilder.append("from m_supervision s left join m_office AS region ON region.id = s.linked_office_id ");
             sqlBuilder.append("left join m_appuser ru on ru.id = s.responsible_user_id ");
+            sqlBuilder.append("left join m_agency ma on ma.id = s.agency_id ");
             this.schema = sqlBuilder.toString();
         }
 
         @Override
         public SupervisionData mapRow(final ResultSet rs, @SuppressWarnings("unused") final int rowNum) throws SQLException {
-
             final Long id = rs.getLong("id");
             final String name = rs.getString("name");
-
+            final String agencyName = rs.getString("agencyName");
+            final Long agencyId = JdbcSupport.getLong(rs, "agencyId");
             final long parentId = rs.getLong("parentRegionId");
             final String parentName = rs.getString("parentRegionName");
-
             final long responsibleUserId = rs.getLong("responsibleUserId");
+            final SupervisionData supervision = SupervisionData.instance(id, name, parentId, parentName, responsibleUserId, agencyName);
+            supervision.setAgencyId(agencyId);
+            return supervision;
 
-            return SupervisionData.instance(id, name, parentId, parentName, responsibleUserId);
         }
 
         public String schema() {
