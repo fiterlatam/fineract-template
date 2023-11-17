@@ -18,13 +18,6 @@
  */
 package org.apache.fineract.organisation.bankcheque.service;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
@@ -71,6 +64,16 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @Service
 @Slf4j
@@ -248,6 +251,9 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
         cheque.setVoidAuthorizedDate(localDate);
         cheque.setVoidAuthorizedBy(currentUser);
         cheque.setStatus(BankChequeStatus.VOIDED.getValue());
+        final Collection<Loan> loans = this.loanRepositoryWrapper.findLoanByChequeId(chequeId);
+        loans.forEach(l -> l.setCheque(null));
+        this.loanRepositoryWrapper.save(new ArrayList<>(loans));
         chequeJpaRepository.saveAndFlush(cheque);
         return new CommandProcessingResultBuilder().withCommandId(command.commandId())
                 .withResourceIdAsString(String.valueOf(command.entityId())).withEntityId(command.entityId()).build();
@@ -361,6 +367,13 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
             BigDecimal chequeAmount = chequeData.getGuaranteeAmount();
             final Long loanAccId = chequeData.getLoanAccId();
             if (loanAccId != null && chequeData.getLoanAmount() != null) {
+                final Loan loan = this.loanRepositoryWrapper.findOneWithNotFoundDetection(loanAccId);
+                if(loan.getCheque() != null){
+                    throw new BankChequeException("print.cheques", "Loan: " + loan.getAccountNumber() + " has a cheque assigned already");
+                }
+                if(!loan.isPendingDisbursementAuthorization()){
+                    throw new BankChequeException("print.cheques", "Loan: " + loan.getAccountNumber() + " is.not.in.disbursement.authorization.status");
+                }
                 CommandProcessingResult result = this.loanWritePlatformService.disburseLoan(loanAccId, command, false);
                 if (result.getLoanId() == null) {
                     throw new BankChequeException("print.cheques", "failed.to.disburse.loan " + loanAccId);
