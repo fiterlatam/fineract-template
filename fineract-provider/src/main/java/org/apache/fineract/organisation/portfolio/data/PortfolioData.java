@@ -21,6 +21,7 @@ package org.apache.fineract.organisation.portfolio.data;
 import java.util.Collection;
 import org.apache.fineract.organisation.office.data.OfficeData;
 import org.apache.fineract.organisation.portfolioCenter.data.PortfolioCenterData;
+import org.apache.fineract.organisation.supervision.data.SupervisionData;
 import org.apache.fineract.useradministration.data.AppUserData;
 
 /**
@@ -39,21 +40,26 @@ public final class PortfolioData {
     private final Long responsibleUserId;
 
     private final String responsibleUserName;
+    private final String supervisionName;
+    private Long supervisionId;
 
     private Collection<PortfolioCenterData> centers;
 
     // template
     private final Collection<OfficeData> parentOfficesOptions;
     private final Collection<AppUserData> responsibleUserOptions;
+    private final Collection<SupervisionData> supervisionOptions;
 
     public static PortfolioData instance(Long id, String name, Long parentId, String parentName, Long responsibleUserId,
-            String responsibleUserName) {
-        return new PortfolioData(id, name, parentId, parentName, responsibleUserId, responsibleUserName, null, null, null);
+            String responsibleUserName, final String supervisionName) {
+        return new PortfolioData(id, name, parentId, parentName, responsibleUserId, responsibleUserName, null, null, null, null,
+                supervisionName);
     }
 
     public PortfolioData(Long id, String name, Long parentId, String parentName, Long responsibleUserId, String responsibleUserName,
             Collection<PortfolioCenterData> centers, Collection<OfficeData> parentOfficesOptions,
-            Collection<AppUserData> responsibleUserOptions) {
+            Collection<AppUserData> responsibleUserOptions, final Collection<SupervisionData> supervisionOptions,
+            final String supervisionName) {
         this.id = id;
         this.name = name;
         this.parentId = parentId;
@@ -64,13 +70,25 @@ public final class PortfolioData {
         // template
         this.parentOfficesOptions = parentOfficesOptions;
         this.responsibleUserOptions = responsibleUserOptions;
+        this.supervisionOptions = supervisionOptions;
+        this.supervisionName = supervisionName;
     }
 
-    public static PortfolioData template(Collection<OfficeData> parentOfficesOptions, Collection<AppUserData> responsibleUserOptions) {
-        return new PortfolioData(null, null, null, null, null, null, null, parentOfficesOptions, responsibleUserOptions);
+    public static PortfolioData template(Collection<OfficeData> parentOfficesOptions, Collection<AppUserData> responsibleUserOptions,
+            final Collection<SupervisionData> supervisionOptions) {
+        return new PortfolioData(null, null, null, null, null, null, null, parentOfficesOptions, responsibleUserOptions, supervisionOptions,
+                null);
     }
 
     public void setCenters(Collection<PortfolioCenterData> centers) {
         this.centers = centers;
+    }
+
+    public Long getSupervisionId() {
+        return supervisionId;
+    }
+
+    public void setSupervisionId(Long supervisionId) {
+        this.supervisionId = supervisionId;
     }
 }

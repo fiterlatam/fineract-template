@@ -205,6 +205,7 @@ public class LoanProductData implements Serializable {
     private final boolean addNewCyclesEnabled;
     private final Integer daysLimitAddOn;
     private final BigDecimal guaranteePercentage;
+    private final BigDecimal paymentToleranceLimit;
 
     /**
      * Used when returning lookup information about loan product for dropdowns.
@@ -295,6 +296,7 @@ public class LoanProductData implements Serializable {
         final EnumOptionData ownerTypeOption = null;
         final boolean addNewCyclesEnabled = true;
         final Integer daysLimitAddOn = null;
+        final BigDecimal paymentToleranceLimit = null;
         return new LoanProductData(id, name, shortName, description, currency, principal, minPrincipal, maxPrincipal, tolerance,
                 numberOfRepayments, minNumberOfRepayments, maxNumberOfRepayments, repaymentEvery, interestRatePerPeriod,
                 minInterestRatePerPeriod, maxInterestRatePerPeriod, annualInterestRate, repaymentFrequencyType, interestRateFrequencyType,
@@ -312,7 +314,7 @@ public class LoanProductData implements Serializable {
                 maxDifferentialLendingRate, isFloatingInterestRateCalculationAllowed, isVariableInstallmentsAllowed, minimumGap, maximumGap,
                 syncExpectedWithDisbursementDate, canUseForTopup, isEqualAmortization, rateOptions, rates, isRatesEnabled,
                 fixedPrincipalPercentagePerInstallment, ageLimitWarning, ageLimitBlock, ownerTypeOption, addNewCyclesEnabled,
-                daysLimitAddOn, null);
+                daysLimitAddOn, null, paymentToleranceLimit);
 
     }
 
@@ -403,7 +405,7 @@ public class LoanProductData implements Serializable {
         final EnumOptionData ownerTypeOption = null;
         final boolean addNewCyclesEnabled = true;
         final Integer daysLimitAddOn = null;
-
+        final BigDecimal paymentToleranceLimit = null;
         return new LoanProductData(id, name, shortName, description, currency, principal, minPrincipal, maxPrincipal, tolerance,
                 numberOfRepayments, minNumberOfRepayments, maxNumberOfRepayments, repaymentEvery, interestRatePerPeriod,
                 minInterestRatePerPeriod, maxInterestRatePerPeriod, annualInterestRate, repaymentFrequencyType, interestRateFrequencyType,
@@ -421,7 +423,7 @@ public class LoanProductData implements Serializable {
                 maxDifferentialLendingRate, isFloatingInterestRateCalculationAllowed, isVariableInstallmentsAllowed, minimumGap, maximumGap,
                 syncExpectedWithDisbursementDate, canUseForTopup, isEqualAmortization, rateOptions, rates, isRatesEnabled,
                 fixedPrincipalPercentagePerInstallment, ageLimitWarning, ageLimitBlock, ownerTypeOption, addNewCyclesEnabled,
-                daysLimitAddOn, null);
+                daysLimitAddOn, null, paymentToleranceLimit);
 
     }
 
@@ -519,7 +521,7 @@ public class LoanProductData implements Serializable {
         final EnumOptionData ownerTypeOption = null;
         final boolean addNewCyclesEnabled = true;
         final Integer daysLimitAddOn = LoanProductConstants.DEFAULT_LIMIT_OF_DAYS_FOR_ADDON;
-
+        final BigDecimal paymentToleranceLimit = null;
         return new LoanProductData(id, name, shortName, description, currency, principal, minPrincipal, maxPrincipal, tolerance,
                 numberOfRepayments, minNumberOfRepayments, maxNumberOfRepayments, repaymentEvery, interestRatePerPeriod,
                 minInterestRatePerPeriod, maxInterestRatePerPeriod, annualInterestRate, repaymentFrequencyType, interestRateFrequencyType,
@@ -537,7 +539,7 @@ public class LoanProductData implements Serializable {
                 maxDifferentialLendingRate, isFloatingInterestRateCalculationAllowed, isVariableInstallmentsAllowed, minimumGap, maximumGap,
                 syncExpectedWithDisbursementDate, canUseForTopup, isEqualAmortization, rateOptions, rates, isRatesEnabled,
                 fixedPrincipalPercentagePerInstallment, ageLimitWarning, ageLimitBlock, ownerTypeOption, addNewCyclesEnabled,
-                daysLimitAddOn, null);
+                daysLimitAddOn, null, paymentToleranceLimit);
 
     }
 
@@ -629,7 +631,7 @@ public class LoanProductData implements Serializable {
         final EnumOptionData ownerTypeOption = null;
         final boolean addNewCyclesEnabled = true;
         final Integer daysLimitAddOn = null;
-
+        final BigDecimal paymentToleranceLimit = null;
         return new LoanProductData(id, name, shortName, description, currency, principal, minPrincipal, maxPrincipal, tolerance,
                 numberOfRepayments, minNumberOfRepayments, maxNumberOfRepayments, repaymentEvery, interestRatePerPeriod,
                 minInterestRatePerPeriod, maxInterestRatePerPeriod, annualInterestRate, repaymentFrequencyType, interestRateFrequencyType,
@@ -647,7 +649,7 @@ public class LoanProductData implements Serializable {
                 maxDifferentialLendingRate, isFloatingInterestRateCalculationAllowed, isVariableInstallmentsAllowed, minimumGap, maximumGap,
                 syncExpectedWithDisbursementDate, canUseForTopup, isEqualAmortization, rateOptions, rates, isRatesEnabled,
                 fixedPrincipalPercentagePerInstallment, ageLimitWarning, ageLimitBlock, ownerTypeOption, addNewCyclesEnabled,
-                daysLimitAddOn, null);
+                daysLimitAddOn, null, paymentToleranceLimit);
 
     }
 
@@ -694,7 +696,7 @@ public class LoanProductData implements Serializable {
             Collection<RateData> rateOptions, Collection<RateData> rates, final boolean isRatesEnabled,
             final BigDecimal fixedPrincipalPercentagePerInstallmen, final Integer ageLimitWarning, final Integer ageLimitBlock,
             final EnumOptionData ownerTypeOption, final boolean addNewCyclesEnabled, final Integer daysLimitAddOn,
-            BigDecimal guaranteePercentage) {
+            BigDecimal guaranteePercentage, final BigDecimal paymentToleranceLimit) {
         this.id = id;
         this.name = name;
         this.shortName = shortName;
@@ -815,6 +817,7 @@ public class LoanProductData implements Serializable {
         this.ageLimitWarning = ageLimitWarning;
         this.daysLimitAddOn = daysLimitAddOn;
         this.guaranteePercentage = guaranteePercentage;
+        this.paymentToleranceLimit = paymentToleranceLimit;
 
     }
 
@@ -970,6 +973,7 @@ public class LoanProductData implements Serializable {
         this.ageLimitWarning = productData.ageLimitWarning;
         this.daysLimitAddOn = productData.daysLimitAddOn;
         this.guaranteePercentage = productData.guaranteePercentage;
+        this.paymentToleranceLimit = productData.paymentToleranceLimit;
     }
 
     private Collection<ChargeData> nullIfEmpty(final Collection<ChargeData> charges) {

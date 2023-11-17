@@ -69,12 +69,11 @@ public class BlacklistDataValidator {
         final JsonElement element = this.fromApiJsonHelper.parse(json);
 
         final BigDecimal balance = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed(BlacklistApiConstants.balanceParamName, element);
-        baseDataValidator.reset().parameter(BlacklistApiConstants.balanceParamName).value(balance).notNull().positiveAmount();
+        baseDataValidator.reset().parameter(BlacklistApiConstants.balanceParamName).value(balance).notNull();
 
         final BigDecimal disbursementAmount = this.fromApiJsonHelper
                 .extractBigDecimalWithLocaleNamed(BlacklistApiConstants.disbursementAmountParamName, element);
-        baseDataValidator.reset().parameter(BlacklistApiConstants.disbursementAmountParamName).value(disbursementAmount).notNull()
-                .positiveAmount();
+        baseDataValidator.reset().parameter(BlacklistApiConstants.disbursementAmountParamName).value(disbursementAmount).notNull();
 
         final String dpi = this.fromApiJsonHelper.extractStringNamed(BlacklistApiConstants.dpiParamName, element);
         baseDataValidator.reset().parameter(BlacklistApiConstants.dpiParamName).value(dpi).notBlank();

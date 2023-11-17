@@ -29,6 +29,7 @@ import javax.persistence.Table;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.domain.AbstractAuditableCustom;
+import org.apache.fineract.organisation.agency.domain.Agency;
 import org.apache.fineract.organisation.office.domain.Office;
 import org.apache.fineract.organisation.supervision.service.SupervisionConstants;
 import org.apache.fineract.useradministration.domain.AppUser;
@@ -48,20 +49,24 @@ public class Supervision extends AbstractAuditableCustom {
     @JoinColumn(name = "responsible_user_id")
     private AppUser responsibleUser;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "agency_id")
+    private Agency agency;
+
     protected Supervision() {
 
     }
 
-    public Supervision(Office parentOffice, String name, AppUser responsibleUser) {
+    public Supervision(Office parentOffice, String name, AppUser responsibleUser, final Agency agency) {
         this.parentOffice = parentOffice;
         this.name = StringUtils.defaultIfEmpty(name, null);
         this.responsibleUser = responsibleUser;
+        this.agency = agency;
     }
 
-    public static Supervision fromJson(Office parentOffice, AppUser responsibleUser, JsonCommand command) {
+    public static Supervision fromJson(Office parentOffice, AppUser responsibleUser, JsonCommand command, final Agency agency) {
         final String name = command.stringValueOfParameterNamed(SupervisionConstants.SupervisionSupportedParameters.NAME.getValue());
-
-        return new Supervision(parentOffice, name, responsibleUser);
+        return new Supervision(parentOffice, name, responsibleUser, agency);
     }
 
     public Map<String, Object> update(JsonCommand command) {
@@ -99,5 +104,13 @@ public class Supervision extends AbstractAuditableCustom {
 
     public void setResponsibleUser(AppUser responsibleUser) {
         this.responsibleUser = responsibleUser;
+    }
+
+    public Agency getAgency() {
+        return agency;
+    }
+
+    public void setAgency(Agency agency) {
+        this.agency = agency;
     }
 }

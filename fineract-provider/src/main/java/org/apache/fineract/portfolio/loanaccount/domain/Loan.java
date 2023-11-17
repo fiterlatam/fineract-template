@@ -3991,6 +3991,10 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         return status().isApproved();
     }
 
+    public boolean isPendingDisbursementAuthorization() {
+        return status().isPendingDisbursementAuthorization();
+    }
+
     private boolean isNotDisbursed() {
         return !isDisbursed();
     }

@@ -213,6 +213,9 @@ public class LoanProduct extends AbstractPersistableCustom {
     @Column(name = "required_guarantee_percent", nullable = false)
     private BigDecimal requiredGuaranteePercent;
 
+    @Column(name = "payment_tolerance_limit", nullable = false)
+    private BigDecimal paymentToleranceLimit;
+
     public static LoanProduct assembleFromJson(final Fund fund, final LoanTransactionProcessingStrategy loanTransactionProcessingStrategy,
             final List<Charge> productCharges, final JsonCommand command, final AprCalculator aprCalculator, FloatingRate floatingRate,
             final List<Rate> productRates) {
@@ -399,7 +402,7 @@ public class LoanProduct extends AbstractPersistableCustom {
 
         final LoanProductOwnerType loanProductOwnerType = LoanProductOwnerType
                 .fromInt(command.integerValueOfParameterNamed(LoanProductConstants.LOAN_PRODUCT_OWNER_TYPE));
-
+        final BigDecimal paymentToleranceLimit = command.bigDecimalValueOfParameterNamed(LoanProductConstants.PAYMENT_TOLERANCE_LIMIT);
         return new LoanProduct(fund, loanTransactionProcessingStrategy, name, shortName, description, currency, principal, minPrincipal,
                 maxPrincipal, interestRatePerPeriod, minInterestRatePerPeriod, maxInterestRatePerPeriod, interestFrequencyType,
                 annualInterestRate, interestMethod, interestCalculationPeriodMethod, allowPartialPeriodInterestCalcualtion, repaymentEvery,
@@ -416,7 +419,7 @@ public class LoanProduct extends AbstractPersistableCustom {
                 minimumGapBetweenInstallments, maximumGapBetweenInstallments, syncExpectedWithDisbursementDate, canUseForTopup,
                 isEqualAmortization, productRates, fixedPrincipalPercentagePerInstallment, disallowExpectedDisbursements,
                 allowApprovedDisbursedAmountsOverApplied, overAppliedCalculationType, overAppliedNumber, ageLimitWarning, ageLimitBlock,
-                addNewCyclesEnabled, loanProductOwnerType, daysLimitAddOn, requiredGuaranteePercent);
+                addNewCyclesEnabled, loanProductOwnerType, daysLimitAddOn, requiredGuaranteePercent, paymentToleranceLimit);
 
     }
 
@@ -654,7 +657,8 @@ public class LoanProduct extends AbstractPersistableCustom {
             final List<Rate> rates, final BigDecimal fixedPrincipalPercentagePerInstallment, final boolean disallowExpectedDisbursements,
             final boolean allowApprovedDisbursedAmountsOverApplied, final String overAppliedCalculationType,
             final Integer overAppliedNumber, final Integer ageLimitWarning, final Integer ageLimitBlock, final boolean addNewCyclesEnabled,
-            final LoanProductOwnerType loanProductOwnerType, final Integer daysLimitAddOn, BigDecimal requiredGuaranteePercent) {
+            final LoanProductOwnerType loanProductOwnerType, final Integer daysLimitAddOn, BigDecimal requiredGuaranteePercent,
+            final BigDecimal paymentToleranceLimit) {
         this.fund = fund;
         this.transactionProcessingStrategy = transactionProcessingStrategy;
         this.name = name.trim();
@@ -737,6 +741,7 @@ public class LoanProduct extends AbstractPersistableCustom {
         this.addNewCycledEnabled = addNewCyclesEnabled;
         this.daysLimitAddOn = daysLimitAddOn;
         this.requiredGuaranteePercent = requiredGuaranteePercent;
+        this.paymentToleranceLimit = paymentToleranceLimit;
 
         if (loanProductOwnerType != null) {
             this.ownerType = loanProductOwnerType.getValue();
@@ -1213,6 +1218,12 @@ public class LoanProduct extends AbstractPersistableCustom {
             this.fixedPrincipalPercentagePerInstallment = newValue;
         }
 
+        if (command.isChangeInBigDecimalParameterNamed(LoanProductConstants.PAYMENT_TOLERANCE_LIMIT, this.paymentToleranceLimit)) {
+            BigDecimal newValue = command.bigDecimalValueOfParameterNamed(LoanProductConstants.PAYMENT_TOLERANCE_LIMIT);
+            actualChanges.put(LoanProductConstants.PAYMENT_TOLERANCE_LIMIT, newValue);
+            this.paymentToleranceLimit = newValue;
+        }
+
         if (command.isChangeInBooleanParameterNamed(LoanProductConstants.DISALLOW_EXPECTED_DISBURSEMENTS,
                 this.disallowExpectedDisbursements)) {
             final boolean newValue = command.booleanPrimitiveValueOfParameterNamed(LoanProductConstants.DISALLOW_EXPECTED_DISBURSEMENTS);
@@ -1665,5 +1676,13 @@ public class LoanProduct extends AbstractPersistableCustom {
 
     public Integer getOwnerType() {
         return ownerType;
+    }
+
+    public BigDecimal getPaymentToleranceLimit() {
+        return this.paymentToleranceLimit;
+    }
+
+    public void setPaymentToleranceLimit(BigDecimal paymentToleranceLimit) {
+        this.paymentToleranceLimit = paymentToleranceLimit;
     }
 }
