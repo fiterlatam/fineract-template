@@ -96,7 +96,7 @@ public class LoanDropdownReadPlatformServiceImpl implements LoanDropdownReadPlat
 
     @Override
     public List<EnumOptionData> retrieveLoanTermFrequencyTypeOptions() {
-        final List<EnumOptionData> loanTermFrequencyOptions = Arrays.asList(loanTermFrequencyType(PeriodFrequencyType.WEEKS),
+        final List<EnumOptionData> loanTermFrequencyOptions = Arrays.asList(loanTermFrequencyType(PeriodFrequencyType.DAYS), loanTermFrequencyType(PeriodFrequencyType.WEEKS),
                 loanTermFrequencyType(PeriodFrequencyType.MONTHS), loanTermFrequencyType(PeriodFrequencyType.YEARS));
         return loanTermFrequencyOptions;
     }
@@ -104,7 +104,7 @@ public class LoanDropdownReadPlatformServiceImpl implements LoanDropdownReadPlat
     @Override
     public List<EnumOptionData> retrieveRepaymentFrequencyTypeOptions() {
 
-        final List<EnumOptionData> repaymentFrequencyOptions = Arrays.asList(repaymentFrequencyType(PeriodFrequencyType.WEEKS),
+        final List<EnumOptionData> repaymentFrequencyOptions = Arrays.asList(repaymentFrequencyType(PeriodFrequencyType.DAYS), repaymentFrequencyType(PeriodFrequencyType.WEEKS),
                 repaymentFrequencyType(PeriodFrequencyType.MONTHS));
         return repaymentFrequencyOptions;
     }
