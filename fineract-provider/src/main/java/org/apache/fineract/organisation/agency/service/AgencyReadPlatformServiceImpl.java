@@ -279,7 +279,7 @@ public class AgencyReadPlatformServiceImpl implements AgencyReadPlatformService 
                         m_office mo
                         INNER JOIN m_office office_under ON
                         office_under.hierarchy LIKE CONCAT(mo.hierarchy, '%')AND office_under.hierarchy LIKE CONCAT(?, '%')
-                        INNER JOIN m_agency ma ON ma.office_id = office_under.id
+                        INNER JOIN m_agency ma ON ma.linked_office_id = office_under.id
                         GROUP BY ma.id
                 """;
         return this.jdbcTemplate.query(sql, (rs, rowNum) -> AgencyData.instance(rs.getLong("id"), rs.getString("name")),
