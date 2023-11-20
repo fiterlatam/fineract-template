@@ -107,6 +107,9 @@ public class Cheque extends AbstractAuditableCustom {
     @Column(name = "amount_in_words")
     private String amountInWords;
 
+    @Column(name = "is_reassigned")
+    private Boolean isReassigned;
+
     public Cheque setChequeNo(Long chequeNo) {
         this.chequeNo = chequeNo;
         return this;
@@ -208,5 +211,8 @@ public class Cheque extends AbstractAuditableCustom {
 
     public void setAmountInWords(String amountInWords) {
         this.amountInWords = amountInWords;
+    }
+    public void setIsReassigned(Boolean isReassigned) {
+        this.isReassigned = isReassigned;
     }
 }
