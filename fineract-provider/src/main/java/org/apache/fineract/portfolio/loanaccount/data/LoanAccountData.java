@@ -244,6 +244,7 @@ public final class LoanAccountData {
     private Long groupId;
     private LocalDate expectedDisbursementDate;
     private BigDecimal requiredGuaranteeAmount;
+    private BigDecimal actualGuaranteeAmount;
 
     private final CollectionData delinquent;
     private final String contractNo;
@@ -378,6 +379,7 @@ public final class LoanAccountData {
         final String contractNo = null;
         final Collection<CodeValueData> loanCollateralOptions = null;
         final BigDecimal requiredGuaranteeAmount = null;
+        final BigDecimal actualGuaranteeAmount = null;
 
         return new LoanAccountData(id, accountNo, status, externalId, clientId, clientAccountNo, clientName, clientOfficeId, group,
                 loanType, loanProductId, loanProductName, loanProductDescription, isLoanProductLinkedToFloatingRate, fundId, fundName,
@@ -400,7 +402,7 @@ public final class LoanAccountData {
                 isVariableInstallmentsAllowed, minimumGap, maximumGap, subStatus, canUseForTopup, clientActiveLoanOptions, isTopup,
                 closureLoanId, closureLoanAccountNo, topupAmount, isEqualAmortization, rates, isRatesEnabled,
                 fixedPrincipalPercentagePerInstallment, delinquent, contractNo, agencyOptions, centerOptions, groupOption,
-                facilitatorOptions, disbursementMethodOptions, requiredGuaranteeAmount);
+                facilitatorOptions, disbursementMethodOptions, requiredGuaranteeAmount, actualGuaranteeAmount);
     }
 
     public static LoanAccountData importInstanceIndividual(EnumOptionData loanTypeEnumOption, Long clientId, Long productId,
@@ -768,6 +770,7 @@ public final class LoanAccountData {
         final Collection<AppUserData> facilitatorOptions = null;
         final Collection<EnumOptionData> disbursementMethodOptions = null;
         final BigDecimal requiredGuaranteeAmount = null;
+        final BigDecimal actualGuaranteeAmount = null;
 
         return new LoanAccountData(id, accountNo, status, externalId, clientId, clientAccountNo, clientName, clientOfficeId, group,
                 loanType, loanProductId, loanProductName, loanProductDescription, isLoanProductLinkedToFloatingRate, fundId, fundName,
@@ -790,7 +793,7 @@ public final class LoanAccountData {
                 isVariableInstallmentsAllowed, minimumGap, maximumGap, subStatus, canUseForTopup, clientActiveLoanOptions, isTopup,
                 closureLoanId, closureLoanAccountNo, topupAmount, isEqualAmortization, rates, isRatesEnabled,
                 fixedPrincipalPercentagePerInstallment, delinquent, contractNo, agencyOptions, centerOptions, groupOption,
-                facilitatorOptions, disbursementMethodOptions, requiredGuaranteeAmount);
+                facilitatorOptions, disbursementMethodOptions, requiredGuaranteeAmount, actualGuaranteeAmount);
     }
 
     /**
@@ -922,6 +925,7 @@ public final class LoanAccountData {
         final Collection<AppUserData> facilitatorOptions = null;
         final Collection<EnumOptionData> disbursementMethodOptions = null;
         final BigDecimal requiredGuaranteeAmount = null;
+        final BigDecimal actualGuaranteeAmount = null;
 
         return new LoanAccountData(id, accountNo, status, externalId, clientId, clientAccountNo, clientName, clientOfficeId, group,
                 loanType, loanProductId, loanProductName, loanProductDescription, isLoanProductLinkedToFloatingRate, fundId, fundName,
@@ -944,7 +948,7 @@ public final class LoanAccountData {
                 isVariableInstallmentsAllowed, minimumGap, maximumGap, subStatus, canUseForTopup, clientActiveLoanOptions, isTopup,
                 closureLoanId, closureLoanAccountNo, topupAmount, isEqualAmortization, rates, isRatesEnabled,
                 fixedPrincipalPercentagePerInstallment, delinquent, contractNo, agencyOptions, centerOptions, groupOption,
-                facilitatorOptions, disbursementMethodOptions, requiredGuaranteeAmount);
+                facilitatorOptions, disbursementMethodOptions, requiredGuaranteeAmount, actualGuaranteeAmount);
     }
 
     public static LoanAccountData populateClientDefaults(final LoanAccountData acc, final LoanAccountData clientAcc) {
@@ -976,7 +980,7 @@ public final class LoanAccountData {
                 acc.minimumGap, acc.maximumGap, acc.subStatus, acc.canUseForTopup, acc.clientActiveLoanOptions, acc.isTopup,
                 acc.closureLoanId, acc.closureLoanAccountNo, acc.topupAmount, acc.isEqualAmortization, acc.rates, acc.isRatesEnabled,
                 acc.fixedPrincipalPercentagePerInstallment, acc.delinquent, acc.contractNo, acc.agencyOptions, acc.centerOptions,
-                acc.groupOptions, acc.facilitatorOptions, acc.disbursementMethodOptions, acc.requiredGuaranteeAmount);
+                acc.groupOptions, acc.facilitatorOptions, acc.disbursementMethodOptions, acc.requiredGuaranteeAmount, acc.actualGuaranteeAmount);
     }
 
     /**
@@ -1110,6 +1114,7 @@ public final class LoanAccountData {
         final Collection<AppUserData> facilitatorOptions = null;
         final Collection<EnumOptionData> disbursementMethodOptions = null;
         final BigDecimal requiredGuaranteeAmount = null;
+        final BigDecimal actualGuaranteeAmount = null;
 
         return new LoanAccountData(id, accountNo, status, externalId, clientId, clientAccountNo, clientName, clientOfficeId, group,
                 loanType, loanProductId, loanProductName, loanProductDescription, isLoanProductLinkedToFloatingRate, fundId, fundName,
@@ -1132,7 +1137,7 @@ public final class LoanAccountData {
                 isVariableInstallmentsAllowed, minimumGap, maximumGap, subStatus, canUseForTopup, clientActiveLoanOptions, isTopup,
                 closureLoanId, closureLoanAccountNo, topupAmount, isEqualAmortization, rates, isRatesEnabled,
                 fixedPrincipalPercentagePerInstallment, delinquent, contractNo, agencyOptions, centerOptions, groupOption,
-                facilitatorOptions, disbursementMethodOptions, requiredGuaranteeAmount);
+                facilitatorOptions, disbursementMethodOptions, requiredGuaranteeAmount, actualGuaranteeAmount);
     }
 
     public static LoanAccountData populateGroupDefaults(final LoanAccountData acc, final LoanAccountData groupAcc) {
@@ -1163,7 +1168,7 @@ public final class LoanAccountData {
                 acc.minimumGap, acc.maximumGap, acc.subStatus, acc.canUseForTopup, acc.clientActiveLoanOptions, acc.isTopup,
                 acc.closureLoanId, acc.closureLoanAccountNo, acc.topupAmount, acc.isEqualAmortization, acc.rates, acc.isRatesEnabled,
                 acc.fixedPrincipalPercentagePerInstallment, acc.delinquent, acc.contractNo, acc.agencyOptions, acc.centerOptions,
-                acc.groupOptions, acc.facilitatorOptions, acc.disbursementMethodOptions, acc.requiredGuaranteeAmount);
+                acc.groupOptions, acc.facilitatorOptions, acc.disbursementMethodOptions, acc.requiredGuaranteeAmount, acc.actualGuaranteeAmount);
     }
 
     public static LoanAccountData loanProductWithTemplateDefaults(final LoanProductData product,
@@ -1312,6 +1317,7 @@ public final class LoanAccountData {
         final Collection<AppUserData> facilitatorOptions = null;
         final Collection<EnumOptionData> disbursementMethodOptions = null;
         final BigDecimal requiredGuaranteeAmount = null;
+        final BigDecimal actualGuaranteeAmount = null;
 
         return new LoanAccountData(id, accountNo, status, externalId, clientId, clientAccountNo, clientName, clientOfficeId, group,
                 loanType, product.getId(), product.getName(), product.getDescription(), product.isLinkedToFloatingInterestRates(),
@@ -1339,7 +1345,7 @@ public final class LoanAccountData {
                 product.getMaximumGapBetweenInstallments(), subStatus, canUseForTopup, clientActiveLoanOptions, isTopup, closureLoanId,
                 closureLoanAccountNo, topupAmount, product.isEqualAmortization(), rates, isRatesEnabled,
                 product.getFixedPrincipalPercentagePerInstallment(), delinquent, contractNo, agencyOptions, centerOptions, groupOption,
-                facilitatorOptions, disbursementMethodOptions, requiredGuaranteeAmount);
+                facilitatorOptions, disbursementMethodOptions, requiredGuaranteeAmount, actualGuaranteeAmount);
     }
 
     public static LoanAccountData populateLoanProductDefaults(final LoanAccountData acc, final LoanProductData product) {
@@ -1415,7 +1421,7 @@ public final class LoanAccountData {
                 product.getMaximumGapBetweenInstallments(), acc.subStatus, acc.canUseForTopup, acc.clientActiveLoanOptions, acc.isTopup,
                 acc.closureLoanId, acc.closureLoanAccountNo, acc.topupAmount, product.isEqualAmortization(), acc.rates, acc.isRatesEnabled,
                 product.getFixedPrincipalPercentagePerInstallment(), delinquent, acc.contractNo, agencyOptions, centerOptions, groupOption,
-                facilitatorOptions, disbursementMethodOptions, acc.requiredGuaranteeAmount);
+                facilitatorOptions, disbursementMethodOptions, acc.requiredGuaranteeAmount, acc.actualGuaranteeAmount);
     }
 
     /*
@@ -1447,7 +1453,7 @@ public final class LoanAccountData {
             final Boolean isVariableInstallmentsAllowed, Integer minimumGap, Integer maximumGap, final EnumOptionData subStatus,
             final boolean canUseForTopup, final boolean isTopup, final Long closureLoanId, final String closureLoanAccountNo,
             final BigDecimal topupAmount, final boolean isEqualAmortization, final BigDecimal fixedPrincipalPercentagePerInstallment,
-            String contractNo, BigDecimal requiredGuaranteeAmount) {
+            String contractNo, BigDecimal requiredGuaranteeAmount, BigDecimal actualGuaranteeAmount) {
 
         final LoanScheduleData repaymentSchedule = null;
         final Collection<LoanTransactionData> transactions = null;
@@ -1513,7 +1519,7 @@ public final class LoanAccountData {
                 createStandingInstructionAtDisbursement, paidInAdvance, interestRatesPeriods, isVariableInstallmentsAllowed, minimumGap,
                 maximumGap, subStatus, canUseForTopup, clientActiveLoanOptions, isTopup, closureLoanId, closureLoanAccountNo, topupAmount,
                 isEqualAmortization, rates, isRatesEnabled, fixedPrincipalPercentagePerInstallment, delinquent, contractNo, agencyOptions,
-                centerOptions, groupOption, facilitatorOptions, disbursementMethodOptions, requiredGuaranteeAmount);
+                centerOptions, groupOption, facilitatorOptions, disbursementMethodOptions, requiredGuaranteeAmount, actualGuaranteeAmount);
     }
 
     /*
@@ -1568,7 +1574,7 @@ public final class LoanAccountData {
                 acc.minimumGap, acc.maximumGap, acc.subStatus, acc.canUseForTopup, clientActiveLoanOptions, acc.isTopup, acc.closureLoanId,
                 acc.closureLoanAccountNo, acc.topupAmount, acc.isEqualAmortization, rates, isRatesEnabled,
                 acc.fixedPrincipalPercentagePerInstallment, delinquent, acc.contractNo, acc.agencyOptions, acc.centerOptions,
-                acc.groupOptions, acc.facilitatorOptions, acc.disbursementMethodOptions, acc.requiredGuaranteeAmount);
+                acc.groupOptions, acc.facilitatorOptions, acc.disbursementMethodOptions, acc.requiredGuaranteeAmount, acc.actualGuaranteeAmount);
     }
 
     public static LoanAccountData associationsAndTemplate(final LoanAccountData acc, final Collection<LoanProductData> productOptions,
@@ -1612,7 +1618,7 @@ public final class LoanAccountData {
                 acc.minimumGap, acc.maximumGap, acc.subStatus, acc.canUseForTopup, acc.clientActiveLoanOptions, acc.isTopup,
                 acc.closureLoanId, acc.closureLoanAccountNo, acc.topupAmount, acc.isEqualAmortization, acc.rates, acc.isRatesEnabled,
                 acc.fixedPrincipalPercentagePerInstallment, acc.delinquent, acc.contractNo, acc.agencyOptions, acc.centerOptions,
-                acc.groupOptions, acc.facilitatorOptions, acc.disbursementMethodOptions, acc.requiredGuaranteeAmount);
+                acc.groupOptions, acc.facilitatorOptions, acc.disbursementMethodOptions, acc.requiredGuaranteeAmount, acc.actualGuaranteeAmount);
     }
 
     public static LoanAccountData associateMemberVariations(final LoanAccountData acc, final Map<Long, Integer> memberLoanCycle) {
@@ -1679,7 +1685,7 @@ public final class LoanAccountData {
                 acc.minimumGap, acc.maximumGap, acc.subStatus, acc.canUseForTopup, acc.clientActiveLoanOptions, acc.isTopup,
                 acc.closureLoanId, acc.closureLoanAccountNo, acc.topupAmount, acc.isEqualAmortization, acc.rates, acc.isRatesEnabled,
                 acc.fixedPrincipalPercentagePerInstallment, acc.delinquent, acc.contractNo, acc.agencyOptions, acc.centerOptions,
-                acc.groupOptions, acc.facilitatorOptions, acc.disbursementMethodOptions, acc.requiredGuaranteeAmount);
+                acc.groupOptions, acc.facilitatorOptions, acc.disbursementMethodOptions, acc.requiredGuaranteeAmount, acc.actualGuaranteeAmount);
     }
 
     public static LoanAccountData withInterestRecalculationCalendarData(final LoanAccountData acc, final CalendarData calendarData,
@@ -1714,7 +1720,7 @@ public final class LoanAccountData {
                 acc.minimumGap, acc.maximumGap, acc.subStatus, acc.canUseForTopup, acc.clientActiveLoanOptions, acc.isTopup,
                 acc.closureLoanId, acc.closureLoanAccountNo, acc.topupAmount, acc.isEqualAmortization, acc.rates, acc.isRatesEnabled,
                 acc.fixedPrincipalPercentagePerInstallment, acc.delinquent, acc.contractNo, acc.agencyOptions, acc.centerOptions,
-                acc.groupOptions, acc.facilitatorOptions, acc.disbursementMethodOptions, acc.requiredGuaranteeAmount);
+                acc.groupOptions, acc.facilitatorOptions, acc.disbursementMethodOptions, acc.requiredGuaranteeAmount, acc.actualGuaranteeAmount);
     }
 
     public static LoanAccountData withLoanCalendarData(final LoanAccountData acc, final CalendarData calendarData) {
@@ -1744,7 +1750,7 @@ public final class LoanAccountData {
                 acc.minimumGap, acc.maximumGap, acc.subStatus, acc.canUseForTopup, acc.clientActiveLoanOptions, acc.isTopup,
                 acc.closureLoanId, acc.closureLoanAccountNo, acc.topupAmount, acc.isEqualAmortization, acc.rates, acc.isRatesEnabled,
                 acc.fixedPrincipalPercentagePerInstallment, acc.delinquent, acc.contractNo, acc.agencyOptions, acc.centerOptions,
-                acc.groupOptions, acc.facilitatorOptions, acc.disbursementMethodOptions, acc.requiredGuaranteeAmount);
+                acc.groupOptions, acc.facilitatorOptions, acc.disbursementMethodOptions, acc.requiredGuaranteeAmount, acc.actualGuaranteeAmount);
     }
 
     public static LoanAccountData withOriginalSchedule(final LoanAccountData acc, final LoanScheduleData originalSchedule) {
@@ -1775,7 +1781,7 @@ public final class LoanAccountData {
                 acc.minimumGap, acc.maximumGap, acc.subStatus, acc.canUseForTopup, acc.clientActiveLoanOptions, acc.isTopup,
                 acc.closureLoanId, acc.closureLoanAccountNo, acc.topupAmount, acc.isEqualAmortization, acc.rates, acc.isRatesEnabled,
                 acc.fixedPrincipalPercentagePerInstallment, acc.delinquent, acc.contractNo, acc.agencyOptions, acc.centerOptions,
-                acc.groupOptions, acc.facilitatorOptions, acc.disbursementMethodOptions, acc.requiredGuaranteeAmount);
+                acc.groupOptions, acc.facilitatorOptions, acc.disbursementMethodOptions, acc.requiredGuaranteeAmount, acc.actualGuaranteeAmount);
     }
 
     private LoanAccountData(final Long id, //
@@ -1831,7 +1837,8 @@ public final class LoanAccountData {
             final Boolean isRatesEnabled, final BigDecimal fixedPrincipalPercentagePerInstallment, final CollectionData delinquent,
             final String contractNo, final Collection<AgencyData> agencyOptions, final Collection<CenterData> centerOptions,
             final Collection<GroupGeneralData> groupOptions, final Collection<AppUserData> facilitatorOptions,
-            final Collection<EnumOptionData> disbursementMethodOptions, BigDecimal requiredGuaranteeAmount) {
+            final Collection<EnumOptionData> disbursementMethodOptions, BigDecimal requiredGuaranteeAmount,
+                            final BigDecimal actualGuaranteeAmount) {
 
         this.id = id;
         this.accountNo = accountNo;
@@ -2026,6 +2033,7 @@ public final class LoanAccountData {
         this.facilitatorOptions = facilitatorOptions;
         this.disbursementMethodOptions = disbursementMethodOptions;
         this.requiredGuaranteeAmount = requiredGuaranteeAmount;
+        this.actualGuaranteeAmount = actualGuaranteeAmount;
     }
 
     public RepaymentScheduleRelatedLoanData repaymentScheduleRelatedData() {

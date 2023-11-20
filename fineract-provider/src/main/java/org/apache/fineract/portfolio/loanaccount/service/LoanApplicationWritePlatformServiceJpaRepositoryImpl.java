@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.persistence.PersistenceException;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.fineract.accounting.journalentry.data.LumaBitacoraTransactionTypeEnum;
@@ -158,7 +159,9 @@ import org.apache.fineract.portfolio.rate.service.RateAssembler;
 import org.apache.fineract.portfolio.savings.data.GroupSavingsIndividualMonitoringAccountData;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccount;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountAssembler;
+import org.apache.fineract.portfolio.savings.domain.SavingsAccountRepositoryWrapper;
 import org.apache.fineract.portfolio.savings.service.GSIMReadPlatformService;
+import org.apache.fineract.portfolio.savings.service.SavingsAccountWritePlatformService;
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -227,6 +230,10 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
     @Autowired
     private BitaCoraMasterRepository bitaCoraMasterRepository;
 
+    private final SavingsAccountWritePlatformService savingsAccountWritePlatformService;
+
+    private final SavingsAccountRepositoryWrapper savingsAccountRepositoryWrapper;
+
     @Autowired
     public LoanApplicationWritePlatformServiceJpaRepositoryImpl(final PlatformSecurityContext context, final FromJsonHelper fromJsonHelper,
             final LoanApplicationTransitionApiJsonValidator loanApplicationTransitionApiJsonValidator,
@@ -257,7 +264,8 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             final ClientCollateralManagementRepository clientCollateralManagementRepository,
             final CupoRepositoryWrapper cupoRepositoryWrapper, final LumaAccountingProcessorForLoan lumaAccountingProcessorForLoan,
             DisburseByChequesCommandFromApiJsonDeserializer disburseByChequesCommandFromApiJsonDeserializer,
-            ChequeBatchRepositoryWrapper chequeBatchRepositoryWrapper) {
+            ChequeBatchRepositoryWrapper chequeBatchRepositoryWrapper, final SavingsAccountWritePlatformService savingsAccountWritePlatformService,
+                                                                final SavingsAccountRepositoryWrapper savingsAccountRepositoryWrapper) {
         this.context = context;
         this.fromJsonHelper = fromJsonHelper;
         this.loanApplicationTransitionApiJsonValidator = loanApplicationTransitionApiJsonValidator;
@@ -306,6 +314,8 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
         this.codeValueRepository = codeValueRepository;
         this.disburseByChequesCommandFromApiJsonDeserializer = disburseByChequesCommandFromApiJsonDeserializer;
         this.chequeBatchRepositoryWrapper = chequeBatchRepositoryWrapper;
+        this.savingsAccountWritePlatformService = savingsAccountWritePlatformService;
+        this.savingsAccountRepositoryWrapper = savingsAccountRepositoryWrapper;
     }
 
     private LoanLifecycleStateMachine defaultLoanLifecycleStateMachine() {
@@ -1928,8 +1938,17 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             cheque.stampAudit(currentUserId, localDateTime);
             loanAccount.setDisbursedByChequeDate(localDate);
             loanAccount.setDisbursedByChequeAppUser(currentUser);
+
             this.loanRepositoryWrapper.saveAndFlush(loanAccount);
             this.chequeBatchRepositoryWrapper.updateCheque(cheque);
+
+
+            //TODO: FBR-47 Handle deposit to guarantee savings account here
+            BigDecimal depositAmount = cheque.getGuaranteeAmount().subtract(cheque.getRequiredGuaranteeAmount());
+            if(depositAmount != null && depositAmount.compareTo(BigDecimal.ZERO) < 0){
+                CommandProcessingResult depositCommandResult = this.savingsAccountWritePlatformService.depositAndHoldToClientGuaranteeAccount(depositAmount.abs(),
+                        loanAccount.getClientId(), localDate);
+            }
         }
         return new CommandProcessingResultBuilder().withCommandId(command.commandId()).build();
     }
