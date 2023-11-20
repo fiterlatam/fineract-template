@@ -6536,6 +6536,18 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                                     LoanCharge.percentageOf(interestForDisbursementDate.getAmount(), this.vatPercentage)));
                         }
                     }
+                } else if(this.actualDisbursementDate.isEqual(paymentDate) && this.interestChargedFromDate == null) {
+                    if (installment.getInstallmentNumber().doubleValue() == 1) {
+                        int totalPeriodDays = 1;
+                        Money interestForDisbursementDate = Money.of(getCurrency(), BigDecimal.valueOf(
+                                calculateInterestForDays(totalPeriodDays, installment.getInterestCharged(getCurrency()).getAmount(), 1)));
+                        interest = interest.plus(interestForDisbursementDate);
+
+                        if (this.isVatRequired) {
+                            vatOnInterest = vatOnInterest.plus(Money.of(getCurrency(),
+                                    LoanCharge.percentageOf(interestForDisbursementDate.getAmount(), this.vatPercentage)));
+                        }
+                    }
                 }
             }
 
@@ -6639,9 +6651,16 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             } else if (installment.getDueDate().isAfter(paymentDate) && installment.getFromDate().isBefore(paymentDate)) {
                 balances = fetchInterestFeeAndPenaltyTillDate(paymentDate, currency, installment);
                 break;
-            } else if (this.actualDisbursementDate.isEqual(paymentDate) && this.interestChargedFromDate.isAfter(actualDisbursementDate)
+            } else if (this.actualDisbursementDate.isEqual(paymentDate) && this.interestChargedFromDate != null && this.interestChargedFromDate.isAfter(actualDisbursementDate)
                     && installment.getInstallmentNumber().doubleValue() == 1) {
                 int totalPeriodDays = Math.toIntExact(ChronoUnit.DAYS.between(installment.getFromDate(), installment.getDueDate()));
+                BigDecimal interestForDisbursementDate = BigDecimal
+                        .valueOf(calculateInterestForDays(totalPeriodDays, installment.getInterestCharged(getCurrency()).getAmount(), 1));
+                balances[0] = Money.of(currency, interestForDisbursementDate);
+                break;
+            } else if (this.actualDisbursementDate.isEqual(paymentDate) && this.interestChargedFromDate == null
+                    && installment.getInstallmentNumber().doubleValue() == 1) {
+                int totalPeriodDays = 1;
                 BigDecimal interestForDisbursementDate = BigDecimal
                         .valueOf(calculateInterestForDays(totalPeriodDays, installment.getInterestCharged(getCurrency()).getAmount(), 1));
                 balances[0] = Money.of(currency, interestForDisbursementDate);
