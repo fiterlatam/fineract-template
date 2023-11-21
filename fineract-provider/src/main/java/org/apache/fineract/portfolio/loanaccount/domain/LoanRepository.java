@@ -21,6 +21,7 @@ package org.apache.fineract.portfolio.loanaccount.domain;
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -72,6 +73,7 @@ public interface LoanRepository extends JpaRepository<Loan, Long>, JpaSpecificat
     String FIND_NON_CLOSED_LOAN_THAT_BELONGS_TO_CLIENT = "select loan from Loan loan where loan.id = :loanId and loan.loanStatus = 300 and loan.client.id = :clientId";
 
     String FIND_BY_ACCOUNT_NUMBER = "select loan from Loan loan where loan.accountNumber = :accountNumber";
+    String FIND_BY_EXTERNAL_ID = "select loan from Loan loan where loan.externalId = :externalId";
 
     @Query(FIND_GROUP_LOANS_DISBURSED_AFTER)
     List<Loan> getGroupLoansDisbursedAfter(@Param("disbursementDate") LocalDate disbursementDate, @Param("groupId") Long groupId,
@@ -163,6 +165,9 @@ public interface LoanRepository extends JpaRepository<Loan, Long>, JpaSpecificat
 
     @Query(FIND_BY_ACCOUNT_NUMBER)
     Loan findLoanAccountByAccountNumber(@Param("accountNumber") String accountNumber);
+
+    @Query(FIND_BY_EXTERNAL_ID)
+    Optional<Loan> findLoanByExternalId(@Param("externalId") String externalId);
 
     @Query("select count(loan.id) from Loan loan where loan.client.id = :clientId and loan.loanProduct.id = :productId and loan.loanStatus = :loanStatus")
     Long getCountActiveLoansByProductAndClient(@Param("productId") Long productId, @Param("clientId") Long clientId,

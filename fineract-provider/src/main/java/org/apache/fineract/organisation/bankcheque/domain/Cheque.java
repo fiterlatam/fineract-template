@@ -212,6 +212,7 @@ public class Cheque extends AbstractAuditableCustom {
     public void setAmountInWords(String amountInWords) {
         this.amountInWords = amountInWords;
     }
+
     public void setIsReassigned(Boolean isReassigned) {
         this.isReassigned = isReassigned;
     }

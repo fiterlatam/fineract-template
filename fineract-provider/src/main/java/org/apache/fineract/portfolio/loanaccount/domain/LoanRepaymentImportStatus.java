@@ -16,18 +16,16 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.portfolio.loanaccount.service;
+package org.apache.fineract.portfolio.loanaccount.domain;
 
-import java.util.Map;
-import org.apache.fineract.infrastructure.jobs.exception.JobExecutionException;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 
-public interface LoanSchedularService {
+@AllArgsConstructor
+@Getter
+public enum LoanRepaymentImportStatus {
 
-    void applyChargeForOverdueLoans() throws JobExecutionException;
+    LOADED(1L), PROCESSED(2L), NOT_PROCESSED(3L), ERROR(4L);
 
-    void recalculateInterest() throws JobExecutionException;
-
-    void recalculateInterest(@SuppressWarnings("unused") Map<String, String> jobParameters);
-
-    void importLoanRepaymentBatches() throws JobExecutionException;
+    private final Long id;
 }
