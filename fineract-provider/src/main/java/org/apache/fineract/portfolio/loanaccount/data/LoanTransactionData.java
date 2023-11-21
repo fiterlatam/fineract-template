@@ -69,6 +69,7 @@ public class LoanTransactionData {
     private Collection<CodeValueData> writeOffReasonOptions = null;
 
     private Integer numberOfRepayments = 0;
+    private Integer installmentNumber;
 
     // import fields
     private transient Integer rowIndex;
@@ -192,13 +193,16 @@ public class LoanTransactionData {
 
     public static LoanTransactionData templateOnTop(final LoanTransactionData loanTransactionData,
             final Collection<PaymentTypeData> paymentTypeOptions) {
-        return new LoanTransactionData(loanTransactionData.id, loanTransactionData.officeId, loanTransactionData.officeName,
-                loanTransactionData.type, loanTransactionData.paymentDetailData, loanTransactionData.currency, loanTransactionData.date,
-                loanTransactionData.amount, loanTransactionData.netDisbursalAmount, loanTransactionData.principalPortion,
-                loanTransactionData.interestPortion, loanTransactionData.feeChargesPortion, loanTransactionData.penaltyChargesPortion,
-                loanTransactionData.overpaymentPortion, loanTransactionData.unrecognizedIncomePortion, paymentTypeOptions,
-                loanTransactionData.externalId, loanTransactionData.transfer, loanTransactionData.fixedEmiAmount,
-                loanTransactionData.outstandingLoanBalance, loanTransactionData.manuallyReversed);
+        final LoanTransactionData loanTransactionTemplate = new LoanTransactionData(loanTransactionData.id, loanTransactionData.officeId,
+                loanTransactionData.officeName, loanTransactionData.type, loanTransactionData.paymentDetailData,
+                loanTransactionData.currency, loanTransactionData.date, loanTransactionData.amount, loanTransactionData.netDisbursalAmount,
+                loanTransactionData.principalPortion, loanTransactionData.interestPortion, loanTransactionData.feeChargesPortion,
+                loanTransactionData.penaltyChargesPortion, loanTransactionData.overpaymentPortion,
+                loanTransactionData.unrecognizedIncomePortion, paymentTypeOptions, loanTransactionData.externalId,
+                loanTransactionData.transfer, loanTransactionData.fixedEmiAmount, loanTransactionData.outstandingLoanBalance,
+                loanTransactionData.manuallyReversed);
+        loanTransactionTemplate.setInstallmentNumber(loanTransactionData.getInstallmentNumber());
+        return loanTransactionTemplate;
 
     }
 
@@ -370,5 +374,21 @@ public class LoanTransactionData {
 
     public void setLoanChargePaidByList(Collection<LoanChargePaidByData> loanChargePaidByList) {
         this.loanChargePaidByList = loanChargePaidByList;
+    }
+
+    public Integer getInstallmentNumber() {
+        return installmentNumber;
+    }
+
+    public void setInstallmentNumber(Integer installmentNumber) {
+        this.installmentNumber = installmentNumber;
+    }
+
+    public Collection<PaymentTypeData> getPaymentTypeOptions() {
+        return paymentTypeOptions;
+    }
+
+    public BigDecimal getOutstandingLoanBalance() {
+        return outstandingLoanBalance;
     }
 }
