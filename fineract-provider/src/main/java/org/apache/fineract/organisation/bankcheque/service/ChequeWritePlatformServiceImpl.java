@@ -67,7 +67,6 @@ import org.apache.fineract.organisation.bankcheque.serialization.VoidChequeComma
 import org.apache.fineract.organisation.monetary.domain.NumberToWordsConverter;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanStatus;
 import org.apache.fineract.portfolio.loanaccount.service.LoanWritePlatformService;
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -203,7 +202,6 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
                 final Long loanId = chequeData.getLoanAccId();
                 final Loan loan = this.loanRepositoryWrapper.findOneWithNotFoundDetection(loanId);
                 loan.setCheque(newCheque);
-                loan.setLoanStatus(LoanStatus.DISBURSE_AUTHORIZATION_PENDING.getValue());
                 this.loanRepositoryWrapper.saveAndFlush(loan);
             }
         }
@@ -377,7 +375,7 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
                 if (loan.getCheque() != null && (loan.getCheque().getId() != null && !loan.getCheque().getId().equals(cheque.getId()))) {
                     throw new BankChequeException("print.cheques", "Loan: " + loan.getAccountNumber() + " has a cheque assigned already");
                 }
-                if (!loan.isPendingDisbursementAuthorization()) {
+                if (!loan.isPendingDisbursementAuthorization() && !chequeData.getReassingedCheque()) {
                     throw new BankChequeException(
                             "print.cheques.loan:" + loan.getAccountNumber() + " is.not.in.disbursement.authorization.status");
                 }
