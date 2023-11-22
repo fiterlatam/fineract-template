@@ -22,6 +22,7 @@ import org.apache.fineract.commands.domain.CommandWrapper;
 import org.apache.fineract.infrastructure.accountnumberformat.service.AccountNumberFormatConstants;
 import org.apache.fineract.organisation.bankcheque.api.BankChequeApiConstants;
 import org.apache.fineract.portfolio.client.api.ClientApiConstants;
+import org.apache.fineract.portfolio.loanaccount.api.LoanApiConstants;
 import org.apache.fineract.portfolio.paymenttype.api.PaymentTypeApiResourceConstants;
 import org.apache.fineract.portfolio.savings.DepositsApiConstants;
 import org.apache.fineract.portfolio.self.pockets.api.PocketApiConstants;
@@ -325,6 +326,15 @@ public class CommandWrapperBuilder {
         this.entityId = null;
         this.loanId = loanId;
         this.href = "/loans/" + loanId + "/guarantors";
+        return this;
+    }
+
+    public CommandWrapperBuilder editLoanFund(final Long loanId) {
+        this.actionName = LoanApiConstants.LOAN_ACTION_UPDATE_FUND;
+        this.entityName = LoanApiConstants.LOAN_RESOURCE_NAME;
+        this.entityId = loanId;
+        this.loanId = loanId;
+        this.href = "/loans/" + loanId + "?command=editloanfund";
         return this;
     }
 
