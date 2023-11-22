@@ -1506,7 +1506,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
 
         this.context.authenticatedUser();
 
-        if (!"group".equals(templateType)) {
+        if (!"individual".equals(templateType) && clientId != null) {
             ClientData clientData = this.clientReadPlatformService.retrieveOne(clientId);
             String blacklistString = "select count(*) from m_client_blacklist where dpi=? and status=?";
             String dpiNumber = clientData.getDpiNumber();

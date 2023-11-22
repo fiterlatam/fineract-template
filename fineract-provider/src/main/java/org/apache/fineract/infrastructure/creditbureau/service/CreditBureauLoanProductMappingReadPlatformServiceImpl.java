@@ -21,12 +21,14 @@ package org.apache.fineract.infrastructure.creditbureau.service;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collection;
+import java.util.List;
 import org.apache.fineract.infrastructure.creditbureau.data.CreditBureauLoanProductMappingData;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 
 @Service
 public class CreditBureauLoanProductMappingReadPlatformServiceImpl implements CreditBureauLoanProductMappingReadPlatformService {
@@ -100,11 +102,15 @@ public class CreditBureauLoanProductMappingReadPlatformServiceImpl implements Cr
     @Override
     public CreditBureauLoanProductMappingData readMappingByLoanId(long loanProductId) {
         this.context.authenticatedUser();
-
         final CreditBureauLoanProductMapper rm = new CreditBureauLoanProductMapper();
         final String sql = "select " + rm.schema() + " and cblp.loan_product_id=?";
-
-        return this.jdbcTemplate.queryForObject(sql, rm, new Object[] { loanProductId }); // NOSONAR
+        List<CreditBureauLoanProductMappingData> creditBureauLoanProductMappingDataList = this.jdbcTemplate.query(sql, rm,
+                new Object[] { loanProductId }); // NOSONAR
+        CreditBureauLoanProductMappingData creditBureauLoanProductMappingData = null;
+        if (!CollectionUtils.isEmpty(creditBureauLoanProductMappingDataList)) {
+            creditBureauLoanProductMappingData = creditBureauLoanProductMappingDataList.get(0);
+        }
+        return creditBureauLoanProductMappingData;
     }
 
     @Override
