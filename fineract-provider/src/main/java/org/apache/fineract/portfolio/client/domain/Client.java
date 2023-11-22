@@ -380,7 +380,7 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
         this.clientType = clientType;
         this.clientClassification = clientClassification;
 
-        this.isVatRequired = isVatRequired;
+        this.isVatRequired = isVatRequired == null ? false : isVatRequired;
         this.vatRate = vatRate;
 
         this.setLegalForm(legalForm);
