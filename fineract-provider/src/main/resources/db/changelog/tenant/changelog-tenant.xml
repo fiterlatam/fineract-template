@@ -124,4 +124,5 @@
     <include file="parts/0105_FBR_395_alter_bank_table.xml" relativeToChangelogFile="true"/>
     <include file="parts/0106_Add_Prequalification_Permissions.xml" relativeToChangelogFile="true"/>
     <include file="parts/0107_FBR_45_loan_repayment_batches.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0108_FBR_412_add_reasign_status_to_cheques.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

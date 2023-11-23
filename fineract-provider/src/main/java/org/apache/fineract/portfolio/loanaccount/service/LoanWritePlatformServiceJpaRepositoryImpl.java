@@ -868,7 +868,6 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 cheque.setVoidedBy(currentUser);
                 cheque.setVoidedDate(localDate);
                 this.chequeJpaRepository.saveAndFlush(cheque);
-                loan.setCheque(null);
             }
             saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
             this.accountTransfersWritePlatformService.reverseAllTransactions(loanId, PortfolioAccountType.LOAN);
