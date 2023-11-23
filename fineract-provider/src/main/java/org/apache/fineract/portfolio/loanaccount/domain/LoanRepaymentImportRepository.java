@@ -16,18 +16,10 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.portfolio.loanaccount.service;
+package org.apache.fineract.portfolio.loanaccount.domain;
 
-import java.util.Map;
-import org.apache.fineract.infrastructure.jobs.exception.JobExecutionException;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
-public interface LoanSchedularService {
-
-    void applyChargeForOverdueLoans() throws JobExecutionException;
-
-    void recalculateInterest() throws JobExecutionException;
-
-    void recalculateInterest(@SuppressWarnings("unused") Map<String, String> jobParameters);
-
-    void importLoanRepaymentBatches() throws JobExecutionException;
-}
+public interface LoanRepaymentImportRepository
+        extends JpaRepository<LoanRepaymentImport, Long>, JpaSpecificationExecutor<LoanRepaymentImport> {}

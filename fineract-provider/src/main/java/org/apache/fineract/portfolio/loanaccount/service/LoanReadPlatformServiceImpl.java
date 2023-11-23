@@ -2402,6 +2402,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                     "ls.penalty_charges_amount - coalesce(ls.penalty_charges_completed_derived, 0) - coalesce(ls.penalty_charges_writtenoff_derived, 0) - coalesce(ls.penalty_charges_waived_derived, 0) as penaltyDue, ");
             sqlBuilder.append(
                     "l.currency_code as currencyCode, l.currency_digits as currencyDigits, l.currency_multiplesof as inMultiplesOf, l.net_disbursal_amount as netDisbursalAmount, ");
+            sqlBuilder.append("ls.installment AS installmentNumber, l.total_outstanding_derived AS totalOutstandingBalance, ");
             sqlBuilder.append("rc." + sqlGenerator.escape("name")
                     + " as currencyName, rc.display_symbol as currencyDisplaySymbol, rc.internationalized_name_code as currencyNameCode, rc.int_code AS intCode ");
             sqlBuilder.append("FROM m_loan l ");
@@ -2424,7 +2425,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
             final BigDecimal feeDue = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "feeDue");
             final BigDecimal penaltyDue = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "penaltyDue");
             final BigDecimal totalDue = principalPortion.add(interestDue).add(feeDue).add(penaltyDue);
-            final BigDecimal outstandingLoanBalance = null;
+            final BigDecimal outstandingLoanBalance = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "totalOutstandingBalance");
+            final Integer installmentNumber = JdbcSupport.getInteger(rs, "installmentNumber");
             final BigDecimal unrecognizedIncomePortion = null;
             final BigDecimal overPaymentPortion = null;
             final BigDecimal netDisbursalAmount = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "netDisbursalAmount");
@@ -2436,9 +2438,11 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
             final String externalId = null;
             final AccountTransferData transfer = null;
             final BigDecimal fixedEmiAmount = null;
-            return new LoanTransactionData(id, officeId, officeName, transactionType, paymentDetailData, currencyData, date, totalDue,
-                    netDisbursalAmount, principalPortion, interestDue, feeDue, penaltyDue, overPaymentPortion, externalId, transfer,
-                    fixedEmiAmount, outstandingLoanBalance, unrecognizedIncomePortion, manuallyReversed);
+            LoanTransactionData loanTransactionData = new LoanTransactionData(id, officeId, officeName, transactionType, paymentDetailData,
+                    currencyData, date, totalDue, netDisbursalAmount, principalPortion, interestDue, feeDue, penaltyDue, overPaymentPortion,
+                    externalId, transfer, fixedEmiAmount, outstandingLoanBalance, unrecognizedIncomePortion, manuallyReversed);
+            loanTransactionData.setInstallmentNumber(installmentNumber);
+            return loanTransactionData;
         }
 
     }

@@ -16,18 +16,15 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.portfolio.loanaccount.service;
+package org.apache.fineract.organisation.prequalification.exception;
 
-import java.util.Map;
-import org.apache.fineract.infrastructure.jobs.exception.JobExecutionException;
+import org.apache.fineract.infrastructure.core.exception.AbstractPlatformDomainRuleException;
 
-public interface LoanSchedularService {
+public class PrequalificationNotMappedException extends AbstractPlatformDomainRuleException {
 
-    void applyChargeForOverdueLoans() throws JobExecutionException;
+    public PrequalificationNotMappedException(final String prequalificationId) {
+        super("error.msg.prequalification.not.mapped.exception",
+                "The Prequalification `" + prequalificationId + "` Should be mapped to a group before validating hard policies. ", prequalificationId);
+    }
 
-    void recalculateInterest() throws JobExecutionException;
-
-    void recalculateInterest(@SuppressWarnings("unused") Map<String, String> jobParameters);
-
-    void importLoanRepaymentBatches() throws JobExecutionException;
 }

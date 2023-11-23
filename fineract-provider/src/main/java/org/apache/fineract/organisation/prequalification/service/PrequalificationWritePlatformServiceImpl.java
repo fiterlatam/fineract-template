@@ -902,7 +902,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         } else if (action.equalsIgnoreCase("rejectanalysis")) {
             status = PrequalificationStatus.REJECTED;
         } else if (action.equalsIgnoreCase("approveanalysis")) {
-            status = PrequalificationStatus.APPROVED;
+            status = PrequalificationStatus.COMPLETED;
         }
         return status;
     }

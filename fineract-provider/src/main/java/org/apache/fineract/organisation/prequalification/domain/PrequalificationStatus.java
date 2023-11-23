@@ -26,7 +26,6 @@ import org.springframework.util.StringUtils;
 public enum PrequalificationStatus {
 
     PENDING(100, "prequalification.status.pending"), //
-    APPROVED(200, "prequalification.status.approved"), //
     REJECTED(300, "prequalification.status.rejected"), //
     BLACKLIST_CHECKED(400, "prequalification.status.blacklist.checked"), //
     BLACKLIST_REJECTED(500, "prequalification.status.blacklist.rejected"), BURO_CHECKED(600,
@@ -60,10 +59,7 @@ public enum PrequalificationStatus {
         switch (statusValue) {
             case 100:
                 enumeration = PrequalificationStatus.PENDING;
-                break;
-            case 200:
-                enumeration = PrequalificationStatus.APPROVED;
-                break;
+            break;
             case 300:
                 enumeration = PrequalificationStatus.REJECTED;
             break;
@@ -134,8 +130,6 @@ public enum PrequalificationStatus {
 
         if (status.equalsIgnoreCase(PrequalificationStatus.PENDING.toString())) {
             clientStatus = PrequalificationStatus.PENDING;
-        } else if (status.equalsIgnoreCase(PrequalificationStatus.APPROVED.toString())) {
-            clientStatus = PrequalificationStatus.APPROVED;
         } else if (status.equalsIgnoreCase(PrequalificationStatus.REJECTED.toString())) {
             clientStatus = PrequalificationStatus.REJECTED;
         } else if (status.equalsIgnoreCase(PrequalificationStatus.BLACKLIST_CHECKED.toString())) {
@@ -192,10 +186,6 @@ public enum PrequalificationStatus {
 
     public boolean isPending() {
         return this.value.equals(PrequalificationStatus.PENDING.getValue());
-    }
-
-    public boolean isApproved() {
-        return this.value.equals(PrequalificationStatus.APPROVED.getValue());
     }
 
     public boolean isRejected() {

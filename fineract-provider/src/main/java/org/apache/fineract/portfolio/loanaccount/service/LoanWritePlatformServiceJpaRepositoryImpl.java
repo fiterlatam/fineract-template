@@ -70,7 +70,6 @@ import org.apache.fineract.organisation.monetary.domain.ApplicationCurrency;
 import org.apache.fineract.organisation.monetary.domain.ApplicationCurrencyRepositoryWrapper;
 import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
 import org.apache.fineract.organisation.monetary.domain.Money;
-import org.apache.fineract.organisation.monetary.domain.MoneyHelper;
 import org.apache.fineract.organisation.office.domain.Office;
 import org.apache.fineract.organisation.staff.domain.Staff;
 import org.apache.fineract.organisation.teller.data.CashierTransactionDataValidator;
@@ -160,7 +159,6 @@ import org.apache.fineract.portfolio.loanaccount.data.HolidayDetailDTO;
 import org.apache.fineract.portfolio.loanaccount.data.LoanChargeData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanChargePaidByData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanInstallmentChargeData;
-import org.apache.fineract.portfolio.loanaccount.data.LoanTransactionData;
 import org.apache.fineract.portfolio.loanaccount.data.ScheduleGeneratorDTO;
 import org.apache.fineract.portfolio.loanaccount.domain.ChangedTransactionDetail;
 import org.apache.fineract.portfolio.loanaccount.domain.DefaultLoanLifecycleStateMachine;
@@ -948,21 +946,6 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             changes.put("note", noteText);
         }
         final Loan loan = this.loanAssembler.assembleFrom(loanId);
-        final boolean isBatchPayment = command.booleanPrimitiveValueOfParameterNamed("isBatchPayment");
-        final BigDecimal paymentToleranceLimit = loan.getLoanProduct().getPaymentToleranceLimit();
-        if (isBatchPayment && paymentToleranceLimit.compareTo(BigDecimal.ZERO) > 0) {
-            final LoanTransactionData transactionData = this.loanReadPlatformService.retrieveLoanTransactionTemplate(loanId);
-            final BigDecimal scheduledAmount = transactionData.getAmount();
-            final BigDecimal limitPortion = scheduledAmount.multiply(paymentToleranceLimit).divide(BigDecimal.valueOf(100L),
-                    MoneyHelper.getRoundingMode());
-            final BigDecimal upperLimitAmount = scheduledAmount.add(limitPortion);
-            final BigDecimal lowerLimitAmount = scheduledAmount.subtract(limitPortion);
-            if (transactionAmount.compareTo(upperLimitAmount) > 0 || transactionAmount.compareTo(lowerLimitAmount) < 0) {
-                throw new PlatformServiceUnavailableException("error.msg.the.provided.transaction.amount.is.outside.tolerance.limits",
-                        transactionAmount + " transaction amount is outside the set tolerance limit on product");
-            }
-        }
-
         final PaymentDetail paymentDetail = this.paymentDetailWritePlatformService.createAndPersistPaymentDetail(command, changes);
         final Boolean isHolidayValidationDone = false;
         final HolidayDetailDTO holidayDetailDto = null;

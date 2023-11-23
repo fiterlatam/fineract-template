@@ -184,4 +184,39 @@
                 ]]>
         </sql>
     </changeSet>
+
+    <changeSet author="fineract" id="7">
+        <insert tableName="job">
+            <column name="name" value="Import Batches of Loan Repayments"/>
+            <column name="display_name" value="Import Batches of Loan Repayments"/>
+            <column name="cron_expression" value="0 0 * ? * * *"/>
+            <column name="create_time" valueDate="${current_datetime}"/>
+            <column name="task_priority" valueNumeric="5"/>
+            <column name="group_name"/>
+            <column name="previous_run_start_time"/>
+            <column name="job_key" value="Import Batches of Loan RepaymentsJobDetail1 _ DEFAULT"/>
+            <column name="initializing_errorlog"/>
+            <column name="is_active" valueBoolean="true"/>
+            <column name="currently_running" valueBoolean="false"/>
+            <column name="updates_allowed" valueBoolean="true"/>
+            <column name="scheduler_group" valueNumeric="3"/>
+            <column name="is_misfired" valueBoolean="false"/>
+            <column name="node_id" valueNumeric="1"/>
+            <column name="is_mismatched_job" valueBoolean="false"/>
+        </insert>
+    </changeSet>
+
+    <changeSet author="fineract" id="8">
+        <preConditions onFail="MARK_RAN">
+            <tableExists tableName="job_run_history"/>
+        </preConditions>
+        <modifyDataType tableName="job_run_history" columnName="error_log" newDataType="LONGTEXT"/>
+    </changeSet>
+
+    <changeSet author="fineract" id="9">
+        <preConditions onFail="MARK_RAN">
+            <tableExists tableName="job_run_history"/>
+        </preConditions>
+        <modifyDataType tableName="job_run_history" columnName="error_message" newDataType="LONGTEXT"/>
+    </changeSet>
 </databaseChangeLog>
