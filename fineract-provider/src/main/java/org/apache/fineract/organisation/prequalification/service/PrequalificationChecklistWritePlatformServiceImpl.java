@@ -90,7 +90,7 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
                 .findOneWithNotFoundDetection(prequalificationId);
         String blistSql = "select count(*) from m_group where prequalification_id=?";
         Long attachedGroup = this.jdbcTemplate.queryForObject(blistSql, Long.class, prequalificationId);
-        if (attachedGroup > 0 && prequalificationGroup.getPrequalificationType().equals(PrequalificationType.GROUP.getValue()))
+        if (attachedGroup <= 0 && prequalificationGroup.getPrequalificationType().equals(PrequalificationType.GROUP.getValue()))
             throw new PrequalificationNotMappedException(prequalificationGroup.getPrequalificationNumber());
 
         List<ClientData> clientDatas = this.jdbcTemplate.query(clientDataMapper.schema(), clientDataMapper, prequalificationId);
