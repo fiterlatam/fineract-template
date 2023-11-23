@@ -215,7 +215,7 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
         oldCheque.stampAudit(currentUserId, localDateTime);
         oldCheque.setVoidedDate(localDate);
         oldCheque.setVoidedBy(currentUser);
-        newCheque.setStatus(BankChequeStatus.PENDING_ISSUANCE.getValue());
+        newCheque.setStatus(BankChequeStatus.READY_TO_BE_PRINTED.getValue());
         newCheque.setDescription(newChequeDescription);
         newCheque.stampAudit(currentUserId, localDateTime);
         newCheque.setPrintedDate(localDate);
@@ -227,6 +227,11 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
         newCheque.setGuaranteeId(oldCheque.getGuaranteeId());
         newCheque.setGuaranteeName(oldCheque.getGuaranteeName());
         newCheque.setAmountInWords(oldCheque.getAmountInWords());
+        newCheque.setIssuanceApprovedOnDate(oldCheque.getIssuanceApprovedOnDate());
+        newCheque.setIssuanceApprovedBy(oldCheque.getIssuanceApprovedBy());
+        newCheque.setIssuanceAuthorizeBy(oldCheque.getIssuanceAuthorizeBy());
+        newCheque.setIssuanceAuthorizeOnDate(oldCheque.getIssuanceAuthorizeOnDate());
+        newCheque.setIsReassigned(true);
         this.chequeJpaRepository.saveAll(List.of(oldCheque, newCheque));
         return new CommandProcessingResultBuilder().withCommandId(command.commandId())
                 .withResourceIdAsString(reassignChequeCommand.getOldChequeId().toString())
@@ -367,17 +372,20 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
             final Long loanAccId = chequeData.getLoanAccId();
             if (loanAccId != null && chequeData.getLoanAmount() != null) {
                 final Loan loan = this.loanRepositoryWrapper.findOneWithNotFoundDetection(loanAccId);
-                if (loan.getCheque() != null) {
+                if (loan.getCheque() != null && (loan.getCheque().getId() != null && !loan.getCheque().getId().equals(cheque.getId()))) {
                     throw new BankChequeException("print.cheques", "Loan: " + loan.getAccountNumber() + " has a cheque assigned already");
                 }
-                if (!loan.isPendingDisbursementAuthorization()) {
-                    throw new BankChequeException("print.cheques",
-                            "Loan: " + loan.getAccountNumber() + " is.not.in.disbursement.authorization.status");
+                if (!loan.isPendingDisbursementAuthorization() && !chequeData.getReassingedCheque()) {
+                    throw new BankChequeException(
+                            "print.cheques.loan:" + loan.getAccountNumber() + " is.not.in.disbursement.authorization.status");
                 }
-                CommandProcessingResult result = this.loanWritePlatformService.disburseLoan(loanAccId, command, false);
-                if (result.getLoanId() == null) {
-                    throw new BankChequeException("print.cheques", "failed.to.disburse.loan " + loanAccId);
+                if (!chequeData.getReassingedCheque()) {
+                    CommandProcessingResult result = this.loanWritePlatformService.disburseLoan(loanAccId, command, false);
+                    if (result.getLoanId() == null) {
+                        throw new BankChequeException("print.cheques", "failed.to.disburse.loan " + loanAccId);
+                    }
                 }
+
                 chequeAmount = chequeData.getLoanAmount();
             }
             final String amountInWords = NumberToWordsConverter.convertToWords(chequeAmount.intValue(),

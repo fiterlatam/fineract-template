@@ -16,17 +16,16 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.organisation.bankcheque.exception;
+package org.apache.fineract.portfolio.loanaccount.domain;
 
-import org.apache.fineract.infrastructure.core.exception.AbstractPlatformDomainRuleException;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 
-public class BankChequeException extends AbstractPlatformDomainRuleException {
+@AllArgsConstructor
+@Getter
+public enum LoanRepaymentImportStatus {
 
-    public BankChequeException(String message) {
-        super("error.msg.cheque." + message, message);
-    }
+    LOADED(1L), PROCESSED(2L), NOT_PROCESSED(3L), ERROR(4L);
 
-    public BankChequeException(String parameterName, String message) {
-        super("error.msg.cheque." + parameterName + message, message);
-    }
+    private final Long id;
 }

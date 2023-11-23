@@ -40,8 +40,6 @@ public final class PreQualificationsEnumerations {
         return switch (status) {
             case PENDING -> new EnumOptionData(PrequalificationStatus.PENDING.getValue().longValue(),
                     PrequalificationStatus.PENDING.getCode(), "PENDING");
-            case APPROVED -> new EnumOptionData(PrequalificationStatus.APPROVED.getValue().longValue(),
-                    PrequalificationStatus.APPROVED.getCode(), "APPROVED");
             case REJECTED -> new EnumOptionData(PrequalificationStatus.REJECTED.getValue().longValue(),
                     PrequalificationStatus.REJECTED.getCode(), "REJECTED");
             case BLACKLIST_CHECKED -> new EnumOptionData(PrequalificationStatus.BLACKLIST_CHECKED.getValue().longValue(),

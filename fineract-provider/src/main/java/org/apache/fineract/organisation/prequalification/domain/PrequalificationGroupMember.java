@@ -97,6 +97,7 @@ public class PrequalificationGroupMember extends AbstractPersistableCustom {
         this.prequalificationGroup = group;
         this.workWithPuente = puente;
         this.requestedAmount = requestedAmount;
+        this.approvedAmount = requestedAmount;
         this.addedBy = appUser;
         this.status = status;
         this.groupPresident = groupPresident;
@@ -161,6 +162,12 @@ public class PrequalificationGroupMember extends AbstractPersistableCustom {
             final BigDecimal newValue = command
                     .bigDecimalValueOfParameterNamed(PrequalificatoinApiConstants.memberRequestedAmountParamName);
             actualChanges.put(PrequalificatoinApiConstants.memberRequestedAmountParamName, newValue);
+        }
+
+        if (command.isChangeInBigDecimalParameterNamed(PrequalificatoinApiConstants.approvedAmountParamName, this.approvedAmount)) {
+            final BigDecimal newValue = command
+                    .bigDecimalValueOfParameterNamed(PrequalificatoinApiConstants.approvedAmountParamName);
+            actualChanges.put(PrequalificatoinApiConstants.approvedAmountParamName, newValue);
         }
 
         if (command.isChangeInStringParameterNamed(PrequalificatoinApiConstants.memberWorkWithPuenteParamName, this.workWithPuente)) {

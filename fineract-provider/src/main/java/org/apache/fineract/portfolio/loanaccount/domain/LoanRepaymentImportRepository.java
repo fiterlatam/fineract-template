@@ -16,17 +16,10 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.organisation.bankcheque.exception;
+package org.apache.fineract.portfolio.loanaccount.domain;
 
-import org.apache.fineract.infrastructure.core.exception.AbstractPlatformDomainRuleException;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
-public class BankChequeException extends AbstractPlatformDomainRuleException {
-
-    public BankChequeException(String message) {
-        super("error.msg.cheque." + message, message);
-    }
-
-    public BankChequeException(String parameterName, String message) {
-        super("error.msg.cheque." + parameterName + message, message);
-    }
-}
+public interface LoanRepaymentImportRepository
+        extends JpaRepository<LoanRepaymentImport, Long>, JpaSpecificationExecutor<LoanRepaymentImport> {}

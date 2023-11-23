@@ -16,17 +16,15 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.organisation.bankcheque.exception;
+package org.apache.fineract.organisation.prequalification.exception;
 
 import org.apache.fineract.infrastructure.core.exception.AbstractPlatformDomainRuleException;
 
-public class BankChequeException extends AbstractPlatformDomainRuleException {
+public class PrequalificationNotMappedException extends AbstractPlatformDomainRuleException {
 
-    public BankChequeException(String message) {
-        super("error.msg.cheque." + message, message);
+    public PrequalificationNotMappedException(final String prequalificationId) {
+        super("error.msg.prequalification.not.mapped.exception",
+                "The Prequalification `" + prequalificationId + "` Should be mapped to a group before validating hard policies. ", prequalificationId);
     }
 
-    public BankChequeException(String parameterName, String message) {
-        super("error.msg.cheque." + parameterName + message, message);
-    }
 }

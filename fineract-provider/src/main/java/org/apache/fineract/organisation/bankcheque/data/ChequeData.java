@@ -60,4 +60,5 @@ public class ChequeData {
     private String caseId;
     private Long guaranteeId;
     private BigDecimal chequeAmount;
+    private Boolean reassingedCheque;
 }
