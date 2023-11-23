@@ -684,9 +684,9 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
 
             CommandProcessingResult result = openSavingsAccount(client, fmt);
 
-            // FBR-402 create savings account for gurantees
+            // FBR-402 create savings account for gurantee
             SavingsProduct product = this.savingsProductRepository.findByName(GURANTEE_PRODUCT_NAME);
-            if (product != null) {
+            if (product != null && client.savingsAccountId() == null) {
                 client.updateSavingsProduct(product.getId());
                 CommandProcessingResult accountResult = openSavingsAccount(client, fmt);
                 if (accountResult != null && accountResult.getSavingsId() != null) {
