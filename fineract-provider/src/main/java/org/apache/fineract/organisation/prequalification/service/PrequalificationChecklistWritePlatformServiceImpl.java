@@ -57,6 +57,7 @@ import org.apache.fineract.organisation.prequalification.domain.Prequalification
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationType;
 import org.apache.fineract.organisation.prequalification.domain.ValidationChecklistResult;
 import org.apache.fineract.organisation.prequalification.domain.ValidationChecklistResultRepository;
+import org.apache.fineract.organisation.prequalification.exception.PrequalificationNotMappedException;
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -87,6 +88,11 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
         AppUser appUser = this.context.authenticatedUser();
         PrequalificationGroup prequalificationGroup = this.prequalificationGroupRepositoryWrapper
                 .findOneWithNotFoundDetection(prequalificationId);
+        String blistSql = "select count(*) from m_group where prequalification_id=?";
+        Long attachedGroup = this.jdbcTemplate.queryForObject(blistSql, Long.class, prequalificationId);
+        if (attachedGroup > 0 && prequalificationGroup.getPrequalificationType().equals(PrequalificationType.GROUP.getValue()))
+            throw new PrequalificationNotMappedException(prequalificationGroup.getPrequalificationNumber());
+
         List<ClientData> clientDatas = this.jdbcTemplate.query(clientDataMapper.schema(), clientDataMapper, prequalificationId);
         final Long productId = prequalificationGroup.getLoanProduct().getId();
         final Integer noOfMembers = prequalificationGroup.getMembers().size();
