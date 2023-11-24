@@ -223,6 +223,9 @@ public final class GroupingTypesDataValidator {
         final Long centerId = this.fromApiJsonHelper.extractLongNamed(GroupingTypesApiConstants.centerIdParamName, element);
         baseDataValidator.reset().parameter(GroupingTypesApiConstants.centerIdParamName).value(centerId).notNull().integerGreaterThanZero();
 
+        final Long prequalificationId = this.fromApiJsonHelper.extractLongNamed(GroupingTypesApiConstants.prequalificationId, element);
+        baseDataValidator.reset().parameter(GroupingTypesApiConstants.prequalificationId).value(prequalificationId).notNull();
+
         // office is inherited from center
         final Long officeId = this.fromApiJsonHelper.extractLongNamed(GroupingTypesApiConstants.officeIdParamName, element);
         baseDataValidator.reset().parameter(GroupingTypesApiConstants.officeIdParamName).value(officeId).notNull().integerGreaterThanZero();
