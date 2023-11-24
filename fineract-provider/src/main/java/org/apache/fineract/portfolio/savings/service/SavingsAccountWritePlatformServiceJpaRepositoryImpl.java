@@ -18,6 +18,7 @@
  */
 package org.apache.fineract.portfolio.savings.service;
 
+import static org.apache.fineract.portfolio.savings.SavingsApiConstants.GURANTEE_PRODUCT_NAME;
 import static org.apache.fineract.portfolio.savings.SavingsApiConstants.SAVINGS_ACCOUNT_CHARGE_RESOURCE_NAME;
 import static org.apache.fineract.portfolio.savings.SavingsApiConstants.SAVINGS_ACCOUNT_RESOURCE_NAME;
 import static org.apache.fineract.portfolio.savings.SavingsApiConstants.amountParamName;
@@ -44,8 +45,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.accounting.journalentry.domain.BitaCoraMasterRepository;
 import org.apache.fineract.accounting.journalentry.service.JournalEntryWritePlatformService;
@@ -2073,4 +2076,93 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
             throw new PlatformDataIntegrityException("Reason For Block is Mandatory", "error.msg.reason.for.block.mandatory");
         }
     }
+
+    @Override
+    public CommandProcessingResult depositAndHoldToClientGuaranteeAccount(BigDecimal depositAmount, Long clientId, LocalDate transactionDate) {
+        CommandProcessingResult result = null;
+        List<SavingsAccount> savingsAccounts =  this.savingAccountRepositoryWrapper.findSavingAccountByClientId(clientId);
+        Optional<SavingsAccount> guaranteeAccount = savingsAccounts.stream().filter(account -> account.savingsProduct().getName().equals(GURANTEE_PRODUCT_NAME)).findFirst();
+
+        boolean isGsim = false;
+
+        final boolean backdatedTxnsAllowedTill = this.savingAccountAssembler.getPivotConfigStatus();
+
+        if(!guaranteeAccount.isEmpty()){
+            SavingsAccount savingsAccount = guaranteeAccount.get();
+
+            final SavingsAccount account = this.savingAccountAssembler.assembleFrom(savingsAccount.getId(), backdatedTxnsAllowedTill);
+
+            if (account.getGsim() != null) {
+                isGsim = true;
+                LOG.info("is gsim");
+            }
+            checkClientOrGroupActive(account);
+
+            this.savingsAccountTransactionDataValidator.validateTransactionWithPivotDate(transactionDate, account);
+
+            final Map<String, Object> changes = new LinkedHashMap<>();
+            final PaymentDetail paymentDetail = null;//this.paymentDetailWritePlatformService.createAndPersistPaymentDetail(command, changes);
+            boolean isAccountTransfer = false;
+            boolean isRegularTransaction = true;
+            final SavingsAccountTransaction deposit = this.savingsAccountDomainService.handleDeposit(account, DateUtils.DEFAULT_DATE_FORMATER, transactionDate,
+                    depositAmount, paymentDetail, isAccountTransfer, isRegularTransaction, backdatedTxnsAllowedTill);
+
+            if (isGsim && (deposit.getId() != null)) {
+
+                LOG.debug("Deposit account has been created: {} ", deposit);
+
+                GroupSavingsIndividualMonitoring gsim = gsimRepository.findById(account.getGsim().getId()).orElseThrow();
+                LOG.info("parent deposit : {} ", gsim.getParentDeposit());
+                LOG.info("child account : {} ", savingsAccount.getId());
+                BigDecimal currentBalance = gsim.getParentDeposit();
+                BigDecimal newBalance = currentBalance.add(depositAmount);
+                gsim.setParentDeposit(newBalance);
+                gsimRepository.save(gsim);
+                LOG.info("balance after making deposit : {} ",
+                        gsimRepository.findById(account.getGsim().getId()).orElseThrow().getParentDeposit());
+
+            }
+
+            this.savingAccountRepositoryWrapper.saveAndFlush(account);
+
+            // Hold Amount
+            Money runningBalance = Money.of(account.getCurrency(), account.getAccountBalance());
+            if (account.getSavingsHoldAmount() != null) {
+                runningBalance = runningBalance.minus(account.getSavingsHoldAmount()).minus(depositAmount);
+            } else {
+                runningBalance = runningBalance.minus(depositAmount);
+            }
+
+            SavingsAccountTransaction transaction = this.savingsAccountDomainService.handleHold(account, getAppUserIfPresent(), depositAmount,
+                    transactionDate, false);
+            account.holdAmount(depositAmount);
+            transaction.updateRunningBalance(runningBalance);
+
+            final String reasonForBlock = "Hold deposit amount for disbursing loan";
+            transaction.updateReason(reasonForBlock);
+
+            account.getAccountBalance();
+            this.savingsAccountTransactionDataValidator.validateTransactionWithPivotDate(transaction.getTransactionLocalDate(), account);
+
+            this.savingsAccountTransactionRepository.saveAndFlush(transaction);
+
+            if (backdatedTxnsAllowedTill) {
+                // Check again whether transactions are modified
+                this.savingsAccountTransactionRepository.saveAll(account.getSavingsAccountTransactionsWithPivotConfig());
+            }
+
+            this.savingAccountRepositoryWrapper.saveAndFlush(account);
+
+            result = new CommandProcessingResultBuilder() //
+                    .withEntityId(deposit.getId()) //
+                    .withOfficeId(account.officeId()) //
+                    .withClientId(clientId) //
+                    .withSavingsId(account.getId()) //
+                    .with(changes) //
+                    .build();
+        }
+
+        return result;
+    }
+
 }

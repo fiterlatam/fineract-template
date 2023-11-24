@@ -758,6 +758,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                     + " lpvi.minimum_gap as minimuminstallmentgap, lpvi.maximum_gap as maximuminstallmentgap, "
                     + " lp.can_use_for_topup as canUseForTopup, " + " l.is_topup as isTopup, " + " topup.closure_loan_id as closureLoanId, "
                     + " l.total_recovered_derived as totalRecovered" + ", topuploan.account_no as closureLoanAccountNo, "
+                    + " (ifnull(sa.account_balance_derived, 0)- ifnull(sa.total_savings_amount_on_hold,0) - ifnull(on_hold_funds_derived,0)) as actualGuaranteeAmount, "
                     + " topup.topup_amount as topupAmount " + " from m_loan l" //
                     + " join m_product_loan lp on lp.id = l.product_id" //
                     + " left join m_loan_recalculation_details lir on lir.loan_id = l.id " + " join m_currency rc on rc."
@@ -785,7 +786,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                     + " left join m_loan as topuploan on topuploan.id = topup.closure_loan_id"
                     + " LEFT JOIN (SELECT DISTINCT sc.loan_id AS loan_id, sc.duedate AS first_duedate"
                     + "            FROM m_loan_repayment_schedule sc " + "            WHERE sc.installment = 1 "
-                    + "            ORDER BY sc.duedate DESC " + "            ) mlrs ON mlrs.loan_id = l.id";
+                    + "            ORDER BY sc.duedate DESC " + "            ) mlrs ON mlrs.loan_id = l.id "
+                    + "left join m_savings_account sa on sa.id = c.default_savings_account";
 
         }
 
@@ -1100,6 +1102,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
             final BigDecimal requiredGuaranteeAmountPercent = requiredGuaranteeAmount.compareTo(BigDecimal.ZERO) > 0
                     ? requiredGuaranteeAmount.divide(new BigDecimal(100))
                     : BigDecimal.ZERO;
+            final BigDecimal actualGuaranteeAmount = rs.getBigDecimal("actualGuaranteeAmount");
 
             return LoanAccountData.basicLoanDetails(id, accountNo, status, externalId, clientId, clientAccountNo, clientName,
                     clientOfficeId, groupData, loanType, loanProductId, loanProductName, loanProductDescription,
@@ -1115,7 +1118,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                     isNPA, daysInMonthType, daysInYearType, isInterestRecalculationEnabled, interestRecalculationData,
                     createStandingInstructionAtDisbursement, isvariableInstallmentsAllowed, minimumGap, maximumGap, loanSubStatus,
                     canUseForTopup, isTopup, closureLoanId, closureLoanAccountNo, topupAmount, isEqualAmortization,
-                    fixedPrincipalPercentagePerInstallment, contractNo, requiredGuaranteeAmountPercent);
+                    fixedPrincipalPercentagePerInstallment, contractNo, requiredGuaranteeAmountPercent, actualGuaranteeAmount);
         }
     }
 
