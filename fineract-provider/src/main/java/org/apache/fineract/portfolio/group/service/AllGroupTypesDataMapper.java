@@ -191,7 +191,7 @@ public final class AllGroupTypesDataMapper implements RowMapper<GroupGeneralData
                 closedByUsername, closedByFirstname, closedByLastname);
 
         GroupGeneralData ret = GroupGeneralData.instance(id, accountNo, name, externalId, status, activationDate, officeId, officeName,
-                centerId, centerName, staffId, staffName, hierarchy, groupLevel, timeline);
+                centerId, centerName, staffId, staffName, hierarchy, groupLevel, timeline, meetingStartTime, meetingEndTime);
 
         // set the remaining fields for group general data
         ret.setLegacyNumber(legacyNumber);
