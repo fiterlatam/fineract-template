@@ -105,6 +105,8 @@ import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import static org.apache.fineract.portfolio.savings.SavingsApiConstants.GURANTEE_PRODUCT_NAME;
+
 @Service
 @Slf4j
 public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWritePlatformService {
@@ -684,9 +686,9 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
 
             CommandProcessingResult result = openSavingsAccount(client, fmt);
 
-            // FBR-402 create savings account for gurantees
+            // FBR-402 create savings account for guarantee
             SavingsProduct product = this.savingsProductRepository.findByName(GURANTEE_PRODUCT_NAME);
-            if (product != null) {
+            if (product != null && client.savingsAccountId() == null) {
                 client.updateSavingsProduct(product.getId());
                 CommandProcessingResult accountResult = openSavingsAccount(client, fmt);
                 if (accountResult != null && accountResult.getSavingsId() != null) {
