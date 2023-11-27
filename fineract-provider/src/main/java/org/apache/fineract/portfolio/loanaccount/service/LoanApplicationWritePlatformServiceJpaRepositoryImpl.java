@@ -33,7 +33,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.persistence.PersistenceException;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.fineract.accounting.journalentry.data.LumaBitacoraTransactionTypeEnum;
@@ -265,8 +264,9 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             final ClientCollateralManagementRepository clientCollateralManagementRepository,
             final CupoRepositoryWrapper cupoRepositoryWrapper, final LumaAccountingProcessorForLoan lumaAccountingProcessorForLoan,
             DisburseByChequesCommandFromApiJsonDeserializer disburseByChequesCommandFromApiJsonDeserializer,
-            ChequeBatchRepositoryWrapper chequeBatchRepositoryWrapper, final SavingsAccountWritePlatformService savingsAccountWritePlatformService,
-                                                                final SavingsAccountRepositoryWrapper savingsAccountRepositoryWrapper) {
+            ChequeBatchRepositoryWrapper chequeBatchRepositoryWrapper,
+            final SavingsAccountWritePlatformService savingsAccountWritePlatformService,
+            final SavingsAccountRepositoryWrapper savingsAccountRepositoryWrapper) {
         this.context = context;
         this.fromJsonHelper = fromJsonHelper;
         this.loanApplicationTransitionApiJsonValidator = loanApplicationTransitionApiJsonValidator;
@@ -1943,12 +1943,11 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             this.loanRepositoryWrapper.saveAndFlush(loanAccount);
             this.chequeBatchRepositoryWrapper.updateCheque(cheque);
 
-
-            //TODO: FBR-47 Handle deposit to guarantee savings account here
+            // TODO: FBR-47 Handle deposit to guarantee savings account here
             BigDecimal depositAmount = cheque.getGuaranteeAmount().subtract(cheque.getRequiredGuaranteeAmount());
-            if(depositAmount != null && depositAmount.compareTo(BigDecimal.ZERO) < 0){
-                CommandProcessingResult depositCommandResult = this.savingsAccountWritePlatformService.depositAndHoldToClientGuaranteeAccount(depositAmount.abs(),
-                        loanAccount.getClientId(), localDate);
+            if (depositAmount != null && depositAmount.compareTo(BigDecimal.ZERO) < 0) {
+                CommandProcessingResult depositCommandResult = this.savingsAccountWritePlatformService
+                        .depositAndHoldToClientGuaranteeAccount(depositAmount.abs(), loanAccount.getClientId(), localDate);
             }
         }
         return new CommandProcessingResultBuilder().withCommandId(command.commandId()).build();

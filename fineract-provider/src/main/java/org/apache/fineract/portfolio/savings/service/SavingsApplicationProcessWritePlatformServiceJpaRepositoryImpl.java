@@ -177,12 +177,12 @@ public class SavingsApplicationProcessWritePlatformServiceJpaRepositoryImpl impl
 
             final SavingsAccount account = this.savingAccountAssembler.assembleFrom(command, submittedBy);
 
-            //FBR-47 if client already has a savings account don't create another
+            // FBR-47 if client already has a savings account don't create another
             List<SavingsAccount> savingsAccounts = this.savingAccountRepository.findSavingAccountByClientId(account.clientId());
 
-            if(savingsAccounts.isEmpty()) {
+            if (savingsAccounts.isEmpty()) {
                 this.savingAccountRepository.save(account);
-            }else {
+            } else {
                 throw new ClientHasSavingsAccountException(account.clientId());
             }
             String accountNumber = "";
@@ -297,9 +297,9 @@ public class SavingsApplicationProcessWritePlatformServiceJpaRepositoryImpl impl
     private void generateAccountNumber(final SavingsAccount account) {
         if (account.isAccountNumberRequiresAutoGeneration()) {
             AccountNumberFormat accountNumberFormat = this.accountNumberFormatRepository.findByAccountType(EntityAccountType.SAVINGS);
-            if(account != null && account.savingsProduct().getName().equals(GURANTEE_PRODUCT_NAME)){
-                accountNumberFormat = new AccountNumberFormat(EntityAccountType.SAVINGS, AccountNumberFormatEnumerations.AccountNumberPrefixType.SAVINGS_CLIENT_ID,
-                            String.valueOf(account.clientId()));
+            if (account != null && account.savingsProduct().getName().equals(GURANTEE_PRODUCT_NAME)) {
+                accountNumberFormat = new AccountNumberFormat(EntityAccountType.SAVINGS,
+                        AccountNumberFormatEnumerations.AccountNumberPrefixType.SAVINGS_CLIENT_ID, String.valueOf(account.clientId()));
             }
             account.updateAccountNo(this.accountNumberGenerator.generate(account, accountNumberFormat));
 

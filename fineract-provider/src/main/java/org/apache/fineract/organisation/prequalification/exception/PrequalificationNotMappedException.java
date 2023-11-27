@@ -24,7 +24,8 @@ public class PrequalificationNotMappedException extends AbstractPlatformDomainRu
 
     public PrequalificationNotMappedException(final String prequalificationId) {
         super("error.msg.prequalification.not.mapped.exception",
-                "The Prequalification `" + prequalificationId + "` Should be mapped to a group before validating hard policies. ", prequalificationId);
+                "The Prequalification `" + prequalificationId + "` Should be mapped to a group before validating hard policies. ",
+                prequalificationId);
     }
 
 }

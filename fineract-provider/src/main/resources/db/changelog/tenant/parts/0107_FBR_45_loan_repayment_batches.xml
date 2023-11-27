@@ -340,4 +340,71 @@
                 ]]>
         </sql>
     </changeSet>
+
+    <changeSet id="13" author="fineract">
+        <sql>
+            <![CDATA[
+                  INSERT INTO stretchy_report
+                  (report_name, report_type, report_subtype, report_category, report_sql, description, core_report, use_report, self_service_user_report)
+                  VALUES("Reporte de Contabilizacion Netsuite", 'Table', NULL, "Accounting", "SELECT
+                    CONVERT(DATE_FORMAT(CURRENT_TIMESTAMP(),  '%Y%m%d%H%i%S') + ROW_NUMBER() OVER (), CHAR(100)) AS 'tranid',
+                    'United States : Guatemala' AS 'subsidiary',
+                    '' AS currency,
+                    CONCAT('Actividad desde ', DATE_FORMAT('${startDate}', '%d/%m/%Y'), ' al ',  DATE_FORMAT('${endDate}', '%d/%m/%Y'), ' MIFOS') AS 'memo',
+                    '' AS 'exchangerate',
+                    '' AS 'postingperiod',
+                    DATE_FORMAT('${endDate}', '%d/%m/%Y') AS 'trandate',
+                     aga.gl_code AS 'journalItemLine_account',
+                    CASE
+                        WHEN journalEntry.type_enum = 1 THEN journalEntry.amount
+                        ELSE NULL
+                    END AS 'journalItemLine_debitAmount',
+                    CASE
+                        WHEN journalEntry.type_enum = 2 THEN journalEntry.amount
+                        ELSE NULL
+                    END AS 'journalItemLine_creditAmount',
+                    CONCAT(ml.account_no, ' - ', mpl.name) AS 'journalItemLine_memo',
+                    '' AS 'journalItemLine_entityRef',
+                    '' AS 'journalItemLine_suitekeyRef',
+                    ma.entity_code AS 'journalItemLine_branchRef',
+                    mpl.short_name AS 'journalItemLine_departmentRef',
+                    mpl.name AS 'journalItemLine_Product/Project/ProgramRef',
+                    'N/A' AS 'journalItemLine_GrantRef',
+                    'N' AS 'journalItemLine_RestrictionRef',
+                    'NOFUNC' AS 'journalItemLine_Functional ExpenseRef'
+                    FROM m_office mo
+                    INNER JOIN m_office office_under ON office_under.hierarchy LIKE CONCAT(mo.hierarchy, '%')AND office_under.hierarchy LIKE CONCAT('${currentUserHierarchy}', '%')
+                    INNER JOIN acc_gl_journal_entry journalEntry
+                    INNER JOIN acc_gl_account aga ON journalEntry.account_id = aga.id
+                    LEFT JOIN m_loan_transaction mlt ON mlt.id = journalEntry.loan_transaction_id
+                    LEFT JOIN m_loan ml ON mlt.loan_id = ml.id
+                    LEFT JOIN m_product_loan mpl ON mpl.id = ml.product_id
+                    LEFT JOIN m_group mg ON mg.id = ml.group_id
+                    LEFT JOIN m_client mc ON mc.id = ml.client_id
+                    LEFT JOIN m_group_client mgc ON mgc.client_id = mc.id
+                    LEFT JOIN m_group mcg ON mcg.id = mgc.group_id
+                    LEFT JOIN m_group center ON (center.id = mg.parent_id OR center.id = mcg.parent_id)
+                    LEFT JOIN m_portfolio mp ON mp.id = center.portfolio_id
+                    LEFT JOIN m_supervision ms ON ms.id = mp.supervision_id
+                    LEFT JOIN m_agency ma ON ma.id = ms.agency_id
+                    WHERE journalEntry.reversed = FALSE AND (journalEntry.entry_date BETWEEN '${startDate}' AND '${endDate}')
+                    GROUP BY journalEntry.id", "Reporte de Contabilizacion Netsuite", 1, 1, 0);
+            ]]>
+        </sql>
+        <sql>
+            <![CDATA[
+                INSERT INTO stretchy_report_parameter (report_id, parameter_id, report_parameter_name) VALUES((SELECT sr.id FROM stretchy_report sr WHERE sr.report_name = "Reporte de Contabilizacion Netsuite"), (SELECT p.id FROM stretchy_parameter p WHERE parameter_name = "startDateSelect"), "Fecha Desde");
+                INSERT INTO stretchy_report_parameter (report_id, parameter_id, report_parameter_name) VALUES((SELECT sr.id FROM stretchy_report sr WHERE sr.report_name = "Reporte de Contabilizacion Netsuite"), (SELECT p.id FROM stretchy_parameter p WHERE parameter_name = "endDateSelect"), "Fecha Hasta");
+                INSERT INTO m_permission (`grouping`, code, entity_name, action_name, can_maker_checker) VALUES('report', 'READ_Reporte de Contabilizacion Netsuite', 'Reporte de Contabilizacion Netsuite', 'READ', 0);
+
+                UPDATE stretchy_parameter
+                SET parameter_label='Fecha Desde'
+                WHERE parameter_name='startDateSelect';
+
+                UPDATE stretchy_parameter
+                SET parameter_label='Fecha Hasta'
+                WHERE parameter_name='endDateSelect';
+            ]]>
+        </sql>
+    </changeSet>
 </databaseChangeLog>

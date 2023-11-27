@@ -248,7 +248,7 @@ public class GroupingTypesWritePlatformServiceJpaRepositoryImpl implements Group
                 LocalTime newMeetingEndTime = newMeetingStarTime.plusMinutes(meetingDefaultDuration).plusMinutes(timeBetweenMeetings);
                 meetingEndTime = newMeetingEndTime;
 
-                if (centerId !=null){
+                if (centerId != null) {
                     String schemaSql = "select cgroup.id from m_group cgroup where cgroup.parent_id = ? and "
                             + "( ( ? >= cgroup.meeting_start_time and ? < cgroup.meeting_end_time) OR "
                             + "( ? > cgroup.meeting_start_time and ? < cgroup.meeting_end_time) ) order by id desc";
@@ -259,7 +259,8 @@ public class GroupingTypesWritePlatformServiceJpaRepositoryImpl implements Group
                         Long groupId = groupIds.get(0);
                         GroupGeneralData existingGroup = this.groupReadPlatformService.retrieveOne(groupId);
 
-                        throw new GroupMeetingTimeCollisionException(existingGroup.getName(), existingGroup.getId(), meetingStartTime, meetingEndTime);
+                        throw new GroupMeetingTimeCollisionException(existingGroup.getName(), existingGroup.getId(), meetingStartTime,
+                                meetingEndTime);
                     }
                 }
 
@@ -550,20 +551,21 @@ public class GroupingTypesWritePlatformServiceJpaRepositoryImpl implements Group
             Group parent = groupForUpdate.getParent();
             if (actualChanges.containsKey(GroupingTypesApiConstants.meetingStartTime)) {
 
-                if (parent !=null){
+                if (parent != null) {
                     String schemaSql = "select cgroup.id from m_group cgroup where cgroup.parent_id = ? and "
                             + "( ( ? >= cgroup.meeting_start_time and ? < cgroup.meeting_end_time) OR "
                             + "( ? > cgroup.meeting_start_time and ? < cgroup.meeting_end_time) ) order by id desc";
                     LocalTime meetingEndTime = groupForUpdate.getMeetingEndTime();
                     LocalTime meetingStartTime = groupForUpdate.getMeetingStartTime();
-                    List<Long> groupIds = jdbcTemplate.queryForList(schemaSql, Long.class, parent.getId(), meetingStartTime, meetingStartTime,
-                            meetingEndTime, meetingEndTime);
+                    List<Long> groupIds = jdbcTemplate.queryForList(schemaSql, Long.class, parent.getId(), meetingStartTime,
+                            meetingStartTime, meetingEndTime, meetingEndTime);
 
                     if (groupIds.size() > 0) {
                         Long existingGroupId = groupIds.get(0);
                         GroupGeneralData existingGroup = this.groupReadPlatformService.retrieveOne(existingGroupId);
 
-                        throw new GroupMeetingTimeCollisionException(existingGroup.getName(), existingGroup.getId(), meetingStartTime, meetingEndTime);
+                        throw new GroupMeetingTimeCollisionException(existingGroup.getName(), existingGroup.getId(), meetingStartTime,
+                                meetingEndTime);
                     }
                 }
             }

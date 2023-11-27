@@ -422,7 +422,7 @@ public class CenterReadPlatformServiceImpl implements CenterReadPlatformService 
                     closedByUsername, closedByFirstname, closedByLastname);
 
             return GroupGeneralData.instance(id, accountNo, name, externalId, status, activationDate, officeId, officeName, null, null,
-                    staffId, staffName, hierarchy, groupLevel, timeline, meetingStartTime,meetingEndTime);
+                    staffId, staffName, hierarchy, groupLevel, timeline, meetingStartTime, meetingEndTime);
         }
     }
 
