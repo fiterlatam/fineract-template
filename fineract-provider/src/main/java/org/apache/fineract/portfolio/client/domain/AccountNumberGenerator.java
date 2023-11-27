@@ -18,6 +18,8 @@
  */
 package org.apache.fineract.portfolio.client.domain;
 
+import static org.apache.fineract.portfolio.savings.SavingsApiConstants.GURANTEE_PRODUCT_NAME;
+
 import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
@@ -38,8 +40,6 @@ import org.apache.fineract.portfolio.shareaccounts.domain.ShareAccount;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import static org.apache.fineract.portfolio.savings.SavingsApiConstants.GURANTEE_PRODUCT_NAME;
-
 /**
  * Example {@link AccountNumberGenerator} for clients that takes an entities auto generated database id and zero fills
  * it ensuring the identifier is always of a given <code>maxLength</code>.
@@ -55,7 +55,7 @@ public class AccountNumberGenerator {
     private static final String OFFICE_NAME = "officeName";
     private static final String LOAN_PRODUCT_SHORT_NAME = "loanProductShortName";
     private static final String SAVINGS_PRODUCT_SHORT_NAME = "savingsProductShortName";
-    private static final String SAVINGS_CLIENT_ID= "savingsAccountClientId";
+    private static final String SAVINGS_CLIENT_ID = "savingsAccountClientId";
     private static final String SHARE_PRODUCT_SHORT_NAME = "sharesProductShortName";
     private static final String PREFIX_SHORT_NAME = "prefixShortName";
     private final AccountNumberFormatRepository accountNumberFormatRepository;
@@ -101,7 +101,7 @@ public class AccountNumberGenerator {
         propertyMap.put(ID, savingsAccount.getId().toString());
         propertyMap.put(OFFICE_NAME, savingsAccount.office().getName());
         propertyMap.put(SAVINGS_PRODUCT_SHORT_NAME, savingsAccount.savingsProduct().getShortName());
-        if(savingsAccount.savingsProduct().getName().equals(GURANTEE_PRODUCT_NAME)){
+        if (savingsAccount.savingsProduct().getName().equals(GURANTEE_PRODUCT_NAME)) {
             propertyMap.put(SAVINGS_CLIENT_ID, String.valueOf(savingsAccount.clientId()));
         }
         propertyMap.put(ENTITY_TYPE, "savingsAccount");
@@ -165,7 +165,7 @@ public class AccountNumberGenerator {
 
                 case SAVINGS_CLIENT_ID:
                     prefix = propertyMap.get(SAVINGS_CLIENT_ID);
-                    break;
+                break;
             }
 
             // FINERACT-590

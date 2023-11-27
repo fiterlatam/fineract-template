@@ -48,7 +48,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.accounting.journalentry.domain.BitaCoraMasterRepository;
 import org.apache.fineract.accounting.journalentry.service.JournalEntryWritePlatformService;
@@ -2078,16 +2077,18 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
     }
 
     @Override
-    public CommandProcessingResult depositAndHoldToClientGuaranteeAccount(BigDecimal depositAmount, Long clientId, LocalDate transactionDate) {
+    public CommandProcessingResult depositAndHoldToClientGuaranteeAccount(BigDecimal depositAmount, Long clientId,
+            LocalDate transactionDate) {
         CommandProcessingResult result = null;
-        List<SavingsAccount> savingsAccounts =  this.savingAccountRepositoryWrapper.findSavingAccountByClientId(clientId);
-        Optional<SavingsAccount> guaranteeAccount = savingsAccounts.stream().filter(account -> account.savingsProduct().getName().equals(GURANTEE_PRODUCT_NAME)).findFirst();
+        List<SavingsAccount> savingsAccounts = this.savingAccountRepositoryWrapper.findSavingAccountByClientId(clientId);
+        Optional<SavingsAccount> guaranteeAccount = savingsAccounts.stream()
+                .filter(account -> account.savingsProduct().getName().equals(GURANTEE_PRODUCT_NAME)).findFirst();
 
         boolean isGsim = false;
 
         final boolean backdatedTxnsAllowedTill = this.savingAccountAssembler.getPivotConfigStatus();
 
-        if(!guaranteeAccount.isEmpty()){
+        if (!guaranteeAccount.isEmpty()) {
             SavingsAccount savingsAccount = guaranteeAccount.get();
 
             final SavingsAccount account = this.savingAccountAssembler.assembleFrom(savingsAccount.getId(), backdatedTxnsAllowedTill);
@@ -2101,11 +2102,13 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
             this.savingsAccountTransactionDataValidator.validateTransactionWithPivotDate(transactionDate, account);
 
             final Map<String, Object> changes = new LinkedHashMap<>();
-            final PaymentDetail paymentDetail = null;//this.paymentDetailWritePlatformService.createAndPersistPaymentDetail(command, changes);
+            final PaymentDetail paymentDetail = null;// this.paymentDetailWritePlatformService.createAndPersistPaymentDetail(command,
+                                                     // changes);
             boolean isAccountTransfer = false;
             boolean isRegularTransaction = true;
-            final SavingsAccountTransaction deposit = this.savingsAccountDomainService.handleDeposit(account, DateUtils.DEFAULT_DATE_FORMATER, transactionDate,
-                    depositAmount, paymentDetail, isAccountTransfer, isRegularTransaction, backdatedTxnsAllowedTill);
+            final SavingsAccountTransaction deposit = this.savingsAccountDomainService.handleDeposit(account,
+                    DateUtils.DEFAULT_DATE_FORMATER, transactionDate, depositAmount, paymentDetail, isAccountTransfer, isRegularTransaction,
+                    backdatedTxnsAllowedTill);
 
             if (isGsim && (deposit.getId() != null)) {
 
@@ -2133,8 +2136,8 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
                 runningBalance = runningBalance.minus(depositAmount);
             }
 
-            SavingsAccountTransaction transaction = this.savingsAccountDomainService.handleHold(account, getAppUserIfPresent(), depositAmount,
-                    transactionDate, false);
+            SavingsAccountTransaction transaction = this.savingsAccountDomainService.handleHold(account, getAppUserIfPresent(),
+                    depositAmount, transactionDate, false);
             account.holdAmount(depositAmount);
             transaction.updateRunningBalance(runningBalance);
 
