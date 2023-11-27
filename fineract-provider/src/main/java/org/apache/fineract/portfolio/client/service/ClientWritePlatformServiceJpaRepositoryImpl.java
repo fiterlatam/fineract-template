@@ -528,12 +528,15 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
                 clientForUpdate.updateGender(newCodeVal);
             }
 
+            boolean isVatRequired = false;
             if (changes.containsKey(ClientApiConstants.isVatRequiredParamName)) {
-                final Boolean newValue = command.booleanPrimitiveValueOfParameterNamed(ClientApiConstants.isVatRequiredParamName);
-                clientForUpdate.setVatRequired(newValue);
+                isVatRequired = command.booleanPrimitiveValueOfParameterNamed(ClientApiConstants.isVatRequiredParamName);
+                clientForUpdate.setVatRequired(isVatRequired);
             }
-
-            if (changes.containsKey(ClientApiConstants.vatRateIdParamName)) {
+            if (!isVatRequired) {
+                clientForUpdate.setVatRate(null);
+            }
+            if (isVatRequired && changes.containsKey(ClientApiConstants.vatRateIdParamName)) {
                 final Long newValue = command.longValueOfParameterNamed(ClientApiConstants.vatRateIdParamName);
                 VatRate vatRate = this.readVatRateService.findById(newValue);
                 clientForUpdate.setVatRate(vatRate);
