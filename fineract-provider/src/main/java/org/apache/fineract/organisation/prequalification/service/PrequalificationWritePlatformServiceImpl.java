@@ -178,7 +178,8 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         if (previousPrequalificationId != null) {
             parentGroup = this.prequalificationGroupRepositoryWrapper.findOneWithNotFoundDetection(previousPrequalificationId);
             if (!parentGroup.getStatus().equals(PrequalificationStatus.COMPLETED.getValue())
-                    && !parentGroup.getStatus().equals(PrequalificationStatus.REJECTED.getValue())) {
+                    && !parentGroup.getStatus().equals(PrequalificationStatus.REJECTED.getValue())
+                    && !parentGroup.getStatus().equals(PrequalificationStatus.TIME_EXPIRED.getValue())) {
                 throw new PrequalificationStatusNotCompletedException(PrequalificationStatus.fromInt(parentGroup.getStatus()).toString());
             }
             existingGroupParentGroup = this.groupRepositoryWrapper.findOneWithPrequalificationIdNotFoundDetection(parentGroup);
