@@ -181,7 +181,8 @@ public class GroupPrequalificationApiResource {
         String groupId = queryParameters.getFirst("groupId");
         Long agencyId = null;
         Long centerId = null;
-        if (!StringUtils.isBlank(groupId)) {
+
+        if (!StringUtils.isBlank(groupId)){
             GroupPrequalificationData prequalificationGroup = this.prequalificationReadPlatformService.retrieveOne(Long.valueOf(groupId));
             agencyId = prequalificationGroup.getAgencyId();
             centerId = prequalificationGroup.getCenterId();
