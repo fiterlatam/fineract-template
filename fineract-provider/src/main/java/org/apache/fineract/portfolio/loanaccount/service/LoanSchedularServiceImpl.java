@@ -342,8 +342,9 @@ public class LoanSchedularServiceImpl implements LoanSchedularService {
             for (final LoanRepaymentImportData loanRepaymentImportData : loanRepayments) {
                 iterations++;
                 final String loanCode = loanRepaymentImportData.getLoanCode();
-                LoanRepaymentImport loanRepaymentImport = this.loanRepaymentImportRepository.findById(loanRepaymentImportData.getId())
+                final LoanRepaymentImport loanRepaymentImport = this.loanRepaymentImportRepository.findById(loanRepaymentImportData.getId())
                         .orElseThrow(() -> new NotFoundException("error.msg.loanRepaymentImport.not.found."));
+                loanRepaymentImport.resetMifosFields();
                 final LocalDateTime localDateTime = DateUtils.getLocalDateTimeOfSystem();
                 loanRepaymentImport.setMifosProcessingDate(localDateTime);
                 loanRepaymentImport.setMifosProcessingTime(localDateTime.toLocalTime());
