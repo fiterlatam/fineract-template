@@ -178,14 +178,22 @@ public class GroupPrequalificationApiResource {
 
         String type = queryParameters.getFirst("type");
         String groupingType = queryParameters.getFirst("groupingType");
+        String groupId = queryParameters.getFirst("groupId");
         Long agencyId = null;
         Long centerId = null;
+        if (!StringUtils.isBlank(groupId)){
+            GroupPrequalificationData prequalificationGroup = this.prequalificationReadPlatformService.retrieveOne(Long.valueOf(groupId));
+            agencyId = prequalificationGroup.getAgencyId();
+            centerId = prequalificationGroup.getCenterId();
+        }
+
         if (queryParameters.getFirst("agencyId") != null) {
             agencyId = NumberUtils.toLong(queryParameters.getFirst("agencyId"), Long.MAX_VALUE);
         }
         if (queryParameters.getFirst("centerId") != null) {
             centerId = NumberUtils.toLong(queryParameters.getFirst("centerId"), Long.MAX_VALUE);
         }
+
         Collection<LoanProductData> loanProducts = this.loanProductReadPlatformService.retrieveAllLoanProducts();
         Integer prequalificationType = null;
         if (StringUtils.isNotBlank(groupingType)) {
