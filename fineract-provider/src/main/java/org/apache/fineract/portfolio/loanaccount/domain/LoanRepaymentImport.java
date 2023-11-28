@@ -181,6 +181,19 @@ public class LoanRepaymentImport {
     @Column(name = "Id_error")
     private Long errorId;
 
+    public void resetMifosFields() {
+        this.status = null;
+        this.mifosProcessingDate = null;
+        this.mifosProcessingTime = null;
+        this.mifosFileName = null;
+        this.operationResult = null;
+        this.scheduledPaymentAmount = null;
+        this.paymentNumber = null;
+        this.lastPayment = null;
+        this.tolerance = null;
+        this.errorId = null;
+    }
+
     public void setStatus(Long status) {
         this.status = status;
     }
