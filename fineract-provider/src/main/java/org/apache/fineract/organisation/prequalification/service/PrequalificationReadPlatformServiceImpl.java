@@ -77,6 +77,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
     private final ColumnValidator columnValidator;
     private final PrequalificationsGroupMapper prequalificationsGroupMapper = new PrequalificationsGroupMapper();
     private final PrequalificationsGroupMappingsMapper mappingsMapper = new PrequalificationsGroupMappingsMapper();
+    private final PrequalificationIndividualMappingsMapper prequalificationIndividualMappingsMapper = new PrequalificationIndividualMappingsMapper();
     private final PrequalificationsMemberMapper prequalificationsMemberMapper = new PrequalificationsMemberMapper();
     private final DatabaseSpecificSQLGenerator sqlGenerator;
     private final PreQualificationMemberRepository preQualificationMemberRepository;
@@ -256,6 +257,14 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
         return prequalificationGroups;
     }
 
+    @Override
+    public Collection<GroupPrequalificationData> retrievePrequalificationIndividualMappings(final Long clientId) {
+        final String sql = "select " + this.prequalificationIndividualMappingsMapper.schema() + " WHERE mc.id = ?";
+        final Collection<GroupPrequalificationData> prequalificationGroups = this.jdbcTemplate.query(sql,
+                this.prequalificationIndividualMappingsMapper, new Object[] { clientId });
+        return prequalificationGroups;
+    }
+
     private String buildSqlStringFromBlacklistCriteria(final SearchParameters searchParameters, List<Object> paramList, boolean isGroup) {
 
         AppUser appUser = this.context.authenticatedUser();
@@ -286,6 +295,10 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             if (groupingType.equals("individual")) {
                 extraCriteria += " and g.prequalification_type_enum = ? ";
                 paramList.add(PrequalificationType.INDIVIDUAL.getValue());
+                if (dpiNumber != null) {
+                    extraCriteria += " and g.dpi = ? ";
+                    paramList.add(dpiNumber);
+                }
             }
         }
 
@@ -555,20 +568,50 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
 
         @Override
         public GroupPrequalificationData mapRow(final ResultSet rs, final int rowNum) throws SQLException {
-
             final Integer statusEnum = JdbcSupport.getInteger(rs, "status");
             final EnumOptionData status = PreQualificationsEnumerations.status(statusEnum);
-
             final Long id = JdbcSupport.getLong(rs, "id");
             final String prequalificationNumber = rs.getString("prequalificationNumber");
             String groupName = rs.getString("groupName");
             final String productName = rs.getString("productName");
             final LocalDate createdAt = JdbcSupport.getLocalDate(rs, "created_at");
-
             final String addedBy = rs.getString("firstname") + " " + rs.getString("lastname");
-
             return GroupPrequalificationData.simpeGroupData(id, prequalificationNumber, status, groupName, productName, addedBy, createdAt);
 
+        }
+    }
+
+    private static final class PrequalificationIndividualMappingsMapper implements RowMapper<GroupPrequalificationData> {
+
+        private final String schema;
+
+        PrequalificationIndividualMappingsMapper() {
+            this.schema = """
+                    mpg.id AS id, mpg.prequalification_number AS prequalificationNumber, mpg.group_name AS groupName, mpg.status AS status,
+                    mpl.name AS productName, mpg.created_at, ma.firstname, ma.lastname
+                    FROM m_prequalification_group mpg
+                    INNER JOIN m_product_loan mpl ON mpl.id = mpg.product_id
+                    INNER JOIN m_prequalification_group_members mpgm ON mpgm.group_id = mpg.id
+                    INNER JOIN m_client mc ON mc.dpi = mpgm.dpi
+                    LEFT JOIN m_appuser ma ON ma.id = mpg.added_by
+                    """;
+        }
+
+        public String schema() {
+            return this.schema;
+        }
+
+        @Override
+        public GroupPrequalificationData mapRow(final ResultSet rs, final int rowNum) throws SQLException {
+            final Integer statusEnum = JdbcSupport.getInteger(rs, "status");
+            final EnumOptionData status = PreQualificationsEnumerations.status(statusEnum);
+            final Long id = JdbcSupport.getLong(rs, "id");
+            final String prequalificationNumber = rs.getString("prequalificationNumber");
+            String groupName = rs.getString("groupName");
+            final String productName = rs.getString("productName");
+            final LocalDate createdAt = JdbcSupport.getLocalDate(rs, "created_at");
+            final String addedBy = rs.getString("firstname") + " " + rs.getString("lastname");
+            return GroupPrequalificationData.simpeGroupData(id, prequalificationNumber, status, groupName, productName, addedBy, createdAt);
         }
     }
 

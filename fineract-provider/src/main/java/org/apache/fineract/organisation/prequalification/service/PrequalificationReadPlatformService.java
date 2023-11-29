@@ -37,4 +37,6 @@ public interface PrequalificationReadPlatformService {
     MemberPrequalificationData retrieveOneMember(Long clientId);
 
     Collection<GroupPrequalificationData> retrievePrequalificationGroupsMappings(Long groupId);
+
+    Collection<GroupPrequalificationData> retrievePrequalificationIndividualMappings(Long clientId);
 }
