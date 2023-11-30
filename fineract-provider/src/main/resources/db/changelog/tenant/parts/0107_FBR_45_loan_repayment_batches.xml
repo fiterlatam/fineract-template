@@ -407,4 +407,15 @@
             ]]>
         </sql>
     </changeSet>
+
+    <changeSet id="14" author="fineract">
+        <sql>
+            <![CDATA[
+                INSERT INTO m_role (name, description, is_disabled) VALUES('Gerente Financiero', 'Gerente Financiero', 0);
+                INSERT INTO m_role (name, description, is_disabled) VALUES('Coordinador Contable', 'Coordinador Contable', 0);
+                INSERT INTO m_role (name, description, is_disabled) VALUES('Supervisor Contable', 'Supervisor Contable', 0);
+                INSERT INTO m_role (name, description, is_disabled) VALUES('Auxiliar Contable Centralizador de pagos', 'Auxiliar Contable Centralizador de pagos', 0);
+            ]]>
+        </sql>
+    </changeSet>
 </databaseChangeLog>
