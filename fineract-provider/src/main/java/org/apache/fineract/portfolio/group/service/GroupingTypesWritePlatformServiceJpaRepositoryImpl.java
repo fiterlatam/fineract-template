@@ -1148,7 +1148,7 @@ public class GroupingTypesWritePlatformServiceJpaRepositoryImpl implements Group
 
                 for (CodeValueData meetingDay : meetingDayOptions) {
                     // complete required fields for entity
-                    final String centerName = generateCenterName(portfolio.getId(), rangeTemplateData, meetingDay);
+                    final String centerName = generateCenterName(portfolio.getName(), rangeTemplateData, meetingDay);
                     final Integer meetingDayValue = meetingDay.getId().intValue();
                     final Integer meetingStart = rangeTemplateData.getStartDay();
                     final Integer meetingEnd = rangeTemplateData.getEndDay();
@@ -1269,9 +1269,9 @@ public class GroupingTypesWritePlatformServiceJpaRepositoryImpl implements Group
                 "Unknown data integrity issue with resource.");
     }
 
-    private String generateCenterName(Long portfolioId, RangeTemplateData rangeTemplateData, CodeValueData meetingDay) {
+    private String generateCenterName(String portfolioName, RangeTemplateData rangeTemplateData, CodeValueData meetingDay) {
         final StringBuilder centerName = new StringBuilder();
-        centerName.append(portfolioId);
+        centerName.append(portfolioName);
         centerName.append("-");
         centerName.append(rangeTemplateData.getCode());
         centerName.append("-");
