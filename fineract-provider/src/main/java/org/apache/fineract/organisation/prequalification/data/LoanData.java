@@ -16,17 +16,21 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.organisation.prequalification.exception;
+package org.apache.fineract.organisation.prequalification.data;
 
-import org.apache.fineract.infrastructure.core.exception.AbstractPlatformResourceNotFoundException;
+import java.math.BigDecimal;
+import lombok.Builder;
+import lombok.Data;
 
-/**
- * A {@link RuntimeException} thrown when client doesn't have a pending loan request.
- */
-public class MemberHasNoPendingLoanException extends AbstractPlatformResourceNotFoundException {
+@Data
+@Builder
+public class LoanData {
 
-    public MemberHasNoPendingLoanException(String name, String dpi, String product) {
-        super("error.msg.client.pending.loan.request", "Client " + name + " with dpi " + dpi + " doesnt have a pending loan request.", name,
-                dpi, product);
-    }
+    private Long clientId;
+    private Long prequalificationId;
+    private Long loanId;
+    private Long groupId;
+    private Long prequalificationMemberId;
+    private String dpi;
+    private BigDecimal principalAmount;
 }
