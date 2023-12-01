@@ -158,7 +158,7 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
         this.preQualificationStatusLogRepository.saveAndFlush(statusLog);
         return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withEntityId(prequalificationId).build();
     }
-
+    
     static final class PolicyMapper implements RowMapper<PolicyData> {
 
         public String schema() {
