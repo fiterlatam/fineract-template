@@ -140,6 +140,9 @@ public final class SavingsAccountTransaction extends AbstractPersistableCustom {
     @Column(name = "ref_no", nullable = true)
     private String refNo;
 
+    @Column(name = "loan_id", length = 20)
+    private Long loanId;
+
     SavingsAccountTransaction() {
         this.dateOf = null;
         this.typeOf = null;
@@ -926,5 +929,13 @@ public final class SavingsAccountTransaction extends AbstractPersistableCustom {
 
     public boolean isReversalTransaction() {
         return reversalTransaction;
+    }
+
+    public Long getLoanId() {
+        return loanId;
+    }
+
+    public void setLoanId(Long loanId) {
+        this.loanId = loanId;
     }
 }

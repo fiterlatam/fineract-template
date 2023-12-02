@@ -2077,8 +2077,7 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
     }
 
     @Override
-    public CommandProcessingResult depositAndHoldToClientGuaranteeAccount(BigDecimal depositAmount, Long clientId,
-            LocalDate transactionDate) {
+    public CommandProcessingResult depositAndHoldToClientGuaranteeAccount(BigDecimal depositAmount, Long clientId, Long loanId, LocalDate transactionDate) {
         CommandProcessingResult result = null;
         List<SavingsAccount> savingsAccounts = this.savingAccountRepositoryWrapper.findSavingAccountByClientId(clientId);
         Optional<SavingsAccount> guaranteeAccount = savingsAccounts.stream()
@@ -2102,13 +2101,12 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
             this.savingsAccountTransactionDataValidator.validateTransactionWithPivotDate(transactionDate, account);
 
             final Map<String, Object> changes = new LinkedHashMap<>();
-            final PaymentDetail paymentDetail = null;// this.paymentDetailWritePlatformService.createAndPersistPaymentDetail(command,
-                                                     // changes);
+            final PaymentDetail paymentDetail = null;
             boolean isAccountTransfer = false;
             boolean isRegularTransaction = true;
-            final SavingsAccountTransaction deposit = this.savingsAccountDomainService.handleDeposit(account,
-                    DateUtils.DEFAULT_DATE_FORMATER, transactionDate, depositAmount, paymentDetail, isAccountTransfer, isRegularTransaction,
-                    backdatedTxnsAllowedTill);
+            final SavingsAccountTransaction deposit = this.savingsAccountDomainService.handleDeposit(account, DateUtils.DEFAULT_DATE_FORMATER, transactionDate,
+                    depositAmount, paymentDetail, isAccountTransfer, isRegularTransaction, backdatedTxnsAllowedTill);
+            deposit.setLoanId(loanId);
 
             if (isGsim && (deposit.getId() != null)) {
 
