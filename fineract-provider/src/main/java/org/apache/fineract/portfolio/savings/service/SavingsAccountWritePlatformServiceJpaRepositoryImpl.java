@@ -48,6 +48,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+
+import com.google.gson.JsonObject;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.accounting.journalentry.domain.BitaCoraMasterRepository;
 import org.apache.fineract.accounting.journalentry.service.JournalEntryWritePlatformService;
@@ -121,6 +123,7 @@ import org.apache.fineract.portfolio.savings.domain.SavingsAccountRepositoryWrap
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountStatusType;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountTransaction;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountTransactionRepository;
+import org.apache.fineract.portfolio.savings.exception.HoldTransactionNotFoundException;
 import org.apache.fineract.portfolio.savings.exception.PostInterestAsOnDateException;
 import org.apache.fineract.portfolio.savings.exception.PostInterestAsOnDateException.PostInterestAsOnExceptionType;
 import org.apache.fineract.portfolio.savings.exception.PostInterestClosingDateException;
@@ -2138,6 +2141,7 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
                     depositAmount, transactionDate, false);
             account.holdAmount(depositAmount);
             transaction.updateRunningBalance(runningBalance);
+            transaction.setLoanId(loanId);
 
             final String reasonForBlock = "Hold deposit amount for disbursing loan";
             transaction.updateReason(reasonForBlock);
@@ -2164,6 +2168,48 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
         }
 
         return result;
+    }
+
+    @Override
+    public CommandProcessingResult releaseLoanGuarantee(Long loanId, JsonCommand command) {
+
+        if(loanId != null && command != null) {
+            List<SavingsAccountTransaction> savingsAccountTransactions = this.savingsAccountTransactionRepository.findAllTransactionByLoanId(loanId);
+
+            SavingsAccountTransaction holdTransaction = savingsAccountTransactions.stream().filter(sa -> sa.isAmountOnHoldNotReleased()).findFirst().orElse(null);
+
+            if(holdTransaction == null) {
+                throw new HoldTransactionNotFoundException(null, null);
+            }
+            Long savingsId = holdTransaction.getSavingsAccount().getId();
+
+            // release on hold guarantee
+            CommandProcessingResult releaseResult = this.releaseAmount(savingsId, holdTransaction.getId());
+            holdTransaction.setLoanId(loanId);
+            this.savingsAccountTransactionRepository.saveAndFlush(holdTransaction);
+
+            // Withdraw guarantee
+            // update transaction amount in command
+            JsonElement element =  command.parsedJson();
+            JsonObject object = element.getAsJsonObject();
+            object.addProperty("transactionAmount", holdTransaction.getAmount());
+            command.setJsonCommand(object.toString());
+
+            CommandProcessingResult withdrawalResult = this.withdrawal(savingsId, command);
+            SavingsAccountTransaction withdrawalTransaction = this.savingsAccountTransactionRepository
+                    .findOneByIdAndSavingsAccountId(withdrawalResult.resourceId(), savingsId);
+            withdrawalTransaction.setLoanId(loanId);
+            this.savingsAccountTransactionRepository.saveAndFlush(withdrawalTransaction);
+
+            return new CommandProcessingResultBuilder()
+                    .withEntityId(withdrawalResult.resourceId())
+                    .withOfficeId(holdTransaction.getSavingsAccount().officeId())
+                    .withClientId(holdTransaction.getSavingsAccount().clientId())
+                    .withGroupId(holdTransaction.getSavingsAccount().groupId())
+                    .withSavingsId(holdTransaction.getSavingsAccount().getId())
+                    .build();
+        }
+        return null;
     }
 
 }
