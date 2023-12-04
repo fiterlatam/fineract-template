@@ -1948,7 +1948,8 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             BigDecimal depositAmount = cheque.getGuaranteeAmount().subtract(requiredGuaranteeAmount);
             if (depositAmount != null && depositAmount.compareTo(BigDecimal.ZERO) < 0) {
                 CommandProcessingResult depositCommandResult = this.savingsAccountWritePlatformService
-                        .depositAndHoldToClientGuaranteeAccount(depositAmount.abs(), requiredGuaranteeAmount.abs(), loanAccount.getClientId(), localDate);
+                        .depositAndHoldToClientGuaranteeAccount(depositAmount.abs(), requiredGuaranteeAmount.abs(),
+                                loanAccount.getClientId(), localDate);
             }
         }
         return new CommandProcessingResultBuilder().withCommandId(command.commandId()).build();

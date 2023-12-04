@@ -2077,8 +2077,8 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
     }
 
     @Override
-    public CommandProcessingResult depositAndHoldToClientGuaranteeAccount(BigDecimal depositAmount, BigDecimal requiredAmount, Long clientId,
-                                                                          LocalDate transactionDate) {
+    public CommandProcessingResult depositAndHoldToClientGuaranteeAccount(BigDecimal depositAmount, BigDecimal requiredAmount,
+            Long clientId, LocalDate transactionDate) {
         CommandProcessingResult result = null;
         List<SavingsAccount> savingsAccounts = this.savingAccountRepositoryWrapper.findSavingAccountByClientId(clientId);
         Optional<SavingsAccount> guaranteeAccount = savingsAccounts.stream()
