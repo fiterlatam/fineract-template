@@ -338,7 +338,7 @@ public class LoanSchedularServiceImpl implements LoanSchedularService {
         List<LoanRepaymentImportData> loanRepayments = this.jdbcTemplate.query(sql, this.loanRepaymentImportMapper, 1);
         List<Throwable> exceptions = new ArrayList<>();
         if (!CollectionUtils.isEmpty(loanRepayments)) {
-            int iterations = 1;
+            int iterations = 0;
             for (final LoanRepaymentImportData loanRepaymentImportData : loanRepayments) {
                 iterations++;
                 final String loanCode = loanRepaymentImportData.getLoanCode();

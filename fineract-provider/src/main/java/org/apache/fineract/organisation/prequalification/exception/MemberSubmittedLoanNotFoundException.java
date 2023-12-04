@@ -20,13 +20,11 @@ package org.apache.fineract.organisation.prequalification.exception;
 
 import org.apache.fineract.infrastructure.core.exception.AbstractPlatformResourceNotFoundException;
 
-/**
- * A {@link RuntimeException} thrown when client doesn't have a pending loan request.
- */
-public class MemberHasNoPendingLoanException extends AbstractPlatformResourceNotFoundException {
+public class MemberSubmittedLoanNotFoundException extends AbstractPlatformResourceNotFoundException {
 
-    public MemberHasNoPendingLoanException(String name, String dpi, String product) {
-        super("error.msg.client.pending.loan.request", "Client " + name + " with dpi " + dpi + " doesnt have a pending loan request.", name,
-                dpi, product);
+    public MemberSubmittedLoanNotFoundException(final String dpi) {
+        super("error.msg.prequalification.submitted.loan.not.found.exception",
+                "Member with DPI " + dpi + " has not no loan in submitted status", dpi);
     }
+
 }
