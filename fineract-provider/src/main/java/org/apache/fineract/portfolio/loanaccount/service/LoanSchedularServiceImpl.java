@@ -349,6 +349,7 @@ public class LoanSchedularServiceImpl implements LoanSchedularService {
                 loanRepaymentImport.setMifosProcessingDate(localDateTime);
                 loanRepaymentImport.setMifosProcessingTime(localDateTime.toLocalTime());
                 loanRepaymentImport.setMifosFileName("Mifos-Run-" + iterations);
+                loanRepaymentImport.setLastPayment("N");
                 try {
                     final Optional<Loan> loanAccountOptional = loanRepository.findLoanByExternalId(loanCode);
 
@@ -376,7 +377,6 @@ public class LoanSchedularServiceImpl implements LoanSchedularService {
                         this.loanRepaymentImportRepository.saveAndFlush(loanRepaymentImport);
                         continue;
                     }
-
                     final MonetaryCurrency currency = loanAccount.getCurrency();
                     final boolean isRecoveryRepayment = false;
                     final Long loanId = loanAccount.getId();
@@ -413,7 +413,9 @@ public class LoanSchedularServiceImpl implements LoanSchedularService {
                     loanRepaymentImport.setScheduledPaymentAmount(scheduledAmount);
                     loanRepaymentImport.setTolerance(tolerance);
                     loanRepaymentImport.setPaymentNumber(installmentNumber.longValue());
-
+                    final Integer numberOfInstallments = loanAccount.getNumberOfRepayments();
+                    final String lastInstallment = Objects.equals(numberOfInstallments, installmentNumber) ? "S" : "N";
+                    loanRepaymentImport.setLastPayment(lastInstallment);
                     // Tolerance limit is not met
                     if (paymentToleranceLimit.compareTo(BigDecimal.ZERO) > 0) {
                         final BigDecimal limitPortion = scheduledAmount.multiply(paymentToleranceLimit).divide(BigDecimal.valueOf(100L),
@@ -474,9 +476,7 @@ public class LoanSchedularServiceImpl implements LoanSchedularService {
                     CommandProcessingResult result = loanWritePlatformService.makeLoanRepayment(LoanTransactionType.REPAYMENT, loanId,
                             command, isRecoveryRepayment);
                     loanRepaymentImport.setStatus(LoanRepaymentImportStatus.PROCESSED.getId());
-                    Integer numberOfInstallments = loanAccount.getNumberOfRepayments();
-                    String lastInstallment = Objects.equals(numberOfInstallments, installmentNumber) ? "S" : "N";
-                    loanRepaymentImport.setLastPayment(lastInstallment);
+                    loanRepaymentImport.setOperationResult("Aplicado");
                     log.info("Import loan repayment successful for loan code {}", result.getLoanId());
                 } catch (final PlatformApiDataValidationException e) {
                     loanRepaymentImport.setErrorId(6L);
