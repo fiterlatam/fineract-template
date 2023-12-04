@@ -2077,8 +2077,8 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
     }
 
     @Override
-    public CommandProcessingResult depositAndHoldToClientGuaranteeAccount(BigDecimal depositAmount, Long clientId,
-            LocalDate transactionDate) {
+    public CommandProcessingResult depositAndHoldToClientGuaranteeAccount(BigDecimal depositAmount, BigDecimal requiredAmount, Long clientId,
+                                                                          LocalDate transactionDate) {
         CommandProcessingResult result = null;
         List<SavingsAccount> savingsAccounts = this.savingAccountRepositoryWrapper.findSavingAccountByClientId(clientId);
         Optional<SavingsAccount> guaranteeAccount = savingsAccounts.stream()
@@ -2131,14 +2131,14 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
             // Hold Amount
             Money runningBalance = Money.of(account.getCurrency(), account.getAccountBalance());
             if (account.getSavingsHoldAmount() != null) {
-                runningBalance = runningBalance.minus(account.getSavingsHoldAmount()).minus(depositAmount);
+                runningBalance = runningBalance.minus(account.getSavingsHoldAmount()).minus(requiredAmount);
             } else {
-                runningBalance = runningBalance.minus(depositAmount);
+                runningBalance = runningBalance.minus(requiredAmount);
             }
 
             SavingsAccountTransaction transaction = this.savingsAccountDomainService.handleHold(account, getAppUserIfPresent(),
-                    depositAmount, transactionDate, false);
-            account.holdAmount(depositAmount);
+                    requiredAmount, transactionDate, false);
+            account.holdAmount(requiredAmount);
             transaction.updateRunningBalance(runningBalance);
 
             final String reasonForBlock = "Hold deposit amount for disbursing loan";
