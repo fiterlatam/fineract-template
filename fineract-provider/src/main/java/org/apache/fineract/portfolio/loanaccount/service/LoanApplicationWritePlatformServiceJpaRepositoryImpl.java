@@ -1944,12 +1944,10 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             this.chequeBatchRepositoryWrapper.updateCheque(cheque);
 
             // TODO: FBR-47 Handle deposit to guarantee savings account here
-            BigDecimal requiredGuaranteeAmount = cheque.getRequiredGuaranteeAmount();
-            BigDecimal depositAmount = cheque.getGuaranteeAmount().subtract(requiredGuaranteeAmount);
-            if (depositAmount != null && depositAmount.compareTo(BigDecimal.ZERO) < 0) {
-                CommandProcessingResult depositCommandResult = this.savingsAccountWritePlatformService
-                        .depositAndHoldToClientGuaranteeAccount(depositAmount.abs(), requiredGuaranteeAmount.abs(),
-                                loanAccount.getClientId(), localDate);
+            BigDecimal depositAmount = cheque.getGuaranteeAmount().subtract(cheque.getRequiredGuaranteeAmount());
+            if(depositAmount != null && depositAmount.compareTo(BigDecimal.ZERO) < 0){
+                CommandProcessingResult depositCommandResult = this.savingsAccountWritePlatformService.depositAndHoldToClientGuaranteeAccount(depositAmount.abs(),
+                        loanAccount.getClientId(), loanAccount.getId(), localDate);
             }
         }
         return new CommandProcessingResultBuilder().withCommandId(command.commandId()).build();
