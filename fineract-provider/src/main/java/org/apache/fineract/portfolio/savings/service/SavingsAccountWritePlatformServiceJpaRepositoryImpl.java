@@ -2185,8 +2185,10 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
 
             // release on hold guarantee
             CommandProcessingResult releaseResult = this.releaseAmount(savingsId, holdTransaction.getId());
-            holdTransaction.setLoanId(loanId);
-            this.savingsAccountTransactionRepository.saveAndFlush(holdTransaction);
+            SavingsAccountTransaction releaseTransaction = this.savingsAccountTransactionRepository
+                    .findOneByIdAndSavingsAccountId(releaseResult.resourceId(), savingsId);
+            releaseTransaction.setLoanId(loanId);
+            this.savingsAccountTransactionRepository.saveAndFlush(releaseTransaction);
 
             // Withdraw guarantee
             // update transaction amount in command
