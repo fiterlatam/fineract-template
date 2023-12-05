@@ -2132,14 +2132,14 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
             // Hold Amount
             Money runningBalance = Money.of(account.getCurrency(), account.getAccountBalance());
             if (account.getSavingsHoldAmount() != null) {
-                runningBalance = runningBalance.minus(account.getSavingsHoldAmount()).minus(requiredAmount);
+                runningBalance = runningBalance.minus(account.getSavingsHoldAmount()).minus(depositAmount);
             } else {
-                runningBalance = runningBalance.minus(requiredAmount);
+                runningBalance = runningBalance.minus(depositAmount);
             }
 
             SavingsAccountTransaction transaction = this.savingsAccountDomainService.handleHold(account, getAppUserIfPresent(),
-                    requiredAmount, transactionDate, false);
-            account.holdAmount(requiredAmount);
+                    depositAmount, transactionDate, false);
+            account.holdAmount(depositAmount);
             transaction.updateRunningBalance(runningBalance);
             transaction.setLoanId(loanId);
 
