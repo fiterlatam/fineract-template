@@ -179,6 +179,10 @@ public class LoanTransactionData {
         this.numberOfRepayments = numberOfRepayments;
     }
 
+    public Integer getNumberOfRepayments() {
+        return numberOfRepayments;
+    }
+
     public void setLoanRepaymentScheduleInstallments(final List<LoanRepaymentScheduleInstallmentData> loanRepaymentScheduleInstallments) {
         this.loanRepaymentScheduleInstallments = loanRepaymentScheduleInstallments;
     }
@@ -202,6 +206,7 @@ public class LoanTransactionData {
                 loanTransactionData.transfer, loanTransactionData.fixedEmiAmount, loanTransactionData.outstandingLoanBalance,
                 loanTransactionData.manuallyReversed);
         loanTransactionTemplate.setInstallmentNumber(loanTransactionData.getInstallmentNumber());
+        loanTransactionTemplate.setNumberOfRepayments(loanTransactionData.getNumberOfRepayments());
         return loanTransactionTemplate;
 
     }

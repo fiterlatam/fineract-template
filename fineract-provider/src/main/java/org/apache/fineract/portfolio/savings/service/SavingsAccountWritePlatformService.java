@@ -123,4 +123,7 @@ public interface SavingsAccountWritePlatformService {
     CommandProcessingResult depositAndHoldToClientGuaranteeAccount(BigDecimal depositAmount, BigDecimal requiredGuaranteeAmount,
             Long clientId, Long loanId, LocalDate transactionDate);
 
+    CommandProcessingResult depositAndHoldToClientGuaranteeAccount(BigDecimal depositAmount, Long clientId, Long loanId, LocalDate transactionDate);
+
+    CommandProcessingResult releaseLoanGuarantee(Long loanId, JsonCommand command);
 }
