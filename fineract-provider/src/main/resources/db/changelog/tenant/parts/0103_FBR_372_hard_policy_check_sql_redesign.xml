@@ -496,4 +496,187 @@
                 stripComments="true"/>
     </changeSet>
 
+    <changeSet author="fineract" id="39">
+        <createTable tableName="m_client_loan_additional_properties">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="loan_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="client_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="case_id" type="VARCHAR(250)">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueComputed="NULL" name="Ciclos_Cancelados" type="BIGINT"/>
+            <column defaultValueComputed="NULL" name="branch_code" type="BIGINT"/>
+            <column defaultValueComputed="NULL"  name="cargoTesorera" type="VARCHAR(100)"/>
+            <column defaultValueComputed="NULL" name="cargo" type="VARCHAR(100)"/>
+            <column defaultValueComputed="NULL" name="estado_solicitud" type="VARCHAR(100)"/>
+            <column defaultValueComputed="NULL" name="fecha_inicio" type="date"/>
+            <column defaultValueComputed="NULL" name="producto" type="VARCHAR(100)"/>
+            <column defaultValueComputed="NULL" name="Fecha_Solicitud" type="date"/>
+            <column defaultValueComputed="NULL" name="codigo_cliente" type="VARCHAR(100)"/>
+            <column defaultValueComputed="NULL" name="actividad_negocio" type="VARCHAR(250)"/>
+            <column defaultValueComputed="NULL" name="activo_corriente" type="DECIMAL(19, 6)"/>
+            <column defaultValueComputed="NULL" name="activo_no_corriente" type="DECIMAL(19, 6)"/>
+            <column defaultValueComputed="NULL" name="alimentacion" type="DECIMAL(19, 6)"/>
+            <column defaultValueComputed="NULL" name="alquiler_cliente" type="DECIMAL(19, 6)"/>
+            <column defaultValueComputed="NULL" name="alquiler_gasto" type="DECIMAL(19, 6)"/>
+            <column defaultValueComputed="NULL" name="alquiler_local" type="DECIMAL(19, 6)"/>
+            <column defaultValueComputed="NULL" name="antiguedad_negocio" type="VARCHAR(100)"/>
+            <column defaultValueComputed="NULL" name="apoyo_familia" type="VARCHAR(100)"/>
+            <column defaultValueComputed="NULL" name="aprobaciones_bc" type="INT"/>
+            <column defaultValueComputed="NULL" name="area" type="VARCHAR(100)"/>
+            <column defaultValueComputed="NULL" name="bienes_inmuebles" type="INT"/>
+            <column defaultValueComputed="NULL" name="bienes_inmuebles_familiares" type="INT"/>
+            <column defaultValueComputed="NULL" name="c_dpi" type="VARCHAR(100)"/>
+            <column defaultValueComputed="NULL" name="c_edad" type="INT"/>
+            <column defaultValueComputed="NULL" name="c_fecha_nacimiento" type="date"/>
+            <column defaultValueComputed="NULL" name="c_otro_nombre" type="VARCHAR(100)"/>
+            <column defaultValueComputed="NULL" name="c_primer_apellido" type="VARCHAR(100)"/>
+            <column defaultValueComputed="NULL" name="c_primer_nombre" type="VARCHAR(100)"/>
+            <column defaultValueComputed="NULL" name="c_profesion" type="VARCHAR(100)"/>
+            <column defaultValueComputed="NULL" name="c_segundo_apellido" type="VARCHAR(100)"/>
+            <column defaultValueComputed="NULL" name="c_segundo_nombre" type="VARCHAR(100)"/>
+            <column defaultValueComputed="NULL" name="c_telefono" type="VARCHAR(100)"/>
+            <column defaultValueComputed="NULL" name="capacidad_pago" type="DECIMAL(19, 6)"/>
+            <column defaultValueComputed="NULL" name="comunal_vigente" type="DECIMAL(19, 6)"/>
+            <column defaultValueComputed="NULL" name="costo_unitario" type="DECIMAL(19, 6)"/>
+            <column defaultValueComputed="NULL" name="costo_venta" type="DECIMAL(19, 6)"/>
+            <column defaultValueComputed="NULL" name="cuanto_pagar" type="DECIMAL(19, 6)"/>
+            <column defaultValueComputed="NULL" name="cuentas_por_pagar" type="DECIMAL(19, 6)"/>
+            <column defaultValueComputed="NULL" name="cuota" type="INT"/>
+            <column defaultValueComputed="NULL" name="cuota_otros" type="INT"/>
+            <column defaultValueComputed="NULL" name="cuota_puente" type="INT"/>
+            <column defaultValueComputed="NULL" name="cuotas_pendientes_bc" type="INT"/>
+            <column defaultValueComputed="NULL" name="dependientes" type="INT"/>
+            <column defaultValueComputed="NULL" name="destino_prestamo" type="VARCHAR(100)"/>
+            <column defaultValueComputed="NULL" name="educacion" type="INT"/>
+            <column defaultValueComputed="NULL" name="efectivo" type="DECIMAL(19, 6)"/>
+            <column defaultValueComputed="NULL" name="endeudamiento_actual" type="DECIMAL(19, 6)"/>
+            <column defaultValueComputed="NULL" name="endeudamiento_futuro" type="DECIMAL(19, 6)"/>
+            <column defaultValueComputed="NULL" name="enf" type="INT"/>
+            <column defaultValueComputed="NULL" name="escribe" type="VARCHAR(100)"/>
+            <column defaultValueComputed="NULL" name="evolucion_negocio" type="VARCHAR(100)"/>
+            <column defaultValueComputed="NULL" name="f_pep" type="VARCHAR(100)"/>
+            <column defaultValueComputed="NULL" name="familiares" type="INT"/>
+            <column defaultValueComputed="NULL" name="fecha_primera_reunion" type="date"/>
+            <column defaultValueComputed="NULL" name="flujo_disponible" type="INT"/>
+            <column defaultValueComputed="NULL" name="garantia_prestamo" type="VARCHAR(100)"/>
+            <column defaultValueComputed="NULL" name="gastos_familiares" type="DECIMAL(19, 6)"/>
+            <column defaultValueComputed="NULL" name="gastos_negocio" type="DECIMAL(19, 6)"/>
+            <column defaultValueComputed="NULL" name="herramientas" type="INT"/>
+            <column defaultValueComputed="NULL" name="hijos" type="INT"/>
+            <column defaultValueComputed="NULL" name="mortgages" type="INT"/>
+            <column defaultValueComputed="NULL" name="impuestos" type="INT"/>
+            <column defaultValueComputed="NULL" name="ingresado_por" type="VARCHAR(250)"/>
+            <column defaultValueComputed="NULL" name="ingreso_familiar" type="DECIMAL(19, 6)"/>
+            <column defaultValueComputed="NULL" name="integrantes_adicional" type="INT"/>
+            <column defaultValueComputed="NULL" name="inventarios" type="DECIMAL(19, 6)"/>
+            <column defaultValueComputed="NULL" name="inversion_total" type="DECIMAL(19, 6)"/>
+            <column defaultValueComputed="NULL" name="invertir" type="TEXT"/>
+            <column defaultValueComputed="NULL" name="lee" type="VARCHAR(100)"/>
+            <column defaultValueComputed="NULL" name="menaje_del_hogar" type="DECIMAL(19, 6)"/>
+            <column defaultValueComputed="NULL" name="mobiliario_y_equipo" type="DECIMAL(19, 6)"/>
+            <column defaultValueComputed="NULL" name="monto_solicitado" type="DECIMAL(19, 6)"/>
+            <column defaultValueComputed="NULL" name="motivo_solicitud" type="VARCHAR(100)"/>
+            <column defaultValueComputed="NULL" name="nit" type="VARCHAR(250)"/>
+            <column defaultValueComputed="NULL" name="nombre_propio" type="VARCHAR(100)"/>
+            <column defaultValueComputed="NULL" name="pasivo_corriente" type="DECIMAL(19, 6)"/>
+            <column defaultValueComputed="NULL" name="pasivo_no_Corriente" type="DECIMAL(19, 6)"/>
+            <column defaultValueComputed="NULL" name="pensiones" type="DECIMAL(19, 6)"/>
+            <column defaultValueComputed="NULL" name="pep" type="VARCHAR(100)"/>
+            <column defaultValueComputed="NULL" name="plazo" type="INT"/>
+            <column defaultValueComputed="NULL" name="plazo_vigente" type="INT"/>
+            <column defaultValueComputed="NULL" name="posee_cuenta" type="VARCHAR(100)"/>
+            <column defaultValueComputed="NULL" name="prestamo_puente" type="BIGINT"/>
+            <column defaultValueComputed="NULL" name="propuesta_facilitador" type="DECIMAL(19, 6)"/>
+            <column defaultValueComputed="NULL" name="punto_reunion" type="VARCHAR(100)"/>
+            <column defaultValueComputed="NULL" name="relacion_gastos" type="DECIMAL(19, 6)"/>
+            <column defaultValueComputed="NULL" name="rentabilidad_neta" type="DECIMAL(19, 6)"/>
+            <column defaultValueComputed="NULL" name="rotacion_inventario" type="DECIMAL(19, 6)"/>
+            <column defaultValueComputed="NULL" name="salario_cliente" type="DECIMAL(19, 6)"/>
+            <column defaultValueComputed="NULL" name="salarios" type="DECIMAL(19, 6)"/>
+            <column defaultValueComputed="NULL" name="salud" type="VARCHAR(100)"/>
+            <column defaultValueComputed="NULL" name="servicios" type="VARCHAR(100)"/>
+            <column defaultValueComputed="NULL" name="servicios_basicos" type="DECIMAL(19, 6)"/>
+            <column defaultValueComputed="NULL" name="servicios_gasto" type="DECIMAL(19, 6)"/>
+            <column defaultValueComputed="NULL" name="servicios_medicos" type="DECIMAL(19, 6)"/>
+            <column defaultValueComputed="NULL" name="tarjetas" type="INT"/>
+            <column defaultValueComputed="NULL" name="tipo_vivienda" type="VARCHAR(100)"/>
+            <column defaultValueComputed="NULL" name="total_activo" type="DECIMAL(19, 6)"/>
+            <column defaultValueComputed="NULL" name="total_ingresos" type="DECIMAL(19, 6)"/>
+            <column defaultValueComputed="NULL" name="total_ingresos_familiares" type="DECIMAL(19, 6)"/>
+            <column defaultValueComputed="NULL" name="total_pasivo" type="DECIMAL(19, 6)"/>
+            <column defaultValueComputed="NULL" name="transporte_gasto" type="DECIMAL(19, 6)"/>
+            <column defaultValueComputed="NULL" name="transporte_negocio" type="DECIMAL(19, 6)"/>
+            <column defaultValueComputed="NULL" name="ubicacion_cliente" type="VARCHAR(250)"/>
+            <column defaultValueComputed="NULL" name="ubicacion_negocio" type="VARCHAR(250)"/>
+            <column defaultValueComputed="NULL" name="utilidad_bruta" type="DECIMAL(19, 6)"/>
+            <column defaultValueComputed="NULL" name="utilidad_neta" type="DECIMAL(19, 6)"/>
+            <column defaultValueComputed="NULL" name="valid_fiador" type="INT"/>
+            <column defaultValueComputed="NULL" name="valor_garantia" type="DECIMAL(19, 6)"/>
+            <column defaultValueComputed="NULL" name="vehiculos" type="INT"/>
+            <column defaultValueComputed="NULL" name="ventas" type="DECIMAL(19, 6)"/>
+            <column defaultValueComputed="NULL" name="vestimenta" type="DECIMAL(19, 6)"/>
+            <column defaultValueComputed="NULL" name="visito_negocio" type="VARCHAR(100)"/>
+            <column defaultValueComputed="NULL" name="external_id" type="VARCHAR(250)"/>
+            <column defaultValueComputed="NULL" name="owner_id" type="VARCHAR(250)"/>
+            <column defaultValueComputed="NULL" name="case_name" type="VARCHAR(250)"/>
+            <column defaultValueComputed="NULL" name="case_type" type="VARCHAR(100)"/>
+            <column defaultValueComputed="NULL" name="date_opened" type="datetime"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="fineract" id="40">
+        <addForeignKeyConstraint baseColumnNames="loan_id" baseTableName="m_client_loan_additional_properties"
+                                 constraintName="FK20231206_m_client_loan_additional_properties_loan_id" deferrable="false"
+                                 initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT"
+                                 referencedColumnNames="id" referencedTableName="m_loan" validate="true"/>
+        <addForeignKeyConstraint baseColumnNames="client_id" baseTableName="m_client_loan_additional_properties"
+                                 constraintName="FK20231206_m_client_loan_additional_properties_client_id" deferrable="false"
+                                 initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT"
+                                 referencedColumnNames="id" referencedTableName="m_client" validate="true"/>
+    </changeSet>
+    <changeSet author="fineract" id="41">
+        <sqlFile
+                encoding="utf8"
+                path="db/changelog/tenant/commands/insert_loan_additional_external_service_configs.sql"
+                relativeToChangelogFile="false"
+                splitStatements="true"
+                stripComments="true"/>
+    </changeSet>
+
+    <changeSet id="42" author="fineract">
+        <sql>
+            <![CDATA[
+                INSERT IGNORE INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory) VALUES((SELECT mc.id FROM m_code mc WHERE mc.code_name = 'clientAreas' LIMIT 1), 'Rural', 'Rural', 1, NULL, 1, 0);
+                INSERT IGNORE INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory) VALUES((SELECT mc.id FROM m_code mc WHERE mc.code_name = 'clientAreas' LIMIT 1), 'Urbana', 'Urbana', 2, NULL, 1, 0);
+                INSERT IGNORE INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory) VALUES((SELECT mc.id FROM m_code mc WHERE mc.code_name = 'clientAreas' LIMIT 1), 'PeriUrbana', 'PeriUrbana', 3, NULL, 1, 0);
+            ]]>
+        </sql>
+    </changeSet>
+
+    <changeSet id="43" author="fineract">
+        <sql>
+            <![CDATA[
+                INSERT IGNORE INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory) VALUES((SELECT mc.id FROM m_code mc WHERE mc.code_name = 'housingType' LIMIT 1), 'Propia', 'Propia', 1, NULL, 1, 0);
+                INSERT IGNORE INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory) VALUES((SELECT mc.id FROM m_code mc WHERE mc.code_name = 'housingType' LIMIT 1), 'Alquilada', 'Alquilada', 2, NULL, 1, 0);
+                INSERT IGNORE INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory) VALUES((SELECT mc.id FROM m_code mc WHERE mc.code_name = 'housingType' LIMIT 1), 'Pagándola', 'Pagándola', 3, NULL, 1, 0);
+            ]]>
+        </sql>
+    </changeSet>
+
+    <changeSet author="fineract" id="44">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="fecha_fin"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="fecha_fin" type="date"/>
+        </addColumn>
+    </changeSet>
 </databaseChangeLog>

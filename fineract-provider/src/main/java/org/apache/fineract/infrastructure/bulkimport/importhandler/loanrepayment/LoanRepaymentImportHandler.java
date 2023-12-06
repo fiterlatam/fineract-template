@@ -106,8 +106,8 @@ public class LoanRepaymentImportHandler implements ImportHandler {
         Integer bankNumber = ImportHandlerUtils.readAsInt(LoanRepaymentConstants.BANK_NO_COL, row);
         String transactionExternalId = ImportHandlerUtils.readAsString(LoanRepaymentConstants.TRANSACTION_EXTERNAL_ID_COL, row);
         String note = ImportHandlerUtils.readAsString(LoanRepaymentConstants.TRANSACTION_NOTE_COL, row);
-        LoanTransactionData data = LoanTransactionData.importInstance(repaymentAmount, repaymentDate, repaymentTypeId, accountNumber, checkNumber, routingCode,
-                receiptNumber, bankNumber, loanAccountId, "", row.getRowNum(), locale, dateFormat);
+        LoanTransactionData data = LoanTransactionData.importInstance(repaymentAmount, repaymentDate, repaymentTypeId, accountNumber,
+                checkNumber, routingCode, receiptNumber, bankNumber, loanAccountId, "", row.getRowNum(), locale, dateFormat);
         data.setNote(note);
         data.setExternalId(transactionExternalId);
         return data;

@@ -40,7 +40,6 @@ import javax.ws.rs.core.UriInfo;
 import org.apache.fineract.commands.domain.CommandWrapper;
 import org.apache.fineract.commands.service.CommandWrapperBuilder;
 import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformService;
-import org.apache.fineract.infrastructure.codes.service.CodeValueReadPlatformService;
 import org.apache.fineract.infrastructure.core.api.ApiRequestParameterHelper;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.serialization.ApiRequestJsonSerializationSettings;
@@ -51,13 +50,11 @@ import org.apache.fineract.infrastructure.documentmanagement.api.FileUploadValid
 import org.apache.fineract.infrastructure.documentmanagement.command.DocumentCommand;
 import org.apache.fineract.infrastructure.documentmanagement.service.DocumentWritePlatformService;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
-import org.apache.fineract.organisation.agency.service.AgencyReadPlatformServiceImpl;
+import org.apache.fineract.organisation.prequalification.data.LoanAdditionalData;
 import org.apache.fineract.organisation.prequalification.data.MemberPrequalificationData;
+import org.apache.fineract.organisation.prequalification.service.BureauValidationWritePlatformService;
 import org.apache.fineract.organisation.prequalification.service.PrequalificationReadPlatformService;
 import org.apache.fineract.organisation.prequalification.service.PrequalificationWritePlatformService;
-import org.apache.fineract.portfolio.group.service.CenterReadPlatformServiceImpl;
-import org.apache.fineract.portfolio.loanproduct.service.LoanProductReadPlatformService;
-import org.apache.fineract.useradministration.service.AppUserReadPlatformService;
 import org.glassfish.jersey.media.multipart.FormDataBodyPart;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataParam;
@@ -79,31 +76,23 @@ public class IndividualPrequalificationApiResource {
 
     private final PlatformSecurityContext context;
     private final PrequalificationReadPlatformService prequalificationReadPlatformService;
-    private final CodeValueReadPlatformService codeValueReadPlatformService;
-    private final CenterReadPlatformServiceImpl centerReadPlatformService;
     private final DefaultToApiJsonSerializer<MemberPrequalificationData> toApiJsonSerializer;
     private final ApiRequestParameterHelper apiRequestParameterHelper;
     private final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService;
     private final FileUploadValidator fileUploadValidator;
     private final DocumentWritePlatformService documentWritePlatformService;
     private final PrequalificationWritePlatformService prequalificationWritePlatformService;
-    private final AgencyReadPlatformServiceImpl agencyReadPlatformService;
-    private final LoanProductReadPlatformService loanProductReadPlatformService;
-    private final AppUserReadPlatformService appUserReadPlatformService;
+    private final BureauValidationWritePlatformService bureauValidationWritePlatformService;
 
     @Autowired
     public IndividualPrequalificationApiResource(final PlatformSecurityContext context,
-            final CodeValueReadPlatformService codeValueReadPlatformService, final AgencyReadPlatformServiceImpl agencyReadPlatformService,
             final PrequalificationWritePlatformService prequalificationWritePlatformService,
-            final CenterReadPlatformServiceImpl centerReadPlatformService,
-            final LoanProductReadPlatformService loanProductReadPlatformService,
-            final AppUserReadPlatformService appUserReadPlatformService,
             final DefaultToApiJsonSerializer<MemberPrequalificationData> toApiJsonSerializer,
             final PrequalificationReadPlatformService prequalificationReadPlatformService, final FileUploadValidator fileUploadValidator,
             final DocumentWritePlatformService documentWritePlatformService, final ApiRequestParameterHelper apiRequestParameterHelper,
-            final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService) {
+            final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService,
+            BureauValidationWritePlatformService bureauValidationWritePlatformService) {
         this.context = context;
-        this.codeValueReadPlatformService = codeValueReadPlatformService;
         this.toApiJsonSerializer = toApiJsonSerializer;
         this.apiRequestParameterHelper = apiRequestParameterHelper;
         this.commandsSourceWritePlatformService = commandsSourceWritePlatformService;
@@ -111,10 +100,7 @@ public class IndividualPrequalificationApiResource {
         this.fileUploadValidator = fileUploadValidator;
         this.documentWritePlatformService = documentWritePlatformService;
         this.prequalificationWritePlatformService = prequalificationWritePlatformService;
-        this.agencyReadPlatformService = agencyReadPlatformService;
-        this.centerReadPlatformService = centerReadPlatformService;
-        this.loanProductReadPlatformService = loanProductReadPlatformService;
-        this.appUserReadPlatformService = appUserReadPlatformService;
+        this.bureauValidationWritePlatformService = bureauValidationWritePlatformService;
     }
 
     @GET
@@ -142,6 +128,21 @@ public class IndividualPrequalificationApiResource {
 
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(queryParameters);
         return this.toApiJsonSerializer.serialize(settings, memberData, PRE_QUALIFICATION_DATA_PARAMETERS);
+
+    }
+
+    @GET
+    @Path("/loanAdditionalData")
+    @Consumes({ MediaType.APPLICATION_JSON })
+    @Produces({ MediaType.APPLICATION_JSON })
+    @Operation(summary = "Retrieve Loan AdditionalData", description = "Example Requests:\n" + "?clientId=234&productId=41&caseId=caseid\n")
+    public String retrieveLoanAdditionalData(@QueryParam("clientId") @Parameter(description = "clientId") final Long clientId,
+            @QueryParam("productId") @Parameter(description = "productId") final Long productId,
+            @QueryParam("caseId") @Parameter(description = "caseId") final String caseId) {
+        this.context.authenticatedUser().validateHasViewPermission(this.resourceNameForPermissions);
+        final LoanAdditionalData loanAdditionalData = this.bureauValidationWritePlatformService.retrieveAdditionProperties(productId,
+                clientId, caseId);
+        return this.toApiJsonSerializer.serialize(loanAdditionalData);
 
     }
 
@@ -193,7 +194,7 @@ public class IndividualPrequalificationApiResource {
             fileUploadValidator.validate(fileSize, inputStream, fileDetails, bodyPart);
             final DocumentCommand documentCommand = new DocumentCommand(null, null, "prequalifications", groupId, name,
                     fileDetails.getFileName(), fileSize, bodyPart.getMediaType().toString(), description, null);
-            final Long documentId = this.documentWritePlatformService.createDocument(documentCommand, inputStream);
+            this.documentWritePlatformService.createDocument(documentCommand, inputStream);
         }
 
         this.prequalificationWritePlatformService.addCommentsToPrequalification(groupId, comment);

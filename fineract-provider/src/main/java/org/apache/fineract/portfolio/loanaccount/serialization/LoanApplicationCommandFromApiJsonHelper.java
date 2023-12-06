@@ -34,6 +34,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.ApiParameterError;
 import org.apache.fineract.infrastructure.core.data.DataValidatorBuilder;
 import org.apache.fineract.infrastructure.core.exception.InvalidJsonException;
@@ -97,8 +98,8 @@ public final class LoanApplicationCommandFromApiJsonHelper {
             LoanApiConstants.applicationId, // glim specific
             LoanApiConstants.lastApplication, // glim specific
             LoanApiConstants.daysInYearTypeParameterName, LoanApiConstants.fixedPrincipalPercentagePerInstallmentParamName,
-            LoanApiConstants.cupoIdParameterName, LoanApiConstants.PREQUALIFICATION_ID,
-            "borrowerCycle"));
+            LoanApiConstants.cupoIdParameterName, LoanApiConstants.PREQUALIFICATION_ID, LoanApiConstants.CASE_ID,
+            LoanApiConstants.LOAN_ADDITIONAL_DATA, "borrowerCycle"));
 
     private final FromJsonHelper fromApiJsonHelper;
     private final CalculateLoanScheduleQueryFromApiJsonHelper apiJsonHelper;
@@ -111,6 +112,18 @@ public final class LoanApplicationCommandFromApiJsonHelper {
         this.fromApiJsonHelper = fromApiJsonHelper;
         this.apiJsonHelper = apiJsonHelper;
         this.clientCollateralManagementRepositoryWrapper = clientCollateralManagementRepositoryWrapper;
+    }
+
+    public void validateLoanAdditionalData(final JsonCommand command) {
+        final JsonElement element = command.jsonElement(LoanApiConstants.LOAN_ADDITIONAL_DATA);
+        final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
+        final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors).resource("loan-addition-data");
+        baseDataValidator.reset().parameter(LoanApiConstants.LOAN_ADDITIONAL_DATA).value(element).notNull();
+        final String area = this.fromApiJsonHelper.extractStringNamed("area", element);
+        baseDataValidator.reset().parameter("area").value(area).ignoreIfNull().notExceedingLengthOf(500);
+        if (!dataValidationErrors.isEmpty()) {
+            throw new PlatformApiDataValidationException(dataValidationErrors);
+        }
     }
 
     public void validateForCreate(final String json, final boolean isMeetingMandatoryForJLGLoans, final LoanProduct loanProduct) {
@@ -210,7 +223,7 @@ public final class LoanApplicationCommandFromApiJsonHelper {
         final String loanOfficerIdParameterName = "loanOfficerId";
         if (this.fromApiJsonHelper.parameterExists(loanOfficerIdParameterName, element)) {
             final Long loanOfficerId = this.fromApiJsonHelper.extractLongNamed(loanOfficerIdParameterName, element);
-            //baseDataValidator.reset().parameter(loanOfficerIdParameterName).value(loanOfficerId).ignoreIfNull().integerGreaterThanZero();
+            // baseDataValidator.reset().parameter(loanOfficerIdParameterName).value(loanOfficerId).ignoreIfNull().integerGreaterThanZero();
         }
 
         final String loanPurposeIdParameterName = "loanPurposeId";

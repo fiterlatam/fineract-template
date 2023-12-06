@@ -34,6 +34,7 @@ import org.apache.fineract.infrastructure.dataqueries.data.DatatableData;
 import org.apache.fineract.organisation.agency.data.AgencyData;
 import org.apache.fineract.organisation.monetary.data.CurrencyData;
 import org.apache.fineract.organisation.prequalification.data.GroupPrequalificationData;
+import org.apache.fineract.organisation.prequalification.data.LoanAdditionalData;
 import org.apache.fineract.organisation.staff.data.StaffData;
 import org.apache.fineract.portfolio.account.data.PortfolioAccountData;
 import org.apache.fineract.portfolio.accountdetails.data.LoanAccountSummaryData;
@@ -259,6 +260,8 @@ public final class LoanAccountData {
     private GroupPrequalificationData prequalificationData;
 
     private Integer borrowerCycle;
+
+    private LoanAdditionalData loanAdditionalData;
 
     public static LoanAccountData disburseLoanByCheques(final Collection<AgencyData> agencyOptions,
             final Collection<CenterData> centerOptions, final Collection<GroupGeneralData> groupOption,
@@ -2239,5 +2242,13 @@ public final class LoanAccountData {
 
     public void setBorrowerCycle(Integer borrowerCycle) {
         this.borrowerCycle = borrowerCycle;
+    }
+
+    public LoanAdditionalData getLoanAdditionalData() {
+        return this.loanAdditionalData;
+    }
+
+    public void setLoanAdditionalData(LoanAdditionalData loanAdditionalData) {
+        this.loanAdditionalData = loanAdditionalData;
     }
 }

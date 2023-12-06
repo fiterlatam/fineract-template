@@ -16,15 +16,17 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.organisation.prequalification.service;
+package org.apache.fineract.organisation.prequalification.domain;
 
-import org.apache.fineract.infrastructure.core.api.JsonCommand;
-import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
-import org.apache.fineract.organisation.prequalification.data.LoanAdditionalData;
+import java.util.List;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
-public interface BureauValidationWritePlatformService {
+public interface LoanAdditionalPropertiesRepository
+        extends JpaRepository<LoanAdditionProperties, Long>, JpaSpecificationExecutor<LoanAdditionProperties> {
 
-    CommandProcessingResult validatePrequalificationWithBureau(Long prequalificationId, JsonCommand command);
-
-    LoanAdditionalData retrieveAdditionProperties(Long productId, Long clientId, String caseId);
+    @Query("select p from LoanAdditionProperties p WHERE p.client.id = :clientId AND p.loan.id = :loanId")
+    List<LoanAdditionProperties> findByClientIdAndLoanId(@Param("clientId") Long clientId, @Param("loanId") Long loanId);
 }
