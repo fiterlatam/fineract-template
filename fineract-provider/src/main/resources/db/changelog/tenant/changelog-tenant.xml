@@ -126,5 +126,6 @@
     <include file="parts/0107_FBR_45_loan_repayment_batches.xml" relativeToChangelogFile="true"/>
     <include file="parts/0108_FBR_412_add_reasign_status_to_cheques.xml" relativeToChangelogFile="true"/>
     <include file="parts/0109_FBR_437_add_loan_id_to_savings_transaction_table.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0110_FBR_436_add_loan_report_guarantee_report.xml" relativeToChangelogFile="true"/>
     <include file="parts/0111_FBR_489_add_require_committee_approval.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
