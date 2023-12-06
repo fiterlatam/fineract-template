@@ -6538,7 +6538,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                     }
                 } else if(this.actualDisbursementDate.isEqual(paymentDate) && this.interestChargedFromDate == null) {
                     if (installment.getInstallmentNumber().doubleValue() == 1) {
-                        int totalPeriodDays = 1;
+                        int totalPeriodDays = Math.toIntExact(ChronoUnit.DAYS.between(installment.getFromDate(), installment.getDueDate()));
                         Money interestForDisbursementDate = Money.of(getCurrency(), BigDecimal.valueOf(
                                 calculateInterestForDays(totalPeriodDays, installment.getInterestCharged(getCurrency()).getAmount(), 1)));
                         interest = interest.plus(interestForDisbursementDate);
@@ -6660,7 +6660,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 break;
             } else if (this.actualDisbursementDate.isEqual(paymentDate) && this.interestChargedFromDate == null
                     && installment.getInstallmentNumber().doubleValue() == 1) {
-                int totalPeriodDays = 1;
+                int totalPeriodDays = Math.toIntExact(ChronoUnit.DAYS.between(installment.getFromDate(), installment.getDueDate()));
                 BigDecimal interestForDisbursementDate = BigDecimal
                         .valueOf(calculateInterestForDays(totalPeriodDays, installment.getInterestCharged(getCurrency()).getAmount(), 1));
                 balances[0] = Money.of(currency, interestForDisbursementDate);
