@@ -132,6 +132,7 @@ import org.apache.fineract.portfolio.loanaccount.domain.LoanSummaryWrapper;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanTopupDetails;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionType;
 import org.apache.fineract.portfolio.loanaccount.exception.LoanApplicationDateException;
+import org.apache.fineract.portfolio.loanaccount.exception.LoanApplicationNotInClosedStateCannotBeModified;
 import org.apache.fineract.portfolio.loanaccount.exception.LoanApplicationNotInSubmittedAndPendingApprovalStateCannotBeDeleted;
 import org.apache.fineract.portfolio.loanaccount.exception.LoanApplicationNotInSubmittedAndPendingApprovalStateCannotBeModified;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.AprCalculator;
@@ -1942,14 +1943,39 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             this.loanRepositoryWrapper.saveAndFlush(loanAccount);
             this.chequeBatchRepositoryWrapper.updateCheque(cheque);
 
-
-            //TODO: FBR-47 Handle deposit to guarantee savings account here
+            // TODO: FBR-47 Handle deposit to guarantee savings account here
             BigDecimal depositAmount = cheque.getGuaranteeAmount().subtract(cheque.getRequiredGuaranteeAmount());
             if(depositAmount != null && depositAmount.compareTo(BigDecimal.ZERO) < 0){
                 CommandProcessingResult depositCommandResult = this.savingsAccountWritePlatformService.depositAndHoldToClientGuaranteeAccount(depositAmount.abs(),
-                        loanAccount.getClientId(), localDate);
+                        cheque.getRequiredGuaranteeAmount(), loanAccount.getClientId(), loanAccount.getId(), localDate);
             }
         }
         return new CommandProcessingResultBuilder().withCommandId(command.commandId()).build();
+    }
+
+    @Override
+    public CommandProcessingResult editLoanFund(final JsonCommand command) {
+        final Long loanId = command.getLoanId();
+        final Loan existingLoanApplication = retrieveLoanBy(loanId);
+        if (existingLoanApplication.isClosed()) {
+            throw new LoanApplicationNotInClosedStateCannotBeModified(loanId);
+        }
+        final String fundIdParameterName = "fundId";
+        final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
+        final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors).resource("loan");
+        if (command.parameterExists(fundIdParameterName)) {
+            final Long fundId = command.longValueOfParameterNamed(fundIdParameterName);
+            baseDataValidator.reset().parameter(fundIdParameterName).value(fundId).ignoreIfNull().integerGreaterThanZero();
+            final Fund fund = this.loanAssembler.findFundByIdIfProvided(fundId);
+            existingLoanApplication.updateFund(fund);
+        }
+        if (!dataValidationErrors.isEmpty()) {
+            throw new PlatformApiDataValidationException("validation.msg.validation.errors.exist", "Validation errors exist.",
+                    dataValidationErrors);
+        }
+        this.loanRepositoryWrapper.saveAndFlush(existingLoanApplication);
+        return new CommandProcessingResultBuilder().withEntityId(loanId).withOfficeId(existingLoanApplication.getOfficeId())
+                .withClientId(existingLoanApplication.getClientId()).withGroupId(existingLoanApplication.getGroupId())
+                .withLoanId(existingLoanApplication.getId()).build();
     }
 }

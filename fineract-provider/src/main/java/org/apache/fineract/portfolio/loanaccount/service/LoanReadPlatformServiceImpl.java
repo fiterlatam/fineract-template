@@ -1021,7 +1021,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                 final EnumOptionData groupStatus = ClientEnumerations.status(groupStatusEnum);
                 final LocalDate activationDate = JdbcSupport.getLocalDate(rs, "activationDate");
                 groupData = GroupGeneralData.instance(groupId, groupAccountNo, groupName, groupExternalId, groupStatus, activationDate,
-                        groupOfficeId, null, groupParentId, centerName, groupStaffId, null, groupHierarchy, groupLevel, null);
+                        groupOfficeId, null, groupParentId, centerName, groupStaffId, null, groupHierarchy, groupLevel, null, null, null);
             }
 
             final Integer loanCounter = JdbcSupport.getInteger(rs, "loanCounter");
@@ -1509,7 +1509,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
 
         this.context.authenticatedUser();
 
-        if (!"group".equals(templateType)) {
+        if (!"individual".equals(templateType) && clientId != null) {
             ClientData clientData = this.clientReadPlatformService.retrieveOne(clientId);
             String blacklistString = "select count(*) from m_client_blacklist where dpi=? and status=?";
             String dpiNumber = clientData.getDpiNumber();

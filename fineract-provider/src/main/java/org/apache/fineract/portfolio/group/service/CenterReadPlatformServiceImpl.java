@@ -414,13 +414,15 @@ public class CenterReadPlatformServiceImpl implements CenterReadPlatformService 
             final String activatedByUsername = rs.getString("activatedByUsername");
             final String activatedByFirstname = rs.getString("activatedByFirstname");
             final String activatedByLastname = rs.getString("activatedByLastname");
+            final LocalTime meetingStartTime = JdbcSupport.getLocalTime(rs, "meetingStartTime");
+            final LocalTime meetingEndTime = JdbcSupport.getLocalTime(rs, "meetingEndTime");
 
             final GroupTimelineData timeline = new GroupTimelineData(submittedOnDate, submittedByUsername, submittedByFirstname,
                     submittedByLastname, activationDate, activatedByUsername, activatedByFirstname, activatedByLastname, closedOnDate,
                     closedByUsername, closedByFirstname, closedByLastname);
 
             return GroupGeneralData.instance(id, accountNo, name, externalId, status, activationDate, officeId, officeName, null, null,
-                    staffId, staffName, hierarchy, groupLevel, timeline);
+                    staffId, staffName, hierarchy, groupLevel, timeline, meetingStartTime,meetingEndTime);
         }
     }
 

@@ -31,6 +31,7 @@ import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.infrastructure.dataqueries.data.DatatableData;
 import org.apache.fineract.organisation.office.data.OfficeData;
+import org.apache.fineract.organisation.prequalification.data.GroupPrequalificationData;
 import org.apache.fineract.organisation.staff.data.StaffData;
 import org.apache.fineract.portfolio.address.data.AddressData;
 import org.apache.fineract.portfolio.collateralmanagement.domain.ClientCollateralManagement;
@@ -99,6 +100,7 @@ public final class ClientData implements Comparable<ClientData>, Serializable {
     private final Collection<CodeValueData> clientClassificationOptions;
     private final Collection<CodeValueData> clientNonPersonConstitutionOptions;
     private final Collection<CodeValueData> clientNonPersonMainBusinessLineOptions;
+    private Collection<GroupPrequalificationData> clientPrequalifications;
     private final String firstlastname;
     private final String secondlastname;
     private final String departmentDpiName;
@@ -783,5 +785,13 @@ public final class ClientData implements Comparable<ClientData>, Serializable {
         this.housingTypeOptions = housingTypeOptions;
         this.departamentoOptions = ldepartamento;
         this.municipioOptions = lmunicipio;
+    }
+
+    public Collection<GroupPrequalificationData> getClientPrequalifications() {
+        return clientPrequalifications;
+    }
+
+    public void setClientPrequalifications(Collection<GroupPrequalificationData> clientPrequalifications) {
+        this.clientPrequalifications = clientPrequalifications;
     }
 }
