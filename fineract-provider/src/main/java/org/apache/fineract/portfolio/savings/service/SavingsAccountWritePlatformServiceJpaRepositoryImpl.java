@@ -2080,7 +2080,7 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
     }
 
     @Override
-    public CommandProcessingResult depositAndHoldToClientGuaranteeAccount(BigDecimal depositAmount, Long clientId, Long loanId, LocalDate transactionDate) {
+    public CommandProcessingResult depositAndHoldToClientGuaranteeAccount(BigDecimal depositAmount, BigDecimal requiredGuaranteeAmount, Long clientId, Long loanId, LocalDate transactionDate) {
         CommandProcessingResult result = null;
         List<SavingsAccount> savingsAccounts = this.savingAccountRepositoryWrapper.findSavingAccountByClientId(clientId);
         Optional<SavingsAccount> guaranteeAccount = savingsAccounts.stream()
@@ -2132,14 +2132,14 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
             // Hold Amount
             Money runningBalance = Money.of(account.getCurrency(), account.getAccountBalance());
             if (account.getSavingsHoldAmount() != null) {
-                runningBalance = runningBalance.minus(account.getSavingsHoldAmount()).minus(depositAmount);
+                runningBalance = runningBalance.minus(account.getSavingsHoldAmount()).minus(requiredGuaranteeAmount);
             } else {
-                runningBalance = runningBalance.minus(depositAmount);
+                runningBalance = runningBalance.minus(requiredGuaranteeAmount);
             }
 
             SavingsAccountTransaction transaction = this.savingsAccountDomainService.handleHold(account, getAppUserIfPresent(),
-                    depositAmount, transactionDate, false);
-            account.holdAmount(depositAmount);
+                    requiredGuaranteeAmount, transactionDate, false);
+            account.holdAmount(requiredGuaranteeAmount);
             transaction.updateRunningBalance(runningBalance);
             transaction.setLoanId(loanId);
 
