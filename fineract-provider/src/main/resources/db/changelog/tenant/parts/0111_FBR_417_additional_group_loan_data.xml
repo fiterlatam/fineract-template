@@ -37,15 +37,13 @@
             <column name="loan_cycle_completed" type="BIGINT">
                 <constraints nullable="false"/>
             </column>
-            <column name="group_id" type="BIGINT"/>
-            <column name="client_id" type="BIGINT"/>
+            <column name="loan_id" type="BIGINT"/>
             <column name="early_cancellation_reason" type="BIGINT"/>
             <column name="source_of_funds" type="BIGINT"/>
             <column name="client_loan_request_number" type="VARCHAR(200)"/>
             <column name="date_requested" type="DATETIME"/>
             <column name="facilitator" type="BIGINT"/>
             <column name="position" type="BIGINT"/>
-
             <column name="full_name" type="VARCHAR(200)"/>
             <column name="last_name" type="VARCHAR(200)"/>
             <column name="marital_status" type="BIGINT"/>
@@ -81,8 +79,33 @@
             <column name="client_type" type="BIGINT"/>
             <column name="house_hold_goods" type="VARCHAR(200)"/>
             <column name="business_activities" type="VARCHAR(300)"/>
-            <column name="business_location" type="VARCHAR(200)"/>
-            <column name="business_location" type="VARCHAR(200)"/>
+            <column name="business_location" type="BIGINT"/>
+            <column name="business_experience" type="BIGINT"/>
+            <column name="sales_value" type="DECIMAL(19, 6)"/>
+            <column name="business_purchases" type="DECIMAL(19, 6)"/>
+            <column name="business_profit" type="DECIMAL(19, 6)"/>
+            <column name="client_profit" type="DECIMAL(19, 6)"/>
+            <column name="inventories" type="DECIMAL(19, 6)"/>
+            <column name="visit_business" type="BIGINT"/>
+            <column name="family_support" type="BIGINT"/>
+            <column name="business_evolution" type="BIGINT"/>
+            <column name="number_of_approvals" type="INT"/>
+            <column name="recommender_name" type="VARCHAR(200)"/>
+            <column name="monthly_payment_capacity" type="DECIMAL(19,6)"/>
+            <column name="loan_purpose" type="BIGINT"/>
+            <column name="current_credit_value" type="DECIMAL(19,6)"/>
+            <column name="requested_value" type="DECIMAL(19,6)"/>
+            <column name="group_authorized_value" type="DECIMAL(19,6)"/>
+            <column name="facilitator_proposed_value" type="DECIMAL(19,6)"/>
+            <column name="proposed_fee" type="DECIMAL(19,6)"/>
+            <column name="agency_authorized_amount" type="DECIMAL(19,6)"/>
+            <column name="authorized_fee" type="DECIMAL(19,6)"/>
+            <column name="total_income" type="DECIMAL(19,6)"/>
+            <column name="total_expenditures" type="DECIMAL(19,6)"/>
+            <column name="available_monthly" type="DECIMAL(19,6)"/>
+            <column name="payment_capacity" type="DECIMAL(19,6)"/>
+            <column name="f_a_c" type="DECIMAL(19,6)"/>
+            <column name="debt_level" type="DECIMAL(19,6)"/>
 
         </createTable>
     </changeSet>
@@ -98,7 +121,7 @@
                 <constraints nullable="false" primaryKey="true"/>
             </column>
 
-            <column name="client_id" type="BIGINT"/>
+            <column name="loan_id" type="BIGINT"/>
             <column name="institution_type" type="BIGINT"/>
             <column name="loan_amount" type="DECIMAL(19,6)"/>
             <column name="balance" type="DECIMAL(19,6)"/>
