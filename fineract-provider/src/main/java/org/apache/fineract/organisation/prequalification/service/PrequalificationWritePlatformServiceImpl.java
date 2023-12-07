@@ -977,7 +977,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                     INNER JOIN m_client mc ON (mgc.client_id = mc.id AND mpgm.dpi = mc.dpi)
                     INNER JOIN m_loan ml ON (ml.client_id = mc.id OR ml.group_id = mg.id)
                     WHERE mpg.id = ? AND mpg.prequalification_type_enum = 2 AND (ml.client_id = (SELECT mt.id FROM m_client mt WHERE mt.dpi = ?))
-                    AND ml.loan_status_id = 100 AND ml.group_id IS NOT NULL
+                    AND ml.loan_status_id = 100
                     GROUP BY ml.id
                     """;
         }
