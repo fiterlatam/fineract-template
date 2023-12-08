@@ -37,6 +37,10 @@ import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
 import org.apache.fineract.organisation.holiday.domain.Holiday;
 import org.apache.fineract.organisation.holiday.domain.HolidayRepository;
 import org.apache.fineract.organisation.holiday.domain.HolidayStatusType;
+import org.apache.fineract.organisation.prequalification.domain.PrequalificationGroup;
+import org.apache.fineract.organisation.prequalification.domain.PrequalificationGroupRepositoryWrapper;
+import org.apache.fineract.organisation.prequalification.domain.PrequalificationStatus;
+import org.apache.fineract.organisation.prequalification.exception.PrequalificationIncorrectStatusException;
 import org.apache.fineract.organisation.staff.domain.Staff;
 import org.apache.fineract.organisation.staff.domain.StaffRepository;
 import org.apache.fineract.organisation.staff.exception.StaffNotFoundException;
@@ -112,6 +116,7 @@ public class LoanAssembler {
     private final WorkingDaysRepositoryWrapper workingDaysRepository;
     private final LoanUtilService loanUtilService;
     private final RateAssembler rateAssembler;
+    private final PrequalificationGroupRepositoryWrapper prequalificationGroupRepositoryWrapper;
 
     @Autowired
     public LoanAssembler(final FromJsonHelper fromApiJsonHelper, final LoanRepositoryWrapper loanRepository,
@@ -123,7 +128,8 @@ public class LoanAssembler {
             final LoanCollateralAssembler collateralAssembler, final LoanSummaryWrapper loanSummaryWrapper,
             final LoanRepaymentScheduleTransactionProcessorFactory loanRepaymentScheduleTransactionProcessorFactory,
             final HolidayRepository holidayRepository, final ConfigurationDomainService configurationDomainService,
-            final WorkingDaysRepositoryWrapper workingDaysRepository, final LoanUtilService loanUtilService, RateAssembler rateAssembler) {
+            final WorkingDaysRepositoryWrapper workingDaysRepository, final LoanUtilService loanUtilService, RateAssembler rateAssembler,
+            PrequalificationGroupRepositoryWrapper prequalificationGroupRepositoryWrapper) {
         this.fromApiJsonHelper = fromApiJsonHelper;
         this.loanRepository = loanRepository;
         this.loanProductRepository = loanProductRepository;
@@ -143,6 +149,7 @@ public class LoanAssembler {
         this.workingDaysRepository = workingDaysRepository;
         this.loanUtilService = loanUtilService;
         this.rateAssembler = rateAssembler;
+        this.prequalificationGroupRepositoryWrapper = prequalificationGroupRepositoryWrapper;
     }
 
     public Loan assembleFrom(final Long accountId) {
@@ -341,6 +348,12 @@ public class LoanAssembler {
             }
         }
 
+        final Long prequalificationId = this.fromApiJsonHelper.extractLongNamed("prequalificationId", element);
+        final PrequalificationGroup prequalificationGroup = this.prequalificationGroupRepositoryWrapper
+                .findOneWithNotFoundDetection(prequalificationId);
+        if (PrequalificationStatus.BURO_CHECKED.getValue().equals(prequalificationGroup.getStatus())) {
+            throw new PrequalificationIncorrectStatusException(PrequalificationStatus.fromInt(prequalificationGroup.getStatus()).getCode());
+        }
         loanApplicationTerms = this.loanScheduleAssembler.assembleLoanTerms(element);
         loanApplicationTerms.getCalculatedRepaymentsStartingFromLocalDate();
         final boolean isHolidayEnabled = this.configurationDomainService.isRescheduleRepaymentsOnHolidaysEnabled();
@@ -353,7 +366,7 @@ public class LoanAssembler {
                 isHolidayEnabled, holidays, workingDays, element, disbursementDetails);
         loanApplication.loanApplicationSubmittal(loanScheduleModel, loanApplicationTerms, defaultLoanLifecycleStateMachine(),
                 submittedOnDate, externalId, allowTransactionsOnHoliday, holidays, workingDays, allowTransactionsOnNonWorkingDay);
-
+        loanApplication.setPrequalificationGroup(prequalificationGroup);
         return loanApplication;
     }
 

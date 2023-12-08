@@ -157,6 +157,7 @@ public interface LoanApiConstants {
     String DEPOSIT_GUARANTEE_NUMBER = "depositGuaranteeNo";
     String CHEQUE_DESCRIPTION = "description";
     String CHEQUE_ID = "chequeId";
+    String PREQUALIFICATION_ID = "prequalificationId";
     String LOAN_RESOURCE_NAME = "LOAN";
     String LOAN_ACTION_UPDATE_FUND = "UPDATEFUND";
 }

@@ -497,7 +497,7 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
                     maxDifferentialLendingRate, isFloatingInterestRateCalculationAllowed, isVariableIntallmentsAllowed, minimumGap,
                     maximumGap, syncExpectedWithDisbursementDate, canUseForTopup, isEqualAmortization, rateOptions, this.rates,
                     isRatesEnabled, fixedPrincipalPercentagePerInstallment, ageLimitWarning, ageLimitBlock, ownerTypeOption,
-                    addNewCyclesEnabled, daysLimitAddOn, guaranteePercentage, paymentToleranceLimit,requireCommitteeApproval);
+                    addNewCyclesEnabled, daysLimitAddOn, guaranteePercentage, paymentToleranceLimit, requireCommitteeApproval);
         }
     }
 
