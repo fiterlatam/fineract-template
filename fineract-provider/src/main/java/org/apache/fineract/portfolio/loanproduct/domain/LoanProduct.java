@@ -1698,4 +1698,12 @@ public class LoanProduct extends AbstractPersistableCustom {
     public void setPaymentToleranceLimit(BigDecimal paymentToleranceLimit) {
         this.paymentToleranceLimit = paymentToleranceLimit;
     }
+
+    public Boolean getRequireCommitteeApproval() {
+        return requireCommitteeApproval;
+    }
+
+    public void setRequireCommitteeApproval(Boolean requireCommitteeApproval) {
+        this.requireCommitteeApproval = requireCommitteeApproval;
+    }
 }
