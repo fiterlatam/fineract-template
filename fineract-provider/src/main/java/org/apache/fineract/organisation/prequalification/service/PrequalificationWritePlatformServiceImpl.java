@@ -37,6 +37,7 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.infrastructure.codes.service.CodeValueReadPlatformService;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
@@ -106,7 +107,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
-import org.springframework.util.ObjectUtils;
 
 @Service
 @Slf4j
@@ -855,7 +855,11 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             }
         }
 
-        if (prequalificationGroup.isPrequalificationTypeIndividual() && action.equals("approveanalysis")) {
+        final Long productId = prequalificationGroup.getLoanProduct().getId();
+        final LoanProduct loanProduct = this.loanProductRepository.findById(productId)
+                .orElseThrow(() -> new LoanProductNotFoundException(productId));
+        final Boolean requireCommitteeApproval = ObjectUtils.defaultIfNull(loanProduct.getRequireCommitteeApproval(), Boolean.FALSE);
+        if (prequalificationGroup.isPrequalificationTypeIndividual() && action.equals("approveanalysis") && requireCommitteeApproval) {
             PrequalificationStatusRange statusRange = resolveIndividualStatusRange(prequalificationGroup, action);
             prequalificationStatus = PrequalificationStatus.fromInt(statusRange.getStatus());
 
