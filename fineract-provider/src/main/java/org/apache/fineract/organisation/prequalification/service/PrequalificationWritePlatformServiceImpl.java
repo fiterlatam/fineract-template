@@ -855,8 +855,6 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             }
         }
 
-        this.approveOrRejectLoanApplications(prequalificationGroup, prequalificationStatus, memberPrequalificationDataList);
-
         if (prequalificationGroup.isPrequalificationTypeIndividual() && action.equals("approveanalysis")) {
             PrequalificationStatusRange statusRange = resolveIndividualStatusRange(prequalificationGroup, action);
             prequalificationStatus = PrequalificationStatus.fromInt(statusRange.getStatus());
@@ -876,7 +874,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
 
         PrequalificationStatusLog newStatusLog = PrequalificationStatusLog.fromJson(addedBy, fromStatus, prequalificationGroup.getStatus(),
                 comments, prequalificationGroup);
-
+        this.approveOrRejectLoanApplications(prequalificationGroup, prequalificationStatus, memberPrequalificationDataList);
         this.preQualificationLogRepository.saveAndFlush(newStatusLog);
 
         List<PrequalificationStatusLog> currentLogs = this.preQualificationLogRepository.groupStatusLogs(fromStatus, prequalificationGroup);
@@ -905,16 +903,19 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             }
             final PrequalificationGroupMember prequalificationGroupMember = memberOptional.get();
             final boolean isApproved = PrequalificationStatus.COMPLETED.equals(prequalificationStatus)
-                    && memberPrequalificationData.getIsSelected();
+                    && (memberPrequalificationData.getIsSelected() || prequalificationGroup.isPrequalificationTypeIndividual());
+            final boolean isRejected = PrequalificationStatus.REJECTED.equals(prequalificationStatus)
+                    || (!memberPrequalificationData.getIsSelected() && PrequalificationStatus.COMPLETED.equals(prequalificationStatus)
+                            && prequalificationGroup.isPrequalificationTypeGroup());
             final BigDecimal approvedLoanAmount = prequalificationGroupMember.getApprovedAmount();
             final String dpi = prequalificationGroupMember.getDpi();
             List<LoanData> submittedLoans;
             if (prequalificationGroup.isPrequalificationTypeGroup()) {
                 submittedLoans = jdbcTemplate.query(this.groupTypeLoanMapper.schema(), this.groupTypeLoanMapper,
-                        new Object[] { prequalificationId, dpi });
+                        new Object[] { prequalificationId, dpi, prequalificationId });
             } else {
                 submittedLoans = jdbcTemplate.query(this.individualTypeLoanMapper.schema(), this.individualTypeLoanMapper,
-                        new Object[] { prequalificationId, dpi });
+                        new Object[] { prequalificationId, dpi, prequalificationId });
             }
             if (submittedLoans.isEmpty()) {
                 throw new MemberSubmittedLoanNotFoundException(dpi);
@@ -944,7 +945,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                             groupId, clientId, loanId, null, null, null, null, null, null);
                     command.setJsonCommand(jsonObject.toString());
                     this.loanApplicationWritePlatformService.approveApplication(loanId, command);
-                } else {
+                } else if (isRejected) {
                     final String note = "Rechazada la precalificación " + prequalificationGroup.getPrequalificationNumber();
                     jsonObject.addProperty("note", note);
                     jsonObject.addProperty("rejectedOnDate", localDateString);
@@ -977,7 +978,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                     INNER JOIN m_client mc ON (mgc.client_id = mc.id AND mpgm.dpi = mc.dpi)
                     INNER JOIN m_loan ml ON (ml.client_id = mc.id OR ml.group_id = mg.id)
                     WHERE mpg.id = ? AND mpg.prequalification_type_enum = 2 AND (ml.client_id = (SELECT mt.id FROM m_client mt WHERE mt.dpi = ?))
-                    AND ml.loan_status_id = 100
+                    AND ml.loan_status_id = 100 AND ml.prequalification_id = ?
                     GROUP BY ml.id
                     """;
         }
@@ -1014,7 +1015,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                         INNER JOIN m_client mc ON mc.dpi = mpgm.dpi
                         INNER JOIN m_loan ml ON ml.client_id = mc.id
                         WHERE mpg.id = ? AND mpg.prequalification_type_enum = 1 AND (ml.client_id = (SELECT mt.id FROM m_client mt WHERE mt.dpi = ?))
-                        AND ml.loan_status_id = 100 AND ml.group_id IS NULL
+                        AND ml.loan_status_id = 100 AND ml.prequalification_id = ?
                     """;
         }
 

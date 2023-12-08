@@ -260,7 +260,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
 
     @Override
     public Collection<GroupPrequalificationData> retrievePrequalificationIndividualMappings(final Long clientId) {
-        final String sql = "select " + this.prequalificationIndividualMappingsMapper.schema() + " WHERE mc.id = ?";
+        final String sql = "select " + this.prequalificationIndividualMappingsMapper.schema() + " WHERE mc.id = ? AND mpg.status = 600";
         final Collection<GroupPrequalificationData> prequalificationGroups = this.jdbcTemplate.query(sql,
                 this.prequalificationIndividualMappingsMapper, new Object[] { clientId });
         return prequalificationGroups;
@@ -582,11 +582,11 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
         }
     }
 
-    private static final class PrequalificationIndividualMappingsMapper implements RowMapper<GroupPrequalificationData> {
+    public static final class PrequalificationIndividualMappingsMapper implements RowMapper<GroupPrequalificationData> {
 
         private final String schema;
 
-        PrequalificationIndividualMappingsMapper() {
+        public PrequalificationIndividualMappingsMapper() {
             this.schema = """
                     mpg.id AS id, mpg.prequalification_number AS prequalificationNumber, mpg.group_name AS groupName, mpg.status AS status,
                     mpl.name AS productName, mpg.created_at, ma.firstname, ma.lastname
