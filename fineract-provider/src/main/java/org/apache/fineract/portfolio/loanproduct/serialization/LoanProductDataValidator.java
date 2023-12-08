@@ -72,7 +72,7 @@ public final class LoanProductDataValidator {
             "closeDate", "externalId", "isLinkedToFloatingInterestRates", "floatingRatesId", "interestRateDifferential",
             "minDifferentialLendingRate", "defaultDifferentialLendingRate", "maxDifferentialLendingRate",
             "isFloatingInterestRateCalculationAllowed", "syncExpectedWithDisbursementDate", "ageLimitWarning", "ageLimitBlock", "ownerType",
-            "guaranteePercentage", LoanProductConstants.ADD_NEW_CYCLES_ENABLED, LoanProductConstants.LOAN_PRODUCT_OWNER_TYPE,
+            "guaranteePercentage","requireCommitteeApproval", LoanProductConstants.ADD_NEW_CYCLES_ENABLED, LoanProductConstants.LOAN_PRODUCT_OWNER_TYPE,
             LoanProductAccountingParams.FEES_RECEIVABLE.getValue(), LoanProductAccountingParams.FUND_SOURCE.getValue(),
             LoanProductAccountingParams.INCOME_FROM_FEES.getValue(), LoanProductAccountingParams.INCOME_FROM_PENALTIES.getValue(),
             LoanProductAccountingParams.INTEREST_ON_LOANS.getValue(), LoanProductAccountingParams.INTEREST_RECEIVABLE.getValue(),
