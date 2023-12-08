@@ -16,18 +16,16 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.portfolio.savings.exception;
+package org.apache.fineract.organisation.prequalification.exception;
 
-import org.apache.fineract.infrastructure.core.exception.AbstractPlatformServiceUnavailableException;
+import org.apache.fineract.infrastructure.core.exception.AbstractPlatformResourceNotFoundException;
 
 /**
- * A {@link RuntimeException} thrown when update not allowed.
+ * A {@link RuntimeException} thrown when client is already blacklisted.
  */
-public class HoldTransactionNotFoundException extends AbstractPlatformServiceUnavailableException {
+public class PrequalificationIncorrectStatusException extends AbstractPlatformResourceNotFoundException {
 
-    public HoldTransactionNotFoundException(final Long savingsId, final Long transactionId) {
-        super("error.msg.saving.account.hold.transaction.not.found",
-                "Savings Account hold transaction not found with identifier " + savingsId + " and transaction identifier " + transactionId,
-                savingsId, transactionId);
+    public PrequalificationIncorrectStatusException(String status) {
+        super("error.msg.group.prequalification.status.not.correct", "Provided Prequalificaiton has incorrect status " + status, status);
     }
 }

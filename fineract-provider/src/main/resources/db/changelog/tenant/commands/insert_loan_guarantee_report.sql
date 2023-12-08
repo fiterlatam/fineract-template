@@ -68,4 +68,3 @@ INSERT INTO stretchy_parameter (parameter_name, parameter_variable, parameter_la
 
 INSERT INTO stretchy_report_parameter (report_id, parameter_id, report_parameter_name) VALUES((SELECT sr.id
                                                                                                FROM stretchy_report sr WHERE sr.report_name = "Reporte de Garantias vinculado a Prestamos"), (SELECT p.id FROM stretchy_parameter p WHERE parameter_name = "depositDateSelect"), "depositDateSelect");
-
