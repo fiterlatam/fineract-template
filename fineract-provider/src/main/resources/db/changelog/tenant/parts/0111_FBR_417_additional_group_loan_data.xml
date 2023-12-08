@@ -33,7 +33,6 @@
             <column autoIncrement="true" name="id" type="BIGINT">
                 <constraints nullable="false" primaryKey="true"/>
             </column>
-
             <column name="loan_cycle_completed" type="BIGINT">
                 <constraints nullable="false"/>
             </column>
@@ -41,7 +40,7 @@
             <column name="early_cancellation_reason" type="BIGINT"/>
             <column name="source_of_funds" type="BIGINT"/>
             <column name="client_loan_request_number" type="VARCHAR(200)"/>
-            <column name="date_requested" type="DATETIME"/>
+            <column name="date_requested" type="DATE"/>
             <column name="facilitator" type="BIGINT"/>
             <column name="position" type="BIGINT"/>
             <column name="full_name" type="VARCHAR(200)"/>
@@ -49,16 +48,13 @@
             <column name="marital_status" type="BIGINT"/>
             <column name="education_level" type="BIGINT"/>
             <column name="years_of_schooling" type="INT"/>
-            <column name="years_of_schooling" type="INT"/>
             <column name="nationality" type="VARCHAR"/>
             <column name="language" type="VARCHAR"/>
             <column name="number_of_children" type="INT"/>
             <column name="dpi" type="VARCHAR"/>
-            <column name="nit_status" type="BIGINT"/>
             <column name="nit" type="VARCHAR"/>
             <column name="job_type" type="BIGINT"/>
             <column name="occupancy_classification" type="BIGINT"/>
-            <column name="acts_own_behalf" type="BIGINT"/>
             <column name="acts_own_behalf" type="BIGINT"/>
             <column name="on_behalf_of" type="VARCHAR"/>
             <column name="political_position" type="VARCHAR"/>
@@ -71,7 +67,7 @@
             <column name="reference_point" type="VARCHAR"/>
             <column name="phone_number" type="VARCHAR"/>
             <column name="relative_number" type="VARCHAR"/>
-            <column name="years_in_community" type="VARCHAR"/>
+            <column name="years_in_community" type="INT"/>
             <column name="monthly_income" type="DECIMAL(19,6)"/>
             <column name="family_expenses" type="DECIMAL(19,6)"/>
             <column name="total_external_loan_amount" type="DECIMAL(19, 6)"/>
