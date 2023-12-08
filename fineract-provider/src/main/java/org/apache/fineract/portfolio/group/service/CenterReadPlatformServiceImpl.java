@@ -422,7 +422,7 @@ public class CenterReadPlatformServiceImpl implements CenterReadPlatformService 
                     closedByUsername, closedByFirstname, closedByLastname);
 
             return GroupGeneralData.instance(id, accountNo, name, externalId, status, activationDate, officeId, officeName, null, null,
-                    staffId, staffName, hierarchy, groupLevel, timeline, meetingStartTime,meetingEndTime);
+                    staffId, staffName, hierarchy, groupLevel, timeline, meetingStartTime, meetingEndTime);
         }
     }
 
@@ -667,7 +667,7 @@ public class CenterReadPlatformServiceImpl implements CenterReadPlatformService 
 
     @Override
     public Collection<StaffCenterData> retriveAllCentersByMeetingDate(final Long officeId, final LocalDate meetingDate,
-                                                                      final Long staffId) {
+            final Long staffId) {
         validateForGenerateCollectionSheet(staffId);
         final CenterCalendarDataMapper centerCalendarMapper = new CenterCalendarDataMapper();
         String sql = centerCalendarMapper.schema();

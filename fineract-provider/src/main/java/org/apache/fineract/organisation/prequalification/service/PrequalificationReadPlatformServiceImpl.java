@@ -84,11 +84,11 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
 
     @Autowired
     public PrequalificationReadPlatformServiceImpl(final PlatformSecurityContext context, final PaginationHelper paginationHelper,
-                                                   final DatabaseSpecificSQLGenerator sqlGenerator, final ColumnValidator columnValidator,
-                                                   final PrequalificationDataValidator dataValidator, final LoanProductRepository loanProductRepository,
-                                                   final PreQualificationMemberRepository preQualificationMemberRepository,
-                                                   final ClientReadPlatformService clientReadPlatformService, final CodeValueReadPlatformService codeValueReadPlatformService,
-                                                   final JdbcTemplate jdbcTemplate) {
+            final DatabaseSpecificSQLGenerator sqlGenerator, final ColumnValidator columnValidator,
+            final PrequalificationDataValidator dataValidator, final LoanProductRepository loanProductRepository,
+            final PreQualificationMemberRepository preQualificationMemberRepository,
+            final ClientReadPlatformService clientReadPlatformService, final CodeValueReadPlatformService codeValueReadPlatformService,
+            final JdbcTemplate jdbcTemplate) {
 
         this.context = context;
         this.dataValidator = dataValidator;

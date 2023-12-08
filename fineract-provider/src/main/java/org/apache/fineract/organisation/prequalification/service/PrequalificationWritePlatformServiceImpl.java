@@ -545,7 +545,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
     }
 
     private List<PrequalificationGroupMember> assembleMembersForUpdate(JsonCommand command, PrequalificationGroup prequalificationGroup,
-                                                                       AppUser addedBy) {
+            AppUser addedBy) {
 
         final List<PrequalificationGroupMember> allMembers = new ArrayList<>();
 

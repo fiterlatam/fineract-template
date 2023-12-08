@@ -26,6 +26,7 @@ import org.apache.fineract.infrastructure.core.exception.AbstractPlatformResourc
 public class MemberHasNoPendingLoanException extends AbstractPlatformResourceNotFoundException {
 
     public MemberHasNoPendingLoanException(String name, String dpi, String product) {
-        super("error.msg.client.pending.loan.request", "Client "+name+ " with dpi " + dpi + " doesnt have a pending loan request.", name, dpi, product);
+        super("error.msg.client.pending.loan.request", "Client " + name + " with dpi " + dpi + " doesnt have a pending loan request.", name,
+                dpi, product);
     }
 }
