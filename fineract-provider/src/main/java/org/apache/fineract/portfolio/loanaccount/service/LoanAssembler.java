@@ -393,7 +393,7 @@ public class LoanAssembler {
 
     public Staff findLoanOfficerByIdIfProvided(final Long loanOfficerId) {
         Staff staff = null;
-        if (loanOfficerId != null) {
+        if (loanOfficerId != null && loanOfficerId > 0) {
             staff = this.staffRepository.findById(loanOfficerId).orElseThrow(() -> new StaffNotFoundException(loanOfficerId));
             if (staff.isNotLoanOfficer()) {
                 throw new StaffRoleException(loanOfficerId, StaffRoleException.StaffRole.LOAN_OFFICER);

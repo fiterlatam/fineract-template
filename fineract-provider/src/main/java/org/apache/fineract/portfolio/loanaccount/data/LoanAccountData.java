@@ -258,6 +258,8 @@ public final class LoanAccountData {
     private Long prequalificationId;
     private GroupPrequalificationData prequalificationData;
 
+    private Integer borrowerCycle;
+
     public static LoanAccountData disburseLoanByCheques(final Collection<AgencyData> agencyOptions,
             final Collection<CenterData> centerOptions, final Collection<GroupGeneralData> groupOption,
             final Collection<AppUserData> facilitatorOptions, final Collection<EnumOptionData> disbursementMethodOptions) {
@@ -423,7 +425,7 @@ public final class LoanAccountData {
                 nominalInterestRate, expectedDisbursementDate, amortizationEnumOption, interestMethodEnum,
                 interestCalculationPeriodTypeEnum, inArrearsTolerance, transactionProcessingStrategyId, graceOnPrincipalPayment,
                 graceOnInterestPayment, graceOnInterestCharged, interestChargedFromDate, repaymentsStartingFromDate, rowIndex, externalId,
-                null, charges, linkAccountId, locale, dateFormat, loanCollateralManagementData);
+                groupId, charges, linkAccountId, locale, dateFormat, loanCollateralManagementData);
     }
 
     public static LoanAccountData importInstanceGroup(EnumOptionData loanTypeEnumOption, Long groupIdforGroupLoan, Long productId,
@@ -2229,5 +2231,13 @@ public final class LoanAccountData {
 
     public void setPrequalificationData(GroupPrequalificationData prequalificationData) {
         this.prequalificationData = prequalificationData;
+    }
+
+    public Integer getBorrowerCycle() {
+        return borrowerCycle;
+    }
+
+    public void setBorrowerCycle(Integer borrowerCycle) {
+        this.borrowerCycle = borrowerCycle;
     }
 }

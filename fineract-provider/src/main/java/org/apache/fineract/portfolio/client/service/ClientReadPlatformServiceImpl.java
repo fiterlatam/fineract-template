@@ -201,6 +201,7 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
         sqlBuilder.append("select " + sqlGenerator.calcFoundRows() + " ");
         sqlBuilder.append(this.clientMapper.schema());
         sqlBuilder.append(" where (o.hierarchy like ? or transferToOffice.hierarchy like ?) ");
+        sqlBuilder.append(" and  c.external_id in (select NumeroCliente from PDA_MIG_017_P_SALDOS) ");
 
         if (searchParameters != null) {
             if (searchParameters.isSelfUser()) {
