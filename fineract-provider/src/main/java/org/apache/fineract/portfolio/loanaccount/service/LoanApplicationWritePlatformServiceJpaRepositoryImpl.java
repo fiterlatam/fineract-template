@@ -375,13 +375,19 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors).resource("loan");
 
             if (loanProduct.useBorrowerCycle()) {
-                Integer cycleNumber = 0;
-                if (clientId != null) {
-                    cycleNumber = this.loanReadPlatformService.retriveLoanCounter(clientId, loanProduct.getId());
-                } else if (groupId != null) {
-                    cycleNumber = this.loanReadPlatformService.retriveLoanCounter(groupId, AccountType.GROUP.getValue(),
-                            loanProduct.getId());
+                Integer cycleNumber = null;
+                cycleNumber = this.fromJsonHelper.extractIntegerWithLocaleNamed("borrowerCycle", command.parsedJson());
+                if (cycleNumber == null)
+                    cycleNumber = 0;
+                if (cycleNumber == 0) {
+                    if (clientId != null) {
+                        cycleNumber = this.loanReadPlatformService.retriveLoanCounter(clientId, loanProduct.getId());
+                    } else if (groupId != null) {
+                        cycleNumber = this.loanReadPlatformService.retriveLoanCounter(groupId, AccountType.GROUP.getValue(),
+                                loanProduct.getId());
+                    }
                 }
+
                 this.loanProductCommandFromApiJsonDeserializer.validateMinMaxConstraints(command.parsedJson(), baseDataValidator,
                         loanProduct, cycleNumber);
             } else {
@@ -389,7 +395,12 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                         loanProduct);
             }
             if (!dataValidationErrors.isEmpty()) {
-                throw new PlatformApiDataValidationException(dataValidationErrors);
+                StringBuffer err = new StringBuffer();
+                for (ApiParameterError error : dataValidationErrors) {
+                    err.append(error.getDeveloperMessage()).append("\n");
+                }
+
+                throw new PlatformApiDataValidationException("validation.msg.validation.errors.exist", err.toString(), dataValidationErrors);
             }
 
             final Loan newLoanApplication = this.loanAssembler.assembleFrom(command);

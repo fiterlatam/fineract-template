@@ -53,7 +53,7 @@ public class LoanTransactionData {
     private final BigDecimal penaltyChargesPortion;
     private final BigDecimal overpaymentPortion;
     private final BigDecimal unrecognizedIncomePortion;
-    private final String externalId;
+    private String externalId;
     private final AccountTransferData transfer;
     private final BigDecimal fixedEmiAmount;
     private final BigDecimal outstandingLoanBalance;
@@ -86,6 +86,8 @@ public class LoanTransactionData {
     private transient Long accountId;
     private transient String transactionType;
     private List<LoanRepaymentScheduleInstallmentData> loanRepaymentScheduleInstallments;
+
+    private String note;
 
     public static LoanTransactionData importInstance(BigDecimal repaymentAmount, LocalDate lastRepaymentDate, Long repaymentTypeId,
             Integer rowIndex, String locale, String dateFormat) {
@@ -173,6 +175,7 @@ public class LoanTransactionData {
         this.possibleNextRepaymentDate = null;
         this.paymentTypeOptions = null;
         this.writeOffReasonOptions = null;
+        this.numberOfRepayments = null;
     }
 
     public void setNumberOfRepayments(Integer numberOfRepayments) {
@@ -390,5 +393,13 @@ public class LoanTransactionData {
 
     public BigDecimal getOutstandingLoanBalance() {
         return outstandingLoanBalance;
+    }
+
+    public void setExternalId(String externalId) {
+        this.externalId = externalId;
+    }
+
+    public void setNote(String note) {
+        this.note = note;
     }
 }

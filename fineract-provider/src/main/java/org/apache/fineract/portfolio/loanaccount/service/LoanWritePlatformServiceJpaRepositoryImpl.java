@@ -402,7 +402,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 .isPaymnetypeApplicableforDisbursementCharge();
 
         // Recalculate first repayment date based in actual disbursement date.
-        updateLoanCounters(loan, actualDisbursementDate);
+        updateLoanCounters(loan, actualDisbursementDate, command);
         Money amountBeforeAdjust = loan.getPrincpal();
         loan.validateAccountStatus(LoanEvent.LOAN_DISBURSED);
         boolean canDisburse = loan.canDisburse(actualDisbursementDate);
@@ -711,7 +711,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             // assuming repayment schedule won't regenerate because expected
             // disbursement and actual disbursement happens on same date
             loan.validateAccountStatus(LoanEvent.LOAN_DISBURSED);
-            updateLoanCounters(loan, actualDisbursementDate);
+            updateLoanCounters(loan, actualDisbursementDate, null);
             boolean canDisburse = loan.canDisburse(actualDisbursementDate);
             ChangedTransactionDetail changedTransactionDetail = null;
             if (canDisburse) {
@@ -1290,7 +1290,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         final List<Long> existingTransactionIds = new ArrayList<>();
         final List<Long> existingReversedTransactionIds = new ArrayList<>();
 
-        updateLoanCounters(loan, loan.getDisbursementDate());
+        updateLoanCounters(loan, loan.getDisbursementDate(), null);
 
         LocalDate recalculateFrom = null;
         if (loan.repaymentScheduleDetail().isInterestRecalculationEnabled()) {
@@ -1343,7 +1343,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         final List<Long> existingTransactionIds = new ArrayList<>();
         final List<Long> existingReversedTransactionIds = new ArrayList<>();
 
-        updateLoanCounters(loan, loan.getDisbursementDate());
+        updateLoanCounters(loan, loan.getDisbursementDate(), null);
 
         LocalDate recalculateFrom = null;
         if (loan.repaymentScheduleDetail().isInterestRecalculationEnabled()) {
@@ -2451,7 +2451,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
     }
 
-    private void updateLoanCounters(final Loan loan, final LocalDate actualDisbursementDate) {
+    private void updateLoanCounters(final Loan loan, final LocalDate actualDisbursementDate, JsonCommand command) {
 
         if (loan.isGroupLoan()) {
             final List<Loan> loansToUpdateForLoanCounter = this.loanRepositoryWrapper.getGroupLoansDisbursedAfter(actualDisbursementDate,
@@ -2462,7 +2462,13 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         } else {
             final List<Loan> loansToUpdateForLoanCounter = this.loanRepositoryWrapper
                     .getClientOrJLGLoansDisbursedAfter(actualDisbursementDate, loan.getClientId());
-            final Integer newLoanCounter = getNewClientOrJLGLoanCounter(loan);
+            Integer newLoanCounter = null;
+            if (command != null) {
+                newLoanCounter = command.integerValueOfParameterNamed("borrowerCycle");
+            }
+            if (newLoanCounter == null || newLoanCounter == 0) {
+                newLoanCounter = getNewClientOrJLGLoanCounter(loan);
+            }
             final Integer newLoanProductCounter = getNewClientOrJLGLoanProductCounter(loan);
             updateLoanCounter(loan, loansToUpdateForLoanCounter, newLoanCounter, newLoanProductCounter);
         }
