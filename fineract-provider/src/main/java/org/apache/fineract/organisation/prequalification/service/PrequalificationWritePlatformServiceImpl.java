@@ -857,9 +857,14 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
 
         this.approveOrRejectLoanApplications(prequalificationGroup, prequalificationStatus, memberPrequalificationDataList);
 
+        LoanProduct loanProduct = prequalificationGroup.getLoanProduct();
         if (prequalificationGroup.isPrequalificationTypeIndividual() && action.equals("approveanalysis")) {
-            PrequalificationStatusRange statusRange = resolveIndividualStatusRange(prequalificationGroup, action);
-            prequalificationStatus = PrequalificationStatus.fromInt(statusRange.getStatus());
+            if (!loanProduct.getRequireCommitteeApproval()){
+                prequalificationStatus = PrequalificationStatus.COMPLETED;
+            }else{
+                PrequalificationStatusRange statusRange = resolveIndividualStatusRange(prequalificationGroup, action);
+                prequalificationStatus = PrequalificationStatus.fromInt(statusRange.getStatus());
+            }
 
         }
         if (prequalificationGroup.isPrequalificationTypeIndividual() && action.equals("approveCommittee")) {
@@ -1053,7 +1058,6 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
     }
 
     private PrequalificationStatus resolveCommitteeStatus(PrequalificationGroup prequalificationGroup, String action) {
-        // TODO ---CHECK IF THE COMMITTEE IS THE LAST COMMITTEE
         PrequalificationStatusRange initialStatusRange = resolveIndividualStatusRange(prequalificationGroup, action);
 
         PrequalificationStatus initialStatus = PrequalificationStatus.fromInt(initialStatusRange.getStatus());
