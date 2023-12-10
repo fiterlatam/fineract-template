@@ -33,4 +33,23 @@
             <column name="loan_id" type="BIGINT"/>
         </addColumn>
     </changeSet>
+
+    <changeSet author="fineract" id="2">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_loan" columnName="prequalification_id"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_loan">
+            <column name="prequalification_id" type="BIGINT" defaultValueComputed="NULL"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="3">
+        <addForeignKeyConstraint baseColumnNames="prequalification_id" baseTableName="m_loan"
+                                 constraintName="FK20231208_m_loan_loan_prequalification_id" deferrable="false"
+                                 initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT"
+                                 referencedColumnNames="id" referencedTableName="m_prequalification_group" validate="true"/>
+    </changeSet>
+
 </databaseChangeLog>
