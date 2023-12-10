@@ -53,22 +53,22 @@
         <sql>
             INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
             SELECT id, 'A', 'A' , 1, 1, 1, 0
-            FROM fineract_default.m_code c WHERE c.code_name = 'Committees';
+            FROM m_code c WHERE c.code_name = 'Committees';
         </sql>
         <sql>
             INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
             SELECT id, 'B', 'B' , 2, 2, 1, 0
-            FROM fineract_default.m_code c WHERE c.code_name = 'Committees';
+            FROM m_code c WHERE c.code_name = 'Committees';
         </sql>
         <sql>
             INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
             SELECT id, 'C', 'C' , 3, 3, 1, 0
-            FROM fineract_default.m_code c WHERE c.code_name = 'Committees';
+            FROM m_code c WHERE c.code_name = 'Committees';
         </sql>
         <sql>
             INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
             SELECT id, 'D', 'D' , 4, 4, 1, 0
-            FROM fineract_default.m_code c WHERE c.code_name = 'Committees';
+            FROM m_code c WHERE c.code_name = 'Committees';
         </sql>
     </changeSet>
 </databaseChangeLog>

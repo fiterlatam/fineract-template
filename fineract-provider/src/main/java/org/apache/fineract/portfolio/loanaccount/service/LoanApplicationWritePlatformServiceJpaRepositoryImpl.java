@@ -72,6 +72,9 @@ import org.apache.fineract.infrastructure.security.service.PlatformSecurityConte
 import org.apache.fineract.organisation.bankcheque.domain.BankChequeStatus;
 import org.apache.fineract.organisation.bankcheque.domain.Cheque;
 import org.apache.fineract.organisation.bankcheque.domain.ChequeBatchRepositoryWrapper;
+import org.apache.fineract.organisation.prequalification.domain.PrequalificationGroup;
+import org.apache.fineract.organisation.prequalification.domain.PrequalificationGroupRepositoryWrapper;
+import org.apache.fineract.organisation.prequalification.exception.PrequalificationNotProvidedException;
 import org.apache.fineract.organisation.staff.domain.Staff;
 import org.apache.fineract.portfolio.account.domain.AccountAssociationType;
 import org.apache.fineract.portfolio.account.domain.AccountAssociations;
@@ -227,6 +230,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
     private final CodeValueRepositoryWrapper codeValueRepository;
     private final DisburseByChequesCommandFromApiJsonDeserializer disburseByChequesCommandFromApiJsonDeserializer;
     private final ChequeBatchRepositoryWrapper chequeBatchRepositoryWrapper;
+    private final PrequalificationGroupRepositoryWrapper prequalificationGroupRepositoryWrapper;
     @Autowired
     private BitaCoraMasterRepository bitaCoraMasterRepository;
 
@@ -265,6 +269,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             final CupoRepositoryWrapper cupoRepositoryWrapper, final LumaAccountingProcessorForLoan lumaAccountingProcessorForLoan,
             DisburseByChequesCommandFromApiJsonDeserializer disburseByChequesCommandFromApiJsonDeserializer,
             ChequeBatchRepositoryWrapper chequeBatchRepositoryWrapper,
+            PrequalificationGroupRepositoryWrapper prequalificationGroupRepositoryWrapper,
             final SavingsAccountWritePlatformService savingsAccountWritePlatformService,
             final SavingsAccountRepositoryWrapper savingsAccountRepositoryWrapper) {
         this.context = context;
@@ -315,6 +320,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
         this.codeValueRepository = codeValueRepository;
         this.disburseByChequesCommandFromApiJsonDeserializer = disburseByChequesCommandFromApiJsonDeserializer;
         this.chequeBatchRepositoryWrapper = chequeBatchRepositoryWrapper;
+        this.prequalificationGroupRepositoryWrapper = prequalificationGroupRepositoryWrapper;
         this.savingsAccountWritePlatformService = savingsAccountWritePlatformService;
         this.savingsAccountRepositoryWrapper = savingsAccountRepositoryWrapper;
     }
@@ -881,6 +887,20 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 newLoanProduct = this.loanProductRepository.findById(productId)
                         .orElseThrow(() -> new LoanProductNotFoundException(productId));
             }
+
+            final String prequalificationIdParameterName = "prequalificationId";
+            PrequalificationGroup prequalificationGroup = existingLoanApplication.getPrequalificationGroup();
+            final Long existingPrequalificationId = existingLoanApplication.getPrequalificationGroup() != null
+                    ? existingLoanApplication.getPrequalificationGroup().getId()
+                    : null;
+            if (command.isChangeInLongParameterNamed(prequalificationIdParameterName, existingPrequalificationId)) {
+                final Long prequalificationId = command.longValueOfParameterNamed(prequalificationIdParameterName);
+                prequalificationGroup = this.prequalificationGroupRepositoryWrapper.findOneWithNotFoundDetection(prequalificationId);
+            }
+            if (prequalificationGroup == null) {
+                throw new PrequalificationNotProvidedException();
+            }
+            existingLoanApplication.setPrequalificationGroup(prequalificationGroup);
 
             LoanProduct loanProductForValidations = newLoanProduct == null ? existingLoanApplication.loanProduct() : newLoanProduct;
 
@@ -1958,7 +1978,8 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             BigDecimal depositAmount = cheque.getGuaranteeAmount().subtract(cheque.getRequiredGuaranteeAmount());
             if (depositAmount != null && depositAmount.compareTo(BigDecimal.ZERO) < 0) {
                 CommandProcessingResult depositCommandResult = this.savingsAccountWritePlatformService
-                        .depositAndHoldToClientGuaranteeAccount(depositAmount.abs(), loanAccount.getClientId(), localDate);
+                        .depositAndHoldToClientGuaranteeAccount(depositAmount.abs(), cheque.getRequiredGuaranteeAmount(),
+                                loanAccount.getClientId(), loanAccount.getId(), localDate);
             }
         }
         return new CommandProcessingResultBuilder().withCommandId(command.commandId()).build();

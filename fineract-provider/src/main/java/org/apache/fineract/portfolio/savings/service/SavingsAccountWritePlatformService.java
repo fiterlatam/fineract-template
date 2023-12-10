@@ -120,5 +120,8 @@ public interface SavingsAccountWritePlatformService {
 
     CommandProcessingResult bulkGSIMClose(Long gsimId, JsonCommand command);
 
-    CommandProcessingResult depositAndHoldToClientGuaranteeAccount(BigDecimal depositAmount, Long clientId, LocalDate transactionDate);
+    CommandProcessingResult depositAndHoldToClientGuaranteeAccount(BigDecimal depositAmount, BigDecimal requiredGuaranteeAmount,
+            Long clientId, Long loanId, LocalDate transactionDate);
+
+    CommandProcessingResult releaseLoanGuarantee(Long loanId, JsonCommand command);
 }

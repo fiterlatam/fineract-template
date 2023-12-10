@@ -97,7 +97,8 @@ public final class LoanApplicationCommandFromApiJsonHelper {
             LoanApiConstants.applicationId, // glim specific
             LoanApiConstants.lastApplication, // glim specific
             LoanApiConstants.daysInYearTypeParameterName, LoanApiConstants.fixedPrincipalPercentagePerInstallmentParamName,
-            LoanApiConstants.cupoIdParameterName, "borrowerCycle"));
+            LoanApiConstants.cupoIdParameterName, LoanApiConstants.PREQUALIFICATION_ID,
+            "borrowerCycle"));
 
     private final FromJsonHelper fromApiJsonHelper;
     private final CalculateLoanScheduleQueryFromApiJsonHelper apiJsonHelper;
@@ -570,6 +571,13 @@ public final class LoanApplicationCommandFromApiJsonHelper {
             atLeastOneParameterPassedForUpdate = true;
             final Long productId = this.fromApiJsonHelper.extractLongNamed(productIdParameterName, element);
             baseDataValidator.reset().parameter(productIdParameterName).value(productId).notNull().integerGreaterThanZero();
+        }
+
+        final String prequalificationIdParameterName = "prequalificationId";
+        if (this.fromApiJsonHelper.parameterExists(prequalificationIdParameterName, element)) {
+            atLeastOneParameterPassedForUpdate = true;
+            final Long prequalificationId = this.fromApiJsonHelper.extractLongNamed(prequalificationIdParameterName, element);
+            baseDataValidator.reset().parameter(productIdParameterName).value(prequalificationId).notNull().integerGreaterThanZero();
         }
 
         final String accountNoParameterName = "accountNo";

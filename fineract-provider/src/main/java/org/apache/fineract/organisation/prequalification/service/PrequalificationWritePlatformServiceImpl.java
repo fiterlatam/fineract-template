@@ -22,6 +22,8 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import java.math.BigDecimal;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
@@ -29,17 +31,22 @@ import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.infrastructure.codes.service.CodeValueReadPlatformService;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuilder;
+import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
+import org.apache.fineract.infrastructure.core.serialization.JsonParserHelper;
+import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.documentmanagement.contentrepository.ContentRepository;
 import org.apache.fineract.infrastructure.documentmanagement.contentrepository.ContentRepositoryFactory;
 import org.apache.fineract.infrastructure.documentmanagement.data.DocumentData;
@@ -57,6 +64,8 @@ import org.apache.fineract.organisation.prequalification.command.Prequalificatio
 import org.apache.fineract.organisation.prequalification.command.PrequalificatoinApiConstants;
 import org.apache.fineract.organisation.prequalification.data.GenericValidationResultSet;
 import org.apache.fineract.organisation.prequalification.data.GroupPrequalificationData;
+import org.apache.fineract.organisation.prequalification.data.LoanData;
+import org.apache.fineract.organisation.prequalification.data.MemberPrequalificationData;
 import org.apache.fineract.organisation.prequalification.data.PrequalificationChecklistData;
 import org.apache.fineract.organisation.prequalification.domain.GroupPrequalificationRelationship;
 import org.apache.fineract.organisation.prequalification.domain.GroupPrequalificationRelationshipRepository;
@@ -72,6 +81,9 @@ import org.apache.fineract.organisation.prequalification.domain.Prequalification
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationStatusRangeRepository;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationSubStatus;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationType;
+import org.apache.fineract.organisation.prequalification.exception.GroupMemberPreQualificationNotFound;
+import org.apache.fineract.organisation.prequalification.exception.MemberNotSelectedException;
+import org.apache.fineract.organisation.prequalification.exception.MemberSubmittedLoanNotFoundException;
 import org.apache.fineract.organisation.prequalification.exception.PrequalificationStatusNotChangedException;
 import org.apache.fineract.organisation.prequalification.exception.PrequalificationStatusNotCompletedException;
 import org.apache.fineract.organisation.prequalification.serialization.PrequalificationMemberCommandFromApiJsonDeserializer;
@@ -80,6 +92,7 @@ import org.apache.fineract.portfolio.client.service.ClientChargeWritePlatformSer
 import org.apache.fineract.portfolio.client.service.ClientReadPlatformService;
 import org.apache.fineract.portfolio.group.domain.Group;
 import org.apache.fineract.portfolio.group.domain.GroupRepositoryWrapper;
+import org.apache.fineract.portfolio.loanaccount.service.LoanApplicationWritePlatformService;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProduct;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductOwnerType;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductRepository;
@@ -92,8 +105,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
-import org.springframework.util.ObjectUtils;
 
 @Service
 @Slf4j
@@ -121,6 +134,10 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
     private final DocumentReadPlatformService documentReadPlatformService;
     private final PrequalificationStatusRangeRepository prequalificationStatusRangeRepository;
     private final PrequalificationReadPlatformService prequalificationReadPlatformService;
+    private final FromJsonHelper fromApiJsonHelper;
+    private final GroupTypeLoanMapper groupTypeLoanMapper = new GroupTypeLoanMapper();
+    private final IndividualTypeLoanMapper individualTypeLoanMapper = new IndividualTypeLoanMapper();
+    private final LoanApplicationWritePlatformService loanApplicationWritePlatformService;
 
     @Autowired
     public PrequalificationWritePlatformServiceImpl(final PlatformSecurityContext context,
@@ -137,7 +154,8 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             final GroupPrequalificationRelationshipRepository groupPrequalificationRelationshipRepository,
             final PrequalificationGroupRepositoryWrapper prequalificationGroupRepositoryWrapper,
             final PrequalificationStatusRangeRepository prequalificationStatusRangeRepository,
-            PrequalificationReadPlatformService prequalificationReadPlatformService) {
+            PrequalificationReadPlatformService prequalificationReadPlatformService, FromJsonHelper fromApiJsonHelper,
+            LoanApplicationWritePlatformService loanApplicationWritePlatformService) {
         this.context = context;
         this.dataValidator = dataValidator;
         this.loanProductRepository = loanProductRepository;
@@ -158,6 +176,8 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         this.groupPrequalificationRelationshipRepository = groupPrequalificationRelationshipRepository;
         this.prequalificationStatusRangeRepository = prequalificationStatusRangeRepository;
         this.prequalificationReadPlatformService = prequalificationReadPlatformService;
+        this.fromApiJsonHelper = fromApiJsonHelper;
+        this.loanApplicationWritePlatformService = loanApplicationWritePlatformService;
     }
 
     @Transactional
@@ -805,6 +825,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
     }
 
     @Override
+    @Transactional
     public CommandProcessingResult processAnalysisRequest(Long entityId, JsonCommand command) {
         String comments = command.stringValueOfParameterNamed("comments");
         String action = command.stringValueOfParameterNamed("action");
@@ -816,8 +837,29 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             return sendToAgency(entityId, command);
         }
         PrequalificationStatus prequalificationStatus = resolveStatus(action);
+        final List<MemberPrequalificationData> memberPrequalificationDataList = new ArrayList<>();
+        if (command.parameterExists("members")) {
+            final JsonElement jsonElement = command.jsonElement("members");
+            if (jsonElement != null) {
+                final JsonArray members = jsonElement.getAsJsonArray();
+                if (!members.isEmpty()) {
+                    for (int i = 0; i < members.size(); i++) {
+                        JsonElement memberJson = members.get(i);
+                        final Long memberId = this.fromApiJsonHelper.extractLongNamed("id", memberJson);
+                        final Boolean isSelected = this.fromApiJsonHelper.extractBooleanNamed("isSelected", memberJson);
+                        final MemberPrequalificationData memberPrequalificationData = MemberPrequalificationData.instance(memberId,
+                                isSelected);
+                        memberPrequalificationDataList.add(memberPrequalificationData);
+                    }
+                }
+            }
+        }
 
-        if (prequalificationGroup.isPrequalificationTypeIndividual() && action.equals("approveanalysis")) {
+        final Long productId = prequalificationGroup.getLoanProduct().getId();
+        final LoanProduct loanProduct = this.loanProductRepository.findById(productId)
+                .orElseThrow(() -> new LoanProductNotFoundException(productId));
+        final Boolean requireCommitteeApproval = ObjectUtils.defaultIfNull(loanProduct.getRequireCommitteeApproval(), Boolean.FALSE);
+        if (prequalificationGroup.isPrequalificationTypeIndividual() && action.equals("approveanalysis") && requireCommitteeApproval) {
             PrequalificationStatusRange statusRange = resolveIndividualStatusRange(prequalificationGroup, action);
             prequalificationStatus = PrequalificationStatus.fromInt(statusRange.getStatus());
 
@@ -836,7 +878,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
 
         PrequalificationStatusLog newStatusLog = PrequalificationStatusLog.fromJson(addedBy, fromStatus, prequalificationGroup.getStatus(),
                 comments, prequalificationGroup);
-
+        this.approveOrRejectLoanApplications(prequalificationGroup, prequalificationStatus, memberPrequalificationDataList);
         this.preQualificationLogRepository.saveAndFlush(newStatusLog);
 
         List<PrequalificationStatusLog> currentLogs = this.preQualificationLogRepository.groupStatusLogs(fromStatus, prequalificationGroup);
@@ -846,6 +888,154 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             this.preQualificationLogRepository.save(currentStatusLog);
         }
         return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withEntityId(prequalificationGroup.getId()).build();
+    }
+
+    private void approveOrRejectLoanApplications(final PrequalificationGroup prequalificationGroup,
+            final PrequalificationStatus prequalificationStatus, final List<MemberPrequalificationData> prequalificationMembers) {
+        final Long prequalificationId = prequalificationGroup.getId();
+        final List<PrequalificationGroupMember> groupMembers = prequalificationGroup.getMembers();
+        final List<MemberPrequalificationData> approvedPrequalificationMembers = prequalificationMembers.stream()
+                .filter(m -> Boolean.TRUE.equals(m.getIsSelected())).toList();
+        if (approvedPrequalificationMembers.isEmpty() && PrequalificationStatus.COMPLETED.equals(prequalificationStatus)) {
+            throw new MemberNotSelectedException(prequalificationGroup.getId());
+        }
+        for (final MemberPrequalificationData memberPrequalificationData : prequalificationMembers) {
+            final Optional<PrequalificationGroupMember> memberOptional = groupMembers.stream()
+                    .filter(m -> memberPrequalificationData.getId().equals(m.getId())).findFirst();
+            if (memberOptional.isEmpty()) {
+                throw new GroupMemberPreQualificationNotFound(memberPrequalificationData.getId());
+            }
+            final PrequalificationGroupMember prequalificationGroupMember = memberOptional.get();
+            final boolean isApproved = PrequalificationStatus.COMPLETED.equals(prequalificationStatus)
+                    && (memberPrequalificationData.getIsSelected() || prequalificationGroup.isPrequalificationTypeIndividual());
+            final boolean isRejected = PrequalificationStatus.REJECTED.equals(prequalificationStatus)
+                    || (!memberPrequalificationData.getIsSelected() && PrequalificationStatus.COMPLETED.equals(prequalificationStatus)
+                            && prequalificationGroup.isPrequalificationTypeGroup());
+            final BigDecimal approvedLoanAmount = prequalificationGroupMember.getApprovedAmount();
+            final String dpi = prequalificationGroupMember.getDpi();
+            List<LoanData> submittedLoans;
+            if (prequalificationGroup.isPrequalificationTypeGroup()) {
+                submittedLoans = jdbcTemplate.query(this.groupTypeLoanMapper.schema(), this.groupTypeLoanMapper,
+                        new Object[] { prequalificationId, dpi, prequalificationId });
+            } else {
+                submittedLoans = jdbcTemplate.query(this.individualTypeLoanMapper.schema(), this.individualTypeLoanMapper,
+                        new Object[] { prequalificationId, dpi, prequalificationId });
+            }
+            if (submittedLoans.isEmpty()) {
+                throw new MemberSubmittedLoanNotFoundException(dpi);
+            }
+            for (final LoanData submittedLoan : submittedLoans) {
+                final Long groupId = submittedLoan.getGroupId();
+                final String localeAsString = "en";
+                final String dateFormat = "dd MMMM yyyy";
+                final Long loanId = submittedLoan.getLoanId();
+                final Long clientId = submittedLoan.getClientId();
+                final JsonObject jsonObject = new JsonObject();
+                final LocalDate localDate = DateUtils.getBusinessLocalDate();
+                Locale locale = JsonParserHelper.localeFromString(localeAsString);
+                final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(dateFormat).withLocale(locale);
+                final String localDateString = localDate.format(dateTimeFormatter);
+                jsonObject.addProperty("locale", localeAsString);
+                jsonObject.addProperty("dateFormat", dateFormat);
+                if (isApproved) {
+                    jsonObject.addProperty("approvedLoanAmount", approvedLoanAmount);
+                    jsonObject.addProperty("approvedOnDate", localDateString);
+                    jsonObject.add("disbursementData", new JsonArray());
+                    jsonObject.addProperty("expectedDisbursementDate", localDateString);
+                    final String note = "Precalificación Aprobada " + prequalificationGroup.getPrequalificationNumber();
+                    jsonObject.addProperty("note", note);
+                    final String jsonCommand = jsonObject.toString();
+                    final JsonCommand command = JsonCommand.from(jsonCommand, jsonObject, this.fromApiJsonHelper, null, loanId, null,
+                            groupId, clientId, loanId, null, null, null, null, null, null);
+                    command.setJsonCommand(jsonObject.toString());
+                    this.loanApplicationWritePlatformService.approveApplication(loanId, command);
+                } else if (isRejected) {
+                    final String note = "Rechazada la precalificación " + prequalificationGroup.getPrequalificationNumber();
+                    jsonObject.addProperty("note", note);
+                    jsonObject.addProperty("rejectedOnDate", localDateString);
+                    final String jsonCommand = jsonObject.toString();
+                    final JsonCommand command = JsonCommand.from(jsonCommand, jsonObject, this.fromApiJsonHelper, null, loanId, null,
+                            groupId, clientId, loanId, null, null, null, null, null, null);
+                    command.setJsonCommand(jsonObject.toString());
+                    this.loanApplicationWritePlatformService.rejectApplication(loanId, command);
+                }
+            }
+        }
+    }
+
+    private static final class GroupTypeLoanMapper implements RowMapper<LoanData> {
+
+        private final String schema;
+
+        private GroupTypeLoanMapper() {
+            this.schema = """
+                    SELECT ml.id AS loanId,
+                    mc.id AS clientId,
+                    mpg.id AS prequalificationId,
+                    mg.id AS groupId,
+                    ml.principal_amount AS principalAmount
+                    FROM m_prequalification_group mpg
+                    INNER JOIN m_prequalification_group_members mpgm ON mpgm.group_id = mpg.id
+                    INNER  JOIN m_group_prequalification_relationship mgpr ON mgpr.prequalification_id = mpg.id
+                    INNER JOIN m_group_client mgc ON mgc.group_id = mgpr.group_id
+                    INNER JOIN m_group mg ON mg.id = mgc.group_id
+                    INNER JOIN m_client mc ON (mgc.client_id = mc.id AND mpgm.dpi = mc.dpi)
+                    INNER JOIN m_loan ml ON (ml.client_id = mc.id OR ml.group_id = mg.id)
+                    WHERE mpg.id = ? AND mpg.prequalification_type_enum = 2 AND (ml.client_id = (SELECT mt.id FROM m_client mt WHERE mt.dpi = ?))
+                    AND ml.loan_status_id = 100 AND ml.prequalification_id = ?
+                    GROUP BY ml.id
+                    """;
+        }
+
+        public String schema() {
+            return this.schema;
+        }
+
+        @Override
+        public LoanData mapRow(ResultSet rs, int rowNum) throws SQLException {
+            final Long loanId = JdbcSupport.getLong(rs, "loanId");
+            final Long clientId = JdbcSupport.getLong(rs, "clientId");
+            final Long prequalificationId = JdbcSupport.getLong(rs, "prequalificationId");
+            final Long groupId = JdbcSupport.getLong(rs, "groupId");
+            final BigDecimal principalAmount = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "principalAmount");
+            return LoanData.builder().loanId(loanId).clientId(clientId).prequalificationId(prequalificationId).groupId(groupId)
+                    .principalAmount(principalAmount).build();
+
+        }
+    }
+
+    private static final class IndividualTypeLoanMapper implements RowMapper<LoanData> {
+
+        private final String schema;
+
+        private IndividualTypeLoanMapper() {
+            this.schema = """
+                        SELECT ml.id AS loanId,
+                        mc.id AS clientId,
+                        mpg.id AS prequalificationId,
+                        ml.principal_amount AS principalAmount
+                        FROM m_prequalification_group mpg
+                        INNER JOIN m_prequalification_group_members mpgm ON mpg.id = mpgm.group_id
+                        INNER JOIN m_client mc ON mc.dpi = mpgm.dpi
+                        INNER JOIN m_loan ml ON ml.client_id = mc.id
+                        WHERE mpg.id = ? AND mpg.prequalification_type_enum = 1 AND (ml.client_id = (SELECT mt.id FROM m_client mt WHERE mt.dpi = ?))
+                        AND ml.loan_status_id = 100 AND ml.prequalification_id = ?
+                    """;
+        }
+
+        public String schema() {
+            return this.schema;
+        }
+
+        @Override
+        public LoanData mapRow(ResultSet rs, int rowNum) throws SQLException {
+            final Long loanId = JdbcSupport.getLong(rs, "loanId");
+            final Long clientId = JdbcSupport.getLong(rs, "clientId");
+            final Long prequalificationId = JdbcSupport.getLong(rs, "prequalificationId");
+            final BigDecimal principalAmount = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "principalAmount");
+            return LoanData.builder().loanId(loanId).clientId(clientId).prequalificationId(prequalificationId)
+                    .principalAmount(principalAmount).build();
+        }
     }
 
     @Override
