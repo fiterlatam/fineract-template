@@ -16,17 +16,18 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.organisation.prequalification.exception;
+package org.apache.fineract.portfolio.savings.exception;
 
-import org.apache.fineract.infrastructure.core.exception.AbstractPlatformResourceNotFoundException;
+import org.apache.fineract.infrastructure.core.exception.AbstractPlatformServiceUnavailableException;
 
 /**
- * A {@link RuntimeException} thrown when client doesn't have a pending loan request.
+ * A {@link RuntimeException} thrown when update not allowed.
  */
-public class MemberHasNoPendingLoanException extends AbstractPlatformResourceNotFoundException {
+public class HoldTransactionNotFoundException extends AbstractPlatformServiceUnavailableException {
 
-    public MemberHasNoPendingLoanException(String name, String dpi, String product) {
-        super("error.msg.client.pending.loan.request", "Client " + name + " with dpi " + dpi + " doesnt have a pending loan request.", name,
-                dpi, product);
+    public HoldTransactionNotFoundException(final Long savingsId, final Long transactionId) {
+        super("error.msg.saving.account.hold.transaction.not.found",
+                "Savings Account hold transaction not found with identifier " + savingsId + " and transaction identifier " + transactionId,
+                savingsId, transactionId);
     }
 }

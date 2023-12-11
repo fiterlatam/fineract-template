@@ -116,16 +116,16 @@ public class CentersApiResource {
 
     @Autowired
     public CentersApiResource(final PlatformSecurityContext context, final CenterReadPlatformService centerReadPlatformService,
-                              final ToApiJsonSerializer<CenterData> centerApiJsonSerializer, final ToApiJsonSerializer<Object> toApiJsonSerializer,
-                              final ToApiJsonSerializer<AccountSummaryCollectionData> groupSummaryToApiJsonSerializer,
-                              final ApiRequestParameterHelper apiRequestParameterHelper,
-                              final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService,
-                              final CollectionSheetReadPlatformService collectionSheetReadPlatformService, final FromJsonHelper fromJsonHelper,
-                              final AccountDetailsReadPlatformService accountDetailsReadPlatformService,
-                              final CalendarReadPlatformService calendarReadPlatformService, final MeetingReadPlatformService meetingReadPlatformService,
-                              final EntityDatatableChecksReadService entityDatatableChecksReadService,
-                              final BulkImportWorkbookService bulkImportWorkbookService,
-                              final BulkImportWorkbookPopulatorService bulkImportWorkbookPopulatorService) {
+            final ToApiJsonSerializer<CenterData> centerApiJsonSerializer, final ToApiJsonSerializer<Object> toApiJsonSerializer,
+            final ToApiJsonSerializer<AccountSummaryCollectionData> groupSummaryToApiJsonSerializer,
+            final ApiRequestParameterHelper apiRequestParameterHelper,
+            final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService,
+            final CollectionSheetReadPlatformService collectionSheetReadPlatformService, final FromJsonHelper fromJsonHelper,
+            final AccountDetailsReadPlatformService accountDetailsReadPlatformService,
+            final CalendarReadPlatformService calendarReadPlatformService, final MeetingReadPlatformService meetingReadPlatformService,
+            final EntityDatatableChecksReadService entityDatatableChecksReadService,
+            final BulkImportWorkbookService bulkImportWorkbookService,
+            final BulkImportWorkbookPopulatorService bulkImportWorkbookPopulatorService) {
         this.context = context;
         this.centerReadPlatformService = centerReadPlatformService;
         this.centerApiJsonSerializer = centerApiJsonSerializer;
@@ -152,9 +152,9 @@ public class CentersApiResource {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = CentersApiResourceSwagger.GetCentersTemplateResponse.class))) })
     public String retrieveTemplate(@Context final UriInfo uriInfo,
-                                   @QueryParam("command") @Parameter(description = "command") final String commandParam,
-                                   @QueryParam("officeId") @Parameter(description = "officeId") final Long officeId,
-                                   @DefaultValue("false") @QueryParam("staffInSelectedOfficeOnly") @Parameter(description = "staffInSelectedOfficeOnly") final boolean staffInSelectedOfficeOnly) {
+            @QueryParam("command") @Parameter(description = "command") final String commandParam,
+            @QueryParam("officeId") @Parameter(description = "officeId") final Long officeId,
+            @DefaultValue("false") @QueryParam("staffInSelectedOfficeOnly") @Parameter(description = "staffInSelectedOfficeOnly") final boolean staffInSelectedOfficeOnly) {
 
         this.context.authenticatedUser().validateHasReadPermission(GroupingTypesApiConstants.CENTER_RESOURCE_NAME);
 
@@ -183,19 +183,19 @@ public class CentersApiResource {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = CentersApiResourceSwagger.GetCentersResponse.class))) })
     public String retrieveAll(@Context final UriInfo uriInfo,
-                              @QueryParam("officeId") @Parameter(description = "officeId") final Long officeId,
-                              @QueryParam("staffId") @Parameter(description = "staffId") final Long staffId,
-                              @QueryParam("externalId") @Parameter(description = "externalId") final String externalId,
-                              @QueryParam("name") @Parameter(description = "name") final String name,
-                              @QueryParam("underHierarchy") @Parameter(description = "underHierarchy") final String hierarchy,
-                              @QueryParam("paged") @Parameter(description = "paged") final Boolean paged,
-                              @QueryParam("offset") @Parameter(description = "offset") final Integer offset,
-                              @QueryParam("limit") @Parameter(description = "limit") final Integer limit,
-                              @QueryParam("orderBy") @Parameter(description = "orderBy") final String orderBy,
-                              @QueryParam("sortOrder") @Parameter(description = "sortOrder") final String sortOrder,
-                              @QueryParam("meetingDate") @Parameter(description = "meetingDate") final DateParam meetingDateParam,
-                              @QueryParam("dateFormat") @Parameter(description = "dateFormat") final String dateFormat,
-                              @QueryParam("locale") @Parameter(description = "locale") final String locale) {
+            @QueryParam("officeId") @Parameter(description = "officeId") final Long officeId,
+            @QueryParam("staffId") @Parameter(description = "staffId") final Long staffId,
+            @QueryParam("externalId") @Parameter(description = "externalId") final String externalId,
+            @QueryParam("name") @Parameter(description = "name") final String name,
+            @QueryParam("underHierarchy") @Parameter(description = "underHierarchy") final String hierarchy,
+            @QueryParam("paged") @Parameter(description = "paged") final Boolean paged,
+            @QueryParam("offset") @Parameter(description = "offset") final Integer offset,
+            @QueryParam("limit") @Parameter(description = "limit") final Integer limit,
+            @QueryParam("orderBy") @Parameter(description = "orderBy") final String orderBy,
+            @QueryParam("sortOrder") @Parameter(description = "sortOrder") final String sortOrder,
+            @QueryParam("meetingDate") @Parameter(description = "meetingDate") final DateParam meetingDateParam,
+            @QueryParam("dateFormat") @Parameter(description = "dateFormat") final String dateFormat,
+            @QueryParam("locale") @Parameter(description = "locale") final String locale) {
 
         this.context.authenticatedUser().validateHasReadPermission(GroupingTypesApiConstants.CENTER_RESOURCE_NAME);
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
@@ -228,8 +228,8 @@ public class CentersApiResource {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = CentersApiResourceSwagger.GetCentersCenterIdResponse.class))) })
     public String retrieveOne(@Context final UriInfo uriInfo,
-                              @PathParam("centerId") @Parameter(description = "centerId") final Long centerId,
-                              @DefaultValue("false") @QueryParam("staffInSelectedOfficeOnly") @Parameter(description = "staffInSelectedOfficeOnly") final boolean staffInSelectedOfficeOnly) {
+            @PathParam("centerId") @Parameter(description = "centerId") final Long centerId,
+            @DefaultValue("false") @QueryParam("staffInSelectedOfficeOnly") @Parameter(description = "staffInSelectedOfficeOnly") final boolean staffInSelectedOfficeOnly) {
 
         this.context.authenticatedUser().validateHasReadPermission(GroupingTypesApiConstants.CENTER_RESOURCE_NAME);
         final Set<String> associationParameters = ApiParameterHelper.extractAssociationsForResponseIfProvided(uriInfo.getQueryParameters());
@@ -302,8 +302,8 @@ public class CentersApiResource {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = CentersApiResourceSwagger.PostCentersResponse.class))) })
     public String modify(@Parameter(hidden = true) final String apiRequestBodyAsJson,
-                         @PathParam("centerId") @Parameter(description = "centerId") final Long centerId,
-                         @PathParam("action") @Parameter(description = "action") final String action) {
+            @PathParam("centerId") @Parameter(description = "centerId") final Long centerId,
+            @PathParam("action") @Parameter(description = "action") final String action) {
         CommandWrapper commandRequest = null; //
         if (StringUtils.equals(action, "transfer")) {
             commandRequest = new CommandWrapperBuilder().transferGroup(centerId) //
@@ -324,7 +324,7 @@ public class CentersApiResource {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = CentersApiResourceSwagger.PutCentersCenterIdResponse.class))) })
     public String update(@PathParam("centerId") @Parameter(description = "centerId") final Long centerId,
-                         @Parameter(hidden = true) final String apiRequestBodyAsJson) {
+            @Parameter(hidden = true) final String apiRequestBodyAsJson) {
 
         final CommandWrapper commandRequest = new CommandWrapperBuilder() //
                 .updateCenter(centerId) //
@@ -369,8 +369,8 @@ public class CentersApiResource {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = CentersApiResourceSwagger.PostCentersCenterIdResponse.class))) })
     public String activate(@PathParam("centerId") @Parameter(description = "centerId") final Long centerId,
-                           @QueryParam("command") @Parameter(description = "command") final String commandParam,
-                           @Parameter(hidden = true) final String apiRequestBodyAsJson, @Context final UriInfo uriInfo) {
+            @QueryParam("command") @Parameter(description = "command") final String commandParam,
+            @Parameter(hidden = true) final String apiRequestBodyAsJson, @Context final UriInfo uriInfo) {
 
         final CommandWrapperBuilder builder = new CommandWrapperBuilder().withJson(apiRequestBodyAsJson);
 
@@ -423,7 +423,7 @@ public class CentersApiResource {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = CentersApiResourceSwagger.GetCentersCenterIdAccountsResponse.class))) })
     public String retrieveGroupAccount(@PathParam("centerId") @Parameter(description = "centerId") final Long centerId,
-                                       @Context final UriInfo uriInfo) {
+            @Context final UriInfo uriInfo) {
 
         this.context.authenticatedUser().validateHasReadPermission(GroupingTypesApiConstants.CENTER_RESOURCE_NAME);
 
@@ -440,7 +440,7 @@ public class CentersApiResource {
     @Path("downloadtemplate")
     @Produces("application/vnd.ms-excel")
     public Response getCentersTemplate(@QueryParam("officeId") final Long officeId, @QueryParam("staffId") final Long staffId,
-                                       @QueryParam("dateFormat") final String dateFormat) {
+            @QueryParam("dateFormat") final String dateFormat) {
         return bulkImportWorkbookPopulatorService.getTemplate(GlobalEntityType.CENTERS.toString(), officeId, staffId, dateFormat);
     }
 
@@ -450,8 +450,8 @@ public class CentersApiResource {
     @RequestBody(description = "Upload centers template", content = {
             @Content(mediaType = MediaType.MULTIPART_FORM_DATA, schema = @Schema(implementation = UploadRequest.class)) })
     public String postCentersTemplate(@FormDataParam("file") InputStream uploadedInputStream,
-                                      @FormDataParam("file") FormDataContentDisposition fileDetail, @FormDataParam("locale") final String locale,
-                                      @FormDataParam("dateFormat") final String dateFormat) {
+            @FormDataParam("file") FormDataContentDisposition fileDetail, @FormDataParam("locale") final String locale,
+            @FormDataParam("dateFormat") final String dateFormat) {
         final Long importDocumentId = this.bulkImportWorkbookService.importWorkbook(GlobalEntityType.CENTERS.toString(),
                 uploadedInputStream, fileDetail, locale, dateFormat);
         return this.toApiJsonSerializer.serialize(importDocumentId);

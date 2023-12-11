@@ -28,16 +28,16 @@ import org.springframework.dao.EmptyResultDataAccessException;
 public class GroupMeetingTimeCollisionException extends AbstractPlatformResourceNotFoundException {
 
     public GroupMeetingTimeCollisionException(final String groupName, final Long groupId, final LocalTime startTime,
-                                              final LocalTime endTime) {
+            final LocalTime endTime) {
         super("error.msg.center.group.meeting.times.collision", "Center group " + groupName + " with id " + groupId
-                        + " In the destination center has meetings in given time: " + startTime + "-" + endTime, groupName, groupId, startTime,
+                + " In the destination center has meetings in given time: " + startTime + "-" + endTime, groupName, groupId, startTime,
                 endTime);
     }
 
     public GroupMeetingTimeCollisionException(final String groupName, final Long groupId, final LocalTime startTime,
-                                              final LocalTime endTime, EmptyResultDataAccessException e) {
+            final LocalTime endTime, EmptyResultDataAccessException e) {
         super("error.msg.center.group.meeting.times.collision", "Center group " + groupName + " with id " + groupId
-                        + " In the destination center has meetings in given time: " + startTime + "-" + endTime, groupName, groupId, startTime,
+                + " In the destination center has meetings in given time: " + startTime + "-" + endTime, groupName, groupId, startTime,
                 endTime);
     }
 

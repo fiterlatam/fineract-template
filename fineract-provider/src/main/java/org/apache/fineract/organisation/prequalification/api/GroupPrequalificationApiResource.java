@@ -182,7 +182,7 @@ public class GroupPrequalificationApiResource {
         Long agencyId = null;
         Long centerId = null;
 
-        if (!StringUtils.isBlank(groupId)){
+        if (!StringUtils.isBlank(groupId)) {
             GroupPrequalificationData prequalificationGroup = this.prequalificationReadPlatformService.retrieveOne(Long.valueOf(groupId));
             agencyId = prequalificationGroup.getAgencyId();
             centerId = prequalificationGroup.getCenterId();
@@ -212,7 +212,7 @@ public class GroupPrequalificationApiResource {
         }
 
         final String hierarchy = this.context.authenticatedUser().getOffice().getHierarchy();
-        Collection<CenterData> centerData =null;
+        Collection<CenterData> centerData = null;
         if (agencyId != null) {
             centerData = this.centerReadPlatformService.retrieveByOfficeHierarchy(hierarchy, agencyId);
         }

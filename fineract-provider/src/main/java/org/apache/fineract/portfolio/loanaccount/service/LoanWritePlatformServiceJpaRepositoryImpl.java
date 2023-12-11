@@ -971,7 +971,6 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             }
             this.loanAccountDomainService.updateLoanCollateralTransaction(loanCollateralManagements);
         }
-
         return commandProcessingResultBuilder.withCommandId(command.commandId()) //
                 .withLoanId(loanId) //
                 .with(changes) //

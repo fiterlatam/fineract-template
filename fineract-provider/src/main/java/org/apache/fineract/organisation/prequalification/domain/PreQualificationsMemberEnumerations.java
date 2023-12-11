@@ -41,11 +41,11 @@ public final class PreQualificationsMemberEnumerations {
             case INVALID:
                 optionData = new EnumOptionData(PrequalificationMemberIndication.INVALID.getValue().longValue(),
                         PrequalificationMemberIndication.INVALID.getCode(), "INVALID");
-                break;
+            break;
             case ACTIVE:
                 optionData = new EnumOptionData(PrequalificationMemberIndication.ACTIVE.getValue().longValue(),
                         PrequalificationMemberIndication.ACTIVE.getCode(), "ACTIVE");
-                break;
+            break;
             case INACTIVE:
                 optionData = new EnumOptionData(PrequalificationMemberIndication.INACTIVE.getValue().longValue(),
                         PrequalificationMemberIndication.INACTIVE.getCode(), "INACTIVE");
@@ -57,7 +57,7 @@ public final class PreQualificationsMemberEnumerations {
             case NONE:
                 optionData = new EnumOptionData(PrequalificationMemberIndication.NONE.getValue().longValue(),
                         PrequalificationMemberIndication.NONE.getCode(), "NONE");
-                break;
+            break;
         }
 
         return optionData;

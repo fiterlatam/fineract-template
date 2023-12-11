@@ -165,8 +165,7 @@ public class PrequalificationGroupMember extends AbstractPersistableCustom {
         }
 
         if (command.isChangeInBigDecimalParameterNamed(PrequalificatoinApiConstants.approvedAmountParamName, this.approvedAmount)) {
-            final BigDecimal newValue = command
-                    .bigDecimalValueOfParameterNamed(PrequalificatoinApiConstants.approvedAmountParamName);
+            final BigDecimal newValue = command.bigDecimalValueOfParameterNamed(PrequalificatoinApiConstants.approvedAmountParamName);
             actualChanges.put(PrequalificatoinApiConstants.approvedAmountParamName, newValue);
         }
 

@@ -18,7 +18,6 @@
  */
 package org.apache.fineract.organisation.bankcheque.service;
 
-
 import java.util.List;
 import org.apache.fineract.infrastructure.core.data.PaginationParameters;
 import org.apache.fineract.infrastructure.core.service.Page;

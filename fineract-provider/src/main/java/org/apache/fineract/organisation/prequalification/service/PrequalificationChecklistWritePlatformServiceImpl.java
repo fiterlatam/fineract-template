@@ -168,8 +168,9 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
         List<PrequalificationGroupMember> members = group.getMembers();
         for (PrequalificationGroupMember member : members) {
             String pendingLoanRequest = "select count(*) from m_loan ml inner join m_client mc on mc.id = ml.client_id where mc.dpi=? AND ml.loan_status_id = 100 and ml.product_id = ?";
-            Long loanCount = this.jdbcTemplate.queryForObject(pendingLoanRequest, Long.class, member.getDpi(),group.getLoanProduct().getId());
-            if (loanCount<=0)
+            Long loanCount = this.jdbcTemplate.queryForObject(pendingLoanRequest, Long.class, member.getDpi(),
+                    group.getLoanProduct().getId());
+            if (loanCount <= 0)
                 throw new MemberHasNoPendingLoanException(member.getName(), member.getDpi(), group.getLoanProduct().getName());
 
         }

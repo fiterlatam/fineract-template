@@ -105,8 +105,6 @@ import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import static org.apache.fineract.portfolio.savings.SavingsApiConstants.GURANTEE_PRODUCT_NAME;
-
 @Service
 @Slf4j
 public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWritePlatformService {

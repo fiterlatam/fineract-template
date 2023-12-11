@@ -141,9 +141,9 @@ public final class ClientData implements Comparable<ClientData>, Serializable {
     private List<EconomicActivityData> economicActivityData;
 
     public static ClientData importClientEntityInstance(Long legalFormId, Integer rowIndex, String fullname, Long officeId,
-                                                        Long clientTypeId, Long clientClassificationId, Long staffId, Boolean active, LocalDate activationDate,
-                                                        LocalDate submittedOnDate, String externalId, LocalDate dateOfBirth, String mobileNo,
-                                                        ClientNonPersonData clientNonPersonDetails, Collection<AddressData> address, String locale, String dateFormat) {
+            Long clientTypeId, Long clientClassificationId, Long staffId, Boolean active, LocalDate activationDate,
+            LocalDate submittedOnDate, String externalId, LocalDate dateOfBirth, String mobileNo,
+            ClientNonPersonData clientNonPersonDetails, Collection<AddressData> address, String locale, String dateFormat) {
         return new ClientData(legalFormId, rowIndex, fullname, null, null, null, submittedOnDate, activationDate, active, externalId,
                 officeId, staffId, mobileNo, dateOfBirth, clientTypeId, null, clientClassificationId, null, address, clientNonPersonDetails,
                 locale, dateFormat);
@@ -222,9 +222,9 @@ public final class ClientData implements Comparable<ClientData>, Serializable {
     }
 
     public static ClientData importClientPersonInstance(Long legalFormId, Integer rowIndex, String firstname, String lastname,
-                                                        String middlename, LocalDate submittedOn, LocalDate activationDate, Boolean active, String externalId, Long officeId,
-                                                        Long staffId, String mobileNo, LocalDate dob, Long clientTypeId, Long genderId, Long clientClassificationId, Boolean isStaff,
-                                                        Collection<AddressData> address, String locale, String dateFormat) {
+            String middlename, LocalDate submittedOn, LocalDate activationDate, Boolean active, String externalId, Long officeId,
+            Long staffId, String mobileNo, LocalDate dob, Long clientTypeId, Long genderId, Long clientClassificationId, Boolean isStaff,
+            Collection<AddressData> address, String locale, String dateFormat) {
 
         return new ClientData(legalFormId, rowIndex, null, firstname, lastname, middlename, submittedOn, activationDate, active, externalId,
                 officeId, staffId, mobileNo, dob, clientTypeId, genderId, clientClassificationId, isStaff, address, null, locale,
@@ -236,9 +236,9 @@ public final class ClientData implements Comparable<ClientData>, Serializable {
     }
 
     private ClientData(Long legalFormId, Integer rowIndex, String fullname, String firstname, String lastname, String middlename,
-                       LocalDate submittedOn, LocalDate activationDate, Boolean active, String externalId, Long officeId, Long staffId,
-                       String mobileNo, LocalDate dob, Long clientTypeId, Long genderId, Long clientClassificationId, Boolean isStaff,
-                       Collection<AddressData> address, ClientNonPersonData clientNonPersonDetails, String locale, String dateFormat) {
+            LocalDate submittedOn, LocalDate activationDate, Boolean active, String externalId, Long officeId, Long staffId,
+            String mobileNo, LocalDate dob, Long clientTypeId, Long genderId, Long clientClassificationId, Boolean isStaff,
+            Collection<AddressData> address, ClientNonPersonData clientNonPersonDetails, String locale, String dateFormat) {
         this.rowIndex = rowIndex;
         this.dateFormat = dateFormat;
         this.locale = locale;
@@ -395,7 +395,7 @@ public final class ClientData implements Comparable<ClientData>, Serializable {
     }
 
     public static ClientData templateWithSavingAccountOptions(final ClientData clientData,
-                                                              final Collection<SavingsAccountData> savingAccountOptions) {
+            final Collection<SavingsAccountData> savingAccountOptions) {
         final Set<ClientCollateralManagementData> clientCollateralManagements = null;
         return new ClientData(clientData.accountNo, clientData.status, clientData.subStatus, clientData.officeId, clientData.officeName,
                 clientData.transferToOfficeId, clientData.transferToOfficeName, clientData.id, clientData.firstname, clientData.middlename,
@@ -416,7 +416,7 @@ public final class ClientData implements Comparable<ClientData>, Serializable {
     }
 
     public static ClientData setParentGroups(final ClientData clientData, final Collection<GroupGeneralData> parentGroups,
-                                             final Set<ClientCollateralManagementData> clientCollateralManagements, ClientContactInformationData contactInformation) {
+            final Set<ClientCollateralManagementData> clientCollateralManagements, ClientContactInformationData contactInformation) {
         return new ClientData(clientData.accountNo, clientData.status, clientData.subStatus, clientData.officeId, clientData.officeName,
                 clientData.transferToOfficeId, clientData.transferToOfficeName, clientData.id, clientData.firstname, clientData.middlename,
                 clientData.lastname, clientData.fullname, clientData.displayName, clientData.externalId, clientData.mobileNo,
@@ -435,7 +435,7 @@ public final class ClientData implements Comparable<ClientData>, Serializable {
     }
 
     public static ClientData clientIdentifier(final Long id, final String accountNo, final String firstname, final String middlename,
-                                              final String lastname, final String fullname, final String displayName, final Long officeId, final String officeName) {
+            final String lastname, final String fullname, final String displayName, final Long officeId, final String officeName) {
 
         final Long transferToOfficeId = null;
         final String transferToOfficeName = null;
@@ -777,8 +777,8 @@ public final class ClientData implements Comparable<ClientData>, Serializable {
     }
 
     public void updateClientAddressTemplate(Collection<CodeValueData> clientAreas, Collection<CodeValueData> clientLocation,
-                                            Collection<CodeValueData> publicServices, Collection<CodeValueData> housingTypeOptions, Collection<CodeValueData> ldepartamento,
-                                            Collection<CodeValueData> lmunicipio) {
+            Collection<CodeValueData> publicServices, Collection<CodeValueData> housingTypeOptions, Collection<CodeValueData> ldepartamento,
+            Collection<CodeValueData> lmunicipio) {
         this.clientAreaOptions = clientAreas;
         this.clientLocationOptions = clientLocation;
         this.publicServiceOptions = publicServices;

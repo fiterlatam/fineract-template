@@ -42,10 +42,9 @@ public final class AccountNumberFormatEnumerations {
             .unmodifiableSet(new HashSet<>(Arrays.asList(AccountNumberPrefixType.OFFICE_NAME,
                     AccountNumberPrefixType.LOAN_PRODUCT_SHORT_NAME, AccountNumberPrefixType.PREFIX_SHORT_NAME)));
 
-    public static final Set<AccountNumberPrefixType> accountNumberPrefixesForSavingsAccounts = Collections
-            .unmodifiableSet(new HashSet<>(Arrays.asList(AccountNumberPrefixType.OFFICE_NAME,
-                    AccountNumberPrefixType.SAVINGS_PRODUCT_SHORT_NAME, AccountNumberPrefixType.PREFIX_SHORT_NAME,
-                    AccountNumberPrefixType.SAVINGS_CLIENT_ID)));
+    public static final Set<AccountNumberPrefixType> accountNumberPrefixesForSavingsAccounts = Collections.unmodifiableSet(
+            new HashSet<>(Arrays.asList(AccountNumberPrefixType.OFFICE_NAME, AccountNumberPrefixType.SAVINGS_PRODUCT_SHORT_NAME,
+                    AccountNumberPrefixType.PREFIX_SHORT_NAME, AccountNumberPrefixType.SAVINGS_CLIENT_ID)));
 
     public static final Set<AccountNumberPrefixType> accountNumberPrefixesForCenters = Collections
             .unmodifiableSet(new HashSet<>(Collections.singletonList(AccountNumberPrefixType.OFFICE_NAME)));
@@ -60,7 +59,7 @@ public final class AccountNumberFormatEnumerations {
                         "accountNumberPrefixType.loanProductShortName"), SAVINGS_PRODUCT_SHORT_NAME(301,
                                 "accountNumberPrefixType.savingsProductShortName"), PREFIX_SHORT_NAME(401,
                                         "accountNumberPrefixType.prefixShortName"), SAVINGS_CLIENT_ID(501,
-                "accountNumberPrefixType.savingsAccountClientId");
+                                                "accountNumberPrefixType.savingsAccountClientId");
 
         private final Integer value;
         private final String code;

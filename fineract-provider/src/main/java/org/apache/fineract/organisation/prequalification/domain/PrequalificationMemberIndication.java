@@ -41,10 +41,10 @@ public enum PrequalificationMemberIndication {
         switch (statusValue) {
             case 100:
                 enumeration = PrequalificationMemberIndication.ACTIVE;
-                break;
+            break;
             case 200:
                 enumeration = PrequalificationMemberIndication.INACTIVE;
-                break;
+            break;
             case 300:
                 enumeration = PrequalificationMemberIndication.NONE;
             break;

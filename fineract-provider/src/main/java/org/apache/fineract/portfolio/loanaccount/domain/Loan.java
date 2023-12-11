@@ -81,6 +81,7 @@ import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
 import org.apache.fineract.organisation.monetary.domain.Money;
 import org.apache.fineract.organisation.monetary.domain.MoneyHelper;
 import org.apache.fineract.organisation.office.domain.Office;
+import org.apache.fineract.organisation.prequalification.domain.PrequalificationGroup;
 import org.apache.fineract.organisation.staff.domain.Staff;
 import org.apache.fineract.organisation.workingdays.domain.WorkingDays;
 import org.apache.fineract.organisation.workingdays.service.WorkingDaysUtil;
@@ -411,6 +412,10 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     @ManyToOne
     @JoinColumn(name = "cheque_id")
     private Cheque cheque;
+
+    @ManyToOne
+    @JoinColumn(name = "prequalification_id")
+    private PrequalificationGroup prequalificationGroup;
 
     @ManyToOne()
     @JoinColumn(name = "disbursed_by_cheque_userid")
@@ -7043,5 +7048,13 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
     public void setDisbursedByChequeDate(LocalDate disbursedByChequeDate) {
         this.disbursedByChequeDate = disbursedByChequeDate;
+    }
+
+    public PrequalificationGroup getPrequalificationGroup() {
+        return prequalificationGroup;
+    }
+
+    public void setPrequalificationGroup(PrequalificationGroup prequalificationGroup) {
+        this.prequalificationGroup = prequalificationGroup;
     }
 }

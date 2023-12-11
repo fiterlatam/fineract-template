@@ -55,7 +55,7 @@ public class CenterGroupRepositoryWrapper {
     }
 
     public Collection<CenterGroup> findCenterGroupsByCenterIdAndMeetingTimes(final Long center, final LocalTime startTime,
-                                                                             final LocalTime endTime) {
+            final LocalTime endTime) {
         return this.repository.findCenterGroupsByCenterIdAndMeetingTimes(center, startTime, endTime);
     }
 

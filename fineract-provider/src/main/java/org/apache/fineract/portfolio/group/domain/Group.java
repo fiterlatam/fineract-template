@@ -243,9 +243,9 @@ public final class Group extends AbstractAuditableCustom {
     }
 
     public static Group assembleNewCenterFrom(final Office office, final GroupLevel groupLevel, final String name, final boolean active,
-                                              final LocalDate activationDate, final LocalDate submittedOnDate, final AppUser currentUser, final LocalTime meetingStartTime,
-                                              final LocalTime meetingEndTime, final Portfolio portfolio, final Integer meetingStart, final Integer meetingEnd,
-                                              final Integer meetingDay) {
+            final LocalDate activationDate, final LocalDate submittedOnDate, final AppUser currentUser, final LocalTime meetingStartTime,
+            final LocalTime meetingEndTime, final Portfolio portfolio, final Integer meetingStart, final Integer meetingEnd,
+            final Integer meetingDay) {
         // By default new group is created in PENDING status, unless explicitly
         // status is set to active
         GroupingTypeStatus status = GroupingTypeStatus.PENDING;
@@ -342,7 +342,7 @@ public final class Group extends AbstractAuditableCustom {
     }
 
     private void setStatus(final LocalDate activationDate, final AppUser loginUser, final GroupingTypeStatus status,
-                           final List<ApiParameterError> dataValidationErrors) {
+            final List<ApiParameterError> dataValidationErrors) {
 
         if (status.isActive()) {
             activate(loginUser, activationDate, dataValidationErrors);
@@ -353,7 +353,7 @@ public final class Group extends AbstractAuditableCustom {
     }
 
     private void activate(final AppUser currentUser, final LocalDate activationLocalDate,
-                          final List<ApiParameterError> dataValidationErrors) {
+            final List<ApiParameterError> dataValidationErrors) {
 
         validateStatusNotEqualToActiveAndLogError(dataValidationErrors);
         if (dataValidationErrors.isEmpty()) {
@@ -376,7 +376,7 @@ public final class Group extends AbstractAuditableCustom {
     }
 
     private void setActivationDate(final LocalDate activationDate, final AppUser loginUser,
-                                   final List<ApiParameterError> dataValidationErrors) {
+            final List<ApiParameterError> dataValidationErrors) {
 
         if (activationDate != null) {
             this.activationDate = activationDate;
