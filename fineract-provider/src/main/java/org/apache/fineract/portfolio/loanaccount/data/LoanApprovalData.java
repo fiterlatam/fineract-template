@@ -38,7 +38,8 @@ public class LoanApprovalData {
     private String locale;
     private transient Integer rowIndex;
 
-    public static LoanApprovalData importInstance(LocalDate approvedOnDate, Integer rowIndex, String locale, String dateFormat, BigDecimal approvedLoanAmount) {
+    public static LoanApprovalData importInstance(LocalDate approvedOnDate, Integer rowIndex, String locale, String dateFormat,
+            BigDecimal approvedLoanAmount) {
         return new LoanApprovalData(approvedOnDate, rowIndex, locale, dateFormat, approvedLoanAmount);
     }
 
@@ -54,7 +55,8 @@ public class LoanApprovalData {
         this.approvedLoanAmount = approvedLoanAmount;
     }
 
-    public LoanApprovalData(final BigDecimal approvalAmount, final LocalDate approvalDate, final BigDecimal netDisbursalAmount, BigDecimal approvedLoanAmount) {
+    public LoanApprovalData(final BigDecimal approvalAmount, final LocalDate approvalDate, final BigDecimal netDisbursalAmount,
+            BigDecimal approvedLoanAmount) {
         this.approvalDate = approvalDate;
         this.approvalAmount = approvalAmount;
         this.netDisbursalAmount = netDisbursalAmount;

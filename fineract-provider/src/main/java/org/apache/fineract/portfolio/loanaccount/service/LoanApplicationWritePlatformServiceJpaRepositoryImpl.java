@@ -72,9 +72,13 @@ import org.apache.fineract.infrastructure.security.service.PlatformSecurityConte
 import org.apache.fineract.organisation.bankcheque.domain.BankChequeStatus;
 import org.apache.fineract.organisation.bankcheque.domain.Cheque;
 import org.apache.fineract.organisation.bankcheque.domain.ChequeBatchRepositoryWrapper;
+import org.apache.fineract.organisation.prequalification.data.LoanAdditionalData;
+import org.apache.fineract.organisation.prequalification.domain.LoanAdditionProperties;
+import org.apache.fineract.organisation.prequalification.domain.LoanAdditionalPropertiesRepository;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationGroup;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationGroupRepositoryWrapper;
 import org.apache.fineract.organisation.prequalification.exception.PrequalificationNotProvidedException;
+import org.apache.fineract.organisation.prequalification.service.BureauValidationWritePlatformServiceImpl;
 import org.apache.fineract.organisation.staff.domain.Staff;
 import org.apache.fineract.portfolio.account.domain.AccountAssociationType;
 import org.apache.fineract.portfolio.account.domain.AccountAssociations;
@@ -168,6 +172,7 @@ import org.apache.fineract.portfolio.savings.service.SavingsAccountWritePlatform
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -237,6 +242,8 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
     private final SavingsAccountWritePlatformService savingsAccountWritePlatformService;
 
     private final SavingsAccountRepositoryWrapper savingsAccountRepositoryWrapper;
+    private final BureauValidationWritePlatformServiceImpl bureauValidationWritePlatformService;
+    private final LoanAdditionalPropertiesRepository loanAdditionalPropertiesRepository;
 
     @Autowired
     public LoanApplicationWritePlatformServiceJpaRepositoryImpl(final PlatformSecurityContext context, final FromJsonHelper fromJsonHelper,
@@ -271,7 +278,9 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             ChequeBatchRepositoryWrapper chequeBatchRepositoryWrapper,
             PrequalificationGroupRepositoryWrapper prequalificationGroupRepositoryWrapper,
             final SavingsAccountWritePlatformService savingsAccountWritePlatformService,
-            final SavingsAccountRepositoryWrapper savingsAccountRepositoryWrapper) {
+            final SavingsAccountRepositoryWrapper savingsAccountRepositoryWrapper,
+            BureauValidationWritePlatformServiceImpl bureauValidationWritePlatformService,
+            LoanAdditionalPropertiesRepository loanAdditionalPropertiesRepository) {
         this.context = context;
         this.fromJsonHelper = fromJsonHelper;
         this.loanApplicationTransitionApiJsonValidator = loanApplicationTransitionApiJsonValidator;
@@ -323,6 +332,8 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
         this.prequalificationGroupRepositoryWrapper = prequalificationGroupRepositoryWrapper;
         this.savingsAccountWritePlatformService = savingsAccountWritePlatformService;
         this.savingsAccountRepositoryWrapper = savingsAccountRepositoryWrapper;
+        this.bureauValidationWritePlatformService = bureauValidationWritePlatformService;
+        this.loanAdditionalPropertiesRepository = loanAdditionalPropertiesRepository;
     }
 
     private LoanLifecycleStateMachine defaultLoanLifecycleStateMachine() {
@@ -383,8 +394,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             if (loanProduct.useBorrowerCycle()) {
                 Integer cycleNumber = null;
                 cycleNumber = this.fromJsonHelper.extractIntegerWithLocaleNamed("borrowerCycle", command.parsedJson());
-                if (cycleNumber == null)
-                    cycleNumber = 0;
+                if (cycleNumber == null) cycleNumber = 0;
                 if (cycleNumber == 0) {
                     if (clientId != null) {
                         cycleNumber = this.loanReadPlatformService.retriveLoanCounter(clientId, loanProduct.getId());
@@ -406,7 +416,8 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                     err.append(error.getDeveloperMessage()).append("\n");
                 }
 
-                throw new PlatformApiDataValidationException("validation.msg.validation.errors.exist", err.toString(), dataValidationErrors);
+                throw new PlatformApiDataValidationException("validation.msg.validation.errors.exist", err.toString(),
+                        dataValidationErrors);
             }
 
             final Loan newLoanApplication = this.loanAssembler.assembleFrom(command);
@@ -690,6 +701,21 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                     accountAssociations.updateLinkedCupo(cupo);
                 }
                 this.accountAssociationsRepository.save(accountAssociations);
+            }
+
+            // Additional Data (Individual Prequalification)
+            final PrequalificationGroup prequalificationGroup = newLoanApplication.getPrequalificationGroup();
+            if (prequalificationGroup != null && prequalificationGroup.isPrequalificationTypeIndividual()) {
+                this.fromApiJsonDeserializer.validateLoanAdditionalData(command);
+                final JsonElement loanAdditionalDataJson = command.jsonElement(LoanApiConstants.LOAN_ADDITIONAL_DATA);
+                final LoanAdditionalData loanAdditionalData = bureauValidationWritePlatformService.mapFromJson(loanAdditionalDataJson);
+                final String caseId = this.fromJsonHelper.extractStringNamed(LoanApiConstants.CASE_ID, loanAdditionalDataJson);
+                final Client loanClient = newLoanApplication.getClient();
+                final LoanAdditionProperties loanAdditionProperties = loanAdditionalData.toEntity();
+                loanAdditionProperties.setCaseId(caseId);
+                loanAdditionProperties.setClient(loanClient);
+                loanAdditionProperties.setLoan(newLoanApplication);
+                loanAdditionalPropertiesRepository.saveAndFlush(loanAdditionProperties);
             }
 
             if (command.parameterExists(LoanApiConstants.datatables)) {
@@ -1385,6 +1411,27 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                     OfficeId = existingLoanApplication.getGroup().getOffice().getId();
                 }
                 officeSpecificLoanProductValidation(existingLoanApplication.getLoanProduct().getId(), OfficeId);
+            }
+
+            if (prequalificationGroup.isPrequalificationTypeIndividual()) {
+                this.fromApiJsonDeserializer.validateLoanAdditionalData(command);
+                final JsonElement loanAdditionalDataJson = command.jsonElement(LoanApiConstants.LOAN_ADDITIONAL_DATA);
+                final LoanAdditionalData loanAdditionalData = bureauValidationWritePlatformService.mapFromJson(loanAdditionalDataJson);
+                final String caseId = this.fromJsonHelper.extractStringNamed(LoanApiConstants.CASE_ID, loanAdditionalDataJson);
+                final Client loanClient = existingLoanApplication.getClient();
+                final List<LoanAdditionProperties> additionalList = this.loanAdditionalPropertiesRepository
+                        .findByClientIdAndLoanId(loanClient.getId(), existingLoanApplication.getId());
+                LoanAdditionProperties loanAdditionEntity;
+                if (!CollectionUtils.isEmpty(additionalList)) {
+                    loanAdditionEntity = additionalList.get(0);
+                    BeanUtils.copyProperties(loanAdditionalData, loanAdditionEntity);
+                } else {
+                    loanAdditionEntity = loanAdditionalData.toEntity();
+                }
+                loanAdditionEntity.setCaseId(caseId);
+                loanAdditionEntity.setClient(loanClient);
+                loanAdditionEntity.setLoan(existingLoanApplication);
+                loanAdditionalPropertiesRepository.saveAndFlush(loanAdditionEntity);
             }
 
             // updating loan interest recalculation details throwing null

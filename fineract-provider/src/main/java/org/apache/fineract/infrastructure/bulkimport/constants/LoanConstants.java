@@ -82,5 +82,4 @@ public final class LoanConstants {
     public static final String LOAN_TYPE_GROUP = "Group";
     public static final String LOAN_TYPE_JLG = "JLG";
 
-
 }
