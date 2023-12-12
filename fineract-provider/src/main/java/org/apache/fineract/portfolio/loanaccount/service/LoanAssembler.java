@@ -348,11 +348,15 @@ public class LoanAssembler {
             }
         }
 
-        final Long prequalificationId = this.fromApiJsonHelper.extractLongNamed("prequalificationId", element);
-        final PrequalificationGroup prequalificationGroup = this.prequalificationGroupRepositoryWrapper
-                .findOneWithNotFoundDetection(prequalificationId);
-        if (!PrequalificationStatus.BURO_CHECKED.getValue().equals(prequalificationGroup.getStatus())) {
-            throw new PrequalificationIncorrectStatusException(PrequalificationStatus.fromInt(prequalificationGroup.getStatus()).getCode());
+        PrequalificationGroup prequalificationGroup = null;
+        final Boolean isBulkImport = this.fromApiJsonHelper.extractBooleanNamed("isBulkImport", element);
+        if (isBulkImport == null || !isBulkImport) {
+            final Long prequalificationId = this.fromApiJsonHelper.extractLongNamed("prequalificationId", element);
+            prequalificationGroup = this.prequalificationGroupRepositoryWrapper
+                    .findOneWithNotFoundDetection(prequalificationId);
+            if (!PrequalificationStatus.BURO_CHECKED.getValue().equals(prequalificationGroup.getStatus())) {
+                throw new PrequalificationIncorrectStatusException(PrequalificationStatus.fromInt(prequalificationGroup.getStatus()).getCode());
+            }
         }
         loanApplicationTerms = this.loanScheduleAssembler.assembleLoanTerms(element);
         loanApplicationTerms.getCalculatedRepaymentsStartingFromLocalDate();
