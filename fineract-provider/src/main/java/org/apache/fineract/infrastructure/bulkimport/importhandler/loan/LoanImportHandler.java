@@ -556,6 +556,7 @@ public class LoanImportHandler implements ImportHandler {
             }
         }
         loanJsonOb.remove("isTopup");
+        loanJsonOb.addProperty("isBulkImport", true);
         String payload = loanJsonOb.toString();
         final CommandWrapper commandRequest = new CommandWrapperBuilder() //
                 .createLoanApplication() //

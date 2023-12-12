@@ -99,7 +99,7 @@ public final class LoanApplicationCommandFromApiJsonHelper {
             LoanApiConstants.lastApplication, // glim specific
             LoanApiConstants.daysInYearTypeParameterName, LoanApiConstants.fixedPrincipalPercentagePerInstallmentParamName,
             LoanApiConstants.cupoIdParameterName, LoanApiConstants.PREQUALIFICATION_ID, LoanApiConstants.CASE_ID,
-            LoanApiConstants.LOAN_ADDITIONAL_DATA, "borrowerCycle"));
+            LoanApiConstants.LOAN_ADDITIONAL_DATA, "borrowerCycle", "isBulkImport"));
 
     private final FromJsonHelper fromApiJsonHelper;
     private final CalculateLoanScheduleQueryFromApiJsonHelper apiJsonHelper;
