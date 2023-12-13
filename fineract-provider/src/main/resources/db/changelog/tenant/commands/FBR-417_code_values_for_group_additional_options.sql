@@ -147,7 +147,7 @@ VALUES (@jobTypeOptions, 'employee', 'Empleada', 0, 1001, 1, 0),
 --
 -- Insert code values into m_code_value for code jobTypeOptions
 --
-SELECT @classificationOptions := (select id from m_code where code_name='jobTypeOptions' limit 1);
+SELECT @classificationOptions := (select id from m_code where code_name='classificationOptions' limit 1);
 
 INSERT INTO `m_code_value`(`code_id`, `code_value`, `code_description`, `order_position`, `code_score`, `is_active`,
                            `is_mandatory`)
@@ -256,3 +256,13 @@ INSERT INTO `m_code_value`(`code_id`, `code_value`, `code_description`, `order_p
 VALUES (@loanPurposeOptions, 'WORKINGCAPITAL', 'Capital de Trabajo y Activos Fijos', 0, 1001, 1, 0),
        (@loanPurposeOptions, 'SALARY', 'Capital de Trabajo', 0, 1002, 1, 0),
        (@loanPurposeOptions, 'FIXEDASSETS', 'Activos Fijos', 0, 1003, 1, 0);
+
+SELECT @clientTypeOptions := (select id from m_code where code_name='clientTypeOptions' limit 1);
+
+INSERT INTO `m_code_value`(`code_id`, `code_value`, `code_description`, `order_position`, `code_score`, `is_active`,
+                           `is_mandatory`)
+VALUES (@clientTypeOptions, 'A', 'A', 0, 1001, 1, 0),
+       (@clientTypeOptions, 'B', 'B', 0, 1002, 1, 0),
+       (@clientTypeOptions, 'C', 'C', 0, 1003, 1, 0),
+       (@clientTypeOptions, 'D', 'D', 0, 1004, 1, 0);
+

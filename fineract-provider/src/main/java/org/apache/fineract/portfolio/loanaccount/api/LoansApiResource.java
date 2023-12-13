@@ -90,6 +90,7 @@ import org.apache.fineract.organisation.agency.service.AgencyReadPlatformService
 import org.apache.fineract.organisation.monetary.data.CurrencyData;
 import org.apache.fineract.organisation.office.domain.OfficeHierarchyLevel;
 import org.apache.fineract.organisation.prequalification.data.GroupPrequalificationData;
+import org.apache.fineract.organisation.prequalification.data.LoanAdditionalData;
 import org.apache.fineract.organisation.staff.data.StaffData;
 import org.apache.fineract.portfolio.account.PortfolioAccountType;
 import org.apache.fineract.portfolio.account.data.PortfolioAccountDTO;
@@ -399,6 +400,7 @@ public class LoansApiResource {
             @Context final UriInfo uriInfo) {
 
         this.context.authenticatedUser().validateHasReadPermission(this.resourceNameForPermissions);
+        final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
 
         // template
         final Collection<LoanProductData> productOptions = this.loanProductReadPlatformService.retrieveAllLoanProductsForLookup(onlyActive);
@@ -422,6 +424,29 @@ public class LoansApiResource {
         } else if (templateType.equals("collateral")) {
             loanCollateralOptions = this.codeValueReadPlatformService.retrieveCodeValuesByCode("LoanCollateral");
             newLoanAccount = LoanAccountData.collateralTemplate(loanCollateralOptions);
+        }  else if (templateType.equals("groupAdditionals")) {
+            Collection<CodeValueData> loanCycleCompletedOptions = this.codeValueReadPlatformService.retrieveCodeValuesByCode("loanCycleCompletedOptions");
+            Collection<CodeValueData> loanPurposeOptions = this.codeValueReadPlatformService.retrieveCodeValuesByCode("loanPurposeOptions");
+            Collection<CodeValueData> businessEvolutionOptions = this.codeValueReadPlatformService.retrieveCodeValuesByCode("businessEvolutionOptions");
+            Collection<CodeValueData> yesnoOptions = this.codeValueReadPlatformService.retrieveCodeValuesByCode("yesnoOptions");
+            Collection<CodeValueData> businessExperienceOptions = this.codeValueReadPlatformService.retrieveCodeValuesByCode("businessExperienceOptions");
+            Collection<CodeValueData> businessLocationOptions = this.codeValueReadPlatformService.retrieveCodeValuesByCode("businessLocationOptions");
+            Collection<CodeValueData> clientTypeOptions = this.codeValueReadPlatformService.retrieveCodeValuesByCode("clientTypeOptions");
+            Collection<CodeValueData> loanStatusOptions = this.codeValueReadPlatformService.retrieveCodeValuesByCode("loanStatusOptions");
+            Collection<CodeValueData> institutionTypeOptions = this.codeValueReadPlatformService.retrieveCodeValuesByCode("institutionTypeOptions");
+            Collection<CodeValueData> housingTypeOptions = this.codeValueReadPlatformService.retrieveCodeValuesByCode("housingTypeOptions");
+            Collection<CodeValueData> classificationOptions = this.codeValueReadPlatformService.retrieveCodeValuesByCode("classificationOptions");
+            Collection<CodeValueData> jobTypeOptions = this.codeValueReadPlatformService.retrieveCodeValuesByCode("jobTypeOptions");
+            Collection<CodeValueData> educationLevelOptions = this.codeValueReadPlatformService.retrieveCodeValuesByCode("educationLevelOptions");
+            Collection<CodeValueData> maritalStatusOptions = this.codeValueReadPlatformService.retrieveCodeValuesByCode("maritalStatusOptions");
+            Collection<CodeValueData> groupPositionOptions = this.codeValueReadPlatformService.retrieveCodeValuesByCode("groupPositionOptions");
+            Collection<CodeValueData> sourceOfFundsOptions = this.codeValueReadPlatformService.retrieveCodeValuesByCode("sourceOfFundsOptions");
+            Collection<CodeValueData> cancellationReasonOptions = this.codeValueReadPlatformService.retrieveCodeValuesByCode("cancellationReasonOptions");
+            newLoanAccount = new LoanAccountData(loanCycleCompletedOptions, loanPurposeOptions, businessEvolutionOptions,
+                    yesnoOptions, businessExperienceOptions, businessLocationOptions, clientTypeOptions, loanStatusOptions,
+                    institutionTypeOptions, housingTypeOptions, classificationOptions, jobTypeOptions, educationLevelOptions,
+                    maritalStatusOptions, groupPositionOptions, sourceOfFundsOptions, cancellationReasonOptions);
+            return this.toApiJsonSerializer.serialize(settings, newLoanAccount, this.loanDataParameters);
         } else if ("cheque".equalsIgnoreCase(templateType)) {
             final Collection<CenterData> centerOptions = this.centerReadPlatformService
                     .retrieveAllForDropdown(this.context.authenticatedUser().getOffice().getId());
@@ -514,7 +539,6 @@ public class LoansApiResource {
                     this.cupoReadService.findAllActiveCuposByGroupId(groupId, CupoStatus.ACTIVE, newLoanAccount.currency().code()));
         }
 
-        final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
         return this.toApiJsonSerializer.serialize(settings, newLoanAccount, this.loanDataParameters);
     }
 
@@ -597,6 +621,7 @@ public class LoansApiResource {
         LoanAccountData loanBasicDetails = this.loanReadPlatformService.retrieveOne(loanId);
         final Long prequalificationId = loanBasicDetails.getPrequalificationId();
         final GroupPrequalificationData prequalificationData = loanBasicDetails.getPrequalificationData();
+        final LoanAdditionalData loanAdditionalData = loanBasicDetails.getLoanAdditionalData();
         if (loanBasicDetails.isInterestRecalculationEnabled()) {
             Collection<CalendarData> interestRecalculationCalendarDatas = this.calendarReadPlatformService.retrieveCalendarsByEntity(
                     loanBasicDetails.getInterestRecalculationDetailId(), CalendarEntityType.LOAN_RECALCULATION_REST_DETAIL.getValue(),
@@ -866,6 +891,7 @@ public class LoansApiResource {
         loanAccount.setCupoLinkingOptions(cupoLinkingOptions);
         loanAccount.setPrequalificationId(prequalificationId);
         loanAccount.setPrequalificationData(prequalificationData);
+        loanAccount.setLoanAdditionalData(loanAdditionalData);
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters(),
                 mandatoryResponseParameters);
         return this.toApiJsonSerializer.serialize(settings, loanAccount, this.loanDataParameters);

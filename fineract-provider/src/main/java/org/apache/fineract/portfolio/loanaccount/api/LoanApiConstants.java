@@ -158,6 +158,8 @@ public interface LoanApiConstants {
     String CHEQUE_DESCRIPTION = "description";
     String CHEQUE_ID = "chequeId";
     String PREQUALIFICATION_ID = "prequalificationId";
+    String CASE_ID = "caseId";
+    String LOAN_ADDITIONAL_DATA = "loanAdditionalData";
     String LOAN_RESOURCE_NAME = "LOAN";
     String loanCycleCompletedParamName = "loanCycleCompleted";
     String rentMortgageFeeParamName = "rentMortgageFee";
@@ -223,4 +225,5 @@ public interface LoanApiConstants {
     String relativeNumberParamName = "relativeNumber";
     String yearsInCommunityParamName = "yearsInCommunity";
     String LOAN_ACTION_UPDATE_FUND = "UPDATEFUND";
+    String paymentCapacityParamName = "paymentCapacity";
 }

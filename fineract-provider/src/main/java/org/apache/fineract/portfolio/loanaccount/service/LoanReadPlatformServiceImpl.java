@@ -57,6 +57,9 @@ import org.apache.fineract.organisation.monetary.domain.ApplicationCurrencyRepos
 import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
 import org.apache.fineract.organisation.monetary.domain.Money;
 import org.apache.fineract.organisation.prequalification.data.GroupPrequalificationData;
+import org.apache.fineract.organisation.prequalification.data.LoanAdditionalData;
+import org.apache.fineract.organisation.prequalification.domain.LoanAdditionProperties;
+import org.apache.fineract.organisation.prequalification.domain.LoanAdditionalPropertiesRepository;
 import org.apache.fineract.organisation.prequalification.service.PrequalificationReadPlatformServiceImpl;
 import org.apache.fineract.organisation.staff.data.StaffData;
 import org.apache.fineract.organisation.staff.service.StaffReadPlatformService;
@@ -167,6 +170,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
     private final AccountDetailsReadPlatformService accountDetailsReadPlatformService;
     private final ColumnValidator columnValidator;
     private final DatabaseSpecificSQLGenerator sqlGenerator;
+    private final LoanAdditionalPropertiesRepository loanAdditionalPropertiesRepository;
     private final PrequalificationReadPlatformServiceImpl.PrequalificationIndividualMappingsMapper prequalificationIndividualMappingsMapper = new PrequalificationReadPlatformServiceImpl.PrequalificationIndividualMappingsMapper();
 
     @Autowired
@@ -182,7 +186,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
             final FloatingRatesReadPlatformService floatingRatesReadPlatformService, final LoanUtilService loanUtilService,
             final ConfigurationDomainService configurationDomainService, final CodeValueRepositoryWrapper codeValueRepositoryWrapper,
             final AccountDetailsReadPlatformService accountDetailsReadPlatformService, final LoanRepositoryWrapper loanRepositoryWrapper,
-            final ColumnValidator columnValidator, DatabaseSpecificSQLGenerator sqlGenerator, PaginationHelper paginationHelper) {
+            final ColumnValidator columnValidator, DatabaseSpecificSQLGenerator sqlGenerator, PaginationHelper paginationHelper,
+            LoanAdditionalPropertiesRepository loanAdditionalPropertiesRepository) {
         this.context = context;
         this.loanRepositoryWrapper = loanRepositoryWrapper;
         this.applicationCurrencyRepository = applicationCurrencyRepository;
@@ -208,6 +213,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
         this.sqlGenerator = sqlGenerator;
         this.paginationHelper = paginationHelper;
         this.codeValueRepositoryWrapper = codeValueRepositoryWrapper;
+        this.loanAdditionalPropertiesRepository = loanAdditionalPropertiesRepository;
     }
 
     @Override
@@ -243,6 +249,13 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                         loanAccountData.setPrequalificationData(groupPrequalificationData);
                     }
 
+                }
+                List<LoanAdditionProperties> loanAdditionalPropertiesList = this.loanAdditionalPropertiesRepository
+                        .findByClientIdAndLoanId(loanAccountData.getClientId(), loanId);
+                if (!CollectionUtils.isEmpty(loanAdditionalPropertiesList)) {
+                    final LoanAdditionProperties loanAdditionProperties = loanAdditionalPropertiesList.get(0);
+                    final LoanAdditionalData loanAdditionalData = loanAdditionProperties.toData();
+                    loanAccountData.setLoanAdditionalData(loanAdditionalData);
                 }
             }
             return loanAccountData;
@@ -636,7 +649,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
     @Override
     public LoanApprovalData retrieveApprovalTemplate(final Long loanId) {
         final Loan loan = this.loanRepositoryWrapper.findOneWithNotFoundDetection(loanId, true);
-        return new LoanApprovalData(loan.getProposedPrincipal(), DateUtils.getBusinessLocalDate(), loan.getNetDisbursalAmount());
+        return new LoanApprovalData(loan.getProposedPrincipal(), DateUtils.getBusinessLocalDate(), loan.getNetDisbursalAmount(), null);
     }
 
     @Override
