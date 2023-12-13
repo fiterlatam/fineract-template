@@ -679,4 +679,137 @@
             <column defaultValueComputed="NULL" name="fecha_fin" type="date"/>
         </addColumn>
     </changeSet>
+
+    <changeSet author="fineract" id="45">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="cuentas_por_cobrar"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="cuentas_por_cobrar" type="DECIMAL(19, 6)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="46">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="hipotecas"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="hipotecas" type="DECIMAL(19, 6)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="47">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="excepcion"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="excepcion" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="48">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="tipo_excepcion"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="tipo_excepcion" type="INT"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="49">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="descripcion_excepcion"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="descripcion_excepcion" type="TEXT"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="50">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="monto_autorizado"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="monto_autorizado" type="DECIMAL(19, 6)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="51">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="observaciones"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="observaciones" type="VARCHAR(250)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="52">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="capital_de_trabajo"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="capital_de_trabajo" type="DECIMAL(19, 6)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="53">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="monto_otros_ingresos"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="monto_otros_ingresos" type="DECIMAL(19, 6)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="54">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="origen_otros_ingresos"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="origen_otros_ingresos" type="VARCHAR(250)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="55">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="otros_ingresos"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="otros_ingresos" type="VARCHAR(250)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="56">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="Relacion_otros_ingresos"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="Relacion_otros_ingresos" type="DECIMAL(19, 6)"/>
+        </addColumn>
+    </changeSet>
+
 </databaseChangeLog>

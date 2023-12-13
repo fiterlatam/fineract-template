@@ -406,13 +406,43 @@ public class LoanAdditionProperties extends AbstractPersistableCustom {
     @Column(name = "ventas")
     private BigDecimal ventas;
 
-    public LoanAdditionProperties() {}
+    @Column(name = "cuentas_por_cobrar")
+    private BigDecimal cuentasPorCobrar;
 
-    public static LoanAdditionProperties fromAdditionalData(final LoanAdditionalData loanAdditionalData) {
-        final LoanAdditionProperties loanAdditionProperties = new LoanAdditionProperties();
-        BeanUtils.copyProperties(loanAdditionalData, loanAdditionProperties);
-        return loanAdditionProperties;
-    }
+    @Column(name = "hipotecas")
+    private BigDecimal hipotecas;
+
+    @Column(name = "excepcion")
+    private String excepcion;
+
+    @Column(name = "tipo_excepcion")
+    private Integer tipoExcepcion;
+
+    @Column(name = "descripcion_excepcion")
+    private String descripcionExcepcion;
+
+    @Column(name = "monto_autorizado")
+    private BigDecimal montoAutorizado;
+
+    @Column(name = "observaciones")
+    private String observaciones;
+
+    @Column(name = "capital_de_trabajo")
+    private BigDecimal capitalDdeTrabajo;
+
+    @Column(name = "monto_otros_ingresos")
+    private BigDecimal montoOtrosIngresos;
+
+    @Column(name = "origen_otros_ingresos")
+    private String origenOtrosIngresos;
+
+    @Column(name = "otros_ingresos")
+    private String otrosIngresos;
+
+    @Column(name = "Relacion_otros_ingresos")
+    private BigDecimal relacionOtrosIngresos;
+
+    public LoanAdditionProperties() {}
 
     public LoanAdditionalData toData() {
         final LoanAdditionalData loanAdditionalData = LoanAdditionalData.builder().build();
@@ -898,5 +928,61 @@ public class LoanAdditionProperties extends AbstractPersistableCustom {
 
     public void setDateOpened(LocalDateTime dateOpened) {
         this.dateOpened = dateOpened;
+    }
+
+    public void setFechaFin(LocalDate fechaFin) {
+        this.fechaFin = fechaFin;
+    }
+
+    public void setVentas(BigDecimal ventas) {
+        this.ventas = ventas;
+    }
+
+    public void setCuentasPorCobrar(BigDecimal cuentasPorCobrar) {
+        this.cuentasPorCobrar = cuentasPorCobrar;
+    }
+
+    public void setHipotecas(BigDecimal hipotecas) {
+        this.hipotecas = hipotecas;
+    }
+
+    public void setExcepcion(String excepcion) {
+        this.excepcion = excepcion;
+    }
+
+    public void setTipoExcepcion(Integer tipoExcepcion) {
+        this.tipoExcepcion = tipoExcepcion;
+    }
+
+    public void setDescripcionExcepcion(String descripcionExcepcion) {
+        this.descripcionExcepcion = descripcionExcepcion;
+    }
+
+    public void setMontoAutorizado(BigDecimal montoAutorizado) {
+        this.montoAutorizado = montoAutorizado;
+    }
+
+    public void setObservaciones(String observaciones) {
+        this.observaciones = observaciones;
+    }
+
+    public void setCapitalDdeTrabajo(BigDecimal capitalDdeTrabajo) {
+        this.capitalDdeTrabajo = capitalDdeTrabajo;
+    }
+
+    public void setMontoOtrosIngresos(BigDecimal montoOtrosIngresos) {
+        this.montoOtrosIngresos = montoOtrosIngresos;
+    }
+
+    public void setOrigenOtrosIngresos(String origenOtrosIngresos) {
+        this.origenOtrosIngresos = origenOtrosIngresos;
+    }
+
+    public void setOtrosIngresos(String otrosIngresos) {
+        this.otrosIngresos = otrosIngresos;
+    }
+
+    public void setRelacionOtrosIngresos(BigDecimal relacionOtrosIngresos) {
+        this.relacionOtrosIngresos = relacionOtrosIngresos;
     }
 }
