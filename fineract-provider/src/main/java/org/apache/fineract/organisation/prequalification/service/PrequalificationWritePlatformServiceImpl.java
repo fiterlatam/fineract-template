@@ -802,9 +802,12 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         PrequalificationChecklistData prequalificationChecklistData = this.prequalificationChecklistReadPlatformService
                 .retrieveHardPolicyValidationResults(entityId);
         GenericValidationResultSet prequalification = prequalificationChecklistData.getPrequalification();
+        GenericValidationResultSet members = prequalificationChecklistData.getMembers();
         Integer fromStatus = prequalificationGroup.getStatus();
         List<String> exceptionsList = List.of("ORANGE", "RED", "YELLOW");
         List<List<String>> rows = prequalification.getRows();
+        List<List<String>> membersRows = members.getRows();
+        rows.addAll(membersRows);
         AtomicReference<PrequalificationStatus> status = new AtomicReference<>(PrequalificationStatus.AGENCY_LEAD_PENDING_APPROVAL);
         for (List<String> innerList : rows) {
             innerList.forEach(item -> {
@@ -1087,7 +1090,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         if (action.equalsIgnoreCase("sendtoagency")) {
             status = PrequalificationStatus.AGENCY_LEAD_PENDING_APPROVAL;
         } else if (action.equalsIgnoreCase("sendtoexception")) {
-            status = PrequalificationStatus.AGENCY_LEAD_PENDING_APPROVAL_WITH_EXCEPTIONS;
+            status = PrequalificationStatus.AGENCY_LEAD_APPROVED_WITH_EXCEPTIONS;
         } else if (action.equalsIgnoreCase("requestupdates")) {
             status = PrequalificationStatus.PREQUALIFICATION_UPDATE_REQUESTED;
         } else if (action.equalsIgnoreCase("rejectanalysis")) {
