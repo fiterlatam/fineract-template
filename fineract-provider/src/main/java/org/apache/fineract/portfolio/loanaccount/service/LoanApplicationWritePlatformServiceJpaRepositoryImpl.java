@@ -118,6 +118,8 @@ import org.apache.fineract.portfolio.loanaccount.data.LoanChargeData;
 import org.apache.fineract.portfolio.loanaccount.data.ScheduleGeneratorDTO;
 import org.apache.fineract.portfolio.loanaccount.domain.DefaultLoanLifecycleStateMachine;
 import org.apache.fineract.portfolio.loanaccount.domain.GLIMAccountInfoRepository;
+import org.apache.fineract.portfolio.loanaccount.domain.GroupLoanAdditionals;
+import org.apache.fineract.portfolio.loanaccount.domain.GroupLoanAdditionalsRepository;
 import org.apache.fineract.portfolio.loanaccount.domain.GroupLoanIndividualMonitoringAccount;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanCharge;
@@ -166,6 +168,7 @@ import org.apache.fineract.portfolio.savings.domain.SavingsAccountRepositoryWrap
 import org.apache.fineract.portfolio.savings.service.GSIMReadPlatformService;
 import org.apache.fineract.portfolio.savings.service.SavingsAccountWritePlatformService;
 import org.apache.fineract.useradministration.domain.AppUser;
+import org.apache.fineract.useradministration.domain.AppUserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -187,6 +190,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
     private final LoanProductDataValidator loanProductCommandFromApiJsonDeserializer;
     private final LoanApplicationCommandFromApiJsonHelper fromApiJsonDeserializer;
     private final LoanRepositoryWrapper loanRepositoryWrapper;
+    private final GroupLoanAdditionalsRepository groupLoanAdditionalsRepository;
     private final NoteRepository noteRepository;
     private final LoanScheduleCalculationPlatformService calculationPlatformService;
     private final LoanAssembler loanAssembler;
@@ -237,6 +241,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
     private final SavingsAccountWritePlatformService savingsAccountWritePlatformService;
 
     private final SavingsAccountRepositoryWrapper savingsAccountRepositoryWrapper;
+    private final AppUserRepository appUserRepository;
 
     @Autowired
     public LoanApplicationWritePlatformServiceJpaRepositoryImpl(final PlatformSecurityContext context, final FromJsonHelper fromJsonHelper,
@@ -258,7 +263,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             final LoanScheduleAssembler loanScheduleAssembler, final LoanUtilService loanUtilService,
             final CalendarReadPlatformService calendarReadPlatformService,
             final GlobalConfigurationRepositoryWrapper globalConfigurationRepository,
-            final FineractEntityToEntityMappingRepository repository,
+            final FineractEntityToEntityMappingRepository repository,final AppUserRepository appUserRepository,
             final FineractEntityRelationRepository fineractEntityRelationRepository,
             final EntityDatatableChecksWritePlatformService entityDatatableChecksWritePlatformService,
             final GLIMAccountInfoWritePlatformService glimAccountInfoWritePlatformService, final GLIMAccountInfoRepository glimRepository,
@@ -271,7 +276,8 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             ChequeBatchRepositoryWrapper chequeBatchRepositoryWrapper,
             PrequalificationGroupRepositoryWrapper prequalificationGroupRepositoryWrapper,
             final SavingsAccountWritePlatformService savingsAccountWritePlatformService,
-            final SavingsAccountRepositoryWrapper savingsAccountRepositoryWrapper) {
+            final SavingsAccountRepositoryWrapper savingsAccountRepositoryWrapper,
+            final GroupLoanAdditionalsRepository groupLoanAdditionalsRepository) {
         this.context = context;
         this.fromJsonHelper = fromJsonHelper;
         this.loanApplicationTransitionApiJsonValidator = loanApplicationTransitionApiJsonValidator;
@@ -323,6 +329,8 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
         this.prequalificationGroupRepositoryWrapper = prequalificationGroupRepositoryWrapper;
         this.savingsAccountWritePlatformService = savingsAccountWritePlatformService;
         this.savingsAccountRepositoryWrapper = savingsAccountRepositoryWrapper;
+        this.groupLoanAdditionalsRepository = groupLoanAdditionalsRepository;
+        this.appUserRepository = appUserRepository;
     }
 
     private LoanLifecycleStateMachine defaultLoanLifecycleStateMachine() {
@@ -483,6 +491,17 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             newLoanApplication.updateLoanContract(contractBuilder.toString());
 
             this.loanRepositoryWrapper.saveAndFlush(newLoanApplication);
+
+            Long facilitatorId = command.longValueOfParameterNamed("facilitator");
+            AppUser facilitator = null;
+            if (facilitatorId != null) {
+                facilitator = this.
+                        appUserRepository.findById(facilitatorId)
+                        .orElseThrow(() -> new GeneralPlatformDomainRuleException("error.msg.loan.facilitator.not.found",
+                                "Facilitator with identifier " + facilitatorId + " does not exist"));
+            }
+            GroupLoanAdditionals groupLoanAdditionals = GroupLoanAdditionals.assembleFromJson(command, newLoanApplication, facilitator);
+            this.groupLoanAdditionalsRepository.save(groupLoanAdditionals);
 
             if (loanProduct.isInterestRecalculationEnabled()) {
                 this.fromApiJsonDeserializer.validateLoanForInterestRecalculation(newLoanApplication);

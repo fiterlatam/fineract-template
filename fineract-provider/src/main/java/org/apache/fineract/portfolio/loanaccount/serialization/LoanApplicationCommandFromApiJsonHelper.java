@@ -97,7 +97,38 @@ public final class LoanApplicationCommandFromApiJsonHelper {
             LoanApiConstants.applicationId, // glim specific
             LoanApiConstants.lastApplication, // glim specific
             LoanApiConstants.daysInYearTypeParameterName, LoanApiConstants.fixedPrincipalPercentagePerInstallmentParamName,
-            LoanApiConstants.cupoIdParameterName, LoanApiConstants.PREQUALIFICATION_ID));
+            LoanApiConstants.loanCycleCompletedParamName, LoanApiConstants.rentMortgageFeeParamName,
+            LoanApiConstants.monthlyIncomeParamName, LoanApiConstants.familyExpensesParamName,
+            LoanApiConstants.totalExternalLoanAmountParamName, LoanApiConstants.totalInstallmentsParamName,
+            LoanApiConstants.clientTypeParamName, LoanApiConstants.houseHoldGoodsParamName,
+            LoanApiConstants.businessActivitiesParamName, LoanApiConstants.businessLocationParamName,
+            LoanApiConstants.businessExperienceParamName, LoanApiConstants.salesValueParamName,
+            LoanApiConstants.businessPurchasesParamName, LoanApiConstants.businessProfitParamName,
+            LoanApiConstants.clientProfitParamName, LoanApiConstants.inventoriesParamName,
+            LoanApiConstants.visitBusinessParamName, LoanApiConstants.familySupportParamName,
+            LoanApiConstants.businessEvolutionParamName, LoanApiConstants.numberOfApprovalsParamName,
+            LoanApiConstants.recommenderNameParamName, LoanApiConstants.monthlyPaymentCapacityParamName,
+            LoanApiConstants.loanPurposeParamName, LoanApiConstants.currentCreditValueParamName,
+            LoanApiConstants.requestedValueParamName, LoanApiConstants.groupAuthorizedValueParamName,
+            LoanApiConstants.facilitatorProposedValueParamName, LoanApiConstants.proposedFeeParamName,
+            LoanApiConstants.agencyAuthorizedAmountParamName, LoanApiConstants.authorizedFeeParamName,
+            LoanApiConstants.totalIncomeParamName, LoanApiConstants.totalExpendituresParamName,
+            LoanApiConstants.availableMonthlyParamName, LoanApiConstants.facValueParamName,
+            LoanApiConstants.debtLevelParamName, LoanApiConstants.earlyCancellationReasonParamName,
+            LoanApiConstants.sourceOfFundsParamName, LoanApiConstants.clientLoanRequestNumberParamName,
+            LoanApiConstants.dateRequestedParamName, LoanApiConstants.positionParamName,
+            LoanApiConstants.fullNameParamName, LoanApiConstants.lastNameParamName,
+            LoanApiConstants.maritalStatusParamName, LoanApiConstants.educationLevelParamName,
+            LoanApiConstants.schoolingYearsParamName, LoanApiConstants.noOfChildrenParamName,
+            LoanApiConstants.nationalityParamName, LoanApiConstants.languageParamName,
+            LoanApiConstants.dpiParamName, LoanApiConstants.nitParamName,
+            LoanApiConstants.jobTypeParamName, LoanApiConstants.occupancyClassificationParamName,
+            LoanApiConstants.actsOwnBehalfParamName, LoanApiConstants.onBehalfOfParamName,
+            LoanApiConstants.politicalPositionParamName, LoanApiConstants.politicalOfficeParamName,
+            LoanApiConstants.housingTypeParamName, LoanApiConstants.addressParamName,
+            LoanApiConstants.populatedPlaceParamName, LoanApiConstants.referencePointParamName,
+            LoanApiConstants.phoneNumberParamName, LoanApiConstants.relativeNumberParamName,
+            LoanApiConstants.yearsInCommunityParamName, LoanApiConstants.PREQUALIFICATION_ID));
 
     private final FromJsonHelper fromApiJsonHelper;
     private final CalculateLoanScheduleQueryFromApiJsonHelper apiJsonHelper;

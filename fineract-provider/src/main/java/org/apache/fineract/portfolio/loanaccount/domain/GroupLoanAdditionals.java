@@ -18,39 +18,16 @@
  */
 package org.apache.fineract.portfolio.loanaccount.domain;
 
-import org.apache.fineract.infrastructure.core.domain.AbstractAuditableWithUTCDateTimeCustom;
-import org.apache.fineract.infrastructure.core.service.DateUtils;
-import org.apache.fineract.organisation.monetary.data.CurrencyData;
-import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
-import org.apache.fineract.organisation.monetary.domain.Money;
-import org.apache.fineract.organisation.office.domain.Office;
-import org.apache.fineract.portfolio.account.data.AccountTransferData;
-import org.apache.fineract.portfolio.loanaccount.data.LoanTransactionData;
-import org.apache.fineract.portfolio.loanaccount.data.LoanTransactionEnumData;
-import org.apache.fineract.portfolio.loanproduct.service.LoanEnumerations;
-import org.apache.fineract.portfolio.paymentdetail.data.PaymentDetailData;
-import org.apache.fineract.portfolio.paymentdetail.domain.PaymentDetail;
-import org.apache.fineract.useradministration.domain.AppUser;
-
-import javax.persistence.CascadeType;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.OneToMany;
-import javax.persistence.Table;
-import javax.persistence.UniqueConstraint;
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.Table;
+import org.apache.fineract.infrastructure.core.api.JsonCommand;
+import org.apache.fineract.infrastructure.core.domain.AbstractAuditableWithUTCDateTimeCustom;
+import org.apache.fineract.useradministration.domain.AppUser;
 
 /**
  * All monetary transactions against a loan are modelled through this entity. Disbursements, Repayments, Waivers,
@@ -67,78 +44,15 @@ public class GroupLoanAdditionals extends AbstractAuditableWithUTCDateTimeCustom
     @ManyToOne(optional = false)
     @JoinColumn(name = "facilitator", nullable = false)
     private AppUser facilitator;
-//            facilitator
-//    position
-//            full_name
-//    last_name
-//            marital_status
-//    education_level
-//            years_of_schooling
-//    years_of_schooling
-//            nationality
-//    language
-//            number_of_children
-//    dpi
-//            nit_status
-//    nit
-//            job_type
-//    occupancy_classification
-//            acts_own_behalf
-//    acts_own_behalf
-//            on_behalf_of
-//    political_position
-//            political_office
-//    housing_type
-//            rent_mortgage_fee
-//    address
-//            populated_place
-//    reference_point
-//            phone_number
-//    relative_number
-//            years_in_community
-//    monthly_income
-//            family_expenses
-//    total_external_loan_amount
-//            total_installments
-//    client_type
-//            house_hold_goods
-//    business_activities
-//            business_location
-//    business_experience
-//            sales_value
-//    business_purchases
-//            business_profit
-//    client_profit
-//            inventories
-//    visit_business
-//            family_support
-//    business_evolution
-//            number_of_approvals
-//    recommender_name
-//            monthly_payment_capacity
-//    loan_purpose
-//            current_credit_value
-//    requested_value
-//            group_authorized_value
-//    facilitator_proposed_value
-//            proposed_fee
-//    agency_authorized_amount
-//            authorized_fee
-//    total_income
-//            total_expenditures
-//    available_monthly
-//            payment_capacity
-//    f_a_c
-//            debt_level
 
     @Column(name = "loan_cycle_completed", nullable = false)
     private Integer loanCycleCompleted;
 
     @Column(name = "early_cancellation_reason")
-    private Integer earlyCancellationReason;
+    private Long earlyCancellationReason;
 
     @Column(name = "source_of_funds")
-    private Integer sourceOfFunds;
+    private Long sourceOfFunds;
 
     @Column(name = "client_loan_request_number", nullable = false)
     private String clientLoanRequestNumber;
@@ -146,7 +60,7 @@ public class GroupLoanAdditionals extends AbstractAuditableWithUTCDateTimeCustom
     @Column(name = "date_requested", nullable = false)
     private LocalDate dateRequested;
 
-    @Column(name = "position")
+    @Column(name = "position", nullable = false)
     private Long position;
 
     @Column(name = "full_name")
@@ -179,10 +93,10 @@ public class GroupLoanAdditionals extends AbstractAuditableWithUTCDateTimeCustom
     @Column(name = "nit")
     private String nit;
 
-    @Column(name = "job_type")
+    @Column(name = "job_type", nullable = false)
     private Long jobType;
 
-    @Column(name = "occupancy_classification")
+    @Column(name = "occupancy_classification", nullable = false)
     private Long occupancyClassification;
 
     @Column(name = "acts_own_behalf")
@@ -216,7 +130,7 @@ public class GroupLoanAdditionals extends AbstractAuditableWithUTCDateTimeCustom
     private String relativeNumber;
 
     @Column(name = "years_in_community")
-    private Long yearsInCommunity;
+    private Integer yearsInCommunity;
 
     @Column(name = "rent_mortgage_fee", scale = 6, precision = 19, nullable = true)
     private BigDecimal rentMortgageFee;
@@ -245,33 +159,241 @@ public class GroupLoanAdditionals extends AbstractAuditableWithUTCDateTimeCustom
     @Column(name = "business_location")
     private Long businessLocation;
 
-    @Column(name = "overpayment_portion_derived", scale = 6, precision = 19, nullable = true)
-    private BigDecimal overPaymentPortion;
+    @Column(name = "business_experience")
+    private Integer businessExperience;
 
-    @Column(name = "unrecognized_income_portion", scale = 6, precision = 19, nullable = true)
-    private BigDecimal unrecognizedIncomePortion;
+    @Column(name = "sales_value", scale = 6, precision = 19, nullable = true)
+    private BigDecimal salesValue;
 
+    @Column(name = "business_purchases", scale = 6, precision = 19, nullable = true)
+    private BigDecimal businessPurchases;
 
-    @Column(name = "external_id", length = 100, nullable = true, unique = true)
-    private String externalId;
+    @Column(name = "business_profit", scale = 6, precision = 19, nullable = true)
+    private BigDecimal businessProfit;
 
-    @OneToMany(cascade = CascadeType.ALL, mappedBy = "loanTransaction", orphanRemoval = true, fetch = FetchType.EAGER)
-    private Set<LoanChargePaidBy> loanChargesPaid = new HashSet<>();
+    @Column(name = "client_profit", scale = 6, precision = 19, nullable = true)
+    private BigDecimal clientProfit;
 
-    @Column(name = "outstanding_loan_balance_derived", scale = 6, precision = 19, nullable = true)
-    private BigDecimal outstandingLoanBalance;
+    @Column(name = "inventories", scale = 6, precision = 19, nullable = true)
+    private BigDecimal inventories;
 
-    @Column(name = "manually_adjusted_or_reversed", nullable = false)
-    private boolean manuallyAdjustedOrReversed;
+    @Column(name = "visit_business")
+    private Long visitBusiness;
 
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY, mappedBy = "loanTransaction")
-    private Set<LoanCollateralManagement> loanCollateralManagementSet = new HashSet<>();
+    @Column(name = "family_support")
+    private Long familySupport;
 
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER, mappedBy = "loanTransaction")
-    private Set<LoanTransactionToRepaymentScheduleMapping> loanTransactionToRepaymentScheduleMappings = new HashSet<>();
+    @Column(name = "business_evolution")
+    private Long businessEvolution;
+
+    @Column(name = "number_of_approvals")
+    private Integer numberOfApprovals;
+
+    @Column(name = "recommender_name")
+    private String recommenderName;
+
+    @Column(name = "monthly_payment_capacity", scale = 6, precision = 19, nullable = true)
+    private BigDecimal monthlyPaymentCapacity;
+
+    @Column(name = "loan_purpose")
+    private Long loanPurpose;
+
+    @Column(name = "current_credit_value", scale = 6, precision = 19, nullable = true)
+    private BigDecimal currentCreditValue;
+
+    @Column(name = "requested_value", scale = 6, precision = 19, nullable = true)
+    private BigDecimal requestedValue;
+
+    @Column(name = "group_authorized_value", scale = 6, precision = 19, nullable = true)
+    private BigDecimal groupAuthorizedValue;
+
+    @Column(name = "facilitator_proposed_value", scale = 6, precision = 19, nullable = true)
+    private BigDecimal facilitatorProposedValue;
+
+    @Column(name = "proposed_fee", scale = 6, precision = 19, nullable = true)
+    private BigDecimal proposedFee;
+
+    @Column(name = "agency_authorized_amount", scale = 6, precision = 19, nullable = true)
+    private BigDecimal agencyAuthorizedAmount;
+
+    @Column(name = "authorized_fee", scale = 6, precision = 19, nullable = true)
+    private BigDecimal authorizedFee;
+
+    @Column(name = "total_income", scale = 6, precision = 19, nullable = true)
+    private BigDecimal totalIncome;
+
+    @Column(name = "total_expenditures", scale = 6, precision = 19, nullable = true)
+    private BigDecimal totalExpenditures;
+
+    @Column(name = "available_monthly", scale = 6, precision = 19, nullable = true)
+    private BigDecimal availableMonthly;
+
+    @Column(name = "f_a_c", scale = 6, precision = 19, nullable = true)
+    private BigDecimal facValue;
+
+    @Column(name = "debt_level", scale = 6, precision = 19, nullable = true)
+    private BigDecimal debtLevel;
 
     protected GroupLoanAdditionals() {}
 
-    // TODO missing hashCode(), equals(Object obj), but probably OK as long as
-    // this is never stored in a Collection.
+    public GroupLoanAdditionals(Integer loanCycleCompleted, BigDecimal rentMortgageFee, BigDecimal monthlyIncome, BigDecimal familyExpenses,
+                                BigDecimal totalExternalLoanAmount, Integer totalInstallments, Integer clientType, String houseHoldGoods,
+                                String businessActivities, Long businessLocation, Integer businessExperience, BigDecimal salesValue,
+                                BigDecimal businessPurchases, BigDecimal businessProfit, BigDecimal clientProfit, BigDecimal inventories, Long visitBusiness,
+                                Long familySupport, Long businessEvolution, Integer numberOfApprovals, String recommenderName,
+                                BigDecimal monthlyPaymentCapacity, Long loanPurpose, BigDecimal currentCreditValue, BigDecimal requestedValue,
+                                BigDecimal groupAuthorizedValue, BigDecimal facilitatorProposedValue, BigDecimal proposedFee, BigDecimal agencyAuthorizedAmount,
+                                BigDecimal authorizedFee, BigDecimal totalIncome, BigDecimal totalExpenditures, BigDecimal availableMonthly,
+                                BigDecimal facValue, BigDecimal debtLevel, AppUser facilitator, Long earlyCancellationReason, Long sourceOfFunds,
+                                String clientLoanRequestNumber, LocalDate dateRequested, Long position, String fullName, String lastName, Long maritalStatus,
+                                Long educationLevel, Integer schoolingYears, Integer noOfChildren, String nationality, String language, String dpi, String nit,
+                                Long jobType, Long occupancyClassification, Long actsOwnBehalf, String onBehalfOf, String politicalPosition,
+                                String politicalOffice, Long housingType, String address, String populatedPlace, String referencePoint, String phoneNumber,
+                                String relativeNumber, Integer yearsInCommunity, Loan loan) {
+
+        this.loan = loan;
+        this.facilitator = facilitator;
+        this.loanCycleCompleted = loanCycleCompleted;
+        this.earlyCancellationReason = earlyCancellationReason;
+        this.sourceOfFunds = sourceOfFunds;
+        this.clientLoanRequestNumber = clientLoanRequestNumber;
+        this.dateRequested = dateRequested;
+        this.position = position;
+        this.fullName = fullName;
+        this.lastName = lastName;
+        this.maritalStatus = maritalStatus;
+        this.educationLevel = educationLevel;
+        this.schoolingYears = schoolingYears;
+        this.noOfChildren = noOfChildren;
+        this.nationality = nationality;
+        this.language = language;
+        this.dpi = dpi;
+        this.nit = nit;
+        this.jobType = jobType;
+        this.occupancyClassification = occupancyClassification;
+        this.actsOwnBehalf = actsOwnBehalf;
+        this.onBehalfOf = onBehalfOf;
+        this.politicalPosition = politicalPosition;
+        this.politicalOffice = politicalOffice;
+        this.housingType = housingType;
+        this.address = address;
+        this.populatedPlace = populatedPlace;
+        this.referencePoint = referencePoint;
+        this.phoneNumber = phoneNumber;
+        this.relativeNumber = relativeNumber;
+        this.yearsInCommunity = yearsInCommunity;
+        this.rentMortgageFee = rentMortgageFee;
+        this.monthlyIncome = monthlyIncome;
+        this.familyExpenses = familyExpenses;
+        this.totalExternalLoanAmount = totalExternalLoanAmount;
+        this.totalInstallments = totalInstallments;
+        this.clientType = clientType;
+        this.houseHoldGoods = houseHoldGoods;
+        this.businessActivities = businessActivities;
+        this.businessLocation = businessLocation;
+        this.businessExperience = businessExperience;
+        this.salesValue = salesValue;
+        this.businessPurchases = businessPurchases;
+        this.businessProfit = businessProfit;
+        this.clientProfit = clientProfit;
+        this.inventories = inventories;
+        this.visitBusiness = visitBusiness;
+        this.familySupport = familySupport;
+        this.businessEvolution = businessEvolution;
+        this.numberOfApprovals = numberOfApprovals;
+        this.recommenderName = recommenderName;
+        this.monthlyPaymentCapacity = monthlyPaymentCapacity;
+        this.loanPurpose = loanPurpose;
+        this.currentCreditValue = currentCreditValue;
+        this.requestedValue = requestedValue;
+        this.groupAuthorizedValue = groupAuthorizedValue;
+        this.facilitatorProposedValue = facilitatorProposedValue;
+        this.proposedFee = proposedFee;
+        this.agencyAuthorizedAmount = agencyAuthorizedAmount;
+        this.authorizedFee = authorizedFee;
+        this.totalIncome = totalIncome;
+        this.totalExpenditures = totalExpenditures;
+        this.availableMonthly = availableMonthly;
+        this.facValue = facValue;
+        this.debtLevel = debtLevel;
+
+    }
+
+    public static GroupLoanAdditionals assembleFromJson(JsonCommand command, Loan loan, AppUser facilitator) {
+
+        Integer loanCycleCompleted = command.integerValueOfParameterNamed("loanCycleCompleted");
+        BigDecimal rentMortgageFee = command.bigDecimalValueOfParameterNamed("rentMortgageFee");
+        BigDecimal monthlyIncome = command.bigDecimalValueOfParameterNamed("monthlyIncome");
+        BigDecimal familyExpenses = command.bigDecimalValueOfParameterNamed("familyExpenses");
+        BigDecimal totalExternalLoanAmount = command.bigDecimalValueOfParameterNamed("totalExternalLoanAmount");
+        Integer totalInstallments = command.integerValueOfParameterNamed("totalInstallments");
+        Integer clientType = command.integerValueOfParameterNamed("clientType");
+        String houseHoldGoods = command.stringValueOfParameterNamed("houseHoldGoods");
+        String businessActivities = command.stringValueOfParameterNamed("businessActivities");
+        Long businessLocation = command.longValueOfParameterNamed("businessLocation");
+        Integer businessExperience = command.integerValueOfParameterNamed("businessExperience");
+        BigDecimal salesValue = command.bigDecimalValueOfParameterNamed("salesValue");
+        BigDecimal businessPurchases = command.bigDecimalValueOfParameterNamed("businessPurchases");
+        BigDecimal businessProfit = command.bigDecimalValueOfParameterNamed("businessProfit");
+        BigDecimal clientProfit = command.bigDecimalValueOfParameterNamed("clientProfit");
+        BigDecimal inventories = command.bigDecimalValueOfParameterNamed("inventories");
+        Long visitBusiness = command.longValueOfParameterNamed("visitBusiness");
+        Long familySupport = command.longValueOfParameterNamed("familySupport");
+        Long businessEvolution = command.longValueOfParameterNamed("businessEvolution");
+        Integer numberOfApprovals = command.integerValueOfParameterNamed("numberOfApprovals");
+        String recommenderName = command.stringValueOfParameterNamed("recommenderName");
+        BigDecimal monthlyPaymentCapacity = command.bigDecimalValueOfParameterNamed("monthlyPaymentCapacity");
+        Long loanPurpose = command.longValueOfParameterNamed("loanPurpose");
+        BigDecimal currentCreditValue = command.bigDecimalValueOfParameterNamed("currentCreditValue");
+        BigDecimal requestedValue = command.bigDecimalValueOfParameterNamed("requestedValue");
+        BigDecimal groupAuthorizedValue = command.bigDecimalValueOfParameterNamed("groupAuthorizedValue");
+        BigDecimal facilitatorProposedValue = command.bigDecimalValueOfParameterNamed("facilitatorProposedValue");
+        BigDecimal proposedFee = command.bigDecimalValueOfParameterNamed("proposedFee");
+        BigDecimal agencyAuthorizedAmount = command.bigDecimalValueOfParameterNamed("agencyAuthorizedAmount");
+        BigDecimal authorizedFee = command.bigDecimalValueOfParameterNamed("authorizedFee");
+        BigDecimal totalIncome = command.bigDecimalValueOfParameterNamed("totalIncome");
+        BigDecimal totalExpenditures = command.bigDecimalValueOfParameterNamed("totalExpenditures");
+        BigDecimal availableMonthly = command.bigDecimalValueOfParameterNamed("availableMonthly");
+        BigDecimal facValue = command.bigDecimalValueOfParameterNamed("facValue");
+        BigDecimal debtLevel = command.bigDecimalValueOfParameterNamed("debtLevel");
+        Long earlyCancellationReason = command.longValueOfParameterNamed("earlyCancellationReason");
+        Long sourceOfFunds = command.longValueOfParameterNamed("sourceOfFunds");
+        String clientLoanRequestNumber = command.stringValueOfParameterNamed("clientLoanRequestNumber");
+        LocalDate dateRequested = command.localDateValueOfParameterNamed("dateRequested");
+        Long position = command.longValueOfParameterNamed("position");
+        String fullName = command.stringValueOfParameterNamed("fullName");
+        String lastName = command.stringValueOfParameterNamed("lastName");
+        Long maritalStatus = command.longValueOfParameterNamed("maritalStatus");
+        Long educationLevel = command.longValueOfParameterNamed("educationLevel");
+        Integer schoolingYears = command.integerValueOfParameterNamed("schoolingYears");
+        Integer noOfChildren = command.integerValueOfParameterNamed("noOfChildren");
+        String nationality = command.stringValueOfParameterNamed("nationality");
+        String language = command.stringValueOfParameterNamed("language");
+        String dpi = command.stringValueOfParameterNamed("dpi");
+        String nit = command.stringValueOfParameterNamed("nit");
+        Long jobType = command.longValueOfParameterNamed("jobType");
+        Long occupancyClassification = command.longValueOfParameterNamed("occupancyClassification");
+        Long actsOwnBehalf = command.longValueOfParameterNamed("actsOwnBehalf");
+        String onBehalfOf = command.stringValueOfParameterNamed("onBehalfOf");
+        String politicalPosition = command.stringValueOfParameterNamed("politicalPosition");
+        String politicalOffice = command.stringValueOfParameterNamed("politicalOffice");
+        Long housingType = command.longValueOfParameterNamed("housingType");
+        String address = command.stringValueOfParameterNamed("address");
+        String populatedPlace = command.stringValueOfParameterNamed("populatedPlace");
+        String referencePoint = command.stringValueOfParameterNamed("referencePoint");
+        String phoneNumber = command.stringValueOfParameterNamed("phoneNumber");
+        String relativeNumber = command.stringValueOfParameterNamed("relativeNumber");
+        Integer yearsInCommunity = command.integerValueOfParameterNamed("yearsInCommunity");
+
+        return new GroupLoanAdditionals(loanCycleCompleted, rentMortgageFee, monthlyIncome, familyExpenses, totalExternalLoanAmount,
+                totalInstallments, clientType, houseHoldGoods, businessActivities, businessLocation, businessExperience, salesValue,
+                businessPurchases, businessProfit, clientProfit, inventories, visitBusiness, familySupport, businessEvolution,
+                numberOfApprovals, recommenderName, monthlyPaymentCapacity, loanPurpose, currentCreditValue, requestedValue,
+                groupAuthorizedValue, facilitatorProposedValue, proposedFee, agencyAuthorizedAmount, authorizedFee, totalIncome,
+                totalExpenditures, availableMonthly, facValue, debtLevel, facilitator, earlyCancellationReason, sourceOfFunds,
+                clientLoanRequestNumber, dateRequested, position, fullName, lastName, maritalStatus, educationLevel, schoolingYears,
+                noOfChildren, nationality, language, dpi, nit, jobType, occupancyClassification, actsOwnBehalf, onBehalfOf,
+                politicalPosition, politicalOffice, housingType, address, populatedPlace, referencePoint, phoneNumber, relativeNumber,
+                yearsInCommunity, loan);
+    }
 }
