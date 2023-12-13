@@ -34,21 +34,23 @@ public enum PrequalificationStatus {
                             "prequalification.status.concent.added"), AGENCY_LEAD_PENDING_APPROVAL(902,
                                     "prequalification.status.pending.approval"), PREQUALIFICATION_UPDATE_REQUESTED(903,
                                             "prequalification.status.update.requested"), AGENCY_LEAD_PENDING_APPROVAL_WITH_EXCEPTIONS(904,
-                                                    "prequalification.status.pending.approval.exceptions"), ANALYSIS_UNIT_PENDING_APPROVAL(
-                                                            1001,
-                                                            "prequalification.status.pending.approval.exceptions"), ANALYSIS_UNIT_PENDING_APPROVAL_WITH_EXCEPTIONS(
-                                                                    1002,
-                                                                    "prequalification.status.pending.approval.exceptions"), PRE_COMMITTEE_D_PENDING_APPROVAL(
-                                                                            1003,
-                                                                            "prequalification.status.pre.committee.d.pending.approval"), PRE_COMMITTEE_C_PENDING_APPROVAL(
-                                                                                    1004,
-                                                                                    "prequalification.status.pre.committee.c.pending.approval"), PRE_COMMITTEE_B_PENDING_APPROVAL(
-                                                                                            1005,
-                                                                                            "prequalification.status.committee.b.pending.approval"), PRE_COMMITTEE_A_PENDING_APPROVAL(
-                                                                                                    1006,
-                                                                                                    "prequalification.status.committee.a.pending.approval"), INVALID(
-                                                                                                            0,
-                                                                                                            "prequalification.status.invalid");
+                                                    "prequalification.status.pending.approval.exceptions"), AGENCY_LEAD_APPROVED_WITH_EXCEPTIONS(
+                                                            905,
+                                                            "prequalification.status.approved.with.exceptions"), ANALYSIS_UNIT_PENDING_APPROVAL(
+                                                                    1001,
+                                                                    "prequalification.status.pending.approval.exceptions"), ANALYSIS_UNIT_PENDING_APPROVAL_WITH_EXCEPTIONS(
+                                                                            1002,
+                                                                            "prequalification.status.pending.approval.exceptions"), PRE_COMMITTEE_D_PENDING_APPROVAL(
+                                                                                    1003,
+                                                                                    "prequalification.status.pre.committee.d.pending.approval"), PRE_COMMITTEE_C_PENDING_APPROVAL(
+                                                                                            1004,
+                                                                                            "prequalification.status.pre.committee.c.pending.approval"), PRE_COMMITTEE_B_PENDING_APPROVAL(
+                                                                                                    1005,
+                                                                                                    "prequalification.status.committee.b.pending.approval"), PRE_COMMITTEE_A_PENDING_APPROVAL(
+                                                                                                            1006,
+                                                                                                            "prequalification.status.committee.a.pending.approval"), INVALID(
+                                                                                                                    0,
+                                                                                                                    "prequalification.status.invalid");
 
     private final Integer value;
     private final String code;
@@ -92,6 +94,9 @@ public enum PrequalificationStatus {
             break;
             case 904:
                 enumeration = PrequalificationStatus.AGENCY_LEAD_PENDING_APPROVAL_WITH_EXCEPTIONS;
+            break;
+            case 905:
+                enumeration = PrequalificationStatus.AGENCY_LEAD_APPROVED_WITH_EXCEPTIONS;
             break;
             case 1001:
                 enumeration = PrequalificationStatus.ANALYSIS_UNIT_PENDING_APPROVAL;
@@ -152,6 +157,8 @@ public enum PrequalificationStatus {
             clientStatus = PrequalificationStatus.PREQUALIFICATION_UPDATE_REQUESTED;
         } else if (status.equalsIgnoreCase(PrequalificationStatus.AGENCY_LEAD_PENDING_APPROVAL_WITH_EXCEPTIONS.toString())) {
             clientStatus = PrequalificationStatus.AGENCY_LEAD_PENDING_APPROVAL_WITH_EXCEPTIONS;
+        } else if (status.equalsIgnoreCase(PrequalificationStatus.AGENCY_LEAD_APPROVED_WITH_EXCEPTIONS.toString())) {
+            clientStatus = PrequalificationStatus.AGENCY_LEAD_APPROVED_WITH_EXCEPTIONS;
         } else if (status.equalsIgnoreCase(PrequalificationStatus.ANALYSIS_UNIT_PENDING_APPROVAL_WITH_EXCEPTIONS.toString())) {
             clientStatus = PrequalificationStatus.ANALYSIS_UNIT_PENDING_APPROVAL_WITH_EXCEPTIONS;
         } else if (status.equalsIgnoreCase(PrequalificationStatus.ANALYSIS_UNIT_PENDING_APPROVAL.toString())) {
