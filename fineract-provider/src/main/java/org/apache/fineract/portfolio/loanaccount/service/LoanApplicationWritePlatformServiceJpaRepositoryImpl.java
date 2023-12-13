@@ -33,6 +33,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.persistence.PersistenceException;
+
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.fineract.accounting.journalentry.data.LumaBitacoraTransactionTypeEnum;
@@ -120,6 +122,7 @@ import org.apache.fineract.portfolio.loanaccount.api.LoanApiConstants;
 import org.apache.fineract.portfolio.loanaccount.command.DisburseByChequesCommand;
 import org.apache.fineract.portfolio.loanaccount.data.LoanChargeData;
 import org.apache.fineract.portfolio.loanaccount.data.ScheduleGeneratorDTO;
+import org.apache.fineract.portfolio.loanaccount.domain.AdditionalsExtraLoans;
 import org.apache.fineract.portfolio.loanaccount.domain.DefaultLoanLifecycleStateMachine;
 import org.apache.fineract.portfolio.loanaccount.domain.GLIMAccountInfoRepository;
 import org.apache.fineract.portfolio.loanaccount.domain.GroupLoanAdditionals;
@@ -523,6 +526,8 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                                 "Facilitator with identifier " + facilitatorId + " does not exist"));
             }
             GroupLoanAdditionals groupLoanAdditionals = GroupLoanAdditionals.assembleFromJson(command, newLoanApplication, facilitator);
+            addExternalLoans(groupLoanAdditionals, command);
+
             this.groupLoanAdditionalsRepository.save(groupLoanAdditionals);
 
             if (loanProduct.isInterestRecalculationEnabled()) {
@@ -765,6 +770,51 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             Throwable throwable = ExceptionUtils.getRootCause(dve.getCause());
             handleDataIntegrityIssues(command, throwable, dve);
             return CommandProcessingResult.empty();
+        }
+    }
+
+    private void addExternalLoans(GroupLoanAdditionals groupLoanAdditionals, JsonCommand command) {
+        JsonArray externalLoansArray = command.arrayOfParameterNamed(LoanApiConstants.externalLoansParamName);
+
+        List<AdditionalsExtraLoans> additionalLoansList = new ArrayList<>();
+        if (!ObjectUtils.isEmpty(externalLoansArray)) {
+            for (JsonElement element : externalLoansArray) {
+                JsonObject loanData = element.getAsJsonObject();
+
+                String name = null;
+                if (loanData.get("institutionName") != null) {
+                    name = loanData.get("institutionName").getAsString();
+                }
+                Long institutionType = null;
+                if (loanData.get("institutionType") != null) {
+                    institutionType = loanData.get("institutionType").getAsLong();
+                }
+
+                Long loanStatus = null;
+                if (loanData.get("loanStatus") != null) {
+                    loanStatus = loanData.get("loanStatus").getAsLong();
+                }
+
+                BigDecimal totalLoanBalance = null;
+                if (loanData.get("totalLoanBalance") != null) {
+                    totalLoanBalance = new BigDecimal(loanData.get("totalLoanBalance").getAsString().replace(",", "".trim()));
+                }
+
+                BigDecimal charges = null;
+                if (loanData.get("charges") != null) {
+                    charges = new BigDecimal(loanData.get("charges").getAsString().replace(",", "").trim());
+                }
+                BigDecimal totalLoanAmount = null;
+                if (loanData.get("totalLoanAmount") != null) {
+                    totalLoanAmount = new BigDecimal(loanData.get("totalLoanAmount").getAsString().replace(",", "").trim());
+                }
+
+                AdditionalsExtraLoans additionalsExtraLoans = new AdditionalsExtraLoans(groupLoanAdditionals, institutionType, totalLoanAmount, totalLoanBalance, charges,
+                        loanStatus);
+                additionalLoansList.add(additionalsExtraLoans);
+
+            }
+            groupLoanAdditionals.setExtraLoans(additionalLoansList);
         }
     }
 

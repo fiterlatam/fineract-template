@@ -202,4 +202,29 @@
                 splitStatements="true"
                 stripComments="true"/>
     </changeSet>
+
+
+    <changeSet author="fineract" id="5">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_loan_external_existing_loans" columnName="additionals_id"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_loan_external_existing_loans">
+            <column name="additionals_id" type="BIGINT"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="6">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_loan_additionals_group" columnName="created_by"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_loan_additionals_group">
+            <column name="created_by" type="BIGINT"/>
+            <column name="created_date" type="DATETIME"/>
+        </addColumn>
+    </changeSet>
+
 </databaseChangeLog>

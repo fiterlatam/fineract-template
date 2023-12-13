@@ -226,4 +226,11 @@ public interface LoanApiConstants {
     String yearsInCommunityParamName = "yearsInCommunity";
     String LOAN_ACTION_UPDATE_FUND = "UPDATEFUND";
     String paymentCapacityParamName = "paymentCapacity";
+    String externalLoansParamName = "externalLoans";
+    String facilitatorParamName = "facilitator";
+    String maidenNameParamName = "maidenName";
+    String politicallyExposedParamName = "politicallyExposed";
+    String otherIncomeParamName = "otherIncome";
+    String currentLoansParamName = "currentLoans";
+    String businessActivityParamName = "businessActivity";
 }

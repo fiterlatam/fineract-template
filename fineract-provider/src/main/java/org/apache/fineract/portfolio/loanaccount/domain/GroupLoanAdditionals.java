@@ -20,13 +20,17 @@ package org.apache.fineract.portfolio.loanaccount.domain;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
-import org.apache.fineract.infrastructure.core.domain.AbstractAuditableWithUTCDateTimeCustom;
+import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
 import org.apache.fineract.useradministration.domain.AppUser;
 
 /**
@@ -35,7 +39,7 @@ import org.apache.fineract.useradministration.domain.AppUser;
  */
 @Entity
 @Table(name = "m_loan_additionals_group")
-public class GroupLoanAdditionals extends AbstractAuditableWithUTCDateTimeCustom {
+public class GroupLoanAdditionals extends AbstractPersistableCustom {
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "loan_id", nullable = false)
@@ -234,6 +238,9 @@ public class GroupLoanAdditionals extends AbstractAuditableWithUTCDateTimeCustom
     @Column(name = "debt_level", scale = 6, precision = 19, nullable = true)
     private BigDecimal debtLevel;
 
+    @OneToMany(mappedBy = "groupLoanAdditionals", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private List<AdditionalsExtraLoans> extraLoans;
+
     protected GroupLoanAdditionals() {}
 
     public GroupLoanAdditionals(Integer loanCycleCompleted, BigDecimal rentMortgageFee, BigDecimal monthlyIncome, BigDecimal familyExpenses,
@@ -373,7 +380,7 @@ public class GroupLoanAdditionals extends AbstractAuditableWithUTCDateTimeCustom
         String nit = command.stringValueOfParameterNamed("nit");
         Long jobType = command.longValueOfParameterNamed("jobType");
         Long occupancyClassification = command.longValueOfParameterNamed("occupancyClassification");
-        Long actsOwnBehalf = command.longValueOfParameterNamed("actsOwnBehalf");
+//        Long actsOwnBehalf = command.longValueOfParameterNamed("actsOwnBehalf");
         String onBehalfOf = command.stringValueOfParameterNamed("onBehalfOf");
         String politicalPosition = command.stringValueOfParameterNamed("politicalPosition");
         String politicalOffice = command.stringValueOfParameterNamed("politicalOffice");
@@ -392,8 +399,16 @@ public class GroupLoanAdditionals extends AbstractAuditableWithUTCDateTimeCustom
                 groupAuthorizedValue, facilitatorProposedValue, proposedFee, agencyAuthorizedAmount, authorizedFee, totalIncome,
                 totalExpenditures, availableMonthly, facValue, debtLevel, facilitator, earlyCancellationReason, sourceOfFunds,
                 clientLoanRequestNumber, dateRequested, position, fullName, lastName, maritalStatus, educationLevel, schoolingYears,
-                noOfChildren, nationality, language, dpi, nit, jobType, occupancyClassification, actsOwnBehalf, onBehalfOf,
+                noOfChildren, nationality, language, dpi, nit, jobType, occupancyClassification, null, onBehalfOf,
                 politicalPosition, politicalOffice, housingType, address, populatedPlace, referencePoint, phoneNumber, relativeNumber,
                 yearsInCommunity, loan);
+    }
+
+    public Loan getLoan() {
+        return this.loan;
+    }
+
+    public void setExtraLoans(List<AdditionalsExtraLoans> extraLoans) {
+        this.extraLoans = extraLoans;
     }
 }
