@@ -63,7 +63,6 @@ import org.apache.fineract.organisation.agency.domain.AgencyRepositoryWrapper;
 import org.apache.fineract.organisation.prequalification.command.PrequalificationDataValidator;
 import org.apache.fineract.organisation.prequalification.command.PrequalificatoinApiConstants;
 import org.apache.fineract.organisation.prequalification.data.GenericValidationResultSet;
-import org.apache.fineract.organisation.prequalification.data.GroupPrequalificationData;
 import org.apache.fineract.organisation.prequalification.data.LoanData;
 import org.apache.fineract.organisation.prequalification.data.MemberPrequalificationData;
 import org.apache.fineract.organisation.prequalification.data.PrequalificationChecklistData;
@@ -1105,27 +1104,38 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         PrequalificationStatusRange finalRange = null;
 
         if (action.equalsIgnoreCase("approveanalysis") || action.equalsIgnoreCase("approveCommittee")) {
-
-            GroupPrequalificationData prequalificationData = prequalificationReadPlatformService.retrieveOne(prequalificationGroup.getId());
-            int numberOfErrors = prequalificationData.getRedValidationCount() > 0
-                    ? Math.toIntExact(prequalificationData.getRedValidationCount())
-                    : 0;
-
             BigDecimal amount = prequalificationGroup.getTotalRequestedAmount();
+            PrequalificationChecklistData prequalificationChecklistData = this.prequalificationChecklistReadPlatformService
+                    .retrieveHardPolicyValidationResults(prequalificationGroup.getId());
+            List<List<String>> rows = prequalificationChecklistData.getMembers().getRows();
+            AtomicReference<Integer> redCountRef = new AtomicReference<>(0);
+            for (List<String> innerList : rows) {
+                innerList.forEach(item -> {
+                    if ("RED".equalsIgnoreCase(item)) {
+                        redCountRef.getAndSet(redCountRef.get() + 1);
+                    }
+                });
+            }
+            Integer redCounts = redCountRef.get();
 
             List<PrequalificationStatusRange> statusRangeList = this.prequalificationStatusRangeRepository
-                    .findByPrequalificationTypeAndNumberOfErrors(prequalificationGroup.getPrequalificationType(), numberOfErrors);
+                    .findByPrequalificationTypeAndNumberOfErrors(prequalificationGroup.getPrequalificationType(), redCounts);
 
-            for (PrequalificationStatusRange statusRange : statusRangeList) {
-                if (amount.compareTo(statusRange.getMinAmount()) >= 0
-                        && (statusRange.getMaxAmount() != null && amount.compareTo(statusRange.getMaxAmount()) <= 0)) {
-                    finalRange = statusRange;
-                    break;
-                } else if (amount.compareTo(statusRange.getMinAmount()) >= 0 && statusRange.getMaxAmount() == null) {
-                    finalRange = statusRange;
-                    break;
+            if (statusRangeList.size() == 1) {
+                finalRange = statusRangeList.get(0);
+            } else {
+                for (PrequalificationStatusRange statusRange : statusRangeList) {
+                    if (amount.compareTo(statusRange.getMinAmount()) >= 0
+                            && (statusRange.getMaxAmount() != null && amount.compareTo(statusRange.getMaxAmount()) <= 0)) {
+                        finalRange = statusRange;
+                        break;
+                    } else if (amount.compareTo(statusRange.getMinAmount()) >= 0 && statusRange.getMaxAmount() == null) {
+                        finalRange = statusRange;
+                        break;
+                    }
                 }
             }
+
         }
 
         return finalRange;
