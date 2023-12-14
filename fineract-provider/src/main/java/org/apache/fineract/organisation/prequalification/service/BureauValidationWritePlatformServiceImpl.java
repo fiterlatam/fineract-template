@@ -26,6 +26,7 @@ import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
+import javax.net.ssl.HttpsURLConnection;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.fineract.infrastructure.configuration.data.ExternalServicesPropertiesData;
 import org.apache.fineract.infrastructure.configuration.service.ExternalServicesConstants;
@@ -52,6 +53,7 @@ import org.apache.fineract.portfolio.loanproduct.domain.LoanProduct;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductRepository;
 import org.apache.fineract.portfolio.loanproduct.exception.LoanProductNotFoundException;
 import org.apache.fineract.useradministration.domain.AppUser;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -199,6 +201,7 @@ public class BureauValidationWritePlatformServiceImpl implements BureauValidatio
         final String url = loanAdditionalsApiHost + "?caseid=" + caseId;
         ResponseEntity<String> responseEntity = null;
         try {
+            HttpsURLConnection.setDefaultHostnameVerifier(NoopHostnameVerifier.INSTANCE);
             responseEntity = restTemplate.exchange(url, HttpMethod.POST, new HttpEntity<>(httpHeaders), String.class);
         } catch (RestClientException ex) {
             LOG.debug("Loan Additional API Provider {} not available", url, ex);
@@ -274,7 +277,7 @@ public class BureauValidationWritePlatformServiceImpl implements BureauValidatio
         loanAdditionalDataBuilder.activoCorriente(activoCorriente);
 
         final BigDecimal activoNocorriente = this.fromApiJsonHelper.extractBigDecimalNamed("activo_no_corriente", jsonElement, locale);
-        loanAdditionalDataBuilder.activoCorriente(activoNocorriente);
+        loanAdditionalDataBuilder.activoNocorriente(activoNocorriente);
 
         final BigDecimal alimentacion = this.fromApiJsonHelper.extractBigDecimalNamed("alimentacion", jsonElement, locale);
         loanAdditionalDataBuilder.alimentacion(alimentacion);
@@ -320,8 +323,11 @@ public class BureauValidationWritePlatformServiceImpl implements BureauValidatio
         final String cOtroNombre = this.fromApiJsonHelper.extractStringNamed("c_otro_nombre", jsonElement);
         loanAdditionalDataBuilder.cOtroNombre(cOtroNombre);
 
-        final String cPrimerApellido = this.fromApiJsonHelper.extractStringNamed("c_primer_nombre", jsonElement);
+        final String cPrimerApellido = this.fromApiJsonHelper.extractStringNamed("c_primer_apellido", jsonElement);
         loanAdditionalDataBuilder.cPrimerApellido(cPrimerApellido);
+
+        final String cPrimerNombre = this.fromApiJsonHelper.extractStringNamed("c_primer_nombre", jsonElement);
+        loanAdditionalDataBuilder.cPrimerNombre(cPrimerNombre);
 
         final String cProfesion = this.fromApiJsonHelper.extractStringNamed("c_profesion", jsonElement);
         loanAdditionalDataBuilder.cProfesion(cProfesion);
@@ -377,8 +383,11 @@ public class BureauValidationWritePlatformServiceImpl implements BureauValidatio
         final BigDecimal efectivo = this.fromApiJsonHelper.extractBigDecimalNamed("efectivo", jsonElement, locale);
         loanAdditionalDataBuilder.efectivo(efectivo);
 
-        final BigDecimal endeudamientoActual = this.fromApiJsonHelper.extractBigDecimalNamed("endeudamiento_futuro", jsonElement, locale);
+        final BigDecimal endeudamientoActual = this.fromApiJsonHelper.extractBigDecimalNamed("endeudamiento_actual", jsonElement, locale);
         loanAdditionalDataBuilder.endeudamientoActual(endeudamientoActual);
+
+        final BigDecimal endeudamientoFuturo = this.fromApiJsonHelper.extractBigDecimalNamed("endeudamiento_futuro", jsonElement, locale);
+        loanAdditionalDataBuilder.endeudamientoFuturo(endeudamientoFuturo);
 
         final Integer enf = this.fromApiJsonHelper.extractIntegerNamed("enf", jsonElement, locale);
         loanAdditionalDataBuilder.enf(enf);
@@ -436,7 +445,7 @@ public class BureauValidationWritePlatformServiceImpl implements BureauValidatio
         loanAdditionalDataBuilder.inventarios(inventarios);
 
         final BigDecimal inversionTotal = this.fromApiJsonHelper.extractBigDecimalNamed("inversion_total", jsonElement, locale);
-        loanAdditionalDataBuilder.inventarios(inversionTotal);
+        loanAdditionalDataBuilder.inversionTotal(inversionTotal);
 
         final String invertir = this.fromApiJsonHelper.extractStringNamed("invertir", jsonElement);
         loanAdditionalDataBuilder.invertir(invertir);
@@ -480,7 +489,7 @@ public class BureauValidationWritePlatformServiceImpl implements BureauValidatio
         final Integer plazoVigente = this.fromApiJsonHelper.extractIntegerNamed("plazo_vigente", jsonElement, locale);
         loanAdditionalDataBuilder.plazoVigente(plazoVigente);
 
-        final String poseeCuenta = this.fromApiJsonHelper.extractStringNamed("poseeCuenta", jsonElement);
+        final String poseeCuenta = this.fromApiJsonHelper.extractStringNamed("posee_cuenta", jsonElement);
         loanAdditionalDataBuilder.poseeCuenta(poseeCuenta);
 
         final Long prestamoPuente = this.fromApiJsonHelper.extractLongNamed("prestamo_puente", jsonElement);
@@ -592,6 +601,43 @@ public class BureauValidationWritePlatformServiceImpl implements BureauValidatio
 
         final BigDecimal ventas = this.fromApiJsonHelper.extractBigDecimalNamed("ventas", jsonElement, locale);
         loanAdditionalDataBuilder.ventas(ventas);
+
+        final BigDecimal cuentasPorCobrar = this.fromApiJsonHelper.extractBigDecimalNamed("cuentas_por_cobrar", jsonElement, locale);
+        loanAdditionalDataBuilder.cuentasPorCobrar(cuentasPorCobrar);
+
+        final BigDecimal hipotecas = this.fromApiJsonHelper.extractBigDecimalNamed("hipotecas", jsonElement, locale);
+        loanAdditionalDataBuilder.hipotecas(hipotecas);
+
+        final String excepcion = this.fromApiJsonHelper.extractStringNamed("excepcion", jsonElement);
+        loanAdditionalDataBuilder.excepcion(excepcion);
+
+        final Integer tipoExcepcion = this.fromApiJsonHelper.extractIntegerNamed("tipo_excepcion", jsonElement, locale);
+        loanAdditionalDataBuilder.tipoExcepcion(tipoExcepcion);
+
+        final String descripcionExcepcion = this.fromApiJsonHelper.extractStringNamed("descripcion_excepcion", jsonElement);
+        loanAdditionalDataBuilder.descripcionExcepcion(descripcionExcepcion);
+
+        final BigDecimal montoAutorizado = this.fromApiJsonHelper.extractBigDecimalNamed("monto_autorizado", jsonElement, locale);
+        loanAdditionalDataBuilder.montoAutorizado(montoAutorizado);
+
+        final String observaciones = this.fromApiJsonHelper.extractStringNamed("observaciones", jsonElement);
+        loanAdditionalDataBuilder.observaciones(observaciones);
+
+        final BigDecimal montoOtrosIngresos = this.fromApiJsonHelper.extractBigDecimalNamed("monto_otros_ingresos", jsonElement, locale);
+        loanAdditionalDataBuilder.montoOtrosIngresos(montoOtrosIngresos);
+
+        final BigDecimal capitalDdeTrabajo = this.fromApiJsonHelper.extractBigDecimalNamed("capital_de_trabajo", jsonElement, locale);
+        loanAdditionalDataBuilder.capitalDdeTrabajo(capitalDdeTrabajo);
+
+        final String origenOtrosIngresos = this.fromApiJsonHelper.extractStringNamed("origen_otros_ingresos", jsonElement);
+        loanAdditionalDataBuilder.origenOtrosIngresos(origenOtrosIngresos);
+
+        final String otrosIngresos = this.fromApiJsonHelper.extractStringNamed("otros_ingresos", jsonElement);
+        loanAdditionalDataBuilder.otrosIngresos(otrosIngresos);
+
+        final BigDecimal relacionOtrosIngresos = this.fromApiJsonHelper.extractBigDecimalNamed("Relacion_otros_ingresos", jsonElement,
+                locale);
+        loanAdditionalDataBuilder.relacionOtrosIngresos(relacionOtrosIngresos);
 
         return loanAdditionalDataBuilder.build();
     }
