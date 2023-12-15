@@ -129,4 +129,5 @@
     <include file="parts/0110_FBR_436_add_loan_report_guarantee_report.xml" relativeToChangelogFile="true"/>
     <include file="parts/0111_FBR_489_add_require_committee_approval.xml" relativeToChangelogFile="true"/>
     <include file="parts/0112_FBR_417_additional_group_loan_data.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0112_FBR_484_add_permission_for_client_activation.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

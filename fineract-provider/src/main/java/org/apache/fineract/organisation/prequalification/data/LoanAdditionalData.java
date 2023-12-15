@@ -276,6 +276,30 @@ public class LoanAdditionalData {
 
     private BigDecimal ventas;
 
+    private BigDecimal cuentasPorCobrar;
+
+    private BigDecimal hipotecas;
+
+    private String excepcion;
+
+    private Integer tipoExcepcion;
+
+    private String descripcionExcepcion;
+
+    private BigDecimal montoAutorizado;
+
+    private String observaciones;
+
+    private BigDecimal capitalDdeTrabajo;
+
+    private BigDecimal montoOtrosIngresos;
+
+    private String origenOtrosIngresos;
+
+    private String otrosIngresos;
+
+    private BigDecimal relacionOtrosIngresos;
+
     public LoanAdditionProperties toEntity() {
         final LoanAdditionProperties loanAdditionProperties = new LoanAdditionProperties();
         BeanUtils.copyProperties(this, loanAdditionProperties);
