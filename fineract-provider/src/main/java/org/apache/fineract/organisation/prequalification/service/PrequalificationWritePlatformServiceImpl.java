@@ -965,11 +965,11 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         }
     }
 
-    private static final class GroupTypeLoanMapper implements RowMapper<LoanData> {
+    static final class GroupTypeLoanMapper implements RowMapper<LoanData> {
 
         private final String schema;
 
-        private GroupTypeLoanMapper() {
+        GroupTypeLoanMapper() {
             this.schema = """
                     SELECT ml.id AS loanId,
                     mc.id AS clientId,
@@ -1006,11 +1006,11 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         }
     }
 
-    private static final class IndividualTypeLoanMapper implements RowMapper<LoanData> {
+    static final class IndividualTypeLoanMapper implements RowMapper<LoanData> {
 
         private final String schema;
 
-        private IndividualTypeLoanMapper() {
+        IndividualTypeLoanMapper() {
             this.schema = """
                         SELECT ml.id AS loanId,
                         mc.id AS clientId,
