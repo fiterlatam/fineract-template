@@ -34,6 +34,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import javax.persistence.PersistenceException;
+
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.fineract.accounting.journalentry.data.LumaBitacoraTransactionTypeEnum;
@@ -80,6 +82,7 @@ import org.apache.fineract.organisation.prequalification.domain.LoanAdditionalPr
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationGroup;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationGroupRepositoryWrapper;
 import org.apache.fineract.organisation.prequalification.exception.PrequalificationNotProvidedException;
+import org.apache.fineract.organisation.prequalification.service.BureauValidationWritePlatformServiceImpl;
 import org.apache.fineract.organisation.staff.domain.Staff;
 import org.apache.fineract.portfolio.account.domain.AccountAssociationType;
 import org.apache.fineract.portfolio.account.domain.AccountAssociations;
@@ -120,8 +123,11 @@ import org.apache.fineract.portfolio.loanaccount.api.LoanApiConstants;
 import org.apache.fineract.portfolio.loanaccount.command.DisburseByChequesCommand;
 import org.apache.fineract.portfolio.loanaccount.data.LoanChargeData;
 import org.apache.fineract.portfolio.loanaccount.data.ScheduleGeneratorDTO;
+import org.apache.fineract.portfolio.loanaccount.domain.AdditionalsExtraLoans;
 import org.apache.fineract.portfolio.loanaccount.domain.DefaultLoanLifecycleStateMachine;
 import org.apache.fineract.portfolio.loanaccount.domain.GLIMAccountInfoRepository;
+import org.apache.fineract.portfolio.loanaccount.domain.GroupLoanAdditionals;
+import org.apache.fineract.portfolio.loanaccount.domain.GroupLoanAdditionalsRepository;
 import org.apache.fineract.portfolio.loanaccount.domain.GroupLoanIndividualMonitoringAccount;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanCharge;
@@ -165,9 +171,11 @@ import org.apache.fineract.portfolio.rate.service.RateAssembler;
 import org.apache.fineract.portfolio.savings.data.GroupSavingsIndividualMonitoringAccountData;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccount;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountAssembler;
+import org.apache.fineract.portfolio.savings.domain.SavingsAccountRepositoryWrapper;
 import org.apache.fineract.portfolio.savings.service.GSIMReadPlatformService;
 import org.apache.fineract.portfolio.savings.service.SavingsAccountWritePlatformService;
 import org.apache.fineract.useradministration.domain.AppUser;
+import org.apache.fineract.useradministration.domain.AppUserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
@@ -190,6 +198,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
     private final LoanProductDataValidator loanProductCommandFromApiJsonDeserializer;
     private final LoanApplicationCommandFromApiJsonHelper fromApiJsonDeserializer;
     private final LoanRepositoryWrapper loanRepositoryWrapper;
+    private final GroupLoanAdditionalsRepository groupLoanAdditionalsRepository;
     private final NoteRepository noteRepository;
     private final LoanScheduleCalculationPlatformService calculationPlatformService;
     private final LoanAssembler loanAssembler;
@@ -236,6 +245,9 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
 
     private final SavingsAccountWritePlatformService savingsAccountWritePlatformService;
 
+    private final SavingsAccountRepositoryWrapper savingsAccountRepositoryWrapper;
+    private final AppUserRepository appUserRepository;
+    private final BureauValidationWritePlatformServiceImpl bureauValidationWritePlatformService;
     private final LoanAdditionalPropertiesRepository loanAdditionalPropertiesRepository;
 
     @Autowired
@@ -258,7 +270,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             final LoanScheduleAssembler loanScheduleAssembler, final LoanUtilService loanUtilService,
             final CalendarReadPlatformService calendarReadPlatformService,
             final GlobalConfigurationRepositoryWrapper globalConfigurationRepository,
-            final FineractEntityToEntityMappingRepository repository,
+            final FineractEntityToEntityMappingRepository repository,final AppUserRepository appUserRepository,
             final FineractEntityRelationRepository fineractEntityRelationRepository,
             final EntityDatatableChecksWritePlatformService entityDatatableChecksWritePlatformService,
             final GLIMAccountInfoWritePlatformService glimAccountInfoWritePlatformService, final GLIMAccountInfoRepository glimRepository,
@@ -269,7 +281,10 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             ChequeBatchRepositoryWrapper chequeBatchRepositoryWrapper,
             PrequalificationGroupRepositoryWrapper prequalificationGroupRepositoryWrapper,
             final SavingsAccountWritePlatformService savingsAccountWritePlatformService,
-            final LoanAdditionalPropertiesRepository loanAdditionalPropertiesRepository) {
+            final SavingsAccountRepositoryWrapper savingsAccountRepositoryWrapper,
+            final BureauValidationWritePlatformServiceImpl bureauValidationWritePlatformService,
+            final LoanAdditionalPropertiesRepository loanAdditionalPropertiesRepository,
+            final GroupLoanAdditionalsRepository groupLoanAdditionalsRepository) {
         this.context = context;
         this.fromJsonHelper = fromJsonHelper;
         this.loanApplicationTransitionApiJsonValidator = loanApplicationTransitionApiJsonValidator;
@@ -317,6 +332,10 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
         this.chequeBatchRepositoryWrapper = chequeBatchRepositoryWrapper;
         this.prequalificationGroupRepositoryWrapper = prequalificationGroupRepositoryWrapper;
         this.savingsAccountWritePlatformService = savingsAccountWritePlatformService;
+        this.savingsAccountRepositoryWrapper = savingsAccountRepositoryWrapper;
+        this.groupLoanAdditionalsRepository = groupLoanAdditionalsRepository;
+        this.appUserRepository = appUserRepository;
+        this.bureauValidationWritePlatformService = bureauValidationWritePlatformService;
         this.loanAdditionalPropertiesRepository = loanAdditionalPropertiesRepository;
     }
 
@@ -489,6 +508,19 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             newLoanApplication.updateLoanContract(contractBuilder.toString());
 
             this.loanRepositoryWrapper.saveAndFlush(newLoanApplication);
+
+            Long facilitatorId = command.longValueOfParameterNamed("facilitator");
+            AppUser facilitator = null;
+            if (facilitatorId != null) {
+                facilitator = this.
+                        appUserRepository.findById(facilitatorId)
+                        .orElseThrow(() -> new GeneralPlatformDomainRuleException("error.msg.loan.facilitator.not.found",
+                                "Facilitator with identifier " + facilitatorId + " does not exist"));
+            }
+            GroupLoanAdditionals groupLoanAdditionals = GroupLoanAdditionals.assembleFromJson(command, newLoanApplication, facilitator);
+            addExternalLoans(groupLoanAdditionals, command);
+
+            this.groupLoanAdditionalsRepository.save(groupLoanAdditionals);
 
             if (loanProduct.isInterestRecalculationEnabled()) {
                 this.fromApiJsonDeserializer.validateLoanForInterestRecalculation(newLoanApplication);
@@ -732,6 +764,51 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             Throwable throwable = ExceptionUtils.getRootCause(dve.getCause());
             handleDataIntegrityIssues(command, throwable, dve);
             return CommandProcessingResult.empty();
+        }
+    }
+
+    private void addExternalLoans(GroupLoanAdditionals groupLoanAdditionals, JsonCommand command) {
+        JsonArray externalLoansArray = command.arrayOfParameterNamed(LoanApiConstants.externalLoansParamName);
+
+        List<AdditionalsExtraLoans> additionalLoansList = new ArrayList<>();
+        if (!ObjectUtils.isEmpty(externalLoansArray)) {
+            for (JsonElement element : externalLoansArray) {
+                JsonObject loanData = element.getAsJsonObject();
+
+                String name = null;
+                if (loanData.get("institutionName") != null) {
+                    name = loanData.get("institutionName").getAsString();
+                }
+                Long institutionType = null;
+                if (loanData.get("institutionType") != null) {
+                    institutionType = loanData.get("institutionType").getAsLong();
+                }
+
+                Long loanStatus = null;
+                if (loanData.get("loanStatus") != null) {
+                    loanStatus = loanData.get("loanStatus").getAsLong();
+                }
+
+                BigDecimal totalLoanBalance = null;
+                if (loanData.get("totalLoanBalance") != null) {
+                    totalLoanBalance = new BigDecimal(loanData.get("totalLoanBalance").getAsString().replace(",", "".trim()));
+                }
+
+                BigDecimal charges = null;
+                if (loanData.get("charges") != null) {
+                    charges = new BigDecimal(loanData.get("charges").getAsString().replace(",", "").trim());
+                }
+                BigDecimal totalLoanAmount = null;
+                if (loanData.get("totalLoanAmount") != null) {
+                    totalLoanAmount = new BigDecimal(loanData.get("totalLoanAmount").getAsString().replace(",", "").trim());
+                }
+
+                AdditionalsExtraLoans additionalsExtraLoans = new AdditionalsExtraLoans(groupLoanAdditionals, institutionType, totalLoanAmount, totalLoanBalance, charges,
+                        loanStatus);
+                additionalLoansList.add(additionalsExtraLoans);
+
+            }
+            groupLoanAdditionals.setExtraLoans(additionalLoansList);
         }
     }
 
