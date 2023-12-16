@@ -41,7 +41,7 @@ public enum Policies {
                                                                                             "Internal Credit History"), TWENTY_ONE(21,
                                                                                                     "External Credit History"), TWENTY_TWO(
                                                                                                             22,
-                                                                                                            "Do you register any lawsuit?"), TWENTY_THREE(
+                                                                                                            "Do you register any lawsuit"), TWENTY_THREE(
                                                                                                                     23,
                                                                                                                     "Housing Type"), TWENTY_FOUR(
                                                                                                                             24,

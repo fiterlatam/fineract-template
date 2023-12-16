@@ -30,7 +30,9 @@ import java.util.Map;
 import java.util.Optional;
 import javax.transaction.Transactional;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuilder;
@@ -44,9 +46,12 @@ import org.apache.fineract.infrastructure.security.service.PlatformSecurityConte
 import org.apache.fineract.organisation.monetary.domain.MoneyHelper;
 import org.apache.fineract.organisation.prequalification.data.ClientData;
 import org.apache.fineract.organisation.prequalification.data.GroupData;
+import org.apache.fineract.organisation.prequalification.data.LoanData;
 import org.apache.fineract.organisation.prequalification.data.PolicyData;
 import org.apache.fineract.organisation.prequalification.domain.BuroCheckClassification;
 import org.apache.fineract.organisation.prequalification.domain.CheckValidationColor;
+import org.apache.fineract.organisation.prequalification.domain.LoanAdditionProperties;
+import org.apache.fineract.organisation.prequalification.domain.LoanAdditionalPropertiesRepository;
 import org.apache.fineract.organisation.prequalification.domain.Policies;
 import org.apache.fineract.organisation.prequalification.domain.PreQualificationStatusLogRepository;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationGroup;
@@ -58,6 +63,7 @@ import org.apache.fineract.organisation.prequalification.domain.Prequalification
 import org.apache.fineract.organisation.prequalification.domain.ValidationChecklistResult;
 import org.apache.fineract.organisation.prequalification.domain.ValidationChecklistResultRepository;
 import org.apache.fineract.organisation.prequalification.exception.MemberHasNoPendingLoanException;
+import org.apache.fineract.organisation.prequalification.exception.MemberSubmittedLoanNotFoundException;
 import org.apache.fineract.organisation.prequalification.exception.PrequalificationNotMappedException;
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.jetbrains.annotations.NotNull;
@@ -82,6 +88,9 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
     final PolicyMapper policyMapper = new PolicyMapper();
     final ClientDataMapper clientDataMapper = new ClientDataMapper();
     private final ReadReportingService readReportingService;
+    private final PrequalificationWritePlatformServiceImpl.GroupTypeLoanMapper groupTypeLoanMapper = new PrequalificationWritePlatformServiceImpl.GroupTypeLoanMapper();
+    private final PrequalificationWritePlatformServiceImpl.IndividualTypeLoanMapper individualTypeLoanMapper = new PrequalificationWritePlatformServiceImpl.IndividualTypeLoanMapper();
+    private final LoanAdditionalPropertiesRepository loanAdditionalPropertiesRepository;
 
     @Override
     @Transactional
@@ -108,7 +117,7 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
         List<ValidationChecklistResult> validationChecklistResults = new ArrayList<>();
         final List<PolicyData> groupPolicies = this.jdbcTemplate.query(this.policyMapper.schema(), this.policyMapper, productId,
                 PrequalificationType.GROUP.name());
-        final List<PolicyData> individualPolicies = this.jdbcTemplate.query(policyMapper.schema(), policyMapper, productId,
+        final List<PolicyData> memberPolicies = this.jdbcTemplate.query(policyMapper.schema(), policyMapper, productId,
                 PrequalificationType.INDIVIDUAL.name());
         final String deleteStatement = "DELETE FROM m_checklist_validation_result WHERE prequalification_id = ?";
         this.jdbcTemplate.update(deleteStatement, prequalificationId);
@@ -130,8 +139,21 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
             validationChecklistResults.add(prequalificationChecklistResult);
         }
 
-        for (PolicyData policyCategoryData : individualPolicies) {
+        for (PolicyData policyCategoryData : memberPolicies) {
             for (final ClientData clientData : clientDatas) {
+                List<LoanData> submittedLoans;
+                if (prequalificationGroup.isPrequalificationTypeGroup()) {
+                    submittedLoans = jdbcTemplate.query(this.groupTypeLoanMapper.schema(), this.groupTypeLoanMapper, prequalificationId,
+                            clientData.getDpi(), prequalificationId);
+                } else {
+                    submittedLoans = jdbcTemplate.query(this.individualTypeLoanMapper.schema(), this.individualTypeLoanMapper,
+                            prequalificationId, clientData.getDpi(), prequalificationId);
+                }
+                if (submittedLoans.isEmpty()) {
+                    throw new MemberSubmittedLoanNotFoundException(clientData.getDpi());
+                }
+                final LoanData submittedLoanData = submittedLoans.get(0);
+                clientData.setLoanId(submittedLoanData.getLoanId());
                 clientData.setProductId(productId);
                 ValidationChecklistResult validationChecklistResult = new ValidationChecklistResult();
                 validationChecklistResult.setPrequalificationId(prequalificationId);
@@ -262,7 +284,7 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
             case NINETEEN -> checkValidationColor = this.runCheck19(clientData);
             case TWENTY -> checkValidationColor = this.runCheck20(clientData);
             case TWENTY_ONE -> checkValidationColor = this.runCheck21(clientData);
-            case TWENTY_TWO -> checkValidationColor = this.runCheck22();
+            case TWENTY_TWO -> checkValidationColor = this.runCheck22(clientData);
             case TWENTY_THREE -> checkValidationColor = this.runCheck23(clientData);
             case TWENTY_FOUR -> checkValidationColor = this.runCheck24(clientData);
             case TWENTY_FIVE -> checkValidationColor = this.runCheck25(clientData);
@@ -703,8 +725,28 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
     /**
      * Do you register any lawsuit?
      */
-    private CheckValidationColor runCheck22() {
-        return CheckValidationColor.RED;
+    private CheckValidationColor runCheck22(final ClientData clientData) {
+        final String clientId = String.valueOf(clientData.getClientId());
+        final String reportName = Policies.TWENTY_TWO.getName() + " Policy Check";
+        final String productId = Long.toString(clientData.getProductId());
+        final ClientData params = retrieveClientParams(clientData.getClientId(), clientData.getProductId());
+        final List<LoanAdditionProperties> loanAdditionPropertiesList = this.loanAdditionalPropertiesRepository
+                .findByClientIdAndLoanId(clientData.getClientId(), clientData.getLoanId());
+        String registerLawSuit = "si";
+        if (!CollectionUtils.isEmpty(loanAdditionPropertiesList)) {
+            final LoanAdditionProperties loanAdditionProperties = loanAdditionPropertiesList.get(0);
+            if (!StringUtils.isEmpty(loanAdditionProperties.getCaseId())) {
+                registerLawSuit = "no";
+            }
+        }
+        final Map<String, String> reportParams = new HashMap<>();
+        reportParams.put("${clientId}", clientId);
+        reportParams.put("${loanProductId}", productId);
+        reportParams.put("${clientCategorization}", params.getClientCategorization());
+        reportParams.put("${recreditCategorization}", params.getRecreditCategorization());
+        reportParams.put("${registerLawSuit}", registerLawSuit);
+        final GenericResultsetData result = this.readReportingService.retrieveGenericResultset(reportName, "report", reportParams, false);
+        return extractColorFromResultset(result);
     }
 
     /**
@@ -749,11 +791,20 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
         final String reportName = Policies.TWENTY_FIVE.getName() + " Policy Check";
         final String productId = Long.toString(clientData.getProductId());
         final ClientData params = retrieveClientParams(clientData.getClientId(), clientData.getProductId());
+        final List<LoanAdditionProperties> loanAdditionPropertiesList = this.loanAdditionalPropertiesRepository
+                .findByClientIdAndLoanId(clientData.getClientId(), clientData.getLoanId());
+        int yearsInBusiness = 0;
+        if (!CollectionUtils.isEmpty(loanAdditionPropertiesList)) {
+            final LoanAdditionProperties loanAdditionProperties = loanAdditionPropertiesList.get(0);
+            String antiguedadNegocio = ObjectUtils.defaultIfNull(loanAdditionProperties.getAntiguedadNegocio(), "");
+            yearsInBusiness = NumberUtils.toInt(antiguedadNegocio.replaceAll("[^0-9]", ""));
+        }
         final Map<String, String> reportParams = new HashMap<>();
         reportParams.put("${clientId}", clientId);
         reportParams.put("${loanProductId}", productId);
         reportParams.put("${clientCategorization}", params.getClientCategorization());
         reportParams.put("${recreditCategorization}", params.getRecreditCategorization());
+        reportParams.put("${businessAge}", String.valueOf(yearsInBusiness));
         final GenericResultsetData result = this.readReportingService.retrieveGenericResultset(reportName, "report", reportParams, false);
         return extractColorFromResultset(result);
     }

@@ -812,4 +812,49 @@
         </addColumn>
     </changeSet>
 
+    <changeSet  author="fineract"  id="57">
+        <dropForeignKeyConstraint baseTableName="m_client_loan_additional_properties" constraintName="FK20231206_m_client_loan_additional_properties_loan_id"/>
+        <dropForeignKeyConstraint baseTableName="m_client_loan_additional_properties" constraintName="FK20231206_m_client_loan_additional_properties_client_id"/>
+    </changeSet>
+
+    <changeSet author="fineract" id="58">
+        <addForeignKeyConstraint baseColumnNames="loan_id" baseTableName="m_client_loan_additional_properties"
+                                 constraintName="FK20231215_m_client_loan_additional_properties_loan_id" deferrable="false"
+                                 initiallyDeferred="false" onDelete="CASCADE" onUpdate="CASCADE"
+                                 referencedColumnNames="id" referencedTableName="m_loan" validate="true"/>
+        <addForeignKeyConstraint baseColumnNames="client_id" baseTableName="m_client_loan_additional_properties"
+                                 constraintName="FK20231215_m_client_loan_additional_properties_client_id" deferrable="false"
+                                 initiallyDeferred="false" onDelete="CASCADE" onUpdate="CASCADE"
+                                 referencedColumnNames="id" referencedTableName="m_client" validate="true"/>
+    </changeSet>
+
+    <changeSet id="59" author="fineract">
+        <sql>
+            <![CDATA[
+                    UPDATE stretchy_report SET report_sql="SELECT
+                  '${businessAge}' AS businessAge,
+                  CASE
+                      WHEN (${loanProductId} = 6) AND ('${recreditCategorization}' = 'NUEVO') AND ('${businessAge}' >= 3)  THEN 'GREEN'
+                      WHEN (${loanProductId} = 6) AND ('${recreditCategorization}' = 'NUEVO') AND ('${businessAge}'  BETWEEN 1.5 AND 3)  THEN 'YELLOW'
+                      WHEN (${loanProductId} = 6) AND ('${recreditCategorization}' = 'NUEVO') AND ('${businessAge}' < 1.5)  THEN 'RED'
+                      WHEN (${loanProductId} = 6) AND ('${recreditCategorization}' = 'RECREDITO') AND ('${businessAge}' >= 3)  THEN 'GREEN'
+                         WHEN (${loanProductId} = 6) AND ('${recreditCategorization}' = 'RECREDITO') AND ('${businessAge}'  BETWEEN 1.5 AND 3)  THEN 'YELLOW'
+                      WHEN (${loanProductId} = 6) AND ('${recreditCategorization}' = 'RECREDITO') AND ('${businessAge}'  < 1.5)  THEN 'RED'
+                      WHEN (${loanProductId} = 6) AND (mc.status_enum = 300)  THEN 'GREEN'
+                  END AS color
+                  FROM m_client mc
+                  WHERE mc.id = ${clientId}" WHERE report_name="Age Of Business Policy Check";
+            ]]>
+        </sql>
+    </changeSet>
+
+    <changeSet author="fineract" id="60">
+        <sqlFile
+                encoding="utf8"
+                path="db/changelog/tenant/commands/policy_run_22.sql"
+                relativeToChangelogFile="false"
+                splitStatements="true"
+                stripComments="true"/>
+    </changeSet>
+
 </databaseChangeLog>
