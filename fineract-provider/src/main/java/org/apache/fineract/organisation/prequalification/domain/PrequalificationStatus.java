@@ -24,33 +24,27 @@ import org.springframework.util.StringUtils;
  * Enum representation of prequalification status states.
  */
 public enum PrequalificationStatus {
+    PENDING(100, "prequalification.status.pending"),
+    REJECTED(300, "prequalification.status.rejected"),
+    BLACKLIST_CHECKED(400, "prequalification.status.blacklist.checked"),
+    BLACKLIST_REJECTED(500, "prequalification.status.blacklist.rejected"),
+    BURO_CHECKED(600, "prequalification.status.buro.checked"),
+    HARD_POLICY_CHECKED(700, "prequalification.status.hard.policy.checked"),
+    TIME_EXPIRED(800, "prequalification.status.expired"),
+    COMPLETED(900, "prequalification.status.completed"),
+    CONSENT_ADDED(901,"prequalification.status.concent.added"),
+    AGENCY_LEAD_PENDING_APPROVAL(902,"prequalification.status.pending.approval"),
+    PREQUALIFICATION_UPDATE_REQUESTED(903,"prequalification.status.update.requested"),
+    AGENCY_LEAD_PENDING_APPROVAL_WITH_EXCEPTIONS(904,"prequalification.status.agency.pending.approval.exceptions"),
+    AGENCY_LEAD_APPROVED_WITH_EXCEPTIONS(905,"prequalification.status.agency.approved.with.exceptions"),
+    ANALYSIS_UNIT_PENDING_APPROVAL(1001,"prequalification.status.analysis.pending.approval"),
+    ANALYSIS_UNIT_PENDING_APPROVAL_WITH_EXCEPTIONS(1002,"prequalification.status.analysis.pending.approval.exceptions"),
+    PRE_COMMITTEE_D_PENDING_APPROVAL(1003,"prequalification.status.pre.committee.d.pending.approval"),
+    PRE_COMMITTEE_C_PENDING_APPROVAL(1004,"prequalification.status.pre.committee.c.pending.approval"),
+    PRE_COMMITTEE_B_PENDING_APPROVAL(1005,"prequalification.status.committee.b.pending.approval"),
+    PRE_COMMITTEE_A_PENDING_APPROVAL(1006,"prequalification.status.committee.a.pending.approval"),
+    INVALID(0,"prequalification.status.invalid");
 
-    PENDING(100, "prequalification.status.pending"), //
-    REJECTED(300, "prequalification.status.rejected"), //
-    BLACKLIST_CHECKED(400, "prequalification.status.blacklist.checked"), //
-    BLACKLIST_REJECTED(500, "prequalification.status.blacklist.rejected"), BURO_CHECKED(600,
-            "prequalification.status.buro.checked"), HARD_POLICY_CHECKED(700, "prequalification.status.hard.policy.checked"), TIME_EXPIRED(
-                    800, "prequalification.status.expired"), COMPLETED(900, "prequalification.status.completed"), CONSENT_ADDED(901,
-                            "prequalification.status.concent.added"), AGENCY_LEAD_PENDING_APPROVAL(902,
-                                    "prequalification.status.pending.approval"), PREQUALIFICATION_UPDATE_REQUESTED(903,
-                                            "prequalification.status.update.requested"), AGENCY_LEAD_PENDING_APPROVAL_WITH_EXCEPTIONS(904,
-                                                    "prequalification.status.pending.approval.exceptions"), AGENCY_LEAD_APPROVED_WITH_EXCEPTIONS(
-                                                            905,
-                                                            "prequalification.status.approved.with.exceptions"), ANALYSIS_UNIT_PENDING_APPROVAL(
-                                                                    1001,
-                                                                    "prequalification.status.pending.approval.exceptions"), ANALYSIS_UNIT_PENDING_APPROVAL_WITH_EXCEPTIONS(
-                                                                            1002,
-                                                                            "prequalification.status.pending.approval.exceptions"), PRE_COMMITTEE_D_PENDING_APPROVAL(
-                                                                                    1003,
-                                                                                    "prequalification.status.pre.committee.d.pending.approval"), PRE_COMMITTEE_C_PENDING_APPROVAL(
-                                                                                            1004,
-                                                                                            "prequalification.status.pre.committee.c.pending.approval"), PRE_COMMITTEE_B_PENDING_APPROVAL(
-                                                                                                    1005,
-                                                                                                    "prequalification.status.committee.b.pending.approval"), PRE_COMMITTEE_A_PENDING_APPROVAL(
-                                                                                                            1006,
-                                                                                                            "prequalification.status.committee.a.pending.approval"), INVALID(
-                                                                                                                    0,
-                                                                                                                    "prequalification.status.invalid");
 
     private final Integer value;
     private final String code;
