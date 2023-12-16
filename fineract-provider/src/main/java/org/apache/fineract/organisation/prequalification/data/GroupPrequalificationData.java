@@ -80,6 +80,7 @@ public class GroupPrequalificationData {
     private PrequalificationSubStatus substatus;
     private String assignedUser;
     private String assignedUserName;
+    private String latestComments;
 
     public GroupPrequalificationData(final Long id, final String productName, final String prequalificationNumber, final String agencyName,
             final String portforlioName, final String centerName, final String groupName, final String addedBy, final LocalDate createdAt,
@@ -120,6 +121,7 @@ public class GroupPrequalificationData {
         this.substatus = null;
         this.assignedUser = null;
         this.assignedUserName = null;
+        this.latestComments = null;
     }
 
     public GroupPrequalificationData(final Long id, final String productName, final String prequalificationNumber, final String agencyName,
@@ -131,7 +133,7 @@ public class GroupPrequalificationData {
             Long redValidationCount, Long prequalilficationTimespan, EnumOptionData lastPrequalificationStatus, String statusChangedBy,
             LocalDate statusChangedOn, String processType, String processQuality, BigDecimal totalRequestedAmount,
             BigDecimal totalApprovedAmount, EnumOptionData prequalificationType, PrequalificationSubStatus substatus, String assignedUser,
-            String assignedUserName) {
+            String assignedUserName, String latestComments) {
         this.id = id;
         this.productName = productName;
         this.prequalificationNumber = prequalificationNumber;
@@ -170,6 +172,7 @@ public class GroupPrequalificationData {
         this.substatus = substatus;
         this.assignedUser = assignedUser;
         this.assignedUserName = assignedUserName;
+        this.latestComments = latestComments;
     }
 
     public static GroupPrequalificationData template(final Collection<AgencyData> agencies, Collection<CenterData> centerData,
@@ -196,12 +199,12 @@ public class GroupPrequalificationData {
             Long redValidationCount, Long prequalilficationTimespan, EnumOptionData lastPrequalificationStatus, String statusChangedBy,
             LocalDate statusChangedOn, String processType, String processQuality, BigDecimal totalRequestedAmount,
             BigDecimal totalApprovedAmount, EnumOptionData prequalificationType, PrequalificationSubStatus substatus, String assignedUser,
-            String assignedUserName) {
+            String assignedUserName, String latestComments) {
         return new GroupPrequalificationData(id, productName, prequalificationNumber, agencyName, portfolioName, centerName, groupName,
                 addedBy, createdAt, status, comments, groupId, null, null, null, null, null, agencyId, centerId, productId, facilitatorId,
                 facilitatorName, greenValidationCount, yellowValidationCount, orangeValidationCount, redValidationCount,
                 prequalilficationTimespan, lastPrequalificationStatus, statusChangedBy, statusChangedOn, processType, processQuality,
-                totalRequestedAmount, totalApprovedAmount, prequalificationType, substatus, assignedUser, assignedUserName);
+                totalRequestedAmount, totalApprovedAmount, prequalificationType, substatus, assignedUser, assignedUserName,latestComments);
     }
 
     public static GroupPrequalificationData simpeGroupData(Long id, String prequalificationNumber, EnumOptionData status, String groupName,

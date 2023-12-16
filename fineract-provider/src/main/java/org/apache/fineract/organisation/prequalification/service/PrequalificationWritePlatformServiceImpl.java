@@ -784,8 +784,9 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
 
         prequalificationGroup.updateStatus(status.get());
 
+        String comments = command.stringValueOfParameterNamed("comments");
         PrequalificationStatusLog statusLog = PrequalificationStatusLog.fromJson(appUser, fromStatus, prequalificationGroup.getStatus(),
-                null, prequalificationGroup);
+                comments, prequalificationGroup);
 
         this.preQualificationLogRepository.saveAndFlush(statusLog);
 
@@ -818,8 +819,9 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
 
         prequalificationGroup.updateStatus(status.get());
 
+        String comments = command.stringValueOfParameterNamed("comments");
         PrequalificationStatusLog statusLog = PrequalificationStatusLog.fromJson(appUser, fromStatus, prequalificationGroup.getStatus(),
-                null, prequalificationGroup);
+                comments, prequalificationGroup);
 
         this.preQualificationLogRepository.saveAndFlush(statusLog);
 
