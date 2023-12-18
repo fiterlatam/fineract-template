@@ -424,28 +424,39 @@ public class LoansApiResource {
         } else if (templateType.equals("collateral")) {
             loanCollateralOptions = this.codeValueReadPlatformService.retrieveCodeValuesByCode("LoanCollateral");
             newLoanAccount = LoanAccountData.collateralTemplate(loanCollateralOptions);
-        }  else if (templateType.equals("groupAdditionals")) {
-            Collection<CodeValueData> loanCycleCompletedOptions = this.codeValueReadPlatformService.retrieveCodeValuesByCode("loanCycleCompletedOptions");
+        } else if (templateType.equals("groupAdditionals")) {
+            Collection<CodeValueData> loanCycleCompletedOptions = this.codeValueReadPlatformService
+                    .retrieveCodeValuesByCode("loanCycleCompletedOptions");
             Collection<CodeValueData> loanPurposeOptions = this.codeValueReadPlatformService.retrieveCodeValuesByCode("loanPurposeOptions");
-            Collection<CodeValueData> businessEvolutionOptions = this.codeValueReadPlatformService.retrieveCodeValuesByCode("businessEvolutionOptions");
+            Collection<CodeValueData> businessEvolutionOptions = this.codeValueReadPlatformService
+                    .retrieveCodeValuesByCode("businessEvolutionOptions");
             Collection<CodeValueData> yesnoOptions = this.codeValueReadPlatformService.retrieveCodeValuesByCode("yesnoOptions");
-            Collection<CodeValueData> businessExperienceOptions = this.codeValueReadPlatformService.retrieveCodeValuesByCode("businessExperienceOptions");
-            Collection<CodeValueData> businessLocationOptions = this.codeValueReadPlatformService.retrieveCodeValuesByCode("businessLocationOptions");
+            Collection<CodeValueData> businessExperienceOptions = this.codeValueReadPlatformService
+                    .retrieveCodeValuesByCode("businessExperienceOptions");
+            Collection<CodeValueData> businessLocationOptions = this.codeValueReadPlatformService
+                    .retrieveCodeValuesByCode("businessLocationOptions");
             Collection<CodeValueData> clientTypeOptions = this.codeValueReadPlatformService.retrieveCodeValuesByCode("clientTypeOptions");
             Collection<CodeValueData> loanStatusOptions = this.codeValueReadPlatformService.retrieveCodeValuesByCode("loanStatusOptions");
-            Collection<CodeValueData> institutionTypeOptions = this.codeValueReadPlatformService.retrieveCodeValuesByCode("institutionTypeOptions");
+            Collection<CodeValueData> institutionTypeOptions = this.codeValueReadPlatformService
+                    .retrieveCodeValuesByCode("institutionTypeOptions");
             Collection<CodeValueData> housingTypeOptions = this.codeValueReadPlatformService.retrieveCodeValuesByCode("housingTypeOptions");
-            Collection<CodeValueData> classificationOptions = this.codeValueReadPlatformService.retrieveCodeValuesByCode("classificationOptions");
+            Collection<CodeValueData> classificationOptions = this.codeValueReadPlatformService
+                    .retrieveCodeValuesByCode("classificationOptions");
             Collection<CodeValueData> jobTypeOptions = this.codeValueReadPlatformService.retrieveCodeValuesByCode("jobTypeOptions");
-            Collection<CodeValueData> educationLevelOptions = this.codeValueReadPlatformService.retrieveCodeValuesByCode("educationLevelOptions");
-            Collection<CodeValueData> maritalStatusOptions = this.codeValueReadPlatformService.retrieveCodeValuesByCode("maritalStatusOptions");
-            Collection<CodeValueData> groupPositionOptions = this.codeValueReadPlatformService.retrieveCodeValuesByCode("groupPositionOptions");
-            Collection<CodeValueData> sourceOfFundsOptions = this.codeValueReadPlatformService.retrieveCodeValuesByCode("sourceOfFundsOptions");
-            Collection<CodeValueData> cancellationReasonOptions = this.codeValueReadPlatformService.retrieveCodeValuesByCode("cancellationReasonOptions");
-            newLoanAccount = new LoanAccountData(loanCycleCompletedOptions, loanPurposeOptions, businessEvolutionOptions,
-                    yesnoOptions, businessExperienceOptions, businessLocationOptions, clientTypeOptions, loanStatusOptions,
-                    institutionTypeOptions, housingTypeOptions, classificationOptions, jobTypeOptions, educationLevelOptions,
-                    maritalStatusOptions, groupPositionOptions, sourceOfFundsOptions, cancellationReasonOptions);
+            Collection<CodeValueData> educationLevelOptions = this.codeValueReadPlatformService
+                    .retrieveCodeValuesByCode("educationLevelOptions");
+            Collection<CodeValueData> maritalStatusOptions = this.codeValueReadPlatformService
+                    .retrieveCodeValuesByCode("maritalStatusOptions");
+            Collection<CodeValueData> groupPositionOptions = this.codeValueReadPlatformService
+                    .retrieveCodeValuesByCode("groupPositionOptions");
+            Collection<CodeValueData> sourceOfFundsOptions = this.codeValueReadPlatformService
+                    .retrieveCodeValuesByCode("sourceOfFundsOptions");
+            Collection<CodeValueData> cancellationReasonOptions = this.codeValueReadPlatformService
+                    .retrieveCodeValuesByCode("cancellationReasonOptions");
+            newLoanAccount = new LoanAccountData(loanCycleCompletedOptions, loanPurposeOptions, businessEvolutionOptions, yesnoOptions,
+                    businessExperienceOptions, businessLocationOptions, clientTypeOptions, loanStatusOptions, institutionTypeOptions,
+                    housingTypeOptions, classificationOptions, jobTypeOptions, educationLevelOptions, maritalStatusOptions,
+                    groupPositionOptions, sourceOfFundsOptions, cancellationReasonOptions);
             return this.toApiJsonSerializer.serialize(settings, newLoanAccount, this.loanDataParameters);
         } else if ("cheque".equalsIgnoreCase(templateType)) {
             final Collection<CenterData> centerOptions = this.centerReadPlatformService

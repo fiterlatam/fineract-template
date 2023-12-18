@@ -246,9 +246,10 @@ public class FromJsonHelper {
     }
 
     public BigDecimal extractBigDecimalWithLocaleNamed(final String parameterName, final JsonElement element) {
-        BigDecimal withLocale =  this.helperDelegator.extractBigDecimalWithLocaleNamed(parameterName, element, new HashSet<String>());
-        //FBR-430 2024.00 is converted as 202400 in Spanish locale. Below fix is to get correct value if locale is Spanish
-        if (withLocale != null && this.helperDelegator.extractLocaleValueAsString(element.getAsJsonObject()).equalsIgnoreCase("es") ) {
+        BigDecimal withLocale = this.helperDelegator.extractBigDecimalWithLocaleNamed(parameterName, element, new HashSet<String>());
+        // FBR-430 2024.00 is converted as 202400 in Spanish locale. Below fix is to get correct value if locale is
+        // Spanish
+        if (withLocale != null && this.helperDelegator.extractLocaleValueAsString(element.getAsJsonObject()).equalsIgnoreCase("es")) {
             BigDecimal withoutLocale = this.extractBigDecimalNamed(parameterName, element, new HashSet<String>());
             if (withLocale.compareTo(withoutLocale) != 0) {
                 return withoutLocale;

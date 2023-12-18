@@ -204,7 +204,7 @@ public class GroupPrequalificationData {
                 addedBy, createdAt, status, comments, groupId, null, null, null, null, null, agencyId, centerId, productId, facilitatorId,
                 facilitatorName, greenValidationCount, yellowValidationCount, orangeValidationCount, redValidationCount,
                 prequalilficationTimespan, lastPrequalificationStatus, statusChangedBy, statusChangedOn, processType, processQuality,
-                totalRequestedAmount, totalApprovedAmount, prequalificationType, substatus, assignedUser, assignedUserName,latestComments);
+                totalRequestedAmount, totalApprovedAmount, prequalificationType, substatus, assignedUser, assignedUserName, latestComments);
     }
 
     public static GroupPrequalificationData simpeGroupData(Long id, String prequalificationNumber, EnumOptionData status, String groupName,
