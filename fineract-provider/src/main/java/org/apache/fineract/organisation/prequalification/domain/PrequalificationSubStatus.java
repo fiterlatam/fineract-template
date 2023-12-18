@@ -27,7 +27,7 @@ public enum PrequalificationSubStatus {
 
     PENDING(100, "prequalification.status.pending"), //
     IN_PROGRESS(200, "prequalification.status.approved"), //
-    COMPLETED(300, "prequalification.status.rejected"), INVALID(999, "prequalification.status.rejected");
+    COMPLETED(300, "prequalification.status.completed"), INVALID(999, "prequalification.status.rejected");
 
     private final Integer value;
     private final String code;
