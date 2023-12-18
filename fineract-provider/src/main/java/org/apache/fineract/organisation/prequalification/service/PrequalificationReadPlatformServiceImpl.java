@@ -523,9 +523,9 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             final String processType = rs.getString("processType");
             final String processQuality = rs.getString("processQuality");
             final Integer substatus = rs.getInt("substatus");
-            PrequalificationSubStatus prequalificationSubStatus = null;
+            String prequalificationSubStatus = PrequalificationSubStatus.PENDING.getCode();
             if (substatus != null) {
-                prequalificationSubStatus = PrequalificationSubStatus.fromInt(substatus);
+                prequalificationSubStatus = PrequalificationSubStatus.fromInt(substatus).getCode();
             }
             final String assignedUser = rs.getString("assignedUser");
             final String assignedUserName = rs.getString("assignedUserName");
