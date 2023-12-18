@@ -523,7 +523,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             final String processType = rs.getString("processType");
             final String processQuality = rs.getString("processQuality");
             final Integer substatus = rs.getInt("substatus");
-            PrequalificationSubStatus prequalificationSubStatus = null;
+            PrequalificationSubStatus prequalificationSubStatus = PrequalificationSubStatus.PENDING;
             if (substatus != null) {
                 prequalificationSubStatus = PrequalificationSubStatus.fromInt(substatus);
             }
@@ -547,7 +547,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                     productName, addedBy, createdAt, comments, groupId, agencyId, centerId, productId, facilitatorId, facilitatorName,
                     greenValidationCount, yellowValidationCount, orangeValidationCount, redValidationCount, prequalilficationTimespan,
                     lastPrequalificationStatus, statusChangedBy, statusChangedOn, processType, processQuality, totalRequestedAmount,
-                    totalApprovedAmount, prequalificationType, prequalificationSubStatus, assignedUser, assignedUserName, latestComments);
+                    totalApprovedAmount, prequalificationType, prequalificationSubStatus.getCode(), assignedUser, assignedUserName, latestComments);
 
         }
     }
