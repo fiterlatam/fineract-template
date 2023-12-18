@@ -18,14 +18,13 @@
  */
 package org.apache.fineract.portfolio.loanaccount.domain;
 
-import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
-
+import java.math.BigDecimal;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
-import java.math.BigDecimal;
+import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
 
 /**
  * All monetary transactions against a loan are modelled through this entity. Disbursements, Repayments, Waivers,
@@ -61,7 +60,7 @@ public class AdditionalsExtraLoans extends AbstractPersistableCustom {
     protected AdditionalsExtraLoans() {}
 
     public AdditionalsExtraLoans(final GroupLoanAdditionals additionals, final Long institutionType, final BigDecimal loanAmount,
-                                 final BigDecimal balance, final BigDecimal fees, final Long loanStatus) {
+            final BigDecimal balance, final BigDecimal fees, final Long loanStatus) {
 
         this.loan = additionals.getLoan();
         this.groupLoanAdditionals = additionals;
