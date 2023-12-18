@@ -34,7 +34,7 @@ public enum PrequalificationSubStatus {
 
     public static PrequalificationSubStatus fromInt(final Integer statusValue) {
 
-        PrequalificationSubStatus enumeration = PrequalificationSubStatus.INVALID;
+        PrequalificationSubStatus enumeration = PrequalificationSubStatus.PENDING;
         switch (statusValue) {
             case 100:
                 enumeration = PrequalificationSubStatus.PENDING;
