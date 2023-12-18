@@ -225,8 +225,8 @@ public class GroupPrequalificationApiResource {
         }
 
         if (StringUtils.equalsIgnoreCase(type, "exceptionsqueue")) {
-            statusOptions = Arrays.asList(status(PrequalificationStatus.AGENCY_LEAD_PENDING_APPROVAL),
-                    status(PrequalificationStatus.AGENCY_LEAD_PENDING_APPROVAL_WITH_EXCEPTIONS));
+            statusOptions = Arrays.asList(status(PrequalificationStatus.ANALYSIS_UNIT_PENDING_APPROVAL_WITH_EXCEPTIONS),
+                    status(PrequalificationStatus.AGENCY_LEAD_APPROVED_WITH_EXCEPTIONS));
         }
 
         GlobalConfigurationPropertyData timespan = this.configurationReadPlatformService

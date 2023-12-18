@@ -63,7 +63,6 @@ import org.apache.fineract.organisation.agency.domain.AgencyRepositoryWrapper;
 import org.apache.fineract.organisation.prequalification.command.PrequalificationDataValidator;
 import org.apache.fineract.organisation.prequalification.command.PrequalificatoinApiConstants;
 import org.apache.fineract.organisation.prequalification.data.GenericValidationResultSet;
-import org.apache.fineract.organisation.prequalification.data.GroupPrequalificationData;
 import org.apache.fineract.organisation.prequalification.data.LoanData;
 import org.apache.fineract.organisation.prequalification.data.MemberPrequalificationData;
 import org.apache.fineract.organisation.prequalification.data.PrequalificationChecklistData;
@@ -785,8 +784,9 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
 
         prequalificationGroup.updateStatus(status.get());
 
+        String comments = command.stringValueOfParameterNamed("comments");
         PrequalificationStatusLog statusLog = PrequalificationStatusLog.fromJson(appUser, fromStatus, prequalificationGroup.getStatus(),
-                null, prequalificationGroup);
+                comments, prequalificationGroup);
 
         this.preQualificationLogRepository.saveAndFlush(statusLog);
 
@@ -802,9 +802,12 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         PrequalificationChecklistData prequalificationChecklistData = this.prequalificationChecklistReadPlatformService
                 .retrieveHardPolicyValidationResults(entityId);
         GenericValidationResultSet prequalification = prequalificationChecklistData.getPrequalification();
+        GenericValidationResultSet members = prequalificationChecklistData.getMembers();
         Integer fromStatus = prequalificationGroup.getStatus();
         List<String> exceptionsList = List.of("ORANGE", "RED", "YELLOW");
         List<List<String>> rows = prequalification.getRows();
+        List<List<String>> membersRows = members.getRows();
+        rows.addAll(membersRows);
         AtomicReference<PrequalificationStatus> status = new AtomicReference<>(PrequalificationStatus.AGENCY_LEAD_PENDING_APPROVAL);
         for (List<String> innerList : rows) {
             innerList.forEach(item -> {
@@ -816,8 +819,9 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
 
         prequalificationGroup.updateStatus(status.get());
 
+        String comments = command.stringValueOfParameterNamed("comments");
         PrequalificationStatusLog statusLog = PrequalificationStatusLog.fromJson(appUser, fromStatus, prequalificationGroup.getStatus(),
-                null, prequalificationGroup);
+                comments, prequalificationGroup);
 
         this.preQualificationLogRepository.saveAndFlush(statusLog);
 
@@ -963,11 +967,11 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         }
     }
 
-    private static final class GroupTypeLoanMapper implements RowMapper<LoanData> {
+    static final class GroupTypeLoanMapper implements RowMapper<LoanData> {
 
         private final String schema;
 
-        private GroupTypeLoanMapper() {
+        GroupTypeLoanMapper() {
             this.schema = """
                     SELECT ml.id AS loanId,
                     mc.id AS clientId,
@@ -1004,11 +1008,11 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         }
     }
 
-    private static final class IndividualTypeLoanMapper implements RowMapper<LoanData> {
+    static final class IndividualTypeLoanMapper implements RowMapper<LoanData> {
 
         private final String schema;
 
-        private IndividualTypeLoanMapper() {
+        IndividualTypeLoanMapper() {
             this.schema = """
                         SELECT ml.id AS loanId,
                         mc.id AS clientId,
@@ -1087,7 +1091,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         if (action.equalsIgnoreCase("sendtoagency")) {
             status = PrequalificationStatus.AGENCY_LEAD_PENDING_APPROVAL;
         } else if (action.equalsIgnoreCase("sendtoexception")) {
-            status = PrequalificationStatus.AGENCY_LEAD_PENDING_APPROVAL_WITH_EXCEPTIONS;
+            status = PrequalificationStatus.AGENCY_LEAD_APPROVED_WITH_EXCEPTIONS;
         } else if (action.equalsIgnoreCase("requestupdates")) {
             status = PrequalificationStatus.PREQUALIFICATION_UPDATE_REQUESTED;
         } else if (action.equalsIgnoreCase("rejectanalysis")) {
@@ -1102,27 +1106,38 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         PrequalificationStatusRange finalRange = null;
 
         if (action.equalsIgnoreCase("approveanalysis") || action.equalsIgnoreCase("approveCommittee")) {
-
-            GroupPrequalificationData prequalificationData = prequalificationReadPlatformService.retrieveOne(prequalificationGroup.getId());
-            int numberOfErrors = prequalificationData.getRedValidationCount() > 0
-                    ? Math.toIntExact(prequalificationData.getRedValidationCount())
-                    : 0;
-
             BigDecimal amount = prequalificationGroup.getTotalRequestedAmount();
+            PrequalificationChecklistData prequalificationChecklistData = this.prequalificationChecklistReadPlatformService
+                    .retrieveHardPolicyValidationResults(prequalificationGroup.getId());
+            List<List<String>> rows = prequalificationChecklistData.getMembers().getRows();
+            AtomicReference<Integer> redCountRef = new AtomicReference<>(0);
+            for (List<String> innerList : rows) {
+                innerList.forEach(item -> {
+                    if ("RED".equalsIgnoreCase(item)) {
+                        redCountRef.getAndSet(redCountRef.get() + 1);
+                    }
+                });
+            }
+            Integer redCounts = redCountRef.get();
 
             List<PrequalificationStatusRange> statusRangeList = this.prequalificationStatusRangeRepository
-                    .findByPrequalificationTypeAndNumberOfErrors(prequalificationGroup.getPrequalificationType(), numberOfErrors);
+                    .findByPrequalificationTypeAndNumberOfErrors(prequalificationGroup.getPrequalificationType(), redCounts);
 
-            for (PrequalificationStatusRange statusRange : statusRangeList) {
-                if (amount.compareTo(statusRange.getMinAmount()) >= 0
-                        && (statusRange.getMaxAmount() != null && amount.compareTo(statusRange.getMaxAmount()) <= 0)) {
-                    finalRange = statusRange;
-                    break;
-                } else if (amount.compareTo(statusRange.getMinAmount()) >= 0 && statusRange.getMaxAmount() == null) {
-                    finalRange = statusRange;
-                    break;
+            if (statusRangeList.size() == 1) {
+                finalRange = statusRangeList.get(0);
+            } else {
+                for (PrequalificationStatusRange statusRange : statusRangeList) {
+                    if (amount.compareTo(statusRange.getMinAmount()) >= 0
+                            && (statusRange.getMaxAmount() != null && amount.compareTo(statusRange.getMaxAmount()) <= 0)) {
+                        finalRange = statusRange;
+                        break;
+                    } else if (amount.compareTo(statusRange.getMinAmount()) >= 0 && statusRange.getMaxAmount() == null) {
+                        finalRange = statusRange;
+                        break;
+                    }
                 }
             }
+
         }
 
         return finalRange;

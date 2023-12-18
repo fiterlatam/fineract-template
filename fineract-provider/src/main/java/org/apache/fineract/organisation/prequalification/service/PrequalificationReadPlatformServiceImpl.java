@@ -351,7 +351,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             } else if (type.equals("exceptionsqueue")) {
                 extraCriteria += " and g.status IN( "
                         + PrequalificationStatus.ANALYSIS_UNIT_PENDING_APPROVAL_WITH_EXCEPTIONS.getValue().toString() + ", "
-                        + PrequalificationStatus.AGENCY_LEAD_PENDING_APPROVAL_WITH_EXCEPTIONS.getValue().toString() + ") ";
+                        + PrequalificationStatus.AGENCY_LEAD_APPROVED_WITH_EXCEPTIONS.getValue().toString() + ") ";
             } else if (type.equals("committeeapprovals")) {
 
                 if (committeeValueData == null) {
@@ -400,6 +400,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                     	g.prequalification_type_enum as prequalificationType,
                     	sl.from_status as previousStatus,
                     	sl.sub_status as substatus,
+                    	sl.comments as latestComments,
                     	assigned.username as assignedUser,
                     	concat(assigned.firstname, ' ', assigned.lastname) as assignedUserName,
                     	sl.date_created as statusChangedOn,
@@ -502,6 +503,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             // final String portfolioName = rs.getString("portfolioName");
             final String productName = rs.getString("productName");
             final String comments = rs.getString("comments");
+            final String latestComments = rs.getString("latestComments");
             final LocalDate createdAt = JdbcSupport.getLocalDate(rs, "created_at");
 
             final String addedBy = rs.getString("firstname") + " " + rs.getString("lastname");
@@ -545,7 +547,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                     productName, addedBy, createdAt, comments, groupId, agencyId, centerId, productId, facilitatorId, facilitatorName,
                     greenValidationCount, yellowValidationCount, orangeValidationCount, redValidationCount, prequalilficationTimespan,
                     lastPrequalificationStatus, statusChangedBy, statusChangedOn, processType, processQuality, totalRequestedAmount,
-                    totalApprovedAmount, prequalificationType, prequalificationSubStatus, assignedUser, assignedUserName);
+                    totalApprovedAmount, prequalificationType, prequalificationSubStatus, assignedUser, assignedUserName,latestComments);
 
         }
     }

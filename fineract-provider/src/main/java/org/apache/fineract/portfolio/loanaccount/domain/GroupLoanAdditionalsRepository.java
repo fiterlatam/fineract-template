@@ -16,32 +16,12 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.organisation.prequalification.data;
+package org.apache.fineract.portfolio.loanaccount.domain;
 
-import java.math.BigDecimal;
-import java.util.Date;
-import lombok.Builder;
-import lombok.Data;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
-@Data
-@Builder
-public class ClientData {
+public interface GroupLoanAdditionalsRepository
+        extends JpaRepository<GroupLoanAdditionals, Long>, JpaSpecificationExecutor<GroupLoanAdditionals> {
 
-    private Long clientId;
-    private Long loanId;
-    private Integer prequalificationId;
-    private Long productId;
-    private Integer prequalificationMemberId;
-    private String name;
-    private Date dateOfBirth;
-    private String dpi;
-    private BigDecimal requestedAmount;
-    private String workWithPuente;
-    private Long noOfCompletedCycles;
-    private String gender;
-    private String clientCategorization;
-    private String clientArea;
-    private String recreditCategorization;
-    private Boolean president;
-    private Integer buroCheckStatus;
 }
