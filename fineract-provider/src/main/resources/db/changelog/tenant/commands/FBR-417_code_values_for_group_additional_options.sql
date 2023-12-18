@@ -265,4 +265,3 @@ VALUES (@clientTypeOptions, 'A', 'A', 0, 1001, 1, 0),
        (@clientTypeOptions, 'B', 'B', 0, 1002, 1, 0),
        (@clientTypeOptions, 'C', 'C', 0, 1003, 1, 0),
        (@clientTypeOptions, 'D', 'D', 0, 1004, 1, 0);
-

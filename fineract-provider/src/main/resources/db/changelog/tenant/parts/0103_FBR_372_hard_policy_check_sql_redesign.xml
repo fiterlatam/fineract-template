@@ -857,4 +857,57 @@
                 stripComments="true"/>
     </changeSet>
 
+    <changeSet id="61" author="fineract">
+        <sql>
+            <![CDATA[
+            UPDATE stretchy_report SET report_sql="SELECT
+                  '${registerLawSuit}' AS registerLawSuit,
+                CASE
+                      WHEN (${loanProductId} = 6) AND ('${recreditCategorization}' = 'NUEVO') AND ('${registerLawSuit}' = 'no')  THEN 'GREEN'
+                      WHEN (${loanProductId} = 6) AND ('${recreditCategorization}' = 'NUEVO') AND ('${registerLawSuit}' = 'si')  THEN 'RED'
+                      WHEN (${loanProductId} = 6) AND ('${recreditCategorization}' = 'RECREDITO') AND ('${registerLawSuit}' = 'no') THEN 'GREEN'
+                      WHEN (${loanProductId} = 6) AND ('${recreditCategorization}' = 'RECREDITO') AND ('${registerLawSuit}' = 'si')  THEN 'RED'
+                      WHEN (${loanProductId} = 6) AND (mc.status_enum = 300) AND ('${registerLawSuit}'  = 'no')  THEN 'GREEN'
+                END AS color
+                FROM m_client mc
+                WHERE mc.id = ${clientId}"
+            WHERE report_name="Do you register any lawsuit Policy Check";
+            ]]>
+        </sql>
+    </changeSet>
+
+    <changeSet id="62" author="fineract">
+        <sql>
+            <![CDATA[
+                INSERT INTO m_product_policy (policy_id, product_id, evaluation_type) VALUES(13, 6, 'INDIVIDUAL');
+            ]]>
+        </sql>
+    </changeSet>
+
+    <changeSet id="63" author="fineract">
+        <sql>
+            <![CDATA[
+            UPDATE stretchy_report SET report_sql="SELECT
+                CASE
+                    WHEN (${loanProductId} = 7) AND ('${buroCheckClassification}' = 'A') THEN 'GREEN'
+                    WHEN (${loanProductId} = 7) AND ('${buroCheckClassification}' = 'B') THEN 'GREEN'
+                    WHEN (${loanProductId} = 7) AND ('${buroCheckClassification}' = 'C') THEN 'ORANGE'
+                    WHEN (${loanProductId} = 7) AND ('${buroCheckClassification}' = 'D') THEN 'ORANGE'
+
+                    WHEN (${loanProductId} = 3) AND ('${buroCheckClassification}' = 'A') THEN 'GREEN'
+                    WHEN (${loanProductId} = 3) AND ('${buroCheckClassification}' = 'B') THEN 'GREEN'
+                    WHEN (${loanProductId} = 3) AND ('${buroCheckClassification}' = 'C') THEN 'ORANGE'
+                    WHEN (${loanProductId} = 3) AND ('${buroCheckClassification}' = 'D') THEN 'ORANGE'
+
+                    WHEN (${loanProductId} = 6) AND ('${buroCheckClassification}' = 'A') THEN 'GREEN'
+                    WHEN (${loanProductId} = 6) AND ('${buroCheckClassification}' = 'B') THEN 'GREEN'
+                    WHEN (${loanProductId} = 6) AND ('${buroCheckClassification}' = 'C') THEN 'ORANGE'
+                    WHEN (${loanProductId} = 6) AND ('${buroCheckClassification}' = 'D') THEN 'ORANGE'
+                END AS color
+             FROM m_client mc
+             WHERE mc.id =  ${clientId}" WHERE report_name="Categories of clients to accept Policy Check";
+            ]]>
+        </sql>
+    </changeSet>
+
 </databaseChangeLog>

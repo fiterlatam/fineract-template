@@ -34,7 +34,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import javax.persistence.PersistenceException;
-
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -270,7 +269,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             final LoanScheduleAssembler loanScheduleAssembler, final LoanUtilService loanUtilService,
             final CalendarReadPlatformService calendarReadPlatformService,
             final GlobalConfigurationRepositoryWrapper globalConfigurationRepository,
-            final FineractEntityToEntityMappingRepository repository,final AppUserRepository appUserRepository,
+            final FineractEntityToEntityMappingRepository repository, final AppUserRepository appUserRepository,
             final FineractEntityRelationRepository fineractEntityRelationRepository,
             final EntityDatatableChecksWritePlatformService entityDatatableChecksWritePlatformService,
             final GLIMAccountInfoWritePlatformService glimAccountInfoWritePlatformService, final GLIMAccountInfoRepository glimRepository,
@@ -512,8 +511,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             Long facilitatorId = command.longValueOfParameterNamed("facilitator");
             AppUser facilitator = null;
             if (facilitatorId != null) {
-                facilitator = this.
-                        appUserRepository.findById(facilitatorId)
+                facilitator = this.appUserRepository.findById(facilitatorId)
                         .orElseThrow(() -> new GeneralPlatformDomainRuleException("error.msg.loan.facilitator.not.found",
                                 "Facilitator with identifier " + facilitatorId + " does not exist"));
             }
@@ -803,8 +801,8 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                     totalLoanAmount = new BigDecimal(loanData.get("totalLoanAmount").getAsString().replace(",", "").trim());
                 }
 
-                AdditionalsExtraLoans additionalsExtraLoans = new AdditionalsExtraLoans(groupLoanAdditionals, institutionType, totalLoanAmount, totalLoanBalance, charges,
-                        loanStatus);
+                AdditionalsExtraLoans additionalsExtraLoans = new AdditionalsExtraLoans(groupLoanAdditionals, institutionType,
+                        totalLoanAmount, totalLoanBalance, charges, loanStatus);
                 additionalLoansList.add(additionalsExtraLoans);
 
             }
