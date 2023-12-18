@@ -26,7 +26,7 @@ import org.springframework.util.StringUtils;
 public enum PrequalificationSubStatus {
 
     PENDING(100, "prequalification.status.pending"), //
-    IN_PROGRESS(200, "prequalification.status.approved"), //
+    IN_PROGRESS(200, "prequalification.status.inprogress"), //
     COMPLETED(300, "prequalification.status.completed"), INVALID(999, "prequalification.status.rejected");
 
     private final Integer value;

@@ -26,7 +26,6 @@ import lombok.Data;
 import org.apache.fineract.infrastructure.configuration.data.GlobalConfigurationPropertyData;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.organisation.agency.data.AgencyData;
-import org.apache.fineract.organisation.prequalification.domain.PrequalificationSubStatus;
 import org.apache.fineract.portfolio.group.data.CenterData;
 import org.apache.fineract.portfolio.loanproduct.data.LoanProductData;
 import org.apache.fineract.useradministration.data.AppUserData;
