@@ -857,18 +857,18 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 BigDecimal netDisbursalAmount = loan.getApprovedPrincipal().subtract(loanOutstanding);
                 loan.adjustNetDisbursalAmount(netDisbursalAmount);
             }
-
+            Long userId = currentUser.getId();
             if (loan.getCheque() != null) {
-                Long userId = currentUser.getId();
                 final LocalDateTime localDateTime = DateUtils.getLocalDateTimeOfSystem();
                 LocalDate localDate = DateUtils.getBusinessLocalDate();
                 Cheque cheque = loan.getCheque();
-                cheque.setStatus(BankChequeStatus.VOIDED.getValue());
+                cheque.setStatus(BankChequeStatus.PENDING_VOIDANCE.getValue());
                 cheque.stampAudit(userId, localDateTime);
-                cheque.setDescription("Voided by undoing loan disbursal");
+                cheque.setDescription("Desembolso Anulado, Loan ID " + loan.getAccountNumber());
                 cheque.setVoidedBy(currentUser);
                 cheque.setVoidedDate(localDate);
                 this.chequeJpaRepository.saveAndFlush(cheque);
+                loan.unlinkCheque();
             }
             saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
             this.accountTransfersWritePlatformService.reverseAllTransactions(loanId, PortfolioAccountType.LOAN);
