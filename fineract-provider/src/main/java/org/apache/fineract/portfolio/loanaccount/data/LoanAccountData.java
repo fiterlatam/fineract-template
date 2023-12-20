@@ -176,6 +176,7 @@ public final class LoanAccountData {
     // linkable account details
     private final PortfolioAccountData linkedAccount;
     private final Collection<PortfolioAccountData> accountLinkingOptions;
+    private final Collection<CodeValueData> documentTypeOptions;
     private CupoData linkedCupo;
     private Collection<CupoData> cupoLinkingOptions;
 
@@ -622,17 +623,18 @@ public final class LoanAccountData {
         this.groupOptions = null;
         this.facilitatorOptions = null;
         this.disbursementMethodOptions = null;
+        this.documentTypeOptions = null;
     }
 
     public LoanAccountData(Collection<CodeValueData> loanCycleCompletedOptions, Collection<CodeValueData> loanPurposeOptions,
-            Collection<CodeValueData> businessEvolutionOptions, Collection<CodeValueData> yesnoOptions,
-            Collection<CodeValueData> businessExperienceOptions, Collection<CodeValueData> businessLocationOptions,
-            Collection<CodeValueData> clientTypeOptions, Collection<CodeValueData> loanStatusOptions,
-            Collection<CodeValueData> institutionTypeOptions, Collection<CodeValueData> housingTypeOptions,
-            Collection<CodeValueData> classificationOptions, Collection<CodeValueData> jobTypeOptions,
-            Collection<CodeValueData> educationLevelOptions, Collection<CodeValueData> maritalStatusOptions,
-            Collection<CodeValueData> groupPositionOptions, Collection<CodeValueData> sourceOfFundsOptions,
-            Collection<CodeValueData> cancellationReasonOptions) {
+                           Collection<CodeValueData> businessEvolutionOptions, Collection<CodeValueData> yesnoOptions,
+                           Collection<CodeValueData> businessExperienceOptions, Collection<CodeValueData> businessLocationOptions,
+                           Collection<CodeValueData> clientTypeOptions, Collection<CodeValueData> loanStatusOptions,
+                           Collection<CodeValueData> institutionTypeOptions, Collection<CodeValueData> housingTypeOptions,
+                           Collection<CodeValueData> classificationOptions, Collection<CodeValueData> jobTypeOptions,
+                           Collection<CodeValueData> educationLevelOptions, Collection<CodeValueData> maritalStatusOptions,
+                           Collection<CodeValueData> groupPositionOptions, Collection<CodeValueData> sourceOfFundsOptions,
+                           Collection<CodeValueData> cancellationReasonOptions, List<AppUserData> facilitatorOptions, Collection<CodeValueData> documentTypeOptions) {
         this.loanCycleCompletedOptions = loanCycleCompletedOptions;
         this.loanPurposeOptions = loanPurposeOptions;
         this.businessEvolutionOptions = businessEvolutionOptions;
@@ -650,6 +652,8 @@ public final class LoanAccountData {
         this.groupPositionOptions = groupPositionOptions;
         this.sourceOfFundsOptions = sourceOfFundsOptions;
         this.cancellationReasonOptions = cancellationReasonOptions;
+        this.facilitatorOptions = facilitatorOptions;
+        this.documentTypeOptions = documentTypeOptions;
         this.dateFormat = null;
         this.locale = null;
         this.rowIndex = null;
@@ -795,7 +799,6 @@ public final class LoanAccountData {
         this.agencyOptions = null;
         this.centerOptions = null;
         this.groupOptions = null;
-        this.facilitatorOptions = null;
         this.disbursementMethodOptions = null;
 
     }
@@ -828,7 +831,7 @@ public final class LoanAccountData {
         return loanProductName;
     }
 
-    public static final Comparator<LoanAccountData> ClientNameComparator = new Comparator<LoanAccountData>() {
+    public static final Comparator<LoanAccountData> ClientNameComparator = new Comparator<>() {
 
         @Override
         public int compare(LoanAccountData loan1, LoanAccountData loan2) {
@@ -2246,6 +2249,7 @@ public final class LoanAccountData {
         this.disbursementMethodOptions = disbursementMethodOptions;
         this.requiredGuaranteeAmount = requiredGuaranteeAmount;
         this.actualGuaranteeAmount = actualGuaranteeAmount;
+        this.documentTypeOptions = null;
     }
 
     public RepaymentScheduleRelatedLoanData repaymentScheduleRelatedData() {
