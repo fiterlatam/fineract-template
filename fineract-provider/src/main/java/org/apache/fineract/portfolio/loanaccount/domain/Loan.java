@@ -1417,12 +1417,13 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             this.createStandingInstructionAtDisbursement = valueAsInput;
         }
 
-        final String externalIdParamName = "externalId";
-        if (command.isChangeInStringParameterNamed(externalIdParamName, this.externalId)) {
-            final String newValue = command.stringValueOfParameterNamed(externalIdParamName);
-            actualChanges.put(externalIdParamName, newValue);
-            this.externalId = StringUtils.defaultIfEmpty(newValue, null);
-        }
+        /***
+         * // External ID is not modifiable final String externalIdParamName = "externalId"; if
+         * (command.isChangeInStringParameterNamed(externalIdParamName, this.externalId)) { final String newValue =
+         * command.stringValueOfParameterNamed(externalIdParamName); actualChanges.put(externalIdParamName, newValue);
+         * this.externalId = StringUtils.defaultIfEmpty(newValue, null); }
+         *
+         */
 
         // add clientId, groupId and loanType changes to actual changes
 
@@ -1603,7 +1604,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         final String loanTermFrequencyParamName = "loanTermFrequency";
         if (command.isChangeInIntegerParameterNamed(loanTermFrequencyParamName, this.termFrequency)) {
             final Integer newValue = command.integerValueOfParameterNamed(loanTermFrequencyParamName);
-            actualChanges.put(externalIdParamName, newValue);
+            actualChanges.put(loanTermFrequencyParamName, newValue);
             this.termFrequency = newValue;
         }
 
@@ -7034,6 +7035,10 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         this.cheque = cheque;
     }
 
+    public void unlinkCheque() {
+        this.cheque = null;
+    }
+
     public AppUser getDisbursedByChequeAppUser() {
         return disbursedByChequeAppUser;
     }
@@ -7056,5 +7061,13 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
     public void setPrequalificationGroup(PrequalificationGroup prequalificationGroup) {
         this.prequalificationGroup = prequalificationGroup;
+    }
+
+    public String getExternalId() {
+        return externalId;
+    }
+
+    public void setExternalId(String externalId) {
+        this.externalId = externalId;
     }
 }

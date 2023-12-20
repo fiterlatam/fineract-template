@@ -26,7 +26,6 @@ import lombok.Data;
 import org.apache.fineract.infrastructure.configuration.data.GlobalConfigurationPropertyData;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.organisation.agency.data.AgencyData;
-import org.apache.fineract.organisation.prequalification.domain.PrequalificationSubStatus;
 import org.apache.fineract.portfolio.group.data.CenterData;
 import org.apache.fineract.portfolio.loanproduct.data.LoanProductData;
 import org.apache.fineract.useradministration.data.AppUserData;
@@ -77,7 +76,7 @@ public class GroupPrequalificationData {
     private Collection<EnumOptionData> groupStatusOptions;
     private BigDecimal totalRequestedAmount;
     private BigDecimal totalApprovedAmount;
-    private PrequalificationSubStatus substatus;
+    private String substatus;
     private String assignedUser;
     private String assignedUserName;
     private String latestComments;
@@ -132,7 +131,7 @@ public class GroupPrequalificationData {
             final String facilitatorName, Long greenValidationCount, Long yellowValidationCount, Long orangeValidationCount,
             Long redValidationCount, Long prequalilficationTimespan, EnumOptionData lastPrequalificationStatus, String statusChangedBy,
             LocalDate statusChangedOn, String processType, String processQuality, BigDecimal totalRequestedAmount,
-            BigDecimal totalApprovedAmount, EnumOptionData prequalificationType, PrequalificationSubStatus substatus, String assignedUser,
+            BigDecimal totalApprovedAmount, EnumOptionData prequalificationType, String substatus, String assignedUser,
             String assignedUserName, String latestComments) {
         this.id = id;
         this.productName = productName;
@@ -198,7 +197,7 @@ public class GroupPrequalificationData {
             final String facilitatorName, Long greenValidationCount, Long yellowValidationCount, Long orangeValidationCount,
             Long redValidationCount, Long prequalilficationTimespan, EnumOptionData lastPrequalificationStatus, String statusChangedBy,
             LocalDate statusChangedOn, String processType, String processQuality, BigDecimal totalRequestedAmount,
-            BigDecimal totalApprovedAmount, EnumOptionData prequalificationType, PrequalificationSubStatus substatus, String assignedUser,
+            BigDecimal totalApprovedAmount, EnumOptionData prequalificationType, String substatus, String assignedUser,
             String assignedUserName, String latestComments) {
         return new GroupPrequalificationData(id, productName, prequalificationNumber, agencyName, portfolioName, centerName, groupName,
                 addedBy, createdAt, status, comments, groupId, null, null, null, null, null, agencyId, centerId, productId, facilitatorId,

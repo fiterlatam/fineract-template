@@ -665,8 +665,8 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         }
 
         BigDecimal requestedAmount = null;
-        if (member.get("amount") != null) {
-            requestedAmount = new BigDecimal(member.get("amount").getAsString().replace(",", ""));
+        if (member.get("requestedAmount") != null) {
+            requestedAmount = new BigDecimal(member.get("requestedAmount").getAsString().replace(",", ""));
         }
 
         String puente = null;
