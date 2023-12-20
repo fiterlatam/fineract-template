@@ -507,6 +507,8 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             newLoanApplication.updateLoanContract(contractBuilder.toString());
 
             this.loanRepositoryWrapper.saveAndFlush(newLoanApplication);
+            final Long newLoanApplicationId = newLoanApplication.getId();
+            newLoanApplication.setExternalId(String.valueOf(newLoanApplicationId));
 
             Long facilitatorId = command.longValueOfParameterNamed("facilitator");
             AppUser facilitator = null;
@@ -515,10 +517,13 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                         .orElseThrow(() -> new GeneralPlatformDomainRuleException("error.msg.loan.facilitator.not.found",
                                 "Facilitator with identifier " + facilitatorId + " does not exist"));
             }
-            GroupLoanAdditionals groupLoanAdditionals = GroupLoanAdditionals.assembleFromJson(command, newLoanApplication, facilitator);
-            addExternalLoans(groupLoanAdditionals, command);
 
-            this.groupLoanAdditionalsRepository.save(groupLoanAdditionals);
+            final PrequalificationGroup prequalificationGroup = newLoanApplication.getPrequalificationGroup();
+            if (prequalificationGroup != null && prequalificationGroup.isPrequalificationTypeGroup()) {
+                GroupLoanAdditionals groupLoanAdditionals = GroupLoanAdditionals.assembleFromJson(command, newLoanApplication, facilitator);
+                addExternalLoans(groupLoanAdditionals, command);
+                this.groupLoanAdditionalsRepository.save(groupLoanAdditionals);
+            }
 
             if (loanProduct.isInterestRecalculationEnabled()) {
                 this.fromApiJsonDeserializer.validateLoanForInterestRecalculation(newLoanApplication);
@@ -718,7 +723,6 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             }
 
             // Additional Data (Individual Prequalification)
-            final PrequalificationGroup prequalificationGroup = newLoanApplication.getPrequalificationGroup();
             if (prequalificationGroup != null && prequalificationGroup.isPrequalificationTypeIndividual()) {
                 final JsonElement loanAdditionalDataJson = command.jsonElement(LoanApiConstants.LOAN_ADDITIONAL_DATA);
                 if (loanAdditionalDataJson != null && loanAdditionalDataJson.isJsonObject()) {
