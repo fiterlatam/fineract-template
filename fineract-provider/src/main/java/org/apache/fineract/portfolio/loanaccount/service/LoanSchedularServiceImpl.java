@@ -87,6 +87,7 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 
 @Service
 @RequiredArgsConstructor
@@ -471,6 +472,9 @@ public class LoanSchedularServiceImpl implements LoanSchedularService {
                     jsonObject.addProperty(PaymentDetailConstants.receiptNumberParamName, receiptNumber);
                     jsonObject.addProperty("locale", localeAsString);
                     jsonObject.addProperty("dateFormat", dateFormat);
+                    if(StringUtils.endsWithIgnoreCase(lastInstallment,"S") &&  scheduledAmount.compareTo(transactionAmount)<=0){
+                        jsonObject.addProperty("adjustGuarantee", true);
+                    }
                     final JsonCommand command = JsonCommand.fromJsonElement(loanId, jsonObject, fromApiJsonHelper);
                     command.setJsonCommand(jsonObject.toString());
                     CommandProcessingResult result = loanWritePlatformService.makeLoanRepayment(LoanTransactionType.REPAYMENT, loanId,
