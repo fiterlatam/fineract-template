@@ -507,6 +507,8 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             newLoanApplication.updateLoanContract(contractBuilder.toString());
 
             this.loanRepositoryWrapper.saveAndFlush(newLoanApplication);
+            final Long newLoanApplicationId = newLoanApplication.getId();
+            newLoanApplication.setExternalId(String.valueOf(newLoanApplicationId));
 
             Long facilitatorId = command.longValueOfParameterNamed("facilitator");
             AppUser facilitator = null;
