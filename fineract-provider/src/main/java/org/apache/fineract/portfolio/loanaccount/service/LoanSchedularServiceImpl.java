@@ -46,6 +46,7 @@ import java.util.stream.Collectors;
 import javax.ws.rs.NotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.cob.loan.ApplyChargeToOverdueLoansBusinessStep;
 import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
@@ -87,7 +88,6 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
-import org.springframework.util.StringUtils;
 
 @Service
 @RequiredArgsConstructor
@@ -472,7 +472,7 @@ public class LoanSchedularServiceImpl implements LoanSchedularService {
                     jsonObject.addProperty(PaymentDetailConstants.receiptNumberParamName, receiptNumber);
                     jsonObject.addProperty("locale", localeAsString);
                     jsonObject.addProperty("dateFormat", dateFormat);
-                    if(StringUtils.endsWithIgnoreCase(lastInstallment,"S") &&  scheduledAmount.compareTo(transactionAmount)<=0){
+                    if(StringUtils.equalsIgnoreCase(lastInstallment,"S") &&  scheduledAmount.compareTo(transactionAmount)<=0){
                         jsonObject.addProperty("adjustGuarantee", true);
                     }
                     final JsonCommand command = JsonCommand.fromJsonElement(loanId, jsonObject, fromApiJsonHelper);
