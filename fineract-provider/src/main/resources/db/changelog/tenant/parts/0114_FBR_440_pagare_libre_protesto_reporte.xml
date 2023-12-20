@@ -26,7 +26,7 @@
     <changeSet author="fineract" id="60">
         <sqlFile
                 encoding="utf8"
-                path="db/changelog/tenant/commands/pagare-libre-protesto-reporte.sql"
+                path="db/changelog/tenant/commands/pagare_libre_protesto_reporte.sql"
                 relativeToChangelogFile="false"
                 splitStatements="true"
                 stripComments="true"/>
