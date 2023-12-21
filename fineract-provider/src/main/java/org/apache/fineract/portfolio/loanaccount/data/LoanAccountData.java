@@ -627,14 +627,15 @@ public final class LoanAccountData {
     }
 
     public LoanAccountData(Collection<CodeValueData> loanCycleCompletedOptions, Collection<CodeValueData> loanPurposeOptions,
-                           Collection<CodeValueData> businessEvolutionOptions, Collection<CodeValueData> yesnoOptions,
-                           Collection<CodeValueData> businessExperienceOptions, Collection<CodeValueData> businessLocationOptions,
-                           Collection<CodeValueData> clientTypeOptions, Collection<CodeValueData> loanStatusOptions,
-                           Collection<CodeValueData> institutionTypeOptions, Collection<CodeValueData> housingTypeOptions,
-                           Collection<CodeValueData> classificationOptions, Collection<CodeValueData> jobTypeOptions,
-                           Collection<CodeValueData> educationLevelOptions, Collection<CodeValueData> maritalStatusOptions,
-                           Collection<CodeValueData> groupPositionOptions, Collection<CodeValueData> sourceOfFundsOptions,
-                           Collection<CodeValueData> cancellationReasonOptions, List<AppUserData> facilitatorOptions, Collection<CodeValueData> documentTypeOptions) {
+            Collection<CodeValueData> businessEvolutionOptions, Collection<CodeValueData> yesnoOptions,
+            Collection<CodeValueData> businessExperienceOptions, Collection<CodeValueData> businessLocationOptions,
+            Collection<CodeValueData> clientTypeOptions, Collection<CodeValueData> loanStatusOptions,
+            Collection<CodeValueData> institutionTypeOptions, Collection<CodeValueData> housingTypeOptions,
+            Collection<CodeValueData> classificationOptions, Collection<CodeValueData> jobTypeOptions,
+            Collection<CodeValueData> educationLevelOptions, Collection<CodeValueData> maritalStatusOptions,
+            Collection<CodeValueData> groupPositionOptions, Collection<CodeValueData> sourceOfFundsOptions,
+            Collection<CodeValueData> cancellationReasonOptions, List<AppUserData> facilitatorOptions,
+            Collection<CodeValueData> documentTypeOptions) {
         this.loanCycleCompletedOptions = loanCycleCompletedOptions;
         this.loanPurposeOptions = loanPurposeOptions;
         this.businessEvolutionOptions = businessEvolutionOptions;
