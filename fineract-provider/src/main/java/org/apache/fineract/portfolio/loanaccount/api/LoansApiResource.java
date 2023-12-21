@@ -488,6 +488,13 @@ public class LoansApiResource {
                     officeId = loanAccountClientDetails.officeId();
                     newLoanAccount = newLoanAccount == null ? loanAccountClientDetails
                             : LoanAccountData.populateClientDefaults(newLoanAccount, loanAccountClientDetails);
+
+                    if (groupId != null) {
+                        final GroupGeneralData group = this.groupReadPlatformService.retrieveOne(groupId);
+                        newLoanAccount = LoanAccountData.associateGroup(newLoanAccount, group);
+                        calendarOptions = this.loanReadPlatformService.retrieveCalendars(groupId);
+                    }
+
                 }
 
                 // if it's JLG loan add group details
