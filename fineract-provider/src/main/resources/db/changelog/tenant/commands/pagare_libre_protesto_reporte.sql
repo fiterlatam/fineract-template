@@ -95,4 +95,3 @@ INSERT IGNORE INTO stretchy_report_parameter(report_id, parameter_id, report_par
 INSERT IGNORE INTO stretchy_report_parameter(report_id, parameter_id, report_parameter_name) VALUES((SELECT sr.id FROM stretchy_report sr WHERE sr.report_name = "Pagare Libre Protesto Individual"), (SELECT p.id FROM stretchy_parameter p WHERE parameter_name = "asOnDate"), "disbursmentDate");
 INSERT IGNORE INTO stretchy_report_parameter(report_id, parameter_id, report_parameter_name) VALUES((SELECT sr.id FROM stretchy_report sr WHERE sr.report_name = "Pagare Libre Protesto Individual"), (SELECT p.id FROM stretchy_parameter p WHERE parameter_name = "AgencyIdSelectOne"), "selected_agency");
 INSERT IGNORE INTO stretchy_report_parameter(report_id, parameter_id, report_parameter_name) VALUES((SELECT sr.id FROM stretchy_report sr WHERE sr.report_name = "Pagare Libre Protesto Individual"), (SELECT p.id FROM stretchy_parameter p WHERE parameter_name = "selectmember"), "selected_member");
-
