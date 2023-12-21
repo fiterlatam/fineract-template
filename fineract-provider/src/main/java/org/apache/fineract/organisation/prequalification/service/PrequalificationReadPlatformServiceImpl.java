@@ -393,7 +393,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             this.schema = """
                     	g.id AS id,
                     	g.prequalification_number AS prequalificationNumber,
-                    	g.status,
+                    	g.status,linkedGroup.id as linkedGroupId,
                     	g.prequalification_duration as prequalilficationTimespan,
                     	g.comments,
                     	g.created_at,
@@ -467,7 +467,9 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                     LEFT JOIN m_agency ma ON
                     	g.agency_id = ma.id
                     LEFT JOIN m_group cg ON
-                    	cg.id = g.group_id
+                    	cg.id = g.group_id       
+                    LEFT JOIN m_group linkedGroup ON
+                    	linkedGroup.prequalification_id = g.id
                     LEFT JOIN m_group pc ON
                     	pc.id = g.center_id
                     LEFT JOIN m_prequalification_status_log sl ON
@@ -510,6 +512,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             final Long agencyId = JdbcSupport.getLong(rs, "agencyId");
             final Long centerId = JdbcSupport.getLong(rs, "centerId");
             final Long productId = JdbcSupport.getLong(rs, "productId");
+            final Long linkedGroupId = JdbcSupport.getLong(rs, "linkedGroupId");
             final Long facilitatorId = JdbcSupport.getLong(rs, "facilitatorId");
             final String facilitatorName = rs.getString("facilitatorName");
             final Long redValidationCount = rs.getLong("redValidationCount");
@@ -547,7 +550,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                     productName, addedBy, createdAt, comments, groupId, agencyId, centerId, productId, facilitatorId, facilitatorName,
                     greenValidationCount, yellowValidationCount, orangeValidationCount, redValidationCount, prequalilficationTimespan,
                     lastPrequalificationStatus, statusChangedBy, statusChangedOn, processType, processQuality, totalRequestedAmount,
-                    totalApprovedAmount, prequalificationType, prequalificationSubStatus, assignedUser, assignedUserName, latestComments);
+                    totalApprovedAmount, prequalificationType, prequalificationSubStatus, assignedUser, assignedUserName, latestComments,linkedGroupId);
 
         }
     }
@@ -578,7 +581,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             final String productName = rs.getString("productName");
             final LocalDate createdAt = JdbcSupport.getLocalDate(rs, "created_at");
             final String addedBy = rs.getString("firstname") + " " + rs.getString("lastname");
-            return GroupPrequalificationData.simpeGroupData(id, prequalificationNumber, status, groupName, productName, addedBy, createdAt);
+            return GroupPrequalificationData.simpeGroupData(id, prequalificationNumber, status, groupName, productName, addedBy, createdAt, null);
 
         }
     }
@@ -590,11 +593,12 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
         public PrequalificationIndividualMappingsMapper() {
             this.schema = """
                     mpg.id AS id, mpg.prequalification_number AS prequalificationNumber, mpg.group_name AS groupName, mpg.status AS status,
-                    mpl.name AS productName, mpg.created_at, ma.firstname, ma.lastname
+                    mpl.name AS productName, mpg.created_at, ma.firstname, ma.lastname, mg.id as groupId
                     FROM m_prequalification_group mpg
                     INNER JOIN m_product_loan mpl ON mpl.id = mpg.product_id
                     INNER JOIN m_prequalification_group_members mpgm ON mpgm.group_id = mpg.id
                     INNER JOIN m_client mc ON mc.dpi = mpgm.dpi
+                    LEFT JOIN m_group mg ON mg.prequalification_id = mpg.id
                     LEFT JOIN m_appuser ma ON ma.id = mpg.added_by
                     """;
         }
@@ -608,12 +612,13 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             final Integer statusEnum = JdbcSupport.getInteger(rs, "status");
             final EnumOptionData status = PreQualificationsEnumerations.status(statusEnum);
             final Long id = JdbcSupport.getLong(rs, "id");
+            final Long groupId = JdbcSupport.getLong(rs, "groupId");
             final String prequalificationNumber = rs.getString("prequalificationNumber");
             String groupName = rs.getString("groupName");
             final String productName = rs.getString("productName");
             final LocalDate createdAt = JdbcSupport.getLocalDate(rs, "created_at");
             final String addedBy = rs.getString("firstname") + " " + rs.getString("lastname");
-            return GroupPrequalificationData.simpeGroupData(id, prequalificationNumber, status, groupName, productName, addedBy, createdAt);
+            return GroupPrequalificationData.simpeGroupData(id, prequalificationNumber, status, groupName, productName, addedBy, createdAt,groupId);
         }
     }
 
