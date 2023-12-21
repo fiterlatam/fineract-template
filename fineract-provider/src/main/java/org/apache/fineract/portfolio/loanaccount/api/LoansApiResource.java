@@ -453,8 +453,7 @@ public class LoansApiResource {
                     .retrieveCodeValuesByCode("sourceOfFundsOptions");
             Collection<CodeValueData> cancellationReasonOptions = this.codeValueReadPlatformService
                     .retrieveCodeValuesByCode("cancellationReasonOptions");
-            Collection<CodeValueData> documentTypeOptions = this.codeValueReadPlatformService
-                    .retrieveCodeValuesByCode("Document Type");
+            Collection<CodeValueData> documentTypeOptions = this.codeValueReadPlatformService.retrieveCodeValuesByCode("Document Type");
 
             final List<AppUserData> facilitatorOptions = new ArrayList<>(
                     this.appUserReadPlatformService.retrieveUsersUnderHierarchy(Long.valueOf(OfficeHierarchyLevel.GRUPO.getValue())));
@@ -462,7 +461,7 @@ public class LoansApiResource {
             newLoanAccount = new LoanAccountData(loanCycleCompletedOptions, loanPurposeOptions, businessEvolutionOptions, yesnoOptions,
                     businessExperienceOptions, businessLocationOptions, clientTypeOptions, loanStatusOptions, institutionTypeOptions,
                     housingTypeOptions, classificationOptions, jobTypeOptions, educationLevelOptions, maritalStatusOptions,
-                    groupPositionOptions, sourceOfFundsOptions, cancellationReasonOptions,facilitatorOptions,documentTypeOptions);
+                    groupPositionOptions, sourceOfFundsOptions, cancellationReasonOptions, facilitatorOptions, documentTypeOptions);
             return this.toApiJsonSerializer.serialize(settings, newLoanAccount, this.loanDataParameters);
         } else if ("cheque".equalsIgnoreCase(templateType)) {
             final Collection<CenterData> centerOptions = this.centerReadPlatformService

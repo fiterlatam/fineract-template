@@ -373,20 +373,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                     groupPresident = member.get("groupPresident").getAsBoolean();
                 }
 
-                LocalDate dateOfBirth = null;
-                if (member.get("dob") != null) {
-
-                    DateTimeFormatter formatter = new DateTimeFormatterBuilder().appendPattern(member.get("dateFormat").getAsString())
-                            .toFormatter();
-                    LocalDate date;
-                    try {
-                        date = LocalDate.parse(member.get("dob").getAsString(), formatter);
-                        dateOfBirth = date;
-                    } catch (DateTimeParseException e) {
-                        LOG.error("Problem occurred in addClientFamilyMember function", e);
-                    }
-
-                }
+                final LocalDate dateOfBirth = this.fromApiJsonHelper.extractLocalDateNamed("dob", member);
 
                 // get light indicator
                 String blistSql = "select count(*) from m_client_blacklist where dpi=? and status=?";
@@ -682,22 +669,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         if (member.get("groupPresident") != null) {
             groupPresident = member.get("groupPresident").getAsBoolean();
         }
-
-        LocalDate dateOfBirth = null;
-        if (member.get("dob") != null) {
-
-            DateTimeFormatter formatter = new DateTimeFormatterBuilder().appendPattern(member.get("dateFormat").getAsString())
-                    .toFormatter();
-            LocalDate date;
-            try {
-                date = LocalDate.parse(member.get("dob").getAsString(), formatter);
-                dateOfBirth = date;
-            } catch (DateTimeParseException e) {
-                LOG.error("Problem occurred in addClientFamilyMember function", e);
-            }
-
-        }
-
+        final LocalDate dateOfBirth = this.fromApiJsonHelper.extractLocalDateNamed("dob", member);
         // get light indicator
         String blistSql = "select count(*) from m_client_blacklist where dpi=? and status=?";
         Long activeBlacklisted = jdbcTemplate.queryForObject(blistSql, Long.class, dpi, BlacklistStatus.ACTIVE.getValue());
