@@ -23,7 +23,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.LocalTime;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
@@ -80,7 +79,8 @@ public final class AllGroupTypesDataMapper implements RowMapper<GroupGeneralData
         sqlBuilder.append("g.distance_from_agency as distance, ");
         sqlBuilder.append("g.type_id as typeId, cvType.code_value as typeValue, g.created_date as createdDate, ");
         sqlBuilder.append("g.meeting_start_date as meetingStart, g.meeting_end_date as meetingEnd, ");
-        sqlBuilder.append("g.meeting_day as meetingDay,pgMeetingDay.code_value as centerMeetingDay, cvMeetingDay.code_value as meetingDayValue, ");
+        sqlBuilder.append(
+                "g.meeting_day as meetingDay,pgMeetingDay.code_value as centerMeetingDay, cvMeetingDay.code_value as meetingDayValue, ");
         sqlBuilder.append("cvMeetingDay.order_position as meetingDayOrderPosition, g.meeting_start_time as meetingStartTime, ");
         sqlBuilder.append("g.meeting_end_time as meetingEndTime, g.reference_point as referencePoint, ");
         sqlBuilder.append("prequalGroup.prequalification_number as prequalificationNumber, "
@@ -181,7 +181,7 @@ public final class AllGroupTypesDataMapper implements RowMapper<GroupGeneralData
         final int meetingEnd = rs.getInt("meetingEnd");
         final int meetingDay = rs.getInt("meetingDay");
         String meetingDayValue = rs.getString("meetingDayValue");
-        if (StringUtils.isBlank(meetingDayValue)){
+        if (StringUtils.isBlank(meetingDayValue)) {
             meetingDayValue = rs.getString("centerMeetingDay");
         }
         final String referencePoint = rs.getString("referencePoint");

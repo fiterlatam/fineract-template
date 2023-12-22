@@ -467,7 +467,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                     LEFT JOIN m_agency ma ON
                     	g.agency_id = ma.id
                     LEFT JOIN m_group cg ON
-                    	cg.id = g.group_id       
+                    	cg.id = g.group_id
                     LEFT JOIN m_group linkedGroup ON
                     	linkedGroup.prequalification_id = g.id
                     LEFT JOIN m_group pc ON
@@ -550,7 +550,8 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                     productName, addedBy, createdAt, comments, groupId, agencyId, centerId, productId, facilitatorId, facilitatorName,
                     greenValidationCount, yellowValidationCount, orangeValidationCount, redValidationCount, prequalilficationTimespan,
                     lastPrequalificationStatus, statusChangedBy, statusChangedOn, processType, processQuality, totalRequestedAmount,
-                    totalApprovedAmount, prequalificationType, prequalificationSubStatus, assignedUser, assignedUserName, latestComments,linkedGroupId);
+                    totalApprovedAmount, prequalificationType, prequalificationSubStatus, assignedUser, assignedUserName, latestComments,
+                    linkedGroupId);
 
         }
     }
@@ -581,7 +582,8 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             final String productName = rs.getString("productName");
             final LocalDate createdAt = JdbcSupport.getLocalDate(rs, "created_at");
             final String addedBy = rs.getString("firstname") + " " + rs.getString("lastname");
-            return GroupPrequalificationData.simpeGroupData(id, prequalificationNumber, status, groupName, productName, addedBy, createdAt, null);
+            return GroupPrequalificationData.simpeGroupData(id, prequalificationNumber, status, groupName, productName, addedBy, createdAt,
+                    null);
 
         }
     }
@@ -618,7 +620,8 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             final String productName = rs.getString("productName");
             final LocalDate createdAt = JdbcSupport.getLocalDate(rs, "created_at");
             final String addedBy = rs.getString("firstname") + " " + rs.getString("lastname");
-            return GroupPrequalificationData.simpeGroupData(id, prequalificationNumber, status, groupName, productName, addedBy, createdAt,groupId);
+            return GroupPrequalificationData.simpeGroupData(id, prequalificationNumber, status, groupName, productName, addedBy, createdAt,
+                    groupId);
         }
     }
 
