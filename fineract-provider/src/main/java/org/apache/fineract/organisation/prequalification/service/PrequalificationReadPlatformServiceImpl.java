@@ -595,7 +595,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
         public PrequalificationIndividualMappingsMapper() {
             this.schema = """
                     mpg.id AS id, mpg.prequalification_number AS prequalificationNumber, mpg.group_name AS groupName, mpg.status AS status,
-                    mpl.name AS productName, mpg.created_at, ma.firstname, ma.lastname, mg.id as groupId
+                    mpl.name AS productName, mpg.created_at, ma.firstname, ma.lastname, mg.id as groupId, mpg.prequalification_type_enum as prequalificationType
                     FROM m_prequalification_group mpg
                     INNER JOIN m_product_loan mpl ON mpl.id = mpg.product_id
                     INNER JOIN m_prequalification_group_members mpgm ON mpgm.group_id = mpg.id
@@ -620,8 +620,12 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             final String productName = rs.getString("productName");
             final LocalDate createdAt = JdbcSupport.getLocalDate(rs, "created_at");
             final String addedBy = rs.getString("firstname") + " " + rs.getString("lastname");
-            return GroupPrequalificationData.simpeGroupData(id, prequalificationNumber, status, groupName, productName, addedBy, createdAt,
-                    groupId);
+            final Integer prequalificationTypeEnum = JdbcSupport.getInteger(rs, "prequalificationType");
+            final EnumOptionData prequalificationType = PreQualificationsEnumerations.prequalificationType(prequalificationTypeEnum);
+            GroupPrequalificationData prequalificationData = GroupPrequalificationData.simpeGroupData(id, prequalificationNumber, status,
+                    groupName, productName, addedBy, createdAt, groupId);
+            prequalificationData.setPrequalificationType(prequalificationType);
+            return prequalificationData;
         }
     }
 

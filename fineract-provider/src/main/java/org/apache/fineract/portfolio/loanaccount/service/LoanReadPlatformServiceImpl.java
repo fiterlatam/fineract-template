@@ -60,6 +60,7 @@ import org.apache.fineract.organisation.prequalification.data.GroupPrequalificat
 import org.apache.fineract.organisation.prequalification.data.LoanAdditionalData;
 import org.apache.fineract.organisation.prequalification.domain.LoanAdditionProperties;
 import org.apache.fineract.organisation.prequalification.domain.LoanAdditionalPropertiesRepository;
+import org.apache.fineract.organisation.prequalification.domain.PrequalificationType;
 import org.apache.fineract.organisation.prequalification.service.PrequalificationReadPlatformServiceImpl;
 import org.apache.fineract.organisation.staff.data.StaffData;
 import org.apache.fineract.organisation.staff.service.StaffReadPlatformService;
@@ -249,15 +250,18 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                     if (!CollectionUtils.isEmpty(prequalificationGroups)) {
                         final GroupPrequalificationData groupPrequalificationData = new ArrayList<>(prequalificationGroups).get(0);
                         loanAccountData.setPrequalificationData(groupPrequalificationData);
+                        final EnumOptionData prequalificationType = groupPrequalificationData.getPrequalificationType();
+                        if (prequalificationType != null
+                                && PrequalificationType.INDIVIDUAL.name().equals(prequalificationType.getValue())) {
+                            List<LoanAdditionProperties> loanAdditionalPropertiesList = this.loanAdditionalPropertiesRepository
+                                    .findByClientIdAndLoanId(loanAccountData.getClientId(), loanId);
+                            if (!CollectionUtils.isEmpty(loanAdditionalPropertiesList)) {
+                                final LoanAdditionProperties loanAdditionProperties = loanAdditionalPropertiesList.get(0);
+                                final LoanAdditionalData loanAdditionalData = loanAdditionProperties.toData();
+                                loanAccountData.setLoanAdditionalData(loanAdditionalData);
+                            }
+                        }
                     }
-
-                }
-                List<LoanAdditionProperties> loanAdditionalPropertiesList = this.loanAdditionalPropertiesRepository
-                        .findByClientIdAndLoanId(loanAccountData.getClientId(), loanId);
-                if (!CollectionUtils.isEmpty(loanAdditionalPropertiesList)) {
-                    final LoanAdditionProperties loanAdditionProperties = loanAdditionalPropertiesList.get(0);
-                    final LoanAdditionalData loanAdditionalData = loanAdditionProperties.toData();
-                    loanAccountData.setLoanAdditionalData(loanAdditionalData);
                 }
             }
             return loanAccountData;
@@ -2595,7 +2599,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
             return null;
         }
 
-        if (groupLoanAdditionalData!=null){
+        if (groupLoanAdditionalData != null) {
             AdditionalDataExtraLoansMapper extraLoansMapper = new AdditionalDataExtraLoansMapper(sqlGenerator);
             final String membersql = "select " + extraLoansMapper.schema();
 
