@@ -41,6 +41,9 @@ public class AdditionalsExtraLoans extends AbstractPersistableCustom {
     @Column(name = "institution_type", nullable = false)
     private Long institutionType;
 
+    @Column(name = "institution_name", nullable = false)
+    private String institutionName;
+
     @Column(name = "loan_amount", nullable = false)
     private BigDecimal loanAmount;
 
@@ -60,7 +63,7 @@ public class AdditionalsExtraLoans extends AbstractPersistableCustom {
     protected AdditionalsExtraLoans() {}
 
     public AdditionalsExtraLoans(final GroupLoanAdditionals additionals, final Long institutionType, final BigDecimal loanAmount,
-            final BigDecimal balance, final BigDecimal fees, final Long loanStatus) {
+            final BigDecimal balance, final BigDecimal fees, final Long loanStatus, final String institutionName) {
 
         this.loan = additionals.getLoan();
         this.groupLoanAdditionals = additionals;
@@ -69,5 +72,6 @@ public class AdditionalsExtraLoans extends AbstractPersistableCustom {
         this.balance = balance;
         this.fees = fees;
         this.loanStatus = loanStatus;
+        this.institutionName = institutionName;
     }
 }

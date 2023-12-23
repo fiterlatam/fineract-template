@@ -27,6 +27,7 @@ import lombok.Data;
 public class AdditionalsExtraLoansData {
 
     private Long institutionType;
+    private String institutionName;
     private String institutionTypeValue;
     private BigDecimal loanAmount;
     private BigDecimal balance;

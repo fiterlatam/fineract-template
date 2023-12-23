@@ -227,4 +227,15 @@
         </addColumn>
     </changeSet>
 
+    <changeSet author="fineract" id="7">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_loan_external_existing_loans" columnName="institution_name"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_loan_external_existing_loans">
+            <column name="institution_name" type="VARCHAR(200)"/>
+        </addColumn>
+    </changeSet>
+
 </databaseChangeLog>
