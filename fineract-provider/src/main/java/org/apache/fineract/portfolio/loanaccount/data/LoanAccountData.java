@@ -280,6 +280,7 @@ public final class LoanAccountData {
     private Collection<CodeValueData> groupPositionOptions;
     private Collection<CodeValueData> sourceOfFundsOptions;
     private Collection<CodeValueData> cancellationReasonOptions;
+    private GroupLoanAdditionalData groupLoanAdditionalData;
 
     public static LoanAccountData disburseLoanByCheques(final Collection<AgencyData> agencyOptions,
             final Collection<CenterData> centerOptions, final Collection<GroupGeneralData> groupOption,
@@ -428,7 +429,7 @@ public final class LoanAccountData {
                 isVariableInstallmentsAllowed, minimumGap, maximumGap, subStatus, canUseForTopup, clientActiveLoanOptions, isTopup,
                 closureLoanId, closureLoanAccountNo, topupAmount, isEqualAmortization, rates, isRatesEnabled,
                 fixedPrincipalPercentagePerInstallment, delinquent, contractNo, agencyOptions, centerOptions, groupOption,
-                facilitatorOptions, disbursementMethodOptions, requiredGuaranteeAmount, actualGuaranteeAmount);
+                facilitatorOptions, disbursementMethodOptions, requiredGuaranteeAmount, actualGuaranteeAmount, null);
     }
 
     public static LoanAccountData importInstanceIndividual(EnumOptionData loanTypeEnumOption, Long clientId, Long productId,
@@ -624,6 +625,7 @@ public final class LoanAccountData {
         this.facilitatorOptions = null;
         this.disbursementMethodOptions = null;
         this.documentTypeOptions = null;
+        this.groupLoanAdditionalData = null;
     }
 
     public LoanAccountData(Collection<CodeValueData> loanCycleCompletedOptions, Collection<CodeValueData> loanPurposeOptions,
@@ -801,7 +803,40 @@ public final class LoanAccountData {
         this.centerOptions = null;
         this.groupOptions = null;
         this.disbursementMethodOptions = null;
+        this.groupLoanAdditionalData = null;
 
+    }
+
+    public static LoanAccountData withAdditionalDetails(LoanAccountData acc, GroupLoanAdditionalData groupLoanAdditionalData) {
+
+        return new LoanAccountData(acc.id, acc.accountNo, acc.status, acc.externalId, acc.clientId, acc.clientAccountNo, acc.clientName,
+                acc.clientOfficeId, acc.group, acc.loanType, acc.loanProductId, acc.loanProductName, acc.loanProductDescription,
+                acc.isLoanProductLinkedToFloatingRate, acc.fundId, acc.fundName, acc.loanPurposeId, acc.loanPurposeName, acc.loanOfficerId,
+                acc.loanOfficerName, acc.currency, acc.proposedPrincipal, acc.principal, acc.approvedPrincipal, acc.netDisbursalAmount,
+                acc.totalOverpaid, acc.inArrearsTolerance, acc.termFrequency, acc.termPeriodFrequencyType, acc.numberOfRepayments,
+                acc.repaymentEvery, acc.repaymentFrequencyType, acc.repaymentFrequencyNthDayType, acc.repaymentFrequencyDayOfWeekType,
+                acc.transactionProcessingStrategyId, acc.transactionProcessingStrategyName, acc.amortizationType, acc.interestRatePerPeriod,
+                acc.interestRateFrequencyType, acc.annualInterestRate, acc.interestType, acc.isFloatingInterestRate,
+                acc.interestRateDifferential, acc.interestCalculationPeriodType, acc.allowPartialPeriodInterestCalcualtion,
+                acc.expectedFirstRepaymentOnDate, acc.graceOnPrincipalPayment, acc.recurringMoratoriumOnPrincipalPeriods,
+                acc.graceOnInterestPayment, acc.graceOnInterestCharged, acc.interestChargedFromDate, acc.timeline, acc.summary,
+                acc.feeChargesAtDisbursementCharged, acc.repaymentSchedule, acc.transactions, acc.charges, acc.collateral, acc.guarantors,
+                acc.meeting, acc.productOptions, acc.termFrequencyTypeOptions, acc.repaymentFrequencyTypeOptions,
+                acc.repaymentFrequencyNthDayTypeOptions, acc.repaymentFrequencyDaysOfWeekTypeOptions,
+                acc.transactionProcessingStrategyOptions, acc.interestRateFrequencyTypeOptions, acc.amortizationTypeOptions,
+                acc.interestTypeOptions, acc.interestCalculationPeriodTypeOptions, acc.fundOptions, acc.chargeOptions, null,
+                acc.loanOfficerOptions, acc.loanPurposeOptions, acc.loanCollateralOptions, acc.calendarOptions,
+                acc.syncDisbursementWithMeeting, acc.loanCounter, acc.loanProductCounter, acc.notes, acc.accountLinkingOptions,
+                acc.linkedAccount, acc.disbursementDetails, acc.multiDisburseLoan, acc.canDefineInstallmentAmount, acc.fixedEmiAmount,
+                acc.maxOutstandingLoanBalance, acc.emiAmountVariations, acc.memberVariations, acc.product, acc.inArrears,
+                acc.graceOnArrearsAgeing, acc.overdueCharges, acc.isNPA, acc.daysInMonthType, acc.daysInYearType,
+                acc.isInterestRecalculationEnabled, acc.interestRecalculationData, null,
+                acc.createStandingInstructionAtDisbursement, acc.paidInAdvance, acc.interestRatesPeriods, acc.isVariableInstallmentsAllowed,
+                acc.minimumGap, acc.maximumGap, acc.subStatus, acc.canUseForTopup, acc.clientActiveLoanOptions, acc.isTopup,
+                acc.closureLoanId, acc.closureLoanAccountNo, acc.topupAmount, acc.isEqualAmortization, acc.rates, acc.isRatesEnabled,
+                acc.fixedPrincipalPercentagePerInstallment, acc.delinquent, acc.contractNo, acc.agencyOptions, acc.centerOptions,
+                acc.groupOptions, acc.facilitatorOptions, acc.disbursementMethodOptions, acc.requiredGuaranteeAmount,
+                acc.actualGuaranteeAmount,groupLoanAdditionalData);
     }
 
     public Integer getRowIndex() {
@@ -998,7 +1033,7 @@ public final class LoanAccountData {
                 isVariableInstallmentsAllowed, minimumGap, maximumGap, subStatus, canUseForTopup, clientActiveLoanOptions, isTopup,
                 closureLoanId, closureLoanAccountNo, topupAmount, isEqualAmortization, rates, isRatesEnabled,
                 fixedPrincipalPercentagePerInstallment, delinquent, contractNo, agencyOptions, centerOptions, groupOption,
-                facilitatorOptions, disbursementMethodOptions, requiredGuaranteeAmount, actualGuaranteeAmount);
+                facilitatorOptions, disbursementMethodOptions, requiredGuaranteeAmount, actualGuaranteeAmount, null);
     }
 
     /**
@@ -1153,7 +1188,7 @@ public final class LoanAccountData {
                 isVariableInstallmentsAllowed, minimumGap, maximumGap, subStatus, canUseForTopup, clientActiveLoanOptions, isTopup,
                 closureLoanId, closureLoanAccountNo, topupAmount, isEqualAmortization, rates, isRatesEnabled,
                 fixedPrincipalPercentagePerInstallment, delinquent, contractNo, agencyOptions, centerOptions, groupOption,
-                facilitatorOptions, disbursementMethodOptions, requiredGuaranteeAmount, actualGuaranteeAmount);
+                facilitatorOptions, disbursementMethodOptions, requiredGuaranteeAmount, actualGuaranteeAmount, null);
     }
 
     public static LoanAccountData populateClientDefaults(final LoanAccountData acc, final LoanAccountData clientAcc) {
@@ -1186,7 +1221,7 @@ public final class LoanAccountData {
                 acc.closureLoanId, acc.closureLoanAccountNo, acc.topupAmount, acc.isEqualAmortization, acc.rates, acc.isRatesEnabled,
                 acc.fixedPrincipalPercentagePerInstallment, acc.delinquent, acc.contractNo, acc.agencyOptions, acc.centerOptions,
                 acc.groupOptions, acc.facilitatorOptions, acc.disbursementMethodOptions, acc.requiredGuaranteeAmount,
-                acc.actualGuaranteeAmount);
+                acc.actualGuaranteeAmount, acc.groupLoanAdditionalData);
     }
 
     /**
@@ -1343,7 +1378,7 @@ public final class LoanAccountData {
                 isVariableInstallmentsAllowed, minimumGap, maximumGap, subStatus, canUseForTopup, clientActiveLoanOptions, isTopup,
                 closureLoanId, closureLoanAccountNo, topupAmount, isEqualAmortization, rates, isRatesEnabled,
                 fixedPrincipalPercentagePerInstallment, delinquent, contractNo, agencyOptions, centerOptions, groupOption,
-                facilitatorOptions, disbursementMethodOptions, requiredGuaranteeAmount, actualGuaranteeAmount);
+                facilitatorOptions, disbursementMethodOptions, requiredGuaranteeAmount, actualGuaranteeAmount, null);
     }
 
     public static LoanAccountData populateGroupDefaults(final LoanAccountData acc, final LoanAccountData groupAcc) {
@@ -1375,7 +1410,7 @@ public final class LoanAccountData {
                 acc.closureLoanId, acc.closureLoanAccountNo, acc.topupAmount, acc.isEqualAmortization, acc.rates, acc.isRatesEnabled,
                 acc.fixedPrincipalPercentagePerInstallment, acc.delinquent, acc.contractNo, acc.agencyOptions, acc.centerOptions,
                 acc.groupOptions, acc.facilitatorOptions, acc.disbursementMethodOptions, acc.requiredGuaranteeAmount,
-                acc.actualGuaranteeAmount);
+                acc.actualGuaranteeAmount, acc.groupLoanAdditionalData);
     }
 
     public static LoanAccountData loanProductWithTemplateDefaults(final LoanProductData product,
@@ -1552,7 +1587,7 @@ public final class LoanAccountData {
                 product.getMaximumGapBetweenInstallments(), subStatus, canUseForTopup, clientActiveLoanOptions, isTopup, closureLoanId,
                 closureLoanAccountNo, topupAmount, product.isEqualAmortization(), rates, isRatesEnabled,
                 product.getFixedPrincipalPercentagePerInstallment(), delinquent, contractNo, agencyOptions, centerOptions, groupOption,
-                facilitatorOptions, disbursementMethodOptions, requiredGuaranteeAmount, actualGuaranteeAmount);
+                facilitatorOptions, disbursementMethodOptions, requiredGuaranteeAmount, actualGuaranteeAmount, null);
     }
 
     public static LoanAccountData populateLoanProductDefaults(final LoanAccountData acc, final LoanProductData product) {
@@ -1628,7 +1663,7 @@ public final class LoanAccountData {
                 product.getMaximumGapBetweenInstallments(), acc.subStatus, acc.canUseForTopup, acc.clientActiveLoanOptions, acc.isTopup,
                 acc.closureLoanId, acc.closureLoanAccountNo, acc.topupAmount, product.isEqualAmortization(), acc.rates, acc.isRatesEnabled,
                 product.getFixedPrincipalPercentagePerInstallment(), delinquent, acc.contractNo, agencyOptions, centerOptions, groupOption,
-                facilitatorOptions, disbursementMethodOptions, acc.requiredGuaranteeAmount, acc.actualGuaranteeAmount);
+                facilitatorOptions, disbursementMethodOptions, acc.requiredGuaranteeAmount, acc.actualGuaranteeAmount, acc.groupLoanAdditionalData);
     }
 
     /*
@@ -1726,7 +1761,7 @@ public final class LoanAccountData {
                 createStandingInstructionAtDisbursement, paidInAdvance, interestRatesPeriods, isVariableInstallmentsAllowed, minimumGap,
                 maximumGap, subStatus, canUseForTopup, clientActiveLoanOptions, isTopup, closureLoanId, closureLoanAccountNo, topupAmount,
                 isEqualAmortization, rates, isRatesEnabled, fixedPrincipalPercentagePerInstallment, delinquent, contractNo, agencyOptions,
-                centerOptions, groupOption, facilitatorOptions, disbursementMethodOptions, requiredGuaranteeAmount, actualGuaranteeAmount);
+                centerOptions, groupOption, facilitatorOptions, disbursementMethodOptions, requiredGuaranteeAmount, actualGuaranteeAmount, null);
     }
 
     /*
@@ -1782,7 +1817,7 @@ public final class LoanAccountData {
                 acc.closureLoanAccountNo, acc.topupAmount, acc.isEqualAmortization, rates, isRatesEnabled,
                 acc.fixedPrincipalPercentagePerInstallment, delinquent, acc.contractNo, acc.agencyOptions, acc.centerOptions,
                 acc.groupOptions, acc.facilitatorOptions, acc.disbursementMethodOptions, acc.requiredGuaranteeAmount,
-                acc.actualGuaranteeAmount);
+                acc.actualGuaranteeAmount, acc.groupLoanAdditionalData);
         loanAccountData.setPrequalificationId(acc.prequalificationId);
         return loanAccountData;
 
@@ -1830,7 +1865,7 @@ public final class LoanAccountData {
                 acc.closureLoanId, acc.closureLoanAccountNo, acc.topupAmount, acc.isEqualAmortization, acc.rates, acc.isRatesEnabled,
                 acc.fixedPrincipalPercentagePerInstallment, acc.delinquent, acc.contractNo, acc.agencyOptions, acc.centerOptions,
                 acc.groupOptions, acc.facilitatorOptions, acc.disbursementMethodOptions, acc.requiredGuaranteeAmount,
-                acc.actualGuaranteeAmount);
+                acc.actualGuaranteeAmount, acc.groupLoanAdditionalData);
     }
 
     public static LoanAccountData associateMemberVariations(final LoanAccountData acc, final Map<Long, Integer> memberLoanCycle) {
@@ -1898,7 +1933,7 @@ public final class LoanAccountData {
                 acc.closureLoanId, acc.closureLoanAccountNo, acc.topupAmount, acc.isEqualAmortization, acc.rates, acc.isRatesEnabled,
                 acc.fixedPrincipalPercentagePerInstallment, acc.delinquent, acc.contractNo, acc.agencyOptions, acc.centerOptions,
                 acc.groupOptions, acc.facilitatorOptions, acc.disbursementMethodOptions, acc.requiredGuaranteeAmount,
-                acc.actualGuaranteeAmount);
+                acc.actualGuaranteeAmount, acc.groupLoanAdditionalData);
     }
 
     public static LoanAccountData withInterestRecalculationCalendarData(final LoanAccountData acc, final CalendarData calendarData,
@@ -1934,7 +1969,7 @@ public final class LoanAccountData {
                 acc.closureLoanId, acc.closureLoanAccountNo, acc.topupAmount, acc.isEqualAmortization, acc.rates, acc.isRatesEnabled,
                 acc.fixedPrincipalPercentagePerInstallment, acc.delinquent, acc.contractNo, acc.agencyOptions, acc.centerOptions,
                 acc.groupOptions, acc.facilitatorOptions, acc.disbursementMethodOptions, acc.requiredGuaranteeAmount,
-                acc.actualGuaranteeAmount);
+                acc.actualGuaranteeAmount, acc.groupLoanAdditionalData);
     }
 
     public static LoanAccountData withLoanCalendarData(final LoanAccountData acc, final CalendarData calendarData) {
@@ -1965,7 +2000,7 @@ public final class LoanAccountData {
                 acc.closureLoanId, acc.closureLoanAccountNo, acc.topupAmount, acc.isEqualAmortization, acc.rates, acc.isRatesEnabled,
                 acc.fixedPrincipalPercentagePerInstallment, acc.delinquent, acc.contractNo, acc.agencyOptions, acc.centerOptions,
                 acc.groupOptions, acc.facilitatorOptions, acc.disbursementMethodOptions, acc.requiredGuaranteeAmount,
-                acc.actualGuaranteeAmount);
+                acc.actualGuaranteeAmount, acc.groupLoanAdditionalData);
     }
 
     public static LoanAccountData withOriginalSchedule(final LoanAccountData acc, final LoanScheduleData originalSchedule) {
@@ -1997,64 +2032,64 @@ public final class LoanAccountData {
                 acc.closureLoanId, acc.closureLoanAccountNo, acc.topupAmount, acc.isEqualAmortization, acc.rates, acc.isRatesEnabled,
                 acc.fixedPrincipalPercentagePerInstallment, acc.delinquent, acc.contractNo, acc.agencyOptions, acc.centerOptions,
                 acc.groupOptions, acc.facilitatorOptions, acc.disbursementMethodOptions, acc.requiredGuaranteeAmount,
-                acc.actualGuaranteeAmount);
+                acc.actualGuaranteeAmount, acc.groupLoanAdditionalData);
     }
 
     private LoanAccountData(final Long id, //
-            final String accountNo, //
-            final LoanStatusEnumData status, //
-            final String externalId, //
-            final Long clientId, final String clientAccountNo, final String clientName, final Long clientOfficeId, //
-            final GroupGeneralData group, final EnumOptionData loanType, final Long loanProductId, final String loanProductName,
-            final String loanProductDescription, //
-            final boolean isLoanProductLinkedToFloatingRate, final Long fundId, final String fundName, final Long loanPurposeId,
-            final String loanPurposeName, //
-            final Long loanOfficerId, final String loanOfficerName, //
-            final CurrencyData currency, BigDecimal proposedPrincipal, final BigDecimal principal, final BigDecimal approvedPrincipal,
-            final BigDecimal netDisbursalAmount, final BigDecimal totalOverpaid, //
-            final BigDecimal inArrearsTolerance, final Integer termFrequency, //
-            final EnumOptionData termPeriodFrequencyType, final Integer numberOfRepayments, final Integer repaymentEvery,
-            final EnumOptionData repaymentFrequencyType, //
-            final EnumOptionData repaymentFrequencyNthDayType, final EnumOptionData repaymentFrequencyDayOfWeekType,
-            final Long transactionProcessingStrategyId, final String transactionProcessingStrategyName,
-            final EnumOptionData amortizationType, final BigDecimal interestRatePerPeriod, final EnumOptionData interestRateFrequencyType,
-            final BigDecimal annualInterestRate, final EnumOptionData interestType, final boolean isFloatingInterestRate,
-            final BigDecimal interestRateDifferential, final EnumOptionData interestCalculationPeriodType,
-            final Boolean allowPartialPeriodInterestCalcualtion, final LocalDate expectedFirstRepaymentOnDate,
-            final Integer graceOnPrincipalPayment, final Integer recurringMoratoriumOnPrincipalPeriods,
-            final Integer graceOnInterestPayment, final Integer graceOnInterestCharged, final LocalDate interestChargedFromDate,
-            final LoanApplicationTimelineData timeline, final LoanSummaryData summary, final BigDecimal feeChargesDueAtDisbursementCharged,
-            final LoanScheduleData repaymentSchedule, final Collection<LoanTransactionData> transactions,
-            final Collection<LoanChargeData> charges, final Collection<LoanCollateralManagementData> collateral,
-            final Collection<GuarantorData> guarantors, final CalendarData meeting, final Collection<LoanProductData> productOptions,
-            final Collection<EnumOptionData> termFrequencyTypeOptions, final Collection<EnumOptionData> repaymentFrequencyTypeOptions,
-            final Collection<EnumOptionData> repaymentFrequencyNthDayTypeOptions,
-            final Collection<EnumOptionData> repaymentFrequencyDaysOfWeekTypeOptions,
-            final Collection<TransactionProcessingStrategyData> transactionProcessingStrategyOptions,
-            final Collection<EnumOptionData> interestRateFrequencyTypeOptions, final Collection<EnumOptionData> amortizationTypeOptions,
-            final Collection<EnumOptionData> interestTypeOptions, final Collection<EnumOptionData> interestCalculationPeriodTypeOptions,
-            final Collection<FundData> fundOptions, final Collection<ChargeData> chargeOptions, final ChargeData chargeTemplate,
-            final Collection<StaffData> loanOfficerOptions, final Collection<CodeValueData> loanPurposeOptions,
-            final Collection<CodeValueData> loanCollateralOptions, final Collection<CalendarData> calendarOptions,
-            final Boolean syncDisbursementWithMeeting, final Integer loanCounter, final Integer loanProductCounter,
-            final Collection<NoteData> notes, final Collection<PortfolioAccountData> accountLinkingOptions,
-            final PortfolioAccountData linkedAccount, final Collection<DisbursementData> disbursementDetails,
-            final Boolean multiDisburseLoan, final Boolean canDefineInstallmentAmount, BigDecimal fixedEmiAmount,
-            final BigDecimal maxOutstandingLoanBalance, final Collection<LoanTermVariationsData> emiAmountVariations,
-            final Map<Long, LoanBorrowerCycleData> memberVariations, final LoanProductData product, final Boolean inArrears,
-            final Integer graceOnArrearsAgeing, final Collection<ChargeData> overdueCharges, final Boolean isNPA,
-            final EnumOptionData daysInMonthType, final EnumOptionData daysInYearType, final boolean isInterestRecalculationEnabled,
-            final LoanInterestRecalculationData interestRecalculationData, final LoanScheduleData originalSchedule,
-            final Boolean createStandingInstructionAtDisbursement, final PaidInAdvanceData paidInAdvance,
-            final Collection<InterestRatePeriodData> interestRatesPeriods, final Boolean isVariableInstallmentsAllowed,
-            final Integer minimumGap, final Integer maximumGap, final EnumOptionData subStatus, final Boolean canUseForTopup,
-            final Collection<LoanAccountSummaryData> clientActiveLoanOptions, final boolean isTopup, final Long closureLoanId,
-            final String closureLoanAccountNo, final BigDecimal topupAmount, final boolean isEqualAmortization, final List<RateData> rates,
-            final Boolean isRatesEnabled, final BigDecimal fixedPrincipalPercentagePerInstallment, final CollectionData delinquent,
-            final String contractNo, final Collection<AgencyData> agencyOptions, final Collection<CenterData> centerOptions,
-            final Collection<GroupGeneralData> groupOptions, final Collection<AppUserData> facilitatorOptions,
-            final Collection<EnumOptionData> disbursementMethodOptions, BigDecimal requiredGuaranteeAmount,
-            final BigDecimal actualGuaranteeAmount) {
+                            final String accountNo, //
+                            final LoanStatusEnumData status, //
+                            final String externalId, //
+                            final Long clientId, final String clientAccountNo, final String clientName, final Long clientOfficeId, //
+                            final GroupGeneralData group, final EnumOptionData loanType, final Long loanProductId, final String loanProductName,
+                            final String loanProductDescription, //
+                            final boolean isLoanProductLinkedToFloatingRate, final Long fundId, final String fundName, final Long loanPurposeId,
+                            final String loanPurposeName, //
+                            final Long loanOfficerId, final String loanOfficerName, //
+                            final CurrencyData currency, BigDecimal proposedPrincipal, final BigDecimal principal, final BigDecimal approvedPrincipal,
+                            final BigDecimal netDisbursalAmount, final BigDecimal totalOverpaid, //
+                            final BigDecimal inArrearsTolerance, final Integer termFrequency, //
+                            final EnumOptionData termPeriodFrequencyType, final Integer numberOfRepayments, final Integer repaymentEvery,
+                            final EnumOptionData repaymentFrequencyType, //
+                            final EnumOptionData repaymentFrequencyNthDayType, final EnumOptionData repaymentFrequencyDayOfWeekType,
+                            final Long transactionProcessingStrategyId, final String transactionProcessingStrategyName,
+                            final EnumOptionData amortizationType, final BigDecimal interestRatePerPeriod, final EnumOptionData interestRateFrequencyType,
+                            final BigDecimal annualInterestRate, final EnumOptionData interestType, final boolean isFloatingInterestRate,
+                            final BigDecimal interestRateDifferential, final EnumOptionData interestCalculationPeriodType,
+                            final Boolean allowPartialPeriodInterestCalcualtion, final LocalDate expectedFirstRepaymentOnDate,
+                            final Integer graceOnPrincipalPayment, final Integer recurringMoratoriumOnPrincipalPeriods,
+                            final Integer graceOnInterestPayment, final Integer graceOnInterestCharged, final LocalDate interestChargedFromDate,
+                            final LoanApplicationTimelineData timeline, final LoanSummaryData summary, final BigDecimal feeChargesDueAtDisbursementCharged,
+                            final LoanScheduleData repaymentSchedule, final Collection<LoanTransactionData> transactions,
+                            final Collection<LoanChargeData> charges, final Collection<LoanCollateralManagementData> collateral,
+                            final Collection<GuarantorData> guarantors, final CalendarData meeting, final Collection<LoanProductData> productOptions,
+                            final Collection<EnumOptionData> termFrequencyTypeOptions, final Collection<EnumOptionData> repaymentFrequencyTypeOptions,
+                            final Collection<EnumOptionData> repaymentFrequencyNthDayTypeOptions,
+                            final Collection<EnumOptionData> repaymentFrequencyDaysOfWeekTypeOptions,
+                            final Collection<TransactionProcessingStrategyData> transactionProcessingStrategyOptions,
+                            final Collection<EnumOptionData> interestRateFrequencyTypeOptions, final Collection<EnumOptionData> amortizationTypeOptions,
+                            final Collection<EnumOptionData> interestTypeOptions, final Collection<EnumOptionData> interestCalculationPeriodTypeOptions,
+                            final Collection<FundData> fundOptions, final Collection<ChargeData> chargeOptions, final ChargeData chargeTemplate,
+                            final Collection<StaffData> loanOfficerOptions, final Collection<CodeValueData> loanPurposeOptions,
+                            final Collection<CodeValueData> loanCollateralOptions, final Collection<CalendarData> calendarOptions,
+                            final Boolean syncDisbursementWithMeeting, final Integer loanCounter, final Integer loanProductCounter,
+                            final Collection<NoteData> notes, final Collection<PortfolioAccountData> accountLinkingOptions,
+                            final PortfolioAccountData linkedAccount, final Collection<DisbursementData> disbursementDetails,
+                            final Boolean multiDisburseLoan, final Boolean canDefineInstallmentAmount, BigDecimal fixedEmiAmount,
+                            final BigDecimal maxOutstandingLoanBalance, final Collection<LoanTermVariationsData> emiAmountVariations,
+                            final Map<Long, LoanBorrowerCycleData> memberVariations, final LoanProductData product, final Boolean inArrears,
+                            final Integer graceOnArrearsAgeing, final Collection<ChargeData> overdueCharges, final Boolean isNPA,
+                            final EnumOptionData daysInMonthType, final EnumOptionData daysInYearType, final boolean isInterestRecalculationEnabled,
+                            final LoanInterestRecalculationData interestRecalculationData, final LoanScheduleData originalSchedule,
+                            final Boolean createStandingInstructionAtDisbursement, final PaidInAdvanceData paidInAdvance,
+                            final Collection<InterestRatePeriodData> interestRatesPeriods, final Boolean isVariableInstallmentsAllowed,
+                            final Integer minimumGap, final Integer maximumGap, final EnumOptionData subStatus, final Boolean canUseForTopup,
+                            final Collection<LoanAccountSummaryData> clientActiveLoanOptions, final boolean isTopup, final Long closureLoanId,
+                            final String closureLoanAccountNo, final BigDecimal topupAmount, final boolean isEqualAmortization, final List<RateData> rates,
+                            final Boolean isRatesEnabled, final BigDecimal fixedPrincipalPercentagePerInstallment, final CollectionData delinquent,
+                            final String contractNo, final Collection<AgencyData> agencyOptions, final Collection<CenterData> centerOptions,
+                            final Collection<GroupGeneralData> groupOptions, final Collection<AppUserData> facilitatorOptions,
+                            final Collection<EnumOptionData> disbursementMethodOptions, BigDecimal requiredGuaranteeAmount,
+                            final BigDecimal actualGuaranteeAmount, GroupLoanAdditionalData groupLoanAdditionalData) {
 
         this.id = id;
         this.accountNo = accountNo;
@@ -2251,6 +2286,7 @@ public final class LoanAccountData {
         this.requiredGuaranteeAmount = requiredGuaranteeAmount;
         this.actualGuaranteeAmount = actualGuaranteeAmount;
         this.documentTypeOptions = null;
+        this.groupLoanAdditionalData = groupLoanAdditionalData;
     }
 
     public RepaymentScheduleRelatedLoanData repaymentScheduleRelatedData() {

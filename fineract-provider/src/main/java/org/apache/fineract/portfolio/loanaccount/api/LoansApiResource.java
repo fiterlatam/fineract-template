@@ -124,6 +124,7 @@ import org.apache.fineract.portfolio.loanaccount.data.AgeLimitStatusEnumerations
 import org.apache.fineract.portfolio.loanaccount.data.CollectionData;
 import org.apache.fineract.portfolio.loanaccount.data.DisbursementData;
 import org.apache.fineract.portfolio.loanaccount.data.GlimRepaymentTemplate;
+import org.apache.fineract.portfolio.loanaccount.data.GroupLoanAdditionalData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanAccountData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanApprovalData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanChargeData;
@@ -261,6 +262,7 @@ public class LoansApiResource {
     private final GroupReadPlatformService groupReadPlatformService;
     private final DefaultToApiJsonSerializer<LoanAccountData> toApiJsonSerializer;
     private final DefaultToApiJsonSerializer<LoanApprovalData> loanApprovalDataToApiJsonSerializer;
+    private final DefaultToApiJsonSerializer<GroupLoanAdditionalData> loanAdditionalDataToApiJsonSerializer;
     private final DefaultToApiJsonSerializer<LoanScheduleData> loanScheduleToApiJsonSerializer;
     private final DefaultToApiJsonSerializer<EnumOptionData> ageLimitValidationJsonSerializer;
     private final ApiRequestParameterHelper apiRequestParameterHelper;
@@ -296,6 +298,7 @@ public class LoansApiResource {
             final DefaultToApiJsonSerializer<LoanApprovalData> loanApprovalDataToApiJsonSerializer,
             final DefaultToApiJsonSerializer<LoanScheduleData> loanScheduleToApiJsonSerializer,
             final DefaultToApiJsonSerializer<EnumOptionData> ageLimitValidationJsonSerializer,
+            final DefaultToApiJsonSerializer<GroupLoanAdditionalData> loanAdditionalDataToApiJsonSerializer,
             final ApiRequestParameterHelper apiRequestParameterHelper, final FromJsonHelper fromJsonHelper,
             final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService,
             final CalendarReadPlatformService calendarReadPlatformService, final NoteReadPlatformService noteReadPlatformService,
@@ -349,6 +352,7 @@ public class LoansApiResource {
         this.appUserReadPlatformService = appUserReadPlatformService;
         this.agencyReadPlatformService = agencyReadPlatformService;
         this.centerReadPlatformService = centerReadPlatformService;
+        this.loanAdditionalDataToApiJsonSerializer = loanAdditionalDataToApiJsonSerializer;
     }
 
     /*
@@ -378,6 +382,22 @@ public class LoansApiResource {
 
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
         return this.loanApprovalDataToApiJsonSerializer.serialize(settings, loanApprovalTemplate, this.loanApprovalDataParameters);
+
+    }
+
+    @GET
+    @Path("{loanId}/additionals")
+    @Consumes({ MediaType.APPLICATION_JSON })
+    @Produces({ MediaType.APPLICATION_JSON })
+    public String retrieveLoanAdditionals(@PathParam("loanId") @Parameter(description = "loanId") final Long loanId,
+            @Context final UriInfo uriInfo) {
+
+        this.context.authenticatedUser().validateHasReadPermission(this.resourceNameForPermissions);
+
+        GroupLoanAdditionalData groupLoanAdditionalsData = this.loanReadPlatformService.retrieveAdditionalData(loanId);
+
+        final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
+        return this.loanAdditionalDataToApiJsonSerializer.serialize(settings, groupLoanAdditionalsData, this.loanApprovalDataParameters);
 
     }
 
@@ -700,7 +720,7 @@ public class LoansApiResource {
                         DataTableApiConstant.transactionsAssociateParamName, DataTableApiConstant.chargesAssociateParamName,
                         DataTableApiConstant.guarantorsAssociateParamName, DataTableApiConstant.collateralAssociateParamName,
                         DataTableApiConstant.notesAssociateParamName, DataTableApiConstant.linkedAccountAssociateParamName,
-                        DataTableApiConstant.multiDisburseDetailsAssociateParamName, DataTableApiConstant.collectionAssociateParamName));
+                        DataTableApiConstant.multiDisburseDetailsAssociateParamName, DataTableApiConstant.collectionAssociateParamName, DataTableApiConstant.additionalDetailsParamName));
             }
 
             ApiParameterHelper.excludeAssociationsForResponseIfProvided(exclude, associationParameters);
@@ -744,6 +764,10 @@ public class LoansApiResource {
                         && loanBasicDetails.isInterestRecalculationEnabled()) {
                     mandatoryResponseParameters.add(DataTableApiConstant.futureScheduleAssociateParamName);
                     this.calculationPlatformService.updateFutureSchedule(repaymentSchedule, loanId);
+                }
+                if (associationParameters.contains(DataTableApiConstant.additionalDetailsParamName)) {
+                    GroupLoanAdditionalData groupLoanAdditionalData = this.loanReadPlatformService.retrieveAdditionalData(loanId);
+                    loanBasicDetails = LoanAccountData.withAdditionalDetails(loanBasicDetails, groupLoanAdditionalData);
                 }
 
                 if (associationParameters.contains(DataTableApiConstant.originalScheduleAssociateParamName)

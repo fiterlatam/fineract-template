@@ -89,8 +89,10 @@ import org.apache.fineract.portfolio.group.data.GroupGeneralData;
 import org.apache.fineract.portfolio.group.data.GroupRoleData;
 import org.apache.fineract.portfolio.group.service.GroupReadPlatformService;
 import org.apache.fineract.portfolio.loanaccount.api.LoanApiConstants;
+import org.apache.fineract.portfolio.loanaccount.data.AdditionalsExtraLoansData;
 import org.apache.fineract.portfolio.loanaccount.data.CollectionData;
 import org.apache.fineract.portfolio.loanaccount.data.DisbursementData;
+import org.apache.fineract.portfolio.loanaccount.data.GroupLoanAdditionalData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanAccountData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanApplicationTimelineData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanApprovalData;
@@ -2580,6 +2582,307 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
         final LoanMapper rm = new LoanMapper(sqlGenerator);
         final String sql = "select " + rm.loanSchema() + " where l.client_id = ? and l.loan_status_id = ?";
         return this.jdbcTemplate.query(sql, rm, new Object[] { clientId, LoanStatus.ACTIVE.getValue() });
+    }
+
+    @Override
+    public GroupLoanAdditionalData retrieveAdditionalData(Long loanId) {
+        final AdditionalGroupLoanData mapper = new AdditionalGroupLoanData(sqlGenerator);
+        String sql = "select " + mapper.schema();
+        GroupLoanAdditionalData groupLoanAdditionalData = this.jdbcTemplate.queryForObject(sql, mapper, loanId);
+
+        if (groupLoanAdditionalData!=null){
+            AdditionalDataExtraLoansMapper extraLoansMapper = new AdditionalDataExtraLoansMapper(sqlGenerator);
+            final String membersql = "select " + extraLoansMapper.schema();
+
+            List<AdditionalsExtraLoansData> extraLoansData = this.jdbcTemplate.query(membersql, extraLoansMapper,
+                    new Object[] { groupLoanAdditionalData.getId() });
+
+            groupLoanAdditionalData.setExtraLoansData(extraLoansData);
+        }
+
+        return groupLoanAdditionalData;
+    }
+
+    private static final class AdditionalGroupLoanData implements RowMapper<GroupLoanAdditionalData> {
+
+        private final DatabaseSpecificSQLGenerator sqlGenerator;
+        private final CurrencyMapper currencyMapper = new CurrencyMapper();
+
+        AdditionalGroupLoanData(DatabaseSpecificSQLGenerator sqlGenerator) {
+            this.sqlGenerator = sqlGenerator;
+        }
+
+        public String schema() {
+            StringBuilder sqlBuilder = new StringBuilder();
+            sqlBuilder.append("""
+                                concat(user.firstname, ' ', user.lastname) as facilitatorName,
+                                user.id as facilitatorId,
+                                gla.loan_cycle_completed as loanCycleCompleted,
+                                loanCycleCV.code_description as loanCycleCompletedValue,
+                                cancellationReasonCV.code_description as earlyCancellationReasonValue,
+                                gla.early_cancellation_reason as earlyCancellationReason,
+                                gla.source_of_funds as sourceOfFunds,
+                                sourceOfFundsCV.code_description as sourceOfFundsValue,
+                                gla.client_loan_request_number as clientLoanRequestNumber,
+                                gla.date_requested as dateRequested,
+                                gla.position,
+                                groupPositionCV.code_description as positionValue,
+                                gla.full_name as fullName,
+                                gla.last_name as lastName,
+                                gla.marital_status as maritalStatus,
+                                maritalStatusCV.code_description as maritalStatusValue,
+                                gla.education_level as educationLevel,
+                                educationLevelCV.code_description as educationLevelValue,
+                                gla.years_of_schooling as schoolingYears,
+                                gla.number_of_children as noOfChildren,
+                                gla.nationality as nationality,
+                                gla.language as language,
+                                gla.dpi as dpi,
+                                gla.nit as nit,
+                                gla.job_type as jobType,
+                                jobtypeCV.code_description as jobTypeValue,
+                                gla.occupancy_classification as occupancyClassification,
+                                classificationCV.code_description as occupancyClassificationValue,
+                                gla.acts_own_behalf as actsOwnBehalf,
+                                ownBehalfCV.code_description as actsOwnBehalfValue,
+                                gla.on_behalf_of as onBehalfOf,
+                                gla.political_position as politicalPosition,
+                                gla.political_office as politicalOffice,
+                                gla.housing_type as housingType,
+                                housingTypeCV.code_description as housingTypeValue,
+                                gla.address as address,
+                                gla.populated_place as populatedPlace,
+                                gla.reference_point as referencePoint,
+                                gla.phone_number as phoneNumber,
+                                gla.relative_number as relativeNumber,
+                                gla.years_in_community as yearsInCommunity,
+                                gla.rent_mortgage_fee as rentMortgageFee,
+                                gla.monthly_income as monthlyIncome,
+                                gla.family_expenses as familyExpenses,
+                                gla.total_external_loan_amount as totalExternalLoanAmount,
+                                gla.total_installments as totalInstallments,
+                                gla.client_type clientType,
+                                clientTypeCV.code_description as clientTypeValue,
+                                gla.house_hold_goods as houseHoldGoods,
+                                gla.business_activities as businessActivities,
+                                gla.business_location as businessLocation,
+                                businessLocationCV.code_description as businessLocationValue,
+                                gla.business_experience as businessExperience,
+                                businessExperienceCV.code_description as businessExperienceValue,
+                                gla.sales_value as salesValue,
+                                gla.business_purchases as businessPurchases,
+                                gla.business_profit as businessProfit,
+                                gla.client_profit as clientProfit,
+                                gla.inventories as inventories,
+                                gla.visit_business as visitBusiness,
+                                visitBusinessCV.code_description as visitBusinessValue,
+                                gla.family_support as familySupport,
+                                famSupportCV.code_description as familySupportValue,
+                                gla.business_evolution as businessEvolution,
+                                businessEvolutionCV.code_description as businessEvolutionValue,
+                                gla.number_of_approvals as numberOfApprovals,
+                                gla.recommender_name as recommenderName,
+                                gla.monthly_payment_capacity as monthlyPaymentCapacity,
+                                gla.loan_purpose as loanPurpose,
+                                loanPurposeCV.code_description as loanPurposeValue,
+                                gla.current_credit_value as currentCreditValue,
+                                gla.requested_value as requestedValue,
+                                gla.group_authorized_value as groupAuthorizedValue,
+                                gla.facilitator_proposed_value as facilitatorProposedValue,
+                                gla.proposed_fee as proposedFee,
+                                gla.agency_authorized_amount as agencyAuthorizedAmount,
+                                gla.authorized_fee as authorizedFee,
+                                gla.total_income as totalIncome,
+                                gla.total_expenditures as totalExpenditures,
+                                gla.available_monthly as availableMonthly,
+                                gla.f_a_c as facValue,
+                                gla.debt_level as debtLevel
+                    FROM m_loan_additionals_group gla
+                    LEFT JOIN m_appuser user ON user.id = gla.facilitator
+                    LEFT JOIN m_code_value loanCycleCV ON loanCycleCV.id = gla.loan_cycle_completed
+                    LEFT JOIN m_code_value businessEvolutionCV ON businessEvolutionCV.id = gla.business_evolution
+                    LEFT JOIN m_code_value businessExperienceCV ON businessExperienceCV.id = gla.business_experience
+                    LEFT JOIN m_code_value businessLocationCV ON businessLocationCV.id = gla.business_location
+                    LEFT JOIN m_code_value classificationCV ON classificationCV.id = gla.occupancy_classification
+                    LEFT JOIN m_code_value educationLevelCV ON educationLevelCV.id = gla.education_level
+                    LEFT JOIN m_code_value maritalStatusCV ON maritalStatusCV.id = gla.marital_status
+                    LEFT JOIN m_code_value groupPositionCV ON groupPositionCV.id = gla.position
+                    LEFT JOIN m_code_value sourceOfFundsCV ON sourceOfFundsCV.id = gla.source_of_funds
+                    LEFT JOIN m_code_value ownBehalfCV ON ownBehalfCV.id = gla.acts_own_behalf
+                    LEFT JOIN m_code_value jobtypeCV ON jobtypeCV.id = gla.job_type
+                    LEFT JOIN m_code_value clientTypeCV ON clientTypeCV.id = gla.client_type
+                    LEFT JOIN m_code_value housingTypeCV ON housingTypeCV.id = gla.housing_type
+                    LEFT JOIN m_code_value visitBusinessCV ON visitBusinessCV.id = gla.visit_business
+                    LEFT JOIN m_code_value famSupportCV ON famSupportCV.id = gla.family_support
+                    LEFT JOIN m_code_value loanPurposeCV ON loanPurposeCV.id = gla.loan_purpose
+                    LEFT JOIN m_code_value cancellationReasonCV ON cancellationReasonCV.id = gla.early_cancellation_reason
+                    WHERE gla.loan_id = ?
+                    """);
+            return sqlBuilder.toString();
+        }
+
+        @Override
+        public GroupLoanAdditionalData mapRow(ResultSet rs, int rowNum) throws SQLException {
+
+            final String facilitatorName = rs.getString("facilitatorName");
+            final Long facilitatorId = rs.getLong("facilitatorId");
+            final Integer loanCycleCompleted = rs.getInt("loanCycleCompleted");
+            final String loanCycleCompletedValue = rs.getString("loanCycleCompletedValue");
+            final String earlyCancellationReasonValue = rs.getString("earlyCancellationReasonValue");
+            final Long earlyCancellationReason = rs.getLong("earlyCancellationReason");
+            final Long sourceOfFunds = rs.getLong("sourceOfFunds");
+            final String sourceOfFundsValue = rs.getString("sourceOfFundsValue");
+            final String clientLoanRequestNumber = rs.getString("clientLoanRequestNumber");
+            final LocalDate dateRequested = JdbcSupport.getLocalDate(rs, "dateRequested");
+            final Long position = rs.getLong("position");
+            final String positionValue = rs.getString("positionValue");
+            final String fullName = rs.getString("fullName");
+            final String lastName = rs.getString("lastName");
+            final Long maritalStatus = rs.getLong("maritalStatus");
+            final String maritalStatusValue = rs.getString("maritalStatusValue");
+            final Long educationLevel = rs.getLong("educationLevel");
+            final String educationLevelValue = rs.getString("educationLevelValue");
+            final Integer schoolingYears = rs.getInt("schoolingYears");
+            final Integer noOfChildren = rs.getInt("noOfChildren");
+            final String nationality = rs.getString("nationality");
+            final String language = rs.getString("language");
+            final String dpi = rs.getString("dpi");
+            final String nit = rs.getString("nit");
+            final Long jobType = rs.getLong("jobType");
+            final String jobTypeValue = rs.getString("jobTypeValue");
+            final Long occupancyClassification = rs.getLong("occupancyClassification");
+            final String occupancyClassificationValue = rs.getString("occupancyClassificationValue");
+            final Long actsOwnBehalf = rs.getLong("actsOwnBehalf");
+            final String actsOwnBehalfValue = rs.getString("actsOwnBehalfValue");
+            final String onBehalfOf = rs.getString("onBehalfOf");
+            final String politicalPosition = rs.getString("politicalPosition");
+            final String politicalOffice = rs.getString("politicalOffice");
+            final Long housingType = rs.getLong("housingType");
+            final String housingTypeValue = rs.getString("housingTypeValue");
+            final String address = rs.getString("address");
+            final String populatedPlace = rs.getString("populatedPlace");
+            final String referencePoint = rs.getString("referencePoint");
+            final String phoneNumber = rs.getString("phoneNumber");
+            final String relativeNumber = rs.getString("relativeNumber");
+            final Integer yearsInCommunity = rs.getInt("yearsInCommunity");
+
+            final BigDecimal rentMortgageFee = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "rentMortgageFee");
+            final BigDecimal monthlyIncome = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "monthlyIncome");
+            final BigDecimal familyExpenses = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "familyExpenses");
+            final BigDecimal totalExternalLoanAmount = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "totalExternalLoanAmount");
+            final Integer totalInstallments = rs.getInt("totalInstallments");
+            final Integer clientType = rs.getInt("clientType");
+            final String clientTypeValue = rs.getString("clientTypeValue");
+            final String houseHoldGoods = rs.getString("houseHoldGoods");
+            final String businessActivities = rs.getString("businessActivities");
+            final Long businessLocation = rs.getLong("businessLocation");
+            final String businessLocationValue = rs.getString("businessLocationValue");
+            final Integer businessExperience = rs.getInt("businessExperience");
+            final String businessExperienceValue = rs.getString("businessExperienceValue");
+            final BigDecimal salesValue = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "salesValue");
+            final BigDecimal businessPurchases = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "businessPurchases");
+            final BigDecimal businessProfit = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "businessProfit");
+            final BigDecimal clientProfit = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "clientProfit");
+            final BigDecimal inventories = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "inventories");
+            final Long visitBusiness = rs.getLong("visitBusiness");
+            final String visitBusinessValue = rs.getString("visitBusinessValue");
+            final Long familySupport = rs.getLong("familySupport");
+            final String familySupportValue = rs.getString("familySupportValue");
+            final Long businessEvolution = rs.getLong("businessEvolution");
+            final String businessEvolutionValue = rs.getString("businessEvolutionValue");
+            final Integer numberOfApprovals = rs.getInt("numberOfApprovals");
+            final String recommenderName = rs.getString("recommenderName");
+            final BigDecimal monthlyPaymentCapacity = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "monthlyPaymentCapacity");
+            final Long loanPurpose = rs.getLong("loanPurpose");
+            final String loanPurposeValue = rs.getString("loanPurposeValue");
+            final BigDecimal currentCreditValue = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "currentCreditValue");
+            final BigDecimal requestedValue = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "requestedValue");
+            final BigDecimal groupAuthorizedValue = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "groupAuthorizedValue");
+            final BigDecimal facilitatorProposedValue = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "facilitatorProposedValue");
+            final BigDecimal proposedFee = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "proposedFee");
+            final BigDecimal agencyAuthorizedAmount = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "agencyAuthorizedAmount");
+            final BigDecimal authorizedFee = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "authorizedFee");
+            final BigDecimal totalIncome = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "totalIncome");
+            final BigDecimal totalExpenditures = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "totalExpenditures");
+            final BigDecimal availableMonthly = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "availableMonthly");
+            final BigDecimal facValue = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "facValue");
+            final BigDecimal debtLevel = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "debtLevel");
+
+            GroupLoanAdditionalData additionalGroupLoanData = GroupLoanAdditionalData.builder().facilitatorName(facilitatorName)
+                    .facilitatorId(facilitatorId).loanCycleCompleted(loanCycleCompleted).loanCycleCompletedValue(loanCycleCompletedValue)
+                    .earlyCancellationReasonValue(earlyCancellationReasonValue).earlyCancellationReason(earlyCancellationReason)
+                    .sourceOfFunds(sourceOfFunds).sourceOfFundsValue(sourceOfFundsValue).clientLoanRequestNumber(clientLoanRequestNumber)
+                    .dateRequested(dateRequested).position(position).positionValue(positionValue).fullName(fullName).lastName(lastName)
+                    .maritalStatus(maritalStatus).maritalStatusValue(maritalStatusValue).educationLevel(educationLevel)
+                    .educationLevelValue(educationLevelValue).schoolingYears(schoolingYears).noOfChildren(noOfChildren)
+                    .nationality(nationality).language(language).dpi(dpi).nit(nit).jobType(jobType).jobTypeValue(jobTypeValue)
+                    .occupancyClassification(occupancyClassification).occupancyClassificationValue(occupancyClassificationValue)
+                    .actsOwnBehalf(actsOwnBehalf).actsOwnBehalfValue(actsOwnBehalfValue).onBehalfOf(onBehalfOf)
+                    .politicalPosition(politicalPosition).politicalOffice(politicalOffice).housingType(housingType)
+                    .housingTypeValue(housingTypeValue).address(address).populatedPlace(populatedPlace).referencePoint(referencePoint)
+                    .phoneNumber(phoneNumber).relativeNumber(relativeNumber).yearsInCommunity(yearsInCommunity)
+                    .rentMortgageFee(rentMortgageFee).monthlyIncome(monthlyIncome).familyExpenses(familyExpenses)
+                    .totalExternalLoanAmount(totalExternalLoanAmount).totalInstallments(totalInstallments).clientType(clientType)
+                    .clientTypeValue(clientTypeValue).houseHoldGoods(houseHoldGoods).businessActivities(businessActivities)
+                    .businessLocation(businessLocation).businessLocationValue(businessLocationValue).businessExperience(businessExperience)
+                    .businessExperienceValue(businessExperienceValue).salesValue(salesValue).businessPurchases(businessPurchases)
+                    .businessProfit(businessProfit).clientProfit(clientProfit).inventories(inventories).visitBusiness(visitBusiness)
+                    .visitBusinessValue(visitBusinessValue).familySupport(familySupport).familySupportValue(familySupportValue)
+                    .businessEvolution(businessEvolution).businessEvolutionValue(businessEvolutionValue)
+                    .numberOfApprovals(numberOfApprovals).recommenderName(recommenderName).monthlyPaymentCapacity(monthlyPaymentCapacity)
+                    .loanPurpose(loanPurpose).loanPurposeValue(loanPurposeValue).currentCreditValue(currentCreditValue)
+                    .requestedValue(requestedValue).groupAuthorizedValue(groupAuthorizedValue)
+                    .facilitatorProposedValue(facilitatorProposedValue).proposedFee(proposedFee)
+                    .agencyAuthorizedAmount(agencyAuthorizedAmount).authorizedFee(authorizedFee).totalIncome(totalIncome)
+                    .totalExpenditures(totalExpenditures).availableMonthly(availableMonthly).facValue(facValue).debtLevel(debtLevel)
+                    .build();
+            return additionalGroupLoanData;
+        }
+
+    }
+
+    private static final class AdditionalDataExtraLoansMapper implements RowMapper<AdditionalsExtraLoansData> {
+
+        private final DatabaseSpecificSQLGenerator sqlGenerator;
+
+        AdditionalDataExtraLoansMapper(DatabaseSpecificSQLGenerator sqlGenerator) {
+            this.sqlGenerator = sqlGenerator;
+        }
+
+        public String schema() {
+            StringBuilder sqlBuilder = new StringBuilder();
+
+            sqlBuilder.append("""
+                                gla.institution_type as institutionType,
+                                institutionTypeCV.code_description as institutionTypeValue,
+                                gla.loan_amount as loanAmount,
+                                gla.balance as balance,
+                                gla.fees as fees,
+                                gla.loan_status as loanStatus,
+                                loanStatusCV.code_description as loanStatusValue
+                    FROM m_loan_external_existing_loans gla
+                    LEFT JOIN m_code_value institutionTypeCV ON institutionTypeCV.id = gla.institution_type
+                    LEFT JOIN m_code_value loanStatusCV ON loanStatusCV.id = gla.loan_status
+                    WHERE gla.additionals_id = ?
+                    """);
+
+            return sqlBuilder.toString();
+        }
+
+        @Override
+        public AdditionalsExtraLoansData mapRow(ResultSet rs, int rowNum) throws SQLException {
+            Long institutionType = rs.getLong("institutionType");
+            String institutionTypeValue = rs.getString("institutionTypeValue");
+            BigDecimal loanAmount = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "loanAmount");
+            BigDecimal balance = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "balance");
+            BigDecimal fees = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "fees");
+            Long loanStatus = rs.getLong("loanStatus");
+            String loanStatusValue = rs.getString("loanStatusValue");
+            AdditionalsExtraLoansData additionalExtraLoansData = AdditionalsExtraLoansData.builder().institutionType(institutionType)
+                    .institutionTypeValue(institutionTypeValue).loanAmount(loanAmount).balance(balance).fees(fees).loanStatus(loanStatus)
+                    .loanStatusValue(loanStatusValue).build();
+            return additionalExtraLoansData;
+        }
     }
 
     private static final class CollectionDataMapper implements RowMapper<CollectionData> {
