@@ -226,7 +226,8 @@ public class BureauValidationWritePlatformServiceImpl implements BureauValidatio
             throw new PlatformDataIntegrityException("error.msg.loan.additional.not.found",
                     "Loan additional properties Not Found for Case ID " + caseId);
         }
-        if (!loanProduct.getName().equalsIgnoreCase(loanAdditionalData.getProducto())) {
+        if (!(loanProduct.getName().equalsIgnoreCase(loanAdditionalData.getProducto())
+                || loanProduct.getName().equalsIgnoreCase(loanAdditionalData.getPrograma()))) {
             throw new PlatformDataIntegrityException("error.msg.selected.loan.product.not.same.with.the.case.id",
                     "Loan additional properties Not Found for Case ID " + caseId);
         }
@@ -234,411 +235,812 @@ public class BureauValidationWritePlatformServiceImpl implements BureauValidatio
     }
 
     public LoanAdditionalData mapFromJson(final JsonElement jsonElement) {
-        final LoanAdditionalData.LoanAdditionalDataBuilder loanAdditionalDataBuilder = LoanAdditionalData.builder();
+        final LoanAdditionalData loanAdditionalData = new LoanAdditionalData();
         final String dateFormat = "yyyy-MM-dd";
         final String dateTimeFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'";
         final String localeAsString = "en";
         final Locale locale = JsonParserHelper.localeFromString(localeAsString);
 
         final String caseId = this.fromApiJsonHelper.extractStringNamed("case_id", jsonElement);
-        loanAdditionalDataBuilder.caseId(caseId);
+        loanAdditionalData.setCaseId(caseId);
 
         final Integer ciclosCancelados = this.fromApiJsonHelper.extractIntegerNamed("Ciclos_Cancelados", jsonElement, locale);
-        loanAdditionalDataBuilder.ciclosCancelados(ciclosCancelados);
+        loanAdditionalData.setCiclosCancelados(ciclosCancelados);
 
         final Long branchCode = this.fromApiJsonHelper.extractLongNamed("branch_code", jsonElement);
-        loanAdditionalDataBuilder.branchCode(branchCode);
+        loanAdditionalData.setBranchCode(branchCode);
 
         final String cargoTesorera = this.fromApiJsonHelper.extractStringNamed("cargoTesorera", jsonElement);
-        loanAdditionalDataBuilder.cargoTesorera(cargoTesorera);
+        loanAdditionalData.setCargoTesorera(cargoTesorera);
 
         final String cargo = this.fromApiJsonHelper.extractStringNamed("cargo", jsonElement);
-        loanAdditionalDataBuilder.cargo(cargo);
+        loanAdditionalData.setCargo(cargo);
 
         final String estadoSolicitud = this.fromApiJsonHelper.extractStringNamed("estado_solicitud", jsonElement);
-        loanAdditionalDataBuilder.estadoSolicitud(estadoSolicitud);
+        loanAdditionalData.setEstadoSolicitud(estadoSolicitud);
 
         final LocalDate fechaInicio = this.fromApiJsonHelper.extractLocalDateNamed("fecha_inicio", jsonElement, dateFormat, locale);
-        loanAdditionalDataBuilder.fechaInicio(fechaInicio);
+        loanAdditionalData.setFechaInicio(fechaInicio);
 
         final String producto = this.fromApiJsonHelper.extractStringNamed("producto", jsonElement);
-        loanAdditionalDataBuilder.producto(producto);
+        loanAdditionalData.setProducto(producto);
 
         final LocalDate fechaSolicitud = this.fromApiJsonHelper.extractLocalDateNamed("Fecha_Solicitud", jsonElement, dateFormat, locale);
-        loanAdditionalDataBuilder.fechaSolicitud(fechaSolicitud);
+        loanAdditionalData.setFechaSolicitud(fechaSolicitud);
 
         final String codigoCliente = this.fromApiJsonHelper.extractStringNamed("codigo_cliente", jsonElement);
-        loanAdditionalDataBuilder.codigoCliente(codigoCliente);
+        loanAdditionalData.setCodigoCliente(codigoCliente);
 
         final String actividadNegocio = this.fromApiJsonHelper.extractStringNamed("actividad_negocio", jsonElement);
-        loanAdditionalDataBuilder.actividadNegocio(actividadNegocio);
+        loanAdditionalData.setActividadNegocio(actividadNegocio);
 
         final BigDecimal activoCorriente = this.fromApiJsonHelper.extractBigDecimalNamed("activo_corriente", jsonElement, locale);
-        loanAdditionalDataBuilder.activoCorriente(activoCorriente);
+        loanAdditionalData.setActivoCorriente(activoCorriente);
 
         final BigDecimal activoNocorriente = this.fromApiJsonHelper.extractBigDecimalNamed("activo_no_corriente", jsonElement, locale);
-        loanAdditionalDataBuilder.activoNocorriente(activoNocorriente);
+        loanAdditionalData.setActivoNocorriente(activoNocorriente);
 
         final BigDecimal alimentacion = this.fromApiJsonHelper.extractBigDecimalNamed("alimentacion", jsonElement, locale);
-        loanAdditionalDataBuilder.alimentacion(alimentacion);
+        loanAdditionalData.setAlimentacion(alimentacion);
 
         final BigDecimal alquilerCliente = this.fromApiJsonHelper.extractBigDecimalNamed("alquiler_cliente", jsonElement, locale);
-        loanAdditionalDataBuilder.alquilerCliente(alquilerCliente);
+        loanAdditionalData.setAlquilerCliente(alquilerCliente);
 
         final BigDecimal alquilerGasto = this.fromApiJsonHelper.extractBigDecimalNamed("alquiler_gasto", jsonElement, locale);
-        loanAdditionalDataBuilder.alquilerGasto(alquilerGasto);
+        loanAdditionalData.setAlquilerGasto(alquilerGasto);
 
         final BigDecimal alquilerLocal = this.fromApiJsonHelper.extractBigDecimalNamed("alquiler_local", jsonElement, locale);
-        loanAdditionalDataBuilder.alquilerLocal(alquilerLocal);
+        loanAdditionalData.setAlquilerLocal(alquilerLocal);
 
         final String antiguedadNegocio = this.fromApiJsonHelper.extractStringNamed("antiguedad_negocio", jsonElement);
-        loanAdditionalDataBuilder.antiguedadNegocio(antiguedadNegocio);
+        loanAdditionalData.setAntiguedadNegocio(antiguedadNegocio);
 
         final String apoyoFamilia = this.fromApiJsonHelper.extractStringNamed("apoyo_familia", jsonElement);
-        loanAdditionalDataBuilder.apoyoFamilia(apoyoFamilia);
+        loanAdditionalData.setApoyoFamilia(apoyoFamilia);
 
         final Integer aprobacionesBc = this.fromApiJsonHelper.extractIntegerNamed("aprobaciones_bc", jsonElement, locale);
-        loanAdditionalDataBuilder.aprobacionesBc(aprobacionesBc);
+        loanAdditionalData.setAprobacionesBc(aprobacionesBc);
 
         final String area = this.fromApiJsonHelper.extractStringNamed("area", jsonElement);
-        loanAdditionalDataBuilder.area(area);
+        loanAdditionalData.setArea(area);
 
         final Integer bienesInmuebles = this.fromApiJsonHelper.extractIntegerNamed("bienes_inmuebles", jsonElement, locale);
-        loanAdditionalDataBuilder.bienesInmuebles(bienesInmuebles);
+        loanAdditionalData.setBienesInmuebles(bienesInmuebles);
 
         final Integer bienesInmueblesFamiliares = this.fromApiJsonHelper.extractIntegerNamed("bienes_inmuebles_familiares", jsonElement,
                 locale);
-        loanAdditionalDataBuilder.bienesInmueblesFamiliares(bienesInmueblesFamiliares);
+        loanAdditionalData.setBienesInmueblesFamiliares(bienesInmueblesFamiliares);
 
         final String cDpi = this.fromApiJsonHelper.extractStringNamed("c_dpi", jsonElement);
-        loanAdditionalDataBuilder.cDpi(cDpi);
+        loanAdditionalData.setCDpi(cDpi);
 
         final Integer cEdad = this.fromApiJsonHelper.extractIntegerNamed("c_edad", jsonElement, locale);
-        loanAdditionalDataBuilder.cEdad(cEdad);
+        loanAdditionalData.setCEdad(cEdad);
 
         final LocalDate cFechaNacimiento = this.fromApiJsonHelper.extractLocalDateNamed("c_fecha_nacimiento", jsonElement, dateFormat,
                 locale);
-        loanAdditionalDataBuilder.cFechaNacimiento(cFechaNacimiento);
+        loanAdditionalData.setCFechaNacimiento(cFechaNacimiento);
 
         final String cOtroNombre = this.fromApiJsonHelper.extractStringNamed("c_otro_nombre", jsonElement);
-        loanAdditionalDataBuilder.cOtroNombre(cOtroNombre);
+        loanAdditionalData.setCOtroNombre(cOtroNombre);
 
         final String cPrimerApellido = this.fromApiJsonHelper.extractStringNamed("c_primer_apellido", jsonElement);
-        loanAdditionalDataBuilder.cPrimerApellido(cPrimerApellido);
+        loanAdditionalData.setCPrimerApellido(cPrimerApellido);
 
         final String cPrimerNombre = this.fromApiJsonHelper.extractStringNamed("c_primer_nombre", jsonElement);
-        loanAdditionalDataBuilder.cPrimerNombre(cPrimerNombre);
+        loanAdditionalData.setCPrimerNombre(cPrimerNombre);
 
         final String cProfesion = this.fromApiJsonHelper.extractStringNamed("c_profesion", jsonElement);
-        loanAdditionalDataBuilder.cProfesion(cProfesion);
+        loanAdditionalData.setCProfesion(cProfesion);
 
         final String cSegundoApellido = this.fromApiJsonHelper.extractStringNamed("c_segundo_apellido", jsonElement);
-        loanAdditionalDataBuilder.cSegundoApellido(cSegundoApellido);
+        loanAdditionalData.setCSegundoApellido(cSegundoApellido);
 
         final String cSegundoNombre = this.fromApiJsonHelper.extractStringNamed("c_segundo_nombre", jsonElement);
-        loanAdditionalDataBuilder.cSegundoNombre(cSegundoNombre);
+        loanAdditionalData.setCSegundoNombre(cSegundoNombre);
 
         final String cTelefono = this.fromApiJsonHelper.extractStringNamed("c_telefono", jsonElement);
-        loanAdditionalDataBuilder.cTelefono(cTelefono);
+        loanAdditionalData.setCTelefono(cTelefono);
 
         final BigDecimal capacidadPago = this.fromApiJsonHelper.extractBigDecimalNamed("capacidad_pago", jsonElement, locale);
-        loanAdditionalDataBuilder.capacidadPago(capacidadPago);
+        loanAdditionalData.setCapacidadPago(capacidadPago);
 
         final BigDecimal comunalVigente = this.fromApiJsonHelper.extractBigDecimalNamed("comunal_vigente", jsonElement, locale);
-        loanAdditionalDataBuilder.comunalVigente(comunalVigente);
+        loanAdditionalData.setComunalVigente(comunalVigente);
 
         final BigDecimal costoUnitario = this.fromApiJsonHelper.extractBigDecimalNamed("costo_unitario", jsonElement, locale);
-        loanAdditionalDataBuilder.costoUnitario(costoUnitario);
+        loanAdditionalData.setCostoUnitario(costoUnitario);
 
         final BigDecimal costoVenta = this.fromApiJsonHelper.extractBigDecimalNamed("costo_venta", jsonElement, locale);
-        loanAdditionalDataBuilder.costoVenta(costoVenta);
+        loanAdditionalData.setCostoVenta(costoVenta);
 
         final BigDecimal cuantoPagar = this.fromApiJsonHelper.extractBigDecimalNamed("cuanto_pagar", jsonElement, locale);
-        loanAdditionalDataBuilder.cuantoPagar(cuantoPagar);
+        loanAdditionalData.setCuantoPagar(cuantoPagar);
 
         final BigDecimal cuentasPorPagar = this.fromApiJsonHelper.extractBigDecimalNamed("cuentas_por_pagar", jsonElement, locale);
-        loanAdditionalDataBuilder.cuentasPorPagar(cuentasPorPagar);
+        loanAdditionalData.setCuentasPorPagar(cuentasPorPagar);
 
         final Integer cuota = this.fromApiJsonHelper.extractIntegerNamed("cuota", jsonElement, locale);
-        loanAdditionalDataBuilder.cuota(cuota);
+        loanAdditionalData.setCuota(cuota);
 
         final Integer cuotaOtros = this.fromApiJsonHelper.extractIntegerNamed("cuota_otros", jsonElement, locale);
-        loanAdditionalDataBuilder.cuotaOtros(cuotaOtros);
+        loanAdditionalData.setCuotaOtros(cuotaOtros);
 
         final Integer cuotaPuente = this.fromApiJsonHelper.extractIntegerNamed("cuota_puente", jsonElement, locale);
-        loanAdditionalDataBuilder.cuotaPuente(cuotaPuente);
+        loanAdditionalData.setCuotaPuente(cuotaPuente);
 
         final Integer cuotasPendientesBc = this.fromApiJsonHelper.extractIntegerNamed("cuotas_pendientes_bc", jsonElement, locale);
-        loanAdditionalDataBuilder.cuotasPendientesBc(cuotasPendientesBc);
+        loanAdditionalData.setCuotasPendientesBc(cuotasPendientesBc);
 
         final Integer dependientes = this.fromApiJsonHelper.extractIntegerNamed("dependientes", jsonElement, locale);
-        loanAdditionalDataBuilder.dependientes(dependientes);
+        loanAdditionalData.setDependientes(dependientes);
 
         final String destinoPrestamo = this.fromApiJsonHelper.extractStringNamed("destino_prestamo", jsonElement);
-        loanAdditionalDataBuilder.destinoPrestamo(destinoPrestamo);
+        loanAdditionalData.setDestinoPrestamo(destinoPrestamo);
 
         final Integer educacion = this.fromApiJsonHelper.extractIntegerNamed("educacion", jsonElement, locale);
-        loanAdditionalDataBuilder.educacion(educacion);
+        loanAdditionalData.setEducacion(educacion);
 
         final BigDecimal efectivo = this.fromApiJsonHelper.extractBigDecimalNamed("efectivo", jsonElement, locale);
-        loanAdditionalDataBuilder.efectivo(efectivo);
+        loanAdditionalData.setEfectivo(efectivo);
 
         final BigDecimal endeudamientoActual = this.fromApiJsonHelper.extractBigDecimalNamed("endeudamiento_actual", jsonElement, locale);
-        loanAdditionalDataBuilder.endeudamientoActual(endeudamientoActual);
+        loanAdditionalData.setEndeudamientoActual(endeudamientoActual);
 
         final BigDecimal endeudamientoFuturo = this.fromApiJsonHelper.extractBigDecimalNamed("endeudamiento_futuro", jsonElement, locale);
-        loanAdditionalDataBuilder.endeudamientoFuturo(endeudamientoFuturo);
+        loanAdditionalData.setEndeudamientoFuturo(endeudamientoFuturo);
 
         final Integer enf = this.fromApiJsonHelper.extractIntegerNamed("enf", jsonElement, locale);
-        loanAdditionalDataBuilder.enf(enf);
+        loanAdditionalData.setEnf(enf);
 
         final String escribe = this.fromApiJsonHelper.extractStringNamed("escribe", jsonElement);
-        loanAdditionalDataBuilder.escribe(escribe);
+        loanAdditionalData.setEscribe(escribe);
 
         final String evolucionNegocio = this.fromApiJsonHelper.extractStringNamed("evolucion_negocio", jsonElement);
-        loanAdditionalDataBuilder.evolucionNegocio(evolucionNegocio);
+        loanAdditionalData.setEvolucionNegocio(evolucionNegocio);
 
         final String fPep = this.fromApiJsonHelper.extractStringNamed("f_pep", jsonElement);
-        loanAdditionalDataBuilder.fPep(fPep);
+        loanAdditionalData.setFPep(fPep);
 
         final Integer familiares = this.fromApiJsonHelper.extractIntegerNamed("familiares", jsonElement, locale);
-        loanAdditionalDataBuilder.familiares(familiares);
+        loanAdditionalData.setFamiliares(familiares);
 
         final LocalDate fechaPrimeraReunion = this.fromApiJsonHelper.extractLocalDateNamed("fecha_primera_reunion", jsonElement, dateFormat,
                 locale);
-        loanAdditionalDataBuilder.fechaPrimeraReunion(fechaPrimeraReunion);
+        loanAdditionalData.setFechaPrimeraReunion(fechaPrimeraReunion);
 
         final Integer flujoDisponible = this.fromApiJsonHelper.extractIntegerNamed("flujo_disponible", jsonElement, locale);
-        loanAdditionalDataBuilder.flujoDisponible(flujoDisponible);
+        loanAdditionalData.setFlujoDisponible(flujoDisponible);
 
         final String garantiaPrestamo = this.fromApiJsonHelper.extractStringNamed("garantia_prestamo", jsonElement);
-        loanAdditionalDataBuilder.garantiaPrestamo(garantiaPrestamo);
+        loanAdditionalData.setGarantiaPrestamo(garantiaPrestamo);
 
         final BigDecimal gastosFamiliares = this.fromApiJsonHelper.extractBigDecimalNamed("gastos_familiares", jsonElement, locale);
-        loanAdditionalDataBuilder.gastosFamiliares(gastosFamiliares);
+        loanAdditionalData.setGastosFamiliares(gastosFamiliares);
 
         final BigDecimal gastosNegocio = this.fromApiJsonHelper.extractBigDecimalNamed("gastos_negocio", jsonElement, locale);
-        loanAdditionalDataBuilder.gastosNegocio(gastosNegocio);
+        loanAdditionalData.setGastosNegocio(gastosNegocio);
 
         final Integer herramientas = this.fromApiJsonHelper.extractIntegerNamed("herramientas", jsonElement, locale);
-        loanAdditionalDataBuilder.herramientas(herramientas);
+        loanAdditionalData.setHerramientas(herramientas);
 
         final Integer hijos = this.fromApiJsonHelper.extractIntegerNamed("hijos", jsonElement, locale);
-        loanAdditionalDataBuilder.hijos(hijos);
+        loanAdditionalData.setHijos(hijos);
 
         final Integer mortgages = this.fromApiJsonHelper.extractIntegerNamed("mortgages", jsonElement, locale);
-        loanAdditionalDataBuilder.mortgages(mortgages);
+        loanAdditionalData.setMortgages(mortgages);
 
         final Integer impuestos = this.fromApiJsonHelper.extractIntegerNamed("impuestos", jsonElement, locale);
-        loanAdditionalDataBuilder.impuestos(impuestos);
+        loanAdditionalData.setImpuestos(impuestos);
 
         final String ingresadoPor = this.fromApiJsonHelper.extractStringNamed("ingresado_por", jsonElement);
-        loanAdditionalDataBuilder.ingresadoPor(ingresadoPor);
+        loanAdditionalData.setIngresadoPor(ingresadoPor);
 
         final BigDecimal ingresoFamiliar = this.fromApiJsonHelper.extractBigDecimalNamed("ingreso_familiar", jsonElement, locale);
-        loanAdditionalDataBuilder.ingresoFamiliar(ingresoFamiliar);
+        loanAdditionalData.setIngresoFamiliar(ingresoFamiliar);
 
         final Integer integrantesAdicional = this.fromApiJsonHelper.extractIntegerNamed("integrantes_adicional", jsonElement, locale);
-        loanAdditionalDataBuilder.integrantesAdicional(integrantesAdicional);
+        loanAdditionalData.setIntegrantesAdicional(integrantesAdicional);
 
         final BigDecimal inventarios = this.fromApiJsonHelper.extractBigDecimalNamed("inventarios", jsonElement, locale);
-        loanAdditionalDataBuilder.inventarios(inventarios);
+        loanAdditionalData.setInventarios(inventarios);
 
         final BigDecimal inversionTotal = this.fromApiJsonHelper.extractBigDecimalNamed("inversion_total", jsonElement, locale);
-        loanAdditionalDataBuilder.inversionTotal(inversionTotal);
+        loanAdditionalData.setInversionTotal(inversionTotal);
 
         final String invertir = this.fromApiJsonHelper.extractStringNamed("invertir", jsonElement);
-        loanAdditionalDataBuilder.invertir(invertir);
+        loanAdditionalData.setInvertir(invertir);
 
         final String lee = this.fromApiJsonHelper.extractStringNamed("lee", jsonElement);
-        loanAdditionalDataBuilder.lee(lee);
+        loanAdditionalData.setLee(lee);
 
         final BigDecimal menajeDelHogar = this.fromApiJsonHelper.extractBigDecimalNamed("menaje_del_hogar", jsonElement, locale);
-        loanAdditionalDataBuilder.menajeDelHogar(menajeDelHogar);
+        loanAdditionalData.setMenajeDelHogar(menajeDelHogar);
 
         final BigDecimal mobiliarioYequipo = this.fromApiJsonHelper.extractBigDecimalNamed("mobiliario_y_equipo", jsonElement, locale);
-        loanAdditionalDataBuilder.mobiliarioYequipo(mobiliarioYequipo);
+        loanAdditionalData.setMobiliarioYequipo(mobiliarioYequipo);
 
         final BigDecimal montoSolicitado = this.fromApiJsonHelper.extractBigDecimalNamed("monto_solicitado", jsonElement, locale);
-        loanAdditionalDataBuilder.montoSolicitado(montoSolicitado);
+        loanAdditionalData.setMontoSolicitado(montoSolicitado);
 
         final String motivoSolicitud = this.fromApiJsonHelper.extractStringNamed("motivo_solicitud", jsonElement);
-        loanAdditionalDataBuilder.motivoSolicitud(motivoSolicitud);
+        loanAdditionalData.setMotivoSolicitud(motivoSolicitud);
 
         final String nit = this.fromApiJsonHelper.extractStringNamed("nit", jsonElement);
-        loanAdditionalDataBuilder.nit(nit);
+        loanAdditionalData.setNit(nit);
 
         final String nombrePropio = this.fromApiJsonHelper.extractStringNamed("nombre_propio", jsonElement);
-        loanAdditionalDataBuilder.nombrePropio(nombrePropio);
+        loanAdditionalData.setNombrePropio(nombrePropio);
 
         final BigDecimal pasivoCorriente = this.fromApiJsonHelper.extractBigDecimalNamed("pasivo_corriente", jsonElement, locale);
-        loanAdditionalDataBuilder.pasivoCorriente(pasivoCorriente);
+        loanAdditionalData.setPasivoCorriente(pasivoCorriente);
 
         final BigDecimal pasivoNoCorriente = this.fromApiJsonHelper.extractBigDecimalNamed("pasivo_no_Corriente", jsonElement, locale);
-        loanAdditionalDataBuilder.pasivoNoCorriente(pasivoNoCorriente);
+        loanAdditionalData.setPasivoNoCorriente(pasivoNoCorriente);
 
         final BigDecimal pensiones = this.fromApiJsonHelper.extractBigDecimalNamed("pensiones", jsonElement, locale);
-        loanAdditionalDataBuilder.pensiones(pensiones);
+        loanAdditionalData.setPensiones(pensiones);
 
         final String pep = this.fromApiJsonHelper.extractStringNamed("pep", jsonElement);
-        loanAdditionalDataBuilder.pep(pep);
+        loanAdditionalData.setPep(pep);
 
         final Integer plazo = this.fromApiJsonHelper.extractIntegerNamed("plazo", jsonElement, locale);
-        loanAdditionalDataBuilder.plazo(plazo);
+        loanAdditionalData.setPlazo(plazo);
 
         final Integer plazoVigente = this.fromApiJsonHelper.extractIntegerNamed("plazo_vigente", jsonElement, locale);
-        loanAdditionalDataBuilder.plazoVigente(plazoVigente);
+        loanAdditionalData.setPlazoVigente(plazoVigente);
 
         final String poseeCuenta = this.fromApiJsonHelper.extractStringNamed("posee_cuenta", jsonElement);
-        loanAdditionalDataBuilder.poseeCuenta(poseeCuenta);
+        loanAdditionalData.setPoseeCuenta(poseeCuenta);
 
         final Long prestamoPuente = this.fromApiJsonHelper.extractLongNamed("prestamo_puente", jsonElement);
-        loanAdditionalDataBuilder.prestamoPuente(prestamoPuente);
+        loanAdditionalData.setPrestamoPuente(prestamoPuente);
 
         final BigDecimal propuestaFacilitador = this.fromApiJsonHelper.extractBigDecimalNamed("propuesta_facilitador", jsonElement, locale);
-        loanAdditionalDataBuilder.propuestaFacilitador(propuestaFacilitador);
+        loanAdditionalData.setPropuestaFacilitador(propuestaFacilitador);
 
         final String puntoReunion = this.fromApiJsonHelper.extractStringNamed("punto_reunion", jsonElement);
-        loanAdditionalDataBuilder.puntoReunion(puntoReunion);
+        loanAdditionalData.setPuntoReunion(puntoReunion);
 
         final BigDecimal relacionGastos = this.fromApiJsonHelper.extractBigDecimalNamed("relacion_gastos", jsonElement, locale);
-        loanAdditionalDataBuilder.relacionGastos(relacionGastos);
+        loanAdditionalData.setRelacionGastos(relacionGastos);
 
         final BigDecimal rentabilidadNeta = this.fromApiJsonHelper.extractBigDecimalNamed("rentabilidad_neta", jsonElement, locale);
-        loanAdditionalDataBuilder.rentabilidadNeta(rentabilidadNeta);
+        loanAdditionalData.setRentabilidadNeta(rentabilidadNeta);
 
         final BigDecimal rotacionInventario = this.fromApiJsonHelper.extractBigDecimalNamed("rotacion_inventario", jsonElement, locale);
-        loanAdditionalDataBuilder.rotacionInventario(rotacionInventario);
+        loanAdditionalData.setRotacionInventario(rotacionInventario);
 
         final BigDecimal salarioCliente = this.fromApiJsonHelper.extractBigDecimalNamed("salario_cliente", jsonElement, locale);
-        loanAdditionalDataBuilder.salarioCliente(salarioCliente);
+        loanAdditionalData.setSalarioCliente(salarioCliente);
 
         final BigDecimal salarios = this.fromApiJsonHelper.extractBigDecimalNamed("salarios", jsonElement, locale);
-        loanAdditionalDataBuilder.salarios(salarios);
+        loanAdditionalData.setSalarios(salarios);
 
         final String salud = this.fromApiJsonHelper.extractStringNamed("salud", jsonElement);
-        loanAdditionalDataBuilder.salud(salud);
+        loanAdditionalData.setSalud(salud);
 
         final String servicios = this.fromApiJsonHelper.extractStringNamed("servicios", jsonElement);
-        loanAdditionalDataBuilder.servicios(servicios);
+        loanAdditionalData.setServicios(servicios);
 
         final BigDecimal serviciosBasicos = this.fromApiJsonHelper.extractBigDecimalNamed("servicios_basicos", jsonElement, locale);
-        loanAdditionalDataBuilder.serviciosBasicos(serviciosBasicos);
+        loanAdditionalData.setServiciosBasicos(serviciosBasicos);
 
         final BigDecimal serviciosGasto = this.fromApiJsonHelper.extractBigDecimalNamed("servicios_gasto", jsonElement, locale);
-        loanAdditionalDataBuilder.serviciosGasto(serviciosGasto);
+        loanAdditionalData.setServiciosGasto(serviciosGasto);
 
         final BigDecimal serviciosMedicos = this.fromApiJsonHelper.extractBigDecimalNamed("servicios_medicos", jsonElement, locale);
-        loanAdditionalDataBuilder.serviciosMedicos(serviciosMedicos);
+        loanAdditionalData.setServiciosMedicos(serviciosMedicos);
 
         final Integer tarjetas = this.fromApiJsonHelper.extractIntegerNamed("tarjetas", jsonElement, locale);
-        loanAdditionalDataBuilder.tarjetas(tarjetas);
+        loanAdditionalData.setTarjetas(tarjetas);
 
         final String tipoVivienda = this.fromApiJsonHelper.extractStringNamed("tipo_vivienda", jsonElement);
-        loanAdditionalDataBuilder.tipoVivienda(tipoVivienda);
+        loanAdditionalData.setTipoVivienda(tipoVivienda);
 
         final BigDecimal totalActivo = this.fromApiJsonHelper.extractBigDecimalNamed("total_activo", jsonElement, locale);
-        loanAdditionalDataBuilder.totalActivo(totalActivo);
+        loanAdditionalData.setTotalActivo(totalActivo);
 
         final BigDecimal totalIngresos = this.fromApiJsonHelper.extractBigDecimalNamed("total_ingresos", jsonElement, locale);
-        loanAdditionalDataBuilder.totalIngresos(totalIngresos);
+        loanAdditionalData.setTotalIngresos(totalIngresos);
 
         final BigDecimal totalIngresosFamiliares = this.fromApiJsonHelper.extractBigDecimalNamed("total_ingresos_familiares", jsonElement,
                 locale);
-        loanAdditionalDataBuilder.totalIngresosFamiliares(totalIngresosFamiliares);
+        loanAdditionalData.setTotalIngresosFamiliares(totalIngresosFamiliares);
 
         final BigDecimal totalPasivo = this.fromApiJsonHelper.extractBigDecimalNamed("total_pasivo", jsonElement, locale);
-        loanAdditionalDataBuilder.totalPasivo(totalPasivo);
+        loanAdditionalData.setTotalPasivo(totalPasivo);
 
         final BigDecimal transporteGasto = this.fromApiJsonHelper.extractBigDecimalNamed("transporte_gasto", jsonElement, locale);
-        loanAdditionalDataBuilder.transporteGasto(transporteGasto);
+        loanAdditionalData.setTransporteGasto(transporteGasto);
 
         final BigDecimal transporteNegocio = this.fromApiJsonHelper.extractBigDecimalNamed("transporte_negocio", jsonElement, locale);
-        loanAdditionalDataBuilder.transporteNegocio(transporteNegocio);
+        loanAdditionalData.setTransporteNegocio(transporteNegocio);
 
         final String ubicacionCliente = this.fromApiJsonHelper.extractStringNamed("ubicacion_cliente", jsonElement);
-        loanAdditionalDataBuilder.ubicacionCliente(ubicacionCliente);
+        loanAdditionalData.setUbicacionCliente(ubicacionCliente);
 
         final String ubicacionNegocio = this.fromApiJsonHelper.extractStringNamed("ubicacion_negocio", jsonElement);
-        loanAdditionalDataBuilder.ubicacionNegocio(ubicacionNegocio);
+        loanAdditionalData.setUbicacionNegocio(ubicacionNegocio);
 
         final BigDecimal utilidadBruta = this.fromApiJsonHelper.extractBigDecimalNamed("utilidad_bruta", jsonElement, locale);
-        loanAdditionalDataBuilder.utilidadBruta(utilidadBruta);
+        loanAdditionalData.setUtilidadBruta(utilidadBruta);
 
         final BigDecimal utilidadNeta = this.fromApiJsonHelper.extractBigDecimalNamed("utilidad_neta", jsonElement, locale);
-        loanAdditionalDataBuilder.utilidadNeta(utilidadNeta);
+        loanAdditionalData.setUtilidadNeta(utilidadNeta);
 
         final Integer validFiador = this.fromApiJsonHelper.extractIntegerNamed("valid_fiador", jsonElement, locale);
-        loanAdditionalDataBuilder.validFiador(validFiador);
+        loanAdditionalData.setValidFiador(validFiador);
 
         final BigDecimal valorGarantia = this.fromApiJsonHelper.extractBigDecimalNamed("valor_garantia", jsonElement, locale);
-        loanAdditionalDataBuilder.valorGarantia(valorGarantia);
+        loanAdditionalData.setValorGarantia(valorGarantia);
 
         final Integer vehiculos = this.fromApiJsonHelper.extractIntegerNamed("vehiculos", jsonElement, locale);
-        loanAdditionalDataBuilder.vehiculos(vehiculos);
+        loanAdditionalData.setVehiculos(vehiculos);
 
         final BigDecimal vestimenta = this.fromApiJsonHelper.extractBigDecimalNamed("vestimenta", jsonElement, locale);
-        loanAdditionalDataBuilder.vestimenta(vestimenta);
+        loanAdditionalData.setVestimenta(vestimenta);
 
         final String visitoNegocio = this.fromApiJsonHelper.extractStringNamed("visito_negocio", jsonElement);
-        loanAdditionalDataBuilder.visitoNegocio(visitoNegocio);
+        loanAdditionalData.setVisitoNegocio(visitoNegocio);
 
         final String externalId = this.fromApiJsonHelper.extractStringNamed("external_id", jsonElement);
-        loanAdditionalDataBuilder.externalId(externalId);
+        loanAdditionalData.setExternalId(externalId);
 
         final String ownerId = this.fromApiJsonHelper.extractStringNamed("owner_id", jsonElement);
-        loanAdditionalDataBuilder.ownerId(ownerId);
+        loanAdditionalData.setOwnerId(ownerId);
 
         final String caseName = this.fromApiJsonHelper.extractStringNamed("case_name", jsonElement);
-        loanAdditionalDataBuilder.caseName(caseName);
+        loanAdditionalData.setCaseName(caseName);
 
         final LocalDateTime dateOpened = this.fromApiJsonHelper.extractLocalDateTimeNamed("date_opened", jsonElement, dateTimeFormat,
                 locale);
-        loanAdditionalDataBuilder.dateOpened(dateOpened);
+        loanAdditionalData.setDateOpened(dateOpened);
 
         final LocalDate fechaFin = this.fromApiJsonHelper.extractLocalDateNamed("fecha_fin", jsonElement, dateFormat, locale);
-        loanAdditionalDataBuilder.fechaFin(fechaFin);
+        loanAdditionalData.setFechaFin(fechaFin);
 
         final BigDecimal ventas = this.fromApiJsonHelper.extractBigDecimalNamed("ventas", jsonElement, locale);
-        loanAdditionalDataBuilder.ventas(ventas);
+        loanAdditionalData.setVentas(ventas);
 
         final BigDecimal cuentasPorCobrar = this.fromApiJsonHelper.extractBigDecimalNamed("cuentas_por_cobrar", jsonElement, locale);
-        loanAdditionalDataBuilder.cuentasPorCobrar(cuentasPorCobrar);
+        loanAdditionalData.setCuentasPorCobrar(cuentasPorCobrar);
 
         final BigDecimal hipotecas = this.fromApiJsonHelper.extractBigDecimalNamed("hipotecas", jsonElement, locale);
-        loanAdditionalDataBuilder.hipotecas(hipotecas);
+        loanAdditionalData.setHipotecas(hipotecas);
 
         final String excepcion = this.fromApiJsonHelper.extractStringNamed("excepcion", jsonElement);
-        loanAdditionalDataBuilder.excepcion(excepcion);
+        loanAdditionalData.setExcepcion(excepcion);
 
         final Integer tipoExcepcion = this.fromApiJsonHelper.extractIntegerNamed("tipo_excepcion", jsonElement, locale);
-        loanAdditionalDataBuilder.tipoExcepcion(tipoExcepcion);
+        loanAdditionalData.setTipoExcepcion(tipoExcepcion);
 
         final String descripcionExcepcion = this.fromApiJsonHelper.extractStringNamed("descripcion_excepcion", jsonElement);
-        loanAdditionalDataBuilder.descripcionExcepcion(descripcionExcepcion);
+        loanAdditionalData.setDescripcionExcepcion(descripcionExcepcion);
 
         final BigDecimal montoAutorizado = this.fromApiJsonHelper.extractBigDecimalNamed("monto_autorizado", jsonElement, locale);
-        loanAdditionalDataBuilder.montoAutorizado(montoAutorizado);
+        loanAdditionalData.setMontoAutorizado(montoAutorizado);
 
         final String observaciones = this.fromApiJsonHelper.extractStringNamed("observaciones", jsonElement);
-        loanAdditionalDataBuilder.observaciones(observaciones);
+        loanAdditionalData.setObservaciones(observaciones);
 
         final BigDecimal montoOtrosIngresos = this.fromApiJsonHelper.extractBigDecimalNamed("monto_otros_ingresos", jsonElement, locale);
-        loanAdditionalDataBuilder.montoOtrosIngresos(montoOtrosIngresos);
+        loanAdditionalData.setMontoOtrosIngresos(montoOtrosIngresos);
 
         final BigDecimal capitalDdeTrabajo = this.fromApiJsonHelper.extractBigDecimalNamed("capital_de_trabajo", jsonElement, locale);
-        loanAdditionalDataBuilder.capitalDdeTrabajo(capitalDdeTrabajo);
+        loanAdditionalData.setCapitalDdeTrabajo(capitalDdeTrabajo);
 
         final String origenOtrosIngresos = this.fromApiJsonHelper.extractStringNamed("origen_otros_ingresos", jsonElement);
-        loanAdditionalDataBuilder.origenOtrosIngresos(origenOtrosIngresos);
+        loanAdditionalData.setOrigenOtrosIngresos(origenOtrosIngresos);
 
         final String otrosIngresos = this.fromApiJsonHelper.extractStringNamed("otros_ingresos", jsonElement);
-        loanAdditionalDataBuilder.otrosIngresos(otrosIngresos);
+        loanAdditionalData.setOtrosIngresos(otrosIngresos);
 
         final BigDecimal relacionOtrosIngresos = this.fromApiJsonHelper.extractBigDecimalNamed("Relacion_otros_ingresos", jsonElement,
                 locale);
-        loanAdditionalDataBuilder.relacionOtrosIngresos(relacionOtrosIngresos);
+        loanAdditionalData.setRelacionOtrosIngresos(relacionOtrosIngresos);
 
-        return loanAdditionalDataBuilder.build();
+        final String programa = this.fromApiJsonHelper.extractStringNamed("Programa", jsonElement);
+        loanAdditionalData.setPrograma(programa);
+
+        final String aldeaVivienda = this.fromApiJsonHelper.extractStringNamed("aldea_vivienda", jsonElement);
+        loanAdditionalData.setAldeaVivienda(aldeaVivienda);
+
+        final Integer aniosComunidad = this.fromApiJsonHelper.extractIntegerNamed("anios_comunidad", jsonElement, locale);
+        loanAdditionalData.setAniosComunidad(aniosComunidad);
+
+        final Integer aniosDeActividadNegocio = this.fromApiJsonHelper.extractIntegerNamed("anios_de_actividad_negocio", jsonElement,
+                locale);
+        loanAdditionalData.setAniosDeActividadNegocio(aniosDeActividadNegocio);
+
+        final String apellidoCasadaSolicitante = this.fromApiJsonHelper.extractStringNamed("apellido_casada_solicitante", jsonElement);
+        loanAdditionalData.setApellidoCasadaSolicitante(apellidoCasadaSolicitante);
+
+        final String cActividadEconomica = this.fromApiJsonHelper.extractStringNamed("c_actividad_economica", jsonElement);
+        loanAdditionalData.setCActividadEconomica(cActividadEconomica);
+
+        final String cApellidoDeCasada = this.fromApiJsonHelper.extractStringNamed("c_apellido_de_casada", jsonElement);
+        loanAdditionalData.setCApellidoDeCasada(cApellidoDeCasada);
+
+        final String cDepartamento = this.fromApiJsonHelper.extractStringNamed("c_departamento", jsonElement);
+        loanAdditionalData.setCDepartamento(cDepartamento);
+
+        final String cDepartamentoDpi = this.fromApiJsonHelper.extractStringNamed("c_departamento_dpi", jsonElement);
+        loanAdditionalData.setCDepartamentoDpi(cDepartamentoDpi);
+
+        final String cDescripcionNegocio = this.fromApiJsonHelper.extractStringNamed("c_descripcion_negocio", jsonElement);
+        loanAdditionalData.setCDescripcionNegocio(cDescripcionNegocio);
+
+        final String descripcionNegocio = this.fromApiJsonHelper.extractStringNamed("descripcionNegocio", jsonElement);
+        loanAdditionalData.setDescripcionNegocio(descripcionNegocio);
+
+        final String cLugarNacimiento = this.fromApiJsonHelper.extractStringNamed("c_lugar_nacimiento", jsonElement);
+        loanAdditionalData.setCLugarNacimiento(cLugarNacimiento);
+
+        final String cMunicipio = this.fromApiJsonHelper.extractStringNamed("c_municipio", jsonElement);
+        loanAdditionalData.setCMunicipio(cMunicipio);
+
+        final String cMunicipioDpi = this.fromApiJsonHelper.extractStringNamed("c_municipio_dpi", jsonElement);
+        loanAdditionalData.setCMunicipioDpi(cMunicipioDpi);
+
+        final String cNit = this.fromApiJsonHelper.extractStringNamed("c_nit", jsonElement);
+        loanAdditionalData.setCNit(cNit);
+
+        final String cSectorEconomico = this.fromApiJsonHelper.extractStringNamed("c_sector_economico", jsonElement);
+        loanAdditionalData.setCSectorEconomico(cSectorEconomico);
+
+        final String calleNegocio = this.fromApiJsonHelper.extractStringNamed("calle_negocio", jsonElement);
+        loanAdditionalData.setCalleNegocio(calleNegocio);
+
+        final String calleVivienda = this.fromApiJsonHelper.extractStringNamed("calle_vivienda", jsonElement);
+        loanAdditionalData.setCalleVivienda(calleVivienda);
+
+        final String casaNegocio = this.fromApiJsonHelper.extractStringNamed("casa_negocio", jsonElement);
+        loanAdditionalData.setCasaNegocio(casaNegocio);
+
+        final String celularSolicitante = this.fromApiJsonHelper.extractStringNamed("celular_solicitante", jsonElement);
+        loanAdditionalData.setCelularSolicitante(celularSolicitante);
+
+        final String coloniaNegocio = this.fromApiJsonHelper.extractStringNamed("colonia_negocio", jsonElement);
+        loanAdditionalData.setColoniaNegocio(coloniaNegocio);
+
+        final String coloniaVivienda = this.fromApiJsonHelper.extractStringNamed("colonia_vivienda", jsonElement);
+        loanAdditionalData.setColoniaVivienda(coloniaVivienda);
+
+        final String correoElectronico = this.fromApiJsonHelper.extractStringNamed("correo_electronico", jsonElement);
+        loanAdditionalData.setCorreoElectronico(correoElectronico);
+
+        final Integer cuentas_uso_familia = this.fromApiJsonHelper.extractIntegerNamed("cuentas_uso_familia", jsonElement, locale);
+        loanAdditionalData.setCuentas_uso_familia(cuentas_uso_familia);
+
+        final Integer cuentas_uso_negocio = this.fromApiJsonHelper.extractIntegerNamed("cuentas_uso_negocio", jsonElement, locale);
+        loanAdditionalData.setCuentas_uso_negocio(cuentas_uso_negocio);
+
+        final String datos_moviles = this.fromApiJsonHelper.extractStringNamed("datos_moviles", jsonElement);
+        loanAdditionalData.setDatos_moviles(datos_moviles);
+
+        final String departamento_dpi_solicitante = this.fromApiJsonHelper.extractStringNamed("departamento_dpi_solicitante", jsonElement);
+        loanAdditionalData.setDepartamento_dpi_solicitante(departamento_dpi_solicitante);
+
+        final String departamento_solicitante = this.fromApiJsonHelper.extractStringNamed("departamento_solicitante", jsonElement);
+        loanAdditionalData.setDepartamento_solicitante(departamento_solicitante);
+
+        final String departamento_vivienda = this.fromApiJsonHelper.extractStringNamed("departamento_vivienda", jsonElement);
+        loanAdditionalData.setDepartamento_vivienda(departamento_vivienda);
+
+        final String descripcion_giro_negocio = this.fromApiJsonHelper.extractStringNamed("descripcion_giro_negocio", jsonElement);
+        loanAdditionalData.setDescripcion_giro_negocio(descripcion_giro_negocio);
+
+        final BigDecimal detalle_compras = this.fromApiJsonHelper.extractBigDecimalNamed("detalle_compras", jsonElement, locale);
+        loanAdditionalData.setDetalle_compras(detalle_compras);
+
+        final String detalle_de_inversion = this.fromApiJsonHelper.extractStringNamed("detalle_de_inversion", jsonElement);
+        loanAdditionalData.setDetalle_de_inversion(detalle_de_inversion);
+
+        final BigDecimal detalle_otros_ingresos = this.fromApiJsonHelper.extractBigDecimalNamed("detalle_otros_ingresos", jsonElement,
+                locale);
+        loanAdditionalData.setDetalle_otros_ingresos(detalle_otros_ingresos);
+
+        final String detalle_prendaria = this.fromApiJsonHelper.extractStringNamed("detalle_prendaria", jsonElement);
+        loanAdditionalData.setDetalle_prendaria(detalle_prendaria);
+
+        final BigDecimal detalle_recuperacion_cuentas = this.fromApiJsonHelper.extractBigDecimalNamed("detalle_recuperacion_cuentas",
+                jsonElement, locale);
+        loanAdditionalData.setDetalle_recuperacion_cuentas(detalle_recuperacion_cuentas);
+
+        final BigDecimal detalle_ventas = this.fromApiJsonHelper.extractBigDecimalNamed("detalle_ventas", jsonElement, locale);
+        loanAdditionalData.setDetalle_ventas(detalle_ventas);
+
+        final Integer edad_solicitante = this.fromApiJsonHelper.extractIntegerNamed("edad_solicitante", jsonElement, locale);
+        loanAdditionalData.setEdad_solicitante(edad_solicitante);
+
+        final BigDecimal efectivo_uso_familia = this.fromApiJsonHelper.extractBigDecimalNamed("efectivo_uso_familia", jsonElement, locale);
+        loanAdditionalData.setEfectivo_uso_familia(efectivo_uso_familia);
+
+        final BigDecimal efectivo_uso_negocio = this.fromApiJsonHelper.extractBigDecimalNamed("efectivo_uso_negocio", jsonElement, locale);
+        loanAdditionalData.setEfectivo_uso_negocio(efectivo_uso_negocio);
+
+        final String entorno_del_negocio = this.fromApiJsonHelper.extractStringNamed("entorno_del_negocio", jsonElement);
+        loanAdditionalData.setEntorno_del_negocio(entorno_del_negocio);
+
+        final String escolaridad_solicitante = this.fromApiJsonHelper.extractStringNamed("escolaridad_solicitante", jsonElement);
+        loanAdditionalData.setEscolaridad_solicitante(escolaridad_solicitante);
+
+        final String estado_civil_solicitante = this.fromApiJsonHelper.extractStringNamed("estado_civil_solicitante", jsonElement);
+        loanAdditionalData.setEstado_civil_solicitante(estado_civil_solicitante);
+
+        final String etnia_maya = this.fromApiJsonHelper.extractStringNamed("etnia_maya", jsonElement);
+        loanAdditionalData.setEtnia_maya(etnia_maya);
+
+        final String etnia_no_maya = this.fromApiJsonHelper.extractStringNamed("etnia_no_maya", jsonElement);
+        loanAdditionalData.setEtnia_no_maya(etnia_no_maya);
+
+        final String explique_el_tema = this.fromApiJsonHelper.extractStringNamed("explique_el_tema", jsonElement);
+        loanAdditionalData.setExplique_el_tema(explique_el_tema);
+
+        final String facilitador = this.fromApiJsonHelper.extractStringNamed("facilitador", jsonElement);
+        loanAdditionalData.setFacilitador(facilitador);
+
+        final LocalDate fecha_estacionalidad = this.fromApiJsonHelper.extractLocalDateNamed("fecha_estacionalidad", jsonElement, dateFormat,
+                locale);
+        loanAdditionalData.setFecha_estacionalidad(fecha_estacionalidad);
+
+        final LocalDate fecha_inico_operaciones = this.fromApiJsonHelper.extractLocalDateNamed("fecha_inico_operaciones", jsonElement,
+                dateFormat, locale);
+        loanAdditionalData.setFecha_inico_operaciones(fecha_inico_operaciones);
+
+        final LocalDate fecha_integraciones = this.fromApiJsonHelper.extractLocalDateNamed("fecha_integraciones", jsonElement, dateFormat,
+                locale);
+        loanAdditionalData.setFecha_integraciones(fecha_integraciones);
+
+        final LocalDate fecha_inventario = this.fromApiJsonHelper.extractLocalDateNamed("fecha_inventario", jsonElement, dateFormat,
+                locale);
+        loanAdditionalData.setFecha_inventario(fecha_inventario);
+
+        final LocalDate fecha_nacimiento_solicitante = this.fromApiJsonHelper.extractLocalDateNamed("fecha_nacimiento_solicitante",
+                jsonElement, dateFormat, locale);
+        loanAdditionalData.setFecha_nacimiento_solicitante(fecha_nacimiento_solicitante);
+
+        final LocalDate fecha_visita = this.fromApiJsonHelper.extractLocalDateNamed("fecha_visita", jsonElement, dateFormat, locale);
+        loanAdditionalData.setFecha_visita(fecha_visita);
+
+        final String frecuencia_compras = this.fromApiJsonHelper.extractStringNamed("frecuencia_compras", jsonElement);
+        loanAdditionalData.setFrecuencia_compras(frecuencia_compras);
+
+        final String frecuencia_ventas = this.fromApiJsonHelper.extractStringNamed("frecuencia_ventas", jsonElement);
+        loanAdditionalData.setFrecuencia_ventas(frecuencia_ventas);
+
+        final String genero = this.fromApiJsonHelper.extractStringNamed("genero", jsonElement);
+        loanAdditionalData.setGenero(genero);
+
+        final String grupo_etnico = this.fromApiJsonHelper.extractStringNamed("grupo_etnico", jsonElement);
+        loanAdditionalData.setGrupo_etnico(grupo_etnico);
+
+        final String habla_espaniol = this.fromApiJsonHelper.extractStringNamed("habla_espaniol", jsonElement);
+        loanAdditionalData.setHabla_espaniol(habla_espaniol);
+
+        final String institucion = this.fromApiJsonHelper.extractStringNamed("institucion", jsonElement);
+        loanAdditionalData.setInstitucion(institucion);
+
+        final String inversion_actual = this.fromApiJsonHelper.extractStringNamed("inversion_actual", jsonElement);
+        loanAdditionalData.setInversion_actual(inversion_actual);
+
+        final String local_negocio = this.fromApiJsonHelper.extractStringNamed("local_negocio", jsonElement);
+        loanAdditionalData.setLocal_negocio(local_negocio);
+
+        final String lote_negocio = this.fromApiJsonHelper.extractStringNamed("lote_negocio", jsonElement);
+        loanAdditionalData.setLote_negocio(lote_negocio);
+
+        final String lote_vivienda = this.fromApiJsonHelper.extractStringNamed("lote_vivienda", jsonElement);
+        loanAdditionalData.setLote_vivienda(lote_vivienda);
+
+        final String manzana_negocio = this.fromApiJsonHelper.extractStringNamed("manzana_negocio", jsonElement);
+        loanAdditionalData.setManzana_negocio(manzana_negocio);
+
+        final String manzana_vivienda = this.fromApiJsonHelper.extractStringNamed("manzana_vivienda", jsonElement);
+        loanAdditionalData.setManzana_vivienda(manzana_vivienda);
+
+        final String municipio_dpi_solicitante = this.fromApiJsonHelper.extractStringNamed("manzana_vivienda", jsonElement);
+        loanAdditionalData.setMunicipio_dpi_solicitante(municipio_dpi_solicitante);
+
+        final String municipio_negocio = this.fromApiJsonHelper.extractStringNamed("municipio_negocio", jsonElement);
+        loanAdditionalData.setMunicipio_negocio(municipio_negocio);
+
+        final String municipio_solicitante = this.fromApiJsonHelper.extractStringNamed("municipio_solicitante", jsonElement);
+        loanAdditionalData.setMunicipio_solicitante(municipio_solicitante);
+
+        final String municipio_vivienda = this.fromApiJsonHelper.extractStringNamed("municipio_vivienda", jsonElement);
+        loanAdditionalData.setMunicipio_vivienda(municipio_vivienda);
+
+        final String nacimiento_solicitante = this.fromApiJsonHelper.extractStringNamed("nacimiento_solicitante", jsonElement);
+        loanAdditionalData.setNacimiento_solicitante(nacimiento_solicitante);
+
+        final String nit_negocio = this.fromApiJsonHelper.extractStringNamed("nit_negocio", jsonElement);
+        loanAdditionalData.setNit_negocio(nit_negocio);
+
+        final String no_casa_vivienda = this.fromApiJsonHelper.extractStringNamed("no_casa_vivienda", jsonElement);
+        loanAdditionalData.setNo_casa_vivienda(no_casa_vivienda);
+
+        final String nombre_negocio = this.fromApiJsonHelper.extractStringNamed("nombre_negocio", jsonElement);
+        loanAdditionalData.setNombre_negocio(nombre_negocio);
+
+        final Integer num_contador_vivienda = this.fromApiJsonHelper.extractIntegerNamed("num_contador_vivienda", jsonElement, locale);
+        loanAdditionalData.setNum_contador_vivienda(num_contador_vivienda);
+
+        final Integer numero_fiadores = this.fromApiJsonHelper.extractIntegerNamed("numero_fiadores", jsonElement, locale);
+        loanAdditionalData.setNumero_fiadores(numero_fiadores);
+
+        final String observaciones_visita = this.fromApiJsonHelper.extractStringNamed("observaciones_visita", jsonElement);
+        loanAdditionalData.setObservaciones_visita(observaciones_visita);
+
+        final BigDecimal otros_activos_familia = this.fromApiJsonHelper.extractBigDecimalNamed("otros_activos_familia", jsonElement,
+                locale);
+        loanAdditionalData.setOtros_activos_familia(otros_activos_familia);
+
+        final BigDecimal otros_activos_negocio = this.fromApiJsonHelper.extractBigDecimalNamed("otros_activos_negocio", jsonElement,
+                locale);
+        loanAdditionalData.setOtros_activos_negocio(otros_activos_negocio);
+
+        final String otros_ingresos_de_la_solicitante = this.fromApiJsonHelper.extractStringNamed("otros_ingresos_de_la_solicitante",
+                jsonElement);
+        loanAdditionalData.setOtros_ingresos_de_la_solicitante(otros_ingresos_de_la_solicitante);
+
+        final String patente_sociedad = this.fromApiJsonHelper.extractStringNamed("patente_sociedad", jsonElement);
+        loanAdditionalData.setPatente_sociedad(patente_sociedad);
+
+        final String primer_apellido_solicitante = this.fromApiJsonHelper.extractStringNamed("primer_apellido_solicitante", jsonElement);
+        loanAdditionalData.setPrimer_apellido_solicitante(primer_apellido_solicitante);
+
+        final String primer_nombre_solicitante = this.fromApiJsonHelper.extractStringNamed("primer_nombre_solicitante", jsonElement);
+        loanAdditionalData.setPrimer_nombre_solicitante(primer_nombre_solicitante);
+
+        final String profesion_solicitante = this.fromApiJsonHelper.extractStringNamed("profesion_solicitante", jsonElement);
+        loanAdditionalData.setProfesion_solicitante(profesion_solicitante);
+
+        final String punto_de_referencia = this.fromApiJsonHelper.extractStringNamed("punto_de_referencia", jsonElement);
+        loanAdditionalData.setPunto_de_referencia(punto_de_referencia);
+
+        final String razon_social = this.fromApiJsonHelper.extractStringNamed("razon_social", jsonElement);
+        loanAdditionalData.setRazon_social(razon_social);
+
+        final String referencias_vecinos = this.fromApiJsonHelper.extractStringNamed("referencias_vecinos", jsonElement);
+        loanAdditionalData.setReferencias_vecinos(referencias_vecinos);
+
+        final String sector_economico_negocio = this.fromApiJsonHelper.extractStringNamed("sector_economico_negocio", jsonElement);
+        loanAdditionalData.setSector_economico_negocio(sector_economico_negocio);
+
+        final String sector_vivienda = this.fromApiJsonHelper.extractStringNamed("sector_vivienda", jsonElement);
+        loanAdditionalData.setSector_vivienda(sector_vivienda);
+
+        final String segundo_apellido_solicitante = this.fromApiJsonHelper.extractStringNamed("segundo_apellido_solicitante", jsonElement);
+        loanAdditionalData.setSegundo_apellido_solicitante(segundo_apellido_solicitante);
+
+        final String segundo_nombre_solicitante = this.fromApiJsonHelper.extractStringNamed("segundo_nombre_solicitante", jsonElement);
+        loanAdditionalData.setSegundo_nombre_solicitante(segundo_nombre_solicitante);
+
+        final BigDecimal tasa = this.fromApiJsonHelper.extractBigDecimalNamed("tasa", jsonElement, locale);
+        loanAdditionalData.setTasa(tasa);
+
+        final String telefono_negocio = this.fromApiJsonHelper.extractStringNamed("telefono_negocio", jsonElement);
+        loanAdditionalData.setTelefono_negocio(telefono_negocio);
+
+        final String tiene_correo = this.fromApiJsonHelper.extractStringNamed("tiene_correo", jsonElement);
+        loanAdditionalData.setTiene_correo(tiene_correo);
+
+        final String tipo_credito = this.fromApiJsonHelper.extractStringNamed("tipo_credito", jsonElement);
+        loanAdditionalData.setTipo_credito(tipo_credito);
+
+        final String telefono_fijo = this.fromApiJsonHelper.extractStringNamed("telefono_fijo", jsonElement);
+        loanAdditionalData.setTelefono_fijo(telefono_fijo);
+
+        final String tipo_direccion_negocio = this.fromApiJsonHelper.extractStringNamed("tipo_direccion_negocio", jsonElement);
+        loanAdditionalData.setTipo_direccion_negocio(tipo_direccion_negocio);
+
+        final BigDecimal total_costo_ventas = this.fromApiJsonHelper.extractBigDecimalNamed("total_costo_ventas", jsonElement, locale);
+        loanAdditionalData.setTotal_costo_ventas(total_costo_ventas);
+
+        final BigDecimal total_cuentas_por_cobrar = this.fromApiJsonHelper.extractBigDecimalNamed("total_cuentas_por_cobrar", jsonElement,
+                locale);
+        loanAdditionalData.setTotal_cuentas_por_cobrar(total_cuentas_por_cobrar);
+
+        final BigDecimal total_cuota_mensual = this.fromApiJsonHelper.extractBigDecimalNamed("total_cuota_mensual", jsonElement, locale);
+        loanAdditionalData.setTotal_cuota_mensual(total_cuota_mensual);
+
+        final BigDecimal total_deuda = this.fromApiJsonHelper.extractBigDecimalNamed("total_deuda", jsonElement, locale);
+        loanAdditionalData.setTotal_deuda(total_deuda);
+
+        final BigDecimal total_efectivo = this.fromApiJsonHelper.extractBigDecimalNamed("total_efectivo", jsonElement, locale);
+        loanAdditionalData.setTotal_efectivo(total_efectivo);
+
+        final BigDecimal total_gastos_negocio = this.fromApiJsonHelper.extractBigDecimalNamed("total_gastos_negocio", jsonElement, locale);
+        loanAdditionalData.setTotal_gastos_negocio(total_gastos_negocio);
+
+        final BigDecimal total_gastos_vivienda = this.fromApiJsonHelper.extractBigDecimalNamed("total_gastos_vivienda", jsonElement,
+                locale);
+        loanAdditionalData.setTotal_gastos_vivienda(total_gastos_vivienda);
+
+        final BigDecimal total_inmueble_familia = this.fromApiJsonHelper.extractBigDecimalNamed("total_inmueble_familia", jsonElement,
+                locale);
+        loanAdditionalData.setTotal_inmueble_familia(total_inmueble_familia);
+
+        final BigDecimal total_inmueble_negocio = this.fromApiJsonHelper.extractBigDecimalNamed("total_inmueble_negocio", jsonElement,
+                locale);
+        loanAdditionalData.setTotal_inmueble_negocio(total_inmueble_negocio);
+
+        final BigDecimal total_inmuebles = this.fromApiJsonHelper.extractBigDecimalNamed("total_inmuebles", jsonElement, locale);
+        loanAdditionalData.setTotal_inmuebles(total_inmuebles);
+
+        final BigDecimal total_inventario = this.fromApiJsonHelper.extractBigDecimalNamed("total_inventario", jsonElement, locale);
+        loanAdditionalData.setTotal_inventario(total_inventario);
+
+        final BigDecimal total_maquinaria = this.fromApiJsonHelper.extractBigDecimalNamed("total_maquinaria", jsonElement, locale);
+        loanAdditionalData.setTotal_maquinaria(total_maquinaria);
+
+        final BigDecimal total_menaje_de_hogar = this.fromApiJsonHelper.extractBigDecimalNamed("total_menaje_de_hogar", jsonElement,
+                locale);
+        loanAdditionalData.setTotal_menaje_de_hogar(total_menaje_de_hogar);
+
+        final BigDecimal total_mobiliario_equipo = this.fromApiJsonHelper.extractBigDecimalNamed("total_mobiliario_equipo", jsonElement,
+                locale);
+        loanAdditionalData.setTotal_mobiliario_equipo(total_mobiliario_equipo);
+
+        final BigDecimal total_otros_activos = this.fromApiJsonHelper.extractBigDecimalNamed("total_otros_activos", jsonElement, locale);
+        loanAdditionalData.setTotal_otros_activos(total_otros_activos);
+
+        final BigDecimal total_precio_ventas = this.fromApiJsonHelper.extractBigDecimalNamed("total_precio_ventas", jsonElement, locale);
+        loanAdditionalData.setTotal_precio_ventas(total_precio_ventas);
+
+        final BigDecimal total_recibido = this.fromApiJsonHelper.extractBigDecimalNamed("total_recibido", jsonElement, locale);
+        loanAdditionalData.setTotal_recibido(total_recibido);
+
+        final Integer total_vehiculo_familia = this.fromApiJsonHelper.extractIntegerNamed("total_vehiculo_familia", jsonElement, locale);
+        loanAdditionalData.setTotal_vehiculo_familia(total_vehiculo_familia);
+
+        final Integer total_vehiculo_negocio = this.fromApiJsonHelper.extractIntegerNamed("total_vehiculo_negocio", jsonElement, locale);
+        loanAdditionalData.setTotal_vehiculo_negocio(total_vehiculo_negocio);
+
+        final Integer total_vehiculos = this.fromApiJsonHelper.extractIntegerNamed("total_vehiculos", jsonElement, locale);
+        loanAdditionalData.setTotal_vehiculos(total_vehiculos);
+
+        final String ubicacion_cliente = this.fromApiJsonHelper.extractStringNamed("ubicacion_cliente", jsonElement);
+        loanAdditionalData.setUbicacion_cliente(ubicacion_cliente);
+
+        final String ubicacion_negocio = this.fromApiJsonHelper.extractStringNamed("ubicacion_negocio", jsonElement);
+        loanAdditionalData.setUbicacion_negocio(ubicacion_negocio);
+
+        final String usa_facebook = this.fromApiJsonHelper.extractStringNamed("usa_facebook", jsonElement);
+        loanAdditionalData.setUsa_facebook(usa_facebook);
+
+        final String verificacion_negocio = this.fromApiJsonHelper.extractStringNamed("verificacion_negocio", jsonElement);
+        loanAdditionalData.setVerificacion_negocio(verificacion_negocio);
+
+        final String verificacion_vivienda = this.fromApiJsonHelper.extractStringNamed("verificacion_vivienda", jsonElement);
+        loanAdditionalData.setVerificacion_vivienda(verificacion_vivienda);
+
+        final String whatsapp = this.fromApiJsonHelper.extractStringNamed("whatsapp", jsonElement);
+        loanAdditionalData.setWhatsapp(whatsapp);
+
+        final Integer zona_negocio = this.fromApiJsonHelper.extractIntegerNamed("zona_negocio", jsonElement, locale);
+        loanAdditionalData.setZona_negocio(zona_negocio);
+
+        final Integer zona_vivienda = this.fromApiJsonHelper.extractIntegerNamed("zona_vivienda", jsonElement, locale);
+        loanAdditionalData.setZona_vivienda(zona_vivienda);
+
+        final String detalle_fiadores = this.fromApiJsonHelper.extractStringNamed("detalle_fiadores", jsonElement);
+        loanAdditionalData.setDetalle_fiadores(detalle_fiadores);
+
+        final String dpi_solicitante = this.fromApiJsonHelper.extractStringNamed("dpi_solicitante", jsonElement);
+        loanAdditionalData.setDpi_solicitante(dpi_solicitante);
+
+        final LocalDate fecha_solicitud = this.fromApiJsonHelper.extractLocalDateNamed("fecha_solicitud", jsonElement, dateFormat, locale);
+        loanAdditionalData.setFecha_solicitud(fecha_solicitud);
+
+        final String recuperacion_cuentas = this.fromApiJsonHelper.extractStringNamed("recuperacion_cuentas", jsonElement);
+        loanAdditionalData.setRecuperacion_cuentas(recuperacion_cuentas);
+
+        final String tercer_nombre_solicitante = this.fromApiJsonHelper.extractStringNamed("tercer_nombre_solicitante", jsonElement);
+        loanAdditionalData.setTercer_nombre_solicitante(tercer_nombre_solicitante);
+
+        return loanAdditionalData;
     }
 }

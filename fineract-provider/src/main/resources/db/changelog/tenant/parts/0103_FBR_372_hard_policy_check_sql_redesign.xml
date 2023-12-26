@@ -910,4 +910,1507 @@
         </sql>
     </changeSet>
 
+
+    <changeSet author="fineract" id="64">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="Programa"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="Programa" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="65">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="aldea_vivienda"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="aldea_vivienda" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="66">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="anios_comunidad"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="anios_comunidad" type="INT"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="67">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="anios_de_actividad_negocio"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="anios_de_actividad_negocio" type="INT"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="68">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="apellido_casada_solicitante"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="apellido_casada_solicitante" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="69">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="c_actividad_economica"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="c_actividad_economica" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="70">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="c_apellido_de_casada"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="c_apellido_de_casada" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="71">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="c_departamento"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="c_departamento" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="72">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="c_departamento_dpi"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="c_departamento_dpi" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="73">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="c_descripcion_negocio"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="c_descripcion_negocio" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="74">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="c_lugar_nacimiento"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="c_lugar_nacimiento" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="75">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="c_municipio"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="c_municipio" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="76">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="c_municipio_dpi"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="c_municipio_dpi" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="77">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="c_sector_economico"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="c_sector_economico" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="78">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="calle_negocio"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="calle_negocio" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="79">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="calle_vivienda"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="calle_vivienda" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="80">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="casa_negocio"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="casa_negocio" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="81">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="celular_solicitante"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="celular_solicitante" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="82">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="colonia_negocio"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="colonia_negocio" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="83">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="colonia_vivienda"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="colonia_vivienda" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="84">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="correo_electronico"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="correo_electronico" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="85">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="cuentas_uso_familia"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="cuentas_uso_familia" type="INT"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="86">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="cuentas_uso_negocio"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="cuentas_uso_negocio" type="INT"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="87">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="datos_moviles"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="datos_moviles" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="88">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="departamento_dpi_solicitante"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="departamento_dpi_solicitante" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="89">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="departamento_negocio"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="departamento_negocio" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="90">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="departamento_solicitante"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="departamento_solicitante" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="185">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="departamento_vivienda"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="departamento_vivienda" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="91">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="descripcion_giro_negocio"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="descripcion_giro_negocio" type="TEXT"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="92">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="detalle_compras"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="detalle_compras" type="DECIMAL(19, 6)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="93">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="detalle_de_inversion"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="detalle_de_inversion" type="VARCHAR(250)"/>
+        </addColumn>
+    </changeSet>
+
+
+    <changeSet author="fineract" id="94">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="detalle_otros_ingresos"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="detalle_otros_ingresos" type="DECIMAL(19, 6)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="95">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="detalle_prendaria"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="detalle_prendaria" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="96">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="detalle_recuperacion_cuentas"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="detalle_recuperacion_cuentas" type="DECIMAL(19, 6)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="97">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="detalle_ventas"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="detalle_ventas" type="DECIMAL(19, 6)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="98">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="edad_solicitante"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="edad_solicitante" type="INT"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="99">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="efectivo_uso_familia"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="efectivo_uso_familia" type="DECIMAL(19, 6)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="100">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="efectivo_uso_negocio"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="efectivo_uso_negocio" type="DECIMAL(19, 6)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="101">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="entorno_del_negocio"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="entorno_del_negocio" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="102">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="escolaridad_solicitante"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="escolaridad_solicitante" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="103">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="estado_civil_solicitante"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="estado_civil_solicitante" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="104">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="etnia_maya"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="etnia_maya" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="105">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="etnia_no_maya"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="etnia_no_maya" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="106">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="explique_el_tema"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="explique_el_tema" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="107">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="facilitador"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="facilitador" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="108">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="fecha_estacionalidad"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="fecha_estacionalidad" type="date"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="109">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="fecha_inico_operaciones"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="fecha_inico_operaciones" type="date"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="110">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="fecha_integraciones"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="fecha_integraciones" type="date"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="111">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="fecha_inventario"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="fecha_inventario" type="date"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="112">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="fecha_nacimiento_solicitante"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="fecha_nacimiento_solicitante" type="date"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="113">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="fecha_visita"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="fecha_visita" type="date"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="114">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="semanal"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="semanal" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="115">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="frecuencia_ventas"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="frecuencia_ventas" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="116">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="genero"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="genero" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="117">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="grupo_etnico"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="grupo_etnico" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="186">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="habla_espaniol"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="habla_espaniol" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="118">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="institucion"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="institucion" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="184">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="inversion_actual"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="inversion_actual" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="119">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="local_negocio"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="local_negocio" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="120">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="lote_negocio"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="lote_negocio" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="121">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="lote_vivienda"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="lote_vivienda" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="122">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="manzana_negocio"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="manzana_negocio" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="123">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="manzana_vivienda"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="manzana_vivienda" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="124">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="municipio_dpi_solicitante"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="municipio_dpi_solicitante" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="125">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="municipio_negocio"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="municipio_negocio" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="126">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="municipio_solicitante"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="municipio_solicitante" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="127">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="municipio_vivienda"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="municipio_vivienda" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="128">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="nacimiento_solicitante"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="nacimiento_solicitante" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="129">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="nit_negocio"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="nit_negocio" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="130">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="no_casa_vivienda"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="no_casa_vivienda" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="131">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="nombre_negocio"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="nombre_negocio" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+
+    <changeSet author="fineract" id="132">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="num_contador_vivienda"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="num_contador_vivienda" type="INT"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="133">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="numero_fiadores"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="numero_fiadores" type="INT"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="134">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="observaciones_visita"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="observaciones_visita" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="135">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="otros_activos_familia"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="otros_activos_familia" type="DECIMAL(19, 6)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="136">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="otros_activos_negocio"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="otros_activos_negocio" type="DECIMAL(19, 6)"/>
+        </addColumn>
+    </changeSet>
+
+
+    <changeSet author="fineract" id="137">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="otros_ingresos_de_la_solicitante"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="otros_ingresos_de_la_solicitante" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="138">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="patente_negocio"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="patente_negocio" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="139">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="patente_sociedad"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="patente_sociedad" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="140">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="primer_apellido_solicitante"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="primer_apellido_solicitante" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="141">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="profesion_solicitante"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="profesion_solicitante" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="142">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="punto_de_referencia"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="punto_de_referencia" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="143">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="razon_social"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="razon_social" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="144">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="referencias_vecinos"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="referencias_vecinos" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="145">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="sector_economico_negocio"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="sector_economico_negocio" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="146">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="sector_negocio"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="sector_negocio" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="147">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="sector_vivienda"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="sector_vivienda" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="148">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="segundo_apellido_solicitante"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="segundo_apellido_solicitante" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="149">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="segundo_apellido_solicitante"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="segundo_apellido_solicitante" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="150">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="segundo_nombre_solicitante"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="segundo_nombre_solicitante" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="151">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="tasa"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="tasa" type="DECIMAL(19, 6)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="152">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="telefono_fijo"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="telefono_fijo" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="153">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="telefono_negocio"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="telefono_negocio" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="154">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="tiene_correo"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="tiene_correo" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="155">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="tipo_credito"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="tipo_credito" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="156">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="tipo_direccion_negocio"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="tipo_direccion_negocio" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="157">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="total_costo_ventas"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="total_costo_ventas" type="DECIMAL(19, 6)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="158">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="total_cuentas_por_cobrar"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="total_cuentas_por_cobrar" type="DECIMAL(19, 6)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="159">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="total_cuota_mensual"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="total_cuota_mensual" type="DECIMAL(19, 6)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="160">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="total_deuda"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="total_deuda" type="DECIMAL(19, 6)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="161">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="total_efectivo"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="total_efectivo" type="DECIMAL(19, 6)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="162">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="total_gastos_negocio"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="total_gastos_negocio" type="DECIMAL(19, 6)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="163">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="total_gastos_vivienda"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="total_gastos_vivienda" type="DECIMAL(19, 6)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="164">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="total_inmueble_familia"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="total_inmueble_familia" type="DECIMAL(19, 6)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="165">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="total_inmueble_negocio"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="total_inmueble_negocio" type="DECIMAL(19, 6)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="166">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="total_inmuebles"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="total_inmuebles" type="DECIMAL(19, 6)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="167">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="total_inventario"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="total_inventario" type="DECIMAL(19, 6)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="168">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="total_maquinaria"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="total_maquinaria" type="DECIMAL(19, 6)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="169">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="total_menaje_de_hogar"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="total_menaje_de_hogar" type="DECIMAL(19, 6)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="170">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="total_mobiliario_equipo"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="total_mobiliario_equipo" type="DECIMAL(19, 6)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="171">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="total_otros_activos"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="total_otros_activos" type="DECIMAL(19, 6)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="172">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="total_precio_ventas"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="total_precio_ventas" type="DECIMAL(19, 6)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="173">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="total_recibido"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="total_recibido" type="INT"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="174">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="total_vehiculo_negocio"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="total_vehiculo_negocio" type="INT"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="175">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="total_vehiculos"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="total_vehiculos" type="INT"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="176">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="ubicacion_cliente"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="ubicacion_cliente" type="VARCHAR(250)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="177">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="ubicacion_negocio"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="ubicacion_negocio" type="VARCHAR(250)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="178">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="usa_facebook"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="usa_facebook" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="179">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="verificacion_negocio"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="verificacion_negocio" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="180">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="verificacion_vivienda"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="verificacion_vivienda" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="181">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="whatsapp"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="whatsapp" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="182">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="zona_negocio"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="zona_negocio" type="INT"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="183">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="zona_vivienda"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="zona_vivienda" type="INT"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="187">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="c_nit"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="c_nit" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="188">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="frecuencia_compras"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="frecuencia_compras" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="189">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="primer_nombre_solicitante"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="primer_nombre_solicitante" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="190">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="total_vehiculo_familia"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="total_vehiculo_familia" type="INT"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="191">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="descripcion_negocio"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="descripcion_negocio" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="192">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="detalle_fiadores"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="detalle_fiadores" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="193">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="dpi_solicitante"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="dpi_solicitante" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="194">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="recuperacion_cuentas"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="recuperacion_cuentas" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="195">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client_loan_additional_properties" columnName="tercer_nombre_solicitante"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column defaultValueComputed="NULL" name="tercer_nombre_solicitante" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="196" author="fineract">
+        <sql>
+            <![CDATA[
+                INSERT IGNORE INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory) VALUES((SELECT mc.id FROM m_code mc WHERE mc.code_name = 'Document Type' LIMIT 1), 'Agregar aval', 'Agregar aval', 1, NULL, 1, 0);
+                INSERT IGNORE INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory) VALUES((SELECT mc.id FROM m_code mc WHERE mc.code_name = 'Document Type' LIMIT 1), 'Plan de inversión', 'Plan de inversión', 1, NULL, 1, 0);
+                INSERT IGNORE INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory) VALUES((SELECT mc.id FROM m_code mc WHERE mc.code_name = 'Document Type' LIMIT 1), 'Diagnóstico técnico agrícola', 'Diagnóstico técnico agrícola', 1, NULL, 1, 0);
+            ]]>
+        </sql>
+    </changeSet>
+
+    <changeSet id="197" author="fineract">
+        <sql>
+            <![CDATA[
+            UPDATE stretchy_report SET report_sql="SELECT CASE
+                   WHEN (${loanProductId} = 2) AND ${numberOfDocuments} > 0  THEN 'GREEN'
+                   WHEN (${loanProductId} = 9) AND ${numberOfDocuments} > 0  THEN 'GREEN'
+                   WHEN (${loanProductId} = 8) AND ${numberOfDocuments} > 0  THEN 'GREEN'
+                   WHEN (${loanProductId} = 4) AND ${numberOfDocuments} > 0  THEN 'GREEN'
+                   WHEN (${loanProductId} = 5) AND ${numberOfDocuments} > 0  THEN 'GREEN'
+                   WHEN (${loanProductId} = 7) AND ${numberOfDocuments} > 0  THEN 'GREEN'
+                   ELSE 'RED'
+              END AS color
+              FROM m_client mc WHERE mc.id = ${clientId}"
+            WHERE report_name = "Mandatory to attach photographs and investment plan Policy Check";
+            ]]>
+        </sql>
+    </changeSet>
+
+    <changeSet id="198" author="fineract">
+        <sql>
+            <![CDATA[
+            UPDATE stretchy_report SET report_sql="SELECT CASE
+                   WHEN (${loanProductId} = 2) AND ${numberOfDocuments} > 0  THEN 'GREEN'
+                   WHEN (${loanProductId} = 9) AND ${numberOfDocuments} > 0  THEN 'GREEN'
+                   WHEN (${loanProductId} = 8) AND ${numberOfDocuments} > 0  THEN 'GREEN'
+                   WHEN (${loanProductId} = 4) AND ${numberOfDocuments} > 0  THEN 'GREEN'
+                   WHEN (${loanProductId} = 5) AND ${numberOfDocuments} > 0  THEN 'GREEN'
+                   WHEN (${loanProductId} = 7) AND ${numberOfDocuments} > 0  THEN 'GREEN'
+                   ELSE 'RED'
+              END AS color
+              FROM m_client mc WHERE mc.id = ${clientId}"
+            WHERE report_name = "Mandatory to attach photographs and investment plan Policy Check";
+            ]]>
+        </sql>
+    </changeSet>
+
+
 </databaseChangeLog>

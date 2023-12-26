@@ -277,7 +277,7 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
             case TWELVE -> checkValidationColor = this.runCheck12(clientData);
             case THIRTEEN -> checkValidationColor = this.runCheck13(clientData);
             case FOURTEEN -> checkValidationColor = this.runCheck14(clientData);
-            case FIFTEEN -> checkValidationColor = this.runCheck15();
+            case FIFTEEN -> checkValidationColor = this.runCheck15(clientData);
             case SIXTEEN -> checkValidationColor = this.runCheck16(clientData);
             case SEVENTEEN -> checkValidationColor = this.runCheck17(groupData);
             case EIGHTEEN -> checkValidationColor = this.runCheck18(clientData);
@@ -291,7 +291,7 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
             case TWENTY_SIX -> checkValidationColor = this.runCheck26(clientData);
             case TWENTY_SEVEN -> checkValidationColor = this.runCheck27(groupData);
             case TWENTY_EIGHT -> checkValidationColor = this.runCheck28(groupData);
-            case TWENTY_NINE -> checkValidationColor = this.runCheck29();
+            case TWENTY_NINE -> checkValidationColor = this.runCheck29(clientData);
             case THIRTY -> checkValidationColor = this.runCheck30(clientData);
             case THIRTY_ONE -> checkValidationColor = this.runCheck31(clientData);
             case THIRTY_TWO -> checkValidationColor = this.runCheck32();
@@ -337,10 +337,19 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
         final String clientId = String.valueOf(clientData.getClientId());
         final String reportName = Policies.FOUR.getName() + " Policy Check";
         final String productId = Long.toString(clientData.getProductId());
+        final Long loanId = clientData.getLoanId();
+        final String documentCountSql = """
+                        SELECT COUNT(*)
+                        FROM m_document md
+                        LEFT JOIN m_code_value mcvd ON md.document_type = mcvd.id
+                        WHERE md.parent_entity_type = 'loans' AND md.parent_entity_id = ? AND (md.name = ? OR mcvd.code_value = ?)
+                """;
+        Object[] params = new Object[] { loanId, "Plan de inversión", "Plan de inversión" };
+        final Long documentCount = this.jdbcTemplate.queryForObject(documentCountSql, Long.class, params);
         final Map<String, String> reportParams = new HashMap<>();
         reportParams.put("${clientId}", clientId);
         reportParams.put("${loanProductId}", productId);
-        reportParams.put("${requestedAmount}", String.valueOf(clientData.getRequestedAmount()));
+        reportParams.put("${numberOfDocuments}", String.valueOf(documentCount));
         final GenericResultsetData result = this.readReportingService.retrieveGenericResultset(reportName, "report", reportParams, false);
         return extractColorFromResultset(result);
     }
@@ -610,8 +619,25 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
     /**
      * Add endorsement
      */
-    private CheckValidationColor runCheck15() {
-        return CheckValidationColor.RED;
+    private CheckValidationColor runCheck15(final ClientData clientData) {
+        final String clientId = String.valueOf(clientData.getClientId());
+        final String reportName = Policies.FIFTEEN.getName() + " Policy Check";
+        final String productId = Long.toString(clientData.getProductId());
+        final Long loanId = clientData.getLoanId();
+        final String documentCountSql = """
+                        SELECT COUNT(*)
+                        FROM m_document md
+                        LEFT JOIN m_code_value mcvd ON md.document_type = mcvd.id
+                        WHERE md.parent_entity_type = 'loans' AND md.parent_entity_id = ? AND (md.name = ? OR mcvd.code_value = ?)
+                """;
+        Object[] params = new Object[] { loanId, "Agregar aval", "Agregar aval" };
+        final Long documentCount = this.jdbcTemplate.queryForObject(documentCountSql, Long.class, params);
+        final Map<String, String> reportParams = new HashMap<>();
+        reportParams.put("${clientId}", clientId);
+        reportParams.put("${loanProductId}", productId);
+        reportParams.put("${numberOfDocuments}", String.valueOf(documentCount));
+        final GenericResultsetData result = this.readReportingService.retrieveGenericResultset(reportName, "report", reportParams, false);
+        return extractColorFromResultset(result);
     }
 
     /**
@@ -886,8 +912,25 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
     /**
      * Present agricultural technical diagnosis (Commcare)
      */
-    private CheckValidationColor runCheck29() {
-        return CheckValidationColor.RED;
+    private CheckValidationColor runCheck29(final ClientData clientData) {
+        final String clientId = String.valueOf(clientData.getClientId());
+        final String reportName = Policies.TWENTY_NINE.getName() + " Policy Check";
+        final String productId = Long.toString(clientData.getProductId());
+        final Long loanId = clientData.getLoanId();
+        final String documentCountSql = """
+                        SELECT COUNT(*)
+                        FROM m_document md
+                        LEFT JOIN m_code_value mcvd ON md.document_type = mcvd.id
+                        WHERE md.parent_entity_type = 'loans' AND md.parent_entity_id = ? AND (md.name = ? OR mcvd.code_value = ?)
+                """;
+        Object[] params = new Object[] { loanId, "Diagnóstico técnico agrícola", "Diagnóstico técnico agrícola" };
+        final Long documentCount = this.jdbcTemplate.queryForObject(documentCountSql, Long.class, params);
+        final Map<String, String> reportParams = new HashMap<>();
+        reportParams.put("${clientId}", clientId);
+        reportParams.put("${loanProductId}", productId);
+        reportParams.put("${numberOfDocuments}", String.valueOf(documentCount));
+        final GenericResultsetData result = this.readReportingService.retrieveGenericResultset(reportName, "report", reportParams, false);
+        return extractColorFromResultset(result);
     }
 
     /**

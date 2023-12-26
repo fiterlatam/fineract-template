@@ -21,13 +21,15 @@ package org.apache.fineract.organisation.prequalification.data;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.apache.fineract.organisation.prequalification.domain.LoanAdditionProperties;
 import org.springframework.beans.BeanUtils;
 
-@Data
-@Builder
+@Getter
+@Setter
+@NoArgsConstructor
 public class LoanAdditionalData {
 
     private Long id;
@@ -299,6 +301,266 @@ public class LoanAdditionalData {
     private String otrosIngresos;
 
     private BigDecimal relacionOtrosIngresos;
+
+    private String programa;
+
+    private String aldeaVivienda;
+
+    private Integer aniosComunidad;
+
+    private Integer aniosDeActividadNegocio;
+
+    private String apellidoCasadaSolicitante;
+
+    private String cActividadEconomica;
+
+    private String cApellidoDeCasada;
+
+    private String cDepartamento;
+
+    private String cDepartamentoDpi;
+
+    private String cDescripcionNegocio;
+
+    private String descripcionNegocio;
+
+    private String cLugarNacimiento;
+
+    private String cMunicipio;
+
+    private String cMunicipioDpi;
+
+    private String cNit;
+
+    private String cSectorEconomico;
+
+    private String calleNegocio;
+
+    private String calleVivienda;
+
+    private String casaNegocio;
+
+    private String celularSolicitante;
+
+    private String coloniaNegocio;
+
+    private String coloniaVivienda;
+
+    private String correoElectronico;
+
+    private Integer cuentas_uso_familia;
+
+    private Integer cuentas_uso_negocio;
+
+    private String datos_moviles;
+
+    private String departamento_dpi_solicitante;
+
+    private String departamento_negocio;
+
+    private String departamento_solicitante;
+
+    private String departamento_vivienda;
+
+    private String descripcion_giro_negocio;
+
+    private BigDecimal detalle_compras;
+
+    private String detalle_de_inversion;
+
+    private BigDecimal detalle_otros_ingresos;
+
+    private String detalle_prendaria;
+
+    private BigDecimal detalle_recuperacion_cuentas;
+
+    private BigDecimal detalle_ventas;
+
+    private Integer edad_solicitante;
+
+    private BigDecimal efectivo_uso_familia;
+
+    private BigDecimal efectivo_uso_negocio;
+
+    private String entorno_del_negocio;
+
+    private String escolaridad_solicitante;
+
+    private String estado_civil_solicitante;
+
+    private String etnia_maya;
+
+    private String etnia_no_maya;
+
+    private String explique_el_tema;
+
+    private String facilitador;
+
+    private LocalDate fecha_estacionalidad;
+
+    private LocalDate fecha_inico_operaciones;
+
+    private LocalDate fecha_integraciones;
+
+    private LocalDate fecha_inventario;
+
+    private LocalDate fecha_nacimiento_solicitante;
+
+    private LocalDate fecha_visita;
+
+    private String frecuencia_compras;
+
+    private String frecuencia_ventas;
+
+    private String genero;
+
+    private String grupo_etnico;
+
+    private String habla_espaniol;
+
+    private String institucion;
+
+    private String inversion_actual;
+
+    private String local_negocio;
+
+    private String lote_negocio;
+
+    private String lote_vivienda;
+
+    private String manzana_negocio;
+
+    private String manzana_vivienda;
+
+    private String municipio_dpi_solicitante;
+
+    private String municipio_negocio;
+
+    private String municipio_solicitante;
+
+    private String municipio_vivienda;
+
+    private String nacimiento_solicitante;
+
+    private String nit_negocio;
+
+    private String no_casa_vivienda;
+
+    private String nombre_negocio;
+
+    private Integer num_contador_vivienda;
+
+    private Integer numero_fiadores;
+
+    private String observaciones_visita;
+
+    private BigDecimal otros_activos_familia;
+
+    private BigDecimal otros_activos_negocio;
+
+    private String otros_ingresos_de_la_solicitante;
+
+    private String patente_sociedad;
+
+    private String primer_apellido_solicitante;
+
+    private String primer_nombre_solicitante;
+
+    private String profesion_solicitante;
+
+    private String punto_de_referencia;
+
+    private String razon_social;
+
+    private String referencias_vecinos;
+
+    private String sector_economico_negocio;
+
+    private String sector_negocio;
+
+    private String sector_vivienda;
+
+    private String segundo_apellido_solicitante;
+
+    private String segundo_nombre_solicitante;
+
+    private BigDecimal tasa;
+
+    private String telefono_fijo;
+
+    private String telefono_negocio;
+
+    private String tiene_correo;
+
+    private String tipo_credito;
+
+    private String tipo_direccion_negocio;
+
+    private BigDecimal total_costo_ventas;
+
+    private BigDecimal total_cuentas_por_cobrar;
+
+    private BigDecimal total_cuota_mensual;
+
+    private BigDecimal total_deuda;
+
+    private BigDecimal total_efectivo;
+
+    private BigDecimal total_gastos_negocio;
+
+    private BigDecimal total_gastos_vivienda;
+
+    private BigDecimal total_inmueble_familia;
+
+    private BigDecimal total_inmueble_negocio;
+
+    private BigDecimal total_inmuebles;
+
+    private BigDecimal total_inventario;
+
+    private BigDecimal total_maquinaria;
+
+    private BigDecimal total_menaje_de_hogar;
+
+    private BigDecimal total_mobiliario_equipo;
+
+    private BigDecimal total_otros_activos;
+
+    private BigDecimal total_precio_ventas;
+
+    private BigDecimal total_recibido;
+
+    private Integer total_vehiculo_familia;
+
+    private Integer total_vehiculo_negocio;
+
+    private Integer total_vehiculos;
+
+    private String ubicacion_cliente;
+
+    private String ubicacion_negocio;
+
+    private String usa_facebook;
+
+    private String verificacion_negocio;
+
+    private String verificacion_vivienda;
+
+    private String whatsapp;
+
+    private Integer zona_negocio;
+
+    private Integer zona_vivienda;
+
+    private String detalle_fiadores;
+
+    private String dpi_solicitante;
+
+    private LocalDate fecha_solicitud;
+
+    private String recuperacion_cuentas;
+
+    private String tercer_nombre_solicitante;
 
     public LoanAdditionProperties toEntity() {
         final LoanAdditionProperties loanAdditionProperties = new LoanAdditionProperties();

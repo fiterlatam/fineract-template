@@ -442,10 +442,394 @@ public class LoanAdditionProperties extends AbstractPersistableCustom {
     @Column(name = "Relacion_otros_ingresos")
     private BigDecimal relacionOtrosIngresos;
 
+    @Column(name = "Programa")
+    private String programa;
+
+    @Column(name = "aldea_vivienda")
+    private String aldeaVivienda;
+
+    @Column(name = "anios_comunidad")
+    private Integer aniosComunidad;
+
+    @Column(name = "anios_de_actividad_negocio")
+    private Integer aniosDeActividadNegocio;
+
+    @Column(name = "apellido_casada_solicitante")
+    private String apellidoCasadaSolicitante;
+
+    @Column(name = "c_actividad_economica")
+    private String cActividadEconomica;
+
+    @Column(name = "c_apellido_de_casada")
+    private String cApellidoDeCasada;
+
+    @Column(name = "c_departamento")
+    private String cDepartamento;
+
+    @Column(name = "c_departamento_dpi")
+    private String cDepartamentoDpi;
+
+    @Column(name = "c_descripcion_negocio")
+    private String cDescripcionNegocio;
+
+    @Column(name = "descripcion_negocio")
+    private String descripcionNegocio;
+
+    @Column(name = "c_lugar_nacimiento")
+    private String cLugarNacimiento;
+
+    @Column(name = "c_municipio")
+    private String cMunicipio;
+
+    @Column(name = "c_municipio_dpi")
+    private String cMunicipioDpi;
+
+    @Column(name = "c_nit")
+    private String cNit;
+
+    @Column(name = "c_sector_economico")
+    private String cSectorEconomico;
+
+    @Column(name = "calle_negocio")
+    private String calleNegocio;
+
+    @Column(name = "calle_vivienda")
+    private String calleVivienda;
+
+    @Column(name = "casa_negocio")
+    private String casaNegocio;
+
+    @Column(name = "celular_solicitante")
+    private String celularSolicitante;
+
+    @Column(name = "colonia_negocio")
+    private String coloniaNegocio;
+
+    @Column(name = "colonia_vivienda")
+    private String coloniaVivienda;
+
+    @Column(name = "correo_electronico")
+    private String correoElectronico;
+
+    @Column(name = "cuentas_uso_familia")
+    private Integer cuentas_uso_familia;
+
+    @Column(name = "cuentas_uso_negocio")
+    private Integer cuentas_uso_negocio;
+
+    @Column(name = "datos_moviles")
+    private String datos_moviles;
+
+    @Column(name = "departamento_dpi_solicitante")
+    private String departamento_dpi_solicitante;
+
+    @Column(name = "departamento_negocio")
+    private String departamento_negocio;
+
+    @Column(name = "departamento_solicitante")
+    private String departamento_solicitante;
+
+    @Column(name = "departamento_vivienda")
+    private String departamento_vivienda;
+
+    @Column(name = "descripcion_giro_negocio")
+    private String descripcion_giro_negocio;
+
+    @Column(name = "detalle_compras")
+    private BigDecimal detalle_compras;
+
+    @Column(name = "detalle_de_inversion")
+    private String detalle_de_inversion;
+
+    @Column(name = "detalle_otros_ingresos")
+    private BigDecimal detalle_otros_ingresos;
+
+    @Column(name = "detalle_prendaria")
+    private String detalle_prendaria;
+
+    @Column(name = "detalle_recuperacion_cuentas")
+    private BigDecimal detalle_recuperacion_cuentas;
+
+    @Column(name = "detalle_ventas")
+    private BigDecimal detalle_ventas;
+
+    @Column(name = "edad_solicitante")
+    private Integer edad_solicitante;
+
+    @Column(name = "efectivo_uso_familia")
+    private BigDecimal efectivo_uso_familia;
+
+    @Column(name = "efectivo_uso_negocio")
+    private BigDecimal efectivo_uso_negocio;
+
+    @Column(name = "entorno_del_negocio")
+    private String entorno_del_negocio;
+
+    @Column(name = "escolaridad_solicitante")
+    private String escolaridad_solicitante;
+
+    @Column(name = "estado_civil_solicitante")
+    private String estado_civil_solicitante;
+
+    @Column(name = "etnia_maya")
+    private String etnia_maya;
+
+    @Column(name = "etnia_no_maya")
+    private String etnia_no_maya;
+
+    @Column(name = "explique_el_tema")
+    private String explique_el_tema;
+
+    @Column(name = "facilitador")
+    private String facilitador;
+
+    @Column(name = "fecha_estacionalidad")
+    private LocalDate fecha_estacionalidad;
+
+    @Column(name = "fecha_inico_operaciones")
+    private LocalDate fecha_inico_operaciones;
+
+    @Column(name = "fecha_integraciones")
+    private LocalDate fecha_integraciones;
+
+    @Column(name = "fecha_inventario")
+    private LocalDate fecha_inventario;
+
+    @Column(name = "fecha_nacimiento_solicitante")
+    private LocalDate fecha_nacimiento_solicitante;
+
+    @Column(name = "fecha_visita")
+    private LocalDate fecha_visita;
+
+    @Column(name = "frecuencia_compras")
+    private String frecuencia_compras;
+
+    @Column(name = "frecuencia_ventas")
+    private String frecuencia_ventas;
+
+    @Column(name = "genero")
+    private String genero;
+
+    @Column(name = "grupo_etnico")
+    private String grupo_etnico;
+
+    @Column(name = "habla_espaniol")
+    private String habla_espaniol;
+
+    @Column(name = "institucion")
+    private String institucion;
+
+    @Column(name = "inversion_actual")
+    private String inversion_actual;
+
+    @Column(name = "local_negocio")
+    private String local_negocio;
+
+    @Column(name = "lote_negocio")
+    private String lote_negocio;
+
+    @Column(name = "lote_vivienda")
+    private String lote_vivienda;
+
+    @Column(name = "manzana_negocio")
+    private String manzana_negocio;
+
+    @Column(name = "manzana_vivienda")
+    private String manzana_vivienda;
+
+    @Column(name = "municipio_dpi_solicitante")
+    private String municipio_dpi_solicitante;
+
+    @Column(name = "municipio_negocio")
+    private String municipio_negocio;
+
+    @Column(name = "municipio_solicitante")
+    private String municipio_solicitante;
+
+    @Column(name = "municipio_vivienda")
+    private String municipio_vivienda;
+
+    @Column(name = "nacimiento_solicitante")
+    private String nacimiento_solicitante;
+
+    @Column(name = "nit_negocio")
+    private String nit_negocio;
+
+    @Column(name = "no_casa_vivienda")
+    private String no_casa_vivienda;
+
+    @Column(name = "nombre_negocio")
+    private String nombre_negocio;
+
+    @Column(name = "num_contador_vivienda")
+    private Integer num_contador_vivienda;
+
+    @Column(name = "numero_fiadores")
+    private Integer numero_fiadores;
+
+    @Column(name = "observaciones_visita")
+    private String observaciones_visita;
+
+    @Column(name = "otros_activos_familia")
+    private BigDecimal otros_activos_familia;
+
+    @Column(name = "otros_activos_negocio")
+    private BigDecimal otros_activos_negocio;
+
+    @Column(name = "otros_ingresos_de_la_solicitante")
+    private String otros_ingresos_de_la_solicitante;
+
+    @Column(name = "patente_sociedad")
+    private String patente_sociedad;
+
+    @Column(name = "primer_apellido_solicitante")
+    private String primer_apellido_solicitante;
+
+    @Column(name = "primer_nombre_solicitante")
+    private String primer_nombre_solicitante;
+
+    @Column(name = "profesion_solicitante")
+    private String profesion_solicitante;
+
+    @Column(name = "punto_de_referencia")
+    private String punto_de_referencia;
+
+    @Column(name = "razon_social")
+    private String razon_social;
+
+    @Column(name = "referencias_vecinos")
+    private String referencias_vecinos;
+
+    @Column(name = "sector_economico_negocio")
+    private String sector_economico_negocio;
+
+    @Column(name = "sector_negocio")
+    private String sector_negocio;
+
+    @Column(name = "sector_vivienda")
+    private String sector_vivienda;
+
+    @Column(name = "segundo_apellido_solicitante")
+    private String segundo_apellido_solicitante;
+
+    @Column(name = "segundo_nombre_solicitante")
+    private String segundo_nombre_solicitante;
+
+    @Column(name = "tasa")
+    private BigDecimal tasa;
+
+    @Column(name = "telefono_fijo")
+    private String telefono_fijo;
+
+    @Column(name = "telefono_negocio")
+    private String telefono_negocio;
+
+    @Column(name = "tiene_correo")
+    private String tiene_correo;
+
+    @Column(name = "tipo_credito")
+    private String tipo_credito;
+
+    @Column(name = "tipo_direccion_negocio")
+    private String tipo_direccion_negocio;
+
+    @Column(name = "total_costo_ventas")
+    private BigDecimal total_costo_ventas;
+
+    @Column(name = "total_cuentas_por_cobrar")
+    private BigDecimal total_cuentas_por_cobrar;
+
+    @Column(name = "total_cuota_mensual")
+    private BigDecimal total_cuota_mensual;
+
+    @Column(name = "total_deuda")
+    private BigDecimal total_deuda;
+
+    @Column(name = "total_efectivo")
+    private BigDecimal total_efectivo;
+
+    @Column(name = "total_gastos_negocio")
+    private BigDecimal total_gastos_negocio;
+
+    @Column(name = "total_gastos_vivienda")
+    private BigDecimal total_gastos_vivienda;
+
+    @Column(name = "total_inmueble_familia")
+    private BigDecimal total_inmueble_familia;
+
+    @Column(name = "total_inmueble_negocio")
+    private BigDecimal total_inmueble_negocio;
+
+    @Column(name = "total_inmuebles")
+    private BigDecimal total_inmuebles;
+
+    @Column(name = "total_inventario")
+    private BigDecimal total_inventario;
+
+    @Column(name = "total_maquinaria")
+    private BigDecimal total_maquinaria;
+
+    @Column(name = "total_menaje_de_hogar")
+    private BigDecimal total_menaje_de_hogar;
+
+    @Column(name = "total_mobiliario_equipo")
+    private BigDecimal total_mobiliario_equipo;
+
+    @Column(name = "total_otros_activos")
+    private BigDecimal total_otros_activos;
+
+    @Column(name = "total_precio_ventas")
+    private BigDecimal total_precio_ventas;
+
+    @Column(name = "total_recibido")
+    private BigDecimal total_recibido;
+
+    @Column(name = "total_vehiculo_familia")
+    private Integer total_vehiculo_familia;
+
+    @Column(name = "total_vehiculo_negocio")
+    private Integer total_vehiculo_negocio;
+
+    @Column(name = "total_vehiculos")
+    private Integer total_vehiculos;
+
+    @Column(name = "usa_facebook")
+    private String usa_facebook;
+
+    @Column(name = "verificacion_negocio")
+    private String verificacion_negocio;
+
+    @Column(name = "verificacion_vivienda")
+    private String verificacion_vivienda;
+
+    @Column(name = "whatsapp")
+    private String whatsapp;
+
+    @Column(name = "zona_negocio")
+    private Integer zona_negocio;
+
+    @Column(name = "zona_vivienda")
+    private Integer zona_vivienda;
+
+    @Column(name = "detalle_fiadores")
+    private String detalle_fiadores;
+
+    @Column(name = "dpi_solicitante")
+    private String dpi_solicitante;
+
+    @Column(name = "fecha_solicitud")
+    private LocalDate fecha_solicitud;
+
+    @Column(name = "recuperacion_cuentas")
+    private String recuperacion_cuentas;
+
+    @Column(name = "tercer_nombre_solicitante")
+    private String tercer_nombre_solicitante;
+
     public LoanAdditionProperties() {}
 
     public LoanAdditionalData toData() {
-        final LoanAdditionalData loanAdditionalData = LoanAdditionalData.builder().build();
+        final LoanAdditionalData loanAdditionalData = new LoanAdditionalData();
         BeanUtils.copyProperties(this, loanAdditionalData);
         return loanAdditionalData;
     }
@@ -984,5 +1368,521 @@ public class LoanAdditionProperties extends AbstractPersistableCustom {
 
     public void setRelacionOtrosIngresos(BigDecimal relacionOtrosIngresos) {
         this.relacionOtrosIngresos = relacionOtrosIngresos;
+    }
+
+    public void setPrograma(String programa) {
+        this.programa = programa;
+    }
+
+    public void setAldeaVivienda(String aldeaVivienda) {
+        this.aldeaVivienda = aldeaVivienda;
+    }
+
+    public void setAniosComunidad(Integer aniosComunidad) {
+        this.aniosComunidad = aniosComunidad;
+    }
+
+    public void setAniosDeActividadNegocio(Integer aniosDeActividadNegocio) {
+        this.aniosDeActividadNegocio = aniosDeActividadNegocio;
+    }
+
+    public void setApellidoCasadaSolicitante(String apellidoCasadaSolicitante) {
+        this.apellidoCasadaSolicitante = apellidoCasadaSolicitante;
+    }
+
+    public void setcActividadEconomica(String cActividadEconomica) {
+        this.cActividadEconomica = cActividadEconomica;
+    }
+
+    public void setcApellidoDeCasada(String cApellidoDeCasada) {
+        this.cApellidoDeCasada = cApellidoDeCasada;
+    }
+
+    public void setcDepartamento(String cDepartamento) {
+        this.cDepartamento = cDepartamento;
+    }
+
+    public void setcDepartamentoDpi(String cDepartamentoDpi) {
+        this.cDepartamentoDpi = cDepartamentoDpi;
+    }
+
+    public void setcDescripcionNegocio(String cDescripcionNegocio) {
+        this.cDescripcionNegocio = cDescripcionNegocio;
+    }
+
+    public void setcLugarNacimiento(String cLugarNacimiento) {
+        this.cLugarNacimiento = cLugarNacimiento;
+    }
+
+    public void setcMunicipio(String cMunicipio) {
+        this.cMunicipio = cMunicipio;
+    }
+
+    public void setcMunicipioDpi(String cMunicipioDpi) {
+        this.cMunicipioDpi = cMunicipioDpi;
+    }
+
+    public void setcNit(String cNit) {
+        this.cNit = cNit;
+    }
+
+    public void setcSectorEconomico(String cSectorEconomico) {
+        this.cSectorEconomico = cSectorEconomico;
+    }
+
+    public void setCalleNegocio(String calleNegocio) {
+        this.calleNegocio = calleNegocio;
+    }
+
+    public void setCalleVivienda(String calleVivienda) {
+        this.calleVivienda = calleVivienda;
+    }
+
+    public void setCasaNegocio(String casaNegocio) {
+        this.casaNegocio = casaNegocio;
+    }
+
+    public void setCelularSolicitante(String celularSolicitante) {
+        this.celularSolicitante = celularSolicitante;
+    }
+
+    public void setColoniaNegocio(String coloniaNegocio) {
+        this.coloniaNegocio = coloniaNegocio;
+    }
+
+    public void setColoniaVivienda(String coloniaVivienda) {
+        this.coloniaVivienda = coloniaVivienda;
+    }
+
+    public void setCorreoElectronico(String correoElectronico) {
+        this.correoElectronico = correoElectronico;
+    }
+
+    public void setCuentas_uso_familia(Integer cuentas_uso_familia) {
+        this.cuentas_uso_familia = cuentas_uso_familia;
+    }
+
+    public void setCuentas_uso_negocio(Integer cuentas_uso_negocio) {
+        this.cuentas_uso_negocio = cuentas_uso_negocio;
+    }
+
+    public void setDatos_moviles(String datos_moviles) {
+        this.datos_moviles = datos_moviles;
+    }
+
+    public void setDepartamento_dpi_solicitante(String departamento_dpi_solicitante) {
+        this.departamento_dpi_solicitante = departamento_dpi_solicitante;
+    }
+
+    public void setDepartamento_negocio(String departamento_negocio) {
+        this.departamento_negocio = departamento_negocio;
+    }
+
+    public void setDepartamento_solicitante(String departamento_solicitante) {
+        this.departamento_solicitante = departamento_solicitante;
+    }
+
+    public void setDepartamento_vivienda(String departamento_vivienda) {
+        this.departamento_vivienda = departamento_vivienda;
+    }
+
+    public void setDescripcion_giro_negocio(String descripcion_giro_negocio) {
+        this.descripcion_giro_negocio = descripcion_giro_negocio;
+    }
+
+    public void setDetalle_compras(BigDecimal detalle_compras) {
+        this.detalle_compras = detalle_compras;
+    }
+
+    public void setDetalle_de_inversion(String detalle_de_inversion) {
+        this.detalle_de_inversion = detalle_de_inversion;
+    }
+
+    public void setDetalle_otros_ingresos(BigDecimal detalle_otros_ingresos) {
+        this.detalle_otros_ingresos = detalle_otros_ingresos;
+    }
+
+    public void setDetalle_prendaria(String detalle_prendaria) {
+        this.detalle_prendaria = detalle_prendaria;
+    }
+
+    public void setDetalle_recuperacion_cuentas(BigDecimal detalle_recuperacion_cuentas) {
+        this.detalle_recuperacion_cuentas = detalle_recuperacion_cuentas;
+    }
+
+    public void setDetalle_ventas(BigDecimal detalle_ventas) {
+        this.detalle_ventas = detalle_ventas;
+    }
+
+    public void setEdad_solicitante(Integer edad_solicitante) {
+        this.edad_solicitante = edad_solicitante;
+    }
+
+    public void setEfectivo_uso_familia(BigDecimal efectivo_uso_familia) {
+        this.efectivo_uso_familia = efectivo_uso_familia;
+    }
+
+    public void setEfectivo_uso_negocio(BigDecimal efectivo_uso_negocio) {
+        this.efectivo_uso_negocio = efectivo_uso_negocio;
+    }
+
+    public void setEntorno_del_negocio(String entorno_del_negocio) {
+        this.entorno_del_negocio = entorno_del_negocio;
+    }
+
+    public void setEscolaridad_solicitante(String escolaridad_solicitante) {
+        this.escolaridad_solicitante = escolaridad_solicitante;
+    }
+
+    public void setEstado_civil_solicitante(String estado_civil_solicitante) {
+        this.estado_civil_solicitante = estado_civil_solicitante;
+    }
+
+    public void setEtnia_maya(String etnia_maya) {
+        this.etnia_maya = etnia_maya;
+    }
+
+    public void setEtnia_no_maya(String etnia_no_maya) {
+        this.etnia_no_maya = etnia_no_maya;
+    }
+
+    public void setExplique_el_tema(String explique_el_tema) {
+        this.explique_el_tema = explique_el_tema;
+    }
+
+    public void setFacilitador(String facilitador) {
+        this.facilitador = facilitador;
+    }
+
+    public void setFecha_estacionalidad(LocalDate fecha_estacionalidad) {
+        this.fecha_estacionalidad = fecha_estacionalidad;
+    }
+
+    public void setFecha_inico_operaciones(LocalDate fecha_inico_operaciones) {
+        this.fecha_inico_operaciones = fecha_inico_operaciones;
+    }
+
+    public void setFecha_integraciones(LocalDate fecha_integraciones) {
+        this.fecha_integraciones = fecha_integraciones;
+    }
+
+    public void setFecha_inventario(LocalDate fecha_inventario) {
+        this.fecha_inventario = fecha_inventario;
+    }
+
+    public void setFecha_nacimiento_solicitante(LocalDate fecha_nacimiento_solicitante) {
+        this.fecha_nacimiento_solicitante = fecha_nacimiento_solicitante;
+    }
+
+    public void setFecha_visita(LocalDate fecha_visita) {
+        this.fecha_visita = fecha_visita;
+    }
+
+    public void setFrecuencia_compras(String frecuencia_compras) {
+        this.frecuencia_compras = frecuencia_compras;
+    }
+
+    public void setFrecuencia_ventas(String frecuencia_ventas) {
+        this.frecuencia_ventas = frecuencia_ventas;
+    }
+
+    public void setGenero(String genero) {
+        this.genero = genero;
+    }
+
+    public void setGrupo_etnico(String grupo_etnico) {
+        this.grupo_etnico = grupo_etnico;
+    }
+
+    public void setHabla_espaniol(String habla_espaniol) {
+        this.habla_espaniol = habla_espaniol;
+    }
+
+    public void setInstitucion(String institucion) {
+        this.institucion = institucion;
+    }
+
+    public void setInversion_actual(String inversion_actual) {
+        this.inversion_actual = inversion_actual;
+    }
+
+    public void setLocal_negocio(String local_negocio) {
+        this.local_negocio = local_negocio;
+    }
+
+    public void setLote_negocio(String lote_negocio) {
+        this.lote_negocio = lote_negocio;
+    }
+
+    public void setLote_vivienda(String lote_vivienda) {
+        this.lote_vivienda = lote_vivienda;
+    }
+
+    public void setManzana_negocio(String manzana_negocio) {
+        this.manzana_negocio = manzana_negocio;
+    }
+
+    public void setManzana_vivienda(String manzana_vivienda) {
+        this.manzana_vivienda = manzana_vivienda;
+    }
+
+    public void setMunicipio_dpi_solicitante(String municipio_dpi_solicitante) {
+        this.municipio_dpi_solicitante = municipio_dpi_solicitante;
+    }
+
+    public void setMunicipio_negocio(String municipio_negocio) {
+        this.municipio_negocio = municipio_negocio;
+    }
+
+    public void setMunicipio_solicitante(String municipio_solicitante) {
+        this.municipio_solicitante = municipio_solicitante;
+    }
+
+    public void setMunicipio_vivienda(String municipio_vivienda) {
+        this.municipio_vivienda = municipio_vivienda;
+    }
+
+    public void setNacimiento_solicitante(String nacimiento_solicitante) {
+        this.nacimiento_solicitante = nacimiento_solicitante;
+    }
+
+    public void setNit_negocio(String nit_negocio) {
+        this.nit_negocio = nit_negocio;
+    }
+
+    public void setNo_casa_vivienda(String no_casa_vivienda) {
+        this.no_casa_vivienda = no_casa_vivienda;
+    }
+
+    public void setNombre_negocio(String nombre_negocio) {
+        this.nombre_negocio = nombre_negocio;
+    }
+
+    public void setNum_contador_vivienda(Integer num_contador_vivienda) {
+        this.num_contador_vivienda = num_contador_vivienda;
+    }
+
+    public void setNumero_fiadores(Integer numero_fiadores) {
+        this.numero_fiadores = numero_fiadores;
+    }
+
+    public void setObservaciones_visita(String observaciones_visita) {
+        this.observaciones_visita = observaciones_visita;
+    }
+
+    public void setOtros_activos_familia(BigDecimal otros_activos_familia) {
+        this.otros_activos_familia = otros_activos_familia;
+    }
+
+    public void setOtros_activos_negocio(BigDecimal otros_activos_negocio) {
+        this.otros_activos_negocio = otros_activos_negocio;
+    }
+
+    public void setOtros_ingresos_de_la_solicitante(String otros_ingresos_de_la_solicitante) {
+        this.otros_ingresos_de_la_solicitante = otros_ingresos_de_la_solicitante;
+    }
+
+    public void setPatente_sociedad(String patente_sociedad) {
+        this.patente_sociedad = patente_sociedad;
+    }
+
+    public void setPrimer_apellido_solicitante(String primer_apellido_solicitante) {
+        this.primer_apellido_solicitante = primer_apellido_solicitante;
+    }
+
+    public void setPrimer_nombre_solicitante(String primer_nombre_solicitante) {
+        this.primer_nombre_solicitante = primer_nombre_solicitante;
+    }
+
+    public void setProfesion_solicitante(String profesion_solicitante) {
+        this.profesion_solicitante = profesion_solicitante;
+    }
+
+    public void setPunto_de_referencia(String punto_de_referencia) {
+        this.punto_de_referencia = punto_de_referencia;
+    }
+
+    public void setRazon_social(String razon_social) {
+        this.razon_social = razon_social;
+    }
+
+    public void setReferencias_vecinos(String referencias_vecinos) {
+        this.referencias_vecinos = referencias_vecinos;
+    }
+
+    public void setSector_economico_negocio(String sector_economico_negocio) {
+        this.sector_economico_negocio = sector_economico_negocio;
+    }
+
+    public void setSector_negocio(String sector_negocio) {
+        this.sector_negocio = sector_negocio;
+    }
+
+    public void setSector_vivienda(String sector_vivienda) {
+        this.sector_vivienda = sector_vivienda;
+    }
+
+    public void setSegundo_apellido_solicitante(String segundo_apellido_solicitante) {
+        this.segundo_apellido_solicitante = segundo_apellido_solicitante;
+    }
+
+    public void setSegundo_nombre_solicitante(String segundo_nombre_solicitante) {
+        this.segundo_nombre_solicitante = segundo_nombre_solicitante;
+    }
+
+    public void setTasa(BigDecimal tasa) {
+        this.tasa = tasa;
+    }
+
+    public void setTelefono_fijo(String telefono_fijo) {
+        this.telefono_fijo = telefono_fijo;
+    }
+
+    public void setTelefono_negocio(String telefono_negocio) {
+        this.telefono_negocio = telefono_negocio;
+    }
+
+    public void setTiene_correo(String tiene_correo) {
+        this.tiene_correo = tiene_correo;
+    }
+
+    public void setTipo_credito(String tipo_credito) {
+        this.tipo_credito = tipo_credito;
+    }
+
+    public void setTipo_direccion_negocio(String tipo_direccion_negocio) {
+        this.tipo_direccion_negocio = tipo_direccion_negocio;
+    }
+
+    public void setTotal_costo_ventas(BigDecimal total_costo_ventas) {
+        this.total_costo_ventas = total_costo_ventas;
+    }
+
+    public void setTotal_cuentas_por_cobrar(BigDecimal total_cuentas_por_cobrar) {
+        this.total_cuentas_por_cobrar = total_cuentas_por_cobrar;
+    }
+
+    public void setTotal_cuota_mensual(BigDecimal total_cuota_mensual) {
+        this.total_cuota_mensual = total_cuota_mensual;
+    }
+
+    public void setTotal_deuda(BigDecimal total_deuda) {
+        this.total_deuda = total_deuda;
+    }
+
+    public void setTotal_efectivo(BigDecimal total_efectivo) {
+        this.total_efectivo = total_efectivo;
+    }
+
+    public void setTotal_gastos_negocio(BigDecimal total_gastos_negocio) {
+        this.total_gastos_negocio = total_gastos_negocio;
+    }
+
+    public void setTotal_gastos_vivienda(BigDecimal total_gastos_vivienda) {
+        this.total_gastos_vivienda = total_gastos_vivienda;
+    }
+
+    public void setTotal_inmueble_familia(BigDecimal total_inmueble_familia) {
+        this.total_inmueble_familia = total_inmueble_familia;
+    }
+
+    public void setTotal_inmueble_negocio(BigDecimal total_inmueble_negocio) {
+        this.total_inmueble_negocio = total_inmueble_negocio;
+    }
+
+    public void setTotal_inmuebles(BigDecimal total_inmuebles) {
+        this.total_inmuebles = total_inmuebles;
+    }
+
+    public void setTotal_inventario(BigDecimal total_inventario) {
+        this.total_inventario = total_inventario;
+    }
+
+    public void setTotal_maquinaria(BigDecimal total_maquinaria) {
+        this.total_maquinaria = total_maquinaria;
+    }
+
+    public void setTotal_menaje_de_hogar(BigDecimal total_menaje_de_hogar) {
+        this.total_menaje_de_hogar = total_menaje_de_hogar;
+    }
+
+    public void setTotal_mobiliario_equipo(BigDecimal total_mobiliario_equipo) {
+        this.total_mobiliario_equipo = total_mobiliario_equipo;
+    }
+
+    public void setTotal_otros_activos(BigDecimal total_otros_activos) {
+        this.total_otros_activos = total_otros_activos;
+    }
+
+    public void setTotal_precio_ventas(BigDecimal total_precio_ventas) {
+        this.total_precio_ventas = total_precio_ventas;
+    }
+
+    public void setTotal_recibido(BigDecimal total_recibido) {
+        this.total_recibido = total_recibido;
+    }
+
+    public void setTotal_vehiculo_familia(Integer total_vehiculo_familia) {
+        this.total_vehiculo_familia = total_vehiculo_familia;
+    }
+
+    public void setTotal_vehiculo_negocio(Integer total_vehiculo_negocio) {
+        this.total_vehiculo_negocio = total_vehiculo_negocio;
+    }
+
+    public void setTotal_vehiculos(Integer total_vehiculos) {
+        this.total_vehiculos = total_vehiculos;
+    }
+
+    public void setUsa_facebook(String usa_facebook) {
+        this.usa_facebook = usa_facebook;
+    }
+
+    public void setVerificacion_negocio(String verificacion_negocio) {
+        this.verificacion_negocio = verificacion_negocio;
+    }
+
+    public void setVerificacion_vivienda(String verificacion_vivienda) {
+        this.verificacion_vivienda = verificacion_vivienda;
+    }
+
+    public void setWhatsapp(String whatsapp) {
+        this.whatsapp = whatsapp;
+    }
+
+    public void setZona_negocio(Integer zona_negocio) {
+        this.zona_negocio = zona_negocio;
+    }
+
+    public void setZona_vivienda(Integer zona_vivienda) {
+        this.zona_vivienda = zona_vivienda;
+    }
+
+    public void setDescripcionNegocio(String descripcionNegocio) {
+        this.descripcionNegocio = descripcionNegocio;
+    }
+
+    public void setDetalle_fiadores(String detalle_fiadores) {
+        this.detalle_fiadores = detalle_fiadores;
+    }
+
+    public void setDpi_solicitante(String dpi_solicitante) {
+        this.dpi_solicitante = dpi_solicitante;
+    }
+
+    public void setFecha_solicitud(LocalDate fecha_solicitud) {
+        this.fecha_solicitud = fecha_solicitud;
+    }
+
+    public void setRecuperacion_cuentasnal(String recuperacion_cuentas) {
+        this.recuperacion_cuentas = recuperacion_cuentas;
+    }
+
+    public void setRecuperacion_cuentas(String recuperacion_cuentas) {
+        this.recuperacion_cuentas = recuperacion_cuentas;
+    }
+
+    public void setTercer_nombre_solicitante(String tercer_nombre_solicitante) {
+        this.tercer_nombre_solicitante = tercer_nombre_solicitante;
     }
 }

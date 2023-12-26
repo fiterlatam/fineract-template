@@ -91,6 +91,7 @@ import org.apache.fineract.organisation.monetary.data.CurrencyData;
 import org.apache.fineract.organisation.office.domain.OfficeHierarchyLevel;
 import org.apache.fineract.organisation.prequalification.data.GroupPrequalificationData;
 import org.apache.fineract.organisation.prequalification.data.LoanAdditionalData;
+import org.apache.fineract.organisation.prequalification.domain.PrequalificationType;
 import org.apache.fineract.organisation.staff.data.StaffData;
 import org.apache.fineract.portfolio.account.PortfolioAccountType;
 import org.apache.fineract.portfolio.account.data.PortfolioAccountDTO;
@@ -720,7 +721,8 @@ public class LoansApiResource {
                         DataTableApiConstant.transactionsAssociateParamName, DataTableApiConstant.chargesAssociateParamName,
                         DataTableApiConstant.guarantorsAssociateParamName, DataTableApiConstant.collateralAssociateParamName,
                         DataTableApiConstant.notesAssociateParamName, DataTableApiConstant.linkedAccountAssociateParamName,
-                        DataTableApiConstant.multiDisburseDetailsAssociateParamName, DataTableApiConstant.collectionAssociateParamName, DataTableApiConstant.additionalDetailsParamName));
+                        DataTableApiConstant.multiDisburseDetailsAssociateParamName, DataTableApiConstant.collectionAssociateParamName,
+                        DataTableApiConstant.additionalDetailsParamName));
             }
 
             ApiParameterHelper.excludeAssociationsForResponseIfProvided(exclude, associationParameters);
@@ -766,8 +768,11 @@ public class LoansApiResource {
                     this.calculationPlatformService.updateFutureSchedule(repaymentSchedule, loanId);
                 }
                 if (associationParameters.contains(DataTableApiConstant.additionalDetailsParamName)) {
-                    GroupLoanAdditionalData groupLoanAdditionalData = this.loanReadPlatformService.retrieveAdditionalData(loanId);
-                    loanBasicDetails = LoanAccountData.withAdditionalDetails(loanBasicDetails, groupLoanAdditionalData);
+                    final EnumOptionData prequalificationType = prequalificationData.getPrequalificationType();
+                    if (prequalificationType != null && PrequalificationType.GROUP.name().equals(prequalificationType.getValue())) {
+                        GroupLoanAdditionalData groupLoanAdditionalData = this.loanReadPlatformService.retrieveAdditionalData(loanId);
+                        loanBasicDetails = LoanAccountData.withAdditionalDetails(loanBasicDetails, groupLoanAdditionalData);
+                    }
                 }
 
                 if (associationParameters.contains(DataTableApiConstant.originalScheduleAssociateParamName)
