@@ -149,4 +149,33 @@ public class SupervisionReadPlatformServiceImpl implements SupervisionReadPlatfo
         }
 
     }
+
+    @Override
+    public Collection<SupervisionData> retrieveByOfficeHierarchy(final String hierarchy) {
+
+        final String sql = """
+                        Select
+                          ma.id AS id,
+                          ma.name AS name,
+                          ma2.name as agencyName,
+                          ma2.id as agencyId,
+                          ma.linked_office_id as parentRegionId,
+                          region.name as parentRegionName,
+                          ma.responsible_user_id as responsibleUserId,
+                          ru.firstname as userFirstName, ru.lastname as userLastName
+                        FROM
+                          m_office mo
+                          INNER JOIN m_office office_under ON
+                          office_under.hierarchy LIKE CONCAT(mo.hierarchy, '%')AND office_under.hierarchy LIKE CONCAT(?, '%')
+                          INNER JOIN m_supervision ma ON ma.linked_office_id = office_under.id OR ma.linked_office_id = office_under.parent_id
+                          left join m_agency ma2 on ma2.id = ma.agency_id
+                          left join m_office AS region ON region.id = ma.linked_office_id
+                          left join m_appuser ru on ru.id = ma.responsible_user_id
+                        GROUP BY ma.id
+                """;
+        return this.jdbcTemplate.query(sql, (rs, rowNum) -> SupervisionData.instance(rs.getLong("id"), rs.getString("name"),
+                        rs.getLong("parentRegionId"), rs.getString("parentRegionName"),
+                        rs.getLong("responsibleUserId"), rs.getString("agencyName")),
+                new Object[] { hierarchy });
+    }
 }
