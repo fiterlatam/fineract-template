@@ -2430,6 +2430,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
             sqlBuilder.append(
                     "l.currency_code as currencyCode, l.currency_digits as currencyDigits, l.currency_multiplesof as inMultiplesOf, l.net_disbursal_amount as netDisbursalAmount, ");
             sqlBuilder.append("ls.installment AS installmentNumber, l.total_outstanding_derived AS totalOutstandingBalance, ");
+            sqlBuilder.append("l.number_of_repayments AS numberOfRepayments, ");
             sqlBuilder.append("rc." + sqlGenerator.escape("name")
                     + " as currencyName, rc.display_symbol as currencyDisplaySymbol, rc.internationalized_name_code as currencyNameCode, rc.int_code AS intCode ");
             sqlBuilder.append("FROM m_loan l ");
@@ -2465,10 +2466,13 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
             final String externalId = null;
             final AccountTransferData transfer = null;
             final BigDecimal fixedEmiAmount = null;
+            final Integer numberOfRepayments = JdbcSupport.getInteger(rs, "numberOfRepayments");
+
             LoanTransactionData loanTransactionData = new LoanTransactionData(id, officeId, officeName, transactionType, paymentDetailData,
                     currencyData, date, totalDue, netDisbursalAmount, principalPortion, interestDue, feeDue, penaltyDue, overPaymentPortion,
                     externalId, transfer, fixedEmiAmount, outstandingLoanBalance, unrecognizedIncomePortion, manuallyReversed);
             loanTransactionData.setInstallmentNumber(installmentNumber);
+            loanTransactionData.setNumberOfRepayments(numberOfRepayments);
             return loanTransactionData;
         }
 
