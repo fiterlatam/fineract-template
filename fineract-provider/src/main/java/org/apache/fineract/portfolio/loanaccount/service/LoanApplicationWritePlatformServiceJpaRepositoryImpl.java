@@ -817,7 +817,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 }
 
                 AdditionalsExtraLoans additionalsExtraLoans = new AdditionalsExtraLoans(groupLoanAdditionals, institutionType,
-                        totalLoanAmount, totalLoanBalance, charges, loanStatus);
+                        totalLoanAmount, totalLoanBalance, charges, loanStatus,name);
                 additionalLoansList.add(additionalsExtraLoans);
 
             }

@@ -2624,6 +2624,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
         public String schema() {
             StringBuilder sqlBuilder = new StringBuilder();
             sqlBuilder.append("""
+                                gla.id as additionalId,
                                 concat(user.firstname, ' ', user.lastname) as facilitatorName,
                                 user.id as facilitatorId,
                                 gla.loan_cycle_completed as loanCycleCompleted,
@@ -2733,6 +2734,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
         @Override
         public GroupLoanAdditionalData mapRow(ResultSet rs, int rowNum) throws SQLException {
 
+            final Long id = rs.getLong("additionalId");
             final String facilitatorName = rs.getString("facilitatorName");
             final Long facilitatorId = rs.getLong("facilitatorId");
             final Integer loanCycleCompleted = rs.getInt("loanCycleCompleted");
@@ -2817,7 +2819,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
             final BigDecimal facValue = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "facValue");
             final BigDecimal debtLevel = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "debtLevel");
 
-            GroupLoanAdditionalData additionalGroupLoanData = GroupLoanAdditionalData.builder().facilitatorName(facilitatorName)
+            GroupLoanAdditionalData additionalGroupLoanData = GroupLoanAdditionalData.builder().id(id).facilitatorName(facilitatorName)
                     .facilitatorId(facilitatorId).loanCycleCompleted(loanCycleCompleted).loanCycleCompletedValue(loanCycleCompletedValue)
                     .earlyCancellationReasonValue(earlyCancellationReasonValue).earlyCancellationReason(earlyCancellationReason)
                     .sourceOfFunds(sourceOfFunds).sourceOfFundsValue(sourceOfFundsValue).clientLoanRequestNumber(clientLoanRequestNumber)
@@ -2862,6 +2864,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
             StringBuilder sqlBuilder = new StringBuilder();
 
             sqlBuilder.append("""
+                                gla.institution_name as institutionName,
                                 gla.institution_type as institutionType,
                                 institutionTypeCV.code_description as institutionTypeValue,
                                 gla.loan_amount as loanAmount,
@@ -2887,7 +2890,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
             BigDecimal fees = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "fees");
             Long loanStatus = rs.getLong("loanStatus");
             String loanStatusValue = rs.getString("loanStatusValue");
-            AdditionalsExtraLoansData additionalExtraLoansData = AdditionalsExtraLoansData.builder().institutionType(institutionType)
+            String institutionName = rs.getString("institutionName");
+            AdditionalsExtraLoansData additionalExtraLoansData = AdditionalsExtraLoansData.builder().institutionName(institutionName).institutionType(institutionType)
                     .institutionTypeValue(institutionTypeValue).loanAmount(loanAmount).balance(balance).fees(fees).loanStatus(loanStatus)
                     .loanStatusValue(loanStatusValue).build();
             return additionalExtraLoansData;
