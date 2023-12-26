@@ -817,9 +817,6 @@ public class LoanAdditionProperties extends AbstractPersistableCustom {
     @Column(name = "dpi_solicitante")
     private String dpi_solicitante;
 
-    @Column(name = "fecha_solicitud")
-    private LocalDate fecha_solicitud;
-
     @Column(name = "recuperacion_cuentas")
     private String recuperacion_cuentas;
 
@@ -1868,10 +1865,6 @@ public class LoanAdditionProperties extends AbstractPersistableCustom {
 
     public void setDpi_solicitante(String dpi_solicitante) {
         this.dpi_solicitante = dpi_solicitante;
-    }
-
-    public void setFecha_solicitud(LocalDate fecha_solicitud) {
-        this.fecha_solicitud = fecha_solicitud;
     }
 
     public void setRecuperacion_cuentasnal(String recuperacion_cuentas) {

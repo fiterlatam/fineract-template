@@ -556,8 +556,6 @@ public class LoanAdditionalData {
 
     private String dpi_solicitante;
 
-    private LocalDate fecha_solicitud;
-
     private String recuperacion_cuentas;
 
     private String tercer_nombre_solicitante;

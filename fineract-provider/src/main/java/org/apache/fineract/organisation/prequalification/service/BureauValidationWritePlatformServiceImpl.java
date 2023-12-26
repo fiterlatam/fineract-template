@@ -1032,9 +1032,6 @@ public class BureauValidationWritePlatformServiceImpl implements BureauValidatio
         final String dpi_solicitante = this.fromApiJsonHelper.extractStringNamed("dpi_solicitante", jsonElement);
         loanAdditionalData.setDpi_solicitante(dpi_solicitante);
 
-        final LocalDate fecha_solicitud = this.fromApiJsonHelper.extractLocalDateNamed("fecha_solicitud", jsonElement, dateFormat, locale);
-        loanAdditionalData.setFecha_solicitud(fecha_solicitud);
-
         final String recuperacion_cuentas = this.fromApiJsonHelper.extractStringNamed("recuperacion_cuentas", jsonElement);
         loanAdditionalData.setRecuperacion_cuentas(recuperacion_cuentas);
 

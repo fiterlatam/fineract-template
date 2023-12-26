@@ -2412,5 +2412,23 @@
         </sql>
     </changeSet>
 
+    <changeSet author="fineract" id="199">
+        <sqlFile
+                encoding="utf8"
+                path="db/changelog/tenant/commands/policy_run_15.sql"
+                relativeToChangelogFile="false"
+                splitStatements="true"
+                stripComments="true"/>
+    </changeSet>
+
+    <changeSet author="fineract" id="200">
+        <sqlFile
+                encoding="utf8"
+                path="db/changelog/tenant/commands/policy_run_29.sql"
+                relativeToChangelogFile="false"
+                splitStatements="true"
+                stripComments="true"/>
+    </changeSet>
+
 
 </databaseChangeLog>
