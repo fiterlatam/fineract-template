@@ -27,8 +27,7 @@ public class HoldTransactionNotFoundException extends AbstractPlatformServiceUna
 
     public HoldTransactionNotFoundException(final Long savingsId, final Long transactionId) {
         super("error.msg.saving.account.hold.transaction.not.found",
-                "Savings Account hold transaction not found with identifier " + savingsId + " and transaction identifier "
-                        + transactionId,
+                "Savings Account hold transaction not found with identifier " + savingsId + " and transaction identifier " + transactionId,
                 savingsId, transactionId);
     }
 }

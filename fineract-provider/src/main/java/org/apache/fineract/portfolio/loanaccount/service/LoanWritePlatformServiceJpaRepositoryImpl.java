@@ -975,10 +975,10 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             this.loanAccountDomainService.updateLoanCollateralTransaction(loanCollateralManagements);
         }
 
-        //FBR-437 release gurantee
+        // FBR-437 release gurantee
         final boolean adjustGuarantee = command.booleanPrimitiveValueOfParameterNamed("adjustGuarantee");
 
-        if(adjustGuarantee){
+        if (adjustGuarantee) {
             this.savingsAccountWritePlatformService.releaseLoanGuarantee(loanId, command);
         }
 
