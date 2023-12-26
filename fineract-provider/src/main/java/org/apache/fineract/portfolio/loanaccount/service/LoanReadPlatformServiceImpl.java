@@ -2588,7 +2588,12 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
     public GroupLoanAdditionalData retrieveAdditionalData(Long loanId) {
         final AdditionalGroupLoanData mapper = new AdditionalGroupLoanData(sqlGenerator);
         String sql = "select " + mapper.schema();
-        GroupLoanAdditionalData groupLoanAdditionalData = this.jdbcTemplate.queryForObject(sql, mapper, loanId);
+        GroupLoanAdditionalData groupLoanAdditionalData = null;
+        try {
+            groupLoanAdditionalData = this.jdbcTemplate.queryForObject(sql, mapper, loanId);
+        } catch (EmptyResultDataAccessException e) {
+            return null;
+        }
 
         if (groupLoanAdditionalData!=null){
             AdditionalDataExtraLoansMapper extraLoansMapper = new AdditionalDataExtraLoansMapper(sqlGenerator);

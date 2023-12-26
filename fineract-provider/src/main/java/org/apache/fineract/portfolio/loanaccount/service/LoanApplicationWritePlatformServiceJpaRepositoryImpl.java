@@ -508,7 +508,10 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
 
             this.loanRepositoryWrapper.saveAndFlush(newLoanApplication);
             final Long newLoanApplicationId = newLoanApplication.getId();
-            newLoanApplication.setExternalId(String.valueOf(newLoanApplicationId));
+            final Boolean isBulkImport = this.fromJsonHelper.extractBooleanNamed("isBulkImport", command.parsedJson());
+            if (isBulkImport == null || !isBulkImport) {
+                newLoanApplication.setExternalId(String.valueOf(newLoanApplicationId));
+            }
 
             Long facilitatorId = command.longValueOfParameterNamed("facilitator");
             AppUser facilitator = null;
