@@ -217,7 +217,7 @@ public class RestructureCreditsWritePlatformServiceImpl implements RestructureCr
     private BigDecimal getTotalOutstanding(List<Loan> loanAccounts) {
         BigDecimal totalOutstanding = BigDecimal.ZERO;
         for (Loan loan : loanAccounts) {
-            totalOutstanding = totalOutstanding.add(loan.getSummary().getTotalOutstanding());
+            totalOutstanding = totalOutstanding.add(loan.getSummary().getTotalPrincipalOutstanding());
         }
         return totalOutstanding;
     }
