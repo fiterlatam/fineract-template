@@ -2584,7 +2584,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
     @Override
     public Collection<LoanAccountData> retrieveClientActiveLoans(Long clientId) {
         final LoanMapper rm = new LoanMapper(sqlGenerator);
-        final String sql = "select " + rm.loanSchema() + " where l.client_id = ? and l.loan_status_id = ?";
+        final String sql = "select distinct " + rm.loanSchema() + " where l.client_id = ? and l.loan_status_id = ?";
         return this.jdbcTemplate.query(sql, rm, new Object[] { clientId, LoanStatus.ACTIVE.getValue() });
     }
 
