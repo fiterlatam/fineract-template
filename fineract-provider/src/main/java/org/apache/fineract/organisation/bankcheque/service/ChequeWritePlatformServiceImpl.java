@@ -385,8 +385,7 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
                         throw new BankChequeException("print.cheques", "failed.to.disburse.loan " + loanAccId);
                     }
                 }
-
-                chequeAmount = chequeData.getLoanAmount();
+                chequeAmount = loan.getNetDisbursalAmount();
             }
             final String amountInWords = NumberToWordsConverter.convertToWords(chequeAmount.intValue(),
                     NumberToWordsConverter.Language.SPANISH);

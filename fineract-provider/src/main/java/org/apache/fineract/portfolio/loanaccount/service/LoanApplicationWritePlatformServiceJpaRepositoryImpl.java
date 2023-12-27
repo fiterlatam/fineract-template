@@ -1574,7 +1574,10 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
         final String producto = this.fromJsonHelper.extractStringNamed("producto", jsonElement);
         loanAdditionalData.setProducto(producto);
 
-        final LocalDate fechaSolicitud = this.fromJsonHelper.extractLocalDateNamed("fechaSolicitud", jsonElement, dateFormat, locale);
+        LocalDate fechaSolicitud = this.fromJsonHelper.extractLocalDateNamed("fechaSolicitud", jsonElement, dateFormat, locale);
+        if (fechaSolicitud == null) {
+            fechaSolicitud = this.fromJsonHelper.extractLocalDateNamed("fecha_solicitud", jsonElement, dateFormat, locale);
+        }
         loanAdditionalData.setFechaSolicitud(fechaSolicitud);
 
         final String codigoCliente = this.fromJsonHelper.extractStringNamed("codigoCliente", jsonElement);
@@ -2323,9 +2326,6 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
 
         final String dpi_solicitante = this.fromJsonHelper.extractStringNamed("dpi_solicitante", jsonElement);
         loanAdditionalData.setDpi_solicitante(dpi_solicitante);
-
-        final LocalDate fecha_solicitud = this.fromJsonHelper.extractLocalDateNamed("fecha_solicitud", jsonElement, dateFormat, locale);
-        loanAdditionalData.setFecha_solicitud(fecha_solicitud);
 
         final String semarecuperacion_cuentasnal = this.fromJsonHelper.extractStringNamed("recuperacion_cuentas", jsonElement);
         loanAdditionalData.setRecuperacion_cuentas(semarecuperacion_cuentasnal);

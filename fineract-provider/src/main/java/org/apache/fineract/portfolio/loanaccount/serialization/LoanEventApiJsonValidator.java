@@ -203,7 +203,7 @@ public final class LoanEventApiJsonValidator {
         }
 
         // Disbursement should be not allowed if maxLoanProductCounter is greater than zero
-        if (loan.getLoanProduct().useBorrowerCycle() && loanProductCounter > 0) {
+        if (loan.getLoanProduct().useBorrowerCycle() && loanProductCounter > 0 && !loan.isTopup()) {
             throw new LoanDisbursalExistingActiveProduct(loan.getLoanProduct().getName());
         }
     }
