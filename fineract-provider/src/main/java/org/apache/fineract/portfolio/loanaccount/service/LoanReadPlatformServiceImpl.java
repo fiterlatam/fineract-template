@@ -2891,9 +2891,9 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
             Long loanStatus = rs.getLong("loanStatus");
             String loanStatusValue = rs.getString("loanStatusValue");
             String institutionName = rs.getString("institutionName");
-            AdditionalsExtraLoansData additionalExtraLoansData = AdditionalsExtraLoansData.builder().institutionName(institutionName).institutionType(institutionType)
-                    .institutionTypeValue(institutionTypeValue).loanAmount(loanAmount).balance(balance).fees(fees).loanStatus(loanStatus)
-                    .loanStatusValue(loanStatusValue).build();
+            AdditionalsExtraLoansData additionalExtraLoansData = AdditionalsExtraLoansData.builder().institutionName(institutionName)
+                    .institutionType(institutionType).institutionTypeValue(institutionTypeValue).loanAmount(loanAmount).balance(balance)
+                    .fees(fees).loanStatus(loanStatus).loanStatusValue(loanStatusValue).build();
             return additionalExtraLoansData;
         }
     }
