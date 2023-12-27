@@ -93,14 +93,18 @@ public class PortfolioReadPlatformServiceImpl implements PortfolioReadPlatformSe
     public PortfolioData retrieveNewPortfolioTemplate() {
         this.context.authenticatedUser();
 
-        final Collection<OfficeData> parentOfficesOptions = officeReadPlatformService.retrieveChildOfficesByUserHierarchyAsParent();
+        final Collection<OfficeData> parentOfficesOptions = officeReadPlatformService
+                .retrieveOfficesByHierarchyLevel(Long.valueOf(OfficeHierarchyLevel.GERENCIA.getValue()));
 
         // retrieve list of users under agency hierarchy level as this is the user role to access these feature
         final List<AppUserData> appUsers = new ArrayList<>(
                 this.appUserReadPlatformService.retrieveUsersUnderHierarchy(Long.valueOf(OfficeHierarchyLevel.CARTERA.getValue())));
-        final Collection<SupervisionData> supervisionOptions = this.supervisionReadPlatformService.retrieveAllByUser();
+        final String hierarchy = this.context.authenticatedUser().getOffice().getHierarchy();
+        final Collection<SupervisionData> supervisionOptions = this.supervisionReadPlatformService.retrieveByOfficeHierarchy(hierarchy);
         return PortfolioData.template(parentOfficesOptions, appUsers, supervisionOptions);
     }
+
+
 
     @Override
     public Collection<PortfolioData> retrieveAllByUser() {
@@ -235,6 +239,5 @@ public class PortfolioReadPlatformServiceImpl implements PortfolioReadPlatformSe
         public String schema() {
             return this.schema;
         }
-
     }
 }

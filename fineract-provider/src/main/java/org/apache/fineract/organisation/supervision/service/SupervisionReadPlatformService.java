@@ -28,4 +28,6 @@ public interface SupervisionReadPlatformService {
     SupervisionData retrieveNewSupervisionTemplate();
 
     Collection<SupervisionData> retrieveAllByUser();
+
+    Collection<SupervisionData> retrieveByOfficeHierarchy(String hierarchy);
 }
