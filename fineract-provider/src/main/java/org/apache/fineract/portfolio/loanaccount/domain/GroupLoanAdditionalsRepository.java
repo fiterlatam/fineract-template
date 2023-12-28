@@ -20,8 +20,10 @@ package org.apache.fineract.portfolio.loanaccount.domain;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.repository.query.Param;
 
 public interface GroupLoanAdditionalsRepository
         extends JpaRepository<GroupLoanAdditionals, Long>, JpaSpecificationExecutor<GroupLoanAdditionals> {
 
+    GroupLoanAdditionals getGroupLoanAdditionalsByLoan(@Param("loan") Loan loan);
 }

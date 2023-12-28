@@ -238,4 +238,15 @@
         </addColumn>
     </changeSet>
 
+    <changeSet author="fineract" id="8">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_loan_additionals_group" columnName="date_of_birth"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_loan_additionals_group">
+            <column name="date_of_birth" type="DATE"/>
+        </addColumn>
+    </changeSet>
+
 </databaseChangeLog>
