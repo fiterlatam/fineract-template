@@ -104,8 +104,6 @@ public class PortfolioReadPlatformServiceImpl implements PortfolioReadPlatformSe
         return PortfolioData.template(parentOfficesOptions, appUsers, supervisionOptions);
     }
 
-
-
     @Override
     public Collection<PortfolioData> retrieveAllByUser() {
         AppUser currentUser = this.context.authenticatedUser();

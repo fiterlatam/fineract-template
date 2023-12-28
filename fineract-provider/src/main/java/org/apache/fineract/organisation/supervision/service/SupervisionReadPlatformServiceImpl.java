@@ -173,9 +173,9 @@ public class SupervisionReadPlatformServiceImpl implements SupervisionReadPlatfo
                           left join m_appuser ru on ru.id = ma.responsible_user_id
                         GROUP BY ma.id
                 """;
-        return this.jdbcTemplate.query(sql, (rs, rowNum) -> SupervisionData.instance(rs.getLong("id"), rs.getString("name"),
-                        rs.getLong("parentRegionId"), rs.getString("parentRegionName"),
-                        rs.getLong("responsibleUserId"), rs.getString("agencyName")),
+        return this.jdbcTemplate.query(sql,
+                (rs, rowNum) -> SupervisionData.instance(rs.getLong("id"), rs.getString("name"), rs.getLong("parentRegionId"),
+                        rs.getString("parentRegionName"), rs.getLong("responsibleUserId"), rs.getString("agencyName")),
                 new Object[] { hierarchy });
     }
 }

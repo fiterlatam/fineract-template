@@ -2430,5 +2430,103 @@
                 stripComments="true"/>
     </changeSet>
 
+    <changeSet id="201" author="fineract">
+        <sql>
+            <![CDATA[
+            UPDATE stretchy_report
+            SET report_name='Present agricultural technical diagnosis Commcare Policy Check'
+            WHERE report_name = 'Present agricultural technical diagnosis (Commcare) Policy Check';
+            ]]>
+        </sql>
+    </changeSet>
 
+    <changeSet id="202" author="fineract">
+        <sql>
+            <![CDATA[
+            UPDATE stretchy_report SET report_sql="SELECT CASE
+                   WHEN (${loanProductId} = 2) AND ${numberOfDocuments} > 0  THEN 'GREEN'
+                   WHEN (${loanProductId} = 3) AND ${numberOfDocuments} > 0  THEN 'GREEN'
+                   WHEN (${loanProductId} = 4) AND ${numberOfDocuments} > 0  THEN 'GREEN'
+                   WHEN (${loanProductId} = 5) AND ${numberOfDocuments} > 0  THEN 'GREEN'
+                   WHEN (${loanProductId} = 6) AND ${numberOfDocuments} > 0  THEN 'GREEN'
+                   WHEN (${loanProductId} = 7) AND ${numberOfDocuments} > 0  THEN 'GREEN'
+                   WHEN (${loanProductId} = 8) AND ${numberOfDocuments} > 0  THEN 'GREEN'
+                   WHEN (${loanProductId} = 9) AND ${numberOfDocuments} > 0  THEN 'GREEN'
+                   WHEN (${loanProductId} = 10) AND ${numberOfDocuments} > 0  THEN 'GREEN'
+                   ELSE 'RED'
+                END AS color
+                FROM m_client mc WHERE mc.id = ${clientId}"
+            WHERE report_name = "Mandatory to attach photographs and investment plan Policy Check";
+            ]]>
+        </sql>
+    </changeSet>
+
+    <changeSet id="203" author="fineract">
+        <sql>
+            <![CDATA[
+            UPDATE stretchy_report SET report_sql="SELECT CASE
+                   WHEN (${loanProductId} = 2) AND ${numberOfDocuments} > 0  THEN 'GREEN'
+                   WHEN (${loanProductId} = 3) AND ${numberOfDocuments} > 0  THEN 'GREEN'
+                   WHEN (${loanProductId} = 4) AND ${numberOfDocuments} > 0  THEN 'GREEN'
+                   WHEN (${loanProductId} = 5) AND ${numberOfDocuments} > 0  THEN 'GREEN'
+                   WHEN (${loanProductId} = 6) AND ${numberOfDocuments} > 0  THEN 'GREEN'
+                   WHEN (${loanProductId} = 7) AND ${numberOfDocuments} > 0  THEN 'GREEN'
+                   WHEN (${loanProductId} = 8) AND ${numberOfDocuments} > 0  THEN 'GREEN'
+                   WHEN (${loanProductId} = 9) AND ${numberOfDocuments} > 0  THEN 'GREEN'
+                   WHEN (${loanProductId} = 10) AND ${numberOfDocuments} > 0  THEN 'GREEN'
+                   ELSE 'RED'
+                END AS color
+                FROM m_client mc WHERE mc.id = ${clientId}"
+            WHERE report_name = "Present agricultural technical diagnosis Commcare Policy Check";
+            ]]>
+        </sql>
+    </changeSet>
+
+    <changeSet id="204" author="fineract">
+        <sql>
+            <![CDATA[
+            UPDATE stretchy_report SET report_sql="SELECT CASE
+                   WHEN (${loanProductId} = 2) AND ${numberOfDocuments} > 0  THEN 'GREEN'
+                   WHEN (${loanProductId} = 3) AND ${numberOfDocuments} > 0  THEN 'GREEN'
+                   WHEN (${loanProductId} = 4) AND ${numberOfDocuments} > 0  THEN 'GREEN'
+                   WHEN (${loanProductId} = 5) AND ${numberOfDocuments} > 0  THEN 'GREEN'
+                   WHEN (${loanProductId} = 6) AND ${numberOfDocuments} > 0  THEN 'GREEN'
+                   WHEN (${loanProductId} = 7) AND ${numberOfDocuments} > 0  THEN 'GREEN'
+                   WHEN (${loanProductId} = 8) AND ${numberOfDocuments} > 0  THEN 'GREEN'
+                   WHEN (${loanProductId} = 9) AND ${numberOfDocuments} > 0  THEN 'GREEN'
+                   WHEN (${loanProductId} = 10) AND ${numberOfDocuments} > 0  THEN 'GREEN'
+                   ELSE 'RED'
+                END AS color
+                FROM m_client mc WHERE mc.id = ${clientId}"
+            WHERE report_name = "Add endorsement Policy Check";
+            ]]>
+        </sql>
+    </changeSet>
+
+    <changeSet author="fineract" id="205">
+        <sqlFile
+                encoding="utf8"
+                path="db/changelog/tenant/commands/policy_run_9.sql"
+                relativeToChangelogFile="false"
+                splitStatements="true"
+                stripComments="true"/>
+    </changeSet>
+
+    <changeSet author="fineract" id="206">
+        <sqlFile
+                encoding="utf8"
+                path="db/changelog/tenant/commands/policy_run_32.sql"
+                relativeToChangelogFile="false"
+                splitStatements="true"
+                stripComments="true"/>
+    </changeSet>
+
+    <changeSet author="fineract" id="207">
+        <sqlFile
+                encoding="utf8"
+                path="db/changelog/tenant/commands/policy_run_33.sql"
+                relativeToChangelogFile="false"
+                splitStatements="true"
+                stripComments="true"/>
+    </changeSet>
 </databaseChangeLog>

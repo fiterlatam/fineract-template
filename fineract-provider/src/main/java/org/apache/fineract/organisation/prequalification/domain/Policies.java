@@ -55,7 +55,7 @@ public enum Policies {
                                                                                                                                                             28,
                                                                                                                                                             "Acceptance of new clients"), TWENTY_NINE(
                                                                                                                                                                     29,
-                                                                                                                                                                    "Present agricultural technical diagnosis (Commcare)"), THIRTY(
+                                                                                                                                                                    "Present agricultural technical diagnosis Commcare"), THIRTY(
                                                                                                                                                                             30,
                                                                                                                                                                             "Age"), THIRTY_ONE(
                                                                                                                                                                                     31,
