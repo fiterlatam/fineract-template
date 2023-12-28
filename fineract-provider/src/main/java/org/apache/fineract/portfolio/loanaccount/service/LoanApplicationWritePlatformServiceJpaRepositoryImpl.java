@@ -1517,6 +1517,22 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             // http://stackoverflow.com/questions/17151757/hibernate-cascade-update-gives-null-pointer/17334374#17334374
             this.loanRepositoryWrapper.saveAndFlush(existingLoanApplication);
 
+            GroupLoanAdditionals additionals = this.groupLoanAdditionalsRepository.getGroupLoanAdditionalsByLoan(existingLoanApplication);
+            if (additionals==null){
+                Long facilitatorId = command.longValueOfParameterNamed("facilitator");
+                AppUser facilitator = null;
+                if (facilitatorId != null) {
+                    facilitator = this.appUserRepository.findById(facilitatorId)
+                            .orElseThrow(() -> new GeneralPlatformDomainRuleException("error.msg.loan.facilitator.not.found",
+                                    "Facilitator with identifier " + facilitatorId + " does not exist"));
+                }
+                additionals = GroupLoanAdditionals.assembleFromJson(command,existingLoanApplication, facilitator);
+            }else{
+                additionals.update(command);
+            }
+            updateExternalLoans(command,additionals);
+            this.groupLoanAdditionalsRepository.save(additionals);
+
             if (productRelatedDetail.isInterestRecalculationEnabled()) {
                 this.fromApiJsonDeserializer.validateLoanForInterestRecalculation(existingLoanApplication);
                 if (changes.containsKey(LoanProductConstants.IS_INTEREST_RECALCULATION_ENABLED_PARAMETER_NAME)) {
@@ -1540,6 +1556,51 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             Throwable throwable = ExceptionUtils.getRootCause(dve.getCause());
             handleDataIntegrityIssues(command, throwable, dve);
             return CommandProcessingResult.empty();
+        }
+    }
+
+    private void updateExternalLoans(JsonCommand command, GroupLoanAdditionals groupLoanAdditionals) {
+        JsonArray externalLoansArray = command.arrayOfParameterNamed(LoanApiConstants.externalLoansParamName);
+
+        List<AdditionalsExtraLoans> additionalLoansList = new ArrayList<>();
+        if (!ObjectUtils.isEmpty(externalLoansArray)) {
+            for (JsonElement element : externalLoansArray) {
+                JsonObject loanData = element.getAsJsonObject();
+
+                String name = null;
+                if (loanData.get("institutionName") != null) {
+                    name = loanData.get("institutionName").getAsString();
+                }
+                Long institutionType = null;
+                if (loanData.get("institutionType") != null) {
+                    institutionType = loanData.get("institutionType").getAsLong();
+                }
+
+                Long loanStatus = null;
+                if (loanData.get("loanStatus") != null) {
+                    loanStatus = loanData.get("loanStatus").getAsLong();
+                }
+
+                BigDecimal totalLoanBalance = null;
+                if (loanData.get("totalLoanBalance") != null) {
+                    totalLoanBalance = new BigDecimal(loanData.get("totalLoanBalance").getAsString().replace(",", "".trim()));
+                }
+
+                BigDecimal charges = null;
+                if (loanData.get("charges") != null) {
+                    charges = new BigDecimal(loanData.get("charges").getAsString().replace(",", "").trim());
+                }
+                BigDecimal totalLoanAmount = null;
+                if (loanData.get("totalLoanAmount") != null) {
+                    totalLoanAmount = new BigDecimal(loanData.get("totalLoanAmount").getAsString().replace(",", "").trim());
+                }
+
+                AdditionalsExtraLoans additionalsExtraLoans = new AdditionalsExtraLoans(groupLoanAdditionals, institutionType,
+                        totalLoanAmount, totalLoanBalance, charges, loanStatus,name);
+                additionalLoansList.add(additionalsExtraLoans);
+
+            }
+            groupLoanAdditionals.setExtraLoans(additionalLoansList);
         }
     }
 

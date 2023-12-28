@@ -767,13 +767,6 @@ public class LoansApiResource {
                     mandatoryResponseParameters.add(DataTableApiConstant.futureScheduleAssociateParamName);
                     this.calculationPlatformService.updateFutureSchedule(repaymentSchedule, loanId);
                 }
-                if (associationParameters.contains(DataTableApiConstant.additionalDetailsParamName)) {
-                    final EnumOptionData prequalificationType = prequalificationData.getPrequalificationType();
-                    if (prequalificationType != null && PrequalificationType.GROUP.name().equals(prequalificationType.getValue())) {
-                        GroupLoanAdditionalData groupLoanAdditionalData = this.loanReadPlatformService.retrieveAdditionalData(loanId);
-                        loanBasicDetails = LoanAccountData.withAdditionalDetails(loanBasicDetails, groupLoanAdditionalData);
-                    }
-                }
 
                 if (associationParameters.contains(DataTableApiConstant.originalScheduleAssociateParamName)
                         && loanBasicDetails.isInterestRecalculationEnabled() && loanBasicDetails.isActive()) {
@@ -781,6 +774,14 @@ public class LoansApiResource {
                     LoanScheduleData loanScheduleData = this.loanScheduleHistoryReadPlatformService.retrieveRepaymentArchiveSchedule(loanId,
                             repaymentScheduleRelatedData, disbursementData);
                     loanBasicDetails = LoanAccountData.withOriginalSchedule(loanBasicDetails, loanScheduleData);
+                }
+            }
+
+            if (associationParameters.contains(DataTableApiConstant.additionalDetailsParamName)) {
+                final EnumOptionData prequalificationType = prequalificationData.getPrequalificationType();
+                if (prequalificationType != null && PrequalificationType.GROUP.name().equals(prequalificationType.getValue())) {
+                    GroupLoanAdditionalData groupLoanAdditionalData = this.loanReadPlatformService.retrieveAdditionalData(loanId);
+                    loanBasicDetails = LoanAccountData.withAdditionalDetails(loanBasicDetails, groupLoanAdditionalData);
                 }
             }
 
