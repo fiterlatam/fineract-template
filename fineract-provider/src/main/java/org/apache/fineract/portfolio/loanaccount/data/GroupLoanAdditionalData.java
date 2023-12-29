@@ -39,6 +39,7 @@ public class GroupLoanAdditionalData {
     private String sourceOfFundsValue;
     private String clientLoanRequestNumber;
     private LocalDate dateRequested;
+    private LocalDate dateOfBirth;
     private Long position;
     private String positionValue;
     private String fullName;
