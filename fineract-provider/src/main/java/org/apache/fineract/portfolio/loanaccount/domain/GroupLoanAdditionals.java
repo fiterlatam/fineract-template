@@ -249,19 +249,19 @@ public class GroupLoanAdditionals extends AbstractPersistableCustom {
     protected GroupLoanAdditionals() {}
 
     public GroupLoanAdditionals(Integer loanCycleCompleted, BigDecimal rentMortgageFee, BigDecimal monthlyIncome, BigDecimal familyExpenses,
-                                BigDecimal totalExternalLoanAmount, Integer totalInstallments, Integer clientType, String houseHoldGoods,
-                                String businessActivities, Long businessLocation, Integer businessExperience, BigDecimal salesValue,
-                                BigDecimal businessPurchases, BigDecimal businessProfit, BigDecimal clientProfit, BigDecimal inventories, Long visitBusiness,
-                                Long familySupport, Long businessEvolution, Integer numberOfApprovals, String recommenderName,
-                                BigDecimal monthlyPaymentCapacity, Long loanPurpose, BigDecimal currentCreditValue, BigDecimal requestedValue,
-                                BigDecimal groupAuthorizedValue, BigDecimal facilitatorProposedValue, BigDecimal proposedFee, BigDecimal agencyAuthorizedAmount,
-                                BigDecimal authorizedFee, BigDecimal totalIncome, BigDecimal totalExpenditures, BigDecimal availableMonthly,
-                                BigDecimal facValue, BigDecimal debtLevel, AppUser facilitator, Long earlyCancellationReason, Long sourceOfFunds,
-                                String clientLoanRequestNumber, LocalDate dateRequested, Long position, String fullName, String lastName, Long maritalStatus,
-                                Long educationLevel, Integer schoolingYears, Integer noOfChildren, String nationality, String language, String dpi, String nit,
-                                Long jobType, Long occupancyClassification, Long actsOwnBehalf, String onBehalfOf, String politicalPosition,
-                                String politicalOffice, Long housingType, String address, String populatedPlace, String referencePoint, String phoneNumber,
-                                String relativeNumber, Integer yearsInCommunity, Loan loan, LocalDate dateOfBirth) {
+            BigDecimal totalExternalLoanAmount, Integer totalInstallments, Integer clientType, String houseHoldGoods,
+            String businessActivities, Long businessLocation, Integer businessExperience, BigDecimal salesValue,
+            BigDecimal businessPurchases, BigDecimal businessProfit, BigDecimal clientProfit, BigDecimal inventories, Long visitBusiness,
+            Long familySupport, Long businessEvolution, Integer numberOfApprovals, String recommenderName,
+            BigDecimal monthlyPaymentCapacity, Long loanPurpose, BigDecimal currentCreditValue, BigDecimal requestedValue,
+            BigDecimal groupAuthorizedValue, BigDecimal facilitatorProposedValue, BigDecimal proposedFee, BigDecimal agencyAuthorizedAmount,
+            BigDecimal authorizedFee, BigDecimal totalIncome, BigDecimal totalExpenditures, BigDecimal availableMonthly,
+            BigDecimal facValue, BigDecimal debtLevel, AppUser facilitator, Long earlyCancellationReason, Long sourceOfFunds,
+            String clientLoanRequestNumber, LocalDate dateRequested, Long position, String fullName, String lastName, Long maritalStatus,
+            Long educationLevel, Integer schoolingYears, Integer noOfChildren, String nationality, String language, String dpi, String nit,
+            Long jobType, Long occupancyClassification, Long actsOwnBehalf, String onBehalfOf, String politicalPosition,
+            String politicalOffice, Long housingType, String address, String populatedPlace, String referencePoint, String phoneNumber,
+            String relativeNumber, Integer yearsInCommunity, Loan loan, LocalDate dateOfBirth) {
 
         this.loan = loan;
         this.facilitator = facilitator;
@@ -333,7 +333,6 @@ public class GroupLoanAdditionals extends AbstractPersistableCustom {
     }
 
     public static GroupLoanAdditionals assembleFromJson(JsonCommand command, Loan loan, AppUser facilitator) {
-
 
         Integer loanCycleCompleted = command.integerValueOfParameterNamed("loanCycleCompleted");
         BigDecimal rentMortgageFee = command.bigDecimalValueOfParameterNamed("rentMortgageFee");
@@ -408,7 +407,8 @@ public class GroupLoanAdditionals extends AbstractPersistableCustom {
                 totalExpenditures, availableMonthly, facValue, debtLevel, facilitator, earlyCancellationReason, sourceOfFunds,
                 clientLoanRequestNumber, dateRequested, position, fullName, lastName, maritalStatus, educationLevel, schoolingYears,
                 noOfChildren, nationality, language, dpi, nit, jobType, occupancyClassification, null, onBehalfOf, politicalPosition,
-                politicalOffice, housingType, address, populatedPlace, referencePoint, phoneNumber, relativeNumber, yearsInCommunity, loan,dateOfBirth);
+                politicalOffice, housingType, address, populatedPlace, referencePoint, phoneNumber, relativeNumber, yearsInCommunity, loan,
+                dateOfBirth);
     }
 
     public Loan getLoan() {

@@ -778,7 +778,8 @@ public class LoansApiResource {
             }
 
             if (associationParameters.contains(DataTableApiConstant.additionalDetailsParamName)) {
-                final EnumOptionData prequalificationType = prequalificationData.getPrequalificationType();
+                final EnumOptionData prequalificationType = prequalificationData != null ? prequalificationData.getPrequalificationType()
+                        : null;
                 if (prequalificationType != null && PrequalificationType.GROUP.name().equals(prequalificationType.getValue())) {
                     GroupLoanAdditionalData groupLoanAdditionalData = this.loanReadPlatformService.retrieveAdditionalData(loanId);
                     loanBasicDetails = LoanAccountData.withAdditionalDetails(loanBasicDetails, groupLoanAdditionalData);
