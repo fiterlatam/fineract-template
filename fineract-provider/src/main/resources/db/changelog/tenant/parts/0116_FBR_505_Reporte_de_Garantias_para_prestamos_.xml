@@ -23,7 +23,7 @@
                    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd">
 
-    <changeSet id="1" author="fineract">
+    <changeSet id="3" author="fineract">
         <sql>
             <![CDATA[
                     UPDATE stretchy_report
@@ -32,7 +32,7 @@
                     case
                         when releaseTbl.id is not null then 'Liberada'
                         WHEN releaseTbl.id is null then 'En Reserva'
-                    end as Estado, releaseTbl.transaction_date as 'Fecha de Liberación', sa.account_balance_derived as 'Cambiar a Saldo',
+                    end as Estado, releaseTbl.transaction_date as 'Fecha de Liberación', sa.account_balance_derived as 'Saldo',
                     ifnull(creditTbl.loanCount, 0) as 'Créditos vigentes'
                     from m_savings_account_transaction sat
                     join m_savings_account sa on sa.id = sat.savings_account_id
