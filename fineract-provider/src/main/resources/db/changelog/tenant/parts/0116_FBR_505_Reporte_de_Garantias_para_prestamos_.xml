@@ -56,4 +56,53 @@
         </sql>
     </changeSet>
 
+    <changeSet id="2" author="fineract">
+        <sql>
+            <![CDATA[
+                UPDATE stretchy_report
+                SET report_sql = "SELECT
+                ml.id AS 'ID de préstamo',
+                ma.name AS Agencia,
+                concat(faci.firstname, ' ', faci.lastname)  AS 'Nombre facilitador',
+                center.display_name AS 'Centro',
+                mg.display_name AS 'Nombre de Grupo',
+                mg.id AS 'Grupo No.',
+                ml.account_no  AS 'Código de Préstamo',
+                mc.display_name AS 'Nombre del Cliente',
+                mg.group_location AS 'Directión',
+                mg.legacy_number AS 'No. de Celular',
+                mlrs.duedate AS 'Próxima Fecha de Pago',
+                ml.maturedon_date AS 'Fecha de Vencimiento',
+                laa.total_overdue_derived AS 'Capital Pendiente'
+                FROM m_office mo
+                INNER JOIN m_office ounder ON ounder.hierarchy LIKE CONCAT(mo.hierarchy, '%')
+                INNER JOIN m_client mc ON mc.office_id = ounder.id
+                INNER JOIN m_loan ml ON ml.client_id = mc.id
+                INNER JOIN m_loan_arrears_aging laa ON laa.loan_id = ml.id
+                LEFT JOIN m_group_client mgc ON mgc.client_id = mc.id
+                LEFT JOIN m_group mg ON mg.id = mgc.group_id
+                LEFT JOIN m_group center ON center.id = mg.parent_id
+                LEFT JOIN m_staff lo ON lo.id = ml.loan_officer_id
+                LEFT JOIN m_guarantor gua ON gua.loan_id = ml.id
+                LEFT JOIN m_portfolio mp ON mp.id = center.portfolio_id
+                LEFT JOIN m_supervision ms ON ms.id = mp.supervision_id
+                LEFT JOIN m_agency ma ON ma.id = ms.agency_id
+                LEFT JOIN m_appuser faci ON faci.id = ma.responsible_user_id
+                LEFT JOIN (
+                            SELECT DISTINCT sc.loan_id AS loan_id, sc.duedate AS duedate
+                            FROM m_loan_repayment_schedule sc
+                            WHERE sc.completed_derived = FALSE
+                            ORDER BY sc.duedate ASC
+                            ) mlrs ON mlrs.loan_id = ml.id
+                WHERE mo.id = '${officeId}'
+                AND (ml.product_id = '${productId}' or '-1' = '${productId}')
+                AND (ml.group_id = '${groupId}' or '-1' = '${groupId}')
+                AND (ml.disbursedon_date  BETWEEN '${disbursedOnStartDate}' AND '${disbursedOnEndDate}')
+                AND ml.loan_status_id = 300
+                GROUP BY ml.id"
+                WHERE report_name = "Group Loans in Arrears";
+            ]]>
+        </sql>
+    </changeSet>
+
 </databaseChangeLog>
