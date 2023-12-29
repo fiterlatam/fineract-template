@@ -520,11 +520,10 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
         final List<ClientData> members = groupData.getMembers();
         final Integer totalMembers = members.size();
         final String numberOfMemberSQL = """
-                SELECT COUNT(DISTINCT mlag.loan_id)
+                SELECT COUNT(DISTINCT mlag.loan_id) totalCount
                 FROM m_loan_additionals_group mlag
-                INNER JOIN m_code_value mcv ON mcv.id = mlag.business_experience
+                LEFT JOIN m_code_value mcv ON mcv.id = mlag.business_experience
                 WHERE mlag.loan_id IN ( %s ) AND mcv.code_value = '<6m'
-                GROUP BY mlag.loan_id
                    """;
         String stmt = String.format(numberOfMemberSQL, members.stream().map(v -> "?").collect(Collectors.joining(", ")));
         List<Object> params = new ArrayList<>();
@@ -1026,11 +1025,10 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
         final List<ClientData> members = groupData.getMembers();
         final Integer totalMembers = members.size();
         final String numberOfMemberSQL = """
-                SELECT COUNT(DISTINCT mlag.loan_id)
+                SELECT COUNT(DISTINCT mlag.loan_id) AS totalCount
                 FROM m_loan_additionals_group mlag
                 INNER JOIN m_code_value mcv ON mcv.id = mlag.job_type
                 WHERE mlag.loan_id IN ( %s ) AND mcv.code_value = 'microentreprenuer'
-                GROUP BY mlag.loan_id
                 """;
         String stmt = String.format(numberOfMemberSQL, members.stream().map(v -> "?").collect(Collectors.joining(", ")));
         List<Object> params = new ArrayList<>();
