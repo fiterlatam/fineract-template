@@ -2635,6 +2635,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                                 sourceOfFundsCV.code_description as sourceOfFundsValue,
                                 gla.client_loan_request_number as clientLoanRequestNumber,
                                 gla.date_requested as dateRequested,
+                                gla.date_of_birth as dateOfBirth,
                                 gla.position,
                                 groupPositionCV.code_description as positionValue,
                                 gla.full_name as fullName,
@@ -2745,6 +2746,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
             final String sourceOfFundsValue = rs.getString("sourceOfFundsValue");
             final String clientLoanRequestNumber = rs.getString("clientLoanRequestNumber");
             final LocalDate dateRequested = JdbcSupport.getLocalDate(rs, "dateRequested");
+            final LocalDate dateOfBirth = JdbcSupport.getLocalDate(rs, "dateOfBirth");
             final Long position = rs.getLong("position");
             final String positionValue = rs.getString("positionValue");
             final String fullName = rs.getString("fullName");
@@ -2845,7 +2847,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                     .requestedValue(requestedValue).groupAuthorizedValue(groupAuthorizedValue)
                     .facilitatorProposedValue(facilitatorProposedValue).proposedFee(proposedFee)
                     .agencyAuthorizedAmount(agencyAuthorizedAmount).authorizedFee(authorizedFee).totalIncome(totalIncome)
-                    .totalExpenditures(totalExpenditures).availableMonthly(availableMonthly).facValue(facValue).debtLevel(debtLevel)
+                    .totalExpenditures(totalExpenditures).availableMonthly(availableMonthly).facValue(facValue).debtLevel(debtLevel).dateOfBirth(dateOfBirth)
                     .build();
             return additionalGroupLoanData;
         }
