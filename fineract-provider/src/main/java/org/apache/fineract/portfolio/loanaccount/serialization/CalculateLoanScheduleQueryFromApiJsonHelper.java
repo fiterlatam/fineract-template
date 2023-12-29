@@ -98,7 +98,7 @@ public final class CalculateLoanScheduleQueryFromApiJsonHelper {
             LoanApiConstants.cupoIdParameterName, LoanApiConstants.externalLoansParamName, LoanApiConstants.CASE_ID,
             LoanApiConstants.paymentCapacityParamName, LoanApiConstants.facilitatorParamName, LoanApiConstants.maidenNameParamName,
             LoanApiConstants.politicallyExposedParamName, LoanApiConstants.otherIncomeParamName, LoanApiConstants.currentLoansParamName,
-            LoanApiConstants.businessActivityParamName));
+            LoanApiConstants.businessActivityParamName, LoanApiConstants.dateOfBirthParamName));
 
     private final FromJsonHelper fromApiJsonHelper;
 
