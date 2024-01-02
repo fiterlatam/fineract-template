@@ -75,13 +75,14 @@ import org.apache.fineract.infrastructure.security.service.PlatformSecurityConte
 import org.apache.fineract.organisation.bankcheque.domain.BankChequeStatus;
 import org.apache.fineract.organisation.bankcheque.domain.Cheque;
 import org.apache.fineract.organisation.bankcheque.domain.ChequeBatchRepositoryWrapper;
+import org.apache.fineract.organisation.prequalification.data.GroupPrequalificationData;
 import org.apache.fineract.organisation.prequalification.data.LoanAdditionalData;
 import org.apache.fineract.organisation.prequalification.domain.LoanAdditionProperties;
 import org.apache.fineract.organisation.prequalification.domain.LoanAdditionalPropertiesRepository;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationGroup;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationGroupRepositoryWrapper;
 import org.apache.fineract.organisation.prequalification.exception.PrequalificationNotProvidedException;
-import org.apache.fineract.organisation.prequalification.service.BureauValidationWritePlatformServiceImpl;
+import org.apache.fineract.organisation.prequalification.service.PrequalificationReadPlatformService;
 import org.apache.fineract.organisation.staff.domain.Staff;
 import org.apache.fineract.portfolio.account.domain.AccountAssociationType;
 import org.apache.fineract.portfolio.account.domain.AccountAssociations;
@@ -133,7 +134,6 @@ import org.apache.fineract.portfolio.loanaccount.domain.LoanCharge;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanCollateralManagement;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanDisbursementDetails;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanLifecycleStateMachine;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleInstallmentRepository;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleTransactionProcessorFactory;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepository;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
@@ -171,7 +171,6 @@ import org.apache.fineract.portfolio.rate.service.RateAssembler;
 import org.apache.fineract.portfolio.savings.data.GroupSavingsIndividualMonitoringAccountData;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccount;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountAssembler;
-import org.apache.fineract.portfolio.savings.domain.SavingsAccountRepositoryWrapper;
 import org.apache.fineract.portfolio.savings.service.GSIMReadPlatformService;
 import org.apache.fineract.portfolio.savings.service.SavingsAccountWritePlatformService;
 import org.apache.fineract.useradministration.domain.AppUser;
@@ -244,11 +243,9 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
     private BitaCoraMasterRepository bitaCoraMasterRepository;
 
     private final SavingsAccountWritePlatformService savingsAccountWritePlatformService;
-
-    private final SavingsAccountRepositoryWrapper savingsAccountRepositoryWrapper;
     private final AppUserRepository appUserRepository;
-    private final BureauValidationWritePlatformServiceImpl bureauValidationWritePlatformService;
     private final LoanAdditionalPropertiesRepository loanAdditionalPropertiesRepository;
+    private final PrequalificationReadPlatformService prequalificationReadPlatformService;
 
     @Autowired
     public LoanApplicationWritePlatformServiceJpaRepositoryImpl(final PlatformSecurityContext context, final FromJsonHelper fromJsonHelper,
@@ -264,7 +261,6 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             final LoanRepaymentScheduleTransactionProcessorFactory loanRepaymentScheduleTransactionProcessorFactory,
             final CalendarRepository calendarRepository, final CalendarInstanceRepository calendarInstanceRepository,
             final SavingsAccountAssembler savingsAccountAssembler, final AccountAssociationsRepository accountAssociationsRepository,
-            final LoanRepaymentScheduleInstallmentRepository repaymentScheduleInstallmentRepository,
             final LoanReadPlatformService loanReadPlatformService, final AccountNumberFormatRepositoryWrapper accountNumberFormatRepository,
             final BusinessEventNotifierService businessEventNotifierService, final ConfigurationDomainService configurationDomainService,
             final LoanScheduleAssembler loanScheduleAssembler, final LoanUtilService loanUtilService,
@@ -281,10 +277,9 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             ChequeBatchRepositoryWrapper chequeBatchRepositoryWrapper,
             PrequalificationGroupRepositoryWrapper prequalificationGroupRepositoryWrapper,
             final SavingsAccountWritePlatformService savingsAccountWritePlatformService,
-            final SavingsAccountRepositoryWrapper savingsAccountRepositoryWrapper,
-            final BureauValidationWritePlatformServiceImpl bureauValidationWritePlatformService,
             final LoanAdditionalPropertiesRepository loanAdditionalPropertiesRepository,
-            final GroupLoanAdditionalsRepository groupLoanAdditionalsRepository) {
+            final GroupLoanAdditionalsRepository groupLoanAdditionalsRepository,
+            PrequalificationReadPlatformService prequalificationReadPlatformService) {
         this.context = context;
         this.fromJsonHelper = fromJsonHelper;
         this.loanApplicationTransitionApiJsonValidator = loanApplicationTransitionApiJsonValidator;
@@ -332,11 +327,10 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
         this.chequeBatchRepositoryWrapper = chequeBatchRepositoryWrapper;
         this.prequalificationGroupRepositoryWrapper = prequalificationGroupRepositoryWrapper;
         this.savingsAccountWritePlatformService = savingsAccountWritePlatformService;
-        this.savingsAccountRepositoryWrapper = savingsAccountRepositoryWrapper;
         this.groupLoanAdditionalsRepository = groupLoanAdditionalsRepository;
         this.appUserRepository = appUserRepository;
-        this.bureauValidationWritePlatformService = bureauValidationWritePlatformService;
         this.loanAdditionalPropertiesRepository = loanAdditionalPropertiesRepository;
+        this.prequalificationReadPlatformService = prequalificationReadPlatformService;
     }
 
     private LoanLifecycleStateMachine defaultLoanLifecycleStateMachine() {
@@ -524,6 +518,16 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
 
             final PrequalificationGroup prequalificationGroup = newLoanApplication.getPrequalificationGroup();
             if (prequalificationGroup != null && prequalificationGroup.isPrequalificationTypeGroup()) {
+                Collection<GroupPrequalificationData> prequalificationDataList = this.prequalificationReadPlatformService
+                        .retrieveGroupByPrequalificationId(prequalificationGroup.getId());
+                if (!CollectionUtils.isEmpty(prequalificationDataList)) {
+                    GroupPrequalificationData prequalificationData = new ArrayList<>(prequalificationDataList).get(0);
+                    final Long prequalificationGroupId = prequalificationData.getGroupId();
+                    if (prequalificationGroupId != null) {
+                        final Group groupPrequalification = this.groupRepository.findOneWithNotFoundDetection(prequalificationGroupId);
+                        newLoanApplication.updateGroup(groupPrequalification);
+                    }
+                }
                 GroupLoanAdditionals groupLoanAdditionals = GroupLoanAdditionals.assembleFromJson(command, newLoanApplication, facilitator);
                 addExternalLoans(groupLoanAdditionals, command);
                 this.groupLoanAdditionalsRepository.save(groupLoanAdditionals);
@@ -1489,7 +1493,21 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 officeSpecificLoanProductValidation(existingLoanApplication.getLoanProduct().getId(), OfficeId);
             }
 
+            if (prequalificationGroup.isPrequalificationTypeGroup()) {
+                Collection<GroupPrequalificationData> prequalificationDataList = this.prequalificationReadPlatformService
+                        .retrieveGroupByPrequalificationId(prequalificationGroup.getId());
+                if (!CollectionUtils.isEmpty(prequalificationDataList)) {
+                    GroupPrequalificationData prequalificationData = new ArrayList<>(prequalificationDataList).get(0);
+                    final Long prequalificationGroupId = prequalificationData.getGroupId();
+                    if (prequalificationGroupId != null) {
+                        final Group groupPrequalification = this.groupRepository.findOneWithNotFoundDetection(prequalificationGroupId);
+                        existingLoanApplication.updateGroup(groupPrequalification);
+                    }
+                }
+            }
+
             if (prequalificationGroup.isPrequalificationTypeIndividual()) {
+                existingLoanApplication.updateGroup(null);
                 final JsonElement loanAdditionalDataJson = command.jsonElement(LoanApiConstants.LOAN_ADDITIONAL_DATA);
                 if (loanAdditionalDataJson != null && loanAdditionalDataJson.isJsonObject()) {
                     this.fromApiJsonDeserializer.validateLoanAdditionalData(command);
@@ -2562,8 +2580,11 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                     numberOfDays = configurationDomainService.retreivePeroidInNumberOfDaysForSkipMeetingDate().intValue();
                 }
             }
-            this.loanScheduleAssembler.validateDisbursementDateWithMeetingDates(expectedDisbursementDate, calendar,
-                    isSkipRepaymentOnFirstMonth, numberOfDays);
+            final boolean isMeetingMandatoryForJLGLoans = this.configurationDomainService.isMeetingMandatoryForJLGLoans();
+            if (Boolean.TRUE.equals(isMeetingMandatoryForJLGLoans)) {
+                this.loanScheduleAssembler.validateDisbursementDateWithMeetingDates(expectedDisbursementDate, calendar,
+                        isSkipRepaymentOnFirstMonth, numberOfDays);
+            }
 
         }
 
