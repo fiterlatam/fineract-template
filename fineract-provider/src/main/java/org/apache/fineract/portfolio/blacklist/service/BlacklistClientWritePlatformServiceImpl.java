@@ -28,6 +28,7 @@ import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuild
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.organisation.agency.domain.Agency;
 import org.apache.fineract.organisation.agency.domain.AgencyRepository;
+import org.apache.fineract.organisation.agency.exception.AgencyNotFoundException;
 import org.apache.fineract.portfolio.blacklist.command.BlacklistApiConstants;
 import org.apache.fineract.portfolio.blacklist.command.BlacklistDataValidator;
 import org.apache.fineract.portfolio.blacklist.domain.BlacklistClients;
@@ -76,13 +77,14 @@ public class BlacklistClientWritePlatformServiceImpl implements BlacklistClientW
     public CommandProcessingResult addClientToBlacklist(JsonCommand command) {
         this.dataValidator.validateForCreate(command.json());
         final Long productId = command.longValueOfParameterNamed(BlacklistApiConstants.productIdParamName);
+        final Long agencyId = command.longValueOfParameterNamed(BlacklistApiConstants.agencyIdParamName);
 
         Optional<LoanProduct> productOption = this.loanProductRepository.findById(productId);
         if (productOption.isEmpty()) throw new LoanProductNotFoundException(productId);
         LoanProduct loanProduct = productOption.get();
 
-        Optional<Agency> agencyOption = this.agencyRepository.findById(productId);
-        if (agencyOption.isEmpty()) throw new LoanProductNotFoundException(productId);
+        Optional<Agency> agencyOption = this.agencyRepository.findById(agencyId);
+        if (agencyOption.isEmpty()) throw new AgencyNotFoundException(agencyId);
         Agency agency = agencyOption.get();
 
         CodeValueData typification = codeValueReadPlatformService
