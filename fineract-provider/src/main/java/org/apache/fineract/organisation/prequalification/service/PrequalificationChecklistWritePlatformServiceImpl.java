@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import javax.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.ObjectUtils;
@@ -121,24 +122,6 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
                 PrequalificationType.INDIVIDUAL.name());
         final String deleteStatement = "DELETE FROM m_checklist_validation_result WHERE prequalification_id = ?";
         this.jdbcTemplate.update(deleteStatement, prequalificationId);
-        for (final PolicyData groupPolicy : groupPolicies) {
-            ValidationChecklistResult prequalificationChecklistResult = new ValidationChecklistResult();
-            prequalificationChecklistResult.setPrequalificationId(prequalificationId);
-            prequalificationChecklistResult.setPolicyId(groupPolicy.getId());
-            prequalificationChecklistResult.setPrequalificationType(PrequalificationType.GROUP.getValue());
-            CheckValidationColor checkValidationColor = this.validateGenericPolicy(Policies.fromInt(groupPolicy.getId()), null, groupData);
-            prequalificationChecklistResult.setValidationColor(checkValidationColor.getValue());
-            AppUser authenticatedUser = platformSecurityContext.getAuthenticatedUserIfPresent();
-            final LocalDateTime localDateTime = DateUtils.getLocalDateTimeOfSystem();
-            if (authenticatedUser != null && authenticatedUser.getId() != null) {
-                prequalificationChecklistResult.setCreatedBy(authenticatedUser.getId());
-                prequalificationChecklistResult.setLastModifiedBy(authenticatedUser.getId());
-            }
-            prequalificationChecklistResult.setCreatedDate(localDateTime);
-            prequalificationChecklistResult.setLastModifiedDate(localDateTime);
-            validationChecklistResults.add(prequalificationChecklistResult);
-        }
-
         for (PolicyData policyCategoryData : memberPolicies) {
             for (final ClientData clientData : clientDatas) {
                 List<LoanData> submittedLoans;
@@ -174,6 +157,24 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
                 validationChecklistResult.setLastModifiedDate(localDateTime);
                 validationChecklistResults.add(validationChecklistResult);
             }
+        }
+
+        for (final PolicyData groupPolicy : groupPolicies) {
+            ValidationChecklistResult prequalificationChecklistResult = new ValidationChecklistResult();
+            prequalificationChecklistResult.setPrequalificationId(prequalificationId);
+            prequalificationChecklistResult.setPolicyId(groupPolicy.getId());
+            prequalificationChecklistResult.setPrequalificationType(PrequalificationType.GROUP.getValue());
+            CheckValidationColor checkValidationColor = this.validateGenericPolicy(Policies.fromInt(groupPolicy.getId()), null, groupData);
+            prequalificationChecklistResult.setValidationColor(checkValidationColor.getValue());
+            AppUser authenticatedUser = platformSecurityContext.getAuthenticatedUserIfPresent();
+            final LocalDateTime localDateTime = DateUtils.getLocalDateTimeOfSystem();
+            if (authenticatedUser != null && authenticatedUser.getId() != null) {
+                prequalificationChecklistResult.setCreatedBy(authenticatedUser.getId());
+                prequalificationChecklistResult.setLastModifiedBy(authenticatedUser.getId());
+            }
+            prequalificationChecklistResult.setCreatedDate(localDateTime);
+            prequalificationChecklistResult.setLastModifiedDate(localDateTime);
+            validationChecklistResults.add(prequalificationChecklistResult);
         }
         prequalificationGroup.updateStatus(PrequalificationStatus.HARD_POLICY_CHECKED);
         prequalificationGroupRepositoryWrapper.saveAndFlush(prequalificationGroup);
@@ -271,7 +272,7 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
             case SIX -> checkValidationColor = this.runCheck6(groupData);
             case SEVEN -> checkValidationColor = this.runCheck7(groupData);
             case EIGHT -> checkValidationColor = this.runCheck8(groupData);
-            case NINE -> checkValidationColor = this.runCheck9();
+            case NINE -> checkValidationColor = this.runCheck9(groupData);
             case TEN -> checkValidationColor = this.runCheck10(groupData);
             case ELEVEN -> checkValidationColor = this.runCheck11(groupData);
             case TWELVE -> checkValidationColor = this.runCheck12(clientData);
@@ -294,8 +295,8 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
             case TWENTY_NINE -> checkValidationColor = this.runCheck29(clientData);
             case THIRTY -> checkValidationColor = this.runCheck30(clientData);
             case THIRTY_ONE -> checkValidationColor = this.runCheck31(clientData);
-            case THIRTY_TWO -> checkValidationColor = this.runCheck32();
-            case THIRTY_THREE -> checkValidationColor = this.runCheck33();
+            case THIRTY_TWO -> checkValidationColor = this.runCheck32(groupData);
+            case THIRTY_THREE -> checkValidationColor = this.runCheck33(groupData);
             default -> checkValidationColor = CheckValidationColor.INVALID;
         }
         return checkValidationColor;
@@ -514,8 +515,29 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
     /**
      * Percentage of members starting business
      */
-    private CheckValidationColor runCheck9() {
-        return CheckValidationColor.RED;
+    private CheckValidationColor runCheck9(final GroupData groupData) {
+        final String reportName = Policies.NINE.getName() + " Policy Check";
+        final List<ClientData> members = groupData.getMembers();
+        final Integer totalMembers = members.size();
+        final String numberOfMemberSQL = """
+                SELECT COUNT(DISTINCT mlag.loan_id) totalCount
+                FROM m_loan_additionals_group mlag
+                LEFT JOIN m_code_value mcv ON mcv.id = mlag.business_experience
+                WHERE mlag.loan_id IN ( %s ) AND mcv.code_value = '<6m'
+                   """;
+        String stmt = String.format(numberOfMemberSQL, members.stream().map(v -> "?").collect(Collectors.joining(", ")));
+        List<Object> params = new ArrayList<>();
+        members.forEach(m -> params.add(m.getLoanId()));
+        final Long numberOfMembers = this.jdbcTemplate.queryForObject(stmt, Long.class, params.toArray());
+        final Map<String, String> reportParams = new HashMap<>();
+        BigDecimal membersPercentage = BigDecimal.valueOf(100L);
+        if (numberOfMembers != null && numberOfMembers < Long.valueOf(totalMembers)) {
+            membersPercentage = BigDecimal.valueOf(100L)
+                    .multiply(BigDecimal.valueOf(numberOfMembers).divide(BigDecimal.valueOf(totalMembers), MoneyHelper.getRoundingMode()));
+        }
+        reportParams.put("${membersPercentage}", String.valueOf(membersPercentage));
+        final GenericResultsetData result = this.readReportingService.retrieveGenericResultset(reportName, "report", reportParams, false);
+        return extractColorFromResultset(result);
     }
 
     /**
@@ -525,7 +547,6 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
      */
     private CheckValidationColor runCheck10(GroupData groupData) {
         final String reportName = Policies.TEN.getName() + " Policy Check";
-
         final String prequalificationId = String.valueOf(groupData.getId());
         final String productId = String.valueOf(groupData.getProductId());
         final Map<String, String> reportParams = new HashMap<>();
@@ -971,14 +992,56 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
     /**
      * Percentage of members with agricultural business
      */
-    private CheckValidationColor runCheck32() {
-        return CheckValidationColor.RED;
+    private CheckValidationColor runCheck32(final GroupData groupData) {
+        final String reportName = Policies.THIRTY_TWO.getName() + " Policy Check";
+        final List<ClientData> members = groupData.getMembers();
+        final Integer totalMembers = members.size();
+        final String numberOfMemberSQL = """
+                SELECT COUNT(DISTINCT mc.id)
+                FROM m_client mc
+                INNER JOIN m_sector_economico mse ON mse.id = mc.economic_sector
+                WHERE mc.id IN ( %s ) AND mse.name = 'Sector Agrícola'
+                """;
+        final String stmt = String.format(numberOfMemberSQL, members.stream().map(v -> "?").collect(Collectors.joining(", ")));
+        List<Object> params = new ArrayList<>();
+        members.forEach(m -> params.add(m.getClientId()));
+        final Long numberOfMembers = this.jdbcTemplate.queryForObject(stmt, Long.class, params.toArray());
+        final Map<String, String> reportParams = new HashMap<>();
+        BigDecimal membersPercentage = BigDecimal.valueOf(100L);
+        if (numberOfMembers != null && numberOfMembers < Long.valueOf(totalMembers)) {
+            membersPercentage = BigDecimal.valueOf(100L)
+                    .multiply(BigDecimal.valueOf(numberOfMembers).divide(BigDecimal.valueOf(totalMembers), MoneyHelper.getRoundingMode()));
+        }
+        reportParams.put("${membersPercentage}", String.valueOf(membersPercentage));
+        final GenericResultsetData result = this.readReportingService.retrieveGenericResultset(reportName, "report", reportParams, false);
+        return extractColorFromResultset(result);
     }
 
     /**
      * Percentage of members with their own business
      */
-    private CheckValidationColor runCheck33() {
-        return CheckValidationColor.RED;
+    private CheckValidationColor runCheck33(final GroupData groupData) {
+        final String reportName = Policies.THIRTY_THREE.getName() + " Policy Check";
+        final List<ClientData> members = groupData.getMembers();
+        final Integer totalMembers = members.size();
+        final String numberOfMemberSQL = """
+                SELECT COUNT(DISTINCT mlag.loan_id) AS totalCount
+                FROM m_loan_additionals_group mlag
+                INNER JOIN m_code_value mcv ON mcv.id = mlag.job_type
+                WHERE mlag.loan_id IN ( %s ) AND mcv.code_value = 'microentreprenuer'
+                """;
+        String stmt = String.format(numberOfMemberSQL, members.stream().map(v -> "?").collect(Collectors.joining(", ")));
+        List<Object> params = new ArrayList<>();
+        members.forEach(m -> params.add(m.getLoanId()));
+        final Long numberOfMembers = this.jdbcTemplate.queryForObject(stmt, Long.class, params.toArray());
+        final Map<String, String> reportParams = new HashMap<>();
+        BigDecimal membersPercentage = BigDecimal.valueOf(100L);
+        if (numberOfMembers != null && numberOfMembers < Long.valueOf(totalMembers)) {
+            membersPercentage = BigDecimal.valueOf(100L)
+                    .multiply(BigDecimal.valueOf(numberOfMembers).divide(BigDecimal.valueOf(totalMembers), MoneyHelper.getRoundingMode()));
+        }
+        reportParams.put("${membersPercentage}", String.valueOf(membersPercentage));
+        final GenericResultsetData result = this.readReportingService.retrieveGenericResultset(reportName, "report", reportParams, false);
+        return extractColorFromResultset(result);
     }
 }

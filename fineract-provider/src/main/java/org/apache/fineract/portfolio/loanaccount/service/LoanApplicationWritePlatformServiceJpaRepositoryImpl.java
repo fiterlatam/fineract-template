@@ -817,7 +817,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 }
 
                 AdditionalsExtraLoans additionalsExtraLoans = new AdditionalsExtraLoans(groupLoanAdditionals, institutionType,
-                        totalLoanAmount, totalLoanBalance, charges, loanStatus,name);
+                        totalLoanAmount, totalLoanBalance, charges, loanStatus, name);
                 additionalLoansList.add(additionalsExtraLoans);
 
             }
@@ -1518,7 +1518,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             this.loanRepositoryWrapper.saveAndFlush(existingLoanApplication);
 
             GroupLoanAdditionals additionals = this.groupLoanAdditionalsRepository.getGroupLoanAdditionalsByLoan(existingLoanApplication);
-            if (additionals==null){
+            if (additionals == null) {
                 Long facilitatorId = command.longValueOfParameterNamed("facilitator");
                 AppUser facilitator = null;
                 if (facilitatorId != null) {
@@ -1526,11 +1526,11 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                             .orElseThrow(() -> new GeneralPlatformDomainRuleException("error.msg.loan.facilitator.not.found",
                                     "Facilitator with identifier " + facilitatorId + " does not exist"));
                 }
-                additionals = GroupLoanAdditionals.assembleFromJson(command,existingLoanApplication, facilitator);
-            }else{
+                additionals = GroupLoanAdditionals.assembleFromJson(command, existingLoanApplication, facilitator);
+            } else {
                 additionals.update(command);
             }
-            updateExternalLoans(command,additionals);
+            updateExternalLoans(command, additionals);
             this.groupLoanAdditionalsRepository.save(additionals);
 
             if (productRelatedDetail.isInterestRecalculationEnabled()) {
@@ -1596,7 +1596,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 }
 
                 AdditionalsExtraLoans additionalsExtraLoans = new AdditionalsExtraLoans(groupLoanAdditionals, institutionType,
-                        totalLoanAmount, totalLoanBalance, charges, loanStatus,name);
+                        totalLoanAmount, totalLoanBalance, charges, loanStatus, name);
                 additionalLoansList.add(additionalsExtraLoans);
 
             }

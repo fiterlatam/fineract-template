@@ -118,8 +118,7 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
         this.chequeBatchRepositoryWrapper.createBatch(batch);
         Set<Cheque> chequeList = new HashSet<>();
         for (Long i = from; i <= to; i++) {
-            Cheque cheque = new Cheque().setBatch(batch).setChequeNo(i).setStatus(BankChequeStatus.AVAILABLE.getValue())
-                    .setDescription(createChequeCommand.getDescription());
+            Cheque cheque = new Cheque().setBatch(batch).setChequeNo(i).setStatus(BankChequeStatus.AVAILABLE.getValue());
             cheque.stampAudit(currentUserId, localDateTime);
             chequeList.add(cheque);
         }
