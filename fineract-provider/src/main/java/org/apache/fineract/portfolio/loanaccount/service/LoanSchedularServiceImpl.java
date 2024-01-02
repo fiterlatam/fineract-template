@@ -335,7 +335,7 @@ public class LoanSchedularServiceImpl implements LoanSchedularService {
     @Override
     @CronTarget(jobName = JobName.IMPORT_BATCHES_OF_LOAN_REPAYMENTS)
     public void importLoanRepaymentBatches() throws JobExecutionException {
-        final String sql = "SELECT " + this.loanRepaymentImportMapper.getSchema() + " WHERE pp.Estado = ?";
+        final String sql = "SELECT " + this.loanRepaymentImportMapper.getSchema() + " WHERE pp.Estado = ? ";
         List<LoanRepaymentImportData> loanRepayments = this.jdbcTemplate.query(sql, this.loanRepaymentImportMapper, 1);
         List<Throwable> exceptions = new ArrayList<>();
         if (!CollectionUtils.isEmpty(loanRepayments)) {
@@ -472,7 +472,7 @@ public class LoanSchedularServiceImpl implements LoanSchedularService {
                     jsonObject.addProperty(PaymentDetailConstants.receiptNumberParamName, receiptNumber);
                     jsonObject.addProperty("locale", localeAsString);
                     jsonObject.addProperty("dateFormat", dateFormat);
-                    if (StringUtils.equalsIgnoreCase(lastInstallment, "S") && scheduledAmount.compareTo(transactionAmount) <= 0) {
+                    if (StringUtils.equalsIgnoreCase(lastInstallment, "S") || outstandingLoanBalance.compareTo(transactionAmount)<= 0) {
                         jsonObject.addProperty("adjustGuarantee", true);
                     }
                     final JsonCommand command = JsonCommand.fromJsonElement(loanId, jsonObject, fromApiJsonHelper);
