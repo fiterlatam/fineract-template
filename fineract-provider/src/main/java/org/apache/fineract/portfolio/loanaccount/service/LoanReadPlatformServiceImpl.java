@@ -2847,8 +2847,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                     .requestedValue(requestedValue).groupAuthorizedValue(groupAuthorizedValue)
                     .facilitatorProposedValue(facilitatorProposedValue).proposedFee(proposedFee)
                     .agencyAuthorizedAmount(agencyAuthorizedAmount).authorizedFee(authorizedFee).totalIncome(totalIncome)
-                    .totalExpenditures(totalExpenditures).availableMonthly(availableMonthly).facValue(facValue).debtLevel(debtLevel).dateOfBirth(dateOfBirth)
-                    .build();
+                    .totalExpenditures(totalExpenditures).availableMonthly(availableMonthly).facValue(facValue).debtLevel(debtLevel)
+                    .dateOfBirth(dateOfBirth).build();
             return additionalGroupLoanData;
         }
 

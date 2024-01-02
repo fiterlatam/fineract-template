@@ -134,4 +134,5 @@
     <include file="parts/0114_FBR_440_pagare_libre_protesto_reporte.xml" relativeToChangelogFile="true"/>
     <include file="parts/0115_FBR_490_Prestamo_complementario.xml" relativeToChangelogFile="true"/>
     <include file="parts/0116_FBR_505_Reporte_de_Garantias_para_prestamos_.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0117_FBR_506_Reporte_de_Cobranzas_y_Saldos_por_Financista.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
