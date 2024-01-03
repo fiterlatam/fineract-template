@@ -518,16 +518,22 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
 
             final PrequalificationGroup prequalificationGroup = newLoanApplication.getPrequalificationGroup();
             if (prequalificationGroup != null && prequalificationGroup.isPrequalificationTypeGroup()) {
+                Group groupPrequalification = null;
                 Collection<GroupPrequalificationData> prequalificationDataList = this.prequalificationReadPlatformService
                         .retrieveGroupByPrequalificationId(prequalificationGroup.getId());
                 if (!CollectionUtils.isEmpty(prequalificationDataList)) {
                     GroupPrequalificationData prequalificationData = new ArrayList<>(prequalificationDataList).get(0);
                     final Long prequalificationGroupId = prequalificationData.getGroupId();
                     if (prequalificationGroupId != null) {
-                        final Group groupPrequalification = this.groupRepository.findOneWithNotFoundDetection(prequalificationGroupId);
-                        newLoanApplication.updateGroup(groupPrequalification);
+                        groupPrequalification = this.groupRepository.findOneWithNotFoundDetection(prequalificationGroupId);
                     }
                 }
+                if (groupPrequalification == null) {
+                    throw new GeneralPlatformDomainRuleException("error.msg.prequalification.is.not.linked.to.agrouo",
+                            "Prequalificaion with number " + prequalificationGroup.getPrequalificationNumber()
+                                    + " is not linked to a group");
+                }
+                newLoanApplication.updateGroup(groupPrequalification);
                 GroupLoanAdditionals groupLoanAdditionals = GroupLoanAdditionals.assembleFromJson(command, newLoanApplication, facilitator);
                 addExternalLoans(groupLoanAdditionals, command);
                 this.groupLoanAdditionalsRepository.save(groupLoanAdditionals);
@@ -1494,16 +1500,22 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             }
 
             if (prequalificationGroup.isPrequalificationTypeGroup()) {
+                Group groupPrequalification = null;
                 Collection<GroupPrequalificationData> prequalificationDataList = this.prequalificationReadPlatformService
                         .retrieveGroupByPrequalificationId(prequalificationGroup.getId());
                 if (!CollectionUtils.isEmpty(prequalificationDataList)) {
                     GroupPrequalificationData prequalificationData = new ArrayList<>(prequalificationDataList).get(0);
                     final Long prequalificationGroupId = prequalificationData.getGroupId();
                     if (prequalificationGroupId != null) {
-                        final Group groupPrequalification = this.groupRepository.findOneWithNotFoundDetection(prequalificationGroupId);
-                        existingLoanApplication.updateGroup(groupPrequalification);
+                        groupPrequalification = this.groupRepository.findOneWithNotFoundDetection(prequalificationGroupId);
                     }
                 }
+                if (groupPrequalification == null) {
+                    throw new GeneralPlatformDomainRuleException("error.msg.prequalification.is.not.linked.to.agrouo",
+                            "Prequalificaion with number " + prequalificationGroup.getPrequalificationNumber()
+                                    + " is not linked to a group");
+                }
+                existingLoanApplication.updateGroup(groupPrequalification);
             }
 
             if (prequalificationGroup.isPrequalificationTypeIndividual()) {
