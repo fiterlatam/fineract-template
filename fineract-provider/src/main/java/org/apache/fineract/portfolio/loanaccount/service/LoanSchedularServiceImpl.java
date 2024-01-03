@@ -472,7 +472,7 @@ public class LoanSchedularServiceImpl implements LoanSchedularService {
                     jsonObject.addProperty(PaymentDetailConstants.receiptNumberParamName, receiptNumber);
                     jsonObject.addProperty("locale", localeAsString);
                     jsonObject.addProperty("dateFormat", dateFormat);
-                    if (StringUtils.equalsIgnoreCase(lastInstallment, "S") || outstandingLoanBalance.compareTo(transactionAmount)<= 0) {
+                    if (StringUtils.equalsIgnoreCase(lastInstallment, "S") || outstandingLoanBalance.compareTo(transactionAmount) <= 0) {
                         jsonObject.addProperty("adjustGuarantee", true);
                     }
                     final JsonCommand command = JsonCommand.fromJsonElement(loanId, jsonObject, fromApiJsonHelper);
