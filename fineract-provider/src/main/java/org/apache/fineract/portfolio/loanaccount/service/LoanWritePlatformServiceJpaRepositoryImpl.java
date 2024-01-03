@@ -53,6 +53,7 @@ import org.apache.fineract.infrastructure.core.exception.GeneralPlatformDomainRu
 import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidationException;
 import org.apache.fineract.infrastructure.core.exception.PlatformServiceUnavailableException;
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
+import org.apache.fineract.infrastructure.core.serialization.JsonParserHelper;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.dataqueries.data.EntityTables;
 import org.apache.fineract.infrastructure.dataqueries.data.StatusEnum;
@@ -159,6 +160,7 @@ import org.apache.fineract.portfolio.loanaccount.data.HolidayDetailDTO;
 import org.apache.fineract.portfolio.loanaccount.data.LoanChargeData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanChargePaidByData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanInstallmentChargeData;
+import org.apache.fineract.portfolio.loanaccount.data.LoanTransactionData;
 import org.apache.fineract.portfolio.loanaccount.data.ScheduleGeneratorDTO;
 import org.apache.fineract.portfolio.loanaccount.domain.ChangedTransactionDetail;
 import org.apache.fineract.portfolio.loanaccount.domain.DefaultLoanLifecycleStateMachine;
@@ -437,7 +439,36 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                             "Disbursal date of this loan application " + loan.getDisbursementDate()
                                     + " should be after last transaction date of loan to be closed " + lastUserTransactionOnLoanToClose);
                 }
-
+                final LoanTransactionData waiveInterestTransactionData = this.loanReadPlatformService
+                        .retrieveWaiveInterestDetails(loanIdToClose);
+                if (waiveInterestTransactionData != null) {
+                    final Money waiveInterestTransactionAmount = Money.of(loan.getCurrency(), waiveInterestTransactionData.getAmount());
+                    if (waiveInterestTransactionAmount.isGreaterThanZero()) {
+                        final BigDecimal transactionAmount = waiveInterestTransactionData.getAmount();
+                        final String localeAsString = "en";
+                        final String dateFormat = "dd MMMM yyyy";
+                        final JsonObject jsonObject = new JsonObject();
+                        final LocalDate localDate = DateUtils.getBusinessLocalDate();
+                        Locale locale = JsonParserHelper.localeFromString(localeAsString);
+                        final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(dateFormat).withLocale(locale);
+                        final String localDateString = localDate.format(dateTimeFormatter);
+                        jsonObject.addProperty("locale", localeAsString);
+                        jsonObject.addProperty("dateFormat", dateFormat);
+                        jsonObject.addProperty("transactionAmount", transactionAmount);
+                        jsonObject.addProperty("transactionDate", localDateString);
+                        final String note = "Préstamo complementario " + loanId;
+                        jsonObject.addProperty("note", note);
+                        final JsonCommand waiveInterestJsonCommand = JsonCommand.from(jsonObject.toString(), jsonObject,
+                                this.fromApiJsonHelper, null, loanIdToClose, null, null, null, loanIdToClose, null, null, null, null, null,
+                                null);
+                        final CommandProcessingResult waiveInterestResult = this.waiveInterestOnLoan(loanIdToClose,
+                                waiveInterestJsonCommand);
+                        if (waiveInterestResult.getLoanId() == null) {
+                            throw new GeneralPlatformDomainRuleException("error.message.loan.failed.to.waive.interest.on.loan",
+                                    "Failed to waive interest on loan application " + loanIdToClose);
+                        }
+                    }
+                }
                 BigDecimal loanOutstanding = this.loanReadPlatformService
                         .retrieveLoanPrePaymentTemplate(LoanTransactionType.REPAYMENT, loanIdToClose, actualDisbursementDate).getAmount();
                 final BigDecimal firstDisbursalAmount = loan.getFirstDisbursalAmount();

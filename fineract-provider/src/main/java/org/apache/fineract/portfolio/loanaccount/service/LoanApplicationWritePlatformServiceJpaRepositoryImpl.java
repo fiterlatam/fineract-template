@@ -1203,7 +1203,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                                     "Topup loan amount should be greater than outstanding amount of loan to be closed.");
                         }
 
-                        if (!existingLoanIdToClose.equals(loanIdToClose)) {
+                        if (existingLoanIdToClose == null || !existingLoanIdToClose.equals(loanIdToClose)) {
                             final LoanTopupDetails topupDetails = new LoanTopupDetails(existingLoanApplication, loanIdToClose);
                             existingLoanApplication.setTopupLoanDetails(topupDetails);
                             changes.put(LoanApiConstants.loanIdToClose, loanIdToClose);
@@ -1535,21 +1535,24 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             // http://stackoverflow.com/questions/17151757/hibernate-cascade-update-gives-null-pointer/17334374#17334374
             this.loanRepositoryWrapper.saveAndFlush(existingLoanApplication);
 
-            GroupLoanAdditionals additionals = this.groupLoanAdditionalsRepository.getGroupLoanAdditionalsByLoan(existingLoanApplication);
-            if (additionals == null) {
-                Long facilitatorId = command.longValueOfParameterNamed("facilitator");
-                AppUser facilitator = null;
-                if (facilitatorId != null) {
-                    facilitator = this.appUserRepository.findById(facilitatorId)
-                            .orElseThrow(() -> new GeneralPlatformDomainRuleException("error.msg.loan.facilitator.not.found",
-                                    "Facilitator with identifier " + facilitatorId + " does not exist"));
+            if (prequalificationGroup != null && prequalificationGroup.isPrequalificationTypeGroup()) {
+                GroupLoanAdditionals additionals = this.groupLoanAdditionalsRepository
+                        .getGroupLoanAdditionalsByLoan(existingLoanApplication);
+                if (additionals == null) {
+                    Long facilitatorId = command.longValueOfParameterNamed("facilitator");
+                    AppUser facilitator = null;
+                    if (facilitatorId != null) {
+                        facilitator = this.appUserRepository.findById(facilitatorId)
+                                .orElseThrow(() -> new GeneralPlatformDomainRuleException("error.msg.loan.facilitator.not.found",
+                                        "Facilitator with identifier " + facilitatorId + " does not exist"));
+                    }
+                    additionals = GroupLoanAdditionals.assembleFromJson(command, existingLoanApplication, facilitator);
+                } else {
+                    additionals.update(command);
                 }
-                additionals = GroupLoanAdditionals.assembleFromJson(command, existingLoanApplication, facilitator);
-            } else {
-                additionals.update(command);
+                updateExternalLoans(command, additionals);
+                this.groupLoanAdditionalsRepository.save(additionals);
             }
-            updateExternalLoans(command, additionals);
-            this.groupLoanAdditionalsRepository.save(additionals);
 
             if (productRelatedDetail.isInterestRecalculationEnabled()) {
                 this.fromApiJsonDeserializer.validateLoanForInterestRecalculation(existingLoanApplication);

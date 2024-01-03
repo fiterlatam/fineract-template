@@ -378,6 +378,7 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
                     throw new BankChequeException(
                             "print.cheques.loan:" + loan.getAccountNumber() + " is.not.in.disbursement.authorization.status");
                 }
+
                 if (!chequeData.getReassingedCheque()) {
                     CommandProcessingResult result = this.loanWritePlatformService.disburseLoan(loanAccId, command, false);
                     if (result.getLoanId() == null) {
