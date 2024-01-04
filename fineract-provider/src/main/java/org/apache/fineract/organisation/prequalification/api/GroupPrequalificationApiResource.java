@@ -146,6 +146,7 @@ public class GroupPrequalificationApiResource {
             @QueryParam("orderBy") @Parameter(description = "orderBy") final String orderBy,
             @QueryParam("status") @Parameter(description = "status") final String status,
             @QueryParam("type") @Parameter(description = "type") final String type,
+            @QueryParam("portfolioCenterId") @Parameter(description = "type") final Long portfolioCenterId,
             @QueryParam("searchText") @Parameter(description = "searchText") final String searchText,
             @QueryParam("sortOrder") @Parameter(description = "sortOrder") final String sortOrder,
             @QueryParam("groupingType") @Parameter(description = "groupingType") final String groupingType) {
@@ -156,7 +157,7 @@ public class GroupPrequalificationApiResource {
 
         String clientName = queryParameters.getFirst("clientName");
         SearchParameters searchParameters = SearchParameters.forPrequalification(clientName, status, offset, limit, orderBy, sortOrder,
-                type, searchText, groupingType);
+                type, searchText, groupingType,portfolioCenterId);
         final Page<GroupPrequalificationData> clientData = this.prequalificationReadPlatformService.retrieveAll(searchParameters);
 
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(queryParameters);
