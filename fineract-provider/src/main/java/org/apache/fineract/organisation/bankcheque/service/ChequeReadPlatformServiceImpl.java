@@ -146,7 +146,7 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
                     	mbc.description AS description,
                     	mbc.guarantee_amount As guaranteeAmount,
                     	ml.approved_principal as loanAmount,
-                    	(case when ml.approved_principal>0 then ml.approved_principal else mbc.guarantee_amount end) as chequeAmount,
+                    	(case when ml.net_disbursal_amount > 0 then ml.net_disbursal_amount when ml.approved_principal > 0 then ml.approved_principal else mbc.guarantee_amount end) as chequeAmount,
                     	mbc.case_id AS caseId,
                     	mbc.guarantee_id AS guaranteeId,
                     	mc.account_no AS clientNo,

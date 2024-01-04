@@ -44,6 +44,8 @@ public class DisbursementData implements Comparable<DisbursementData> {
     private String note;
     private transient String linkAccountId;
 
+    private Integer borrowerCycle;
+
     public static DisbursementData importInstance(LocalDate actualDisbursementDate, String linkAccountId, Integer rowIndex, String locale,
             String dateFormat) {
         return new DisbursementData(actualDisbursementDate, linkAccountId, rowIndex, locale, dateFormat);
@@ -129,4 +131,11 @@ public class DisbursementData implements Comparable<DisbursementData> {
         return this.waivedChargeAmount;
     }
 
+    public Integer getBorrowerCycle() {
+        return borrowerCycle;
+    }
+
+    public void setBorrowerCycle(Integer borrowerCycle) {
+        this.borrowerCycle = borrowerCycle;
+    }
 }

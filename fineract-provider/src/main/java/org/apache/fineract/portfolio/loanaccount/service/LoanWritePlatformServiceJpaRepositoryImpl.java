@@ -53,6 +53,7 @@ import org.apache.fineract.infrastructure.core.exception.GeneralPlatformDomainRu
 import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidationException;
 import org.apache.fineract.infrastructure.core.exception.PlatformServiceUnavailableException;
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
+import org.apache.fineract.infrastructure.core.serialization.JsonParserHelper;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.dataqueries.data.EntityTables;
 import org.apache.fineract.infrastructure.dataqueries.data.StatusEnum;
@@ -159,6 +160,7 @@ import org.apache.fineract.portfolio.loanaccount.data.HolidayDetailDTO;
 import org.apache.fineract.portfolio.loanaccount.data.LoanChargeData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanChargePaidByData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanInstallmentChargeData;
+import org.apache.fineract.portfolio.loanaccount.data.LoanTransactionData;
 import org.apache.fineract.portfolio.loanaccount.data.ScheduleGeneratorDTO;
 import org.apache.fineract.portfolio.loanaccount.domain.ChangedTransactionDetail;
 import org.apache.fineract.portfolio.loanaccount.domain.DefaultLoanLifecycleStateMachine;
@@ -405,7 +407,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 .isPaymnetypeApplicableforDisbursementCharge();
 
         // Recalculate first repayment date based in actual disbursement date.
-        updateLoanCounters(loan, actualDisbursementDate);
+        updateLoanCounters(loan, actualDisbursementDate, command);
         Money amountBeforeAdjust = loan.getPrincpal();
         loan.validateAccountStatus(LoanEvent.LOAN_DISBURSED);
         boolean canDisburse = loan.canDisburse(actualDisbursementDate);
@@ -437,7 +439,36 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                             "Disbursal date of this loan application " + loan.getDisbursementDate()
                                     + " should be after last transaction date of loan to be closed " + lastUserTransactionOnLoanToClose);
                 }
-
+                final LoanTransactionData waiveInterestTransactionData = this.loanReadPlatformService
+                        .retrieveWaiveInterestDetails(loanIdToClose);
+                if (waiveInterestTransactionData != null) {
+                    final Money waiveInterestTransactionAmount = Money.of(loan.getCurrency(), waiveInterestTransactionData.getAmount());
+                    if (waiveInterestTransactionAmount.isGreaterThanZero()) {
+                        final BigDecimal transactionAmount = waiveInterestTransactionData.getAmount();
+                        final String localeAsString = "en";
+                        final String dateFormat = "dd MMMM yyyy";
+                        final JsonObject jsonObject = new JsonObject();
+                        final LocalDate localDate = DateUtils.getBusinessLocalDate();
+                        Locale locale = JsonParserHelper.localeFromString(localeAsString);
+                        final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(dateFormat).withLocale(locale);
+                        final String localDateString = localDate.format(dateTimeFormatter);
+                        jsonObject.addProperty("locale", localeAsString);
+                        jsonObject.addProperty("dateFormat", dateFormat);
+                        jsonObject.addProperty("transactionAmount", transactionAmount);
+                        jsonObject.addProperty("transactionDate", localDateString);
+                        final String note = "Préstamo complementario " + loanId;
+                        jsonObject.addProperty("note", note);
+                        final JsonCommand waiveInterestJsonCommand = JsonCommand.from(jsonObject.toString(), jsonObject,
+                                this.fromApiJsonHelper, null, loanIdToClose, null, null, null, loanIdToClose, null, null, null, null, null,
+                                null);
+                        final CommandProcessingResult waiveInterestResult = this.waiveInterestOnLoan(loanIdToClose,
+                                waiveInterestJsonCommand);
+                        if (waiveInterestResult.getLoanId() == null) {
+                            throw new GeneralPlatformDomainRuleException("error.message.loan.failed.to.waive.interest.on.loan",
+                                    "Failed to waive interest on loan application " + loanIdToClose);
+                        }
+                    }
+                }
                 BigDecimal loanOutstanding = this.loanReadPlatformService
                         .retrieveLoanPrePaymentTemplate(LoanTransactionType.REPAYMENT, loanIdToClose, actualDisbursementDate).getAmount();
                 final BigDecimal firstDisbursalAmount = loan.getFirstDisbursalAmount();
@@ -714,7 +745,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             // assuming repayment schedule won't regenerate because expected
             // disbursement and actual disbursement happens on same date
             loan.validateAccountStatus(LoanEvent.LOAN_DISBURSED);
-            updateLoanCounters(loan, actualDisbursementDate);
+            updateLoanCounters(loan, actualDisbursementDate, null);
             boolean canDisburse = loan.canDisburse(actualDisbursementDate);
             ChangedTransactionDetail changedTransactionDetail = null;
             if (canDisburse) {
@@ -857,18 +888,18 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 BigDecimal netDisbursalAmount = loan.getApprovedPrincipal().subtract(loanOutstanding);
                 loan.adjustNetDisbursalAmount(netDisbursalAmount);
             }
-
+            Long userId = currentUser.getId();
             if (loan.getCheque() != null) {
-                Long userId = currentUser.getId();
                 final LocalDateTime localDateTime = DateUtils.getLocalDateTimeOfSystem();
                 LocalDate localDate = DateUtils.getBusinessLocalDate();
                 Cheque cheque = loan.getCheque();
-                cheque.setStatus(BankChequeStatus.VOIDED.getValue());
+                cheque.setStatus(BankChequeStatus.PENDING_VOIDANCE.getValue());
                 cheque.stampAudit(userId, localDateTime);
-                cheque.setDescription("Voided by undoing loan disbursal");
+                cheque.setDescription("Desembolso Anulado, Loan ID " + loan.getAccountNumber());
                 cheque.setVoidedBy(currentUser);
                 cheque.setVoidedDate(localDate);
                 this.chequeJpaRepository.saveAndFlush(cheque);
+                loan.unlinkCheque();
             }
             saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
             this.accountTransfersWritePlatformService.reverseAllTransactions(loanId, PortfolioAccountType.LOAN);
@@ -1300,7 +1331,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         final List<Long> existingTransactionIds = new ArrayList<>();
         final List<Long> existingReversedTransactionIds = new ArrayList<>();
 
-        updateLoanCounters(loan, loan.getDisbursementDate());
+        updateLoanCounters(loan, loan.getDisbursementDate(), null);
 
         LocalDate recalculateFrom = null;
         if (loan.repaymentScheduleDetail().isInterestRecalculationEnabled()) {
@@ -1353,7 +1384,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         final List<Long> existingTransactionIds = new ArrayList<>();
         final List<Long> existingReversedTransactionIds = new ArrayList<>();
 
-        updateLoanCounters(loan, loan.getDisbursementDate());
+        updateLoanCounters(loan, loan.getDisbursementDate(), null);
 
         LocalDate recalculateFrom = null;
         if (loan.repaymentScheduleDetail().isInterestRecalculationEnabled()) {
@@ -2461,7 +2492,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
     }
 
-    private void updateLoanCounters(final Loan loan, final LocalDate actualDisbursementDate) {
+    private void updateLoanCounters(final Loan loan, final LocalDate actualDisbursementDate, JsonCommand command) {
 
         if (loan.isGroupLoan()) {
             final List<Loan> loansToUpdateForLoanCounter = this.loanRepositoryWrapper.getGroupLoansDisbursedAfter(actualDisbursementDate,
@@ -2472,7 +2503,13 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         } else {
             final List<Loan> loansToUpdateForLoanCounter = this.loanRepositoryWrapper
                     .getClientOrJLGLoansDisbursedAfter(actualDisbursementDate, loan.getClientId());
-            final Integer newLoanCounter = getNewClientOrJLGLoanCounter(loan);
+            Integer newLoanCounter = null;
+            if (command != null) {
+                newLoanCounter = command.integerValueOfParameterNamed("borrowerCycle");
+            }
+            if (newLoanCounter == null || newLoanCounter == 0) {
+                newLoanCounter = getNewClientOrJLGLoanCounter(loan);
+            }
             final Integer newLoanProductCounter = getNewClientOrJLGLoanProductCounter(loan);
             updateLoanCounter(loan, loansToUpdateForLoanCounter, newLoanCounter, newLoanProductCounter);
         }

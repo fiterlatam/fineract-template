@@ -34,6 +34,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.ApiParameterError;
 import org.apache.fineract.infrastructure.core.data.DataValidatorBuilder;
 import org.apache.fineract.infrastructure.core.exception.InvalidJsonException;
@@ -97,7 +98,35 @@ public final class LoanApplicationCommandFromApiJsonHelper {
             LoanApiConstants.applicationId, // glim specific
             LoanApiConstants.lastApplication, // glim specific
             LoanApiConstants.daysInYearTypeParameterName, LoanApiConstants.fixedPrincipalPercentagePerInstallmentParamName,
-            LoanApiConstants.cupoIdParameterName, LoanApiConstants.PREQUALIFICATION_ID));
+            LoanApiConstants.loanCycleCompletedParamName, LoanApiConstants.rentMortgageFeeParamName,
+            LoanApiConstants.monthlyIncomeParamName, LoanApiConstants.familyExpensesParamName,
+            LoanApiConstants.totalExternalLoanAmountParamName, LoanApiConstants.totalInstallmentsParamName,
+            LoanApiConstants.clientTypeParamName, LoanApiConstants.houseHoldGoodsParamName, LoanApiConstants.businessActivitiesParamName,
+            LoanApiConstants.businessLocationParamName, LoanApiConstants.businessExperienceParamName, LoanApiConstants.salesValueParamName,
+            LoanApiConstants.businessPurchasesParamName, LoanApiConstants.businessProfitParamName, LoanApiConstants.clientProfitParamName,
+            LoanApiConstants.inventoriesParamName, LoanApiConstants.visitBusinessParamName, LoanApiConstants.familySupportParamName,
+            LoanApiConstants.businessEvolutionParamName, LoanApiConstants.numberOfApprovalsParamName,
+            LoanApiConstants.recommenderNameParamName, LoanApiConstants.monthlyPaymentCapacityParamName,
+            LoanApiConstants.loanPurposeParamName, LoanApiConstants.currentCreditValueParamName, LoanApiConstants.requestedValueParamName,
+            LoanApiConstants.groupAuthorizedValueParamName, LoanApiConstants.facilitatorProposedValueParamName,
+            LoanApiConstants.proposedFeeParamName, LoanApiConstants.agencyAuthorizedAmountParamName,
+            LoanApiConstants.authorizedFeeParamName, LoanApiConstants.totalIncomeParamName, LoanApiConstants.totalExpendituresParamName,
+            LoanApiConstants.availableMonthlyParamName, LoanApiConstants.facValueParamName, LoanApiConstants.debtLevelParamName,
+            LoanApiConstants.earlyCancellationReasonParamName, LoanApiConstants.sourceOfFundsParamName,
+            LoanApiConstants.clientLoanRequestNumberParamName, LoanApiConstants.dateRequestedParamName, LoanApiConstants.positionParamName,
+            LoanApiConstants.fullNameParamName, LoanApiConstants.lastNameParamName, LoanApiConstants.maritalStatusParamName,
+            LoanApiConstants.educationLevelParamName, LoanApiConstants.schoolingYearsParamName, LoanApiConstants.noOfChildrenParamName,
+            LoanApiConstants.nationalityParamName, LoanApiConstants.languageParamName, LoanApiConstants.dpiParamName,
+            LoanApiConstants.nitParamName, LoanApiConstants.jobTypeParamName, LoanApiConstants.occupancyClassificationParamName,
+            LoanApiConstants.actsOwnBehalfParamName, LoanApiConstants.onBehalfOfParamName, LoanApiConstants.politicalPositionParamName,
+            LoanApiConstants.politicalOfficeParamName, LoanApiConstants.housingTypeParamName, LoanApiConstants.addressParamName,
+            LoanApiConstants.populatedPlaceParamName, LoanApiConstants.referencePointParamName, LoanApiConstants.phoneNumberParamName,
+            LoanApiConstants.relativeNumberParamName, LoanApiConstants.yearsInCommunityParamName, LoanApiConstants.PREQUALIFICATION_ID,
+            LoanApiConstants.cupoIdParameterName, LoanApiConstants.externalLoansParamName, LoanApiConstants.CASE_ID,
+            LoanApiConstants.paymentCapacityParamName, LoanApiConstants.facilitatorParamName, LoanApiConstants.maidenNameParamName,
+            LoanApiConstants.politicallyExposedParamName, LoanApiConstants.otherIncomeParamName, LoanApiConstants.currentLoansParamName,
+            LoanApiConstants.dateOfBirthParamName, LoanApiConstants.businessActivityParamName, LoanApiConstants.LOAN_ADDITIONAL_DATA,
+            "borrowerCycle", "isBulkImport"));
 
     private final FromJsonHelper fromApiJsonHelper;
     private final CalculateLoanScheduleQueryFromApiJsonHelper apiJsonHelper;
@@ -105,11 +134,23 @@ public final class LoanApplicationCommandFromApiJsonHelper {
 
     @Autowired
     public LoanApplicationCommandFromApiJsonHelper(final FromJsonHelper fromApiJsonHelper,
-            final CalculateLoanScheduleQueryFromApiJsonHelper apiJsonHelper,
-            final ClientCollateralManagementRepositoryWrapper clientCollateralManagementRepositoryWrapper) {
+                                                   final CalculateLoanScheduleQueryFromApiJsonHelper apiJsonHelper,
+                                                   final ClientCollateralManagementRepositoryWrapper clientCollateralManagementRepositoryWrapper) {
         this.fromApiJsonHelper = fromApiJsonHelper;
         this.apiJsonHelper = apiJsonHelper;
         this.clientCollateralManagementRepositoryWrapper = clientCollateralManagementRepositoryWrapper;
+    }
+
+    public void validateLoanAdditionalData(final JsonCommand command) {
+        final JsonElement element = command.jsonElement(LoanApiConstants.LOAN_ADDITIONAL_DATA);
+        final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
+        final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors).resource("loan-addition-data");
+        baseDataValidator.reset().parameter(LoanApiConstants.LOAN_ADDITIONAL_DATA).value(element).notNull();
+        final String area = this.fromApiJsonHelper.extractStringNamed("area", element);
+        baseDataValidator.reset().parameter("area").value(area).ignoreIfNull().notExceedingLengthOf(500);
+        if (!dataValidationErrors.isEmpty()) {
+            throw new PlatformApiDataValidationException(dataValidationErrors);
+        }
     }
 
     public void validateForCreate(final String json, final boolean isMeetingMandatoryForJLGLoans, final LoanProduct loanProduct) {
@@ -209,7 +250,7 @@ public final class LoanApplicationCommandFromApiJsonHelper {
         final String loanOfficerIdParameterName = "loanOfficerId";
         if (this.fromApiJsonHelper.parameterExists(loanOfficerIdParameterName, element)) {
             final Long loanOfficerId = this.fromApiJsonHelper.extractLongNamed(loanOfficerIdParameterName, element);
-            baseDataValidator.reset().parameter(loanOfficerIdParameterName).value(loanOfficerId).ignoreIfNull().integerGreaterThanZero();
+            // baseDataValidator.reset().parameter(loanOfficerIdParameterName).value(loanOfficerId).ignoreIfNull().integerGreaterThanZero();
         }
 
         final String loanPurposeIdParameterName = "loanPurposeId";
@@ -1084,7 +1125,7 @@ public final class LoanApplicationCommandFromApiJsonHelper {
     }
 
     public void validateLoanTermAndRepaidEveryValues(final Integer loanTermFrequency, final Integer loanTermFrequencyType,
-            final Integer numberOfRepayments, final Integer repaymentEvery, final Integer repaymentEveryType, final Loan loan) {
+                                                     final Integer numberOfRepayments, final Integer repaymentEvery, final Integer repaymentEveryType, final Loan loan) {
         final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
         this.apiJsonHelper.validateSelectedPeriodFrequencyTypeIsTheSame(dataValidationErrors, loanTermFrequency, loanTermFrequencyType,
                 numberOfRepayments, repaymentEvery, repaymentEveryType);
@@ -1273,7 +1314,7 @@ public final class LoanApplicationCommandFromApiJsonHelper {
     }
 
     public void validateLoanMultiDisbursementDate(final JsonElement element, final DataValidatorBuilder baseDataValidator,
-            LocalDate expectedDisbursement, BigDecimal totalPrincipal) {
+                                                  LocalDate expectedDisbursement, BigDecimal totalPrincipal) {
 
         this.validateDisbursementsAreDatewiseOrdered(element, baseDataValidator);
 
@@ -1355,22 +1396,22 @@ public final class LoanApplicationCommandFromApiJsonHelper {
                         errorcode = "installment." + LoanApiConstants.LOAN_CHARGE_CAN_NOT_BE_ADDED_WITH_PRINCIPAL_CALCULATION_TYPE;
 
                     }
-                break;
+                    break;
                 case PERCENT_OF_AMOUNT_AND_INTEREST:
                     if (loanCharge.isInstalmentFee()) {
                         errorcode = "installment." + LoanApiConstants.LOAN_CHARGE_CAN_NOT_BE_ADDED_WITH_PRINCIPAL_CALCULATION_TYPE;
                     } else if (loanCharge.isSpecifiedDueDate()) {
                         errorcode = "specific." + LoanApiConstants.LOAN_CHARGE_CAN_NOT_BE_ADDED_WITH_INTEREST_CALCULATION_TYPE;
                     }
-                break;
+                    break;
                 case PERCENT_OF_INTEREST:
                     if (loanCharge.isSpecifiedDueDate()) {
                         errorcode = "specific." + LoanApiConstants.LOAN_CHARGE_CAN_NOT_BE_ADDED_WITH_INTEREST_CALCULATION_TYPE;
                     }
-                break;
+                    break;
 
                 default:
-                break;
+                    break;
             }
             if (errorcode != null) {
                 baseDataValidator.reset().parameter("charges").failWithCode(errorcode);
@@ -1402,7 +1443,7 @@ public final class LoanApplicationCommandFromApiJsonHelper {
     }
 
     private void validatePartialPeriodSupport(final Integer interestCalculationPeriodType, final DataValidatorBuilder baseDataValidator,
-            final JsonElement element, final LoanProduct loanProduct) {
+                                              final JsonElement element, final LoanProduct loanProduct) {
         if (interestCalculationPeriodType != null) {
             final InterestCalculationPeriodMethod interestCalculationPeriodMethod = InterestCalculationPeriodMethod
                     .fromInt(interestCalculationPeriodType);

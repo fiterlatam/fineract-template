@@ -140,21 +140,21 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
 
     @Autowired
     public PrequalificationWritePlatformServiceImpl(final PlatformSecurityContext context,
-            final PrequalificationDataValidator dataValidator, final GroupRepositoryWrapper groupRepositoryWrapper,
-            final AppUserRepository appUserRepository, final LoanProductRepository loanProductRepository,
-            final ClientReadPlatformService clientReadPlatformService, final AgencyRepositoryWrapper agencyRepositoryWrapper,
-            final PrequalificationMemberCommandFromApiJsonDeserializer apiJsonDeserializer,
-            final PrequalificationGroupMemberRepositoryWrapper preQualificationMemberRepository,
-            final PreQualificationStatusLogRepository preQualificationLogRepository,
-            final PrequalificationChecklistReadPlatformService prequalificationChecklistReadPlatformService,
-            final CodeValueReadPlatformService codeValueReadPlatformService, final JdbcTemplate jdbcTemplate,
-            final ContentRepositoryFactory contentRepositoryFactory, final DocumentRepository documentRepository,
-            final DocumentReadPlatformService documentReadPlatformService,
-            final GroupPrequalificationRelationshipRepository groupPrequalificationRelationshipRepository,
-            final PrequalificationGroupRepositoryWrapper prequalificationGroupRepositoryWrapper,
-            final PrequalificationStatusRangeRepository prequalificationStatusRangeRepository,
-            PrequalificationReadPlatformService prequalificationReadPlatformService, FromJsonHelper fromApiJsonHelper,
-            LoanApplicationWritePlatformService loanApplicationWritePlatformService) {
+                                                    final PrequalificationDataValidator dataValidator, final GroupRepositoryWrapper groupRepositoryWrapper,
+                                                    final AppUserRepository appUserRepository, final LoanProductRepository loanProductRepository,
+                                                    final ClientReadPlatformService clientReadPlatformService, final AgencyRepositoryWrapper agencyRepositoryWrapper,
+                                                    final PrequalificationMemberCommandFromApiJsonDeserializer apiJsonDeserializer,
+                                                    final PrequalificationGroupMemberRepositoryWrapper preQualificationMemberRepository,
+                                                    final PreQualificationStatusLogRepository preQualificationLogRepository,
+                                                    final PrequalificationChecklistReadPlatformService prequalificationChecklistReadPlatformService,
+                                                    final CodeValueReadPlatformService codeValueReadPlatformService, final JdbcTemplate jdbcTemplate,
+                                                    final ContentRepositoryFactory contentRepositoryFactory, final DocumentRepository documentRepository,
+                                                    final DocumentReadPlatformService documentReadPlatformService,
+                                                    final GroupPrequalificationRelationshipRepository groupPrequalificationRelationshipRepository,
+                                                    final PrequalificationGroupRepositoryWrapper prequalificationGroupRepositoryWrapper,
+                                                    final PrequalificationStatusRangeRepository prequalificationStatusRangeRepository,
+                                                    PrequalificationReadPlatformService prequalificationReadPlatformService, FromJsonHelper fromApiJsonHelper,
+                                                    LoanApplicationWritePlatformService loanApplicationWritePlatformService) {
         this.context = context;
         this.dataValidator = dataValidator;
         this.loanProductRepository = loanProductRepository;
@@ -266,7 +266,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
 
     @NotNull
     private String resolvePrequalificationNumber(Boolean individualPrequalification, Agency agency,
-            PrequalificationGroup prequalificationGroup) {
+                                                 PrequalificationGroup prequalificationGroup) {
         StringBuilder prequalSB = new StringBuilder();
         prequalSB.append("PRECAL-");
         String prequalificationNumber = StringUtils.leftPad(prequalificationGroup.getId().toString(), 4, '0');
@@ -373,20 +373,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                     groupPresident = member.get("groupPresident").getAsBoolean();
                 }
 
-                LocalDate dateOfBirth = null;
-                if (member.get("dob") != null) {
-
-                    DateTimeFormatter formatter = new DateTimeFormatterBuilder().appendPattern(member.get("dateFormat").getAsString())
-                            .toFormatter();
-                    LocalDate date;
-                    try {
-                        date = LocalDate.parse(member.get("dob").getAsString(), formatter);
-                        dateOfBirth = date;
-                    } catch (DateTimeParseException e) {
-                        LOG.error("Problem occurred in addClientFamilyMember function", e);
-                    }
-
-                }
+                final LocalDate dateOfBirth = this.fromApiJsonHelper.extractLocalDateNamed("dob", member);
 
                 // get light indicator
                 String blistSql = "select count(*) from m_client_blacklist where dpi=? and status=?";
@@ -544,7 +531,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
     }
 
     private List<PrequalificationGroupMember> assembleMembersForUpdate(JsonCommand command, PrequalificationGroup prequalificationGroup,
-            AppUser addedBy) {
+                                                                       AppUser addedBy) {
 
         final List<PrequalificationGroupMember> allMembers = new ArrayList<>();
 
@@ -580,7 +567,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
     }
 
     private PrequalificationGroupMember assembleMemberForUpdate(JsonElement memberElement,
-            PrequalificationGroupMember prequalificationGroupMember, AppUser addedBy, PrequalificationGroup prequalificationGroup) {
+                                                                PrequalificationGroupMember prequalificationGroupMember, AppUser addedBy, PrequalificationGroup prequalificationGroup) {
         apiJsonDeserializer.validateForUpdate(memberElement.toString());
 
         JsonCommand command = JsonCommand.fromJsonElement(prequalificationGroupMember.getId(), memberElement, new FromJsonHelper());
@@ -665,8 +652,8 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         }
 
         BigDecimal requestedAmount = null;
-        if (member.get("amount") != null) {
-            requestedAmount = new BigDecimal(member.get("amount").getAsString().replace(",", ""));
+        if (member.get("requestedAmount") != null) {
+            requestedAmount = new BigDecimal(member.get("requestedAmount").getAsString().replace(",", ""));
         }
 
         String puente = null;
@@ -682,22 +669,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         if (member.get("groupPresident") != null) {
             groupPresident = member.get("groupPresident").getAsBoolean();
         }
-
-        LocalDate dateOfBirth = null;
-        if (member.get("dob") != null) {
-
-            DateTimeFormatter formatter = new DateTimeFormatterBuilder().appendPattern(member.get("dateFormat").getAsString())
-                    .toFormatter();
-            LocalDate date;
-            try {
-                date = LocalDate.parse(member.get("dob").getAsString(), formatter);
-                dateOfBirth = date;
-            } catch (DateTimeParseException e) {
-                LOG.error("Problem occurred in addClientFamilyMember function", e);
-            }
-
-        }
-
+        final LocalDate dateOfBirth = this.fromApiJsonHelper.extractLocalDateNamed("dob", member);
         // get light indicator
         String blistSql = "select count(*) from m_client_blacklist where dpi=? and status=?";
         Long activeBlacklisted = jdbcTemplate.queryForObject(blistSql, Long.class, dpi, BlacklistStatus.ACTIVE.getValue());
@@ -784,8 +756,9 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
 
         prequalificationGroup.updateStatus(status.get());
 
+        String comments = command.stringValueOfParameterNamed("comments");
         PrequalificationStatusLog statusLog = PrequalificationStatusLog.fromJson(appUser, fromStatus, prequalificationGroup.getStatus(),
-                null, prequalificationGroup);
+                comments, prequalificationGroup);
 
         this.preQualificationLogRepository.saveAndFlush(statusLog);
 
@@ -818,8 +791,9 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
 
         prequalificationGroup.updateStatus(status.get());
 
+        String comments = command.stringValueOfParameterNamed("comments");
         PrequalificationStatusLog statusLog = PrequalificationStatusLog.fromJson(appUser, fromStatus, prequalificationGroup.getStatus(),
-                null, prequalificationGroup);
+                comments, prequalificationGroup);
 
         this.preQualificationLogRepository.saveAndFlush(statusLog);
 
@@ -893,7 +867,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
     }
 
     private void approveOrRejectLoanApplications(final PrequalificationGroup prequalificationGroup,
-            final PrequalificationStatus prequalificationStatus, final List<MemberPrequalificationData> prequalificationMembers) {
+                                                 final PrequalificationStatus prequalificationStatus, final List<MemberPrequalificationData> prequalificationMembers) {
         final Long prequalificationId = prequalificationGroup.getId();
         final List<PrequalificationGroupMember> groupMembers = prequalificationGroup.getMembers();
         final List<MemberPrequalificationData> approvedPrequalificationMembers = prequalificationMembers.stream()
@@ -912,7 +886,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                     && (memberPrequalificationData.getIsSelected() || prequalificationGroup.isPrequalificationTypeIndividual());
             final boolean isRejected = PrequalificationStatus.REJECTED.equals(prequalificationStatus)
                     || (!memberPrequalificationData.getIsSelected() && PrequalificationStatus.COMPLETED.equals(prequalificationStatus)
-                            && prequalificationGroup.isPrequalificationTypeGroup());
+                    && prequalificationGroup.isPrequalificationTypeGroup());
             final BigDecimal approvedLoanAmount = prequalificationGroupMember.getApprovedAmount();
             final String dpi = prequalificationGroupMember.getDpi();
             List<LoanData> submittedLoans;
@@ -965,11 +939,11 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         }
     }
 
-    private static final class GroupTypeLoanMapper implements RowMapper<LoanData> {
+    static final class GroupTypeLoanMapper implements RowMapper<LoanData> {
 
         private final String schema;
 
-        private GroupTypeLoanMapper() {
+        GroupTypeLoanMapper() {
             this.schema = """
                     SELECT ml.id AS loanId,
                     mc.id AS clientId,
@@ -1006,11 +980,11 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         }
     }
 
-    private static final class IndividualTypeLoanMapper implements RowMapper<LoanData> {
+    static final class IndividualTypeLoanMapper implements RowMapper<LoanData> {
 
         private final String schema;
 
-        private IndividualTypeLoanMapper() {
+        IndividualTypeLoanMapper() {
             this.schema = """
                         SELECT ml.id AS loanId,
                         mc.id AS clientId,
@@ -1111,15 +1085,15 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             AtomicReference<Integer> redCountRef = new AtomicReference<>(0);
             for (List<String> innerList : rows) {
                 innerList.forEach(item -> {
-                    if ("RED".equalsIgnoreCase(item)) {
+                    if ("RED".equalsIgnoreCase(item)||"ORANGE".equalsIgnoreCase(item)||"YELLOW".equalsIgnoreCase(item)) {
                         redCountRef.getAndSet(redCountRef.get() + 1);
                     }
                 });
             }
-            Integer redCounts = redCountRef.get();
+            Integer errorWarningsCount = redCountRef.get();
 
             List<PrequalificationStatusRange> statusRangeList = this.prequalificationStatusRangeRepository
-                    .findByPrequalificationTypeAndNumberOfErrors(prequalificationGroup.getPrequalificationType(), redCounts);
+                    .findByPrequalificationTypeAndNumberOfErrors(prequalificationGroup.getPrequalificationType(), errorWarningsCount);
 
             if (statusRangeList.size() == 1) {
                 finalRange = statusRangeList.get(0);

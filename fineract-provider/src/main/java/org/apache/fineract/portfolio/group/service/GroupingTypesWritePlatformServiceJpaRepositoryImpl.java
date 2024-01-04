@@ -549,26 +549,6 @@ public class GroupingTypesWritePlatformServiceJpaRepositoryImpl implements Group
             }
 
             Group parent = groupForUpdate.getParent();
-            if (actualChanges.containsKey(GroupingTypesApiConstants.meetingStartTime)) {
-
-                if (parent != null) {
-                    String schemaSql = "select cgroup.id from m_group cgroup where cgroup.parent_id = ? and "
-                            + "( ( ? >= cgroup.meeting_start_time and ? < cgroup.meeting_end_time) OR "
-                            + "( ? > cgroup.meeting_start_time and ? < cgroup.meeting_end_time) ) order by id desc";
-                    LocalTime meetingEndTime = groupForUpdate.getMeetingEndTime();
-                    LocalTime meetingStartTime = groupForUpdate.getMeetingStartTime();
-                    List<Long> groupIds = jdbcTemplate.queryForList(schemaSql, Long.class, parent.getId(), meetingStartTime,
-                            meetingStartTime, meetingEndTime, meetingEndTime);
-
-                    if (groupIds.size() > 0) {
-                        Long existingGroupId = groupIds.get(0);
-                        GroupGeneralData existingGroup = this.groupReadPlatformService.retrieveOne(existingGroupId);
-
-                        throw new GroupMeetingTimeCollisionException(existingGroup.getName(), existingGroup.getId(), meetingStartTime,
-                                meetingEndTime);
-                    }
-                }
-            }
 
             final GroupLevel groupLevel = this.groupLevelRepository.findById(groupForUpdate.getGroupLevel().getId()).orElse(null);
 
@@ -940,18 +920,18 @@ public class GroupingTypesWritePlatformServiceJpaRepositoryImpl implements Group
      * Guaranteed to throw an exception no matter what the data integrity issue is.
      */
     private void handleGroupDataIntegrityIssues(final JsonCommand command, final Throwable realCause, final Exception dve,
-            final GroupTypes groupLevel) {
+                                                final GroupTypes groupLevel) {
 
         String levelName = "Invalid";
         switch (groupLevel) {
             case CENTER:
                 levelName = "Center";
-            break;
+                break;
             case GROUP:
                 levelName = "Group";
-            break;
+                break;
             case INVALID:
-            break;
+                break;
         }
 
         String errorMessageForUser = null;
@@ -1200,7 +1180,7 @@ public class GroupingTypesWritePlatformServiceJpaRepositoryImpl implements Group
     }
 
     public void validateOfficeOpeningDateisAfterGroupOrCenterOpeningDate(final Office groupOffice, final GroupLevel groupLevel,
-            final LocalDate activationDate) {
+                                                                         final LocalDate activationDate) {
         if (activationDate != null && groupOffice.getOpeningLocalDate().isAfter(activationDate)) {
             final String levelName = groupLevel.getLevelName();
             final String errorMessage = levelName + " activation date should be greater than or equal to the parent Office's creation date "

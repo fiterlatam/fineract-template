@@ -84,12 +84,11 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
 
     @Autowired
     public PrequalificationReadPlatformServiceImpl(final PlatformSecurityContext context, final PaginationHelper paginationHelper,
-            final DatabaseSpecificSQLGenerator sqlGenerator, final ColumnValidator columnValidator,
-            final PrequalificationDataValidator dataValidator, final LoanProductRepository loanProductRepository,
-            final PreQualificationMemberRepository preQualificationMemberRepository,
-            final ClientReadPlatformService clientReadPlatformService, final CodeValueReadPlatformService codeValueReadPlatformService,
-            final JdbcTemplate jdbcTemplate) {
-
+                                                   final DatabaseSpecificSQLGenerator sqlGenerator, final ColumnValidator columnValidator,
+                                                   final PrequalificationDataValidator dataValidator, final LoanProductRepository loanProductRepository,
+                                                   final PreQualificationMemberRepository preQualificationMemberRepository,
+                                                   final ClientReadPlatformService clientReadPlatformService, final CodeValueReadPlatformService codeValueReadPlatformService,
+                                                   final JdbcTemplate jdbcTemplate) {
         this.context = context;
         this.dataValidator = dataValidator;
         this.loanProductRepository = loanProductRepository;
@@ -259,6 +258,14 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
     }
 
     @Override
+    public Collection<GroupPrequalificationData> retrieveGroupByPrequalificationId(Long prequalificationId) {
+        final String sql = "select " + this.mappingsMapper.schema() + " where PG.id = ? ";
+        Collection<GroupPrequalificationData> prequalificationGroups = this.jdbcTemplate.query(sql, this.mappingsMapper,
+                new Object[] { prequalificationId });
+        return prequalificationGroups;
+    }
+
+    @Override
     public Collection<GroupPrequalificationData> retrievePrequalificationIndividualMappings(final Long clientId) {
         final String sql = "select " + this.prequalificationIndividualMappingsMapper.schema() + " WHERE mc.id = ? AND mpg.status = 600";
         final Collection<GroupPrequalificationData> prequalificationGroups = this.jdbcTemplate.query(sql,
@@ -394,13 +401,14 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             this.schema = """
                     	g.id AS id,
                     	g.prequalification_number AS prequalificationNumber,
-                    	g.status,
+                    	g.status,linkedGroup.id as linkedGroupId,
                     	g.prequalification_duration as prequalilficationTimespan,
                     	g.comments,
                     	g.created_at,
                     	g.prequalification_type_enum as prequalificationType,
                     	sl.from_status as previousStatus,
                     	sl.sub_status as substatus,
+                    	sl.comments as latestComments,
                     	assigned.username as assignedUser,
                     	concat(assigned.firstname, ' ', assigned.lastname) as assignedUserName,
                     	sl.date_created as statusChangedOn,
@@ -468,6 +476,8 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                     	g.agency_id = ma.id
                     LEFT JOIN m_group cg ON
                     	cg.id = g.group_id
+                    LEFT JOIN m_group linkedGroup ON
+                    	linkedGroup.prequalification_id = g.id
                     LEFT JOIN m_group pc ON
                     	pc.id = g.center_id
                     LEFT JOIN m_prequalification_status_log sl ON
@@ -503,12 +513,14 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             // final String portfolioName = rs.getString("portfolioName");
             final String productName = rs.getString("productName");
             final String comments = rs.getString("comments");
+            final String latestComments = rs.getString("latestComments");
             final LocalDate createdAt = JdbcSupport.getLocalDate(rs, "created_at");
 
             final String addedBy = rs.getString("firstname") + " " + rs.getString("lastname");
             final Long agencyId = JdbcSupport.getLong(rs, "agencyId");
             final Long centerId = JdbcSupport.getLong(rs, "centerId");
             final Long productId = JdbcSupport.getLong(rs, "productId");
+            final Long linkedGroupId = JdbcSupport.getLong(rs, "linkedGroupId");
             final Long facilitatorId = JdbcSupport.getLong(rs, "facilitatorId");
             final String facilitatorName = rs.getString("facilitatorName");
             final Long redValidationCount = rs.getLong("redValidationCount");
@@ -522,9 +534,9 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             final String processType = rs.getString("processType");
             final String processQuality = rs.getString("processQuality");
             final Integer substatus = rs.getInt("substatus");
-            PrequalificationSubStatus prequalificationSubStatus = null;
+            String prequalificationSubStatus = PrequalificationSubStatus.PENDING.getCode();
             if (substatus != null) {
-                prequalificationSubStatus = PrequalificationSubStatus.fromInt(substatus);
+                prequalificationSubStatus = PrequalificationSubStatus.fromInt(substatus).getCode();
             }
             final String assignedUser = rs.getString("assignedUser");
             final String assignedUserName = rs.getString("assignedUserName");
@@ -546,7 +558,8 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                     productName, addedBy, createdAt, comments, groupId, agencyId, centerId, productId, facilitatorId, facilitatorName,
                     greenValidationCount, yellowValidationCount, orangeValidationCount, redValidationCount, prequalilficationTimespan,
                     lastPrequalificationStatus, statusChangedBy, statusChangedOn, processType, processQuality, totalRequestedAmount,
-                    totalApprovedAmount, prequalificationType, prequalificationSubStatus, assignedUser, assignedUserName);
+                    totalApprovedAmount, prequalificationType, prequalificationSubStatus, assignedUser, assignedUserName, latestComments,
+                    linkedGroupId);
 
         }
     }
@@ -557,7 +570,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
 
         PrequalificationsGroupMappingsMapper() {
             this.schema = " PG.id AS id, PG.prequalification_number AS prequalificationNumber, PG.group_name AS groupName, "
-                    + "PG.status, LP.name AS productName, " + "PG.created_at, AU.firstname, AU.lastname "
+                    + "PG.status, LP.name AS productName, " + "PG.created_at, AU.firstname, AU.lastname, MG.id AS groupId "
                     + "from m_group_prequalification_relationship GR " + "inner join m_group MG on MG.id = GR.group_id "
                     + "inner join m_prequalification_group PG on PG.id = GR.prequalification_id "
                     + "inner join m_product_loan LP on LP.id = PG.product_id " + "INNER JOIN m_appuser AU ON AU.id = PG.added_by " + "";
@@ -572,12 +585,14 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             final Integer statusEnum = JdbcSupport.getInteger(rs, "status");
             final EnumOptionData status = PreQualificationsEnumerations.status(statusEnum);
             final Long id = JdbcSupport.getLong(rs, "id");
+            final Long groupId = JdbcSupport.getLong(rs, "groupId");
             final String prequalificationNumber = rs.getString("prequalificationNumber");
             String groupName = rs.getString("groupName");
             final String productName = rs.getString("productName");
             final LocalDate createdAt = JdbcSupport.getLocalDate(rs, "created_at");
             final String addedBy = rs.getString("firstname") + " " + rs.getString("lastname");
-            return GroupPrequalificationData.simpeGroupData(id, prequalificationNumber, status, groupName, productName, addedBy, createdAt);
+            return GroupPrequalificationData.simpeGroupData(id, prequalificationNumber, status, groupName, productName, addedBy, createdAt,
+                    groupId);
 
         }
     }
@@ -589,11 +604,12 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
         public PrequalificationIndividualMappingsMapper() {
             this.schema = """
                     mpg.id AS id, mpg.prequalification_number AS prequalificationNumber, mpg.group_name AS groupName, mpg.status AS status,
-                    mpl.name AS productName, mpg.created_at, ma.firstname, ma.lastname
+                    mpl.name AS productName, mpg.created_at, ma.firstname, ma.lastname, mg.id as groupId, mpg.prequalification_type_enum as prequalificationType
                     FROM m_prequalification_group mpg
                     INNER JOIN m_product_loan mpl ON mpl.id = mpg.product_id
                     INNER JOIN m_prequalification_group_members mpgm ON mpgm.group_id = mpg.id
                     INNER JOIN m_client mc ON mc.dpi = mpgm.dpi
+                    LEFT JOIN m_group mg ON mg.prequalification_id = mpg.id
                     LEFT JOIN m_appuser ma ON ma.id = mpg.added_by
                     """;
         }
@@ -607,12 +623,18 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             final Integer statusEnum = JdbcSupport.getInteger(rs, "status");
             final EnumOptionData status = PreQualificationsEnumerations.status(statusEnum);
             final Long id = JdbcSupport.getLong(rs, "id");
+            final Long groupId = JdbcSupport.getLong(rs, "groupId");
             final String prequalificationNumber = rs.getString("prequalificationNumber");
             String groupName = rs.getString("groupName");
             final String productName = rs.getString("productName");
             final LocalDate createdAt = JdbcSupport.getLocalDate(rs, "created_at");
             final String addedBy = rs.getString("firstname") + " " + rs.getString("lastname");
-            return GroupPrequalificationData.simpeGroupData(id, prequalificationNumber, status, groupName, productName, addedBy, createdAt);
+            final Integer prequalificationTypeEnum = JdbcSupport.getInteger(rs, "prequalificationType");
+            final EnumOptionData prequalificationType = PreQualificationsEnumerations.prequalificationType(prequalificationTypeEnum);
+            GroupPrequalificationData prequalificationData = GroupPrequalificationData.simpeGroupData(id, prequalificationNumber, status,
+                    groupName, productName, addedBy, createdAt, groupId);
+            prequalificationData.setPrequalificationType(prequalificationType);
+            return prequalificationData;
         }
     }
 

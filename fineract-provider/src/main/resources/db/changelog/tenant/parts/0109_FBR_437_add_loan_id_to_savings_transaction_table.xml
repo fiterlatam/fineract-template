@@ -52,5 +52,4 @@
                                  referencedColumnNames="id" referencedTableName="m_prequalification_group" validate="true"/>
     </changeSet>
 
-
 </databaseChangeLog>

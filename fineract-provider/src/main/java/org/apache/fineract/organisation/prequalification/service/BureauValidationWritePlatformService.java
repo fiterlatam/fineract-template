@@ -20,8 +20,11 @@ package org.apache.fineract.organisation.prequalification.service;
 
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
+import org.apache.fineract.organisation.prequalification.data.LoanAdditionalData;
 
 public interface BureauValidationWritePlatformService {
 
     CommandProcessingResult validatePrequalificationWithBureau(Long prequalificationId, JsonCommand command);
+
+    LoanAdditionalData retrieveAdditionProperties(Long productId, Long clientId, String caseId);
 }
