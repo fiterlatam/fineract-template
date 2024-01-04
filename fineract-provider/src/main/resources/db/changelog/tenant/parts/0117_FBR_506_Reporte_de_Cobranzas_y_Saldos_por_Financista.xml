@@ -135,4 +135,64 @@
         </sql>
     </changeSet>
 
+    <changeSet id="4" author="fineract">
+        <sql>
+            <![CDATA[
+            UPDATE stretchy_report
+            SET report_sql = "
+            SELECT
+            dt.loanId AS 'Nro Solicitud',
+            dt.requestedDate AS 'Fecha Reporte',
+            dt.disbursementDate AS 'Fecha de Desembolso',
+            dt.productName AS 'Producto',
+            dt.fundName AS 'Origen de Fondos',
+            dt.clientNo AS 'Codigo Cliente',
+            dt.clientName AS 'Cliente',
+            dt.groupNo AS 'Nro Grupo',
+            dt.groupName AS 'Nombre Grupo',
+            dt.agencyName AS 'Agencia',
+            dt.approvedPrincipal AS 'Monto Otorgado',
+            dt.outstandingPrincipal AS 'Saldo Capital',
+            dt.repaidPrincipal AS 'Capital Recuperado',
+            dt.repaidInterest AS 'Intereses',
+            dt.totalRepaid AS 'Total Cobrad'
+            FROM (
+                SELECT
+                    mg.id AS groupId,
+                    ml.id AS loanId,
+                    mc.account_no AS clientNo,
+                    mc.display_name AS clientName,
+                    mpl.name AS productName,
+                    curdate() AS requestedDate,
+                    ml.disbursedon_date AS disbursementDate,
+                    COALESCE(mg.account_no, 'N/A') AS groupNo,
+                    COALESCE(mg.display_name, 'N/A') AS groupName,
+                    COALESCE(ma.name, 'N/A') AS agencyName,
+                    IFNULL(ml.approved_principal, 0) AS approvedPrincipal,
+                    IFNULL(ml.principal_outstanding_derived, 0) AS outstandingPrincipal,
+                    IFNULL(ml.principal_repaid_derived, 0) AS repaidPrincipal,
+                    IFNULL(ml.interest_repaid_derived, 0) AS repaidInterest,
+                    IFNULL(ml.principal_repaid_derived, 0) + IFNULL(ml.interest_repaid_derived, 0) AS totalRepaid,
+                    mf.name AS fundName
+                FROM m_office mo
+                INNER JOIN m_office office_under ON office_under.hierarchy LIKE CONCAT(mo.hierarchy, '%')AND office_under.hierarchy LIKE CONCAT('${currentUserHierarchy}', '%')
+                INNER JOIN m_client mc ON office_under.id = mc.office_id
+                INNER JOIN m_loan ml ON ml.client_id = mc.id
+                LEFT JOIN m_product_loan mpl ON mpl.id = ml.product_id
+                LEFT JOIN m_group_client mgc ON mgc.client_id = mc.id
+                LEFT JOIN m_group mg ON mg.id = mgc.group_id
+                LEFT JOIN m_group center ON center.id = mg.parent_id
+                LEFT JOIN m_portfolio mp ON mp.id = center.portfolio_id
+                LEFT JOIN m_supervision ms ON ms.id = mp.supervision_id
+                LEFT JOIN m_agency ma ON ma.id = ms.agency_id
+                LEFT JOIN m_fund mf ON mf.id = ml.fund_id
+                WHERE (ml.submittedon_date BETWEEN '${submittedOnStartDate}' AND '${submittedOnEndDate}') AND(ml.fund_id = '${fundId}' OR '-1' = '${fundId}')
+                AND (ml.loan_status_id = 300) AND ml.group_id IS NULL
+                GROUP BY ml.id ORDER BY mc.id
+            )dt" WHERE report_name = "Reporte por Clienta de Cobranzas y Saldos por Financista";
+            ]]>
+        </sql>
+
+    </changeSet>
+
 </databaseChangeLog>

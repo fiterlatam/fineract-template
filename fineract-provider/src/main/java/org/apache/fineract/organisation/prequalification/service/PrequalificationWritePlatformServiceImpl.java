@@ -1085,7 +1085,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             AtomicReference<Integer> redCountRef = new AtomicReference<>(0);
             for (List<String> innerList : rows) {
                 innerList.forEach(item -> {
-                    if ("RED".equalsIgnoreCase(item)||"ORANGE".equalsIgnoreCase(item)||"YELLOW".equalsIgnoreCase(item)) {
+                    if ("RED".equalsIgnoreCase(item) || "ORANGE".equalsIgnoreCase(item) || "YELLOW".equalsIgnoreCase(item)) {
                         redCountRef.getAndSet(redCountRef.get() + 1);
                     }
                 });
