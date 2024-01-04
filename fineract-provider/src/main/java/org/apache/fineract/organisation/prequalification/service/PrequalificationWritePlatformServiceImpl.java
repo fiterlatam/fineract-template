@@ -1085,15 +1085,15 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             AtomicReference<Integer> redCountRef = new AtomicReference<>(0);
             for (List<String> innerList : rows) {
                 innerList.forEach(item -> {
-                    if ("RED".equalsIgnoreCase(item)) {
+                    if ("RED".equalsIgnoreCase(item)||"ORANGE".equalsIgnoreCase(item)||"YELLOW".equalsIgnoreCase(item)) {
                         redCountRef.getAndSet(redCountRef.get() + 1);
                     }
                 });
             }
-            Integer redCounts = redCountRef.get();
+            Integer errorWarningsCount = redCountRef.get();
 
             List<PrequalificationStatusRange> statusRangeList = this.prequalificationStatusRangeRepository
-                    .findByPrequalificationTypeAndNumberOfErrors(prequalificationGroup.getPrequalificationType(), redCounts);
+                    .findByPrequalificationTypeAndNumberOfErrors(prequalificationGroup.getPrequalificationType(), errorWarningsCount);
 
             if (statusRangeList.size() == 1) {
                 finalRange = statusRangeList.get(0);
