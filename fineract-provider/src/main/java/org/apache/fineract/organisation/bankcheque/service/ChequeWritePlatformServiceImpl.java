@@ -118,8 +118,7 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
         this.chequeBatchRepositoryWrapper.createBatch(batch);
         Set<Cheque> chequeList = new HashSet<>();
         for (Long i = from; i <= to; i++) {
-            Cheque cheque = new Cheque().setBatch(batch).setChequeNo(i).setStatus(BankChequeStatus.AVAILABLE.getValue())
-                    .setDescription(createChequeCommand.getDescription());
+            Cheque cheque = new Cheque().setBatch(batch).setChequeNo(i).setStatus(BankChequeStatus.AVAILABLE.getValue());
             cheque.stampAudit(currentUserId, localDateTime);
             chequeList.add(cheque);
         }
@@ -379,14 +378,14 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
                     throw new BankChequeException(
                             "print.cheques.loan:" + loan.getAccountNumber() + " is.not.in.disbursement.authorization.status");
                 }
+
                 if (!chequeData.getReassingedCheque()) {
                     CommandProcessingResult result = this.loanWritePlatformService.disburseLoan(loanAccId, command, false);
                     if (result.getLoanId() == null) {
                         throw new BankChequeException("print.cheques", "failed.to.disburse.loan " + loanAccId);
                     }
                 }
-
-                chequeAmount = chequeData.getLoanAmount();
+                chequeAmount = loan.getNetDisbursalAmount();
             }
             final String amountInWords = NumberToWordsConverter.convertToWords(chequeAmount.intValue(),
                     NumberToWordsConverter.Language.SPANISH);

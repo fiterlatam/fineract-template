@@ -41,7 +41,7 @@ public enum Policies {
                                                                                             "Internal Credit History"), TWENTY_ONE(21,
                                                                                                     "External Credit History"), TWENTY_TWO(
                                                                                                             22,
-                                                                                                            "Do you register any lawsuit?"), TWENTY_THREE(
+                                                                                                            "Do you register any lawsuit"), TWENTY_THREE(
                                                                                                                     23,
                                                                                                                     "Housing Type"), TWENTY_FOUR(
                                                                                                                             24,
@@ -55,7 +55,7 @@ public enum Policies {
                                                                                                                                                             28,
                                                                                                                                                             "Acceptance of new clients"), TWENTY_NINE(
                                                                                                                                                                     29,
-                                                                                                                                                                    "Present agricultural technical diagnosis (Commcare)"), THIRTY(
+                                                                                                                                                                    "Present agricultural technical diagnosis Commcare"), THIRTY(
                                                                                                                                                                             30,
                                                                                                                                                                             "Age"), THIRTY_ONE(
                                                                                                                                                                                     31,

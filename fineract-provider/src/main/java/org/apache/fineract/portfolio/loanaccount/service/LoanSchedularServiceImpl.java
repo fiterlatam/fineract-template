@@ -46,6 +46,7 @@ import java.util.stream.Collectors;
 import javax.ws.rs.NotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.cob.loan.ApplyChargeToOverdueLoansBusinessStep;
 import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
@@ -334,7 +335,7 @@ public class LoanSchedularServiceImpl implements LoanSchedularService {
     @Override
     @CronTarget(jobName = JobName.IMPORT_BATCHES_OF_LOAN_REPAYMENTS)
     public void importLoanRepaymentBatches() throws JobExecutionException {
-        final String sql = "SELECT " + this.loanRepaymentImportMapper.getSchema() + " WHERE pp.Estado = ?";
+        final String sql = "SELECT " + this.loanRepaymentImportMapper.getSchema() + " WHERE pp.Estado = ? ";
         List<LoanRepaymentImportData> loanRepayments = this.jdbcTemplate.query(sql, this.loanRepaymentImportMapper, 1);
         List<Throwable> exceptions = new ArrayList<>();
         if (!CollectionUtils.isEmpty(loanRepayments)) {
@@ -471,6 +472,9 @@ public class LoanSchedularServiceImpl implements LoanSchedularService {
                     jsonObject.addProperty(PaymentDetailConstants.receiptNumberParamName, receiptNumber);
                     jsonObject.addProperty("locale", localeAsString);
                     jsonObject.addProperty("dateFormat", dateFormat);
+                    if (StringUtils.equalsIgnoreCase(lastInstallment, "S") || outstandingLoanBalance.compareTo(transactionAmount) <= 0) {
+                        jsonObject.addProperty("adjustGuarantee", true);
+                    }
                     final JsonCommand command = JsonCommand.fromJsonElement(loanId, jsonObject, fromApiJsonHelper);
                     command.setJsonCommand(jsonObject.toString());
                     CommandProcessingResult result = loanWritePlatformService.makeLoanRepayment(LoanTransactionType.REPAYMENT, loanId,

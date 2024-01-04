@@ -28,6 +28,7 @@ import lombok.Data;
 public class ClientData {
 
     private Long clientId;
+    private Long loanId;
     private Integer prequalificationId;
     private Long productId;
     private Integer prequalificationMemberId;

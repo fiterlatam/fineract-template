@@ -293,15 +293,18 @@ public class LoanScheduleAssembler {
                 numberOfDays = configurationDomainService.retreivePeroidInNumberOfDaysForSkipMeetingDate().intValue();
             }
         }
-        if ((loanType.isJLGAccount() || loanType.isGroupAccount()) && calendar != null) {
-            validateRepaymentsStartDateWithMeetingDates(calculatedRepaymentsStartingFromDate, calendar, isSkipMeetingOnFirstDay,
-                    numberOfDays);
+        final boolean isMeetingMandatoryForJLGLoans = this.configurationDomainService.isMeetingMandatoryForJLGLoans();
+        if (Boolean.TRUE.equals(isMeetingMandatoryForJLGLoans)) {
+            if ((loanType.isJLGAccount() || loanType.isGroupAccount()) && calendar != null) {
+                validateRepaymentsStartDateWithMeetingDates(calculatedRepaymentsStartingFromDate, calendar, isSkipMeetingOnFirstDay,
+                        numberOfDays);
 
-            /*
-             * If disbursement is synced on meeting, make sure disbursement date is on a meeting date
-             */
-            if (synchDisbursement != null && synchDisbursement.booleanValue()) {
-                validateDisbursementDateWithMeetingDates(expectedDisbursementDate, calendar, isSkipMeetingOnFirstDay, numberOfDays);
+                /*
+                 * If disbursement is synced on meeting, make sure disbursement date is on a meeting date
+                 */
+                if (synchDisbursement != null && synchDisbursement.booleanValue()) {
+                    validateDisbursementDateWithMeetingDates(expectedDisbursementDate, calendar, isSkipMeetingOnFirstDay, numberOfDays);
+                }
             }
         }
 

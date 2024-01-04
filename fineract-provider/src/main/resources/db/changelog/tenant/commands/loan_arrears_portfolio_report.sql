@@ -38,7 +38,7 @@
 
 -- Group Loan In Arrears Report --
 
-INSERT INTO fineract_default.stretchy_report
+INSERT INTO stretchy_report
 (report_name, report_type, report_subtype, report_category, report_sql, description, core_report, use_report, self_service_user_report)
 VALUES('Group Loans in Arrears', 'Table', NULL, 'Loan', 'SELECT
 ml.id AS ''ID de préstamo'',

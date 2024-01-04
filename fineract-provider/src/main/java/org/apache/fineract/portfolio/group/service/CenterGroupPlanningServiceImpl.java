@@ -168,7 +168,7 @@ public class CenterGroupPlanningServiceImpl implements CenterGroupPlanningServic
         sqlBuilder.append(" inner join m_product_loan pl on pl.id = l.product_id ");
         sqlBuilder.append(" inner join m_loan_repayment_schedule lrs on lrs.loan_id = l.id ");
         sqlBuilder.append(" where gc.group_id = ? ");
-        sqlBuilder.append(" and lrs.duedate = ? ");
+        sqlBuilder.append(" and lrs.duedate < ? ");
         sqlBuilder.append(" group by pl.id ");
         String sql = sqlBuilder.toString();
 

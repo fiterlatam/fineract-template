@@ -120,16 +120,16 @@ public class LoanAssembler {
 
     @Autowired
     public LoanAssembler(final FromJsonHelper fromApiJsonHelper, final LoanRepositoryWrapper loanRepository,
-            final LoanProductRepository loanProductRepository, final ClientRepositoryWrapper clientRepository,
-            final GroupRepository groupRepository, final FundRepository fundRepository,
-            final LoanTransactionProcessingStrategyRepository loanTransactionProcessingStrategyRepository,
-            final StaffRepository staffRepository, final CodeValueRepositoryWrapper codeValueRepository,
-            final LoanScheduleAssembler loanScheduleAssembler, final LoanChargeAssembler loanChargeAssembler,
-            final LoanCollateralAssembler collateralAssembler, final LoanSummaryWrapper loanSummaryWrapper,
-            final LoanRepaymentScheduleTransactionProcessorFactory loanRepaymentScheduleTransactionProcessorFactory,
-            final HolidayRepository holidayRepository, final ConfigurationDomainService configurationDomainService,
-            final WorkingDaysRepositoryWrapper workingDaysRepository, final LoanUtilService loanUtilService, RateAssembler rateAssembler,
-            PrequalificationGroupRepositoryWrapper prequalificationGroupRepositoryWrapper) {
+                         final LoanProductRepository loanProductRepository, final ClientRepositoryWrapper clientRepository,
+                         final GroupRepository groupRepository, final FundRepository fundRepository,
+                         final LoanTransactionProcessingStrategyRepository loanTransactionProcessingStrategyRepository,
+                         final StaffRepository staffRepository, final CodeValueRepositoryWrapper codeValueRepository,
+                         final LoanScheduleAssembler loanScheduleAssembler, final LoanChargeAssembler loanChargeAssembler,
+                         final LoanCollateralAssembler collateralAssembler, final LoanSummaryWrapper loanSummaryWrapper,
+                         final LoanRepaymentScheduleTransactionProcessorFactory loanRepaymentScheduleTransactionProcessorFactory,
+                         final HolidayRepository holidayRepository, final ConfigurationDomainService configurationDomainService,
+                         final WorkingDaysRepositoryWrapper workingDaysRepository, final LoanUtilService loanUtilService, RateAssembler rateAssembler,
+                         PrequalificationGroupRepositoryWrapper prequalificationGroupRepositoryWrapper) {
         this.fromApiJsonHelper = fromApiJsonHelper;
         this.loanRepository = loanRepository;
         this.loanProductRepository = loanProductRepository;
@@ -348,11 +348,15 @@ public class LoanAssembler {
             }
         }
 
-        final Long prequalificationId = this.fromApiJsonHelper.extractLongNamed("prequalificationId", element);
-        final PrequalificationGroup prequalificationGroup = this.prequalificationGroupRepositoryWrapper
-                .findOneWithNotFoundDetection(prequalificationId);
-        if (!PrequalificationStatus.BURO_CHECKED.getValue().equals(prequalificationGroup.getStatus())) {
-            throw new PrequalificationIncorrectStatusException(PrequalificationStatus.fromInt(prequalificationGroup.getStatus()).getCode());
+        PrequalificationGroup prequalificationGroup = null;
+        final Boolean isBulkImport = this.fromApiJsonHelper.extractBooleanNamed("isBulkImport", element);
+        if (isBulkImport == null || !isBulkImport) {
+            final Long prequalificationId = this.fromApiJsonHelper.extractLongNamed("prequalificationId", element);
+            prequalificationGroup = this.prequalificationGroupRepositoryWrapper.findOneWithNotFoundDetection(prequalificationId);
+            if (!PrequalificationStatus.BURO_CHECKED.getValue().equals(prequalificationGroup.getStatus())) {
+                throw new PrequalificationIncorrectStatusException(
+                        PrequalificationStatus.fromInt(prequalificationGroup.getStatus()).getCode());
+            }
         }
         loanApplicationTerms = this.loanScheduleAssembler.assembleLoanTerms(element);
         loanApplicationTerms.getCalculatedRepaymentsStartingFromLocalDate();
@@ -393,7 +397,7 @@ public class LoanAssembler {
 
     public Staff findLoanOfficerByIdIfProvided(final Long loanOfficerId) {
         Staff staff = null;
-        if (loanOfficerId != null) {
+        if (loanOfficerId != null && loanOfficerId > 0) {
             staff = this.staffRepository.findById(loanOfficerId).orElseThrow(() -> new StaffNotFoundException(loanOfficerId));
             if (staff.isNotLoanOfficer()) {
                 throw new StaffRoleException(loanOfficerId, StaffRoleException.StaffRole.LOAN_OFFICER);

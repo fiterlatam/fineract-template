@@ -192,8 +192,8 @@ public class PrequalificationGroup extends AbstractPersistableCustom {
                 actualChanges.put(PrequalificatoinApiConstants.centerIdParamName, newValue);
                 this.centerId = newValue;
             }
-
-            if (command.isChangeInLongParameterNamed(PrequalificatoinApiConstants.facilitatorParamName, this.facilitator.getId())) {
+            if (this.facilitator == null
+                    || command.isChangeInLongParameterNamed(PrequalificatoinApiConstants.facilitatorParamName, this.facilitator.getId())) {
                 final Long newValue = command.longValueOfParameterNamed(PrequalificatoinApiConstants.facilitatorParamName);
                 actualChanges.put(PrequalificatoinApiConstants.facilitatorParamName, newValue);
             }

@@ -26,6 +26,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
@@ -116,8 +117,9 @@ public class RestructureCreditsWritePlatformServiceImpl implements RestructureCr
         if (loanProducts.isEmpty()) throw new ProductNotFoundException(productId, "loan");
         String disbursementDateString = jsonCommand.stringValueOfParameterNamed("disbursementDate");
         String dateFormat = jsonCommand.stringValueOfParameterNamed("dateFormat");
+        Locale clientApplicationLocale = jsonCommand.extractLocale();
         final DateTimeFormatter simpleDateFormat = new DateTimeFormatterBuilder().parseCaseInsensitive().parseLenient()
-                .appendPattern(dateFormat).toFormatter();
+                .appendPattern(dateFormat).toFormatter(clientApplicationLocale);
         LocalDateTime disbursementDate = LocalDateTime.parse(disbursementDateString, simpleDateFormat);
 
         List<Loan> loanAccounts = resolveLoanAccounts(jsonCommand.arrayValueOfParameterNamed("selectedLoanIds"));
@@ -169,8 +171,9 @@ public class RestructureCreditsWritePlatformServiceImpl implements RestructureCr
         JsonObject loanObject = loanDataElelement.getAsJsonObject();
 
         String dateFormat = command.stringValueOfParameterNamed("dateFormat");
+        Locale clientApplicationLocale = command.extractLocale();
         final DateTimeFormatter simpleDateFormat = new DateTimeFormatterBuilder().parseCaseInsensitive().parseLenient()
-                .appendPattern(dateFormat).toFormatter();
+                .appendPattern(dateFormat).toFormatter(clientApplicationLocale);
 
         String disbursementDate = request.getNewDisbursementDate().toLocalDate().format(simpleDateFormat);
         JsonElement parse = this.fromApiJsonHelper.parse(this.fromApiJsonHelper.getGsonConverter().toJson(disbursementDate));
@@ -214,7 +217,7 @@ public class RestructureCreditsWritePlatformServiceImpl implements RestructureCr
     private BigDecimal getTotalOutstanding(List<Loan> loanAccounts) {
         BigDecimal totalOutstanding = BigDecimal.ZERO;
         for (Loan loan : loanAccounts) {
-            totalOutstanding = totalOutstanding.add(loan.getSummary().getTotalOutstanding());
+            totalOutstanding = totalOutstanding.add(loan.getSummary().getTotalPrincipalOutstanding());
         }
         return totalOutstanding;
     }
