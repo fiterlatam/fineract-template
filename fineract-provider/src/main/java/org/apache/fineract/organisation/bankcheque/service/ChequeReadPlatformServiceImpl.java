@@ -146,7 +146,11 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
                     	mbc.description AS description,
                     	mbc.guarantee_amount As guaranteeAmount,
                     	ml.approved_principal as loanAmount,
-                    	(case when ml.net_disbursal_amount > 0 then ml.net_disbursal_amount when ml.approved_principal > 0 then ml.approved_principal else mbc.guarantee_amount end) as chequeAmount,
+                        CASE
+                            WHEN ml.is_topup = FALSE THEN ml.net_disbursal_amount
+                            WHEN ml.is_topup = TRUE THEN (COALESCE(ml.net_disbursal_amount, 0) + COALESCE(closureloan.interest_outstanding_derived, 0))
+                            ELSE mbc.guarantee_amount
+                     	END as chequeAmount,
                     	mbc.case_id AS caseId,
                     	mbc.guarantee_id AS guaranteeId,
                     	mc.account_no AS clientNo,
@@ -186,6 +190,8 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
                     LEFT JOIN m_appuser voidauthorizedby ON voidauthorizedby.id = mbc.void_authorizedby_id
                     LEFT JOIN m_appuser lastmodifiedby ON lastmodifiedby.id = mbc.lastmodifiedby_id
                     LEFT JOIN m_client mc ON mc.id = ml.client_id
+                    LEFT JOIN m_loan_topup mltopup ON mltopup.loan_id = ml.id
+                    LEFT JOIN m_loan closureloan ON closureloan.id = mltopup.closure_loan_id
                     """;
         }
 
