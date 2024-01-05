@@ -25,6 +25,8 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
+
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
@@ -54,6 +56,7 @@ import org.apache.fineract.portfolio.client.service.ClientChargeWritePlatformSer
 import org.apache.fineract.portfolio.client.service.ClientReadPlatformService;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductRepository;
 import org.apache.fineract.useradministration.domain.AppUser;
+import org.apache.fineract.useradministration.domain.Role;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -327,6 +330,13 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
         if (centerId != null) {
             extraCriteria += " and g.center_id = ? ";
             paramList.add(centerId);
+        }
+        Set<Role> roles = appUser.getRoles();
+        for (Role userRole : roles) {
+            if (StringUtils.containsIgnoreCase(userRole.getName(),"Líder de agencia")){
+                    extraCriteria += " and ma.responsible_user_id = ? ";
+                    paramList.add(appUser.getId());
+            };
         }
 
         if (dpiNumber != null) {
