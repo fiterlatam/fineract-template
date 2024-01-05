@@ -285,6 +285,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
         }
         String sqlSearch = searchParameters.getSqlSearch();
         final Long officeId = searchParameters.getOfficeId();
+        final Long centerId = searchParameters.getCenterId();
         final String dpiNumber = searchParameters.getName();
         final String status = searchParameters.getStatus();
         final String type = searchParameters.getType();
@@ -321,6 +322,11 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
         if (officeId != null) {
             extraCriteria += " and c.office_id = ? ";
             paramList.add(officeId);
+        }
+
+        if (centerId != null) {
+            extraCriteria += " and g.center_id = ? ";
+            paramList.add(centerId);
         }
 
         if (dpiNumber != null) {
