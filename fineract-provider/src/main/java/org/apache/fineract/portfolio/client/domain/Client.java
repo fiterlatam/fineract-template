@@ -253,6 +253,9 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
     @Column(name = "secondlastname", nullable = false)
     private String secondlastname;
 
+    @Column(name = "loan_cycle", nullable = true)
+    private Integer loanCycle;
+
     public static Client createNew(final AppUser currentUser, final Office clientOffice, final Group clientParentGroup, final Staff staff,
             final Long savingsProductId, final CodeValue gender, final CodeValue clientType, final CodeValue clientClassification,
             final Integer legalForm, final ClientInfoRelatedDetail clientInfoRelatedDetail, final JsonCommand command) {
@@ -1129,5 +1132,12 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
 
     public void setClientInfoRelatedDetail(ClientInfoRelatedDetail clientInfoRelatedDetail) {
         this.clientInfoRelatedDetail = clientInfoRelatedDetail;
+    }
+
+    public Integer getLoanCycle() {
+        return this.loanCycle;
+    }
+    public void updateLoanCycle(final Integer loanCycle) {
+        this.loanCycle = loanCycle;
     }
 }
