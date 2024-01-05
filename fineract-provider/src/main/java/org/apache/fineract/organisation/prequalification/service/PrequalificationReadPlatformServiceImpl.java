@@ -302,6 +302,15 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             if (groupingType.equals("group")) {
                 extraCriteria += " and g.prequalification_type_enum = ? ";
                 paramList.add(PrequalificationType.GROUP.getValue());
+
+                Set<Role> roles = appUser.getRoles();
+                for (Role userRole : roles) {
+                    if (StringUtils.containsIgnoreCase(userRole.getName(),"Líder de agencia")){
+                        extraCriteria += " and ma.responsible_user_id = ? ";
+                        paramList.add(appUser.getId());
+                    };
+                }
+
             }
 
             if (groupingType.equals("individual")) {
@@ -330,13 +339,6 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
         if (centerId != null) {
             extraCriteria += " and g.center_id = ? ";
             paramList.add(centerId);
-        }
-        Set<Role> roles = appUser.getRoles();
-        for (Role userRole : roles) {
-            if (StringUtils.containsIgnoreCase(userRole.getName(),"Líder de agencia")){
-                    extraCriteria += " and ma.responsible_user_id = ? ";
-                    paramList.add(appUser.getId());
-            };
         }
 
         if (dpiNumber != null) {
