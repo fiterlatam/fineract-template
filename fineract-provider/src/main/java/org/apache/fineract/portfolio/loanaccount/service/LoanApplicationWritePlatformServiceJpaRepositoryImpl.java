@@ -530,7 +530,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                     }
                 }
                 if (groupPrequalification == null) {
-                    throw new GeneralPlatformDomainRuleException("error.msg.prequalification.is.not.linked.to.agrouo",
+                    throw new GeneralPlatformDomainRuleException("error.msg.prequalification.is.not.linked.to.a.group",
                             "Prequalificaion with number " + prequalificationGroup.getPrequalificationNumber()
                                     + " is not linked to a group");
                 }
@@ -1512,7 +1512,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                     }
                 }
                 if (groupPrequalification == null) {
-                    throw new GeneralPlatformDomainRuleException("error.msg.prequalification.is.not.linked.to.agrouo",
+                    throw new GeneralPlatformDomainRuleException("error.msg.prequalification.is.not.linked.to.a.group",
                             "Prequalificaion with number " + prequalificationGroup.getPrequalificationNumber()
                                     + " is not linked to a group");
                 }
