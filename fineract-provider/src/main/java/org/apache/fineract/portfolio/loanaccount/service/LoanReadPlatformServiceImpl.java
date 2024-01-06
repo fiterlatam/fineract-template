@@ -1745,8 +1745,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
 
     @Override
     public Integer retriveLoanCounterByClient(final Long clientId) {
-        final String sql = "Select COUNT(ml.id) from m_loan ml where ml.client_id = ? and ml.loan_status_id >=300 " +
-                "and ml.loan_status_id not in (400, 500, 601, 602)";
+        final String sql = "Select COUNT(ml.id) from m_loan ml where ml.client_id = ? and ml.loan_status_id >=300 "
+                + "and ml.loan_status_id not in (400, 500, 601, 602)";
         Integer loanCounter = this.jdbcTemplate.queryForObject(sql, new Object[] { clientId }, Integer.class);
         if (loanCounter != null) {
             return loanCounter;

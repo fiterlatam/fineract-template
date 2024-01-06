@@ -43,7 +43,7 @@ public final class SQLInjectionValidator {
         }
         String lowerCaseSQL = sqlSearch.toLowerCase();
         for (String ddl : DDL_COMMANDS) {
-            if (lowerCaseSQL.contains(ddl)) {
+            if (ddl.equals(lowerCaseSQL)) {
                 throw new SQLInjectionException();
             }
         }
