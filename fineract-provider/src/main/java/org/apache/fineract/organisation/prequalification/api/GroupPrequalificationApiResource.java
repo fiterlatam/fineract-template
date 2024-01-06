@@ -157,7 +157,7 @@ public class GroupPrequalificationApiResource {
 
         String clientName = queryParameters.getFirst("clientName");
         SearchParameters searchParameters = SearchParameters.forPrequalification(clientName, status, offset, limit, orderBy, sortOrder,
-                type, searchText, groupingType,portfolioCenterId);
+                type, searchText, groupingType, portfolioCenterId);
         final Page<GroupPrequalificationData> clientData = this.prequalificationReadPlatformService.retrieveAll(searchParameters);
 
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(queryParameters);

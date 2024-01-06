@@ -27,14 +27,14 @@
         <sql>
             <![CDATA[
                     with cte as (
-			select count(ml.id) client_cycle, mc.id
-			from m_client mc 
-			left join m_loan ml on ml.client_id = mc.id and  ml.loan_status_id >=300 and ml.loan_status_id not in (400, 500, 601, 602)
-			group by mc.id 
-		)
-		update m_client mc
-		join cte on cte.id = mc.id 
-		set mc.loan_cycle = cte.client_cycle;
+            select count(ml.id) client_cycle, mc.id
+            from m_client mc
+            left join m_loan ml on ml.client_id = mc.id and  ml.loan_status_id >=300 and ml.loan_status_id not in (400, 500, 601, 602)
+            group by mc.id
+        )
+        update m_client mc
+        join cte on cte.id = mc.id
+        set mc.loan_cycle = cte.client_cycle;
             ]]>
         </sql>
     </changeSet>

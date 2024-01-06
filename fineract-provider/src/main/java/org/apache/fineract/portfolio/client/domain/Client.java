@@ -1137,6 +1137,7 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
     public Integer getLoanCycle() {
         return this.loanCycle;
     }
+
     public void updateLoanCycle(final Integer loanCycle) {
         this.loanCycle = loanCycle;
     }

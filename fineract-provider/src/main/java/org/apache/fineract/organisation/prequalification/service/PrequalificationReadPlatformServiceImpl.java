@@ -22,11 +22,11 @@ import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
-
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
@@ -305,10 +305,11 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
 
                 Set<Role> roles = appUser.getRoles();
                 for (Role userRole : roles) {
-                    if (StringUtils.containsIgnoreCase(userRole.getName(),"Líder de agencia")){
+                    if (StringUtils.containsIgnoreCase(userRole.getName(), "Líder de agencia")) {
                         extraCriteria += " and ma.responsible_user_id = ? ";
                         paramList.add(appUser.getId());
-                    };
+                    }
+                    ;
                 }
 
             }
@@ -532,7 +533,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             final String productName = rs.getString("productName");
             final String comments = rs.getString("comments");
             final String latestComments = rs.getString("latestComments");
-            final LocalDate createdAt = JdbcSupport.getLocalDate(rs, "created_at");
+            final LocalDateTime createdAt = JdbcSupport.getLocalDateTime(rs, "created_at");
 
             final String addedBy = rs.getString("firstname") + " " + rs.getString("lastname");
             final Long agencyId = JdbcSupport.getLong(rs, "agencyId");
@@ -607,7 +608,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             final String prequalificationNumber = rs.getString("prequalificationNumber");
             String groupName = rs.getString("groupName");
             final String productName = rs.getString("productName");
-            final LocalDate createdAt = JdbcSupport.getLocalDate(rs, "created_at");
+            final LocalDateTime createdAt = JdbcSupport.getLocalDateTime(rs, "created_at");
             final String addedBy = rs.getString("firstname") + " " + rs.getString("lastname");
             return GroupPrequalificationData.simpeGroupData(id, prequalificationNumber, status, groupName, productName, addedBy, createdAt,
                     groupId);
@@ -645,7 +646,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             final String prequalificationNumber = rs.getString("prequalificationNumber");
             String groupName = rs.getString("groupName");
             final String productName = rs.getString("productName");
-            final LocalDate createdAt = JdbcSupport.getLocalDate(rs, "created_at");
+            final LocalDateTime createdAt = JdbcSupport.getLocalDateTime(rs, "created_at");
             final String addedBy = rs.getString("firstname") + " " + rs.getString("lastname");
             final Integer prequalificationTypeEnum = JdbcSupport.getInteger(rs, "prequalificationType");
             final EnumOptionData prequalificationType = PreQualificationsEnumerations.prequalificationType(prequalificationTypeEnum);
