@@ -182,6 +182,7 @@ public class RestructureCreditsWritePlatformServiceImpl implements RestructureCr
         loanObject.add("principal", this.fromApiJsonHelper.parse(request.getTotalLoanAmount().toPlainString()));
         loanObject.add("locale", command.jsonElement("locale"));
         loanObject.add("dateFormat", command.jsonElement("dateFormat"));
+        loanObject.addProperty("isRestructuredLoan", true);
         JsonElement finalCommand = this.fromApiJsonHelper.parse(loanObject.toString());
 
         JsonCommand jsonCommand = JsonCommand.fromExistingCommand(command, finalCommand);
