@@ -27,6 +27,7 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
@@ -852,6 +853,9 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         Money vatOnInterest = foreCloseDetail.getVatOnInterestCharged(currency);
         Money vatOnCharges = foreCloseDetail.getVatOnChargeExpected(currency);
         Money vatOnPenaltyCharges = foreCloseDetail.getVatOnPenaltyChargeExpected(currency);
+
+        clearTransactionInstallmentMappingForForeclosure(foreClosureDate, loan);
+
         loan.updateInstallmentsPostDate(foreClosureDate);
 
         LoanTransaction payment = null;
@@ -955,6 +959,27 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
                     this.standingInstructionRepository.save(accountTransferStandingInstruction);
                 }
             }
+        }
+    }
+
+    private void clearTransactionInstallmentMappingForForeclosure(LocalDate foreClosureDate, Loan loan) {
+        // FSAB-1 On foreclosure all installments on or after foreclosure date are removed and a single new installment is created.
+        // If any such installment is partially/completely paid then its reference from m_loan_transaction_repayment_schedule_mapping table
+        // is not removed causing a foreign key exception when the installment is deleted
+        for (final LoanRepaymentScheduleInstallment installment : loan.getRepaymentScheduleInstallments()) {
+            if (!installment.getDueDate().isBefore(foreClosureDate)) {
+                for (LoanTransaction transaction : loan.getLoanTransactions()) {
+                    if (transaction.isRepayment()) {
+                        Set<LoanTransactionToRepaymentScheduleMapping> mappings = transaction.getLoanTransactionToRepaymentScheduleMappings();
+                        boolean contains = mappings.stream().anyMatch(item -> Objects.equals(item.getLoanRepaymentScheduleInstallment().getInstallmentNumber(), installment.getInstallmentNumber()));
+                        if (contains) {
+                            transaction.getLoanTransactionToRepaymentScheduleMappings().clear();
+                            saveLoanTransactionWithDataIntegrityViolationChecks(transaction);
+                        }
+                    }
+                }
+            }
+
         }
     }
 
