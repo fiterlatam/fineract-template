@@ -232,7 +232,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
             newRepaymentTransaction.updateVatComponents(Money.zero(currency), Money.zero(currency), Money.zero(currency));
 
             // update the total amount of the transaction
-           // newRepaymentTransaction.updateTotal(currency);
+            newRepaymentTransaction.updateTotal(currency);
 
         }
 
