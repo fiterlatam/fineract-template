@@ -673,17 +673,20 @@ public final class LoanRepaymentScheduleInstallment extends AbstractAuditableCus
 
     public Money updateVatInterestComponents(final LocalDate transactionDate, final Money transactionAmountRemaining,
             final Money interestPortion) {
-
         final MonetaryCurrency currency = transactionAmountRemaining.getCurrency();
         Money interestPortionOfTransaction = Money.zero(currency);
-        Money vatOnInterestPortionOfTransaction = loan.calculateVatOnAmount(interestPortion);
+        Money vatOnInterestPortionOfTransaction = Money.zero(currency);
+        if (this.vatOnInterestPaid == null || (this.vatOnInterestCharged != null && this.vatOnInterestCharged.compareTo(this.vatOnInterestPaid) != 0)) {
 
-        interestPortionOfTransaction = interestPortionOfTransaction.plus(vatOnInterestPortionOfTransaction);
-        this.vatOnInterestPaid = getVatOnInterestPaid(currency).plus(vatOnInterestPortionOfTransaction).getAmount();
+            vatOnInterestPortionOfTransaction = loan.calculateVatOnAmount(interestPortion);
 
-        checkIfRepaymentPeriodObligationsAreMet(transactionDate, currency);
+            interestPortionOfTransaction = interestPortionOfTransaction.plus(vatOnInterestPortionOfTransaction);
+            this.vatOnInterestPaid = getVatOnInterestPaid(currency).plus(vatOnInterestPortionOfTransaction).getAmount();
 
-        trackAdvanceAndLateTotalsForRepaymentPeriod(transactionDate, currency, interestPortionOfTransaction);
+            checkIfRepaymentPeriodObligationsAreMet(transactionDate, currency);
+
+            trackAdvanceAndLateTotalsForRepaymentPeriod(transactionDate, currency, interestPortionOfTransaction);
+        }
 
         return vatOnInterestPortionOfTransaction;
     }

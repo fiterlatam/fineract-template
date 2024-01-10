@@ -272,8 +272,8 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
         return new LoanTransaction(loanTransaction.loan, loanTransaction.office, loanTransaction.typeOf, loanTransaction.dateOf,
                 loanTransaction.amount, loanTransaction.principalPortion, loanTransaction.interestPortion,
                 loanTransaction.feeChargesPortion, loanTransaction.penaltyChargesPortion, loanTransaction.overPaymentPortion,
-                loanTransaction.reversed, loanTransaction.paymentDetail, loanTransaction.externalId, loanTransaction.vatOnInterestPortion,
-                loanTransaction.vatOnChargesPortion);
+                loanTransaction.reversed, loanTransaction.paymentDetail, loanTransaction.externalId, BigDecimal.ZERO,
+                BigDecimal.ZERO);
     }
 
     public static LoanTransaction accrueLoanCharge(final Loan loan, final Office office, final Money amount, final LocalDate applyDate,
