@@ -1018,7 +1018,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         final boolean adjustGuarantee = command.booleanPrimitiveValueOfParameterNamed("adjustGuarantee");
 
         if (adjustGuarantee) {
-            this.savingsAccountWritePlatformService.releaseLoanGuarantee(loanId, command);
+            this.savingsAccountWritePlatformService.releaseLoanGuarantee(loanId, command,transactionDate);
         }
 
         return commandProcessingResultBuilder.withCommandId(command.commandId()) //
