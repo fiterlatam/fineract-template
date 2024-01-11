@@ -1,4 +1,4 @@
-name: FB PROD CI
+name: FB CI
 on:
   push:
     branches:
