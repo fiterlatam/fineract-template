@@ -553,4 +553,14 @@
         </sql>
     </changeSet>
 
+    <changeSet id="5" author="fineract">
+        <sql>
+            <![CDATA[
+                UPDATE stretchy_parameter SET parameter_label='Nombre de agencia' WHERE parameter_name='AgencyIdSelectOne';
+                UPDATE stretchy_parameter SET parameter_label='Miembro' WHERE parameter_name='selectmember';
+                UPDATE stretchy_parameter SET parameter_label='Como en la fecha' WHERE parameter_name='asOnDate';
+            ]]>
+        </sql>
+    </changeSet>
+
 </databaseChangeLog>
