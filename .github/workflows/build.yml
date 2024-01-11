@@ -45,7 +45,7 @@ jobs:
           
       - name: Update YAML file
         run: |
-          sed -i 's/qa-backend.*/qa-backend:${{ steps.commit.outputs.short }}/' helm/back-deployment.yaml
+          sed -i 's/prod-backend.*/prod-backend:${{ steps.commit.outputs.short }}/' helm/back-deployment.yaml
 
       - name: Commit changes
         run: |
