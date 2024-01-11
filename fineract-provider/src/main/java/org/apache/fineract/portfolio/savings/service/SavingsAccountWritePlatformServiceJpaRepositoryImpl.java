@@ -2200,13 +2200,7 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
             object.addProperty("transactionAmount", holdTransaction.getAmount());
             command.setJsonCommand(object.toString());
 
-            CommandProcessingResult withdrawalResult = this.withdrawal(savingsId, command);
-            SavingsAccountTransaction withdrawalTransaction = this.savingsAccountTransactionRepository
-                    .findOneByIdAndSavingsAccountId(withdrawalResult.resourceId(), savingsId);
-            withdrawalTransaction.setLoanId(loanId);
-            this.savingsAccountTransactionRepository.saveAndFlush(withdrawalTransaction);
-
-            return new CommandProcessingResultBuilder().withEntityId(withdrawalResult.resourceId())
+            return new CommandProcessingResultBuilder().withEntityId(releaseResult.resourceId())
                     .withOfficeId(holdTransaction.getSavingsAccount().officeId())
                     .withClientId(holdTransaction.getSavingsAccount().clientId()).withGroupId(holdTransaction.getSavingsAccount().groupId())
                     .withSavingsId(holdTransaction.getSavingsAccount().getId()).build();
