@@ -938,4 +938,8 @@ public final class SavingsAccountTransaction extends AbstractPersistableCustom {
     public void setLoanId(Long loanId) {
         this.loanId = loanId;
     }
+
+    public void updateDateOf(LocalDate transactionDate) {
+        this.dateOf =transactionDate;
+    }
 }
