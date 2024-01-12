@@ -140,21 +140,21 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
 
     @Autowired
     public PrequalificationWritePlatformServiceImpl(final PlatformSecurityContext context,
-                                                    final PrequalificationDataValidator dataValidator, final GroupRepositoryWrapper groupRepositoryWrapper,
-                                                    final AppUserRepository appUserRepository, final LoanProductRepository loanProductRepository,
-                                                    final ClientReadPlatformService clientReadPlatformService, final AgencyRepositoryWrapper agencyRepositoryWrapper,
-                                                    final PrequalificationMemberCommandFromApiJsonDeserializer apiJsonDeserializer,
-                                                    final PrequalificationGroupMemberRepositoryWrapper preQualificationMemberRepository,
-                                                    final PreQualificationStatusLogRepository preQualificationLogRepository,
-                                                    final PrequalificationChecklistReadPlatformService prequalificationChecklistReadPlatformService,
-                                                    final CodeValueReadPlatformService codeValueReadPlatformService, final JdbcTemplate jdbcTemplate,
-                                                    final ContentRepositoryFactory contentRepositoryFactory, final DocumentRepository documentRepository,
-                                                    final DocumentReadPlatformService documentReadPlatformService,
-                                                    final GroupPrequalificationRelationshipRepository groupPrequalificationRelationshipRepository,
-                                                    final PrequalificationGroupRepositoryWrapper prequalificationGroupRepositoryWrapper,
-                                                    final PrequalificationStatusRangeRepository prequalificationStatusRangeRepository,
-                                                    PrequalificationReadPlatformService prequalificationReadPlatformService, FromJsonHelper fromApiJsonHelper,
-                                                    LoanApplicationWritePlatformService loanApplicationWritePlatformService) {
+            final PrequalificationDataValidator dataValidator, final GroupRepositoryWrapper groupRepositoryWrapper,
+            final AppUserRepository appUserRepository, final LoanProductRepository loanProductRepository,
+            final ClientReadPlatformService clientReadPlatformService, final AgencyRepositoryWrapper agencyRepositoryWrapper,
+            final PrequalificationMemberCommandFromApiJsonDeserializer apiJsonDeserializer,
+            final PrequalificationGroupMemberRepositoryWrapper preQualificationMemberRepository,
+            final PreQualificationStatusLogRepository preQualificationLogRepository,
+            final PrequalificationChecklistReadPlatformService prequalificationChecklistReadPlatformService,
+            final CodeValueReadPlatformService codeValueReadPlatformService, final JdbcTemplate jdbcTemplate,
+            final ContentRepositoryFactory contentRepositoryFactory, final DocumentRepository documentRepository,
+            final DocumentReadPlatformService documentReadPlatformService,
+            final GroupPrequalificationRelationshipRepository groupPrequalificationRelationshipRepository,
+            final PrequalificationGroupRepositoryWrapper prequalificationGroupRepositoryWrapper,
+            final PrequalificationStatusRangeRepository prequalificationStatusRangeRepository,
+            PrequalificationReadPlatformService prequalificationReadPlatformService, FromJsonHelper fromApiJsonHelper,
+            LoanApplicationWritePlatformService loanApplicationWritePlatformService) {
         this.context = context;
         this.dataValidator = dataValidator;
         this.loanProductRepository = loanProductRepository;
@@ -266,7 +266,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
 
     @NotNull
     private String resolvePrequalificationNumber(Boolean individualPrequalification, Agency agency,
-                                                 PrequalificationGroup prequalificationGroup) {
+            PrequalificationGroup prequalificationGroup) {
         StringBuilder prequalSB = new StringBuilder();
         prequalSB.append("PRECAL-");
         String prequalificationNumber = StringUtils.leftPad(prequalificationGroup.getId().toString(), 4, '0');
@@ -531,7 +531,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
     }
 
     private List<PrequalificationGroupMember> assembleMembersForUpdate(JsonCommand command, PrequalificationGroup prequalificationGroup,
-                                                                       AppUser addedBy) {
+            AppUser addedBy) {
 
         final List<PrequalificationGroupMember> allMembers = new ArrayList<>();
 
@@ -567,7 +567,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
     }
 
     private PrequalificationGroupMember assembleMemberForUpdate(JsonElement memberElement,
-                                                                PrequalificationGroupMember prequalificationGroupMember, AppUser addedBy, PrequalificationGroup prequalificationGroup) {
+            PrequalificationGroupMember prequalificationGroupMember, AppUser addedBy, PrequalificationGroup prequalificationGroup) {
         apiJsonDeserializer.validateForUpdate(memberElement.toString());
 
         JsonCommand command = JsonCommand.fromJsonElement(prequalificationGroupMember.getId(), memberElement, new FromJsonHelper());
@@ -867,7 +867,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
     }
 
     private void approveOrRejectLoanApplications(final PrequalificationGroup prequalificationGroup,
-                                                 final PrequalificationStatus prequalificationStatus, final List<MemberPrequalificationData> prequalificationMembers) {
+            final PrequalificationStatus prequalificationStatus, final List<MemberPrequalificationData> prequalificationMembers) {
         final Long prequalificationId = prequalificationGroup.getId();
         final List<PrequalificationGroupMember> groupMembers = prequalificationGroup.getMembers();
         final List<MemberPrequalificationData> approvedPrequalificationMembers = prequalificationMembers.stream()
@@ -886,7 +886,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                     && (memberPrequalificationData.getIsSelected() || prequalificationGroup.isPrequalificationTypeIndividual());
             final boolean isRejected = PrequalificationStatus.REJECTED.equals(prequalificationStatus)
                     || (!memberPrequalificationData.getIsSelected() && PrequalificationStatus.COMPLETED.equals(prequalificationStatus)
-                    && prequalificationGroup.isPrequalificationTypeGroup());
+                            && prequalificationGroup.isPrequalificationTypeGroup());
             final BigDecimal approvedLoanAmount = prequalificationGroupMember.getApprovedAmount();
             final String dpi = prequalificationGroupMember.getDpi();
             List<LoanData> submittedLoans;

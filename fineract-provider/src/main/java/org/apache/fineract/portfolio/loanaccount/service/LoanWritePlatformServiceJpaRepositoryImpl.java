@@ -144,6 +144,7 @@ import org.apache.fineract.portfolio.charge.exception.LoanChargeNotFoundExceptio
 import org.apache.fineract.portfolio.charge.exception.LoanChargeWaiveCannotBeReversedException;
 import org.apache.fineract.portfolio.charge.exception.LoanChargeWaiveCannotBeReversedException.LoanChargeWaiveCannotUndoReason;
 import org.apache.fineract.portfolio.client.domain.Client;
+import org.apache.fineract.portfolio.client.domain.ClientRepositoryWrapper;
 import org.apache.fineract.portfolio.client.exception.ClientNotActiveException;
 import org.apache.fineract.portfolio.collateralmanagement.domain.ClientCollateralManagement;
 import org.apache.fineract.portfolio.collateralmanagement.exception.LoanCollateralAmountNotSufficientException;
@@ -284,6 +285,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
     private final SavingsAccountWritePlatformService savingsAccountWritePlatformService;
 
+    private final ClientRepositoryWrapper clientRepository;
+
     private LoanLifecycleStateMachine defaultLoanLifecycleStateMachine() {
         final List<LoanStatus> allowedLoanStatuses = Arrays.asList(LoanStatus.values());
         return new DefaultLoanLifecycleStateMachine(allowedLoanStatuses);
@@ -407,6 +410,11 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 .isPaymnetypeApplicableforDisbursementCharge();
 
         // Recalculate first repayment date based in actual disbursement date.
+        Client client = loan.getClient();
+        Integer loanCycle = this.loanReadPlatformService.retriveLoanCounterByClient(client.getId());
+        client.updateLoanCycle(loanCycle + 1);
+        this.clientRepository.save(client);
+
         updateLoanCounters(loan, actualDisbursementDate, command);
         Money amountBeforeAdjust = loan.getPrincpal();
         loan.validateAccountStatus(LoanEvent.LOAN_DISBURSED);
@@ -1010,7 +1018,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         final boolean adjustGuarantee = command.booleanPrimitiveValueOfParameterNamed("adjustGuarantee");
 
         if (adjustGuarantee) {
-            this.savingsAccountWritePlatformService.releaseLoanGuarantee(loanId, command);
+            this.savingsAccountWritePlatformService.releaseLoanGuarantee(loanId, command,transactionDate);
         }
 
         return commandProcessingResultBuilder.withCommandId(command.commandId()) //
@@ -2489,6 +2497,10 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         }
         loan.updateClientLoanCounter(null);
         loan.updateLoanProductLoanCounter(null);
+
+        Client client = loan.getClient();
+        client.updateLoanCycle(client.getLoanCycle() - 1);
+        this.clientRepository.save(client);
 
     }
 

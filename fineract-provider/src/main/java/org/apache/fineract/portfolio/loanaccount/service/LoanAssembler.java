@@ -120,16 +120,16 @@ public class LoanAssembler {
 
     @Autowired
     public LoanAssembler(final FromJsonHelper fromApiJsonHelper, final LoanRepositoryWrapper loanRepository,
-                         final LoanProductRepository loanProductRepository, final ClientRepositoryWrapper clientRepository,
-                         final GroupRepository groupRepository, final FundRepository fundRepository,
-                         final LoanTransactionProcessingStrategyRepository loanTransactionProcessingStrategyRepository,
-                         final StaffRepository staffRepository, final CodeValueRepositoryWrapper codeValueRepository,
-                         final LoanScheduleAssembler loanScheduleAssembler, final LoanChargeAssembler loanChargeAssembler,
-                         final LoanCollateralAssembler collateralAssembler, final LoanSummaryWrapper loanSummaryWrapper,
-                         final LoanRepaymentScheduleTransactionProcessorFactory loanRepaymentScheduleTransactionProcessorFactory,
-                         final HolidayRepository holidayRepository, final ConfigurationDomainService configurationDomainService,
-                         final WorkingDaysRepositoryWrapper workingDaysRepository, final LoanUtilService loanUtilService, RateAssembler rateAssembler,
-                         PrequalificationGroupRepositoryWrapper prequalificationGroupRepositoryWrapper) {
+            final LoanProductRepository loanProductRepository, final ClientRepositoryWrapper clientRepository,
+            final GroupRepository groupRepository, final FundRepository fundRepository,
+            final LoanTransactionProcessingStrategyRepository loanTransactionProcessingStrategyRepository,
+            final StaffRepository staffRepository, final CodeValueRepositoryWrapper codeValueRepository,
+            final LoanScheduleAssembler loanScheduleAssembler, final LoanChargeAssembler loanChargeAssembler,
+            final LoanCollateralAssembler collateralAssembler, final LoanSummaryWrapper loanSummaryWrapper,
+            final LoanRepaymentScheduleTransactionProcessorFactory loanRepaymentScheduleTransactionProcessorFactory,
+            final HolidayRepository holidayRepository, final ConfigurationDomainService configurationDomainService,
+            final WorkingDaysRepositoryWrapper workingDaysRepository, final LoanUtilService loanUtilService, RateAssembler rateAssembler,
+            PrequalificationGroupRepositoryWrapper prequalificationGroupRepositoryWrapper) {
         this.fromApiJsonHelper = fromApiJsonHelper;
         this.loanRepository = loanRepository;
         this.loanProductRepository = loanProductRepository;
@@ -350,7 +350,8 @@ public class LoanAssembler {
 
         PrequalificationGroup prequalificationGroup = null;
         final Boolean isBulkImport = this.fromApiJsonHelper.extractBooleanNamed("isBulkImport", element);
-        if (isBulkImport == null || !isBulkImport) {
+        final Boolean isRestructuredLoan = this.fromApiJsonHelper.extractBooleanNamed("isRestructuredLoan", element);
+        if ((isBulkImport == null || !isBulkImport) && (isRestructuredLoan == null || !isRestructuredLoan)) {
             final Long prequalificationId = this.fromApiJsonHelper.extractLongNamed("prequalificationId", element);
             prequalificationGroup = this.prequalificationGroupRepositoryWrapper.findOneWithNotFoundDetection(prequalificationId);
             if (!PrequalificationStatus.BURO_CHECKED.getValue().equals(prequalificationGroup.getStatus())) {
