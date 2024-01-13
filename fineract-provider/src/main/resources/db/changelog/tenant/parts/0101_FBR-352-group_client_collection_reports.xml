@@ -40,220 +40,152 @@
                 stripComments="true"/>
     </changeSet>
 
-    <changeSet author="fineract" id="7">
+    <changeSet author="fineract" id="3">
+
         <sql>
-            UPDATE stretchy_report SET report_sql = "SELECT
-            t.clientId AS 'Nro Solicitud',
-            t.clientNo AS 'Codigo Cliente',
-            t.clientName AS 'Cliente',
-            t.groupNo AS 'Nro Grupo',
-            t.groupName AS 'Nombre Grupo',
-            t.agencyName AS 'Agencia',
-            t.approvedPrincipal AS 'Monto Otorgado',
-            t.outstandingPrincipal AS 'Saldo Capital',
-            t.repaidPrincipal AS 'Capital Recuperado',
-            t.repaidInterest AS 'Intereses',
-            t.totalRepaid AS 'Total Cobrad'
-            FROM
-            (
+            UPDATE stretchy_report SET report_sql='SELECT
+            t.clientId AS ''Nro Solicitud'',
+            t.clientNo AS ''Codigo Cliente'',
+            t.clientName AS ''Cliente'',
+            t.groupNo AS ''Nro Grupo'',
+            t.groupName AS ''Nombre Grupo'',
+            t.agencyName AS ''Agencia'',
+            t.approvedPrincipal AS ''Monto Otorgado'',
+            t.outstandingPrincipal AS ''Saldo Capital'',
+            t.repaidPrincipal AS ''Capital Recuperado'',
+            t.repaidInterest AS ''Intereses'',
+            t.totalRepaid AS ''Total Cobrad''
+            FROM (
             SELECT
             group_client.id AS clientId,
             group_client.account_no AS clientNo,
             group_client.display_name AS clientName,
-            COALESCE(mg.account_no, 'N/A') AS groupNo,
-            COALESCE(mg.display_name, 'N/A') AS groupName,
-            COALESCE(ma.name, 'N/A') AS agencyName,
+            COALESCE(mg.account_no, ''N/A'') AS groupNo,
+            COALESCE(mg.display_name, ''N/A'') AS groupName,
+            COALESCE(ma.name, ''N/A'')  AS agencyName,
             client_loan.approved_principal AS approvedPrincipal ,
             client_loan.principal_outstanding_derived AS outstandingPrincipal,
             client_loan.principal_repaid_derived AS repaidPrincipal,
             client_loan.interest_repaid_derived AS repaidInterest,
             client_loan.total_repaid AS totalRepaid
             -- current user --
-            FROM
-            m_office mo
-            LEFT JOIN m_office office_under ON
-            office_under.hierarchy LIKE CONCAT(mo.hierarchy, '%')
-            AND office_under.hierarchy LIKE CONCAT('${currentUserHierarchy}', '%')
+            FROM m_office mo
+            LEFT JOIN m_office office_under ON office_under.hierarchy LIKE CONCAT(mo.hierarchy, ''%'')
+            AND office_under.hierarchy LIKE CONCAT(''${currentUserHierarchy}'', ''%'')
             -- agency --
-            LEFT JOIN m_appuser agency_responsible_user ON
-            agency_responsible_user.office_id = office_under.id
-            LEFT JOIN m_office agency_responsible_user_office ON
-            agency_responsible_user_office.id = agency_responsible_user.office_id
-            INNER JOIN m_agency ma ON
-            ma.responsible_user_id = agency_responsible_user.id
-            LEFT JOIN m_office agency_office_under ON
-            agency_office_under.hierarchy LIKE CONCAT(agency_responsible_user_office.hierarchy, '%')
+            LEFT JOIN m_appuser agency_responsible_user ON agency_responsible_user.office_id  = office_under.id
+            LEFT JOIN m_office agency_responsible_user_office ON agency_responsible_user_office.id = agency_responsible_user.office_id
+            INNER JOIN m_agency ma ON ma.responsible_user_id = agency_responsible_user.id
+            LEFT JOIN m_office agency_office_under ON agency_office_under.hierarchy LIKE CONCAT(agency_responsible_user_office.hierarchy, ''%'')
             -- supervision --
-            LEFT JOIN m_appuser supervison_responsible_user ON
-            agency_responsible_user.office_id = agency_office_under.id
-            LEFT JOIN m_office supervision_responsible_user_office ON
-            supervision_responsible_user_office.id = supervison_responsible_user.office_id
-            LEFT JOIN m_supervision ms ON
-            ms.responsible_user_id = supervison_responsible_user.id
-            LEFT JOIN m_office supervison_office_under ON
-            supervison_office_under.hierarchy LIKE CONCAT(supervision_responsible_user_office.hierarchy, '%')
+            LEFT JOIN m_appuser supervison_responsible_user ON agency_responsible_user.office_id = agency_office_under.id
+            LEFT JOIN m_office supervision_responsible_user_office ON supervision_responsible_user_office.id = supervison_responsible_user.office_id
+            LEFT JOIN m_supervision ms ON ms.responsible_user_id = supervison_responsible_user.id
+            LEFT JOIN m_office supervison_office_under ON supervison_office_under.hierarchy LIKE CONCAT(supervision_responsible_user_office.hierarchy, ''%'')
             -- porfolio ---
-            LEFT JOIN m_appuser portfolio_responsible_user ON
-            portfolio_responsible_user.office_id = supervison_office_under.id
-            LEFT JOIN m_portfolio mp ON
-            mp.responsible_user_id = portfolio_responsible_user.id
+            LEFT JOIN m_appuser portfolio_responsible_user ON portfolio_responsible_user.office_id = supervison_office_under.id
+            LEFT JOIN m_portfolio mp ON mp.responsible_user_id = portfolio_responsible_user.id
             -- group client loan ---
-            LEFT JOIN m_group center ON
-            center.portfolio_id = mp.id
-            LEFT JOIN m_group mg ON
-            mg.parent_id = center.id
-            LEFT JOIN m_group_client mgc ON
-            mgc.group_id = mg.id
-            LEFT JOIN m_client group_client ON
-            group_client.id = mgc.client_id
-            LEFT JOIN m_loan ml ON
-            ml.client_id = group_client.id
-            INNER JOIN (
-            SELECT
-            SUM(IFNULL(m_loan.approved_principal, 0)) AS approved_principal,
+            LEFT JOIN m_group center ON center.portfolio_id = mp.id
+            LEFT JOIN m_group mg ON mg.parent_id = center.id
+            LEFT JOIN m_group_client mgc ON mgc.group_id = mg.id
+            LEFT JOIN m_client group_client ON group_client.id = mgc.client_id
+            LEFT JOIN m_loan ml ON ml.client_id = group_client.id
+            LEFT JOIN (
+            SELECT SUM(IFNULL(m_loan.approved_principal, 0)) AS approved_principal,
             SUM(IFNULL(m_loan.principal_outstanding_derived, 0)) AS principal_outstanding_derived,
-            SUM(IFNULL(m_loan.principal_repaid_derived, 0)) AS principal_repaid_derived,
+            SUM(IFNULL(m_loan.principal_repaid_derived, 0)) AS  principal_repaid_derived,
             SUM(IFNULL(m_loan.interest_repaid_derived, 0)) AS interest_repaid_derived,
             SUM(IFNULL(m_loan.principal_repaid_derived, 0) + IFNULL(m_loan.interest_repaid_derived, 0)) AS total_repaid,
             m_loan.client_id AS client_id
-            FROM
-            m_loan m_loan
-            WHERE
-            (m_loan.submittedon_date BETWEEN '${submittedOnStartDate}' AND '${submittedOnEndDate}')
-            AND (m_loan.fund_id = '${fundId}'
-            OR '-1' = '${fundId}')
-            AND (m_loan.loan_status_id = 300)
-            GROUP BY
-            m_loan.client_id
-            ) client_loan ON
-            client_loan.client_id = ml.client_id
-            GROUP BY
-            group_client.id
+            FROM m_loan m_loan
+            GROUP BY m_loan.client_id
+            ) client_loan ON client_loan.client_id = ml.client_id
+            WHERE (ml.submittedon_date BETWEEN ''${submittedOnStartDate}'' AND ''${submittedOnEndDate}'') AND (ml.fund_id = ''${fundId}'' OR ''-1'' = ''${fundId}'') AND (mgc.client_id IS NOT NULL)
+            GROUP BY group_client.id
             UNION ALL
             SELECT
             mc.id AS clientId,
             mc.account_no AS clientNo,
             mc.display_name AS clientName,
-            'N/A' AS groupNo,
-            'N/A' AS groupName,
-            'N/A' AS agencyNam,
+            ''N/A'' AS groupNo,
+            ''N/A'' AS groupName,
+            ''N/A''  AS agencyNam,
             client_loan.approved_principal AS approvedPrincipal,
             client_loan.principal_outstanding_derived AS outstandingPrincipal,
             client_loan.principal_repaid_derived AS repaidPrincipal,
             client_loan.interest_repaid_derived AS repaidInterest,
             client_loan.total_repaid AS totalRepaid
             -- current user --
-            FROM
-            m_office mo
-            LEFT JOIN m_office office_under ON
-            office_under.hierarchy LIKE CONCAT(mo.hierarchy, '%')
-            AND office_under.hierarchy LIKE CONCAT('${currentUserHierarchy}', '%')
+            FROM m_office mo
+            LEFT JOIN m_office office_under ON office_under.hierarchy LIKE CONCAT(mo.hierarchy, ''%'')
+            AND office_under.hierarchy LIKE CONCAT(''${currentUserHierarchy}'', ''%'')
             -- individual client --
-            INNER JOIN m_client mc ON
-            mc.office_id = office_under.id
-            LEFT JOIN m_loan ml ON
-            ml.client_id = mc.id
+            INNER JOIN m_client mc ON mc.office_id = office_under.id
+            LEFT JOIN m_loan ml ON ml.client_id = mc.id
             INNER JOIN (
-            SELECT
-            SUM(IFNULL(m_loan.approved_principal, 0)) AS approved_principal,
+            SELECT SUM(IFNULL(m_loan.approved_principal, 0)) AS approved_principal,
             SUM(IFNULL(m_loan.principal_outstanding_derived, 0)) AS principal_outstanding_derived,
-            SUM(IFNULL(m_loan.principal_repaid_derived, 0)) AS principal_repaid_derived,
+            SUM(IFNULL(m_loan.principal_repaid_derived, 0)) AS  principal_repaid_derived,
             SUM(IFNULL(m_loan.interest_repaid_derived, 0)) AS interest_repaid_derived,
             SUM(IFNULL(m_loan.principal_repaid_derived, 0) + IFNULL(m_loan.interest_repaid_derived, 0)) AS total_repaid,
             m_loan.client_id AS client_id
-            FROM
-            m_loan m_loan
-            WHERE
-            (m_loan.submittedon_date BETWEEN '${submittedOnStartDate}' AND '${submittedOnEndDate}')
-            AND (m_loan.fund_id = '${fundId}'
-            OR '-1' = '${fundId}')
-            AND (m_loan.loan_status_id = 300)
-            GROUP BY
-            m_loan.client_id
-            ) client_loan ON
-            client_loan.client_id = ml.client_id
-            LEFT JOIN m_group_client mgc ON
-            mgc.client_id = mc.id
-            WHERE
-            mgc.client_id IS NULL
-            GROUP BY
-            mc.id
-            ) t
-            ORDER BY
-            t.clientId" WHERE report_name = "Reporte por Clienta de Cobranzas y Saldos por Financista";
+            FROM m_loan m_loan
+            GROUP BY m_loan.client_id
+            ) client_loan ON client_loan.client_id = ml.client_id
+            LEFT JOIN m_group_client mgc ON mgc.client_id = mc.id
+            WHERE (ml.submittedon_date BETWEEN ''${submittedOnStartDate}'' AND ''${submittedOnEndDate}'') AND (ml.fund_id = ''${fundId}'' OR ''-1'' = ''${fundId}'') AND (mgc.client_id IS NULL)
+            GROUP BY mc.id
+            ) t ORDER BY t.clientId' WHERE report_name='Reporte por Clienta de Cobranzas y Saldos por Financista';
         </sql>
     </changeSet>
-    <changeSet author="fineract" id="6">
+    <changeSet author="fineract" id="4">
         <sql>
-            UPDATE stretchy_report SET report_sql = "SELECT
-            mg.id AS 'Nro Solicitud',
-            mg.account_no AS 'Nro Grupo',
-            mg.display_name AS 'Nombre Grupo',
-            ma.name AS 'Agencia',
-            group_loan.approved_principal AS 'Monto Otorgado',
-            group_loan.principal_outstanding_derived AS 'Saldo Capital',
-            group_loan.principal_repaid_derived AS 'Capital Recuperado',
-            group_loan.interest_repaid_derived AS 'Intereses',
-            group_loan.total_repaid AS 'Total Cobrad'
+            UPDATE stretchy_report SET report_sql='SELECT
+            mg.id AS ''Nro Solicitud'',
+            mg.account_no AS ''Nro Grupo'',
+            mg.display_name AS ''Nombre Grupo'',
+            ma.name AS ''Agencia'',
+            group_loan.approved_principal AS ''Monto Otorgado'',
+            group_loan.principal_outstanding_derived AS ''Saldo Capital'',
+            group_loan.principal_repaid_derived AS ''Capital Recuperado'',
+            group_loan.interest_repaid_derived AS ''Intereses'',
+            group_loan.total_repaid AS ''Total Cobrad''
             -- current user --
-            FROM
-            m_office mo
-            LEFT JOIN m_office office_under ON
-            office_under.hierarchy LIKE CONCAT(mo.hierarchy, '%')
-            AND office_under.hierarchy LIKE CONCAT('${currentUserHierarchy}', '%')
+            FROM m_office mo
+            LEFT JOIN m_office office_under ON office_under.hierarchy LIKE CONCAT(mo.hierarchy, ''%'')
+            AND office_under.hierarchy LIKE CONCAT(''${currentUserHierarchy}'', ''%'')
             -- agency --
-            LEFT JOIN m_appuser agency_responsible_user ON
-            agency_responsible_user.office_id = office_under.id
-            LEFT JOIN m_office agency_responsible_user_office ON
-            agency_responsible_user_office.id = agency_responsible_user.office_id
-            INNER JOIN m_agency ma ON
-            ma.responsible_user_id = agency_responsible_user.id
-            LEFT JOIN m_office agency_office_under ON
-            agency_office_under.hierarchy LIKE CONCAT(agency_responsible_user_office.hierarchy, '%')
+            LEFT JOIN m_appuser agency_responsible_user ON agency_responsible_user.office_id  = office_under.id
+            LEFT JOIN m_office agency_responsible_user_office ON agency_responsible_user_office.id = agency_responsible_user.office_id
+            INNER JOIN m_agency ma ON ma.responsible_user_id = agency_responsible_user.id
+            LEFT JOIN m_office agency_office_under ON agency_office_under.hierarchy LIKE CONCAT(agency_responsible_user_office.hierarchy, ''%'')
             -- supervision --
-            LEFT JOIN m_appuser supervison_responsible_user ON
-            agency_responsible_user.office_id = agency_office_under.id
-            LEFT JOIN m_office supervision_responsible_user_office ON
-            supervision_responsible_user_office.id = supervison_responsible_user.office_id
-            LEFT JOIN m_supervision ms ON
-            ms.responsible_user_id = supervison_responsible_user.id
-            LEFT JOIN m_office supervison_office_under ON
-            supervison_office_under.hierarchy LIKE CONCAT(supervision_responsible_user_office.hierarchy, '%')
+            LEFT JOIN m_appuser supervison_responsible_user ON agency_responsible_user.office_id = agency_office_under.id
+            LEFT JOIN m_office supervision_responsible_user_office ON supervision_responsible_user_office.id = supervison_responsible_user.office_id
+            LEFT JOIN m_supervision ms ON ms.responsible_user_id = supervison_responsible_user.id
+            LEFT JOIN m_office supervison_office_under ON supervison_office_under.hierarchy LIKE CONCAT(supervision_responsible_user_office.hierarchy, ''%'')
             -- porfolio ---
-            LEFT JOIN m_appuser portfolio_responsible_user ON
-            portfolio_responsible_user.office_id = supervison_office_under.id
-            LEFT JOIN m_portfolio mp ON
-            mp.responsible_user_id = portfolio_responsible_user.id
+            LEFT JOIN m_appuser portfolio_responsible_user ON portfolio_responsible_user.office_id = supervison_office_under.id
+            LEFT JOIN m_portfolio mp ON mp.responsible_user_id = portfolio_responsible_user.id
             -- loans ---
-            LEFT JOIN m_group center ON
-            center.portfolio_id = mp.id
-            LEFT JOIN m_group mg ON
-            mg.parent_id = center.id
-            LEFT JOIN m_loan ml ON
-            ml.group_id = mg.id
+            LEFT JOIN m_group center ON center.portfolio_id = mp.id
+            LEFT JOIN m_group mg ON mg.parent_id = center.id
+            LEFT JOIN m_loan ml ON ml.group_id = mg.id
             INNER JOIN (
-            SELECT
-            SUM(IFNULL(m_loan.approved_principal, 0)) AS approved_principal,
+            SELECT SUM(IFNULL(m_loan.approved_principal, 0)) AS approved_principal,
             SUM(IFNULL(m_loan.principal_outstanding_derived, 0)) AS principal_outstanding_derived,
-            SUM(IFNULL(m_loan.principal_repaid_derived, 0)) AS principal_repaid_derived,
+            SUM(IFNULL(m_loan.principal_repaid_derived, 0)) AS  principal_repaid_derived,
             SUM(IFNULL(m_loan.interest_repaid_derived, 0)) AS interest_repaid_derived,
             SUM(IFNULL(m_loan.principal_repaid_derived, 0) + IFNULL(m_loan.interest_repaid_derived, 0)) AS total_repaid,
             m_loan.group_id AS group_id
-            FROM
-            m_loan m_loan
-            WHERE
-            (m_loan.submittedon_date BETWEEN '${submittedOnStartDate}' AND '${submittedOnEndDate}')
-            AND (m_loan.fund_id = '${fundId}'
-            OR '-1' = '${fundId}')
-            AND (m_loan.loan_status_id = 300)
-            GROUP BY
-            m_loan.group_id
-            ) group_loan ON
-            group_loan.group_id = mg.id
-            GROUP BY
-            mg.id
-            ORDER BY
-            mg.id" WHERE report_name = "Reporte Grupal de Cobranzas y Saldos por Financista";
+            FROM m_loan m_loan
+            GROUP BY m_loan.group_id
+            ) group_loan ON group_loan.group_id = mg.id
+            WHERE (ml.submittedon_date BETWEEN ''${submittedOnStartDate}'' AND ''${submittedOnEndDate}'')
+            AND (ml.fund_id = ''${fundId}'' OR ''-1'' = ''${fundId}'')
+            GROUP BY mg.id
+            ORDER BY mg.id' WHERE report_name='Reporte Grupal de Cobranzas y Saldos por Financista';
         </sql>
     </changeSet>
     <changeSet author="fineract" id="5">

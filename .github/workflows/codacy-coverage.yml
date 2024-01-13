@@ -2,10 +2,10 @@ name: FB - Codacy Coverage Reporter
 on:
   push:
     branches:
-      - fiter/fb/dev
+      - fiter/fb/qa
   pull_request:
     branches:
-      - fiter/fb/dev
+      - fiter/fb/qa
 jobs:
   codacy-coverage-reporter:
     name: Build and upload code coverage report

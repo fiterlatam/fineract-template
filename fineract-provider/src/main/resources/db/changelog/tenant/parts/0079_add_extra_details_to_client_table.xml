@@ -43,8 +43,8 @@
     </changeSet>
 
     <changeSet author="fineract" id="2">
-            <modifyDataType tableName="m_client" columnName="economic_sector" newDataType="BIGINT"/>
-            <modifyDataType tableName="m_client" columnName="economic_activity" newDataType="BIGINT"/>
+        <modifyDataType tableName="m_client" columnName="economic_sector" newDataType="BIGINT"/>
+        <modifyDataType tableName="m_client" columnName="economic_activity" newDataType="BIGINT"/>
     </changeSet>
 
     <changeSet author="fineract" id="3">

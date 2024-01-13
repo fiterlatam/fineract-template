@@ -85,7 +85,6 @@ public final class AllGroupTypesDataMapper implements RowMapper<GroupGeneralData
         sqlBuilder.append("g.meeting_end_time as meetingEndTime, g.reference_point as referencePoint, ");
         sqlBuilder.append("prequalGroup.prequalification_number as prequalificationNumber, "
                 + "prequalGroup.status as prequalificationStatus, g.prequalification_id as prequalificationId ");
-
         sqlBuilder.append("from m_group g ");
         sqlBuilder.append("join m_office o on o.id = g.office_id ");
         sqlBuilder.append("left join m_staff s on s.id = g.staff_id ");

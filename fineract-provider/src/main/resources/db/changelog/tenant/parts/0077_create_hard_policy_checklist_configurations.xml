@@ -144,25 +144,4 @@
         </insert>
     </changeSet>
 
-    <changeSet id="8" author="fineract">
-        <insert tableName="m_code_value">
-            <column name="code_id" valueNumeric="4"/>
-            <column name="code_value" value="Mujer"/>
-            <column name="code_description" value="Mujer"/>
-            <column name="order_position" valueNumeric="1"/>
-            <column name="code_score" valueNumeric="NULL"/>
-            <column name="is_active" valueBoolean="true"/>
-            <column name="is_mandatory" valueBoolean="false"/>
-        </insert>
-        <insert tableName="m_code_value">
-            <column name="code_id" valueNumeric="4"/>
-            <column name="code_value" value="Hombre"/>
-            <column name="code_description" value="Hombre"/>
-            <column name="order_position" valueNumeric="2"/>
-            <column name="code_score" valueNumeric="NULL"/>
-            <column name="is_active" valueBoolean="true"/>
-            <column name="is_mandatory" valueBoolean="false"/>
-        </insert>
-    </changeSet>
-
 </databaseChangeLog>

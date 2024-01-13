@@ -64,6 +64,7 @@ public final class SearchParameters {
     private final String chequeNo;
     private final Long batchId;
     private final Long chequeId;
+
     final LocalDate disbursementStartDate;
     final LocalDate disbursementEndDate;
     final LocalDate approvalStartDate;

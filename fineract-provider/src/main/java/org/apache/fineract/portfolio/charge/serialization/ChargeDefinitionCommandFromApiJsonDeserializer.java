@@ -526,6 +526,7 @@ public final class ChargeDefinitionCommandFromApiJsonDeserializer {
                 }
                 if (min != null && max != null) {
                     if ((max - min) <= 0) {
+
                         dataValidationErrors.add(ApiParameterError.parameterError("validation.msg.charge.ranges.min.greaterorequal.to",
                                 "The parameter adminFeeMin must be less than " + max, "adminFeeMin", min, max));
                     }
@@ -541,6 +542,7 @@ public final class ChargeDefinitionCommandFromApiJsonDeserializer {
                     ChargeData.ChargeRangeData curr = itt.next();
 
                     if (prev.adminFeeMin == null && curr.adminFeeMin == null) {
+
                         dataValidationErrors.add(ApiParameterError.parameterError("validation.msg.ranges.overlap", "Ranges cannot overlap",
                                 "adminFeeMin", prev.adminFeeMin, curr.adminFeeMin));
                     } else if ((prev.adminFeeMax == null || prev.adminFeeMax.doubleValue() == Double.POSITIVE_INFINITY)) {
