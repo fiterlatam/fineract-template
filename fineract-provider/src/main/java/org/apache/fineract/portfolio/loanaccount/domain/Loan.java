@@ -1749,7 +1749,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
          */
         Loan loan = loanCharge.getLoan();
         if (loan.isSubmittedAndPendingApproval() || loan.isApproved()) { // doing for both just in case status is not
-                                                                         // updated at this points
+            // updated at this points
             if (loanCharge.isInstalmentFee()) {
                 loanCharge.clearLoanInstallmentCharges();
                 for (final LoanRepaymentScheduleInstallment installment : getRepaymentScheduleInstallments()) {
@@ -4647,7 +4647,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             break;
         }
         return dueRepaymentPeriodDate.minusDays(1);// get 2n-1 range date from
-                                                   // startDate
+        // startDate
     }
 
     public void applyHolidayToRepaymentScheduleDates(final Holiday holiday, final LoanUtilService loanUtilService) {

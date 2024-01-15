@@ -157,6 +157,7 @@ public class BankChequeApiResource {
     }
 
     @GET
+
     @Path("guarantees")
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })

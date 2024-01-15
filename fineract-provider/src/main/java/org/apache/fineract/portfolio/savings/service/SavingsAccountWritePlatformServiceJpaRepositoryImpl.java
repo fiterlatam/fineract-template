@@ -1941,7 +1941,7 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
 
     @Transactional
     @Override
-    public CommandProcessingResult releaseAmount(final Long savingsId, final Long savingsTransactionId,LocalDate transactionDate) {
+    public CommandProcessingResult releaseAmount(final Long savingsId, final Long savingsTransactionId, LocalDate transactionDate) {
 
         final AppUser submittedBy = this.context.authenticatedUser();
         SavingsAccountTransaction holdTransaction = this.savingsAccountTransactionRepository
@@ -2190,7 +2190,7 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
             Long savingsId = holdTransaction.getSavingsAccount().getId();
 
             // release on hold guarantee
-            CommandProcessingResult releaseResult = this.releaseAmount(savingsId, holdTransaction.getId(),transactionDate);
+            CommandProcessingResult releaseResult = this.releaseAmount(savingsId, holdTransaction.getId(), transactionDate);
             SavingsAccountTransaction releaseTransaction = this.savingsAccountTransactionRepository
                     .findOneByIdAndSavingsAccountId(releaseResult.resourceId(), savingsId);
             releaseTransaction.setLoanId(loanId);

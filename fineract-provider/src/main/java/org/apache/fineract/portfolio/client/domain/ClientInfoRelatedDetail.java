@@ -198,4 +198,12 @@ public class ClientInfoRelatedDetail {
             this.familyReference = StringUtils.defaultIfEmpty(newValue, null);
         }
     }
+
+    public Integer getLoanCycle() {
+        return this.loanCycle;
+    }
+
+    public void setLoanCycle(Integer loanCycle) {
+        this.loanCycle = loanCycle;
+    }
 }

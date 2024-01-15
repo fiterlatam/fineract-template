@@ -431,8 +431,8 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                     	assigned.username as assignedUser,
                     	concat(assigned.firstname, ' ', assigned.lastname) as assignedUserName,
                     	sl.date_created as statusChangedOn,
-                    	(select sum(requested_amount) from m_prequalification_group_members where group_id = g.id) as totalRequestedAmount,
-                    	(select sum(approved_amount) from m_prequalification_group_members where group_id = g.id) as totalApprovedAmount,
+                        prequalification_numbers.total_requested_amount as totalRequestedAmount,
+                        prequalification_numbers.total_approved_amount totalApprovedAmount,
                     	(case when g.previous_prequalification is not null THEN 'Recredito' ELSE 'Nuevo' END) as processType,
                     	(case when (select count(*) from m_prequalification_status_log where prequalification_id = g.id and to_status = g.status )>0 THEN 'Reproceso' ELSE 'Nuevo' END) as processQuality,
                     	concat(mu.firstname, ' ', mu.lastname) as statusChangedBy,
@@ -491,6 +491,14 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                     	au.id = g.added_by
                     INNER JOIN m_product_loan lp ON
                     	g.product_id = lp.id
+                    LEFT JOIN (
+                        SELECT
+                        mpgm.group_id AS prequalification_id,
+                        SUM(mpgm.requested_amount) total_requested_amount,
+                        SUM(mpgm.approved_amount) total_approved_amount
+                        FROM m_prequalification_group_members mpgm
+                        GROUP BY mpgm.group_id
+                    ) prequalification_numbers ON prequalification_numbers.prequalification_id = g.id
                     LEFT JOIN m_agency ma ON
                     	g.agency_id = ma.id
                     LEFT JOIN m_group cg ON
