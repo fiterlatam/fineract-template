@@ -144,6 +144,7 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
                     	mbc.is_reassigned AS reassinged,
                     	mbc.status_enum AS statusEnum,
                     	mbc.description AS description,
+                    	mbc.guarantee_deposit_no As depositNumber,
                     	mbc.guarantee_amount As guaranteeAmount,
                     	ml.approved_principal as loanAmount,
                         CASE
@@ -225,6 +226,7 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
             final String printedByUsername = rs.getString("printedByUsername");
             final String voidAuthorizedByUsername = rs.getString("voidAuthorizedByUsername");
             final String lastModifiedByUsername = rs.getString("lastModifiedByUsername");
+            final String depositNumber = rs.getString("depositNumber");
             final Boolean reassinged = rs.getBoolean("reassinged");
             String clientName = rs.getString("clientName");
             final String guaranteeName = rs.getString("guaranteeName");
@@ -247,7 +249,7 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
                     .lastModifiedByUsername(lastModifiedByUsername).clientName(clientName).clientNo(clientNo).groupName(groupName)
                     .loanAccNo(loanAccNo).loanAmount(loanAmount).guaranteeAmount(guaranteeAmount).groupNo(groupNo).guaranteeId(guaranteeId)
                     .caseId(caseId).chequeAmount(chequeAmount).agencyId(agencyId).loanAccId(loanAccId)
-                    .reassingedCheque(Boolean.valueOf(reassinged)).build();
+                    .reassingedCheque(Boolean.valueOf(reassinged)).depositNumber(depositNumber).build();
 
         }
     }
