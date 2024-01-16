@@ -30,7 +30,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class SqlInjectionPreventerServiceImpl implements SqlInjectionPreventerService {
 
-    private static final Codec<?> MYSQL_CODEC = new MySQLCodec(MySQLCodec.Mode.STANDARD);
+    private static final Codec<?> MYSQL_CODEC = new MySQLCodec(MySQLCodec.Mode.ANSI);
 
     private final DatabaseTypeResolver databaseTypeResolver;
 
