@@ -31,5 +31,6 @@ public class PayGuaranteeByChequeCommand {
     private String guaranteeName;
     private BigDecimal guaranteeAmount;
     private String caseId;
+    private String clientExternalId;
     private String description;
 }
