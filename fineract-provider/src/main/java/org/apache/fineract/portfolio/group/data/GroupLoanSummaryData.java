@@ -29,17 +29,19 @@ public class GroupLoanSummaryData {
     private String loanShortProductName;
     private BigDecimal totalRepayment;
     private BigDecimal totalOverdue;
+    private BigDecimal totalPaidAmount;
     private Integer clientCounter;
 
     public GroupLoanSummaryData() {}
 
-    public GroupLoanSummaryData(Long groupId, String loanShortProductName, BigDecimal totalRepayment, BigDecimal totalOverdue,
-            Integer clientCounter) {
+    public GroupLoanSummaryData(Long groupId, String loanShortProductName, BigDecimal totalRepayment, BigDecimal totalPaidAmount,
+            BigDecimal totalOverdue, Integer clientCounter) {
         this.groupId = groupId;
         this.loanShortProductName = loanShortProductName;
         this.totalRepayment = totalRepayment;
         this.totalOverdue = totalOverdue;
         this.clientCounter = clientCounter;
+        this.totalPaidAmount = totalPaidAmount;
     }
 
     public void setGroupId(Long groupId) {
@@ -80,5 +82,13 @@ public class GroupLoanSummaryData {
 
     public Integer getClientCounter() {
         return clientCounter;
+    }
+
+    public BigDecimal getTotalPaidAmount() {
+        return totalPaidAmount;
+    }
+
+    public void setTotalPaidAmount(BigDecimal totalPaidAmount) {
+        this.totalPaidAmount = totalPaidAmount;
     }
 }

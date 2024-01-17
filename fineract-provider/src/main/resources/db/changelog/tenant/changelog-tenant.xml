@@ -136,4 +136,8 @@
     <include file="parts/0116_FBR_505_Reporte_de_Garantias_para_prestamos_.xml" relativeToChangelogFile="true"/>
     <include file="parts/0117_FBR_506_Reporte_de_Cobranzas_y_Saldos_por_Financista.xml" relativeToChangelogFile="true"/>
     <include file="parts/0118_FBR_518_update_client_loan_cycle.xml" relativeToChangelogFile="true"/>
+<<<<<<< HEAD
+=======
+    <include file="parts/0119_FBR_433_FB_Tabla_de_Prestamos.xml" relativeToChangelogFile="true"/>
+>>>>>>> 2e44a492800c869e00603a366465d403a8785e45
 </databaseChangeLog>
