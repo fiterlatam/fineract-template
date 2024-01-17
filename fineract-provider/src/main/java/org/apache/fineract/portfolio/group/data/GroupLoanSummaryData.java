@@ -34,8 +34,8 @@ public class GroupLoanSummaryData {
 
     public GroupLoanSummaryData() {}
 
-    public GroupLoanSummaryData(Long groupId, String loanShortProductName, BigDecimal totalRepayment, BigDecimal totalPaidAmount, BigDecimal totalOverdue,
-            Integer clientCounter) {
+    public GroupLoanSummaryData(Long groupId, String loanShortProductName, BigDecimal totalRepayment, BigDecimal totalPaidAmount,
+            BigDecimal totalOverdue, Integer clientCounter) {
         this.groupId = groupId;
         this.loanShortProductName = loanShortProductName;
         this.totalRepayment = totalRepayment;

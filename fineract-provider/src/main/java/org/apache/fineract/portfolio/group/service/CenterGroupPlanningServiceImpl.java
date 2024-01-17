@@ -157,8 +157,7 @@ public class CenterGroupPlanningServiceImpl implements CenterGroupPlanningServic
         sqlBuilder.append(
                 "sum(ifnull(ifnull(lrs.principal_amount, 0) + ifnull(lrs.interest_amount, 0) + ifnull(lrs.penalty_charges_amount, 0), 0)) - sum(ifnull(ifnull(lrs.total_paid_late_derived, 0) +\n"
                         + "ifnull(lrs.interest_completed_derived, 0) + ifnull(lrs.total_paid_in_advance_derived, 0), 0)) as totalRepayment, ");
-        sqlBuilder.append(
-                "coalesce(l.total_repayment_derived,0) as totalPaidAmount, ");
+        sqlBuilder.append("coalesce(l.total_repayment_derived,0) as totalPaidAmount, ");
 
         sqlBuilder.append(
                 "ifnull((select sum(ifnull(ifnull(lrs2.principal_amount, 0) + ifnull(lrs2.interest_amount, 0) + ifnull(lrs2.penalty_charges_amount, 0) - ifnull(lrs2.total_paid_late_derived, 0) -\n"
