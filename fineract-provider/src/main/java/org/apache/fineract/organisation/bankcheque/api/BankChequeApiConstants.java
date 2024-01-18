@@ -56,6 +56,7 @@ public class BankChequeApiConstants {
     public static String GUARANTEE_NAME = "guaranteeName";
     public static String GUARANTEE_ID = "guaranteeId";
     public static String GUARANTEE_AMOUNT = "guaranteeAmount";
+    public static String CLIENT_NUMBER = "clientNo";
 
     public static final Set<String> BATCH_RESPONSE_DATA_PARAMETERS = new HashSet<>(
             Arrays.asList(ID_PARAM_NAME, BATCH_NO, AGENCY, BANK_ACCOUNT, CHEQUES, FROM, TO, BANK_ACC_ID, DESCRIPTION));

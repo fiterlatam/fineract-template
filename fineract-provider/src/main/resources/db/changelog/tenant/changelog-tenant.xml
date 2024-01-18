@@ -137,4 +137,5 @@
     <include file="parts/0117_FBR_506_Reporte_de_Cobranzas_y_Saldos_por_Financista.xml" relativeToChangelogFile="true"/>
     <include file="parts/0118_FBR_518_update_client_loan_cycle.xml" relativeToChangelogFile="true"/>
     <include file="parts/0119_FBR_433_FB_Tabla_de_Prestamos.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0120_FBR_536_Rediseno_de_Pago_de_Garantias_con_cheques.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

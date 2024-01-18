@@ -62,4 +62,5 @@ public class ChequeData {
     private BigDecimal chequeAmount;
     private Boolean reassingedCheque;
     private String depositNumber;
+    private String numeroCliente;
 }

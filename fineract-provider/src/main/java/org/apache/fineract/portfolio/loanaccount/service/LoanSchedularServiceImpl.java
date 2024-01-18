@@ -475,7 +475,7 @@ public class LoanSchedularServiceImpl implements LoanSchedularService {
                     if (StringUtils.equalsIgnoreCase(lastInstallment, "S") || outstandingLoanBalance.compareTo(transactionAmount) <= 0) {
                         jsonObject.addProperty("adjustGuarantee", true);
                     }
-                    final JsonCommand command = JsonCommand.fromJsonElement(loanId, jsonObject, fromApiJsonHelper);
+                    final JsonCommand command = JsonCommand.fromJsonElement(loanId, jsonObject, this.fromApiJsonHelper);
                     command.setJsonCommand(jsonObject.toString());
                     CommandProcessingResult result = loanWritePlatformService.makeLoanRepayment(LoanTransactionType.REPAYMENT, loanId,
                             command, isRecoveryRepayment);

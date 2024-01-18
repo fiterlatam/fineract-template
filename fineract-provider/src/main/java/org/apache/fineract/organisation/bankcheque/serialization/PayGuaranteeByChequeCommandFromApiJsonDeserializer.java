@@ -54,17 +54,19 @@ public class PayGuaranteeByChequeCommandFromApiJsonDeserializer extends Abstract
             final Long chequeId = this.fromApiJsonHelper.extractLongNamed(LoanApiConstants.CHEQUE_ID, element);
             baseDataValidator.reset().parameter(LoanApiConstants.CHEQUE_ID).value(chequeId).notBlank();
             final String caseId = this.fromApiJsonHelper.extractStringNamed(BankChequeApiConstants.GUARANTEE_CASE_ID, element);
+            final String clientNo = this.fromApiJsonHelper.extractStringNamed(BankChequeApiConstants.CLIENT_NUMBER, element);
             baseDataValidator.reset().parameter(BankChequeApiConstants.GUARANTEE_CASE_ID).value(caseId).notBlank();
+            baseDataValidator.reset().parameter(BankChequeApiConstants.CLIENT_NUMBER).value(clientNo).notBlank();
             final Long guaranteeId = this.fromApiJsonHelper.extractLongNamed(BankChequeApiConstants.GUARANTEE_ID, element);
             baseDataValidator.reset().parameter(BankChequeApiConstants.GUARANTEE_ID).value(guaranteeId).notBlank();
             final BigDecimal guaranteeAmount = this.fromApiJsonHelper.extractBigDecimalNamed(BankChequeApiConstants.GUARANTEE_AMOUNT,
                     element, locale);
-            baseDataValidator.reset().parameter(BankChequeApiConstants.GUARANTEE_AMOUNT).value(guaranteeAmount).longGreaterThanZero()
-                    .notNull();
+            baseDataValidator.reset().parameter(BankChequeApiConstants.GUARANTEE_AMOUNT).value(guaranteeAmount).notNull()
+                    .notLessThanMin(BigDecimal.ZERO);
             final String guaranteeName = this.fromApiJsonHelper.extractStringNamed(BankChequeApiConstants.GUARANTEE_NAME, element);
-
             final PayGuaranteeByChequeCommand payGuaranteeByChequeCommand = PayGuaranteeByChequeCommand.builder().chequeId(chequeId)
-                    .caseId(caseId).guaranteeId(guaranteeId).guaranteeAmount(guaranteeAmount).guaranteeName(guaranteeName).build();
+                    .caseId(caseId).clientExternalId(clientNo).guaranteeId(guaranteeId).guaranteeAmount(guaranteeAmount)
+                    .guaranteeName(guaranteeName).build();
             payGuaranteeByChequeCommands.add(payGuaranteeByChequeCommand);
         }
         throwExceptionIfValidationWarningsExist(dataValidationErrors);
