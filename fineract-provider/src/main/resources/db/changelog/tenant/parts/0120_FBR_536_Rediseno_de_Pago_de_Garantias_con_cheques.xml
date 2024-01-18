@@ -29,7 +29,7 @@
                 <columnExists tableName="m_bank_check" columnName="numero_cliente"/>
             </not>
         </preConditions>
-        <addColumn tableName="m_product_loan">
+        <addColumn tableName="m_bank_check">
             <column name="numero_cliente" type="VARCHAR(100)"/>
         </addColumn>
     </changeSet>

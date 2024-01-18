@@ -494,10 +494,11 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
                     log.info("Guarantee withdrawal is successful for savings account ID {}", result.getSavingsId());
                 }
             }
-
-            final String amountInWords = NumberToWordsConverter.convertToWords(Integer.parseInt(String.valueOf(chequeAmount)),
-                    NumberToWordsConverter.Language.SPANISH);
-            cheque.setAmountInWords(amountInWords);
+            if (chequeAmount != null) {
+                final String amountInWords = NumberToWordsConverter.convertToWords(chequeAmount.intValue(),
+                        NumberToWordsConverter.Language.SPANISH);
+                cheque.setAmountInWords(amountInWords);
+            }
             cheque.setStatus(BankChequeStatus.ISSUED.getValue());
             final LocalDateTime localDateTime = DateUtils.getLocalDateTimeOfSystem();
             LocalDate localDate = DateUtils.getBusinessLocalDate();
