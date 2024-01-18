@@ -68,6 +68,7 @@ public final class PortfolioCenterData {
     private final String meetingDayName;
 
     private final String referencePoint;
+    private String rangeCode;
 
     @JsonDeserialize(using = LocalTimeDeserializer.class)
     @JsonSerialize(using = LocalTimeSerializer.class)
@@ -95,7 +96,7 @@ public final class PortfolioCenterData {
             String meetingDayName, String referencePoint, Collection<OfficeData> parentOfficesOptions,
             Collection<AppUserData> responsibleUserOptions, Collection<CodeValueData> cityOptions, Collection<CodeValueData> stateOptions,
             Collection<CodeValueData> typeOptions, Collection<EnumOptionData> statusOptions, Collection<CodeValueData> meetingDayOptions,
-            EnumOptionData centerLocation) {
+            EnumOptionData centerLocation, String rangeCode) {
         this.id = id;
         this.name = name;
         this.portfolioId = portfolioId;
@@ -122,22 +123,23 @@ public final class PortfolioCenterData {
         this.statusOptions = statusOptions;
         this.meetingDayOptions = meetingDayOptions;
         this.centerLocation = centerLocation;
+        this.rangeCode = rangeCode;
     }
 
     public static PortfolioCenterData instance(Long id, String name, Long portfolioId, String portfolioName, BigDecimal legacyCenterNumber,
             CodeValueData city, CodeValueData state, CodeValueData type, EnumOptionData status, Integer distance, LocalDate createdDate,
             Integer meetingStart, Integer meetingEnd, Integer meetingDay, String meetingStartTime, String meetingEndTime,
-            String meetingDayName, String referencePoint, EnumOptionData centerLocation) {
+            String meetingDayName, String referencePoint, EnumOptionData centerLocation, String rangeCode) {
         return new PortfolioCenterData(id, name, portfolioId, portfolioName, legacyCenterNumber, city, state, type, status, distance,
                 createdDate, meetingStart, meetingEnd, meetingDay, meetingStartTime, meetingEndTime, meetingDayName, referencePoint, null,
-                null, null, null, null, null, null, centerLocation);
+                null, null, null, null, null, null, centerLocation, rangeCode);
     }
 
     public static PortfolioCenterData template(Collection<OfficeData> parentOfficesOptions, List<AppUserData> appUsers,
             Collection<CodeValueData> cityOptions, Collection<CodeValueData> stateOptions, Collection<CodeValueData> typeOptions,
             Collection<EnumOptionData> statusOptions, Collection<CodeValueData> meetingDayOptions) {
         return new PortfolioCenterData(null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null,
-                null, parentOfficesOptions, appUsers, cityOptions, stateOptions, typeOptions, statusOptions, meetingDayOptions, null);
+                null, parentOfficesOptions, appUsers, cityOptions, stateOptions, typeOptions, statusOptions, meetingDayOptions, null, null);
     }
 
     public Long getId() {
