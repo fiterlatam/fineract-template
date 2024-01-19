@@ -260,7 +260,8 @@ public class PortfolioCenterReadPlatformServiceImpl implements PortfolioCenterRe
             sqlBuilder.append("left join m_code_value cvState on pc.state_province_id = cvState.id ");
             sqlBuilder.append("left join m_code_value cvType on pc.type_id = cvType.id ");
             sqlBuilder.append("left join m_code_value cvMeetingDay on pc.meeting_day = cvMeetingDay.id ");
-            sqlBuilder.append("left join m_range_template mrt on mrt.month_start_day = pc.meeting_start_date and mrt.month_end_day = pc.meeting_end_date ");
+            sqlBuilder.append(
+                    "left join m_range_template mrt on mrt.month_start_day = pc.meeting_start_date and mrt.month_end_day = pc.meeting_end_date ");
             this.schema = sqlBuilder.toString();
         }
 

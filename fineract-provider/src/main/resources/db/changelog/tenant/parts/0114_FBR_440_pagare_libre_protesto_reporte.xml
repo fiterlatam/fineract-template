@@ -563,4 +563,55 @@
         </sql>
     </changeSet>
 
+    <changeSet id="6" author="fineract">
+        <sql>
+            <![CDATA[
+                DELETE
+                FROM stretchy_report_parameter
+                WHERE id IN (SELECT x.id FROM (SELECT srp.id FROM  stretchy_report_parameter srp INNER JOIN stretchy_report sr ON sr.id = srp.report_id WHERE sr.report_name = 'Pagare Libre Protesto Individual') x);
+
+                INSERT INTO stretchy_parameter (parameter_name, parameter_variable, parameter_label, parameter_displayType, parameter_FormatType, parameter_default, special, selectOne, selectAll, parameter_sql, parent_id) VALUES('officeIdSelectAll', 'officeIdSelectAll', 'Oficina', 'select', 'number', '-1', NULL, NULL, 'Y',
+                                                                                                                                                                                                                                     "select id,
+                                                                                                                                                                                                                                     concat(substring('........................................', 1,
+                                                                                                                                                                                                                                     ((LENGTH(`hierarchy`) - LENGTH(REPLACE(`hierarchy`, '.', '')) - 1) * 4)),
+                                                                                                                                                                                                                                        `name`) as tc
+                                                                                                                                                                                                                                     from m_office
+                                                                                                                                                                                                                                     where hierarchy like concat
+                                                                                                                                                                                                                                     ('${currentUserHierarchy}', '%')
+                                                                                                                                                                                                                                     order by hierarchy", NULL);
+                INSERT INTO stretchy_parameter (parameter_name, parameter_variable, parameter_label, parameter_displayType, parameter_FormatType, parameter_default, special, selectOne, selectAll, parameter_sql, parent_id) VALUES('loanProductSelectAll', 'loanProductSelectAll', 'Producto', 'select', 'number', '-1', NULL, NULL, 'Y', "SELECT pl.id, pl.name as name FROM m_product_loan pl", (SELECT id FROM stretchy_parameter sp WHERE sp.parameter_name = 'officeIdSelectAll'));
+                INSERT INTO stretchy_parameter (parameter_name, parameter_variable, parameter_label, parameter_displayType, parameter_FormatType, parameter_default, special, selectOne, selectAll, parameter_sql, parent_id) VALUES('disbursementDate', 'disbursementDate', 'Fecha de desembolso', 'date', 'date', 'today', NULL, NULL, NULL, NULL, (SELECT id FROM stretchy_parameter sp WHERE sp.parameter_name = 'loanProductSelectAll'));
+                INSERT INTO stretchy_parameter (parameter_name, parameter_variable, parameter_label, parameter_displayType, parameter_FormatType, parameter_default, special, selectOne, selectAll, parameter_sql, parent_id) VALUES('clientIdSelectOne', 'clientIdSelectOne', 'ID de cliente', 'select', 'number', '0', NULL, 'Y', NULL,
+                                                                                                                                                                                                                                     "SELECT
+                                                                                                                                                                                                                                     mc.id AS id,
+                                                                                                                                                                                                                                     CONCAT(mc.display_name, ' (#', ml.id, ')') AS name
+                                                                                                                                                                                                                                     FROM m_client mc
+                                                                                                                                                                                                                                     LEFT JOIN m_office mo ON mo.id = mc.office_id
+                                                                                                                                                                                                                                     LEFT JOIN m_loan ml ON ml.client_id = mc.id
+                                                                                                                                                                                                                                     WHERE (mo.id = ${officeIdSelectAll} OR ${officeIdSelectAll} = '-1')
+                                                                                                                                                                                                                                     AND (ml.product_id = ${loanProductSelectAll} OR ${loanProductSelectAll} = '-1') AND ml.loan_status_id = 300 AND ml.disbursedon_date = '${disbursementDate}'", (SELECT id FROM stretchy_parameter sp WHERE sp.parameter_name = 'disbursementDate'));
+
+                INSERT INTO stretchy_report_parameter (report_id, parameter_id, report_parameter_name) VALUES ((SELECT id FROM stretchy_report sr WHERE sr.report_name = 'Pagare Libre Protesto Individual'), (SELECT id FROM stretchy_parameter sp WHERE sp.parameter_name = 'officeIdSelectAll'), 'officeIdSelectAll');
+                INSERT INTO stretchy_report_parameter (report_id, parameter_id, report_parameter_name) VALUES ((SELECT id FROM stretchy_report sr WHERE sr.report_name = 'Pagare Libre Protesto Individual'), (SELECT id FROM stretchy_parameter sp WHERE sp.parameter_name = 'loanProductSelectAll'), 'loanProductSelectAll');
+                INSERT INTO stretchy_report_parameter (report_id, parameter_id, report_parameter_name) VALUES ((SELECT id FROM stretchy_report sr WHERE sr.report_name = 'Pagare Libre Protesto Individual'), (SELECT id FROM stretchy_parameter sp WHERE sp.parameter_name = 'clientIdSelectOne'), 'clientIdSelectOne');
+                INSERT INTO stretchy_report_parameter (report_id, parameter_id, report_parameter_name) VALUES ((SELECT id FROM stretchy_report sr WHERE sr.report_name = 'Pagare Libre Protesto Individual'), (SELECT id FROM stretchy_parameter sp WHERE sp.parameter_name = 'disbursementDate'), 'disbursementDate');
+            ]]>
+        </sql>
+    </changeSet>
+
+
+    <changeSet id="7" author="fineract">
+        <sql>
+            <![CDATA[
+            DELETE
+            FROM stretchy_report_parameter
+            WHERE id IN (SELECT x.id FROM (SELECT srp.id FROM  stretchy_report_parameter srp INNER JOIN stretchy_report sr ON sr.id = srp.report_id WHERE sr.report_name = 'Pagare Libre Protesto Adicional') x);
+            INSERT INTO stretchy_report_parameter (report_id, parameter_id, report_parameter_name) VALUES ((SELECT id FROM stretchy_report sr WHERE sr.report_name = 'Pagare Libre Protesto Adicional'), (SELECT id FROM stretchy_parameter sp WHERE sp.parameter_name = 'officeIdSelectAll'), 'officeIdSelectAll');
+            INSERT INTO stretchy_report_parameter (report_id, parameter_id, report_parameter_name) VALUES ((SELECT id FROM stretchy_report sr WHERE sr.report_name = 'Pagare Libre Protesto Adicional'), (SELECT id FROM stretchy_parameter sp WHERE sp.parameter_name = 'loanProductSelectAll'), 'loanProductSelectAll');
+            INSERT INTO stretchy_report_parameter (report_id, parameter_id, report_parameter_name) VALUES ((SELECT id FROM stretchy_report sr WHERE sr.report_name = 'Pagare Libre Protesto Adicional'), (SELECT id FROM stretchy_parameter sp WHERE sp.parameter_name = 'clientIdSelectOne'), 'clientIdSelectOne');
+            INSERT INTO stretchy_report_parameter (report_id, parameter_id, report_parameter_name) VALUES ((SELECT id FROM stretchy_report sr WHERE sr.report_name = 'Pagare Libre Protesto Adicional'), (SELECT id FROM stretchy_parameter sp WHERE sp.parameter_name = 'disbursementDate'), 'disbursementDate');
+            ]]>
+        </sql>
+    </changeSet>
+
 </databaseChangeLog>
