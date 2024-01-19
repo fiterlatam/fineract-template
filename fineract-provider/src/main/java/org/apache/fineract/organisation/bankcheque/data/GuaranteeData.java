@@ -18,7 +18,6 @@
  */
 package org.apache.fineract.organisation.bankcheque.data;
 
-import java.math.BigDecimal;
 import lombok.Builder;
 import lombok.Data;
 
@@ -31,7 +30,7 @@ public class GuaranteeData {
     private String clientName;
     private String withdrawalReason;
     private String caseId;
-    private BigDecimal requestedAmount;
+    private String requestedAmount;
     private String status;
     private Long chequeId;
 }

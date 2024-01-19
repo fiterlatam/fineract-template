@@ -218,8 +218,8 @@ public class GroupPrequalificationApiResource {
 
         List<EnumOptionData> statusOptions = Arrays.asList(status(PrequalificationStatus.CONSENT_ADDED),
                 status(PrequalificationStatus.BLACKLIST_CHECKED), status(PrequalificationStatus.COMPLETED),
-                status(PrequalificationStatus.HARD_POLICY_CHECKED), status(PrequalificationStatus.TIME_EXPIRED),
-                status(PrequalificationStatus.PREQUALIFICATION_UPDATE_REQUESTED));
+                status(PrequalificationStatus.BURO_CHECKED), status(PrequalificationStatus.HARD_POLICY_CHECKED),
+                status(PrequalificationStatus.TIME_EXPIRED), status(PrequalificationStatus.PREQUALIFICATION_UPDATE_REQUESTED));
         if (StringUtils.equalsIgnoreCase(type, "analysis")) {
             statusOptions = Arrays.asList(status(PrequalificationStatus.ANALYSIS_UNIT_PENDING_APPROVAL),
                     status(PrequalificationStatus.ANALYSIS_UNIT_PENDING_APPROVAL_WITH_EXCEPTIONS));

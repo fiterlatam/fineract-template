@@ -33,4 +33,7 @@ interface ClientRepository extends JpaRepository<Client, Long>, JpaSpecification
 
     @Query(FIND_CLIENT_BY_DPI_NUMBER)
     Client getClientByDpiNumber(@Param("dpiNum") String dpiNumber);
+
+    @Query("select client from Client client where client.externalId = :externalId")
+    Client getClientByExternalId(@Param("externalId") String externalId);
 }

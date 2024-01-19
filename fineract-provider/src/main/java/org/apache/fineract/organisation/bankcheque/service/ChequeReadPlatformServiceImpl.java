@@ -154,6 +154,7 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
                      	END as chequeAmount,
                     	mbc.case_id AS caseId,
                     	mbc.guarantee_id AS guaranteeId,
+                    	mbc.numero_cliente AS numeroCliente,
                     	mc.account_no AS clientNo,
                     	mc.display_name AS clientName,
                     	mbc.guarantee_name AS guaranteeName,
@@ -238,6 +239,7 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
             final String loanAccNo = rs.getString("loanAccNo");
             final Long loanAccId = JdbcSupport.getLong(rs, "loanAccId");
             final String groupNo = rs.getString("groupNo");
+            final String numeroCliente = rs.getString("numeroCliente");
             final BigDecimal loanAmount = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "loanAmount");
             final BigDecimal guaranteeAmount = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "guaranteeAmount");
             final BigDecimal chequeAmount = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "chequeAmount");
@@ -248,8 +250,8 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
                     .printedByUsername(printedByUsername).voidAuthorizedByUsername(voidAuthorizedByUsername)
                     .lastModifiedByUsername(lastModifiedByUsername).clientName(clientName).clientNo(clientNo).groupName(groupName)
                     .loanAccNo(loanAccNo).loanAmount(loanAmount).guaranteeAmount(guaranteeAmount).groupNo(groupNo).guaranteeId(guaranteeId)
-                    .caseId(caseId).chequeAmount(chequeAmount).agencyId(agencyId).loanAccId(loanAccId)
-                    .reassingedCheque(Boolean.valueOf(reassinged)).depositNumber(depositNumber).build();
+                    .caseId(caseId).chequeAmount(chequeAmount).agencyId(agencyId).loanAccId(loanAccId).reassingedCheque(reassinged)
+                    .depositNumber(depositNumber).numeroCliente(numeroCliente).build();
 
         }
     }
@@ -428,8 +430,9 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
                     final String clientName = this.fromApiJsonHelper.extractStringNamed("name", data);
                     final String withdrawalReason = this.fromApiJsonHelper.extractStringNamed("razon_retiro", data);
                     final BigDecimal requestedAmount = this.fromApiJsonHelper.extractBigDecimalNamed("monto", data, reqLocale);
+                    final String requestedAmountString = String.valueOf(requestedAmount);
                     final GuaranteeData guarantee = GuaranteeData.builder().id(id).caseId(caseId).clientNo(clientNo).clientName(clientName)
-                            .withdrawalReason(withdrawalReason).requestedAmount(requestedAmount).status(status).build();
+                            .withdrawalReason(withdrawalReason).requestedAmount(requestedAmountString).status(status).build();
                     guaranteeDataList.add(guarantee);
                 }
             }
@@ -442,7 +445,9 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
             for (final ChequeData chequeData : chequeDataList) {
                 if (!(chequeData.getStatus().getId().equals(BankChequeStatus.VOIDED.getValue().longValue())
                         && chequeData.getGuaranteeId().equals(data.getId()))) {
-                    guaranteeDataList.remove(index);
+                    if (guaranteeDataList.size() > index - 1) {
+                        guaranteeDataList.remove(index);
+                    }
                 }
             }
             index++;
