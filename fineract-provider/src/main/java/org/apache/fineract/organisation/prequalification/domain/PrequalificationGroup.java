@@ -98,7 +98,7 @@ public class PrequalificationGroup extends AbstractPersistableCustom {
     private List<PrequalificationGroupMember> members;
 
     public static PrequalificationGroup fromJson(final AppUser appUser, final AppUser facilitator, final Agency agency, final Group group,
-                                                 final LoanProduct loanProduct, PrequalificationGroup parentGroup, final JsonCommand command, String requalificationGroupName) {
+            final LoanProduct loanProduct, PrequalificationGroup parentGroup, final JsonCommand command, String requalificationGroupName) {
         String groupName = command.stringValueOfParameterNamed("groupName");
 
         Long prequalilficationTimespan = command.longValueOfParameterNamed(PrequalificatoinApiConstants.prequalilficationTimespanParamName);
@@ -106,7 +106,7 @@ public class PrequalificationGroup extends AbstractPersistableCustom {
         if (group != null) {
             groupName = group.getName();
         }
-        if(parentGroup != null){
+        if (parentGroup != null) {
             groupName = requalificationGroupName;
         }
         return new PrequalificationGroup(appUser, facilitator, agency, group, groupName, center, loanProduct, prequalilficationTimespan,

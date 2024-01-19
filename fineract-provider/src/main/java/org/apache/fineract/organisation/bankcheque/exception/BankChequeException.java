@@ -26,7 +26,7 @@ public class BankChequeException extends AbstractPlatformDomainRuleException {
         super("error.msg.cheque." + message, message);
     }
 
-    public BankChequeException(String parameterName, String message) {
-        super("error.msg.cheque." + parameterName + message, message);
+    public BankChequeException(String messageCode, String message) {
+        super("error.msg.cheque." + messageCode, message);
     }
 }

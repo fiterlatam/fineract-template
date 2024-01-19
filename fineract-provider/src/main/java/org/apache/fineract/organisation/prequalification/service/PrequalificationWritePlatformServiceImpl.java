@@ -219,11 +219,11 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                 group = this.groupRepositoryWrapper.findOneWithNotFoundDetection(centerGroupId);
                 requalificationGroupName = group.getName();
             }
-            if (parentGroup!=null){
+            if (parentGroup != null) {
                 String mappingSql = "select count(*) from m_group_prequalification_relationship where group_id=?";
-                Long mappingCount = jdbcTemplate.queryForObject(mappingSql, Long.class,existingGroupParentGroup.getId());
+                Long mappingCount = jdbcTemplate.queryForObject(mappingSql, Long.class, existingGroupParentGroup.getId());
                 Long mappingNumber = mappingCount + 1;
-                requalificationGroupName = parentGroup.getGroupName()+"-"+ mappingNumber;
+                requalificationGroupName = parentGroup.getGroupName() + "-" + mappingNumber;
             }
 
             agency = this.agencyRepositoryWrapper.findOneWithNotFoundDetection(agencyId);
@@ -237,7 +237,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         AppUser addedBy = this.context.getAuthenticatedUserIfPresent();
 
         PrequalificationGroup prequalificationGroup = PrequalificationGroup.fromJson(addedBy, facilitator, agency, group, loanProduct,
-                parentGroup, command,requalificationGroupName);
+                parentGroup, command, requalificationGroupName);
 
         PrequalificationType prequalificationType = resolvePrequalificationType(loanProduct);
         prequalificationGroup.setPrequalificationType(prequalificationType.getValue());
