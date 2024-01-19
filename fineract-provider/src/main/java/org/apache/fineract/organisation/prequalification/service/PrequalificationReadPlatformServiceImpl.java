@@ -118,7 +118,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             throw new PlatformApiDataValidationException(dataValidationErrors);
         }
         List<Object> paramList = new ArrayList<>();
-        final StringBuilder sqlBuilder = new StringBuilder(200);
+        final StringBuilder sqlBuilder = new StringBuilder(500);
         sqlBuilder.append("select " + sqlGenerator.calcFoundRows() + " ");
         sqlBuilder.append(this.prequalificationsGroupMapper.schema());
         sqlBuilder.append(" where g.prequalification_number is not null ");
@@ -309,12 +309,11 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                         extraCriteria += " and ma.responsible_user_id = ? ";
                         paramList.add(appUser.getId());
                     }
-                    ;
                 }
 
             }
 
-            if (groupingType.equals("individual")) {
+            if (StringUtils.equals(groupingType,"individual")) {
                 extraCriteria += " and g.prequalification_type_enum = ? ";
                 paramList.add(PrequalificationType.INDIVIDUAL.getValue());
                 if (dpiNumber != null) {
@@ -361,11 +360,11 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             PrequalificationStatus prequalificationStatus = PrequalificationStatus.fromString(status);
             extraCriteria += " and g.status = " + prequalificationStatus.getValue() + " ";
         }
+        extraCriteria += " and g.group_id is null ";
+
         if (type != null) {
             if (type.equals("existing")) {
                 extraCriteria += " and g.group_id is not null ";
-            } else if (type.equals("new")) {
-                extraCriteria += " and g.group_id is null ";
             } else if (type.equals("checked")) {
                 extraCriteria += " and g.status = " + PrequalificationStatus.BURO_CHECKED.getValue().toString() + " "
                         + "and (g.id not in (select prequalification_id from m_group where prequalification_id is not null)) ";
@@ -449,42 +448,10 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                     	lp.name AS productName,
                     	au.firstname,
                     	au.lastname,
-                    		(
-                    	SELECT
-                    		COUNT(*)
-                    	FROM
-                    		m_checklist_validation_result mcvr
-                    	WHERE
-                    		mcvr.validation_color_enum = 1
-                    		AND mcvr.prequalification_type = 2
-                    		AND mcvr.prequalification_id  = g.id ) AS greenValidationCount,
-                    				(
-                    	SELECT
-                    		COUNT(*)
-                    	FROM
-                    		m_checklist_validation_result mcvr
-                    	WHERE
-                    		mcvr.validation_color_enum = 2
-                    		AND mcvr.prequalification_type = 2
-                    		AND mcvr.prequalification_id  = g.id ) AS yellowValidationCount,
-                    				(
-                    	SELECT
-                    		COUNT(*)
-                    	FROM
-                    		m_checklist_validation_result mcvr
-                    	WHERE
-                    		mcvr.validation_color_enum = 3
-                    		AND mcvr.prequalification_type = 2
-                    		AND mcvr.prequalification_id  = g.id ) AS orangeValidationCount,
-                    				(
-                    	SELECT
-                    		COUNT(*)
-                    	FROM
-                    		m_checklist_validation_result mcvr
-                    	WHERE
-                    		mcvr.validation_color_enum = 4
-                    		AND mcvr.prequalification_type = 2
-                    		AND mcvr.prequalification_id  = g.id ) AS redValidationCount
+                    	greenValidation.validCount AS greenValidationCount,
+                    	yellowValidation.validCount AS yellowValidationCount,
+                    	orangeValidation.validCount AS orangeValidationCount,
+                    	redValidation.validCount AS redValidationCount
                     FROM
                     	m_prequalification_group g
                     INNER JOIN m_appuser au ON
@@ -501,6 +468,38 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                     ) prequalification_numbers ON prequalification_numbers.prequalification_id = g.id
                     LEFT JOIN m_agency ma ON
                     	g.agency_id = ma.id
+                    LEFT JOIN 
+                    (
+                      SELECT p.id AS groupid,
+                      COUNT(mcvr.id) AS validCount
+                      FROM m_checklist_validation_result mcvr 
+                      INNER JOIN m_prequalification_group p ON mcvr.prequalification_id = p.id and mcvr.validation_color_enum = 1
+                    ) greenValidation ON greenValidation.groupid = g.id
+                    
+                     LEFT JOIN 
+                    (
+                      SELECT p.id AS groupid,
+                      COUNT(mcvr.id) AS validCount
+                      FROM m_checklist_validation_result mcvr 
+                      INNER JOIN m_prequalification_group p ON mcvr.prequalification_id = p.id and mcvr.validation_color_enum = 2
+                    ) yellowValidation ON yellowValidation.groupid = g.id
+                    
+                     LEFT JOIN 
+                    (
+                      SELECT p.id AS groupid,
+                      COUNT(mcvr.id) AS validCount
+                      FROM m_checklist_validation_result mcvr 
+                      INNER JOIN m_prequalification_group p ON mcvr.prequalification_id = p.id and mcvr.validation_color_enum = 3
+                    ) orangeValidation ON orangeValidation.groupid = g.id
+                    
+                     LEFT JOIN 
+                    (
+                      SELECT p.id AS groupid,
+                      COUNT(mcvr.id) AS validCount
+                      FROM m_checklist_validation_result mcvr 
+                      INNER JOIN m_prequalification_group p ON mcvr.prequalification_id = p.id and mcvr.validation_color_enum = 4
+                    ) redValidation ON redValidation.groupid = g.id
+                    
                     LEFT JOIN m_group cg ON
                     	cg.id = g.group_id
                     LEFT JOIN m_group linkedGroup ON
@@ -550,16 +549,16 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             final Long linkedGroupId = JdbcSupport.getLong(rs, "linkedGroupId");
             final Long facilitatorId = JdbcSupport.getLong(rs, "facilitatorId");
             final String facilitatorName = rs.getString("facilitatorName");
-            final Long redValidationCount = rs.getLong("redValidationCount");
-            final Long orangeValidationCount = rs.getLong("orangeValidationCount");
-            final Long greenValidationCount = rs.getLong("greenValidationCount");
-            final Long yellowValidationCount = rs.getLong("yellowValidationCount");
+            final Long redValidationCount = 0L;
+            final Long orangeValidationCount = 0L;
+            final Long greenValidationCount = 0L;
+            final Long yellowValidationCount = 0L;
             final Long prequalilficationTimespan = rs.getLong("prequalilficationTimespan");
             final Integer previousStatus = rs.getInt("previousStatus");
             final String statusChangedBy = rs.getString("statusChangedBy");
             final LocalDate statusChangedOn = JdbcSupport.getLocalDate(rs, "statusChangedOn");
-            final String processType = rs.getString("processType");
-            final String processQuality = rs.getString("processQuality");
+            final String processType = "that";
+            final String processQuality = "nuevo";
             final Integer substatus = rs.getInt("substatus");
             String prequalificationSubStatus = PrequalificationSubStatus.PENDING.getCode();
             if (substatus != null) {
@@ -567,8 +566,8 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             }
             final String assignedUser = rs.getString("assignedUser");
             final String assignedUserName = rs.getString("assignedUserName");
-            final BigDecimal totalRequestedAmount = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "totalRequestedAmount");
-            final BigDecimal totalApprovedAmount = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "totalApprovedAmount");
+            final BigDecimal totalRequestedAmount = BigDecimal.ZERO;
+            final BigDecimal totalApprovedAmount = BigDecimal.ONE;
 
             if (StringUtils.isBlank(groupName)) {
                 groupName = newGroupName;
@@ -782,10 +781,10 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             final Long noOfCycles = rs.getLong("noOfCycles");
             final Long additionalCreditsCount = rs.getLong("additionalCreditsCount");
             final BigDecimal additionalCreditsSum = rs.getBigDecimal("additionalCreditsSum");
-            final Long redValidationCount = rs.getLong("redValidationCount");
-            final Long orangeValidationCount = rs.getLong("orangeValidationCount");
-            final Long greenValidationCount = rs.getLong("greenValidationCount");
-            final Long yellowValidationCount = rs.getLong("yellowValidationCount");
+            final Long redValidationCount = 0L;
+            final Long orangeValidationCount = 0L;
+            final Long greenValidationCount = 0L;
+            final Long yellowValidationCount = 0L;
             final Boolean groupPresident = rs.getBoolean("groupPresident");
 
             return MemberPrequalificationData.instance(id, name, dpi, dob, puente, requestedAmount, status, blacklistCount, totalLoanAmount,
