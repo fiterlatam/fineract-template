@@ -2529,4 +2529,11 @@
                 splitStatements="true"
                 stripComments="true"/>
     </changeSet>
+
+    <changeSet author="fineract" id="208">
+        <preConditions onFail="MARK_RAN">
+            <columnExists tableName="m_client_loan_additional_properties" columnName="observaciones"/>
+        </preConditions>
+        <modifyDataType tableName="m_client_loan_additional_properties" columnName="observaciones" newDataType="LONGTEXT"/>
+    </changeSet>
 </databaseChangeLog>

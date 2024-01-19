@@ -239,7 +239,7 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
             final String loanAccNo = rs.getString("loanAccNo");
             final Long loanAccId = JdbcSupport.getLong(rs, "loanAccId");
             final String groupNo = rs.getString("groupNo");
-            final String numeroCliente = rs.getString("numero_cliente");
+            final String numeroCliente = rs.getString("numeroCliente");
             final BigDecimal loanAmount = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "loanAmount");
             final BigDecimal guaranteeAmount = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "guaranteeAmount");
             final BigDecimal chequeAmount = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "chequeAmount");
@@ -445,7 +445,9 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
             for (final ChequeData chequeData : chequeDataList) {
                 if (!(chequeData.getStatus().getId().equals(BankChequeStatus.VOIDED.getValue().longValue())
                         && chequeData.getGuaranteeId().equals(data.getId()))) {
-                    guaranteeDataList.remove(index);
+                    if (guaranteeDataList.size() > index - 1) {
+                        guaranteeDataList.remove(index);
+                    }
                 }
             }
             index++;
