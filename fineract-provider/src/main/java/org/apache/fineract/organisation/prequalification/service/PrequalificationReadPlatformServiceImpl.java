@@ -313,7 +313,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
 
             }
 
-            if (StringUtils.equals(groupingType,"individual")) {
+            if (StringUtils.equals(groupingType, "individual")) {
                 extraCriteria += " and g.prequalification_type_enum = ? ";
                 paramList.add(PrequalificationType.INDIVIDUAL.getValue());
                 if (dpiNumber != null) {
@@ -468,38 +468,38 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                     ) prequalification_numbers ON prequalification_numbers.prequalification_id = g.id
                     LEFT JOIN m_agency ma ON
                     	g.agency_id = ma.id
-                    LEFT JOIN 
+                    LEFT JOIN
                     (
                       SELECT p.id AS groupid,
                       COUNT(mcvr.id) AS validCount
-                      FROM m_checklist_validation_result mcvr 
+                      FROM m_checklist_validation_result mcvr
                       INNER JOIN m_prequalification_group p ON mcvr.prequalification_id = p.id and mcvr.validation_color_enum = 1
                     ) greenValidation ON greenValidation.groupid = g.id
-                    
-                     LEFT JOIN 
+
+                     LEFT JOIN
                     (
                       SELECT p.id AS groupid,
                       COUNT(mcvr.id) AS validCount
-                      FROM m_checklist_validation_result mcvr 
+                      FROM m_checklist_validation_result mcvr
                       INNER JOIN m_prequalification_group p ON mcvr.prequalification_id = p.id and mcvr.validation_color_enum = 2
                     ) yellowValidation ON yellowValidation.groupid = g.id
-                    
-                     LEFT JOIN 
+
+                     LEFT JOIN
                     (
                       SELECT p.id AS groupid,
                       COUNT(mcvr.id) AS validCount
-                      FROM m_checklist_validation_result mcvr 
+                      FROM m_checklist_validation_result mcvr
                       INNER JOIN m_prequalification_group p ON mcvr.prequalification_id = p.id and mcvr.validation_color_enum = 3
                     ) orangeValidation ON orangeValidation.groupid = g.id
-                    
-                     LEFT JOIN 
+
+                     LEFT JOIN
                     (
                       SELECT p.id AS groupid,
                       COUNT(mcvr.id) AS validCount
-                      FROM m_checklist_validation_result mcvr 
+                      FROM m_checklist_validation_result mcvr
                       INNER JOIN m_prequalification_group p ON mcvr.prequalification_id = p.id and mcvr.validation_color_enum = 4
                     ) redValidation ON redValidation.groupid = g.id
-                    
+
                     LEFT JOIN m_group cg ON
                     	cg.id = g.group_id
                     LEFT JOIN m_group linkedGroup ON

@@ -182,6 +182,22 @@ public class GroupPrequalificationApiResource {
         String groupId = queryParameters.getFirst("groupId");
         Long agencyId = null;
         Long centerId = null;
+        Collection<CenterData> centerData = null;
+        Collection<AgencyData> agencies = null;
+        Collection<AppUserData> appUsers = null;
+        Collection<LoanProductData> loanProducts = null;
+        GlobalConfigurationPropertyData timespan = null;
+        List<EnumOptionData> statusOptions = Arrays.asList(status(PrequalificationStatus.CONSENT_ADDED),
+                status(PrequalificationStatus.BLACKLIST_CHECKED), status(PrequalificationStatus.BLACKLIST_REJECTED),
+                status(PrequalificationStatus.COMPLETED), status(PrequalificationStatus.BURO_CHECKED),
+                status(PrequalificationStatus.HARD_POLICY_CHECKED), status(PrequalificationStatus.TIME_EXPIRED),
+                status(PrequalificationStatus.PREQUALIFICATION_UPDATE_REQUESTED));
+        if (StringUtils.equalsIgnoreCase(type, "list")) {
+            final GroupPrequalificationData clientIdentifierData = GroupPrequalificationData.template(agencies, centerData, loanProducts,
+                    appUsers, timespan, statusOptions);
+            final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(queryParameters);
+            return this.toApiJsonSerializer.serialize(settings, clientIdentifierData, PRE_QUALIFICATION_DATA_PARAMETERS);
+        }
         if (!StringUtils.isBlank(groupId)) {
             GroupPrequalificationData prequalificationGroup = this.prequalificationReadPlatformService.retrieveOne(Long.valueOf(groupId));
             agencyId = prequalificationGroup.getAgencyId();
@@ -195,7 +211,7 @@ public class GroupPrequalificationApiResource {
             centerId = NumberUtils.toLong(queryParameters.getFirst("centerId"), Long.MAX_VALUE);
         }
 
-        Collection<LoanProductData> loanProducts = this.loanProductReadPlatformService.retrieveAllLoanProducts();
+        loanProducts = this.loanProductReadPlatformService.retrieveAllLoanProducts();
         Integer prequalificationType = null;
         if (StringUtils.isNotBlank(groupingType)) {
             if (groupingType.equals("group")) {
@@ -212,27 +228,18 @@ public class GroupPrequalificationApiResource {
         }
 
         final String hierarchy = this.context.authenticatedUser().getOffice().getHierarchy();
-        final Collection<CenterData> centerData = this.centerReadPlatformService.retrieveByOfficeHierarchy(hierarchy, agencyId);
-        final Collection<AgencyData> agencies = this.agencyReadPlatformService.retrieveByOfficeHierarchy(hierarchy);
-        final Collection<AppUserData> appUsers = this.appUserReadPlatformService.retrieveByOfficeHierarchy(hierarchy, centerId);
-
-        List<EnumOptionData> statusOptions = Arrays.asList(status(PrequalificationStatus.CONSENT_ADDED),
-                status(PrequalificationStatus.BLACKLIST_CHECKED),status(PrequalificationStatus.BLACKLIST_REJECTED),
-                status(PrequalificationStatus.COMPLETED),
-                status(PrequalificationStatus.BURO_CHECKED), status(PrequalificationStatus.HARD_POLICY_CHECKED),
-                status(PrequalificationStatus.TIME_EXPIRED), status(PrequalificationStatus.PREQUALIFICATION_UPDATE_REQUESTED));
+        centerData = this.centerReadPlatformService.retrieveByOfficeHierarchy(hierarchy, agencyId);
+        agencies = this.agencyReadPlatformService.retrieveByOfficeHierarchy(hierarchy);
+        appUsers = this.appUserReadPlatformService.retrieveByOfficeHierarchy(hierarchy, centerId);
         if (StringUtils.equalsIgnoreCase(type, "analysis")) {
             statusOptions = Arrays.asList(status(PrequalificationStatus.ANALYSIS_UNIT_PENDING_APPROVAL),
                     status(PrequalificationStatus.ANALYSIS_UNIT_PENDING_APPROVAL_WITH_EXCEPTIONS));
         }
-
         if (StringUtils.equalsIgnoreCase(type, "exceptionsqueue")) {
             statusOptions = Arrays.asList(status(PrequalificationStatus.ANALYSIS_UNIT_PENDING_APPROVAL_WITH_EXCEPTIONS),
                     status(PrequalificationStatus.AGENCY_LEAD_APPROVED_WITH_EXCEPTIONS));
         }
-
-        GlobalConfigurationPropertyData timespan = this.configurationReadPlatformService
-                .retrieveGlobalConfiguration("Prequalification Timespan");
+        timespan = this.configurationReadPlatformService.retrieveGlobalConfiguration("Prequalification Timespan");
         final GroupPrequalificationData clientIdentifierData = GroupPrequalificationData.template(agencies, centerData, loanProducts,
                 appUsers, timespan, statusOptions);
 
