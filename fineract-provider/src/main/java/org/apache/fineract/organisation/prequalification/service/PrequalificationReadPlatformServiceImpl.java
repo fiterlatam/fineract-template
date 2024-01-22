@@ -42,6 +42,7 @@ import org.apache.fineract.infrastructure.core.service.database.DatabaseSpecific
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.infrastructure.security.utils.ColumnValidator;
 import org.apache.fineract.organisation.prequalification.command.PrequalificationDataValidator;
+import org.apache.fineract.organisation.prequalification.data.BuroData;
 import org.apache.fineract.organisation.prequalification.data.GroupPrequalificationData;
 import org.apache.fineract.organisation.prequalification.data.MemberPrequalificationData;
 import org.apache.fineract.organisation.prequalification.domain.BuroCheckClassification;
@@ -184,10 +185,17 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                 final EnumOptionData enumOptionData = PreQualificationsMemberEnumerations.status(status);
                 memberPrequalificationData.setStatus(enumOptionData);
             }
+            Long membersRedValidationCount = members.stream().mapToLong(MemberPrequalificationData::getRedValidationCount).sum();
+            clientData.setRedValidationCount(clientData.getRedValidationCount() + membersRedValidationCount);
+            Long membersOrangeValidationCount = members.stream().mapToLong(MemberPrequalificationData::getOrangeValidationCount).sum();
+            clientData.setOrangeValidationCount(clientData.getOrangeValidationCount() + membersOrangeValidationCount);
+            Long membersYellowValidationCount = members.stream().mapToLong(MemberPrequalificationData::getYellowValidationCount).sum();
+            clientData.setYellowValidationCount(clientData.getYellowValidationCount() + membersYellowValidationCount);
+            Long membersGreenValidationCount = members.stream().mapToLong(MemberPrequalificationData::getGreenValidationCount).sum();
+            clientData.setGreenValidationCount(clientData.getYellowValidationCount() + membersGreenValidationCount);
             clientData.updateMembers(members);
         }
         return clientData;
-
     }
 
     @Override
@@ -686,6 +694,13 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                     	COALESCE((SELECT max(loan_counter) FROM m_loan WHERE client_id = mc.id), 0) AS noOfCycles,
                     	0 AS additionalCreditsCount,
                     	0 AS additionalCreditsSum,
+                    	m.buro_nombre AS nombre,
+                    	m.buro_id_tipo AS tipo,
+                    	m.buro_id_numero as numero,
+                    	m.buro_id_estado as estado,
+                    	m.buro_fecha AS fecha,
+                    	m.buro_cuentas AS cuentas,
+                    	m.buro_resumen AS resumen,
                     	(
                     	SELECT
                     		count(*)
@@ -766,7 +781,15 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             EnumOptionData bureauCheckStatus = BuroCheckClassification.status(BuroCheckClassification.fromInt(bureauStatus).getId());
             final Long id = JdbcSupport.getLong(rs, "id");
             final String name = rs.getString("name");
-            ;
+            final String nombre = rs.getString("nombre");
+            final String tipo = rs.getString("tipo");
+            final String numero = rs.getString("numero");
+            final String estado = rs.getString("estado");
+            final LocalDateTime fecha = JdbcSupport.getLocalDateTime(rs, "fecha");
+            final String cuentas = rs.getString("cuentas");
+            final String resumen = rs.getString("resumen");
+            final BuroData buroData = BuroData.builder().nombre(nombre).tipo(tipo).numero(numero).estado(estado).fecha(fecha)
+                    .cuentas(cuentas).resumen(resumen).classification(bureauCheckStatus).build();
             final String dpi = rs.getString("dpi");
             final BigDecimal requestedAmount = rs.getBigDecimal("requestedAmount");
             final BigDecimal approvedAmount = rs.getBigDecimal("approvedAmount");
@@ -781,17 +804,17 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             final Long noOfCycles = rs.getLong("noOfCycles");
             final Long additionalCreditsCount = rs.getLong("additionalCreditsCount");
             final BigDecimal additionalCreditsSum = rs.getBigDecimal("additionalCreditsSum");
-            final Long redValidationCount = 0L;
-            final Long orangeValidationCount = 0L;
-            final Long greenValidationCount = 0L;
-            final Long yellowValidationCount = 0L;
+            final Long redValidationCount = rs.getLong("redValidationCount");
+            final Long orangeValidationCount = rs.getLong("orangeValidationCount");
+            final Long greenValidationCount = rs.getLong("greenValidationCount");
+            final Long yellowValidationCount = rs.getLong("redValidationCount");
             final Boolean groupPresident = rs.getBoolean("groupPresident");
-
-            return MemberPrequalificationData.instance(id, name, dpi, dob, puente, requestedAmount, status, blacklistCount, totalLoanAmount,
-                    totalLoanBalance, totalGuaranteedLoanBalance, noOfCycles, additionalCreditsCount, additionalCreditsSum,
-                    activeBlacklistCount, inActiveBlacklistCount, greenValidationCount, yellowValidationCount, orangeValidationCount,
-                    redValidationCount, bureauCheckStatus, approvedAmount, groupPresident);
-
+            MemberPrequalificationData memberPrequalificationData = MemberPrequalificationData.instance(id, name, dpi, dob, puente,
+                    requestedAmount, status, blacklistCount, totalLoanAmount, totalLoanBalance, totalGuaranteedLoanBalance, noOfCycles,
+                    additionalCreditsCount, additionalCreditsSum, activeBlacklistCount, inActiveBlacklistCount, greenValidationCount,
+                    yellowValidationCount, orangeValidationCount, redValidationCount, bureauCheckStatus, approvedAmount, groupPresident);
+            memberPrequalificationData.setBuroData(buroData);
+            return memberPrequalificationData;
         }
     }
 

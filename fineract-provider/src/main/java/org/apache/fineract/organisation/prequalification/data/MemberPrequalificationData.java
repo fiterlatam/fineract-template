@@ -53,6 +53,7 @@ public class MemberPrequalificationData {
     private final EnumOptionData bureauCheckStatus;
     private final Boolean groupPresident;
     private final Boolean isSelected;
+    private BuroData buroData;
 
     public MemberPrequalificationData(final Long id, final String name, final String dpi, final LocalDate dob, final String workWithPuente,
             final BigDecimal requestedAmount, final EnumOptionData status, Long blacklistCount, BigDecimal totalLoanAmount,
@@ -126,5 +127,29 @@ public class MemberPrequalificationData {
                 totalLoanBalance, totalGuaranteedLoanBalance, noOfCycles, additionalCreditsCount, additionalCreditsSum,
                 activeBlacklistCount, inActiveBlacklistCount, greenValidationCount, yellowValidationCount, orangeValidationCount,
                 redValidationCount, bureauCheckStatus, approvedAmount, groupPresident, null);
+    }
+
+    public Long getGreenValidationCount() {
+        return greenValidationCount;
+    }
+
+    public Long getYellowValidationCount() {
+        return yellowValidationCount;
+    }
+
+    public Long getOrangeValidationCount() {
+        return orangeValidationCount;
+    }
+
+    public Long getRedValidationCount() {
+        return redValidationCount;
+    }
+
+    public BuroData getBuroData() {
+        return buroData;
+    }
+
+    public void setBuroData(BuroData buroData) {
+        this.buroData = buroData;
     }
 }
