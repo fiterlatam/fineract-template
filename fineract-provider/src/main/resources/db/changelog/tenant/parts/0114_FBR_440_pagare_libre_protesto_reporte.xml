@@ -599,7 +599,6 @@
         </sql>
     </changeSet>
 
-
     <changeSet id="7" author="fineract">
         <sql>
             <![CDATA[
@@ -610,6 +609,47 @@
             INSERT INTO stretchy_report_parameter (report_id, parameter_id, report_parameter_name) VALUES ((SELECT id FROM stretchy_report sr WHERE sr.report_name = 'Pagare Libre Protesto Adicional'), (SELECT id FROM stretchy_parameter sp WHERE sp.parameter_name = 'loanProductSelectAll'), 'loanProductSelectAll');
             INSERT INTO stretchy_report_parameter (report_id, parameter_id, report_parameter_name) VALUES ((SELECT id FROM stretchy_report sr WHERE sr.report_name = 'Pagare Libre Protesto Adicional'), (SELECT id FROM stretchy_parameter sp WHERE sp.parameter_name = 'clientIdSelectOne'), 'clientIdSelectOne');
             INSERT INTO stretchy_report_parameter (report_id, parameter_id, report_parameter_name) VALUES ((SELECT id FROM stretchy_report sr WHERE sr.report_name = 'Pagare Libre Protesto Adicional'), (SELECT id FROM stretchy_parameter sp WHERE sp.parameter_name = 'disbursementDate'), 'disbursementDate');
+            ]]>
+        </sql>
+    </changeSet>
+
+    <changeSet id="8" author="fineract">
+        <sql>
+            <![CDATA[
+            UPDATE
+                stretchy_report_parameter srp
+                INNER JOIN stretchy_report sr ON sr.id = srp.report_id
+                INNER JOIN stretchy_parameter sp ON sp.id = srp.parameter_id
+                SET srp.report_parameter_name = 'clientLoanIdSelectOne'
+            WHERE sr.report_name = 'Pagare Libre Protesto Individual' AND sp.parameter_name  = 'clientIdSelectOne';
+
+            UPDATE
+                stretchy_report_parameter srp
+                INNER JOIN stretchy_report sr ON sr.id = srp.report_id
+                INNER JOIN stretchy_parameter sp ON sp.id = srp.parameter_id
+                SET srp.report_parameter_name = 'clientLoanIdSelectOne'
+            WHERE sr.report_name = 'Pagare Libre Protesto Adicional' AND sp.parameter_name  = 'clientIdSelectOne';
+
+            UPDATE  stretchy_parameter sp
+            SET sp.parameter_name = 'clientLoanIdSelectOne',
+                sp.parameter_variable = 'clientLoanIdSelectOne',
+                sp.parameter_sql = "SELECT
+                ml.id AS id,
+                CONCAT(mc.display_name, ' (#', ml.id, ')') AS name
+                FROM
+                    m_client mc
+                LEFT JOIN m_office mo ON
+                    mo.id = mc.office_id
+                LEFT JOIN m_loan ml ON
+                    ml.client_id = mc.id
+                WHERE
+                    (mo.id = ${officeIdSelectAll}
+                    OR ${officeIdSelectAll} = '-1')
+                AND (ml.product_id = ${loanProductSelectAll}
+                    OR ${loanProductSelectAll} = '-1')
+                AND ml.loan_status_id = 300
+                AND ml.disbursedon_date = '${disbursementDate}'"
+            WHERE sp.parameter_name = 'clientIdSelectOne';
             ]]>
         </sql>
     </changeSet>
