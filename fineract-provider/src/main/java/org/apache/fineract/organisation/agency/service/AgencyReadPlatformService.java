@@ -29,5 +29,7 @@ public interface AgencyReadPlatformService {
 
     Collection<AgencyData> retrieveAllByUser();
 
+    Collection<AgencyData> retrieveAllByAgencyLeader();
+
     Collection<AgencyData> retrieveByOfficeHierarchy(final String hierarchy);
 }
