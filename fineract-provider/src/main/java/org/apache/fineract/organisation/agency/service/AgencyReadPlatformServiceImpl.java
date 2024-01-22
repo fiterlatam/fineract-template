@@ -39,6 +39,7 @@ import org.apache.fineract.organisation.office.data.OfficeData;
 import org.apache.fineract.organisation.office.domain.OfficeHierarchyLevel;
 import org.apache.fineract.organisation.office.service.OfficeReadPlatformService;
 import org.apache.fineract.useradministration.data.AppUserData;
+import org.apache.fineract.useradministration.domain.AppUser;
 import org.apache.fineract.useradministration.service.AppUserReadPlatformService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
@@ -141,6 +142,18 @@ public class AgencyReadPlatformServiceImpl implements AgencyReadPlatformService 
         schemaSql += "where a.linked_office_id in (%s)";
 
         return this.jdbcTemplate.query(String.format(schemaSql, inSql), agencyMapper, officeIds.toArray());
+    }
+
+
+    @Override
+    public Collection<AgencyData> retrieveAllByAgencyLeader() {
+        AppUser appUser = this.context.authenticatedUser();
+
+        AgencyMapper agencyMapper = new AgencyMapper();
+        String schemaSql = "select " + agencyMapper.schema();
+        schemaSql += "where a.responsible_user_id = ?";
+
+        return this.jdbcTemplate.query(schemaSql, agencyMapper, appUser.getId());
     }
 
     private static final class AgencyMapper implements RowMapper<AgencyData> {

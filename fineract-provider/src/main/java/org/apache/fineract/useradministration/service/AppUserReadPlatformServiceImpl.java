@@ -307,21 +307,20 @@ public class AppUserReadPlatformServiceImpl implements AppUserReadPlatformServic
     public Collection<AppUserData> retrieveByOfficeHierarchy(String hierarchy, final Long centerId) {
         String sql = """
                 SELECT
-                	facilitator.id AS id,
-                	facilitator.username AS username,
-                	facilitator.firstname AS firstname,
-                	facilitator.lastname AS lastname,
-                	facilitator.email AS email,
-                	facilitator.office_id AS officeId,
-                	mo.name AS officeName,
-                	facilitator.is_self_service_user AS isSelfServiceUser
+                    facilitator.id AS id,
+                    facilitator.username AS username,
+                    facilitator.firstname AS firstname,
+                    facilitator.lastname AS lastname,
+                    facilitator.email AS email,
+                    facilitator.office_id AS officeId,
+                    mo.NAME AS officeName,
+                    facilitator.is_self_service_user AS isSelfServiceUser 
                 FROM m_office mo
-                INNER JOIN m_office office_under ON office_under.hierarchy LIKE CONCAT(mo.hierarchy, '%')AND office_under.hierarchy LIKE CONCAT(?, '%')
-                LEFT JOIN m_group center ON center.office_id = office_under.id
-                LEFT JOIN m_office center_office ON center_office.id = center.office_id
-                LEFT JOIN m_office center_office_under ON center_office_under.hierarchy LIKE CONCAT(center_office.hierarchy, '%')
-                LEFT JOIN m_appuser facilitator ON facilitator.office_id = center_office_under.id
-                WHERE facilitator.is_deleted = FALSE AND center.parent_id IS NULL AND center.level_id = 1
+                INNER JOIN m_office office_under ON office_under.hierarchy LIKE CONCAT( mo.hierarchy, '%' ) 
+                AND office_under.hierarchy LIKE CONCAT(?, '%')
+                LEFT JOIN m_appuser facilitator ON facilitator.office_id = office_under.id 
+                LEFT JOIN m_group center ON center.office_id = office_under.id and center.parent_id is null
+                WHERE facilitator.is_deleted = FALSE
                 """;
         final List<Object> params = new ArrayList<>(List.of(hierarchy));
         if (centerId != null) {

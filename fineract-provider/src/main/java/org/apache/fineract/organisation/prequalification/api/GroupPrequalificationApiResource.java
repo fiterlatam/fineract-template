@@ -229,7 +229,10 @@ public class GroupPrequalificationApiResource {
 
         final String hierarchy = this.context.authenticatedUser().getOffice().getHierarchy();
         centerData = this.centerReadPlatformService.retrieveByOfficeHierarchy(hierarchy, agencyId);
-        agencies = this.agencyReadPlatformService.retrieveByOfficeHierarchy(hierarchy);
+        agencies = this.agencyReadPlatformService.retrieveAllByAgencyLeader();
+        if (agencies.isEmpty()){
+            agencies = this.agencyReadPlatformService.retrieveByOfficeHierarchy(hierarchy);
+        }
         appUsers = this.appUserReadPlatformService.retrieveByOfficeHierarchy(hierarchy, centerId);
         if (StringUtils.equalsIgnoreCase(type, "analysis")) {
             statusOptions = Arrays.asList(status(PrequalificationStatus.ANALYSIS_UNIT_PENDING_APPROVAL),
