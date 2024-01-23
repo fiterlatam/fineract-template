@@ -122,7 +122,6 @@ import org.apache.fineract.portfolio.savings.domain.SavingsAccountRepositoryWrap
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountStatusType;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountTransaction;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountTransactionRepository;
-import org.apache.fineract.portfolio.savings.exception.HoldTransactionNotFoundException;
 import org.apache.fineract.portfolio.savings.exception.PostInterestAsOnDateException;
 import org.apache.fineract.portfolio.savings.exception.PostInterestAsOnDateException.PostInterestAsOnExceptionType;
 import org.apache.fineract.portfolio.savings.exception.PostInterestClosingDateException;
@@ -2185,7 +2184,7 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
                     .findFirst().orElse(null);
 
             if (holdTransaction == null) {
-                throw new HoldTransactionNotFoundException(null, null);
+                return null;
             }
             Long savingsId = holdTransaction.getSavingsAccount().getId();
 
