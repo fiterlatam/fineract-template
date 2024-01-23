@@ -81,6 +81,27 @@ public class PrequalificationGroupMember extends AbstractPersistableCustom {
     @Column(name = "is_president", nullable = false)
     private Boolean groupPresident;
 
+    @Column(name = "buro_nombre")
+    private String nombre;
+
+    @Column(name = "buro_id_tipo")
+    private String tipo;
+
+    @Column(name = "buro_id_numero")
+    private String numero;
+
+    @Column(name = "buro_id_estado")
+    private String estado;
+
+    @Column(name = "buro_fecha")
+    private LocalDateTime fecha;
+
+    @Column(name = "buro_cuentas")
+    private String cuentas;
+
+    @Column(name = "buro_resumen")
+    private String resumen;
+
     protected PrequalificationGroupMember() {
         //
     }
@@ -188,5 +209,33 @@ public class PrequalificationGroupMember extends AbstractPersistableCustom {
 
     public void updatePresident(Boolean newValue) {
         this.groupPresident = newValue;
+    }
+
+    public void setNombre(String nombre) {
+        this.nombre = nombre;
+    }
+
+    public void setTipo(String tipo) {
+        this.tipo = tipo;
+    }
+
+    public void setNumero(String numero) {
+        this.numero = numero;
+    }
+
+    public void setEstado(String estado) {
+        this.estado = estado;
+    }
+
+    public void setFecha(LocalDateTime fecha) {
+        this.fecha = fecha;
+    }
+
+    public void setCuentas(String cuentas) {
+        this.cuentas = cuentas;
+    }
+
+    public void setResumen(String resumen) {
+        this.resumen = resumen;
     }
 }
