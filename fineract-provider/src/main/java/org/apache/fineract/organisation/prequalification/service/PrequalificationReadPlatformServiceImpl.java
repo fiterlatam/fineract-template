@@ -557,16 +557,16 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             final Long linkedGroupId = JdbcSupport.getLong(rs, "linkedGroupId");
             final Long facilitatorId = JdbcSupport.getLong(rs, "facilitatorId");
             final String facilitatorName = rs.getString("facilitatorName");
-            final Long redValidationCount = 0L;
-            final Long orangeValidationCount = 0L;
-            final Long greenValidationCount = 0L;
-            final Long yellowValidationCount = 0L;
+            final Long redValidationCount = rs.getLong("redValidationCount");
+            final Long orangeValidationCount = rs.getLong("orangeValidationCount");
+            final Long greenValidationCount = rs.getLong("greenValidationCount");
+            final Long yellowValidationCount = rs.getLong("yellowValidationCount");
             final Long prequalilficationTimespan = rs.getLong("prequalilficationTimespan");
             final Integer previousStatus = rs.getInt("previousStatus");
             final String statusChangedBy = rs.getString("statusChangedBy");
             final LocalDate statusChangedOn = JdbcSupport.getLocalDate(rs, "statusChangedOn");
-            final String processType = "that";
-            final String processQuality = "nuevo";
+            final String processType = rs.getString("processType");
+            final String processQuality = rs.getString("processQuality");
             final Integer substatus = rs.getInt("substatus");
             String prequalificationSubStatus = PrequalificationSubStatus.PENDING.getCode();
             if (substatus != null) {
@@ -574,8 +574,8 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             }
             final String assignedUser = rs.getString("assignedUser");
             final String assignedUserName = rs.getString("assignedUserName");
-            final BigDecimal totalRequestedAmount = BigDecimal.ZERO;
-            final BigDecimal totalApprovedAmount = BigDecimal.ONE;
+            final BigDecimal totalRequestedAmount = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "totalRequestedAmount");
+            final BigDecimal totalApprovedAmount = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "totalApprovedAmount");
 
             if (StringUtils.isBlank(groupName)) {
                 groupName = newGroupName;
