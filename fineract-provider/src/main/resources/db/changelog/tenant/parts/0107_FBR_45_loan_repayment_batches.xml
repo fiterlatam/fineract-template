@@ -418,4 +418,55 @@
             ]]>
         </sql>
     </changeSet>
+
+
+    <changeSet id="15" author="fineract">
+        <sql>
+            <![CDATA[
+                UPDATE stretchy_report
+                SET report_sql = "SELECT
+                    DATE_FORMAT(CURRENT_TIMESTAMP(),  '%Y%m%d%H%i%S') AS 'tranid',
+                    'United States : Guatemala' AS 'subsidiary',
+                    '' AS currency,
+                    CONCAT('Actividad desde ', DATE_FORMAT('${startDate}', '%d/%m/%Y'), ' al ',  DATE_FORMAT('${endDate}', '%d/%m/%Y'), ' MIFOS') AS 'memo',
+                    '' AS 'exchangerate',
+                    '' AS 'postingperiod',
+                    DATE_FORMAT('${endDate}', '%d/%m/%Y') AS 'trandate',
+                     aga.gl_code AS 'journalItemLine_account',
+                    CASE
+                        WHEN journalEntry.type_enum = 1 THEN journalEntry.amount
+                        ELSE NULL
+                    END AS 'journalItemLine_debitAmount',
+                    CASE
+                        WHEN journalEntry.type_enum = 2 THEN journalEntry.amount
+                        ELSE NULL
+                    END AS 'journalItemLine_creditAmount',
+                    CONCAT(ml.account_no, ' - ', mpl.name) AS 'journalItemLine_memo',
+                    '' AS 'journalItemLine_entityRef',
+                    '' AS 'journalItemLine_suitekeyRef',
+                    agency_office.office_code AS 'journalItemLine_branchRef',
+                    mpl.short_name AS 'journalItemLine_departmentRef',
+                    mpl.name AS 'journalItemLine_Product/Project/ProgramRef',
+                    'N/A' AS 'journalItemLine_GrantRef',
+                    'N' AS 'journalItemLine_RestrictionRef',
+                    'NOFUNC' AS 'journalItemLine_Functional ExpenseRef'
+                    FROM m_office mo
+                    INNER JOIN m_office office_under ON office_under.hierarchy LIKE CONCAT(mo.hierarchy, '%')AND office_under.hierarchy LIKE CONCAT('${currentUserHierarchy}', '%')
+                    INNER JOIN acc_gl_journal_entry journalEntry
+                    INNER JOIN acc_gl_account aga ON journalEntry.account_id = aga.id
+                    LEFT JOIN m_loan_transaction mlt ON mlt.id = journalEntry.loan_transaction_id
+                    LEFT JOIN m_loan ml ON mlt.loan_id = ml.id
+                    LEFT JOIN m_product_loan mpl ON mpl.id = ml.product_id
+                    LEFT JOIN m_group mg ON mg.id = ml.group_id
+                    LEFT JOIN m_group center ON center.id = mg.parent_id
+                    LEFT JOIN m_portfolio mp ON mp.id = center.portfolio_id
+                    LEFT JOIN m_supervision ms ON ms.id = mp.supervision_id
+                    LEFT JOIN m_agency ma ON ma.id = ms.agency_id
+                    LEFT JOIN m_office agency_office ON agency_office.id = ma.linked_office_id
+                    WHERE journalEntry.reversed = FALSE AND (journalEntry.entry_date BETWEEN '${startDate}' AND '${endDate}')
+                    GROUP BY journalEntry.id"
+                WHERE report_name = "Reporte de Contabilizacion Netsuite";
+            ]]>
+        </sql>
+    </changeSet>
 </databaseChangeLog>
