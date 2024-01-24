@@ -356,7 +356,7 @@ public class LoanSchedularServiceImpl implements LoanSchedularService {
 
                     // Loan not found
                     if (loanAccountOptional.isEmpty()) {
-                        final String failMessage = "error.msg.loan.not.found: Loan ID :: " + loanCode;
+                        final String failMessage = "Préstamo no encontrado. ID: " + loanCode;
                         loanRepaymentImport.setStatus(LoanRepaymentImportStatus.ERROR.getId());
                         loanRepaymentImport.setErrorId(1L);
                         loanRepaymentImport.setOperationResult(failMessage);
