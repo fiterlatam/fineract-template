@@ -100,4 +100,13 @@
         </addColumn>
     </changeSet>
 
+    <changeSet id="8" author="fineract">
+        <sql>
+            <![CDATA[
+                INSERT IGNORE INTO m_role (name, description, is_disabled) VALUES('Contador General', 'Contador General', 0);
+                INSERT IGNORE INTO m_role (name, description, is_disabled) VALUES('Auxiliar Contable ', 'Auxiliar Contable', 0);
+            ]]>
+        </sql>
+    </changeSet>
+
 </databaseChangeLog>

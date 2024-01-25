@@ -1366,7 +1366,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
         postJournalEntries(loan, existingTransactionIds, existingReversedTransactionIds);
         loanAccountDomainService.recalculateAccruals(loan);
-        this.savingsAccountWritePlatformService.releaseLoanGuarantee(loanId, command, command.localDateValueOfParameterNamed("transactionDate"));
+        this.savingsAccountWritePlatformService.releaseLoanGuarantee(loanId, command,
+                command.localDateValueOfParameterNamed("transactionDate"));
 
         businessEventNotifierService.notifyPostBusinessEvent(new LoanWrittenOffPostBusinessEvent(writeOff));
         return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withEntityId(writeOff.getId())
