@@ -201,7 +201,6 @@ public class GroupPrequalificationApiResource {
         if (!StringUtils.isBlank(groupId)) {
             GroupPrequalificationData prequalificationGroup = this.prequalificationReadPlatformService.retrieveOne(Long.valueOf(groupId));
             agencyId = prequalificationGroup.getAgencyId();
-            centerId = prequalificationGroup.getCenterId();
         }
 
         if (queryParameters.getFirst("agencyId") != null) {
@@ -230,7 +229,7 @@ public class GroupPrequalificationApiResource {
         final String hierarchy = this.context.authenticatedUser().getOffice().getHierarchy();
         centerData = this.centerReadPlatformService.retrieveByOfficeHierarchy(hierarchy, agencyId);
         agencies = this.agencyReadPlatformService.retrieveAllByAgencyLeader();
-        if (agencies.isEmpty()){
+        if (agencies.isEmpty()) {
             agencies = this.agencyReadPlatformService.retrieveByOfficeHierarchy(hierarchy);
         }
         appUsers = this.appUserReadPlatformService.retrieveByOfficeHierarchy(hierarchy, centerId);

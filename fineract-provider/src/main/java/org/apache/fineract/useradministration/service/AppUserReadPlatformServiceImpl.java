@@ -314,11 +314,11 @@ public class AppUserReadPlatformServiceImpl implements AppUserReadPlatformServic
                     facilitator.email AS email,
                     facilitator.office_id AS officeId,
                     mo.NAME AS officeName,
-                    facilitator.is_self_service_user AS isSelfServiceUser 
+                    facilitator.is_self_service_user AS isSelfServiceUser
                 FROM m_office mo
-                INNER JOIN m_office office_under ON office_under.hierarchy LIKE CONCAT( mo.hierarchy, '%' ) 
+                INNER JOIN m_office office_under ON office_under.hierarchy LIKE CONCAT( mo.hierarchy, '%' )
                 AND office_under.hierarchy LIKE CONCAT(?, '%')
-                LEFT JOIN m_appuser facilitator ON facilitator.office_id = office_under.id 
+                LEFT JOIN m_appuser facilitator ON facilitator.office_id = office_under.id
                 LEFT JOIN m_group center ON center.office_id = office_under.id and center.parent_id is null
                 WHERE facilitator.is_deleted = FALSE
                 """;

@@ -38,6 +38,7 @@ import org.apache.fineract.infrastructure.core.exception.InvalidJsonException;
 import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidationException;
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
+import org.apache.fineract.portfolio.calendar.CalendarConstants;
 import org.apache.fineract.portfolio.client.api.ClientApiConstants;
 import org.apache.fineract.portfolio.group.api.GroupingTypesApiConstants;
 import org.apache.fineract.portfolio.group.domain.GroupRepositoryWrapper;
@@ -59,7 +60,8 @@ public final class GroupingTypesDataValidator {
             GroupingTypesApiConstants.cityId, GroupingTypesApiConstants.stateId, GroupingTypesApiConstants.centerTypeId,
             GroupingTypesApiConstants.distance, GroupingTypesApiConstants.meetingStart, GroupingTypesApiConstants.meetingEnd,
             GroupingTypesApiConstants.meetingStartTime, GroupingTypesApiConstants.meetingEndTime, GroupingTypesApiConstants.meetingDay,
-            GroupingTypesApiConstants.referencePoint, GroupingTypesApiConstants.legacyNumber));
+            GroupingTypesApiConstants.referencePoint, GroupingTypesApiConstants.legacyNumber,
+            CalendarConstants.CalendarSupportedParameters.Time_Format.getValue()));
 
     private static final Set<String> GROUP_TRANSFER_DATA_PARAMETERS = new HashSet<>(
             Arrays.asList(GroupingTypesApiConstants.groupIdParamName, GroupingTypesApiConstants.toCenterIdParamName));
@@ -76,7 +78,7 @@ public final class GroupingTypesDataValidator {
             GroupingTypesApiConstants.formationDate, GroupingTypesApiConstants.size, GroupingTypesApiConstants.createdDate,
             GroupingTypesApiConstants.meetingStartTime, GroupingTypesApiConstants.meetingEndTime,
             GroupingTypesApiConstants.newPortfolioCenterId, GroupingTypesApiConstants.groupLocation,
-            GroupingTypesApiConstants.prequalificationId));
+            GroupingTypesApiConstants.prequalificationId, CalendarConstants.CalendarSupportedParameters.Time_Format.getValue()));
 
     private static final Set<String> ACTIVATION_REQUEST_DATA_PARAMETERS = new HashSet<>(
             Arrays.asList(GroupingTypesApiConstants.localeParamName, GroupingTypesApiConstants.dateFormatParamName,
