@@ -605,6 +605,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                     .bigDecimalValueOfParameterNamed(PrequalificatoinApiConstants.memberRequestedAmountParamName);
             if (newValue != null) {
                 prequalificationGroupMember.updateAmountRequested(newValue);
+                prequalificationGroupMember.updateApprovedAmount(newValue);
             }
         }
 
