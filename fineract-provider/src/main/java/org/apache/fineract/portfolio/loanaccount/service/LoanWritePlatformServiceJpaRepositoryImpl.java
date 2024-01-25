@@ -185,6 +185,7 @@ import org.apache.fineract.portfolio.loanaccount.domain.LoanRepository;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanStatus;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanSubStatus;
+import org.apache.fineract.portfolio.loanaccount.domain.LoanSummary;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanSummaryWrapper;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanTrancheDisbursementCharge;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanTransaction;
@@ -225,6 +226,8 @@ import org.apache.fineract.portfolio.repaymentwithpostdatedchecks.domain.PostDat
 import org.apache.fineract.portfolio.repaymentwithpostdatedchecks.domain.PostDatedChecksRepository;
 import org.apache.fineract.portfolio.repaymentwithpostdatedchecks.service.RepaymentWithPostDatedChecksAssembler;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccount;
+import org.apache.fineract.portfolio.savings.domain.SavingsAccountTransaction;
+import org.apache.fineract.portfolio.savings.domain.SavingsAccountTransactionRepository;
 import org.apache.fineract.portfolio.savings.service.SavingsAccountWritePlatformService;
 import org.apache.fineract.portfolio.transfer.api.TransferApiConstants;
 import org.apache.fineract.useradministration.domain.AppUser;
@@ -282,6 +285,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     private final LumaAccountingProcessorForLoan lumaAccountingProcessorForLoan;
     private final BitaCoraMasterRepository bitaCoraMasterRepository;
     private final ChequeJpaRepository chequeJpaRepository;
+    private final SavingsAccountTransactionRepository savingsAccountTransactionRepository;
 
     private final SavingsAccountWritePlatformService savingsAccountWritePlatformService;
 
@@ -1017,8 +1021,29 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         // FBR-437 release gurantee
         final boolean adjustGuarantee = command.booleanPrimitiveValueOfParameterNamed("adjustGuarantee");
 
+        List<SavingsAccountTransaction> savingsAccountTransactions = this.savingsAccountTransactionRepository
+                .findAllTransactionByLoanId(loanId);
+
+        SavingsAccountTransaction holdTransaction = savingsAccountTransactions.stream().filter(sa -> sa.isAmountOnHoldNotReleased())
+                .findFirst().orElse(null);
+
         if (adjustGuarantee) {
-            this.savingsAccountWritePlatformService.releaseLoanGuarantee(loanId, command, transactionDate);
+
+            if (holdTransaction != null) {
+                this.savingsAccountWritePlatformService.releaseLoanGuarantee(loanId, command, transactionDate, holdTransaction);
+            }
+
+        }else{
+            LoanSummary summary = loan.getSummary();
+
+            //If its not release but the outstanding balance is less than whats in the guarantee then we need to adjust the guarantee
+            if (holdTransaction != null)
+                if (summary.getTotalOutstanding().compareTo(BigDecimal.ZERO) > 0 && holdTransaction.getAmount().compareTo(summary.getTotalOutstanding()) > 0) {
+                    //release loan guarantee amount
+                    this.savingsAccountWritePlatformService.releaseLoanGuarantee(loanId, command, transactionDate,holdTransaction);
+                    //repay the loan balance
+
+                }
         }
 
         return commandProcessingResultBuilder.withCommandId(command.commandId()) //

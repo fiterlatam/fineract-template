@@ -2174,18 +2174,8 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
     }
 
     @Override
-    public CommandProcessingResult releaseLoanGuarantee(Long loanId, JsonCommand command, LocalDate transactionDate) {
+    public CommandProcessingResult releaseLoanGuarantee(Long loanId, JsonCommand command, LocalDate transactionDate,SavingsAccountTransaction holdTransaction ) {
 
-        if (loanId != null && command != null) {
-            List<SavingsAccountTransaction> savingsAccountTransactions = this.savingsAccountTransactionRepository
-                    .findAllTransactionByLoanId(loanId);
-
-            SavingsAccountTransaction holdTransaction = savingsAccountTransactions.stream().filter(sa -> sa.isAmountOnHoldNotReleased())
-                    .findFirst().orElse(null);
-
-            if (holdTransaction == null) {
-                return null;
-            }
             Long savingsId = holdTransaction.getSavingsAccount().getId();
 
             // release on hold guarantee
@@ -2206,8 +2196,6 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
                     .withOfficeId(holdTransaction.getSavingsAccount().officeId())
                     .withClientId(holdTransaction.getSavingsAccount().clientId()).withGroupId(holdTransaction.getSavingsAccount().groupId())
                     .withSavingsId(holdTransaction.getSavingsAccount().getId()).build();
-        }
-        return null;
     }
 
 }
