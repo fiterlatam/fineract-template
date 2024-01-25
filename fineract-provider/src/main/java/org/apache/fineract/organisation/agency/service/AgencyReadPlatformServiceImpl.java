@@ -144,7 +144,6 @@ public class AgencyReadPlatformServiceImpl implements AgencyReadPlatformService 
         return this.jdbcTemplate.query(String.format(schemaSql, inSql), agencyMapper, officeIds.toArray());
     }
 
-
     @Override
     public Collection<AgencyData> retrieveAllByAgencyLeader() {
         AppUser appUser = this.context.authenticatedUser();
@@ -285,14 +284,13 @@ public class AgencyReadPlatformServiceImpl implements AgencyReadPlatformService 
     @Override
     public Collection<AgencyData> retrieveByOfficeHierarchy(final String hierarchy) {
         final String sql = """
-                        SELECT
-                        ma.id AS id,
-                        ma.name AS name
-                        FROM
-                        m_office mo
-                        INNER JOIN m_office office_under ON
-                        office_under.hierarchy LIKE CONCAT(mo.hierarchy, '%')AND office_under.hierarchy LIKE CONCAT(?, '%')
-                        INNER JOIN m_agency ma ON ma.linked_office_id = office_under.id OR ma.linked_office_id = office_under.parent_id
+                         SELECT
+                            ma.id AS id,
+                            ma.name AS name,
+                            mo.name AS officeName
+                        FROM m_office mo
+                        INNER JOIN m_office ounder ON ounder.hierarchy LIKE CONCAT(mo.hierarchy, '%') AND ounder.hierarchy LIKE CONCAT(?, '%')
+                        INNER JOIN m_agency ma ON ma.linked_office_id = mo.id
                         GROUP BY ma.id
                 """;
         return this.jdbcTemplate.query(sql, (rs, rowNum) -> AgencyData.instance(rs.getLong("id"), rs.getString("name")),

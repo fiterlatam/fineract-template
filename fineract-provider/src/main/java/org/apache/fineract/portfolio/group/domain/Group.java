@@ -21,7 +21,6 @@ package org.apache.fineract.portfolio.group.domain;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -53,6 +52,7 @@ import org.apache.fineract.organisation.office.domain.Office;
 import org.apache.fineract.organisation.portfolio.domain.Portfolio;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationGroup;
 import org.apache.fineract.organisation.staff.domain.Staff;
+import org.apache.fineract.portfolio.calendar.CalendarConstants;
 import org.apache.fineract.portfolio.client.domain.Client;
 import org.apache.fineract.portfolio.group.api.GroupingTypesApiConstants;
 import org.apache.fineract.portfolio.group.exception.ClientExistInGroupException;
@@ -61,6 +61,7 @@ import org.apache.fineract.portfolio.group.exception.GroupExistsInCenterExceptio
 import org.apache.fineract.portfolio.group.exception.GroupNotExistsInCenterException;
 import org.apache.fineract.portfolio.group.exception.InvalidGroupStateTransitionException;
 import org.apache.fineract.portfolio.loanaccount.domain.GroupLoanIndividualMonitoringAccount;
+import org.apache.fineract.portfolio.meeting.exception.MeetingDateException;
 import org.apache.fineract.useradministration.domain.AppUser;
 
 @Entity
@@ -500,19 +501,26 @@ public final class Group extends AbstractAuditableCustom {
             this.longitude = newValue;
         }
 
-        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ISO_LOCAL_TIME;
-        String meetingStartTime = command.stringValueOfParameterNamed(GroupingTypesApiConstants.meetingStartTime);
-        if (StringUtils.isNotBlank(meetingStartTime)) {
-            LocalTime newMeetingStarTime = LocalTime.parse(meetingStartTime, dateTimeFormatter);
-            this.meetingStartTime = newMeetingStarTime;
+        final String timeFormat = command.stringValueOfParameterNamed(CalendarConstants.CalendarSupportedParameters.Time_Format.getValue());
+        if (command.isChangeInTimeParameterNamed(GroupingTypesApiConstants.meetingStartTime, this.meetingStartTime, timeFormat)) {
+            final LocalTime newMeetingStarTime = command.localTimeValueOfParameterNamed(GroupingTypesApiConstants.meetingStartTime);
+            actualChanges.put(GroupingTypesApiConstants.meetingStartTime, newMeetingStarTime);
+            if (newMeetingStarTime != null) {
+                this.meetingStartTime = newMeetingStarTime;
+            }
         }
-
-        String meetingEndTime = command.stringValueOfParameterNamed(GroupingTypesApiConstants.meetingEndTime);
-        if (StringUtils.isNotBlank(meetingEndTime)) {
-            LocalTime newMeetingEndTime = LocalTime.parse(meetingEndTime, dateTimeFormatter);
-            this.meetingEndTime = newMeetingEndTime;
+        if (command.isChangeInTimeParameterNamed(GroupingTypesApiConstants.meetingEndTime, this.meetingEndTime, timeFormat)) {
+            final LocalTime newMeetingEndTime = command.localTimeValueOfParameterNamed(GroupingTypesApiConstants.meetingEndTime);
+            actualChanges.put(GroupingTypesApiConstants.meetingEndTime, newMeetingEndTime);
+            if (newMeetingEndTime != null) {
+                this.meetingEndTime = newMeetingEndTime;
+            }
+            if (this.meetingEndTime != null && this.meetingStartTime != null) {
+                if (this.meetingEndTime.isBefore(this.meetingStartTime)) {
+                    throw new MeetingDateException("meeting.end.time.earlier.than.start.time", "Meeting start should be before end time");
+                }
+            }
         }
-
         if (command.isChangeInIntegerParameterNamed(GroupingTypesApiConstants.groupLocation, this.location)) {
             final Integer newValue = command.integerValueOfParameterNamed(GroupingTypesApiConstants.groupLocation);
             actualChanges.put(GroupingTypesApiConstants.groupLocation, newValue);
