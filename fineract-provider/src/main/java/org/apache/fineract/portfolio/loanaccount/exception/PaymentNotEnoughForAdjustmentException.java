@@ -18,16 +18,16 @@
  */
 package org.apache.fineract.portfolio.loanaccount.exception;
 
-import org.apache.fineract.infrastructure.core.exception.AbstractPlatformResourceNotFoundException;
-
 import java.math.BigDecimal;
+import org.apache.fineract.infrastructure.core.exception.AbstractPlatformResourceNotFoundException;
 
 /**
  * A {@link RuntimeException} thrown when loan resources are not found.
  */
 public class PaymentNotEnoughForAdjustmentException extends AbstractPlatformResourceNotFoundException {
 
-    public PaymentNotEnoughForAdjustmentException(final BigDecimal amount,final BigDecimal loanBalance,final BigDecimal releaseAmount) {
-        super("error.msg.payment.amount.not.enough.invalid", "Payment of amount " + amount + " is not enough to cover the loan balance of "+ loanBalance+" and adjust release of amount"+ releaseAmount, amount, loanBalance, releaseAmount);
+    public PaymentNotEnoughForAdjustmentException(final BigDecimal amount, final BigDecimal loanBalance, final BigDecimal releaseAmount) {
+        super("error.msg.payment.amount.not.enough.invalid", "Payment of amount " + amount + " is not enough to cover the loan balance of "
+                + loanBalance + " and adjust release of amount" + releaseAmount, amount, loanBalance, releaseAmount);
     }
 }

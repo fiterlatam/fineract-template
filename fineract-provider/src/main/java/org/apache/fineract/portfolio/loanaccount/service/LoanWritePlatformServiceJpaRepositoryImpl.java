@@ -18,6 +18,14 @@
  */
 package org.apache.fineract.portfolio.loanaccount.service;
 
+import static org.apache.fineract.portfolio.account.AccountDetailConstants.fromClientIdParamName;
+import static org.apache.fineract.portfolio.account.AccountDetailConstants.fromOfficeIdParamName;
+import static org.apache.fineract.portfolio.account.AccountDetailConstants.toClientIdParamName;
+import static org.apache.fineract.portfolio.account.AccountDetailConstants.toOfficeIdParamName;
+import static org.apache.fineract.portfolio.account.api.AccountTransfersApiConstants.transferAmountParamName;
+import static org.apache.fineract.portfolio.account.api.AccountTransfersApiConstants.transferDateParamName;
+import static org.apache.fineract.portfolio.account.api.AccountTransfersApiConstants.transferDescriptionParamName;
+
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -238,14 +246,6 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import static org.apache.fineract.portfolio.account.AccountDetailConstants.fromClientIdParamName;
-import static org.apache.fineract.portfolio.account.AccountDetailConstants.fromOfficeIdParamName;
-import static org.apache.fineract.portfolio.account.AccountDetailConstants.toClientIdParamName;
-import static org.apache.fineract.portfolio.account.AccountDetailConstants.toOfficeIdParamName;
-import static org.apache.fineract.portfolio.account.api.AccountTransfersApiConstants.transferAmountParamName;
-import static org.apache.fineract.portfolio.account.api.AccountTransfersApiConstants.transferDateParamName;
-import static org.apache.fineract.portfolio.account.api.AccountTransfersApiConstants.transferDescriptionParamName;
 
 @Service
 @Slf4j
@@ -1037,7 +1037,6 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         // FBR-437 release gurantee
         final boolean adjustGuarantee = command.booleanPrimitiveValueOfParameterNamed("adjustGuarantee");
 
-
         if (adjustGuarantee) {
             List<SavingsAccountTransaction> savingsAccountTransactions = this.savingsAccountTransactionRepository
                     .findAllTransactionByLoanId(loanId);
@@ -1061,7 +1060,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 final JsonCommand assemblerCommand = JsonCommand.fromJsonElement(loanId, requestData, this.fromApiJsonHelper);
                 assemblerCommand.setJsonCommand(requestData.toString());
 
-                //if guarantee hold amount is not greater than outstanding loan amount we cant release
+                // if guarantee hold amount is not greater than outstanding loan amount we cant release
                 BigDecimal totalOutstanding = loan.getSummary().getTotalOutstanding();
                 if (holdTransaction.getAmount().compareTo(totalOutstanding) < 0) {
                     throw new PaymentNotEnoughForAdjustmentException(transactionAmount, totalOutstanding, holdTransaction.getAmount());
@@ -1069,23 +1068,21 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
                 this.savingsAccountWritePlatformService.releaseLoanGuarantee(loanId, command, transactionDate, holdTransaction);
 
-                if (totalOutstanding.compareTo(BigDecimal.ZERO)>0) {
-                        //repay the loan balance with transfer
+                if (totalOutstanding.compareTo(BigDecimal.ZERO) > 0) {
+                    // repay the loan balance with transfer
 
-                    //withdraw from savings account
-                    final SavingsTransactionBooleanValues transactionBooleanValues = new SavingsTransactionBooleanValues(true,
-                            true, fromSavingsAccount.isWithdrawalFeeApplicableForTransfer(), false, false,
-                            false, false, false, false, false);
+                    // withdraw from savings account
+                    final SavingsTransactionBooleanValues transactionBooleanValues = new SavingsTransactionBooleanValues(true, true,
+                            fromSavingsAccount.isWithdrawalFeeApplicableForTransfer(), false, false, false, false, false, false, false);
                     final SavingsAccountTransaction withdrawal = this.savingsAccountDomainService.handleWithdrawal(fromSavingsAccount, fmt,
                             transactionDate, totalOutstanding, paymentDetail, transactionBooleanValues, false);
 
+                    final LoanTransaction loanRepaymentTransaction = this.loanAccountDomainService.makeRepayment(
+                            LoanTransactionType.REPAYMENT, loan, new CommandProcessingResultBuilder(), transactionDate, totalOutstanding,
+                            paymentDetail, null, null, isRecoveryRepayment, isAccountTransfer, holidayDetailDto, isHolidayValidationDone);
 
-                    final LoanTransaction loanRepaymentTransaction = this.loanAccountDomainService.makeRepayment(LoanTransactionType.REPAYMENT,
-                            loan, new CommandProcessingResultBuilder(), transactionDate, totalOutstanding, paymentDetail, null, null,
-                            isRecoveryRepayment, isAccountTransfer, holidayDetailDto, isHolidayValidationDone);
-
-                    final AccountTransferDetails accountTransferDetails = this.accountTransferAssembler.assembleSavingsToLoanTransfer(assemblerCommand,
-                            fromSavingsAccount, loan, withdrawal, loanRepaymentTransaction);
+                    final AccountTransferDetails accountTransferDetails = this.accountTransferAssembler.assembleSavingsToLoanTransfer(
+                            assemblerCommand, fromSavingsAccount, loan, withdrawal, loanRepaymentTransaction);
                     this.accountTransferDetailRepository.saveAndFlush(accountTransferDetails);
                 }
             }

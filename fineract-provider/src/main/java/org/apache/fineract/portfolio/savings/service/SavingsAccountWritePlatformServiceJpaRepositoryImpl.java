@@ -2174,28 +2174,29 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
     }
 
     @Override
-    public CommandProcessingResult releaseLoanGuarantee(Long loanId, JsonCommand command, LocalDate transactionDate,SavingsAccountTransaction holdTransaction ) {
+    public CommandProcessingResult releaseLoanGuarantee(Long loanId, JsonCommand command, LocalDate transactionDate,
+            SavingsAccountTransaction holdTransaction) {
 
-            Long savingsId = holdTransaction.getSavingsAccount().getId();
+        Long savingsId = holdTransaction.getSavingsAccount().getId();
 
-            // release on hold guarantee
-            CommandProcessingResult releaseResult = this.releaseAmount(savingsId, holdTransaction.getId(), transactionDate);
-            SavingsAccountTransaction releaseTransaction = this.savingsAccountTransactionRepository
-                    .findOneByIdAndSavingsAccountId(releaseResult.resourceId(), savingsId);
-            releaseTransaction.setLoanId(loanId);
-            this.savingsAccountTransactionRepository.saveAndFlush(releaseTransaction);
+        // release on hold guarantee
+        CommandProcessingResult releaseResult = this.releaseAmount(savingsId, holdTransaction.getId(), transactionDate);
+        SavingsAccountTransaction releaseTransaction = this.savingsAccountTransactionRepository
+                .findOneByIdAndSavingsAccountId(releaseResult.resourceId(), savingsId);
+        releaseTransaction.setLoanId(loanId);
+        this.savingsAccountTransactionRepository.saveAndFlush(releaseTransaction);
 
-            // Withdraw guarantee
-            // update transaction amount in command
-            JsonElement element = command.parsedJson();
-            JsonObject object = element.getAsJsonObject();
-            object.addProperty("transactionAmount", holdTransaction.getAmount());
-            command.setJsonCommand(object.toString());
+        // Withdraw guarantee
+        // update transaction amount in command
+        JsonElement element = command.parsedJson();
+        JsonObject object = element.getAsJsonObject();
+        object.addProperty("transactionAmount", holdTransaction.getAmount());
+        command.setJsonCommand(object.toString());
 
-            return new CommandProcessingResultBuilder().withEntityId(releaseResult.resourceId())
-                    .withOfficeId(holdTransaction.getSavingsAccount().officeId())
-                    .withClientId(holdTransaction.getSavingsAccount().clientId()).withGroupId(holdTransaction.getSavingsAccount().groupId())
-                    .withSavingsId(holdTransaction.getSavingsAccount().getId()).build();
+        return new CommandProcessingResultBuilder().withEntityId(releaseResult.resourceId())
+                .withOfficeId(holdTransaction.getSavingsAccount().officeId()).withClientId(holdTransaction.getSavingsAccount().clientId())
+                .withGroupId(holdTransaction.getSavingsAccount().groupId()).withSavingsId(holdTransaction.getSavingsAccount().getId())
+                .build();
     }
 
 }
