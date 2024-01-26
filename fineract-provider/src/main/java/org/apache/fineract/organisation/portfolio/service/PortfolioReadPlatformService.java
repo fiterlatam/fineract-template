@@ -28,7 +28,7 @@ public interface PortfolioReadPlatformService {
 
     PortfolioData retrieveNewPortfolioTemplate();
 
-    Collection<PortfolioData> retrieveAllByUser();
+    Collection<PortfolioData> retrieveAllByUser(String name);
 
     PortfolioPlanningData retrievePlanningByPortfolio(Long portfolioId);
 }
