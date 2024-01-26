@@ -2174,40 +2174,29 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
     }
 
     @Override
-    public CommandProcessingResult releaseLoanGuarantee(Long loanId, JsonCommand command, LocalDate transactionDate) {
+    public CommandProcessingResult releaseLoanGuarantee(Long loanId, JsonCommand command, LocalDate transactionDate,
+            SavingsAccountTransaction holdTransaction) {
 
-        if (loanId != null && command != null) {
-            List<SavingsAccountTransaction> savingsAccountTransactions = this.savingsAccountTransactionRepository
-                    .findAllTransactionByLoanId(loanId);
+        Long savingsId = holdTransaction.getSavingsAccount().getId();
 
-            SavingsAccountTransaction holdTransaction = savingsAccountTransactions.stream().filter(sa -> sa.isAmountOnHoldNotReleased())
-                    .findFirst().orElse(null);
+        // release on hold guarantee
+        CommandProcessingResult releaseResult = this.releaseAmount(savingsId, holdTransaction.getId(), transactionDate);
+        SavingsAccountTransaction releaseTransaction = this.savingsAccountTransactionRepository
+                .findOneByIdAndSavingsAccountId(releaseResult.resourceId(), savingsId);
+        releaseTransaction.setLoanId(loanId);
+        this.savingsAccountTransactionRepository.saveAndFlush(releaseTransaction);
 
-            if (holdTransaction == null) {
-                return null;
-            }
-            Long savingsId = holdTransaction.getSavingsAccount().getId();
+        // Withdraw guarantee
+        // update transaction amount in command
+        JsonElement element = command.parsedJson();
+        JsonObject object = element.getAsJsonObject();
+        object.addProperty("transactionAmount", holdTransaction.getAmount());
+        command.setJsonCommand(object.toString());
 
-            // release on hold guarantee
-            CommandProcessingResult releaseResult = this.releaseAmount(savingsId, holdTransaction.getId(), transactionDate);
-            SavingsAccountTransaction releaseTransaction = this.savingsAccountTransactionRepository
-                    .findOneByIdAndSavingsAccountId(releaseResult.resourceId(), savingsId);
-            releaseTransaction.setLoanId(loanId);
-            this.savingsAccountTransactionRepository.saveAndFlush(releaseTransaction);
-
-            // Withdraw guarantee
-            // update transaction amount in command
-            JsonElement element = command.parsedJson();
-            JsonObject object = element.getAsJsonObject();
-            object.addProperty("transactionAmount", holdTransaction.getAmount());
-            command.setJsonCommand(object.toString());
-
-            return new CommandProcessingResultBuilder().withEntityId(releaseResult.resourceId())
-                    .withOfficeId(holdTransaction.getSavingsAccount().officeId())
-                    .withClientId(holdTransaction.getSavingsAccount().clientId()).withGroupId(holdTransaction.getSavingsAccount().groupId())
-                    .withSavingsId(holdTransaction.getSavingsAccount().getId()).build();
-        }
-        return null;
+        return new CommandProcessingResultBuilder().withEntityId(releaseResult.resourceId())
+                .withOfficeId(holdTransaction.getSavingsAccount().officeId()).withClientId(holdTransaction.getSavingsAccount().clientId())
+                .withGroupId(holdTransaction.getSavingsAccount().groupId()).withSavingsId(holdTransaction.getSavingsAccount().getId())
+                .build();
     }
 
 }
