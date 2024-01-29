@@ -60,7 +60,7 @@ public class DefaultLoanLifecycleStateMachine implements LoanLifecycleStateMachi
                 }
             break;
             case LOAN_APPROVAL_UNDO:
-                if (from.hasStateOf(LoanStatus.APPROVED)) {
+                if (from.hasStateOf(LoanStatus.APPROVED) || from.hasStateOf(LoanStatus.DISBURSE_AUTHORIZATION_PENDING)) {
                     newState = stateOf(LoanStatus.SUBMITTED_AND_PENDING_APPROVAL, this.allowedLoanStatuses);
                 }
             break;
