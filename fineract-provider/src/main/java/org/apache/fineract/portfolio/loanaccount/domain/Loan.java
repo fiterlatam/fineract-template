@@ -5091,7 +5091,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 }
             break;
             case LOAN_REJECTED:
-                if (!isSubmittedAndPendingApproval()) {
+                if (!isSubmittedAndPendingApproval() && !isApproved()) {
                     final String defaultUserMessage = "Loan application cannot be rejected. Loan Account is not in Submitted and Pending approval state.";
                     final ApiParameterError error = ApiParameterError
                             .generalError("error.msg.loan.reject.account.is.not.submitted.pending.approval.state", defaultUserMessage);
