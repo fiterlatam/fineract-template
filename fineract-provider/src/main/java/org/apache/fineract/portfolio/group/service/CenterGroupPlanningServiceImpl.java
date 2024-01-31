@@ -156,27 +156,17 @@ public class CenterGroupPlanningServiceImpl implements CenterGroupPlanningServic
         sqlBuilder.append("coalesce(l.total_repayment_derived,0) as totalRepayment, ");
         sqlBuilder.append("coalesce(l.total_expected_repayment_derived,0) as totalPaymentExpected, ");
 
-        sqlBuilder.append(
-                "coalesce( (SELECT sum( " +
-                        "( COALESCE(lrs2.principal_amount,0) + COALESCE(lrs2.interest_amount,0) + " +
-                        "COALESCE(lrs2.penalty_charges_amount,0) + COALESCE(lrs2.fee_charges_amount,0) + " +
-                        "COALESCE(lrs2.fee_charges_amount,0) )- " +
-                        "( COALESCE(lrs2.total_paid_late_derived,0) + COALESCE(lrs2.interest_completed_derived,0) + " +
-                        "COALESCE(lrs2.principal_completed_derived,0) + COALESCE(lrs2.total_paid_in_advance_derived,0) +" +
-                        " COALESCE(lrs2.interest_writtenoff_derived,0) + COALESCE(lrs2.principal_writtenoff_derived,0) + " +
-                        "COALESCE(lrs2.interest_waived_derived,0) + COALESCE(lrs2.penalty_charges_writtenoff_derived,0) + " +
-                        "COALESCE(lrs2.penalty_charges_waived_derived,0) " +
-                        ") ) FROM " +
-                        "m_group_client gc2 " +
-                        "LEFT JOIN m_loan l2 ON l2.client_id = gc2.client_id " +
-                        "INNER JOIN m_loan_repayment_schedule lrs2 ON lrs2.loan_id = l2.id " +
-                        "WHERE " +
-                        "gc2.group_id = ? " +
-                        "AND lrs2.duedate < ? " +
-                        "AND lrs2.completed_derived = 0 " +
-                        "AND l2.product_id = pl.id " +
-                        "),0) as totalOverdue,"
-        );
+        sqlBuilder.append("coalesce( (SELECT sum( " + "( COALESCE(lrs2.principal_amount,0) + COALESCE(lrs2.interest_amount,0) + "
+                + "COALESCE(lrs2.penalty_charges_amount,0) + COALESCE(lrs2.fee_charges_amount,0) + "
+                + "COALESCE(lrs2.fee_charges_amount,0) )- "
+                + "( COALESCE(lrs2.total_paid_late_derived,0) + COALESCE(lrs2.interest_completed_derived,0) + "
+                + "COALESCE(lrs2.principal_completed_derived,0) + COALESCE(lrs2.total_paid_in_advance_derived,0) +"
+                + " COALESCE(lrs2.interest_writtenoff_derived,0) + COALESCE(lrs2.principal_writtenoff_derived,0) + "
+                + "COALESCE(lrs2.interest_waived_derived,0) + COALESCE(lrs2.penalty_charges_writtenoff_derived,0) + "
+                + "COALESCE(lrs2.penalty_charges_waived_derived,0) " + ") ) FROM " + "m_group_client gc2 "
+                + "LEFT JOIN m_loan l2 ON l2.client_id = gc2.client_id "
+                + "INNER JOIN m_loan_repayment_schedule lrs2 ON lrs2.loan_id = l2.id " + "WHERE " + "gc2.group_id = ? "
+                + "AND lrs2.duedate < ? " + "AND lrs2.completed_derived = 0 " + "AND l2.product_id = pl.id " + "),0) as totalOverdue,");
 
         sqlBuilder.append(" count(gc.client_id) as clientCounter ");
         sqlBuilder.append(" from m_group_client gc ");
