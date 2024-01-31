@@ -153,8 +153,8 @@ public class CenterGroupPlanningServiceImpl implements CenterGroupPlanningServic
     private List<GroupLoanSummaryData> retrieveGroupLoanSummary(Long groupId, LocalDate dueDate) {
         StringBuilder sqlBuilder = new StringBuilder(400);
         sqlBuilder.append(" select gc.group_id as groupId, pl.short_name as loanShortProductName, ");
-        sqlBuilder.append("coalesce(l.total_repayment_derived,0) as totalRepayment, ");
-        sqlBuilder.append("coalesce(l.total_expected_repayment_derived,0) as totalPaymentExpected, ");
+        sqlBuilder.append("sum(coalesce(l.total_repayment_derived,0)) as totalRepayment, ");
+        sqlBuilder.append("sum(coalesce(l.total_expected_repayment_derived,0)) as totalPaymentExpected, ");
 
         sqlBuilder.append(
                 "coalesce( (SELECT sum( " +
