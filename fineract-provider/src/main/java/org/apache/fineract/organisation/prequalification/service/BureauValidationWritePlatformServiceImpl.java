@@ -178,7 +178,7 @@ public class BureauValidationWritePlatformServiceImpl implements BureauValidatio
         if (responseEntity.hasBody()) {
             final JsonElement jsonElement = this.fromApiJsonHelper.parse(responseEntity.getBody());
             if (jsonElement.isJsonObject()) {
-                final String dateTimeFormat = "yyyy-MM-dd HH:mm:ss";
+                final String dateTimeFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'";
                 final String localeAsString = "en";
                 final Locale locale = JsonParserHelper.localeFromString(localeAsString);
                 final String classificationLetter = this.fromApiJsonHelper.extractStringNamed("Clasificacion", jsonElement);
@@ -192,7 +192,7 @@ public class BureauValidationWritePlatformServiceImpl implements BureauValidatio
                     final String estado = this.fromApiJsonHelper.extractStringNamed("Estado", identificacionJson);
                     buroDataBuilder.tipo(tipo).numero(numero).estado(estado);
                 }
-                final LocalDateTime fetcha = this.fromApiJsonHelper.extractLocalDateTimeNamed("Fecha", jsonElement, dateTimeFormat, locale);
+                final LocalDateTime fetcha = this.fromApiJsonHelper.extractLocalDateTimeNamed("Fecha", jsonElement,dateTimeFormat,locale);
                 EnumOptionData enumOptionData = BuroCheckClassification
                         .status(BuroCheckClassification.fromLetter(classificationLetter).getId());
                 buroDataBuilder.classification(enumOptionData).fecha(fetcha).cuentas(cuentas).resumen(resumen).build();
