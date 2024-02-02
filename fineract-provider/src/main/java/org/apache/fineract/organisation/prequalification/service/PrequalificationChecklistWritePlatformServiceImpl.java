@@ -323,10 +323,23 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
         final String clientId = String.valueOf(clientData.getClientId());
         final String reportName = Policies.THREE.getName() + " Policy Check";
         final String productId = Long.toString(clientData.getProductId());
+        final Long loanId = clientData.getLoanId();
+        final String percentageIncreaseSQL = """
+                SELECT
+                CASE WHEN (mlag.current_credit_value = 0 OR mlag.requested_value = 0) THEN 0
+                     WHEN mlag.requested_value < mlag.current_credit_value THEN 0
+                     ELSE ((mlag.requested_value - mlag.current_credit_value)/mlag.current_credit_value)
+                END AS percentageIncrease
+                FROM m_loan_additionals_group mlag
+                INNER JOIN m_loan ml ON ml.id = mlag.loan_id
+                WHERE ml.id = ?
+                """;
+        Object[] params = new Object[] { loanId };
+        final BigDecimal percentageIncrease = this.jdbcTemplate.queryForObject(percentageIncreaseSQL, BigDecimal.class, params);
         final Map<String, String> reportParams = new HashMap<>();
         reportParams.put("${clientId}", clientId);
         reportParams.put("${loanProductId}", productId);
-        reportParams.put("${requestedAmount}", String.valueOf(clientData.getRequestedAmount()));
+        reportParams.put("${percentageIncrease}", String.valueOf(percentageIncrease));
         final GenericResultsetData result = this.readReportingService.retrieveGenericResultset(reportName, "report", reportParams, false);
         return extractColorFromResultset(result);
     }
