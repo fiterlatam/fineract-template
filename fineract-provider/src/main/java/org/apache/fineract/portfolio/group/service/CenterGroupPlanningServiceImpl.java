@@ -154,8 +154,8 @@ public class CenterGroupPlanningServiceImpl implements CenterGroupPlanningServic
         String sql = """
                 SELECT
                 	gc.group_id AS groupId,
-                	paymentsSummary.totalOverdue,
-                	paymentsSummary.totalRepayment,
+                	coalesce(paymentsSummary.totalOverdue,0),
+                	coalesce(paymentsSummary.totalRepayment,0),
                 	count( gc.client_id ) AS clientCounter
                 FROM
                 	m_group_client gc
