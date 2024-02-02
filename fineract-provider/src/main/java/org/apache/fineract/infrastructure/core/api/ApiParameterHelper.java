@@ -92,8 +92,8 @@ public final class ApiParameterHelper {
     }
 
     public static Locale extractLocale(final MultivaluedMap<String, String> queryParams) {
-        Locale locale = null;
-        if (queryParams.getFirst("locale") != null) {
+        Locale locale = Locale.ENGLISH;
+        if ("en".equals(queryParams.getFirst("locale"))) {
             final String localeAsString = queryParams.getFirst("locale");
             locale = JsonParserHelper.localeFromString(localeAsString);
         }
