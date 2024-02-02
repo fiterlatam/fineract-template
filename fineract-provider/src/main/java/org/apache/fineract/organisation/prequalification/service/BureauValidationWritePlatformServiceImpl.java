@@ -192,7 +192,7 @@ public class BureauValidationWritePlatformServiceImpl implements BureauValidatio
                     final String estado = this.fromApiJsonHelper.extractStringNamed("Estado", identificacionJson);
                     buroDataBuilder.tipo(tipo).numero(numero).estado(estado);
                 }
-                final LocalDateTime fetcha = this.fromApiJsonHelper.extractLocalDateTimeNamed("Fecha", jsonElement,dateTimeFormat,locale);
+                final LocalDateTime fetcha = this.fromApiJsonHelper.extractLocalDateTimeNamed("Fecha", jsonElement, dateTimeFormat, locale);
                 EnumOptionData enumOptionData = BuroCheckClassification
                         .status(BuroCheckClassification.fromLetter(classificationLetter).getId());
                 buroDataBuilder.classification(enumOptionData).fecha(fetcha).cuentas(cuentas).resumen(resumen).build();
