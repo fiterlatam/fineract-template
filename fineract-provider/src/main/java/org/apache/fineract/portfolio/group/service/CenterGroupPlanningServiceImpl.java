@@ -151,45 +151,44 @@ public class CenterGroupPlanningServiceImpl implements CenterGroupPlanningServic
     }
 
     private List<GroupLoanSummaryData> retrieveGroupLoanSummary(Long groupId, LocalDate dueDate) {
-        StringBuilder sqlBuilder = new StringBuilder(400);
-        sqlBuilder.append(" select gc.group_id as groupId, pl.short_name as loanShortProductName, ");
-        sqlBuilder.append("sum(coalesce(l.total_repayment_derived,0)) as totalRepayment, ");
-        sqlBuilder.append("sum(coalesce(l.total_expected_repayment_derived,0)) as totalPaymentExpected, ");
-
-        sqlBuilder.append(
-                "coalesce( (SELECT sum( " +
-                        "( COALESCE(lrs2.principal_amount,0) + COALESCE(lrs2.interest_amount,0) + " +
-                        "COALESCE(lrs2.penalty_charges_amount,0) + COALESCE(lrs2.fee_charges_amount,0) + " +
-                        "COALESCE(lrs2.fee_charges_amount,0) )- " +
-                        "( COALESCE(lrs2.total_paid_late_derived,0) + COALESCE(lrs2.interest_completed_derived,0) + " +
-                        "COALESCE(lrs2.principal_completed_derived,0) + COALESCE(lrs2.total_paid_in_advance_derived,0) +" +
-                        " COALESCE(lrs2.interest_writtenoff_derived,0) + COALESCE(lrs2.principal_writtenoff_derived,0) + " +
-                        "COALESCE(lrs2.interest_waived_derived,0) + COALESCE(lrs2.penalty_charges_writtenoff_derived,0) + " +
-                        "COALESCE(lrs2.penalty_charges_waived_derived,0) " +
-                        ") ) FROM " +
-                        "m_group_client gc2 " +
-                        "LEFT JOIN m_loan l2 ON l2.client_id = gc2.client_id " +
-                        "INNER JOIN m_loan_repayment_schedule lrs2 ON lrs2.loan_id = l2.id " +
-                        "WHERE " +
-                        "gc2.group_id = ? " +
-                        "AND lrs2.duedate < ? " +
-                        "AND lrs2.completed_derived = 0 " +
-                        "AND l2.product_id = pl.id " +
-                        "),0) as totalOverdue,"
-        );
-
-        sqlBuilder.append(" count(gc.client_id) as clientCounter ");
-        sqlBuilder.append(" from m_group_client gc ");
-        sqlBuilder.append(" left join m_loan l on l.client_id = gc.client_id ");
-        sqlBuilder.append(" inner join m_product_loan pl on pl.id = l.product_id ");
-        sqlBuilder.append(" inner join m_loan_repayment_schedule lrs on lrs.loan_id = l.id ");
-        sqlBuilder.append(" where gc.group_id = ? ");
-        sqlBuilder.append(" and lrs.duedate < ? ");
-        sqlBuilder.append(" group by pl.id ");
-        String sql = sqlBuilder.toString();
-
+        String sql = """
+SELECT
+	gc.group_id AS groupId,
+	paymentsSummary.totalOverdue,
+	paymentsSummary.totalRepayment,
+	count( gc.client_id ) AS clientCounter 
+FROM
+	m_group_client gc
+	LEFT JOIN (
+	SELECT
+		gc2.group_id AS groupId,
+		coalesce (sum(
+			(
+				COALESCE ( lrs2.principal_amount, 0 ) + COALESCE ( lrs2.interest_amount, 0 ) + 
+				COALESCE ( lrs2.penalty_charges_amount, 0 ) + COALESCE ( lrs2.fee_charges_amount, 0 ) + 
+				COALESCE ( lrs2.fee_charges_amount, 0 )) - 
+				(COALESCE ( lrs2.total_paid_late_derived, 0 ) + COALESCE ( lrs2.interest_completed_derived, 0 ) + 
+				COALESCE ( lrs2.principal_completed_derived, 0 ) + COALESCE ( lrs2.total_paid_in_advance_derived, 0 ) + 
+				COALESCE ( lrs2.interest_writtenoff_derived, 0 ) + COALESCE ( lrs2.principal_writtenoff_derived, 0 ) + 
+				COALESCE ( lrs2.interest_waived_derived, 0 ) + 
+				COALESCE ( lrs2.penalty_charges_writtenoff_derived, 0 ) + COALESCE ( lrs2.penalty_charges_waived_derived, 0 ) 
+			)
+		),0) AS totalOverdue,
+		sum(COALESCE ( l2.total_repayment_derived, 0 )) AS totalRepayment
+	FROM
+		m_loan_repayment_schedule lrs2
+		INNER JOIN m_loan l2 ON l2.id = lrs2.loan_id
+		LEFT JOIN m_group_client gc2 ON l2.client_id = gc2.client_id 
+	WHERE
+		gc2.group_id = ? 
+		AND lrs2.duedate < ? 
+		AND lrs2.completed_derived = 0 
+	) paymentsSummary ON paymentsSummary.groupId = gc.group_id 
+WHERE
+	gc.group_id = ?
+""";
         List<GroupLoanSummaryData> groupLoanSummaryData = jdbcTemplate.query(sql, new BeanPropertyRowMapper(GroupLoanSummaryData.class),
-                new Object[] { groupId, dueDate, groupId, dueDate });
+                new Object[] { groupId, dueDate, groupId });
 
         return groupLoanSummaryData;
     }
