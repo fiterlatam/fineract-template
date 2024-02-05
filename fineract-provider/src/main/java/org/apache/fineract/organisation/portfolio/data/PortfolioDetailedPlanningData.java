@@ -61,7 +61,7 @@ public class PortfolioDetailedPlanningData {
 
     private BigDecimal totalOverdue;
 
-    private BigDecimal totalPaidAmount;
+    private BigDecimal totalPaymentExpected;
 
     public PortfolioDetailedPlanningData(Long centerGroupId, String centerGroupName, BigDecimal legacyGroupNumber,
             LocalTime meetingStartTime, LocalTime meetingEndTime, Long portfolioCenterId, String portfolioCenterName,
@@ -163,11 +163,11 @@ public class PortfolioDetailedPlanningData {
         this.totalOverdue = totalOverdue;
     }
 
-    public BigDecimal getTotalPaidAmount() {
-        return totalPaidAmount;
+    public BigDecimal getTotalPaymentExpected() {
+        return totalPaymentExpected;
     }
 
-    public void setTotalPaidAmount(BigDecimal totalPaidAmount) {
-        this.totalPaidAmount = totalPaidAmount;
+    public void setTotalPaymentExpected(BigDecimal totalPaymentExpected) {
+        this.totalPaymentExpected = totalPaymentExpected;
     }
 }

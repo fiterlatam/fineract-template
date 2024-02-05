@@ -110,19 +110,18 @@ public class LoanSchedularServiceImpl implements LoanSchedularService {
     @Override
     @CronTarget(jobName = JobName.APPLY_CHARGE_TO_OVERDUE_LOAN_INSTALLMENT)
     public void applyChargeForOverdueLoans() throws JobExecutionException {
-
         final Long penaltyWaitPeriodValue = this.configurationDomainService.retrievePenaltyWaitPeriod();
         final Boolean backdatePenalties = this.configurationDomainService.isBackdatePenaltiesEnabled();
         final Collection<OverdueLoanScheduleData> overdueLoanScheduledInstallments = this.loanReadPlatformService
                 .retrieveAllLoansWithOverdueInstallments(penaltyWaitPeriodValue, backdatePenalties);
-
         Set<Long> loanIds = overdueLoanScheduledInstallments.stream().map(OverdueLoanScheduleData::getLoanId).collect(Collectors.toSet());
-
+        Map<Long, List<OverdueLoanScheduleData>> groupedOverdueData = overdueLoanScheduledInstallments.stream()
+                .collect(Collectors.groupingBy(OverdueLoanScheduleData::getLoanId));
         if (!loanIds.isEmpty()) {
             List<Throwable> exceptions = new ArrayList<>();
-            for (final Long loanId : loanIds) {
+            for (final Long loanId : groupedOverdueData.keySet()) {
                 try {
-                    applyChargeToOverdueLoansBusinessStep.execute(loanRepository.getReferenceById(loanId));
+                    this.applyChargeToOverdueLoansBusinessStep.execute(loanId, groupedOverdueData.get(loanId));
                 } catch (final PlatformApiDataValidationException e) {
                     final List<ApiParameterError> errors = e.getErrors();
                     for (final ApiParameterError error : errors) {

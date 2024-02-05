@@ -139,4 +139,6 @@
     <include file="parts/0119_FBR_433_FB_Tabla_de_Prestamos.xml" relativeToChangelogFile="true"/>
     <include file="parts/0120_FBR_536_Rediseno_de_Pago_de_Garantias_con_cheques.xml" relativeToChangelogFile="true"/>
     <include file="parts/0121_FBR_552_buro_check_popup_message.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0122_FBR_569_apply_overdue_penalty_fixes.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0123_FBR_576_update_Porcentaje_de_Incremento.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

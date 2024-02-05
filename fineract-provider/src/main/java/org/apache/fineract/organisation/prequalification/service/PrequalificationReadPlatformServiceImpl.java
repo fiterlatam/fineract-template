@@ -28,6 +28,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 import org.apache.fineract.infrastructure.codes.service.CodeValueReadPlatformService;
@@ -39,14 +40,13 @@ import org.apache.fineract.infrastructure.core.service.Page;
 import org.apache.fineract.infrastructure.core.service.PaginationHelper;
 import org.apache.fineract.infrastructure.core.service.SearchParameters;
 import org.apache.fineract.infrastructure.core.service.database.DatabaseSpecificSQLGenerator;
+import org.apache.fineract.infrastructure.dataqueries.service.GenericDataService;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.infrastructure.security.utils.ColumnValidator;
-import org.apache.fineract.organisation.prequalification.command.PrequalificationDataValidator;
 import org.apache.fineract.organisation.prequalification.data.BuroData;
 import org.apache.fineract.organisation.prequalification.data.GroupPrequalificationData;
 import org.apache.fineract.organisation.prequalification.data.MemberPrequalificationData;
 import org.apache.fineract.organisation.prequalification.domain.BuroCheckClassification;
-import org.apache.fineract.organisation.prequalification.domain.PreQualificationMemberRepository;
 import org.apache.fineract.organisation.prequalification.domain.PreQualificationsEnumerations;
 import org.apache.fineract.organisation.prequalification.domain.PreQualificationsMemberEnumerations;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationMemberIndication;
@@ -54,8 +54,6 @@ import org.apache.fineract.organisation.prequalification.domain.Prequalification
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationSubStatus;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationType;
 import org.apache.fineract.portfolio.client.service.ClientChargeWritePlatformServiceJpaRepositoryImpl;
-import org.apache.fineract.portfolio.client.service.ClientReadPlatformService;
-import org.apache.fineract.portfolio.loanproduct.domain.LoanProductRepository;
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.apache.fineract.useradministration.domain.Role;
 import org.slf4j.Logger;
@@ -72,9 +70,6 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
     private static final Logger LOG = LoggerFactory.getLogger(ClientChargeWritePlatformServiceJpaRepositoryImpl.class);
 
     private final PlatformSecurityContext context;
-    private final PrequalificationDataValidator dataValidator;
-    private final LoanProductRepository loanProductRepository;
-    private final ClientReadPlatformService clientReadPlatformService;
     private final CodeValueReadPlatformService codeValueReadPlatformService;
     private final JdbcTemplate jdbcTemplate;
     private final PaginationHelper paginationHelper;
@@ -84,26 +79,20 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
     private final PrequalificationIndividualMappingsMapper prequalificationIndividualMappingsMapper = new PrequalificationIndividualMappingsMapper();
     private final PrequalificationsMemberMapper prequalificationsMemberMapper = new PrequalificationsMemberMapper();
     private final DatabaseSpecificSQLGenerator sqlGenerator;
-    private final PreQualificationMemberRepository preQualificationMemberRepository;
+    private final GenericDataService genericDataService;
 
     @Autowired
     public PrequalificationReadPlatformServiceImpl(final PlatformSecurityContext context, final PaginationHelper paginationHelper,
             final DatabaseSpecificSQLGenerator sqlGenerator, final ColumnValidator columnValidator,
-            final PrequalificationDataValidator dataValidator, final LoanProductRepository loanProductRepository,
-            final PreQualificationMemberRepository preQualificationMemberRepository,
-            final ClientReadPlatformService clientReadPlatformService, final CodeValueReadPlatformService codeValueReadPlatformService,
-            final JdbcTemplate jdbcTemplate) {
+            final CodeValueReadPlatformService codeValueReadPlatformService, final JdbcTemplate jdbcTemplate,
+            GenericDataService genericDataService) {
         this.context = context;
-        this.dataValidator = dataValidator;
-        this.loanProductRepository = loanProductRepository;
-        this.clientReadPlatformService = clientReadPlatformService;
         this.codeValueReadPlatformService = codeValueReadPlatformService;
         this.jdbcTemplate = jdbcTemplate;
         this.paginationHelper = paginationHelper;
         this.sqlGenerator = sqlGenerator;
         this.columnValidator = columnValidator;
-        this.preQualificationMemberRepository = preQualificationMemberRepository;
-
+        this.genericDataService = genericDataService;
     }
 
     @Override
@@ -120,18 +109,14 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
         }
         List<Object> paramList = new ArrayList<>();
         final StringBuilder sqlBuilder = new StringBuilder(500);
-        sqlBuilder.append("select " + sqlGenerator.calcFoundRows() + " ");
-        sqlBuilder.append(this.prequalificationsGroupMapper.schema());
+        sqlBuilder.append("select ").append(this.prequalificationsGroupMapper.schema());
         sqlBuilder.append(" where g.prequalification_number is not null ");
-
+        String sqlCountRows = this.genericDataService.wrapSQLCount(sqlBuilder.toString());
         if (searchParameters != null) {
-
             final String extraCriteria = buildSqlStringFromBlacklistCriteria(searchParameters, paramList, true);
-
             if (StringUtils.isNotBlank(extraCriteria)) {
                 sqlBuilder.append(" and (").append(extraCriteria).append(")");
             }
-
             if (searchParameters.isOrderByRequested()) {
                 sqlBuilder.append(" order by ").append(searchParameters.getOrderBy());
                 this.columnValidator.validateSqlInjection(sqlBuilder.toString(), searchParameters.getOrderBy());
@@ -142,7 +127,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             } else {
                 sqlBuilder.append(" order by g.id desc ");
             }
-
+            sqlCountRows = this.genericDataService.wrapSQLCount(sqlBuilder.toString());
             if (searchParameters.isLimited()) {
                 sqlBuilder.append(" ");
                 if (searchParameters.isOffset()) {
@@ -152,8 +137,11 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                 }
             }
         }
-        return this.paginationHelper.fetchPage(this.jdbcTemplate, sqlBuilder.toString(), paramList.toArray(),
-                this.prequalificationsGroupMapper);
+        List<GroupPrequalificationData> pageItems = this.jdbcTemplate.query(sqlBuilder.toString(), this.prequalificationsGroupMapper,
+                paramList.toArray());
+        final Integer totalFilteredRecords = ObjectUtils
+                .defaultIfNull(this.jdbcTemplate.queryForObject(sqlCountRows, Integer.class, paramList.toArray()), 0);
+        return new Page<>(pageItems, totalFilteredRecords);
     }
 
     @Override
@@ -384,7 +372,6 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                         + PrequalificationStatus.AGENCY_LEAD_PENDING_APPROVAL_WITH_EXCEPTIONS.getValue().toString() + ") ";
             } else if (type.equals("exceptionsqueue")) {
                 extraCriteria += " and g.status IN( "
-                        + PrequalificationStatus.ANALYSIS_UNIT_PENDING_APPROVAL_WITH_EXCEPTIONS.getValue().toString() + ", "
                         + PrequalificationStatus.AGENCY_LEAD_APPROVED_WITH_EXCEPTIONS.getValue().toString() + ") ";
             } else if (type.equals("committeeapprovals")) {
 
