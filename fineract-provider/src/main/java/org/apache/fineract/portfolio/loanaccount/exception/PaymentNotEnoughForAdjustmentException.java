@@ -16,23 +16,18 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.infrastructure.dataqueries.service;
+package org.apache.fineract.portfolio.loanaccount.exception;
 
-import java.util.List;
-import org.apache.fineract.infrastructure.dataqueries.data.GenericResultsetData;
-import org.apache.fineract.infrastructure.dataqueries.data.ResultsetColumnHeaderData;
+import java.math.BigDecimal;
+import org.apache.fineract.infrastructure.core.exception.AbstractPlatformResourceNotFoundException;
 
-public interface GenericDataService {
+/**
+ * A {@link RuntimeException} thrown when loan resources are not found.
+ */
+public class PaymentNotEnoughForAdjustmentException extends AbstractPlatformResourceNotFoundException {
 
-    GenericResultsetData fillGenericResultSet(String sql);
-
-    String generateJsonFromGenericResultsetData(GenericResultsetData grs);
-
-    String replace(String str, String pattern, String replace);
-
-    String wrapSQL(String sql);
-
-    String wrapSQLCount(String sql);
-
-    List<ResultsetColumnHeaderData> fillResultsetColumnHeaders(String datatable);
+    public PaymentNotEnoughForAdjustmentException(final BigDecimal amount, final BigDecimal loanBalance, final BigDecimal releaseAmount) {
+        super("error.msg.payment.amount.not.enough.invalid", "Payment of amount " + amount + " is not enough to cover the loan balance of "
+                + loanBalance + " and adjust release of amount" + releaseAmount, amount, loanBalance, releaseAmount);
+    }
 }
