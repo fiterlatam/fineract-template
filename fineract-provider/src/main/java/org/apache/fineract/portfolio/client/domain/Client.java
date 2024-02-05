@@ -769,6 +769,7 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
         StringBuilder nameBuilder = new StringBuilder();
         Integer legalForm = this.getLegalForm();
         if (legalForm == null || LegalForm.fromInt(legalForm).isPerson()) {
+//            First name, Middle Name, First last name, Second last name, and Maiden/Married Name.
             if (StringUtils.isNotBlank(this.firstname)) {
                 nameBuilder.append(this.firstname).append(' ');
             }
@@ -778,11 +779,17 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
             }
 
             if (StringUtils.isNotBlank(this.lastname)) {
-                nameBuilder.append(this.lastname);
+                nameBuilder.append(this.lastname).append(' ');
+            }
+            if (StringUtils.isNotBlank(this.firstlastname)) {
+                nameBuilder.append(this.firstlastname).append(' ');
             }
 
-            if (StringUtils.isNotBlank(this.fullname)) {
-                nameBuilder = new StringBuilder(this.fullname);
+            if (StringUtils.isNotBlank(this.secondlastname)) {
+                nameBuilder = new StringBuilder(this.secondlastname).append(' ');;
+            }
+            if (StringUtils.isNotBlank(this.clientInfoRelatedDetail.getMaidenName())) {
+                nameBuilder = new StringBuilder(this.clientInfoRelatedDetail.getMaidenName());
             }
         } else if (LegalForm.fromInt(legalForm).isEntity()) {
             if (StringUtils.isNotBlank(this.fullname)) {
