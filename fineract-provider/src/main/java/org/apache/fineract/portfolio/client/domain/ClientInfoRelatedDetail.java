@@ -202,6 +202,9 @@ public class ClientInfoRelatedDetail {
     public Integer getLoanCycle() {
         return this.loanCycle;
     }
+    public String getMaidenName() {
+        return this.maidenName;
+    }
 
     public void setLoanCycle(Integer loanCycle) {
         this.loanCycle = loanCycle;
