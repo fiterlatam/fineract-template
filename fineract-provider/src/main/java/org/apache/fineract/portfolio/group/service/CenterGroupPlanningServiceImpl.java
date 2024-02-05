@@ -155,7 +155,7 @@ public class CenterGroupPlanningServiceImpl implements CenterGroupPlanningServic
                 SELECT
                 	gc.group_id AS groupId,
                 	coalesce(paymentsSummary.totalOverdue,0) as totalOverdue,
-                	coalesce(paymentsSummary.totalRepayment,0) as totalRepayment,
+                	coalesce(paidSummary.totalRepayment,0) as totalRepayment,
                 	count( gc.client_id ) AS clientCounter
                 FROM
                 	m_group_client gc
@@ -182,13 +182,27 @@ public class CenterGroupPlanningServiceImpl implements CenterGroupPlanningServic
                 	WHERE
                 		gc2.group_id = ?
                 		AND lrs2.duedate < ?
+                		AND l2.loan_status_id = 300
                 		AND lrs2.completed_derived = 0
-                	) paymentsSummary ON paymentsSummary.groupId = gc.group_id
+                	) paymentsSummary ON paymentsSummary.groupId = gc.group_id       
+                LEFT JOIN (
+                	SELECT
+                		gc3.group_id AS groupId,
+                		sum(COALESCE ( l3.total_repayment_derived, 0 )) AS totalRepayment
+                	FROM
+                		m_loan_repayment_schedule lrs3
+                		INNER JOIN m_loan l3 ON l3.id = lrs3.loan_id
+                		LEFT JOIN m_group_client gc3 ON l3.client_id = gc3.client_id
+                	WHERE
+                		gc3.group_id = ?
+                		AND lrs3.duedate < ?
+                		AND l3.loan_status_id = 300
+                	) paidSummary ON paidSummary.groupId = gc.group_id
                 WHERE
                 	gc.group_id = ?
                 """;
         List<GroupLoanSummaryData> groupLoanSummaryData = jdbcTemplate.query(sql, new BeanPropertyRowMapper(GroupLoanSummaryData.class),
-                new Object[] { groupId, dueDate, groupId });
+                new Object[] { groupId, dueDate, groupId, dueDate, groupId });
 
         return groupLoanSummaryData;
     }
