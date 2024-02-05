@@ -154,8 +154,8 @@ public class CenterGroupPlanningServiceImpl implements CenterGroupPlanningServic
         String sql = """
                 SELECT
                 	gc.group_id AS groupId,
-                	coalesce(paymentsSummary.totalOverdue,0) as totalOverdue,
-                	coalesce(paidSummary.totalRepayment,0) as totalRepayment,
+                	coalesce(overdueSummary.totalOverdue,0) as totalOverdue,
+                	coalesce(paymentsSummary.totalRepayment,0) as totalRepayment,
                 	count( gc.client_id ) AS clientCounter
                 FROM
                 	m_group_client gc
@@ -173,8 +173,7 @@ public class CenterGroupPlanningServiceImpl implements CenterGroupPlanningServic
                 				COALESCE ( lrs2.interest_waived_derived, 0 ) +
                 				COALESCE ( lrs2.penalty_charges_writtenoff_derived, 0 ) + COALESCE ( lrs2.penalty_charges_waived_derived, 0 )
                 			)
-                		),0) AS totalOverdue,
-                		sum(COALESCE ( l2.total_repayment_derived, 0 )) AS totalRepayment
+                		),0) AS totalOverdue
                 	FROM
                 		m_loan_repayment_schedule lrs2
                 		INNER JOIN m_loan l2 ON l2.id = lrs2.loan_id
@@ -184,20 +183,33 @@ public class CenterGroupPlanningServiceImpl implements CenterGroupPlanningServic
                 		AND lrs2.duedate < ?
                 		AND l2.loan_status_id = 300
                 		AND lrs2.completed_derived = 0
-                	) paymentsSummary ON paymentsSummary.groupId = gc.group_id       
-                LEFT JOIN (
+                	) overdueSummary ON overdueSummary.groupId = gc.group_id       
+                	LEFT JOIN (
                 	SELECT
-                		gc3.group_id AS groupId,
-                		sum(COALESCE ( l3.total_repayment_derived, 0 )) AS totalRepayment
+                		gc2.group_id AS groupId,
+                		coalesce (sum(
+                			(
+                				COALESCE ( lrs2.principal_amount, 0 ) + COALESCE ( lrs2.interest_amount, 0 ) +
+                				COALESCE ( lrs2.penalty_charges_amount, 0 ) + COALESCE ( lrs2.fee_charges_amount, 0 ) +
+                				COALESCE ( lrs2.fee_charges_amount, 0 )) -
+                				(COALESCE ( lrs2.total_paid_late_derived, 0 ) + COALESCE ( lrs2.interest_completed_derived, 0 ) +
+                				COALESCE ( lrs2.principal_completed_derived, 0 ) + COALESCE ( lrs2.total_paid_in_advance_derived, 0 ) +
+                				COALESCE ( lrs2.interest_writtenoff_derived, 0 ) + COALESCE ( lrs2.principal_writtenoff_derived, 0 ) +
+                				COALESCE ( lrs2.interest_waived_derived, 0 ) +
+                				COALESCE ( lrs2.penalty_charges_writtenoff_derived, 0 ) + COALESCE ( lrs2.penalty_charges_waived_derived, 0 )
+                			)
+                		),0) AS totalRepayment
                 	FROM
-                		m_loan_repayment_schedule lrs3
-                		INNER JOIN m_loan l3 ON l3.id = lrs3.loan_id
-                		LEFT JOIN m_group_client gc3 ON l3.client_id = gc3.client_id
+                		m_loan_repayment_schedule lrs2
+                		INNER JOIN m_loan l2 ON l2.id = lrs2.loan_id
+                		LEFT JOIN m_group_client gc2 ON l2.client_id = gc2.client_id
                 	WHERE
-                		gc3.group_id = ?
-                		AND lrs3.duedate < ?
-                		AND l3.loan_status_id = 300
-                	) paidSummary ON paidSummary.groupId = gc.group_id
+                		gc2.group_id = ?
+                		AND lrs2.duedate = ?
+                		AND l2.loan_status_id = 300
+                		AND lrs2.completed_derived = 0
+                	) paymentsSummary ON paymentsSummary.groupId = gc.group_id       
+                
                 WHERE
                 	gc.group_id = ?
                 """;
