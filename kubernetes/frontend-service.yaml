@@ -1,0 +1,23 @@
+---
+# Source: fiter-app/charts/community-app/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: fineract-community-app
+  namespace: fineract-dev
+  labels:
+    app.kubernetes.io/name: community-app
+    app.kubernetes.io/instance: fineract
+    app_name: community-app
+spec:
+  type: NodePort
+  ports:
+    - port: 80
+      targetPort: 80
+      nodePort: 30036
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: community-app
+    app.kubernetes.io/instance: fineract
+    app_name: community-app

@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: fineract-nginx
+  name: fineract-nginx
+  namespace: fineract-dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fineract-nginx
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: fineract-nginx
+    spec:
+      volumes:
+      - name: nginx-config
+        configMap:
+          name: fineract-nginx-config
+      containers:
+      - image: nginx
+        name: nginx
+        imagePullPolicy: IfNotPresent
+        volumeMounts:
+        - name: nginx-config
+          mountPath: /etc/nginx/conf.d
+        ports:
+        - containerPort: 80
+        resources: {}
+status: {}
