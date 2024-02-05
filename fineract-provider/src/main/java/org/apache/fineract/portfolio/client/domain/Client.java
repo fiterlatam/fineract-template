@@ -769,7 +769,6 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
         StringBuilder nameBuilder = new StringBuilder();
         Integer legalForm = this.getLegalForm();
         if (legalForm == null || LegalForm.fromInt(legalForm).isPerson()) {
-//            First name, Middle Name, First last name, Second last name, and Maiden/Married Name.
             if (StringUtils.isNotBlank(this.firstname)) {
                 nameBuilder.append(this.firstname).append(' ');
             }
