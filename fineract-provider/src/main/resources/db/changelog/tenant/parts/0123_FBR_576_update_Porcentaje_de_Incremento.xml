@@ -51,4 +51,22 @@
         </sql>
     </changeSet>
 
+    <changeSet id="2" author="fineract">
+        <sql>
+            <![CDATA[
+                DELETE mcci
+                FROM m_client_contact_info mcci
+                WHERE mcci.id IN (
+                    SELECT x.id
+                    FROM (
+                        SELECT ci.*
+                        FROM m_client_contact_info ci
+                        GROUP BY ci.client_id
+                        HAVING COUNT(ci.client_id ) > 1
+                    )x
+                );
+            ]]>
+        </sql>
+    </changeSet>
+
 </databaseChangeLog>

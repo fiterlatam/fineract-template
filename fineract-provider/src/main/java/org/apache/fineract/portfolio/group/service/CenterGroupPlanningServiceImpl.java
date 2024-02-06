@@ -183,7 +183,7 @@ public class CenterGroupPlanningServiceImpl implements CenterGroupPlanningServic
                 		AND lrs2.duedate < ?
                 		AND l2.loan_status_id = 300
                 		AND lrs2.completed_derived = 0
-                	) overdueSummary ON overdueSummary.groupId = gc.group_id       
+                	) overdueSummary ON overdueSummary.groupId = gc.group_id
                 	LEFT JOIN (
                 	SELECT
                 		gc2.group_id AS groupId,
@@ -208,8 +208,8 @@ public class CenterGroupPlanningServiceImpl implements CenterGroupPlanningServic
                 		AND lrs2.duedate = ?
                 		AND l2.loan_status_id = 300
                 		AND lrs2.completed_derived = 0
-                	) paymentsSummary ON paymentsSummary.groupId = gc.group_id       
-                
+                	) paymentsSummary ON paymentsSummary.groupId = gc.group_id
+
                 WHERE
                 	gc.group_id = ?
                 """;
