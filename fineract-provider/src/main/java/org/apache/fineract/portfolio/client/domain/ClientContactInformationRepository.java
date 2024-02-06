@@ -19,6 +19,7 @@
 
 package org.apache.fineract.portfolio.client.domain;
 
+import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -28,6 +29,6 @@ public interface ClientContactInformationRepository
         extends JpaRepository<ClientContactInformation, Long>, JpaSpecificationExecutor<ClientContactInformation> {
 
     @Query("select contactInfo from ClientContactInformation contactInfo where contactInfo.client.id = :clientId")
-    ClientContactInformation findByClientId(@Param("clientId") Long clientId);
+    List<ClientContactInformation> findByClientId(@Param("clientId") Long clientId);
 
 }
