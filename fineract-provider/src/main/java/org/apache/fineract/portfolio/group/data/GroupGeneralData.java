@@ -119,6 +119,7 @@ public class GroupGeneralData implements Serializable {
     private String dateFormat;
     private String locale;
     private LocalDate submittedOnDate;
+    private Integer meetingFrequencyRange;
 
     public static GroupGeneralData importInstance(String groupName, List<ClientData> clientMembers, LocalDate activationDate,
             LocalDate submittedOnDate, Boolean active, String externalId, Long officeId, Long staffId, Long centerId, Integer rowIndex,
@@ -654,5 +655,9 @@ public class GroupGeneralData implements Serializable {
 
     public void setPrequalificationGroups(Collection<GroupPrequalificationData> prequalificationData) {
         this.prequalificationGroups = prequalificationData;
+    }
+
+    public void setMeetingFrequencyRange(Integer meetingFrequencyRange) {
+        this.meetingFrequencyRange = meetingFrequencyRange;
     }
 }
