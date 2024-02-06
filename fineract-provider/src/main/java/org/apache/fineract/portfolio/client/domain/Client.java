@@ -231,7 +231,7 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
     @Column(name = "old_customer_number", nullable = false)
     private String oldCustomerNumber;
 
-    @OneToOne(mappedBy = "client", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @OneToOne(mappedBy = "client", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private ClientContactInformation contactInformation;
 
     @ManyToMany(fetch = FetchType.LAZY)
