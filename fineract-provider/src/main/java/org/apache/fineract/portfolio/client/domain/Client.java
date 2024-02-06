@@ -785,10 +785,10 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
             }
 
             if (StringUtils.isNotBlank(this.secondlastname)) {
-                nameBuilder = new StringBuilder(this.secondlastname).append(' ');;
+                nameBuilder.append(this.secondlastname).append(' ');
             }
             if (StringUtils.isNotBlank(this.clientInfoRelatedDetail.getMaidenName())) {
-                nameBuilder = new StringBuilder(this.clientInfoRelatedDetail.getMaidenName());
+                nameBuilder.append(this.clientInfoRelatedDetail.getMaidenName());
             }
         } else if (LegalForm.fromInt(legalForm).isEntity()) {
             if (StringUtils.isNotBlank(this.fullname)) {
