@@ -231,7 +231,7 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
     @Column(name = "old_customer_number", nullable = false)
     private String oldCustomerNumber;
 
-    @OneToOne(mappedBy = "client", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @OneToOne(mappedBy = "client", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private ClientContactInformation contactInformation;
 
     @ManyToMany(fetch = FetchType.LAZY)
@@ -778,11 +778,17 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
             }
 
             if (StringUtils.isNotBlank(this.lastname)) {
-                nameBuilder.append(this.lastname);
+                nameBuilder.append(this.lastname).append(' ');
+            }
+            if (StringUtils.isNotBlank(this.firstlastname)) {
+                nameBuilder.append(this.firstlastname).append(' ');
             }
 
-            if (StringUtils.isNotBlank(this.fullname)) {
-                nameBuilder = new StringBuilder(this.fullname);
+            if (StringUtils.isNotBlank(this.secondlastname)) {
+                nameBuilder.append(this.secondlastname).append(' ');
+            }
+            if (StringUtils.isNotBlank(this.clientInfoRelatedDetail.getMaidenName())) {
+                nameBuilder.append(this.clientInfoRelatedDetail.getMaidenName());
             }
         } else if (LegalForm.fromInt(legalForm).isEntity()) {
             if (StringUtils.isNotBlank(this.fullname)) {

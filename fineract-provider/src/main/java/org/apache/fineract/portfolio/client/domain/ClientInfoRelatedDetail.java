@@ -203,6 +203,10 @@ public class ClientInfoRelatedDetail {
         return this.loanCycle;
     }
 
+    public String getMaidenName() {
+        return this.maidenName;
+    }
+
     public void setLoanCycle(Integer loanCycle) {
         this.loanCycle = loanCycle;
     }

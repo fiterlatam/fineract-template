@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.Set;
 import javax.persistence.PersistenceException;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.fineract.commands.domain.CommandWrapper;
 import org.apache.fineract.commands.service.CommandProcessingService;
@@ -344,6 +345,7 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
             this.clientRepository.saveAndFlush(newClient);
 
             ClientContactInformation clientContactInformation = ClientContactInformation.fromJson(newClient, command);
+            this.clientContactInformationRepository.saveAndFlush(clientContactInformation);
             newClient.updateClientInformation(clientContactInformation);
 
             final Set<CodeValue> publicServiceTypes = new HashSet<>();
@@ -557,12 +559,15 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
             if (!changes.isEmpty()) {
                 this.clientRepository.saveAndFlush(clientForUpdate);
             }
-            ClientContactInformation contactInformation = this.clientContactInformationRepository.findByClientId(clientId);
-            if (contactInformation == null) {
-                contactInformation = ClientContactInformation.fromJson(clientForUpdate, command);
+            List<ClientContactInformation> contactInformationList = this.clientContactInformationRepository.findByClientId(clientId);
+            ClientContactInformation contactInformation;
+            if (CollectionUtils.isNotEmpty(contactInformationList)) {
+                contactInformation = ClientContactInformation.updateJson(contactInformationList.get(0), command);
             } else {
-                ClientContactInformation.updateJson(contactInformation, command);
+                contactInformation = ClientContactInformation.fromJson(clientForUpdate, command);
             }
+            this.clientContactInformationRepository.saveAndFlush(contactInformation);
+
             clientForUpdate.updateClientInformation(contactInformation);
             final Set<CodeValue> publicServiceTypes = new HashSet<>();
             JsonArray publicServices = command.arrayOfParameterNamed(ClientApiConstants.PUBLIC_SERVICES);
