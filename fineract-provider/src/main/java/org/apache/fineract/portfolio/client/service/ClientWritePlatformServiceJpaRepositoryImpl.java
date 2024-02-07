@@ -532,6 +532,10 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
             if (changes.containsKey(ClientApiConstants.isVatRequiredParamName)) {
                 isVatRequired = command.booleanPrimitiveValueOfParameterNamed(ClientApiConstants.isVatRequiredParamName);
                 clientForUpdate.setVatRequired(isVatRequired);
+            } else {
+                //FSAB-13- This else is required because isVatRequired remains false when user changes vat from dropdown.
+                // In this case we need the original checkbox value else the original vat value will become null
+                isVatRequired = clientForUpdate.isVatRequired();
             }
             if (!isVatRequired) {
                 clientForUpdate.setVatRate(null);
