@@ -530,9 +530,10 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                     }
                 }
                 if (groupPrequalification == null) {
-                    throw new GeneralPlatformDomainRuleException("error.msg.prequalification.is.not.linked.to.a.group",
-                            "Prequalificaion with number " + prequalificationGroup.getPrequalificationNumber()
-                                    + " is not linked to a group");
+                    throw new GeneralPlatformDomainRuleException(
+                            "error.msg.prequalification.is.not.linked.to.a.group", "Prequalificaion with number "
+                                    + prequalificationGroup.getPrequalificationNumber() + " is not linked to a group",
+                            prequalificationGroup.getPrequalificationNumber());
                 }
                 newLoanApplication.updateGroup(groupPrequalification);
                 GroupLoanAdditionals groupLoanAdditionals = GroupLoanAdditionals.assembleFromJson(command, newLoanApplication, facilitator);
@@ -1512,9 +1513,10 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                     }
                 }
                 if (groupPrequalification == null) {
-                    throw new GeneralPlatformDomainRuleException("error.msg.prequalification.is.not.linked.to.a.group",
-                            "Prequalificaion with number " + prequalificationGroup.getPrequalificationNumber()
-                                    + " is not linked to a group");
+                    throw new GeneralPlatformDomainRuleException(
+                            "error.msg.prequalification.is.not.linked.to.a.group", "Prequalificaion with number "
+                                    + prequalificationGroup.getPrequalificationNumber() + " is not linked to a group",
+                            prequalificationGroup.getPrequalificationNumber());
                 }
                 existingLoanApplication.updateGroup(groupPrequalification);
             }
