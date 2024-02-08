@@ -6,7 +6,7 @@ pipeline {
   }
 
   stages {
-    stages('Preparing') {
+    stage('Preparing') {
       steps {
         scripts {
           slackSend channel: '#core-ci-cd',
