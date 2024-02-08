@@ -8,7 +8,7 @@ pipeline {
   stages {
     stage('Preparing') {
       steps {
-        scripts {
+				script {
           slackSend channel: '#core-ci-cd',
           color: '#81db02',
           message: "Inició el procesode integración continua",
