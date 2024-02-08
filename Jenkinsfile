@@ -14,7 +14,7 @@ pipeline {
           message: "Inició el procesode integración continua",
           teamDomain: 'su-fiter',
           token: 'N3PfCrZCxpFh0WHgWCEXbU26',
-          baseUrl: 'https://hooks.slack.com/services/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'
+          webhookUrl: 'https://hooks.slack.com/services/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'
         }
       }
     }
