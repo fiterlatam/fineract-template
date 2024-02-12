@@ -141,8 +141,11 @@ public class GroupLoanAdditionals extends AbstractPersistableCustom {
     @Column(name = "years_in_community")
     private Integer yearsInCommunity;
 
-    @Column(name = "rent_mortgage_fee", scale = 6, precision = 19, nullable = true)
-    private BigDecimal rentMortgageFee;
+    @Column(name = "rent_fee", scale = 6, precision = 19, nullable = true)
+    private BigDecimal rentFee;
+
+    @Column(name = "mortgage_fee", scale = 6, precision = 19, nullable = true)
+    private BigDecimal mortgageFee;
 
     @Column(name = "monthly_income", scale = 6, precision = 19, nullable = true)
     private BigDecimal monthlyIncome;
@@ -248,7 +251,7 @@ public class GroupLoanAdditionals extends AbstractPersistableCustom {
 
     protected GroupLoanAdditionals() {}
 
-    public GroupLoanAdditionals(Integer loanCycleCompleted, BigDecimal rentMortgageFee, BigDecimal monthlyIncome, BigDecimal familyExpenses,
+    public GroupLoanAdditionals(Integer loanCycleCompleted, BigDecimal rentFee, BigDecimal mortgageFee, BigDecimal monthlyIncome, BigDecimal familyExpenses,
             BigDecimal totalExternalLoanAmount, Integer totalInstallments, Integer clientType, String houseHoldGoods,
             String businessActivities, Long businessLocation, Integer businessExperience, BigDecimal salesValue,
             BigDecimal businessPurchases, BigDecimal businessProfit, BigDecimal clientProfit, BigDecimal inventories, Long visitBusiness,
@@ -295,7 +298,8 @@ public class GroupLoanAdditionals extends AbstractPersistableCustom {
         this.phoneNumber = phoneNumber;
         this.relativeNumber = relativeNumber;
         this.yearsInCommunity = yearsInCommunity;
-        this.rentMortgageFee = rentMortgageFee;
+        this.rentFee = rentFee;
+        this.mortgageFee = mortgageFee;
         this.monthlyIncome = monthlyIncome;
         this.familyExpenses = familyExpenses;
         this.totalExternalLoanAmount = totalExternalLoanAmount;
@@ -335,7 +339,8 @@ public class GroupLoanAdditionals extends AbstractPersistableCustom {
     public static GroupLoanAdditionals assembleFromJson(JsonCommand command, Loan loan, AppUser facilitator) {
 
         Integer loanCycleCompleted = command.integerValueOfParameterNamed("loanCycleCompleted");
-        BigDecimal rentMortgageFee = command.bigDecimalValueOfParameterNamed("rentMortgageFee");
+        BigDecimal rentFee = command.bigDecimalValueOfParameterNamed("rentFee");
+        BigDecimal mortgageFee = command.bigDecimalValueOfParameterNamed("mortgageFee");
         BigDecimal monthlyIncome = command.bigDecimalValueOfParameterNamed("monthlyIncome");
         BigDecimal familyExpenses = command.bigDecimalValueOfParameterNamed("familyExpenses");
         BigDecimal totalExternalLoanAmount = command.bigDecimalValueOfParameterNamed("totalExternalLoanAmount");
@@ -399,7 +404,7 @@ public class GroupLoanAdditionals extends AbstractPersistableCustom {
         String relativeNumber = command.stringValueOfParameterNamed("relativeNumber");
         Integer yearsInCommunity = command.integerValueOfParameterNamed("yearsInCommunity");
 
-        return new GroupLoanAdditionals(loanCycleCompleted, rentMortgageFee, monthlyIncome, familyExpenses, totalExternalLoanAmount,
+        return new GroupLoanAdditionals(loanCycleCompleted, rentFee,mortgageFee, monthlyIncome, familyExpenses, totalExternalLoanAmount,
                 totalInstallments, clientType, houseHoldGoods, businessActivities, businessLocation, businessExperience, salesValue,
                 businessPurchases, businessProfit, clientProfit, inventories, visitBusiness, familySupport, businessEvolution,
                 numberOfApprovals, recommenderName, monthlyPaymentCapacity, loanPurpose, currentCreditValue, requestedValue,
@@ -428,10 +433,15 @@ public class GroupLoanAdditionals extends AbstractPersistableCustom {
             actualChanges.put("loanCycleCompleted", newValue);
             this.loanCycleCompleted = newValue;
         }
-        if (command.isChangeInBigDecimalParameterNamed("rentMortgageFee", this.rentMortgageFee)) {
-            final BigDecimal newValue = command.bigDecimalValueOfParameterNamed("rentMortgageFee");
-            actualChanges.put("rentMortgageFee", newValue);
-            this.rentMortgageFee = newValue;
+        if (command.isChangeInBigDecimalParameterNamed("rentFee", this.rentFee)) {
+            final BigDecimal newValue = command.bigDecimalValueOfParameterNamed("rentFee");
+            actualChanges.put("rentFee", newValue);
+            this.rentFee = newValue;
+        }
+        if (command.isChangeInBigDecimalParameterNamed("mortgageFee", this.mortgageFee)) {
+            final BigDecimal newValue = command.bigDecimalValueOfParameterNamed("mortgageFee");
+            actualChanges.put("mortgageFee", newValue);
+            this.mortgageFee = newValue;
         }
         if (command.isChangeInBigDecimalParameterNamed("monthlyIncome", this.monthlyIncome)) {
             final BigDecimal newValue = command.bigDecimalValueOfParameterNamed("monthlyIncome");

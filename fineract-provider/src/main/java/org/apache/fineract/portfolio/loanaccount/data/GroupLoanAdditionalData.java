@@ -71,7 +71,8 @@ public class GroupLoanAdditionalData {
     private String phoneNumber;
     private String relativeNumber;
     private Integer yearsInCommunity;
-    private BigDecimal rentMortgageFee;
+    private BigDecimal rentFee;
+    private BigDecimal mortgageFee;
     private BigDecimal monthlyIncome;
     private BigDecimal familyExpenses;
     private BigDecimal totalExternalLoanAmount;
