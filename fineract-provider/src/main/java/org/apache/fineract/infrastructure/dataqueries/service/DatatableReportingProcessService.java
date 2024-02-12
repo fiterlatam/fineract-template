@@ -19,6 +19,8 @@
 package org.apache.fineract.infrastructure.dataqueries.service;
 
 import java.io.File;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import javax.ws.rs.core.MediaType;
@@ -60,17 +62,16 @@ public class DatatableReportingProcessService implements ReportingProcessService
         final boolean exportCsv = ApiParameterHelper.exportCsv(queryParams);
         final boolean exportPdf = ApiParameterHelper.exportPdf(queryParams);
         final String parameterTypeValue = ApiParameterHelper.parameterType(queryParams) ? "parameter" : "report";
-
+        final String fileName = reportName.replaceAll("[^a-zA-Z0-9.\\-]", "_") + "_"
+                + new SimpleDateFormat("yyyyMMddHHmmss").format(new Date());
         // PDF format
         if (exportPdf) {
             final Map<String, String> reportParams = getReportParams(queryParams);
             final String pdfFileName = this.readExtraDataAndReportingService.retrieveReportPDF(reportName, parameterTypeValue, reportParams,
                     isSelfServiceUserReport);
-
             final File file = new File(pdfFileName);
-
             final ResponseBuilder response = Response.ok(file);
-            response.header("Content-Disposition", "attachment; filename=\"" + pdfFileName + "\"");
+            response.header("Content-Disposition", "attachment; filename=\"" + fileName + ".pdf" + "\"");
             response.header("content-Type", "application/pdf");
 
             return response.build();
@@ -104,7 +105,7 @@ public class DatatableReportingProcessService implements ReportingProcessService
         final StreamingOutput result = this.readExtraDataAndReportingService.retrieveReportCSV(reportName, parameterTypeValue, reportParams,
                 isSelfServiceUserReport);
 
-        return Response.ok().entity(result).type("text/csv")
-                .header("Content-Disposition", "attachment;filename=" + reportName.replaceAll(" ", "") + ".csv").build();
+        return Response.ok().entity(result).type("text/csv").header("Content-Disposition", "attachment;filename=" + fileName + ".csv")
+                .build();
     }
 }
