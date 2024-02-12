@@ -55,8 +55,6 @@ import org.apache.fineract.infrastructure.security.service.PlatformSecurityConte
 import org.apache.fineract.infrastructure.security.service.SqlInjectionPreventerService;
 import org.apache.fineract.infrastructure.security.utils.LogParameterEscapeUtil;
 import org.apache.fineract.useradministration.domain.AppUser;
-import org.owasp.esapi.ESAPI;
-import org.owasp.esapi.codecs.UnixCodec;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
@@ -241,41 +239,29 @@ public class ReadReportingServiceImpl implements ReadReportingService {
     @Override
     public String retrieveReportPDF(final String reportName, final String type, final Map<String, String> queryParams,
             final boolean isSelfServiceUserReport) {
-
-        final String fileLocation = FileSystemContentRepository.FINERACT_BASE_DIR + File.separator + "";
+        final String fileLocation = FileSystemContentRepository.FINERACT_BASE_DIR;
         if (!new File(fileLocation).isDirectory()) {
             new File(fileLocation).mkdirs();
         }
-
-        final String genaratePdf = fileLocation + File.separator + reportName + ".pdf";
-
+        String formattedReportName = reportName.replaceAll("[^a-zA-Z0-9.\\-]", "_");
+        final String generatedPDF = fileLocation + File.separator + formattedReportName + ".pdf";
         try {
             final GenericResultsetData result = retrieveGenericResultset(reportName, type, queryParams, isSelfServiceUserReport);
-
             final List<ResultsetColumnHeaderData> columnHeaders = result.getColumnHeaders();
             final List<ResultsetRowData> data = result.getData();
             List<String> row;
-
             log.info("NO. of Columns: {}", columnHeaders.size());
-            final Integer chSize = columnHeaders.size();
-
+            final int chSize = columnHeaders.size();
             final Document document = new Document(PageSize.B0.rotate());
-
-            String validatedFileName = ESAPI.encoder().encodeForOS(new UnixCodec(), reportName);
-            PdfWriter.getInstance(document, new FileOutputStream(fileLocation + validatedFileName + ".pdf"));
+            PdfWriter.getInstance(document, new FileOutputStream(generatedPDF));
             document.open();
-
             final PdfPTable table = new PdfPTable(chSize);
             table.setWidthPercentage(100);
-
             for (int i = 0; i < chSize; i++) {
-
                 table.addCell(columnHeaders.get(i).getColumnName());
-
             }
             table.completeRow();
-
-            Integer rSize;
+            int rSize;
             String currColType;
             String currVal;
             log.info("NO. of Rows: {}", data.size());
@@ -299,7 +285,7 @@ public class ReadReportingServiceImpl implements ReadReportingService {
             table.completeRow();
             document.add(table);
             document.close();
-            return genaratePdf;
+            return generatedPDF;
         } catch (final Exception e) {
             log.error("error.msg.reporting.error:", e);
             throw new PlatformDataIntegrityException("error.msg.exception.error", e.getMessage(), e);
