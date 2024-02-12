@@ -6452,7 +6452,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     }
 
     public LoanRepaymentScheduleInstallment fetchLoanForeclosureDetail(final LocalDate closureDate) {
-        Money[] receivables = retriveIncomeOutstandingTillDate(closureDate);
+        Money[] receivables = retrieveIncomeOutstandingTillDate(closureDate);
         Money totalPrincipal = Money.of(getCurrency(), this.getSummary().getTotalPrincipalOutstanding());
         totalPrincipal = totalPrincipal.minus(receivables[3]);
         final Set<LoanInterestRecalcualtionAdditionalDetails> compoundingDetails = null;
@@ -6471,7 +6471,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 receivables[0].getAmount(), receivables[1].getAmount(), receivables[2].getAmount(), false, compoundingDetails);
     }
 
-    public Money[] retriveIncomeOutstandingTillDate(final LocalDate paymentDate) {
+    public Money[] retrieveIncomeOutstandingTillDate(final LocalDate paymentDate) {
         Money[] balances = new Money[4];
         final MonetaryCurrency currency = getCurrency();
         Money interest = Money.zero(currency);
@@ -6481,11 +6481,8 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         // get the charges
         for (final LoanRepaymentScheduleInstallment installment : this.repaymentScheduleInstallments) {
             if (!installment.getDueDate().isAfter(paymentDate)) {
-                List<Charge> loanCharges = this.loanProduct.getLoanProductCharges().stream().filter(charge -> charge.isOverdueInstallment())
-                        .collect(Collectors.toList());
                 interest = interest.plus(installment.getInterestOutstanding(currency));
-                // TODO: FBR-309 The amount of late interest is not being generated
-                penalty = calculateOverduePenaltiesForFutureDate(loanCharges, paymentDate, installment);
+                penalty = penalty.plus(installment.getPenaltyChargesOutstanding(currency));
                 fee = fee.plus(installment.getFeeChargesOutstanding(currency));
             } else if (installment.getFromDate().isBefore(paymentDate)) {
                 Money[] balancesForCurrentPeroid = fetchInterestFeeAndPenaltyTillDate(paymentDate, currency, installment);
@@ -6576,7 +6573,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 List<Charge> loanCharges = this.loanProduct.getLoanProductCharges().stream().filter(charge -> charge.isOverdueInstallment())
                         .collect(Collectors.toList());
                 interest = interest.plus(installment.getInterestOutstanding(currency));
-                penalty = penalty = calculateOverduePenaltiesForFutureDate(loanCharges, paymentDate, installment);
+                penalty = calculateOverduePenaltiesForFutureDate(loanCharges, paymentDate, installment);
                 fee = fee.plus(installment.getFeeChargesOutstanding(currency));
                 principalAmountInstallments = principalAmountInstallments.plus(installment.getPrincipalOutstanding(currency));
             } else if (installment.getFromDate().isBefore(paymentDate)) {

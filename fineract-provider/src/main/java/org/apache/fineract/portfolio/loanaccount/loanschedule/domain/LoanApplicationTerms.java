@@ -741,6 +741,12 @@ public final class LoanApplicationTerms {
             break;
         }
 
+        if (this.installmentAmountInMultiplesOf != null) {
+            final double scaledAmount = Money.roundToMultiplesOf(interestForInstallment.getAmount().doubleValue(),
+                    this.installmentAmountInMultiplesOf);
+            interestForInstallment = Money.of(interestForInstallment.getCurrency(), BigDecimal.valueOf(scaledAmount));
+        }
+
         return new PrincipalInterest(null, interestForInstallment, interestBroughtForwardDueToGrace);
     }
 
