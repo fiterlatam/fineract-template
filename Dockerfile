@@ -26,7 +26,8 @@ RUN mv /fineract/libs/gradle/gradle-8.5-bin.zip /tmp \
     && unzip -d /opt/gradle /tmp/gradle-8.5-bin.zip \
     && echo GRADLE_HOME=/opt/gradle/gradle-8.5 > /etc/profile.d/gradle.sh \
     && echo PATH=${GRADLE_HOME}/bin:${PATH} >> /etc/profile.d/gradle.sh \
-    && chmod +x /etc/profile.d/gradle.sh
+    && chmod +x /etc/profile.d/gradle.sh \
+    && source /etc/profile.d/gradle.sh
 
 RUN gradle wrapper
 
