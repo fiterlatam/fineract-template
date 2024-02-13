@@ -720,7 +720,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
             return "l.id as id, mlrs.first_duedate As firstInstallmentDate, l.account_no as accountNo, l.contract as contractNo, l.external_id as externalId, l.fund_id as fundId, f.name as fundName, l.prequalification_id AS prequalificationId, "
                     + " l.loan_type_enum as loanType, l.loanpurpose_cv_id as loanPurposeId, cv.code_value as loanPurposeName,"
                     + " lp.id as loanProductId, lp.name as loanProductName, lp.description as loanProductDescription,"
-                    + " (coalesce(lp.required_guarantee_percent,0)*l.principal_amount) as requiredGuaranteeAmount ,"
+                    + " case when lp.id = 7 and (coalesce(lp.required_guarantee_percent,0)*l.principal_amount) < 500000 then 0 else (coalesce(lp.required_guarantee_percent,0)*l.principal_amount) end as requiredGuaranteeAmount,"
                     + " lp.is_linked_to_floating_interest_rates as isLoanProductLinkedToFloatingRate, "
                     + " lp.allow_variabe_installments as isvariableInstallmentsAllowed, "
                     + " lp.allow_multiple_disbursals as multiDisburseLoan,"
@@ -2847,8 +2847,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                     .actsOwnBehalf(actsOwnBehalf).actsOwnBehalfValue(actsOwnBehalfValue).onBehalfOf(onBehalfOf)
                     .politicalPosition(politicalPosition).politicalOffice(politicalOffice).housingType(housingType)
                     .housingTypeValue(housingTypeValue).address(address).populatedPlace(populatedPlace).referencePoint(referencePoint)
-                    .phoneNumber(phoneNumber).relativeNumber(relativeNumber).yearsInCommunity(yearsInCommunity)
-                    .rentFee(rentFee).mortgageFee(mortgageFee).monthlyIncome(monthlyIncome).familyExpenses(familyExpenses)
+                    .phoneNumber(phoneNumber).relativeNumber(relativeNumber).yearsInCommunity(yearsInCommunity).rentFee(rentFee)
+                    .mortgageFee(mortgageFee).monthlyIncome(monthlyIncome).familyExpenses(familyExpenses)
                     .totalExternalLoanAmount(totalExternalLoanAmount).totalInstallments(totalInstallments).clientType(clientType)
                     .clientTypeValue(clientTypeValue).houseHoldGoods(houseHoldGoods).businessActivities(businessActivities)
                     .businessLocation(businessLocation).businessLocationValue(businessLocationValue).businessExperience(businessExperience)

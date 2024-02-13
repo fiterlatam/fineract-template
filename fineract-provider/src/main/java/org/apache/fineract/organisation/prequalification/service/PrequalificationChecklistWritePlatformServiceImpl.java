@@ -352,18 +352,28 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
         final String reportName = Policies.FOUR.getName() + " Policy Check";
         final String productId = Long.toString(clientData.getProductId());
         final Long loanId = clientData.getLoanId();
-        final String documentCountSql = """
+        final String documentCountSql1 = """
                         SELECT COUNT(*)
                         FROM m_document md
                         LEFT JOIN m_code_value mcvd ON md.document_type = mcvd.id
                         WHERE md.parent_entity_type = 'loans' AND md.parent_entity_id = ? AND (md.name = ? OR mcvd.code_value = ?)
                 """;
-        Object[] params = new Object[] { loanId, "Plan de inversión", "Plan de inversión" };
-        final Long documentCount = this.jdbcTemplate.queryForObject(documentCountSql, Long.class, params);
+        Object[] params1 = new Object[] { loanId, "Plan de inversión", "Plan de inversión" };
+        final Long documentCount1 = this.jdbcTemplate.queryForObject(documentCountSql1, Long.class, params1);
+
+        final String documentCountSql2 = """
+                        SELECT COUNT(*)
+                        FROM m_document md
+                        LEFT JOIN m_code_value mcvd ON md.document_type = mcvd.id
+                        WHERE md.parent_entity_type = 'loans' AND md.parent_entity_id = ? AND (md.name = ? OR mcvd.code_value = ?)
+                """;
+        Object[] params2 = new Object[] { loanId, "Fotografias", "Fotografias" };
+        final Long documentCount2 = this.jdbcTemplate.queryForObject(documentCountSql2, Long.class, params2);
+        final Long totalDocumentCount = (ObjectUtils.defaultIfNull(documentCount1, 0L) + ObjectUtils.defaultIfNull(documentCount2, 0L));
         final Map<String, String> reportParams = new HashMap<>();
         reportParams.put("${clientId}", clientId);
         reportParams.put("${loanProductId}", productId);
-        reportParams.put("${numberOfDocuments}", String.valueOf(documentCount));
+        reportParams.put("${numberOfDocuments}", String.valueOf(totalDocumentCount));
         final GenericResultsetData result = this.readReportingService.retrieveGenericResultset(reportName, "report", reportParams, false);
         return extractColorFromResultset(result);
     }
