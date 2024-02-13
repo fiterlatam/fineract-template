@@ -22,12 +22,12 @@ RUN apt-get update -qq && apt-get install -y wget vim unzip
 COPY . fineract
 WORKDIR /fineract
 
-RUN unzip -d /opt/gradle /fineract/libs/gradle/gradle-8.5-bin.zip && \
-    mv /fineract/libs/gradle/gradle.sh /etc/profile.d/gradle.sh && \
-    chmod +x /etc/profile.d/gradle.sh && \
-    source /etc/profile.d/gradle.sh
+RUN unzip -d /opt/gradle /fineract/libs/gradle/gradle-8.5-bin.zip
 
-RUN gradle wrapper
+ENV GRADLE_HOME /opt/gradle/gradle-8.5
+ENV PATH $PATH:$GRADLE_HOME/bin
+
+RUN /etc/profile.d/gradle.sh wrapper
 
 
 RUN ./gradlew --no-daemon -q  -x compileTestJava -x test bootJar
