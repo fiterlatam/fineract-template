@@ -22,11 +22,10 @@ RUN apt-get update -qq && apt-get install -y wget vim unzip
 COPY . fineract
 WORKDIR /fineract
 
-RUN mv /fineract/libs/gradle/gradle-8.5-bin.zip /tmp \
-    && unzip -d /opt/gradle /tmp/gradle-8.5-bin.zip \
-    && mv /fineract/libs/gradle/gradle.sh /etc/profile.d/gradle.sh \
-    && chmod +x /etc/profile.d/gradle.sh \
-    && source /etc/profile.d/gradle.sh
+RUN unzip -d /opt/gradle /fineract/libs/gradle/gradle-8.5-bin.zip && \
+    mv /fineract/libs/gradle/gradle.sh /etc/profile.d/gradle.sh && \
+    chmod +x /etc/profile.d/gradle.sh && \
+    source /etc/profile.d/gradle.sh
 
 RUN gradle wrapper
 
