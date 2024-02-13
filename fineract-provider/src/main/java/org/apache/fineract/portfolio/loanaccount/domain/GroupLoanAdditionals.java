@@ -251,9 +251,9 @@ public class GroupLoanAdditionals extends AbstractPersistableCustom {
 
     protected GroupLoanAdditionals() {}
 
-    public GroupLoanAdditionals(Integer loanCycleCompleted, BigDecimal rentFee, BigDecimal mortgageFee, BigDecimal monthlyIncome, BigDecimal familyExpenses,
-            BigDecimal totalExternalLoanAmount, Integer totalInstallments, Integer clientType, String houseHoldGoods,
-            String businessActivities, Long businessLocation, Integer businessExperience, BigDecimal salesValue,
+    public GroupLoanAdditionals(Integer loanCycleCompleted, BigDecimal rentFee, BigDecimal mortgageFee, BigDecimal monthlyIncome,
+            BigDecimal familyExpenses, BigDecimal totalExternalLoanAmount, Integer totalInstallments, Integer clientType,
+            String houseHoldGoods, String businessActivities, Long businessLocation, Integer businessExperience, BigDecimal salesValue,
             BigDecimal businessPurchases, BigDecimal businessProfit, BigDecimal clientProfit, BigDecimal inventories, Long visitBusiness,
             Long familySupport, Long businessEvolution, Integer numberOfApprovals, String recommenderName,
             BigDecimal monthlyPaymentCapacity, Long loanPurpose, BigDecimal currentCreditValue, BigDecimal requestedValue,
@@ -404,7 +404,7 @@ public class GroupLoanAdditionals extends AbstractPersistableCustom {
         String relativeNumber = command.stringValueOfParameterNamed("relativeNumber");
         Integer yearsInCommunity = command.integerValueOfParameterNamed("yearsInCommunity");
 
-        return new GroupLoanAdditionals(loanCycleCompleted, rentFee,mortgageFee, monthlyIncome, familyExpenses, totalExternalLoanAmount,
+        return new GroupLoanAdditionals(loanCycleCompleted, rentFee, mortgageFee, monthlyIncome, familyExpenses, totalExternalLoanAmount,
                 totalInstallments, clientType, houseHoldGoods, businessActivities, businessLocation, businessExperience, salesValue,
                 businessPurchases, businessProfit, clientProfit, inventories, visitBusiness, familySupport, businessEvolution,
                 numberOfApprovals, recommenderName, monthlyPaymentCapacity, loanPurpose, currentCreditValue, requestedValue,

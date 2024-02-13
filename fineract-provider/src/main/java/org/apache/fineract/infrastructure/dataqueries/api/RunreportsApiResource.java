@@ -49,7 +49,6 @@ import org.glassfish.jersey.internal.util.collection.MultivaluedStringMap;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 @Path("/runreports")
 @Component
@@ -73,7 +72,6 @@ public class RunreportsApiResource {
 
     @GET
     @Path("{reportName}")
-    @Transactional(timeout = Integer.MAX_VALUE)
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON, "text/csv", "application/vnd.ms-excel", "application/pdf", "text/html" })
     @Operation(summary = "Running a Report", description = "This resource allows you to run and receive output from pre-defined Apache Fineract reports.\n"
