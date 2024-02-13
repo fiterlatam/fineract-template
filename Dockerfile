@@ -19,6 +19,9 @@ FROM azul/zulu-openjdk:17 AS builder
 
 RUN apt-get update -qq && apt-get install -y wget vim unzip
 
+COPY . fineract
+WORKDIR /fineract
+
 RUN mv /fineract/libs/gradle/gradle-8.5-bin.zip /tmp \
     && unzip -d /opt/gradle /tmp/gradle-8.5-bin.zip \
     && echo GRADLE_HOME=/opt/gradle/gradle-8.5 > /etc/profile.d/gradle.sh \
@@ -26,9 +29,6 @@ RUN mv /fineract/libs/gradle/gradle-8.5-bin.zip /tmp \
     && chmod +x /etc/profile.d/gradle.sh
 
 RUN gradle wrapper
-
-COPY . fineract
-WORKDIR /fineract
 
 
 RUN ./gradlew --no-daemon -q  -x compileTestJava -x test bootJar
