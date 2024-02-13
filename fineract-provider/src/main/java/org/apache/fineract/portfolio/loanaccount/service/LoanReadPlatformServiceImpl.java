@@ -2679,7 +2679,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                                 gla.phone_number as phoneNumber,
                                 gla.relative_number as relativeNumber,
                                 gla.years_in_community as yearsInCommunity,
-                                gla.rent_mortgage_fee as rentMortgageFee,
+                                gla.rent_fee as rentFee,
+                                gla.mortgage_fee as mortgageFee,
                                 gla.monthly_income as monthlyIncome,
                                 gla.family_expenses as familyExpenses,
                                 gla.total_external_loan_amount as totalExternalLoanAmount,
@@ -2791,7 +2792,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
             final String relativeNumber = rs.getString("relativeNumber");
             final Integer yearsInCommunity = rs.getInt("yearsInCommunity");
 
-            final BigDecimal rentMortgageFee = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "rentMortgageFee");
+            final BigDecimal rentFee = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "rentFee");
+            final BigDecimal mortgageFee = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "mortgageFee");
             final BigDecimal monthlyIncome = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "monthlyIncome");
             final BigDecimal familyExpenses = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "familyExpenses");
             final BigDecimal totalExternalLoanAmount = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "totalExternalLoanAmount");
@@ -2846,7 +2848,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                     .politicalPosition(politicalPosition).politicalOffice(politicalOffice).housingType(housingType)
                     .housingTypeValue(housingTypeValue).address(address).populatedPlace(populatedPlace).referencePoint(referencePoint)
                     .phoneNumber(phoneNumber).relativeNumber(relativeNumber).yearsInCommunity(yearsInCommunity)
-                    .rentMortgageFee(rentMortgageFee).monthlyIncome(monthlyIncome).familyExpenses(familyExpenses)
+                    .rentFee(rentFee).mortgageFee(mortgageFee).monthlyIncome(monthlyIncome).familyExpenses(familyExpenses)
                     .totalExternalLoanAmount(totalExternalLoanAmount).totalInstallments(totalInstallments).clientType(clientType)
                     .clientTypeValue(clientTypeValue).houseHoldGoods(houseHoldGoods).businessActivities(businessActivities)
                     .businessLocation(businessLocation).businessLocationValue(businessLocationValue).businessExperience(businessExperience)
