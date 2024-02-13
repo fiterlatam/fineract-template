@@ -82,12 +82,12 @@ public class ReadReportingServiceImpl implements ReadReportingService {
 
                 final InputStream in = new ByteArrayInputStream(sb.toString().getBytes(StandardCharsets.UTF_8));
 
-                final byte[] outputByte = new byte[4096];
-                Integer readLen = in.read(outputByte, 0, 4096);
+                final byte[] outputByte = new byte[256096];
+                Integer readLen = in.read(outputByte, 0, 256096);
 
                 while (readLen != -1) {
                     out.write(outputByte, 0, readLen);
-                    readLen = in.read(outputByte, 0, 4096);
+                    readLen = in.read(outputByte, 0, 256096);
                 }
                 // in.close();
                 // out.flush();
