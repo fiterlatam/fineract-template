@@ -22,11 +22,9 @@ import com.lowagie.text.Document;
 import com.lowagie.text.PageSize;
 import com.lowagie.text.pdf.PdfPTable;
 import com.lowagie.text.pdf.PdfWriter;
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -39,6 +37,7 @@ import java.util.Set;
 import javax.ws.rs.core.StreamingOutput;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
 import org.apache.fineract.infrastructure.core.exception.PlatformDataIntegrityException;
@@ -76,22 +75,9 @@ public class ReadReportingServiceImpl implements ReadReportingService {
             final boolean isSelfServiceUserReport) {
         return out -> {
             try {
-
                 final GenericResultsetData result = retrieveGenericResultset(name, type, queryParams, isSelfServiceUserReport);
                 final StringBuilder sb = generateCsvFileBuffer(result);
-
-                final InputStream in = new ByteArrayInputStream(sb.toString().getBytes(StandardCharsets.UTF_8));
-
-                final byte[] outputByte = new byte[256096];
-                Integer readLen = in.read(outputByte, 0, 256096);
-
-                while (readLen != -1) {
-                    out.write(outputByte, 0, readLen);
-                    readLen = in.read(outputByte, 0, 256096);
-                }
-                // in.close();
-                // out.flush();
-                // out.close();
+                IOUtils.write(sb.toString(), out, StandardCharsets.UTF_8);
             } catch (final Exception e) {
                 throw new PlatformDataIntegrityException("error.msg.exception.error", e.getMessage(), e);
             }

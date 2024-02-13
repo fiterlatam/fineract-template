@@ -100,4 +100,29 @@
         </sql>
     </changeSet>
 
+
+    <changeSet id="5" author="fineract">
+        <sql>
+            <![CDATA[
+            UPDATE stretchy_report
+            SET report_sql=
+                    "SELECT CASE
+                       WHEN (${percentageIncrease} <= 200) THEN 'GREEN'
+                       WHEN (${loanProductId} = 2) AND ${numberOfFirstDocument} > 0  AND ${numberOfSecondDocument} > 0 THEN 'GREEN'
+                       WHEN (${loanProductId} = 3) AND ${numberOfFirstDocument} > 0  AND ${numberOfSecondDocument} > 0 THEN 'GREEN'
+                       WHEN (${loanProductId} = 4) AND ${numberOfFirstDocument} > 0  AND ${numberOfSecondDocument} > 0 THEN 'GREEN'
+                       WHEN (${loanProductId} = 5) AND ${numberOfFirstDocument} > 0  AND ${numberOfSecondDocument} > 0 THEN 'GREEN'
+                       WHEN (${loanProductId} = 6) AND ${numberOfFirstDocument} > 0  AND ${numberOfSecondDocument} > 0 THEN 'GREEN'
+                       WHEN (${loanProductId} = 7) AND ${numberOfFirstDocument} > 0  AND ${numberOfSecondDocument} > 0 THEN 'GREEN'
+                       WHEN (${loanProductId} = 8) AND ${numberOfFirstDocument} > 0  AND ${numberOfSecondDocument} > 0 THEN 'GREEN'
+                       WHEN (${loanProductId} = 9) AND ${numberOfFirstDocument} > 0  AND ${numberOfSecondDocument} > 0 THEN 'GREEN'
+                       WHEN (${loanProductId} = 10) AND ${numberOfFirstDocument} > 0  AND ${numberOfSecondDocument} > 0 THEN 'GREEN'
+                       ELSE 'RED'
+                    END AS color
+                    FROM m_client mc WHERE mc.id = ${clientId}"
+            WHERE report_name = "Mandatory to attach photographs and investment plan Policy Check";
+            ]]>
+        </sql>
+    </changeSet>
+
 </databaseChangeLog>

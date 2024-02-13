@@ -70,6 +70,7 @@ import org.apache.fineract.useradministration.domain.AppUser;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
@@ -328,7 +329,7 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
                 SELECT
                 CASE WHEN (mlag.current_credit_value = 0 OR mlag.requested_value = 0) THEN 0
                      WHEN mlag.requested_value < mlag.current_credit_value THEN 0
-                     ELSE ((mlag.requested_value - mlag.current_credit_value)/mlag.current_credit_value)
+                     ELSE ((mlag.requested_value - mlag.current_credit_value)/mlag.current_credit_value) * 100
                 END AS percentageIncrease
                 FROM m_loan_additionals_group mlag
                 INNER JOIN m_loan ml ON ml.id = mlag.loan_id
@@ -352,28 +353,49 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
         final String reportName = Policies.FOUR.getName() + " Policy Check";
         final String productId = Long.toString(clientData.getProductId());
         final Long loanId = clientData.getLoanId();
-        final String documentCountSql1 = """
+        final String firstDocumentCountSql = """
                         SELECT COUNT(*)
                         FROM m_document md
                         LEFT JOIN m_code_value mcvd ON md.document_type = mcvd.id
                         WHERE md.parent_entity_type = 'loans' AND md.parent_entity_id = ? AND (md.name = ? OR mcvd.code_value = ?)
                 """;
-        Object[] params1 = new Object[] { loanId, "Plan de inversión", "Plan de inversión" };
-        final Long documentCount1 = this.jdbcTemplate.queryForObject(documentCountSql1, Long.class, params1);
+        Object[] firstDocumentParams = new Object[] { loanId, "Plan de inversión", "Plan de inversión" };
+        final Long firstDocumentCount = ObjectUtils
+                .defaultIfNull(this.jdbcTemplate.queryForObject(firstDocumentCountSql, Long.class, firstDocumentParams), 0L);
+        final String secondDocumentCountSql = """
+                        SELECT COUNT(*)
+                        FROM m_document md
+                        LEFT JOIN m_code_value mcvd ON md.document_type = mcvd.id
+                        WHERE md.parent_entity_type = 'loans' AND md.parent_entity_id = ? AND (md.name = ? OR mcvd.code_value = ?)
+                """;
+        Object[] secondDocumentParams = new Object[] { loanId, "Fotografias", "Fotografias" };
+        final Long secondDocumentCount = ObjectUtils
+                .defaultIfNull(this.jdbcTemplate.queryForObject(secondDocumentCountSql, Long.class, secondDocumentParams), 0L);
+        final String percentageIncreaseSQL = """
+                SELECT
+                CASE WHEN (mlag.current_credit_value = 0 OR mlag.requested_value = 0) THEN 0
+                     WHEN mlag.requested_value < mlag.current_credit_value THEN 0
+                     ELSE ((mlag.requested_value - mlag.current_credit_value)/mlag.current_credit_value) * 100
+                END AS percentageIncrease
+                FROM m_loan_additionals_group mlag
+                INNER JOIN m_loan ml ON ml.id = mlag.loan_id
+                WHERE ml.id = ?
+                """;
+        Object[] params = new Object[] { loanId };
 
-        final String documentCountSql2 = """
-                        SELECT COUNT(*)
-                        FROM m_document md
-                        LEFT JOIN m_code_value mcvd ON md.document_type = mcvd.id
-                        WHERE md.parent_entity_type = 'loans' AND md.parent_entity_id = ? AND (md.name = ? OR mcvd.code_value = ?)
-                """;
-        Object[] params2 = new Object[] { loanId, "Fotografias", "Fotografias" };
-        final Long documentCount2 = this.jdbcTemplate.queryForObject(documentCountSql2, Long.class, params2);
-        final Long totalDocumentCount = (ObjectUtils.defaultIfNull(documentCount1, 0L) + ObjectUtils.defaultIfNull(documentCount2, 0L));
+        BigDecimal percentageIncrease;
+        try {
+            percentageIncrease = ObjectUtils
+                    .defaultIfNull(this.jdbcTemplate.queryForObject(percentageIncreaseSQL, BigDecimal.class, params), BigDecimal.ZERO);
+        } catch (EmptyResultDataAccessException e) {
+            percentageIncrease = BigDecimal.ZERO;
+        }
         final Map<String, String> reportParams = new HashMap<>();
         reportParams.put("${clientId}", clientId);
         reportParams.put("${loanProductId}", productId);
-        reportParams.put("${numberOfDocuments}", String.valueOf(totalDocumentCount));
+        reportParams.put("${numberOfFirstDocument}", Long.toString(firstDocumentCount));
+        reportParams.put("${numberOfSecondDocument}", Long.toString(secondDocumentCount));
+        reportParams.put("${percentageIncrease}", String.valueOf(percentageIncrease));
         final GenericResultsetData result = this.readReportingService.retrieveGenericResultset(reportName, "report", reportParams, false);
         return extractColorFromResultset(result);
     }
