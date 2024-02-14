@@ -40,6 +40,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
+import java.io.IOException;
+
 @Path("/self/runreports")
 @Component
 @Scope("singleton")
@@ -73,7 +75,7 @@ public class SelfRunReportApiResource {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = SelfRunReportApiResourceSwagger.GetRunReportResponse.class))) })
     public Response runReport(@PathParam("reportName") @Parameter(description = "reportName") final String reportName,
-            @Context final UriInfo uriInfo) {
+            @Context final UriInfo uriInfo) throws IOException {
         this.context.authenticatedUser();
         final boolean isSelfServiceUserReport = true;
         return this.runreportsApiResource.runReport(reportName, uriInfo, isSelfServiceUserReport);
