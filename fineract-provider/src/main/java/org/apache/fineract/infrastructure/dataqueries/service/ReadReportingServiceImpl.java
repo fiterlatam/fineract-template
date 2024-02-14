@@ -34,7 +34,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import javax.ws.rs.core.StreamingOutput;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
@@ -71,17 +70,15 @@ public class ReadReportingServiceImpl implements ReadReportingService {
     private final DatabaseSpecificSQLGenerator sqlGenerator;
 
     @Override
-    public StreamingOutput retrieveReportCSV(final String name, final String type, final Map<String, String> queryParams,
-            final boolean isSelfServiceUserReport) {
-        return out -> {
-            try {
-                final GenericResultsetData result = retrieveGenericResultset(name, type, queryParams, isSelfServiceUserReport);
-                final StringBuilder sb = generateCsvFileBuffer(result);
-                IOUtils.write(sb.toString(), out, StandardCharsets.UTF_8);
-            } catch (final Exception e) {
-                throw new PlatformDataIntegrityException("error.msg.exception.error", e.getMessage(), e);
-            }
-        };
+    public void retrieveReportCSV(final ByteArrayOutputStream byteArrayOutputStream, final String name, final String type,
+            final Map<String, String> queryParams, final boolean isSelfServiceUserReport) {
+        try {
+            final GenericResultsetData result = retrieveGenericResultset(name, type, queryParams, isSelfServiceUserReport);
+            final StringBuilder sb = generateCsvFileBuffer(result);
+            IOUtils.write(sb.toString().getBytes(StandardCharsets.UTF_8), byteArrayOutputStream);
+        } catch (final Exception e) {
+            throw new PlatformDataIntegrityException("error.msg.exception.error", e.getMessage(), e);
+        }
     }
 
     private StringBuilder generateCsvFileBuffer(final GenericResultsetData result) {

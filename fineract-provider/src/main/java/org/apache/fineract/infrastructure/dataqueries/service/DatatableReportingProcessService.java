@@ -18,6 +18,7 @@
  */
 package org.apache.fineract.infrastructure.dataqueries.service;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -27,7 +28,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
-import javax.ws.rs.core.StreamingOutput;
 import org.apache.fineract.infrastructure.core.api.ApiParameterHelper;
 import org.apache.fineract.infrastructure.core.serialization.ToApiJsonSerializer;
 import org.apache.fineract.infrastructure.dataqueries.api.RunreportsApiResource;
@@ -101,11 +101,12 @@ public class DatatableReportingProcessService implements ReportingProcessService
         }
 
         // CSV format
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         final Map<String, String> reportParams = getReportParams(queryParams);
-        final StreamingOutput result = this.readExtraDataAndReportingService.retrieveReportCSV(reportName, parameterTypeValue, reportParams,
+        this.readExtraDataAndReportingService.retrieveReportCSV(byteArrayOutputStream, reportName, parameterTypeValue, reportParams,
                 isSelfServiceUserReport);
-
-        return Response.ok().entity(result).type("text/csv").header("Content-Disposition", "attachment;filename=" + fileName + ".csv")
-                .build();
+        return Response.ok().entity(byteArrayOutputStream.toByteArray()).type("text/csv")
+                .header("Content-Disposition", "attachment;filename=" + fileName + ".csv")
+                .header("Content-Length", byteArrayOutputStream.size()).build();
     }
 }

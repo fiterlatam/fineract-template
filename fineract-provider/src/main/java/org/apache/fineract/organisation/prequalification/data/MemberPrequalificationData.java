@@ -54,6 +54,7 @@ public class MemberPrequalificationData {
     private final Boolean groupPresident;
     private final Boolean isSelected;
     private BuroData buroData;
+    private Long clientId;
 
     public MemberPrequalificationData(final Long id, final String name, final String dpi, final LocalDate dob, final String workWithPuente,
             final BigDecimal requestedAmount, final EnumOptionData status, Long blacklistCount, BigDecimal totalLoanAmount,
@@ -151,5 +152,13 @@ public class MemberPrequalificationData {
 
     public void setBuroData(BuroData buroData) {
         this.buroData = buroData;
+    }
+
+    public Long getClientId() {
+        return clientId;
+    }
+
+    public void setClientId(Long clientId) {
+        this.clientId = clientId;
     }
 }

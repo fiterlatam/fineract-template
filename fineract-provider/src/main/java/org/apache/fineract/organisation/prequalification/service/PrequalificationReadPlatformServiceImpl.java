@@ -671,6 +671,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                     	m.status,
                     	m.is_president as groupPresident,
                     	m.dpi,
+                    	mc.id AS clientId,
                     	m.dob,
                     	m.buro_check_status as buroCheckStatus,
                     	m.requested_amount AS requestedAmount,
@@ -795,12 +796,14 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             final Long orangeValidationCount = rs.getLong("orangeValidationCount");
             final Long greenValidationCount = rs.getLong("greenValidationCount");
             final Long yellowValidationCount = rs.getLong("redValidationCount");
+            final Long clientId = rs.getLong("clientId");
             final Boolean groupPresident = rs.getBoolean("groupPresident");
             MemberPrequalificationData memberPrequalificationData = MemberPrequalificationData.instance(id, name, dpi, dob, puente,
                     requestedAmount, status, blacklistCount, totalLoanAmount, totalLoanBalance, totalGuaranteedLoanBalance, noOfCycles,
                     additionalCreditsCount, additionalCreditsSum, activeBlacklistCount, inActiveBlacklistCount, greenValidationCount,
                     yellowValidationCount, orangeValidationCount, redValidationCount, bureauCheckStatus, approvedAmount, groupPresident);
             memberPrequalificationData.setBuroData(buroData);
+            memberPrequalificationData.setClientId(clientId);
             return memberPrequalificationData;
         }
     }
