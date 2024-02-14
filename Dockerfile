@@ -27,7 +27,7 @@ RUN unzip -d /opt/gradle /fineract/libs/gradle/gradle-8.5-bin.zip
 ENV GRADLE_HOME /opt/gradle/gradle-8.5
 ENV PATH $PATH:$GRADLE_HOME/bin
 
-#RUN gradle wrapper
+RUN gradle wrapper
 
 
 RUN ./gradlew --no-daemon -q  -x compileTestJava -x test bootJar
