@@ -29,6 +29,7 @@ ENV PATH $PATH:$GRADLE_HOME/bin
 
 RUN gradle wrapper
 
+RUN sed -i 's|services.gradle.org/distributions/gradle-8.5-bin.zip|sumasparati.mundosumas.com/libs/gradle/8.5/gradle-8.5-bin.zip|' /fineract/gradle/wrapper/gradle-wrapper.properties
 
 RUN ./gradlew --no-daemon -q  -x compileTestJava -x test bootJar
 RUN mv /fineract/fineract-provider/build/libs/*.jar /fineract/fineract-provider/build/libs/fineract-provider.jar
