@@ -41,7 +41,7 @@ public interface ReadReportingService {
 
     String retrieveReportPDF(String name, String type, Map<String, String> extractedQueryParams, boolean isSelfServiceUserReport);
 
-    void retrieveReportCSV(ByteArrayOutputStream byteArrayOutputStream, String name, String type, Map<String, String> extractedQueryParams,
+    String retrieveReportCSV(String reportName, String reportType, Map<String, String> extractedQueryParams,
             boolean isSelfServiceUserReport);
 
     GenericResultsetData retrieveGenericResultset(String name, String type, Map<String, String> extractedQueryParams,

@@ -22,6 +22,7 @@ import com.lowagie.text.Document;
 import com.lowagie.text.PageSize;
 import com.lowagie.text.pdf.PdfPTable;
 import com.lowagie.text.pdf.PdfWriter;
+import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -36,7 +37,6 @@ import java.util.Map;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
 import org.apache.fineract.infrastructure.core.exception.PlatformDataIntegrityException;
@@ -70,12 +70,19 @@ public class ReadReportingServiceImpl implements ReadReportingService {
     private final DatabaseSpecificSQLGenerator sqlGenerator;
 
     @Override
-    public void retrieveReportCSV(final ByteArrayOutputStream byteArrayOutputStream, final String name, final String type,
-            final Map<String, String> queryParams, final boolean isSelfServiceUserReport) {
+    public String retrieveReportCSV(final String reportName, final String reportType, final Map<String, String> queryParams,
+            final boolean isSelfServiceUserReport) {
         try {
-            final GenericResultsetData result = retrieveGenericResultset(name, type, queryParams, isSelfServiceUserReport);
-            final StringBuilder sb = generateCsvFileBuffer(result);
-            IOUtils.write(sb.toString().getBytes(StandardCharsets.UTF_8), byteArrayOutputStream);
+            String csvFileName = reportName.replaceAll("[^a-zA-Z0-9.\\-]", "_") + ".csv";
+            final FileOutputStream fileOutputStream = new FileOutputStream(csvFileName);
+            final BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(fileOutputStream);
+            final GenericResultsetData result = retrieveGenericResultset(reportName, reportType, queryParams, isSelfServiceUserReport);
+            final StringBuilder csvFileBuffer = generateCsvFileBuffer(result);
+            final byte[] byteArray = csvFileBuffer.toString().getBytes(StandardCharsets.UTF_8);
+            bufferedOutputStream.write(byteArray);
+            bufferedOutputStream.flush();
+            bufferedOutputStream.close();
+            return csvFileName;
         } catch (final Exception e) {
             throw new PlatformDataIntegrityException("error.msg.exception.error", e.getMessage(), e);
         }
