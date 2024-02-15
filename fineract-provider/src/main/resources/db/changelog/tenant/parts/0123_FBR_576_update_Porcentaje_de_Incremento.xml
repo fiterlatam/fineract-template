@@ -69,4 +69,60 @@
         </sql>
     </changeSet>
 
+    <changeSet id="3" author="fineract">
+        <sql>
+            <![CDATA[
+                INSERT IGNORE INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory) VALUES((SELECT mc.id FROM m_code mc WHERE mc.code_name = 'Document Type' LIMIT 1), 'Fotografias', 'Fotografias', 1, NULL, 1, 0);
+            ]]>
+        </sql>
+    </changeSet>
+
+    <changeSet id="4" author="fineract">
+        <sql>
+            <![CDATA[
+            UPDATE stretchy_report
+            SET report_sql=
+                "SELECT CASE
+                   WHEN (${loanProductId} = 2) AND ${numberOfDocuments} > 1  THEN 'GREEN'
+                   WHEN (${loanProductId} = 3) AND ${numberOfDocuments} > 1  THEN 'GREEN'
+                   WHEN (${loanProductId} = 4) AND ${numberOfDocuments} > 1  THEN 'GREEN'
+                   WHEN (${loanProductId} = 5) AND ${numberOfDocuments} > 1  THEN 'GREEN'
+                   WHEN (${loanProductId} = 6) AND ${numberOfDocuments} > 1  THEN 'GREEN'
+                   WHEN (${loanProductId} = 7) AND ${numberOfDocuments} > 1  THEN 'GREEN'
+                   WHEN (${loanProductId} = 8) AND ${numberOfDocuments} > 1  THEN 'GREEN'
+                   WHEN (${loanProductId} = 9) AND ${numberOfDocuments} > 1  THEN 'GREEN'
+                   WHEN (${loanProductId} = 10) AND ${numberOfDocuments} > 1  THEN 'GREEN'
+                   ELSE 'RED'
+                END AS color
+                FROM m_client mc WHERE mc.id = ${clientId}"
+            WHERE report_name = "Mandatory to attach photographs and investment plan Policy Check";
+            ]]>
+        </sql>
+    </changeSet>
+
+
+    <changeSet id="5" author="fineract">
+        <sql>
+            <![CDATA[
+            UPDATE stretchy_report
+            SET report_sql=
+                    "SELECT CASE
+                       WHEN (${percentageIncrease} <= 200) THEN 'GREEN'
+                       WHEN (${loanProductId} = 2) AND ${numberOfFirstDocument} > 0  AND ${numberOfSecondDocument} > 0 THEN 'GREEN'
+                       WHEN (${loanProductId} = 3) AND ${numberOfFirstDocument} > 0  AND ${numberOfSecondDocument} > 0 THEN 'GREEN'
+                       WHEN (${loanProductId} = 4) AND ${numberOfFirstDocument} > 0  AND ${numberOfSecondDocument} > 0 THEN 'GREEN'
+                       WHEN (${loanProductId} = 5) AND ${numberOfFirstDocument} > 0  AND ${numberOfSecondDocument} > 0 THEN 'GREEN'
+                       WHEN (${loanProductId} = 6) AND ${numberOfFirstDocument} > 0  AND ${numberOfSecondDocument} > 0 THEN 'GREEN'
+                       WHEN (${loanProductId} = 7) AND ${numberOfFirstDocument} > 0  AND ${numberOfSecondDocument} > 0 THEN 'GREEN'
+                       WHEN (${loanProductId} = 8) AND ${numberOfFirstDocument} > 0  AND ${numberOfSecondDocument} > 0 THEN 'GREEN'
+                       WHEN (${loanProductId} = 9) AND ${numberOfFirstDocument} > 0  AND ${numberOfSecondDocument} > 0 THEN 'GREEN'
+                       WHEN (${loanProductId} = 10) AND ${numberOfFirstDocument} > 0  AND ${numberOfSecondDocument} > 0 THEN 'GREEN'
+                       ELSE 'RED'
+                    END AS color
+                    FROM m_client mc WHERE mc.id = ${clientId}"
+            WHERE report_name = "Mandatory to attach photographs and investment plan Policy Check";
+            ]]>
+        </sql>
+    </changeSet>
+
 </databaseChangeLog>
