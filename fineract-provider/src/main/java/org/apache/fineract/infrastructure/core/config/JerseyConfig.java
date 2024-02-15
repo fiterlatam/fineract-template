@@ -19,14 +19,14 @@
 
 package org.apache.fineract.infrastructure.core.config;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.annotation.PostConstruct;
 import javax.ws.rs.ApplicationPath;
 import javax.ws.rs.Path;
 import javax.ws.rs.ext.Provider;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.server.ServerProperties;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Configuration;
@@ -35,7 +35,11 @@ import org.springframework.context.annotation.Configuration;
 @ApplicationPath("/api/v1")
 public class JerseyConfig extends ResourceConfig {
 
-    private static final Logger LOG = LoggerFactory.getLogger(JerseyConfig.class);
+    private static final Logger LOG = Logger.getLogger("org.glassfish.jersey");
+
+    static {
+        LOG.setLevel(Level.OFF);
+    }
 
     JerseyConfig() {
         register(org.glassfish.jersey.media.multipart.MultiPartFeature.class);

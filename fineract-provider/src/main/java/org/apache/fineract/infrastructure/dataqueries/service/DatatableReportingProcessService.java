@@ -20,6 +20,7 @@ package org.apache.fineract.infrastructure.dataqueries.service;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
@@ -55,7 +56,7 @@ public class DatatableReportingProcessService implements ReportingProcessService
     }
 
     @Override
-    public Response processRequest(String reportName, MultivaluedMap<String, String> queryParams) {
+    public Response processRequest(String reportName, MultivaluedMap<String, String> queryParams) throws IOException {
         boolean isSelfServiceUserReport = Boolean.parseBoolean(
                 queryParams.getOrDefault(RunreportsApiResource.IS_SELF_SERVICE_USER_REPORT_PARAMETER, List.of("false")).get(0));
         final boolean prettyPrint = ApiParameterHelper.prettyPrint(queryParams);
@@ -105,6 +106,7 @@ public class DatatableReportingProcessService implements ReportingProcessService
         final Map<String, String> reportParams = getReportParams(queryParams);
         this.readExtraDataAndReportingService.retrieveReportCSV(byteArrayOutputStream, reportName, parameterTypeValue, reportParams,
                 isSelfServiceUserReport);
+        byteArrayOutputStream.close();
         return Response.ok().entity(byteArrayOutputStream.toByteArray()).type("text/csv")
                 .header("Content-Disposition", "attachment;filename=" + fileName + ".csv")
                 .header("Content-Length", byteArrayOutputStream.size()).build();
