@@ -98,7 +98,7 @@ public final class LoanApplicationCommandFromApiJsonHelper {
             LoanApiConstants.applicationId, // glim specific
             LoanApiConstants.lastApplication, // glim specific
             LoanApiConstants.daysInYearTypeParameterName, LoanApiConstants.fixedPrincipalPercentagePerInstallmentParamName,
-            LoanApiConstants.loanCycleCompletedParamName, LoanApiConstants.rentMortgageFeeParamName,
+            LoanApiConstants.loanCycleCompletedParamName, LoanApiConstants.mortgageFeeParamName, LoanApiConstants.rentFeeParamName,
             LoanApiConstants.monthlyIncomeParamName, LoanApiConstants.familyExpensesParamName,
             LoanApiConstants.totalExternalLoanAmountParamName, LoanApiConstants.totalInstallmentsParamName,
             LoanApiConstants.clientTypeParamName, LoanApiConstants.houseHoldGoodsParamName, LoanApiConstants.businessActivitiesParamName,

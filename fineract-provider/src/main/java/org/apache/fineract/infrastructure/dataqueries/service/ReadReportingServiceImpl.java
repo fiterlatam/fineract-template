@@ -22,11 +22,9 @@ import com.lowagie.text.Document;
 import com.lowagie.text.PageSize;
 import com.lowagie.text.pdf.PdfPTable;
 import com.lowagie.text.pdf.PdfWriter;
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -36,9 +34,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import javax.ws.rs.core.StreamingOutput;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
 import org.apache.fineract.infrastructure.core.exception.PlatformDataIntegrityException;
@@ -55,8 +53,6 @@ import org.apache.fineract.infrastructure.security.service.PlatformSecurityConte
 import org.apache.fineract.infrastructure.security.service.SqlInjectionPreventerService;
 import org.apache.fineract.infrastructure.security.utils.LogParameterEscapeUtil;
 import org.apache.fineract.useradministration.domain.AppUser;
-import org.owasp.esapi.ESAPI;
-import org.owasp.esapi.codecs.UnixCodec;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
@@ -74,30 +70,15 @@ public class ReadReportingServiceImpl implements ReadReportingService {
     private final DatabaseSpecificSQLGenerator sqlGenerator;
 
     @Override
-    public StreamingOutput retrieveReportCSV(final String name, final String type, final Map<String, String> queryParams,
-            final boolean isSelfServiceUserReport) {
-        return out -> {
-            try {
-
-                final GenericResultsetData result = retrieveGenericResultset(name, type, queryParams, isSelfServiceUserReport);
-                final StringBuilder sb = generateCsvFileBuffer(result);
-
-                final InputStream in = new ByteArrayInputStream(sb.toString().getBytes(StandardCharsets.UTF_8));
-
-                final byte[] outputByte = new byte[4096];
-                Integer readLen = in.read(outputByte, 0, 4096);
-
-                while (readLen != -1) {
-                    out.write(outputByte, 0, readLen);
-                    readLen = in.read(outputByte, 0, 4096);
-                }
-                // in.close();
-                // out.flush();
-                // out.close();
-            } catch (final Exception e) {
-                throw new PlatformDataIntegrityException("error.msg.exception.error", e.getMessage(), e);
-            }
-        };
+    public void retrieveReportCSV(final ByteArrayOutputStream byteArrayOutputStream, final String name, final String type,
+            final Map<String, String> queryParams, final boolean isSelfServiceUserReport) {
+        try {
+            final GenericResultsetData result = retrieveGenericResultset(name, type, queryParams, isSelfServiceUserReport);
+            final StringBuilder sb = generateCsvFileBuffer(result);
+            IOUtils.write(sb.toString().getBytes(StandardCharsets.UTF_8), byteArrayOutputStream);
+        } catch (final Exception e) {
+            throw new PlatformDataIntegrityException("error.msg.exception.error", e.getMessage(), e);
+        }
     }
 
     private StringBuilder generateCsvFileBuffer(final GenericResultsetData result) {
@@ -241,41 +222,29 @@ public class ReadReportingServiceImpl implements ReadReportingService {
     @Override
     public String retrieveReportPDF(final String reportName, final String type, final Map<String, String> queryParams,
             final boolean isSelfServiceUserReport) {
-
-        final String fileLocation = FileSystemContentRepository.FINERACT_BASE_DIR + File.separator + "";
+        final String fileLocation = FileSystemContentRepository.FINERACT_BASE_DIR;
         if (!new File(fileLocation).isDirectory()) {
             new File(fileLocation).mkdirs();
         }
-
-        final String genaratePdf = fileLocation + File.separator + reportName + ".pdf";
-
+        String formattedReportName = reportName.replaceAll("[^a-zA-Z0-9.\\-]", "_");
+        final String generatedPDF = fileLocation + File.separator + formattedReportName + ".pdf";
         try {
             final GenericResultsetData result = retrieveGenericResultset(reportName, type, queryParams, isSelfServiceUserReport);
-
             final List<ResultsetColumnHeaderData> columnHeaders = result.getColumnHeaders();
             final List<ResultsetRowData> data = result.getData();
             List<String> row;
-
             log.info("NO. of Columns: {}", columnHeaders.size());
-            final Integer chSize = columnHeaders.size();
-
+            final int chSize = columnHeaders.size();
             final Document document = new Document(PageSize.B0.rotate());
-
-            String validatedFileName = ESAPI.encoder().encodeForOS(new UnixCodec(), reportName);
-            PdfWriter.getInstance(document, new FileOutputStream(fileLocation + validatedFileName + ".pdf"));
+            PdfWriter.getInstance(document, new FileOutputStream(generatedPDF));
             document.open();
-
             final PdfPTable table = new PdfPTable(chSize);
             table.setWidthPercentage(100);
-
             for (int i = 0; i < chSize; i++) {
-
                 table.addCell(columnHeaders.get(i).getColumnName());
-
             }
             table.completeRow();
-
-            Integer rSize;
+            int rSize;
             String currColType;
             String currVal;
             log.info("NO. of Rows: {}", data.size());
@@ -299,7 +268,7 @@ public class ReadReportingServiceImpl implements ReadReportingService {
             table.completeRow();
             document.add(table);
             document.close();
-            return genaratePdf;
+            return generatedPDF;
         } catch (final Exception e) {
             log.error("error.msg.reporting.error:", e);
             throw new PlatformDataIntegrityException("error.msg.exception.error", e.getMessage(), e);

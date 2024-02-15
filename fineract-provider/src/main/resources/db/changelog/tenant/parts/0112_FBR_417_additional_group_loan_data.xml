@@ -248,5 +248,20 @@
             <column name="date_of_birth" type="DATE"/>
         </addColumn>
     </changeSet>
+    <changeSet author="fineract" id="9">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_loan_additionals_group" columnName="rent_fee"/>
+            </not>
+        </preConditions>
+        <dropColumn tableName="m_loan_additionals_group">
+                <column name="rent_mortgage_fee"/>
+        </dropColumn>
+
+        <addColumn tableName="m_loan_additionals_group">
+            <column name="rent_fee" type="DECIMAL(19,6)" defaultValue="0"></column>
+            <column name="mortgage_fee" type="DECIMAL(19,6)" defaultValue="0"></column>
+        </addColumn>
+    </changeSet>
 
 </databaseChangeLog>
