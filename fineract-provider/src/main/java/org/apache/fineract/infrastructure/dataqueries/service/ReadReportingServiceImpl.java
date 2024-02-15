@@ -73,10 +73,8 @@ public class ReadReportingServiceImpl implements ReadReportingService {
     public String retrieveReportCSV(final String reportName, final String reportType, final Map<String, String> queryParams,
             final boolean isSelfServiceUserReport) {
         try {
-            final String fileLocation = FileSystemContentRepository.FINERACT_BASE_DIR;
-            String formattedReportName = reportName.replaceAll("[^a-zA-Z0-9.\\-]", "_");
-            final String csvFilePath = fileLocation + File.separator + formattedReportName + ".csv";
-            final FileOutputStream fileOutputStream = new FileOutputStream(csvFilePath);
+            String csvFileName = reportName.replaceAll("[^a-zA-Z0-9.\\-]", "_") + ".csv";
+            final FileOutputStream fileOutputStream = new FileOutputStream(csvFileName);
             final BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(fileOutputStream);
             final GenericResultsetData result = retrieveGenericResultset(reportName, reportType, queryParams, isSelfServiceUserReport);
             final StringBuilder csvFileBuffer = generateCsvFileBuffer(result);
@@ -84,7 +82,7 @@ public class ReadReportingServiceImpl implements ReadReportingService {
             bufferedOutputStream.write(byteArray);
             bufferedOutputStream.flush();
             bufferedOutputStream.close();
-            return csvFilePath;
+            return csvFileName;
         } catch (final Exception e) {
             throw new PlatformDataIntegrityException("error.msg.exception.error", e.getMessage(), e);
         }
