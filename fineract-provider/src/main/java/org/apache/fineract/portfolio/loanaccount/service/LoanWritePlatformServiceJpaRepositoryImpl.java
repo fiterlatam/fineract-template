@@ -427,7 +427,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 .isPaymnetypeApplicableforDisbursementCharge();
 
         // Recalculate first repayment date based in actual disbursement date.
-        //Do not increment loan counter for migrated loans
+        // Do not increment loan counter for migrated loans
         if (loan.loanProduct().isIncludeInBorrowerCycle() && loan.getExternalId().equalsIgnoreCase(loan.getId().toString())) {
             Client client = loan.getClient();
             client.updateLoanCycle(client.getLoanCycle() + 1);
