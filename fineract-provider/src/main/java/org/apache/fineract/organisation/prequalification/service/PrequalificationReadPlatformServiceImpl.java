@@ -469,6 +469,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                       COUNT(mcvr.id) AS validCount
                       FROM m_checklist_validation_result mcvr
                       INNER JOIN m_prequalification_group p ON mcvr.prequalification_id = p.id and mcvr.validation_color_enum = 1
+                      GROUP BY p.id
                     ) greenValidation ON greenValidation.groupid = g.id
 
                      LEFT JOIN
@@ -477,6 +478,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                       COUNT(mcvr.id) AS validCount
                       FROM m_checklist_validation_result mcvr
                       INNER JOIN m_prequalification_group p ON mcvr.prequalification_id = p.id and mcvr.validation_color_enum = 2
+                      GROUP BY p.id
                     ) yellowValidation ON yellowValidation.groupid = g.id
 
                      LEFT JOIN
@@ -485,6 +487,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                       COUNT(mcvr.id) AS validCount
                       FROM m_checklist_validation_result mcvr
                       INNER JOIN m_prequalification_group p ON mcvr.prequalification_id = p.id and mcvr.validation_color_enum = 3
+                      GROUP BY p.id
                     ) orangeValidation ON orangeValidation.groupid = g.id
 
                      LEFT JOIN
@@ -493,6 +496,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                       COUNT(mcvr.id) AS validCount
                       FROM m_checklist_validation_result mcvr
                       INNER JOIN m_prequalification_group p ON mcvr.prequalification_id = p.id and mcvr.validation_color_enum = 4
+                      GROUP BY p.id
                     ) redValidation ON redValidation.groupid = g.id
 
                     LEFT JOIN m_group cg ON
