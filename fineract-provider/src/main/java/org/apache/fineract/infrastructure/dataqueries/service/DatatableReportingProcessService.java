@@ -18,9 +18,7 @@
  */
 package org.apache.fineract.infrastructure.dataqueries.service;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
@@ -56,7 +54,7 @@ public class DatatableReportingProcessService implements ReportingProcessService
     }
 
     @Override
-    public Response processRequest(String reportName, MultivaluedMap<String, String> queryParams) throws IOException {
+    public Response processRequest(String reportName, MultivaluedMap<String, String> queryParams) {
         boolean isSelfServiceUserReport = Boolean.parseBoolean(
                 queryParams.getOrDefault(RunreportsApiResource.IS_SELF_SERVICE_USER_REPORT_PARAMETER, List.of("false")).get(0));
         final boolean prettyPrint = ApiParameterHelper.prettyPrint(queryParams);
@@ -102,13 +100,11 @@ public class DatatableReportingProcessService implements ReportingProcessService
         }
 
         // CSV format
-        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         final Map<String, String> reportParams = getReportParams(queryParams);
-        this.readExtraDataAndReportingService.retrieveReportCSV(byteArrayOutputStream, reportName, parameterTypeValue, reportParams,
+        String csvFilePath = this.readExtraDataAndReportingService.retrieveReportCSV(reportName, parameterTypeValue, reportParams,
                 isSelfServiceUserReport);
-        byteArrayOutputStream.close();
-        return Response.ok().entity(byteArrayOutputStream.toByteArray()).type("text/csv")
-                .header("Content-Disposition", "attachment;filename=" + fileName + ".csv")
-                .header("Content-Length", byteArrayOutputStream.size()).build();
+        final File file = new File(csvFilePath);
+        return Response.ok().entity(file).type("text/csv").header("Content-Disposition", "attachment;filename=" + fileName + ".csv")
+                .header("Content-Length", file.length()).build();
     }
 }
