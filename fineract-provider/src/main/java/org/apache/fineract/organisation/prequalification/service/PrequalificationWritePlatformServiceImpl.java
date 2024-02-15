@@ -791,7 +791,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         for (List<String> innerList : rows) {
             innerList.forEach(item -> {
                 if (exceptionsList.contains(item)) {
-                    status.set(PrequalificationStatus.ANALYSIS_UNIT_PENDING_APPROVAL);
+                    status.set(PrequalificationStatus.AGENCY_LEAD_PENDING_APPROVAL_WITH_EXCEPTIONS);
                 }
             });
         }
