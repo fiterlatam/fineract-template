@@ -46,6 +46,7 @@ import org.apache.fineract.infrastructure.security.service.PlatformSecurityConte
 import org.apache.fineract.organisation.agency.domain.Agency;
 import org.apache.fineract.organisation.bankAccount.domain.BankAccount;
 import org.apache.fineract.organisation.bankAccount.domain.BankAccountRepositoryWrapper;
+import org.apache.fineract.organisation.bankcheque.api.BankChequeApiConstants;
 import org.apache.fineract.organisation.bankcheque.command.ApproveChequeIssuanceCommand;
 import org.apache.fineract.organisation.bankcheque.command.AuthorizeChequeIssuanceCommand;
 import org.apache.fineract.organisation.bankcheque.command.CreateChequeCommand;
@@ -420,6 +421,7 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
             final String numeroCliente = chequeData.getNumeroCliente();
             final Long guaranteeId = chequeData.getGuaranteeId();
             final BigDecimal guaranteeAmount = chequeData.getGuaranteeAmount();
+            final Collection<PaymentTypeData> paymentTypeOptions = this.paymentTypeReadPlatformService.retrieveAllPaymentTypes();
             if (loanAccId != null && chequeData.getLoanAmount() != null) {
                 final Loan loan = this.loanRepositoryWrapper.findOneWithNotFoundDetection(loanAccId);
                 if (loan.getCheque() != null && (loan.getCheque().getId() != null && !loan.getCheque().getId().equals(cheque.getId()))) {
@@ -431,7 +433,24 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
                 }
 
                 if (!chequeData.getReassingedCheque()) {
-                    CommandProcessingResult result = this.loanWritePlatformService.disburseLoan(loanAccId, command, false);
+                    final JsonObject jsonObject = command.parsedJson().getAsJsonObject();
+                    jsonObject.addProperty("glAccountId", chequeData.getGlAccountId());
+                    jsonObject.addProperty("accountNumber", bankAccNo);
+                    jsonObject.addProperty("checkNumber", chequeData.getChequeNo());
+                    jsonObject.addProperty("routingCode", "");
+                    jsonObject.addProperty("receiptNumber", "");
+                    jsonObject.addProperty("note", "Desembolso de préstamo mediante cheque número " + chequeData.getChequeNo());
+                    if (!CollectionUtils.isEmpty(paymentTypeOptions)) {
+                        final Optional<PaymentTypeData> paymentTypeDataOptional = new ArrayList<>(paymentTypeOptions).stream()
+                                .filter(p -> BankChequeApiConstants.BANK_CHEQUE_PAYMENT_TYPE.equalsIgnoreCase(p.getName())).findFirst();
+                        if (paymentTypeDataOptional.isPresent()) {
+                            final PaymentTypeData paymentType = paymentTypeDataOptional.get();
+                            jsonObject.addProperty("paymentTypeId", paymentType.getId());
+                        }
+                    }
+                    final JsonCommand commandJson = JsonCommand.fromJsonElement(loanAccId, jsonObject, this.fromApiJsonHelper);
+                    commandJson.setJsonCommand(jsonObject.toString());
+                    CommandProcessingResult result = this.loanWritePlatformService.disburseLoan(loanAccId, commandJson, false);
                     if (result.getLoanId() == null) {
                         throw new BankChequeException("print.cheques", "failed.to.disburse.loan " + loanAccId);
                     }
@@ -464,7 +483,6 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
                     throw new BankChequeException("guarantee.amount.greater.than.available.savings.account.balance",
                             "Guarantee amount is greater than savings account balance of" + availableBalance);
                 }
-                final Collection<PaymentTypeData> paymentTypeOptions = this.paymentTypeReadPlatformService.retrieveAllPaymentTypes();
                 final String localeAsString = "en";
                 final String dateFormat = "dd MMMM yyyy";
                 final JsonObject jsonObject = new JsonObject();
