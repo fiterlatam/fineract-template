@@ -575,7 +575,7 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
                     firstname, middlename, lastname, fullname, displayName, externalId, mobileNo, emailAddress, dateOfBirth, gender,
                     activationDate, imageId, staffId, staffName, timeline, savingsProductId, savingsProductName, savingsAccountId,
                     clienttype, classification, legalForm, clientNonPerson, isStaff, dpiNumber, oldCustomerNumber, null, null, null, null,
-                    null, null, null);
+                    null, null, null,null,null,null,null);
 
         }
     }
@@ -615,6 +615,7 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
                     "cvSubStatus.code_value as subStatusValue,cvSubStatus.code_description as subStatusDesc,c.office_id as officeId, o.name as officeName, ");
             builder.append("c.transfer_to_office_id as transferToOfficeId, transferToOffice.name as transferToOfficeName, ");
             builder.append("c.firstname as firstname, c.middlename as middlename, c.lastname as lastname, ");
+            builder.append("c.marital_status as maritalStatusId, c.job_type as jobType, c.nit as nit, c.education_level_id as educationLevelId, ");
             builder.append("c.fullname as fullname, c.display_name as displayName, ");
             builder.append("c.mobile_no as mobileNo, ");
             builder.append("c.is_staff as isStaff, ");
@@ -784,6 +785,10 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
             final Long departmentDpi = rs.getLong("departmentDpi");
             final String municipalityDpiName = rs.getString("municipalityDpiName");
             final Long municipalityDpi = rs.getLong("municipalityDpi");
+            final Long maritalStatusId = rs.getLong("maritalStatusId");
+            final Long jobType = rs.getLong("jobType");
+            final String nit = rs.getString("nit");
+            final Long educationLevelId = rs.getLong("educationLevelId");
 
             ClientInfoRelatedDetailData detailData = ClientInfoRelatedDetailData.instance(loanCycle, groupNumber, maidenName, othernames,
                     groupMember, statusInGroup, retirementReason, civilStatus, educationLevel, ethinicity, nationality, languages,
@@ -799,7 +804,8 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
                     firstname, middlename, lastname, fullname, displayName, externalId, mobileNo, emailAddress, dateOfBirth, gender,
                     activationDate, imageId, staffId, staffName, timeline, savingsProductId, savingsProductName, savingsAccountId,
                     clienttype, classification, legalForm, clientNonPerson, isStaff, dpiNumber, oldCustomerNumber, detailData,
-                    firstlastname, secondlastname, departmentDpiName, departmentDpi, municipalityDpiName, municipalityDpi);
+                    firstlastname, secondlastname, departmentDpiName, departmentDpi, municipalityDpiName, municipalityDpi,maritalStatusId,
+                    jobType, nit,educationLevelId);
 
         }
     }

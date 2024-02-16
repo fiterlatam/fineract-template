@@ -253,6 +253,15 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
     @Column(name = "secondlastname", nullable = false)
     private String secondlastname;
 
+    @Column(name = "marital_status", nullable = false)
+    private Long maritalStatus;
+    @Column(name = "job_type", nullable = false)
+    private Long jobType;
+    @Column(name = "nit", nullable = false)
+    private String nit;
+    @Column(name = "education_level_id", nullable = false)
+    private Long educationLevel;
+
     public static Client createNew(final AppUser currentUser, final Office clientOffice, final Group clientParentGroup, final Staff staff,
             final Long savingsProductId, final CodeValue gender, final CodeValue clientType, final CodeValue clientClassification,
             final Integer legalForm, final ClientInfoRelatedDetail clientInfoRelatedDetail, final JsonCommand command) {
@@ -272,6 +281,10 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
         final Long departmentDpi = command.longValueOfParameterNamed(ClientApiConstants.departmentDpiParamName);
         final String firstlastname = command.stringValueOfParameterNamed(ClientApiConstants.firstlastnameParamName);
         final String secondlastname = command.stringValueOfParameterNamed(ClientApiConstants.secondlastnameParamName);
+        final String nit = command.stringValueOfParameterNamed(ClientApiConstants.nitParamName);
+        final Long jobType = command.longValueOfParameterNamed(ClientApiConstants.jobtypeParamName);
+        final Long educationLevelId = command.longValueOfParameterNamed(ClientApiConstants.educationLevelIdParamName);
+        final Long maritalStatusId = command.longValueOfParameterNamed(ClientApiConstants.maritalStatusIdParamName);
 
         final boolean isStaff = command.booleanPrimitiveValueOfParameterNamed(ClientApiConstants.isStaffParamName);
 
@@ -302,19 +315,19 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
         return new Client(currentUser, status, clientOffice, clientParentGroup, accountNo, firstname, middlename, lastname, fullname,
                 activationDate, officeJoiningDate, externalId, mobileNo, emailAddress, staff, submittedOnDate, savingsProductId,
                 savingsAccountId, dataOfBirth, gender, clientType, clientClassification, legalForm, isStaff, dpiNumber, oldCustomerNumber,
-                clientInfoRelatedDetail, municipalityDpi, departmentDpi, firstlastname, secondlastname);
+                clientInfoRelatedDetail, municipalityDpi, departmentDpi, firstlastname, secondlastname,nit, jobType, educationLevelId, maritalStatusId);
     }
 
     protected Client() {}
 
     private Client(final AppUser currentUser, final ClientStatus status, final Office office, final Group clientParentGroup,
-            final String accountNo, final String firstname, final String middlename, final String lastname, final String fullname,
-            final LocalDate activationDate, final LocalDate officeJoiningDate, final String externalId, final String mobileNo,
-            final String emailAddress, final Staff staff, final LocalDate submittedOnDate, final Long savingsProductId,
-            final Long savingsAccountId, final LocalDate dateOfBirth, final CodeValue gender, final CodeValue clientType,
-            final CodeValue clientClassification, final Integer legalForm, final Boolean isStaff, final String dpiNumber,
-            final String oldCustomerNumber, ClientInfoRelatedDetail clientInfoRelatedDetail, Long municipalityDpi, Long departmentDpi,
-            String firstlastname, String secondlastname) {
+                   final String accountNo, final String firstname, final String middlename, final String lastname, final String fullname,
+                   final LocalDate activationDate, final LocalDate officeJoiningDate, final String externalId, final String mobileNo,
+                   final String emailAddress, final Staff staff, final LocalDate submittedOnDate, final Long savingsProductId,
+                   final Long savingsAccountId, final LocalDate dateOfBirth, final CodeValue gender, final CodeValue clientType,
+                   final CodeValue clientClassification, final Integer legalForm, final Boolean isStaff, final String dpiNumber,
+                   final String oldCustomerNumber, ClientInfoRelatedDetail clientInfoRelatedDetail, Long municipalityDpi, Long departmentDpi,
+                   String firstlastname, String secondlastname, String nit, Long jobType, Long educationLevelId, Long maritalStatusId) {
 
         if (StringUtils.isBlank(accountNo)) {
             this.accountNumber = new RandomPasswordGenerator(19).generate();
@@ -387,6 +400,10 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
         this.departmentDpi = departmentDpi;
         this.firstlastname = firstlastname;
         this.secondlastname = secondlastname;
+        this.nit = nit;
+        this.jobType = jobType;
+        this.educationLevel = educationLevelId;
+        this.maritalStatus = maritalStatusId;
 
         deriveDisplayName();
         validate();
@@ -677,6 +694,27 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
             actualChanges.put(ClientApiConstants.secondlastnameParamName, newValue);
             this.secondlastname = newValue;
         }
+        if (command.isChangeInLongParameterNamed(ClientApiConstants.maritalStatusIdParamName, this.maritalStatus)) {
+            final Long newValue = command.longValueOfParameterNamed(ClientApiConstants.maritalStatusIdParamName);
+            actualChanges.put(ClientApiConstants.maritalStatusIdParamName, newValue);
+            this.maritalStatus = newValue;
+        }
+        if (command.isChangeInStringParameterNamed(ClientApiConstants.nitParamName, this.nit)) {
+            final String newValue = command.stringValueOfParameterNamed(ClientApiConstants.nitParamName);
+            actualChanges.put(ClientApiConstants.nitParamName, newValue);
+            this.nit = newValue;
+        }
+        if (command.isChangeInLongParameterNamed(ClientApiConstants.jobtypeParamName, this.jobType)) {
+            final Long newValue = command.longValueOfParameterNamed(ClientApiConstants.jobtypeParamName);
+            actualChanges.put(ClientApiConstants.jobtypeParamName, newValue);
+            this.jobType = newValue;
+        }
+        if (command.isChangeInLongParameterNamed(ClientApiConstants.educationLevelIdParamName, this.educationLevel)) {
+            final Long newValue = command.longValueOfParameterNamed(ClientApiConstants.educationLevelIdParamName);
+            actualChanges.put(ClientApiConstants.educationLevelIdParamName, newValue);
+            this.educationLevel = newValue;
+        }
+
 
         validateUpdate();
 
@@ -1149,5 +1187,37 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
         if (this.clientInfoRelatedDetail != null) {
             this.clientInfoRelatedDetail.setLoanCycle(loanCycle);
         }
+    }
+
+    public Long getMaritalStatus() {
+        return maritalStatus;
+    }
+
+    public void setMaritalStatus(Long maritalStatus) {
+        this.maritalStatus = maritalStatus;
+    }
+
+    public Long getJobType() {
+        return jobType;
+    }
+
+    public void setJobType(Long jobType) {
+        this.jobType = jobType;
+    }
+
+    public String getNit() {
+        return nit;
+    }
+
+    public void setNit(String nit) {
+        this.nit = nit;
+    }
+
+    public Long getEducationLevel() {
+        return educationLevel;
+    }
+
+    public void setEducationLevel(Long educationLevel) {
+        this.educationLevel = educationLevel;
     }
 }
