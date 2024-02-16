@@ -29,8 +29,10 @@ import java.io.FileOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -73,8 +75,14 @@ public class ReadReportingServiceImpl implements ReadReportingService {
     public String retrieveReportCSV(final String reportName, final String reportType, final Map<String, String> queryParams,
             final boolean isSelfServiceUserReport) {
         try {
-            String csvFileName = reportName.replaceAll("[^a-zA-Z0-9.\\-]", "_") + ".csv";
-            final FileOutputStream fileOutputStream = new FileOutputStream(csvFileName);
+            final String fileLocation = FileSystemContentRepository.FINERACT_BASE_DIR;
+            final File fileDirectory = new File(fileLocation);
+            if (!fileDirectory.exists()) {
+                fileDirectory.mkdirs();
+            }
+            final String csvFilePath = fileLocation + File.separator + reportName.replaceAll("[^a-zA-Z0-9.\\-]", "_") + "_"
+                    + new SimpleDateFormat("yyyyMMddHHmmss").format(new Date()) + ".csv";
+            final FileOutputStream fileOutputStream = new FileOutputStream(csvFilePath);
             final BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(fileOutputStream);
             final GenericResultsetData result = retrieveGenericResultset(reportName, reportType, queryParams, isSelfServiceUserReport);
             final StringBuilder csvFileBuffer = generateCsvFileBuffer(result);
@@ -82,7 +90,7 @@ public class ReadReportingServiceImpl implements ReadReportingService {
             bufferedOutputStream.write(byteArray);
             bufferedOutputStream.flush();
             bufferedOutputStream.close();
-            return csvFileName;
+            return csvFilePath;
         } catch (final Exception e) {
             throw new PlatformDataIntegrityException("error.msg.exception.error", e.getMessage(), e);
         }
