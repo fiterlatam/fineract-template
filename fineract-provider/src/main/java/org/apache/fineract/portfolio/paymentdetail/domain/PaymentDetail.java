@@ -55,6 +55,9 @@ public final class PaymentDetail extends AbstractPersistableCustom {
     @Column(name = "bank_number", length = 50)
     private String bankNumber;
 
+    @Column(name = "gl_account_id", length = 50)
+    private Long glAccountId;
+
     PaymentDetail() {
 
     }
@@ -66,9 +69,9 @@ public final class PaymentDetail extends AbstractPersistableCustom {
         final String routingCode = command.stringValueOfParameterNamed(PaymentDetailConstants.routingCodeParamName);
         final String receiptNumber = command.stringValueOfParameterNamed(PaymentDetailConstants.receiptNumberParamName);
         final String bankNumber = command.stringValueOfParameterNamed(PaymentDetailConstants.bankNumberParamName);
-
+        final Long glAccountId = command.longValueOfParameterNamed(PaymentDetailConstants.glAccountId);
         if (StringUtils.isNotBlank(accountNumber)) {
-            changes.put(PaymentDetailConstants.accountNumberParamName, accountNumber);
+            changes.put(PaymentDetailConstants.glAccountId, glAccountId);
         }
         if (StringUtils.isNotBlank(checkNumber)) {
             changes.put(PaymentDetailConstants.checkNumberParamName, checkNumber);
@@ -82,8 +85,13 @@ public final class PaymentDetail extends AbstractPersistableCustom {
         if (StringUtils.isNotBlank(bankNumber)) {
             changes.put(PaymentDetailConstants.bankNumberParamName, bankNumber);
         }
+
+        if (glAccountId != null) {
+            changes.put(PaymentDetailConstants.bankNumberParamName, bankNumber);
+        }
         final PaymentDetail paymentDetail = new PaymentDetail(paymentType, accountNumber, checkNumber, routingCode, receiptNumber,
                 bankNumber);
+        paymentDetail.setGlAccountId(glAccountId);
         return paymentDetail;
     }
 
@@ -119,5 +127,13 @@ public final class PaymentDetail extends AbstractPersistableCustom {
 
     public String getRoutingCode() {
         return routingCode;
+    }
+
+    public Long getGlAccountId() {
+        return glAccountId;
+    }
+
+    public void setGlAccountId(Long glAccountId) {
+        this.glAccountId = glAccountId;
     }
 }
