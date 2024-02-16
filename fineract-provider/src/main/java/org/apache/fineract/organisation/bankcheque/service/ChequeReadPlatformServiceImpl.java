@@ -172,6 +172,7 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
                     	mbc.created_date AS createdDate,
                     	mbc.usedon_date AS usedOnDate,
                     	mbc.printed_date AS printedDate,
+                    	aga.id AS glAccountId,
                     	mbc.void_authorized_date AS voidAuthorizedDate,
                     	voidedby.username AS voidedByUsername,
                     	createdby.username AS createdByUsername,
@@ -184,6 +185,7 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
                     LEFT JOIN m_group mpg ON mpg.id = mg.parent_id
                     LEFT JOIN m_payment_batch mpb ON mpb.id = mbc.batch_id
                     LEFT JOIN m_bank_account mba ON mba.id = mpb.bank_acc_id
+                    LEFT JOIN acc_gl_account aga ON aga.id = mba.gl_account_id
                     LEFT JOIN m_bank mb ON mb.id = mba.bank_id
                     LEFT JOIN m_agency mag ON mag.id = mba.agency_id
                     LEFT JOIN m_appuser voidedby ON voidedby.id = mbc.voidedby_id
@@ -214,6 +216,7 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
             final String bankAccNo = rs.getString("bankAccNo");
             final Long bankAccId = JdbcSupport.getLong(rs, "bankAccId");
             final Long agencyId = JdbcSupport.getLong(rs, "agencyId");
+            final Long glAccountId = JdbcSupport.getLong(rs, "glAccountId");
             final String agencyName = rs.getString("agencyName");
             final String caseId = rs.getString("caseId");
             final String bankName = rs.getString("bankName");
@@ -251,7 +254,7 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
                     .lastModifiedByUsername(lastModifiedByUsername).clientName(clientName).clientNo(clientNo).groupName(groupName)
                     .loanAccNo(loanAccNo).loanAmount(loanAmount).guaranteeAmount(guaranteeAmount).groupNo(groupNo).guaranteeId(guaranteeId)
                     .caseId(caseId).chequeAmount(chequeAmount).agencyId(agencyId).loanAccId(loanAccId).reassingedCheque(reassinged)
-                    .depositNumber(depositNumber).numeroCliente(numeroCliente).build();
+                    .depositNumber(depositNumber).numeroCliente(numeroCliente).glAccountId(glAccountId).build();
 
         }
     }
