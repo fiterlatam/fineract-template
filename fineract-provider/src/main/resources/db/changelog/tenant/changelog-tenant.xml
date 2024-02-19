@@ -142,4 +142,5 @@
     <include file="parts/0122_FBR_569_apply_overdue_penalty_fixes.xml" relativeToChangelogFile="true"/>
     <include file="parts/0123_FBR_576_update_Porcentaje_de_Incremento.xml" relativeToChangelogFile="true"/>
     <include file="parts/0124_FBR_588_Personalizar_asientos_contables.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0125_FBR_599_modify_client_input_data.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

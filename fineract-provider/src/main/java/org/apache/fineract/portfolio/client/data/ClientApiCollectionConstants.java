@@ -38,7 +38,8 @@ public class ClientApiCollectionConstants extends ClientApiConstants {
             loanCycleParamName, groupNumberParamName, groupMemberParamName, statusInGroupParamName, retirementReasonParamName,
             civilStatusParamName, educationLevelParamName, ethinicityParamName, nationalityParamName, languagesParamName,
             economicSectorParamName, economicActivityParamName, otherNamesParamName, maidenNameParamName, familyReferenceParamName,
-            municipalityDpiParamName, departmentDpiParamName, firstlastnameParamName, secondlastnameParamName));
+            municipalityDpiParamName, departmentDpiParamName, firstlastnameParamName, secondlastnameParamName,nitParamName,
+            maritalStatusIdParamName, educationLevelIdParamName,jobtypeParamName));
 
     protected static final Set<String> CLIENT_NON_PERSON_CREATE_REQUEST_DATA_PARAMETERS = new HashSet<>(
             Arrays.asList(familyMembers, address, localeParamName, dateFormatParamName, incorpNumberParamName, remarksParamName,
@@ -56,7 +57,8 @@ public class ClientApiCollectionConstants extends ClientApiConstants {
             loanCycleParamName, groupNumberParamName, groupMemberParamName, statusInGroupParamName, retirementReasonParamName,
             civilStatusParamName, educationLevelParamName, ethinicityParamName, nationalityParamName, languagesParamName,
             economicSectorParamName, economicActivityParamName, familyReferenceParamName, maidenNameParamName, otherNamesParamName,
-            municipalityDpiParamName, departmentDpiParamName, firstlastnameParamName, secondlastnameParamName));
+            municipalityDpiParamName, departmentDpiParamName, firstlastnameParamName, secondlastnameParamName,nitParamName,
+            maritalStatusIdParamName, educationLevelIdParamName,jobtypeParamName));
 
     protected static final Set<String> CLIENT_NON_PERSON_UPDATE_REQUEST_DATA_PARAMETERS = new HashSet<>(
             Arrays.asList(localeParamName, dateFormatParamName, incorpNumberParamName, remarksParamName, incorpValidityTillParamName,

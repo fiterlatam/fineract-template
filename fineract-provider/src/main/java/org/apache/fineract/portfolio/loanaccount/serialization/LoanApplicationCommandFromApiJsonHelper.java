@@ -262,6 +262,22 @@ public final class LoanApplicationCommandFromApiJsonHelper {
         final BigDecimal principal = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed("principal", element);
         baseDataValidator.reset().parameter("principal").value(principal).notNull().positiveAmount();
 
+        final Long loanCycleCompleted = this.fromApiJsonHelper.extractLongNamed(LoanApiConstants.loanCycleCompletedParamName, element);
+        baseDataValidator.reset().parameter(LoanApiConstants.loanCycleCompletedParamName).value(loanCycleCompleted).notNull();
+
+        final Long sourceOfFunds = this.fromApiJsonHelper.extractLongNamed(LoanApiConstants.sourceOfFundsParamName, element);
+        baseDataValidator.reset().parameter(LoanApiConstants.sourceOfFundsParamName).value(sourceOfFunds).notNull();
+
+        final Long position = this.fromApiJsonHelper.extractLongNamed(LoanApiConstants.positionParamName, element);
+        baseDataValidator.reset().parameter(LoanApiConstants.positionParamName).value(position).notNull();
+
+        final Long facilitator = this.fromApiJsonHelper.extractLongNamed(LoanApiConstants.facilitatorParamName, element);
+        baseDataValidator.reset().parameter(LoanApiConstants.facilitatorParamName).value(facilitator).notNull();
+
+        final Long clientType = this.fromApiJsonHelper.extractLongNamed(LoanApiConstants.clientTypeParamName, element);
+        baseDataValidator.reset().parameter(LoanApiConstants.clientTypeParamName).value(clientType).notNull();
+
+
         final String loanTermFrequencyParameterName = "loanTermFrequency";
         final Integer loanTermFrequency = this.fromApiJsonHelper.extractIntegerWithLocaleNamed(loanTermFrequencyParameterName, element);
         baseDataValidator.reset().parameter(loanTermFrequencyParameterName).value(loanTermFrequency).notNull().integerGreaterThanZero();
