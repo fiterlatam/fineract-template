@@ -40,6 +40,7 @@ import org.apache.fineract.portfolio.account.data.PortfolioAccountData;
 import org.apache.fineract.portfolio.accountdetails.data.LoanAccountSummaryData;
 import org.apache.fineract.portfolio.calendar.data.CalendarData;
 import org.apache.fineract.portfolio.charge.data.ChargeData;
+import org.apache.fineract.portfolio.client.data.EconomicSectorData;
 import org.apache.fineract.portfolio.common.domain.PeriodFrequencyType;
 import org.apache.fineract.portfolio.cupo.data.CupoData;
 import org.apache.fineract.portfolio.floatingrates.data.InterestRatePeriodData;
@@ -281,6 +282,7 @@ public final class LoanAccountData {
     private Collection<CodeValueData> sourceOfFundsOptions;
     private Collection<CodeValueData> cancellationReasonOptions;
     private GroupLoanAdditionalData groupLoanAdditionalData;
+    private List<EconomicSectorData> economicSectorOptions;
 
     public static LoanAccountData disburseLoanByCheques(final Collection<AgencyData> agencyOptions,
             final Collection<CenterData> centerOptions, final Collection<GroupGeneralData> groupOption,
@@ -629,15 +631,15 @@ public final class LoanAccountData {
     }
 
     public LoanAccountData(Collection<CodeValueData> loanCycleCompletedOptions, Collection<CodeValueData> loanPurposeOptions,
-            Collection<CodeValueData> businessEvolutionOptions, Collection<CodeValueData> yesnoOptions,
-            Collection<CodeValueData> businessExperienceOptions, Collection<CodeValueData> businessLocationOptions,
-            Collection<CodeValueData> clientTypeOptions, Collection<CodeValueData> loanStatusOptions,
-            Collection<CodeValueData> institutionTypeOptions, Collection<CodeValueData> housingTypeOptions,
-            Collection<CodeValueData> classificationOptions, Collection<CodeValueData> jobTypeOptions,
-            Collection<CodeValueData> educationLevelOptions, Collection<CodeValueData> maritalStatusOptions,
-            Collection<CodeValueData> groupPositionOptions, Collection<CodeValueData> sourceOfFundsOptions,
-            Collection<CodeValueData> cancellationReasonOptions, List<AppUserData> facilitatorOptions,
-            Collection<CodeValueData> documentTypeOptions) {
+                           Collection<CodeValueData> businessEvolutionOptions, Collection<CodeValueData> yesnoOptions,
+                           Collection<CodeValueData> businessExperienceOptions, Collection<CodeValueData> businessLocationOptions,
+                           Collection<CodeValueData> clientTypeOptions, Collection<CodeValueData> loanStatusOptions,
+                           Collection<CodeValueData> institutionTypeOptions, Collection<CodeValueData> housingTypeOptions,
+                           Collection<CodeValueData> classificationOptions, Collection<CodeValueData> jobTypeOptions,
+                           Collection<CodeValueData> educationLevelOptions, Collection<CodeValueData> maritalStatusOptions,
+                           Collection<CodeValueData> groupPositionOptions, Collection<CodeValueData> sourceOfFundsOptions,
+                           Collection<CodeValueData> cancellationReasonOptions, List<AppUserData> facilitatorOptions,
+                           Collection<CodeValueData> documentTypeOptions, List<EconomicSectorData> economicSectorData) {
         this.loanCycleCompletedOptions = loanCycleCompletedOptions;
         this.loanPurposeOptions = loanPurposeOptions;
         this.businessEvolutionOptions = businessEvolutionOptions;
@@ -804,6 +806,7 @@ public final class LoanAccountData {
         this.groupOptions = null;
         this.disbursementMethodOptions = null;
         this.groupLoanAdditionalData = null;
+        this.economicSectorOptions = economicSectorData;
 
     }
 
