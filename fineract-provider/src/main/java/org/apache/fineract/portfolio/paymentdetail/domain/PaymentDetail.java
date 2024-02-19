@@ -58,6 +58,9 @@ public final class PaymentDetail extends AbstractPersistableCustom {
     @Column(name = "gl_account_id", length = 50)
     private Long glAccountId;
 
+    @Column(name = "bill_number")
+    private String billNumber;
+
     PaymentDetail() {
 
     }
@@ -69,6 +72,7 @@ public final class PaymentDetail extends AbstractPersistableCustom {
         final String routingCode = command.stringValueOfParameterNamed(PaymentDetailConstants.routingCodeParamName);
         final String receiptNumber = command.stringValueOfParameterNamed(PaymentDetailConstants.receiptNumberParamName);
         final String bankNumber = command.stringValueOfParameterNamed(PaymentDetailConstants.bankNumberParamName);
+        final String billNumber = command.stringValueOfParameterNamed(PaymentDetailConstants.billNumber);
         final Long glAccountId = command.longValueOfParameterNamed(PaymentDetailConstants.glAccountId);
         if (StringUtils.isNotBlank(accountNumber)) {
             changes.put(PaymentDetailConstants.glAccountId, glAccountId);
@@ -89,9 +93,13 @@ public final class PaymentDetail extends AbstractPersistableCustom {
         if (glAccountId != null) {
             changes.put(PaymentDetailConstants.bankNumberParamName, bankNumber);
         }
+        if (StringUtils.isNotBlank(billNumber)) {
+            changes.put(PaymentDetailConstants.billNumber, billNumber);
+        }
         final PaymentDetail paymentDetail = new PaymentDetail(paymentType, accountNumber, checkNumber, routingCode, receiptNumber,
                 bankNumber);
         paymentDetail.setGlAccountId(glAccountId);
+        paymentDetail.setBillNumber(billNumber);
         return paymentDetail;
     }
 
@@ -135,5 +143,13 @@ public final class PaymentDetail extends AbstractPersistableCustom {
 
     public void setGlAccountId(Long glAccountId) {
         this.glAccountId = glAccountId;
+    }
+
+    public String getBillNumber() {
+        return billNumber;
+    }
+
+    public void setBillNumber(String billNumber) {
+        this.billNumber = billNumber;
     }
 }

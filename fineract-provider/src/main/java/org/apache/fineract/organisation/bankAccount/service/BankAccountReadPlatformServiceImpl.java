@@ -156,7 +156,7 @@ public class BankAccountReadPlatformServiceImpl implements BankAccountReadPlatfo
         return this.paginationHelper.fetchPage(this.jdbcTemplate, sqlBuilder.toString(), paramList.toArray(), bankAccountMapper);
     }
 
-    private static final class BankAccountMapper implements RowMapper<BankAccountData> {
+    public static final class BankAccountMapper implements RowMapper<BankAccountData> {
 
         private final String schema;
 

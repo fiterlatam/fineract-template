@@ -1001,6 +1001,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         changes.put("locale", command.locale());
         changes.put("dateFormat", command.dateFormat());
         changes.put("paymentTypeId", command.stringValueOfParameterNamed("paymentTypeId"));
+        changes.put("glAccountId", command.longValueOfParameterNamed("glAccountId"));
+        changes.put("billNumber", command.stringValueOfParameterNamed("billNumber"));
 
         final Locale locale = command.extractLocale();
         final DateTimeFormatter fmt = DateTimeFormatter.ofPattern(command.dateFormat()).withLocale(locale);

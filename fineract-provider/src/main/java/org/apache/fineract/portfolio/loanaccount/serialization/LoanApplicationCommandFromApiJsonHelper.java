@@ -277,7 +277,6 @@ public final class LoanApplicationCommandFromApiJsonHelper {
         final Long clientType = this.fromApiJsonHelper.extractLongNamed(LoanApiConstants.clientTypeParamName, element);
         baseDataValidator.reset().parameter(LoanApiConstants.clientTypeParamName).value(clientType).notNull();
 
-
         final String loanTermFrequencyParameterName = "loanTermFrequency";
         final Integer loanTermFrequency = this.fromApiJsonHelper.extractIntegerWithLocaleNamed(loanTermFrequencyParameterName, element);
         baseDataValidator.reset().parameter(loanTermFrequencyParameterName).value(loanTermFrequency).notNull().integerGreaterThanZero();
