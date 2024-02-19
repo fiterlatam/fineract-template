@@ -135,12 +135,13 @@ public class ClientsApiResource {
             Collection<CodeValueData> housingTypeOptions = this.codeValueReadPlatformService.retrieveCodeValuesByCode("housingType");
             Collection<CodeValueData> Ldepartamento = this.codeValueReadPlatformService.retrieveCodeValuesByCode("Ldepartamento");
             Collection<CodeValueData> Lmunicipio = this.codeValueReadPlatformService.retrieveCodeValuesByCode("Lmunicipio");
-            Collection<CodeValueData> maritalStatusOptions = this.codeValueReadPlatformService.retrieveCodeValuesByCode("maritalStatusOptions");
+            Collection<CodeValueData> maritalStatusOptions = this.codeValueReadPlatformService
+                    .retrieveCodeValuesByCode("maritalStatusOptions");
             Collection<CodeValueData> jobTypeOptions = this.codeValueReadPlatformService.retrieveCodeValuesByCode("jobTypeOptions");
             Collection<CodeValueData> educationLevelOptions = this.codeValueReadPlatformService
                     .retrieveCodeValuesByCode("educationLevelOptions");
             clientData.updateClientAddressTemplate(clientAreas, clientLocation, publicServices, housingTypeOptions, Ldepartamento,
-                    Lmunicipio,maritalStatusOptions,jobTypeOptions,educationLevelOptions);
+                    Lmunicipio, maritalStatusOptions, jobTypeOptions, educationLevelOptions);
 
         }
 
@@ -225,7 +226,8 @@ public class ClientsApiResource {
             Collection<CodeValueData> housingTypeOptions = this.codeValueReadPlatformService.retrieveCodeValuesByCode("housingType");
             Collection<CodeValueData> Ldepartamento = this.codeValueReadPlatformService.retrieveCodeValuesByCode("Ldepartamento");
             Collection<CodeValueData> Lmunicipio = this.codeValueReadPlatformService.retrieveCodeValuesByCode("Lmunicipio");
-            Collection<CodeValueData> maritalStatusOptions = this.codeValueReadPlatformService.retrieveCodeValuesByCode("maritalStatusOptions");
+            Collection<CodeValueData> maritalStatusOptions = this.codeValueReadPlatformService
+                    .retrieveCodeValuesByCode("maritalStatusOptions");
             Collection<CodeValueData> jobTypeOptions = this.codeValueReadPlatformService.retrieveCodeValuesByCode("jobTypeOptions");
             Collection<CodeValueData> educationLevelOptions = this.codeValueReadPlatformService
                     .retrieveCodeValuesByCode("educationLevelOptions");

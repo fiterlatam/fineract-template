@@ -538,9 +538,12 @@ public class AccountingProcessorHelper {
     private void createJournalEntriesForLoan(final Office office, final String currencyCode, final int accountTypeToDebitId,
             final int accountTypeToCreditId, final Long loanProductId, final Long paymentTypeId, final Long loanId,
             final String transactionId, final LocalDate transactionDate, final BigDecimal amount, final Long fundSourceGlAccountId) {
-        final GLAccount debitAccount = getLinkedGLAccountForLoanProduct(loanProductId, accountTypeToDebitId, paymentTypeId);
+        GLAccount debitAccount = getLinkedGLAccountForLoanProduct(loanProductId, accountTypeToDebitId, paymentTypeId);
+        if (fundSourceGlAccountId != null && AccrualAccountsForLoan.FUND_SOURCE.getValue().equals(accountTypeToDebitId)) {
+            debitAccount = this.accountRepositoryWrapper.findOneWithNotFoundDetection(fundSourceGlAccountId);
+        }
         GLAccount creditAccount = getLinkedGLAccountForLoanProduct(loanProductId, accountTypeToCreditId, paymentTypeId);
-        if (fundSourceGlAccountId != null) {
+        if (fundSourceGlAccountId != null && AccrualAccountsForLoan.FUND_SOURCE.getValue().equals(accountTypeToCreditId)) {
             creditAccount = this.accountRepositoryWrapper.findOneWithNotFoundDetection(fundSourceGlAccountId);
         }
         createDebitJournalEntryForLoan(office, currencyCode, debitAccount, loanId, transactionId, transactionDate, amount);
@@ -663,8 +666,11 @@ public class AccountingProcessorHelper {
 
     public void createDebitJournalEntryOrReversalForLoan(final Office office, final String currencyCode, final int accountMappingTypeId,
             final Long loanProductId, final Long paymentTypeId, final Long loanId, final String transactionId,
-            final LocalDate transactionDate, final BigDecimal amount, final Boolean isReversal) {
-        final GLAccount account = getLinkedGLAccountForLoanProduct(loanProductId, accountMappingTypeId, paymentTypeId);
+            final LocalDate transactionDate, final BigDecimal amount, final Boolean isReversal, final Long fundSourceGlAccountId) {
+        GLAccount account = getLinkedGLAccountForLoanProduct(loanProductId, accountMappingTypeId, paymentTypeId);
+        if (fundSourceGlAccountId != null && AccrualAccountsForLoan.FUND_SOURCE.getValue().equals(accountMappingTypeId)) {
+            account = this.getGLAccountById(fundSourceGlAccountId);
+        }
         if (isReversal) {
             createCreditJournalEntryForLoan(office, currencyCode, account, loanId, transactionId, transactionDate, amount);
         } else {

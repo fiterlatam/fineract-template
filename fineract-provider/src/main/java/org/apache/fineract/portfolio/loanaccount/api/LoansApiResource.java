@@ -488,7 +488,8 @@ public class LoansApiResource {
             newLoanAccount = new LoanAccountData(loanCycleCompletedOptions, loanPurposeOptions, businessEvolutionOptions, yesnoOptions,
                     businessExperienceOptions, businessLocationOptions, clientTypeOptions, loanStatusOptions, institutionTypeOptions,
                     housingTypeOptions, classificationOptions, jobTypeOptions, educationLevelOptions, maritalStatusOptions,
-                    groupPositionOptions, sourceOfFundsOptions, cancellationReasonOptions, facilitatorOptions, documentTypeOptions,economicSectorData);
+                    groupPositionOptions, sourceOfFundsOptions, cancellationReasonOptions, facilitatorOptions, documentTypeOptions,
+                    economicSectorData);
             return this.toApiJsonSerializer.serialize(settings, newLoanAccount, this.loanDataParameters);
         } else if ("cheque".equalsIgnoreCase(templateType)) {
             final Collection<CenterData> centerOptions = this.centerReadPlatformService

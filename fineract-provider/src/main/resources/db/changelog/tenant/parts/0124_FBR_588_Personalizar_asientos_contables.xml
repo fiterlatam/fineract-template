@@ -49,4 +49,26 @@
                                  referencedColumnNames="id" referencedTableName="acc_gl_account"
                                  validate="true"/>
     </changeSet>
+
+    <changeSet id="4" author="fineract">
+        <sql>
+            <![CDATA[
+                INSERT IGNORE INTO m_payment_type (value, description, is_cash_payment, order_position) VALUES('Pago manual', 'Pago manual', 0, 0);
+                INSERT IGNORE INTO m_payment_type (value, description, is_cash_payment, order_position) VALUES('Pago automático', 'Pago automático', 0, 3);
+            ]]>
+        </sql>
+    </changeSet>
+
+    <changeSet author="fineract" id="5">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_payment_detail" columnName="bill_number"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_payment_detail">
+            <column name="bill_number" type="VARCHAR(250)"/>
+        </addColumn>
+    </changeSet>
+
+
 </databaseChangeLog>

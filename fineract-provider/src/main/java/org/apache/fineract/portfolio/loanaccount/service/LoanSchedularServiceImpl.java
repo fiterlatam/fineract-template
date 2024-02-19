@@ -396,9 +396,13 @@ public class LoanSchedularServiceImpl implements LoanSchedularService {
                     final Collection<PaymentTypeData> paymentTypeOptions = transactionData.getPaymentTypeOptions();
                     Long paymentTypeId = 1L;
                     if (!paymentTypeOptions.isEmpty()) {
-                        paymentTypeId = new ArrayList<>(paymentTypeOptions).get(0).getId();
+                        final Optional<PaymentTypeData> paymentTypeOptional = new ArrayList<>(paymentTypeOptions).stream()
+                                .filter(t -> "Pago automático".equalsIgnoreCase(t.getName())).findFirst();
+                        if (paymentTypeOptional.isPresent()) {
+                            PaymentTypeData paymentTypeData = paymentTypeOptional.get();
+                            paymentTypeId = paymentTypeData.getId();
+                        }
                     }
-
                     final BigDecimal scheduledAmount = transactionData.getAmount();
                     final Integer installmentNumber = transactionData.getInstallmentNumber();
                     final BigDecimal outstandingLoanBalance = transactionData.getOutstandingLoanBalance();
@@ -467,6 +471,8 @@ public class LoanSchedularServiceImpl implements LoanSchedularService {
                     jsonObject.addProperty("transactionDate", transactionDate);
                     jsonObject.addProperty(PaymentDetailConstants.accountNumberParamName, accountNumber);
                     jsonObject.addProperty("checkNumber", checkNumber);
+                    jsonObject.addProperty("billNumber", loanRepaymentImport.getReceiptNumber());
+                    jsonObject.addProperty("glAccountId", 1L); // TO DO:: to be fetched from PDA_PAGOS table
                     jsonObject.addProperty(PaymentDetailConstants.bankNumberParamName, bankNumber);
                     jsonObject.addProperty(PaymentDetailConstants.receiptNumberParamName, receiptNumber);
                     jsonObject.addProperty("locale", localeAsString);
