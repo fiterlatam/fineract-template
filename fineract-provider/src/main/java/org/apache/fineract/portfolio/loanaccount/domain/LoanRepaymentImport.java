@@ -181,6 +181,12 @@ public class LoanRepaymentImport {
     @Column(name = "Id_error")
     private Long errorId;
 
+    /*
+     * Uploaded by ETL
+     */
+    @Column(name = "GL")
+    private String glCode;
+
     public void resetMifosFields() {
         this.status = null;
         this.mifosProcessingDate = null;
