@@ -134,11 +134,11 @@ public class CashBasedAccountingProcessorForLoan implements AccountingProcessorF
         if (loanTransactionDTO.isLoanToLoanTransfer()) {
             this.helper.createCashBasedJournalEntriesAndReversalsForLoan(office, currencyCode,
                     CashAccountsForLoan.LOAN_PORTFOLIO.getValue(), FinancialActivity.ASSET_TRANSFER.getValue(), loanProductId,
-                    paymentTypeId, loanId, transactionId, transactionDate, disbursalAmount, isReversal, null);
+                    paymentTypeId, loanId, transactionId, transactionDate, disbursalAmount, isReversal, fundSourceGlAccountId);
         } else if (loanTransactionDTO.isAccountTransfer()) {
             this.helper.createCashBasedJournalEntriesAndReversalsForLoan(office, currencyCode,
                     CashAccountsForLoan.LOAN_PORTFOLIO.getValue(), FinancialActivity.LIABILITY_TRANSFER.getValue(), loanProductId,
-                    paymentTypeId, loanId, transactionId, transactionDate, disbursalAmount, isReversal, null);
+                    paymentTypeId, loanId, transactionId, transactionDate, disbursalAmount, isReversal, fundSourceGlAccountId);
         } else {
             this.helper.createCashBasedJournalEntriesAndReversalsForLoan(office, currencyCode,
                     CashAccountsForLoan.LOAN_PORTFOLIO.getValue(), CashAccountsForLoan.FUND_SOURCE.getValue(), loanProductId, paymentTypeId,
@@ -241,7 +241,7 @@ public class CashBasedAccountingProcessorForLoan implements AccountingProcessorF
         }
 
         /*** create a single debit entry (or reversal) for the entire amount **/
-        Long fundSourceGlAccountId = null;
+        final Long fundSourceGlAccountId = loanTransactionDTO.getGlAccountId();
         if (loanTransactionDTO.isLoanToLoanTransfer()) {
             this.helper.createDebitJournalEntryOrReversalForLoan(office, currencyCode, FinancialActivity.ASSET_TRANSFER.getValue(),
                     loanProductId, paymentTypeId, loanId, transactionId, transactionDate, totalDebitAmount, isReversal,
@@ -257,7 +257,6 @@ public class CashBasedAccountingProcessorForLoan implements AccountingProcessorF
                         fundSourceGlAccountId);
 
             } else {
-                fundSourceGlAccountId = loanTransactionDTO.getGlAccountId();
                 this.helper.createDebitJournalEntryOrReversalForLoan(office, currencyCode, CashAccountsForLoan.FUND_SOURCE.getValue(),
                         loanProductId, paymentTypeId, loanId, transactionId, transactionDate, totalDebitAmount, isReversal,
                         fundSourceGlAccountId);

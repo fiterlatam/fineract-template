@@ -126,11 +126,11 @@ public class AccrualBasedAccountingProcessorForLoan implements AccountingProcess
         if (loanTransactionDTO.isLoanToLoanTransfer()) {
             this.helper.createAccrualBasedJournalEntriesAndReversalsForLoan(office, currencyCode,
                     AccrualAccountsForLoan.LOAN_PORTFOLIO.getValue(), FinancialActivity.ASSET_TRANSFER.getValue(), loanProductId,
-                    paymentTypeId, loanId, transactionId, transactionDate, disbursalAmount, isReversed, null);
+                    paymentTypeId, loanId, transactionId, transactionDate, disbursalAmount, isReversed, fundSourceGlAccountId);
         } else if (loanTransactionDTO.isAccountTransfer()) {
             this.helper.createAccrualBasedJournalEntriesAndReversalsForLoan(office, currencyCode,
                     AccrualAccountsForLoan.LOAN_PORTFOLIO.getValue(), FinancialActivity.LIABILITY_TRANSFER.getValue(), loanProductId,
-                    paymentTypeId, loanId, transactionId, transactionDate, disbursalAmount, isReversed, null);
+                    paymentTypeId, loanId, transactionId, transactionDate, disbursalAmount, isReversed, fundSourceGlAccountId);
         } else {
             this.helper.createAccrualBasedJournalEntriesAndReversalsForLoan(office, currencyCode,
                     AccrualAccountsForLoan.LOAN_PORTFOLIO.getValue(), AccrualAccountsForLoan.FUND_SOURCE.getValue(), loanProductId,
@@ -281,7 +281,7 @@ public class AccrualBasedAccountingProcessorForLoan implements AccountingProcess
          * Single DEBIT transaction for write-offs or Repayments (and their reversals)
          ***/
         if (!(totalDebitAmount.compareTo(BigDecimal.ZERO) == 0)) {
-            Long fundSourceGlAccountId = null;
+            final Long fundSourceGlAccountId = loanTransactionDTO.getGlAccountId();
             if (writeOff) {
                 this.helper.createDebitJournalEntryOrReversalForLoan(office, currencyCode,
                         AccrualAccountsForLoan.LOSSES_WRITTEN_OFF.getValue(), loanProductId, paymentTypeId, loanId, transactionId,
@@ -302,7 +302,6 @@ public class AccrualBasedAccountingProcessorForLoan implements AccountingProcess
                                 transactionDate, totalDebitAmount, isReversal, fundSourceGlAccountId);
 
                     } else {
-                        fundSourceGlAccountId = loanTransactionDTO.getGlAccountId();
                         this.helper.createDebitJournalEntryOrReversalForLoan(office, currencyCode,
                                 AccrualAccountsForLoan.FUND_SOURCE.getValue(), loanProductId, paymentTypeId, loanId, transactionId,
                                 transactionDate, totalDebitAmount, isReversal, fundSourceGlAccountId);

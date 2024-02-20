@@ -539,11 +539,15 @@ public class AccountingProcessorHelper {
             final int accountTypeToCreditId, final Long loanProductId, final Long paymentTypeId, final Long loanId,
             final String transactionId, final LocalDate transactionDate, final BigDecimal amount, final Long fundSourceGlAccountId) {
         GLAccount debitAccount = getLinkedGLAccountForLoanProduct(loanProductId, accountTypeToDebitId, paymentTypeId);
-        if (fundSourceGlAccountId != null && AccrualAccountsForLoan.FUND_SOURCE.getValue().equals(accountTypeToDebitId)) {
+        if (fundSourceGlAccountId != null
+                && List.of(AccrualAccountsForLoan.FUND_SOURCE.getValue(), FinancialActivity.ASSET_TRANSFER.getValue())
+                        .contains(accountTypeToDebitId)) {
             debitAccount = this.accountRepositoryWrapper.findOneWithNotFoundDetection(fundSourceGlAccountId);
         }
         GLAccount creditAccount = getLinkedGLAccountForLoanProduct(loanProductId, accountTypeToCreditId, paymentTypeId);
-        if (fundSourceGlAccountId != null && AccrualAccountsForLoan.FUND_SOURCE.getValue().equals(accountTypeToCreditId)) {
+        if (fundSourceGlAccountId != null
+                && List.of(AccrualAccountsForLoan.FUND_SOURCE.getValue(), FinancialActivity.ASSET_TRANSFER.getValue())
+                        .contains(accountTypeToCreditId)) {
             creditAccount = this.accountRepositoryWrapper.findOneWithNotFoundDetection(fundSourceGlAccountId);
         }
         createDebitJournalEntryForLoan(office, currencyCode, debitAccount, loanId, transactionId, transactionDate, amount);
@@ -668,7 +672,9 @@ public class AccountingProcessorHelper {
             final Long loanProductId, final Long paymentTypeId, final Long loanId, final String transactionId,
             final LocalDate transactionDate, final BigDecimal amount, final Boolean isReversal, final Long fundSourceGlAccountId) {
         GLAccount account = getLinkedGLAccountForLoanProduct(loanProductId, accountMappingTypeId, paymentTypeId);
-        if (fundSourceGlAccountId != null && AccrualAccountsForLoan.FUND_SOURCE.getValue().equals(accountMappingTypeId)) {
+        if (fundSourceGlAccountId != null
+                && List.of(AccrualAccountsForLoan.FUND_SOURCE.getValue(), FinancialActivity.ASSET_TRANSFER.getValue())
+                        .contains(accountMappingTypeId)) {
             account = this.getGLAccountById(fundSourceGlAccountId);
         }
         if (isReversal) {

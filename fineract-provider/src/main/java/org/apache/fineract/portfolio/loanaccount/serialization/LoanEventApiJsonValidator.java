@@ -264,6 +264,12 @@ public final class LoanEventApiJsonValidator {
         final String note = this.fromApiJsonHelper.extractStringNamed("note", element);
         baseDataValidator.reset().parameter("note").value(note).notExceedingLengthOf(1000);
 
+        final Long glAccountId = this.fromApiJsonHelper.extractLongNamed("glAccountId", element);
+        baseDataValidator.reset().parameter("glAccountId").value(note).value(glAccountId).notNull();
+
+        final String billNumber = this.fromApiJsonHelper.extractStringNamed("billNumber", element);
+        baseDataValidator.reset().parameter("billNumber").value(billNumber).notNull();
+
         validatePaymentDetails(baseDataValidator, element);
         throwExceptionIfValidationWarningsExist(dataValidationErrors);
     }
@@ -291,9 +297,6 @@ public final class LoanEventApiJsonValidator {
                 Arrays.asList("accountNumber", "checkNumber", "routingCode", "receiptNumber", "bankNumber", "billNumber", "glAccountId"));
         for (final String paymentDetailParameterName : paymentDetailParameters) {
             final String paymentDetailParameterValue = this.fromApiJsonHelper.extractStringNamed(paymentDetailParameterName, element);
-            if (List.of("billNumber", "glAccountId").contains(paymentDetailParameterName)) {
-                baseDataValidator.reset().parameter(paymentDetailParameterName).value(paymentDetailParameterValue).notNull();
-            }
             baseDataValidator.reset().parameter(paymentDetailParameterName).value(paymentDetailParameterValue).ignoreIfNull()
                     .notExceedingLengthOf(50);
         }
