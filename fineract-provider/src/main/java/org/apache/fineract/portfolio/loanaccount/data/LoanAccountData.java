@@ -2489,4 +2489,12 @@ public final class LoanAccountData {
     public void setLoanAdditionalData(LoanAdditionalData loanAdditionalData) {
         this.loanAdditionalData = loanAdditionalData;
     }
+
+    public EnumOptionData getLoanType() {
+        return loanType;
+    }
+
+    public Long getGroupId() {
+        return groupId;
+    }
 }
