@@ -68,6 +68,8 @@ import org.apache.fineract.infrastructure.dataqueries.data.EntityTables;
 import org.apache.fineract.infrastructure.dataqueries.data.StatusEnum;
 import org.apache.fineract.infrastructure.dataqueries.service.EntityDatatableChecksWritePlatformService;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
+import org.apache.fineract.organisation.bankcheque.data.ChequeData;
+import org.apache.fineract.organisation.bankcheque.service.ChequeReadPlatformService;
 import org.apache.fineract.organisation.holiday.domain.HolidayRepositoryWrapper;
 import org.apache.fineract.organisation.monetary.domain.ApplicationCurrency;
 import org.apache.fineract.organisation.monetary.domain.ApplicationCurrencyRepositoryWrapper;
@@ -175,6 +177,7 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
     private final LumaAccountingProcessorForSavingsService lumaAccountingProcessorForSavingsService;
     private final BitaCoraMasterRepository bitaCoraMasterRepository;
     private final ExchangeRepository exchangeRepository;
+    private final ChequeReadPlatformService chequeReadPlatformService;
 
     @Autowired
     public SavingsAccountWritePlatformServiceJpaRepositoryImpl(final PlatformSecurityContext context,
@@ -199,7 +202,8 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
             final BusinessEventNotifierService businessEventNotifierService, final GSIMRepositoy gsimRepository,
             final JdbcTemplate jdbcTemplate, final SavingsAccountInterestPostingService savingsAccountInterestPostingService,
             final LumaAccountingProcessorForSavingsService lumaAccountingProcessorForSavingsService,
-            final BitaCoraMasterRepository bitaCoraMasterRepository, final ExchangeRepository exchangeRepository) {
+            final BitaCoraMasterRepository bitaCoraMasterRepository, final ExchangeRepository exchangeRepository,
+            final ChequeReadPlatformService chequeReadPlatformService) {
         this.context = context;
         this.savingAccountRepositoryWrapper = savingAccountRepositoryWrapper;
         this.savingsAccountTransactionRepository = savingsAccountTransactionRepository;
@@ -231,6 +235,7 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
         this.lumaAccountingProcessorForSavingsService = lumaAccountingProcessorForSavingsService;
         this.bitaCoraMasterRepository = bitaCoraMasterRepository;
         this.exchangeRepository = exchangeRepository;
+        this.chequeReadPlatformService = chequeReadPlatformService;
     }
 
     private static final Logger LOG = LoggerFactory.getLogger(SavingsAccountWritePlatformServiceJpaRepositoryImpl.class);
@@ -2082,7 +2087,7 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
 
     @Override
     public CommandProcessingResult depositAndHoldToClientGuaranteeAccount(BigDecimal depositAmount, BigDecimal requiredGuaranteeAmount,
-            Long clientId, Long loanId, LocalDate transactionDate) {
+                                                                          Long clientId, Long loanId, LocalDate transactionDate, Long chequeId) {
         CommandProcessingResult result = null;
         List<SavingsAccount> savingsAccounts = this.savingAccountRepositoryWrapper.findSavingAccountByClientId(clientId);
         Optional<SavingsAccount> guaranteeAccount = savingsAccounts.stream()
@@ -2109,6 +2114,11 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
             final PaymentDetail paymentDetail = null;
             boolean isAccountTransfer = false;
             boolean isRegularTransaction = true;
+            ChequeData chequeData = this.chequeReadPlatformService.retrieveChequeById(chequeId);
+            if (chequeData != null) {
+                paymentDetail.setGlAccountId(chequeData.getGlAccountId());
+                paymentDetail.setBillNumber(chequeData.getChequeNo().toString());
+            }
             final SavingsAccountTransaction deposit = this.savingsAccountDomainService.handleDeposit(account,
                     DateUtils.DEFAULT_DATE_FORMATER, transactionDate, depositAmount, paymentDetail, isAccountTransfer, isRegularTransaction,
                     backdatedTxnsAllowedTill);
