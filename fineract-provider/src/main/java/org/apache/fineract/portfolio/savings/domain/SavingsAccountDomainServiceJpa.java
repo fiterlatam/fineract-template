@@ -181,16 +181,18 @@ public class SavingsAccountDomainServiceJpa implements SavingsAccountDomainServi
     @Override
     public SavingsAccountTransaction handleDeposit(final SavingsAccount account, final DateTimeFormatter fmt,
             final LocalDate transactionDate, final BigDecimal transactionAmount, final PaymentDetail paymentDetail,
-            final boolean isAccountTransfer, final boolean isRegularTransaction, final boolean backdatedTxnsAllowedTill) {
+            final boolean isAccountTransfer, final boolean isRegularTransaction, final boolean backdatedTxnsAllowedTill,
+            Long bankGlAccountId) {
         final SavingsAccountTransactionType savingsAccountTransactionType = SavingsAccountTransactionType.DEPOSIT;
         return handleDeposit(account, fmt, transactionDate, transactionAmount, paymentDetail, isAccountTransfer, isRegularTransaction,
-                savingsAccountTransactionType, backdatedTxnsAllowedTill);
+                savingsAccountTransactionType, backdatedTxnsAllowedTill, bankGlAccountId);
     }
 
     private SavingsAccountTransaction handleDeposit(final SavingsAccount account, final DateTimeFormatter fmt,
             final LocalDate transactionDate, final BigDecimal transactionAmount, final PaymentDetail paymentDetail,
             final boolean isAccountTransfer, final boolean isRegularTransaction,
-            final SavingsAccountTransactionType savingsAccountTransactionType, final boolean backdatedTxnsAllowedTill) {
+            final SavingsAccountTransactionType savingsAccountTransactionType, final boolean backdatedTxnsAllowedTill,
+            Long bankGlAccountId) {
 
         AppUser user = getAppUserIfPresent();
         account.validateForAccountBlock();
@@ -250,7 +252,7 @@ public class SavingsAccountDomainServiceJpa implements SavingsAccountDomainServi
         this.bitaCoraMasterRepository.save(master);
 
         postJournalEntries(account, existingTransactionIds, existingReversedTransactionIds, isAccountTransfer, backdatedTxnsAllowedTill,
-                paymentDetail);
+                paymentDetail, bankGlAccountId);
         businessEventNotifierService.notifyPostBusinessEvent(new SavingsDepositBusinessEvent(deposit));
         return deposit;
     }
@@ -275,7 +277,7 @@ public class SavingsAccountDomainServiceJpa implements SavingsAccountDomainServi
         final boolean isRegularTransaction = true;
         final SavingsAccountTransactionType savingsAccountTransactionType = SavingsAccountTransactionType.DIVIDEND_PAYOUT;
         return handleDeposit(account, fmt, transactionDate, transactionAmount, paymentDetail, isAccountTransfer, isRegularTransaction,
-                savingsAccountTransactionType, backdatedTxnsAllowedTill);
+                savingsAccountTransactionType, backdatedTxnsAllowedTill, null);
     }
 
     private void updateExistingTransactionsDetails(SavingsAccount account, Set<Long> existingTransactionIds,
@@ -312,7 +314,7 @@ public class SavingsAccountDomainServiceJpa implements SavingsAccountDomainServi
 
     private void postJournalEntries(final SavingsAccount savingsAccount, final Set<Long> existingTransactionIds,
             final Set<Long> existingReversedTransactionIds, boolean isAccountTransfer, final boolean backdatedTxnsAllowedTill,
-            final PaymentDetail paymentDetail) {
+            final PaymentDetail paymentDetail, Long bankGlAccountId) {
 
         final MonetaryCurrency currency = savingsAccount.getCurrency();
         final ApplicationCurrency applicationCurrency = this.applicationCurrencyRepositoryWrapper.findOneWithNotFoundDetection(currency);
@@ -320,7 +322,7 @@ public class SavingsAccountDomainServiceJpa implements SavingsAccountDomainServi
         final Map<String, Object> accountingBridgeData = savingsAccount.deriveAccountingBridgeData(applicationCurrency.toData(),
                 existingTransactionIds, existingReversedTransactionIds, isAccountTransfer, backdatedTxnsAllowedTill);
         if (paymentDetail != null) {
-            accountingBridgeData.put("glAccountId", paymentDetail.getGlAccountId());
+            accountingBridgeData.put("glAccountId", bankGlAccountId);
         }
         this.journalEntryWritePlatformService.createJournalEntriesForSavings(accountingBridgeData);
     }
