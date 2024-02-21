@@ -319,7 +319,7 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
         if (amountForDeposit.isGreaterThanZero()) {
             boolean isAccountTransfer = false;
             this.savingsAccountDomainService.handleDeposit(account, fmt, account.getActivationLocalDate(), amountForDeposit.getAmount(),
-                    null, isAccountTransfer, isRegularTransaction, false);
+                    null, isAccountTransfer, isRegularTransaction, false, null);
 
             updateExistingTransactionsDetails(account, existingTransactionIds, existingReversedTransactionIds);
         }
@@ -389,7 +389,7 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
         boolean isAccountTransfer = false;
         boolean isRegularTransaction = true;
         final SavingsAccountTransaction deposit = this.savingsAccountDomainService.handleDeposit(account, fmt, transactionDate,
-                transactionAmount, paymentDetail, isAccountTransfer, isRegularTransaction, backdatedTxnsAllowedTill);
+                transactionAmount, paymentDetail, isAccountTransfer, isRegularTransaction, backdatedTxnsAllowedTill, null);
 
         if (isGsim && (deposit.getId() != null)) {
 
@@ -2111,17 +2111,14 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
             this.savingsAccountTransactionDataValidator.validateTransactionWithPivotDate(transactionDate, account);
 
             final Map<String, Object> changes = new LinkedHashMap<>();
-            final PaymentDetail paymentDetail = null;
+            PaymentDetail paymentDetail = null;
             boolean isAccountTransfer = false;
             boolean isRegularTransaction = true;
             ChequeData chequeData = this.chequeReadPlatformService.retrieveChequeById(chequeId);
-            if (chequeData != null) {
-                paymentDetail.setGlAccountId(chequeData.getGlAccountId());
-                paymentDetail.setBillNumber(chequeData.getChequeNo().toString());
-            }
+
             final SavingsAccountTransaction deposit = this.savingsAccountDomainService.handleDeposit(account,
                     DateUtils.DEFAULT_DATE_FORMATER, transactionDate, depositAmount, paymentDetail, isAccountTransfer, isRegularTransaction,
-                    backdatedTxnsAllowedTill);
+                    backdatedTxnsAllowedTill, chequeData.getGlAccountId());
             deposit.setLoanId(loanId);
 
             if (isGsim && (deposit.getId() != null)) {
