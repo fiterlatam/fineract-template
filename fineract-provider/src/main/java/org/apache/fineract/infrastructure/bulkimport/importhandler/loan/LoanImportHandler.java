@@ -37,9 +37,15 @@ import org.apache.fineract.infrastructure.bulkimport.importhandler.ImportHandler
 import org.apache.fineract.infrastructure.bulkimport.importhandler.ImportHandlerUtils;
 import org.apache.fineract.infrastructure.bulkimport.importhandler.helper.DateSerializer;
 import org.apache.fineract.infrastructure.bulkimport.importhandler.helper.EnumOptionDataValueSerializer;
+import org.apache.fineract.infrastructure.codes.domain.CodeValue;
+import org.apache.fineract.infrastructure.codes.domain.CodeValueRepository;
+import org.apache.fineract.infrastructure.codes.domain.CodeValueRepositoryWrapper;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.infrastructure.core.serialization.GoogleGsonSerializerHelper;
+import org.apache.fineract.portfolio.group.domain.Group;
+import org.apache.fineract.portfolio.group.domain.GroupRepository;
+import org.apache.fineract.portfolio.group.domain.GroupRepositoryWrapper;
 import org.apache.fineract.portfolio.loanaccount.data.DisbursementData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanAccountData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanApprovalData;
@@ -70,10 +76,15 @@ public class LoanImportHandler implements ImportHandler {
     private List<String> statuses;
 
     private final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService;
+    private final GroupRepositoryWrapper groupRepository;
+    private final CodeValueRepositoryWrapper codeValueRepository;
 
     @Autowired
-    public LoanImportHandler(final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService) {
+    public LoanImportHandler(final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService,
+                             final GroupRepositoryWrapper groupRepository, final CodeValueRepositoryWrapper codeValueRepository) {
         this.commandsSourceWritePlatformService = commandsSourceWritePlatformService;
+        this.codeValueRepository = codeValueRepository;
+        this.groupRepository = groupRepository;
     }
 
     @Override
@@ -539,7 +550,16 @@ public class LoanImportHandler implements ImportHandler {
         GsonBuilder gsonBuilder = GoogleGsonSerializerHelper.createGsonBuilder();
         gsonBuilder.registerTypeAdapter(LocalDate.class, new DateSerializer(dateFormat));
         gsonBuilder.registerTypeAdapter(EnumOptionData.class, new EnumOptionDataValueSerializer());
-        JsonObject loanJsonOb = gsonBuilder.create().toJsonTree(loans.get(rowIndex)).getAsJsonObject();
+        LoanAccountData loanData = loans.get(rowIndex);
+        Integer repaymentFrequencyDayOfWeekType = null;
+        Integer repaymentFrequencyNthDayType = null;
+        if (loanData.getLoanType().getValue().equalsIgnoreCase("JLG")) {
+            Group group = this.groupRepository.findOneWithNotFoundDetection(loanData.getGroupId());
+            String meetingDay = this.codeValueRepository.findOneWithNotFoundDetection(group.getMeetingDay().longValue()).label();
+            repaymentFrequencyDayOfWeekType = resolveMeetingNthDay(meetingDay);
+            repaymentFrequencyNthDayType = resolveMeetingFrequencyRange(group.getMeetingStart(), group.getMeetingEnd());
+        }
+        JsonObject loanJsonOb = gsonBuilder.create().toJsonTree(loanData).getAsJsonObject();
         loanJsonOb.remove("isLoanProductLinkedToFloatingRate");
         loanJsonOb.remove("isInterestRecalculationEnabled");
         loanJsonOb.remove("isFloatingInterestRate");
@@ -557,6 +577,8 @@ public class LoanImportHandler implements ImportHandler {
         }
         loanJsonOb.remove("isTopup");
         loanJsonOb.addProperty("isBulkImport", true);
+        loanJsonOb.addProperty("repaymentFrequencyNthDayType", repaymentFrequencyDayOfWeekType);
+        loanJsonOb.addProperty("repaymentFrequencyDayOfWeekType", repaymentFrequencyNthDayType);
         String payload = loanJsonOb.toString();
         final CommandWrapper commandRequest = new CommandWrapperBuilder() //
                 .createLoanApplication() //
@@ -577,6 +599,34 @@ public class LoanImportHandler implements ImportHandler {
             return 3;
         }
         return 0;
+    }
+
+    private Integer resolveMeetingFrequencyRange(int meetingStart, int meetingEnd) {
+        if (meetingEnd >= 1 && meetingEnd <= 7) {
+            return 1;
+        } else if (meetingStart >= 8 && meetingEnd <= 14) {
+            return 2;
+        } else if (meetingStart >= 15 && meetingEnd <= 21) {
+            return 3;
+        } else if (meetingStart >= 22 && meetingEnd <= 28) {
+            return 4;
+        } else {
+            return null;
+        }
+    }
+
+    private Integer resolveMeetingNthDay(String meetingDay) {
+        if (meetingDay.equalsIgnoreCase("Lunes")) {
+            return 1;
+        } else if (meetingDay.equalsIgnoreCase("Martes")) {
+            return 2;
+        } else if(meetingDay.equalsIgnoreCase("Miércoles")) {
+            return 3;
+        } else if(meetingDay.equalsIgnoreCase("Jueves")) {
+            return 4;
+        } else {
+            return 5;
+        }
     }
 
 }
