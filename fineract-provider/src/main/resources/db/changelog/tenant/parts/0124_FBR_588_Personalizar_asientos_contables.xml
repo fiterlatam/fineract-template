@@ -70,5 +70,14 @@
         </addColumn>
     </changeSet>
 
+    <changeSet id="7" author="fineract">
+        <sql>
+            <![CDATA[
+                SET PERSIST group_concat_max_len=18446744073709551615;
+                SET GLOBAL group_concat_max_len=18446744073709551615;
+                SET SESSION group_concat_max_len=18446744073709551615;
+            ]]>
+        </sql>
+    </changeSet>
 
 </databaseChangeLog>

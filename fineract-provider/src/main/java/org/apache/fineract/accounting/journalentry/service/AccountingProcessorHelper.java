@@ -235,10 +235,8 @@ public class AccountingProcessorHelper {
 
         }
 
-
-
         SavingsDTO savingsDTO = new SavingsDTO(loanId, loanProductId, officeId, currencyData.code(), cashBasedAccountingEnabled,
-                accrualBasedAccountingEnabled, newSavingsTransactions,glAccountId);
+                accrualBasedAccountingEnabled, newSavingsTransactions, glAccountId);
         return savingsDTO;
     }
 
@@ -477,7 +475,7 @@ public class AccountingProcessorHelper {
             accountTypeToCreditId = accountTypeToBeDebited;
         }
         createJournalEntriesForSavings(office, currencyCode, accountTypeToDebitId, accountTypeToCreditId, savingsProductId, paymentTypeId,
-                loanId, transactionId, transactionDate, amount,glAccountId);
+                loanId, transactionId, transactionDate, amount, glAccountId);
     }
 
     /**
@@ -586,8 +584,8 @@ public class AccountingProcessorHelper {
             final int accountTypeToCreditId, final Long savingsProductId, final Long paymentTypeId, final Long savingsId,
             final String transactionId, final LocalDate transactionDate, final BigDecimal amount, final Long glAccountId) {
         GLAccount debitAccount = getLinkedGLAccountForSavingsProduct(savingsProductId, accountTypeToDebitId, paymentTypeId);
-        if (glAccountId!=null){
-          debitAccount = this.getGLAccountById(glAccountId);
+        if (glAccountId != null) {
+            debitAccount = this.getGLAccountById(glAccountId);
         }
         final GLAccount creditAccount = getLinkedGLAccountForSavingsProduct(savingsProductId, accountTypeToCreditId, paymentTypeId);
         createDebitJournalEntryForSavings(office, currencyCode, debitAccount, savingsId, transactionId, transactionDate, amount);
