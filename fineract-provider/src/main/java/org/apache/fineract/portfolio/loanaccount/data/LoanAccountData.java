@@ -107,8 +107,8 @@ public final class LoanAccountData {
     private final Integer numberOfRepayments;
     private final Integer repaymentEvery;
     private final EnumOptionData repaymentFrequencyType;
-    private EnumOptionData repaymentFrequencyNthDayType;
-    private EnumOptionData repaymentFrequencyDayOfWeekType;
+    private final EnumOptionData repaymentFrequencyNthDayType;
+    private final EnumOptionData repaymentFrequencyDayOfWeekType;
     private final BigDecimal interestRatePerPeriod;
     private final EnumOptionData interestRateFrequencyType;
     private final BigDecimal annualInterestRate;
