@@ -112,11 +112,12 @@ public class CashBasedAccountingProcessorForSavings implements AccountingProcess
                             FinancialActivity.LIABILITY_TRANSFER.getValue(), CashAccountsForSavings.SAVINGS_CONTROL.getValue(),
                             savingsProductId, paymentTypeId, savingsId, transactionId, transactionDate, amount, isReversal);
                 } else {
-                    if (glAccountId!=null){
+                    if (glAccountId != null) {
                         this.helper.createCashBasedJournalEntriesAndReversalsForSavings(office, currencyCode,
                                 CashAccountsForSavings.SAVINGS_REFERENCE.getValue(), CashAccountsForSavings.SAVINGS_CONTROL.getValue(),
-                                savingsProductId, paymentTypeId, savingsId, transactionId, transactionDate, amount, isReversal, glAccountId);
-                    }else {
+                                savingsProductId, paymentTypeId, savingsId, transactionId, transactionDate, amount, isReversal,
+                                glAccountId);
+                    } else {
                         this.helper.createCashBasedJournalEntriesAndReversalsForSavings(office, currencyCode,
                                 CashAccountsForSavings.SAVINGS_REFERENCE.getValue(), CashAccountsForSavings.SAVINGS_CONTROL.getValue(),
                                 savingsProductId, paymentTypeId, savingsId, transactionId, transactionDate, amount, isReversal);
