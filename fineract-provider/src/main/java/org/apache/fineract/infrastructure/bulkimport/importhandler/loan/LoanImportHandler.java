@@ -574,8 +574,8 @@ public class LoanImportHandler implements ImportHandler {
         }
         loanJsonOb.remove("isTopup");
         loanJsonOb.addProperty("isBulkImport", true);
-        loanJsonOb.addProperty("repaymentFrequencyNthDayType", repaymentFrequencyDayOfWeekType);
-        loanJsonOb.addProperty("repaymentFrequencyDayOfWeekType", repaymentFrequencyNthDayType);
+        loanJsonOb.addProperty("repaymentFrequencyNthDayType", repaymentFrequencyNthDayType);
+        loanJsonOb.addProperty("repaymentFrequencyDayOfWeekType", repaymentFrequencyDayOfWeekType);
         String payload = loanJsonOb.toString();
         final CommandWrapper commandRequest = new CommandWrapperBuilder() //
                 .createLoanApplication() //
