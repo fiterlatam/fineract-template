@@ -2997,7 +2997,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             if (depositAmount != null && depositAmount.compareTo(BigDecimal.ZERO) < 0) {
                 CommandProcessingResult depositCommandResult = this.savingsAccountWritePlatformService
                         .depositAndHoldToClientGuaranteeAccount(depositAmount.abs(), cheque.getRequiredGuaranteeAmount(),
-                                loanAccount.getClientId(), loanAccount.getId(), localDate);
+                                loanAccount.getClientId(), loanAccount.getId(), localDate, cheque.getId());
             }
         }
         return new CommandProcessingResultBuilder().withCommandId(command.commandId()).build();

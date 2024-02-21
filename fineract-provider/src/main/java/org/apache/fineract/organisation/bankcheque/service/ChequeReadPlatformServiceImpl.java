@@ -388,6 +388,11 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
         return this.paginationHelper.fetchPage(this.jdbcTemplate, sqlBuilder.toString(), extraCriteria.getArguments(), this.chequeMapper);
 
     }
+    @Override
+    public ChequeData retrieveChequeById(final Long chequeId) {
+        final String query = "SELECT " + this.chequeMapper.schema() + " WHERE mbc.id = ? ";
+        return this.jdbcTemplate.queryForObject(query, this.chequeMapper, chequeId);
+    }
 
     @Override
     public List<GuaranteeData> retrieveGuarantees(String caseId, final String locale) {

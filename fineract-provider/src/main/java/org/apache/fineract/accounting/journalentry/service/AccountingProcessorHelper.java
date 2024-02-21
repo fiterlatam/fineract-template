@@ -176,6 +176,7 @@ public class AccountingProcessorHelper {
         final CurrencyData currencyData = (CurrencyData) accountingBridgeData.get("currency");
         final List<SavingsTransactionDTO> newSavingsTransactions = new ArrayList<>();
         boolean isAccountTransfer = (Boolean) accountingBridgeData.get("isAccountTransfer");
+        Long glAccountId = (Long) accountingBridgeData.get("glAccountId");
 
         @SuppressWarnings("unchecked")
         final List<Map<String, Object>> newTransactionsMap = (List<Map<String, Object>>) accountingBridgeData.get("newSavingsTransactions");
@@ -234,8 +235,11 @@ public class AccountingProcessorHelper {
 
         }
 
-        return new SavingsDTO(loanId, loanProductId, officeId, currencyData.code(), cashBasedAccountingEnabled,
-                accrualBasedAccountingEnabled, newSavingsTransactions);
+
+
+        SavingsDTO savingsDTO = new SavingsDTO(loanId, loanProductId, officeId, currencyData.code(), cashBasedAccountingEnabled,
+                accrualBasedAccountingEnabled, newSavingsTransactions,glAccountId);
+        return savingsDTO;
     }
 
     public SharesDTO populateSharesDtoFromMap(final Map<String, Object> accountingBridgeData, final boolean cashBasedAccountingEnabled,
@@ -461,6 +465,21 @@ public class AccountingProcessorHelper {
                 loanId, transactionId, transactionDate, amount);
     }
 
+    public void createCashBasedJournalEntriesAndReversalsForSavings(final Office office, final String currencyCode,
+            final Integer accountTypeToBeDebited, final Integer accountTypeToBeCredited, final Long savingsProductId,
+            final Long paymentTypeId, final Long loanId, final String transactionId, final LocalDate transactionDate,
+            final BigDecimal amount, final Boolean isReversal, final Long glAccountId) {
+        int accountTypeToDebitId = accountTypeToBeDebited;
+        int accountTypeToCreditId = accountTypeToBeCredited;
+        // reverse debits and credits for reversals
+        if (isReversal) {
+            accountTypeToDebitId = accountTypeToBeCredited;
+            accountTypeToCreditId = accountTypeToBeDebited;
+        }
+        createJournalEntriesForSavings(office, currencyCode, accountTypeToDebitId, accountTypeToCreditId, savingsProductId, paymentTypeId,
+                loanId, transactionId, transactionDate, amount,glAccountId);
+    }
+
     /**
      * Convenience method that creates a pair of related Debits and Credits for Cash Based accounting.
      *
@@ -558,6 +577,18 @@ public class AccountingProcessorHelper {
             final int accountTypeToCreditId, final Long savingsProductId, final Long paymentTypeId, final Long savingsId,
             final String transactionId, final LocalDate transactionDate, final BigDecimal amount) {
         final GLAccount debitAccount = getLinkedGLAccountForSavingsProduct(savingsProductId, accountTypeToDebitId, paymentTypeId);
+        final GLAccount creditAccount = getLinkedGLAccountForSavingsProduct(savingsProductId, accountTypeToCreditId, paymentTypeId);
+        createDebitJournalEntryForSavings(office, currencyCode, debitAccount, savingsId, transactionId, transactionDate, amount);
+        createCreditJournalEntryForSavings(office, currencyCode, creditAccount, savingsId, transactionId, transactionDate, amount);
+    }
+
+    private void createJournalEntriesForSavings(final Office office, final String currencyCode, final int accountTypeToDebitId,
+            final int accountTypeToCreditId, final Long savingsProductId, final Long paymentTypeId, final Long savingsId,
+            final String transactionId, final LocalDate transactionDate, final BigDecimal amount, final Long glAccountId) {
+        GLAccount debitAccount = getLinkedGLAccountForSavingsProduct(savingsProductId, accountTypeToDebitId, paymentTypeId);
+        if (glAccountId!=null){
+          debitAccount = this.getGLAccountById(glAccountId);
+        }
         final GLAccount creditAccount = getLinkedGLAccountForSavingsProduct(savingsProductId, accountTypeToCreditId, paymentTypeId);
         createDebitJournalEntryForSavings(office, currencyCode, debitAccount, savingsId, transactionId, transactionDate, amount);
         createCreditJournalEntryForSavings(office, currencyCode, creditAccount, savingsId, transactionId, transactionDate, amount);

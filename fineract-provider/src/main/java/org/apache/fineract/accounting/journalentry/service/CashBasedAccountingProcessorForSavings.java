@@ -42,6 +42,7 @@ public class CashBasedAccountingProcessorForSavings implements AccountingProcess
         final GLClosure latestGLClosure = this.helper.getLatestClosureByBranch(savingsDTO.getOfficeId());
         final Long savingsProductId = savingsDTO.getSavingsProductId();
         final Long savingsId = savingsDTO.getSavingsId();
+        final Long glAccountId = savingsDTO.getGlAccountId();
         final String currencyCode = savingsDTO.getCurrencyCode();
         for (final SavingsTransactionDTO savingsTransactionDTO : savingsDTO.getNewSavingsTransactions()) {
             final LocalDate transactionDate = savingsTransactionDTO.getTransactionDate();
@@ -111,9 +112,15 @@ public class CashBasedAccountingProcessorForSavings implements AccountingProcess
                             FinancialActivity.LIABILITY_TRANSFER.getValue(), CashAccountsForSavings.SAVINGS_CONTROL.getValue(),
                             savingsProductId, paymentTypeId, savingsId, transactionId, transactionDate, amount, isReversal);
                 } else {
-                    this.helper.createCashBasedJournalEntriesAndReversalsForSavings(office, currencyCode,
-                            CashAccountsForSavings.SAVINGS_REFERENCE.getValue(), CashAccountsForSavings.SAVINGS_CONTROL.getValue(),
-                            savingsProductId, paymentTypeId, savingsId, transactionId, transactionDate, amount, isReversal);
+                    if (glAccountId!=null){
+                        this.helper.createCashBasedJournalEntriesAndReversalsForSavings(office, currencyCode,
+                                CashAccountsForSavings.SAVINGS_REFERENCE.getValue(), CashAccountsForSavings.SAVINGS_CONTROL.getValue(),
+                                savingsProductId, paymentTypeId, savingsId, transactionId, transactionDate, amount, isReversal, glAccountId);
+                    }else {
+                        this.helper.createCashBasedJournalEntriesAndReversalsForSavings(office, currencyCode,
+                                CashAccountsForSavings.SAVINGS_REFERENCE.getValue(), CashAccountsForSavings.SAVINGS_CONTROL.getValue(),
+                                savingsProductId, paymentTypeId, savingsId, transactionId, transactionDate, amount, isReversal);
+                    }
                 }
             }
 

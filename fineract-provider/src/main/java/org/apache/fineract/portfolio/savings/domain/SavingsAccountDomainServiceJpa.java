@@ -249,7 +249,7 @@ public class SavingsAccountDomainServiceJpa implements SavingsAccountDomainServi
                 transactionBooleanValues);
         this.bitaCoraMasterRepository.save(master);
 
-        postJournalEntries(account, existingTransactionIds, existingReversedTransactionIds, isAccountTransfer, backdatedTxnsAllowedTill);
+        postJournalEntries(account, existingTransactionIds, existingReversedTransactionIds, isAccountTransfer, backdatedTxnsAllowedTill, paymentDetail);
         businessEventNotifierService.notifyPostBusinessEvent(new SavingsDepositBusinessEvent(deposit));
         return deposit;
     }
@@ -306,6 +306,20 @@ public class SavingsAccountDomainServiceJpa implements SavingsAccountDomainServi
 
         final Map<String, Object> accountingBridgeData = savingsAccount.deriveAccountingBridgeData(applicationCurrency.toData(),
                 existingTransactionIds, existingReversedTransactionIds, isAccountTransfer, backdatedTxnsAllowedTill);
+        this.journalEntryWritePlatformService.createJournalEntriesForSavings(accountingBridgeData);
+    }
+
+    private void postJournalEntries(final SavingsAccount savingsAccount, final Set<Long> existingTransactionIds,
+            final Set<Long> existingReversedTransactionIds, boolean isAccountTransfer, final boolean backdatedTxnsAllowedTill, final PaymentDetail paymentDetail) {
+
+        final MonetaryCurrency currency = savingsAccount.getCurrency();
+        final ApplicationCurrency applicationCurrency = this.applicationCurrencyRepositoryWrapper.findOneWithNotFoundDetection(currency);
+
+        final Map<String, Object> accountingBridgeData = savingsAccount.deriveAccountingBridgeData(applicationCurrency.toData(),
+                existingTransactionIds, existingReversedTransactionIds, isAccountTransfer, backdatedTxnsAllowedTill);
+        if (paymentDetail!=null) {
+            accountingBridgeData.put("glAccountId", paymentDetail.getGlAccountId());
+        }
         this.journalEntryWritePlatformService.createJournalEntriesForSavings(accountingBridgeData);
     }
 

@@ -32,6 +32,8 @@ public interface ChequeReadPlatformService {
 
     BatchData retrieveTemplate(final Long bankAccId);
 
+    ChequeData retrieveChequeById(Long chequeId);
+
     List<GuaranteeData> retrieveGuarantees(final String caseId, final String locale);
 
     Page<ChequeData> retrieveAll(final ChequeSearchParams chequeSearchParams, final PaginationParameters parameters);
