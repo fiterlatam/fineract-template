@@ -228,9 +228,9 @@ public class AccountingProcessorHelper {
                 isAccountTransfer = this.accountTransfersReadPlatformService.isAccountTransfer(Long.parseLong(transactionId),
                         PortfolioAccountType.SAVINGS);
             }
-            final SavingsTransactionDTO transaction = new SavingsTransactionDTO(transactionOfficeId, paymentTypeId, savingsReferenceGlAccountId, transactionId,
-                    transactionDate, transactionType, amount, reversed, feePayments, penaltyPayments, overdraftAmount, isAccountTransfer,
-                    taxPayments);
+            final SavingsTransactionDTO transaction = new SavingsTransactionDTO(transactionOfficeId, paymentTypeId,
+                    savingsReferenceGlAccountId, transactionId, transactionDate, transactionType, amount, reversed, feePayments,
+                    penaltyPayments, overdraftAmount, isAccountTransfer, taxPayments);
 
             newSavingsTransactions.add(transaction);
 
@@ -451,8 +451,8 @@ public class AccountingProcessorHelper {
      */
     public void createCashBasedJournalEntriesAndReversalsForSavings(final Office office, final String currencyCode,
             final Integer accountTypeToBeDebited, final Integer accountTypeToBeCredited, final Long savingsProductId,
-            final Long paymentTypeId,  final Long savingsReferenceGlAccountId, final Long loanId, final String transactionId, final LocalDate transactionDate,
-            final BigDecimal amount, final Boolean isReversal) {
+            final Long paymentTypeId, final Long savingsReferenceGlAccountId, final Long loanId, final String transactionId,
+            final LocalDate transactionDate, final BigDecimal amount, final Boolean isReversal) {
         int accountTypeToDebitId = accountTypeToBeDebited;
         int accountTypeToCreditId = accountTypeToBeCredited;
         // reverse debits and credits for reversals
@@ -460,8 +460,8 @@ public class AccountingProcessorHelper {
             accountTypeToDebitId = accountTypeToBeCredited;
             accountTypeToCreditId = accountTypeToBeDebited;
         }
-        createJournalEntriesForSavings(office, currencyCode, accountTypeToDebitId, accountTypeToCreditId, savingsProductId, paymentTypeId, savingsReferenceGlAccountId,
-                loanId, transactionId, transactionDate, amount);
+        createJournalEntriesForSavings(office, currencyCode, accountTypeToDebitId, accountTypeToCreditId, savingsProductId, paymentTypeId,
+                savingsReferenceGlAccountId, loanId, transactionId, transactionDate, amount);
     }
 
     public void createCashBasedJournalEntriesAndReversalsForSavings(final Office office, final String currencyCode,
@@ -573,14 +573,14 @@ public class AccountingProcessorHelper {
     }
 
     private void createJournalEntriesForSavings(final Office office, final String currencyCode, final int accountTypeToDebitId,
-            final int accountTypeToCreditId, final Long savingsProductId, final Long paymentTypeId, final Long savingsReferenceGlAccountId, final Long savingsId,
-            final String transactionId, final LocalDate transactionDate, final BigDecimal amount) {
+            final int accountTypeToCreditId, final Long savingsProductId, final Long paymentTypeId, final Long savingsReferenceGlAccountId,
+            final Long savingsId, final String transactionId, final LocalDate transactionDate, final BigDecimal amount) {
         GLAccount debitAccount = getLinkedGLAccountForSavingsProduct(savingsProductId, accountTypeToDebitId, paymentTypeId);
-        if(savingsReferenceGlAccountId != null && CashAccountsForSavings.SAVINGS_REFERENCE.getValue().equals(accountTypeToDebitId)){
+        if (savingsReferenceGlAccountId != null && CashAccountsForSavings.SAVINGS_REFERENCE.getValue().equals(accountTypeToDebitId)) {
             debitAccount = this.getGLAccountById(savingsReferenceGlAccountId);
         }
         GLAccount creditAccount = getLinkedGLAccountForSavingsProduct(savingsProductId, accountTypeToCreditId, paymentTypeId);
-        if(savingsReferenceGlAccountId != null && CashAccountsForSavings.SAVINGS_REFERENCE.getValue().equals(accountTypeToCreditId)){
+        if (savingsReferenceGlAccountId != null && CashAccountsForSavings.SAVINGS_REFERENCE.getValue().equals(accountTypeToCreditId)) {
             creditAccount = this.getGLAccountById(savingsReferenceGlAccountId);
         }
         createDebitJournalEntryForSavings(office, currencyCode, debitAccount, savingsId, transactionId, transactionDate, amount);

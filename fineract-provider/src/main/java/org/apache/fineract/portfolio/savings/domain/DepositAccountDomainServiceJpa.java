@@ -128,7 +128,7 @@ public class DepositAccountDomainServiceJpa implements DepositAccountDomainServi
         boolean isRegularTransaction = false;
         final boolean backdatedTxnsAllowedTill = false;
         return this.savingsAccountDomainService.handleDeposit(account, fmt, transactionDate, transactionAmount, paymentDetail,
-                isAccountTransfer, isRegularTransaction, backdatedTxnsAllowedTill, null);
+                isAccountTransfer, isRegularTransaction, backdatedTxnsAllowedTill);
     }
 
     @Transactional
@@ -146,7 +146,7 @@ public class DepositAccountDomainServiceJpa implements DepositAccountDomainServi
         account.updateDepositAmount(transactionAmount);
         final boolean backdatedTxnsAllowedTill = false;
         final SavingsAccountTransaction deposit = this.savingsAccountDomainService.handleDeposit(account, fmt, transactionDate,
-                transactionAmount, paymentDetail, isAccountTransfer, isRegularTransaction, backdatedTxnsAllowedTill, null);
+                transactionAmount, paymentDetail, isAccountTransfer, isRegularTransaction, backdatedTxnsAllowedTill);
         final Set<Long> existingTransactionIds = new HashSet<>();
         final Set<Long> existingReversedTransactionIds = new HashSet<>();
         final boolean isAnyActivationChargesDue = isAnyActivationChargesDue(account);
@@ -173,7 +173,7 @@ public class DepositAccountDomainServiceJpa implements DepositAccountDomainServi
         boolean isAccountTransfer = false;
         final boolean backdatedTxnsAllowedTill = false;
         final SavingsAccountTransaction deposit = this.savingsAccountDomainService.handleDeposit(account, fmt, transactionDate,
-                transactionAmount, paymentDetail, isAccountTransfer, isRegularTransaction, backdatedTxnsAllowedTill, null);
+                transactionAmount, paymentDetail, isAccountTransfer, isRegularTransaction, backdatedTxnsAllowedTill);
         final Set<Long> existingTransactionIds = new HashSet<>();
         final Set<Long> existingReversedTransactionIds = new HashSet<>();
         updateExistingTransactionsDetails(account, existingTransactionIds, existingReversedTransactionIds);

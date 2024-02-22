@@ -1336,7 +1336,8 @@ public class SavingsAccountReadPlatformServiceImpl implements SavingsAccountRead
             sqlBuilder.append("totran.transaction_date as toTransferDate, totran.amount as toTransferAmount,");
             sqlBuilder.append("totran.description as toTransferDescription,");
             sqlBuilder.append("sa.id as savingsId, sa.account_no as accountNo,");
-            sqlBuilder.append("pd.payment_type_id as paymentType,coalesce(aga.name, pd.account_number) as accountNumber,pd.check_number as checkNumber, ");
+            sqlBuilder.append(
+                    "pd.payment_type_id as paymentType,coalesce(aga.name, pd.account_number) as accountNumber,pd.check_number as checkNumber, ");
             sqlBuilder.append("pd.receipt_number as receiptNumber, pd.bank_number as bankNumber,pd.routing_code as routingCode, ");
             sqlBuilder.append(
                     "sa.currency_code as currencyCode, sa.currency_digits as currencyDigits, sa.currency_multiplesof as inMultiplesOf, ");

@@ -78,7 +78,7 @@ public class LoanImportHandler implements ImportHandler {
 
     @Autowired
     public LoanImportHandler(final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService,
-                             final GroupRepositoryWrapper groupRepository, final CodeValueRepositoryWrapper codeValueRepository) {
+            final GroupRepositoryWrapper groupRepository, final CodeValueRepositoryWrapper codeValueRepository) {
         this.commandsSourceWritePlatformService = commandsSourceWritePlatformService;
         this.codeValueRepository = codeValueRepository;
         this.groupRepository = groupRepository;
@@ -617,9 +617,9 @@ public class LoanImportHandler implements ImportHandler {
             return 1;
         } else if (meetingDay.equalsIgnoreCase("Martes")) {
             return 2;
-        } else if(meetingDay.equalsIgnoreCase("Miércoles")) {
+        } else if (meetingDay.equalsIgnoreCase("Miércoles")) {
             return 3;
-        } else if(meetingDay.equalsIgnoreCase("Jueves")) {
+        } else if (meetingDay.equalsIgnoreCase("Jueves")) {
             return 4;
         } else {
             return 5;

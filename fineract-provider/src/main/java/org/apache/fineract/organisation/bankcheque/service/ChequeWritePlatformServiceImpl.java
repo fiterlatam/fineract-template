@@ -495,8 +495,9 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
                 jsonObject.addProperty("transactionAmount", guaranteeAmount);
                 jsonObject.addProperty("transactionDate", localDateString);
                 if (!CollectionUtils.isEmpty(paymentTypeOptions)) {
-                    Optional<PaymentTypeData> paymentTypeOptional = new ArrayList<>(paymentTypeOptions).stream().filter(pt -> BankChequeApiConstants.BANK_CHEQUE_PAYMENT_TYPE.equalsIgnoreCase(pt.getName())).findFirst();
-                    if(paymentTypeOptional.isPresent()){
+                    Optional<PaymentTypeData> paymentTypeOptional = new ArrayList<>(paymentTypeOptions).stream()
+                            .filter(pt -> BankChequeApiConstants.BANK_CHEQUE_PAYMENT_TYPE.equalsIgnoreCase(pt.getName())).findFirst();
+                    if (paymentTypeOptional.isPresent()) {
                         PaymentTypeData paymentType = paymentTypeOptional.get();
                         jsonObject.addProperty("paymentTypeId", paymentType.getId());
                     }
