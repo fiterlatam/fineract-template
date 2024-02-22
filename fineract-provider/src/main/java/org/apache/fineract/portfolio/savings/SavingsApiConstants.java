@@ -202,4 +202,5 @@ public class SavingsApiConstants {
     public static final String accountMappingForPaymentParamName = "accountMappingForPayment";
 
     public static final String adjustGuaranteeParamName = "adjustGuarantee";
+    public static final String glAccountIdParamName = "glAccountId";
 }

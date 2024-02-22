@@ -207,9 +207,10 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
             final AppUserRepositoryWrapper appuserRepository, final StandingInstructionRepository standingInstructionRepository,
             final BusinessEventNotifierService businessEventNotifierService, final GSIMRepositoy gsimRepository,
             final JdbcTemplate jdbcTemplate, final SavingsAccountInterestPostingService savingsAccountInterestPostingService,
-            final LumaAccountingProcessorForSavingsService lumaAccountingProcessorForSavingsService,final FromJsonHelper fromApiJsonHelper,
+            final LumaAccountingProcessorForSavingsService lumaAccountingProcessorForSavingsService, final FromJsonHelper fromApiJsonHelper,
             final BitaCoraMasterRepository bitaCoraMasterRepository, final ExchangeRepository exchangeRepository,
-            final ChequeReadPlatformService chequeReadPlatformService,final PaymentTypeReadPlatformService paymentTypeReadPlatformService) {
+            final ChequeReadPlatformService chequeReadPlatformService,
+            final PaymentTypeReadPlatformService paymentTypeReadPlatformService) {
         this.context = context;
         this.savingAccountRepositoryWrapper = savingAccountRepositoryWrapper;
         this.savingsAccountTransactionRepository = savingsAccountTransactionRepository;
@@ -2095,8 +2096,7 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
 
     @Override
     public CommandProcessingResult depositAndHoldToClientGuaranteeAccount(BigDecimal depositAmount, BigDecimal requiredGuaranteeAmount,
-                                                                          Long clientId, Long loanId, LocalDate transactionDate, Long chequeId,
-                                                                          JsonCommand command) {
+            Long clientId, Long loanId, LocalDate transactionDate, Long chequeId, JsonCommand command) {
         CommandProcessingResult result = null;
         List<SavingsAccount> savingsAccounts = this.savingAccountRepositoryWrapper.findSavingAccountByClientId(clientId);
         Optional<SavingsAccount> guaranteeAccount = savingsAccounts.stream()
@@ -2147,8 +2147,8 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
             jsonObject.addProperty("receiptNumber", "");
             jsonObject.addProperty("note", "Guarantias Deposit " + chequeData.getChequeNo());
 
-//            final JsonCommand commandJson = JsonCommand.from(jsonObject.toString());
-//            commandJson.setJsonCommand(jsonObject.toString());
+            // final JsonCommand commandJson = JsonCommand.from(jsonObject.toString());
+            // commandJson.setJsonCommand(jsonObject.toString());
 
             final JsonCommand depositJsonCommand = JsonCommand.fromJsonElement(chequeId, jsonObject, this.fromApiJsonHelper);
             depositJsonCommand.setJsonCommand(jsonObject.toString());
