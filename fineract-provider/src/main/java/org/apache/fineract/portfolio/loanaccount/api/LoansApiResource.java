@@ -107,7 +107,9 @@ import org.apache.fineract.portfolio.charge.data.ChargeData;
 import org.apache.fineract.portfolio.charge.domain.ChargeTimeType;
 import org.apache.fineract.portfolio.charge.service.ChargeReadPlatformService;
 import org.apache.fineract.portfolio.client.data.ClientData;
+import org.apache.fineract.portfolio.client.data.EconomicSectorData;
 import org.apache.fineract.portfolio.client.service.ClientReadPlatformService;
+import org.apache.fineract.portfolio.client.service.EconomicActivityReadPlatformService;
 import org.apache.fineract.portfolio.collateralmanagement.data.LoanCollateralResponseData;
 import org.apache.fineract.portfolio.collateralmanagement.service.LoanCollateralManagementReadPlatformService;
 import org.apache.fineract.portfolio.cupo.data.CupoData;
@@ -287,6 +289,7 @@ public class LoansApiResource {
     private final AppUserReadPlatformService appUserReadPlatformService;
     private final AgencyReadPlatformServiceImpl agencyReadPlatformService;
     private final CenterReadPlatformServiceImpl centerReadPlatformService;
+    private final EconomicActivityReadPlatformService economicActivityReadPlatformService;
 
     public LoansApiResource(final PlatformSecurityContext context, final LoanReadPlatformService loanReadPlatformService,
             final LoanProductReadPlatformService loanProductReadPlatformService,
@@ -315,6 +318,7 @@ public class LoansApiResource {
             final GLIMAccountInfoReadPlatformService glimAccountInfoReadPlatformService,
             final LoanCollateralManagementReadPlatformService loanCollateralManagementReadPlatformService,
             final CupoReadService cupoReadService, AppUserReadPlatformService appUserReadPlatformService,
+            EconomicActivityReadPlatformService economicActivityReadPlatformService,
             AgencyReadPlatformServiceImpl agencyReadPlatformService, CenterReadPlatformServiceImpl centerReadPlatformService) {
         this.context = context;
         this.loanReadPlatformService = loanReadPlatformService;
@@ -354,6 +358,7 @@ public class LoansApiResource {
         this.agencyReadPlatformService = agencyReadPlatformService;
         this.centerReadPlatformService = centerReadPlatformService;
         this.loanAdditionalDataToApiJsonSerializer = loanAdditionalDataToApiJsonSerializer;
+        this.economicActivityReadPlatformService = economicActivityReadPlatformService;
     }
 
     /*
@@ -475,6 +480,7 @@ public class LoansApiResource {
             Collection<CodeValueData> cancellationReasonOptions = this.codeValueReadPlatformService
                     .retrieveCodeValuesByCode("cancellationReasonOptions");
             Collection<CodeValueData> documentTypeOptions = this.codeValueReadPlatformService.retrieveCodeValuesByCode("Document Type");
+            List<EconomicSectorData> economicSectorData = this.economicActivityReadPlatformService.retrieveSectorData();
 
             final List<AppUserData> facilitatorOptions = new ArrayList<>(
                     this.appUserReadPlatformService.retrieveUsersUnderHierarchy(Long.valueOf(OfficeHierarchyLevel.GRUPO.getValue())));
@@ -482,7 +488,8 @@ public class LoansApiResource {
             newLoanAccount = new LoanAccountData(loanCycleCompletedOptions, loanPurposeOptions, businessEvolutionOptions, yesnoOptions,
                     businessExperienceOptions, businessLocationOptions, clientTypeOptions, loanStatusOptions, institutionTypeOptions,
                     housingTypeOptions, classificationOptions, jobTypeOptions, educationLevelOptions, maritalStatusOptions,
-                    groupPositionOptions, sourceOfFundsOptions, cancellationReasonOptions, facilitatorOptions, documentTypeOptions);
+                    groupPositionOptions, sourceOfFundsOptions, cancellationReasonOptions, facilitatorOptions, documentTypeOptions,
+                    economicSectorData);
             return this.toApiJsonSerializer.serialize(settings, newLoanAccount, this.loanDataParameters);
         } else if ("cheque".equalsIgnoreCase(templateType)) {
             final Collection<CenterData> centerOptions = this.centerReadPlatformService

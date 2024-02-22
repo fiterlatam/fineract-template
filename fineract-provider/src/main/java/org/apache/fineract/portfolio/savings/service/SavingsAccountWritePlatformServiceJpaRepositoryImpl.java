@@ -63,11 +63,15 @@ import org.apache.fineract.infrastructure.core.exception.GeneralPlatformDomainRu
 import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidationException;
 import org.apache.fineract.infrastructure.core.exception.PlatformDataIntegrityException;
 import org.apache.fineract.infrastructure.core.exception.PlatformServiceUnavailableException;
+import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
+import org.apache.fineract.infrastructure.core.serialization.JsonParserHelper;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.dataqueries.data.EntityTables;
 import org.apache.fineract.infrastructure.dataqueries.data.StatusEnum;
 import org.apache.fineract.infrastructure.dataqueries.service.EntityDatatableChecksWritePlatformService;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
+import org.apache.fineract.organisation.bankcheque.data.ChequeData;
+import org.apache.fineract.organisation.bankcheque.service.ChequeReadPlatformService;
 import org.apache.fineract.organisation.holiday.domain.HolidayRepositoryWrapper;
 import org.apache.fineract.organisation.monetary.domain.ApplicationCurrency;
 import org.apache.fineract.organisation.monetary.domain.ApplicationCurrencyRepositoryWrapper;
@@ -100,6 +104,8 @@ import org.apache.fineract.portfolio.note.domain.Note;
 import org.apache.fineract.portfolio.note.domain.NoteRepository;
 import org.apache.fineract.portfolio.paymentdetail.domain.PaymentDetail;
 import org.apache.fineract.portfolio.paymentdetail.service.PaymentDetailWritePlatformService;
+import org.apache.fineract.portfolio.paymenttype.data.PaymentTypeData;
+import org.apache.fineract.portfolio.paymenttype.service.PaymentTypeReadPlatformService;
 import org.apache.fineract.portfolio.savings.SavingsAccountTransactionType;
 import org.apache.fineract.portfolio.savings.SavingsApiConstants;
 import org.apache.fineract.portfolio.savings.SavingsTransactionBooleanValues;
@@ -175,6 +181,9 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
     private final LumaAccountingProcessorForSavingsService lumaAccountingProcessorForSavingsService;
     private final BitaCoraMasterRepository bitaCoraMasterRepository;
     private final ExchangeRepository exchangeRepository;
+    private final ChequeReadPlatformService chequeReadPlatformService;
+    private final PaymentTypeReadPlatformService paymentTypeReadPlatformService;
+    private final FromJsonHelper fromApiJsonHelper;
 
     @Autowired
     public SavingsAccountWritePlatformServiceJpaRepositoryImpl(final PlatformSecurityContext context,
@@ -198,8 +207,10 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
             final AppUserRepositoryWrapper appuserRepository, final StandingInstructionRepository standingInstructionRepository,
             final BusinessEventNotifierService businessEventNotifierService, final GSIMRepositoy gsimRepository,
             final JdbcTemplate jdbcTemplate, final SavingsAccountInterestPostingService savingsAccountInterestPostingService,
-            final LumaAccountingProcessorForSavingsService lumaAccountingProcessorForSavingsService,
-            final BitaCoraMasterRepository bitaCoraMasterRepository, final ExchangeRepository exchangeRepository) {
+            final LumaAccountingProcessorForSavingsService lumaAccountingProcessorForSavingsService, final FromJsonHelper fromApiJsonHelper,
+            final BitaCoraMasterRepository bitaCoraMasterRepository, final ExchangeRepository exchangeRepository,
+            final ChequeReadPlatformService chequeReadPlatformService,
+            final PaymentTypeReadPlatformService paymentTypeReadPlatformService) {
         this.context = context;
         this.savingAccountRepositoryWrapper = savingAccountRepositoryWrapper;
         this.savingsAccountTransactionRepository = savingsAccountTransactionRepository;
@@ -231,6 +242,9 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
         this.lumaAccountingProcessorForSavingsService = lumaAccountingProcessorForSavingsService;
         this.bitaCoraMasterRepository = bitaCoraMasterRepository;
         this.exchangeRepository = exchangeRepository;
+        this.chequeReadPlatformService = chequeReadPlatformService;
+        this.paymentTypeReadPlatformService = paymentTypeReadPlatformService;
+        this.fromApiJsonHelper = fromApiJsonHelper;
     }
 
     private static final Logger LOG = LoggerFactory.getLogger(SavingsAccountWritePlatformServiceJpaRepositoryImpl.class);
@@ -2082,7 +2096,7 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
 
     @Override
     public CommandProcessingResult depositAndHoldToClientGuaranteeAccount(BigDecimal depositAmount, BigDecimal requiredGuaranteeAmount,
-            Long clientId, Long loanId, LocalDate transactionDate) {
+            Long clientId, Long loanId, LocalDate transactionDate, Long chequeId, JsonCommand command) {
         CommandProcessingResult result = null;
         List<SavingsAccount> savingsAccounts = this.savingAccountRepositoryWrapper.findSavingAccountByClientId(clientId);
         Optional<SavingsAccount> guaranteeAccount = savingsAccounts.stream()
@@ -2106,9 +2120,40 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
             this.savingsAccountTransactionDataValidator.validateTransactionWithPivotDate(transactionDate, account);
 
             final Map<String, Object> changes = new LinkedHashMap<>();
-            final PaymentDetail paymentDetail = null;
+            PaymentDetail paymentDetail = null;
             boolean isAccountTransfer = false;
             boolean isRegularTransaction = true;
+            ChequeData chequeData = this.chequeReadPlatformService.retrieveChequeById(chequeId);
+            final Collection<PaymentTypeData> paymentTypeOptions = this.paymentTypeReadPlatformService.retrieveAllPaymentTypes();
+
+            final JsonObject jsonObject = new JsonObject();
+            final String localeAsString = "en";
+            final String dateFormat = "dd MMMM yyyy";
+            final LocalDate localDate = DateUtils.getBusinessLocalDate();
+            Locale locale = JsonParserHelper.localeFromString(localeAsString);
+            final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(dateFormat).withLocale(locale);
+            final String localDateString = localDate.format(dateTimeFormatter);
+            jsonObject.addProperty("locale", localeAsString);
+            jsonObject.addProperty("dateFormat", dateFormat);
+            jsonObject.addProperty("transactionAmount", depositAmount);
+            jsonObject.addProperty("transactionDate", localDateString);
+            if (!CollectionUtils.isEmpty(paymentTypeOptions)) {
+                jsonObject.addProperty("paymentTypeId", new ArrayList<>(paymentTypeOptions).get(0).getId());
+            }
+            jsonObject.addProperty("glAccountId", chequeData.getGlAccountId());
+            jsonObject.addProperty("accountNumber", chequeData.getBankAccNo());
+            jsonObject.addProperty("checkNumber", chequeData.getChequeNo());
+            jsonObject.addProperty("routingCode", "");
+            jsonObject.addProperty("receiptNumber", "");
+            jsonObject.addProperty("note", "Guarantias Deposit " + chequeData.getChequeNo());
+
+            // final JsonCommand commandJson = JsonCommand.from(jsonObject.toString());
+            // commandJson.setJsonCommand(jsonObject.toString());
+
+            final JsonCommand depositJsonCommand = JsonCommand.fromJsonElement(chequeId, jsonObject, this.fromApiJsonHelper);
+            depositJsonCommand.setJsonCommand(jsonObject.toString());
+
+            paymentDetail = this.paymentDetailWritePlatformService.createAndPersistPaymentDetail(depositJsonCommand, changes);
             final SavingsAccountTransaction deposit = this.savingsAccountDomainService.handleDeposit(account,
                     DateUtils.DEFAULT_DATE_FORMATER, transactionDate, depositAmount, paymentDetail, isAccountTransfer, isRegularTransaction,
                     backdatedTxnsAllowedTill);

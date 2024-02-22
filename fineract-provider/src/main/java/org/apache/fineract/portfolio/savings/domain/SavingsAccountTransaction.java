@@ -563,6 +563,7 @@ public final class SavingsAccountTransaction extends AbstractPersistableCustom {
 
         if (this.paymentDetail != null) {
             thisTransactionData.put("paymentTypeId", this.paymentDetail.getPaymentType().getId());
+            thisTransactionData.put("glAccountId", this.paymentDetail.getGlAccountId());
         }
 
         /***
