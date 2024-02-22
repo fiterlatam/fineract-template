@@ -47,6 +47,8 @@ import javax.ws.rs.NotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.fineract.accounting.glaccount.domain.GLAccount;
+import org.apache.fineract.accounting.glaccount.domain.GLAccountRepositoryWrapper;
 import org.apache.fineract.cob.loan.ApplyChargeToOverdueLoansBusinessStep;
 import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
@@ -106,6 +108,7 @@ public class LoanSchedularServiceImpl implements LoanSchedularService {
     private final LoanRepaymentImportMapper loanRepaymentImportMapper = new LoanRepaymentImportMapper();
     private final FromJsonHelper fromApiJsonHelper;
     private final LoanRepaymentImportRepository loanRepaymentImportRepository;
+    private final GLAccountRepositoryWrapper glAccountRepository;
 
     @Override
     @CronTarget(jobName = JobName.APPLY_CHARGE_TO_OVERDUE_LOAN_INSTALLMENT)
@@ -396,9 +399,13 @@ public class LoanSchedularServiceImpl implements LoanSchedularService {
                     final Collection<PaymentTypeData> paymentTypeOptions = transactionData.getPaymentTypeOptions();
                     Long paymentTypeId = 1L;
                     if (!paymentTypeOptions.isEmpty()) {
-                        paymentTypeId = new ArrayList<>(paymentTypeOptions).get(0).getId();
+                        final Optional<PaymentTypeData> paymentTypeOptional = new ArrayList<>(paymentTypeOptions).stream()
+                                .filter(t -> "Pago automático".equalsIgnoreCase(t.getName())).findFirst();
+                        if (paymentTypeOptional.isPresent()) {
+                            PaymentTypeData paymentTypeData = paymentTypeOptional.get();
+                            paymentTypeId = paymentTypeData.getId();
+                        }
                     }
-
                     final BigDecimal scheduledAmount = transactionData.getAmount();
                     final Integer installmentNumber = transactionData.getInstallmentNumber();
                     final BigDecimal outstandingLoanBalance = transactionData.getOutstandingLoanBalance();
@@ -461,12 +468,16 @@ public class LoanSchedularServiceImpl implements LoanSchedularService {
                     }
 
                     // Make loan repayment
+                    final String glCode = loanRepaymentImport.getGlCode();
+                    final GLAccount glAccount = this.glAccountRepository.findOneByGlCodeWithNotFoundDetection(glCode);
                     final JsonObject jsonObject = new JsonObject();
                     jsonObject.addProperty(PaymentDetailConstants.paymentTypeParamName, paymentTypeId);
                     jsonObject.addProperty("transactionAmount", transactionAmount);
                     jsonObject.addProperty("transactionDate", transactionDate);
                     jsonObject.addProperty(PaymentDetailConstants.accountNumberParamName, accountNumber);
                     jsonObject.addProperty("checkNumber", checkNumber);
+                    jsonObject.addProperty("billNumber", loanRepaymentImport.getReceiptNumber());
+                    jsonObject.addProperty("glAccountId", glAccount.getId());
                     jsonObject.addProperty(PaymentDetailConstants.bankNumberParamName, bankNumber);
                     jsonObject.addProperty(PaymentDetailConstants.receiptNumberParamName, receiptNumber);
                     jsonObject.addProperty("locale", localeAsString);

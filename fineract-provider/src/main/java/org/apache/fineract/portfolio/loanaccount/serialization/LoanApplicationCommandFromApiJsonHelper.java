@@ -56,6 +56,7 @@ import org.apache.fineract.portfolio.loanproduct.domain.AmortizationMethod;
 import org.apache.fineract.portfolio.loanproduct.domain.InterestCalculationPeriodMethod;
 import org.apache.fineract.portfolio.loanproduct.domain.InterestMethod;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProduct;
+import org.apache.fineract.portfolio.loanproduct.domain.LoanProductOwnerType;
 import org.apache.fineract.portfolio.loanproduct.exception.EqualAmortizationUnsupportedFeatureException;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccount;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -262,6 +263,23 @@ public final class LoanApplicationCommandFromApiJsonHelper {
         final BigDecimal principal = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed("principal", element);
         baseDataValidator.reset().parameter("principal").value(principal).notNull().positiveAmount();
 
+        final Boolean isBulkImport = this.fromApiJsonHelper.extractBooleanNamed("isBulkImport", element);
+        if ((isBulkImport == null || !isBulkImport) && loanProduct.getOwnerType().equals(LoanProductOwnerType.GROUP.getValue())) {
+            final Long loanCycleCompleted = this.fromApiJsonHelper.extractLongNamed(LoanApiConstants.loanCycleCompletedParamName, element);
+            baseDataValidator.reset().parameter(LoanApiConstants.loanCycleCompletedParamName).value(loanCycleCompleted).notNull();
+
+            final Long sourceOfFunds = this.fromApiJsonHelper.extractLongNamed(LoanApiConstants.sourceOfFundsParamName, element);
+            baseDataValidator.reset().parameter(LoanApiConstants.sourceOfFundsParamName).value(sourceOfFunds).notNull();
+
+            final Long position = this.fromApiJsonHelper.extractLongNamed(LoanApiConstants.positionParamName, element);
+            baseDataValidator.reset().parameter(LoanApiConstants.positionParamName).value(position).notNull();
+
+            final Long facilitator = this.fromApiJsonHelper.extractLongNamed(LoanApiConstants.facilitatorParamName, element);
+            baseDataValidator.reset().parameter(LoanApiConstants.facilitatorParamName).value(facilitator).notNull();
+
+            final Long clientType = this.fromApiJsonHelper.extractLongNamed(LoanApiConstants.clientTypeParamName, element);
+            baseDataValidator.reset().parameter(LoanApiConstants.clientTypeParamName).value(clientType).notNull();
+        }
         final String loanTermFrequencyParameterName = "loanTermFrequency";
         final Integer loanTermFrequency = this.fromApiJsonHelper.extractIntegerWithLocaleNamed(loanTermFrequencyParameterName, element);
         baseDataValidator.reset().parameter(loanTermFrequencyParameterName).value(loanTermFrequency).notNull().integerGreaterThanZero();
