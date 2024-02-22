@@ -1336,7 +1336,7 @@ public class SavingsAccountReadPlatformServiceImpl implements SavingsAccountRead
             sqlBuilder.append("totran.transaction_date as toTransferDate, totran.amount as toTransferAmount,");
             sqlBuilder.append("totran.description as toTransferDescription,");
             sqlBuilder.append("sa.id as savingsId, sa.account_no as accountNo,");
-            sqlBuilder.append("pd.payment_type_id as paymentType,pd.account_number as accountNumber,pd.check_number as checkNumber, ");
+            sqlBuilder.append("pd.payment_type_id as paymentType,coalesce(aga.name, pd.account_number) as accountNumber,pd.check_number as checkNumber, ");
             sqlBuilder.append("pd.receipt_number as receiptNumber, pd.bank_number as bankNumber,pd.routing_code as routingCode, ");
             sqlBuilder.append(
                     "sa.currency_code as currencyCode, sa.currency_digits as currencyDigits, sa.currency_multiplesof as inMultiplesOf, ");
@@ -1350,6 +1350,7 @@ public class SavingsAccountReadPlatformServiceImpl implements SavingsAccountRead
             sqlBuilder.append("left join m_account_transfer_transaction fromtran on fromtran.from_savings_transaction_id = tr.id ");
             sqlBuilder.append("left join m_account_transfer_transaction totran on totran.to_savings_transaction_id = tr.id ");
             sqlBuilder.append("left join m_payment_detail pd on tr.payment_detail_id = pd.id ");
+            sqlBuilder.append("left join acc_gl_account aga on aga.id = pd.gl_account_id ");
             sqlBuilder.append("left join m_payment_type pt on pd.payment_type_id = pt.id ");
             sqlBuilder.append(" left join m_appuser au on au.id=tr.appuser_id ");
             sqlBuilder.append(" left join m_note nt ON nt.savings_account_transaction_id=tr.id ");

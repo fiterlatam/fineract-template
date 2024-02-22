@@ -446,21 +446,6 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
                 }
             }
         }
-
-        final String query = "SELECT " + this.chequeMapper.schema() + " WHERE mbc.case_id = ? ";
-        List<ChequeData> chequeDataList = this.jdbcTemplate.query(query, this.chequeMapper, caseId);
-        int index = 0;
-        for (final GuaranteeData data : List.copyOf(guaranteeDataList)) {
-            for (final ChequeData chequeData : chequeDataList) {
-                if (!(chequeData.getStatus().getId().equals(BankChequeStatus.VOIDED.getValue().longValue())
-                        && chequeData.getGuaranteeId().equals(data.getId()))) {
-                    if (guaranteeDataList.size() > index - 1) {
-                        guaranteeDataList.remove(index);
-                    }
-                }
-            }
-            index++;
-        }
         return guaranteeDataList;
     }
 }
