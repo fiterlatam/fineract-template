@@ -20,6 +20,7 @@ package org.apache.fineract.organisation.bankcheque.service;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import java.math.BigDecimal;
 import java.nio.charset.Charset;
 import java.sql.ResultSet;
@@ -32,8 +33,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import com.google.gson.JsonObject;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Base64;
@@ -440,7 +439,7 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
                     final JsonElement data = this.fromApiJsonHelper.extractJsonObjectNamed("datos", element);
 
                     JsonObject asJsonObject = data.getAsJsonObject();
-                    asJsonObject.addProperty("locale",locale);
+                    asJsonObject.addProperty("locale", locale);
                     JsonElement withLocale = this.fromApiJsonHelper.parse(asJsonObject.toString());
 
                     final String clientNo = this.fromApiJsonHelper.extractStringNamed("numero_cliente", withLocale);
