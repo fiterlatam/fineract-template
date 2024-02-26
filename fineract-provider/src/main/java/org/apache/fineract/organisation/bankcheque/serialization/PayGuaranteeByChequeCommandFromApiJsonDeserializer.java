@@ -24,6 +24,8 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+
+import com.google.gson.JsonObject;
 import lombok.RequiredArgsConstructor;
 import org.apache.fineract.infrastructure.core.data.ApiParameterError;
 import org.apache.fineract.infrastructure.core.data.DataValidatorBuilder;
@@ -50,7 +52,10 @@ public class PayGuaranteeByChequeCommandFromApiJsonDeserializer extends Abstract
         final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
         final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors).resource("loan");
         for (int i = 0; i < jsonArray.size(); i++) {
-            final JsonElement element = jsonArray.get(i);
+            final JsonElement originalElement = jsonArray.get(i);
+            JsonObject asJsonObject = originalElement.getAsJsonObject();
+            asJsonObject.addProperty("locale", locale.toLanguageTag());
+            JsonElement element = this.fromApiJsonHelper.parse(originalElement.toString());
             final Long chequeId = this.fromApiJsonHelper.extractLongNamed(LoanApiConstants.CHEQUE_ID, element);
             baseDataValidator.reset().parameter(LoanApiConstants.CHEQUE_ID).value(chequeId).notBlank();
             final String caseId = this.fromApiJsonHelper.extractStringNamed(BankChequeApiConstants.GUARANTEE_CASE_ID, element);
@@ -59,8 +64,8 @@ public class PayGuaranteeByChequeCommandFromApiJsonDeserializer extends Abstract
             baseDataValidator.reset().parameter(BankChequeApiConstants.CLIENT_NUMBER).value(clientNo).notBlank();
             final Long guaranteeId = this.fromApiJsonHelper.extractLongNamed(BankChequeApiConstants.GUARANTEE_ID, element);
             baseDataValidator.reset().parameter(BankChequeApiConstants.GUARANTEE_ID).value(guaranteeId).notBlank();
-            final BigDecimal guaranteeAmount = this.fromApiJsonHelper.extractBigDecimalNamed(BankChequeApiConstants.GUARANTEE_AMOUNT,
-                    element, locale);
+            final BigDecimal guaranteeAmount = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed(BankChequeApiConstants.GUARANTEE_AMOUNT,
+                    element);
             baseDataValidator.reset().parameter(BankChequeApiConstants.GUARANTEE_AMOUNT).value(guaranteeAmount).notNull()
                     .notLessThanMin(BigDecimal.ZERO);
             final String guaranteeName = this.fromApiJsonHelper.extractStringNamed(BankChequeApiConstants.GUARANTEE_NAME, element);
