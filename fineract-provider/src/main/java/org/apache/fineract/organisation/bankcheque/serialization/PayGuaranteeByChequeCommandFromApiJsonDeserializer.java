@@ -20,12 +20,11 @@ package org.apache.fineract.organisation.bankcheque.serialization;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-
-import com.google.gson.JsonObject;
 import lombok.RequiredArgsConstructor;
 import org.apache.fineract.infrastructure.core.data.ApiParameterError;
 import org.apache.fineract.infrastructure.core.data.DataValidatorBuilder;
@@ -64,8 +63,8 @@ public class PayGuaranteeByChequeCommandFromApiJsonDeserializer extends Abstract
             baseDataValidator.reset().parameter(BankChequeApiConstants.CLIENT_NUMBER).value(clientNo).notBlank();
             final Long guaranteeId = this.fromApiJsonHelper.extractLongNamed(BankChequeApiConstants.GUARANTEE_ID, element);
             baseDataValidator.reset().parameter(BankChequeApiConstants.GUARANTEE_ID).value(guaranteeId).notBlank();
-            final BigDecimal guaranteeAmount = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed(BankChequeApiConstants.GUARANTEE_AMOUNT,
-                    element);
+            final BigDecimal guaranteeAmount = this.fromApiJsonHelper
+                    .extractBigDecimalWithLocaleNamed(BankChequeApiConstants.GUARANTEE_AMOUNT, element);
             baseDataValidator.reset().parameter(BankChequeApiConstants.GUARANTEE_AMOUNT).value(guaranteeAmount).notNull()
                     .notLessThanMin(BigDecimal.ZERO);
             final String guaranteeName = this.fromApiJsonHelper.extractStringNamed(BankChequeApiConstants.GUARANTEE_NAME, element);
