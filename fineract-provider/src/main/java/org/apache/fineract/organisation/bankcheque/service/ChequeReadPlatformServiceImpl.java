@@ -32,6 +32,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import com.google.gson.JsonObject;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Base64;
@@ -431,14 +433,20 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
                 JsonArray jsonArray = jsonElement.getAsJsonArray();
                 for (int i = 0; i < jsonArray.size(); i++) {
                     final JsonElement element = jsonArray.get(i);
+
                     final Long id = this.fromApiJsonHelper.extractLongNamed("id", element);
                     final String status = ObjectUtils.defaultIfNull(this.fromApiJsonHelper.extractStringNamed("estado", element),
                             "Nueva Solicitud");
                     final JsonElement data = this.fromApiJsonHelper.extractJsonObjectNamed("datos", element);
-                    final String clientNo = this.fromApiJsonHelper.extractStringNamed("numero_cliente", data);
-                    final String clientName = this.fromApiJsonHelper.extractStringNamed("name", data);
-                    final String withdrawalReason = this.fromApiJsonHelper.extractStringNamed("razon_retiro", data);
-                    final BigDecimal requestedAmount = this.fromApiJsonHelper.extractBigDecimalNamed("monto", data, reqLocale);
+
+                    JsonObject asJsonObject = data.getAsJsonObject();
+                    asJsonObject.addProperty("locale",locale);
+                    JsonElement withLocale = this.fromApiJsonHelper.parse(asJsonObject.toString());
+
+                    final String clientNo = this.fromApiJsonHelper.extractStringNamed("numero_cliente", withLocale);
+                    final String clientName = this.fromApiJsonHelper.extractStringNamed("name", withLocale);
+                    final String withdrawalReason = this.fromApiJsonHelper.extractStringNamed("razon_retiro", withLocale);
+                    final BigDecimal requestedAmount = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed("monto", withLocale);
                     final String requestedAmountString = String.valueOf(requestedAmount);
                     final GuaranteeData guarantee = GuaranteeData.builder().id(id).caseId(caseId).clientNo(clientNo).clientName(clientName)
                             .withdrawalReason(withdrawalReason).requestedAmount(requestedAmountString).status(status).build();
