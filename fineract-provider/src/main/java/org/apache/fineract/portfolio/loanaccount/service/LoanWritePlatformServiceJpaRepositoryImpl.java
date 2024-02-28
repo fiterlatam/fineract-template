@@ -1102,7 +1102,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                         final SavingsTransactionBooleanValues transactionBooleanValues = new SavingsTransactionBooleanValues(isAccountTransfer,
                                 isRegularTransaction, isApplyWithdrawFee, isInterestTransfer, isWithdrawBalance, false, false, false, false, false);
                         final SavingsAccountTransaction withdrawal = this.savingsAccountDomainService.handleWithdrawal(fromSavingsAccount, fmt, transactionDate,
-                                transactionAmount, paymentDetail, transactionBooleanValues, backdatedTxnsAllowedTill);
+                                holdTransaction.getAmount(), paymentDetail, transactionBooleanValues, backdatedTxnsAllowedTill);
                         final Note note = Note.savingsTransactionNote(fromSavingsAccount, withdrawal, "Guarantias Withdrawal");
                         this.noteRepository.save(note);
                     }
