@@ -1040,8 +1040,9 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
         // FBR-437 release gurantee
         final boolean adjustGuarantee = command.booleanPrimitiveValueOfParameterNamed("adjustGuarantee");
+        BigDecimal totalOutstanding = loan.getSummary().getTotalOutstanding();
 
-        if (adjustGuarantee) {
+        if (adjustGuarantee || totalOutstanding.compareTo(BigDecimal.ZERO)<=0) {
             List<SavingsAccountTransaction> savingsAccountTransactions = this.savingsAccountTransactionRepository
                     .findAllTransactionByLoanId(loanId);
 
@@ -1065,14 +1066,15 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 assemblerCommand.setJsonCommand(requestData.toString());
 
                 // if guarantee hold amount is not greater than outstanding loan amount we cant release
-                BigDecimal totalOutstanding = loan.getSummary().getTotalOutstanding();
-                if (holdTransaction.getAmount().compareTo(totalOutstanding) < 0) {
+                if (holdTransaction.getAmount().compareTo(totalOutstanding) < 0 && adjustGuarantee) {
                     throw new PaymentNotEnoughForAdjustmentException(transactionAmount, totalOutstanding, holdTransaction.getAmount());
                 }
-
+                //release loan guarantee to make payment
                 this.savingsAccountWritePlatformService.releaseLoanGuarantee(loanId, command, transactionDate, holdTransaction);
 
+
                 if (totalOutstanding.compareTo(BigDecimal.ZERO) > 0) {
+
                     // repay the loan balance with transfer
 
                     // withdraw from savings account
@@ -1088,6 +1090,11 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                     final AccountTransferDetails accountTransferDetails = this.accountTransferAssembler.assembleSavingsToLoanTransfer(
                             assemblerCommand, fromSavingsAccount, loan, withdrawal, loanRepaymentTransaction);
                     this.accountTransferDetailRepository.saveAndFlush(accountTransferDetails);
+                }else{
+                    if (adjustGuarantee) {
+                        // release the hold amount
+                        this.savingsAccountWritePlatformService.withdrawal(fromSavingsAccount.getId(), command);
+                    }
                 }
             }
 

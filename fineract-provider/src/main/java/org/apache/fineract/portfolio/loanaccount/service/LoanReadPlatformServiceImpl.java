@@ -2460,8 +2460,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
             sqlBuilder.append(
                     "THEN (select max(tr.transaction_date) as transaction_date from m_loan_transaction tr where tr.loan_id = l.id AND tr.transaction_type_enum = ? AND tr.is_reversed = false) ");
             sqlBuilder.append("ELSE ls.dueDate END) as transactionDate, ");
-            sqlBuilder.append(
-                    "ls.principal_amount - coalesce(ls.principal_writtenoff_derived, 0) - coalesce(ls.principal_completed_derived, 0) as principalDue, ");
+            sqlBuilder.append("ls.principal_amount - coalesce(ls.principal_writtenoff_derived, 0) - coalesce(ls.principal_completed_derived, 0) as principalDue, ");
+            sqlBuilder.append("mbc.required_guarantee_amount as collateralAmount, ");
             sqlBuilder.append(
                     "ls.interest_amount - coalesce(ls.interest_completed_derived, 0) - coalesce(ls.interest_waived_derived, 0) - coalesce(ls.interest_writtenoff_derived, 0) as interestDue, ");
             sqlBuilder.append(
@@ -2477,6 +2477,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
             sqlBuilder.append("FROM m_loan l ");
             sqlBuilder.append("JOIN m_currency rc on rc." + sqlGenerator.escape("code") + " = l.currency_code ");
             sqlBuilder.append("JOIN m_loan_repayment_schedule ls ON ls.loan_id = l.id AND ls.completed_derived = false ");
+            sqlBuilder.append("LEFT JOIN m_bank_check mbc ON mbc.id = l.cheque_id ");
             sqlBuilder.append(
                     "JOIN((SELECT ls.loan_id, ls.duedate as datedue FROM m_loan_repayment_schedule ls WHERE ls.loan_id = ? and ls.completed_derived = false ORDER BY ls.duedate LIMIT 1)) asq on asq.loan_id = ls.loan_id ");
             sqlBuilder.append("AND asq.datedue = ls.duedate ");
@@ -2495,6 +2496,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
             final BigDecimal penaltyDue = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "penaltyDue");
             final BigDecimal totalDue = principalPortion.add(interestDue).add(feeDue).add(penaltyDue);
             final BigDecimal outstandingLoanBalance = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "totalOutstandingBalance");
+            final BigDecimal collateralAmount = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "collateralAmount");
             final Integer installmentNumber = JdbcSupport.getInteger(rs, "installmentNumber");
             final BigDecimal unrecognizedIncomePortion = null;
             final BigDecimal overPaymentPortion = null;
@@ -2514,6 +2516,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                     externalId, transfer, fixedEmiAmount, outstandingLoanBalance, unrecognizedIncomePortion, manuallyReversed);
             loanTransactionData.setInstallmentNumber(installmentNumber);
             loanTransactionData.setNumberOfRepayments(numberOfRepayments);
+            loanTransactionData.setCollateralAmount(collateralAmount);
             return loanTransactionData;
         }
 
