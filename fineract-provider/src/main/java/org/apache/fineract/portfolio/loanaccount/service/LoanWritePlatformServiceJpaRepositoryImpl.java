@@ -1092,8 +1092,19 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                     this.accountTransferDetailRepository.saveAndFlush(accountTransferDetails);
                 }else{
                     if (adjustGuarantee) {
-                        // release the hold amount
-                        this.savingsAccountWritePlatformService.withdrawal(fromSavingsAccount.getId(), command);
+                        // withdraw the hold amount
+                        isAccountTransfer = false;
+                        final boolean backdatedTxnsAllowedTill = this.configurationDomainService.retrievePivotDateConfig();
+                        final boolean isRegularTransaction = true;
+                        final boolean isApplyWithdrawFee = true;
+                        final boolean isInterestTransfer = false;
+                        final boolean isWithdrawBalance = false;
+                        final SavingsTransactionBooleanValues transactionBooleanValues = new SavingsTransactionBooleanValues(isAccountTransfer,
+                                isRegularTransaction, isApplyWithdrawFee, isInterestTransfer, isWithdrawBalance, false, false, false, false, false);
+                        final SavingsAccountTransaction withdrawal = this.savingsAccountDomainService.handleWithdrawal(fromSavingsAccount, fmt, transactionDate,
+                                transactionAmount, paymentDetail, transactionBooleanValues, backdatedTxnsAllowedTill);
+                        final Note note = Note.savingsTransactionNote(fromSavingsAccount, withdrawal, "Guarantias Withdrawal");
+                        this.noteRepository.save(note);
                     }
                 }
             }
