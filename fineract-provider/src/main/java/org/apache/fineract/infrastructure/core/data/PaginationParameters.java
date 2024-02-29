@@ -19,6 +19,7 @@
 package org.apache.fineract.infrastructure.core.data;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.fineract.infrastructure.security.utils.SQLInjectionValidator;
 
 /**
  * <p>
@@ -105,6 +106,9 @@ public final class PaginationParameters {
 
     public String orderBySql() {
         final StringBuilder sql = new StringBuilder();
+        // validate against sql injection
+        SQLInjectionValidator.validateSQLInput(this.getOrderBy());
+        SQLInjectionValidator.validateSQLInput(this.getSortOrder());
 
         if (this.isOrderByRequested()) {
             sql.append(" order by ").append(this.getOrderBy());
