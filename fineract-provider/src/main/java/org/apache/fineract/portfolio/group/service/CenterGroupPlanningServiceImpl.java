@@ -178,7 +178,7 @@ public class CenterGroupPlanningServiceImpl implements CenterGroupPlanningServic
                 		m_loan_repayment_schedule lrs2
                 		INNER JOIN m_loan l2 ON l2.id = lrs2.loan_id
                 		INNER JOIN m_product_loan lp2 ON lp2.id = l2.product_id
-                		LEFT JOIN m_group_client gc2 ON l2.client_id = gc2.client_id
+                		INNER JOIN m_group_client gc2 ON l2.client_id = gc2.client_id
                 		LEFT JOIN m_group_prequalification_relationship pgrel ON pgrel.group_id = gc2.group_id
                 		LEFT JOIN m_prequalification_group preq ON preq.id = pgrel.prequalification_id AND preq.product_id = l2.product_id
                 	WHERE
@@ -207,7 +207,7 @@ public class CenterGroupPlanningServiceImpl implements CenterGroupPlanningServic
                 		m_loan_repayment_schedule lrs2
                 		INNER JOIN m_loan l2 ON l2.id = lrs2.loan_id
                 		INNER JOIN m_product_loan lp2 ON lp2.id = l2.product_id
-                		LEFT JOIN m_group_client gc2 ON l2.client_id = gc2.client_id
+                		INNER JOIN m_group_client gc2 ON l2.client_id = gc2.client_id
                 	    LEFT JOIN m_group_prequalification_relationship pgrel ON pgrel.group_id = gc2.group_id
                 		LEFT JOIN m_prequalification_group preq ON preq.id = pgrel.prequalification_id AND preq.product_id = l2.product_id
                 	WHERE
