@@ -198,12 +198,12 @@
         </sql>
     </changeSet>
 
-    <changeSet id="4" author="fineract">
+    <changeSet id="5" author="fineract">
         <sql>
             <![CDATA[
             UPDATE stretchy_report
             SET report_sql = "SELECT
-                IFNULL('${submittedOnEndDate}', 'N/A') AS 'Presentado hasta la fecha',
+                IFNULL('${submittedOnEndDate}', 'N/A') AS 'Fecha',
                 COALESCE(agency_office.office_code, 'IND') AS 'Agencia',
                 ml.id AS 'ID de préstamo',
                 IFNULL(ml.contract, '') AS 'Contrato de Prestamo No',
@@ -227,7 +227,7 @@
                 0 AS 'Pago por Adelantado',
                 0 AS 'Int Prest Dif Recuperacion',
                 ml.approvedon_date AS 'Fecha procesado',
-                ml.approvedon_date AS 'Fecha Aprovado',
+                ml.approvedon_date AS 'Fecha Aprobado',
                 ml.approved_principal AS 'Monto Aprobado',
                 ml.maturedon_date AS 'Fecha Vencimiento',
                 ml.number_of_repayments AS 'No de Cuotas',
