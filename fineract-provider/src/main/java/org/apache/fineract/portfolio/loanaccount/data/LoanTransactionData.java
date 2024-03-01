@@ -89,6 +89,7 @@ public class LoanTransactionData {
     private List<LoanRepaymentScheduleInstallmentData> loanRepaymentScheduleInstallments;
     private String note;
     private List<BankAccountData> bankAccounts;
+    private BigDecimal collateralAmount;
 
     public static LoanTransactionData importInstance(BigDecimal repaymentAmount, LocalDate lastRepaymentDate, Long repaymentTypeId,
             Integer rowIndex, String locale, String dateFormat) {
@@ -182,6 +183,13 @@ public class LoanTransactionData {
     public void setNumberOfRepayments(Integer numberOfRepayments) {
         this.numberOfRepayments = numberOfRepayments;
     }
+    public void setCollateralAmount(BigDecimal collateralAmount) {
+        this.collateralAmount = collateralAmount;
+    }
+
+    public BigDecimal getCollateralAmount() {
+        return this.collateralAmount;
+    }
 
     public Integer getNumberOfRepayments() {
         return numberOfRepayments;
@@ -211,6 +219,7 @@ public class LoanTransactionData {
                 loanTransactionData.manuallyReversed);
         loanTransactionTemplate.setInstallmentNumber(loanTransactionData.getInstallmentNumber());
         loanTransactionTemplate.setNumberOfRepayments(loanTransactionData.getNumberOfRepayments());
+        loanTransactionTemplate.setCollateralAmount(loanTransactionData.getCollateralAmount());
         return loanTransactionTemplate;
 
     }
