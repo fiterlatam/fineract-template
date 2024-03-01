@@ -25,6 +25,9 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.apache.fineract.accounting.glaccount.domain.GLAccount;
+import org.apache.fineract.accounting.glaccount.domain.GLAccountRepositoryWrapper;
 import org.apache.fineract.commands.domain.CommandWrapper;
 import org.apache.fineract.commands.service.CommandWrapperBuilder;
 import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformService;
@@ -58,11 +61,14 @@ public class LoanRepaymentImportHandler implements ImportHandler {
 
     private final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService;
 
+    private final GLAccountRepositoryWrapper glAccountRepositoryWrapper;
+
     @Autowired
     public LoanRepaymentImportHandler(final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService,
-            final LoanReadPlatformService loanReadPlatformService) {
+            final LoanReadPlatformService loanReadPlatformService, final GLAccountRepositoryWrapper glAccountRepositoryWrapper) {
         this.commandsSourceWritePlatformService = commandsSourceWritePlatformService;
         this.loanReadPlatformService = loanReadPlatformService;
+        this.glAccountRepositoryWrapper = glAccountRepositoryWrapper;
     }
 
     @Override
@@ -120,12 +126,15 @@ public class LoanRepaymentImportHandler implements ImportHandler {
         String errorMessage = "";
         GsonBuilder gsonBuilder = GoogleGsonSerializerHelper.createGsonBuilder();
         gsonBuilder.registerTypeAdapter(LocalDate.class, new DateSerializer(dateFormat));
+        GLAccount account = this.glAccountRepositoryWrapper.findOneByGlCodeWithNotFoundDetection("1120-1");
 
         for (LoanTransactionData loanRepayment : loanRepayments) {
             try {
 
                 JsonObject loanRepaymentJsonob = gsonBuilder.create().toJsonTree(loanRepayment).getAsJsonObject();
                 loanRepaymentJsonob.remove("manuallyReversed");
+                loanRepaymentJsonob.addProperty("glAccountId", account.getId());
+                loanRepaymentJsonob.addProperty("billNumber", "123456789");
                 String payload = loanRepaymentJsonob.toString();
                 final CommandWrapper commandRequest = new CommandWrapperBuilder() //
                         .loanRepaymentTransaction(loanRepayment.getAccountId()) //

@@ -143,4 +143,5 @@
     <include file="parts/0123_FBR_576_update_Porcentaje_de_Incremento.xml" relativeToChangelogFile="true"/>
     <include file="parts/0124_FBR_588_Personalizar_asientos_contables.xml" relativeToChangelogFile="true"/>
     <include file="parts/0125_FBR_599_modify_client_input_data.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0126_FBR_595_disable_interest_rate_field_on_loan_products.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
