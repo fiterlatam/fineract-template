@@ -294,7 +294,7 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
                 validateParentGroupRulesBeforeClientActivation(newClient);
                 runEntityDatatableCheck(newClient.getId(), newClient.getLegalForm());
                 final CommandWrapper commandWrapper = new CommandWrapperBuilder().activateClient(null).build();
-                rollbackTransaction = this.commandProcessingService.validateRollbackCommand(commandWrapper, currentUser);
+                rollbackTransaction = this.commandProcessingService.validateCommand(commandWrapper, currentUser);
             }
 
             this.clientRepository.saveAndFlush(newClient);

@@ -35,7 +35,6 @@ import org.apache.fineract.infrastructure.core.domain.FineractPlatformTenant;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.infrastructure.event.external.repository.ExternalEventRepository;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -70,11 +69,6 @@ public class PurgeExternalEventsTaskletTest {
         underTest = new PurgeExternalEventsTasklet(repository, configurationDomainService);
     }
 
-    @AfterEach
-    public void tearDown() {
-        ThreadLocalContextUtil.reset();
-    }
-
     @Test
     public void givenEventsForPurgeWhenTaskExecutionThenEventsPurgeForDaysCriteria() {
         // given
@@ -101,4 +95,5 @@ public class PurgeExternalEventsTaskletTest {
         // then
         assertEquals(RepeatStatus.FINISHED, resultStatus);
     }
+
 }

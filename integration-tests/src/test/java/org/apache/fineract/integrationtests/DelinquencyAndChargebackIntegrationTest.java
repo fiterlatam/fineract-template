@@ -118,8 +118,7 @@ public class DelinquencyAndChargebackIntegrationTest {
 
             // Create Loan Account
             final Integer loanId = createLoanAccount(loanTransactionHelper, clientId.toString(),
-                    getLoanProductsProductResponse.getId().toString(), operationDate, "12",
-                    loanProductTestBuilder.getTransactionProcessingStrategyCode());
+                    getLoanProductsProductResponse.getId().toString(), operationDate, "12");
 
             // Move the Business date 1 month to apply the first repayment
             businessDate = businessDate.plusMonths(1);
@@ -239,8 +238,7 @@ public class DelinquencyAndChargebackIntegrationTest {
 
             // Create Loan Account
             final Integer loanId = createLoanAccount(loanTransactionHelper, clientId.toString(),
-                    getLoanProductsProductResponse.getId().toString(), operationDate, "3",
-                    loanProductTestBuilder.getTransactionProcessingStrategyCode());
+                    getLoanProductsProductResponse.getId().toString(), operationDate, "3");
 
             // Move the Business date 1 month to apply the first repayment
             businessDate = businessDate.plusMonths(1);
@@ -348,7 +346,7 @@ public class DelinquencyAndChargebackIntegrationTest {
     }
 
     private Integer createLoanAccount(final LoanTransactionHelper loanTransactionHelper, final String clientId, final String loanProductId,
-            final String operationDate, final String periods, String repaymentStrategy) {
+            final String operationDate, final String periods) {
         final String loanApplicationJSON = new LoanApplicationTestBuilder().withPrincipal(principalAmount).withLoanTermFrequency(periods)
                 .withLoanTermFrequencyAsMonths().withNumberOfRepayments(periods).withRepaymentEveryAfter("1")
                 .withRepaymentFrequencyTypeAsMonths() //
@@ -356,7 +354,6 @@ public class DelinquencyAndChargebackIntegrationTest {
                 .withExpectedDisbursementDate(operationDate) //
                 .withInterestTypeAsDecliningBalance() //
                 .withSubmittedOnDate(operationDate) //
-                .withRepaymentStrategy(repaymentStrategy) //
                 .build(clientId, loanProductId, null);
         final Integer loanId = loanTransactionHelper.getLoanId(loanApplicationJSON);
         loanTransactionHelper.approveLoan(operationDate, principalAmount, loanId, null);

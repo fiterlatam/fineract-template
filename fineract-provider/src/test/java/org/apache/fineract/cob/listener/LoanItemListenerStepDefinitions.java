@@ -66,11 +66,7 @@ public class LoanItemListenerStepDefinitions implements En {
         });
 
         When("LoanItemListener.onReadError method executed", () -> {
-            try {
-                loanItemListener.onReadError(exception);
-            } finally {
-                ThreadLocalContextUtil.reset();
-            }
+            loanItemListener.onReadError(exception);
         });
 
         Then("LoanItemListener.onReadError result should match", () -> {
@@ -91,11 +87,7 @@ public class LoanItemListenerStepDefinitions implements En {
         });
 
         When("LoanItemListener.onProcessError method executed", () -> {
-            try {
-                loanItemListener.onProcessError(loan, exception);
-            } finally {
-                ThreadLocalContextUtil.reset();
-            }
+            loanItemListener.onProcessError(loan, exception);
         });
 
         Then("LoanItemListener.onProcessError result should match", () -> {
@@ -116,11 +108,7 @@ public class LoanItemListenerStepDefinitions implements En {
         });
 
         When("LoanItemListener.onWriteError method executed", () -> {
-            try {
-                loanItemListener.onWriteError(exception, new Chunk<>(List.of(loan)));
-            } finally {
-                ThreadLocalContextUtil.reset();
-            }
+            loanItemListener.onWriteError(exception, new Chunk<>(List.of(loan)));
         });
 
         Then("LoanItemListener.onWriteError result should match", () -> {

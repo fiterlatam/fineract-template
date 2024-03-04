@@ -28,7 +28,6 @@ import java.util.Optional;
 import org.apache.fineract.infrastructure.core.domain.FineractPlatformTenant;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -37,11 +36,6 @@ public class CustomDateTimeProviderTest {
     @BeforeEach
     public void init() {
         ThreadLocalContextUtil.setTenant(new FineractPlatformTenant(1L, "default", "Default", "Asia/Kolkata", null));
-    }
-
-    @AfterEach
-    public void tearDown() {
-        ThreadLocalContextUtil.reset();
     }
 
     @Test
@@ -71,4 +65,5 @@ public class CustomDateTimeProviderTest {
         assertEquals(now.getHour(), ((OffsetDateTime) dateTimeProvider.get()).getHour());
         assertEquals(now.getMinute(), ((OffsetDateTime) dateTimeProvider.get()).getMinute());
     }
+
 }

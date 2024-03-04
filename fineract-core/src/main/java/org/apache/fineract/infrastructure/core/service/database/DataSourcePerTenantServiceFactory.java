@@ -22,7 +22,6 @@ import static org.apache.fineract.infrastructure.core.domain.FineractPlatformTen
 import static org.apache.fineract.infrastructure.core.domain.FineractPlatformTenantConnection.toProtocol;
 
 import com.zaxxer.hikari.HikariConfig;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import javax.sql.DataSource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -61,7 +60,6 @@ public class DataSourcePerTenantServiceFactory {
         this.databasePasswordEncryptor = databasePasswordEncryptor;
     }
 
-    @SuppressFBWarnings(value = "SLF4J_SIGN_ONLY_FORMAT")
     public DataSource createNewDataSourceFor(final FineractPlatformTenantConnection tenantConnection) {
         if (!databasePasswordEncryptor.isMasterPasswordHashValid(tenantConnection.getMasterPasswordHash())) {
             throw new IllegalArgumentException(

@@ -25,8 +25,6 @@ public interface ConfigurationDomainService {
 
     boolean isMakerCheckerEnabledForTask(String taskPermissionCode);
 
-    boolean isSameMakerCheckerEnabled();
-
     boolean isAmazonS3Enabled();
 
     boolean isRescheduleFutureRepaymentsEnabled();
@@ -140,7 +138,5 @@ public interface ConfigurationDomainService {
     String retrieveReportExportS3FolderName();
 
     String getAccrualDateConfigForCharge();
-
-    String getNextPaymentDateConfigForLoan();
 
 }

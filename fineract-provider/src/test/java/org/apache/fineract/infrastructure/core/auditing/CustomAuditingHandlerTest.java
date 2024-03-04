@@ -33,7 +33,6 @@ import org.apache.fineract.infrastructure.core.domain.AbstractAuditableWithUTCDa
 import org.apache.fineract.infrastructure.core.domain.FineractPlatformTenant;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -47,11 +46,6 @@ public class CustomAuditingHandlerTest {
         ThreadLocalContextUtil.setTenant(new FineractPlatformTenant(1L, "default", "Default", "Asia/Kolkata", null));
         ThreadLocalContextUtil
                 .setBusinessDates(new HashMap<>(Map.of(BusinessDateType.BUSINESS_DATE, LocalDate.now(ZoneId.of("Asia/Kolkata")))));
-    }
-
-    @AfterEach
-    public void tearDown() {
-        ThreadLocalContextUtil.reset();
     }
 
     @Test
@@ -117,4 +111,5 @@ public class CustomAuditingHandlerTest {
         assertEquals(now.getHour(), targetObject.getCreatedDate().get().getHour());
         assertEquals(now.getMinute(), targetObject.getCreatedDate().get().getMinute());
     }
+
 }

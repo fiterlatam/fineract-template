@@ -54,7 +54,6 @@ import org.apache.fineract.investor.service.AccountingService;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanSummary;
 import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -89,11 +88,6 @@ public class LoanAccountOwnerTransferBusinessStepTest {
         ThreadLocalContextUtil.setBusinessDates(new HashMap<>(Map.of(BusinessDateType.BUSINESS_DATE, actualDate)));
         underTest = new LoanAccountOwnerTransferBusinessStep(externalAssetOwnerTransferRepository,
                 externalAssetOwnerTransferLoanMappingRepository, accountingService, businessEventNotifierService);
-    }
-
-    @AfterEach
-    public void tearDown() {
-        ThreadLocalContextUtil.reset();
     }
 
     @Test

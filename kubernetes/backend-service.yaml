@@ -1,0 +1,30 @@
+---
+# Source: fiter-app/charts/fineract/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: fineract
+  namespace: fineract-dev
+  labels:
+    app.kubernetes.io/name: fineract
+    app.kubernetes.io/instance: fineract
+    app_name: fineract
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8443
+      targetPort: 8443
+      protocol: TCP
+      name: job-port
+    - port: 8080
+      targetPort: 8080
+      protocol: TCP
+      name: http
+    - port: 9464
+      targetPort: 9464
+      protocol: TCP
+      name: metrics
+  selector:
+    app.kubernetes.io/name: fineract
+    app.kubernetes.io/instance: fineract
+    app_name: fineract

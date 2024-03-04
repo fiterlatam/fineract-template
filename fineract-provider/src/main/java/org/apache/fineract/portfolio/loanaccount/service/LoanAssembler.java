@@ -34,13 +34,11 @@ import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDoma
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.infrastructure.core.domain.ExternalId;
-import org.apache.fineract.infrastructure.core.exception.GeneralPlatformDomainRuleException;
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
 import org.apache.fineract.infrastructure.core.service.ExternalIdFactory;
 import org.apache.fineract.organisation.holiday.domain.Holiday;
 import org.apache.fineract.organisation.holiday.domain.HolidayRepository;
 import org.apache.fineract.organisation.holiday.domain.HolidayStatusType;
-import org.apache.fineract.organisation.monetary.exception.InvalidCurrencyException;
 import org.apache.fineract.organisation.staff.domain.Staff;
 import org.apache.fineract.organisation.staff.domain.StaffRepository;
 import org.apache.fineract.organisation.staff.exception.StaffNotFoundException;
@@ -66,7 +64,6 @@ import org.apache.fineract.portfolio.loanaccount.api.LoanApiConstants;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanCharge;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanCollateralManagement;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanCreditAllocationRule;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanDisbursementDetails;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanLifecycleStateMachine;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanPaymentAllocationRule;
@@ -80,12 +77,11 @@ import org.apache.fineract.portfolio.loanaccount.exception.MultiDisbursementData
 import org.apache.fineract.portfolio.loanaccount.exception.MultiDisbursementDataRequiredException;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanApplicationTerms;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleModel;
-import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleType;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.service.LoanScheduleAssembler;
-import org.apache.fineract.portfolio.loanproduct.LoanProductConstants;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProduct;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductRelatedDetail;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductRepository;
+import org.apache.fineract.portfolio.loanproduct.exception.InvalidCurrencyException;
 import org.apache.fineract.portfolio.loanproduct.exception.LinkedAccountRequiredException;
 import org.apache.fineract.portfolio.loanproduct.exception.LoanProductNotFoundException;
 import org.apache.fineract.portfolio.rate.domain.Rate;
@@ -252,23 +248,6 @@ public class LoanAssembler {
         final Boolean isFloatingInterestRate = this.fromApiJsonHelper
                 .extractBooleanNamed(LoanApiConstants.isFloatingInterestRateParameterName, element);
 
-        // PROGRESSIVE: Repayment strategy MUST be only "advanced payment allocation"
-        final LoanScheduleType loanScheduleType = loanProduct.getLoanProductRelatedDetail().getLoanScheduleType();
-        if (loanScheduleType.equals(LoanScheduleType.PROGRESSIVE)) {
-            if (!transactionProcessingStrategyCode.equals(LoanProductConstants.ADVANCED_PAYMENT_ALLOCATION_STRATEGY)) {
-                throw new GeneralPlatformDomainRuleException(
-                        "error.msg.loan.repayment.strategy.can.not.be.different.than.advanced.payment.allocation",
-                        "Loan repayment strategy can not be different than Advanced Payment Allocation");
-            }
-            // CUMULATIVE: Repayment strategy CANNOT be "advanced payment allocation"
-        } else if (loanScheduleType.equals(LoanScheduleType.CUMULATIVE)) {
-            if (transactionProcessingStrategyCode.equals(LoanProductConstants.ADVANCED_PAYMENT_ALLOCATION_STRATEGY)) {
-                throw new GeneralPlatformDomainRuleException(
-                        "error.msg.loan.repayment.strategy.can.not.be.equal.to.advanced.payment.allocation",
-                        "Loan repayment strategy can not be equal to Advanced Payment Allocation");
-            }
-        }
-
         if (clientId != null) {
             client = this.clientRepository.findOneWithNotFoundDetection(clientId);
             if (client.isNotActive()) {
@@ -391,12 +370,6 @@ public class LoanAssembler {
                             r.getFutureInstallmentAllocationRule()))
                     .toList();
             loanApplication.setPaymentAllocationRules(loanPaymentAllocationRules);
-
-            if (loanProduct.getCreditAllocationRules() != null && loanProduct.getCreditAllocationRules().size() > 0) {
-                List<LoanCreditAllocationRule> loanCreditAllocationRules = loanProduct.getCreditAllocationRules().stream()
-                        .map(r -> new LoanCreditAllocationRule(loanApplication, r.getTransactionType(), r.getAllocationTypes())).toList();
-                loanApplication.setCreditAllocationRules(loanCreditAllocationRules);
-            }
         }
     }
 }

@@ -105,7 +105,6 @@ public class LoanDelinquencyDomainServiceTest {
 
     @AfterEach
     public void deregister() {
-        ThreadLocalContextUtil.reset();
         moneyHelperStatic.close();
     }
 

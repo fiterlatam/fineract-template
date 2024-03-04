@@ -89,12 +89,24 @@ public class CommandSourceServiceTest {
 
     @Test
     public void testCreateFromExisting() {
+        CommandWrapper wrapper = CommandWrapper.wrap("act", "ent", 1L, 1L);
         long commandId = 1L;
+        JsonCommand jsonCommand = JsonCommand.fromExistingCommand(commandId, "", null, null, null, 1L, null, null, null, null, null, null,
+                null, null, null, null, null);
         CommandSource commandMock = Mockito.mock(CommandSource.class);
+        Mockito.when(commandSourceRepository.saveAndFlush(commandMock)).thenReturn(commandMock);
         Mockito.when(commandSourceRepository.findById(commandId)).thenReturn(Optional.of(commandMock));
+        AppUser appUser = Mockito.mock(AppUser.class);
 
-        CommandSource actual = underTest.getCommandSource(commandId);
-        Assertions.assertEquals(commandMock, actual);
+        ThreadLocalContextUtil.setTenant(new FineractPlatformTenant(1L, "t1", "n1", ZoneId.systemDefault().toString(), null));
+
+        CommandSource actual = underTest.saveInitialNewTransaction(wrapper, jsonCommand, appUser, "idk");
+
+        ArgumentCaptor<CommandSource> commandSourceArgumentCaptor = ArgumentCaptor.forClass(CommandSource.class);
+        Mockito.verify(commandSourceRepository).saveAndFlush(commandSourceArgumentCaptor.capture());
+
+        CommandSource captured = commandSourceArgumentCaptor.getValue();
+        Assertions.assertEquals(actual, captured);
     }
 
     @Test

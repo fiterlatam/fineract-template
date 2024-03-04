@@ -43,7 +43,6 @@ import org.apache.fineract.infrastructure.event.business.service.BusinessEventNo
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleInstallment;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProduct;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -68,11 +67,6 @@ public class CheckLoanRepaymentOverdueBusinessStepTest {
         ThreadLocalContextUtil
                 .setBusinessDates(new HashMap<>(Map.of(BusinessDateType.BUSINESS_DATE, LocalDate.now(ZoneId.systemDefault()))));
         underTest = new CheckLoanRepaymentOverdueBusinessStep(configurationDomainService, businessEventNotifierService);
-    }
-
-    @AfterEach
-    public void tearDown() {
-        ThreadLocalContextUtil.reset();
     }
 
     @Test
@@ -175,4 +169,5 @@ public class CheckLoanRepaymentOverdueBusinessStepTest {
         assertEquals(repaymentInstallment, loanPayloadForEvent);
         assertEquals(processedLoan, loanForProcessing);
     }
+
 }

@@ -495,11 +495,6 @@ public class ExternalEventConfigurationHelper {
         loanAccountDelinquencyPauseChangedBusinessEvent.put("enabled", false);
         defaults.add(loanAccountDelinquencyPauseChangedBusinessEvent);
 
-        Map<String, Object> loanAccountCustomSnapshotBusinessEvent = new HashMap<>();
-        loanAccountCustomSnapshotBusinessEvent.put("type", "LoanAccountCustomSnapshotBusinessEvent");
-        loanAccountCustomSnapshotBusinessEvent.put("enabled", false);
-        defaults.add(loanAccountCustomSnapshotBusinessEvent);
-
         return defaults;
 
     }

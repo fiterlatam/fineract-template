@@ -100,7 +100,6 @@ import org.apache.poi.ss.usermodel.Workbook;
 public class LoanTransactionHelper extends IntegrationTest {
 
     public static final String DATE_TIME_FORMAT = "dd MMMM yyyy HH:mm";
-    private static final String LOAN_PRODUCTS_URL = "/fineract-provider/api/v1/loanproducts";
     private static final String CREATE_LOAN_PRODUCT_URL = "/fineract-provider/api/v1/loanproducts?" + Utils.TENANT_IDENTIFIER;
     private static final String APPLY_LOAN_URL = "/fineract-provider/api/v1/loans?" + Utils.TENANT_IDENTIFIER;
     private static final String LOAN_ACCOUNT_URL = "/fineract-provider/api/v1/loans";
@@ -742,11 +741,6 @@ public class LoanTransactionHelper extends IntegrationTest {
     public PostLoansLoanIdTransactionsResponse reverseLoanTransaction(final Long loanId, final String transactionExternalId,
             final PostLoansLoanIdTransactionsTransactionIdRequest request) {
         return ok(fineract().loanTransactions.adjustLoanTransaction1(loanId, transactionExternalId, request, "undo"));
-    }
-
-    public PostLoansLoanIdTransactionsResponse chargebackLoanTransaction(final Long loanId, final Long transactionId,
-            final PostLoansLoanIdTransactionsTransactionIdRequest request) {
-        return ok(fineract().loanTransactions.adjustLoanTransaction(loanId, transactionId, request, "chargeback"));
     }
 
     public PostLoansLoanIdTransactionsResponse chargebackLoanTransaction(final String loanExternalId, final Long transactionId,
@@ -1825,10 +1819,6 @@ public class LoanTransactionHelper extends IntegrationTest {
         return ok(fineract().loans.calculateLoanScheduleOrSubmitLoanApplication(request, null));
     }
 
-    public void applyLoanWithError(PostLoansRequest request, Integer httpStatus) {
-        assertThat(fineract().loans.calculateLoanScheduleOrSubmitLoanApplication(request, null)).hasHttpStatus(httpStatus);
-    }
-
     public PostLoansLoanIdResponse approveLoan(String loanExternalId, PostLoansLoanIdRequest request) {
         return ok(fineract().loans.stateTransitions1(loanExternalId, request, "approve"));
     }
@@ -1981,10 +1971,4 @@ public class LoanTransactionHelper extends IntegrationTest {
         final String ADD_CHARGES_URL = LOAN_ACCOUNT_URL + "/" + loanId + "/charges?" + Utils.TENANT_IDENTIFIER;
         return Utils.performServerPost(requestSpec, responseSpec, ADD_CHARGES_URL, request, jsonAttributeToGetBack);
     }
-
-    public Object updateLoanProduct(final Long loanProductId, final String request) {
-        final String UPDATE_LOAN_PRODUCT_URL = LOAN_PRODUCTS_URL + "/" + loanProductId + "?" + Utils.TENANT_IDENTIFIER;
-        return Utils.performServerPut(requestSpec, responseSpec, UPDATE_LOAN_PRODUCT_URL, request, null);
-    }
-
 }

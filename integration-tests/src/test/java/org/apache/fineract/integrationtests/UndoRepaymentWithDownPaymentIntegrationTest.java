@@ -18,7 +18,6 @@
  */
 package org.apache.fineract.integrationtests;
 
-import static org.apache.fineract.portfolio.loanaccount.domain.transactionprocessor.impl.AdvancedPaymentScheduleTransactionProcessor.ADVANCED_PAYMENT_ALLOCATION_STRATEGY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -347,8 +346,7 @@ public class UndoRepaymentWithDownPaymentIntegrationTest {
                 .withRepaymentFrequencyTypeAsMonths().withInterestRatePerPeriod(interestRate).withInterestTypeAsFlatBalance()
                 .withAmortizationTypeAsEqualPrincipalPayments().withInterestCalculationPeriodTypeSameAsRepaymentPeriod()
                 .withExpectedDisbursementDate("03 September 2022").withSubmittedOnDate("01 September 2022").withLoanType("individual")
-                .withRepaymentStrategy(ADVANCED_PAYMENT_ALLOCATION_STRATEGY).withExternalId(externalId)
-                .build(clientID.toString(), loanProductID.toString(), null);
+                .withExternalId(externalId).build(clientID.toString(), loanProductID.toString(), null);
 
         final Integer loanId = loanTransactionHelper.getLoanId(loanApplicationJSON);
         loanTransactionHelper.approveLoan("02 September 2022", "1000", loanId, null);

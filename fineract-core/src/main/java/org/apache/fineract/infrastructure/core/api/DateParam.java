@@ -18,6 +18,7 @@
  */
 package org.apache.fineract.infrastructure.core.api;
 
+import jakarta.ws.rs.WebApplicationException;
 import java.time.LocalDate;
 import java.util.Locale;
 import org.apache.fineract.infrastructure.core.data.DateFormat;
@@ -30,7 +31,7 @@ public class DateParam {
 
     private final String dateAsString;
 
-    public DateParam(final String dateStr) {
+    public DateParam(final String dateStr) throws WebApplicationException {
         this.dateAsString = dateStr;
     }
 

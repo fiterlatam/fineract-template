@@ -20,7 +20,6 @@ package org.apache.fineract.infrastructure.core.diagnostics.performance.sampling
 
 import static org.apache.fineract.infrastructure.core.diagnostics.performance.MeasuringUtil.measure;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -32,7 +31,6 @@ public abstract class AbstractSamplingService implements SamplingService {
     private final Map<String, AtomicInteger> sampleCounters = new ConcurrentHashMap<>();
     private final int samplingRate;
 
-    @SuppressFBWarnings("CT_CONSTRUCTOR_THROW")
     public AbstractSamplingService(int samplingRate) {
         if (samplingRate < 1) {
             throw new IllegalArgumentException("samplingRate cannot be less than 1");

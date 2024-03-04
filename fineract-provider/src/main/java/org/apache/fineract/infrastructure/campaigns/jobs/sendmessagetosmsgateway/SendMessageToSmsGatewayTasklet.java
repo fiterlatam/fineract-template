@@ -18,7 +18,6 @@
  */
 package org.apache.fineract.infrastructure.campaigns.jobs.sendmessagetosmsgateway;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -134,7 +133,6 @@ public class SendMessageToSmsGatewayTasklet implements Tasklet {
         }
     }
 
-    @SuppressFBWarnings("SLF4J_SIGN_ONLY_FORMAT")
     private void connectAndSendToIntermediateServer(Collection<SmsMessageApiQueueResourceData> apiQueueResourceDatas) {
         Map<String, Object> hostConfig = smsConfigUtils.getMessageGateWayRequestURI("sms",
                 SmsMessageApiQueueResourceData.toJsonString(apiQueueResourceDatas));

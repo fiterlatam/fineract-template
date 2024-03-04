@@ -62,9 +62,7 @@ public class LoanTransactionRelation extends AbstractAuditableWithUTCDateTimeCus
 
     public static LoanTransactionRelation linkToTransaction(@NotNull LoanTransaction fromTransaction,
             @NotNull LoanTransaction toTransaction, LoanTransactionRelationTypeEnum relation) {
-        LoanTransactionRelation loanTransactionRelation = new LoanTransactionRelation(fromTransaction, toTransaction, null, relation);
-        fromTransaction.getLoanTransactionRelations().add(loanTransactionRelation);
-        return loanTransactionRelation;
+        return new LoanTransactionRelation(fromTransaction, toTransaction, null, relation);
     }
 
     public static LoanTransactionRelation linkToCharge(@NotNull LoanTransaction fromTransaction, @NotNull LoanCharge loanCharge,

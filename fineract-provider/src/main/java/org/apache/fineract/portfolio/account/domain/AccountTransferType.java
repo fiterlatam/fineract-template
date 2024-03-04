@@ -27,8 +27,7 @@ public enum AccountTransferType {
     ACCOUNT_TRANSFER(1, "accountTransferType.account.transfer"), //
     LOAN_REPAYMENT(2, "accountTransferType.loan.repayment"), //
     CHARGE_PAYMENT(3, "accountTransferType.charge.payment"), //
-    INTEREST_TRANSFER(4, "accountTransferType.interest.transfer"), //
-    LOAN_DOWN_PAYMENT(5, "accountTransferType.loan.downpayment"); //
+    INTEREST_TRANSFER(4, "accountTransferType.interest.transfer"); //
 
     private final Integer value;
     private final String code;
@@ -48,9 +47,6 @@ public enum AccountTransferType {
             break;
             case 4:
                 enumeration = AccountTransferType.INTEREST_TRANSFER;
-            break;
-            case 5:
-                enumeration = AccountTransferType.LOAN_DOWN_PAYMENT;
             break;
         }
         return enumeration;
@@ -88,9 +84,4 @@ public enum AccountTransferType {
     public boolean isInterestTransfer() {
         return this.value.equals(AccountTransferType.INTEREST_TRANSFER.getValue());
     }
-
-    public boolean isLoanDownPayment() {
-        return this.value.equals(AccountTransferType.LOAN_DOWN_PAYMENT.getValue());
-    }
-
 }

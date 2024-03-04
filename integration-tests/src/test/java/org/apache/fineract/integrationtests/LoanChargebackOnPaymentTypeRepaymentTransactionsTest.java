@@ -64,6 +64,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 public class LoanChargebackOnPaymentTypeRepaymentTransactionsTest {
 
     private ResponseSpecification responseSpec;
+    private ResponseSpecification responseSpecErr400;
     private ResponseSpecification responseSpecErr503;
     private RequestSpecification requestSpec;
     private ClientHelper clientHelper;
@@ -75,6 +76,7 @@ public class LoanChargebackOnPaymentTypeRepaymentTransactionsTest {
         this.requestSpec = new RequestSpecBuilder().setContentType(ContentType.JSON).build();
         this.requestSpec.header("Authorization", "Basic " + Utils.loginIntoServerAndGetBase64EncodedAuthenticationKey());
         this.responseSpec = new ResponseSpecBuilder().expectStatusCode(200).build();
+        this.responseSpecErr400 = new ResponseSpecBuilder().expectStatusCode(400).build();
         this.responseSpecErr503 = new ResponseSpecBuilder().expectStatusCode(503).build();
         this.loanTransactionHelper = new LoanTransactionHelper(this.requestSpec, this.responseSpec);
         this.clientHelper = new ClientHelper(this.requestSpec, this.responseSpec);
@@ -98,8 +100,7 @@ public class LoanChargebackOnPaymentTypeRepaymentTransactionsTest {
                 delinquencyBucketId, loanProductTestBuilder);
         assertNotNull(getLoanProductsProductResponse);
 
-        final Integer loanId = createLoanAccount(clientId, getLoanProductsProductResponse.getId(), loanExternalIdStr,
-                loanProductTestBuilder.getTransactionProcessingStrategyCode());
+        final Integer loanId = createLoanAccount(clientId, getLoanProductsProductResponse.getId(), loanExternalIdStr);
 
         // make Repayment
         final PostLoansLoanIdTransactionsResponse repaymentTransaction_1 = loanTransactionHelper.makeLoanRepayment(loanExternalIdStr,
@@ -234,8 +235,7 @@ public class LoanChargebackOnPaymentTypeRepaymentTransactionsTest {
                 delinquencyBucketId, loanProductTestBuilder);
         assertNotNull(getLoanProductsProductResponse);
 
-        final Integer loanId = createLoanAccount(clientId, getLoanProductsProductResponse.getId(), loanExternalIdStr,
-                loanProductTestBuilder.getTransactionProcessingStrategyCode());
+        final Integer loanId = createLoanAccount(clientId, getLoanProductsProductResponse.getId(), loanExternalIdStr);
 
         // Merchant Refund
         final PostLoansLoanIdTransactionsResponse merchantIssuedRefund_2 = loanTransactionHelper.makeMerchantIssuedRefund((long) loanId,
@@ -258,16 +258,14 @@ public class LoanChargebackOnPaymentTypeRepaymentTransactionsTest {
         return loanTransactionHelper.getLoanProduct(loanProductId);
     }
 
-    private Integer createLoanAccount(final Integer clientID, final Long loanProductID, final String externalId,
-            final String repaymentStrategy) {
+    private Integer createLoanAccount(final Integer clientID, final Long loanProductID, final String externalId) {
 
         String loanApplicationJSON = new LoanApplicationTestBuilder().withPrincipal("1000").withLoanTermFrequency("1")
                 .withLoanTermFrequencyAsMonths().withNumberOfRepayments("1").withRepaymentEveryAfter("1")
                 .withRepaymentFrequencyTypeAsMonths().withInterestRatePerPeriod("0").withInterestTypeAsFlatBalance()
                 .withAmortizationTypeAsEqualPrincipalPayments().withInterestCalculationPeriodTypeSameAsRepaymentPeriod()
                 .withExpectedDisbursementDate("03 September 2022").withSubmittedOnDate("01 September 2022").withLoanType("individual")
-                .withExternalId(externalId).withRepaymentStrategy(repaymentStrategy)
-                .build(clientID.toString(), loanProductID.toString(), null);
+                .withExternalId(externalId).build(clientID.toString(), loanProductID.toString(), null);
 
         final Integer loanId = loanTransactionHelper.getLoanId(loanApplicationJSON);
         loanTransactionHelper.approveLoan("02 September 2022", "1000", loanId, null);

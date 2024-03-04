@@ -52,6 +52,7 @@ import org.apache.fineract.batch.exception.BatchReferenceInvalidException;
 import org.apache.fineract.batch.exception.ErrorInfo;
 import org.apache.fineract.batch.service.ResolutionHelper.BatchRequestNode;
 import org.apache.fineract.infrastructure.core.domain.BatchRequestContextHolder;
+import org.apache.fineract.infrastructure.core.exception.AbstractIdempotentCommandException;
 import org.apache.fineract.infrastructure.core.exception.ErrorHandler;
 import org.apache.fineract.infrastructure.core.filters.BatchCallHandler;
 import org.apache.fineract.infrastructure.core.filters.BatchFilter;
@@ -61,8 +62,10 @@ import org.springframework.dao.ConcurrencyFailureException;
 import org.springframework.dao.NonTransientDataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.TransactionException;
 import org.springframework.transaction.TransactionExecution;
+import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.TransactionSystemException;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -101,7 +104,8 @@ public class BatchApiServiceImpl implements BatchApiService {
      */
     @Override
     public List<BatchResponse> handleBatchRequestsWithoutEnclosingTransaction(final List<BatchRequest> requestList, UriInfo uriInfo) {
-        return handleBatchRequests(requestList, uriInfo, false);
+        BatchRequestContextHolder.setEnclosingTransaction(Optional.empty());
+        return handleBatchRequests(false, requestList, uriInfo);
     }
 
     /**
@@ -113,18 +117,7 @@ public class BatchApiServiceImpl implements BatchApiService {
      */
     @Override
     public List<BatchResponse> handleBatchRequestsWithEnclosingTransaction(final List<BatchRequest> requestList, final UriInfo uriInfo) {
-        return handleBatchRequests(requestList, uriInfo, true);
-    }
-
-    private List<BatchResponse> handleBatchRequests(final List<BatchRequest> requestList, final UriInfo uriInfo,
-            boolean enclosingTransaction) {
-        BatchRequestContextHolder.setIsEnclosingTransaction(enclosingTransaction);
-        try {
-            return enclosingTransaction ? callInTransaction(Function.identity()::apply, () -> handleRequestNodes(requestList, uriInfo))
-                    : handleRequestNodes(requestList, uriInfo);
-        } finally {
-            BatchRequestContextHolder.resetIsEnclosingTransaction();
-        }
+        return callInTransaction(Function.identity()::apply, () -> handleBatchRequests(true, requestList, uriInfo));
     }
 
     /**
@@ -143,16 +136,18 @@ public class BatchApiServiceImpl implements BatchApiService {
             TransactionTemplate transactionTemplate = new TransactionTemplate(transactionManager);
             transactionConfigurator.accept(transactionTemplate);
             return transactionTemplate.execute(status -> {
-                BatchRequestContextHolder.setEnclosingTransaction(status);
+                BatchRequestContextHolder.setEnclosingTransaction(Optional.of(status));
                 try {
                     responseList.addAll(request.get());
                     return responseList;
                 } catch (BatchExecutionException ex) {
-                    log.error("Exception during the batch request processing", ex);
-                    responseList.add(buildErrorResponse(ex.getCause(), ex.getRequest()));
-                    return responseList;
+                    status.setRollbackOnly();
+                    return List.of(buildErrorResponse(ex.getCause(), ex.getRequest()));
+                } catch (RuntimeException ex) {
+                    status.setRollbackOnly();
+                    return buildErrorResponses(ex, responseList);
                 } finally {
-                    BatchRequestContextHolder.resetTransaction();
+                    BatchRequestContextHolder.setEnclosingTransaction(Optional.empty());
                 }
             });
         } catch (TransactionException | NonTransientDataAccessException ex) {
@@ -168,17 +163,24 @@ public class BatchApiServiceImpl implements BatchApiService {
      * @param uriInfo
      * @return {@code List<BatchResponse>}
      */
-    private List<BatchResponse> handleRequestNodes(final List<BatchRequest> requestList, final UriInfo uriInfo) {
+    private List<BatchResponse> handleBatchRequests(boolean enclosingTransaction, final List<BatchRequest> requestList,
+            final UriInfo uriInfo) {
         final List<BatchRequestNode> rootNodes;
         try {
             rootNodes = this.resolutionHelper.buildNodesTree(requestList);
         } catch (BatchReferenceInvalidException e) {
-            return List.of(buildOrThrowErrorResponse(e, null));
+            return List.of(buildErrorResponse(e));
         }
 
         final ArrayList<BatchResponse> responseList = new ArrayList<>(requestList.size());
         for (BatchRequestNode rootNode : rootNodes) {
-            this.callRequestRecursive(rootNode.getRequest(), rootNode, responseList, uriInfo);
+            if (enclosingTransaction) {
+                this.callRequestRecursive(rootNode.getRequest(), rootNode, responseList, uriInfo, enclosingTransaction);
+            } else {
+                ArrayList<BatchResponse> localResponseList = new ArrayList<>();
+                this.callRequestRecursive(rootNode.getRequest(), rootNode, localResponseList, uriInfo, enclosingTransaction);
+                responseList.addAll(localResponseList);
+            }
         }
         responseList.sort(Comparator.comparing(BatchResponse::getRequestId));
         return responseList;
@@ -195,10 +197,18 @@ public class BatchApiServiceImpl implements BatchApiService {
      *            the collected responses
      * @return {@code BatchResponse}
      */
-    private void callRequestRecursive(BatchRequest request, BatchRequestNode requestNode, List<BatchResponse> responseList,
-            UriInfo uriInfo) {
+    private void callRequestRecursive(BatchRequest request, BatchRequestNode requestNode, List<BatchResponse> responseList, UriInfo uriInfo,
+            boolean enclosingTransaction) {
         // run current node
-        BatchResponse response = executeRequest(request, uriInfo);
+        BatchResponse response;
+        if (enclosingTransaction) {
+            response = executeRequest(request, uriInfo);
+        } else {
+            List<BatchResponse> transactionResponse = callInTransaction(
+                    transactionTemplate -> transactionTemplate.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW),
+                    () -> List.of(executeRequest(request, uriInfo)));
+            response = transactionResponse.get(0);
+        }
         responseList.add(response);
         if (response.getStatusCode() != null && response.getStatusCode() == SC_OK) {
             // run child nodes
@@ -207,10 +217,13 @@ public class BatchApiServiceImpl implements BatchApiService {
                 BatchRequest resolvedChildRequest;
                 try {
                     resolvedChildRequest = this.resolutionHelper.resolveRequest(childRequest, response);
-                    callRequestRecursive(resolvedChildRequest, childNode, responseList, uriInfo);
                 } catch (JsonPathException jpex) {
-                    responseList.add(buildOrThrowErrorResponse(jpex, childRequest));
+                    responseList.add(buildErrorResponse(jpex, childRequest));
+                    return;
+                } catch (RuntimeException ex) {
+                    throw new BatchExecutionException(childRequest, ex);
                 }
+                callRequestRecursive(resolvedChildRequest, childNode, responseList, uriInfo, enclosingTransaction);
             });
         } else {
             responseList.addAll(parentRequestFailedRecursive(request, requestNode, response, null));
@@ -232,7 +245,7 @@ public class BatchApiServiceImpl implements BatchApiService {
         log.debug("Batch request: method [{}], relative url [{}]", request.getMethod(), request.getRelativeUrl());
         Either<RuntimeException, BatchRequest> preprocessorResult = runPreprocessors(request);
         if (preprocessorResult.isLeft()) {
-            return buildOrThrowErrorResponse(preprocessorResult.getLeft(), request);
+            throw new BatchExecutionException(request, preprocessorResult.getLeft());
         } else {
             request = preprocessorResult.get();
         }
@@ -240,16 +253,19 @@ public class BatchApiServiceImpl implements BatchApiService {
             BatchRequestContextHolder.setRequestAttributes(new HashMap<>(Optional.ofNullable(request.getHeaders())
                     .map(list -> list.stream().collect(Collectors.toMap(Header::getName, Header::getValue)))
                     .orElse(Collections.emptyMap())));
-            if (BatchRequestContextHolder.isEnclosingTransaction()) {
+            BatchCallHandler callHandler = new BatchCallHandler(this.batchFilters, commandStrategy::execute);
+            Optional<TransactionStatus> transaction = BatchRequestContextHolder.getEnclosingTransaction();
+            if (transaction.isPresent()) {
                 entityManager.flush();
             }
-            BatchCallHandler callHandler = new BatchCallHandler(this.batchFilters, commandStrategy::execute);
             final BatchResponse rootResponse = callHandler.serviceCall(request, uriInfo);
             log.debug("Batch response: status code [{}], method [{}], relative url [{}]", rootResponse.getStatusCode(), request.getMethod(),
                     request.getRelativeUrl());
             return rootResponse;
+        } catch (AbstractIdempotentCommandException idempotentException) {
+            return buildErrorResponse(idempotentException, request);
         } catch (RuntimeException ex) {
-            return buildOrThrowErrorResponse(ex, request);
+            throw new BatchExecutionException(request, ex);
         } finally {
             BatchRequestContextHolder.resetRequestAttributes();
         }
@@ -297,6 +313,11 @@ public class BatchApiServiceImpl implements BatchApiService {
         return responseList;
     }
 
+    @NotNull
+    private BatchResponse buildErrorResponse(@NotNull Throwable ex) {
+        return buildErrorResponse(ex, null);
+    }
+
     /**
      * Return the response when any exception raised
      *
@@ -325,15 +346,6 @@ public class BatchApiServiceImpl implements BatchApiService {
         return buildErrorResponse(requestId, statusCode, body, headers);
     }
 
-    private BatchResponse buildOrThrowErrorResponse(RuntimeException ex, BatchRequest request) {
-        BatchResponse response = buildErrorResponse(ex, request);
-        if (response.getStatusCode() != SC_OK && BatchRequestContextHolder.isEnclosingTransaction()) {
-            BatchRequestContextHolder.getTransaction().ifPresent(TransactionExecution::setRollbackOnly);
-            throw new BatchExecutionException(request, ex);
-        }
-        return response;
-    }
-
     @NotNull
     private List<BatchResponse> buildErrorResponses(Throwable ex, @NotNull List<BatchResponse> responseList) {
         BatchResponse response = responseList.isEmpty() ? null
@@ -356,10 +368,9 @@ public class BatchApiServiceImpl implements BatchApiService {
         }
         if (response != null) {
             requestId = response.getRequestId();
-            Integer responseCode = response.getStatusCode();
-            if (responseCode == null || responseCode != SC_OK) {
-                if (responseCode != null) {
-                    statusCode = responseCode;
+            if (response.getStatusCode() == null || response.getStatusCode() != SC_OK) {
+                if (response.getStatusCode() != null) {
+                    statusCode = response.getStatusCode();
                 }
                 body = "Transaction is being rolled back. First erroneous request: \n" + new Gson().toJson(response);
             }

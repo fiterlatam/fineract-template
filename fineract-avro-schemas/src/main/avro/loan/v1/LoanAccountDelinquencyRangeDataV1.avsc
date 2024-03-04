@@ -52,15 +52,11 @@
             ]
         },
         {
-            "default": null,
             "name": "installmentDelinquencyBuckets",
-            "type": [
-                "null",
-                {
-                    "type": "array",
-                    "items": "org.apache.fineract.avro.loan.v1.LoanInstallmentDelinquencyBucketDataV1"
-                }
-            ]
+            "type": {
+                "type": "array",
+                "items": "org.apache.fineract.avro.loan.v1.LoanInstallmentDelinquencyBucketDataV1"
+            }
         }
     ]
 }

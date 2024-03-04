@@ -24,7 +24,6 @@ import static org.springframework.security.authorization.AuthorityAuthorizationM
 import static org.springframework.security.authorization.AuthorizationManagers.allOf;
 import static org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher;
 
-import java.util.List;
 import java.util.Objects;
 import org.apache.fineract.commands.domain.CommandSourceRepository;
 import org.apache.fineract.commands.service.CommandSourceService;
@@ -36,6 +35,7 @@ import org.apache.fineract.infrastructure.core.filters.CorrelationHeaderFilter;
 import org.apache.fineract.infrastructure.core.filters.IdempotencyStoreFilter;
 import org.apache.fineract.infrastructure.core.filters.IdempotencyStoreHelper;
 import org.apache.fineract.infrastructure.core.filters.RequestResponseFilter;
+import org.apache.fineract.infrastructure.core.filters.ResponseCorsFilter;
 import org.apache.fineract.infrastructure.core.serialization.ToApiJsonSerializer;
 import org.apache.fineract.infrastructure.core.service.MDCWrapper;
 import org.apache.fineract.infrastructure.instancemode.filter.FineractInstanceModeApiFilter;
@@ -60,7 +60,6 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -70,9 +69,6 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.ExceptionTranslationFilter;
 import org.springframework.security.web.authentication.www.BasicAuthenticationEntryPoint;
 import org.springframework.security.web.context.SecurityContextHolderFilter;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.CorsConfigurationSource;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 @Configuration
 @ConditionalOnProperty("fineract.security.basicauth.enabled")
@@ -135,13 +131,13 @@ public class SecurityConfig {
                             .requestMatchers(antMatcher("/api/**"))
                             .access(allOf(fullyAuthenticated(), hasAuthority("TWOFACTOR_AUTHENTICATED"))); //
                 }).httpBasic((httpBasic) -> httpBasic.authenticationEntryPoint(basicAuthenticationEntryPoint())) //
-                .cors(Customizer.withDefaults()).csrf((csrf) -> csrf.disable()) // NOSONAR only creating a service that
-                                                                                // is used by non-browser clients
+                .csrf((csrf) -> csrf.disable()) // NOSONAR only creating a service that is used by non-browser clients
                 .sessionManagement((smc) -> smc.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) //
                 .addFilterBefore(tenantAwareBasicAuthenticationFilter(), SecurityContextHolderFilter.class) //
                 .addFilterAfter(requestResponseFilter(), ExceptionTranslationFilter.class) //
                 .addFilterAfter(correlationHeaderFilter(), RequestResponseFilter.class) //
-                .addFilterAfter(fineractInstanceModeApiFilter(), CorrelationHeaderFilter.class); //
+                .addFilterAfter(responseCorsFilter(), CorrelationHeaderFilter.class) //
+                .addFilterAfter(fineractInstanceModeApiFilter(), ResponseCorsFilter.class); //
         if (!Objects.isNull(loanCOBFilterHelper)) {
             http.addFilterAfter(loanCOBApiFilter(), FineractInstanceModeApiFilter.class) //
                     .addFilterAfter(idempotencyStoreFilter(), LoanCOBApiFilter.class); //
@@ -150,9 +146,9 @@ public class SecurityConfig {
         }
 
         if (fineractProperties.getSecurity().getTwoFactor().isEnabled()) {
-            http.addFilterAfter(twoFactorAuthenticationFilter(), CorrelationHeaderFilter.class);
+            http.addFilterAfter(twoFactorAuthenticationFilter(), ResponseCorsFilter.class);
         } else {
-            http.addFilterAfter(insecureTwoFactorAuthenticationFilter(), CorrelationHeaderFilter.class);
+            http.addFilterAfter(insecureTwoFactorAuthenticationFilter(), ResponseCorsFilter.class);
         }
 
         if (serverProperties.getSsl().isEnabled()) {
@@ -190,6 +186,10 @@ public class SecurityConfig {
         return new CorrelationHeaderFilter(fineractProperties, mdcWrapper);
     }
 
+    public ResponseCorsFilter responseCorsFilter() {
+        return new ResponseCorsFilter();
+    }
+
     public TenantAwareBasicAuthenticationFilter tenantAwareBasicAuthenticationFilter() throws Exception {
         TenantAwareBasicAuthenticationFilter filter = new TenantAwareBasicAuthenticationFilter(authenticationManagerBean(),
                 basicAuthenticationEntryPoint(), toApiJsonSerializer, configurationDomainService, cacheWritePlatformService,
@@ -223,17 +223,5 @@ public class SecurityConfig {
         ProviderManager providerManager = new ProviderManager(authProvider());
         providerManager.setEraseCredentialsAfterAuthentication(false);
         return providerManager;
-    }
-
-    @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(List.of("*"));
-        configuration.setAllowedMethods(List.of("*"));
-        configuration.setAllowCredentials(true);
-        configuration.setAllowedHeaders(List.of("*"));
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
-        return source;
     }
 }

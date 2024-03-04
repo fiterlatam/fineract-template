@@ -21,7 +21,6 @@ package org.apache.fineract.cob.loan;
 import static org.springframework.transaction.TransactionDefinition.PROPAGATION_REQUIRES_NEW;
 
 import com.google.common.collect.Lists;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -56,7 +55,6 @@ public class ApplyLoanLockTasklet implements Tasklet {
     private final TransactionTemplate transactionTemplate;
 
     @Override
-    @SuppressFBWarnings("SLF4J_SIGN_ONLY_FORMAT")
     public RepeatStatus execute(@NotNull StepContribution contribution, @NotNull ChunkContext chunkContext)
             throws LoanLockCannotBeAppliedException {
         ExecutionContext executionContext = contribution.getStepExecution().getExecutionContext();

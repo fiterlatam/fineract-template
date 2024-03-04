@@ -90,7 +90,6 @@ public class LoanRepaymentBusinessEventSerializerTest {
 
     @AfterEach
     public void reset() {
-        ThreadLocalContextUtil.reset();
         moneyHelper.close();
     }
 
@@ -182,4 +181,5 @@ public class LoanRepaymentBusinessEventSerializerTest {
         AvroRuntimeException exceptionThrown = assertThrows(AvroRuntimeException.class, () -> serializer.toAvroDTO(event));
         assertTrue(exceptionThrown.getMessage().contains("does not accept null values"));
     }
+
 }

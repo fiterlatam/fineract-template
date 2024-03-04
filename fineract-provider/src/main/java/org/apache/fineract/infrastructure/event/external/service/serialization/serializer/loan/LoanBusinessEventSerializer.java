@@ -19,13 +19,11 @@
 package org.apache.fineract.infrastructure.event.external.service.serialization.serializer.loan;
 
 import java.util.Collection;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.apache.avro.generic.GenericContainer;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.fineract.avro.generator.ByteBufferSerializable;
 import org.apache.fineract.avro.loan.v1.LoanAccountDataV1;
-import org.apache.fineract.avro.loan.v1.LoanInstallmentDelinquencyBucketDataV1;
 import org.apache.fineract.infrastructure.event.business.domain.BusinessEvent;
 import org.apache.fineract.infrastructure.event.business.domain.loan.LoanBusinessEvent;
 import org.apache.fineract.infrastructure.event.external.service.serialization.mapper.loan.LoanAccountDataMapper;
@@ -48,7 +46,6 @@ public class LoanBusinessEventSerializer implements BusinessEventSerializer {
     private final LoanAccountDataMapper mapper;
     private final LoanChargeReadPlatformService loanChargeReadPlatformService;
     private final DelinquencyReadPlatformService delinquencyReadPlatformService;
-    private final LoanInstallmentLevelDelinquencyEventProducer installmentLevelDelinquencyEventProducer;
 
     @Override
     public <T> boolean canSerialize(BusinessEvent<T> event) {
@@ -77,13 +74,7 @@ public class LoanBusinessEventSerializer implements BusinessEventSerializer {
         } else {
             data.setSummary(LoanSummaryData.withOnlyCurrencyData(data.getCurrency()));
         }
-
-        List<LoanInstallmentDelinquencyBucketDataV1> installmentsDelinquencyData = installmentLevelDelinquencyEventProducer
-                .calculateInstallmentLevelDelinquencyData(event.get(), data.getCurrency());
-
-        LoanAccountDataV1 result = mapper.map(data);
-        result.getDelinquent().setInstallmentDelinquencyBuckets(installmentsDelinquencyData);
-        return result;
+        return mapper.map(data);
     }
 
     @Override

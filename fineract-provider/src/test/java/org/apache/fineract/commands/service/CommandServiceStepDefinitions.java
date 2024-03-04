@@ -25,10 +25,13 @@ import static org.mockito.ArgumentMatchers.any;
 import io.cucumber.java8.En;
 import io.github.resilience4j.retry.RetryRegistry;
 import io.github.resilience4j.retry.event.RetryEvent;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.apache.fineract.commands.domain.CommandSource;
 import org.apache.fineract.commands.domain.CommandWrapper;
-import org.apache.fineract.commands.exception.RollbackTransactionNotApprovedException;
+import org.apache.fineract.commands.exception.RollbackTransactionAsCommandIsNotApprovedByCheckerException;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.domain.FineractRequestContextHolder;
@@ -66,7 +69,7 @@ public class CommandServiceStepDefinitions implements En {
             ReflectionTestUtils.setField(processAndLogCommandService, "fineractRequestContextHolder", contextHolder);
             Mockito.when(contextHolder.getAttribute(any(), any())).thenThrow(new CannotAcquireLockException("BLOW IT UP!!!"))
                     .thenThrow(new ObjectOptimisticLockingFailureException("Dummy", new RuntimeException("BLOW IT UP!!!")))
-                    .thenThrow(new RollbackTransactionNotApprovedException(1L, null));
+                    .thenThrow(new RollbackTransactionAsCommandIsNotApprovedByCheckerException(new DummyCommandSource()));
 
             this.retryRegistry.retry("executeCommand").getEventPublisher().onRetry(event -> {
                 log.warn("... retry event: {}", event);
@@ -142,6 +145,15 @@ public class CommandServiceStepDefinitions implements En {
         @Override
         public Long deleteEntry(Long makerCheckerId) {
             return null;
+        }
+    }
+
+    @Entity
+    @Table(name = "m_portfolio_command_source")
+    public static class DummyCommandSource extends CommandSource {
+
+        public DummyCommandSource() {
+            setId(1L);
         }
     }
 }

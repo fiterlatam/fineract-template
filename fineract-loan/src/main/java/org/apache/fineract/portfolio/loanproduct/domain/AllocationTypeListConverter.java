@@ -24,8 +24,8 @@ import java.util.List;
 import org.apache.fineract.infrastructure.core.data.GenericEnumListConverter;
 
 @Converter(autoApply = true)
-public class AllocationTypeListConverter extends GenericEnumListConverter<AllocationType>
-        implements AttributeConverter<List<AllocationType>, String> {
+public class AllocationTypeListConverter extends GenericEnumListConverter<PaymentAllocationType>
+        implements AttributeConverter<List<PaymentAllocationType>, String> {
 
     @Override
     public boolean isUnique() {
@@ -33,7 +33,7 @@ public class AllocationTypeListConverter extends GenericEnumListConverter<Alloca
     }
 
     public AllocationTypeListConverter() {
-        super(AllocationType.class);
+        super(PaymentAllocationType.class);
     }
 
 }

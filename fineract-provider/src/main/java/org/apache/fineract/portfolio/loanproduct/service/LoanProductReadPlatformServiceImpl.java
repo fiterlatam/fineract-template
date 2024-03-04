@@ -47,7 +47,6 @@ import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanSchedul
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleType;
 import org.apache.fineract.portfolio.loanproduct.data.AdvancedPaymentData;
 import org.apache.fineract.portfolio.loanproduct.data.AdvancedPaymentData.PaymentAllocationOrder;
-import org.apache.fineract.portfolio.loanproduct.data.CreditAllocationData;
 import org.apache.fineract.portfolio.loanproduct.data.LoanProductBorrowerCycleVariationData;
 import org.apache.fineract.portfolio.loanproduct.data.LoanProductData;
 import org.apache.fineract.portfolio.loanproduct.data.LoanProductGuaranteeData;
@@ -85,11 +84,10 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
             final Collection<LoanProductBorrowerCycleVariationData> borrowerCycleVariationDatas = retrieveLoanProductBorrowerCycleVariations(
                     loanProductId);
             final Collection<AdvancedPaymentData> advancedPaymentData = retrieveAdvancedPaymentData(loanProductId);
-            final Collection<CreditAllocationData> creditAllocationData = retrieveCreditAllocationData(loanProductId);
             final Collection<DelinquencyBucketData> delinquencyBucketOptions = this.delinquencyReadPlatformService
                     .retrieveAllDelinquencyBuckets();
             final LoanProductMapper rm = new LoanProductMapper(charges, borrowerCycleVariationDatas, rates, delinquencyBucketOptions,
-                    advancedPaymentData, creditAllocationData);
+                    advancedPaymentData);
             final String sql = "select " + rm.loanProductSchema() + " where lp.id = ?";
 
             return this.jdbcTemplate.queryForObject(sql, rm, loanProductId); // NOSONAR
@@ -119,18 +117,11 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
     }
 
     @Override
-    public List<CreditAllocationData> retrieveCreditAllocationData(final Long loanProductId) {
-        final CreditAllocationDataMapper cadm = new CreditAllocationDataMapper();
-        final String sql = "select " + cadm.schema() + " where loan_product_id = ?";
-        return this.jdbcTemplate.query(sql, cadm, loanProductId); // NOSONAR
-    }
-
-    @Override
     public Collection<LoanProductData> retrieveAllLoanProducts() {
 
         this.context.authenticatedUser();
 
-        final LoanProductMapper rm = new LoanProductMapper(null, null, null, null, null, null);
+        final LoanProductMapper rm = new LoanProductMapper(null, null, null, null, null);
 
         String sql = "select " + rm.loanProductSchema();
 
@@ -209,22 +200,18 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
 
         private final Collection<AdvancedPaymentData> advancedPaymentData;
 
-        private final Collection<CreditAllocationData> creditAllocationData;
-
         private final Collection<RateData> rates;
 
         private final Collection<DelinquencyBucketData> delinquencyBucketOptions;
 
         LoanProductMapper(final Collection<ChargeData> charges,
                 final Collection<LoanProductBorrowerCycleVariationData> borrowerCycleVariationDatas, final Collection<RateData> rates,
-                final Collection<DelinquencyBucketData> delinquencyBucketOptions, Collection<AdvancedPaymentData> advancedPaymentData,
-                Collection<CreditAllocationData> creditAllocationData) {
+                final Collection<DelinquencyBucketData> delinquencyBucketOptions, Collection<AdvancedPaymentData> advancedPaymentData) {
             this.charges = charges;
             this.borrowerCycleVariationDatas = borrowerCycleVariationDatas;
             this.rates = rates;
             this.delinquencyBucketOptions = delinquencyBucketOptions;
             this.advancedPaymentData = advancedPaymentData;
-            this.creditAllocationData = creditAllocationData;
         }
 
         public String loanProductSchema() {
@@ -243,7 +230,7 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
                     + "lp.days_in_month_enum as daysInMonth, lp.days_in_year_enum as daysInYear, lp.interest_recalculation_enabled as isInterestRecalculationEnabled, "
                     + "lp.can_define_fixed_emi_amount as canDefineInstallmentAmount, lp.instalment_amount_in_multiples_of as installmentAmountInMultiplesOf, "
                     + "lp.due_days_for_repayment_event as dueDaysForRepaymentEvent, lp.overdue_days_for_repayment_event as overDueDaysForRepaymentEvent, lp.enable_down_payment as enableDownPayment, lp.disbursed_amount_percentage_for_down_payment as disbursedAmountPercentageForDownPayment, lp.enable_auto_repayment_for_down_payment as enableAutoRepaymentForDownPayment, lp.repayment_start_date_type_enum as repaymentStartDateType, "
-                    + "lp.enable_installment_level_delinquency as enableInstallmentLevelDelinquency, "
+                    + "lp.disable_schedule_extension_for_down_payment as disableScheduleExtensionForDownPayment, lp.enable_installment_level_delinquency as enableInstallmentLevelDelinquency, "
                     + "lpr.pre_close_interest_calculation_strategy as preCloseInterestCalculationStrategy, "
                     + "lpr.id as lprId, lpr.product_id as productId, lpr.compound_type_enum as compoundType, lpr.reschedule_strategy_enum as rescheduleStrategy, "
                     + "lpr.rest_frequency_type_enum as restFrequencyEnum, lpr.rest_frequency_interval as restFrequencyInterval, "
@@ -380,6 +367,7 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
             final boolean enableAutoRepaymentForDownPayment = rs.getBoolean("enableAutoRepaymentForDownPayment");
             final Integer repaymentStartDateTypeId = JdbcSupport.getInteger(rs, "repaymentStartDateType");
             final EnumOptionData repaymentStartDateType = LoanEnumerations.repaymentStartDateType(repaymentStartDateTypeId);
+            final boolean disableScheduleExtensionForDownPayment = rs.getBoolean("disableScheduleExtensionForDownPayment");
             final boolean enableInstallmentLevelDelinquency = rs.getBoolean("enableInstallmentLevelDelinquency");
 
             String status = "";
@@ -514,7 +502,7 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
             final boolean isRatesEnabled = false;
 
             // Delinquency Buckets
-            final Long delinquencyBucketId = JdbcSupport.getLong(rs, "delinquencyBucketId");
+            final Long delinquencyBucketId = rs.getLong("delinquencyBucketId");
             final String delinquencyBucketName = rs.getString("delinquencyBucketName");
             final DelinquencyBucketData delinquencyBucket = new DelinquencyBucketData(delinquencyBucketId, delinquencyBucketName,
                     new ArrayList<>());
@@ -543,7 +531,7 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
                     maximumGap, syncExpectedWithDisbursementDate, canUseForTopup, isEqualAmortization, rateOptions, this.rates,
                     isRatesEnabled, fixedPrincipalPercentagePerInstallment, delinquencyBucketOptions, delinquencyBucket,
                     dueDaysForRepaymentEvent, overDueDaysForRepaymentEvent, enableDownPayment, disbursedAmountPercentageForDownPayment,
-                    enableAutoRepaymentForDownPayment, advancedPaymentData, creditAllocationData, repaymentStartDateType,
+                    enableAutoRepaymentForDownPayment, advancedPaymentData, repaymentStartDateType, disableScheduleExtensionForDownPayment,
                     enableInstallmentLevelDelinquency, loanScheduleType.asEnumOptionData(), loanScheduleProcessingType.asEnumOptionData());
         }
     }
@@ -602,34 +590,11 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
             return new AdvancedPaymentData(transactionType, futureInstallmentAllocationRule, convert(allocationTypes));
         }
 
-        private List<PaymentAllocationOrder> convert(String allocationOrders) {
-            String[] allocationRule = allocationOrders.split(",");
+        private List<PaymentAllocationOrder> convert(String futureInstallmentAllocationRule) {
+            String[] allocationRule = futureInstallmentAllocationRule.split(",");
             AtomicInteger order = new AtomicInteger(1);
             return Arrays.stream(allocationRule) //
                     .map(s -> new PaymentAllocationOrder(s, order.getAndIncrement())) //
-                    .toList();
-        }
-
-    }
-
-    private static final class CreditAllocationDataMapper implements RowMapper<CreditAllocationData> {
-
-        public String schema() {
-            return "transaction_type, allocation_types from m_loan_product_credit_allocation_rule";
-        }
-
-        @Override
-        public CreditAllocationData mapRow(ResultSet rs, int rowNum) throws SQLException {
-            final String transactionType = rs.getString("transaction_type");
-            final String allocationTypes = rs.getString("allocation_types");
-            return new CreditAllocationData(transactionType, convert(allocationTypes));
-        }
-
-        private List<CreditAllocationData.CreditAllocationOrder> convert(String allocationOrders) {
-            String[] allocationRule = allocationOrders.split(",");
-            AtomicInteger order = new AtomicInteger(1);
-            return Arrays.stream(allocationRule) //
-                    .map(s -> new CreditAllocationData.CreditAllocationOrder(s, order.getAndIncrement())) //
                     .toList();
         }
 
@@ -666,7 +631,7 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
     public Collection<LoanProductData> retrieveAllLoanProductsForCurrency(String currencyCode) {
         this.context.authenticatedUser();
 
-        final LoanProductMapper rm = new LoanProductMapper(null, null, null, null, null, null);
+        final LoanProductMapper rm = new LoanProductMapper(null, null, null, null, null);
 
         String sql = "select " + rm.loanProductSchema() + " where lp.currency_code= ? ";
 

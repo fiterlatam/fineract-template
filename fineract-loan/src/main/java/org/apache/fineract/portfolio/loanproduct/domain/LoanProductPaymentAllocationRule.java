@@ -52,7 +52,7 @@ public class LoanProductPaymentAllocationRule extends AbstractAuditableWithUTCDa
     @Enumerated(EnumType.STRING)
     private PaymentAllocationTransactionType transactionType;
 
-    @Convert(converter = PaymentAllocationTypeListConverter.class)
+    @Convert(converter = AllocationTypeListConverter.class)
     @Column(name = "allocation_types", nullable = false)
     private List<PaymentAllocationType> allocationTypes;
 

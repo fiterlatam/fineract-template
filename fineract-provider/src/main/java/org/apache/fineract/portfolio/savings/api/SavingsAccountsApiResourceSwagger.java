@@ -182,7 +182,7 @@ final class SavingsAccountsApiResourceSwagger {
 
                 public GetSavingsCurrency currency;
                 @Schema(example = "0")
-                public BigDecimal accountBalance;
+                public Integer accountBalance;
             }
 
             @Schema(example = "1")

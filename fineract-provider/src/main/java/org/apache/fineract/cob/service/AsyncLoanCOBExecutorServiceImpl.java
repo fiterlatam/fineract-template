@@ -18,7 +18,6 @@
  */
 package org.apache.fineract.cob.service;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
@@ -68,7 +67,6 @@ public class AsyncLoanCOBExecutorServiceImpl implements AsyncLoanCOBExecutorServ
 
     @Override
     @Async(TaskExecutorConstant.LOAN_COB_CATCH_UP_TASK_EXECUTOR_BEAN_NAME)
-    @SuppressFBWarnings("SLF4J_SIGN_ONLY_FORMAT")
     public void executeLoanCOBCatchUpAsync(FineractContext context) {
         try {
             ThreadLocalContextUtil.init(context);

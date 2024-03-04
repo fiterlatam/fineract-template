@@ -42,7 +42,6 @@ import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.service.LoanAccrualPlatformService;
 import org.junit.Assert;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -65,11 +64,6 @@ public class AddPeriodicAccrualEntriesBusinessStepTest {
         ThreadLocalContextUtil
                 .setBusinessDates(new HashMap<>(Map.of(BusinessDateType.BUSINESS_DATE, LocalDate.now(ZoneId.systemDefault()))));
         underTest = new AddPeriodicAccrualEntriesBusinessStep(loanAccrualPlatformService);
-    }
-
-    @AfterEach
-    public void tearDown() {
-        ThreadLocalContextUtil.reset();
     }
 
     @Test

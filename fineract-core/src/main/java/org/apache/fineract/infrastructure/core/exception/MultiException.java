@@ -19,14 +19,14 @@
 package org.apache.fineract.infrastructure.core.exception;
 
 import com.google.common.io.CharStreams;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Exception with multiple root causes.
@@ -45,12 +45,11 @@ import lombok.extern.slf4j.Slf4j;
  *
  * @author Michael Vorburger.ch <mike@vorburger.ch>
  */
-@Slf4j
 public class MultiException extends Exception {
 
+    private static final Logger LOG = LoggerFactory.getLogger(MultiException.class);
     private final List<Throwable> throwables;
 
-    @SuppressFBWarnings("CT_CONSTRUCTOR_THROW")
     public MultiException(List<Throwable> problems) {
         super("MultiException with " + problems.size() + " contained causes (details available)");
         if (problems.isEmpty()) {
@@ -81,12 +80,11 @@ public class MultiException extends Exception {
 
     @Override
     @SuppressWarnings("RegexpSinglelineJava")
-    @SuppressFBWarnings("SLF4J_SIGN_ONLY_FORMAT")
     public void printStackTrace() {
-        log.error("{}", super.getMessage());
+        LOG.error("{}", super.getMessage());
         int i = 0;
         for (Throwable e : throwables) {
-            log.error("{}.", ++i);
+            LOG.error("{}.", ++i);
             e.printStackTrace();
         }
     }

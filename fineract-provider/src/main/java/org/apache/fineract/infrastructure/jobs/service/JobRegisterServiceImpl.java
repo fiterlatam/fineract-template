@@ -19,7 +19,6 @@
 package org.apache.fineract.infrastructure.jobs.service;
 
 import com.google.common.base.Splitter;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.text.ParseException;
 import java.util.Collections;
 import java.util.HashMap;
@@ -97,7 +96,6 @@ public class JobRegisterServiceImpl implements JobRegisterService, ApplicationLi
 
     private static final String JOB_STARTER_METHOD_NAME = "run";
 
-    @SuppressFBWarnings("SLF4J_SIGN_ONLY_FORMAT")
     public void executeJob(final ScheduledJobDetail scheduledJobDetail, String triggerType, Set<JobParameterDTO> jobParameterDTOSet) {
         try {
             final JobDataMap jobDataMap = new JobDataMap();
