@@ -2460,7 +2460,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
             sqlBuilder.append(
                     "THEN (select max(tr.transaction_date) as transaction_date from m_loan_transaction tr where tr.loan_id = l.id AND tr.transaction_type_enum = ? AND tr.is_reversed = false) ");
             sqlBuilder.append("ELSE ls.dueDate END) as transactionDate, ");
-            sqlBuilder.append("ls.principal_amount - coalesce(ls.principal_writtenoff_derived, 0) - coalesce(ls.principal_completed_derived, 0) as principalDue, ");
+            sqlBuilder.append(
+                    "ls.principal_amount - coalesce(ls.principal_writtenoff_derived, 0) - coalesce(ls.principal_completed_derived, 0) as principalDue, ");
             sqlBuilder.append("mbc.required_guarantee_amount as collateralAmount, ");
             sqlBuilder.append(
                     "ls.interest_amount - coalesce(ls.interest_completed_derived, 0) - coalesce(ls.interest_waived_derived, 0) - coalesce(ls.interest_writtenoff_derived, 0) as interestDue, ");

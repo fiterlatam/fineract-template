@@ -1,0 +1,317 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements. See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership. The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License. You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied. See the License for the
+    specific language governing permissions and limitations
+    under the License.
+
+-->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd">
+
+    <changeSet author="fineract" id="1">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="job" columnName="display_name_code"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="job">
+            <column name="display_name_code" type="VARCHAR(250)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="2" author="fineract">
+        <sql>
+            <![CDATA[
+                UPDATE job SET display_name_code='update.loan.arrears.ageing' WHERE name='Update Loan Arrears Ageing';
+                UPDATE job SET display_name_code='apply.annual.fee.for.savings' WHERE name='Apply Annual Fee For Savings';
+                UPDATE job SET display_name_code='apply.holidays.to.loans' WHERE name='Apply Holidays To Loans';
+                UPDATE job SET display_name_code='post.interest.for.savings' WHERE name='Post Interest For Savings';
+                UPDATE job SET display_name_code='transfer.fee.for.loans.from.savings' WHERE name='Transfer Fee For Loans From Savings';
+                UPDATE job SET display_name_code='pay.due.savings.charges' WHERE name='Pay Due Savings Charges';
+                UPDATE job SET display_name_code='update.accounting.running.balances' WHERE name='Update Accounting Running Balances';
+                UPDATE job SET display_name_code='execute.standing.instruction' WHERE name='Execute Standing Instruction';
+                UPDATE job SET display_name_code='add.accrual.transactions' WHERE name='Add Accrual Transactions';
+                UPDATE job SET display_name_code='apply.penalty.to.overdue.loans' WHERE name='Apply penalty to overdue loans';
+                UPDATE job SET display_name_code='update.non.performing.assets' WHERE name='Update Non Performing Assets';
+                UPDATE job SET display_name_code='transfer.interest.to.savings' WHERE name='Transfer Interest To Savings';
+                UPDATE job SET display_name_code='update.deposit.accounts.maturity.details' WHERE name='Update Deposit Accounts Maturity details';
+                UPDATE job SET display_name_code='add.periodic.accrual.transactions' WHERE name='Add Periodic Accrual Transactions';
+                UPDATE job SET display_name_code='recalculate.interest.for.loans' WHERE name='Recalculate Interest For Loans';
+                UPDATE job SET display_name_code='generate.mandatory.savings.schedule' WHERE name='Generate Mandatory Savings Schedule';
+                UPDATE job SET display_name_code='generate.loan.loss.provisioning' WHERE name='Generate Loan Loss Provisioning';
+                UPDATE job SET display_name_code='post.dividends.for.shares' WHERE name='Post Dividends For Shares';
+                UPDATE job SET display_name_code='update.savings.dormant.accounts' WHERE name='Update Savings Dormant Accounts';
+                UPDATE job SET display_name_code='add.accrual.transactions.for.loans.with.income.posted.as.transactions' WHERE name='Add Accrual Transactions For Loans With Income Posted As Transactions';
+                UPDATE job SET display_name_code='execute.report.mailing.jobs' WHERE name='Execute Report Mailing Jobs';
+                UPDATE job SET display_name_code='update.sms.outbound.with.campaign.message' WHERE name='Update SMS Outbound with Campaign Message';
+                UPDATE job SET display_name_code='send.messages.to.sms.gateway' WHERE name='Send Messages to SMS Gateway';
+                UPDATE job SET display_name_code='get.delivery.reports.from.sms.gateway' WHERE name='Get Delivery Reports from SMS Gateway';
+                UPDATE job SET display_name_code='execute.email' WHERE name='Execute Email';
+                UPDATE job SET display_name_code='update.email.outbound.with.campaign.message' WHERE name='Update Email Outbound with campaign message';
+                UPDATE job SET display_name_code='generate.adhocclient.schedule' WHERE name='Generate AdhocClient Schedule';
+                UPDATE job SET display_name_code='update.trial.balance.details' WHERE name='Update Trial Balance Details';
+                UPDATE job SET display_name_code='execute.all.dirty.jobs' WHERE name='Execute All Dirty Jobs';
+                UPDATE job SET display_name_code='increase.business.date.by.1.day' WHERE name='Increase Business Date by 1 day';
+                UPDATE job SET display_name_code='increase.cob.date.by.1.day' WHERE name='Increase COB Date by 1 day';
+                UPDATE job SET display_name_code='disable.expired.prequalifications' WHERE name='Disable Expired Prequalifications';
+                UPDATE job SET display_name_code='import.batches.of.loan.repayments' WHERE name='Import Batches of Loan Repayments';
+            ]]>
+        </sql>
+    </changeSet>
+
+    <!--
+     comment: this change set is to set as inactive the job 'Apply Annual Fee For Savings' and delete the job run history for this job.
+ -->
+    <changeSet author="fineract" id="3">
+        <sql>
+            DELETE FROM job_run_history WHERE job_id IN (SELECT id FROM job WHERE name IN ('Apply Annual Fee For Savings'))
+        </sql>
+        <sql>
+            UPDATE job SET is_active = 0 WHERE name = 'Apply Annual Fee For Savings'
+        </sql>
+    </changeSet>
+
+    <!--
+        comment: this change set is to set as inactive the job 'Execute All Dirty Jobs' and delete the job run history for this job.
+    -->
+    <changeSet author="fineract" id="4">
+        <sql>
+            DELETE FROM job_run_history WHERE job_id IN (SELECT id FROM job WHERE name IN ('Execute All Dirty Jobs'))
+        </sql>
+        <sql>
+            UPDATE job SET is_active = 0 WHERE name = 'Execute All Dirty Jobs'
+        </sql>
+    </changeSet>
+
+    <!--
+        comment: this change set is to set as inactive the job 'Execute Email' and delete the job run history for this job.
+    -->
+    <changeSet author="fineract" id="5">
+        <sql>
+            DELETE FROM job_run_history WHERE job_id IN (SELECT id FROM job WHERE name IN ('Execute Email'))
+        </sql>
+        <sql>
+            UPDATE job SET is_active = 0 WHERE name = 'Execute Email'
+        </sql>
+    </changeSet>
+
+    <!--
+        comment: this change set is to set as inactive the job 'Execute Report Mailing Jobs' and delete the job run history for this job.
+    -->
+    <changeSet author="fineract" id="6">
+        <sql>
+            DELETE FROM job_run_history WHERE job_id IN (SELECT id FROM job WHERE name IN ('Execute Report Mailing Jobs'))
+        </sql>
+        <sql>
+            UPDATE job SET is_active = 0 WHERE name = 'Execute Report Mailing Jobs'
+        </sql>
+    </changeSet>
+
+    <!--
+        comment: this change set is to set as inactive the job 'Execute Standing Instruction' and delete the job run history for this job.
+    -->
+    <changeSet author="fineract" id="7">
+        <sql>
+            DELETE FROM job_run_history WHERE job_id IN (SELECT id FROM job WHERE name IN ('Execute Standing Instruction'))
+        </sql>
+        <sql>
+            UPDATE job SET is_active = 0 WHERE name = 'Execute Standing Instruction'
+        </sql>
+    </changeSet>
+
+    <!--
+        comment: this change set is to set as inactive the job 'Generate AdhocClient Schedule' and delete the job run history for this job.
+    -->
+    <changeSet author="fineract" id="8">
+        <sql>
+            DELETE FROM job_run_history WHERE job_id IN (SELECT id FROM job WHERE name IN ('Generate AdhocClient Schedule'))
+        </sql>
+        <sql>
+            UPDATE job SET is_active = 0 WHERE name = 'Generate AdhocClient Schedule'
+        </sql>
+    </changeSet>
+
+    <!--
+        comment: this change set is to set as inactive the job 'Generate Mandatory Savings Schedule' and delete the job run history for this job.
+    -->
+    <changeSet author="fineract" id="9">
+        <sql>
+            DELETE FROM job_run_history WHERE job_id IN (SELECT id FROM job WHERE name IN ('Generate Mandatory Savings Schedule'))
+        </sql>
+        <sql>
+            UPDATE job SET is_active = 0 WHERE name = 'Generate Mandatory Savings Schedule'
+        </sql>
+    </changeSet>
+
+    <!--
+        comment: this change set is to set as inactive the job 'Get Delivery Reports from SMS Gateway' and delete the job run history for this job.
+    -->
+    <changeSet author="fineract" id="10">
+        <sql>
+            DELETE FROM job_run_history WHERE job_id IN (SELECT id FROM job WHERE name IN ('Get Delivery Reports from SMS Gateway'))
+        </sql>
+        <sql>
+            UPDATE job SET is_active = 0 WHERE name = 'Get Delivery Reports from SMS Gateway'
+        </sql>
+    </changeSet>
+
+    <!--
+        comment: this change set is to set as inactive the job 'Increase Business Date by 1 day' and delete the job run history for this job.
+    -->
+    <changeSet author="fineract" id="11">
+        <sql>
+            DELETE FROM job_run_history WHERE job_id IN (SELECT id FROM job WHERE name IN ('Increase Business Date by 1 day'))
+        </sql>
+        <sql>
+            UPDATE job SET is_active = 0 WHERE name = 'Increase Business Date by 1 day'
+        </sql>
+    </changeSet>
+
+    <!--
+        comment: this change set is to set as inactive the job 'Increase COB Date by 1 day' and delete the job run history for this job.
+    -->
+    <changeSet author="fineract" id="12">
+        <sql>
+            DELETE FROM job_run_history WHERE job_id IN (SELECT id FROM job WHERE name IN ('Increase COB Date by 1 day'))
+        </sql>
+        <sql>
+            UPDATE job SET is_active = 0 WHERE name = 'Increase COB Date by 1 day'
+        </sql>
+    </changeSet>
+
+    <!--
+        comment: this change set is to set as inactive the job 'Pay Due Savings Charges' and delete the job run history for this job.
+    -->
+    <changeSet author="fineract" id="13">
+        <sql>
+            DELETE FROM job_run_history WHERE job_id IN (SELECT id FROM job WHERE name IN ('Pay Due Savings Charges'))
+        </sql>
+        <sql>
+            UPDATE job SET is_active = 0 WHERE name = 'Pay Due Savings Charges'
+        </sql>
+    </changeSet>
+
+    <!--
+        comment: this change set is to set as inactive the job 'Post Dividends For Shares' and delete the job run history for this job.
+    -->
+    <changeSet author="fineract" id="14">
+        <sql>
+            DELETE FROM job_run_history WHERE job_id IN (SELECT id FROM job WHERE name IN ('Post Dividends For Shares'))
+        </sql>
+        <sql>
+            UPDATE job SET is_active = 0 WHERE name = 'Post Dividends For Shares'
+        </sql>
+    </changeSet>
+
+    <!--
+        comment: this change set is to set as inactive the job 'Post Interest For Savings' and delete the job run history for this job.
+    -->
+    <changeSet author="fineract" id="15">
+        <sql>
+            DELETE FROM job_run_history WHERE job_id IN (SELECT id FROM job WHERE name IN ('Post Interest For Savings'))
+        </sql>
+        <sql>
+            UPDATE job SET is_active = 0 WHERE name = 'Post Interest For Savings'
+        </sql>
+    </changeSet>
+
+    <!--
+        comment: this change set is to set as inactive the job 'Send Messages to SMS Gateway' and delete the job run history for this job.
+    -->
+    <changeSet author="fineract" id="16">
+        <sql>
+            DELETE FROM job_run_history WHERE job_id IN (SELECT id FROM job WHERE name IN ('Send Messages to SMS Gateway'))
+        </sql>
+        <sql>
+            UPDATE job SET is_active = 0 WHERE name = 'Send Messages to SMS Gateway'
+        </sql>
+    </changeSet>
+
+    <!--
+        comment: this change set is to set as inactive the job 'Send Messages to SMS Gateway' and delete the job run history for this job.
+    -->
+    <changeSet author="fineract" id="17">
+        <sql>
+            DELETE FROM job_run_history WHERE job_id IN (SELECT id FROM job WHERE name IN ('Transfer Fee For Loans From Savings'))
+        </sql>
+        <sql>
+            UPDATE job SET is_active = 0 WHERE name = 'Transfer Fee For Loans From Savings'
+        </sql>
+    </changeSet>
+
+    <!--
+        comment: this change set is to set as inactive the job 'Transfer Interest To Savings' and delete the job run history for this job.
+    -->
+    <changeSet author="fineract" id="18">
+        <sql>
+            DELETE FROM job_run_history WHERE job_id IN (SELECT id FROM job WHERE name IN ('Transfer Interest To Savings'))
+        </sql>
+        <sql>
+            UPDATE job SET is_active = 0 WHERE name = 'Transfer Interest To Savings'
+        </sql>
+    </changeSet>
+
+    <!--
+        comment: this change set is to set as inactive the job 'Update Deposit Accounts Maturity details' and delete the job run history for this job.
+    -->
+    <changeSet author="fineract" id="19">
+        <sql>
+            DELETE FROM job_run_history WHERE job_id IN (SELECT id FROM job WHERE name IN ('Update Deposit Accounts Maturity details'))
+        </sql>
+        <sql>
+            UPDATE job SET is_active = 0 WHERE name = 'Update Deposit Accounts Maturity details'
+        </sql>
+    </changeSet>
+
+    <!--
+        comment: this change set is to set as inactive the job 'Update Email Outbound with campaign message' and delete the job run history for this job.
+    -->
+    <changeSet author="fineract" id="20">
+        <sql>
+            DELETE FROM job_run_history WHERE job_id IN (SELECT id FROM job WHERE name IN ('Update Email Outbound with campaign message'))
+        </sql>
+        <sql>
+            UPDATE job SET is_active = 0 WHERE name = 'Update Email Outbound with campaign message'
+        </sql>
+    </changeSet>
+
+    <!--
+        comment: this change set is to set as inactive the job 'Update Savings Dormant Accounts' and delete the job run history for this job.
+    -->
+    <changeSet author="fineract" id="21">
+        <sql>
+            DELETE FROM job_run_history WHERE job_id IN (SELECT id FROM job WHERE name IN ('Update Savings Dormant Accounts'))
+        </sql>
+        <sql>
+            UPDATE job SET is_active = 0 WHERE name = 'Update Savings Dormant Accounts'
+        </sql>
+    </changeSet>
+
+    <!--
+        comment: this change set is to set as inactive the job 'Update SMS Outbound with Campaign Message' and delete the job run history for this job.
+    -->
+    <changeSet author="fineract" id="22">
+        <sql>
+            DELETE FROM job_run_history WHERE job_id IN (SELECT id FROM job WHERE name IN ('Update SMS Outbound with Campaign Message'))
+        </sql>
+        <sql>
+            UPDATE job SET is_active = 0 WHERE name = 'Update SMS Outbound with Campaign Message'
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>
