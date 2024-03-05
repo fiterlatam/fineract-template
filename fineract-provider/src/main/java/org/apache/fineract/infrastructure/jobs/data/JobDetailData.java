@@ -44,12 +44,14 @@ public class JobDetailData {
     @SuppressWarnings("unused")
     private final boolean currentlyRunning;
 
+    private final int executionOrder;
+
     @SuppressWarnings("unused")
     private final JobDetailHistoryData lastRunHistory;
 
     public JobDetailData(final Long jobId, final String displayName, final String displayNameCode, final Date nextRunTime,
             final String initializingError, final String cronExpression, final boolean active, final boolean currentlyRunning,
-            final JobDetailHistoryData lastRunHistory) {
+            int executionOrder, final JobDetailHistoryData lastRunHistory) {
         this.jobId = jobId;
         this.displayName = displayName;
         this.displayNameCode = displayNameCode;
@@ -57,6 +59,7 @@ public class JobDetailData {
         this.initializingError = initializingError;
         this.cronExpression = cronExpression;
         this.active = active;
+        this.executionOrder = executionOrder;
         this.lastRunHistory = lastRunHistory;
         this.currentlyRunning = currentlyRunning;
     }

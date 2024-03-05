@@ -141,7 +141,7 @@ public class SchedulerJobRunnerReadServiceImpl implements SchedulerJobRunnerRead
 
         JobDetailMapper(DatabaseSpecificSQLGenerator sqlGenerator) {
             sqlBuilder = new StringBuilder("select").append(
-                    " job.id,job.display_name as displayName, job.display_name_code as displayNameCode, job.next_run_time as nextRunTime,job.initializing_errorlog as initializingError,job.cron_expression as cronExpression,job.is_active as active,job.currently_running as currentlyRunning,")
+                    " job.id,job.display_name as displayName, job.display_name_code as displayNameCode, job.execution_order as executionOrder, job.next_run_time as nextRunTime,job.initializing_errorlog as initializingError,job.cron_expression as cronExpression,job.is_active as active,job.currently_running as currentlyRunning,")
                     .append(" runHistory.version,runHistory.start_time as lastRunStartTime,runHistory.end_time as lastRunEndTime,runHistory."
                             + sqlGenerator.escape("status")
                             + ",runHistory.error_message as jobRunErrorMessage,runHistory.trigger_type as triggerType,runHistory.error_log as jobRunErrorLog ")
@@ -162,7 +162,7 @@ public class SchedulerJobRunnerReadServiceImpl implements SchedulerJobRunnerRead
             final String cronExpression = rs.getString("cronExpression");
             final boolean active = rs.getBoolean("active");
             final boolean currentlyRunning = rs.getBoolean("currentlyRunning");
-
+            final int executionOrder = rs.getInt("executionOrder");
             final Long version = rs.getLong("version");
             final Date jobRunStartTime = rs.getTimestamp("lastRunStartTime");
             final Date jobRunEndTime = rs.getTimestamp("lastRunEndTime");
@@ -177,7 +177,7 @@ public class SchedulerJobRunnerReadServiceImpl implements SchedulerJobRunnerRead
                         jobRunErrorLog);
             }
             final JobDetailData jobDetail = new JobDetailData(id, displayName, displayNameCode, nextRunTime, initializingError,
-                    cronExpression, active, currentlyRunning, lastRunHistory);
+                    cronExpression, active, currentlyRunning, executionOrder, lastRunHistory);
             return jobDetail;
         }
 

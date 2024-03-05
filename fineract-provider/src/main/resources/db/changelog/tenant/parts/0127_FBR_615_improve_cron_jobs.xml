@@ -314,4 +314,57 @@
         </sql>
     </changeSet>
 
+    <changeSet author="fineract" id="23">
+        <addColumn tableName="job">
+            <column name="execution_order" type="INT" defaultValueComputed="NULL"/>
+        </addColumn>
+    </changeSet>
+
+    <!--
+    comment: This change set is to set the order for jobs to be executed.
+-->
+    <changeSet author="fineract" id="24">
+        <sql>
+            UPDATE job SET execution_order = 1 WHERE name = 'Apply Holidays To Loans'
+        </sql>
+        <sql>
+            UPDATE job SET execution_order = 2 WHERE name = 'Apply penalty to overdue loans'
+        </sql>
+        <sql>
+            UPDATE job SET execution_order = 3 WHERE name = 'Update Non Performing Assets'
+        </sql>
+        <sql>
+            UPDATE job SET execution_order = 4 WHERE name = 'Update Loan Arrears Ageing'
+        </sql>
+        <sql>
+            UPDATE job SET execution_order = 5 WHERE name = 'Recalculate Interest For Loans'
+        </sql>
+        <sql>
+            UPDATE job SET execution_order = 6 WHERE name = 'Add Accrual Transactions'
+        </sql>
+        <sql>
+            UPDATE job SET execution_order = 7 WHERE name = 'Add Accrual Transactions For Loans With Income Posted As Transactions'
+        </sql>
+        <sql>
+            UPDATE job SET execution_order = 8 WHERE name = 'Add Periodic Accrual Transactions'
+        </sql>
+        <sql>
+            UPDATE job SET execution_order = 9 WHERE name = 'Generate Loan Loss Provisioning'
+        </sql>
+        <sql>
+            UPDATE job SET execution_order = 10 WHERE name = 'Update Accounting Running Balances'
+        </sql>
+        <sql>
+            UPDATE job SET execution_order = 11 WHERE name = 'Update Trial Balance Details'
+        </sql>
+
+        <sql>
+            UPDATE job SET execution_order = 12 WHERE name = 'Disable Expired Prequalifications'
+        </sql>
+
+        <sql>
+            UPDATE job SET execution_order = 13 WHERE name = 'Import Batches of Loan Repayments'
+        </sql>
+    </changeSet>
+
 </databaseChangeLog>
