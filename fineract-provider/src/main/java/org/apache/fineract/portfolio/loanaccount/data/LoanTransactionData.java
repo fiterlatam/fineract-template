@@ -183,6 +183,7 @@ public class LoanTransactionData {
     public void setNumberOfRepayments(Integer numberOfRepayments) {
         this.numberOfRepayments = numberOfRepayments;
     }
+
     public void setCollateralAmount(BigDecimal collateralAmount) {
         this.collateralAmount = collateralAmount;
     }

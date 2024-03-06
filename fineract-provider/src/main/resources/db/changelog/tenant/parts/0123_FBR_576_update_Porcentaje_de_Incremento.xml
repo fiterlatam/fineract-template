@@ -125,4 +125,28 @@
         </sql>
     </changeSet>
 
+
+    <changeSet id="6" author="fineract">
+        <sql>
+            <![CDATA[
+            UPDATE stretchy_report
+            SET report_sql=
+                        "SELECT CASE
+                           WHEN (${loanProductId} = 2) AND ${numberOfDocuments} > 0  THEN 'GREEN'
+                           WHEN (${loanProductId} = 3) AND ${numberOfDocuments} > 0  THEN 'GREEN'
+                           WHEN (${loanProductId} = 4) AND ${numberOfDocuments} > 0  THEN 'GREEN'
+                           WHEN (${loanProductId} = 5) AND ${numberOfDocuments} > 0  THEN 'GREEN'
+                           WHEN (${loanProductId} = 6) AND ${numberOfDocuments} > 0  THEN 'GREEN'
+                           WHEN (${loanProductId} = 7) AND (${numberOfDocuments} > 0 OR ${requestedAmount} <= 5000)   THEN 'GREEN'
+                           WHEN (${loanProductId} = 8) AND ${numberOfDocuments} > 0  THEN 'GREEN'
+                           WHEN (${loanProductId} = 9) AND ${numberOfDocuments} > 0  THEN 'GREEN'
+                           WHEN (${loanProductId} = 10) AND ${numberOfDocuments} > 0  THEN 'GREEN'
+                           ELSE 'RED'
+                        END AS color
+                        FROM m_client mc WHERE mc.id = ${clientId}"
+            WHERE report_name = "Add endorsement Policy Check";
+            ]]>
+        </sql>
+    </changeSet>
+
 </databaseChangeLog>
