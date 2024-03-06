@@ -34,22 +34,11 @@ RUN sed -i 's|services.gradle.org/distributions/gradle-8.5-bin.zip|sumasparati.m
 RUN ./gradlew --no-daemon -q  -x compileTestJava -x test bootJar
 RUN mv /fineract/fineract-provider/build/libs/*.jar /fineract/fineract-provider/build/libs/fineract-provider.jar
 
-
-# https://issues.apache.org/jira/browse/LEGAL-462
-# https://issues.apache.org/jira/browse/FINERACT-762
-# We include an alternative JDBC driver (which is faster, but not allowed to be default in Apache distribution)
-# allowing implementations to switch the driver used by changing start-up parameters (for both tenants and each tenant DB)
-# The commented out lines in the docker-compose.yml illustrate how to do this.
 WORKDIR /app/libs
-
+RUN wget -q https://repo1.maven.org/maven2/com/mysql/mysql-connector-j/8.0.33/mysql-connector-j-8.0.33.jar
 # =========================================
 
 FROM azul/zulu-openjdk:17 as fineract
-
-#pentaho copy
-# COPY --from=builder /fineract/fineract-provider/pentahoReports/*.properties /root/.mifosx/pentahoReports/
-# COPY --from=builder /fineract/fineract-provider/pentahoReports/*.prpt /root/.mifosx/pentahoReports/
-# COPY --from=builder /fineract/fineract-provider/ff4j/*.yml /root/.fineract/ff4j/
 
 COPY --from=builder /fineract/fineract-provider/build/libs/ /app
 COPY --from=builder /app/libs /app/libs
