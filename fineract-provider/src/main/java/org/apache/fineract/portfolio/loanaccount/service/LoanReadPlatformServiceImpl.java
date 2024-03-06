@@ -727,7 +727,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
             return "l.id as id, mlrs.first_duedate As firstInstallmentDate, l.account_no as accountNo, l.contract as contractNo, l.external_id as externalId, l.fund_id as fundId, f.name as fundName, l.prequalification_id AS prequalificationId, "
                     + " l.loan_type_enum as loanType, l.loanpurpose_cv_id as loanPurposeId, cv.code_value as loanPurposeName,"
                     + " lp.id as loanProductId, lp.name as loanProductName, lp.description as loanProductDescription,"
-                    + " case when lp.id = 7 and (coalesce(lp.required_guarantee_percent,0)*l.principal_amount) < 500000 then 0 else (coalesce(lp.required_guarantee_percent,0)*l.principal_amount) end as requiredGuaranteeAmount,"
+                    + " coalesce(lp.required_guarantee_percent, 0) * l.principal_amount as requiredGuaranteeAmount,"
                     + " lp.is_linked_to_floating_interest_rates as isLoanProductLinkedToFloatingRate, "
                     + " lp.allow_variabe_installments as isvariableInstallmentsAllowed, "
                     + " lp.allow_multiple_disbursals as multiDisburseLoan,"

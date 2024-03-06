@@ -60,7 +60,7 @@ public class SchedulerJobRunnerReadServiceImpl implements SchedulerJobRunnerRead
     @Override
     public List<JobDetailData> findAllJobDeatils() {
         final JobDetailMapper detailMapper = new JobDetailMapper(sqlGenerator);
-        final String sql = detailMapper.schema() + " where job.is_active = ?";
+        final String sql = detailMapper.schema() + " where job.is_active = ? ORDER BY job.execution_order";
         final List<JobDetailData> JobDeatils = this.jdbcTemplate.query(sql, detailMapper, new Object[] { true });
         return JobDeatils;
 
