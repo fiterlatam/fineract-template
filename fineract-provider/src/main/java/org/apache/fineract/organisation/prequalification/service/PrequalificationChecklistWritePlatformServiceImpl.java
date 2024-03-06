@@ -327,9 +327,8 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
         final Long loanId = clientData.getLoanId();
         final String percentageIncreaseSQL = """
                 SELECT
-                CASE WHEN (mlag.current_credit_value = 0 OR mlag.requested_value = 0) THEN 0
-                     WHEN mlag.requested_value < mlag.current_credit_value THEN 0
-                     ELSE ((mlag.requested_value - mlag.current_credit_value)/mlag.current_credit_value) * 100
+                CASE WHEN (mlag.current_credit_value <= 0) THEN 0
+                     ELSE (mlag.requested_value/mlag.current_credit_value) * 100
                 END AS percentageIncrease
                 FROM m_loan_additionals_group mlag
                 INNER JOIN m_loan ml ON ml.id = mlag.loan_id
@@ -373,9 +372,8 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
                 .defaultIfNull(this.jdbcTemplate.queryForObject(secondDocumentCountSql, Long.class, secondDocumentParams), 0L);
         final String percentageIncreaseSQL = """
                 SELECT
-                CASE WHEN (mlag.current_credit_value = 0 OR mlag.requested_value = 0) THEN 0
-                     WHEN mlag.requested_value < mlag.current_credit_value THEN 0
-                     ELSE ((mlag.requested_value - mlag.current_credit_value)/mlag.current_credit_value) * 100
+                CASE WHEN (mlag.current_credit_value <= 0) THEN 0
+                     ELSE (mlag.requested_value/mlag.current_credit_value) * 100
                 END AS percentageIncrease
                 FROM m_loan_additionals_group mlag
                 INNER JOIN m_loan ml ON ml.id = mlag.loan_id
@@ -702,6 +700,7 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
         reportParams.put("${clientId}", clientId);
         reportParams.put("${loanProductId}", productId);
         reportParams.put("${numberOfDocuments}", String.valueOf(documentCount));
+        reportParams.put("${requestedAmount}", String.valueOf(clientData.getRequestedAmount()));
         final GenericResultsetData result = this.readReportingService.retrieveGenericResultset(reportName, "report", reportParams, false);
         return extractColorFromResultset(result);
     }

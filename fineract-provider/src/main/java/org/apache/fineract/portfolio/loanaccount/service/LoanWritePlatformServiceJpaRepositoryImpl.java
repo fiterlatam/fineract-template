@@ -1042,7 +1042,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         final boolean adjustGuarantee = command.booleanPrimitiveValueOfParameterNamed("adjustGuarantee");
         BigDecimal totalOutstanding = loan.getSummary().getTotalOutstanding();
 
-        if (adjustGuarantee || totalOutstanding.compareTo(BigDecimal.ZERO)<=0) {
+        if (adjustGuarantee || totalOutstanding.compareTo(BigDecimal.ZERO) <= 0) {
             List<SavingsAccountTransaction> savingsAccountTransactions = this.savingsAccountTransactionRepository
                     .findAllTransactionByLoanId(loanId);
 
@@ -1069,9 +1069,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 if (holdTransaction.getAmount().compareTo(totalOutstanding) < 0 && adjustGuarantee) {
                     throw new PaymentNotEnoughForAdjustmentException(transactionAmount, totalOutstanding, holdTransaction.getAmount());
                 }
-                //release loan guarantee to make payment
+                // release loan guarantee to make payment
                 this.savingsAccountWritePlatformService.releaseLoanGuarantee(loanId, command, transactionDate, holdTransaction);
-
 
                 if (totalOutstanding.compareTo(BigDecimal.ZERO) > 0) {
 
@@ -1090,7 +1089,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                     final AccountTransferDetails accountTransferDetails = this.accountTransferAssembler.assembleSavingsToLoanTransfer(
                             assemblerCommand, fromSavingsAccount, loan, withdrawal, loanRepaymentTransaction);
                     this.accountTransferDetailRepository.saveAndFlush(accountTransferDetails);
-                }else{
+                } else {
                     if (adjustGuarantee) {
                         // withdraw the hold amount
                         isAccountTransfer = false;
@@ -1099,10 +1098,12 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                         final boolean isApplyWithdrawFee = true;
                         final boolean isInterestTransfer = false;
                         final boolean isWithdrawBalance = false;
-                        final SavingsTransactionBooleanValues transactionBooleanValues = new SavingsTransactionBooleanValues(isAccountTransfer,
-                                isRegularTransaction, isApplyWithdrawFee, isInterestTransfer, isWithdrawBalance, false, false, false, false, false);
-                        final SavingsAccountTransaction withdrawal = this.savingsAccountDomainService.handleWithdrawal(fromSavingsAccount, fmt, transactionDate,
-                                holdTransaction.getAmount(), paymentDetail, transactionBooleanValues, backdatedTxnsAllowedTill);
+                        final SavingsTransactionBooleanValues transactionBooleanValues = new SavingsTransactionBooleanValues(
+                                isAccountTransfer, isRegularTransaction, isApplyWithdrawFee, isInterestTransfer, isWithdrawBalance, false,
+                                false, false, false, false);
+                        final SavingsAccountTransaction withdrawal = this.savingsAccountDomainService.handleWithdrawal(fromSavingsAccount,
+                                fmt, transactionDate, holdTransaction.getAmount(), paymentDetail, transactionBooleanValues,
+                                backdatedTxnsAllowedTill);
                         final Note note = Note.savingsTransactionNote(fromSavingsAccount, withdrawal, "Guarantias Withdrawal");
                         this.noteRepository.save(note);
                     }
