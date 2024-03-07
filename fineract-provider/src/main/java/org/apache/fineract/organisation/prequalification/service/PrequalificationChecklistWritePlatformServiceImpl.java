@@ -328,13 +328,13 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
         final String percentageIncreaseSQL = """
                 SELECT
                 CASE WHEN (mlag.current_credit_value <= 0) THEN 0
-                     ELSE (mlag.requested_value/mlag.current_credit_value) * 100
+                     ELSE ((mlag.requested_value/mlag.current_credit_value) - 1) * 100
                 END AS percentageIncrease
                 FROM m_loan_additionals_group mlag
                 INNER JOIN m_loan ml ON ml.id = mlag.loan_id
                 WHERE ml.id = ?
                 """;
-        Object[] params = new Object[] { loanId };
+        final Object[] params = new Object[] { loanId };
         final BigDecimal percentageIncrease = this.jdbcTemplate.queryForObject(percentageIncreaseSQL, BigDecimal.class, params);
         final Map<String, String> reportParams = new HashMap<>();
         reportParams.put("${clientId}", clientId);
@@ -373,7 +373,7 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
         final String percentageIncreaseSQL = """
                 SELECT
                 CASE WHEN (mlag.current_credit_value <= 0) THEN 0
-                     ELSE (mlag.requested_value/mlag.current_credit_value) * 100
+                     ELSE ((mlag.requested_value/mlag.current_credit_value) - 1) * 100
                 END AS percentageIncrease
                 FROM m_loan_additionals_group mlag
                 INNER JOIN m_loan ml ON ml.id = mlag.loan_id
