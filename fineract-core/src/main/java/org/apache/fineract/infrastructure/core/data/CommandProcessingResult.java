@@ -49,6 +49,8 @@ public class CommandProcessingResult implements Serializable {
     private Boolean rollbackTransaction;
     private final ExternalId resourceExternalId;
     private final ExternalId subResourceExternalId;
+    private String registroPosterior;
+    private String registroAnterior;
 
     private CommandProcessingResult(final Long commandId, final Long officeId, final Long groupId, final Long clientId, final Long loanId,
             final Long savingsId, final String resourceIdentifier, final Long resourceId, final String transactionId,
@@ -158,5 +160,17 @@ public class CommandProcessingResult implements Serializable {
 
     public void setRollbackTransaction(Boolean rollbackTransaction) {
         this.rollbackTransaction = rollbackTransaction;
+    }
+
+    public void setCommandId(Long commandId) {
+        this.commandId = commandId;
+    }
+
+    public void setRegistroPosterior(String registroPosterior) {
+        this.registroPosterior = registroPosterior;
+    }
+
+    public void setRegistroAnterior(String registroAnterior) {
+        this.registroAnterior = registroAnterior;
     }
 }

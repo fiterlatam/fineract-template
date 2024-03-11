@@ -46,10 +46,17 @@ public class CommandProcessingResultBuilder {
 
     private ExternalId subEntityExternalId = ExternalId.empty();
 
+    private String registroPosterior;
+    private String registroAnterior;
+
     public CommandProcessingResult build() {
-        return CommandProcessingResult.fromDetails(this.commandId, this.officeId, this.groupId, this.clientId, this.loanId, this.savingsId,
-                this.resourceIdentifier, this.entityId, this.gsimId, this.glimId, this.creditBureauReportData, this.transactionId,
-                this.changes, this.productId, this.rollbackTransaction, this.subEntityId, this.entityExternalId, this.subEntityExternalId);
+        CommandProcessingResult commandProcessingResult = CommandProcessingResult.fromDetails(this.commandId, this.officeId, this.groupId,
+                this.clientId, this.loanId, this.savingsId, this.resourceIdentifier, this.entityId, this.gsimId, this.glimId,
+                this.creditBureauReportData, this.transactionId, this.changes, this.productId, this.rollbackTransaction, this.subEntityId,
+                this.entityExternalId, this.subEntityExternalId);
+        commandProcessingResult.setRegistroAnterior(this.registroAnterior);
+        commandProcessingResult.setRegistroPosterior(this.registroPosterior);
+        return commandProcessingResult;
     }
 
     public CommandProcessingResultBuilder withCommandId(final Long withCommandId) {
@@ -142,4 +149,18 @@ public class CommandProcessingResultBuilder {
         return this;
     }
 
+    public CommandProcessingResultBuilder setCommandId(Long commandId) {
+        this.commandId = commandId;
+        return this;
+    }
+
+    public CommandProcessingResultBuilder withRegistroAnterior(String registroAnterior) {
+        this.registroAnterior = registroAnterior;
+        return this;
+    }
+
+    public CommandProcessingResultBuilder withRegistroPosterior(String registroPosterior) {
+        this.registroPosterior = registroPosterior;
+        return this;
+    }
 }

@@ -24,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.google.common.reflect.TypeToken;
-import com.google.gson.Gson;
+import com.google.gson.*;
 import io.restassured.specification.RequestSpecification;
 import io.restassured.specification.ResponseSpecification;
 import jakarta.ws.rs.core.HttpHeaders;
@@ -1939,10 +1939,17 @@ public class LoanTransactionHelper extends IntegrationTest {
 
     public static List<Integer> getLoanIdsByStatusId(RequestSpecification requestSpec, ResponseSpecification responseSpec,
             Integer statusId) {
-        final String GET_LOAN_URL = "/fineract-provider/api/v1/internal/loan/status/" + statusId + "?" + Utils.TENANT_IDENTIFIER;
+        final String GET_LOAN_URL = "/fineract-provider/api/v1/loans?status=" + statusId;
         log.info("---------------------------------GET LOANS BY STATUS---------------------------------------------");
         final String get = Utils.performServerGet(requestSpec, responseSpec, GET_LOAN_URL, null);
-        return new Gson().fromJson(get, new TypeToken<ArrayList<Integer>>() {}.getType());
+        final JsonObject jsonObj = new Gson().fromJson(get, JsonObject.class);
+        final JsonArray jsonArray = jsonObj.getAsJsonArray("pageItems");
+        final List<Integer> loanIds = new ArrayList<>();
+        for (final JsonElement jsonElement : jsonArray) {
+            final Integer loadId = jsonElement.getAsJsonObject().getAsJsonPrimitive("id").getAsInt();
+            loanIds.add(loadId);
+        }
+        return loanIds;
     }
 
     public PutLoanProductsProductIdResponse updateLoanProduct(Long id, PutLoanProductsProductIdRequest requestModifyLoan) {

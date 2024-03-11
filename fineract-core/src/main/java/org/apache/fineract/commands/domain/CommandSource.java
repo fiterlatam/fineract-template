@@ -123,6 +123,13 @@ public class CommandSource extends AbstractPersistableCustom {
     @Column(name = "result_status_code")
     private Integer resultStatusCode;
 
+    @Column(name = "maquina")
+    private String maquina;
+    @Column(name = "registro_anterior")
+    private String registroAnterior;
+    @Column(name = "registro_posterior")
+    private String registroPosterior;
+
     private CommandSource(final String actionName, final String entityName, final String href, final Long resourceId,
             final Long subResourceId, final String commandSerializedAsJson, final AppUser maker, final String idempotencyKey,
             final Integer status) {
@@ -344,5 +351,33 @@ public class CommandSource extends AbstractPersistableCustom {
         this.resourceExternalId = result.getResourceExternalId();
         this.subResourceId = result.getSubResourceId();
         this.subResourceExternalId = result.getSubResourceExternalId();
+    }
+
+    public void setActionName(String actionName) {
+        this.actionName = actionName;
+    }
+
+    public String getMaquina() {
+        return maquina;
+    }
+
+    public void setMaquina(String maquina) {
+        this.maquina = maquina;
+    }
+
+    public String getRegistroAnterior() {
+        return registroAnterior;
+    }
+
+    public void setRegistroAnterior(String registroAnterior) {
+        this.registroAnterior = registroAnterior;
+    }
+
+    public String getRegistroPosterior() {
+        return registroPosterior;
+    }
+
+    public void setRegistroPosterior(String registroPosterior) {
+        this.registroPosterior = registroPosterior;
     }
 }

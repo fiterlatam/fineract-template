@@ -112,6 +112,7 @@ public class SynchronousCommandProcessingService implements CommandProcessingSer
             }
         }
         if (commandId != null) {
+            commandSource.setMaquina(ThreadLocalContextUtil.getComputerName());
             storeCommandIdInContext(commandSource); // Store command id as a request attribute
         }
 
@@ -125,6 +126,8 @@ public class SynchronousCommandProcessingService implements CommandProcessingSer
         try {
             result = commandSourceService.processCommand(findCommandHandler(wrapper), command, commandSource, user, isApprovedByChecker,
                     isMakerChecker);
+            commandSource.setRegistroAnterior(result.getRegistroAnterior());
+            commandSource.setRegistroPosterior(result.getRegistroPosterior());
         } catch (Throwable t) { // NOSONAR
             RuntimeException mappable = ErrorHandler.getMappable(t);
             ErrorInfo errorInfo = commandSourceService.generateErrorInfo(mappable);

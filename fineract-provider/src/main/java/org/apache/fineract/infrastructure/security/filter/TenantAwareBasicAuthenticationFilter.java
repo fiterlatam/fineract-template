@@ -24,6 +24,8 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.time.LocalDate;
 import java.util.HashMap;
 import lombok.Setter;
@@ -102,6 +104,14 @@ public class TenantAwareBasicAuthenticationFilter extends BasicAuthenticationFil
 
         final StopWatch task = new StopWatch();
         task.start();
+        String computerName;
+        final String remoteAddress = request.getRemoteAddr();
+        try {
+            final InetAddress inetAddress = InetAddress.getByName(remoteAddress);
+            computerName = inetAddress.getHostName();
+        } catch (UnknownHostException e) {
+            computerName = request.getRemoteHost();
+        }
 
         try {
             ThreadLocalContextUtil.reset();
@@ -136,7 +146,7 @@ public class TenantAwareBasicAuthenticationFilter extends BasicAuthenticationFil
                     if (authToken != null && authToken.startsWith("Basic ")) {
                         ThreadLocalContextUtil.setAuthToken(authToken.replaceFirst("Basic ", ""));
                     }
-
+                    ThreadLocalContextUtil.setComputerName(computerName);
                     if (!FIRST_REQUEST_PROCESSED) {
                         final String baseUrl = request.getRequestURL().toString().replace(request.getPathInfo(), "/");
                         System.setProperty("baseUrl", baseUrl);
