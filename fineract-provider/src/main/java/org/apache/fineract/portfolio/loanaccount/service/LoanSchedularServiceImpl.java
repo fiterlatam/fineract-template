@@ -371,7 +371,7 @@ public class LoanSchedularServiceImpl implements LoanSchedularService {
 
                     // Loan is already closed/cancelled
                     if (loanAccount.isClosed()) {
-                        final String failMessage = "error.msg.loan.is.closed.or.cancelled: Loan ID :: " + loanCode;
+                        final String failMessage = "El préstamo está cerrado o cancelado. ID: " + loanCode;
                         loanRepaymentImport.setStatus(LoanRepaymentImportStatus.ERROR.getId());
                         loanRepaymentImport.setErrorId(2L);
                         loanRepaymentImport.setOperationResult(failMessage);
@@ -430,8 +430,8 @@ public class LoanSchedularServiceImpl implements LoanSchedularService {
                         final BigDecimal upperLimitAmount = scheduledAmount.add(limitPortion);
                         final BigDecimal lowerLimitAmount = scheduledAmount.subtract(limitPortion);
                         if (transactionAmount.compareTo(upperLimitAmount) > 0) {
-                            final String failMessage = "error.msg.the.provided.transaction.amount.is.greater.than.tolerance.limit:: Loan ID = "
-                                    + loanCode + " and transaction amount = " + transactionAmount;
+                            final String failMessage = "El monto de la transacción " + transactionAmount
+                                    + " es mayor que el límite de tolerancia del préstamo ID: " + loanCode;
                             loanRepaymentImport.setStatus(LoanRepaymentImportStatus.ERROR.getId());
                             loanRepaymentImport.setErrorId(4L);
                             loanRepaymentImport.setOperationResult(failMessage);
@@ -442,8 +442,8 @@ public class LoanSchedularServiceImpl implements LoanSchedularService {
                         }
 
                         if (transactionAmount.compareTo(lowerLimitAmount) < 0) {
-                            final String failMessage = "error.msg.the.provided.transaction.amount.is.less.than.tolerance.limit:: Loan ID = "
-                                    + loanCode + " and transaction amount = " + transactionAmount;
+                            final String failMessage = "El monto de la transacción " + transactionAmount
+                                    + " es menor que el límite de tolerancia del préstamo ID: " + loanCode;
                             loanRepaymentImport.setStatus(LoanRepaymentImportStatus.ERROR.getId());
                             loanRepaymentImport.setErrorId(5L);
                             loanRepaymentImport.setOperationResult(failMessage);
@@ -456,8 +456,8 @@ public class LoanSchedularServiceImpl implements LoanSchedularService {
 
                     // Payment amount greater than outstanding
                     if (Money.of(currency, transactionAmount).isGreaterThan(Money.of(currency, outstandingLoanBalance))) {
-                        final String failMessage = "error.msg.the.provided.transaction.amount.exceeds.the.amount.to.payoff.the.loans:: Loan ID = "
-                                + loanCode + " and transaction amount = " + transactionAmount;
+                        final String failMessage = "El monto de la transacción " + transactionAmount
+                                + " excede el monto de reembolso del préstamo ID: " + loanCode;
                         loanRepaymentImport.setStatus(LoanRepaymentImportStatus.ERROR.getId());
                         loanRepaymentImport.setErrorId(3L);
                         loanRepaymentImport.setOperationResult(failMessage);
