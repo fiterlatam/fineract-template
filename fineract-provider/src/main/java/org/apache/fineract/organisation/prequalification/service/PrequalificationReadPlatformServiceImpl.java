@@ -173,14 +173,6 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                 final EnumOptionData enumOptionData = PreQualificationsMemberEnumerations.status(status);
                 memberPrequalificationData.setStatus(enumOptionData);
             }
-            Long membersRedValidationCount = members.stream().mapToLong(MemberPrequalificationData::getRedValidationCount).sum();
-            clientData.setRedValidationCount(clientData.getRedValidationCount() + membersRedValidationCount);
-            Long membersOrangeValidationCount = members.stream().mapToLong(MemberPrequalificationData::getOrangeValidationCount).sum();
-            clientData.setOrangeValidationCount(clientData.getOrangeValidationCount() + membersOrangeValidationCount);
-            Long membersYellowValidationCount = members.stream().mapToLong(MemberPrequalificationData::getYellowValidationCount).sum();
-            clientData.setYellowValidationCount(clientData.getYellowValidationCount() + membersYellowValidationCount);
-            Long membersGreenValidationCount = members.stream().mapToLong(MemberPrequalificationData::getGreenValidationCount).sum();
-            clientData.setGreenValidationCount(clientData.getYellowValidationCount() + membersGreenValidationCount);
             clientData.updateMembers(members);
         }
         return clientData;
@@ -798,7 +790,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             final Long redValidationCount = rs.getLong("redValidationCount");
             final Long orangeValidationCount = rs.getLong("orangeValidationCount");
             final Long greenValidationCount = rs.getLong("greenValidationCount");
-            final Long yellowValidationCount = rs.getLong("redValidationCount");
+            final Long yellowValidationCount = rs.getLong("yellowValidationCount");
             final Long clientId = rs.getLong("clientId");
             final Boolean groupPresident = rs.getBoolean("groupPresident");
             MemberPrequalificationData memberPrequalificationData = MemberPrequalificationData.instance(id, name, dpi, dob, puente,

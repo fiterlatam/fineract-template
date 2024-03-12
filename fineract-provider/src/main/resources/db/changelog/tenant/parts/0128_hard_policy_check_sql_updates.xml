@@ -47,4 +47,54 @@
         </sql>
     </changeSet>
 
+    <changeSet id="2" author="fineract">
+        <sql>
+            <![CDATA[
+                UPDATE stretchy_report SET report_sql = "SELECT mc.id,
+                UPPER(COALESCE(mc.nationality, '')) AS client_nationality,
+                CASE
+                    WHEN (${loanProductId} = 6) AND ('${recreditCategorization}' = 'NUEVO') AND ('GUATEMAL' LIKE CONCAT('%',COALESCE(mc.nationality, ''),'%')) THEN 'GREEN'
+                    WHEN (${loanProductId} = 6) AND ('${recreditCategorization}' = 'NUEVO') AND ('GUATEMAL' NOT LIKE CONCAT('%',COALESCE(mc.nationality, ''),'%')) THEN 'RED'
+                    WHEN (${loanProductId} = 6) AND ('${recreditCategorization}' = 'RECREDITO') AND ('GUATEMAL' LIKE CONCAT('%',COALESCE(mc.nationality, ''),'%')) THEN 'GREEN'
+                    WHEN (${loanProductId} = 6) AND ('${recreditCategorization}' = 'RECREDITO') AND ('GUATEMAL' NOT LIKE CONCAT('%',COALESCE(mc.nationality, ''),'%')) THEN 'RED'
+                    WHEN (${loanProductId} = 6) AND (mc.status_enum = 300) THEN 'GREEN'
+                END AS color
+                FROM m_client mc
+                WHERE mc.id = ${clientId}" WHERE report_name = "Nationality Policy Check";
+            ]]>
+        </sql>
+    </changeSet>
+
+    <changeSet id="3" author="fineract">
+        <sql>
+            <![CDATA[
+                UPDATE stretchy_report SET report_sql = "SELECT
+                COALESCE(client_details.principal_paid_percentage, 0) AS principal_paid_percentage,
+                CASE
+                    WHEN ('${loanProductId}' = 7) AND ( COALESCE(client_details.principal_paid_percentage, 0) >= 50) THEN 'GREEN'
+                    WHEN ('${loanProductId}' = 3) AND ( COALESCE(client_details.principal_paid_percentage, 0) >= 50) THEN 'GREEN'
+                END AS color
+                FROM m_client mc
+                INNER JOIN (
+                    SELECT mc.id AS client_id,  (100 * SUM(ml.principal_repaid_derived)/SUM(ml.principal_disbursed_derived)) AS principal_paid_percentage
+                    FROM m_client mc
+                    LEFT JOIN m_loan ml ON ml.client_id = mc.id
+                    WHERE  ml.loan_status_id in (300,600) AND COALESCE(ml.principal_disbursed_derived, 0) > 0
+                GROUP BY mc.id
+                )client_details ON client_details.client_id = mc.id
+                WHERE mc.id = ${clientId}" WHERE report_name = "Credits Policy Check";
+            ]]>
+        </sql>
+    </changeSet>
+
+    <changeSet id="4" author="fineract">
+        <sql>
+            <![CDATA[
+                DELETE FROM m_product_policy WHERE product_id = 6 AND policy_id = (select id from m_policy where name = 'Present agricultural technical diagnosis (Commcare)' limit 1);
+                DELETE FROM m_product_policy WHERE product_id in (6,7,3) AND policy_id = (select id from m_policy where name = 'Categories of clients to accept' limit 1);
+                UPDATE m_product_policy set evaluation_type = 'GROUP' WHERE policy_id = (select id from m_policy where name = 'Present agricultural technical diagnosis (Commcare)' limit 1);
+            ]]>
+        </sql>
+    </changeSet>
+
 </databaseChangeLog>
