@@ -35,6 +35,7 @@ public final class ThreadLocalContextUtil {
     private static final ThreadLocal<String> contextHolder = new ThreadLocal<>();
     private static final ThreadLocal<FineractPlatformTenant> tenantContext = new ThreadLocal<>();
     private static final ThreadLocal<String> authTokenContext = new ThreadLocal<>();
+    private static final ThreadLocal<String> computerNameContext = new ThreadLocal<>();
     private static final ThreadLocal<HashMap<BusinessDateType, LocalDate>> businessDateContext = new ThreadLocal<>();
     private static final ThreadLocal<ActionContext> actionContext = new ThreadLocal<>();
 
@@ -70,6 +71,14 @@ public final class ThreadLocalContextUtil {
 
     public static void setAuthToken(final String authToken) {
         authTokenContext.set(authToken);
+    }
+
+    public static String getComputerName() {
+        return computerNameContext.get();
+    }
+
+    public static void setComputerName(final String computerName) {
+        computerNameContext.set(computerName);
     }
 
     // Map is not serializable, but Hashmap is
