@@ -138,4 +138,25 @@
         </sql>
     </changeSet>
 
+    <changeSet id="6" author="fineract">
+        <sql>
+            <![CDATA[
+                UPDATE stretchy_report SET report_sql = "SELECT
+                prequalification_details.recreditCategorization,
+                CASE
+                WHEN (${loanProductId} NOT IN (3,7)) AND (prequalification_details.recreditCategorization = 'RECREDITO') AND ('${clientArea}' = 'URBAN') AND (${recurringMembersCount} >= (${newMembersCount}*3)) THEN 'GREEN'
+                WHEN (${loanProductId} NOT IN (3,7)) AND (prequalification_details.recreditCategorization = 'RECREDITO') AND ('${clientArea}' = 'RURAL') AND (${recurringMembersCount} >= (${newMembersCount}*3)) THEN 'GREEN'
+                END AS color
+                FROM m_prequalification_group mpg
+                LEFT JOIN (
+                SELECT p.id AS prequalification_id,
+                (CASE WHEN p.previous_prequalification IS NULL THEN 'NUEVO' ELSE 'RECREDITO' END) AS recreditCategorization
+                FROM m_prequalification_group p
+                )prequalification_details ON prequalification_details.prequalification_id = mpg.id
+                WHERE mpg.id = ${prequalificationId}"
+                WHERE report_name = "Acceptance of new clients Policy Check";
+            ]]>
+        </sql>
+    </changeSet>
+
 </databaseChangeLog>
