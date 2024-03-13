@@ -2679,7 +2679,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                                 gla.job_type as jobType,
                                 jobtypeCV.code_description as jobTypeValue,
                                 gla.occupancy_classification as occupancyClassification,
-                                classificationCV.code_description as occupancyClassificationValue,
+                                eco.name as occupancyClassificationValue,                              
                                 gla.acts_own_behalf as actsOwnBehalf,
                                 ownBehalfCV.code_description as actsOwnBehalfValue,
                                 gla.on_behalf_of as onBehalfOf,
@@ -2696,6 +2696,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                                 gla.rent_fee as rentFee,
                                 gla.mortgage_fee as mortgageFee,
                                 gla.monthly_income as monthlyIncome,
+                                gla.other_income as otherIncome,
                                 gla.family_expenses as familyExpenses,
                                 gla.total_external_loan_amount as totalExternalLoanAmount,
                                 gla.total_installments as totalInstallments,
@@ -2741,7 +2742,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                     LEFT JOIN m_code_value businessEvolutionCV ON businessEvolutionCV.id = gla.business_evolution
                     LEFT JOIN m_code_value businessExperienceCV ON businessExperienceCV.id = gla.business_experience
                     LEFT JOIN m_code_value businessLocationCV ON businessLocationCV.id = gla.business_location
-                    LEFT JOIN m_code_value classificationCV ON classificationCV.id = gla.occupancy_classification
+                    LEFT JOIN m_sector_economico eco ON eco.id = gla.occupancy_classification
                     LEFT JOIN m_code_value educationLevelCV ON educationLevelCV.id = gla.education_level
                     LEFT JOIN m_code_value maritalStatusCV ON maritalStatusCV.id = gla.marital_status
                     LEFT JOIN m_code_value groupPositionCV ON groupPositionCV.id = gla.position
@@ -2809,6 +2810,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
             final BigDecimal rentFee = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "rentFee");
             final BigDecimal mortgageFee = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "mortgageFee");
             final BigDecimal monthlyIncome = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "monthlyIncome");
+            final BigDecimal otherIncome = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "otherIncome");
             final BigDecimal familyExpenses = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "familyExpenses");
             final BigDecimal totalExternalLoanAmount = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "totalExternalLoanAmount");
             final Integer totalInstallments = rs.getInt("totalInstallments");
@@ -2876,7 +2878,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                     .facilitatorProposedValue(facilitatorProposedValue).proposedFee(proposedFee)
                     .agencyAuthorizedAmount(agencyAuthorizedAmount).authorizedFee(authorizedFee).totalIncome(totalIncome)
                     .totalExpenditures(totalExpenditures).availableMonthly(availableMonthly).facValue(facValue).debtLevel(debtLevel)
-                    .dateOfBirth(dateOfBirth).build();
+                    .dateOfBirth(dateOfBirth).otherIncome(otherIncome).build();
             return additionalGroupLoanData;
         }
 
