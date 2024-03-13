@@ -46,7 +46,6 @@ import java.util.stream.Collectors;
 import javax.ws.rs.NotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.accounting.glaccount.domain.GLAccount;
 import org.apache.fineract.accounting.glaccount.domain.GLAccountRepositoryWrapper;
 import org.apache.fineract.cob.loan.ApplyChargeToOverdueLoansBusinessStep;
@@ -482,9 +481,7 @@ public class LoanSchedularServiceImpl implements LoanSchedularService {
                     jsonObject.addProperty(PaymentDetailConstants.receiptNumberParamName, receiptNumber);
                     jsonObject.addProperty("locale", localeAsString);
                     jsonObject.addProperty("dateFormat", dateFormat);
-                    if (StringUtils.equalsIgnoreCase(lastInstallment, "S") || outstandingLoanBalance.compareTo(transactionAmount) <= 0) {
-                        jsonObject.addProperty("adjustGuarantee", true);
-                    }
+
                     final JsonCommand command = JsonCommand.fromJsonElement(loanId, jsonObject, this.fromApiJsonHelper);
                     command.setJsonCommand(jsonObject.toString());
                     CommandProcessingResult result = loanWritePlatformService.makeLoanRepayment(LoanTransactionType.REPAYMENT, loanId,
