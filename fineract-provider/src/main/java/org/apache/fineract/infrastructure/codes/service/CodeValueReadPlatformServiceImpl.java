@@ -18,9 +18,6 @@
  */
 package org.apache.fineract.infrastructure.codes.service;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.Collection;
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 import org.apache.fineract.infrastructure.codes.exception.CodeValueNotFoundException;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
@@ -31,11 +28,15 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
 
-@Service
-public class CodeValueReadPlatformServiceImpl implements CodeValueReadPlatformService {
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.Collection;
 
-    private final JdbcTemplate jdbcTemplate;
-    private final PlatformSecurityContext context;
+@Service
+public abstract class CodeValueReadPlatformServiceImpl implements CodeValueReadPlatformService {
+
+    protected final JdbcTemplate jdbcTemplate;
+    protected final PlatformSecurityContext context;
 
     @Autowired
     public CodeValueReadPlatformServiceImpl(final PlatformSecurityContext context, final JdbcTemplate jdbcTemplate) {
@@ -70,7 +71,7 @@ public class CodeValueReadPlatformServiceImpl implements CodeValueReadPlatformSe
         this.context.authenticatedUser();
 
         final CodeValueDataMapper rm = new CodeValueDataMapper();
-        final String sql = "select " + rm.schema() + "where c.code_name like ? and cv.is_active = true order by position";
+        final String sql = "select " + rm.schema() + "where c.code_name like ? and cv.is_active = true and cv.parent_id IS NULL order by position";
 
         return this.jdbcTemplate.query(sql, rm, new Object[] { code }); // NOSONAR
     }

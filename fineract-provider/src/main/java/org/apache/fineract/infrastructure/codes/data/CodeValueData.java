@@ -25,17 +25,17 @@ import java.io.Serializable;
  */
 public class CodeValueData implements Serializable {
 
-    private final Long id;
+    protected Long id;
 
-    private final String name;
-
-    @SuppressWarnings("unused")
-    private final Integer position;
+    protected String name;
 
     @SuppressWarnings("unused")
-    private final String description;
-    private final boolean active;
-    private final boolean mandatory;
+    protected Integer position;
+
+    @SuppressWarnings("unused")
+    protected String description;
+    protected boolean active;
+    protected boolean mandatory;
 
     public CodeValueData(final Long id) {
         this.id = id;
@@ -45,6 +45,8 @@ public class CodeValueData implements Serializable {
         this.active = false;
         this.mandatory = false;
     }
+
+
 
     public static CodeValueData instance(final Long id, final String name, final Integer position, final boolean isActive,
             final boolean mandatory) {
@@ -79,7 +81,7 @@ public class CodeValueData implements Serializable {
         return new CodeValueData(id, name, position, description, isActive, mandatory);
     }
 
-    private CodeValueData(final Long id, final String name, final Integer position, final String description, final boolean active,
+    public CodeValueData(final Long id, final String name, final Integer position, final String description, final boolean active,
             final boolean mandatory) {
         this.id = id;
         this.name = name;

@@ -3586,4 +3586,28 @@ public class CommandWrapperBuilder {
         this.href = "/codecauses/" + causeId;
         return this;
     }
+
+    public CommandWrapperBuilder createClientAlly() {
+        this.actionName = "CREATE";
+        this.entityName = "CLIENTALLY";
+        this.href = "/clientally";
+        return this;
+    }
+
+    public CommandWrapperBuilder updateClientAlly(final Long id) {
+        this.actionName = "UPDATE";
+        this.entityName = "CLIENTALLY";
+        this.href = "/clientally/" + id;
+        this.entityId = id;
+        return this;
+    }
+
+    public CommandWrapperBuilder deleteClientAlly(final Long id) {
+        this.actionName = "DELETE";
+        this.entityName = "CLIENTALLY";
+        this.href = "/clientally/" + id;
+        this.entityId = id;
+        return this;
+    }
+
 }

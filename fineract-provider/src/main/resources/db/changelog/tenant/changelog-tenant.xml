@@ -43,4 +43,17 @@
     <include file="parts/0026_reversals_for_reversed_transactions.xml" relativeToChangelogFile="true"/>
     <include file="parts/0027_cupo_feature.xml" relativeToChangelogFile="true"/>
     <include file="parts/0028_causal_process_mapping.xml" relativeToChangelogFile="true"/>
+
+    <include file="parts/20240308190000_SU_47_custom_schema_CREATE.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20240308200000_SU_47_code_value_MODIFY.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20240308200050_SU_47_code_value_departamento_INSERT.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20240308200100_SU_47_code_value_ciudad_INSERT.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20240308200200_SU_47_code_value_frecuencia_liquiadcion_INSERT.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20240308200300_SU_47_code_value_entiadd_bancaria_INSERT.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20240308200400_SU_47_code_value_tipo_cuenta_bancaria_INSERT.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20240308200500_SU_47_code_value_perfil_tributario_INSERT.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20240308200600_SU_47_code_value_estado_INSERT.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20240309200000_SU_47_c_client_ally_CREATE.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20240309200100_SU_47_m_permission_INSERT.xml" relativeToChangelogFile="true"/>
+
 </databaseChangeLog>
