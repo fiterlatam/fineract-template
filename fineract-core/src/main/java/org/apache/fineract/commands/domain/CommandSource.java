@@ -125,10 +125,18 @@ public class CommandSource extends AbstractPersistableCustom {
 
     @Column(name = "maquina")
     private String maquina;
+
     @Column(name = "registro_anterior")
     private String registroAnterior;
+
     @Column(name = "registro_posterior")
     private String registroPosterior;
+
+    @Column(name = "rol_nombre")
+    private String rolNombre;
+
+    @Column(name = "usuario_nombre")
+    private String usuarioNombre;
 
     private CommandSource(final String actionName, final String entityName, final String href, final Long resourceId,
             final Long subResourceId, final String commandSerializedAsJson, final AppUser maker, final String idempotencyKey,
@@ -379,5 +387,21 @@ public class CommandSource extends AbstractPersistableCustom {
 
     public void setRegistroPosterior(String registroPosterior) {
         this.registroPosterior = registroPosterior;
+    }
+
+    public String getRolNombre() {
+        return rolNombre;
+    }
+
+    public void setRolNombre(String rolNombre) {
+        this.rolNombre = rolNombre;
+    }
+
+    public String getUsuarioNombre() {
+        return usuarioNombre;
+    }
+
+    public void setUsuarioNombre(String usuarioNombre) {
+        this.usuarioNombre = usuarioNombre;
     }
 }

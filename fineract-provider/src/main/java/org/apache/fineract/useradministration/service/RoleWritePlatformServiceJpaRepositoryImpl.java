@@ -33,6 +33,7 @@ import org.apache.fineract.infrastructure.core.exception.ErrorHandler;
 import org.apache.fineract.infrastructure.core.exception.PlatformDataIntegrityException;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.useradministration.command.PermissionsCommand;
+import org.apache.fineract.useradministration.domain.AppUser;
 import org.apache.fineract.useradministration.domain.Permission;
 import org.apache.fineract.useradministration.domain.PermissionRepository;
 import org.apache.fineract.useradministration.domain.Role;
@@ -61,14 +62,16 @@ public class RoleWritePlatformServiceJpaRepositoryImpl implements RoleWritePlatf
     @Override
     public CommandProcessingResult createRole(final JsonCommand command) {
         try {
-            this.context.authenticatedUser();
+            final AppUser authenticatedUser = this.context.authenticatedUser();
+            final String usuarioNombre = authenticatedUser.getUsername();
             this.roleCommandFromApiJsonDeserializer.validateForCreate(command.json());
             final Role entity = Role.fromJson(command);
+            final String rolNombre = entity.getName();
             this.roleRepository.saveAndFlush(entity);
             final Gson gson = new Gson();
             final String json = gson.toJson(entity);
             return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withEntityId(entity.getId())
-                    .withRegistroPosterior(json).build();
+                    .withRegistroPosterior(json).withUsuarioNombre(usuarioNombre).withRolNombre(rolNombre).build();
         } catch (final JpaSystemException | DataIntegrityViolationException dve) {
             handleDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
             return new CommandProcessingResultBuilder() //
@@ -102,7 +105,8 @@ public class RoleWritePlatformServiceJpaRepositoryImpl implements RoleWritePlatf
     @Override
     public CommandProcessingResult updateRole(final Long roleId, final JsonCommand command) {
         try {
-            this.context.authenticatedUser();
+            final AppUser authenticatedUser = this.context.authenticatedUser();
+            final String usuarioNombre = authenticatedUser.getUsername();
             this.roleCommandFromApiJsonDeserializer.validateForUpdate(command.json());
             final Role role = this.roleRepository.findById(roleId).orElseThrow(() -> new RoleNotFoundException(roleId));
             final Gson gson = new Gson();
@@ -111,12 +115,14 @@ public class RoleWritePlatformServiceJpaRepositoryImpl implements RoleWritePlatf
             if (!changes.isEmpty()) {
                 this.roleRepository.saveAndFlush(role);
             }
+            final String rolNombre = role.getName();
             final String registroPosterior = gson.toJson(role);
             return new CommandProcessingResultBuilder() //
                     .withCommandId(command.commandId()) //
                     .withEntityId(roleId) //
                     .with(changes) //
-                    .withRegistroAnterior(registroAnteriorJson).withRegistroPosterior(registroPosterior).build();
+                    .withRegistroAnterior(registroAnteriorJson).withRegistroPosterior(registroPosterior).withUsuarioNombre(usuarioNombre)
+                    .withRolNombre(rolNombre).build();
         } catch (final JpaSystemException | DataIntegrityViolationException dve) {
             handleDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
             return new CommandProcessingResultBuilder() //
@@ -135,7 +141,8 @@ public class RoleWritePlatformServiceJpaRepositoryImpl implements RoleWritePlatf
     @Transactional
     @Override
     public CommandProcessingResult updateRolePermissions(final Long roleId, final JsonCommand command) {
-        this.context.authenticatedUser();
+        final AppUser authenticatedUser = this.context.authenticatedUser();
+        final String usuarioNombre = authenticatedUser.getUsername();
         final Role role = this.roleRepository.findById(roleId).orElseThrow(() -> new RoleNotFoundException(roleId));
         final Gson gson = new Gson();
         final String registroAnteriorJson = gson.toJson(role);
@@ -157,12 +164,14 @@ public class RoleWritePlatformServiceJpaRepositoryImpl implements RoleWritePlatf
             changes.put("permissions", changedPermissions);
             this.roleRepository.saveAndFlush(role);
         }
+        final String rolNombre = role.getName();
         final String registroPosterior = gson.toJson(role);
         return new CommandProcessingResultBuilder() //
                 .withCommandId(command.commandId()) //
                 .withEntityId(roleId) //
                 .with(changes) //
-                .withRegistroAnterior(registroAnteriorJson).withRegistroPosterior(registroPosterior).build();
+                .withRegistroAnterior(registroAnteriorJson).withRegistroPosterior(registroPosterior).withUsuarioNombre(usuarioNombre)
+                .withRolNombre(rolNombre).build();
     }
 
     private Permission findPermissionByCode(final Collection<Permission> allPermissions, final String permissionCode) {
@@ -183,12 +192,14 @@ public class RoleWritePlatformServiceJpaRepositoryImpl implements RoleWritePlatf
     @Transactional
     @Override
     public CommandProcessingResult deleteRole(Long roleId) {
-
+        final AppUser authenticatedUser = this.context.authenticatedUser();
+        final String usuarioNombre = authenticatedUser.getUsername();
         try {
             /**
              * Checking the role present in DB or not using role_id
              */
             final Role role = this.roleRepository.findById(roleId).orElseThrow(() -> new RoleNotFoundException(roleId));
+            final String rolNombre = role.getName();
             final Gson gson = new Gson();
             final String registroAnteriorJson = gson.toJson(role);
             /**
@@ -200,7 +211,8 @@ public class RoleWritePlatformServiceJpaRepositoryImpl implements RoleWritePlatf
             }
 
             this.roleRepository.delete(role);
-            return new CommandProcessingResultBuilder().withEntityId(roleId).withRegistroAnterior(registroAnteriorJson).build();
+            return new CommandProcessingResultBuilder().withEntityId(roleId).withRegistroAnterior(registroAnteriorJson)
+                    .withUsuarioNombre(usuarioNombre).withRolNombre(rolNombre).build();
         } catch (final JpaSystemException | DataIntegrityViolationException e) {
             throw ErrorHandler.getMappable(e, "error.msg.unknown.data.integrity.issue",
                     "Unknown data integrity issue with resource: " + e.getMostSpecificCause());
@@ -213,11 +225,14 @@ public class RoleWritePlatformServiceJpaRepositoryImpl implements RoleWritePlatf
     @Transactional
     @Override
     public CommandProcessingResult disableRole(Long roleId) {
+        final AppUser authenticatedUser = this.context.authenticatedUser();
+        final String usuarioNombre = authenticatedUser.getUsername();
         try {
             /**
              * Checking the role present in DB or not using role_id
              */
             final Role role = this.roleRepository.findById(roleId).orElseThrow(() -> new RoleNotFoundException(roleId));
+            final String rolNombre = role.getName();
             // if(role.isDisabled()){throw new RoleNotFoundException(roleId);}
             final Gson gson = new Gson();
             final String registroAnteriorJson = gson.toJson(role);
@@ -236,7 +251,7 @@ public class RoleWritePlatformServiceJpaRepositoryImpl implements RoleWritePlatf
             final String registroPosterior = gson.toJson(role);
             this.roleRepository.saveAndFlush(role);
             return new CommandProcessingResultBuilder().withEntityId(roleId).withRegistroAnterior(registroAnteriorJson)
-                    .withRegistroPosterior(registroPosterior).build();
+                    .withRegistroPosterior(registroPosterior).withUsuarioNombre(usuarioNombre).withRolNombre(rolNombre).build();
 
         } catch (final JpaSystemException | DataIntegrityViolationException e) {
             throw ErrorHandler.getMappable(e, "error.msg.unknown.data.integrity.issue",
@@ -250,11 +265,14 @@ public class RoleWritePlatformServiceJpaRepositoryImpl implements RoleWritePlatf
     @Transactional
     @Override
     public CommandProcessingResult enableRole(Long roleId) {
+        final AppUser authenticatedUser = this.context.authenticatedUser();
+        final String usuarioNombre = authenticatedUser.getUsername();
         try {
             /**
              * Checking the role present in DB or not using role_id
              */
             final Role role = this.roleRepository.findById(roleId).orElseThrow(() -> new RoleNotFoundException(roleId));
+            final String rolNombre = role.getName();
             // if(!role.isEnabled()){throw new RoleNotFoundException(roleId);}
             final Gson gson = new Gson();
             final String registroAnteriorJson = gson.toJson(role);
@@ -262,7 +280,7 @@ public class RoleWritePlatformServiceJpaRepositoryImpl implements RoleWritePlatf
             this.roleRepository.saveAndFlush(role);
             final String registroPosterior = gson.toJson(role);
             return new CommandProcessingResultBuilder().withEntityId(roleId).withRegistroAnterior(registroAnteriorJson)
-                    .withRegistroPosterior(registroPosterior).build();
+                    .withRegistroPosterior(registroPosterior).withUsuarioNombre(usuarioNombre).withRolNombre(rolNombre).build();
 
         } catch (final JpaSystemException | DataIntegrityViolationException e) {
             throw ErrorHandler.getMappable(e, "error.msg.unknown.data.integrity.issue",

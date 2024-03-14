@@ -69,6 +69,7 @@ dependencies {
 
             'com.google.guava:guava',
             'com.google.code.gson:gson',
+            'com.fasterxml.jackson.datatype:jackson-datatype-jsr310',
 
             'jakarta.jms:jakarta.jms-api',
             'jakarta.management.j2ee:jakarta.management.j2ee-api',

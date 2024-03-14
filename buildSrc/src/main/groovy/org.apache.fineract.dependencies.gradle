@@ -32,6 +32,7 @@ dependencyManagement {
         mavenBom 'org.jetbrains.kotlin:kotlin-bom:1.9.22'
         mavenBom 'org.junit:junit-bom:5.10.2'
         mavenBom 'com.fasterxml.jackson:jackson-bom:2.16.1'
+        mavenBom 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.16.1'
         mavenBom 'io.cucumber:cucumber-bom:7.15.0'
         mavenBom 'io.netty:netty-bom:4.1.106.Final'
         mavenBom 'org.mockito:mockito-bom:5.10.0'
