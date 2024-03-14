@@ -48,6 +48,8 @@ public class CommandProcessingResultBuilder {
 
     private String registroPosterior;
     private String registroAnterior;
+    private String usuarioNombre;
+    private String rolNombre;
 
     public CommandProcessingResult build() {
         CommandProcessingResult commandProcessingResult = CommandProcessingResult.fromDetails(this.commandId, this.officeId, this.groupId,
@@ -56,6 +58,8 @@ public class CommandProcessingResultBuilder {
                 this.entityExternalId, this.subEntityExternalId);
         commandProcessingResult.setRegistroAnterior(this.registroAnterior);
         commandProcessingResult.setRegistroPosterior(this.registroPosterior);
+        commandProcessingResult.setUsuarioNombre(this.usuarioNombre);
+        commandProcessingResult.setRolNombre(this.rolNombre);
         return commandProcessingResult;
     }
 
@@ -161,6 +165,16 @@ public class CommandProcessingResultBuilder {
 
     public CommandProcessingResultBuilder withRegistroPosterior(String registroPosterior) {
         this.registroPosterior = registroPosterior;
+        return this;
+    }
+
+    public CommandProcessingResultBuilder withUsuarioNombre(String usuarioNombre) {
+        this.usuarioNombre = usuarioNombre;
+        return this;
+    }
+
+    public CommandProcessingResultBuilder withRolNombre(String rolNombre) {
+        this.rolNombre = rolNombre;
         return this;
     }
 }

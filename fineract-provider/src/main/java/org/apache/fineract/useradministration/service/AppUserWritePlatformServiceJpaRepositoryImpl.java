@@ -20,6 +20,9 @@ package org.apache.fineract.useradministration.service;
 
 import static org.apache.fineract.useradministration.service.AppUserConstants.CLIENTS;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import jakarta.persistence.PersistenceException;
@@ -31,7 +34,6 @@ import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.apache.fineract.commands.service.CommandWrapperBuilder;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.ApiParameterError;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
@@ -83,14 +85,15 @@ public class AppUserWritePlatformServiceJpaRepositoryImpl implements AppUserWrit
     private final AppUserPreviousPasswordRepository appUserPreviewPasswordRepository;
     private final StaffRepositoryWrapper staffRepositoryWrapper;
     private final ClientRepositoryWrapper clientRepositoryWrapper;
+    private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
 
     @Override
     @Transactional
     @Caching(evict = { @CacheEvict(value = "users", allEntries = true), @CacheEvict(value = "usersByUsername", allEntries = true) })
     public CommandProcessingResult createUser(final JsonCommand command) {
         try {
-            this.context.authenticatedUser();
-
+            final AppUser authenticatedUser = this.context.authenticatedUser();
+            final String usuarioNombre = authenticatedUser.getUsername();
             this.fromApiJsonDeserializer.validateForCreate(command.json());
 
             final String officeIdParamName = "officeId";
@@ -129,15 +132,15 @@ public class AppUserWritePlatformServiceJpaRepositoryImpl implements AppUserWrit
 
             final Boolean sendPasswordToEmail = command.booleanObjectValueOfParameterNamed("sendPasswordToEmail");
             this.userDomainService.create(appUser, sendPasswordToEmail);
-
+            final String registroPosterior = objectMapper.writeValueAsString(appUser);
             return new CommandProcessingResultBuilder() //
                     .withCommandId(command.commandId()) //
                     .withEntityId(appUser.getId()) //
                     .withOfficeId(userOffice.getId()) //
-                    .build();
+                    .withRegistroPosterior(registroPosterior).withUsuarioNombre(usuarioNombre).build();
         } catch (final DataIntegrityViolationException dve) {
             throw handleDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
-        } catch (final JpaSystemException | PersistenceException | AuthenticationServiceException dve) {
+        } catch (final JpaSystemException | PersistenceException | AuthenticationServiceException | JsonProcessingException dve) {
             log.error("createUser: JpaSystemException | PersistenceException | AuthenticationServiceException", dve);
             Throwable throwable = ExceptionUtils.getRootCause(dve.getCause());
             throw handleDataIntegrityIssues(command, throwable, dve);
@@ -159,12 +162,11 @@ public class AppUserWritePlatformServiceJpaRepositoryImpl implements AppUserWrit
     @Caching(evict = { @CacheEvict(value = "users", allEntries = true), @CacheEvict(value = "usersByUsername", allEntries = true) })
     public CommandProcessingResult updateUser(final Long userId, final JsonCommand command) {
         try {
-            this.context.authenticatedUser(new CommandWrapperBuilder().updateUser(null).build());
-
+            final AppUser authenticatedUser = this.context.authenticatedUser();
+            final String usuarioNombre = authenticatedUser.getUsername();
             this.fromApiJsonDeserializer.validateForUpdate(command.json(), this.context.authenticatedUser());
-
             final AppUser userToUpdate = this.appUserRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
-
+            final String registroAnteriorJson = objectMapper.writeValueAsString(userToUpdate);
             final AppUserPreviousPassword currentPasswordToSaveAsPreview = getCurrentPasswordToSaveAsPreview(userToUpdate, command);
 
             Collection<Client> clients = null;
@@ -214,16 +216,18 @@ public class AppUserWritePlatformServiceJpaRepositoryImpl implements AppUserWrit
                 }
 
             }
-
+            final String registroPosterior = objectMapper.writeValueAsString(userToUpdate);
             return new CommandProcessingResultBuilder() //
                     .withEntityId(userId) //
                     .withOfficeId(userToUpdate.getOffice().getId()) //
                     .with(changes) //
+                    .withRegistroAnterior(registroAnteriorJson).withRegistroPosterior(registroPosterior).withUsuarioNombre(usuarioNombre)
                     .build();
         } catch (final DataIntegrityViolationException dve) {
             throw handleDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
-        } catch (final JpaSystemException | PersistenceException | AuthenticationServiceException dve) {
-            log.error("updateUser: JpaSystemException | PersistenceException | AuthenticationServiceException", dve);
+        } catch (final JpaSystemException | PersistenceException | AuthenticationServiceException | JsonProcessingException dve) {
+            log.error("updateUser: JpaSystemException | PersistenceException | AuthenticationServiceException | JsonProcessingException ",
+                    dve);
             Throwable throwable = ExceptionUtils.getRootCause(dve.getCause());
             throw handleDataIntegrityIssues(command, throwable, dve);
         }
@@ -271,16 +275,25 @@ public class AppUserWritePlatformServiceJpaRepositoryImpl implements AppUserWrit
     @Override
     @Transactional
     @Caching(evict = { @CacheEvict(value = "users", allEntries = true), @CacheEvict(value = "usersByUsername", allEntries = true) })
-    public CommandProcessingResult deleteUser(final Long userId) {
-        final AppUser user = this.appUserRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
-        if (user.isDeleted()) {
-            throw new UserNotFoundException(userId);
+    public CommandProcessingResult deleteUser(final Long userId, JsonCommand command) {
+        try {
+            final AppUser authenticatedUser = this.context.authenticatedUser();
+            final String usuarioNombre = authenticatedUser.getUsername();
+            final AppUser user = this.appUserRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
+            final String registroAnteriorJson = objectMapper.writeValueAsString(user);
+            if (user.isDeleted()) {
+                throw new UserNotFoundException(userId);
+            }
+            user.delete();
+            this.appUserRepository.save(user);
+            return new CommandProcessingResultBuilder().withEntityId(userId).withOfficeId(user.getOffice().getId())
+                    .withRegistroAnterior(registroAnteriorJson).withUsuarioNombre(usuarioNombre).build();
+        } catch (final JpaSystemException | PersistenceException | AuthenticationServiceException | JsonProcessingException dve) {
+            log.error("updateUser: JpaSystemException | PersistenceException | AuthenticationServiceException | JsonProcessingException ",
+                    dve);
+            Throwable throwable = ExceptionUtils.getRootCause(dve.getCause());
+            throw handleDataIntegrityIssues(command, throwable, dve);
         }
-
-        user.delete();
-        this.appUserRepository.save(user);
-
-        return new CommandProcessingResultBuilder().withEntityId(userId).withOfficeId(user.getOffice().getId()).build();
     }
 
     /*

@@ -128,6 +128,8 @@ public class SynchronousCommandProcessingService implements CommandProcessingSer
                     isMakerChecker);
             commandSource.setRegistroAnterior(result.getRegistroAnterior());
             commandSource.setRegistroPosterior(result.getRegistroPosterior());
+            commandSource.setUsuarioNombre(result.getUsuarioNombre());
+            commandSource.setRolNombre(result.getRolNombre());
         } catch (Throwable t) { // NOSONAR
             RuntimeException mappable = ErrorHandler.getMappable(t);
             ErrorInfo errorInfo = commandSourceService.generateErrorInfo(mappable);

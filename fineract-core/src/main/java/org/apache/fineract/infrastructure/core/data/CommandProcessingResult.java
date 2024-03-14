@@ -51,6 +51,8 @@ public class CommandProcessingResult implements Serializable {
     private final ExternalId subResourceExternalId;
     private String registroPosterior;
     private String registroAnterior;
+    private String usuarioNombre;
+    private String rolNombre;
 
     private CommandProcessingResult(final Long commandId, final Long officeId, final Long groupId, final Long clientId, final Long loanId,
             final Long savingsId, final String resourceIdentifier, final Long resourceId, final String transactionId,
@@ -172,5 +174,13 @@ public class CommandProcessingResult implements Serializable {
 
     public void setRegistroAnterior(String registroAnterior) {
         this.registroAnterior = registroAnterior;
+    }
+
+    public void setUsuarioNombre(String usuarioNombre) {
+        this.usuarioNombre = usuarioNombre;
+    }
+
+    public void setRolNombre(String rolNombre) {
+        this.rolNombre = rolNombre;
     }
 }
