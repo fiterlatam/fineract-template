@@ -1001,6 +1001,16 @@ public final class Group extends AbstractAuditableCustom {
         this.prequalificationGroup = prequalificationGroup;
     }
 
+    public void updateMeetingDay(Integer meetingDay) {
+        this.meetingDay = meetingDay;
+    }
+    public void updateMeetingStart(Integer meetingStart) {
+        this.meetingStart = meetingStart;
+    }
+    public void updateMeetingEnd(Integer meetingEnd) {
+        this.meetingEnd = meetingEnd;
+    }
+
     public Integer getMeetingDay() {
         return this.meetingDay;
     }
