@@ -123,20 +123,53 @@ public class CommandSource extends AbstractPersistableCustom {
     @Column(name = "result_status_code")
     private Integer resultStatusCode;
 
+    /**
+     * Name of the computer sending request
+     */
     @Column(name = "maquina")
     private String maquina;
 
+    /**
+     * Json string of the resource previous state
+     */
     @Column(name = "registro_anterior")
     private String registroAnterior;
 
+    /**
+     * Json string of the resource current state
+     */
     @Column(name = "registro_posterior")
     private String registroPosterior;
 
+    /**
+     * Current resource role name
+     */
     @Column(name = "rol_nombre")
     private String rolNombre;
 
+    /**
+     * Current resource username
+     */
     @Column(name = "usuario_nombre")
     private String usuarioNombre;
+
+    /**
+     * Created by username
+     */
+    @Column(name = "usuario_creacion_nombre")
+    private String usuarioCreacionNombre;
+
+    /**
+     * Current resource user ID
+     */
+    @Column(name = "usuario_id")
+    private Long usuarioId;
+
+    /**
+     * Current resource Role ID
+     */
+    @Column(name = "rol_id")
+    private Long rolId;
 
     private CommandSource(final String actionName, final String entityName, final String href, final Long resourceId,
             final Long subResourceId, final String commandSerializedAsJson, final AppUser maker, final String idempotencyKey,
@@ -148,6 +181,9 @@ public class CommandSource extends AbstractPersistableCustom {
         this.subResourceId = subResourceId;
         this.commandAsJson = commandSerializedAsJson;
         this.maker = maker;
+        if (maker != null) {
+            this.usuarioCreacionNombre = maker.getUsername();
+        }
         this.madeOnDate = DateUtils.getAuditOffsetDateTime();
         this.status = status;
         this.idempotencyKey = idempotencyKey;
@@ -337,6 +373,9 @@ public class CommandSource extends AbstractPersistableCustom {
 
     public void markAsChecked(final AppUser checker) {
         this.checker = checker;
+        if (checker != null) {
+            this.usuarioCreacionNombre = checker.getUsername();
+        }
         this.checkedOnDate = DateUtils.getAuditOffsetDateTime();
         this.status = CommandProcessingResultType.PROCESSED.getValue();
     }
@@ -403,5 +442,17 @@ public class CommandSource extends AbstractPersistableCustom {
 
     public void setUsuarioNombre(String usuarioNombre) {
         this.usuarioNombre = usuarioNombre;
+    }
+
+    public void setUsuarioCreacionNombre(String usuarioCreacionNombre) {
+        this.usuarioCreacionNombre = usuarioCreacionNombre;
+    }
+
+    public void setUsuarioId(Long usuarioId) {
+        this.usuarioId = usuarioId;
+    }
+
+    public void setRolId(Long rolId) {
+        this.rolId = rolId;
     }
 }
