@@ -97,7 +97,7 @@ public class CenterGroupPlanningServiceImpl implements CenterGroupPlanningServic
             final int rangeEndDay = portfolioPlanning.getRangeEndDay();
 
             // generate the future planning for this group && loan
-            while (currentNextMeetingDate.isBefore(endDateRange) || currentNextMeetingDate.isEqual(endDateRange)) {
+            while ((currentNextMeetingDate.isAfter(startDateRange) || currentNextMeetingDate.equals(startDateRange)) && (currentNextMeetingDate.isBefore(endDateRange) || currentNextMeetingDate.isEqual(endDateRange))) {
                 List<GroupLoanSummaryData> groupLoanSummaryList = retrieveGroupLoanSummary(portfolioPlanning.getCenterGroupId(),
                         portfolioPlanning.getMeetingDate());
 
@@ -159,6 +159,7 @@ public class CenterGroupPlanningServiceImpl implements CenterGroupPlanningServic
                 	count( gc.client_id ) AS clientCounter
                 FROM
                 	m_group_client gc
+                	JOIN m_client mc on mc.id = gc.client_id and mc.status_enum = 300
                 	LEFT JOIN (
                 	SELECT
                 		gc2.group_id AS groupId,
