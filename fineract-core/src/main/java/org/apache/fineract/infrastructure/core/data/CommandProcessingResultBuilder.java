@@ -50,6 +50,9 @@ public class CommandProcessingResultBuilder {
     private String registroAnterior;
     private String usuarioNombre;
     private String rolNombre;
+    private String usuarioCreacionNombre;
+    private Long usuarioId;
+    private Long rolId;
 
     public CommandProcessingResult build() {
         CommandProcessingResult commandProcessingResult = CommandProcessingResult.fromDetails(this.commandId, this.officeId, this.groupId,
@@ -60,6 +63,9 @@ public class CommandProcessingResultBuilder {
         commandProcessingResult.setRegistroPosterior(this.registroPosterior);
         commandProcessingResult.setUsuarioNombre(this.usuarioNombre);
         commandProcessingResult.setRolNombre(this.rolNombre);
+        commandProcessingResult.setUsuarioCreacionNombre(this.usuarioCreacionNombre);
+        commandProcessingResult.setUsuarioId(this.usuarioId);
+        commandProcessingResult.setRolId(this.rolId);
         return commandProcessingResult;
     }
 
@@ -177,4 +183,20 @@ public class CommandProcessingResultBuilder {
         this.rolNombre = rolNombre;
         return this;
     }
+
+    public CommandProcessingResultBuilder withUsuarioCreacionNombre(String usuarioCreacionNombre) {
+        this.usuarioCreacionNombre = usuarioCreacionNombre;
+        return this;
+    }
+
+    public CommandProcessingResultBuilder withUsuarioId(Long usuarioId) {
+        this.usuarioId = usuarioId;
+        return this;
+    }
+
+    public CommandProcessingResultBuilder withRolId(Long rolId) {
+        this.rolId = rolId;
+        return this;
+    }
+
 }

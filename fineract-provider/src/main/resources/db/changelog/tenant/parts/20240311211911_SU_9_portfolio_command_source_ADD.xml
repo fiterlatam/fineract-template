@@ -76,4 +76,43 @@
             <column name="rol_nombre" type="VARCHAR(250)"/>
         </addColumn>
     </changeSet>
+
+    <changeSet author="fineract" id="6">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_portfolio_command_source" columnName="usuario_id"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_portfolio_command_source">
+            <column name="usuario_id" type="BIGINT"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="7">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_portfolio_command_source" columnName="rol_id"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_portfolio_command_source">
+            <column name="rol_id" type="BIGINT"/>
+        </addColumn>
+    </changeSet>
+
+
+    <changeSet author="fineract" id="8" >
+        <renameColumn tableName="m_portfolio_command_source" oldColumnName="usuario_nombre" newColumnName="usuario_creacion_nombre" columnDataType="VARCHAR(100)"/>
+    </changeSet>
+
+    <changeSet author="fineract" id="9">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_portfolio_command_source" columnName="usuario_nombre"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_portfolio_command_source">
+            <column name="usuario_nombre" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
 </databaseChangeLog>
