@@ -26,18 +26,16 @@ import org.apache.fineract.infrastructure.codes.exception.CodeValueNotFoundExcep
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.context.annotation.Primary;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
 
 @Service
-@Primary
 public class CodeValueReadPlatformServiceImpl implements CodeValueReadPlatformService {
 
-    protected final JdbcTemplate jdbcTemplate;
-    protected final PlatformSecurityContext context;
+    private final JdbcTemplate jdbcTemplate;
+    private final PlatformSecurityContext context;
 
     @Autowired
     public CodeValueReadPlatformServiceImpl(final PlatformSecurityContext context, final JdbcTemplate jdbcTemplate) {
@@ -73,7 +71,7 @@ public class CodeValueReadPlatformServiceImpl implements CodeValueReadPlatformSe
         this.context.authenticatedUser();
 
         final CodeValueDataMapper rm = new CodeValueDataMapper();
-        final String sql = "select " + rm.schema() + "where c.code_name like ? and cv.is_active = true and cv.parent_id IS NULL order by position";
+        final String sql = "select " + rm.schema() + "where c.code_name like ? and cv.is_active = true order by position";
 
         return this.jdbcTemplate.query(sql, rm, new Object[] { code }); // NOSONAR
     }
