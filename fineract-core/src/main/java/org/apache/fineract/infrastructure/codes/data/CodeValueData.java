@@ -31,12 +31,12 @@ import lombok.experimental.Accessors;
 @Accessors(chain = true)
 public class CodeValueData implements Serializable {
 
-    protected Long id;
-    protected String name;
-    protected Integer position;
-    protected String description;
-    protected boolean active;
-    protected boolean mandatory;
+    private Long id;
+    private String name;
+    private Integer position;
+    private String description;
+    private boolean active;
+    private boolean mandatory;
 
     public static CodeValueData instance(final Long id, final String name, final Integer position, final boolean isActive,
             final boolean mandatory) {
