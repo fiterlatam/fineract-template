@@ -35,26 +35,29 @@ public final class ClientAllyApiConstants {
     public static final String dateFormatParamName = "dateFormat";
 
     // request parameters
-	public static final String idParamName = "id";
-	public static final String companyNameParamName = "companyName";
-	public static final String nitParamName = "nit";
-	public static final String nitDigitParamName = "nitDigit";
-	public static final String addressParamName = "address";
-	public static final String cityCodeValueIdParamName = "cityCodeValueId";
-	public static final String departmentCodeValueIdParamName = "departmentCodeValueId";
-	public static final String liquidationFrequencyCodeValueIdParamName = "liquidationFrequencyCodeValueId";
-	public static final String applyCupoMaxSellParamName = "applyCupoMaxSell";
-	public static final String cupoMaxSellParamName = "cupoMaxSell";
-	public static final String settledComissionParamName = "settledComission";
-	public static final String buyEnabledParamName = "buyEnabled";
-	public static final String collectionEnabledParamName = "collectionEnabled";
-	public static final String bankEntityCodeValueIdParamName = "bankEntityCodeValueId";
-	public static final String accountTypeCodeValueIdParamName = "accountTypeCodeValueId";
-	public static final String accountNumberParamName = "accountNumber";
-	public static final String taxProfileCodeValueIdParamName = "taxProfileCodeValueId";
-	public static final String stateCodeValueIdParamName = "stateCodeValueId";
+    public static final String idParamName = "id";
+    public static final String companyNameParamName = "companyName";
+    public static final String nitParamName = "nit";
+    public static final String nitDigitParamName = "nitDigit";
+    public static final String addressParamName = "address";
+    public static final String cityCodeValueIdParamName = "cityCodeValueId";
+    public static final String departmentCodeValueIdParamName = "departmentCodeValueId";
+    public static final String liquidationFrequencyCodeValueIdParamName = "liquidationFrequencyCodeValueId";
+    public static final String applyCupoMaxSellParamName = "applyCupoMaxSell";
+    public static final String cupoMaxSellParamName = "cupoMaxSell";
+    public static final String settledComissionParamName = "settledComission";
+    public static final String buyEnabledParamName = "buyEnabled";
+    public static final String collectionEnabledParamName = "collectionEnabled";
+    public static final String bankEntityCodeValueIdParamName = "bankEntityCodeValueId";
+    public static final String accountTypeCodeValueIdParamName = "accountTypeCodeValueId";
+    public static final String accountNumberParamName = "accountNumber";
+    public static final String taxProfileCodeValueIdParamName = "taxProfileCodeValueId";
+    public static final String stateCodeValueIdParamName = "stateCodeValueId";
 
-    
     // request parameters Set
-    public static final Set<String> REQUEST_DATA_PARAMETERS = new HashSet<>(Arrays.asList(localeParamName, dateFormatParamName, idParamName,companyNameParamName,nitParamName,nitDigitParamName,addressParamName,cityCodeValueIdParamName,departmentCodeValueIdParamName,liquidationFrequencyCodeValueIdParamName,applyCupoMaxSellParamName,cupoMaxSellParamName,settledComissionParamName,buyEnabledParamName,collectionEnabledParamName,bankEntityCodeValueIdParamName,accountTypeCodeValueIdParamName,accountNumberParamName,taxProfileCodeValueIdParamName,stateCodeValueIdParamName));
+    public static final Set<String> REQUEST_DATA_PARAMETERS = new HashSet<>(Arrays.asList(localeParamName, dateFormatParamName, idParamName,
+            companyNameParamName, nitParamName, nitDigitParamName, addressParamName, cityCodeValueIdParamName,
+            departmentCodeValueIdParamName, liquidationFrequencyCodeValueIdParamName, applyCupoMaxSellParamName, cupoMaxSellParamName,
+            settledComissionParamName, buyEnabledParamName, collectionEnabledParamName, bankEntityCodeValueIdParamName,
+            accountTypeCodeValueIdParamName, accountNumberParamName, taxProfileCodeValueIdParamName, stateCodeValueIdParamName));
 }

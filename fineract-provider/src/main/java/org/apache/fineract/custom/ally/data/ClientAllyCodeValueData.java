@@ -18,17 +18,17 @@
  */
 package org.apache.fineract.custom.ally.data;
 
+import java.util.Collection;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.NoArgsConstructor;
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 
-import java.util.Collection;
-
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
 public class ClientAllyCodeValueData {
+
     private Collection<CodeValueData> departmentsList;
     private Collection<CodeValueData> citiesList;
     private Collection<CodeValueData> liquidationFrequencyList;

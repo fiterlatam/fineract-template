@@ -24,11 +24,12 @@ import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 
 @Getter
 @Setter
-public  class CustomCodeValueData extends CodeValueData {
+public class CustomCodeValueData extends CodeValueData {
+
     private Long parentId;
 
-    public CustomCodeValueData(final Long id, final String name, final Integer position, final String description,
-                               final boolean isActive, final boolean mandatory, final Long parentId) {
+    public CustomCodeValueData(final Long id, final String name, final Integer position, final String description, final boolean isActive,
+            final boolean mandatory, final Long parentId) {
         super.setId(id);
         super.setName(name);
         super.setPosition(position);

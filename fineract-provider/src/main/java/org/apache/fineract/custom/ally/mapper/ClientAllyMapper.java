@@ -19,35 +19,34 @@
 
 package org.apache.fineract.custom.ally.mapper;
 
-import org.apache.fineract.custom.ally.data.ClientAllyData;
-import org.apache.fineract.custom.ally.domain.ClientAlly;
-
 import java.util.List;
 import java.util.stream.Collectors;
+import org.apache.fineract.custom.ally.data.ClientAllyData;
+import org.apache.fineract.custom.ally.domain.ClientAlly;
 
 public class ClientAllyMapper {
 
     public static ClientAlly toModel(ClientAllyData dto) {
         ClientAlly ret = new ClientAlly();
 
-		ret.setId(dto.getId());
-		ret.setCompanyName(dto.getCompanyName());
-		ret.setNit(dto.getNit());
-		ret.setNitDigit(dto.getNitDigit());
-		ret.setAddress(dto.getAddress());
-		ret.setCityCodeValueId(dto.getCityCodeValueId());
-		ret.setDepartmentCodeValueId(dto.getDepartmentCodeValueId());
-		ret.setLiquidationFrequencyCodeValueId(dto.getLiquidationFrequencyCodeValueId());
-		ret.setApplyCupoMaxSell(dto.getApplyCupoMaxSell());
-		ret.setCupoMaxSell(dto.getCupoMaxSell());
-		ret.setSettledComission(dto.getSettledComission());
-		ret.setBuyEnabled(dto.getBuyEnabled());
-		ret.setCollectionEnabled(dto.getCollectionEnabled());
-		ret.setBankEntityCodeValueId(dto.getBankEntityCodeValueId());
-		ret.setAccountTypeCodeValueId(dto.getAccountTypeCodeValueId());
-		ret.setAccountNumber(dto.getAccountNumber());
-		ret.setTaxProfileCodeValueId(dto.getTaxProfileCodeValueId());
-		ret.setStateCodeValueId(dto.getStateCodeValueId());
+        ret.setId(dto.getId());
+        ret.setCompanyName(dto.getCompanyName());
+        ret.setNit(dto.getNit());
+        ret.setNitDigit(dto.getNitDigit());
+        ret.setAddress(dto.getAddress());
+        ret.setCityCodeValueId(dto.getCityCodeValueId());
+        ret.setDepartmentCodeValueId(dto.getDepartmentCodeValueId());
+        ret.setLiquidationFrequencyCodeValueId(dto.getLiquidationFrequencyCodeValueId());
+        ret.setApplyCupoMaxSell(dto.getApplyCupoMaxSell());
+        ret.setCupoMaxSell(dto.getCupoMaxSell());
+        ret.setSettledComission(dto.getSettledComission());
+        ret.setBuyEnabled(dto.getBuyEnabled());
+        ret.setCollectionEnabled(dto.getCollectionEnabled());
+        ret.setBankEntityCodeValueId(dto.getBankEntityCodeValueId());
+        ret.setAccountTypeCodeValueId(dto.getAccountTypeCodeValueId());
+        ret.setAccountNumber(dto.getAccountNumber());
+        ret.setTaxProfileCodeValueId(dto.getTaxProfileCodeValueId());
+        ret.setStateCodeValueId(dto.getStateCodeValueId());
 
         return ret;
     }
@@ -55,30 +54,29 @@ public class ClientAllyMapper {
     public static ClientAllyData toDTO(ClientAlly model) {
         ClientAllyData ret = new ClientAllyData();
 
-		ret.setId(model.getId());
-		ret.setCompanyName(model.getCompanyName());
-		ret.setNit(model.getNit());
-		ret.setNitDigit(model.getNitDigit());
-		ret.setAddress(model.getAddress());
-		ret.setCityCodeValueId(model.getCityCodeValueId());
-		ret.setDepartmentCodeValueId(model.getDepartmentCodeValueId());
-		ret.setLiquidationFrequencyCodeValueId(model.getLiquidationFrequencyCodeValueId());
-		ret.setApplyCupoMaxSell(model.getApplyCupoMaxSell());
-		ret.setCupoMaxSell(model.getCupoMaxSell());
-		ret.setSettledComission(model.getSettledComission());
-		ret.setBuyEnabled(model.getBuyEnabled());
-		ret.setCollectionEnabled(model.getCollectionEnabled());
-		ret.setBankEntityCodeValueId(model.getBankEntityCodeValueId());
-		ret.setAccountTypeCodeValueId(model.getAccountTypeCodeValueId());
-		ret.setAccountNumber(model.getAccountNumber());
-		ret.setTaxProfileCodeValueId(model.getTaxProfileCodeValueId());
-		ret.setStateCodeValueId(model.getStateCodeValueId());
+        ret.setId(model.getId());
+        ret.setCompanyName(model.getCompanyName());
+        ret.setNit(model.getNit());
+        ret.setNitDigit(model.getNitDigit());
+        ret.setAddress(model.getAddress());
+        ret.setCityCodeValueId(model.getCityCodeValueId());
+        ret.setDepartmentCodeValueId(model.getDepartmentCodeValueId());
+        ret.setLiquidationFrequencyCodeValueId(model.getLiquidationFrequencyCodeValueId());
+        ret.setApplyCupoMaxSell(model.getApplyCupoMaxSell());
+        ret.setCupoMaxSell(model.getCupoMaxSell());
+        ret.setSettledComission(model.getSettledComission());
+        ret.setBuyEnabled(model.getBuyEnabled());
+        ret.setCollectionEnabled(model.getCollectionEnabled());
+        ret.setBankEntityCodeValueId(model.getBankEntityCodeValueId());
+        ret.setAccountTypeCodeValueId(model.getAccountTypeCodeValueId());
+        ret.setAccountNumber(model.getAccountNumber());
+        ret.setTaxProfileCodeValueId(model.getTaxProfileCodeValueId());
+        ret.setStateCodeValueId(model.getStateCodeValueId());
 
         return ret;
     }
-    
-    public static List<ClientAllyData> toDTO(List<ClientAlly> model) {
-		return model.stream().map(obj ->toDTO(obj)).collect(Collectors.toList());
-	}
-}
 
+    public static List<ClientAllyData> toDTO(List<ClientAlly> model) {
+        return model.stream().map(obj -> toDTO(obj)).collect(Collectors.toList());
+    }
+}

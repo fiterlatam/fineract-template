@@ -45,7 +45,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
-
 @Path("/v1/clientsallies")
 @Component
 @Scope("singleton")
@@ -66,13 +65,14 @@ public class ClientAllyApiResource {
         this.apiRequestParameterHelper = apiRequestParameterHelper;
     }
 
-	@Autowired
+    @Autowired
     private ClientAllyReadWritePlatformService service;
 
     @GET
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
-    public String get(@Context final UriInfo uriInfo, @QueryParam("sqlSearch") @Parameter(description = "sqlSearch") final String sqlSearch) {
+    public String get(@Context final UriInfo uriInfo,
+            @QueryParam("sqlSearch") @Parameter(description = "sqlSearch") final String sqlSearch) {
         this.context.authenticatedUser().validateHasReadPermission(ClientAllyApiConstants.RESOURCE_NAME);
         return this.toApiJsonSerializer.serialize(this.service.findByName(sqlSearch));
     }
@@ -90,19 +90,16 @@ public class ClientAllyApiResource {
     @Path("/department/{id}/cities")
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
-    public String getCitiesByDepartment(@Context final UriInfo uriInfo,
-                                        @PathParam("id") @Parameter(description = "id") final Long id) {
+    public String getCitiesByDepartment(@Context final UriInfo uriInfo, @PathParam("id") @Parameter(description = "id") final Long id) {
         this.context.authenticatedUser().validateHasReadPermission(ClientAllyApiConstants.RESOURCE_NAME);
         return this.toApiJsonSerializer.serialize(this.service.getCitiesByDepartment(id));
     }
-
 
     @GET
     @Path("{id}")
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
-    public String retrieveOne(@PathParam("id") @Parameter(description = "id") final Long id,
-            @Context final UriInfo uriInfo) {
+    public String retrieveOne(@PathParam("id") @Parameter(description = "id") final Long id, @Context final UriInfo uriInfo) {
 
         this.context.authenticatedUser().validateHasReadPermission(ClientAllyApiConstants.RESOURCE_NAME);
 
@@ -112,7 +109,6 @@ public class ClientAllyApiResource {
 
         return this.toApiJsonSerializer.serialize(settings, data, ClientAllyApiConstants.REQUEST_DATA_PARAMETERS);
     }
-
 
     @POST
     @Consumes({ MediaType.APPLICATION_JSON })
@@ -125,7 +121,6 @@ public class ClientAllyApiResource {
 
         return this.toApiJsonSerializer.serialize(result);
     }
-
 
     @PUT
     @Path("{id}")
@@ -141,17 +136,16 @@ public class ClientAllyApiResource {
         return this.toApiJsonSerializer.serialize(result);
     }
 
-
     @DELETE
     @Path("{id}")
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     public String delete(@PathParam("id") @Parameter(description = "id") final Long id) {
-    
+
         final CommandWrapper commandRequest = new CommandWrapperBuilder().deleteClientAlly(id).build();
-        
+
         final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
-        
+
         return this.toApiJsonSerializer.serialize(result);
     }
 

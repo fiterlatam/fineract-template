@@ -18,13 +18,12 @@
  */
 package org.apache.fineract.custom.ally.data;
 
+import java.math.BigDecimal;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-
-import java.math.BigDecimal;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -33,29 +32,29 @@ import java.math.BigDecimal;
 @Setter
 public class ClientAllyData {
 
-	private Long id;
-	private String companyName;
-	private String nit;
-	private Integer nitDigit;
-	private String address;
-	private Long cityCodeValueId;
-	private String cityCodeValueDescription;
-	private Long departmentCodeValueId;
-	private String departmentCodeValueDescription;
-	private Long liquidationFrequencyCodeValueId;
-	private String liquidationFrequencyCodeValueDescription;
-	private Boolean applyCupoMaxSell;
-	private Integer cupoMaxSell;
-	private BigDecimal settledComission;
-	private Boolean buyEnabled;
-	private Boolean collectionEnabled;
-	private Long bankEntityCodeValueId;
-	private String bankEntityCodeValueDescription;
-	private Long accountTypeCodeValueId;
-	private String accountTypeCodeValueDescription;
-	private Long accountNumber;
-	private Long taxProfileCodeValueId;
-	private String taxProfileCodeValueDescription;
-	private Long stateCodeValueId;
-	private String stateCodeValueDescription;
+    private Long id;
+    private String companyName;
+    private String nit;
+    private Integer nitDigit;
+    private String address;
+    private Long cityCodeValueId;
+    private String cityCodeValueDescription;
+    private Long departmentCodeValueId;
+    private String departmentCodeValueDescription;
+    private Long liquidationFrequencyCodeValueId;
+    private String liquidationFrequencyCodeValueDescription;
+    private Boolean applyCupoMaxSell;
+    private Integer cupoMaxSell;
+    private BigDecimal settledComission;
+    private Boolean buyEnabled;
+    private Boolean collectionEnabled;
+    private Long bankEntityCodeValueId;
+    private String bankEntityCodeValueDescription;
+    private Long accountTypeCodeValueId;
+    private String accountTypeCodeValueDescription;
+    private Long accountNumber;
+    private Long taxProfileCodeValueId;
+    private String taxProfileCodeValueDescription;
+    private Long stateCodeValueId;
+    private String stateCodeValueDescription;
 }

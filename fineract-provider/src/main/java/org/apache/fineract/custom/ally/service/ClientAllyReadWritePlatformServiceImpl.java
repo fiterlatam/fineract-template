@@ -19,6 +19,11 @@
 package org.apache.fineract.custom.ally.service;
 
 import jakarta.persistence.PersistenceException;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.fineract.custom.ally.data.CityCodeValueData;
@@ -44,12 +49,6 @@ import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-
 @Service
 @Slf4j
 public class ClientAllyReadWritePlatformServiceImpl implements ClientAllyReadWritePlatformService {
@@ -69,11 +68,9 @@ public class ClientAllyReadWritePlatformServiceImpl implements ClientAllyReadWri
     private final CustomCodeValueReadPlatformService customCodeValueReadPlatformService;
 
     @Autowired
-    public ClientAllyReadWritePlatformServiceImpl(final JdbcTemplate jdbcTemplate,
-                                                  final DatabaseSpecificSQLGenerator sqlGenerator,
-                                                  final PlatformSecurityContext context,
-                                                  final CustomCodeValueReadPlatformService customCodeValueReadPlatformService,
-                                                  final ClientAllyDataValidator validatorClass) {
+    public ClientAllyReadWritePlatformServiceImpl(final JdbcTemplate jdbcTemplate, final DatabaseSpecificSQLGenerator sqlGenerator,
+            final PlatformSecurityContext context, final CustomCodeValueReadPlatformService customCodeValueReadPlatformService,
+            final ClientAllyDataValidator validatorClass) {
         this.jdbcTemplate = jdbcTemplate;
         this.sqlGenerator = sqlGenerator;
         this.validatorClass = validatorClass;
@@ -96,24 +93,23 @@ public class ClientAllyReadWritePlatformServiceImpl implements ClientAllyReadWri
 
         name = "%" + (Objects.isNull(name) ? "" : name) + "%";
 
-        final String sql = "SELECT " + rm.schema()
-                + " WHERE cca.company_name LIKE ? OR cca.nit LIKE ?"
+        final String sql = "SELECT " + rm.schema() + " WHERE cca.company_name LIKE ? OR cca.nit LIKE ?"
                 + " ORDER BY company_name, stateDescription";
 
         return this.jdbcTemplate.query(sql, rm, new Object[] { name, name });
     }
 
-
     @Override
     public ClientAllyCodeValueData getTemplateForInsertAndUpdate() {
         return ClientAllyCodeValueData.builder()
                 .departmentsList(customCodeValueReadPlatformService.retrieveCodeValuesByCode(STRING_CODEVALUE_DEPARTAMENTO))
-                .liquidationFrequencyList(customCodeValueReadPlatformService.retrieveCodeValuesByCode(STRING_CODEVALUE_FRECUENCIA_LIQUIDACION))
+                .liquidationFrequencyList(
+                        customCodeValueReadPlatformService.retrieveCodeValuesByCode(STRING_CODEVALUE_FRECUENCIA_LIQUIDACION))
                 .bankEntitiesList(customCodeValueReadPlatformService.retrieveCodeValuesByCode(STRING_CODEVALUE_ENTIDAD_BANCARIA))
                 .accountTypesList(customCodeValueReadPlatformService.retrieveCodeValuesByCode(STRING_CODEVALUE_TIPO_CUENTA_BANCARIA))
-                .taxProfilesList(customCodeValueReadPlatformService.retrieveCodeValuesByCode(STRING_CODEVALUE_PERFIL_TRIBUTARIO_REGIMEN_IVA))
-                .statesList(customCodeValueReadPlatformService.retrieveCodeValuesByCode(STRING_CODEVALUE_ESTADO))
-                .build();
+                .taxProfilesList(
+                        customCodeValueReadPlatformService.retrieveCodeValuesByCode(STRING_CODEVALUE_PERFIL_TRIBUTARIO_REGIMEN_IVA))
+                .statesList(customCodeValueReadPlatformService.retrieveCodeValuesByCode(STRING_CODEVALUE_ESTADO)).build();
     }
 
     @Override
@@ -122,7 +118,6 @@ public class ClientAllyReadWritePlatformServiceImpl implements ClientAllyReadWri
                 .citiesList(customCodeValueReadPlatformService.retrieveCodeValuesByCodeAndParent(STRING_CODEVALUE_CIUDAD, departmentId))
                 .build();
     }
-
 
     @Override
     public ClientAllyData findById(Long id) {
@@ -154,7 +149,6 @@ public class ClientAllyReadWritePlatformServiceImpl implements ClientAllyReadWri
         }
     }
 
-
     @Transactional
     @Override
     public CommandProcessingResult delete(final Long id) {
@@ -170,7 +164,6 @@ public class ClientAllyReadWritePlatformServiceImpl implements ClientAllyReadWri
 
         return new CommandProcessingResultBuilder().withEntityId(id).build();
     }
-
 
     @Transactional
     @Override
@@ -205,58 +198,42 @@ public class ClientAllyReadWritePlatformServiceImpl implements ClientAllyReadWri
                 "Unknown data integrity issue with resource.");
     }
 
-
     private static final class ClientAllyRowMapper implements RowMapper<ClientAllyData> {
 
         public String schema() {
-            return "     mcv_city.code_value                as cityDescription," +
-                    "    mcv_department.code_value          as departmentDescription," +
-                    "    mcv_liquidation_freq.code_value    as liquidationFrequencyDescription," +
-                    "    mcv_bank_entity_id.code_value      as bankEntityDescription," +
-                    "    mcv_account_type_id.code_value     as accountTypeDescription," +
-                    "    mcv_tax_profile_id.code_value      as taxProfileDescription," +
-                    "    mcv_state_id.code_value            as stateDescription," +
-                    "    cca.* " +
-                    "from " +
-                    "    custom.c_client_ally cca " +
-                    "    left join public.m_code_value mcv_city on  mcv_city.id = cca.city_id  " +
-                    "    left join public.m_code_value mcv_department on  mcv_department.id = cca.department_id  " +
-                    "    left join public.m_code_value mcv_liquidation_freq on  mcv_liquidation_freq.id = cca.liquidation_frequency_id " +
-                    "    left join public.m_code_value mcv_bank_entity_id on  mcv_bank_entity_id.id = cca.bank_entity_id " +
-                    "    left join public.m_code_value mcv_account_type_id on  mcv_account_type_id.id = cca.account_type_id" +
-                    "    left join public.m_code_value mcv_tax_profile_id on  mcv_tax_profile_id.id = cca.tax_profile_id " +
-                    "    left join public.m_code_value mcv_state_id on  mcv_state_id.id = cca.state_id ";
+            return "     mcv_city.code_value                as cityDescription,"
+                    + "    mcv_department.code_value          as departmentDescription,"
+                    + "    mcv_liquidation_freq.code_value    as liquidationFrequencyDescription,"
+                    + "    mcv_bank_entity_id.code_value      as bankEntityDescription,"
+                    + "    mcv_account_type_id.code_value     as accountTypeDescription,"
+                    + "    mcv_tax_profile_id.code_value      as taxProfileDescription,"
+                    + "    mcv_state_id.code_value            as stateDescription," + "    cca.* " + "from "
+                    + "    custom.c_client_ally cca " + "    left join public.m_code_value mcv_city on  mcv_city.id = cca.city_id  "
+                    + "    left join public.m_code_value mcv_department on  mcv_department.id = cca.department_id  "
+                    + "    left join public.m_code_value mcv_liquidation_freq on  mcv_liquidation_freq.id = cca.liquidation_frequency_id "
+                    + "    left join public.m_code_value mcv_bank_entity_id on  mcv_bank_entity_id.id = cca.bank_entity_id "
+                    + "    left join public.m_code_value mcv_account_type_id on  mcv_account_type_id.id = cca.account_type_id"
+                    + "    left join public.m_code_value mcv_tax_profile_id on  mcv_tax_profile_id.id = cca.tax_profile_id "
+                    + "    left join public.m_code_value mcv_state_id on  mcv_state_id.id = cca.state_id ";
         }
 
         @Override
         public ClientAllyData mapRow(final ResultSet rs, @SuppressWarnings("unused") final int rowNum) throws SQLException {
-            return ClientAllyData.builder()
-                    .id(rs.getLong("id"))
-                    .companyName(rs.getString("company_name"))
-                    .nit(rs.getString("nit"))
-                    .nitDigit(rs.getInt("nit_digit"))
-                    .address(rs.getString("address"))
-                    .cityCodeValueId(rs.getLong("city_id"))
-                    .cityCodeValueDescription(rs.getString("cityDescription"))
-                    .departmentCodeValueId(rs.getLong("department_id"))
+            return ClientAllyData.builder().id(rs.getLong("id")).companyName(rs.getString("company_name")).nit(rs.getString("nit"))
+                    .nitDigit(rs.getInt("nit_digit")).address(rs.getString("address")).cityCodeValueId(rs.getLong("city_id"))
+                    .cityCodeValueDescription(rs.getString("cityDescription")).departmentCodeValueId(rs.getLong("department_id"))
                     .departmentCodeValueDescription(rs.getString("departmentDescription"))
                     .liquidationFrequencyCodeValueId(rs.getLong("liquidation_frequency_id"))
                     .liquidationFrequencyCodeValueDescription(rs.getString("liquidationFrequencyDescription"))
-                    .applyCupoMaxSell(rs.getBoolean("apply_cupo_max_sell"))
-                    .cupoMaxSell(rs.getInt("cupo_max_sell"))
-                    .settledComission(rs.getBigDecimal("settled_comission"))
-                    .buyEnabled(rs.getBoolean("buy_enabled"))
-                    .collectionEnabled(rs.getBoolean("collection_enabled"))
-                    .bankEntityCodeValueId(rs.getLong("bank_entity_id"))
+                    .applyCupoMaxSell(rs.getBoolean("apply_cupo_max_sell")).cupoMaxSell(rs.getInt("cupo_max_sell"))
+                    .settledComission(rs.getBigDecimal("settled_comission")).buyEnabled(rs.getBoolean("buy_enabled"))
+                    .collectionEnabled(rs.getBoolean("collection_enabled")).bankEntityCodeValueId(rs.getLong("bank_entity_id"))
                     .bankEntityCodeValueDescription(rs.getString("bankEntityDescription"))
                     .accountTypeCodeValueId(rs.getLong("account_type_id"))
-                    .accountTypeCodeValueDescription(rs.getString("accountTypeDescription"))
-                    .accountNumber(rs.getLong("account_number"))
+                    .accountTypeCodeValueDescription(rs.getString("accountTypeDescription")).accountNumber(rs.getLong("account_number"))
                     .taxProfileCodeValueId(rs.getLong("tax_profile_id"))
-                    .taxProfileCodeValueDescription(rs.getString("taxProfileDescription"))
-                    .stateCodeValueId(rs.getLong("state_id"))
-                    .stateCodeValueDescription(rs.getString("stateDescription"))
-                    .build();
+                    .taxProfileCodeValueDescription(rs.getString("taxProfileDescription")).stateCodeValueId(rs.getLong("state_id"))
+                    .stateCodeValueDescription(rs.getString("stateDescription")).build();
         }
     }
 

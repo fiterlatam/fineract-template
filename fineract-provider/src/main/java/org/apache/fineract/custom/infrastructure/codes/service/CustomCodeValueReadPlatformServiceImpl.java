@@ -18,6 +18,9 @@
  */
 package org.apache.fineract.custom.infrastructure.codes.service;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.Collection;
 import org.apache.fineract.custom.infrastructure.codes.data.CustomCodeValueData;
 import org.apache.fineract.infrastructure.codes.service.CodeValueReadPlatformServiceImpl;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
@@ -26,13 +29,9 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.Collection;
-
 @Service
-public class CustomCodeValueReadPlatformServiceImpl extends CodeValueReadPlatformServiceImpl
-        implements CustomCodeValueReadPlatformService {
+public class CustomCodeValueReadPlatformServiceImpl extends CodeValueReadPlatformServiceImpl implements CustomCodeValueReadPlatformService {
+
     @Autowired
     public CustomCodeValueReadPlatformServiceImpl(PlatformSecurityContext context, JdbcTemplate jdbcTemplate) {
         super(context, jdbcTemplate);
@@ -57,13 +56,8 @@ public class CustomCodeValueReadPlatformServiceImpl extends CodeValueReadPlatfor
 
         @Override
         public CustomCodeValueData mapRow(final ResultSet rs, @SuppressWarnings("unused") final int rowNum) throws SQLException {
-            return new CustomCodeValueData(
-                    rs.getLong("id"), rs.getString("value"),
-                    rs.getInt("position"),
-                    rs.getString("description"),
-                    rs.getBoolean("isActive"),
-                    rs.getBoolean("mandatory"),
-                    rs.getLong("parentId"));
+            return new CustomCodeValueData(rs.getLong("id"), rs.getString("value"), rs.getInt("position"), rs.getString("description"),
+                    rs.getBoolean("isActive"), rs.getBoolean("mandatory"), rs.getLong("parentId"));
         }
     }
 }

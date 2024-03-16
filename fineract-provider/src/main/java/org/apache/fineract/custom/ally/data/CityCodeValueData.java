@@ -18,16 +18,16 @@
  */
 package org.apache.fineract.custom.ally.data;
 
+import java.util.Collection;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.NoArgsConstructor;
 import org.apache.fineract.custom.infrastructure.codes.data.CustomCodeValueData;
 
-import java.util.Collection;
-
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
 public class CityCodeValueData {
+
     private Collection<CustomCodeValueData> citiesList;
 }

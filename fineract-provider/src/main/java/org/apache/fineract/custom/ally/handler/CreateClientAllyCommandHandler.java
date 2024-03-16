@@ -34,7 +34,6 @@ public class CreateClientAllyCommandHandler implements NewCommandSourceHandler {
     @Autowired
     private ClientAllyReadWritePlatformService service;
 
-
     @Transactional
     @Override
     public CommandProcessingResult processCommand(final JsonCommand command) {
