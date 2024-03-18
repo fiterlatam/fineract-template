@@ -166,4 +166,5 @@
     <include file="parts/20240308200600_SU_47_code_value_estado_INSERT.xml" relativeToChangelogFile="true"/>
     <include file="parts/20240309200000_SU_47_c_client_ally_CREATE.xml" relativeToChangelogFile="true"/>
     <include file="parts/20240309200100_SU_47_m_permission_INSERT.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20240315145400_SU_48_additional_datatable_CREATE.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

@@ -68,7 +68,7 @@ public class RoleWritePlatformServiceJpaRepositoryImpl implements RoleWritePlatf
             final Role entity = Role.fromJson(command);
             final String rolNombre = entity.getName();
             this.roleRepository.saveAndFlush(entity);
-            final Long rolId = entity.getId();
+            final String rolId = String.valueOf(entity.getId());
             final Gson gson = new Gson();
             final String json = gson.toJson(entity);
             return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withEntityId(entity.getId())
@@ -118,7 +118,7 @@ public class RoleWritePlatformServiceJpaRepositoryImpl implements RoleWritePlatf
                 this.roleRepository.saveAndFlush(role);
             }
             final String rolNombre = role.getName();
-            final Long rolId = role.getId();
+            final String rolId = String.valueOf(role.getId());
             final String registroPosterior = gson.toJson(role);
             return new CommandProcessingResultBuilder() //
                     .withCommandId(command.commandId()) //
@@ -168,7 +168,7 @@ public class RoleWritePlatformServiceJpaRepositoryImpl implements RoleWritePlatf
             this.roleRepository.saveAndFlush(role);
         }
         final String rolNombre = role.getName();
-        final Long rolId = role.getId();
+        final String rolId = String.valueOf(role.getId());
         final String registroPosterior = gson.toJson(role);
         return new CommandProcessingResultBuilder() //
                 .withCommandId(command.commandId()) //
@@ -204,7 +204,7 @@ public class RoleWritePlatformServiceJpaRepositoryImpl implements RoleWritePlatf
              */
             final Role role = this.roleRepository.findById(roleId).orElseThrow(() -> new RoleNotFoundException(roleId));
             final String rolNombre = role.getName();
-            final Long rolId = role.getId();
+            final String rolId = String.valueOf(role.getId());
             final Gson gson = new Gson();
             final String registroAnteriorJson = gson.toJson(role);
             /**
@@ -238,7 +238,7 @@ public class RoleWritePlatformServiceJpaRepositoryImpl implements RoleWritePlatf
              */
             final Role role = this.roleRepository.findById(roleId).orElseThrow(() -> new RoleNotFoundException(roleId));
             final String rolNombre = role.getName();
-            final Long rolId = role.getId();
+            final String rolId = String.valueOf(role.getId());
             // if(role.isDisabled()){throw new RoleNotFoundException(roleId);}
             final Gson gson = new Gson();
             final String registroAnteriorJson = gson.toJson(role);
@@ -280,7 +280,7 @@ public class RoleWritePlatformServiceJpaRepositoryImpl implements RoleWritePlatf
              */
             final Role role = this.roleRepository.findById(roleId).orElseThrow(() -> new RoleNotFoundException(roleId));
             final String rolNombre = role.getName();
-            final Long rolId = role.getId();
+            final String rolId = String.valueOf(role.getId());
             // if(!role.isEnabled()){throw new RoleNotFoundException(roleId);}
             final Gson gson = new Gson();
             final String registroAnteriorJson = gson.toJson(role);

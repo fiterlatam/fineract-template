@@ -19,6 +19,8 @@
 package org.apache.fineract.portfolio.client.domain;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 
@@ -82,6 +84,7 @@ public final class ClientEnumerations {
         for (final LegalForm legalForm : legalForms) {
             optionDatas.add(legalForm(legalForm));
         }
+        optionDatas.sort(Collections.reverseOrder(Comparator.comparingLong(EnumOptionData::getId)));
         return optionDatas;
     }
 

@@ -169,7 +169,7 @@ public class CommandSource extends AbstractPersistableCustom {
      * Current resource Role ID
      */
     @Column(name = "rol_id")
-    private Long rolId;
+    private String rolId;
 
     private CommandSource(final String actionName, final String entityName, final String href, final Long resourceId,
             final Long subResourceId, final String commandSerializedAsJson, final AppUser maker, final String idempotencyKey,
@@ -452,7 +452,7 @@ public class CommandSource extends AbstractPersistableCustom {
         this.usuarioId = usuarioId;
     }
 
-    public void setRolId(Long rolId) {
+    public void setRolId(String rolId) {
         this.rolId = rolId;
     }
 }

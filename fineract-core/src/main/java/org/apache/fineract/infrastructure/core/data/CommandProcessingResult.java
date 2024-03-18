@@ -55,7 +55,7 @@ public class CommandProcessingResult implements Serializable {
     private String rolNombre;
     private String usuarioCreacionNombre;
     private Long usuarioId;
-    private Long rolId;
+    private String rolId;
 
     private CommandProcessingResult(final Long commandId, final Long officeId, final Long groupId, final Long clientId, final Long loanId,
             final Long savingsId, final String resourceIdentifier, final Long resourceId, final String transactionId,
@@ -195,7 +195,7 @@ public class CommandProcessingResult implements Serializable {
         this.usuarioId = usuarioId;
     }
 
-    public void setRolId(Long rolId) {
+    public void setRolId(String rolId) {
         this.rolId = rolId;
     }
 }

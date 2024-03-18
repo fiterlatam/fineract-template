@@ -31,6 +31,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -132,6 +133,10 @@ public class AppUserWritePlatformServiceJpaRepositoryImpl implements AppUserWrit
 
             final Boolean sendPasswordToEmail = command.booleanObjectValueOfParameterNamed("sendPasswordToEmail");
             this.userDomainService.create(appUser, sendPasswordToEmail);
+
+            final Set<Role> userRoles = appUser.getRoles();
+            final String roleIDs = userRoles.stream().map(r -> String.valueOf(r.getId())).collect(Collectors.joining(", "));
+            final String roleNames = userRoles.stream().map(Role::getName).collect(Collectors.joining(", "));
             final String registroPosterior = objectMapper.writeValueAsString(appUser);
             final String usuarioNombre = appUser.getUsername();
             final Long usuarioId = appUser.getId();
@@ -139,8 +144,8 @@ public class AppUserWritePlatformServiceJpaRepositoryImpl implements AppUserWrit
                     .withCommandId(command.commandId()) //
                     .withEntityId(appUser.getId()) //
                     .withOfficeId(userOffice.getId()) //
-                    .withRegistroPosterior(registroPosterior).withUsuarioNombre(usuarioNombre).withUsuarioId(usuarioId)
-                    .withUsuarioCreacionNombre(usuarioCreacionNombre).build();
+                    .withRegistroPosterior(registroPosterior).withUsuarioNombre(usuarioNombre).withUsuarioId(usuarioId).withRolId(roleIDs)
+                    .withRolNombre(roleNames).withUsuarioCreacionNombre(usuarioCreacionNombre).build();
         } catch (final DataIntegrityViolationException dve) {
             throw handleDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
         } catch (final JpaSystemException | PersistenceException | AuthenticationServiceException | JsonProcessingException dve) {
@@ -219,6 +224,9 @@ public class AppUserWritePlatformServiceJpaRepositoryImpl implements AppUserWrit
                 }
 
             }
+            final Set<Role> userRoles = userToUpdate.getRoles();
+            final String roleIDs = userRoles.stream().map(r -> String.valueOf(r.getId())).collect(Collectors.joining(", "));
+            final String roleNames = userRoles.stream().map(Role::getName).collect(Collectors.joining(", "));
             final String registroPosterior = objectMapper.writeValueAsString(userToUpdate);
             final String usuarioNombre = userToUpdate.getUsername();
             final Long usuarioId = userToUpdate.getId();
@@ -227,7 +235,8 @@ public class AppUserWritePlatformServiceJpaRepositoryImpl implements AppUserWrit
                     .withOfficeId(userToUpdate.getOffice().getId()) //
                     .with(changes) //
                     .withRegistroAnterior(registroAnteriorJson).withRegistroPosterior(registroPosterior).withUsuarioNombre(usuarioNombre)
-                    .withUsuarioCreacionNombre(usuarioCreacionNombre).withUsuarioId(usuarioId).build();
+                    .withUsuarioCreacionNombre(usuarioCreacionNombre).withUsuarioId(usuarioId).withRolId(roleIDs).withRolNombre(roleNames)
+                    .build();
         } catch (final DataIntegrityViolationException dve) {
             throw handleDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
         } catch (final JpaSystemException | PersistenceException | AuthenticationServiceException | JsonProcessingException dve) {
