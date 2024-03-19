@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements. See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership. The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License. You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied. See the License for the
+    specific language governing permissions and limitations
+    under the License.
+
+-->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd">
+
+    <changeSet id="1" author="fineract">
+        <sql>
+            <![CDATA[
+                INSERT INTO m_code (code_name, is_system_defined) VALUES('Tipo ID', false);
+                INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory) VALUES((SELECT id FROM m_code WHERE code_name='Tipo ID'), 'Nit', 'Nit', 1, NULL, true, false);
+                INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory) VALUES((SELECT id FROM m_code WHERE code_name='Tipo ID'), 'Cedula', 'Cedula', 2, NULL, true, false);
+            ]]>
+        </sql>
+    </changeSet>
+
+    <changeSet id="2" author="fineract">
+        <sql>
+            <![CDATA[
+                INSERT INTO m_code (code_name, is_system_defined) VALUES('Rep legal codeudor', false);
+                INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory) VALUES((SELECT id FROM m_code WHERE code_name='Rep legal codeudor'), 'Rep legal', 'Rep legal', 1, NULL, true, false);
+                INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory) VALUES((SELECT id FROM m_code WHERE code_name='Rep legal codeudor'), 'Codeudo', 'Codeudo', 2, NULL, true, false);
+            ]]>
+        </sql>
+    </changeSet>
+
+    <changeSet id="3" author="fineract">
+        <sql>
+            <![CDATA[
+                INSERT INTO m_code (code_name, is_system_defined) VALUES('Negocio', false);
+                INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory) VALUES((SELECT id FROM m_code WHERE code_name='Negocio'), 'OTRO', 'OTRO', 1, NULL, true, false);
+                INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory) VALUES((SELECT id FROM m_code WHERE code_name='Negocio'), 'CONFIRMING', 'CONFIRMING', 2, NULL, true, false);
+                INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory) VALUES((SELECT id FROM m_code WHERE code_name='Negocio'), 'FACTORING', 'FACTORING', 3, NULL, true, false);
+                INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory) VALUES((SELECT id FROM m_code WHERE code_name='Negocio'), 'CAPITAL DE TRABAJO', 'CAPITAL DE TRABAJO', 4, NULL, true, false);
+            ]]>
+        </sql>
+    </changeSet>
+
+    <changeSet id="=4" author="fineract">
+        <sql>
+            <![CDATA[
+                INSERT INTO m_code (code_name, is_system_defined) VALUES('Categoria', false);
+                INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory) VALUES((SELECT id FROM m_code WHERE code_name='Categoria'), 'OTRA', 'OTRA', 1, NULL, true, false);
+                INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory) VALUES((SELECT id FROM m_code WHERE code_name='Categoria'), 'PROVEEDOR GCO', 'PROVEEDOR GCO', 2, NULL, true, false);
+                INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory) VALUES((SELECT id FROM m_code WHERE code_name='Categoria'), 'CLIENTE GCO', 'CLIENTE GCO', 3, NULL, true, false);
+                INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory) VALUES((SELECT id FROM m_code WHERE code_name='Categoria'), 'INMOBILIARIO', 'INMOBILIARIO', 4, NULL, true, false);
+                INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory) VALUES((SELECT id FROM m_code WHERE code_name='Categoria'), 'TERCERO', 'TERCERO', 4, NULL, true, false);
+            ]]>
+        </sql>
+    </changeSet>
+
+    <changeSet id="5" author="fineract">
+        <sql>
+            <![CDATA[
+                INSERT INTO m_code (code_name, is_system_defined) VALUES('Regimen IVA', false);
+                INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory) VALUES((SELECT id FROM m_code WHERE code_name='Regimen IVA'), 'Responsable', 'Responsable', 1, NULL, true, false);
+                INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory) VALUES((SELECT id FROM m_code WHERE code_name='Regimen IVA'), 'No responsable', 'No responsable', 2, NULL, true, false);
+                INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory) VALUES((SELECT id FROM m_code WHERE code_name='Regimen IVA'), 'Regimen simple', 'Regimen simple', 3, NULL, true, false);
+            ]]>
+        </sql>
+    </changeSet>
+
+    <changeSet id="6" author="fineract">
+        <sql>
+            <![CDATA[
+                INSERT INTO m_code (code_name, is_system_defined) VALUES('Segmento', false);
+                INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory) VALUES((SELECT id FROM m_code WHERE code_name='Segmento'), 'Pequeña', 'Pequeña', 1, NULL, true, false);
+                INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory) VALUES((SELECT id FROM m_code WHERE code_name='Segmento'), 'Mediana', 'Mediana', 2, NULL, true, false);
+                INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory) VALUES((SELECT id FROM m_code WHERE code_name='Segmento'), 'Grande', 'Grande', 3, NULL, true, false);
+            ]]>
+        </sql>
+    </changeSet>
+
+    <changeSet id="7" author="fineract">
+        <sql>
+            <![CDATA[
+                INSERT INTO m_code (code_name, is_system_defined) VALUES('CIIU', false);
+                INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory) VALUES((SELECT id FROM m_code WHERE code_name='CIIU'), 'Cultivo de cereales (excepto arroz), legumbres y semillas oleaginosas ', 'Cultivo de cereales (excepto arroz), legumbres y semillas oleaginosas ', 1, '0111', true, false);
+                INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory) VALUES((SELECT id FROM m_code WHERE code_name='CIIU'), 'Cultivo de arroz ', 'Cultivo de arroz ', 2, '0112', true, false);
+                INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory) VALUES((SELECT id FROM m_code WHERE code_name='CIIU'), 'Cultivo de hortalizas, raíces y tubérculos', 'Cultivo de hortalizas, raíces y tubérculos', 3, '0113', true, false);
+                INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory) VALUES((SELECT id FROM m_code WHERE code_name='CIIU'), 'Cultivo de tabaco', 'Cultivo de tabaco', 4, '0114', true, false);
+            ]]>
+        </sql>
+    </changeSet>
+
+    <changeSet id="8" author="fineract">
+        <sql>
+            <![CDATA[
+            CREATE TABLE campos_cliente_empresas (
+                client_id int8 NOT NULL,
+                "NIT" varchar(15) NOT NULL,
+                "Estado_cd_Estado" int4 NOT NULL,
+                "Tipo ID_cd_Tipo ID" int4 NOT NULL,
+                "Regimen IVA_cd_Regimen IVA" int4 NOT NULL,
+                "Razon Social" varchar(40) NOT NULL,
+                "Direccion" varchar(40) NOT NULL,
+                "Departamento_cd_Departamento" int4 NOT NULL,
+                "Ciudad_cd_Ciudad" int4 NOT NULL,
+                "Telefono" varchar(60) DEFAULT NULL::character varying NULL,
+                "Celular" varchar(30) NOT NULL,
+                "Correo electronico" varchar(40) NOT NULL,
+                "Retencion" varchar(2) NOT NULL,
+                "Cupo" int4 NOT NULL,
+                "Fecha Cupo" date NOT NULL,
+                "Segmento_cd_Segmento" int4 NOT NULL,
+                "CIIU_cd_CIIU" int4 NOT NULL,
+                "Negocio_cd_Negocio" int4 NOT NULL,
+                "Categoria_cd_Categoria" int4 NOT NULL,
+                "Observaciones" varchar(100) NOT NULL,
+                "NIT confirming" varchar(15) NOT NULL,
+                "Nombre codeudor" varchar(40) DEFAULT NULL::character varying NULL,
+                "Cedula codeudor" varchar(15) DEFAULT NULL::character varying NULL,
+                "Rep legal codeudor_cd_Rep legal codeudor" int4 NULL,
+                created_at timestamp NULL,
+                updated_at timestamp NULL,
+                CONSTRAINT campos_cliente_empresas_pkey PRIMARY KEY (client_id),
+                CONSTRAINT fk_campos_cliente_empresas_client_id FOREIGN KEY (client_id) REFERENCES public.m_client(id)
+            );
+            ]]>
+        </sql>
+    </changeSet>
+
+    <changeSet id="9" author="fineract">
+        <sql>
+            <![CDATA[
+            INSERT INTO x_registered_table (registered_table_name, application_table_name, entity_subtype, category) VALUES('campos_cliente_empresas', 'm_client', 'Entity', 100);
+            ]]>
+        </sql>
+    </changeSet>
+
+    <changeSet id="10" author="fineract">
+        <sql>
+            <![CDATA[
+                INSERT INTO m_entity_datatable_check (application_table_name, x_registered_table_name, status_enum, system_defined, product_id) VALUES('m_client', 'campos_cliente_empresas', 100, true, NULL);
+            ]]>
+        </sql>
+    </changeSet>
+
+    <changeSet id="11" author="fineract">
+        <sql>
+            <![CDATA[
+                INSERT INTO m_permission ("grouping", code, entity_name, action_name, can_maker_checker) VALUES('datatable', 'CREATE_campos_cliente_empresas', 'campos_cliente_empresas', 'CREATE', true);
+                INSERT INTO m_permission ("grouping", code, entity_name, action_name, can_maker_checker) VALUES('datatable', 'CREATE_campos_cliente_empresas_CHECKER', 'campos_cliente_empresas', 'CREATE', false);
+                INSERT INTO m_permission ("grouping", code, entity_name, action_name, can_maker_checker) VALUES('datatable', 'READ_campos_cliente_empresas', 'campos_cliente_empresas', 'READ', false);
+                INSERT INTO m_permission ("grouping", code, entity_name, action_name, can_maker_checker) VALUES('datatable', 'UPDATE_campos_cliente_empresas', 'campos_cliente_empresas', 'UPDATE', true);
+                INSERT INTO m_permission ("grouping", code, entity_name, action_name, can_maker_checker) VALUES('datatable', 'UPDATE_campos_cliente_empresas_CHECKER', 'campos_cliente_empresas', 'UPDATE', false);
+                INSERT INTO m_permission ("grouping", code, entity_name, action_name, can_maker_checker) VALUES('datatable', 'DELETE_campos_cliente_empresas', 'campos_cliente_empresas', 'DELETE', true);
+                INSERT INTO m_permission ("grouping", code, entity_name, action_name, can_maker_checker) VALUES('datatable', 'DELETE_campos_cliente_empresas_CHECKER', 'campos_cliente_empresas', 'DELETE', false);
+            ]]>
+        </sql>
+    </changeSet>
+
+    <changeSet id="12" author="fineract">
+        <sql>
+            <![CDATA[
+                INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory, parent_id) VALUES((SELECT id FROM m_code WHERE code_name='Constitution'), 'Constitución de 1995', 'Constitución de 1995', 1, NULL, true, false, NULL);
+                INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory, parent_id) VALUES((SELECT id FROM m_code WHERE code_name='Main Business Line'), 'agrícola', 'agrícola', 2, NULL, true, false, NULL);
+                INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory, parent_id) VALUES((SELECT id FROM m_code WHERE code_name='Gender'), 'Hombre', 'Hombre', 1, NULL, true, false, NULL);
+                INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory, parent_id) VALUES((SELECT id FROM m_code WHERE code_name='Gender'), 'Mujer', 'Mujer', 2, NULL, true, false, NULL);
+            ]]>
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>

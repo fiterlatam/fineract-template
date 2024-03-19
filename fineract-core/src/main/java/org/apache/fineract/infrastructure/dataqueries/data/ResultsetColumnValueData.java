@@ -30,16 +30,13 @@ public class ResultsetColumnValueData implements Serializable {
     @SuppressWarnings("unused")
     private final Integer score;
 
-    public ResultsetColumnValueData(final int id, final String value) {
-        this.id = id;
-        this.value = value;
-        this.score = null;
-    }
+    private final Integer parentId;
 
-    public ResultsetColumnValueData(final int id, final String value, final int score) {
+    public ResultsetColumnValueData(final Integer id, final String value, final Integer score, final Integer parentId) {
         this.id = id;
         this.value = value;
         this.score = score;
+        this.parentId = parentId;
     }
 
     public boolean matches(final String match) {

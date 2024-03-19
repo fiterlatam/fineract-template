@@ -115,4 +115,18 @@
         </addColumn>
     </changeSet>
 
+    <changeSet author="fineract" id="10" >
+        <preConditions onFail="MARK_RAN">
+            <columnExists tableName="m_portfolio_command_source" columnName="rol_nombre"/>
+        </preConditions>
+        <modifyDataType tableName="m_portfolio_command_source" columnName="rol_nombre" newDataType="VARCHAR(250)"/>
+    </changeSet>
+
+    <changeSet author="fineract" id="11" >
+        <preConditions onFail="MARK_RAN">
+            <columnExists tableName="m_portfolio_command_source" columnName="rol_id"/>
+        </preConditions>
+        <modifyDataType tableName="m_portfolio_command_source" columnName="rol_id" newDataType="VARCHAR(250)"/>
+    </changeSet>
+
 </databaseChangeLog>

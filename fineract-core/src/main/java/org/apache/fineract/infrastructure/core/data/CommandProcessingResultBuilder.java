@@ -52,7 +52,7 @@ public class CommandProcessingResultBuilder {
     private String rolNombre;
     private String usuarioCreacionNombre;
     private Long usuarioId;
-    private Long rolId;
+    private String rolId;
 
     public CommandProcessingResult build() {
         CommandProcessingResult commandProcessingResult = CommandProcessingResult.fromDetails(this.commandId, this.officeId, this.groupId,
@@ -194,7 +194,7 @@ public class CommandProcessingResultBuilder {
         return this;
     }
 
-    public CommandProcessingResultBuilder withRolId(Long rolId) {
+    public CommandProcessingResultBuilder withRolId(String rolId) {
         this.rolId = rolId;
         return this;
     }

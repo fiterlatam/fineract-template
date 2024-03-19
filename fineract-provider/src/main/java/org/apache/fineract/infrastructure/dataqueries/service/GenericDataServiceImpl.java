@@ -304,7 +304,7 @@ public class GenericDataServiceImpl implements GenericDataService {
      * Candidate for using caching there to get allowed 'column values' from code/codevalue tables
      */
     private List<ResultsetColumnValueData> retrieveCodeValues(final String codeName) {
-        final String sql = "select v.id, v.code_score, v.code_value from m_code m join m_code_value v on v.code_id = m.id where m.code_name = ? order by v.order_position, v.id";
+        final String sql = "select v.id, v.code_score, v.code_value, v.parent_id from m_code m join m_code_value v on v.code_id = m.id where m.code_name = ? order by v.order_position, v.id";
         final SqlRowSet rsValues = this.jdbcTemplate.queryForRowSet(sql, codeName); // NOSONAR
 
         final List<ResultsetColumnValueData> columnValues = new ArrayList<>();
@@ -314,8 +314,8 @@ public class GenericDataServiceImpl implements GenericDataService {
             final Integer id = rsValues.getInt("id");
             final String codeValue = rsValues.getString("code_value");
             final Integer score = rsValues.getInt("code_score");
-
-            columnValues.add(new ResultsetColumnValueData(id, codeValue, score));
+            final Integer parentId = rsValues.getInt("parent_id");
+            columnValues.add(new ResultsetColumnValueData(id, codeValue, score, parentId));
         }
 
         return columnValues;
