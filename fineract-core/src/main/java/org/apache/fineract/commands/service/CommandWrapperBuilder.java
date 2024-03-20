@@ -3687,4 +3687,30 @@ public class CommandWrapperBuilder {
         this.entityId = id;
         return this;
     }
+
+    public CommandWrapperBuilder createClientAllyPointOfSales(final Long clientAllyId) {
+        this.actionName = "CREATE";
+        this.entityName = "CLIENTALLYPOINTOFSALES";
+        this.href = "/clientallypointofsales";
+        this.clientId = clientAllyId;
+        return this;
+    }
+
+    public CommandWrapperBuilder updateClientAllyPointOfSales(final Long clientAllyId, final Long id) {
+        this.actionName = "UPDATE";
+        this.entityName = "CLIENTALLYPOINTOFSALES";
+        this.href = "/clientallypointofsales/" + id;
+        this.clientId = clientAllyId;
+        this.entityId = id;
+        return this;
+    }
+
+    public CommandWrapperBuilder deleteClientAllyPointOfSales(final Long id) {
+        this.actionName = "DELETE";
+        this.entityName = "CLIENTALLYPOINTOFSALES";
+        this.href = "/clientallypointofsales/" + id;
+        this.entityId = id;
+        return this;
+    }
+
 }

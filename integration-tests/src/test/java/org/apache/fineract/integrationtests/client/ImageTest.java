@@ -92,7 +92,7 @@ public class ImageTest extends IntegrationTest {
             assertThat(body.contentLength()).isEqualTo(testPart.body().contentLength());
         }
 
-        var staff = ok(fineract().staff.retrieveOne9(staffId));
+        var staff = ok(fineract().staff.retrieveOne10(staffId));
         String expectedFileName = staff.getDisplayName() + "JPEG"; // without dot!
         assertThat(Parts.fileName(r)).hasValue(expectedFileName);
     }

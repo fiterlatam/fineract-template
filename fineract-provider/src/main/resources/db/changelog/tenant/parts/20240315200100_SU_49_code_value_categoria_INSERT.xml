@@ -1,0 +1,307 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements. See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership. The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License. You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied. See the License for the
+    specific language governing permissions and limitations
+    under the License.
+
+-->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd">
+        <changeSet author="fineract" id="1" >
+        		<insert tableName="m_code">
+        			<column name="code_name" value="CategoriaPuntoDeVenta"/>
+        			<column name="is_system_defined" valueBoolean="false"/>
+        		</insert>
+        </changeSet>
+        <changeSet author="fineract" id="2" >
+        		<insert tableName="m_code_value">
+        			<column name="code_id" valueComputed="(SELECT id FROM m_code WHERE code_name='CategoriaPuntoDeVenta')"/>
+        			<column name="code_value" value="VESTUARIO"/>
+        			<column name="code_description" value=""/>
+        			<column name="order_position" valueNumeric="10"/>
+        			<column name="code_score" valueNumeric="1"/>
+        			<column name="is_active" valueBoolean="true"/>
+        			<column name="is_mandatory" valueBoolean="false"/>
+        		</insert>
+        </changeSet>
+        <changeSet author="fineract" id="3" >
+        		<insert tableName="m_code_value">
+        			<column name="code_id" valueComputed="(SELECT id FROM m_code WHERE code_name='CategoriaPuntoDeVenta')"/>
+        			<column name="code_value" value="FARMACOS"/>
+        			<column name="code_description" value=""/>
+        			<column name="order_position" valueNumeric="20"/>
+        			<column name="code_score" valueNumeric="2"/>
+        			<column name="is_active" valueBoolean="true"/>
+        			<column name="is_mandatory" valueBoolean="false"/>
+        		</insert>
+        </changeSet>
+        <changeSet author="fineract" id="4" >
+        		<insert tableName="m_code_value">
+        			<column name="code_id" valueComputed="(SELECT id FROM m_code WHERE code_name='CategoriaPuntoDeVenta')"/>
+        			<column name="code_value" value="VARIEDAD HOGAR"/>
+        			<column name="code_description" value=""/>
+        			<column name="order_position" valueNumeric="30"/>
+        			<column name="code_score" valueNumeric="3"/>
+        			<column name="is_active" valueBoolean="true"/>
+        			<column name="is_mandatory" valueBoolean="false"/>
+        		</insert>
+        </changeSet>
+        <changeSet author="fineract" id="5" >
+        		<insert tableName="m_code_value">
+        			<column name="code_id" valueComputed="(SELECT id FROM m_code WHERE code_name='CategoriaPuntoDeVenta')"/>
+        			<column name="code_value" value="IMPLEMENTOS HOSPITALARIOS"/>
+        			<column name="code_description" value=""/>
+        			<column name="order_position" valueNumeric="40"/>
+        			<column name="code_score" valueNumeric="4"/>
+        			<column name="is_active" valueBoolean="true"/>
+        			<column name="is_mandatory" valueBoolean="false"/>
+        		</insert>
+        </changeSet>
+        <changeSet author="fineract" id="6" >
+        		<insert tableName="m_code_value">
+        			<column name="code_id" valueComputed="(SELECT id FROM m_code WHERE code_name='CategoriaPuntoDeVenta')"/>
+        			<column name="code_value" value="RECAUDO"/>
+        			<column name="code_description" value=""/>
+        			<column name="order_position" valueNumeric="50"/>
+        			<column name="code_score" valueNumeric="5"/>
+        			<column name="is_active" valueBoolean="true"/>
+        			<column name="is_mandatory" valueBoolean="false"/>
+        		</insert>
+        </changeSet>
+        <changeSet author="fineract" id="7" >
+        		<insert tableName="m_code_value">
+        			<column name="code_id" valueComputed="(SELECT id FROM m_code WHERE code_name='CategoriaPuntoDeVenta')"/>
+        			<column name="code_value" value="ACCESORIOS MOTOCICLISMO"/>
+        			<column name="code_description" value=""/>
+        			<column name="order_position" valueNumeric="60"/>
+        			<column name="code_score" valueNumeric="6"/>
+        			<column name="is_active" valueBoolean="true"/>
+        			<column name="is_mandatory" valueBoolean="false"/>
+        		</insert>
+        </changeSet>
+        <changeSet author="fineract" id="8" >
+        		<insert tableName="m_code_value">
+        			<column name="code_id" valueComputed="(SELECT id FROM m_code WHERE code_name='CategoriaPuntoDeVenta')"/>
+        			<column name="code_value" value="MARROQUINERIA"/>
+        			<column name="code_description" value=""/>
+        			<column name="order_position" valueNumeric="70"/>
+        			<column name="code_score" valueNumeric="7"/>
+        			<column name="is_active" valueBoolean="true"/>
+        			<column name="is_mandatory" valueBoolean="false"/>
+        		</insert>
+        </changeSet>
+        <changeSet author="fineract" id="9" >
+        		<insert tableName="m_code_value">
+        			<column name="code_id" valueComputed="(SELECT id FROM m_code WHERE code_name='CategoriaPuntoDeVenta')"/>
+        			<column name="code_value" value="AUTOPARTES Y SERVICIOS"/>
+        			<column name="code_description" value=""/>
+        			<column name="order_position" valueNumeric="80"/>
+        			<column name="code_score" valueNumeric="8"/>
+        			<column name="is_active" valueBoolean="true"/>
+        			<column name="is_mandatory" valueBoolean="false"/>
+        		</insert>
+        </changeSet>
+        <changeSet author="fineract" id="10" >
+        		<insert tableName="m_code_value">
+        			<column name="code_id" valueComputed="(SELECT id FROM m_code WHERE code_name='CategoriaPuntoDeVenta')"/>
+        			<column name="code_value" value="SERVICIOS DE BELLEZA Y ESTETICA"/>
+        			<column name="code_description" value=""/>
+        			<column name="order_position" valueNumeric="90"/>
+        			<column name="code_score" valueNumeric="9"/>
+        			<column name="is_active" valueBoolean="true"/>
+        			<column name="is_mandatory" valueBoolean="false"/>
+        		</insert>
+        </changeSet>
+        <changeSet author="fineract" id="11" >
+        		<insert tableName="m_code_value">
+        			<column name="code_id" valueComputed="(SELECT id FROM m_code WHERE code_name='CategoriaPuntoDeVenta')"/>
+        			<column name="code_value" value="SEGUROS VEHICULOS"/>
+        			<column name="code_description" value=""/>
+        			<column name="order_position" valueNumeric="100"/>
+        			<column name="code_score" valueNumeric="10"/>
+        			<column name="is_active" valueBoolean="true"/>
+        			<column name="is_mandatory" valueBoolean="false"/>
+        		</insert>
+        </changeSet>
+        <changeSet author="fineract" id="12" >
+        		<insert tableName="m_code_value">
+        			<column name="code_id" valueComputed="(SELECT id FROM m_code WHERE code_name='CategoriaPuntoDeVenta')"/>
+        			<column name="code_value" value="HOTELERIA Y TURISMO"/>
+        			<column name="code_description" value=""/>
+        			<column name="order_position" valueNumeric="110"/>
+        			<column name="code_score" valueNumeric="11"/>
+        			<column name="is_active" valueBoolean="true"/>
+        			<column name="is_mandatory" valueBoolean="false"/>
+        		</insert>
+        </changeSet>
+        <changeSet author="fineract" id="13" >
+        		<insert tableName="m_code_value">
+        			<column name="code_id" valueComputed="(SELECT id FROM m_code WHERE code_name='CategoriaPuntoDeVenta')"/>
+        			<column name="code_value" value="MEDICINA ESTETICA"/>
+        			<column name="code_description" value=""/>
+        			<column name="order_position" valueNumeric="120"/>
+        			<column name="code_score" valueNumeric="12"/>
+        			<column name="is_active" valueBoolean="true"/>
+        			<column name="is_mandatory" valueBoolean="false"/>
+        		</insert>
+        </changeSet>
+        <changeSet author="fineract" id="14" >
+        		<insert tableName="m_code_value">
+        			<column name="code_id" valueComputed="(SELECT id FROM m_code WHERE code_name='CategoriaPuntoDeVenta')"/>
+        			<column name="code_value" value="JOYERIA Y RELOJERIA"/>
+        			<column name="code_description" value=""/>
+        			<column name="order_position" valueNumeric="130"/>
+        			<column name="code_score" valueNumeric="13"/>
+        			<column name="is_active" valueBoolean="true"/>
+        			<column name="is_mandatory" valueBoolean="false"/>
+        		</insert>
+        </changeSet>
+        <changeSet author="fineract" id="15" >
+        		<insert tableName="m_code_value">
+        			<column name="code_id" valueComputed="(SELECT id FROM m_code WHERE code_name='CategoriaPuntoDeVenta')"/>
+        			<column name="code_value" value="RELOJERIA Y CALCULADORAS"/>
+        			<column name="code_description" value=""/>
+        			<column name="order_position" valueNumeric="140"/>
+        			<column name="code_score" valueNumeric="14"/>
+        			<column name="is_active" valueBoolean="true"/>
+        			<column name="is_mandatory" valueBoolean="false"/>
+        		</insert>
+        </changeSet>
+        <changeSet author="fineract" id="16" >
+        		<insert tableName="m_code_value">
+        			<column name="code_id" valueComputed="(SELECT id FROM m_code WHERE code_name='CategoriaPuntoDeVenta')"/>
+        			<column name="code_value" value="FERRETERIA Y ACABADOS"/>
+        			<column name="code_description" value=""/>
+        			<column name="order_position" valueNumeric="150"/>
+        			<column name="code_score" valueNumeric="15"/>
+        			<column name="is_active" valueBoolean="true"/>
+        			<column name="is_mandatory" valueBoolean="false"/>
+        		</insert>
+        </changeSet>
+        <changeSet author="fineract" id="17" >
+        		<insert tableName="m_code_value">
+        			<column name="code_id" valueComputed="(SELECT id FROM m_code WHERE code_name='CategoriaPuntoDeVenta')"/>
+        			<column name="code_value" value="PRODUCTOS TEXTILES  Y AFINES A LA CONFECCION"/>
+        			<column name="code_description" value=""/>
+        			<column name="order_position" valueNumeric="160"/>
+        			<column name="code_score" valueNumeric="16"/>
+        			<column name="is_active" valueBoolean="true"/>
+        			<column name="is_mandatory" valueBoolean="false"/>
+        		</insert>
+        </changeSet>
+        <changeSet author="fineract" id="18" >
+        		<insert tableName="m_code_value">
+        			<column name="code_id" valueComputed="(SELECT id FROM m_code WHERE code_name='CategoriaPuntoDeVenta')"/>
+        			<column name="code_value" value="VINCULACIÓN"/>
+        			<column name="code_description" value=""/>
+        			<column name="order_position" valueNumeric="170"/>
+        			<column name="code_score" valueNumeric="17"/>
+        			<column name="is_active" valueBoolean="true"/>
+        			<column name="is_mandatory" valueBoolean="false"/>
+        		</insert>
+        </changeSet>
+        <changeSet author="fineract" id="19" >
+        		<insert tableName="m_code_value">
+        			<column name="code_id" valueComputed="(SELECT id FROM m_code WHERE code_name='CategoriaPuntoDeVenta')"/>
+        			<column name="code_value" value="PRUEBAS"/>
+        			<column name="code_description" value=""/>
+        			<column name="order_position" valueNumeric="180"/>
+        			<column name="code_score" valueNumeric="18"/>
+        			<column name="is_active" valueBoolean="true"/>
+        			<column name="is_mandatory" valueBoolean="false"/>
+        		</insert>
+        </changeSet>
+        <changeSet author="fineract" id="20" >
+        		<insert tableName="m_code_value">
+        			<column name="code_id" valueComputed="(SELECT id FROM m_code WHERE code_name='CategoriaPuntoDeVenta')"/>
+        			<column name="code_value" value="SERVICIOS ODONTOLÓGICOS"/>
+        			<column name="code_description" value=""/>
+        			<column name="order_position" valueNumeric="190"/>
+        			<column name="code_score" valueNumeric="19"/>
+        			<column name="is_active" valueBoolean="true"/>
+        			<column name="is_mandatory" valueBoolean="false"/>
+        		</insert>
+        </changeSet>
+        <changeSet author="fineract" id="21" >
+        		<insert tableName="m_code_value">
+        			<column name="code_id" valueComputed="(SELECT id FROM m_code WHERE code_name='CategoriaPuntoDeVenta')"/>
+        			<column name="code_value" value="DEPORTIVOS"/>
+        			<column name="code_description" value=""/>
+        			<column name="order_position" valueNumeric="200"/>
+        			<column name="code_score" valueNumeric="20"/>
+        			<column name="is_active" valueBoolean="true"/>
+        			<column name="is_mandatory" valueBoolean="false"/>
+        		</insert>
+        </changeSet>
+        <changeSet author="fineract" id="22" >
+        		<insert tableName="m_code_value">
+        			<column name="code_id" valueComputed="(SELECT id FROM m_code WHERE code_name='CategoriaPuntoDeVenta')"/>
+        			<column name="code_value" value="ARTICULOS ELECTRONICOS"/>
+        			<column name="code_description" value=""/>
+        			<column name="order_position" valueNumeric="210"/>
+        			<column name="code_score" valueNumeric="21"/>
+        			<column name="is_active" valueBoolean="true"/>
+        			<column name="is_mandatory" valueBoolean="false"/>
+        		</insert>
+        </changeSet>
+        <changeSet author="fineract" id="23" >
+        		<insert tableName="m_code_value">
+        			<column name="code_id" valueComputed="(SELECT id FROM m_code WHERE code_name='CategoriaPuntoDeVenta')"/>
+        			<column name="code_value" value="CALZADO Y ACCESORIOS"/>
+        			<column name="code_description" value=""/>
+        			<column name="order_position" valueNumeric="220"/>
+        			<column name="code_score" valueNumeric="22"/>
+        			<column name="is_active" valueBoolean="true"/>
+        			<column name="is_mandatory" valueBoolean="false"/>
+        		</insert>
+        </changeSet>
+        <changeSet author="fineract" id="24" >
+        		<insert tableName="m_code_value">
+        			<column name="code_id" valueComputed="(SELECT id FROM m_code WHERE code_name='CategoriaPuntoDeVenta')"/>
+        			<column name="code_value" value="SALUD"/>
+        			<column name="code_description" value=""/>
+        			<column name="order_position" valueNumeric="230"/>
+        			<column name="code_score" valueNumeric="23"/>
+        			<column name="is_active" valueBoolean="true"/>
+        			<column name="is_mandatory" valueBoolean="false"/>
+        		</insert>
+        </changeSet>
+        <changeSet author="fineract" id="25" >
+        		<insert tableName="m_code_value">
+        			<column name="code_id" valueComputed="(SELECT id FROM m_code WHERE code_name='CategoriaPuntoDeVenta')"/>
+        			<column name="code_value" value="INSTRUMENTOS"/>
+        			<column name="code_description" value=""/>
+        			<column name="order_position" valueNumeric="240"/>
+        			<column name="code_score" valueNumeric="24"/>
+        			<column name="is_active" valueBoolean="true"/>
+        			<column name="is_mandatory" valueBoolean="false"/>
+        		</insert>
+        </changeSet>
+        <changeSet author="fineract" id="26" >
+        		<insert tableName="m_code_value">
+        			<column name="code_id" valueComputed="(SELECT id FROM m_code WHERE code_name='CategoriaPuntoDeVenta')"/>
+        			<column name="code_value" value="PERFUMERIA"/>
+        			<column name="code_description" value=""/>
+        			<column name="order_position" valueNumeric="250"/>
+        			<column name="code_score" valueNumeric="25"/>
+        			<column name="is_active" valueBoolean="true"/>
+        			<column name="is_mandatory" valueBoolean="false"/>
+        		</insert>
+        </changeSet>
+
+</databaseChangeLog>
