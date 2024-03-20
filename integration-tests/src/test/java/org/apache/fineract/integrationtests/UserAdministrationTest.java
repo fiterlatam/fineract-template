@@ -199,19 +199,19 @@ public class UserAdministrationTest extends IntegrationTest {
 
         // User updates its own password
         String updatedPassword = "aA1qwerty56!";
-        PutUsersUserIdResponse putUsersUserIdResponse = ok(newFineract(simpleUsername, originalPassword).users.update27(userId,
+        PutUsersUserIdResponse putUsersUserIdResponse = ok(newFineract(simpleUsername, originalPassword).users.update28(userId,
                 new PutUsersUserIdRequest().password(updatedPassword).repeatPassword(updatedPassword)));
         Assertions.assertNotNull(putUsersUserIdResponse.getResourceId());
 
         // From then on the originalPassword is not working anymore
         CallFailedRuntimeException callFailedRuntimeException = Assertions.assertThrows(CallFailedRuntimeException.class, () -> {
-            ok(newFineract(simpleUsername, originalPassword).users.retrieveOne32(userId));
+            ok(newFineract(simpleUsername, originalPassword).users.retrieveOne33(userId));
         });
         Assertions.assertEquals(401, callFailedRuntimeException.getResponse().raw().code());
         Assertions.assertTrue(callFailedRuntimeException.getMessage().contains("Unauthorized"));
 
         // The update password is still working perfectly
-        GetUsersUserIdResponse ok = ok(newFineract(simpleUsername, updatedPassword).users.retrieveOne32(userId));
+        GetUsersUserIdResponse ok = ok(newFineract(simpleUsername, updatedPassword).users.retrieveOne33(userId));
     }
 
     @Test
@@ -235,7 +235,7 @@ public class UserAdministrationTest extends IntegrationTest {
 
         // User tries to update it's own roles
         CallFailedRuntimeException callFailedRuntimeException = Assertions.assertThrows(CallFailedRuntimeException.class, () -> {
-            ok(newFineract(simpleUsername, password).users.update27(userId,
+            ok(newFineract(simpleUsername, password).users.update28(userId,
                     new PutUsersUserIdRequest().roles(List.of(Long.valueOf(roleId2)))));
         });
 

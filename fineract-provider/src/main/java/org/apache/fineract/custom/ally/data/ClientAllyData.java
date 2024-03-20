@@ -57,4 +57,5 @@ public class ClientAllyData {
     private String taxProfileCodeValueDescription;
     private Long stateCodeValueId;
     private String stateCodeValueDescription;
+    private Integer pointOfSalesCounter;
 }

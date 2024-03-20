@@ -167,4 +167,10 @@
     <include file="parts/20240309200000_SU_47_c_client_ally_CREATE.xml" relativeToChangelogFile="true"/>
     <include file="parts/20240309200100_SU_47_m_permission_INSERT.xml" relativeToChangelogFile="true"/>
     <include file="parts/20240315145400_SU_48_additional_datatable_CREATE.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20240315190000_SU_49_c_client_ally_point_of_sales_CREATE.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20240315200100_SU_49_code_value_categoria_INSERT.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20240315200200_SU_49_code_value_marca_INSERT.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20240315200300_SU_49_code_value_segmento_INSERT.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20240315200400_SU_49_code_value_tipo_INSERT.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20240315230100_SU_49_m_permission_INSERT.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
