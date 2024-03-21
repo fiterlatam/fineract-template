@@ -36,7 +36,7 @@ public final class SQLInjectionValidator {
 
     private static final String[] COMMENTS = { "--", "({", "/*", "#" };
 
-    private static final String SQL_PATTERN = "[a-zA-Z_=,\\-:'!><.?\"`% ()0-9*\n\r]*";
+    private static final String SQL_PATTERN = "[a-zA-Z\\u00C0-\\u00FF_=,\\-:'!><.?\"`% ()0-9*\n\r]*";
 
     // TODO: see here https://rails-sqli.org for and
     // https://larrysteinle.com/2011/02/20/use-regular-expressions-to-detect-sql-code-injection more examples

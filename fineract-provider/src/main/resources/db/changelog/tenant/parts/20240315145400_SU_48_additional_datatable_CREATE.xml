@@ -847,4 +847,13 @@
         <dropNotNullConstraint tableName="m_client_non_person" columnName="constitution_cv_id" columnDataType="int4"/>
     </changeSet>
 
+    <changeSet id="31" author="fineract">
+        <preConditions onFail="MARK_RAN">
+            <columnExists tableName="campos_cliente_empresas" columnName="Estado_cd_Estado"/>
+        </preConditions>
+        <dropColumn tableName="campos_cliente_empresas">
+            <column name="Estado_cd_Estado"/>
+        </dropColumn>
+    </changeSet>
+
 </databaseChangeLog>
