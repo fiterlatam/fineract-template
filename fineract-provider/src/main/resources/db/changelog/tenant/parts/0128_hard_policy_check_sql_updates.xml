@@ -181,11 +181,13 @@
                 UPDATE stretchy_report SET report_sql = "SELECT
                 COALESCE(client_details.principal_paid_percentage, 0) AS principal_paid_percentage,
                 CASE
-                    WHEN ('${loanProductId}' in (7,6,3))) AND ( COALESCE(client_details.principal_paid_percentage, 0) >= 50) THEN 'GREEN'
+                    WHEN ('${loanProductId}' = 7) AND ( COALESCE(client_details.principal_paid_percentage, 0) >= 50) THEN 'GREEN'
+                    WHEN ('${loanProductId}' = 6) AND ( COALESCE(client_details.principal_paid_percentage, 0) >= 50) THEN 'GREEN'
+                    WHEN ('${loanProductId}' = 3) AND ( COALESCE(client_details.principal_paid_percentage, 0) >= 50) THEN 'GREEN'
                 END AS color
                 FROM m_client mc
                 INNER JOIN (
-                    SELECT mc.id AS client_id,  (100 * (SUM(ml.principal_repaid_derived)/SUM(ml.principal_disbursed_derived))) AS principal_paid_percentage
+                    SELECT mc.id AS client_id,  (100 * SUM(ml.principal_repaid_derived)/SUM(ml.principal_disbursed_derived)) AS principal_paid_percentage
                     FROM m_client mc
                     LEFT JOIN m_loan ml ON ml.client_id = mc.id
                     WHERE  ml.loan_status_id in (300,600) AND COALESCE(ml.principal_disbursed_derived, 0) > 0
