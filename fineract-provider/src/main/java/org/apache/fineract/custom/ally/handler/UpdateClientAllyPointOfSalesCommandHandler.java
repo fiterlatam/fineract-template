@@ -34,7 +34,6 @@ public class UpdateClientAllyPointOfSalesCommandHandler implements NewCommandSou
     @Autowired
     private ClientAllyPointOfSalesReadWritePlatformService service;
 
-
     @Transactional
     @Override
     public CommandProcessingResult processCommand(final JsonCommand command) {

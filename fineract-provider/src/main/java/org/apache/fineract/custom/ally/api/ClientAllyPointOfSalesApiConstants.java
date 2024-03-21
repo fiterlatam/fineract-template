@@ -35,22 +35,24 @@ public final class ClientAllyPointOfSalesApiConstants {
     public static final String dateFormatParamName = "dateFormat";
 
     // request parameters
-	public static final String idParamName = "id";
-	public static final String clientAllyIdParamName = "clientAllyId";
-	public static final String codeParamName = "code";
-	public static final String nameParamName = "name";
-	public static final String brandParamName = "brandCodeValueId";
-	public static final String cityCodeValueIdParamName = "cityCodeValueId";
-	public static final String departmentCodeValueIdParamName = "departmentCodeValueId";
-	public static final String categoryCodeValueIdParamName = "categoryCodeValueId";
-	public static final String segmentCodeValueIdParamName = "segmentCodeValueId";
-	public static final String typeCodeValueIdParamName = "typeCodeValueId";
-	public static final String settledComissionParamName = "settledComission";
-	public static final String buyEnabledParamName = "buyEnabled";
-	public static final String collectionEnabledParamName = "collectionEnabled";
-	public static final String stateCodeValueIdParamName = "stateCodeValueId";
+    public static final String idParamName = "id";
+    public static final String clientAllyIdParamName = "clientAllyId";
+    public static final String codeParamName = "code";
+    public static final String nameParamName = "name";
+    public static final String brandParamName = "brandCodeValueId";
+    public static final String cityCodeValueIdParamName = "cityCodeValueId";
+    public static final String departmentCodeValueIdParamName = "departmentCodeValueId";
+    public static final String categoryCodeValueIdParamName = "categoryCodeValueId";
+    public static final String segmentCodeValueIdParamName = "segmentCodeValueId";
+    public static final String typeCodeValueIdParamName = "typeCodeValueId";
+    public static final String settledComissionParamName = "settledComission";
+    public static final String buyEnabledParamName = "buyEnabled";
+    public static final String collectionEnabledParamName = "collectionEnabled";
+    public static final String stateCodeValueIdParamName = "stateCodeValueId";
 
-    
     // request parameters Set
-    public static final Set<String> REQUEST_DATA_PARAMETERS = new HashSet<>(Arrays.asList(localeParamName, dateFormatParamName, idParamName,clientAllyIdParamName,codeParamName,nameParamName,brandParamName,cityCodeValueIdParamName,departmentCodeValueIdParamName,categoryCodeValueIdParamName,segmentCodeValueIdParamName,typeCodeValueIdParamName,settledComissionParamName,buyEnabledParamName,collectionEnabledParamName,stateCodeValueIdParamName));
+    public static final Set<String> REQUEST_DATA_PARAMETERS = new HashSet<>(Arrays.asList(localeParamName, dateFormatParamName, idParamName,
+            clientAllyIdParamName, codeParamName, nameParamName, brandParamName, cityCodeValueIdParamName, departmentCodeValueIdParamName,
+            categoryCodeValueIdParamName, segmentCodeValueIdParamName, typeCodeValueIdParamName, settledComissionParamName,
+            buyEnabledParamName, collectionEnabledParamName, stateCodeValueIdParamName));
 }

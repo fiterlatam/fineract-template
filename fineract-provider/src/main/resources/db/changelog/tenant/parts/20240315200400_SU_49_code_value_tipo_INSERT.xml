@@ -23,43 +23,43 @@
                    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd">
         <changeSet author="fineract" id="1" >
-        		<insert tableName="m_code">
-        			<column name="code_name" value="TipoPuntoDeVenta"/>
-        			<column name="is_system_defined" valueBoolean="false"/>
-        		</insert>
+                <insert tableName="m_code">
+                    <column name="code_name" value="TipoPuntoDeVenta"/>
+                    <column name="is_system_defined" valueBoolean="false"/>
+                </insert>
         </changeSet>
         <changeSet author="fineract" id="2" >
-        		<insert tableName="m_code_value">
-        			<column name="code_id" valueComputed="(SELECT id FROM m_code WHERE code_name='TipoPuntoDeVenta')"/>
-        			<column name="code_value" value="Franquicia"/>
-        			<column name="code_description" value=""/>
-        			<column name="order_position" valueNumeric="10"/>
-        			<column name="code_score" valueNumeric="1"/>
-        			<column name="is_active" valueBoolean="true"/>
-        			<column name="is_mandatory" valueBoolean="false"/>
-        		</insert>
+                <insert tableName="m_code_value">
+                    <column name="code_id" valueComputed="(SELECT id FROM m_code WHERE code_name='TipoPuntoDeVenta')"/>
+                    <column name="code_value" value="Franquicia"/>
+                    <column name="code_description" value=""/>
+                    <column name="order_position" valueNumeric="10"/>
+                    <column name="code_score" valueNumeric="1"/>
+                    <column name="is_active" valueBoolean="true"/>
+                    <column name="is_mandatory" valueBoolean="false"/>
+                </insert>
         </changeSet>
         <changeSet author="fineract" id="3" >
-        		<insert tableName="m_code_value">
-        			<column name="code_id" valueComputed="(SELECT id FROM m_code WHERE code_name='TipoPuntoDeVenta')"/>
-        			<column name="code_value" value="Externa"/>
-        			<column name="code_description" value=""/>
-        			<column name="order_position" valueNumeric="20"/>
-        			<column name="code_score" valueNumeric="2"/>
-        			<column name="is_active" valueBoolean="true"/>
-        			<column name="is_mandatory" valueBoolean="false"/>
-        		</insert>
+                <insert tableName="m_code_value">
+                    <column name="code_id" valueComputed="(SELECT id FROM m_code WHERE code_name='TipoPuntoDeVenta')"/>
+                    <column name="code_value" value="Externa"/>
+                    <column name="code_description" value=""/>
+                    <column name="order_position" valueNumeric="20"/>
+                    <column name="code_score" valueNumeric="2"/>
+                    <column name="is_active" valueBoolean="true"/>
+                    <column name="is_mandatory" valueBoolean="false"/>
+                </insert>
         </changeSet>
         <changeSet author="fineract" id="4" >
-        		<insert tableName="m_code_value">
-        			<column name="code_id" valueComputed="(SELECT id FROM m_code WHERE code_name='TipoPuntoDeVenta')"/>
-        			<column name="code_value" value="Propia"/>
-        			<column name="code_description" value=""/>
-        			<column name="order_position" valueNumeric="30"/>
-        			<column name="code_score" valueNumeric="3"/>
-        			<column name="is_active" valueBoolean="true"/>
-        			<column name="is_mandatory" valueBoolean="false"/>
-        		</insert>
+                <insert tableName="m_code_value">
+                    <column name="code_id" valueComputed="(SELECT id FROM m_code WHERE code_name='TipoPuntoDeVenta')"/>
+                    <column name="code_value" value="Propia"/>
+                    <column name="code_description" value=""/>
+                    <column name="order_position" valueNumeric="30"/>
+                    <column name="code_score" valueNumeric="3"/>
+                    <column name="is_active" valueBoolean="true"/>
+                    <column name="is_mandatory" valueBoolean="false"/>
+                </insert>
         </changeSet>
 
 </databaseChangeLog>

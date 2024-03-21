@@ -21,6 +21,5 @@ package org.apache.fineract.custom.ally.domain;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
-public interface  ClientAllyPointOfSalesRepository
-        extends JpaRepository< ClientAllyPointOfSales, Long>, JpaSpecificationExecutor< ClientAllyPointOfSales> {
-}
+public interface ClientAllyPointOfSalesRepository
+        extends JpaRepository<ClientAllyPointOfSales, Long>, JpaSpecificationExecutor<ClientAllyPointOfSales> {}

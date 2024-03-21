@@ -209,9 +209,8 @@ public class ClientAllyReadWritePlatformServiceImpl implements ClientAllyReadWri
                     + "    mcv_tax_profile_id.code_value      as taxProfileDescription,"
                     + "    mcv_state_id.code_value            as stateDescription,"
                     + "    (SELECT COUNT(1) FROM custom.c_client_ally_point_of_sales WHERE client_ally_id = cca.id) as pointOfSalesCounter,"
-                    + "    cca.* "
-                    + "from "
-                    + "    custom.c_client_ally cca " + "    left join public.m_code_value mcv_city on  mcv_city.id = cca.city_id  "
+                    + "    cca.* " + "from " + "    custom.c_client_ally cca "
+                    + "    left join public.m_code_value mcv_city on  mcv_city.id = cca.city_id  "
                     + "    left join public.m_code_value mcv_department on  mcv_department.id = cca.department_id  "
                     + "    left join public.m_code_value mcv_liquidation_freq on  mcv_liquidation_freq.id = cca.liquidation_frequency_id "
                     + "    left join public.m_code_value mcv_bank_entity_id on  mcv_bank_entity_id.id = cca.bank_entity_id "
@@ -236,8 +235,7 @@ public class ClientAllyReadWritePlatformServiceImpl implements ClientAllyReadWri
                     .accountTypeCodeValueDescription(rs.getString("accountTypeDescription")).accountNumber(rs.getLong("account_number"))
                     .taxProfileCodeValueId(rs.getLong("tax_profile_id"))
                     .taxProfileCodeValueDescription(rs.getString("taxProfileDescription")).stateCodeValueId(rs.getLong("state_id"))
-                    .stateCodeValueDescription(rs.getString("stateDescription"))
-                    .pointOfSalesCounter(rs.getInt("pointOfSalesCounter"))
+                    .stateCodeValueDescription(rs.getString("stateDescription")).pointOfSalesCounter(rs.getInt("pointOfSalesCounter"))
                     .build();
         }
     }

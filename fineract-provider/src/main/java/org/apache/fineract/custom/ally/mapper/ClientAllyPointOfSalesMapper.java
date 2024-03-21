@@ -19,54 +19,32 @@
 
 package org.apache.fineract.custom.ally.mapper;
 
-import org.apache.fineract.custom.ally.data.ClientAllyPointOfSalesData;
-import org.apache.fineract.custom.ally.domain.ClientAllyPointOfSales;
-
 import java.util.List;
 import java.util.stream.Collectors;
+import org.apache.fineract.custom.ally.data.ClientAllyPointOfSalesData;
+import org.apache.fineract.custom.ally.domain.ClientAllyPointOfSales;
 
 public class ClientAllyPointOfSalesMapper {
 
     public static ClientAllyPointOfSales toModel(ClientAllyPointOfSalesData dto) {
-        return ClientAllyPointOfSales.builder()
-				.id(dto.getId())
-				.clientAllyId(dto.getClientAllyId())
-				.code(dto.getCode())
-				.name(dto.getName())
-				.brandCodeValueId(dto.getBrandCodeValueId())
-				.cityCodeValueId(dto.getCityCodeValueId())
-				.departmentCodeValueId(dto.getDepartmentCodeValueId())
-				.categoryCodeValueId(dto.getCategoryCodeValueId())
-				.segmentCodeValueId(dto.getSegmentCodeValueId())
-				.typeCodeValueId(dto.getTypeCodeValueId())
-				.settledComission(dto.getSettledComission())
-				.buyEnabled(dto.getBuyEnabled())
-				.collectionEnabled(dto.getCollectionEnabled())
-				.stateCodeValueId(dto.getStateCodeValueId())
-				.build();
+        return ClientAllyPointOfSales.builder().id(dto.getId()).clientAllyId(dto.getClientAllyId()).code(dto.getCode()).name(dto.getName())
+                .brandCodeValueId(dto.getBrandCodeValueId()).cityCodeValueId(dto.getCityCodeValueId())
+                .departmentCodeValueId(dto.getDepartmentCodeValueId()).categoryCodeValueId(dto.getCategoryCodeValueId())
+                .segmentCodeValueId(dto.getSegmentCodeValueId()).typeCodeValueId(dto.getTypeCodeValueId())
+                .settledComission(dto.getSettledComission()).buyEnabled(dto.getBuyEnabled()).collectionEnabled(dto.getCollectionEnabled())
+                .stateCodeValueId(dto.getStateCodeValueId()).build();
     }
 
     public static ClientAllyPointOfSalesData toDTO(ClientAllyPointOfSales model) {
-        return ClientAllyPointOfSalesData.builder()
-				.id(model.getId())
-				.clientAllyId(model.getClientAllyId())
-				.code(model.getCode())
-				.name(model.getName())
-				.brandCodeValueId(model.getBrandCodeValueId())
-				.cityCodeValueId(model.getCityCodeValueId())
-				.departmentCodeValueId(model.getDepartmentCodeValueId())
-				.categoryCodeValueId(model.getCategoryCodeValueId())
-				.segmentCodeValueId(model.getSegmentCodeValueId())
-				.typeCodeValueId(model.getTypeCodeValueId())
-				.settledComission(model.getSettledComission())
-				.buyEnabled(model.getBuyEnabled())
-				.collectionEnabled(model.getCollectionEnabled())
-				.stateCodeValueId(model.getStateCodeValueId())
-				.build();
+        return ClientAllyPointOfSalesData.builder().id(model.getId()).clientAllyId(model.getClientAllyId()).code(model.getCode())
+                .name(model.getName()).brandCodeValueId(model.getBrandCodeValueId()).cityCodeValueId(model.getCityCodeValueId())
+                .departmentCodeValueId(model.getDepartmentCodeValueId()).categoryCodeValueId(model.getCategoryCodeValueId())
+                .segmentCodeValueId(model.getSegmentCodeValueId()).typeCodeValueId(model.getTypeCodeValueId())
+                .settledComission(model.getSettledComission()).buyEnabled(model.getBuyEnabled())
+                .collectionEnabled(model.getCollectionEnabled()).stateCodeValueId(model.getStateCodeValueId()).build();
     }
-    
-    public static List<ClientAllyPointOfSalesData> toDTO(List<ClientAllyPointOfSales> model) {
-		return model.stream().map(obj ->toDTO(obj)).collect(Collectors.toList());
-	}
-}
 
+    public static List<ClientAllyPointOfSalesData> toDTO(List<ClientAllyPointOfSales> model) {
+        return model.stream().map(obj -> toDTO(obj)).collect(Collectors.toList());
+    }
+}

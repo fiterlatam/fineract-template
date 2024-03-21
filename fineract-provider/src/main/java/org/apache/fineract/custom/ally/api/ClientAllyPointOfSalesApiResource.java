@@ -18,7 +18,6 @@
  */
 package org.apache.fineract.custom.ally.api;
 
-
 import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -66,7 +65,7 @@ public class ClientAllyPointOfSalesApiResource {
         this.apiRequestParameterHelper = apiRequestParameterHelper;
     }
 
-	@Autowired
+    @Autowired
     private ClientAllyPointOfSalesReadWritePlatformService service;
 
     @GET
@@ -78,24 +77,21 @@ public class ClientAllyPointOfSalesApiResource {
         return this.toApiJsonSerializer.serialize(this.service.getTemplateForInsertAndUpdate());
     }
 
-
     @GET
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     public String get(@Context final UriInfo uriInfo, @PathParam("parentId") @Parameter(description = "parentId") final Long parentId,
-                      @QueryParam("sqlSearch") @Parameter(description = "sqlSearch") final String sqlSearch) {
+            @QueryParam("sqlSearch") @Parameter(description = "sqlSearch") final String sqlSearch) {
 
         this.context.authenticatedUser().validateHasReadPermission(ClientAllyPointOfSalesApiConstants.RESOURCE_NAME);
         return this.toApiJsonSerializer.serialize(this.service.findByName(parentId, sqlSearch));
     }
 
-
     @GET
     @Path("{id}")
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
-    public String retrieveOne(@PathParam("id") @Parameter(description = "id") final Long id,
-            @Context final UriInfo uriInfo) {
+    public String retrieveOne(@PathParam("id") @Parameter(description = "id") final Long id, @Context final UriInfo uriInfo) {
 
         this.context.authenticatedUser().validateHasReadPermission(ClientAllyPointOfSalesApiConstants.RESOURCE_NAME);
 
@@ -106,20 +102,19 @@ public class ClientAllyPointOfSalesApiResource {
         return this.toApiJsonSerializer.serialize(settings, data, ClientAllyPointOfSalesApiConstants.REQUEST_DATA_PARAMETERS);
     }
 
-
     @POST
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     public String createNewHoliday(@Parameter(hidden = true) final String apiRequestBodyAsJson,
-                                   @PathParam("parentId") @Parameter(description = "parentId") final Long parentId) {
+            @PathParam("parentId") @Parameter(description = "parentId") final Long parentId) {
 
-        final CommandWrapper commandRequest = new CommandWrapperBuilder().createClientAllyPointOfSales(parentId).withJson(apiRequestBodyAsJson).build();
+        final CommandWrapper commandRequest = new CommandWrapperBuilder().createClientAllyPointOfSales(parentId)
+                .withJson(apiRequestBodyAsJson).build();
 
         final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
 
         return this.toApiJsonSerializer.serialize(result);
     }
-
 
     @PUT
     @Path("{id}")
@@ -129,24 +124,24 @@ public class ClientAllyPointOfSalesApiResource {
             @PathParam("parentId") @Parameter(description = "parentId") final Long parentId,
             @Parameter(hidden = true) final String jsonRequestBody) {
 
-        final CommandWrapper commandRequest = new CommandWrapperBuilder().updateClientAllyPointOfSales(parentId, id).withJson(jsonRequestBody).build();
+        final CommandWrapper commandRequest = new CommandWrapperBuilder().updateClientAllyPointOfSales(parentId, id)
+                .withJson(jsonRequestBody).build();
 
         final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
 
         return this.toApiJsonSerializer.serialize(result);
     }
 
-
     @DELETE
     @Path("{id}")
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     public String delete(@PathParam("id") @Parameter(description = "id") final Long id) {
-    
+
         final CommandWrapper commandRequest = new CommandWrapperBuilder().deleteClientAllyPointOfSales(id).build();
-        
+
         final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
-        
+
         return this.toApiJsonSerializer.serialize(result);
     }
 }

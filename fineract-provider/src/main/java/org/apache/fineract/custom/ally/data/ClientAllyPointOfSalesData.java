@@ -18,13 +18,12 @@
  */
 package org.apache.fineract.custom.ally.data;
 
+import java.math.BigDecimal;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-
-import java.math.BigDecimal;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -33,25 +32,25 @@ import java.math.BigDecimal;
 @Setter
 public class ClientAllyPointOfSalesData {
 
-	private Long id;
-	private Long clientAllyId;
-	private String code;
-	private String name;
-	private Long brandCodeValueId;
-	private String brandCodeValueDescription;
-	private Long cityCodeValueId;
-	private String cityCodeValueDescription;
-	private Long departmentCodeValueId;
-	private String departmentCodeValueDescription;
-	private Long categoryCodeValueId;
-	private String categoryCodeValueDescription;
-	private Long segmentCodeValueId;
-	private String segmentCodeValueDescription;
-	private Long typeCodeValueId;
-	private String typeCodeValueDescription;
-	private BigDecimal settledComission;
-	private Boolean buyEnabled;
-	private Boolean collectionEnabled;
-	private Long stateCodeValueId;
-	private String stateCodeValueDescription;
+    private Long id;
+    private Long clientAllyId;
+    private String code;
+    private String name;
+    private Long brandCodeValueId;
+    private String brandCodeValueDescription;
+    private Long cityCodeValueId;
+    private String cityCodeValueDescription;
+    private Long departmentCodeValueId;
+    private String departmentCodeValueDescription;
+    private Long categoryCodeValueId;
+    private String categoryCodeValueDescription;
+    private Long segmentCodeValueId;
+    private String segmentCodeValueDescription;
+    private Long typeCodeValueId;
+    private String typeCodeValueDescription;
+    private BigDecimal settledComission;
+    private Boolean buyEnabled;
+    private Boolean collectionEnabled;
+    private Long stateCodeValueId;
+    private String stateCodeValueDescription;
 }
