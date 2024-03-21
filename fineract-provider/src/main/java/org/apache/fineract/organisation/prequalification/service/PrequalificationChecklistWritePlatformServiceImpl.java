@@ -887,8 +887,7 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
         int yearsInBusiness = 0;
         if (!CollectionUtils.isEmpty(loanAdditionPropertiesList)) {
             final LoanAdditionProperties loanAdditionProperties = loanAdditionPropertiesList.get(0);
-            String antiguedadNegocio = ObjectUtils.defaultIfNull(loanAdditionProperties.getAntiguedadNegocio(), "");
-            yearsInBusiness = NumberUtils.toInt(antiguedadNegocio.replaceAll("[^0-9]", ""));
+            yearsInBusiness = ObjectUtils.defaultIfNull(loanAdditionProperties.getAniosDeActividadNegocio(), 0);
         }
         final Map<String, String> reportParams = new HashMap<>();
         reportParams.put("${clientId}", clientId);
