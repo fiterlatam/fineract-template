@@ -28,45 +28,41 @@ import java.util.stream.Collectors;
 public class ClientAllyPointOfSalesMapper {
 
     public static ClientAllyPointOfSales toModel(ClientAllyPointOfSalesData dto) {
-        ClientAllyPointOfSales ret = new ClientAllyPointOfSales();
-
-		ret.setId(dto.getId());
-		ret.setClientAllyId(dto.getClientAllyId());
-		ret.setCode(dto.getCode());
-		ret.setName(dto.getName());
-		ret.setBrandCodeValueId(dto.getBrandCodeValueId());
-		ret.setCityCodeValueId(dto.getCityCodeValueId());
-		ret.setDepartmentCodeValueId(dto.getDepartmentCodeValueId());
-		ret.setCategoryCodeValueId(dto.getCategoryCodeValueId());
-		ret.setSegmentCodeValueId(dto.getSegmentCodeValueId());
-		ret.setTypeCodeValueId(dto.getTypeCodeValueId());
-		ret.setSettledComission(dto.getSettledComission());
-		ret.setBuyEnabled(dto.getBuyEnabled());
-		ret.setCollectionEnabled(dto.getCollectionEnabled());
-		ret.setStateCodeValueId(dto.getStateCodeValueId());
-
-        return ret;
+        return ClientAllyPointOfSales.builder()
+				.id(dto.getId())
+				.clientAllyId(dto.getClientAllyId())
+				.code(dto.getCode())
+				.name(dto.getName())
+				.brandCodeValueId(dto.getBrandCodeValueId())
+				.cityCodeValueId(dto.getCityCodeValueId())
+				.departmentCodeValueId(dto.getDepartmentCodeValueId())
+				.categoryCodeValueId(dto.getCategoryCodeValueId())
+				.segmentCodeValueId(dto.getSegmentCodeValueId())
+				.typeCodeValueId(dto.getTypeCodeValueId())
+				.settledComission(dto.getSettledComission())
+				.buyEnabled(dto.getBuyEnabled())
+				.collectionEnabled(dto.getCollectionEnabled())
+				.stateCodeValueId(dto.getStateCodeValueId())
+				.build();
     }
 
     public static ClientAllyPointOfSalesData toDTO(ClientAllyPointOfSales model) {
-        ClientAllyPointOfSalesData ret = new ClientAllyPointOfSalesData();
-
-		ret.setId(model.getId());
-		ret.setClientAllyId(model.getClientAllyId());
-		ret.setCode(model.getCode());
-		ret.setName(model.getName());
-		ret.setBrandCodeValueId(model.getBrandCodeValueId());
-		ret.setCityCodeValueId(model.getCityCodeValueId());
-		ret.setDepartmentCodeValueId(model.getDepartmentCodeValueId());
-		ret.setCategoryCodeValueId(model.getCategoryCodeValueId());
-		ret.setSegmentCodeValueId(model.getSegmentCodeValueId());
-		ret.setTypeCodeValueId(model.getTypeCodeValueId());
-		ret.setSettledComission(model.getSettledComission());
-		ret.setBuyEnabled(model.getBuyEnabled());
-		ret.setCollectionEnabled(model.getCollectionEnabled());
-		ret.setStateCodeValueId(model.getStateCodeValueId());
-
-        return ret;
+        return ClientAllyPointOfSalesData.builder()
+				.id(model.getId())
+				.clientAllyId(model.getClientAllyId())
+				.code(model.getCode())
+				.name(model.getName())
+				.brandCodeValueId(model.getBrandCodeValueId())
+				.cityCodeValueId(model.getCityCodeValueId())
+				.departmentCodeValueId(model.getDepartmentCodeValueId())
+				.categoryCodeValueId(model.getCategoryCodeValueId())
+				.segmentCodeValueId(model.getSegmentCodeValueId())
+				.typeCodeValueId(model.getTypeCodeValueId())
+				.settledComission(model.getSettledComission())
+				.buyEnabled(model.getBuyEnabled())
+				.collectionEnabled(model.getCollectionEnabled())
+				.stateCodeValueId(model.getStateCodeValueId())
+				.build();
     }
     
     public static List<ClientAllyPointOfSalesData> toDTO(List<ClientAllyPointOfSales> model) {

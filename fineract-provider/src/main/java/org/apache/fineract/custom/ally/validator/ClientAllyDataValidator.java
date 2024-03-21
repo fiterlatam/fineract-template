@@ -90,9 +90,13 @@ public class ClientAllyDataValidator {
                 element);
         baseDataValidator.reset().parameter(ClientAllyApiConstants.applyCupoMaxSellParamName).value(applyCupoMaxSell).notNull();
 
-        final Integer cupoMaxSell = this.fromApiJsonHelper.extractIntegerWithLocaleNamed(ClientAllyApiConstants.cupoMaxSellParamName,
-                element);
-        baseDataValidator.reset().parameter(ClientAllyApiConstants.cupoMaxSellParamName).value(cupoMaxSell);
+        Integer cupoMaxSell = null;
+        if(applyCupoMaxSell) {
+            cupoMaxSell = this.fromApiJsonHelper.extractIntegerWithLocaleNamed(ClientAllyApiConstants.cupoMaxSellParamName,
+                    element);
+            baseDataValidator.reset().parameter(ClientAllyApiConstants.cupoMaxSellParamName).value(cupoMaxSell)
+                    .notNull().integerGreaterThanNumber(0);;
+        }
 
         final BigDecimal settledComission = this.fromApiJsonHelper
                 .extractBigDecimalWithLocaleNamed(ClientAllyApiConstants.settledComissionParamName, element);
@@ -178,9 +182,13 @@ public class ClientAllyDataValidator {
                 element);
         baseDataValidator.reset().parameter(ClientAllyApiConstants.applyCupoMaxSellParamName).value(applyCupoMaxSell).notNull();
 
-        final Integer cupoMaxSell = this.fromApiJsonHelper.extractIntegerWithLocaleNamed(ClientAllyApiConstants.cupoMaxSellParamName,
-                element);
-        baseDataValidator.reset().parameter(ClientAllyApiConstants.cupoMaxSellParamName).value(cupoMaxSell);
+        Integer cupoMaxSell = null;
+        if(applyCupoMaxSell) {
+            cupoMaxSell = this.fromApiJsonHelper.extractIntegerWithLocaleNamed(ClientAllyApiConstants.cupoMaxSellParamName,
+                    element);
+            baseDataValidator.reset().parameter(ClientAllyApiConstants.cupoMaxSellParamName).value(cupoMaxSell)
+                    .notNull().integerGreaterThanNumber(0);
+        }
 
         final BigDecimal settledComission = this.fromApiJsonHelper
                 .extractBigDecimalWithLocaleNamed(ClientAllyApiConstants.settledComissionParamName, element);
