@@ -18,12 +18,11 @@
  */
 package org.apache.fineract.custom.ally.service;
 
+import java.util.List;
 import org.apache.fineract.custom.ally.data.ClientAllyPoibfOfSaleCodeValueData;
 import org.apache.fineract.custom.ally.data.ClientAllyPointOfSalesData;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
-
-import java.util.List;
 
 public interface ClientAllyPointOfSalesReadWritePlatformService {
 

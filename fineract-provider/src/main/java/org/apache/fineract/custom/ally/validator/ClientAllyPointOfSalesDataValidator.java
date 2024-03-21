@@ -20,6 +20,11 @@ package org.apache.fineract.custom.ally.validator;
 
 import com.google.gson.JsonElement;
 import com.google.gson.reflect.TypeToken;
+import java.lang.reflect.Type;
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.custom.ally.api.ClientAllyPointOfSalesApiConstants;
 import org.apache.fineract.custom.ally.domain.ClientAllyPointOfSales;
@@ -30,12 +35,6 @@ import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidati
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-
-import java.lang.reflect.Type;
-import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
 @Component
 public class ClientAllyPointOfSalesDataValidator {
@@ -54,7 +53,7 @@ public class ClientAllyPointOfSalesDataValidator {
         }
 
         final Type typeOfMap = new TypeToken<Map<String, Object>>() {}.getType();
-        this.fromApiJsonHelper.checkForUnsupportedParameters(typeOfMap, json,  ClientAllyPointOfSalesApiConstants.REQUEST_DATA_PARAMETERS);
+        this.fromApiJsonHelper.checkForUnsupportedParameters(typeOfMap, json, ClientAllyPointOfSalesApiConstants.REQUEST_DATA_PARAMETERS);
         final JsonElement element = this.fromApiJsonHelper.parse(json);
 
         final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
@@ -62,58 +61,62 @@ public class ClientAllyPointOfSalesDataValidator {
         final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors)
                 .resource(ClientAllyPointOfSalesApiConstants.RESOURCE_NAME);
 
-		final String code = this.fromApiJsonHelper.extractStringNamed(ClientAllyPointOfSalesApiConstants.codeParamName, element);
-		baseDataValidator.reset().parameter(ClientAllyPointOfSalesApiConstants.codeParamName).value(code).notNull().notExceedingLengthOf(4);
+        final String code = this.fromApiJsonHelper.extractStringNamed(ClientAllyPointOfSalesApiConstants.codeParamName, element);
+        baseDataValidator.reset().parameter(ClientAllyPointOfSalesApiConstants.codeParamName).value(code).notNull().notExceedingLengthOf(4);
 
-		final String name = this.fromApiJsonHelper.extractStringNamed(ClientAllyPointOfSalesApiConstants.nameParamName, element);
-		baseDataValidator.reset().parameter(ClientAllyPointOfSalesApiConstants.nameParamName).value(name).notNull().notExceedingLengthOf(100);
+        final String name = this.fromApiJsonHelper.extractStringNamed(ClientAllyPointOfSalesApiConstants.nameParamName, element);
+        baseDataValidator.reset().parameter(ClientAllyPointOfSalesApiConstants.nameParamName).value(name).notNull()
+                .notExceedingLengthOf(100);
 
-		final Long brand = this.fromApiJsonHelper.extractLongNamed(ClientAllyPointOfSalesApiConstants.brandParamName, element);
-		baseDataValidator.reset().parameter(ClientAllyPointOfSalesApiConstants.brandParamName).value(brand).notNull();
+        final Long brand = this.fromApiJsonHelper.extractLongNamed(ClientAllyPointOfSalesApiConstants.brandParamName, element);
+        baseDataValidator.reset().parameter(ClientAllyPointOfSalesApiConstants.brandParamName).value(brand).notNull();
 
-		final Long cityCodeValueId = this.fromApiJsonHelper.extractLongNamed(ClientAllyPointOfSalesApiConstants.cityCodeValueIdParamName, element);
-		baseDataValidator.reset().parameter(ClientAllyPointOfSalesApiConstants.cityCodeValueIdParamName).value(cityCodeValueId).notNull();
+        final Long cityCodeValueId = this.fromApiJsonHelper.extractLongNamed(ClientAllyPointOfSalesApiConstants.cityCodeValueIdParamName,
+                element);
+        baseDataValidator.reset().parameter(ClientAllyPointOfSalesApiConstants.cityCodeValueIdParamName).value(cityCodeValueId).notNull();
 
-		final Long departmentCodeValueId = this.fromApiJsonHelper.extractLongNamed(ClientAllyPointOfSalesApiConstants.departmentCodeValueIdParamName, element);
-		baseDataValidator.reset().parameter(ClientAllyPointOfSalesApiConstants.departmentCodeValueIdParamName).value(departmentCodeValueId).notNull();
+        final Long departmentCodeValueId = this.fromApiJsonHelper
+                .extractLongNamed(ClientAllyPointOfSalesApiConstants.departmentCodeValueIdParamName, element);
+        baseDataValidator.reset().parameter(ClientAllyPointOfSalesApiConstants.departmentCodeValueIdParamName).value(departmentCodeValueId)
+                .notNull();
 
-		final Long categoryCodeValueId = this.fromApiJsonHelper.extractLongNamed(ClientAllyPointOfSalesApiConstants.categoryCodeValueIdParamName, element);
-		baseDataValidator.reset().parameter(ClientAllyPointOfSalesApiConstants.categoryCodeValueIdParamName).value(categoryCodeValueId).notNull();
+        final Long categoryCodeValueId = this.fromApiJsonHelper
+                .extractLongNamed(ClientAllyPointOfSalesApiConstants.categoryCodeValueIdParamName, element);
+        baseDataValidator.reset().parameter(ClientAllyPointOfSalesApiConstants.categoryCodeValueIdParamName).value(categoryCodeValueId)
+                .notNull();
 
-		final Long segmentCodeValueId = this.fromApiJsonHelper.extractLongNamed(ClientAllyPointOfSalesApiConstants.segmentCodeValueIdParamName, element);
-		baseDataValidator.reset().parameter(ClientAllyPointOfSalesApiConstants.segmentCodeValueIdParamName).value(segmentCodeValueId).notNull();
+        final Long segmentCodeValueId = this.fromApiJsonHelper
+                .extractLongNamed(ClientAllyPointOfSalesApiConstants.segmentCodeValueIdParamName, element);
+        baseDataValidator.reset().parameter(ClientAllyPointOfSalesApiConstants.segmentCodeValueIdParamName).value(segmentCodeValueId)
+                .notNull();
 
-		final Long typeCodeValueId = this.fromApiJsonHelper.extractLongNamed(ClientAllyPointOfSalesApiConstants.typeCodeValueIdParamName, element);
-		baseDataValidator.reset().parameter(ClientAllyPointOfSalesApiConstants.typeCodeValueIdParamName).value(typeCodeValueId).notNull();
+        final Long typeCodeValueId = this.fromApiJsonHelper.extractLongNamed(ClientAllyPointOfSalesApiConstants.typeCodeValueIdParamName,
+                element);
+        baseDataValidator.reset().parameter(ClientAllyPointOfSalesApiConstants.typeCodeValueIdParamName).value(typeCodeValueId).notNull();
 
-		final BigDecimal settledComission = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed(ClientAllyPointOfSalesApiConstants.settledComissionParamName, element);
-		baseDataValidator.reset().parameter(ClientAllyPointOfSalesApiConstants.settledComissionParamName).value(settledComission).notNull();
+        final BigDecimal settledComission = this.fromApiJsonHelper
+                .extractBigDecimalWithLocaleNamed(ClientAllyPointOfSalesApiConstants.settledComissionParamName, element);
+        baseDataValidator.reset().parameter(ClientAllyPointOfSalesApiConstants.settledComissionParamName).value(settledComission).notNull();
 
-		final Boolean buyEnabled = this.fromApiJsonHelper.extractBooleanNamed(ClientAllyPointOfSalesApiConstants.buyEnabledParamName, element);
-		baseDataValidator.reset().parameter(ClientAllyPointOfSalesApiConstants.buyEnabledParamName).value(buyEnabled).notNull();
+        final Boolean buyEnabled = this.fromApiJsonHelper.extractBooleanNamed(ClientAllyPointOfSalesApiConstants.buyEnabledParamName,
+                element);
+        baseDataValidator.reset().parameter(ClientAllyPointOfSalesApiConstants.buyEnabledParamName).value(buyEnabled).notNull();
 
-		final Boolean collectionEnabled = this.fromApiJsonHelper.extractBooleanNamed(ClientAllyPointOfSalesApiConstants.collectionEnabledParamName, element);
-		baseDataValidator.reset().parameter(ClientAllyPointOfSalesApiConstants.collectionEnabledParamName).value(collectionEnabled).notNull();
+        final Boolean collectionEnabled = this.fromApiJsonHelper
+                .extractBooleanNamed(ClientAllyPointOfSalesApiConstants.collectionEnabledParamName, element);
+        baseDataValidator.reset().parameter(ClientAllyPointOfSalesApiConstants.collectionEnabledParamName).value(collectionEnabled)
+                .notNull();
 
-		final Long stateCodeValueId = this.fromApiJsonHelper.extractLongNamed(ClientAllyPointOfSalesApiConstants.stateCodeValueIdParamName, element);
-		baseDataValidator.reset().parameter(ClientAllyPointOfSalesApiConstants.stateCodeValueIdParamName).value(stateCodeValueId).notNull();
+        final Long stateCodeValueId = this.fromApiJsonHelper.extractLongNamed(ClientAllyPointOfSalesApiConstants.stateCodeValueIdParamName,
+                element);
+        baseDataValidator.reset().parameter(ClientAllyPointOfSalesApiConstants.stateCodeValueIdParamName).value(stateCodeValueId).notNull();
 
         throwExceptionIfValidationWarningsExist(dataValidationErrors);
-        
-        return ClientAllyPointOfSales.builder()
-				.code(code)
-				.name(name)
-				.brandCodeValueId(brand)
-				.cityCodeValueId(cityCodeValueId)
-				.departmentCodeValueId(departmentCodeValueId)
-				.categoryCodeValueId(categoryCodeValueId)
-				.segmentCodeValueId(segmentCodeValueId)
-				.typeCodeValueId(typeCodeValueId)
-				.settledComission(settledComission)
-				.buyEnabled(buyEnabled)
-				.collectionEnabled(collectionEnabled)
-				.stateCodeValueId(stateCodeValueId)
-				.build();
+
+        return ClientAllyPointOfSales.builder().code(code).name(name).brandCodeValueId(brand).cityCodeValueId(cityCodeValueId)
+                .departmentCodeValueId(departmentCodeValueId).categoryCodeValueId(categoryCodeValueId)
+                .segmentCodeValueId(segmentCodeValueId).typeCodeValueId(typeCodeValueId).settledComission(settledComission)
+                .buyEnabled(buyEnabled).collectionEnabled(collectionEnabled).stateCodeValueId(stateCodeValueId).build();
     }
 
     public ClientAllyPointOfSales validateForUpdate(final String json) {
@@ -123,7 +126,7 @@ public class ClientAllyPointOfSalesDataValidator {
         }
 
         final Type typeOfMap = new TypeToken<Map<String, Object>>() {}.getType();
-        this.fromApiJsonHelper.checkForUnsupportedParameters(typeOfMap, json,  ClientAllyPointOfSalesApiConstants.REQUEST_DATA_PARAMETERS);
+        this.fromApiJsonHelper.checkForUnsupportedParameters(typeOfMap, json, ClientAllyPointOfSalesApiConstants.REQUEST_DATA_PARAMETERS);
         final JsonElement element = this.fromApiJsonHelper.parse(json);
 
         final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
@@ -131,58 +134,62 @@ public class ClientAllyPointOfSalesDataValidator {
         final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors)
                 .resource(ClientAllyPointOfSalesApiConstants.RESOURCE_NAME);
 
-		final String code = this.fromApiJsonHelper.extractStringNamed(ClientAllyPointOfSalesApiConstants.codeParamName, element);
-		baseDataValidator.reset().parameter(ClientAllyPointOfSalesApiConstants.codeParamName).value(code).notNull().notExceedingLengthOf(4);
+        final String code = this.fromApiJsonHelper.extractStringNamed(ClientAllyPointOfSalesApiConstants.codeParamName, element);
+        baseDataValidator.reset().parameter(ClientAllyPointOfSalesApiConstants.codeParamName).value(code).notNull().notExceedingLengthOf(4);
 
-		final String name = this.fromApiJsonHelper.extractStringNamed(ClientAllyPointOfSalesApiConstants.nameParamName, element);
-		baseDataValidator.reset().parameter(ClientAllyPointOfSalesApiConstants.nameParamName).value(name).notNull().notExceedingLengthOf(100);
+        final String name = this.fromApiJsonHelper.extractStringNamed(ClientAllyPointOfSalesApiConstants.nameParamName, element);
+        baseDataValidator.reset().parameter(ClientAllyPointOfSalesApiConstants.nameParamName).value(name).notNull()
+                .notExceedingLengthOf(100);
 
-		final Long brand = this.fromApiJsonHelper.extractLongNamed(ClientAllyPointOfSalesApiConstants.brandParamName, element);
-		baseDataValidator.reset().parameter(ClientAllyPointOfSalesApiConstants.brandParamName).value(brand).notNull();
+        final Long brand = this.fromApiJsonHelper.extractLongNamed(ClientAllyPointOfSalesApiConstants.brandParamName, element);
+        baseDataValidator.reset().parameter(ClientAllyPointOfSalesApiConstants.brandParamName).value(brand).notNull();
 
-		final Long cityCodeValueId = this.fromApiJsonHelper.extractLongNamed(ClientAllyPointOfSalesApiConstants.cityCodeValueIdParamName, element);
-		baseDataValidator.reset().parameter(ClientAllyPointOfSalesApiConstants.cityCodeValueIdParamName).value(cityCodeValueId).notNull();
+        final Long cityCodeValueId = this.fromApiJsonHelper.extractLongNamed(ClientAllyPointOfSalesApiConstants.cityCodeValueIdParamName,
+                element);
+        baseDataValidator.reset().parameter(ClientAllyPointOfSalesApiConstants.cityCodeValueIdParamName).value(cityCodeValueId).notNull();
 
-		final Long departmentCodeValueId = this.fromApiJsonHelper.extractLongNamed(ClientAllyPointOfSalesApiConstants.departmentCodeValueIdParamName, element);
-		baseDataValidator.reset().parameter(ClientAllyPointOfSalesApiConstants.departmentCodeValueIdParamName).value(departmentCodeValueId).notNull();
+        final Long departmentCodeValueId = this.fromApiJsonHelper
+                .extractLongNamed(ClientAllyPointOfSalesApiConstants.departmentCodeValueIdParamName, element);
+        baseDataValidator.reset().parameter(ClientAllyPointOfSalesApiConstants.departmentCodeValueIdParamName).value(departmentCodeValueId)
+                .notNull();
 
-		final Long categoryCodeValueId = this.fromApiJsonHelper.extractLongNamed(ClientAllyPointOfSalesApiConstants.categoryCodeValueIdParamName, element);
-		baseDataValidator.reset().parameter(ClientAllyPointOfSalesApiConstants.categoryCodeValueIdParamName).value(categoryCodeValueId).notNull();
+        final Long categoryCodeValueId = this.fromApiJsonHelper
+                .extractLongNamed(ClientAllyPointOfSalesApiConstants.categoryCodeValueIdParamName, element);
+        baseDataValidator.reset().parameter(ClientAllyPointOfSalesApiConstants.categoryCodeValueIdParamName).value(categoryCodeValueId)
+                .notNull();
 
-		final Long segmentCodeValueId = this.fromApiJsonHelper.extractLongNamed(ClientAllyPointOfSalesApiConstants.segmentCodeValueIdParamName, element);
-		baseDataValidator.reset().parameter(ClientAllyPointOfSalesApiConstants.segmentCodeValueIdParamName).value(segmentCodeValueId).notNull();
+        final Long segmentCodeValueId = this.fromApiJsonHelper
+                .extractLongNamed(ClientAllyPointOfSalesApiConstants.segmentCodeValueIdParamName, element);
+        baseDataValidator.reset().parameter(ClientAllyPointOfSalesApiConstants.segmentCodeValueIdParamName).value(segmentCodeValueId)
+                .notNull();
 
-		final Long typeCodeValueId = this.fromApiJsonHelper.extractLongNamed(ClientAllyPointOfSalesApiConstants.typeCodeValueIdParamName, element);
-		baseDataValidator.reset().parameter(ClientAllyPointOfSalesApiConstants.typeCodeValueIdParamName).value(typeCodeValueId).notNull();
+        final Long typeCodeValueId = this.fromApiJsonHelper.extractLongNamed(ClientAllyPointOfSalesApiConstants.typeCodeValueIdParamName,
+                element);
+        baseDataValidator.reset().parameter(ClientAllyPointOfSalesApiConstants.typeCodeValueIdParamName).value(typeCodeValueId).notNull();
 
-		final BigDecimal settledComission = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed(ClientAllyPointOfSalesApiConstants.settledComissionParamName, element);
-		baseDataValidator.reset().parameter(ClientAllyPointOfSalesApiConstants.settledComissionParamName).value(settledComission).notNull();
+        final BigDecimal settledComission = this.fromApiJsonHelper
+                .extractBigDecimalWithLocaleNamed(ClientAllyPointOfSalesApiConstants.settledComissionParamName, element);
+        baseDataValidator.reset().parameter(ClientAllyPointOfSalesApiConstants.settledComissionParamName).value(settledComission).notNull();
 
-		final Boolean buyEnabled = this.fromApiJsonHelper.extractBooleanNamed(ClientAllyPointOfSalesApiConstants.buyEnabledParamName, element);
-		baseDataValidator.reset().parameter(ClientAllyPointOfSalesApiConstants.buyEnabledParamName).value(buyEnabled).notNull();
+        final Boolean buyEnabled = this.fromApiJsonHelper.extractBooleanNamed(ClientAllyPointOfSalesApiConstants.buyEnabledParamName,
+                element);
+        baseDataValidator.reset().parameter(ClientAllyPointOfSalesApiConstants.buyEnabledParamName).value(buyEnabled).notNull();
 
-		final Boolean collectionEnabled = this.fromApiJsonHelper.extractBooleanNamed(ClientAllyPointOfSalesApiConstants.collectionEnabledParamName, element);
-		baseDataValidator.reset().parameter(ClientAllyPointOfSalesApiConstants.collectionEnabledParamName).value(collectionEnabled).notNull();
+        final Boolean collectionEnabled = this.fromApiJsonHelper
+                .extractBooleanNamed(ClientAllyPointOfSalesApiConstants.collectionEnabledParamName, element);
+        baseDataValidator.reset().parameter(ClientAllyPointOfSalesApiConstants.collectionEnabledParamName).value(collectionEnabled)
+                .notNull();
 
-		final Long stateCodeValueId = this.fromApiJsonHelper.extractLongNamed(ClientAllyPointOfSalesApiConstants.stateCodeValueIdParamName, element);
-		baseDataValidator.reset().parameter(ClientAllyPointOfSalesApiConstants.stateCodeValueIdParamName).value(stateCodeValueId).notNull();
+        final Long stateCodeValueId = this.fromApiJsonHelper.extractLongNamed(ClientAllyPointOfSalesApiConstants.stateCodeValueIdParamName,
+                element);
+        baseDataValidator.reset().parameter(ClientAllyPointOfSalesApiConstants.stateCodeValueIdParamName).value(stateCodeValueId).notNull();
 
         throwExceptionIfValidationWarningsExist(dataValidationErrors);
 
-		return ClientAllyPointOfSales.builder()
-				.code(code)
-				.name(name)
-				.brandCodeValueId(brand)
-				.cityCodeValueId(cityCodeValueId)
-				.departmentCodeValueId(departmentCodeValueId)
-				.categoryCodeValueId(categoryCodeValueId)
-				.segmentCodeValueId(segmentCodeValueId)
-				.typeCodeValueId(typeCodeValueId)
-				.settledComission(settledComission)
-				.buyEnabled(buyEnabled)
-				.collectionEnabled(collectionEnabled)
-				.stateCodeValueId(stateCodeValueId)
-				.build();
+        return ClientAllyPointOfSales.builder().code(code).name(name).brandCodeValueId(brand).cityCodeValueId(cityCodeValueId)
+                .departmentCodeValueId(departmentCodeValueId).categoryCodeValueId(categoryCodeValueId)
+                .segmentCodeValueId(segmentCodeValueId).typeCodeValueId(typeCodeValueId).settledComission(settledComission)
+                .buyEnabled(buyEnabled).collectionEnabled(collectionEnabled).stateCodeValueId(stateCodeValueId).build();
     }
 
     private void throwExceptionIfValidationWarningsExist(final List<ApiParameterError> dataValidationErrors) {

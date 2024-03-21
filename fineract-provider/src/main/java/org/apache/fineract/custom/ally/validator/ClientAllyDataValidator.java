@@ -91,11 +91,11 @@ public class ClientAllyDataValidator {
         baseDataValidator.reset().parameter(ClientAllyApiConstants.applyCupoMaxSellParamName).value(applyCupoMaxSell).notNull();
 
         Integer cupoMaxSell = null;
-        if(applyCupoMaxSell) {
-            cupoMaxSell = this.fromApiJsonHelper.extractIntegerWithLocaleNamed(ClientAllyApiConstants.cupoMaxSellParamName,
-                    element);
-            baseDataValidator.reset().parameter(ClientAllyApiConstants.cupoMaxSellParamName).value(cupoMaxSell)
-                    .notNull().integerGreaterThanNumber(0);;
+        if (applyCupoMaxSell) {
+            cupoMaxSell = this.fromApiJsonHelper.extractIntegerWithLocaleNamed(ClientAllyApiConstants.cupoMaxSellParamName, element);
+            baseDataValidator.reset().parameter(ClientAllyApiConstants.cupoMaxSellParamName).value(cupoMaxSell).notNull()
+                    .integerGreaterThanNumber(0);
+            ;
         }
 
         final BigDecimal settledComission = this.fromApiJsonHelper
@@ -183,11 +183,10 @@ public class ClientAllyDataValidator {
         baseDataValidator.reset().parameter(ClientAllyApiConstants.applyCupoMaxSellParamName).value(applyCupoMaxSell).notNull();
 
         Integer cupoMaxSell = null;
-        if(applyCupoMaxSell) {
-            cupoMaxSell = this.fromApiJsonHelper.extractIntegerWithLocaleNamed(ClientAllyApiConstants.cupoMaxSellParamName,
-                    element);
-            baseDataValidator.reset().parameter(ClientAllyApiConstants.cupoMaxSellParamName).value(cupoMaxSell)
-                    .notNull().integerGreaterThanNumber(0);
+        if (applyCupoMaxSell) {
+            cupoMaxSell = this.fromApiJsonHelper.extractIntegerWithLocaleNamed(ClientAllyApiConstants.cupoMaxSellParamName, element);
+            baseDataValidator.reset().parameter(ClientAllyApiConstants.cupoMaxSellParamName).value(cupoMaxSell).notNull()
+                    .integerGreaterThanNumber(0);
         }
 
         final BigDecimal settledComission = this.fromApiJsonHelper

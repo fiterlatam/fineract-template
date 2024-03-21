@@ -18,12 +18,11 @@
  */
 package org.apache.fineract.custom.ally.data;
 
+import java.util.Collection;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.NoArgsConstructor;
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
-
-import java.util.Collection;
 
 @AllArgsConstructor
 @NoArgsConstructor

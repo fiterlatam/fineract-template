@@ -25,16 +25,15 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.math.BigDecimal;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.math.BigDecimal;
-
 @Entity
-@Table(schema="custom", name = "c_client_ally_point_of_sales")
+@Table(schema = "custom", name = "c_client_ally_point_of_sales")
 @Cacheable(false)
 @AllArgsConstructor
 @NoArgsConstructor
@@ -43,47 +42,47 @@ import java.math.BigDecimal;
 @Setter
 public class ClientAllyPointOfSales {
 
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	@Column(name = "id", nullable = false)
-	private Long id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id", nullable = false)
+    private Long id;
 
-	@Column(name = "client_ally_id", nullable = false)
-	private Long clientAllyId;
+    @Column(name = "client_ally_id", nullable = false)
+    private Long clientAllyId;
 
-	@Column(name = "code", nullable = false, length = 4)
-	private String code;
+    @Column(name = "code", nullable = false, length = 4)
+    private String code;
 
-	@Column(name = "name", nullable = false, length = 100)
-	private String name;
+    @Column(name = "name", nullable = false, length = 100)
+    private String name;
 
-	@Column(name = "brand_id", nullable = false)
-	private Long brandCodeValueId;
+    @Column(name = "brand_id", nullable = false)
+    private Long brandCodeValueId;
 
-	@Column(name = "city_id", nullable = false)
-	private Long cityCodeValueId;
+    @Column(name = "city_id", nullable = false)
+    private Long cityCodeValueId;
 
-	@Column(name = "department_id", nullable = false)
-	private Long departmentCodeValueId;
+    @Column(name = "department_id", nullable = false)
+    private Long departmentCodeValueId;
 
-	@Column(name = "category_id", nullable = false)
-	private Long categoryCodeValueId;
+    @Column(name = "category_id", nullable = false)
+    private Long categoryCodeValueId;
 
-	@Column(name = "segment_id", nullable = false)
-	private Long segmentCodeValueId;
+    @Column(name = "segment_id", nullable = false)
+    private Long segmentCodeValueId;
 
-	@Column(name = "type_id", nullable = false)
-	private Long typeCodeValueId;
+    @Column(name = "type_id", nullable = false)
+    private Long typeCodeValueId;
 
-	@Column(name = "settled_comission", nullable = false)
-	private BigDecimal settledComission;
+    @Column(name = "settled_comission", nullable = false)
+    private BigDecimal settledComission;
 
-	@Column(name = "buy_enabled", nullable = false)
-	private Boolean buyEnabled;
+    @Column(name = "buy_enabled", nullable = false)
+    private Boolean buyEnabled;
 
-	@Column(name = "collection_enabled", nullable = false)
-	private Boolean collectionEnabled;
+    @Column(name = "collection_enabled", nullable = false)
+    private Boolean collectionEnabled;
 
-	@Column(name = "state_id", nullable = false)
-	private Long stateCodeValueId;
+    @Column(name = "state_id", nullable = false)
+    private Long stateCodeValueId;
 }

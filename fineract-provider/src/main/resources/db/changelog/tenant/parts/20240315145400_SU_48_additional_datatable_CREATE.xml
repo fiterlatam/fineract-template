@@ -825,4 +825,26 @@
         </addColumn>
     </changeSet>
 
+    <changeSet id="28" author="fineract">
+        <preConditions onFail="MARK_RAN">
+            <columnExists tableName="campos_cliente_empresas" columnName="Celular"/>
+        </preConditions>
+        <dropColumn tableName="campos_cliente_empresas">
+            <column name="Celular"/>
+        </dropColumn>
+    </changeSet>
+
+    <changeSet id="29" author="fineract">
+        <preConditions onFail="MARK_RAN">
+            <columnExists tableName="campos_cliente_empresas" columnName="Correo electronico"/>
+        </preConditions>
+        <dropColumn tableName="campos_cliente_empresas">
+            <column name="Correo electronico"/>
+        </dropColumn>
+    </changeSet>
+
+    <changeSet id="30" author="fineract">
+        <dropNotNullConstraint tableName="m_client_non_person" columnName="constitution_cv_id" columnDataType="int4"/>
+    </changeSet>
+
 </databaseChangeLog>
