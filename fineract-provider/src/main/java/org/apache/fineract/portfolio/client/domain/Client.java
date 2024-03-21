@@ -717,14 +717,15 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
         }
 
         validateUpdate();
-
-        deriveDisplayName();
-
         if (this.clientInfoRelatedDetail == null) {
             clientInfoRelatedDetail = new ClientInfoRelatedDetail();
         }
 
         this.clientInfoRelatedDetail.update(command, actualChanges);
+
+        deriveDisplayName();
+
+
 
         return actualChanges;
     }
@@ -824,6 +825,9 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
 
             if (StringUtils.isNotBlank(this.secondlastname)) {
                 nameBuilder.append(this.secondlastname).append(' ');
+            }
+            if (StringUtils.isNotBlank(this.clientInfoRelatedDetail.getOthernames())) {
+                nameBuilder.append(this.clientInfoRelatedDetail.getOthernames()).append(' ');
             }
             if (StringUtils.isNotBlank(this.clientInfoRelatedDetail.getMaidenName())) {
                 nameBuilder.append(this.clientInfoRelatedDetail.getMaidenName());

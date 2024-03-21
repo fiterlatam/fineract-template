@@ -138,8 +138,8 @@ public class ClientInfoRelatedDetail {
             this.maidenName = StringUtils.defaultIfEmpty(newValue, null);
         }
         if (command.isChangeInStringParameterNamed(ClientApiConstants.otherNamesParamName, this.othernames)) {
-            final String newValue = command.stringValueOfParameterNamed(ClientApiConstants.maidenNameParamName);
-            actualChanges.put(ClientApiConstants.maidenNameParamName, newValue);
+            final String newValue = command.stringValueOfParameterNamed(ClientApiConstants.otherNamesParamName);
+            actualChanges.put(ClientApiConstants.otherNamesParamName, newValue);
             this.othernames = StringUtils.defaultIfEmpty(newValue, null);
         }
         if (command.isChangeInStringParameterNamed(ClientApiConstants.groupMemberParamName, this.groupMember)) {
@@ -205,6 +205,9 @@ public class ClientInfoRelatedDetail {
 
     public String getMaidenName() {
         return this.maidenName;
+    }
+    public String getOthernames() {
+        return this.othernames;
     }
 
     public void setLoanCycle(Integer loanCycle) {
