@@ -33,7 +33,6 @@ import javax.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuilder;
@@ -887,8 +886,7 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
         int yearsInBusiness = 0;
         if (!CollectionUtils.isEmpty(loanAdditionPropertiesList)) {
             final LoanAdditionProperties loanAdditionProperties = loanAdditionPropertiesList.get(0);
-            String antiguedadNegocio = ObjectUtils.defaultIfNull(loanAdditionProperties.getAntiguedadNegocio(), "");
-            yearsInBusiness = NumberUtils.toInt(antiguedadNegocio.replaceAll("[^0-9]", ""));
+            yearsInBusiness = ObjectUtils.defaultIfNull(loanAdditionProperties.getAniosDeActividadNegocio(), 0);
         }
         final Map<String, String> reportParams = new HashMap<>();
         reportParams.put("${clientId}", clientId);

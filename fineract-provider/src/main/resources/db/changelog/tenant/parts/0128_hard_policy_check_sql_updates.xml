@@ -159,4 +159,20 @@
         </sql>
     </changeSet>
 
+    <changeSet id="7" author="fineract">
+        <sql>
+            <![CDATA[
+                UPDATE stretchy_report SET report_sql = "SELECT mc.id,
+                UPPER(COALESCE(mc.nationality, '')) AS client_nationality,
+                CASE
+                    WHEN (${loanProductId} = 6) AND (COALESCE(mc.nationality, '') LIKE '%GUATEMAL%') THEN 'GREEN'
+                    WHEN (${loanProductId} = 6) AND (COALESCE(mc.nationality, '') NOT LIKE '%GUATEMAL%') THEN 'RED'
+                    WHEN (${loanProductId} = 6) AND (mc.status_enum = 300) THEN 'GREEN'
+                END AS color
+                FROM m_client mc
+                WHERE mc.id = ${clientId}" WHERE report_name = "Nationality Policy Check";
+            ]]>
+        </sql>
+    </changeSet>
+
 </databaseChangeLog>
