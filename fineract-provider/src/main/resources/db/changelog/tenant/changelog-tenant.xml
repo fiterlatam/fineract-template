@@ -173,4 +173,5 @@
     <include file="parts/20240315200300_SU_49_code_value_segmento_INSERT.xml" relativeToChangelogFile="true"/>
     <include file="parts/20240315200400_SU_49_code_value_tipo_INSERT.xml" relativeToChangelogFile="true"/>
     <include file="parts/20240315230100_SU_49_m_permission_INSERT.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20240321215300_SU_129_activity_stretch_report_CREATE.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
