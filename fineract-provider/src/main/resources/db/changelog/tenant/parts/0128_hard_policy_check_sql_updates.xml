@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements. See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership. The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License. You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied. See the License for the
+    specific language governing permissions and limitations
+    under the License.
+
+-->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd">
+
+
+    <changeSet id="1" author="fineract">
+        <sql>
+            <![CDATA[
+                UPDATE stretchy_report SET report_sql = "SELECT
+                housing_type.owner_percent,
+                CASE
+                    WHEN (${loanProductId} = 2) AND (housing_type.owner_percent >=50) THEN 'GREEN'
+                    WHEN (${loanProductId} = 2) AND (housing_type.owner_percent <50) THEN 'YELLOW'
+
+                    WHEN (${loanProductId} = 8) AND (housing_type.owner_percent >=50) THEN 'GREEN'
+                    WHEN (${loanProductId} = 8) AND (housing_type.owner_percent <50) THEN 'YELLOW'
+
+                END AS color
+                FROM m_prequalification_group mpg
+                INNER JOIN ( select (((select count(*) from m_prequalification_group_members mpm INNER JOIN m_client mc on mc.dpi = mpm.dpi
+                INNER JOIN m_client_contact_info mcinf on mcinf.client_id = mc.id INNER JOIN m_code_value mcv on mcv.id = mcinf.housing_type where mcv.code_value = 'Propia' and mpm.group_id = ${prequalificationId})/
+                (select count(*) from m_prequalification_group_members mpg where mpg.group_id = ${prequalificationId}))*100) as owner_percent, ${prequalificationId} as grp_id )
+                housing_type ON housing_type.grp_id = mpg.id
+                WHERE mpg.id = ${prequalificationId}" WHERE report_name = "Percentage of members with their own home Policy Check";
+            ]]>
+        </sql>
+    </changeSet>
+
+    <changeSet id="2" author="fineract">
+        <sql>
+            <![CDATA[
+                UPDATE stretchy_report SET report_sql = "SELECT mc.id,
+                UPPER(COALESCE(mc.nationality, '')) AS client_nationality,
+                CASE
+                    WHEN (${loanProductId} = 6) AND ('${recreditCategorization}' = 'NUEVO') AND ('GUATEMAL' LIKE CONCAT('%',COALESCE(mc.nationality, ''),'%')) THEN 'GREEN'
+                    WHEN (${loanProductId} = 6) AND ('${recreditCategorization}' = 'NUEVO') AND ('GUATEMAL' NOT LIKE CONCAT('%',COALESCE(mc.nationality, ''),'%')) THEN 'RED'
+                    WHEN (${loanProductId} = 6) AND ('${recreditCategorization}' = 'RECREDITO') AND ('GUATEMAL' LIKE CONCAT('%',COALESCE(mc.nationality, ''),'%')) THEN 'GREEN'
+                    WHEN (${loanProductId} = 6) AND ('${recreditCategorization}' = 'RECREDITO') AND ('GUATEMAL' NOT LIKE CONCAT('%',COALESCE(mc.nationality, ''),'%')) THEN 'RED'
+                    WHEN (${loanProductId} = 6) AND (mc.status_enum = 300) THEN 'GREEN'
+                END AS color
+                FROM m_client mc
+                WHERE mc.id = ${clientId}" WHERE report_name = "Nationality Policy Check";
+            ]]>
+        </sql>
+    </changeSet>
+
+    <changeSet id="3" author="fineract">
+        <sql>
+            <![CDATA[
+                UPDATE stretchy_report SET report_sql = "SELECT
+                COALESCE(client_details.principal_paid_percentage, 0) AS principal_paid_percentage,
+                CASE
+                    WHEN ('${loanProductId}' = 7) AND ( COALESCE(client_details.principal_paid_percentage, 0) >= 50) THEN 'GREEN'
+                    WHEN ('${loanProductId}' = 3) AND ( COALESCE(client_details.principal_paid_percentage, 0) >= 50) THEN 'GREEN'
+                END AS color
+                FROM m_client mc
+                INNER JOIN (
+                    SELECT mc.id AS client_id,  (100 * SUM(ml.principal_repaid_derived)/SUM(ml.principal_disbursed_derived)) AS principal_paid_percentage
+                    FROM m_client mc
+                    LEFT JOIN m_loan ml ON ml.client_id = mc.id
+                    WHERE  ml.loan_status_id in (300,600) AND COALESCE(ml.principal_disbursed_derived, 0) > 0
+                GROUP BY mc.id
+                )client_details ON client_details.client_id = mc.id
+                WHERE mc.id = ${clientId}" WHERE report_name = "Credits Policy Check";
+            ]]>
+        </sql>
+    </changeSet>
+
+    <changeSet id="4" author="fineract">
+        <sql>
+            <![CDATA[
+                DELETE FROM m_product_policy WHERE product_id = 6 AND policy_id = (select id from m_policy where name = 'Present agricultural technical diagnosis (Commcare)' limit 1);
+                DELETE FROM m_product_policy WHERE product_id in (6,7,3) AND policy_id = (select id from m_policy where name = 'Categories of clients to accept' limit 1);
+                UPDATE m_product_policy set evaluation_type = 'GROUP' WHERE policy_id = (select id from m_policy where name = 'Present agricultural technical diagnosis (Commcare)' limit 1);
+            ]]>
+        </sql>
+    </changeSet>
+
+    <changeSet id="5" author="fineract">
+        <sql>
+            <![CDATA[
+                UPDATE stretchy_report SET report_sql = "SELECT CASE
+                WHEN (${loanProductId} NOT IN (3,7)) AND (IFNULL(client_loan_details.number_of_loan_cycles, 0) >= 3) THEN 'RECURRING'
+                ELSE 'NEW'
+                END AS clientCategorization,
+                'GREEN' AS color,
+                CASE
+                WHEN client_area.code_value = 'Urbana' THEN 'URBANA'
+                WHEN client_area.code_value = 'Rural' THEN 'RURAL'
+                WHEN client_area.code_value = 'PeriUrbana' THEN 'PERI_URBANA'
+                ELSE 'RURAL'
+                END AS clientArea,
+                CASE
+                WHEN COALESCE(client_loan_details.number_of_submitted_loans, 0) > 0 THEN 'RECREDITO'
+                ELSE 'NUEVO'
+                END AS recreditCategorization,
+                client_loan_details.submittedon_years,
+                client_loan_details.rejoining_years,
+                client_loan_details.number_of_loan_cycles,
+                client_loan_details.number_of_closed_loans,
+                client_loan_details.number_of_submitted_loans
+                FROM m_client mc
+                INNER JOIN (
+                SELECT mcl.id AS client_id,
+                TIMESTAMPDIFF(YEAR, mcl.submittedon_date, CURDATE()) AS submittedon_years,
+                IFNULL(TIMESTAMPDIFF(YEAR, mcl.submittedon_date, mcl.reactivated_on_date), 0) AS rejoining_years,
+                COALESCE((SELECT COUNT(*) FROM m_loan WHERE client_id = mcl.id AND approvedon_date IS NOT NULL), 0) AS number_of_loan_cycles,
+                COALESCE((SELECT COUNT(*) FROM m_loan WHERE client_id = mcl.id AND loan_status_id = 600), 0) AS number_of_closed_loans,
+                COALESCE((SELECT COUNT(*) FROM m_loan WHERE client_id = mcl.id), 0) AS number_of_submitted_loans
+                FROM  m_client mcl
+                )client_loan_details ON client_loan_details.client_id = mc.id
+                LEFT JOIN m_client_contact_info mcci ON mcci.client_id = mc.id
+                LEFT JOIN m_code_value client_area ON client_area.id = mcci.area
+                WHERE mc.id = ${clientId}
+                GROUP BY mc.id" WHERE report_name = "Client Categorization Policy Check";
+            ]]>
+        </sql>
+    </changeSet>
+
+    <changeSet id="6" author="fineract">
+        <sql>
+            <![CDATA[
+                UPDATE stretchy_report SET report_sql = "SELECT
+                prequalification_details.recreditCategorization,
+                CASE
+                WHEN (${loanProductId} NOT IN (3,7)) AND (prequalification_details.recreditCategorization = 'RECREDITO') AND ('${clientArea}' = 'URBAN') AND (${recurringMembersCount} >= (${newMembersCount}*3)) THEN 'GREEN'
+                WHEN (${loanProductId} NOT IN (3,7)) AND (prequalification_details.recreditCategorization = 'RECREDITO') AND ('${clientArea}' = 'RURAL') AND (${recurringMembersCount} >= (${newMembersCount}*3)) THEN 'GREEN'
+                END AS color
+                FROM m_prequalification_group mpg
+                LEFT JOIN (
+                SELECT p.id AS prequalification_id,
+                (CASE WHEN p.previous_prequalification IS NULL THEN 'NUEVO' ELSE 'RECREDITO' END) AS recreditCategorization
+                FROM m_prequalification_group p
+                )prequalification_details ON prequalification_details.prequalification_id = mpg.id
+                WHERE mpg.id = ${prequalificationId}"
+                WHERE report_name = "Acceptance of new clients Policy Check";
+            ]]>
+        </sql>
+    </changeSet>
+
+    <changeSet id="7" author="fineract">
+        <sql>
+            <![CDATA[
+                UPDATE stretchy_report SET report_sql = "SELECT mc.id,
+                UPPER(COALESCE(mc.nationality, '')) AS client_nationality,
+                CASE
+                    WHEN (${loanProductId} = 6) AND (COALESCE(mc.nationality, '') LIKE '%GUATEMAL%') THEN 'GREEN'
+                    WHEN (${loanProductId} = 6) AND (COALESCE(mc.nationality, '') NOT LIKE '%GUATEMAL%') THEN 'RED'
+                    WHEN (${loanProductId} = 6) AND (mc.status_enum = 300) THEN 'GREEN'
+                END AS color
+                FROM m_client mc
+                WHERE mc.id = ${clientId}" WHERE report_name = "Nationality Policy Check";
+            ]]>
+        </sql>
+    </changeSet>
+
+    <changeSet id="8" author="fineract">
+        <sql>
+            <![CDATA[
+                UPDATE stretchy_report SET report_sql = "SELECT
+                COALESCE(client_details.principal_paid_percentage, 0) AS principal_paid_percentage,
+                CASE
+                    WHEN ('${loanProductId}' = 7) AND ( COALESCE(client_details.principal_paid_percentage, 0) >= 50) THEN 'GREEN'
+                    WHEN ('${loanProductId}' = 6) AND ( COALESCE(client_details.principal_paid_percentage, 0) >= 50) THEN 'GREEN'
+                    WHEN ('${loanProductId}' = 3) AND ( COALESCE(client_details.principal_paid_percentage, 0) >= 50) THEN 'GREEN'
+                END AS color
+                FROM m_client mc
+                INNER JOIN (
+                    SELECT mc.id AS client_id,  (100 * SUM(ml.principal_repaid_derived)/SUM(ml.principal_disbursed_derived)) AS principal_paid_percentage
+                    FROM m_client mc
+                    LEFT JOIN m_loan ml ON ml.client_id = mc.id
+                    WHERE  ml.loan_status_id in (300,600) AND COALESCE(ml.principal_disbursed_derived, 0) > 0
+                GROUP BY mc.id
+                )client_details ON client_details.client_id = mc.id
+                WHERE mc.id = ${clientId}" WHERE report_name = "Credits Policy Check";
+            ]]>
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>

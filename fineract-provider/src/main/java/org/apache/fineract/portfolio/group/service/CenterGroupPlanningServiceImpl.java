@@ -97,7 +97,7 @@ public class CenterGroupPlanningServiceImpl implements CenterGroupPlanningServic
             final int rangeEndDay = portfolioPlanning.getRangeEndDay();
 
             // generate the future planning for this group && loan
-            while (currentNextMeetingDate.isBefore(endDateRange) || currentNextMeetingDate.isEqual(endDateRange)) {
+            while ((currentNextMeetingDate.isAfter(startDateRange) || currentNextMeetingDate.equals(startDateRange)) && (currentNextMeetingDate.isBefore(endDateRange) || currentNextMeetingDate.isEqual(endDateRange))) {
                 List<GroupLoanSummaryData> groupLoanSummaryList = retrieveGroupLoanSummary(portfolioPlanning.getCenterGroupId(),
                         portfolioPlanning.getMeetingDate());
 
@@ -159,33 +159,22 @@ public class CenterGroupPlanningServiceImpl implements CenterGroupPlanningServic
                 	count( gc.client_id ) AS clientCounter
                 FROM
                 	m_group_client gc
+                	JOIN m_client mc on mc.id = gc.client_id and mc.status_enum = 300
                 	LEFT JOIN (
                 	SELECT
                 		gc2.group_id AS groupId,
-                		coalesce (sum(
-                			(
-                				COALESCE ( lrs2.principal_amount, 0 ) + COALESCE ( lrs2.interest_amount, 0 ) +
-                				COALESCE ( lrs2.penalty_charges_amount, 0 ) + COALESCE ( lrs2.fee_charges_amount, 0 ) +
-                				COALESCE ( lrs2.fee_charges_amount, 0 )) -
-                				(COALESCE ( lrs2.total_paid_late_derived, 0 ) + COALESCE ( lrs2.interest_completed_derived, 0 ) +
-                				COALESCE ( lrs2.principal_completed_derived, 0 ) + COALESCE ( lrs2.total_paid_in_advance_derived, 0 ) +
-                				COALESCE ( lrs2.interest_writtenoff_derived, 0 ) + COALESCE ( lrs2.principal_writtenoff_derived, 0 ) +
-                				COALESCE ( lrs2.interest_waived_derived, 0 ) +
-                				COALESCE ( lrs2.penalty_charges_writtenoff_derived, 0 ) + COALESCE ( lrs2.penalty_charges_waived_derived, 0 )
-                			)
-                		),0) AS totalOverdue
+                		coalesce (sum(larr.total_overdue_derived),0) AS totalOverdue
                 	FROM
-                		m_loan_repayment_schedule lrs2
-                		INNER JOIN m_loan l2 ON l2.id = lrs2.loan_id
+                		m_loan l2 
                 		INNER JOIN m_product_loan lp2 ON lp2.id = l2.product_id
                 		INNER JOIN m_group_client gc2 ON l2.client_id = gc2.client_id
+                		INNER JOIN m_client mc2 on mc2.id = gc2.client_id and mc2.status_enum = 300
                 		INNER JOIN m_group grp ON gc2.group_id = grp.id
+                		LEFT JOIN m_loan_arrears_aging larr ON larr.loan_id = l2.id
                 		LEFT JOIN m_prequalification_group preq ON preq.id = grp.prequalification_id AND preq.product_id = l2.product_id
                 	WHERE
                 		gc2.group_id = ?
-                		AND lrs2.duedate < ?
                 		AND l2.loan_status_id = 300
-                		AND lrs2.completed_derived = 0
                 	    AND lp2.owner_type_enum = 2
                 	    ) overdueSummary ON overdueSummary.groupId = gc.group_id
                 	LEFT JOIN (
@@ -208,6 +197,7 @@ public class CenterGroupPlanningServiceImpl implements CenterGroupPlanningServic
                 		INNER JOIN m_loan l2 ON l2.id = lrs2.loan_id
                 		INNER JOIN m_product_loan lp2 ON lp2.id = l2.product_id
                 		INNER JOIN m_group_client gc2 ON l2.client_id = gc2.client_id
+                		INNER JOIN m_client mc2 on mc2.id = gc2.client_id and mc2.status_enum = 300
                 		INNER JOIN m_group grp ON gc2.group_id = grp.id
                 		LEFT JOIN m_prequalification_group preq ON preq.id = grp.prequalification_id AND preq.product_id = l2.product_id
                 	WHERE
@@ -222,7 +212,7 @@ public class CenterGroupPlanningServiceImpl implements CenterGroupPlanningServic
                 	gc.group_id = ?
                 """;
         List<GroupLoanSummaryData> groupLoanSummaryData = jdbcTemplate.query(sql, new BeanPropertyRowMapper(GroupLoanSummaryData.class),
-                new Object[] { groupId, dueDate, groupId, dueDate, groupId });
+                new Object[] { groupId, groupId, dueDate, groupId });
 
         return groupLoanSummaryData;
     }

@@ -1092,6 +1092,9 @@ public class GroupingTypesWritePlatformServiceJpaRepositoryImpl implements Group
             throw new GroupMeetingTimeCollisionException(existingGroup.getName(), existingGroup.getId(), meetingStartTime, meetingEndTime);
         }
         group.setParent(newCenter);
+        group.updateMeetingDay(newCenter.getMeetingDay());
+        group.updateMeetingStart(newCenter.getMeetingStart());
+        group.updateMeetingEnd(newCenter.getMeetingEnd());
         this.groupRepository.saveAndFlush(group);
         return new CommandProcessingResultBuilder() //
                 .withCommandId(command.commandId()) //
