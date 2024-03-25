@@ -445,7 +445,6 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                     	redValidation.validCount AS redValidationCount
                     FROM
                     	m_prequalification_group g
-                    INNER JOIN m_office mo on mo.id = g.agency_id
                     INNER JOIN m_appuser au ON
                     	au.id = g.added_by
                     INNER JOIN m_product_loan lp ON
@@ -460,6 +459,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                     ) prequalification_numbers ON prequalification_numbers.prequalification_id = g.id
                     LEFT JOIN m_agency ma ON
                     	g.agency_id = ma.id
+                    LEFT JOIN m_office mo on mo.id = ma.linked_office_id
                     LEFT JOIN
                     (
                       SELECT p.id AS groupid,
