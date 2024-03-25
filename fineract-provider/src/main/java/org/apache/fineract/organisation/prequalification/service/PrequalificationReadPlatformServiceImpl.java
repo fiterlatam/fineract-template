@@ -286,6 +286,11 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
 
         String extraCriteria = "";
 
+        //add hierrachy filter here.
+        extraCriteria += " and mo.hierarchy LIKE CONCAT(?, '%') OR ? like CONCAT(mo.hierarchy, '%')";
+        paramList.add(appUser.getOffice().getHierarchy());
+        paramList.add(appUser.getOffice().getHierarchy());
+
         if (StringUtils.isNotBlank(groupingType)) {
             if (groupingType.equals("group")) {
                 extraCriteria += " and g.prequalification_type_enum = ? ";
@@ -440,6 +445,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                     	redValidation.validCount AS redValidationCount
                     FROM
                     	m_prequalification_group g
+                    INNER JOIN m_office mo on mo.id = g.agency_id
                     INNER JOIN m_appuser au ON
                     	au.id = g.added_by
                     INNER JOIN m_product_loan lp ON
