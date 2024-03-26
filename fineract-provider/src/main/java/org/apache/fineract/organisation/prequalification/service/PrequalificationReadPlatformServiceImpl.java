@@ -286,10 +286,6 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
 
         String extraCriteria = "";
 
-        //add hierrachy filter here.
-        extraCriteria += " and mo.hierarchy LIKE CONCAT(?, '%') OR ? like CONCAT(mo.hierarchy, '%')";
-        paramList.add(appUser.getOffice().getHierarchy());
-        paramList.add(appUser.getOffice().getHierarchy());
 
         if (StringUtils.isNotBlank(groupingType)) {
             if (groupingType.equals("group")) {
@@ -303,6 +299,12 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                         paramList.add(appUser.getId());
                     }
                 }
+
+                //add hierrachy filter here.
+                extraCriteria += " and (mo.hierarchy LIKE CONCAT(?, '%') OR ? like CONCAT(mo.hierarchy, '%'))";
+                paramList.add(appUser.getOffice().getHierarchy());
+                paramList.add(appUser.getOffice().getHierarchy());
+
 
             }
 
