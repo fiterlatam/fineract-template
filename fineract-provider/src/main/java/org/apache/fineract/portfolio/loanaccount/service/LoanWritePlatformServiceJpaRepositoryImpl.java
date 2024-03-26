@@ -1094,13 +1094,9 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                         // withdraw the hold amount
                         isAccountTransfer = false;
                         final boolean backdatedTxnsAllowedTill = this.configurationDomainService.retrievePivotDateConfig();
-                        final boolean isRegularTransaction = true;
-                        final boolean isApplyWithdrawFee = true;
-                        final boolean isInterestTransfer = false;
-                        final boolean isWithdrawBalance = false;
-                        final SavingsTransactionBooleanValues transactionBooleanValues = new SavingsTransactionBooleanValues(
-                                isAccountTransfer, isRegularTransaction, isApplyWithdrawFee, isInterestTransfer, isWithdrawBalance, false,
-                                false, false, false, false);
+
+                        final SavingsTransactionBooleanValues transactionBooleanValues = new SavingsTransactionBooleanValues(true, true,
+                                fromSavingsAccount.isWithdrawalFeeApplicableForTransfer(), false, false, false, false, false, false, false);
                         final SavingsAccountTransaction withdrawal = this.savingsAccountDomainService.handleWithdrawal(fromSavingsAccount,
                                 fmt, transactionDate, holdTransaction.getAmount(), paymentDetail, transactionBooleanValues,
                                 backdatedTxnsAllowedTill);
