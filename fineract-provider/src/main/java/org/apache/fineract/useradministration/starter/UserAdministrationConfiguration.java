@@ -75,10 +75,11 @@ public class UserAdministrationConfiguration {
             PlatformPasswordEncoder platformPasswordEncoder, AppUserRepository appUserRepository,
             OfficeRepositoryWrapper officeRepositoryWrapper, RoleRepository roleRepository, UserDataValidator fromApiJsonDeserializer,
             AppUserPreviousPasswordRepository appUserPreviewPasswordRepository, StaffRepositoryWrapper staffRepositoryWrapper,
-            ClientRepositoryWrapper clientRepositoryWrapper) {
+            ClientRepositoryWrapper clientRepositoryWrapper, RoleReadPlatformService roleReadPlatformService,
+            StaffReadPlatformService staffReadPlatformService, JdbcTemplate jdbcTemplate) {
         return new AppUserWritePlatformServiceJpaRepositoryImpl(context, userDomainService, platformPasswordEncoder, appUserRepository,
                 officeRepositoryWrapper, roleRepository, fromApiJsonDeserializer, appUserPreviewPasswordRepository, staffRepositoryWrapper,
-                clientRepositoryWrapper);
+                clientRepositoryWrapper, roleReadPlatformService, staffReadPlatformService, jdbcTemplate);
     }
 
     @Bean

@@ -18,8 +18,11 @@
  */
 package org.apache.fineract.infrastructure.security.domain;
 
+import org.springframework.data.jpa.repository.Query;
+
 public interface PlatformUserRepository {
 
+    @Query("Select appUser from AppUser appUser where appUser.username = :username AND appUser.deleted = :deleted AND appUser.enabled = :enabled AND appUser.statusEnum = 300")
     PlatformUser findByUsernameAndDeletedAndEnabled(String username, boolean deleted, boolean enabled);
 
 }

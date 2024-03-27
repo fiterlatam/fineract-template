@@ -281,6 +281,22 @@ public class CommandWrapperBuilder {
         return this;
     }
 
+    public CommandWrapperBuilder deactivateUser(final Long userId) {
+        this.actionName = "DEACTIVATE";
+        this.entityName = "USER";
+        this.entityId = userId;
+        this.href = "/users/" + userId;
+        return this;
+    }
+
+    public CommandWrapperBuilder reactivateUser(final Long userId) {
+        this.actionName = "REACTIVATE";
+        this.entityName = "USER";
+        this.entityId = userId;
+        this.href = "/users/" + userId;
+        return this;
+    }
+
     public CommandWrapperBuilder createOffice() {
         this.actionName = "CREATE";
         this.entityName = "OFFICE";
