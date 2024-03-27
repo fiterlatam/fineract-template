@@ -16,22 +16,15 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.useradministration.service;
+package org.apache.fineract.useradministration.exception;
 
-import org.apache.fineract.infrastructure.core.api.JsonCommand;
-import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
+import java.time.LocalDate;
+import org.apache.fineract.infrastructure.core.exception.AbstractPlatformResourceNotFoundException;
 
-public interface AppUserWritePlatformService {
+public class InvalidDeactivationDateRangeException extends AbstractPlatformResourceNotFoundException {
 
-    CommandProcessingResult createUser(JsonCommand command);
-
-    CommandProcessingResult updateUser(Long userId, JsonCommand command);
-
-    CommandProcessingResult deleteUser(Long userId, JsonCommand command);
-
-    CommandProcessingResult deactivateUser(Long userId, JsonCommand command);
-
-    CommandProcessingResult reactivateUser(Long userId, JsonCommand command);
-
-    void reactivateAppUsers();
+    public InvalidDeactivationDateRangeException(LocalDate firstDate, LocalDate secondDate) {
+        super("error.msg.invalid.deactivation.date.range.selection", "The deactivation date range selected is invalid", firstDate,
+                secondDate);
+    }
 }

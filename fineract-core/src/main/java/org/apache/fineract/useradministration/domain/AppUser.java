@@ -119,6 +119,15 @@ public class AppUser extends AbstractPersistableCustom implements PlatformUser {
     @Column(name = "cannot_change_password", nullable = true)
     private Boolean cannotChangePassword;
 
+    @Column(name = "status_enum")
+    private Integer statusEnum;
+
+    @Column(name = "deactivated_from_date")
+    private LocalDate deactivatedFromDate;
+
+    @Column(name = "deactivated_to_date")
+    private LocalDate deactivatedToDate;
+
     public static AppUser fromJson(final Office userOffice, final Staff linkedStaff, final Set<Role> allRoles,
             final Collection<Client> clients, final JsonCommand command) {
 
@@ -366,6 +375,47 @@ public class AppUser extends AbstractPersistableCustom implements PlatformUser {
 
     public boolean isDeleted() {
         return this.deleted;
+    }
+
+    public boolean isActive() {
+        return AppUserStatus.fromInt(this.statusEnum).isActive();
+    }
+
+    public boolean isInactive() {
+        return AppUserStatus.fromInt(this.statusEnum).isInactive();
+    }
+
+    public boolean isTemporarilyInactive() {
+        return AppUserStatus.fromInt(this.statusEnum).isTemporarilyInactive();
+    }
+
+    public boolean isPermanentlyInactive() {
+        return AppUserStatus.fromInt(this.statusEnum).isPermanentlyInactive();
+    }
+
+    public void activate() {
+        this.enabled = true;
+        this.statusEnum = AppUserStatus.ACTIVE.getValue();
+        this.deactivatedFromDate = null;
+        this.deactivatedToDate = null;
+    }
+
+    public void deactivateTemporarily(final LocalDate deactivatedFromDate, final LocalDate deactivatedToDate) {
+        if (isSystemUser()) {
+            throw new NoAuthorizationException("User configured as the system user cannot be deactivated");
+        }
+        this.enabled = false;
+        this.statusEnum = AppUserStatus.INACTIVE_TEMPORARY.getValue();
+        this.deactivatedFromDate = deactivatedFromDate;
+        this.deactivatedToDate = deactivatedToDate;
+    }
+
+    public void deactivatePermanently() {
+        if (isSystemUser()) {
+            throw new NoAuthorizationException("User configured as the system user cannot be deactivated");
+        }
+        this.enabled = false;
+        this.statusEnum = AppUserStatus.INACTIVE_PERMANENT.getValue();
     }
 
     public boolean isSystemUser() {
@@ -731,5 +781,13 @@ public class AppUser extends AbstractPersistableCustom implements PlatformUser {
     @Override
     public String toString() {
         return "AppUser [username=" + this.username + ", getId()=" + this.getId() + "]";
+    }
+
+    public Integer getStatusEnum() {
+        return statusEnum;
+    }
+
+    public void setStatusEnum(Integer statusEnum) {
+        this.statusEnum = statusEnum;
     }
 }

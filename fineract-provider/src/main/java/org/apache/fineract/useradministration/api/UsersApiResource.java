@@ -46,6 +46,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.commands.domain.CommandWrapper;
 import org.apache.fineract.commands.service.CommandWrapperBuilder;
 import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformService;
@@ -169,6 +170,39 @@ public class UsersApiResource {
         return this.toApiJsonSerializer.serialize(result);
     }
 
+    /**
+     * Users reactivate or deactivate
+     *
+     * @param userId
+     * @param commandParam
+     * @param apiRequestBodyAsJson
+     * @return
+     */
+    @POST
+    @Path("{userId}")
+    @Consumes({ MediaType.APPLICATION_JSON })
+    @Produces({ MediaType.APPLICATION_JSON })
+    @Operation(summary = "Reactivate User | Deactivate user", description = """
+            Description: Reactivate user in case user is deactivated. | Deactivate the user in case user is active.
+            Example Request: https://DomainName/api/v1/users/{userId}?command=activate
+            https://DomainName/api/v1/users/{roleId}?command=deactivate""")
+    @ApiResponses({ @ApiResponse(responseCode = "200", description = "OK") })
+    public String actionsOnRoles(@PathParam("userId") @Parameter(description = "roleId") final Long userId,
+            @QueryParam("command") @Parameter(description = "command") final String commandParam,
+            @Parameter(hidden = true) final String apiRequestBodyAsJson) {
+
+        final CommandWrapperBuilder builder = new CommandWrapperBuilder().withJson(apiRequestBodyAsJson);
+        CommandProcessingResult result = null;
+        if (is(commandParam, "deactivate")) {
+            final CommandWrapper commandRequest = builder.deactivateUser(userId).build();
+            result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
+        } else if (is(commandParam, "reactivate")) {
+            final CommandWrapper commandRequest = builder.reactivateUser(userId).build();
+            result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
+        }
+        return this.toApiJsonSerializer.serialize(result);
+    }
+
     @PUT
     @Path("{userId}")
     @Operation(summary = "Update a User", description = "When updating a password you must provide the repeatPassword parameter also.")
@@ -227,5 +261,9 @@ public class UsersApiResource {
         final Long importDocumentId = this.bulkImportWorkbookService.importWorkbook(GlobalEntityType.USERS.toString(), uploadedInputStream,
                 fileDetail, locale, dateFormat);
         return this.toApiJsonSerializer.serialize(importDocumentId);
+    }
+
+    private boolean is(final String commandParam, final String commandValue) {
+        return StringUtils.isNotBlank(commandParam) && commandParam.trim().equalsIgnoreCase(commandValue);
     }
 }

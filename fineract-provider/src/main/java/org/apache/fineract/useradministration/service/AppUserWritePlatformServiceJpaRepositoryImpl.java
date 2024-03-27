@@ -26,6 +26,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import jakarta.persistence.PersistenceException;
+import java.time.LocalDate;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -42,6 +43,7 @@ import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuild
 import org.apache.fineract.infrastructure.core.exception.ErrorHandler;
 import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidationException;
 import org.apache.fineract.infrastructure.core.exception.PlatformDataIntegrityException;
+import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.core.service.PlatformEmailSendException;
 import org.apache.fineract.infrastructure.security.service.PlatformPasswordEncoder;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
@@ -49,9 +51,11 @@ import org.apache.fineract.organisation.office.domain.Office;
 import org.apache.fineract.organisation.office.domain.OfficeRepositoryWrapper;
 import org.apache.fineract.organisation.staff.domain.Staff;
 import org.apache.fineract.organisation.staff.domain.StaffRepositoryWrapper;
+import org.apache.fineract.organisation.staff.service.StaffReadPlatformService;
 import org.apache.fineract.portfolio.client.domain.Client;
 import org.apache.fineract.portfolio.client.domain.ClientRepositoryWrapper;
 import org.apache.fineract.useradministration.api.AppUserApiConstant;
+import org.apache.fineract.useradministration.data.AppUserData;
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.apache.fineract.useradministration.domain.AppUserPreviousPassword;
 import org.apache.fineract.useradministration.domain.AppUserPreviousPasswordRepository;
@@ -59,6 +63,7 @@ import org.apache.fineract.useradministration.domain.AppUserRepository;
 import org.apache.fineract.useradministration.domain.Role;
 import org.apache.fineract.useradministration.domain.RoleRepository;
 import org.apache.fineract.useradministration.domain.UserDomainService;
+import org.apache.fineract.useradministration.exception.InvalidDeactivationDateRangeException;
 import org.apache.fineract.useradministration.exception.PasswordPreviouslyUsedException;
 import org.apache.fineract.useradministration.exception.RoleNotFoundException;
 import org.apache.fineract.useradministration.exception.UserNotFoundException;
@@ -67,9 +72,11 @@ import org.springframework.cache.annotation.Caching;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.ObjectUtils;
 
 @Slf4j
@@ -87,6 +94,9 @@ public class AppUserWritePlatformServiceJpaRepositoryImpl implements AppUserWrit
     private final StaffRepositoryWrapper staffRepositoryWrapper;
     private final ClientRepositoryWrapper clientRepositoryWrapper;
     private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
+    private final RoleReadPlatformService roleReadPlatformService;
+    private final StaffReadPlatformService staffReadPlatformService;
+    private final JdbcTemplate jdbcTemplate;
 
     @Override
     @Transactional
@@ -310,6 +320,101 @@ public class AppUserWritePlatformServiceJpaRepositoryImpl implements AppUserWrit
                     dve);
             Throwable throwable = ExceptionUtils.getRootCause(dve.getCause());
             throw handleDataIntegrityIssues(command, throwable, dve);
+        }
+    }
+
+    @Override
+    @Transactional
+    @Caching(evict = { @CacheEvict(value = "users", allEntries = true), @CacheEvict(value = "usersByUsername", allEntries = true) })
+    public CommandProcessingResult deactivateUser(Long userId, JsonCommand command) {
+        try {
+            final AppUser authenticatedUser = this.context.authenticatedUser();
+            final String usuarioCreacionNombre = authenticatedUser.getUsername();
+            final AppUser user = this.appUserRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
+            final String usuarioNombre = user.getUsername();
+            final Long usuarioId = user.getId();
+            if (user.isInactive()) {
+                throw new UserNotFoundException(userId);
+            }
+            final String registroAnteriorJson = objectMapper.writeValueAsString(user);
+            final String deactivationType = command.stringValueOfParameterNamed("deactivationType");
+            if ("TEMPORARY".equals(deactivationType)) {
+                final LocalDate deactivatedFromDate = command.localDateValueOfParameterNamed("deactivatedFromDate");
+                final LocalDate deactivatedToDate = command.localDateValueOfParameterNamed("deactivatedToDate");
+                final boolean isValidDateRange = (DateUtils.isEqual(deactivatedToDate, deactivatedFromDate)
+                        || DateUtils.isAfter(deactivatedToDate, deactivatedFromDate))
+                        && (!DateUtils.isBeforeBusinessDate(deactivatedFromDate) && !DateUtils.isBeforeBusinessDate(deactivatedToDate));
+                if (!isValidDateRange) {
+                    throw new InvalidDeactivationDateRangeException(deactivatedFromDate, deactivatedToDate);
+                }
+                user.deactivateTemporarily(deactivatedFromDate, deactivatedToDate);
+            } else {
+                user.deactivatePermanently();
+            }
+            this.appUserRepository.save(user);
+            final String registroPosterior = objectMapper.writeValueAsString(user);
+            return new CommandProcessingResultBuilder().withEntityId(userId).withOfficeId(user.getOffice().getId())
+                    .withRegistroAnterior(registroAnteriorJson).withRegistroPosterior(registroPosterior).withUsuarioNombre(usuarioNombre)
+                    .withUsuarioId(usuarioId).withUsuarioCreacionNombre(usuarioCreacionNombre).build();
+        } catch (final DataIntegrityViolationException dve) {
+            throw handleDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
+        } catch (final JpaSystemException | PersistenceException | AuthenticationServiceException | JsonProcessingException dve) {
+            log.error(
+                    "reactivateUser: JpaSystemException | PersistenceException | AuthenticationServiceException | JsonProcessingException ",
+                    dve);
+            Throwable throwable = ExceptionUtils.getRootCause(dve.getCause());
+            throw handleDataIntegrityIssues(command, throwable, dve);
+        }
+    }
+
+    @Override
+    @Transactional
+    @Caching(evict = { @CacheEvict(value = "users", allEntries = true), @CacheEvict(value = "usersByUsername", allEntries = true) })
+    public CommandProcessingResult reactivateUser(Long userId, JsonCommand command) {
+        try {
+            final AppUser authenticatedUser = this.context.authenticatedUser();
+            final String usuarioCreacionNombre = authenticatedUser.getUsername();
+            final AppUser user = this.appUserRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
+            final String usuarioNombre = user.getUsername();
+            final Long usuarioId = user.getId();
+            if (user.isActive()) {
+                throw new UserNotFoundException(userId);
+            }
+            final String registroAnteriorJson = objectMapper.writeValueAsString(user);
+            user.activate();
+            this.appUserRepository.save(user);
+            final String registroPosterior = objectMapper.writeValueAsString(user);
+            return new CommandProcessingResultBuilder().withEntityId(userId).withOfficeId(user.getOffice().getId())
+                    .withRegistroAnterior(registroAnteriorJson).withRegistroPosterior(registroPosterior).withUsuarioNombre(usuarioNombre)
+                    .withUsuarioId(usuarioId).withUsuarioCreacionNombre(usuarioCreacionNombre).build();
+        } catch (final DataIntegrityViolationException dve) {
+            throw handleDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
+        } catch (final JpaSystemException | PersistenceException | AuthenticationServiceException | JsonProcessingException dve) {
+            log.error(
+                    "reactivateUser: JpaSystemException | PersistenceException | AuthenticationServiceException | JsonProcessingException ",
+                    dve);
+            Throwable throwable = ExceptionUtils.getRootCause(dve.getCause());
+            throw handleDataIntegrityIssues(command, throwable, dve);
+        }
+    }
+
+    @Override
+    public void reactivateAppUsers() {
+        final AppUser currentUser = this.context.authenticatedUser();
+        final String hierarchy = currentUser.getOffice().getHierarchy();
+        final String hierarchySearchString = hierarchy + "%";
+        final LocalDate localDate = DateUtils.getBusinessLocalDate();
+        final AppUserReadPlatformServiceImpl.AppUserMapper mapper = new AppUserReadPlatformServiceImpl.AppUserMapper(
+                this.roleReadPlatformService, this.staffReadPlatformService);
+        final String sql = "SELECT " + mapper.schema() + " AND u.status_enum = 400 AND u.deactivated_to_date <= ? ORDER BY u.username";
+        List<AppUserData> appUsers = this.jdbcTemplate.query(sql, mapper, new Object[] { hierarchySearchString, localDate });
+        if (!CollectionUtils.isEmpty(appUsers)) {
+            for (final AppUserData appUserData : appUsers) {
+                final Long userId = appUserData.getId();
+                final AppUser appUserEntity = this.appUserRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
+                appUserEntity.activate();
+                this.appUserRepository.saveAndFlush(appUserEntity);
+            }
         }
     }
 

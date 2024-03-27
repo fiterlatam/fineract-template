@@ -49,6 +49,7 @@ public class JpaUserDomainService implements UserDomainService {
 
         final String encodePassword = this.applicationPasswordEncoder.encode(appUser);
         appUser.updatePassword(encodePassword);
+        appUser.setStatusEnum(AppUserStatus.ACTIVE.getValue());
 
         this.userRepository.saveAndFlush(appUser);
 

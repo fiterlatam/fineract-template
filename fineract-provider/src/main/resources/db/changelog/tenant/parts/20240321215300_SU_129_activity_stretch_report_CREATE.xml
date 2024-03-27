@@ -140,4 +140,92 @@
             <column name="can_maker_checker" valueBoolean="false"/>
         </insert>
     </changeSet>
+
+    <changeSet author="fineract" id="4">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="stretchy_report_parameter" columnName="mandatory_parameter"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="stretchy_report_parameter">
+            <column name="mandatory_parameter" defaultValueBoolean="false" type="boolean"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="5">
+        <sql>
+            <![CDATA[
+                UPDATE  stretchy_report_parameter srp
+                SET mandatory_parameter = TRUE
+                FROM stretchy_parameter sp
+                INNER JOIN stretchy_report_parameter srp2 ON srp2.parameter_id = sp.id
+                INNER JOIN stretchy_report sr ON sr.id = srp2.report_id
+                WHERE srp.report_id = sr.id AND srp.parameter_id = sp.id AND sr.report_name = 'Reporte de tabla de auditoria (Roles y Usuarios)' AND sp.parameter_name IN ('startDateSelect', 'endDateSelect', 'moduleSelect');
+
+                UPDATE  stretchy_report_parameter srp
+                SET mandatory_parameter = FALSE
+                FROM stretchy_parameter sp
+                INNER JOIN stretchy_report_parameter srp2 ON srp2.parameter_id = sp.id
+                INNER JOIN stretchy_report sr ON sr.id = srp2.report_id
+                WHERE srp.report_id = sr.id AND srp.parameter_id = sp.id AND sr.report_name = 'Reporte de tabla de auditoria (Roles y Usuarios)' AND sp.parameter_name IN ('resourceSelect', 'actionSelect');
+
+                UPDATE stretchy_parameter
+                SET parameter_sql = 'SELECT * FROM ( SELECT ''ROLE'' AS id, ''Rol'' AS name UNION ALL SELECT ''USER'' AS id,''Usuario'' AS name) x ORDER BY x.id'
+                WHERE parameter_name = 'moduleSelect';
+            ]]>
+        </sql>
+        <sql>
+            <![CDATA[
+                    UPDATE stretchy_report
+                    SET report_sql = 'SELECT
+                    Concat(REPEAT(''..'',
+                    (( Length(ounder.hierarchy) - Length( REPLACE(ounder.hierarchy,
+                    ''.'',
+                    '''')) - 1 ))) ,
+                    ounder.name) AS "Oficina/Sucursal",
+                    mpcs.entity_name AS "Modulo",
+                    mpcs.rol_id AS "ID del rol",
+                    mpcs.rol_nombre AS "Nombre del Rol",
+                    mpcs.Usuario_Nombre AS "Nombre De usuario",
+                    TO_CHAR(mpcs.made_on_date_utc AT TIME ZONE ''${tenantTimezone}'', ''yyyy-MM-dd HH24:MI:SS'') AS "Fecha & Hora",
+                    mpcs.maker_id AS "Id del Usuario",
+                    mpcs.usuario_creacion_nombre AS "Usuario que reliza la acción",
+                    mpcs.maquina AS "Maquina",
+                    CASE
+                        WHEN mpcs.action_name = ''PERMISSIONS'' THEN ''MODIFICADO''
+                    WHEN mpcs.action_name = ''UPDATE'' THEN ''MODIFICADO''
+                    WHEN mpcs.action_name = ''CREATE'' THEN ''CREADO''
+                    WHEN mpcs.action_name = ''DELETE'' THEN ''ELIMINADO''
+                    WHEN mpcs.action_name = ''DELETE'' THEN ''ELIMINADO''
+                    WHEN mpcs.action_name = ''DELETE'' THEN ''ELIMINADO''
+                    WHEN mpcs.action_name = ''DISABLE'' THEN ''DESACTIVAR''
+                    WHEN mpcs.action_name = ''ENABLE'' THEN ''PERMITIR''
+                    ELSE mpcs.action_name
+                    END AS "Acción",
+                    mpcs.registro_anterior AS "Registro Anterior",
+                    mpcs.registro_posterior AS "Registro Posterior"
+                    FROM m_office mo
+                    INNER JOIN m_office ounder ON ounder.hierarchy LIKE CONCAT(mo.hierarchy, ''%'') AND ounder.hierarchy LIKE CONCAT(''${currentUserHierarchy}'', ''%'')
+                    INNER JOIN m_appuser maker ON maker.office_id = ounder.id
+                    INNER JOIN m_portfolio_command_source mpcs ON mpcs.maker_id = maker.id
+                    WHERE (mpcs.entity_name = ''${modulo}'' OR ''-1'' = ''${modulo}'')
+                    AND (DATE(mpcs.made_on_date_utc) BETWEEN ''${startDate}'' AND ''${endDate}'')
+                    AND (mpcs.resource_id = ''${resourceId}'' OR ''-1'' = ''${resourceId}'')
+                    AND (mpcs.action_name = (CASE
+                      WHEN ''${actionId}'' = 1 THEN ''CREATE''
+                      WHEN ''${actionId}'' = 2 THEN ''UPDATE''
+                      WHEN ''${actionId}'' = 3 THEN ''PERMISSIONS''
+                      WHEN ''${actionId}'' = 4 THEN ''DELETE''
+                      WHEN ''${actionId}'' = 5 THEN ''ENABLE''
+                      WHEN ''${actionId}'' = 6 THEN ''DISABLE''
+                      ELSE ''UNKNOWN''
+                    END ) OR ''-1'' = ''${actionId}'')
+                    AND mpcs.entity_name IN (''USER'', ''ROLE'') AND mpcs.status = 1
+                    ORDER BY ounder.hierarchy, mpcs.made_on_date_utc DESC'
+                    WHERE report_name = 'Reporte de tabla de auditoria (Roles y Usuarios)';
+            ]]>
+        </sql>
+    </changeSet>
+
+
 </databaseChangeLog>

@@ -21,6 +21,7 @@ package org.apache.fineract.useradministration.data;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.organisation.office.data.OfficeData;
 import org.apache.fineract.organisation.staff.data.StaffData;
 import org.apache.fineract.portfolio.client.data.ClientData;
@@ -52,6 +53,9 @@ public final class AppUserData {
     private final Collection<RoleData> selectedRoles;
     private final StaffData staff;
     private final Boolean isSelfServiceUser;
+    private Boolean isEnabled;
+    private Boolean isDeleted;
+    private EnumOptionData status;
 
     @SuppressWarnings("unused")
     private Set<ClientData> clients;
@@ -141,6 +145,10 @@ public final class AppUserData {
         return this.username;
     }
 
+    public Long getId() {
+        return id;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -172,4 +180,27 @@ public final class AppUserData {
         return this.isSelfServiceUser == null ? false : this.isSelfServiceUser;
     }
 
+    public Boolean getEnabled() {
+        return isEnabled;
+    }
+
+    public void setEnabled(Boolean enabled) {
+        isEnabled = enabled;
+    }
+
+    public Boolean getDeleted() {
+        return isDeleted;
+    }
+
+    public void setDeleted(Boolean deleted) {
+        isDeleted = deleted;
+    }
+
+    public EnumOptionData getStatus() {
+        return status;
+    }
+
+    public void setStatus(EnumOptionData status) {
+        this.status = status;
+    }
 }
