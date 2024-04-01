@@ -31,6 +31,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.core.env.Environment;
 
 @Configuration
@@ -104,6 +105,7 @@ public class CompatibilityConfig {
         LOG.warn("===============================================================================================\n");
     }
 
+    @Primary
     @Bean(destroyMethod = "close")
     public HikariDataSource hikariTenantDataSource(HikariConfig hc) {
         return new HikariDataSource(hc);
