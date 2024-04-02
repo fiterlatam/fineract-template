@@ -165,6 +165,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     public static final String INTEREST_RATE_DIFFERENTIAL = "interestRateDifferential";
     public static final String FUND_ID = "fundId";
     public static final String LOAN_OFFICER_ID = "loanOfficerId";
+    public static final String LOAN_ASSIGNOR_ID = "loanAssignorId";
     public static final String LOAN_PURPOSE_ID = "loanPurposeId";
     public static final String TRANSACTION_PROCESSING_STRATEGY_CODE = "transactionProcessingStrategyCode";
     public static final String SUBMITTED_ON_DATE = "submittedOnDate";
@@ -468,6 +469,10 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
     @Column(name = "enable_installment_level_delinquency", nullable = false)
     private boolean enableInstallmentLevelDelinquency = false;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "loan_assignor_id")
+    private Client loanAssignor;
 
     public static Loan newIndividualLoanApplication(final String accountNo, final Client client, final Integer loanType,
             final LoanProduct loanProduct, final Fund fund, final Staff officer, final CodeValue loanPurpose,
@@ -1543,6 +1548,16 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         if (command.isChangeInLongParameterNamed(LOAN_OFFICER_ID, existingLoanOfficerId)) {
             final Long newValue = command.longValueOfParameterNamed(LOAN_OFFICER_ID);
             actualChanges.put(LOAN_OFFICER_ID, newValue);
+        }
+
+        Long existingLoanAssignorId = null;
+        if (this.loanAssignor != null) {
+            existingLoanAssignorId = this.loanAssignor.getId();
+        }
+
+        if (command.isChangeInLongParameterNamed(LOAN_ASSIGNOR_ID, existingLoanAssignorId)) {
+            final Long newValue = command.longValueOfParameterNamed(LOAN_ASSIGNOR_ID);
+            actualChanges.put(LOAN_ASSIGNOR_ID, newValue);
         }
 
         Long existingLoanPurposeId = null;
@@ -7212,4 +7227,11 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         this.enableInstallmentLevelDelinquency = enableInstallmentLevelDelinquency;
     }
 
+    public Client getLoanAssignor() {
+        return loanAssignor;
+    }
+
+    public void setLoanAssignor(Client loanAssignor) {
+        this.loanAssignor = loanAssignor;
+    }
 }

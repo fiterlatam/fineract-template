@@ -30,6 +30,7 @@ import org.apache.fineract.portfolio.floatingrates.data.InterestRatePeriodData;
 import org.apache.fineract.portfolio.loanaccount.data.DisbursementData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanAccountData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanApprovalData;
+import org.apache.fineract.portfolio.loanaccount.data.LoanAssignorData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanRepaymentScheduleInstallmentData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanScheduleAccrualData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanTermVariationsData;
@@ -165,4 +166,8 @@ public interface LoanReadPlatformService {
     Long retrieveLoanTransactionIdByExternalId(ExternalId externalId);
 
     Long retrieveLoanIdByExternalId(ExternalId externalId);
+
+    List<LoanAssignorData> retrieveLoanAssignorData(String searchTerm);
+
+    LoanAssignorData retrieveLoanAssignorDataById(Long loanAssignorId);
 }

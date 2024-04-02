@@ -175,4 +175,5 @@
     <include file="parts/20240315230100_SU_49_m_permission_INSERT.xml" relativeToChangelogFile="true"/>
     <include file="parts/20240321215300_SU_129_activity_stretch_report_CREATE.xml" relativeToChangelogFile="true"/>
     <include file="parts/20240325221900_SU_10_app_user_deactivation_ADD.xml" relativeToChangelogFile="true"/>
+    <include file="parts/202404012124100_SU_209_Cedente_ADD.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

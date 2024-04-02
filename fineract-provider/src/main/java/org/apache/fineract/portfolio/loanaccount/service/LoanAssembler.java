@@ -51,7 +51,9 @@ import org.apache.fineract.portfolio.accountdetails.domain.AccountType;
 import org.apache.fineract.portfolio.accountdetails.service.AccountEnumerations;
 import org.apache.fineract.portfolio.client.domain.Client;
 import org.apache.fineract.portfolio.client.domain.ClientRepositoryWrapper;
+import org.apache.fineract.portfolio.client.domain.LegalForm;
 import org.apache.fineract.portfolio.client.exception.ClientNotActiveException;
+import org.apache.fineract.portfolio.client.exception.ClientNotLegalEntityException;
 import org.apache.fineract.portfolio.collateralmanagement.domain.CollateralManagementDomain;
 import org.apache.fineract.portfolio.collateralmanagement.service.LoanCollateralAssembler;
 import org.apache.fineract.portfolio.fund.domain.Fund;
@@ -143,6 +145,7 @@ public class LoanAssembler {
         final Long productId = this.fromApiJsonHelper.extractLongNamed("productId", element);
         final Long fundId = this.fromApiJsonHelper.extractLongNamed("fundId", element);
         final Long loanOfficerId = this.fromApiJsonHelper.extractLongNamed("loanOfficerId", element);
+        final Long loanAssignorId = this.fromApiJsonHelper.extractLongNamed("loanAssignorId", element);
         final String transactionProcessingStrategyCode = this.fromApiJsonHelper.extractStringNamed("transactionProcessingStrategyCode",
                 element);
         final String transactionProcessingStrategyName = this.loanRepaymentScheduleTransactionProcessorFactory
@@ -158,6 +161,7 @@ public class LoanAssembler {
                 .extractBigDecimalWithLocaleNamed(LoanApiConstants.disbursementPrincipalParameterName, element);
         final Fund fund = findFundByIdIfProvided(fundId);
         final Staff loanOfficer = findLoanOfficerByIdIfProvided(loanOfficerId);
+        Client loanAssignor = this.findLoanAssignorByIdIfProvided(loanAssignorId);
         CodeValue loanPurpose = null;
         if (loanPurposeId != null) {
             loanPurpose = this.codeValueRepository.findOneWithNotFoundDetection(loanPurposeId);
@@ -316,6 +320,7 @@ public class LoanAssembler {
         if (loanApplication == null) {
             throw new IllegalStateException("No loan application exists for either a client or group (or both).");
         }
+
         loanApplication.updateTransactionProcessingStrategy(transactionProcessingStrategyCode, transactionProcessingStrategyName);
         copyAdvancedPaymentRulesIfApplicable(transactionProcessingStrategyCode, loanProduct, loanApplication);
         loanApplication.setHelpers(defaultLoanLifecycleStateMachine, this.loanSummaryWrapper,
@@ -328,6 +333,7 @@ public class LoanAssembler {
         }
 
         loanApplication.updateEnableInstallmentLevelDelinquency(loanProduct.isEnableInstallmentLevelDelinquency());
+        loanApplication.setLoanAssignor(loanAssignor);
 
         final LoanApplicationTerms loanApplicationTerms = this.loanScheduleAssembler.assembleLoanTerms(element);
         final boolean isHolidayEnabled = this.configurationDomainService.isRescheduleRepaymentsOnHolidaysEnabled();
@@ -369,6 +375,22 @@ public class LoanAssembler {
             }
         }
         return staff;
+    }
+
+    public Client findLoanAssignorByIdIfProvided(final Long loanAssignorId) {
+        Client loanAssignor = null;
+        if (loanAssignorId != null) {
+            loanAssignor = this.clientRepository.findOneWithNotFoundDetection(loanAssignorId);
+            if (loanAssignor.isNotActive()) {
+                throw new ClientNotActiveException(loanAssignorId);
+            }
+            final Integer legalFormValue = loanAssignor.getLegalForm();
+            LegalForm legalForm = LegalForm.fromInt(legalFormValue);
+            if (!legalForm.isEntity()) {
+                throw new ClientNotLegalEntityException(loanAssignorId);
+            }
+        }
+        return loanAssignor;
     }
 
     public void validateExpectedDisbursementForHolidayAndNonWorkingDay(final Loan loanApplication) {

@@ -935,6 +935,13 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 existingLoanApplication.updateLoanOfficerOnLoanApplication(newValue);
             }
 
+            final String loanAssignorIdParamName = "loanAssignorId";
+            if (changes.containsKey(loanAssignorIdParamName)) {
+                final Long loanOfficerId = command.longValueOfParameterNamed(loanAssignorIdParamName);
+                final Client newValue = this.loanAssembler.findLoanAssignorByIdIfProvided(loanOfficerId);
+                existingLoanApplication.setLoanAssignor(newValue);
+            }
+
             final String strategyCodeParamName = "transactionProcessingStrategyCode";
             if (changes.containsKey(strategyCodeParamName)) {
                 final String strategy = command.stringValueOfParameterNamed(strategyCodeParamName);
