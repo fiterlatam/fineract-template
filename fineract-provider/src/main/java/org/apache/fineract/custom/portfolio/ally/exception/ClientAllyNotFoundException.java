@@ -16,29 +16,14 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.custom.infrastructure.codes.data;
+package org.apache.fineract.custom.portfolio.ally.exception;
 
-import lombok.Getter;
-import lombok.Setter;
-import org.apache.fineract.infrastructure.codes.data.CodeValueData;
+import org.apache.fineract.infrastructure.core.exception.AbstractPlatformResourceNotFoundException;
 
-@Getter
-@Setter
-public class CustomCodeValueData extends CodeValueData {
+public class ClientAllyNotFoundException extends AbstractPlatformResourceNotFoundException {
 
-    private Long parentId;
-    private String parentName;
-
-    public CustomCodeValueData(final Long id, final String name, final Integer position, final String description, final boolean isActive,
-            final boolean mandatory, final Long parentId, final String parentName) {
-        super.setId(id);
-        super.setName(name);
-        super.setPosition(position);
-        super.setDescription(description);
-        super.setActive(isActive);
-        super.setMandatory(mandatory);
-        this.parentId = parentId;
-        this.parentName = parentName;
+    public ClientAllyNotFoundException() {
+        super("error.msg.clientally.id.invalid", "ClientAlly does not exist");
     }
 
 }
