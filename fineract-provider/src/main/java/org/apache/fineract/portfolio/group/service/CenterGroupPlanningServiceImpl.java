@@ -97,7 +97,8 @@ public class CenterGroupPlanningServiceImpl implements CenterGroupPlanningServic
             final int rangeEndDay = portfolioPlanning.getRangeEndDay();
 
             // generate the future planning for this group && loan
-            while ((currentNextMeetingDate.isAfter(startDateRange) || currentNextMeetingDate.equals(startDateRange)) && (currentNextMeetingDate.isBefore(endDateRange) || currentNextMeetingDate.isEqual(endDateRange))) {
+            while ((currentNextMeetingDate.isAfter(startDateRange) || currentNextMeetingDate.equals(startDateRange))
+                    && (currentNextMeetingDate.isBefore(endDateRange) || currentNextMeetingDate.isEqual(endDateRange))) {
                 List<GroupLoanSummaryData> groupLoanSummaryList = retrieveGroupLoanSummary(portfolioPlanning.getCenterGroupId(),
                         portfolioPlanning.getMeetingDate());
 
@@ -165,7 +166,7 @@ public class CenterGroupPlanningServiceImpl implements CenterGroupPlanningServic
                 		gc2.group_id AS groupId,
                 		coalesce (sum(larr.total_overdue_derived),0) AS totalOverdue
                 	FROM
-                		m_loan l2 
+                		m_loan l2
                 		INNER JOIN m_product_loan lp2 ON lp2.id = l2.product_id
                 		INNER JOIN m_group_client gc2 ON l2.client_id = gc2.client_id
                 		INNER JOIN m_client mc2 on mc2.id = gc2.client_id and mc2.status_enum = 300

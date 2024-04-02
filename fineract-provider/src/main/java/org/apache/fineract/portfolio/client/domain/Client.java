@@ -725,8 +725,6 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
 
         deriveDisplayName();
 
-
-
         return actualChanges;
     }
 

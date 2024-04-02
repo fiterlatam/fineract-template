@@ -1093,7 +1093,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                     if (adjustGuarantee) {
                         // withdraw the hold amount
 
-                        final PaymentDetail withdrawalDetail = this.paymentDetailWritePlatformService.createAndPersistPaymentDetail(command, changes);
+                        final PaymentDetail withdrawalDetail = this.paymentDetailWritePlatformService.createAndPersistPaymentDetail(command,
+                                changes);
 
                         isAccountTransfer = false;
                         final boolean backdatedTxnsAllowedTill = false;
