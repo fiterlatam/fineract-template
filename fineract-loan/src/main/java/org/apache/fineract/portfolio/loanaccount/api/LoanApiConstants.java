@@ -52,6 +52,7 @@ public interface LoanApiConstants {
     String transactionProcessingStrategyCodeParameterName = "transactionProcessingStrategyCode";
     String loanPurposeIdParameterName = "loanPurposeId";
     String loanOfficerIdParameterName = "loanOfficerId";
+    String loanAssignorIdParameterName = "loanAssignorId";
     String fundIdParameterName = "fundId";
     String externalIdParameterName = "externalId";
     String accountNoParameterName = "accountNo";

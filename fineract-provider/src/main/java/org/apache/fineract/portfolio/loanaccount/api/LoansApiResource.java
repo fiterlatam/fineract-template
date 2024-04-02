@@ -121,6 +121,7 @@ import org.apache.fineract.portfolio.loanaccount.data.DisbursementData;
 import org.apache.fineract.portfolio.loanaccount.data.GlimRepaymentTemplate;
 import org.apache.fineract.portfolio.loanaccount.data.LoanAccountData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanApprovalData;
+import org.apache.fineract.portfolio.loanaccount.data.LoanAssignorData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanChargeData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanCollateralManagementData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanSummaryData;
@@ -415,6 +416,9 @@ public class LoansApiResource {
         final List<DatatableData> datatableTemplates = this.entityDatatableChecksReadService
                 .retrieveTemplates(StatusEnum.CREATE.getCode().longValue(), EntityTables.LOAN.getName(), productId);
         newLoanAccount.setDatatables(datatableTemplates);
+
+        final List<LoanAssignorData> loanAssignorOptions = this.loanReadPlatformService.retrieveLoanAssignorData(null);
+        newLoanAccount.setLoanAssignorOptions(loanAssignorOptions);
 
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
         return this.toApiJsonSerializer.serialize(settings, newLoanAccount, LOAN_DATA_PARAMETERS);
@@ -1121,6 +1125,11 @@ public class LoansApiResource {
                 overdueCharges, paidInAdvanceTemplate, interestRatesPeriods, clientActiveLoanOptions, rates, isRatesEnabled, collectionData,
                 LoanScheduleType.getValuesAsEnumOptionDataList(), LoanScheduleProcessingType.getValuesAsEnumOptionDataList());
 
+        final Long loanAssignorId = loanBasicDetails.getLoanAssignorId();
+        if (loanAssignorId != null) {
+            LoanAssignorData loanAssignorData = this.loanReadPlatformService.retrieveLoanAssignorDataById(loanAssignorId);
+            loanAccount.setLoanAssignorData(loanAssignorData);
+        }
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters(),
                 mandatoryResponseParameters);
         return this.toApiJsonSerializer.serialize(settings, loanAccount, LOAN_DATA_PARAMETERS);

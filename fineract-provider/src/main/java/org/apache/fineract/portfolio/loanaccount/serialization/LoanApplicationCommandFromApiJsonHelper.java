@@ -89,7 +89,8 @@ public final class LoanApplicationCommandFromApiJsonHelper {
             LoanApiConstants.graceOnInterestPaymentParameterName, LoanApiConstants.graceOnInterestChargedParameterName,
             LoanApiConstants.interestChargedFromDateParameterName, LoanApiConstants.submittedOnDateParameterName,
             LoanApiConstants.submittedOnNoteParameterName, LoanApiConstants.accountNoParameterName,
-            LoanApiConstants.externalIdParameterName, LoanApiConstants.fundIdParameterName, LoanApiConstants.loanOfficerIdParameterName, // optional
+            LoanApiConstants.externalIdParameterName, LoanApiConstants.fundIdParameterName, LoanApiConstants.loanOfficerIdParameterName,
+            LoanApiConstants.loanAssignorIdParameterName, // optional
             LoanApiConstants.loanPurposeIdParameterName, LoanApiConstants.inArrearsToleranceParameterName,
             LoanApiConstants.chargesParameterName, LoanApiConstants.collateralParameterName, // optional
             LoanApiConstants.transactionProcessingStrategyCodeParameterName, // settings
@@ -215,6 +216,12 @@ public final class LoanApplicationCommandFromApiJsonHelper {
         if (this.fromApiJsonHelper.parameterExists(LoanApiConstants.loanOfficerIdParameterName, element)) {
             final Long loanOfficerId = this.fromApiJsonHelper.extractLongNamed(LoanApiConstants.loanOfficerIdParameterName, element);
             baseDataValidator.reset().parameter(LoanApiConstants.loanOfficerIdParameterName).value(loanOfficerId).ignoreIfNull()
+                    .integerGreaterThanZero();
+        }
+
+        if (this.fromApiJsonHelper.parameterExists(LoanApiConstants.loanAssignorIdParameterName, element)) {
+            final Long loanAssignorId = this.fromApiJsonHelper.extractLongNamed(LoanApiConstants.loanAssignorIdParameterName, element);
+            baseDataValidator.reset().parameter(LoanApiConstants.loanAssignorIdParameterName).value(loanAssignorId).ignoreIfNull()
                     .integerGreaterThanZero();
         }
 
@@ -659,6 +666,13 @@ public final class LoanApplicationCommandFromApiJsonHelper {
             atLeastOneParameterPassedForUpdate = true;
             final Long loanOfficerId = this.fromApiJsonHelper.extractLongNamed(LoanApiConstants.loanOfficerIdParameterName, element);
             baseDataValidator.reset().parameter(LoanApiConstants.loanOfficerIdParameterName).value(loanOfficerId).ignoreIfNull()
+                    .integerGreaterThanZero();
+        }
+
+        if (this.fromApiJsonHelper.parameterExists(LoanApiConstants.loanAssignorIdParameterName, element)) {
+            atLeastOneParameterPassedForUpdate = true;
+            final Long loanAssignorId = this.fromApiJsonHelper.extractLongNamed(LoanApiConstants.loanAssignorIdParameterName, element);
+            baseDataValidator.reset().parameter(LoanApiConstants.loanAssignorIdParameterName).value(loanAssignorId).ignoreIfNull()
                     .integerGreaterThanZero();
         }
 

@@ -93,6 +93,7 @@ import org.apache.fineract.portfolio.loanaccount.data.DisbursementData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanAccountData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanApplicationTimelineData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanApprovalData;
+import org.apache.fineract.portfolio.loanaccount.data.LoanAssignorData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanInterestRecalculationData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanRepaymentScheduleInstallmentData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanScheduleAccrualData;
@@ -646,7 +647,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                     + " l.currency_code as currencyCode, l.currency_digits as currencyDigits, l.currency_multiplesof as inMultiplesOf, rc."
                     + sqlGenerator.escape("name")
                     + " as currencyName, rc.display_symbol as currencyDisplaySymbol, rc.internationalized_name_code as currencyNameCode, "
-                    + " l.loan_officer_id as loanOfficerId, s.display_name as loanOfficerName, "
+                    + " l.loan_officer_id as loanOfficerId, s.display_name as loanOfficerName, l.loan_assignor_id as loanAssignorId, "
                     + " l.principal_disbursed_derived as principalDisbursed, l.principal_repaid_derived as principalPaid,"
                     + " l.principal_adjustments_derived as principalAdjustments, l.principal_writtenoff_derived as principalWrittenOff,"
                     + " l.principal_outstanding_derived as principalOutstanding, l.interest_charged_derived as interestCharged,"
@@ -760,6 +761,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
             final String fundName = rs.getString("fundName");
 
             final Long loanOfficerId = JdbcSupport.getLong(rs, "loanOfficerId");
+            final Long loanAssignorId = JdbcSupport.getLong(rs, "loanAssignorId");
             final String loanOfficerName = rs.getString("loanOfficerName");
 
             final Long loanPurposeId = JdbcSupport.getLong(rs, "loanPurposeId");
@@ -1047,24 +1049,27 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
             final String loanScheduleProcessingTypeStr = rs.getString("loanScheduleProcessingType");
             final LoanScheduleProcessingType loanScheduleProcessingType = LoanScheduleProcessingType.valueOf(loanScheduleProcessingTypeStr);
 
-            return LoanAccountData.basicLoanDetails(id, accountNo, status, externalId, clientId, clientAccountNo, clientName,
-                    clientOfficeId, clientExternalId, groupData, loanType, loanProductId, loanProductName, loanProductDescription,
-                    isLoanProductLinkedToFloatingRate, fundId, fundName, loanPurposeId, loanPurposeName, loanOfficerId, loanOfficerName,
-                    currencyData, proposedPrincipal, principal, approvedPrincipal, netDisbursalAmount, totalOverpaid, inArrearsTolerance,
-                    termFrequency, termPeriodFrequencyType, numberOfRepayments, repaymentEvery, repaymentFrequencyType, null, null,
-                    transactionStrategyCode, transactionStrategyName, amortizationType, interestRatePerPeriod, interestRateFrequencyType,
-                    annualInterestRate, interestType, isFloatingInterestRate, interestRateDifferential, interestCalculationPeriodType,
-                    allowPartialPeriodInterestCalcualtion, expectedFirstRepaymentOnDate, graceOnPrincipalPayment,
-                    recurringMoratoriumOnPrincipalPeriods, graceOnInterestPayment, graceOnInterestCharged, interestChargedFromDate,
-                    timeline, loanSummary, feeChargesDueAtDisbursementCharged, syncDisbursementWithMeeting, loanCounter, loanProductCounter,
-                    multiDisburseLoan, canDefineInstallmentAmount, fixedEmiAmount, outstandingLoanBalance, inArrears, graceOnArrearsAgeing,
-                    isNPA, daysInMonthType, daysInYearType, isInterestRecalculationEnabled, interestRecalculationData,
-                    createStandingInstructionAtDisbursement, isvariableInstallmentsAllowed, minimumGap, maximumGap, loanSubStatus,
-                    canUseForTopup, isTopup, closureLoanId, closureLoanAccountNo, topupAmount, isEqualAmortization,
-                    fixedPrincipalPercentagePerInstallment, delinquencyRange, disallowExpectedDisbursements, isFraud,
-                    lastClosedBusinessDate, overpaidOnDate, isChargedOff, enableDownPayment, disbursedAmountPercentageForDownPayment,
-                    enableAutoRepaymentForDownPayment, enableInstallmentLevelDelinquency, loanScheduleType.asEnumOptionData(),
-                    loanScheduleProcessingType.asEnumOptionData());
+            final LoanAccountData basicLoanDetails = LoanAccountData.basicLoanDetails(id, accountNo, status, externalId, clientId,
+                    clientAccountNo, clientName, clientOfficeId, clientExternalId, groupData, loanType, loanProductId, loanProductName,
+                    loanProductDescription, isLoanProductLinkedToFloatingRate, fundId, fundName, loanPurposeId, loanPurposeName,
+                    loanOfficerId, loanOfficerName, currencyData, proposedPrincipal, principal, approvedPrincipal, netDisbursalAmount,
+                    totalOverpaid, inArrearsTolerance, termFrequency, termPeriodFrequencyType, numberOfRepayments, repaymentEvery,
+                    repaymentFrequencyType, null, null, transactionStrategyCode, transactionStrategyName, amortizationType,
+                    interestRatePerPeriod, interestRateFrequencyType, annualInterestRate, interestType, isFloatingInterestRate,
+                    interestRateDifferential, interestCalculationPeriodType, allowPartialPeriodInterestCalcualtion,
+                    expectedFirstRepaymentOnDate, graceOnPrincipalPayment, recurringMoratoriumOnPrincipalPeriods, graceOnInterestPayment,
+                    graceOnInterestCharged, interestChargedFromDate, timeline, loanSummary, feeChargesDueAtDisbursementCharged,
+                    syncDisbursementWithMeeting, loanCounter, loanProductCounter, multiDisburseLoan, canDefineInstallmentAmount,
+                    fixedEmiAmount, outstandingLoanBalance, inArrears, graceOnArrearsAgeing, isNPA, daysInMonthType, daysInYearType,
+                    isInterestRecalculationEnabled, interestRecalculationData, createStandingInstructionAtDisbursement,
+                    isvariableInstallmentsAllowed, minimumGap, maximumGap, loanSubStatus, canUseForTopup, isTopup, closureLoanId,
+                    closureLoanAccountNo, topupAmount, isEqualAmortization, fixedPrincipalPercentagePerInstallment, delinquencyRange,
+                    disallowExpectedDisbursements, isFraud, lastClosedBusinessDate, overpaidOnDate, isChargedOff, enableDownPayment,
+                    disbursedAmountPercentageForDownPayment, enableAutoRepaymentForDownPayment, enableInstallmentLevelDelinquency,
+                    loanScheduleType.asEnumOptionData(), loanScheduleProcessingType.asEnumOptionData());
+            basicLoanDetails.setLoanAssignorId(loanAssignorId);
+            return basicLoanDetails;
+
         }
     }
 
@@ -2593,4 +2598,58 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         return loanRepositoryWrapper.findIdByExternalId(externalId);
     }
 
+    private static final class LoanAssignorMapper implements RowMapper<LoanAssignorData> {
+
+        public String schema() {
+            return """
+                        mc.id AS id,
+                    	mc.display_name AS "displayName",
+                    	mc.email_address AS "email",
+                    	mc.mobile_no AS "mobileNumber",
+                    	mc.submittedon_date AS "submittedOnDate",
+                    	cce."NIT" AS nit,
+                    	mo.name AS officeName
+                    FROM m_office mo
+                    INNER JOIN m_office ounder ON ounder.hierarchy LIKE CONCAT(mo.hierarchy, '%') AND ounder.hierarchy LIKE CONCAT(?, '%')
+                    INNER JOIN m_client mc ON mc.office_id = ounder.id
+                    INNER JOIN campos_cliente_empresas cce  ON cce.client_id = mc.id
+                    WHERE mc.status_enum = 300 AND mc.legal_form_enum = 2
+                    """;
+        }
+
+        @Override
+        public LoanAssignorData mapRow(@NotNull ResultSet rs, int rowNum) throws SQLException {
+            final Long id = JdbcSupport.getLong(rs, "id");
+            final String officeName = rs.getString("officeName");
+            final String displayName = rs.getString("displayName");
+            final String email = rs.getString("email");
+            final String nit = rs.getString("nit");
+            final String mobileNumber = rs.getString("mobileNumber");
+            final LocalDate submittedOnDate = JdbcSupport.getLocalDate(rs, "submittedOnDate");
+            return new LoanAssignorData(id, displayName, nit, email, mobileNumber, officeName, submittedOnDate);
+        }
+    }
+
+    @Override
+    public List<LoanAssignorData> retrieveLoanAssignorData(String searchTerm) {
+        final String currentUserHierarchy = this.context.authenticatedUser().getOffice().getHierarchy();
+        final LoanAssignorMapper rowMapper = new LoanAssignorMapper();
+        String sql = "SELECT " + rowMapper.schema();
+        Object[] params = new Object[] { currentUserHierarchy };
+        if (StringUtils.isNotBlank(searchTerm)) {
+            params = new Object[] { currentUserHierarchy, searchTerm, searchTerm };
+            sql = sql + " AND (mc.display_name LIKE '%?%' OR cce.\"NIT\" LIKE '%?%')";
+        }
+        sql = sql + " ORDER BY mc.display_name ASC";
+        return this.jdbcTemplate.query(sql, rowMapper, params); // NOSONAR
+    }
+
+    @Override
+    public LoanAssignorData retrieveLoanAssignorDataById(Long loanAssignorId) {
+        final String currentUserHierarchy = this.context.authenticatedUser().getOffice().getHierarchy();
+        final LoanAssignorMapper rowMapper = new LoanAssignorMapper();
+        final String sql = "SELECT " + rowMapper.schema() + " AND mc.id = ? ";
+        final Object[] params = new Object[] { currentUserHierarchy, loanAssignorId };
+        return this.jdbcTemplate.queryForObject(sql, rowMapper, params);
+    }
 }

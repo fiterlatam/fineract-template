@@ -227,5 +227,15 @@
         </sql>
     </changeSet>
 
+    <changeSet author="fineract" id="6">
+        <sql>
+            <![CDATA[
+                DELETE
+                FROM stretchy_report_parameter srp
+                WHERE srp.id = (SELECT srp.id FROM stretchy_report_parameter srp INNER JOIN stretchy_parameter sp ON sp.id = srp.parameter_id INNER JOIN stretchy_report sr ON sr.id = srp.report_id WHERE sr.report_name = 'Reporte de tabla de auditoria (Roles y Usuarios)' AND sp.parameter_name = 'makerSelect');
+            ]]>
+        </sql>
+    </changeSet>
+
 
 </databaseChangeLog>

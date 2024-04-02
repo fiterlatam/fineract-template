@@ -92,6 +92,8 @@ public class LoanAccountData {
     private Long loanOfficerId;
     private String loanOfficerName;
     private EnumOptionData loanType;
+    private Long loanAssignorId;
+    private LoanAssignorData loanAssignorData;
 
     // terms
     private CurrencyData currency;
@@ -168,6 +170,7 @@ public class LoanAccountData {
     private Collection<CalendarData> calendarOptions;
     private List<EnumOptionData> loanScheduleTypeOptions;
     private List<EnumOptionData> loanScheduleProcessingTypeOptions;
+    private List<LoanAssignorData> loanAssignorOptions;
 
     @Transient
     private BigDecimal feeChargesAtDisbursementCharged;
