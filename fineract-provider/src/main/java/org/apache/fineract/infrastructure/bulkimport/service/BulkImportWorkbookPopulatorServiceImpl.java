@@ -111,13 +111,15 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 
 @Service
+@Primary
 public class BulkImportWorkbookPopulatorServiceImpl implements BulkImportWorkbookPopulatorService {
 
     private static final Logger LOG = LoggerFactory.getLogger(BulkImportWorkbookPopulatorServiceImpl.class);
-    private final PlatformSecurityContext context;
+    protected final PlatformSecurityContext context;
     private final OfficeReadPlatformService officeReadPlatformService;
     private final StaffReadPlatformService staffReadPlatformService;
     private final ClientReadPlatformService clientReadPlatformService;
@@ -130,7 +132,7 @@ public class BulkImportWorkbookPopulatorServiceImpl implements BulkImportWorkboo
     private final LoanReadPlatformService loanReadPlatformService;
     private final GLAccountReadPlatformService glAccountReadPlatformService;
     private final SavingsAccountReadPlatformService savingsAccountReadPlatformService;
-    private final CodeValueReadPlatformService codeValueReadPlatformService;
+    protected final CodeValueReadPlatformService codeValueReadPlatformService;
     private final SavingsProductReadPlatformService savingsProductReadPlatformService;
     private final ShareProductReadPlatformService shareProductReadPlatformService;
     private final ChargeReadPlatformService chargeReadPlatformService;
@@ -251,7 +253,7 @@ public class BulkImportWorkbookPopulatorServiceImpl implements BulkImportWorkboo
         return null;
     }
 
-    private Response buildResponse(final Workbook workbook, final String entity) {
+    protected Response buildResponse(final Workbook workbook, final String entity) {
         String filename = entity + DateUtils.getBusinessLocalDate().toString() + ".xls";
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try {
@@ -297,7 +299,7 @@ public class BulkImportWorkbookPopulatorServiceImpl implements BulkImportWorkboo
         return staff;
     }
 
-    private List<CodeValueData> fetchCodeValuesByCodeName(String codeName) {
+    protected List<CodeValueData> fetchCodeValuesByCodeName(String codeName) {
         List<CodeValueData> codeValues = null;
         if (codeName != null) {
             codeValues = (List<CodeValueData>) codeValueReadPlatformService.retrieveCodeValuesByCode(codeName);

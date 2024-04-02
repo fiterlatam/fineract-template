@@ -18,7 +18,7 @@
  */
 package org.apache.fineract.custom.infrastructure.codes.service;
 
-import java.util.Collection;
+import java.util.List;
 import org.apache.fineract.custom.infrastructure.codes.data.CustomCodeValueData;
 import org.apache.fineract.infrastructure.codes.service.CodeValueReadPlatformService;
 
@@ -41,5 +41,7 @@ import org.apache.fineract.infrastructure.codes.service.CodeValueReadPlatformSer
  */
 public interface CustomCodeValueReadPlatformService extends CodeValueReadPlatformService {
 
-    Collection<CustomCodeValueData> retrieveCodeValuesByCodeAndParent(String code, Long parentId);
+    List<CustomCodeValueData> retrieveCodeValuesByCodeWithParent(String code);
+
+    List<CustomCodeValueData> retrieveCodeValuesByCodeAndParent(String code, Long parentId);
 }

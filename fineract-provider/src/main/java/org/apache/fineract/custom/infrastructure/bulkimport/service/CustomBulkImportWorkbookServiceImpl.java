@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.infrastructure.bulkimport.service;
+package org.apache.fineract.custom.infrastructure.bulkimport.service;
 
 import jakarta.ws.rs.core.Response;
 import java.io.BufferedInputStream;
@@ -31,12 +31,14 @@ import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.Collection;
 import org.apache.commons.io.IOUtils;
+import org.apache.fineract.custom.infrastructure.bulkimport.data.CustomGlobalEntityType;
 import org.apache.fineract.infrastructure.bulkimport.data.BulkImportEvent;
 import org.apache.fineract.infrastructure.bulkimport.data.GlobalEntityType;
 import org.apache.fineract.infrastructure.bulkimport.data.ImportData;
 import org.apache.fineract.infrastructure.bulkimport.domain.ImportDocument;
 import org.apache.fineract.infrastructure.bulkimport.domain.ImportDocumentRepository;
 import org.apache.fineract.infrastructure.bulkimport.importhandler.ImportHandlerUtils;
+import org.apache.fineract.infrastructure.bulkimport.service.BulkImportWorkbookService;
 import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
 import org.apache.fineract.infrastructure.core.exception.GeneralPlatformDomainRuleException;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
@@ -56,16 +58,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.annotation.Primary;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
 
 @Service
-@Primary
-public class BulkImportWorkbookServiceImpl implements BulkImportWorkbookService {
+public class CustomBulkImportWorkbookServiceImpl implements BulkImportWorkbookService {
 
-    private static final Logger LOG = LoggerFactory.getLogger(BulkImportWorkbookServiceImpl.class);
+    private static final Logger LOG = LoggerFactory.getLogger(CustomBulkImportWorkbookServiceImpl.class);
     private final ApplicationContext applicationContext;
     private final PlatformSecurityContext securityContext;
     private final DocumentWritePlatformService documentWritePlatformService;
@@ -74,7 +74,7 @@ public class BulkImportWorkbookServiceImpl implements BulkImportWorkbookService 
     private final JdbcTemplate jdbcTemplate;
 
     @Autowired
-    public BulkImportWorkbookServiceImpl(final ApplicationContext applicationContext, final PlatformSecurityContext securityContext,
+    public CustomBulkImportWorkbookServiceImpl(final ApplicationContext applicationContext, final PlatformSecurityContext securityContext,
             final DocumentWritePlatformService documentWritePlatformService, final DocumentRepository documentRepository,
             final ImportDocumentRepository importDocumentRepository, final JdbcTemplate jdbcTemplate) {
         this.applicationContext = applicationContext;
@@ -107,64 +107,13 @@ public class BulkImportWorkbookServiceImpl implements BulkImportWorkbookService 
 
                 }
                 Workbook workbook = new HSSFWorkbook(clonedInputStream);
-                GlobalEntityType entityType = null;
+                CustomGlobalEntityType entityType = null;
                 int primaryColumn = 0;
-                if (entity.trim().equalsIgnoreCase(GlobalEntityType.CLIENTS_PERSON.toString())) {
-                    entityType = GlobalEntityType.CLIENTS_PERSON;
+                if (entity.trim().equalsIgnoreCase(CustomGlobalEntityType.CLIENT_ALLY.getAlias())) {
+                    entityType = CustomGlobalEntityType.CLIENT_ALLY;
                     primaryColumn = 0;
-                } else if (entity.trim().equalsIgnoreCase(GlobalEntityType.CLIENTS_ENTITY.toString())) {
-                    entityType = GlobalEntityType.CLIENTS_ENTITY;
-                    primaryColumn = 0;
-                } else if (entity.trim().equalsIgnoreCase(GlobalEntityType.CENTERS.toString())) {
-                    entityType = GlobalEntityType.CENTERS;
-                    primaryColumn = 0;
-                } else if (entity.trim().equalsIgnoreCase(GlobalEntityType.GROUPS.toString())) {
-                    entityType = GlobalEntityType.GROUPS;
-                    primaryColumn = 0;
-                } else if (entity.trim().equalsIgnoreCase(GlobalEntityType.LOANS.toString())) {
-                    entityType = GlobalEntityType.LOANS;
-                    primaryColumn = 0;
-                } else if (entity.trim().equalsIgnoreCase(GlobalEntityType.LOAN_TRANSACTIONS.toString())) {
-                    entityType = GlobalEntityType.LOAN_TRANSACTIONS;
-                    primaryColumn = 0;
-                } else if (entity.trim().equalsIgnoreCase(GlobalEntityType.GUARANTORS.toString())) {
-                    entityType = GlobalEntityType.GUARANTORS;
-                    primaryColumn = 0;
-                } else if (entity.trim().equalsIgnoreCase(GlobalEntityType.OFFICES.toString())) {
-                    entityType = GlobalEntityType.OFFICES;
-                    primaryColumn = 0;
-                } else if (entity.trim().equalsIgnoreCase(GlobalEntityType.CHART_OF_ACCOUNTS.toString())) {
-                    entityType = GlobalEntityType.CHART_OF_ACCOUNTS;
-                    primaryColumn = 0;
-                } else if (entity.trim().equalsIgnoreCase(GlobalEntityType.GL_JOURNAL_ENTRIES.toString())) {
-                    entityType = GlobalEntityType.GL_JOURNAL_ENTRIES;
-                    primaryColumn = 0;
-                } else if (entity.trim().equalsIgnoreCase(GlobalEntityType.STAFF.toString())) {
-                    entityType = GlobalEntityType.STAFF;
-                    primaryColumn = 0;
-                } else if (entity.trim().equalsIgnoreCase(GlobalEntityType.SHARE_ACCOUNTS.toString())) {
-                    entityType = GlobalEntityType.SHARE_ACCOUNTS;
-                    primaryColumn = 0;
-                } else if (entity.trim().equalsIgnoreCase(GlobalEntityType.SAVINGS_ACCOUNT.toString())) {
-                    entityType = GlobalEntityType.SAVINGS_ACCOUNT;
-                    primaryColumn = 0;
-                } else if (entity.trim().equalsIgnoreCase(GlobalEntityType.SAVINGS_TRANSACTIONS.toString())) {
-                    entityType = GlobalEntityType.SAVINGS_TRANSACTIONS;
-                    primaryColumn = 0;
-                } else if (entity.trim().equalsIgnoreCase(GlobalEntityType.RECURRING_DEPOSIT_ACCOUNTS.toString())) {
-                    entityType = GlobalEntityType.RECURRING_DEPOSIT_ACCOUNTS;
-                    primaryColumn = 0;
-                } else if (entity.trim().equalsIgnoreCase(GlobalEntityType.RECURRING_DEPOSIT_ACCOUNTS_TRANSACTIONS.toString())) {
-                    entityType = GlobalEntityType.RECURRING_DEPOSIT_ACCOUNTS_TRANSACTIONS;
-                    primaryColumn = 0;
-                } else if (entity.trim().equalsIgnoreCase(GlobalEntityType.FIXED_DEPOSIT_ACCOUNTS.toString())) {
-                    entityType = GlobalEntityType.FIXED_DEPOSIT_ACCOUNTS;
-                    primaryColumn = 0;
-                } else if (entity.trim().equalsIgnoreCase(GlobalEntityType.FIXED_DEPOSIT_TRANSACTIONS.toString())) {
-                    entityType = GlobalEntityType.FIXED_DEPOSIT_TRANSACTIONS;
-                    primaryColumn = 0;
-                } else if (entity.trim().equalsIgnoreCase(GlobalEntityType.USERS.toString())) {
-                    entityType = GlobalEntityType.USERS;
+                } else if (entity.trim().equalsIgnoreCase(CustomGlobalEntityType.CLIENT_ALLY_POINTS_OF_SALES.getAlias())) {
+                    entityType = CustomGlobalEntityType.CLIENT_ALLY_POINTS_OF_SALES;
                     primaryColumn = 0;
                 } else {
                     workbook.close();
@@ -183,8 +132,8 @@ public class BulkImportWorkbookServiceImpl implements BulkImportWorkbookService 
     }
 
     private Long publishEvent(final Integer primaryColumn, final FormDataContentDisposition fileDetail,
-            final InputStream clonedInputStreamWorkbook, final GlobalEntityType entityType, final Workbook workbook, final String locale,
-            final String dateFormat) {
+            final InputStream clonedInputStreamWorkbook, final CustomGlobalEntityType entityType, final Workbook workbook,
+            final String locale, final String dateFormat) {
 
         final String fileName = fileDetail.getFileName();
 
@@ -257,8 +206,7 @@ public class BulkImportWorkbookServiceImpl implements BulkImportWorkbookService 
         this.securityContext.authenticatedUser();
         final ImportTemplateLocationMapper importTemplateLocationMapper = new ImportTemplateLocationMapper();
         final String sql = "select " + importTemplateLocationMapper.schema();
-        DocumentData documentData = this.jdbcTemplate.queryForObject(sql, importTemplateLocationMapper,
-                new Object[] { Long.valueOf(importDocumentId) }); // NOSONAR
+        DocumentData documentData = this.jdbcTemplate.queryForObject(sql, importTemplateLocationMapper, new Object[] { importDocumentId }); // NOSONAR
         return buildResponse(documentData);
     }
 

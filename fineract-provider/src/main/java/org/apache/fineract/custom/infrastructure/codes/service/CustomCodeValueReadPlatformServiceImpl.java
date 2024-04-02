@@ -20,7 +20,7 @@ package org.apache.fineract.custom.infrastructure.codes.service;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Collection;
+import java.util.List;
 import org.apache.fineract.custom.infrastructure.codes.data.CustomCodeValueData;
 import org.apache.fineract.infrastructure.codes.service.CodeValueReadPlatformServiceImpl;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
@@ -38,11 +38,23 @@ public class CustomCodeValueReadPlatformServiceImpl extends CodeValueReadPlatfor
     }
 
     @Override
-    public Collection<CustomCodeValueData> retrieveCodeValuesByCodeAndParent(final String code, final Long parentId) {
+    public List<CustomCodeValueData> retrieveCodeValuesByCodeWithParent(final String code) {
         super.context.authenticatedUser();
 
         final CodeValueDataMapper rm = new CodeValueDataMapper();
-        final String sql = "select " + rm.schema() + "where c.code_name like ? and parent_id = ? and cv.is_active = true order by position";
+        final String sql = "select " + rm.schema()
+                + "where c.code_name like ? and cv.is_active = true order by parentCV.code_value, cv.code_value";
+
+        return this.jdbcTemplate.query(sql, rm, new Object[] { code });
+    }
+
+    @Override
+    public List<CustomCodeValueData> retrieveCodeValuesByCodeAndParent(final String code, final Long parentId) {
+        super.context.authenticatedUser();
+
+        final CodeValueDataMapper rm = new CodeValueDataMapper();
+        final String sql = "select " + rm.schema()
+                + "where c.code_name like ? and cv.parent_id = ? and cv.is_active = true order by position";
 
         return this.jdbcTemplate.query(sql, rm, new Object[] { code, parentId });
     }
@@ -50,14 +62,19 @@ public class CustomCodeValueReadPlatformServiceImpl extends CodeValueReadPlatfor
     private static final class CodeValueDataMapper implements RowMapper<CustomCodeValueData> {
 
         public String schema() {
-            return " cv.id as id, cv.code_value as value, cv.code_id as codeId, cv.code_description as description, cv.order_position as position,"
-                    + " cv.is_active isActive, cv.is_mandatory as mandatory, cv.parent_id as parentId from m_code_value as cv join m_code c on cv.code_id = c.id ";
+            return "  cv.id as id, cv.code_value as value, cv.code_id as codeId, cv.code_description as description, " + //
+                    " cv.order_position as position, cv.is_active isActive, cv.is_mandatory as mandatory, " + //
+                    " cv.parent_id as parentId, parentCV.code_value as parentValue " + //
+                    "from " + //
+                    " m_code_value as cv " + //
+                    " join m_code c on cv.code_id = c.id " + //
+                    " left join m_code_value parentCV on parentCV.id = cv.parent_id ";
         }
 
         @Override
         public CustomCodeValueData mapRow(final ResultSet rs, @SuppressWarnings("unused") final int rowNum) throws SQLException {
             return new CustomCodeValueData(rs.getLong("id"), rs.getString("value"), rs.getInt("position"), rs.getString("description"),
-                    rs.getBoolean("isActive"), rs.getBoolean("mandatory"), rs.getLong("parentId"));
+                    rs.getBoolean("isActive"), rs.getBoolean("mandatory"), rs.getLong("parentId"), rs.getString("parentValue"));
         }
     }
 }

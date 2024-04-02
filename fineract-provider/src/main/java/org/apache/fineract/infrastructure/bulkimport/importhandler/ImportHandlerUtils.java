@@ -27,6 +27,7 @@ import org.apache.fineract.infrastructure.bulkimport.constants.TemplatePopulateI
 import org.apache.fineract.infrastructure.core.data.ApiParameterError;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.infrastructure.core.exception.AbstractPlatformException;
+import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidationException;
 import org.apache.fineract.infrastructure.core.exception.UnsupportedParameterException;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.poi.ss.usermodel.Cell;
@@ -270,11 +271,13 @@ public final class ImportHandlerUtils {
     public static void writeErrorMessage(Sheet sheet, Integer rowIndex, String errorMessage, int statusColumn) {
         Cell statusCell = sheet.getRow(rowIndex).createCell(statusColumn);
         statusCell.setCellValue(errorMessage);
-        statusCell.setCellStyle(getCellStyle(sheet.getWorkbook(), IndexedColors.RED));
+        statusCell.setCellStyle(getCellStyle(sheet.getWorkbook(), IndexedColors.LIGHT_ORANGE));
     }
 
     public static String getErrorMessage(RuntimeException re) {
-        if (re instanceof AbstractPlatformException) {
+        if (re instanceof PlatformApiDataValidationException) {
+            return ((PlatformApiDataValidationException) re).getErrors().toString();
+        } else if (re instanceof AbstractPlatformException) {
             AbstractPlatformException abstractPlatformException = (AbstractPlatformException) re;
             return abstractPlatformException.getDefaultUserMessage();
         } else if (re instanceof UnsupportedParameterException) {

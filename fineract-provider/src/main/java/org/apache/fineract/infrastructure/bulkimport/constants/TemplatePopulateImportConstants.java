@@ -18,9 +18,9 @@
  */
 package org.apache.fineract.infrastructure.bulkimport.constants;
 
-public final class TemplatePopulateImportConstants {
+public class TemplatePopulateImportConstants {
 
-    private TemplatePopulateImportConstants() {
+    protected TemplatePopulateImportConstants() {
 
     }
 
