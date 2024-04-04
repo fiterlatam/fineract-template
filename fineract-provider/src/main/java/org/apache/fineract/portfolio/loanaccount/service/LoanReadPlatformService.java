@@ -18,6 +18,8 @@
  */
 package org.apache.fineract.portfolio.loanaccount.service;
 
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
@@ -44,6 +46,7 @@ import org.apache.fineract.portfolio.loanaccount.loanschedule.data.LoanScheduleD
 import org.apache.fineract.portfolio.loanaccount.loanschedule.data.LoanSchedulePeriodData;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.data.OverdueLoanScheduleData;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleType;
+import org.springframework.ui.Model;
 
 public interface LoanReadPlatformService {
 
@@ -170,4 +173,6 @@ public interface LoanReadPlatformService {
     List<LoanAssignorData> retrieveLoanAssignorData(String searchTerm);
 
     LoanAssignorData retrieveLoanAssignorDataById(Long loanAssignorId);
+
+    void exportLoanDisbursementPDF(final Model model, Long loanId, HttpServletResponse httpServletResponse) throws IOException;
 }

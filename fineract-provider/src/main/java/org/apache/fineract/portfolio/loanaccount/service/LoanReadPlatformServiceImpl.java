@@ -21,15 +21,22 @@ package org.apache.fineract.portfolio.loanaccount.service;
 import static java.lang.Boolean.TRUE;
 import static org.apache.fineract.portfolio.loanproduct.service.LoanEnumerations.interestType;
 
+import com.lowagie.text.DocumentException;
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.SimpleDateFormat;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -75,6 +82,7 @@ import org.apache.fineract.portfolio.charge.domain.Charge;
 import org.apache.fineract.portfolio.charge.domain.ChargeTimeType;
 import org.apache.fineract.portfolio.charge.service.ChargeReadPlatformService;
 import org.apache.fineract.portfolio.client.data.ClientData;
+import org.apache.fineract.portfolio.client.domain.Client;
 import org.apache.fineract.portfolio.client.domain.ClientEnumerations;
 import org.apache.fineract.portfolio.client.service.ClientReadPlatformService;
 import org.apache.fineract.portfolio.common.domain.PeriodFrequencyType;
@@ -144,7 +152,13 @@ import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.ui.Model;
 import org.springframework.util.CollectionUtils;
+import org.thymeleaf.TemplateEngine;
+import org.thymeleaf.spring6.SpringTemplateEngine;
+import org.thymeleaf.templatemode.TemplateMode;
+import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
+import org.xhtmlrenderer.pdf.ITextRenderer;
 
 @AllArgsConstructor
 @Transactional(readOnly = true)
@@ -179,6 +193,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
     private final LoanTransactionRelationRepository loanTransactionRelationRepository;
     private final LoanTransactionRelationMapper loanTransactionRelationMapper;
     private final LoanChargePaidByReadPlatformService loanChargePaidByReadPlatformService;
+    private final SpringTemplateEngine templateEngine;
 
     @Override
     public LoanAccountData retrieveOne(final Long loanId) {
@@ -2651,5 +2666,73 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         final String sql = "SELECT " + rowMapper.schema() + " AND mc.id = ? ";
         final Object[] params = new Object[] { currentUserHierarchy, loanAssignorId };
         return this.jdbcTemplate.queryForObject(sql, rowMapper, params);
+    }
+
+    @Override
+    public void exportLoanDisbursementPDF(final Model model, Long loanId, HttpServletResponse httpServletResponse)
+            throws DocumentException, IOException {
+        final Loan loan = this.loanRepositoryWrapper.findOneWithNotFoundDetection(loanId);
+        final Client loanClient = loan.getClient();
+        String clientFullName = "N/A";
+        String clientNit = "N/A";
+        if (loanClient != null) {
+            final String lastName = loan.getClient().getLastname();
+            final String firstName = loan.getClient().getFirstname();
+            clientFullName = firstName + " " + lastName;
+            if (loanClient.getExternalId() != null) {
+                clientNit = loanClient.getExternalId().getValue();
+            }
+        }
+        final LocalDate disbursementDate = loan.getDisbursementDate();
+        final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("dd MMMM yyyy").withLocale(Locale.forLanguageTag("es-ES"));
+        final String disbursementDateString = disbursementDate.format(dateTimeFormatter);
+        final BigDecimal disbursementAmount = loan.getDisbursedAmount();
+        final String disbursementAmountString = Money.of(loan.getCurrency(), disbursementAmount).toString();
+        final Client loanAssignor = loan.getLoanAssignor();
+        String loanAssignorDisplayName = "N/A";
+        String loanAssignorNit = "N/A";
+        if (loanAssignor != null) {
+            final Long loanAssignorId = loanAssignor.getId();
+            final LoanAssignorData loanAssignorData = this.retrieveLoanAssignorDataById(loanAssignorId);
+            loanAssignorNit = loanAssignorData.getNit();
+            loanAssignorDisplayName = loanAssignor.getDisplayName();
+        }
+        AppUser disbursedByUser = loan.getDisbursedBy();
+        String disbursedByUsername = this.context.authenticatedUser().getDisplayName();
+        if (disbursedByUser != null) {
+            disbursedByUsername = disbursedByUser.getDisplayName();
+        }
+
+        Map<String, Object> variables = new HashMap<>();
+        variables.put("clientFullName", clientFullName);
+        variables.put("clientNit", clientNit);
+        variables.put("disbursementDate", disbursementDateString);
+        variables.put("loanId", loanId);
+        variables.put("disbursementAmount", disbursementAmountString);
+        variables.put("disbursedByUsername", disbursedByUsername);
+        variables.put("loanAssignorDisplayName", loanAssignorDisplayName);
+        variables.put("loanAssignorNit", loanAssignorNit);
+        final org.thymeleaf.context.Context thymeleafContext = new org.thymeleaf.context.Context(Locale.forLanguageTag("es-ES"), variables);
+        ClassLoaderTemplateResolver templateResolver = new ClassLoaderTemplateResolver();
+        templateResolver.setPrefix("templates/");
+        templateResolver.setSuffix(".html");
+        templateResolver.setCharacterEncoding("UTF-8");
+        templateResolver.setCacheable(false);
+        templateResolver.setTemplateMode(TemplateMode.HTML);
+        templateResolver.setOrder(0);
+        templateResolver.setCheckExistence(true);
+        TemplateEngine thymeleafTemplateEngine = new TemplateEngine();
+        thymeleafTemplateEngine.setTemplateResolver(templateResolver);
+        String html = thymeleafTemplateEngine.process("LoanDisbursementReport", thymeleafContext);
+        ITextRenderer renderer = new ITextRenderer();
+        renderer.setDocumentFromString(html);
+        renderer.layout();
+        final String filename = "Reporte_de_desembolso_" + new SimpleDateFormat("yyyyMMddHHmmss").format(new Date()) + ".pdf";
+        httpServletResponse.setContentType("application/pdf");
+        httpServletResponse.setHeader("Content-Disposition", "attachment; filename=" + filename);
+        httpServletResponse.setStatus(HttpServletResponse.SC_OK);
+        OutputStream outputStream = httpServletResponse.getOutputStream();
+        renderer.createPDF(outputStream);
+        outputStream.close();
     }
 }

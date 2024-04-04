@@ -106,6 +106,12 @@ dependencies {
             'org.mapstruct:mapstruct',
 
             'io.github.resilience4j:resilience4j-spring-boot3',
+
+            'org.springframework.boot:spring-boot-starter-thymeleaf',
+            'com.lowagie:itext:2.1.7',
+            'org.xhtmlrenderer:flying-saucer-pdf:9.7.1',
+            'ognl:ognl:3.4.2'
+
             )
 
     implementation ('software.amazon.msk:aws-msk-iam-auth:2.0.3') {

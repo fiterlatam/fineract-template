@@ -237,5 +237,30 @@
         </sql>
     </changeSet>
 
+    <changeSet author="fineract" id="7">
+        <sql>
+            <![CDATA[
+            UPDATE stretchy_parameter SET parameter_sql='SELECT
+                sp.parameter_name,
+                sp.parameter_variable,
+                sp.parameter_label,
+                sp."parameter_displayType",
+                sp."parameter_FormatType",
+                sp.parameter_default,
+                sp."selectOne",
+                sp."selectAll",
+                spp.parameter_name AS parentParameterName,
+                srp.mandatory_parameter AS "mandatoryParameter"
+            FROM stretchy_parameter sp
+            INNER JOIN stretchy_report_parameter srp ON srp.parameter_id = sp.id
+            INNER JOIN stretchy_report sr ON srp.report_id = sr.id
+            LEFT JOIN stretchy_parameter spp ON spp.id = sp.parent_id
+            WHERE sr.self_service_user_report = ${isSelfServiceUser} AND sr.report_name IN(${reportListing}) AND sp.special IS NULL
+            GROUP BY srp.id, sp.parameter_name, sp.parameter_variable, sp.parameter_label, 	sp."parameter_displayType",
+            sp."parameter_FormatType", sp.parameter_default, sp."selectOne", sp."selectAll",spp.parameter_name, sp.id
+            ORDER BY sp.id' WHERE parameter_name='FullParameterList';
+            ]]>
+        </sql>
+    </changeSet>
 
 </databaseChangeLog>

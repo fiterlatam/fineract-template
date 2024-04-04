@@ -7234,4 +7234,8 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     public void setLoanAssignor(Client loanAssignor) {
         this.loanAssignor = loanAssignor;
     }
+
+    public AppUser getDisbursedBy() {
+        return disbursedBy;
+    }
 }
