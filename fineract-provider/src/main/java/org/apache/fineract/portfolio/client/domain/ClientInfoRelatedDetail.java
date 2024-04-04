@@ -206,6 +206,7 @@ public class ClientInfoRelatedDetail {
     public String getMaidenName() {
         return this.maidenName;
     }
+
     public String getOthernames() {
         return this.othernames;
     }

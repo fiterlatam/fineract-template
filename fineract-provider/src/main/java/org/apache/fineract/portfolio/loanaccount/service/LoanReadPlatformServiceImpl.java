@@ -2679,7 +2679,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                                 gla.job_type as jobType,
                                 jobtypeCV.code_description as jobTypeValue,
                                 gla.occupancy_classification as occupancyClassification,
-                                eco.name as occupancyClassificationValue,                              
+                                eco.name as occupancyClassificationValue,
                                 gla.acts_own_behalf as actsOwnBehalf,
                                 ownBehalfCV.code_description as actsOwnBehalfValue,
                                 gla.on_behalf_of as onBehalfOf,
