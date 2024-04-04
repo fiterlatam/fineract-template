@@ -21,6 +21,7 @@ package org.apache.fineract.portfolio.loanaccount.api;
 import static org.apache.fineract.portfolio.loanproduct.service.LoanEnumerations.interestType;
 
 import com.google.gson.JsonElement;
+import com.lowagie.text.DocumentException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
@@ -32,6 +33,7 @@ import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.DefaultValue;
@@ -46,6 +48,7 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -160,11 +163,18 @@ import org.apache.fineract.portfolio.savings.DepositAccountType;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountStatusType;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataParam;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.util.CollectionUtils;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.thymeleaf.spring6.SpringTemplateEngine;
 
 @Path("/v1/loans")
 @Component
+@Controller
 @Tag(name = "Loans", description = "The API concept of loans models the loan application process and the loan contract/monitoring process.\n"
         + "\n" + "Field Descriptions\n" + "accountNo\n"
         + "The account no. associated with this loan. Is auto generated if not provided at loan application creation time.\n"
@@ -281,6 +291,8 @@ public class LoansApiResource {
     private final DefaultToApiJsonSerializer<LoanDelinquencyTagHistoryData> jsonSerializerTagHistory;
     private final DelinquencyReadPlatformService delinquencyReadPlatformService;
 
+    @Autowired
+    private SpringTemplateEngine templateEngine;
     /*
      * This template API is used for loan approval, ideally this should be invoked on loan that are pending for
      * approval. But system does not validate the status of the loan, it returns the template irrespective of loan
@@ -835,6 +847,17 @@ public class LoansApiResource {
             @PathParam("loanExternalId") @Parameter(description = "loanExternalId", required = true) final String loanExternalId,
             @Context final UriInfo uriInfo, @Parameter(hidden = true) final String apiRequestBodyAsJson) {
         return createLoanDelinquencyAction(null, ExternalIdFactory.produce(loanExternalId), apiRequestBodyAsJson);
+    }
+
+    @POST
+    @ModelAttribute
+    @Path("{loanId}/disbursement-report")
+    @GetMapping("/disbursement-report")
+    @Operation(summary = "Download loan disbursement report in PDF format", description = "Download loan disbursement report in PDF format")
+    public void getDisbursementReportPDF(Model model, @Context HttpServletResponse response,
+            @PathParam("loanId") @Parameter(description = "loanId") final Long loanId) throws DocumentException, IOException {
+        context.authenticatedUser().validateHasReadPermission(RESOURCE_NAME_FOR_PERMISSIONS);
+        this.loanReadPlatformService.exportLoanDisbursementPDF(model, loanId, response);
     }
 
     private String retrieveApprovalTemplate(final Long loanId, final String loanExternalIdStr, final String templateType,
