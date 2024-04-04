@@ -37,6 +37,7 @@ import org.apache.fineract.organisation.portfolioCenter.domain.PortfolioCenterFr
 import org.apache.fineract.organisation.portfolioCenter.service.PortfolioCenterGroupUtil;
 import org.apache.fineract.portfolio.accountdetails.service.AccountDetailsReadPlatformService;
 import org.apache.fineract.portfolio.group.data.GroupLoanSummaryData;
+import org.apache.fineract.portfolio.group.domain.PlanningType;
 import org.apache.fineract.portfolio.loanaccount.service.LoanReadPlatformService;
 import org.apache.fineract.useradministration.service.AppUserReadPlatformService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -102,6 +103,9 @@ public class CenterGroupPlanningServiceImpl implements CenterGroupPlanningServic
                 List<GroupLoanSummaryData> groupLoanSummaryList = retrieveGroupLoanSummary(portfolioPlanning.getCenterGroupId(),
                         portfolioPlanning.getMeetingDate());
 
+                List<GroupLoanSummaryData> individualLoanSummaryList = retrieveIndividualLoanSummary(portfolioPlanning.getCenterGroupId(),
+                        portfolioPlanning.getMeetingDate());
+
                 if (groupLoanSummaryList != null && !groupLoanSummaryList.isEmpty()) {
                     for (GroupLoanSummaryData groupLoanSummaryData : groupLoanSummaryList) {
                         if (currentNextMeetingDate.isBefore(endDateRange) || currentNextMeetingDate.isEqual(endDateRange)) {
@@ -118,6 +122,7 @@ public class CenterGroupPlanningServiceImpl implements CenterGroupPlanningServic
                             newPortfolioPlanning.setTotalOverdue(groupLoanSummaryData.getTotalOverdue());
                             newPortfolioPlanning.setTotalPaymentExpected(groupLoanSummaryData.getTotalPaymentExpected());
                             newPortfolioPlanning.setNumberOfClients(groupLoanSummaryData.getClientCounter());
+                            newPortfolioPlanning.setPlanningType(PlanningType.GROUP.getCode());
 
                             portfolioPlanningDetailed.add(newPortfolioPlanning);
                         }
@@ -137,8 +142,32 @@ public class CenterGroupPlanningServiceImpl implements CenterGroupPlanningServic
                         newPortfolioPlanning.setTotalOverdue(BigDecimal.ZERO);
                         newPortfolioPlanning.setTotalPaymentExpected(BigDecimal.ZERO);
                         newPortfolioPlanning.setNumberOfClients(0);
+                        newPortfolioPlanning.setPlanningType(PlanningType.GROUP.getCode());
 
                         portfolioPlanningDetailed.add(newPortfolioPlanning);
+                    }
+                }
+
+                if (individualLoanSummaryList != null && !individualLoanSummaryList.isEmpty()) {
+                    for (GroupLoanSummaryData loanSummaryData : individualLoanSummaryList) {
+                        if (currentNextMeetingDate.isBefore(endDateRange) || currentNextMeetingDate.isEqual(endDateRange)) {
+                            final PortfolioDetailedPlanningData newPortfolioPlanning = PortfolioDetailedPlanningData.instance(
+                                    portfolioPlanning.getCenterGroupId(), loanSummaryData.getClientName(),
+                                    portfolioPlanning.getLegacyGroupNumber(), portfolioPlanning.getMeetingStartTime(),
+                                    portfolioPlanning.getMeetingEndTime(), portfolioPlanning.getPortfolioCenterId(),
+                                    portfolioPlanning.getPortfolioCenterName(), portfolioPlanning.getLegacyCenterNumber(),
+                                    portfolioPlanning.getMeetingDayName(), currentNextMeetingDate, meetingDayOfWeek, rangeStartDay,
+                                    rangeEndDay);
+
+                            newPortfolioPlanning.setLoanShortProductName(loanSummaryData.getLoanShortProductName());
+                            newPortfolioPlanning.setTotalRepayment(loanSummaryData.getTotalRepayment());
+                            newPortfolioPlanning.setTotalOverdue(loanSummaryData.getTotalOverdue());
+                            newPortfolioPlanning.setTotalPaymentExpected(loanSummaryData.getTotalPaymentExpected());
+                            newPortfolioPlanning.setNumberOfClients(loanSummaryData.getClientCounter());
+                            newPortfolioPlanning.setPlanningType(PlanningType.INDIVIDUAL.getCode());
+
+                            portfolioPlanningDetailed.add(newPortfolioPlanning);
+                        }
                     }
                 }
 
@@ -211,6 +240,72 @@ public class CenterGroupPlanningServiceImpl implements CenterGroupPlanningServic
 
                 WHERE
                 	gc.group_id = ?
+                """;
+        List<GroupLoanSummaryData> groupLoanSummaryData = jdbcTemplate.query(sql, new BeanPropertyRowMapper(GroupLoanSummaryData.class),
+                new Object[] { groupId, groupId, dueDate, groupId });
+
+        return groupLoanSummaryData;
+    }
+
+    private List<GroupLoanSummaryData> retrieveIndividualLoanSummary(Long groupId, LocalDate dueDate) {
+        String sql = """
+                SELECT
+                	gc.group_id AS groupId,
+                	gc.client_id AS clientId,
+                	mc.display_name AS clientName,
+                	COALESCE ( overdueSummary.totalOverdue, 0 ) AS totalOverdue,
+                	COALESCE ( paymentsSummary.totalRepayment, 0 ) AS totalRepayment,
+                	count( gc.client_id ) AS clientCounter
+                FROM
+                	m_group_client gc
+                	JOIN m_client mc ON mc.id = gc.client_id AND mc.status_enum = 300
+                		LEFT JOIN (
+                		SELECT
+                		gc2.client_id AS clientId,
+                		COALESCE ( sum( larr.total_overdue_derived ), 0 ) AS totalOverdue
+                	FROM
+                		m_loan l2
+                		INNER JOIN m_product_loan lp2 ON lp2.id = l2.product_id
+                		INNER JOIN m_group_client gc2 ON l2.client_id = gc2.client_id
+                		INNER JOIN m_client mc2 ON mc2.id = gc2.client_id AND mc2.status_enum = 300
+                		INNER JOIN m_group grp ON gc2.group_id = grp.id
+                		LEFT JOIN m_loan_arrears_aging larr ON larr.loan_id = l2.id
+                	WHERE
+                		gc2.group_id = ?
+                		AND l2.loan_status_id = 300
+                        AND lp2.id in (3,7)
+                		GROUP BY gc2.client_id
+                	) overdueSummary ON overdueSummary.clientId = gc.client_id
+                	LEFT JOIN (
+                        SELECT
+                            gc2.client_id AS clientId,
+                            coalesce (sum((
+                                COALESCE ( lrs2.principal_amount, 0 ) + COALESCE ( lrs2.interest_amount, 0 ) +
+                                COALESCE ( lrs2.penalty_charges_amount, 0 ) + COALESCE ( lrs2.fee_charges_amount, 0 ) +
+                                COALESCE ( lrs2.fee_charges_amount, 0 )) -
+                                (COALESCE ( lrs2.total_paid_late_derived, 0 ) + COALESCE ( lrs2.interest_completed_derived, 0 ) +
+                                COALESCE ( lrs2.principal_completed_derived, 0 ) + COALESCE ( lrs2.total_paid_in_advance_derived, 0 ) +
+                                COALESCE ( lrs2.interest_writtenoff_derived, 0 ) + COALESCE ( lrs2.principal_writtenoff_derived, 0 ) +
+                                COALESCE ( lrs2.interest_waived_derived, 0 ) +
+                                COALESCE ( lrs2.penalty_charges_writtenoff_derived, 0 ) + COALESCE ( lrs2.penalty_charges_waived_derived, 0 ))),0) AS totalRepayment
+                            FROM
+                            m_loan_repayment_schedule lrs2
+                            INNER JOIN m_loan l2 ON l2.id = lrs2.loan_id
+                            INNER JOIN m_product_loan lp2 ON lp2.id = l2.product_id
+                            INNER JOIN m_group_client gc2 ON l2.client_id = gc2.client_id
+                            INNER JOIN m_client mc2 on mc2.id = gc2.client_id and mc2.status_enum = 300
+                            INNER JOIN m_group grp ON gc2.group_id = grp.id
+                			WHERE
+                            gc2.group_id = ?
+                            AND lrs2.duedate = ?
+                            AND l2.loan_status_id = 300
+                            AND lrs2.completed_derived = 0
+                            AND lp2.id in (3,7)
+                			GROUP BY gc2.client_id ) paymentsSummary ON paymentsSummary.clientId = gc.client_id
+                WHERE
+                	gc.group_id = ?
+                	and (totalOverdue >0 OR totalRepayment>0)
+                GROUP BY gc.client_id
                 """;
         List<GroupLoanSummaryData> groupLoanSummaryData = jdbcTemplate.query(sql, new BeanPropertyRowMapper(GroupLoanSummaryData.class),
                 new Object[] { groupId, groupId, dueDate, groupId });
