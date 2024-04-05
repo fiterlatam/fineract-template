@@ -18,6 +18,7 @@
  */
 package org.apache.fineract.useradministration.data;
 
+import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
@@ -56,6 +57,8 @@ public final class AppUserData {
     private Boolean isEnabled;
     private Boolean isDeleted;
     private EnumOptionData status;
+    private LocalDate deactivatedFromDate;
+    private LocalDate deactivatedToDate;
 
     @SuppressWarnings("unused")
     private Set<ClientData> clients;
@@ -202,5 +205,25 @@ public final class AppUserData {
 
     public void setStatus(EnumOptionData status) {
         this.status = status;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public LocalDate getDeactivatedFromDate() {
+        return deactivatedFromDate;
+    }
+
+    public void setDeactivatedFromDate(LocalDate deactivatedFromDate) {
+        this.deactivatedFromDate = deactivatedFromDate;
+    }
+
+    public LocalDate getDeactivatedToDate() {
+        return deactivatedToDate;
+    }
+
+    public void setDeactivatedToDate(LocalDate deactivatedToDate) {
+        this.deactivatedToDate = deactivatedToDate;
     }
 }

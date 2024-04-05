@@ -166,7 +166,6 @@ import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -849,15 +848,15 @@ public class LoansApiResource {
         return createLoanDelinquencyAction(null, ExternalIdFactory.produce(loanExternalId), apiRequestBodyAsJson);
     }
 
-    @POST
+    @GET
     @ModelAttribute
     @Path("{loanId}/disbursement-report")
     @GetMapping("/disbursement-report")
     @Operation(summary = "Download loan disbursement report in PDF format", description = "Download loan disbursement report in PDF format")
-    public void getDisbursementReportPDF(Model model, @Context HttpServletResponse response,
+    public void getDisbursementReportPDF(@Context HttpServletResponse response,
             @PathParam("loanId") @Parameter(description = "loanId") final Long loanId) throws DocumentException, IOException {
         context.authenticatedUser().validateHasReadPermission(RESOURCE_NAME_FOR_PERMISSIONS);
-        this.loanReadPlatformService.exportLoanDisbursementPDF(model, loanId, response);
+        this.loanReadPlatformService.exportLoanDisbursementPDF(loanId, response);
     }
 
     private String retrieveApprovalTemplate(final Long loanId, final String loanExternalIdStr, final String templateType,
