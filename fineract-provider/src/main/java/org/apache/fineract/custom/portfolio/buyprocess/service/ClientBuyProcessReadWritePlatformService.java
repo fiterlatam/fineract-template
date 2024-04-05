@@ -16,19 +16,19 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.custom.portfolio.ally.domain;
+package org.apache.fineract.custom.portfolio.buyprocess.service;
 
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.apache.fineract.custom.portfolio.buyprocess.data.ClientBuyProcessData;
+import org.apache.fineract.infrastructure.core.api.JsonCommand;
+import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 
 import java.util.List;
-import java.util.Optional;
 
-public interface ClientAllyPointOfSalesRepository
-        extends JpaRepository<ClientAllyPointOfSales, Long>, JpaSpecificationExecutor<ClientAllyPointOfSales> {
+public interface ClientBuyProcessReadWritePlatformService {
 
+    List<ClientBuyProcessData> findAllActive();
+    
+    ClientBuyProcessData findById(Long id);
 
-    Optional<ClientAllyPointOfSales> findAllyByPointOfSaleId(Long pointOfSaleId);
-
-    List<ClientAllyPointOfSales> findAllPointOfSalesByAllyId(Long clientAllyId);
+    CommandProcessingResult create(JsonCommand command);
 }

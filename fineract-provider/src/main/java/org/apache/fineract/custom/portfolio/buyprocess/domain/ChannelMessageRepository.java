@@ -16,28 +16,20 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.portfolio.loanproduct.domain;
+package org.apache.fineract.custom.portfolio.buyprocess.domain;
 
-import java.util.List;
-import java.util.Optional;
-
-import org.apache.fineract.infrastructure.core.domain.ExternalId;
-import org.apache.fineract.portfolio.delinquency.domain.DelinquencyBucket;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-public interface LoanProductRepository extends JpaRepository<LoanProduct, Long>, JpaSpecificationExecutor<LoanProduct> {
+import java.util.List;
+import java.util.Optional;
 
-    @Query("select loanProduct from LoanProduct loanProduct, IN(loanProduct.charges) charge where charge.id = :chargeId")
-    List<LoanProduct> retrieveLoanProductsByChargeId(@Param("chargeId") Long chargeId);
+public interface  ChannelMessageRepository
+        extends JpaRepository<ChannelMessage, Long>, JpaSpecificationExecutor< ChannelMessage> {
 
-    Long countByDelinquencyBucket(DelinquencyBucket delinquencyBucket);
+    @Query("select ent from ChannelMessage ent where ent.channelId = :channelId and ent.validationId = :validationId")
+    Optional<ChannelMessage> getChannelMessage(@Param("channelId") Long channelId, @Param("validationId") Long validationId);
 
-    List<LoanProduct> findByDelinquencyBucketNotNull();
-
-    LoanProduct findByExternalId(ExternalId externalId);
-
-    Optional<LoanProduct> findByName(String name);
 }

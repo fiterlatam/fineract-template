@@ -16,28 +16,24 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.portfolio.loanproduct.domain;
+package org.apache.fineract.custom.portfolio.buyprocess.domain;
 
-import java.util.List;
-import java.util.Optional;
-
-import org.apache.fineract.infrastructure.core.domain.ExternalId;
-import org.apache.fineract.portfolio.delinquency.domain.DelinquencyBucket;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 
-public interface LoanProductRepository extends JpaRepository<LoanProduct, Long>, JpaSpecificationExecutor<LoanProduct> {
+import java.util.Optional;
 
-    @Query("select loanProduct from LoanProduct loanProduct, IN(loanProduct.charges) charge where charge.id = :chargeId")
-    List<LoanProduct> retrieveLoanProductsByChargeId(@Param("chargeId") Long chargeId);
+public interface  ClientAdditionalInformationRepository
+        extends JpaRepository< ClientAdditionalInformation, Long>, JpaSpecificationExecutor< ClientAdditionalInformation> {
 
-    Long countByDelinquencyBucket(DelinquencyBucket delinquencyBucket);
+	/*
+   String FIND_NON_CLOSED_LOAN_THAT_BELONGS_TO_CLIENT = "select loan from Loan loan where loan.id = :loanId and loan.loanStatus = 300 and loan.client.id = :clientId";
 
-    List<LoanProduct> findByDelinquencyBucketNotNull();
+    @Query(FIND_GROUP_LOANS_DISBURSED_AFTER)
+    List<Loan> getGroupLoansDisbursedAfter(@Param("disbursementDate") Date disbursementDate, @Param("groupId") Long groupId,
+            @Param("loanType") Integer loanType);
+	*/
 
-    LoanProduct findByExternalId(ExternalId externalId);
+    Optional<ClientAdditionalInformation> findByClientId(Long clientId);
 
-    Optional<LoanProduct> findByName(String name);
 }

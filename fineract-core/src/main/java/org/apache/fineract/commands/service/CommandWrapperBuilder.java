@@ -3729,4 +3729,10 @@ public class CommandWrapperBuilder {
         return this;
     }
 
+    public CommandWrapperBuilder createClientBuyProcess() {
+        this.actionName = "CREATE";
+        this.entityName = "CLIENTBUYPROCESS";
+        this.href = "/clientbuyprocess";
+        return this;
+    }
 }

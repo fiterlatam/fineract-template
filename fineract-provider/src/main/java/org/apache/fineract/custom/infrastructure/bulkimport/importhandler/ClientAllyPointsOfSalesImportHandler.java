@@ -12,6 +12,7 @@ import org.apache.fineract.commands.service.CommandWrapperBuilder;
 import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformService;
 import org.apache.fineract.custom.infrastructure.bulkimport.data.CustomGlobalEntityType;
 import org.apache.fineract.custom.infrastructure.bulkimport.enumerator.ClientAllyPointOfSalesTemplatePopulateImportEnum;
+import org.apache.fineract.custom.infrastructure.bulkimport.enumerator.ClientAllyTemplatePopulateImportEnum;
 import org.apache.fineract.custom.portfolio.ally.data.ClientAllyPointOfSalesData;
 import org.apache.fineract.infrastructure.bulkimport.constants.StaffConstants;
 import org.apache.fineract.infrastructure.bulkimport.constants.TemplatePopulateImportConstants;
@@ -130,6 +131,13 @@ public class ClientAllyPointsOfSalesImportHandler implements ImportHandler {
                         + " seleccionada no corresponde al "
                         + ClientAllyPointOfSalesTemplatePopulateImportEnum.DEPARTMENT_ID.getColumnName() + " seleccionado; ");
             }
+        }
+
+        BigDecimal settledComission = BigDecimal.valueOf(
+                ImportHandlerUtils.readAsDouble(ClientAllyTemplatePopulateImportEnum.SETTLED_COMISSION.getColumnIndex(), row));
+        if (Objects.nonNull(settledComission) && settledComission.compareTo(BigDecimal.valueOf(99.99)) > 0) {
+            ammenedEValidationMessages.append("El campo " + ClientAllyTemplatePopulateImportEnum.SETTLED_COMISSION.getColumnName()
+                    + " no debe ser que 99.99; ");
         }
     }
 
