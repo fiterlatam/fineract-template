@@ -21,9 +21,12 @@ package org.apache.fineract.custom.portfolio.ally.domain;
 import jakarta.persistence.Cacheable;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import lombok.AllArgsConstructor;
@@ -47,8 +50,18 @@ public class ClientAllyPointOfSales {
     @Column(name = "id", nullable = false)
     private Long id;
 
+    @Column(name = "id", insertable=false, updatable=false)
+    private Long pointOfSaleId;
+
     @Column(name = "client_ally_id", nullable = false)
     private Long clientAllyId;
+
+    @Column(name = "client_ally_id", insertable=false, updatable=false)
+    private Long allyId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "client_ally_id", insertable=false, updatable=false)
+    private ClientAlly clientAlly;
 
     @Column(name = "code", nullable = false, length = 4)
     private String code;

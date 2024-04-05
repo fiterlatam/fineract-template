@@ -176,4 +176,11 @@
     <include file="parts/20240321215300_SU_129_activity_stretch_report_CREATE.xml" relativeToChangelogFile="true"/>
     <include file="parts/20240325221900_SU_10_app_user_deactivation_ADD.xml" relativeToChangelogFile="true"/>
     <include file="parts/202404012124100_SU_209_Cedente_ADD.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20240401190000_SU_15_c_configurations_INSERT.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20240401190100_SU_15_m_permission_INSERT.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20240401200000_SU_15_c_channel_CREATE.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20240401200050_SU_15_c_channel_validation_CREATE.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20240401200100_SU_15_c_channel_message_CREATE.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20240401200200_SU_15_c_client_buy_process_CREATE.xml" relativeToChangelogFile="true"/>
+
 </databaseChangeLog>

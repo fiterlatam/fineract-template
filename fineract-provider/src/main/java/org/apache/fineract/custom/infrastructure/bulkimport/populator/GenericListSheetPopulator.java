@@ -20,8 +20,11 @@ package org.apache.fineract.custom.infrastructure.bulkimport.populator;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
+
 import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.infrastructure.bulkimport.constants.TemplatePopulateImportConstants;
 import org.apache.fineract.infrastructure.bulkimport.populator.AbstractWorkbookPopulator;
@@ -61,6 +64,18 @@ public class GenericListSheetPopulator extends AbstractWorkbookPopulator {
     }
 
     private void populateSheet(Sheet officeSheet, int rowIndex) {
+
+        dtoList = dtoList.stream().sorted(Comparator.comparing(dto -> {
+            try {
+                Method getNameMethod = clazz.getDeclaredMethod(methodName);
+                return (String) getNameMethod.invoke(dto);
+            } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+                log.error("Error while sorting the list", e);
+            }
+            return null;
+        })).collect(Collectors.toList());
+
+
         for (Object currentDTO : dtoList) {
             Row row = officeSheet.createRow(rowIndex);
 

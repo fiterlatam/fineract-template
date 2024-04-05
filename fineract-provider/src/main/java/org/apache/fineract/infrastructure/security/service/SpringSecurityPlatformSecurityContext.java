@@ -25,6 +25,7 @@ import org.apache.fineract.commands.domain.CommandWrapper;
 import org.apache.fineract.commands.service.CommandWrapperBuilder;
 import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
+import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.infrastructure.security.exception.NoAuthorizationException;
 import org.apache.fineract.infrastructure.security.exception.ResetPasswordException;
 import org.apache.fineract.useradministration.domain.AppUser;
@@ -175,4 +176,13 @@ public class SpringSecurityPlatformSecurityContext implements PlatformSecurityCo
         return true;
     }
 
+    @Override
+    public String getApiRequestChannel() {
+        return ThreadLocalContextUtil.getRequestChannelContext();
+    }
+
+    @Override
+    public String getApiRequestClientIP() {
+        return ThreadLocalContextUtil.getRequestIPContext();
+    }
 }

@@ -16,19 +16,14 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.custom.portfolio.ally.domain;
+package org.apache.fineract.custom.portfolio.buyprocess.exception;
 
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.apache.fineract.infrastructure.core.exception.AbstractPlatformResourceNotFoundException;
 
-import java.util.List;
-import java.util.Optional;
+public class ClientBuyProcessNotCompletedException extends AbstractPlatformResourceNotFoundException {
 
-public interface ClientAllyPointOfSalesRepository
-        extends JpaRepository<ClientAllyPointOfSales, Long>, JpaSpecificationExecutor<ClientAllyPointOfSales> {
+    public ClientBuyProcessNotCompletedException() {
+        super("error.msg.clientbuyprocess.not.completed", "ClientBuyProcess could not complete Loan Creation");
+    }
 
-
-    Optional<ClientAllyPointOfSales> findAllyByPointOfSaleId(Long pointOfSaleId);
-
-    List<ClientAllyPointOfSales> findAllPointOfSalesByAllyId(Long clientAllyId);
 }

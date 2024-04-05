@@ -16,19 +16,37 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.custom.portfolio.ally.domain;
+package org.apache.fineract.custom.portfolio.buyprocess.data;
 
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
-import java.util.List;
-import java.util.Optional;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 
-public interface ClientAllyPointOfSalesRepository
-        extends JpaRepository<ClientAllyPointOfSales, Long>, JpaSpecificationExecutor<ClientAllyPointOfSales> {
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
+@Getter
+@Setter
+public class ClientBuyProcessData {
 
-
-    Optional<ClientAllyPointOfSales> findAllyByPointOfSaleId(Long pointOfSaleId);
-
-    List<ClientAllyPointOfSales> findAllPointOfSalesByAllyId(Long clientAllyId);
+	private Long id;
+	private Long channelId;
+	private Long clientId;
+	private Long pointOfSalesId;
+	private Long productId;
+	private Long creditId;
+	private LocalDate requestedDate;
+	private BigDecimal amount;
+	private Long term;
+	private LocalDateTime createdAt;
+	private Long createdBy;
+	private String ipDetails;
+	private Integer status;
+	private String errorMessage;
 }

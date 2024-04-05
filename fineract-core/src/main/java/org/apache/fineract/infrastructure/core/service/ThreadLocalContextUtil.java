@@ -38,6 +38,8 @@ public final class ThreadLocalContextUtil {
     private static final ThreadLocal<String> computerNameContext = new ThreadLocal<>();
     private static final ThreadLocal<HashMap<BusinessDateType, LocalDate>> businessDateContext = new ThreadLocal<>();
     private static final ThreadLocal<ActionContext> actionContext = new ThreadLocal<>();
+    private static final ThreadLocal<String> channelContext = new ThreadLocal<>();
+    private static final ThreadLocal<String> requestIPContext = new ThreadLocal<>();
 
     private ThreadLocalContextUtil() {}
 
@@ -133,4 +135,30 @@ public final class ThreadLocalContextUtil {
         businessDateContext.remove();
         actionContext.remove();
     }
+
+    public static String getRequestChannelContext() {
+        return channelContext.get();
+    }
+
+    public static void setRequestChannelContext(final String channelCtx) {
+        channelContext.set(channelCtx);
+    }
+
+    public static void clearRequestChannelContext() {
+        channelContext.remove();
+    }
+
+
+    public static String getRequestIPContext() {
+        return requestIPContext.get();
+    }
+
+    public static void setRequestIPContext(final String channelCtx) {
+        requestIPContext.set(channelCtx);
+    }
+
+    public static void clearRequestIPContext() {
+        requestIPContext.remove();
+    }
+
 }

@@ -42,4 +42,8 @@ public interface PlatformSecurityContext extends PlatformUserRightsContext {
     boolean doesPasswordHasToBeRenewed(AppUser currentUser);
 
     AppUser authenticatedUser(CommandWrapper commandWrapper);
+
+    String getApiRequestChannel();
+
+    String getApiRequestClientIP();
 }

@@ -97,7 +97,7 @@ public class ClientAllyPointOfSalesDataValidator {
         final BigDecimal settledComission = this.fromApiJsonHelper
                 .extractBigDecimalWithLocaleNamed(ClientAllyPointOfSalesApiConstants.settledComissionParamName, element);
         baseDataValidator.reset().parameter(ClientAllyPointOfSalesApiConstants.settledComissionParamName).value(settledComission).notNull()
-                .notGreaterThanMax(BigDecimal.valueOf(100));
+                .notGreaterThanMax(BigDecimal.valueOf(99.99));
 
         final Boolean buyEnabled = this.fromApiJsonHelper.extractBooleanNamed(ClientAllyPointOfSalesApiConstants.buyEnabledParamName,
                 element);
