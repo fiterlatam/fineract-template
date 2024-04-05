@@ -406,13 +406,27 @@ public class AppUserWritePlatformServiceJpaRepositoryImpl implements AppUserWrit
         final LocalDate localDate = DateUtils.getBusinessLocalDate();
         final AppUserReadPlatformServiceImpl.AppUserMapper mapper = new AppUserReadPlatformServiceImpl.AppUserMapper(
                 this.roleReadPlatformService, this.staffReadPlatformService);
-        final String sql = "SELECT " + mapper.schema() + " AND u.status_enum = 400 AND u.deactivated_to_date <= ? ORDER BY u.username";
-        List<AppUserData> appUsers = this.jdbcTemplate.query(sql, mapper, new Object[] { hierarchySearchString, localDate });
-        if (!CollectionUtils.isEmpty(appUsers)) {
-            for (final AppUserData appUserData : appUsers) {
+        final String activateSQL = "SELECT " + mapper.schema()
+                + " AND u.status_enum = 400 AND u.deactivated_to_date <= ? ORDER BY u.username";
+        List<AppUserData> inAppUsers = this.jdbcTemplate.query(activateSQL, mapper, new Object[] { hierarchySearchString, localDate });
+        if (!CollectionUtils.isEmpty(inAppUsers)) {
+            for (final AppUserData appUserData : inAppUsers) {
                 final Long userId = appUserData.getId();
                 final AppUser appUserEntity = this.appUserRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
                 appUserEntity.activate();
+                this.appUserRepository.saveAndFlush(appUserEntity);
+            }
+        }
+
+        final String deactivateSQL = "SELECT " + mapper.schema()
+                + " AND u.status_enum = 300 AND u.deactivated_from_date <= ? ORDER BY u.username";
+        List<AppUserData> activeAppUsers = this.jdbcTemplate.query(deactivateSQL, mapper,
+                new Object[] { hierarchySearchString, localDate });
+        if (!CollectionUtils.isEmpty(activeAppUsers)) {
+            for (final AppUserData appUserData : activeAppUsers) {
+                final Long userId = appUserData.getId();
+                final AppUser appUserEntity = this.appUserRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
+                appUserEntity.deactivateTemporarily(appUserData.getDeactivatedFromDate(), appUserData.getDeactivatedToDate());
                 this.appUserRepository.saveAndFlush(appUserEntity);
             }
         }

@@ -46,7 +46,6 @@ import org.apache.fineract.portfolio.loanaccount.loanschedule.data.LoanScheduleD
 import org.apache.fineract.portfolio.loanaccount.loanschedule.data.LoanSchedulePeriodData;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.data.OverdueLoanScheduleData;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleType;
-import org.springframework.ui.Model;
 
 public interface LoanReadPlatformService {
 
@@ -174,5 +173,5 @@ public interface LoanReadPlatformService {
 
     LoanAssignorData retrieveLoanAssignorDataById(Long loanAssignorId);
 
-    void exportLoanDisbursementPDF(final Model model, Long loanId, HttpServletResponse httpServletResponse) throws IOException;
+    void exportLoanDisbursementPDF(Long loanId, HttpServletResponse httpServletResponse) throws IOException;
 }

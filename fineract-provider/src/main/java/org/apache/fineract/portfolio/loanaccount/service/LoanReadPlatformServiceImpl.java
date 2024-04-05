@@ -152,7 +152,6 @@ import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.ui.Model;
 import org.springframework.util.CollectionUtils;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.spring6.SpringTemplateEngine;
@@ -2669,8 +2668,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
     }
 
     @Override
-    public void exportLoanDisbursementPDF(final Model model, Long loanId, HttpServletResponse httpServletResponse)
-            throws DocumentException, IOException {
+    public void exportLoanDisbursementPDF(Long loanId, HttpServletResponse httpServletResponse) throws DocumentException, IOException {
         final Loan loan = this.loanRepositoryWrapper.findOneWithNotFoundDetection(loanId);
         final Client loanClient = loan.getClient();
         String clientFullName = "N/A";
@@ -2679,14 +2677,14 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
             final String lastName = loan.getClient().getLastname();
             final String firstName = loan.getClient().getFirstname();
             clientFullName = firstName + " " + lastName;
-            if (loanClient.getExternalId() != null) {
+            if (loanClient.getExternalId() != null && !loanClient.getExternalId().isEmpty()) {
                 clientNit = loanClient.getExternalId().getValue();
             }
         }
         final LocalDate disbursementDate = loan.getDisbursementDate();
         final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("dd MMMM yyyy").withLocale(Locale.forLanguageTag("es-ES"));
         final String disbursementDateString = disbursementDate.format(dateTimeFormatter);
-        final BigDecimal disbursementAmount = loan.getDisbursedAmount();
+        final BigDecimal disbursementAmount = loan.getNetDisbursalAmount();
         final String disbursementAmountString = Money.of(loan.getCurrency(), disbursementAmount).toString();
         final Client loanAssignor = loan.getLoanAssignor();
         String loanAssignorDisplayName = "N/A";
@@ -2697,13 +2695,13 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
             loanAssignorNit = loanAssignorData.getNit();
             loanAssignorDisplayName = loanAssignor.getDisplayName();
         }
-        AppUser disbursedByUser = loan.getDisbursedBy();
+        final AppUser disbursedByUser = loan.getDisbursedBy();
         String disbursedByUsername = this.context.authenticatedUser().getDisplayName();
         if (disbursedByUser != null) {
             disbursedByUsername = disbursedByUser.getDisplayName();
         }
 
-        Map<String, Object> variables = new HashMap<>();
+        final Map<String, Object> variables = new HashMap<>();
         variables.put("clientFullName", clientFullName);
         variables.put("clientNit", clientNit);
         variables.put("disbursementDate", disbursementDateString);
@@ -2721,17 +2719,17 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         templateResolver.setTemplateMode(TemplateMode.HTML);
         templateResolver.setOrder(0);
         templateResolver.setCheckExistence(true);
-        TemplateEngine thymeleafTemplateEngine = new TemplateEngine();
+        final TemplateEngine thymeleafTemplateEngine = new TemplateEngine();
         thymeleafTemplateEngine.setTemplateResolver(templateResolver);
-        String html = thymeleafTemplateEngine.process("LoanDisbursementReport", thymeleafContext);
-        ITextRenderer renderer = new ITextRenderer();
+        final String html = thymeleafTemplateEngine.process("LoanDisbursementReport", thymeleafContext);
+        final ITextRenderer renderer = new ITextRenderer();
         renderer.setDocumentFromString(html);
         renderer.layout();
         final String filename = "Reporte_de_desembolso_" + new SimpleDateFormat("yyyyMMddHHmmss").format(new Date()) + ".pdf";
         httpServletResponse.setContentType("application/pdf");
-        httpServletResponse.setHeader("Content-Disposition", "attachment; filename=" + filename);
+        httpServletResponse.setHeader("Content-Disposition", "inline; filename=" + filename);
         httpServletResponse.setStatus(HttpServletResponse.SC_OK);
-        OutputStream outputStream = httpServletResponse.getOutputStream();
+        final OutputStream outputStream = httpServletResponse.getOutputStream();
         renderer.createPDF(outputStream);
         outputStream.close();
     }

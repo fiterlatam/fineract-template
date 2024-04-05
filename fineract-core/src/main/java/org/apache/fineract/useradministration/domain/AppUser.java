@@ -404,8 +404,10 @@ public class AppUser extends AbstractPersistableCustom implements PlatformUser {
         if (isSystemUser()) {
             throw new NoAuthorizationException("User configured as the system user cannot be deactivated");
         }
-        this.enabled = false;
-        this.statusEnum = AppUserStatus.INACTIVE_TEMPORARY.getValue();
+        if (!DateUtils.isAfterBusinessDate(deactivatedFromDate)) {
+            this.enabled = false;
+            this.statusEnum = AppUserStatus.INACTIVE_TEMPORARY.getValue();
+        }
         this.deactivatedFromDate = deactivatedFromDate;
         this.deactivatedToDate = deactivatedToDate;
     }

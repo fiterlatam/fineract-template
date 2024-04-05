@@ -20,6 +20,7 @@ package org.apache.fineract.useradministration.service;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -178,6 +179,9 @@ public class AppUserReadPlatformServiceImpl implements AppUserReadPlatformServic
             EnumOptionData status = new EnumOptionData(appUserStatus.getValue().longValue(), appUserStatus.getCode(), appUserStatus.name());
             final Collection<RoleData> selectedRoles = this.roleReadPlatformService.retrieveAppUserRoles(id);
 
+            final LocalDate deactivatedFromDate = JdbcSupport.getLocalDate(rs, "deactivatedFromDate");
+            final LocalDate deactivatedToDate = JdbcSupport.getLocalDate(rs, "deactivatedToDate");
+
             final StaffData linkedStaff;
             if (staffId != null) {
                 linkedStaff = this.staffReadPlatformService.retrieveStaff(staffId);
@@ -194,7 +198,7 @@ public class AppUserReadPlatformServiceImpl implements AppUserReadPlatformServic
 
         public String schema() {
             return " u.id as id, u.username as username, u.firstname as firstname, u.lastname as lastname, u.email as email, u.password_never_expires as passwordNeverExpires, "
-                    + " u.office_id as officeId, o.name as officeName, u.staff_id as staffId, u.is_self_service_user as isSelfServiceUser, u.status_enum as statusEnum, u.is_deleted as isDeleted, u.enabled as isEnabled from m_appuser u "
+                    + " u.office_id as officeId, o.name as officeName, u.staff_id as staffId, u.is_self_service_user as isSelfServiceUser, u.status_enum as statusEnum, u.is_deleted as isDeleted, u.enabled as isEnabled, u.deactivated_from_date AS deactivatedFromDate, u.deactivated_to_date AS deactivatedToDate from m_appuser u "
                     + " join m_office o on o.id = u.office_id where o.hierarchy like ? and u.is_deleted=false ";
         }
 
