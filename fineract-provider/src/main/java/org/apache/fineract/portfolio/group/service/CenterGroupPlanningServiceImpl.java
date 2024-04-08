@@ -104,7 +104,7 @@ public class CenterGroupPlanningServiceImpl implements CenterGroupPlanningServic
                         portfolioPlanning.getMeetingDate());
 
                 List<GroupLoanSummaryData> individualLoanSummaryList = retrieveIndividualLoanSummary(portfolioPlanning.getCenterGroupId(),
-                        portfolioPlanning.getMeetingDate());
+                        startDateRange, endDateRange);
 
                 if (groupLoanSummaryList != null && !groupLoanSummaryList.isEmpty()) {
                     for (GroupLoanSummaryData groupLoanSummaryData : groupLoanSummaryList) {
@@ -247,7 +247,7 @@ public class CenterGroupPlanningServiceImpl implements CenterGroupPlanningServic
         return groupLoanSummaryData;
     }
 
-    private List<GroupLoanSummaryData> retrieveIndividualLoanSummary(Long groupId, LocalDate dueDate) {
+    private List<GroupLoanSummaryData> retrieveIndividualLoanSummary(Long groupId, LocalDate startDateRange, LocalDate endDateRange) {
         String sql = """
                 SELECT
                 	gc.group_id AS groupId,
@@ -297,7 +297,7 @@ public class CenterGroupPlanningServiceImpl implements CenterGroupPlanningServic
                             INNER JOIN m_group grp ON gc2.group_id = grp.id
                 			WHERE
                             gc2.group_id = ?
-                            AND lrs2.duedate = ?
+                            AND lrs2.duedate between ? AND ?
                             AND l2.loan_status_id = 300
                             AND lrs2.completed_derived = 0
                             AND lp2.id in (3,7)
@@ -308,7 +308,7 @@ public class CenterGroupPlanningServiceImpl implements CenterGroupPlanningServic
                 GROUP BY gc.client_id
                 """;
         List<GroupLoanSummaryData> groupLoanSummaryData = jdbcTemplate.query(sql, new BeanPropertyRowMapper(GroupLoanSummaryData.class),
-                new Object[] { groupId, groupId, dueDate, groupId });
+                new Object[] { groupId, groupId, startDateRange, endDateRange, groupId });
 
         return groupLoanSummaryData;
     }
