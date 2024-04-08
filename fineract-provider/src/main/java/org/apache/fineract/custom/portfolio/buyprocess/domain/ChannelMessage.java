@@ -31,10 +31,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.math.BigDecimal;
-
 @Entity
-@Table(schema="custom", name = "c_channel_message")
+@Table(schema = "custom", name = "c_channel_message")
 @Cacheable(false)
 @AllArgsConstructor
 @NoArgsConstructor
@@ -43,20 +41,20 @@ import java.math.BigDecimal;
 @Setter
 public class ChannelMessage {
 
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	@Column(name = "id", nullable = false)
-	private Long id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id", nullable = false)
+    private Long id;
 
-	@Column(name = "channel_id", nullable = true)
-	private Long channelId;
+    @Column(name = "channel_id", nullable = true)
+    private Long channelId;
 
-	@Column(name = "validation_id", nullable = false)
-	private Long validationId;
+    @Column(name = "validation_id", nullable = false)
+    private Long validationId;
 
-	@Column(name = "message", nullable = false, length = 5000)
-	private String message;
+    @Column(name = "message", nullable = false, length = 5000)
+    private String message;
 
-	@Column(name = "enabled", nullable = false)
-	private Boolean enabled;
+    @Column(name = "enabled", nullable = false)
+    private Boolean enabled;
 }

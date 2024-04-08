@@ -50,17 +50,17 @@ public class ClientAllyPointOfSales {
     @Column(name = "id", nullable = false)
     private Long id;
 
-    @Column(name = "id", insertable=false, updatable=false)
+    @Column(name = "id", insertable = false, updatable = false)
     private Long pointOfSaleId;
 
     @Column(name = "client_ally_id", nullable = false)
     private Long clientAllyId;
 
-    @Column(name = "client_ally_id", insertable=false, updatable=false)
+    @Column(name = "client_ally_id", insertable = false, updatable = false)
     private Long allyId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "client_ally_id", insertable=false, updatable=false)
+    @JoinColumn(name = "client_ally_id", insertable = false, updatable = false)
     private ClientAlly clientAlly;
 
     @Column(name = "code", nullable = false, length = 4)

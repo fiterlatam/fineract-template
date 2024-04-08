@@ -1,16 +1,16 @@
 package org.apache.fineract.custom.portfolio.buyprocess.data;
 
+import java.math.BigDecimal;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.tika.utils.StringUtils;
 
-import java.math.BigDecimal;
-
 @Builder
 @Getter
 @Setter
 public class ApproveLoanPayloadData {
+
     private String approvedOnDate;
     private String expectedDisbursementDate;
     private BigDecimal approvedLoanAmount;

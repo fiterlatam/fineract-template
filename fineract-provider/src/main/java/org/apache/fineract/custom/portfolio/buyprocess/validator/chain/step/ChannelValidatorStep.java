@@ -1,5 +1,6 @@
 package org.apache.fineract.custom.portfolio.buyprocess.validator.chain.step;
 
+import java.util.Optional;
 import org.apache.fineract.custom.portfolio.buyprocess.domain.Channel;
 import org.apache.fineract.custom.portfolio.buyprocess.domain.ChannelMessageRepository;
 import org.apache.fineract.custom.portfolio.buyprocess.domain.ChannelRepository;
@@ -10,20 +11,16 @@ import org.apache.fineract.custom.portfolio.buyprocess.validator.chain.BuyProces
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.Optional;
-
 @Component
 public class ChannelValidatorStep extends BuyProcessAbstractStepProcessor implements BuyProcessValidationLayerProcessor {
 
     ClientBuyProcessValidatorEnum clazzEnum = ClientBuyProcessValidatorEnum.CHANNEL_VALIDATOR;
-
 
     @Autowired
     private ChannelRepository channelRepository;
 
     @Autowired
     private ChannelMessageRepository channelMessageRepository;
-
 
     @Override
     public Long getPriority() {

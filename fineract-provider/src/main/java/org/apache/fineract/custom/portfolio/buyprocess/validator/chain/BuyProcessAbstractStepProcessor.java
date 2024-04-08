@@ -1,19 +1,16 @@
 package org.apache.fineract.custom.portfolio.buyprocess.validator.chain;
 
-import org.apache.fineract.custom.portfolio.buyprocess.domain.Channel;
+import java.util.Objects;
+import java.util.Optional;
 import org.apache.fineract.custom.portfolio.buyprocess.domain.ChannelMessage;
 import org.apache.fineract.custom.portfolio.buyprocess.domain.ChannelMessageRepository;
 import org.apache.fineract.custom.portfolio.buyprocess.domain.ClientBuyProcess;
 import org.apache.fineract.custom.portfolio.buyprocess.enumerator.ClientBuyProcessValidatorEnum;
 import org.apache.tika.utils.StringUtils;
 
-import java.util.Objects;
-import java.util.Optional;
-
 public abstract class BuyProcessAbstractStepProcessor implements BuyProcessValidationLayerProcessor {
 
     protected ChannelMessageRepository superChannelMessageRepository = null;
-
 
     public void setSuperChannelMessageRepository(ChannelMessageRepository superChannelMessageRepository) {
         this.superChannelMessageRepository = superChannelMessageRepository;
@@ -40,24 +37,25 @@ public abstract class BuyProcessAbstractStepProcessor implements BuyProcessValid
     }
 
     public void ammendErrorMessage(ClientBuyProcessValidatorEnum validatorEnum, ClientBuyProcess clientBuyProcess) {
-        ammendErrorMessage(validatorEnum, clientBuyProcess, (Objects.isNull(clientBuyProcess.getChannelId()) ? 1L : clientBuyProcess.getChannelId()));
+        ammendErrorMessage(validatorEnum, clientBuyProcess,
+                (Objects.isNull(clientBuyProcess.getChannelId()) ? 1L : clientBuyProcess.getChannelId()));
     }
 
     public void ammendErrorMessage(ClientBuyProcessValidatorEnum validatorEnum, ClientBuyProcess clientBuyProcess, Long channelId) {
         String returnMessage = StringUtils.EMPTY;
 
-        returnMessage = getTranslatedMessage(validatorEnum,
-                (Objects.isNull(channelId) ? 1L : channelId), returnMessage);
+        returnMessage = getTranslatedMessage(validatorEnum, (Objects.isNull(channelId) ? 1L : channelId), returnMessage);
 
         clientBuyProcess.getErrorMessageHM().put(validatorEnum.getColumnName(), returnMessage);
     }
 
-//    public void ammendErrorMessage(ClientBuyProcessValidatorEnum validatorEnum, ClientBuyProcess clientBuyProcess, Long channelId) {
-//        String returnMessage = StringUtils.EMPTY;
-//
-//        returnMessage = getTranslatedMessage(validatorEnum,
-//                (Objects.isNull(channelId) ? 1L : channelId), returnMessage);
-//
-//        clientBuyProcess.setErrorMessage(clientBuyProcess.getErrorMessage().concat(returnMessage).concat(" | ").);
-//    }
+    // public void ammendErrorMessage(ClientBuyProcessValidatorEnum validatorEnum, ClientBuyProcess clientBuyProcess,
+    // Long channelId) {
+    // String returnMessage = StringUtils.EMPTY;
+    //
+    // returnMessage = getTranslatedMessage(validatorEnum,
+    // (Objects.isNull(channelId) ? 1L : channelId), returnMessage);
+    //
+    // clientBuyProcess.setErrorMessage(clientBuyProcess.getErrorMessage().concat(returnMessage).concat(" | ").);
+    // }
 }
