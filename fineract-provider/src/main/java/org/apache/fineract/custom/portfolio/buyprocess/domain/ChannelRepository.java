@@ -18,22 +18,22 @@
  */
 package org.apache.fineract.custom.portfolio.buyprocess.domain;
 
+import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
-import java.util.Optional;
-
-public interface  ChannelRepository
-        extends JpaRepository< Channel, Long>, JpaSpecificationExecutor< Channel> {
+public interface ChannelRepository extends JpaRepository<Channel, Long>, JpaSpecificationExecutor<Channel> {
 
     Optional<Channel> findByHash(String hash);
 
-	/*
-   String FIND_NON_CLOSED_LOAN_THAT_BELONGS_TO_CLIENT = "select loan from Loan loan where loan.id = :loanId and loan.loanStatus = 300 and loan.client.id = :clientId";
-
-    @Query(FIND_GROUP_LOANS_DISBURSED_AFTER)
-    List<Loan> getGroupLoansDisbursedAfter(@Param("disbursementDate") Date disbursementDate, @Param("groupId") Long groupId,
-            @Param("loanType") Integer loanType);
-	*/
+    /*
+     * String FIND_NON_CLOSED_LOAN_THAT_BELONGS_TO_CLIENT =
+     * "select loan from Loan loan where loan.id = :loanId and loan.loanStatus = 300 and loan.client.id = :clientId";
+     *
+     * @Query(FIND_GROUP_LOANS_DISBURSED_AFTER) List<Loan> getGroupLoansDisbursedAfter(@Param("disbursementDate") Date
+     * disbursementDate, @Param("groupId") Long groupId,
+     *
+     * @Param("loanType") Integer loanType);
+     */
 
 }

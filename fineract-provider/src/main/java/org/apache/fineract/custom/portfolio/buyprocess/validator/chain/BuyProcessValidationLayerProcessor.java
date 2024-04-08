@@ -7,7 +7,6 @@ public interface BuyProcessValidationLayerProcessor {
     // Defines the execution order
     Long getPriority();
 
-
     void validateStepChain(ClientBuyProcess clientBuyProcess);
 
 }

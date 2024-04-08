@@ -1,15 +1,14 @@
 package org.apache.fineract.custom.portfolio.buyprocess.enumerator;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
+import static org.apache.fineract.infrastructure.bulkimport.constants.TemplatePopulateImportConstants.LARGE_COL_SIZE;
 
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-
-import static org.apache.fineract.infrastructure.bulkimport.constants.TemplatePopulateImportConstants.LARGE_COL_SIZE;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 
 @AllArgsConstructor
 @Getter
@@ -36,7 +35,7 @@ public enum ClientBuyProcessValidatorEnum {
     private Long maxLength;
 
     ClientBuyProcessValidatorEnum(Long columnIndex, String columnName, String codeValueName, int columnSize, Boolean mandatory,
-                                  Class clazz) {
+            Class clazz) {
         this.columnIndex = columnIndex;
         this.columnName = columnName;
         this.codeValueName = codeValueName;

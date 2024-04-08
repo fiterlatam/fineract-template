@@ -35,22 +35,21 @@ public final class ClientBuyProcessApiConstants {
     public static final String dateFormatParamName = "dateFormat";
 
     // request parameters
-	public static final String idParamName = "id";
-	public static final String channelIdParamName = "channelId";
-	public static final String clientIdParamName = "clientId";
-	public static final String pointOfSalesIdParamName = "pointOfSalesId";
-	public static final String productIdParamName = "productId";
-	public static final String creditIdParamName = "creditId";
-	public static final String requestedDateParamName = "requestedDate";
-	public static final String amountParamName = "amount";
-	public static final String termParamName = "term";
-	public static final String createdAtParamName = "createdAt";
-	public static final String createdByParamName = "createdBy";
-	public static final String ipDetailsParamName = "ipDetails";
+    public static final String idParamName = "id";
+    public static final String channelIdParamName = "channelId";
+    public static final String clientIdParamName = "clientId";
+    public static final String pointOfSalesIdParamName = "pointOfSalesId";
+    public static final String productIdParamName = "productId";
+    public static final String creditIdParamName = "creditId";
+    public static final String requestedDateParamName = "requestedDate";
+    public static final String amountParamName = "amount";
+    public static final String termParamName = "term";
+    public static final String createdAtParamName = "createdAt";
+    public static final String createdByParamName = "createdBy";
+    public static final String ipDetailsParamName = "ipDetails";
 
-    
     // request parameters Set
-    public static final Set<String> REQUEST_DATA_PARAMETERS = new HashSet<>(Arrays.asList(localeParamName, dateFormatParamName,
-			idParamName,channelIdParamName,clientIdParamName,pointOfSalesIdParamName,productIdParamName,creditIdParamName,
-			requestedDateParamName,amountParamName,termParamName,createdAtParamName,createdByParamName,ipDetailsParamName));
+    public static final Set<String> REQUEST_DATA_PARAMETERS = new HashSet<>(Arrays.asList(localeParamName, dateFormatParamName, idParamName,
+            channelIdParamName, clientIdParamName, pointOfSalesIdParamName, productIdParamName, creditIdParamName, requestedDateParamName,
+            amountParamName, termParamName, createdAtParamName, createdByParamName, ipDetailsParamName));
 }

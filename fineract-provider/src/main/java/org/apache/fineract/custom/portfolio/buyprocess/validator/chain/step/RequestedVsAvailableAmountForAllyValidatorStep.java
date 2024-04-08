@@ -1,30 +1,23 @@
 package org.apache.fineract.custom.portfolio.buyprocess.validator.chain.step;
 
+import java.math.BigDecimal;
+import java.util.Objects;
+import java.util.Optional;
 import org.apache.fineract.custom.portfolio.ally.domain.ClientAllyPointOfSales;
 import org.apache.fineract.custom.portfolio.ally.domain.ClientAllyPointOfSalesRepository;
 import org.apache.fineract.custom.portfolio.buyprocess.domain.ChannelMessageRepository;
-import org.apache.fineract.custom.portfolio.buyprocess.domain.ClientAdditionalInformation;
-import org.apache.fineract.custom.portfolio.buyprocess.domain.ClientAdditionalInformationRepository;
 import org.apache.fineract.custom.portfolio.buyprocess.domain.ClientBuyProcess;
 import org.apache.fineract.custom.portfolio.buyprocess.enumerator.ClientBuyProcessValidatorEnum;
 import org.apache.fineract.custom.portfolio.buyprocess.validator.chain.BuyProcessAbstractStepProcessor;
 import org.apache.fineract.custom.portfolio.buyprocess.validator.chain.BuyProcessValidationLayerProcessor;
-import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.support.rowset.SqlRowSet;
 import org.springframework.stereotype.Component;
 
-import java.math.BigDecimal;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-
 @Component
-public class RequestedVsAvailableAmountForAllyValidatorStep extends BuyProcessAbstractStepProcessor implements BuyProcessValidationLayerProcessor {
+public class RequestedVsAvailableAmountForAllyValidatorStep extends BuyProcessAbstractStepProcessor
+        implements BuyProcessValidationLayerProcessor {
 
     // Define which validator this class is
     private ClientBuyProcessValidatorEnum stepProcessorEnum = ClientBuyProcessValidatorEnum.REQUESTED_VS_AVAILABLE_AMOUNT_ALLY_VALIDATOR;
@@ -32,17 +25,16 @@ public class RequestedVsAvailableAmountForAllyValidatorStep extends BuyProcessAb
     private ChannelMessageRepository channelMessageRepository;
 
     private final JdbcTemplate jdbcTemplate;
+
     public RequestedVsAvailableAmountForAllyValidatorStep(JdbcTemplate jdbcTemplate, ChannelMessageRepository channelMessageRepository,
-                                                          ClientAllyPointOfSalesRepository clientAllyPointOfSalesRepository) {
+            ClientAllyPointOfSalesRepository clientAllyPointOfSalesRepository) {
         this.jdbcTemplate = jdbcTemplate;
         this.channelMessageRepository = channelMessageRepository;
         this.clientAllyPointOfSalesRepository = clientAllyPointOfSalesRepository;
     }
 
-
     @Autowired
     private LoanRepository loanRepository;
-
 
     @Override
     public Long getPriority() {
@@ -54,7 +46,8 @@ public class RequestedVsAvailableAmountForAllyValidatorStep extends BuyProcessAb
         setSuperChannelMessageRepository(channelMessageRepository);
 
         // Custom validation comes here
-        Optional<ClientAllyPointOfSales> optObject = clientAllyPointOfSalesRepository.findAllyByPointOfSaleId(clientBuyProcess.getPointOfSalesId());
+        Optional<ClientAllyPointOfSales> optObject = clientAllyPointOfSalesRepository
+                .findAllyByPointOfSaleId(clientBuyProcess.getPointOfSalesId());
         if (optObject.isPresent() && Objects.nonNull(optObject.get().getClientAlly().getCupoMaxSell())) {
 
             // Check Ally limit
@@ -64,7 +57,7 @@ public class RequestedVsAvailableAmountForAllyValidatorStep extends BuyProcessAb
             // Get used amount
             BigDecimal usedAmount = BigDecimal.ZERO;
             StringBuilder sqlBuilder = new StringBuilder();
-            
+
             sqlBuilder.append("select ");
             sqlBuilder.append("     SUM(ml.total_outstanding_derived) as totalOutstandingDerived ");
             sqlBuilder.append("from  ");
@@ -88,8 +81,10 @@ public class RequestedVsAvailableAmountForAllyValidatorStep extends BuyProcessAb
             sqlBuilder.append("and ml.loan_status_id = 300 ");
             sqlBuilder.append("and buyProcessByAlly.status = 200 ");
 
-            usedAmount = this.jdbcTemplate.queryForObject(sqlBuilder.toString(), BigDecimal.class, currEntity.getAllyId(), currEntity.getAllyId());;
-            if(Objects.isNull(usedAmount)){
+            usedAmount = this.jdbcTemplate.queryForObject(sqlBuilder.toString(), BigDecimal.class, currEntity.getAllyId(),
+                    currEntity.getAllyId());
+            ;
+            if (Objects.isNull(usedAmount)) {
                 usedAmount = BigDecimal.ZERO;
             }
 

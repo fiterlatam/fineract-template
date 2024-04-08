@@ -21,8 +21,6 @@ package org.apache.fineract.custom.portfolio.buyprocess.domain;
 import jakarta.persistence.Cacheable;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
@@ -31,10 +29,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.math.BigDecimal;
-
 @Entity
-@Table(schema="public", name = "campos_cliente_empresas")
+@Table(schema = "public", name = "campos_cliente_empresas")
 @Cacheable(false)
 @AllArgsConstructor
 @NoArgsConstructor
@@ -43,10 +39,10 @@ import java.math.BigDecimal;
 @Setter
 public class ClientAdditionalInformation {
 
-	@Id
-	@Column(name = "client_id", nullable = false)
-	private Long clientId;
+    @Id
+    @Column(name = "client_id", nullable = false)
+    private Long clientId;
 
-	@Column(name = "Cupo", nullable = false)
-	private Long cupoLimit;
+    @Column(name = "Cupo", nullable = false)
+    private Long cupoLimit;
 }

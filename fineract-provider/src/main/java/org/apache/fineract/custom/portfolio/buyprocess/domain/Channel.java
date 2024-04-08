@@ -18,7 +18,6 @@
  */
 package org.apache.fineract.custom.portfolio.buyprocess.domain;
 
-import jakarta.persistence.Cacheable;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -31,10 +30,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.math.BigDecimal;
-
 @Entity
-@Table(schema="custom", name = "c_channel")
+@Table(schema = "custom", name = "c_channel")
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
@@ -42,20 +39,20 @@ import java.math.BigDecimal;
 @Setter
 public class Channel {
 
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	@Column(name = "id", nullable = false)
-	private Long id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id", nullable = false)
+    private Long id;
 
-	@Column(name = "hash", nullable = false, length = 5000)
-	private String hash;
+    @Column(name = "hash", nullable = false, length = 5000)
+    private String hash;
 
-	@Column(name = "name", nullable = false, length = 100)
-	private String name;
+    @Column(name = "name", nullable = false, length = 100)
+    private String name;
 
-	@Column(name = "description", nullable = true, length = 1000)
-	private String description;
+    @Column(name = "description", nullable = true, length = 1000)
+    private String description;
 
-	@Column(name = "active", nullable = false)
-	private Boolean active;
+    @Column(name = "active", nullable = false)
+    private Boolean active;
 }

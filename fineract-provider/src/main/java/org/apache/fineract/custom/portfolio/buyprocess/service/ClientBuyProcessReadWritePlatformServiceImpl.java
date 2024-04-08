@@ -20,6 +20,10 @@ package org.apache.fineract.custom.portfolio.buyprocess.service;
 
 import com.google.gson.GsonBuilder;
 import jakarta.persistence.PersistenceException;
+import java.time.LocalDate;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.fineract.commands.domain.CommandWrapper;
@@ -47,18 +51,11 @@ import org.apache.fineract.infrastructure.core.service.database.DatabaseSpecific
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProduct;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductRepository;
-import org.apache.tika.utils.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDate;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
 
 @Slf4j
 @Service
@@ -71,10 +68,8 @@ public class ClientBuyProcessReadWritePlatformServiceImpl implements ClientBuyPr
     private final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService;
 
     @Autowired
-    public ClientBuyProcessReadWritePlatformServiceImpl(final JdbcTemplate jdbcTemplate,
-            final DatabaseSpecificSQLGenerator sqlGenerator,
-            final ClientBuyProcessDataValidator validatorClass,
-            final PlatformSecurityContext context,
+    public ClientBuyProcessReadWritePlatformServiceImpl(final JdbcTemplate jdbcTemplate, final DatabaseSpecificSQLGenerator sqlGenerator,
+            final ClientBuyProcessDataValidator validatorClass, final PlatformSecurityContext context,
             final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService) {
         this.jdbcTemplate = jdbcTemplate;
         this.sqlGenerator = sqlGenerator;
@@ -83,8 +78,8 @@ public class ClientBuyProcessReadWritePlatformServiceImpl implements ClientBuyPr
         this.commandsSourceWritePlatformService = commandsSourceWritePlatformService;
     }
 
-	@Autowired
-	private ClientBuyProcessRepository repository;
+    @Autowired
+    private ClientBuyProcessRepository repository;
 
     @Autowired
     private LoanProductRepository loanProductRepository;
@@ -150,15 +145,11 @@ public class ClientBuyProcessReadWritePlatformServiceImpl implements ClientBuyPr
         }
     }
 
-
     private void disburseLoanApplication(ClientBuyProcess entity, LoanProduct prodiuctEntity) {
 
         DisburseLoanPayloadData payloadData = DisburseLoanPayloadData.builder()
                 .actualDisbursementDate(DateUtils.format(entity.getRequestedDate(), CustomDateUtils.SPANISH_DATE_FORMAT))
-                .transactionAmount(entity.getAmount())
-                .locale("en")
-                .dateFormat(CustomDateUtils.SPANISH_DATE_FORMAT)
-                .build();
+                .transactionAmount(entity.getAmount()).locale("en").dateFormat(CustomDateUtils.SPANISH_DATE_FORMAT).build();
 
         // Execute create loan command
         GsonBuilder gsonBuilder = GoogleGsonSerializerHelper.createGsonBuilder();
@@ -166,22 +157,17 @@ public class ClientBuyProcessReadWritePlatformServiceImpl implements ClientBuyPr
 
         String payload = gsonBuilder.create().toJson(payloadData);
         final CommandWrapper commandRequest = new CommandWrapperBuilder() //
-                .disburseLoanApplication(entity.getLoanId())
-                .withJson(payload) //
+                .disburseLoanApplication(entity.getLoanId()).withJson(payload) //
                 .build(); //
         CommandProcessingResult result = commandsSourceWritePlatformService.logCommandSource(commandRequest);
     }
-
 
     private void approveLoanApplication(ClientBuyProcess entity, LoanProduct prodiuctEntity) {
 
         ApproveLoanPayloadData payloadData = ApproveLoanPayloadData.builder()
                 .approvedOnDate(DateUtils.format(entity.getRequestedDate(), CustomDateUtils.SPANISH_DATE_FORMAT))
                 .expectedDisbursementDate(DateUtils.format(entity.getRequestedDate(), CustomDateUtils.SPANISH_DATE_FORMAT))
-                .approvedLoanAmount(entity.getAmount())
-                .dateFormat(CustomDateUtils.SPANISH_DATE_FORMAT)
-                .locale("en")
-                .build();
+                .approvedLoanAmount(entity.getAmount()).dateFormat(CustomDateUtils.SPANISH_DATE_FORMAT).locale("en").build();
 
         // Execute create loan command
         GsonBuilder gsonBuilder = GoogleGsonSerializerHelper.createGsonBuilder();
@@ -189,37 +175,34 @@ public class ClientBuyProcessReadWritePlatformServiceImpl implements ClientBuyPr
 
         String payload = gsonBuilder.create().toJson(payloadData);
         final CommandWrapper commandRequest = new CommandWrapperBuilder() //
-                .approveLoanApplication(entity.getLoanId())
-                .withJson(payload) //
+                .approveLoanApplication(entity.getLoanId()).withJson(payload) //
                 .build(); //
         CommandProcessingResult result = commandsSourceWritePlatformService.logCommandSource(commandRequest);
     }
 
-
     private void createLoanApplication(ClientBuyProcess entity, LoanProduct prodiuctEntity) {
 
-        CreateLoanPayloadData payloadData = CreateLoanPayloadData.builder()
-                .productId(entity.getProductId())
+        CreateLoanPayloadData payloadData = CreateLoanPayloadData.builder().productId(entity.getProductId())
                 .submittedOnDate(DateUtils.format(entity.getRequestedDate(), CustomDateUtils.SPANISH_DATE_FORMAT))
                 .expectedDisbursementDate(DateUtils.format(entity.getRequestedDate(), CustomDateUtils.SPANISH_DATE_FORMAT))
                 .loanTermFrequency(entity.getTerm())
-                .loanTermFrequencyType(prodiuctEntity.getLoanProductRelatedDetail().getRepaymentPeriodFrequencyType().getValue()) // From product
-                .numberOfRepayments(entity.getTerm())
-                .repaymentEvery(prodiuctEntity.getLoanProductRelatedDetail().getRepayEvery()) // From product
-                .repaymentFrequencyType(prodiuctEntity.getLoanProductRelatedDetail().getRepaymentPeriodFrequencyType().getValue()) // From product
-                .interestRatePerPeriod(prodiuctEntity.getLoanProductRelatedDetail().getNominalInterestRatePerPeriod()) // From product
-                .interestType(prodiuctEntity.getLoanProductRelatedDetail().getInterestMethod().getValue()) // From product
-                .amortizationType(prodiuctEntity.getLoanProductRelatedDetail().getAmortizationMethod().getValue()) // From product
-                .interestCalculationPeriodType(prodiuctEntity.getLoanProductRelatedDetail().getInterestCalculationPeriodMethod().getValue()) // From product
-                .transactionProcessingStrategyCode(prodiuctEntity.getTransactionProcessingStrategyCode())
-                .charges(Collections.emptyList())
-                .collateral(Collections.emptyList())
-                .dateFormat(CustomDateUtils.SPANISH_DATE_FORMAT)
-                .locale("es")
-                .clientId(entity.getClientId())
-                .loanType("individual")
-                .principal(entity.getAmount())
-                .build();
+                .loanTermFrequencyType(prodiuctEntity.getLoanProductRelatedDetail().getRepaymentPeriodFrequencyType().getValue()) // From
+                                                                                                                                  // product
+                .numberOfRepayments(entity.getTerm()).repaymentEvery(prodiuctEntity.getLoanProductRelatedDetail().getRepayEvery()) // From
+                                                                                                                                   // product
+                .repaymentFrequencyType(prodiuctEntity.getLoanProductRelatedDetail().getRepaymentPeriodFrequencyType().getValue()) // From
+                                                                                                                                   // product
+                .interestRatePerPeriod(prodiuctEntity.getLoanProductRelatedDetail().getNominalInterestRatePerPeriod()) // From
+                                                                                                                       // product
+                .interestType(prodiuctEntity.getLoanProductRelatedDetail().getInterestMethod().getValue()) // From
+                                                                                                           // product
+                .amortizationType(prodiuctEntity.getLoanProductRelatedDetail().getAmortizationMethod().getValue()) // From
+                                                                                                                   // product
+                .interestCalculationPeriodType(prodiuctEntity.getLoanProductRelatedDetail().getInterestCalculationPeriodMethod().getValue()) // From
+                                                                                                                                             // product
+                .transactionProcessingStrategyCode(prodiuctEntity.getTransactionProcessingStrategyCode()).charges(Collections.emptyList())
+                .collateral(Collections.emptyList()).dateFormat(CustomDateUtils.SPANISH_DATE_FORMAT).locale("es")
+                .clientId(entity.getClientId()).loanType("individual").principal(entity.getAmount()).build();
 
         // Execute create loan command
         GsonBuilder gsonBuilder = GoogleGsonSerializerHelper.createGsonBuilder();
@@ -227,15 +210,13 @@ public class ClientBuyProcessReadWritePlatformServiceImpl implements ClientBuyPr
 
         String payload = gsonBuilder.create().toJson(payloadData);
         final CommandWrapper commandRequest = new CommandWrapperBuilder() //
-                .createLoanApplication()
-                .withJson(payload) //
+                .createLoanApplication().withJson(payload) //
                 .build(); //
         CommandProcessingResult result = commandsSourceWritePlatformService.logCommandSource(commandRequest);
 
         // Set Loan ID
         entity.setLoanId(result.getLoanId());
     }
-
 
     private void handleDataIntegrityIssues(final JsonCommand command, final Throwable realCause, final Exception dve) {
         throw new PlatformDataIntegrityException("error.msg.clientbuyprocess.unknown.data.integrity.issue",

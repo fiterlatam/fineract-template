@@ -18,16 +18,15 @@
  */
 package org.apache.fineract.custom.portfolio.buyprocess.service;
 
+import java.util.List;
 import org.apache.fineract.custom.portfolio.buyprocess.data.ClientBuyProcessData;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 
-import java.util.List;
-
 public interface ClientBuyProcessReadWritePlatformService {
 
     List<ClientBuyProcessData> findAllActive();
-    
+
     ClientBuyProcessData findById(Long id);
 
     CommandProcessingResult create(JsonCommand command);

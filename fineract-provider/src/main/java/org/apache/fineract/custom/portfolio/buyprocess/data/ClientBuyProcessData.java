@@ -18,15 +18,14 @@
  */
 package org.apache.fineract.custom.portfolio.buyprocess.data;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -35,18 +34,18 @@ import java.time.LocalDateTime;
 @Setter
 public class ClientBuyProcessData {
 
-	private Long id;
-	private Long channelId;
-	private Long clientId;
-	private Long pointOfSalesId;
-	private Long productId;
-	private Long creditId;
-	private LocalDate requestedDate;
-	private BigDecimal amount;
-	private Long term;
-	private LocalDateTime createdAt;
-	private Long createdBy;
-	private String ipDetails;
-	private Integer status;
-	private String errorMessage;
+    private Long id;
+    private Long channelId;
+    private Long clientId;
+    private Long pointOfSalesId;
+    private Long productId;
+    private Long creditId;
+    private LocalDate requestedDate;
+    private BigDecimal amount;
+    private Long term;
+    private LocalDateTime createdAt;
+    private Long createdBy;
+    private String ipDetails;
+    private Integer status;
+    private String errorMessage;
 }
