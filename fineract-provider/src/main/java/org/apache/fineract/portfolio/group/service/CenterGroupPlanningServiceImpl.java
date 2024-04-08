@@ -149,21 +149,23 @@ public class CenterGroupPlanningServiceImpl implements CenterGroupPlanningServic
                 }
 
                 if (individualLoanSummaryList != null && !individualLoanSummaryList.isEmpty()) {
-                    for (GroupLoanSummaryData loanSummaryData : individualLoanSummaryList) {
+                    for (GroupLoanSummaryData individualLoanSummaryData : individualLoanSummaryList) {
                         if (currentNextMeetingDate.isBefore(endDateRange) || currentNextMeetingDate.isEqual(endDateRange)) {
+                            LocalDate individualInstallmentDate = individualLoanSummaryData.getInstallmentDate()!=null?
+                                    individualLoanSummaryData.getInstallmentDate():currentNextMeetingDate;
                             final PortfolioDetailedPlanningData newPortfolioPlanning = PortfolioDetailedPlanningData.instance(
-                                    portfolioPlanning.getCenterGroupId(), loanSummaryData.getClientName(),
+                                    portfolioPlanning.getCenterGroupId(), individualLoanSummaryData.getClientName(),
                                     portfolioPlanning.getLegacyGroupNumber(), portfolioPlanning.getMeetingStartTime(),
                                     portfolioPlanning.getMeetingEndTime(), portfolioPlanning.getPortfolioCenterId(),
                                     portfolioPlanning.getPortfolioCenterName(), portfolioPlanning.getLegacyCenterNumber(),
-                                    portfolioPlanning.getMeetingDayName(), currentNextMeetingDate, meetingDayOfWeek, rangeStartDay,
+                                    portfolioPlanning.getMeetingDayName(), individualInstallmentDate, meetingDayOfWeek, rangeStartDay,
                                     rangeEndDay);
 
-                            newPortfolioPlanning.setLoanShortProductName(loanSummaryData.getLoanShortProductName());
-                            newPortfolioPlanning.setTotalRepayment(loanSummaryData.getTotalRepayment());
-                            newPortfolioPlanning.setTotalOverdue(loanSummaryData.getTotalOverdue());
-                            newPortfolioPlanning.setTotalPaymentExpected(loanSummaryData.getTotalPaymentExpected());
-                            newPortfolioPlanning.setNumberOfClients(loanSummaryData.getClientCounter());
+                            newPortfolioPlanning.setLoanShortProductName(individualLoanSummaryData.getLoanShortProductName());
+                            newPortfolioPlanning.setTotalRepayment(individualLoanSummaryData.getTotalRepayment());
+                            newPortfolioPlanning.setTotalOverdue(individualLoanSummaryData.getTotalOverdue());
+                            newPortfolioPlanning.setTotalPaymentExpected(individualLoanSummaryData.getTotalPaymentExpected());
+                            newPortfolioPlanning.setNumberOfClients(individualLoanSummaryData.getClientCounter());
                             newPortfolioPlanning.setPlanningType(PlanningType.INDIVIDUAL.getCode());
 
                             portfolioPlanningDetailed.add(newPortfolioPlanning);
@@ -255,6 +257,7 @@ public class CenterGroupPlanningServiceImpl implements CenterGroupPlanningServic
                 	mc.display_name AS clientName,
                 	COALESCE ( overdueSummary.totalOverdue, 0 ) AS totalOverdue,
                 	COALESCE ( paymentsSummary.totalRepayment, 0 ) AS totalRepayment,
+                	paymentsSummary.installmentDate,
                 	count( gc.client_id ) AS clientCounter
                 FROM
                 	m_group_client gc
@@ -279,6 +282,7 @@ public class CenterGroupPlanningServiceImpl implements CenterGroupPlanningServic
                 	LEFT JOIN (
                         SELECT
                             gc2.client_id AS clientId,
+                            lrs2.duedate AS installmentDate,
                             coalesce (sum((
                                 COALESCE ( lrs2.principal_amount, 0 ) + COALESCE ( lrs2.interest_amount, 0 ) +
                                 COALESCE ( lrs2.penalty_charges_amount, 0 ) + COALESCE ( lrs2.fee_charges_amount, 0 ) +
