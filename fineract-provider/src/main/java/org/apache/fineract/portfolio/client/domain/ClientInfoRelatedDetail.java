@@ -210,6 +210,10 @@ public class ClientInfoRelatedDetail {
         return this.othernames;
     }
 
+    public String getOthernames() {
+        return this.othernames;
+    }
+
     public void setLoanCycle(Integer loanCycle) {
         this.loanCycle = loanCycle;
     }

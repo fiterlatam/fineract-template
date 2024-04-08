@@ -63,6 +63,8 @@ public class PortfolioDetailedPlanningData {
 
     private BigDecimal totalPaymentExpected;
 
+    private String planningType;
+
     public PortfolioDetailedPlanningData(Long centerGroupId, String centerGroupName, BigDecimal legacyGroupNumber,
             LocalTime meetingStartTime, LocalTime meetingEndTime, Long portfolioCenterId, String portfolioCenterName,
             BigDecimal legacyCenterNumber, String meetingDayName, LocalDate meetingDate, int meetingDayOfWeek, int rangeStartDay,
@@ -169,5 +171,9 @@ public class PortfolioDetailedPlanningData {
 
     public void setTotalPaymentExpected(BigDecimal totalPaymentExpected) {
         this.totalPaymentExpected = totalPaymentExpected;
+    }
+
+    public void setPlanningType(String planningType) {
+        this.planningType = planningType;
     }
 }

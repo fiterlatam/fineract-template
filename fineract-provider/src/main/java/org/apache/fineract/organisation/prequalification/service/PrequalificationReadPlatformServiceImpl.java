@@ -299,6 +299,11 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                     }
                 }
 
+                // add hierrachy filter here.
+                extraCriteria += " and (mo.hierarchy LIKE CONCAT(?, '%') OR ? like CONCAT(mo.hierarchy, '%'))";
+                paramList.add(appUser.getOffice().getHierarchy());
+                paramList.add(appUser.getOffice().getHierarchy());
+
             }
 
             if (StringUtils.equals(groupingType, "individual")) {
@@ -454,6 +459,10 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                     ) prequalification_numbers ON prequalification_numbers.prequalification_id = g.id
                     LEFT JOIN m_agency ma ON
                     	g.agency_id = ma.id
+                    LEFT JOIN(
+                    select agency_id, linked_office_id from m_supervision GROUP BY agency_id
+                    ) supv ON supv.agency_id = ma.id
+                    LEFT JOIN m_office mo on mo.id = supv.linked_office_id
                     LEFT JOIN
                     (
                       SELECT p.id AS groupid,
