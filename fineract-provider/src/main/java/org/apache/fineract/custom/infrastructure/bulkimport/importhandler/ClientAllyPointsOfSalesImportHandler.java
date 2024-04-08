@@ -1,11 +1,6 @@
 package org.apache.fineract.custom.infrastructure.bulkimport.importhandler;
 
 import com.google.gson.GsonBuilder;
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.commands.domain.CommandWrapper;
 import org.apache.fineract.commands.service.CommandWrapperBuilder;
@@ -14,7 +9,6 @@ import org.apache.fineract.custom.infrastructure.bulkimport.data.CustomGlobalEnt
 import org.apache.fineract.custom.infrastructure.bulkimport.enumerator.ClientAllyPointOfSalesTemplatePopulateImportEnum;
 import org.apache.fineract.custom.infrastructure.bulkimport.enumerator.ClientAllyTemplatePopulateImportEnum;
 import org.apache.fineract.custom.portfolio.ally.data.ClientAllyPointOfSalesData;
-import org.apache.fineract.infrastructure.bulkimport.constants.StaffConstants;
 import org.apache.fineract.infrastructure.bulkimport.constants.TemplatePopulateImportConstants;
 import org.apache.fineract.infrastructure.bulkimport.data.Count;
 import org.apache.fineract.infrastructure.bulkimport.importhandler.ImportHandler;
@@ -29,6 +23,12 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.tika.utils.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 
 @Service
 @Slf4j
@@ -58,7 +58,8 @@ public class ClientAllyPointsOfSalesImportHandler implements ImportHandler {
         for (int rowIndex = 1; rowIndex <= noOfEntries; rowIndex++) {
             Row row;
             row = staffSheet.getRow(rowIndex);
-            if (ImportHandlerUtils.isNotImported(row, StaffConstants.STATUS_COL)) {
+            if (ImportHandlerUtils.isNotImported(row,
+                    ClientAllyPointOfSalesTemplatePopulateImportEnum.IMPORT_STATUS_COLUMN.getColumnIndex())) {
                 staffList.add(readExcelRow(workbook, row, locale, dateFormat));
             }
         }

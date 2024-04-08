@@ -58,7 +58,7 @@ public class ClientAllyImportHandler implements ImportHandler {
         for (int rowIndex = 1; rowIndex <= noOfEntries; rowIndex++) {
             Row row;
             row = staffSheet.getRow(rowIndex);
-            if (ImportHandlerUtils.isNotImported(row, StaffConstants.STATUS_COL)) {
+            if (ImportHandlerUtils.isNotImported(row, ClientAllyTemplatePopulateImportEnum.IMPORT_STATUS_COLUMN.getColumnIndex())) {
                 staffList.add(readExcelRow(workbook, row, locale, dateFormat));
             }
         }
@@ -142,13 +142,13 @@ public class ClientAllyImportHandler implements ImportHandler {
         if (Objects.nonNull(applyCupoMaxSell) && applyCupoMaxSell && Objects.isNull(cupoMaxSell)) {
             ammenedEValidationMessages.append(
                     "El campo " + ClientAllyTemplatePopulateImportEnum.CUPO_MAX_SELL.getColumnName() + " es obligatorio si el campo "
-                            + ClientAllyTemplatePopulateImportEnum.APPLY_CUPO_MAX_SELL.getColumnIndex() + " es verdadero; ");
+                            + ClientAllyTemplatePopulateImportEnum.APPLY_CUPO_MAX_SELL.getColumnName() + " es verdadero; ");
         }
 
         BigDecimal settledComission = BigDecimal
                 .valueOf(ImportHandlerUtils.readAsDouble(ClientAllyTemplatePopulateImportEnum.SETTLED_COMISSION.getColumnIndex(), row));
         if (Objects.nonNull(settledComission) && settledComission.compareTo(BigDecimal.valueOf(99.99)) > 0) {
-            ammenedEValidationMessages.append("El campo " + ClientAllyTemplatePopulateImportEnum.SETTLED_COMISSION.getColumnName()
+            ammenedEValidationMessages.append("La " + ClientAllyTemplatePopulateImportEnum.SETTLED_COMISSION.getColumnName()
                     + " no debe ser major que 99.99; ");
         }
     }
