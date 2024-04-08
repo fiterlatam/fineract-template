@@ -856,4 +856,32 @@
         </dropColumn>
     </changeSet>
 
+    <changeSet id="32" author="fineract">
+        <preConditions onFail="MARK_RAN">
+            <columnExists tableName="campos_cliente_empresas" columnName="Razon Social"/>
+        </preConditions>
+        <dropColumn tableName="campos_cliente_empresas">
+            <column name="Razon Social"/>
+        </dropColumn>
+    </changeSet>
+
+    <changeSet id="33" author="fineract">
+        <sql>
+            <![CDATA[
+                UPDATE m_code_value
+                SET code_value = 'Codeudor', code_description = 'Codeudor'
+                WHERE code_id = (SELECT id FROM m_code WHERE code_name='Rep legal codeudor') AND code_value = 'Codeudo';
+            ]]>
+        </sql>
+    </changeSet>
+
+    <changeSet id="34" author="fineract">
+        <preConditions onFail="MARK_RAN">
+            <columnExists tableName="campos_cliente_empresas" columnName="Observaciones"/>
+        </preConditions>
+        <dropColumn tableName="campos_cliente_empresas">
+            <column name="Observaciones"/>
+        </dropColumn>
+    </changeSet>
+
 </databaseChangeLog>
