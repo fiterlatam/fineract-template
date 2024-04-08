@@ -1744,12 +1744,16 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
     @SuppressWarnings("deprecation")
     @Override
     public Integer retriveLoanCounter(final Long clientId, Long productId) {
-        final String sql = "Select MAX(l.loan_product_counter) from m_loan l where l.client_id = ? and l.product_id=?";
-        Integer loanCounter = this.jdbcTemplate.queryForObject(sql, new Object[] { clientId, productId }, Integer.class);
-        if (loanCounter != null) {
-            return loanCounter;
+        Integer loanCounter = 0;
+        final String sql = "Select coalesce(MAX(l.loan_product_counter),0) from m_loan l where l.client_id = ? and l.product_id=?";
+        loanCounter = this.jdbcTemplate.queryForObject(sql, new Object[] { clientId, productId }, Integer.class);
+
+        final String clientDefinedLoanCycle = "Select c.loan_cycle as loanCycle from m_client c where c.id = ?";
+        Integer clientLoanCycle = this.jdbcTemplate.queryForObject(clientDefinedLoanCycle, new Object[] { clientId}, Integer.class);
+        if (clientLoanCycle != null) {
+            return clientLoanCycle;
         } else {
-            return 0;
+            return loanCounter;
         }
     }
 
