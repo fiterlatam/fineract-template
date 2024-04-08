@@ -77,8 +77,8 @@ public class ClientInfoRelatedDetail {
     private String familyReference;
 
     public ClientInfoRelatedDetail(Integer loanCycle, String groupNumber, String maidenName, String othernames, String groupMember,
-            String statusInGroup, String retirementReason, String civilStatus, String educationLevel, String ethinicity, String nationality,
-            String languages, Long economicSector, Long economicActivity, String familyReference) {
+                                   String statusInGroup, String retirementReason, String civilStatus, String educationLevel, String ethinicity, String nationality,
+                                   String languages, Long economicSector, Long economicActivity, String familyReference) {
         this.loanCycle = loanCycle;
         this.groupNumber = groupNumber;
         this.maidenName = maidenName;
@@ -205,9 +205,6 @@ public class ClientInfoRelatedDetail {
 
     public String getMaidenName() {
         return this.maidenName;
-    }
-    public String getOthernames() {
-        return this.othernames;
     }
 
     public String getOthernames() {
