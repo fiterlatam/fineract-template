@@ -19,6 +19,7 @@
 package org.apache.fineract.portfolio.group.data;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 
 /**
  * Immutable data object representing loan summary for a given group
@@ -32,11 +33,12 @@ public class GroupLoanSummaryData {
     private BigDecimal totalPaymentExpected;
     private Integer clientCounter;
     private String clientName;
+    private LocalDate installmentDate;
 
     public GroupLoanSummaryData() {}
 
     public GroupLoanSummaryData(Long groupId, String loanShortProductName, BigDecimal totalRepayment, BigDecimal totalPaymentExpected,
-            BigDecimal totalOverdue, Integer clientCounter, String clientName) {
+            BigDecimal totalOverdue, Integer clientCounter, String clientName, LocalDate installmentDate) {
         this.groupId = groupId;
         this.loanShortProductName = loanShortProductName;
         this.totalRepayment = totalRepayment;
@@ -44,6 +46,7 @@ public class GroupLoanSummaryData {
         this.clientCounter = clientCounter;
         this.totalPaymentExpected = totalPaymentExpected;
         this.clientName = clientName;
+        this.installmentDate = installmentDate;
     }
 
     public void setGroupId(Long groupId) {
@@ -100,5 +103,13 @@ public class GroupLoanSummaryData {
 
     public void setClientName(String clientName) {
         this.clientName = clientName;
+    }
+
+    public LocalDate getInstallmentDate() {
+        return installmentDate;
+    }
+
+    public void setInstallmentDate(LocalDate installmentDate) {
+        this.installmentDate = installmentDate;
     }
 }
