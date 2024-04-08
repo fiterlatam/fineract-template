@@ -2682,8 +2682,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
             }
         }
         final LocalDate disbursementDate = loan.getDisbursementDate();
-        final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("dd MMMM yyyy").withLocale(Locale.forLanguageTag("es-ES"));
-        final String disbursementDateString = disbursementDate.format(dateTimeFormatter);
+        final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd MMMM yyyy").withLocale(Locale.forLanguageTag("es-ES"));
+        final String disbursementDateString = disbursementDate.format(dateFormatter);
         final BigDecimal disbursementAmount = loan.getNetDisbursalAmount();
         final String disbursementAmountString = Money.of(loan.getCurrency(), disbursementAmount).toString();
         final Client loanAssignor = loan.getLoanAssignor();
@@ -2700,7 +2700,9 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         if (disbursedByUser != null) {
             disbursedByUsername = disbursedByUser.getDisplayName();
         }
-
+        final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy MMMM dd HH:mm:ss")
+                .withLocale(Locale.forLanguageTag("es-ES"));
+        final String generatedOnDateTime = DateUtils.getLocalDateTimeOfTenant().format(dateTimeFormatter);
         final Map<String, Object> variables = new HashMap<>();
         variables.put("clientFullName", clientFullName);
         variables.put("clientNit", clientNit);
@@ -2710,6 +2712,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         variables.put("disbursedByUsername", disbursedByUsername);
         variables.put("loanAssignorDisplayName", loanAssignorDisplayName);
         variables.put("loanAssignorNit", loanAssignorNit);
+        variables.put("generatedOnDateTime", generatedOnDateTime);
+        variables.put("generatedByUsername", this.context.authenticatedUser().getDisplayName());
         final org.thymeleaf.context.Context thymeleafContext = new org.thymeleaf.context.Context(Locale.forLanguageTag("es-ES"), variables);
         ClassLoaderTemplateResolver templateResolver = new ClassLoaderTemplateResolver();
         templateResolver.setPrefix("templates/");

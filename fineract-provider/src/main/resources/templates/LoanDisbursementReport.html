@@ -19,6 +19,14 @@
             height: auto;
             margin: 20px 20px 20px 450px;
         }
+        .generation{
+            padding-top: 20px;
+            padding-left: 20px;
+            margin-left: 20px;
+            text-align: right;
+            font-size: 12px;
+        }
+
     </style>
 </head>
 <body>
@@ -37,6 +45,10 @@
         <p>Monto de crédito: <span th:text="${disbursementAmount}"></span></p>
         <p>Fecha de desembolso: <span th:text="${disbursementDate}"></span></p>
         <p>Usuario que hizo el desembolso: <span th:text="${disbursedByUsername}"></span></p>
+        <br/>
+        <div class="generation">
+            <p>Generado por <b><span th:text="${generatedByUsername}"></span></b> el <b><span th:text="${generatedOnDateTime}"></span></b></p>
+        </div>
     </div>
 </body>
 </html>
