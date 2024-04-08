@@ -1,13 +1,12 @@
 package org.apache.fineract.custom.portfolio.buyprocess.data;
 
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.tika.utils.StringUtils;
-
-import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
 
 @Builder
 @Getter

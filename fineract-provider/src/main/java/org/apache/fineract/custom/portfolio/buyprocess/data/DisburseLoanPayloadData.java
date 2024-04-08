@@ -1,11 +1,10 @@
 package org.apache.fineract.custom.portfolio.buyprocess.data;
 
+import java.math.BigDecimal;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.tika.utils.StringUtils;
-
-import java.math.BigDecimal;
 
 @Builder
 @Getter
@@ -13,15 +12,8 @@ import java.math.BigDecimal;
 public class DisburseLoanPayloadData {
 
     /*
-{
-    "actualDisbursementDate": "04 abril 2024",
-    "transactionAmount": 100,
-    "externalId": "",
-    "paymentTypeId": "",
-    "note": "",
-    "dateFormat": "dd MMMM yyyy",
-    "locale": "es"
-}
+     * { "actualDisbursementDate": "04 abril 2024", "transactionAmount": 100, "externalId": "", "paymentTypeId": "",
+     * "note": "", "dateFormat": "dd MMMM yyyy", "locale": "es" }
      */
 
     private String actualDisbursementDate;

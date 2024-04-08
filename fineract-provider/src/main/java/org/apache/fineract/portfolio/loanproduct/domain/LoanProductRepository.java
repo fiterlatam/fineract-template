@@ -20,7 +20,6 @@ package org.apache.fineract.portfolio.loanproduct.domain;
 
 import java.util.List;
 import java.util.Optional;
-
 import org.apache.fineract.infrastructure.core.domain.ExternalId;
 import org.apache.fineract.portfolio.delinquency.domain.DelinquencyBucket;
 import org.springframework.data.jpa.repository.JpaRepository;

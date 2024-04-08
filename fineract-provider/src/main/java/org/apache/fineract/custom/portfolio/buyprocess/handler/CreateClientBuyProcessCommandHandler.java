@@ -34,7 +34,6 @@ public class CreateClientBuyProcessCommandHandler implements NewCommandSourceHan
     @Autowired
     private ClientBuyProcessReadWritePlatformService service;
 
-
     @Transactional
     @Override
     public CommandProcessingResult processCommand(final JsonCommand command) {

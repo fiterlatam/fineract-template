@@ -148,7 +148,6 @@ public final class ThreadLocalContextUtil {
         channelContext.remove();
     }
 
-
     public static String getRequestIPContext() {
         return requestIPContext.get();
     }

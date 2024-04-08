@@ -24,7 +24,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
-
 import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.infrastructure.bulkimport.constants.TemplatePopulateImportConstants;
 import org.apache.fineract.infrastructure.bulkimport.populator.AbstractWorkbookPopulator;
@@ -74,7 +73,6 @@ public class GenericListSheetPopulator extends AbstractWorkbookPopulator {
             }
             return null;
         })).collect(Collectors.toList());
-
 
         for (Object currentDTO : dtoList) {
             Row row = officeSheet.createRow(rowIndex);

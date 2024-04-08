@@ -145,8 +145,8 @@ public class ClientAllyImportHandler implements ImportHandler {
                             + ClientAllyTemplatePopulateImportEnum.APPLY_CUPO_MAX_SELL.getColumnIndex() + " es verdadero; ");
         }
 
-        BigDecimal settledComission = BigDecimal.valueOf(
-                ImportHandlerUtils.readAsDouble(ClientAllyTemplatePopulateImportEnum.SETTLED_COMISSION.getColumnIndex(), row));
+        BigDecimal settledComission = BigDecimal
+                .valueOf(ImportHandlerUtils.readAsDouble(ClientAllyTemplatePopulateImportEnum.SETTLED_COMISSION.getColumnIndex(), row));
         if (Objects.nonNull(settledComission) && settledComission.compareTo(BigDecimal.valueOf(99.99)) > 0) {
             ammenedEValidationMessages.append("El campo " + ClientAllyTemplatePopulateImportEnum.SETTLED_COMISSION.getColumnName()
                     + " no debe ser major que 99.99; ");

@@ -133,11 +133,11 @@ public class ClientAllyPointsOfSalesImportHandler implements ImportHandler {
             }
         }
 
-        BigDecimal settledComission = BigDecimal.valueOf(
-                ImportHandlerUtils.readAsDouble(ClientAllyTemplatePopulateImportEnum.SETTLED_COMISSION.getColumnIndex(), row));
+        BigDecimal settledComission = BigDecimal
+                .valueOf(ImportHandlerUtils.readAsDouble(ClientAllyTemplatePopulateImportEnum.SETTLED_COMISSION.getColumnIndex(), row));
         if (Objects.nonNull(settledComission) && settledComission.compareTo(BigDecimal.valueOf(99.99)) > 0) {
-            ammenedEValidationMessages.append("El campo " + ClientAllyTemplatePopulateImportEnum.SETTLED_COMISSION.getColumnName()
-                    + " no debe ser que 99.99; ");
+            ammenedEValidationMessages.append(
+                    "El campo " + ClientAllyTemplatePopulateImportEnum.SETTLED_COMISSION.getColumnName() + " no debe ser que 99.99; ");
         }
     }
 

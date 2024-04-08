@@ -1,5 +1,6 @@
 package org.apache.fineract.custom.portfolio.buyprocess.validator.chain.step;
 
+import java.math.BigDecimal;
 import org.apache.fineract.custom.portfolio.buyprocess.domain.ChannelMessageRepository;
 import org.apache.fineract.custom.portfolio.buyprocess.domain.ClientBuyProcess;
 import org.apache.fineract.custom.portfolio.buyprocess.enumerator.ClientBuyProcessValidatorEnum;
@@ -7,13 +8,8 @@ import org.apache.fineract.custom.portfolio.buyprocess.validator.chain.BuyProces
 import org.apache.fineract.custom.portfolio.buyprocess.validator.chain.BuyProcessValidationLayerProcessor;
 import org.apache.fineract.infrastructure.configuration.data.GlobalConfigurationPropertyData;
 import org.apache.fineract.infrastructure.configuration.service.ConfigurationReadPlatformService;
-import org.apache.fineract.portfolio.loanproduct.domain.LoanProduct;
-import org.apache.fineract.portfolio.loanproduct.domain.LoanProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-
-import java.math.BigDecimal;
-import java.util.Optional;
 
 @Component
 public class MiniummAmountValidatorStep extends BuyProcessAbstractStepProcessor implements BuyProcessValidationLayerProcessor {
@@ -21,13 +17,11 @@ public class MiniummAmountValidatorStep extends BuyProcessAbstractStepProcessor 
     // Define which validator this class is
     private ClientBuyProcessValidatorEnum stepProcessorEnum = ClientBuyProcessValidatorEnum.MINIMUM_AMOUNT_VALIDATOR;
 
-
     @Autowired
     private ChannelMessageRepository channelMessageRepository;
 
     @Autowired
     private ConfigurationReadPlatformService configurationReadPlatformService;
-
 
     @Override
     public Long getPriority() {

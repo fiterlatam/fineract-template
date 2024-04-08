@@ -1,7 +1,6 @@
 package org.apache.fineract.custom.portfolio.buyprocess.validator.chain.step;
 
-import org.apache.fineract.custom.portfolio.ally.domain.ClientAllyPointOfSales;
-import org.apache.fineract.custom.portfolio.ally.domain.ClientAllyPointOfSalesRepository;
+import java.util.Optional;
 import org.apache.fineract.custom.portfolio.buyprocess.domain.ChannelMessageRepository;
 import org.apache.fineract.custom.portfolio.buyprocess.domain.ClientBuyProcess;
 import org.apache.fineract.custom.portfolio.buyprocess.enumerator.ClientBuyProcessValidatorEnum;
@@ -12,21 +11,17 @@ import org.apache.fineract.portfolio.loanproduct.domain.LoanProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.Optional;
-
 @Component
 public class RequestedVsProductTermValidatorStep extends BuyProcessAbstractStepProcessor implements BuyProcessValidationLayerProcessor {
 
     // Define which validator this class is
     private ClientBuyProcessValidatorEnum stepProcessorEnum = ClientBuyProcessValidatorEnum.TERM_VALIDATOR;
 
-
     @Autowired
     private ChannelMessageRepository channelMessageRepository;
 
     @Autowired
     private LoanProductRepository loanProductRepository;
-
 
     @Override
     public Long getPriority() {
