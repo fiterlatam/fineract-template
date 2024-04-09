@@ -944,11 +944,4 @@ public final class SavingsAccountTransaction extends AbstractPersistableCustom {
         this.dateOf = transactionDate;
     }
 
-    public Boolean getGuaranteeWithdrawn() {
-        return guaranteeWithdrawn;
-    }
-
-    public void setGuaranteeWithdrawn(Boolean guaranteeWithdrawn) {
-        this.guaranteeWithdrawn = guaranteeWithdrawn;
-    }
 }
