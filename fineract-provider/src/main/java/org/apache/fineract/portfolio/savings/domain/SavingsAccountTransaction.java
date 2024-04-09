@@ -143,9 +143,6 @@ public final class SavingsAccountTransaction extends AbstractPersistableCustom {
     @Column(name = "loan_id", length = 20)
     private Long loanId;
 
-    @Column(name = "guarantee_amount_withdrawn", length = 20)
-    private Boolean guaranteeWithdrawn;
-
     SavingsAccountTransaction() {
         this.dateOf = null;
         this.typeOf = null;
