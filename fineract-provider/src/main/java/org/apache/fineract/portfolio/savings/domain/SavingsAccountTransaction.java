@@ -143,6 +143,9 @@ public final class SavingsAccountTransaction extends AbstractPersistableCustom {
     @Column(name = "loan_id", length = 20)
     private Long loanId;
 
+    @Column(name = "guarantee_amount_withdrawn", length = 20)
+    private Boolean guaranteeWithdrawn;
+
     SavingsAccountTransaction() {
         this.dateOf = null;
         this.typeOf = null;
@@ -942,5 +945,13 @@ public final class SavingsAccountTransaction extends AbstractPersistableCustom {
 
     public void updateDateOf(LocalDate transactionDate) {
         this.dateOf = transactionDate;
+    }
+
+    public Boolean getGuaranteeWithdrawn() {
+        return guaranteeWithdrawn;
+    }
+
+    public void setGuaranteeWithdrawn(Boolean guaranteeWithdrawn) {
+        this.guaranteeWithdrawn = guaranteeWithdrawn;
     }
 }

@@ -1749,7 +1749,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
         loanCounter = this.jdbcTemplate.queryForObject(sql, new Object[] { clientId, productId }, Integer.class);
 
         final String clientDefinedLoanCycle = "Select c.loan_cycle as loanCycle from m_client c where c.id = ?";
-        Integer clientLoanCycle = this.jdbcTemplate.queryForObject(clientDefinedLoanCycle, new Object[] { clientId}, Integer.class);
+        Integer clientLoanCycle = this.jdbcTemplate.queryForObject(clientDefinedLoanCycle, new Object[] { clientId }, Integer.class);
         if (clientLoanCycle != null) {
             return clientLoanCycle;
         } else {

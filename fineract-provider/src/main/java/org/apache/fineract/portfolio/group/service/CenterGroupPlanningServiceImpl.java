@@ -151,8 +151,9 @@ public class CenterGroupPlanningServiceImpl implements CenterGroupPlanningServic
                 if (individualLoanSummaryList != null && !individualLoanSummaryList.isEmpty()) {
                     for (GroupLoanSummaryData individualLoanSummaryData : individualLoanSummaryList) {
                         if (currentNextMeetingDate.isBefore(endDateRange) || currentNextMeetingDate.isEqual(endDateRange)) {
-                            LocalDate individualInstallmentDate = individualLoanSummaryData.getInstallmentDate()!=null?
-                                    individualLoanSummaryData.getInstallmentDate():currentNextMeetingDate;
+                            LocalDate individualInstallmentDate = individualLoanSummaryData.getInstallmentDate() != null
+                                    ? individualLoanSummaryData.getInstallmentDate()
+                                    : currentNextMeetingDate;
                             final PortfolioDetailedPlanningData newPortfolioPlanning = PortfolioDetailedPlanningData.instance(
                                     portfolioPlanning.getCenterGroupId(), individualLoanSummaryData.getClientName(),
                                     portfolioPlanning.getLegacyGroupNumber(), portfolioPlanning.getMeetingStartTime(),
