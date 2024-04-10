@@ -174,7 +174,8 @@ public class AgencyReadPlatformServiceImpl implements AgencyReadPlatformService 
             sqlBuilder.append("a.linked_office_id as parentRegionId, region.name as parentRegionName, ");
             sqlBuilder.append("a.responsible_user_id as responsibleUserId, ru.firstname as userFirstName, ru.lastname as userLastName ");
             sqlBuilder.append("from m_agency a left join m_office AS region ON region.id = a.linked_office_id ");
-            sqlBuilder.append("LEFT JOIN(select agency_id, linked_office_id from m_supervision GROUP BY agency_id ) supv ON supv.agency_id = a.id ");
+            sqlBuilder.append(
+                    "LEFT JOIN(select agency_id, linked_office_id from m_supervision GROUP BY agency_id ) supv ON supv.agency_id = a.id ");
             sqlBuilder.append("LEFT JOIN m_office mo on mo.id = supv.linked_office_id ");
             sqlBuilder.append("left join m_code_value cvCity on a.city_id = cvCity.id ");
             sqlBuilder.append("left join m_code_value cvState on a.state_province_id = cvState.id ");
