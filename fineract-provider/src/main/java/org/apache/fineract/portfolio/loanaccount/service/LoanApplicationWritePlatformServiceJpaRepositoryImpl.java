@@ -21,6 +21,7 @@ package org.apache.fineract.portfolio.loanaccount.service;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -34,6 +35,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import javax.persistence.PersistenceException;
+
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -249,37 +251,37 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
 
     @Autowired
     public LoanApplicationWritePlatformServiceJpaRepositoryImpl(final PlatformSecurityContext context, final FromJsonHelper fromJsonHelper,
-            final LoanApplicationTransitionApiJsonValidator loanApplicationTransitionApiJsonValidator,
-            final LoanApplicationCommandFromApiJsonHelper fromApiJsonDeserializer,
-            final LoanProductDataValidator loanProductCommandFromApiJsonDeserializer, final AprCalculator aprCalculator,
-            final LoanAssembler loanAssembler, final LoanChargeAssembler loanChargeAssembler,
-            final LoanCollateralAssembler loanCollateralAssembler, final LoanRepositoryWrapper loanRepositoryWrapper,
-            final NoteRepository noteRepository, final LoanScheduleCalculationPlatformService calculationPlatformService,
-            final ClientRepositoryWrapper clientRepository, final LoanProductRepository loanProductRepository,
-            final AccountNumberGenerator accountNumberGenerator, final LoanSummaryWrapper loanSummaryWrapper,
-            final GroupRepositoryWrapper groupRepository, final CodeValueRepositoryWrapper codeValueRepository,
-            final LoanRepaymentScheduleTransactionProcessorFactory loanRepaymentScheduleTransactionProcessorFactory,
-            final CalendarRepository calendarRepository, final CalendarInstanceRepository calendarInstanceRepository,
-            final SavingsAccountAssembler savingsAccountAssembler, final AccountAssociationsRepository accountAssociationsRepository,
-            final LoanReadPlatformService loanReadPlatformService, final AccountNumberFormatRepositoryWrapper accountNumberFormatRepository,
-            final BusinessEventNotifierService businessEventNotifierService, final ConfigurationDomainService configurationDomainService,
-            final LoanScheduleAssembler loanScheduleAssembler, final LoanUtilService loanUtilService,
-            final CalendarReadPlatformService calendarReadPlatformService,
-            final GlobalConfigurationRepositoryWrapper globalConfigurationRepository,
-            final FineractEntityToEntityMappingRepository repository, final AppUserRepository appUserRepository,
-            final FineractEntityRelationRepository fineractEntityRelationRepository,
-            final EntityDatatableChecksWritePlatformService entityDatatableChecksWritePlatformService,
-            final GLIMAccountInfoWritePlatformService glimAccountInfoWritePlatformService, final GLIMAccountInfoRepository glimRepository,
-            final LoanRepository loanRepository, final GSIMReadPlatformService gsimReadPlatformService, final RateAssembler rateAssembler,
-            final LoanProductReadPlatformService loanProductReadPlatformService, final JdbcTemplate jdbcTemplate,
-            final CupoRepositoryWrapper cupoRepositoryWrapper, final LumaAccountingProcessorForLoan lumaAccountingProcessorForLoan,
-            DisburseByChequesCommandFromApiJsonDeserializer disburseByChequesCommandFromApiJsonDeserializer,
-            ChequeBatchRepositoryWrapper chequeBatchRepositoryWrapper,
-            PrequalificationGroupRepositoryWrapper prequalificationGroupRepositoryWrapper,
-            final SavingsAccountWritePlatformService savingsAccountWritePlatformService,
-            final LoanAdditionalPropertiesRepository loanAdditionalPropertiesRepository,
-            final GroupLoanAdditionalsRepository groupLoanAdditionalsRepository,
-            PrequalificationReadPlatformService prequalificationReadPlatformService) {
+                                                                final LoanApplicationTransitionApiJsonValidator loanApplicationTransitionApiJsonValidator,
+                                                                final LoanApplicationCommandFromApiJsonHelper fromApiJsonDeserializer,
+                                                                final LoanProductDataValidator loanProductCommandFromApiJsonDeserializer, final AprCalculator aprCalculator,
+                                                                final LoanAssembler loanAssembler, final LoanChargeAssembler loanChargeAssembler,
+                                                                final LoanCollateralAssembler loanCollateralAssembler, final LoanRepositoryWrapper loanRepositoryWrapper,
+                                                                final NoteRepository noteRepository, final LoanScheduleCalculationPlatformService calculationPlatformService,
+                                                                final ClientRepositoryWrapper clientRepository, final LoanProductRepository loanProductRepository,
+                                                                final AccountNumberGenerator accountNumberGenerator, final LoanSummaryWrapper loanSummaryWrapper,
+                                                                final GroupRepositoryWrapper groupRepository, final CodeValueRepositoryWrapper codeValueRepository,
+                                                                final LoanRepaymentScheduleTransactionProcessorFactory loanRepaymentScheduleTransactionProcessorFactory,
+                                                                final CalendarRepository calendarRepository, final CalendarInstanceRepository calendarInstanceRepository,
+                                                                final SavingsAccountAssembler savingsAccountAssembler, final AccountAssociationsRepository accountAssociationsRepository,
+                                                                final LoanReadPlatformService loanReadPlatformService, final AccountNumberFormatRepositoryWrapper accountNumberFormatRepository,
+                                                                final BusinessEventNotifierService businessEventNotifierService, final ConfigurationDomainService configurationDomainService,
+                                                                final LoanScheduleAssembler loanScheduleAssembler, final LoanUtilService loanUtilService,
+                                                                final CalendarReadPlatformService calendarReadPlatformService,
+                                                                final GlobalConfigurationRepositoryWrapper globalConfigurationRepository,
+                                                                final FineractEntityToEntityMappingRepository repository, final AppUserRepository appUserRepository,
+                                                                final FineractEntityRelationRepository fineractEntityRelationRepository,
+                                                                final EntityDatatableChecksWritePlatformService entityDatatableChecksWritePlatformService,
+                                                                final GLIMAccountInfoWritePlatformService glimAccountInfoWritePlatformService, final GLIMAccountInfoRepository glimRepository,
+                                                                final LoanRepository loanRepository, final GSIMReadPlatformService gsimReadPlatformService, final RateAssembler rateAssembler,
+                                                                final LoanProductReadPlatformService loanProductReadPlatformService, final JdbcTemplate jdbcTemplate,
+                                                                final CupoRepositoryWrapper cupoRepositoryWrapper, final LumaAccountingProcessorForLoan lumaAccountingProcessorForLoan,
+                                                                DisburseByChequesCommandFromApiJsonDeserializer disburseByChequesCommandFromApiJsonDeserializer,
+                                                                ChequeBatchRepositoryWrapper chequeBatchRepositoryWrapper,
+                                                                PrequalificationGroupRepositoryWrapper prequalificationGroupRepositoryWrapper,
+                                                                final SavingsAccountWritePlatformService savingsAccountWritePlatformService,
+                                                                final LoanAdditionalPropertiesRepository loanAdditionalPropertiesRepository,
+                                                                final GroupLoanAdditionalsRepository groupLoanAdditionalsRepository,
+                                                                PrequalificationReadPlatformService prequalificationReadPlatformService) {
         this.context = context;
         this.fromJsonHelper = fromJsonHelper;
         this.loanApplicationTransitionApiJsonValidator = loanApplicationTransitionApiJsonValidator;
@@ -532,7 +534,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 if (groupPrequalification == null) {
                     throw new GeneralPlatformDomainRuleException(
                             "error.msg.prequalification.is.not.linked.to.a.group", "Prequalificaion with number "
-                                    + prequalificationGroup.getPrequalificationNumber() + " is not linked to a group",
+                            + prequalificationGroup.getPrequalificationNumber() + " is not linked to a group",
                             prequalificationGroup.getPrequalificationNumber());
                 }
                 newLoanApplication.updateGroup(groupPrequalification);
@@ -853,7 +855,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
     }
 
     private void checkForProductMixRestrictions(final List<Long> activeLoansLoanProductIds, final Long productId,
-            final String productName) {
+                                                final String productName) {
 
         if (!CollectionUtils.isEmpty(activeLoansLoanProductIds)) {
             final Collection<LoanProductData> restrictedPrdouctsList = this.loanProductReadPlatformService
@@ -950,17 +952,17 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
     }
 
     private void createCalendar(final Loan loan, LocalDate calendarStartDate, Integer recalculationFrequencyNthDay,
-            final Integer repeatsOnDay, final RecalculationFrequencyType recalculationFrequencyType, Integer frequency,
-            CalendarEntityType calendarEntityType, final String title) {
+                                final Integer repeatsOnDay, final RecalculationFrequencyType recalculationFrequencyType, Integer frequency,
+                                CalendarEntityType calendarEntityType, final String title) {
         CalendarFrequencyType calendarFrequencyType = CalendarFrequencyType.INVALID;
         Integer updatedRepeatsOnDay = repeatsOnDay;
         switch (recalculationFrequencyType) {
             case DAILY:
                 calendarFrequencyType = CalendarFrequencyType.DAILY;
-            break;
+                break;
             case MONTHLY:
                 calendarFrequencyType = CalendarFrequencyType.MONTHLY;
-            break;
+                break;
             case SAME_AS_REPAYMENT_PERIOD:
                 frequency = loan.repaymentScheduleDetail().getRepayEvery();
                 calendarFrequencyType = CalendarFrequencyType.from(loan.repaymentScheduleDetail().getRepaymentPeriodFrequencyType());
@@ -968,12 +970,12 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 if (updatedRepeatsOnDay == null) {
                     updatedRepeatsOnDay = calendarStartDate.get(ChronoField.DAY_OF_WEEK);
                 }
-            break;
+                break;
             case WEEKLY:
                 calendarFrequencyType = CalendarFrequencyType.WEEKLY;
-            break;
+                break;
             default:
-            break;
+                break;
         }
 
         final Calendar calendar = Calendar.createRepeatingCalendar(title, calendarStartDate, CalendarType.COLLECTION.getValue(),
@@ -1515,7 +1517,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 if (groupPrequalification == null) {
                     throw new GeneralPlatformDomainRuleException(
                             "error.msg.prequalification.is.not.linked.to.a.group", "Prequalificaion with number "
-                                    + prequalificationGroup.getPrequalificationNumber() + " is not linked to a group",
+                            + prequalificationGroup.getPrequalificationNumber() + " is not linked to a group",
                             prequalificationGroup.getPrequalificationNumber());
                 }
                 existingLoanApplication.updateGroup(groupPrequalification);
@@ -2994,11 +2996,10 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
 
             // TODO: FBR-47 Handle deposit to guarantee savings account here
             BigDecimal depositAmount = cheque.getGuaranteeAmount().subtract(cheque.getRequiredGuaranteeAmount());
-            if (depositAmount != null && depositAmount.compareTo(BigDecimal.ZERO) < 0) {
-                CommandProcessingResult depositCommandResult = this.savingsAccountWritePlatformService
-                        .depositAndHoldToClientGuaranteeAccount(depositAmount.abs(), cheque.getRequiredGuaranteeAmount(),
-                                loanAccount.getClientId(), loanAccount.getId(), localDate, cheque.getId(), command);
-            }
+            CommandProcessingResult depositCommandResult = this.savingsAccountWritePlatformService
+                    .depositAndHoldToClientGuaranteeAccount(depositAmount.abs(), cheque.getRequiredGuaranteeAmount(),
+                            loanAccount.getClientId(), loanAccount.getId(), localDate, cheque.getId(), command);
+
         }
         return new CommandProcessingResultBuilder().withCommandId(command.commandId()).build();
     }
