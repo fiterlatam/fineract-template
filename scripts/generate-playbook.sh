@@ -15,6 +15,6 @@ echo "---
         dest: /home/ansible
 
     - name: Apply the fineract/$1 k8s manifest
-      shell: 'kubectl apply -f $1'
+      shell: kubectl apply -f $1
       
 " > $2
