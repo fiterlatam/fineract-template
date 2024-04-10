@@ -189,6 +189,8 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
                     LEFT JOIN acc_gl_account aga ON aga.id = mba.gl_account_id
                     LEFT JOIN m_bank mb ON mb.id = mba.bank_id
                     LEFT JOIN m_agency mag ON mag.id = mba.agency_id
+                    LEFT JOIN(select agency_id, linked_office_id from m_supervision GROUP BY agency_id ) supv ON supv.agency_id = mag.id
+                    LEFT JOIN m_office mo on mo.id = supv.linked_office_id 
                     LEFT JOIN m_appuser voidedby ON voidedby.id = mbc.voidedby_id
                     LEFT JOIN m_appuser createdby ON createdby.id = mbc.createdby_id
                     LEFT JOIN m_appuser printedby ON printedby.id = mbc.printedby_id
@@ -335,6 +337,7 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
         final Long to = chequeSearchParams.getTo();
         final Long groupId = chequeSearchParams.getGroupId();
         final Long centerId = chequeSearchParams.getCenterId();
+
         if (batchId != null) {
             extraCriteria.addNonNullCriteria("mpb.id = ", batchId);
         }
@@ -369,11 +372,16 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
             extraCriteria.addNonNullCriteria("mpg.id = ", centerId);
         }
 
-        sqlBuilder.append(" ").append(extraCriteria.getSQLTemplate());
+        String sqlTemplate = extraCriteria.getSQLTemplate();
+        sqlBuilder.append(" ").append(sqlTemplate);
         final Collection<AgencyData> agencyOptions = this.agencyReadPlatformService.retrieveAllByUser();
         final Set<Long> agencyIds = agencyOptions.stream().map(AgencyData::getId).collect(Collectors.toSet());
         final String agencyIdParams = StringUtils.join(agencyIds, ", ");
-        sqlBuilder.append(" AND mba.agency_id IN ( ").append(agencyIdParams).append(")");
+        if (sqlTemplate.isBlank()){
+            sqlBuilder.append(" WHERE mba.agency_id IN ( ").append(agencyIdParams).append(")");
+        }else {
+            sqlBuilder.append(" AND mba.agency_id IN ( ").append(agencyIdParams).append(")");
+        }
         if (chequeSearchParams.getOrderBy() != null) {
             sqlBuilder.append(" order by ").append(chequeSearchParams.getOrderBy()).append(' ').append(chequeSearchParams.getSortOrder());
             this.columnValidator.validateSqlInjection(sqlBuilder.toString(), chequeSearchParams.getOrderBy(),
