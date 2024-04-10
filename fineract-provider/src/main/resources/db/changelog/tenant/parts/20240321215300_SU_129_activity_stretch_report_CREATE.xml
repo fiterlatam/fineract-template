@@ -1,0 +1,266 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements. See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership. The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License. You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied. See the License for the
+    specific language governing permissions and limitations
+    under the License.
+
+-->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd">
+
+    <changeSet id="1" author="fineract">
+        <update tableName="stretchy_parameter">
+            <column name="parameter_label" value="Fecha de"/>
+            <where>parameter_name='startDateSelect'</where>
+        </update>
+        <update tableName="stretchy_parameter">
+            <column name="parameter_label" value="Fecha hasta"/>
+            <where>parameter_name='endDateSelect'</where>
+        </update>
+    </changeSet>
+
+    <changeSet id="2" author="fineract">
+        <sql>
+            <![CDATA[
+            INSERT INTO stretchy_parameter (parameter_name, parameter_variable, parameter_label, "parameter_displayType", "parameter_FormatType", parameter_default, special, "selectOne", "selectAll", parameter_sql, parent_id)
+            VALUES('makerSelect', 'makerId', 'Usuario del sistema', 'select', 'number', '-1', NULL, NULL, 'Y', 'SELECT ma.id AS id, CONCAT(ma.firstname, '' '', ma.lastname, '' ('', ma.username, '')'') AS name FROM m_appuser ma ORDER BY 2', NULL)
+                ON CONFLICT DO NOTHING;
+            ]]>
+        </sql>
+        <sql>
+            <![CDATA[
+            INSERT INTO stretchy_parameter (parameter_name, parameter_variable, parameter_label, "parameter_displayType", "parameter_FormatType", parameter_default, special, "selectOne", "selectAll", parameter_sql, parent_id)
+            VALUES('moduleSelect', 'modulo', 'Modulo', 'select', 'text', '-1', NULL, 'Y', NULL, 'SELECT * FROM ( SELECT ''ROLE'' AS id, ''Role'' AS name UNION ALL SELECT ''USER'' AS id,''Usuario'' AS name) x ORDER BY x.id', NULL)
+                ON CONFLICT DO NOTHING;
+            ]]>
+        </sql>
+        <sql>
+            <![CDATA[
+            INSERT INTO stretchy_parameter (parameter_name, parameter_variable, parameter_label, "parameter_displayType", "parameter_FormatType", parameter_default, special, "selectOne", "selectAll", parameter_sql, parent_id)
+            VALUES('resourceSelect', 'resourceId', 'Nombre del recurso', 'select', 'number', '-1', NULL, NULL, 'Y', 'SELECT x.*
+                FROM (SELECT ma.id AS id, CONCAT(ma.firstname, '' '', ma.lastname, '' ('', ma.username, '')'') AS name FROM m_appuser ma WHERE ''${modulo}'' = ''USER''
+                UNION ALL SELECT mr.id AS id, mr.name AS name FROM m_role mr WHERE ''${modulo}'' = ''ROLE'') x
+                ORDER BY 2', (SELECT id FROM stretchy_parameter WHERE parameter_name = 'moduleSelect'))
+                ON CONFLICT DO NOTHING;
+            ]]>
+        </sql>
+        <sql>
+            <![CDATA[
+                INSERT INTO stretchy_parameter (parameter_name, parameter_variable, parameter_label, "parameter_displayType", "parameter_FormatType", parameter_default, special, "selectOne", "selectAll", parameter_sql, parent_id) VALUES('actionSelect', 'actionId', 'Nombre de la acción', 'select', 'text', '-1', NULL, NULL, 'Y', 'SELECT * FROM ( SELECT 1 AS id, ''CREADO'' AS name
+                UNION ALL SELECT 2 AS id, ''MODIFICADO'' AS name
+                UNION ALL SELECT 3 AS id, ''MODIFICAR PERMISO'' AS name
+                UNION ALL SELECT 4 AS id, ''ELIMINADO'' AS name
+                UNION ALL SELECT 5 AS id, ''PERMITIR'' AS name
+                UNION ALL SELECT 6 AS id, ''DESACTIVAR'' AS name
+                )
+                x ORDER BY x.id', NULL)
+                ON CONFLICT DO NOTHING;
+            ]]>
+        </sql>
+        <sql>
+            <![CDATA[
+                INSERT INTO stretchy_report (report_name, report_type, report_subtype, report_category, report_sql, description, core_report, use_report, self_service_user_report) VALUES('Reporte de tabla de auditoria (Roles y Usuarios)', 'Table', NULL, 'Audit', 'SELECT
+                Concat(REPEAT(''..'',
+                (( Length(ounder.hierarchy) - Length( REPLACE(ounder.hierarchy,
+                ''.'',
+                '''')) - 1 ))) ,
+                ounder.name) AS "Oficina/Sucursal",
+                mpcs.entity_name AS "Modulo",
+                mpcs.rol_id AS "ID del rol",
+                mpcs.rol_nombre AS "Nombre del Rol",
+                mpcs.Usuario_Nombre AS "Nombre De usuario",
+                TO_CHAR(mpcs.made_on_date_utc AT TIME ZONE ''${tenantTimezone}'', ''yyyy-MM-dd HH24:MI:SS'') AS "Fecha & Hora",
+                mpcs.maker_id AS "Id del Usuario",
+                mpcs.usuario_creacion_nombre AS "Usuario que reliza la acción",
+                mpcs.maquina AS "Maquina",
+                CASE
+                    WHEN mpcs.action_name = ''PERMISSIONS'' THEN ''MODIFICADO''
+                WHEN mpcs.action_name = ''UPDATE'' THEN ''MODIFICADO''
+                WHEN mpcs.action_name = ''CREATE'' THEN ''CREADO''
+                WHEN mpcs.action_name = ''DELETE'' THEN ''ELIMINADO''
+                WHEN mpcs.action_name = ''DELETE'' THEN ''ELIMINADO''
+                WHEN mpcs.action_name = ''DELETE'' THEN ''ELIMINADO''
+                    ELSE mpcs.action_name
+                END AS "Acción",
+                mpcs.registro_anterior AS "Registro Anterior",
+                mpcs.registro_posterior AS "Registro Posterior"
+                FROM m_office mo
+                INNER JOIN m_office ounder ON ounder.hierarchy LIKE CONCAT(mo.hierarchy, ''%'') AND ounder.hierarchy LIKE CONCAT(''${currentUserHierarchy}'', ''%'')
+                INNER JOIN m_appuser maker ON maker.office_id = ounder.id
+                INNER JOIN m_portfolio_command_source mpcs ON mpcs.maker_id = maker.id
+                WHERE (mpcs.entity_name = ''${modulo}'' OR ''-1'' = ''${modulo}'') AND (DATE(mpcs.made_on_date_utc) BETWEEN ''${startDate}'' AND ''${endDate}'')
+                AND (mpcs.maker_id = ''${makerId}'' OR ''-1'' = ''${makerId}'') AND (mpcs.resource_id = ''${resourceId}'' OR ''-1'' = ''${resourceId}'') AND (mpcs.maker_id = ''${makerId}'' OR ''-1'' = ''${makerId}'')
+                AND (mpcs.action_name = (CASE
+                  WHEN ''${actionId}'' = 1 THEN ''CREATE''
+                  WHEN ''${actionId}'' = 2 THEN ''UPDATE''
+                  WHEN ''${actionId}'' = 3 THEN ''PERMISSIONS''
+                  WHEN ''${actionId}'' = 4 THEN ''DELETE''
+                  WHEN ''${actionId}'' = 5 THEN ''ENABLE''
+                  WHEN ''${actionId}'' = 6 THEN ''DISABLE''
+                  ELSE ''UNKNOWN''
+                END ) OR ''-1'' = ''${actionId}'')
+                AND mpcs.entity_name IN (''USER'', ''ROLE'') AND mpcs.status = 1
+                ORDER BY ounder.hierarchy, mpcs.made_on_date_utc DESC', 'Reporte de tabla de auditoría', true, true, false)
+                ON CONFLICT DO NOTHING;
+            ]]>
+        </sql>
+        <sql>
+            <![CDATA[
+            INSERT INTO stretchy_report_parameter (report_id, parameter_id, report_parameter_name) VALUES((SELECT sr.id FROM stretchy_report sr WHERE sr.report_name = 'Reporte de tabla de auditoria (Roles y Usuarios)'), (SELECT sp.id FROM stretchy_parameter sp WHERE sp.parameter_name  = 'makerSelect'), 'makerId');
+            INSERT INTO stretchy_report_parameter (report_id, parameter_id, report_parameter_name) VALUES((SELECT sr.id FROM stretchy_report sr WHERE sr.report_name = 'Reporte de tabla de auditoria (Roles y Usuarios)'), (SELECT sp.id FROM stretchy_parameter sp WHERE sp.parameter_name  = 'moduleSelect'), 'modulo');
+            INSERT INTO stretchy_report_parameter (report_id, parameter_id, report_parameter_name) VALUES((SELECT sr.id FROM stretchy_report sr WHERE sr.report_name = 'Reporte de tabla de auditoria (Roles y Usuarios)'), (SELECT sp.id FROM stretchy_parameter sp WHERE sp.parameter_name  = 'resourceSelect'), 'resourceId');
+            INSERT INTO stretchy_report_parameter (report_id, parameter_id, report_parameter_name) VALUES((SELECT sr.id FROM stretchy_report sr WHERE sr.report_name = 'Reporte de tabla de auditoria (Roles y Usuarios)'), (SELECT sp.id FROM stretchy_parameter sp WHERE sp.parameter_name  = 'actionSelect'), 'actionId');
+            INSERT INTO stretchy_report_parameter (report_id, parameter_id, report_parameter_name) VALUES((SELECT sr.id FROM stretchy_report sr WHERE sr.report_name = 'Reporte de tabla de auditoria (Roles y Usuarios)'), (SELECT sp.id FROM stretchy_parameter sp WHERE sp.parameter_name  = 'startDateSelect'), 'startDate');
+            INSERT INTO stretchy_report_parameter (report_id, parameter_id, report_parameter_name) VALUES((SELECT sr.id FROM stretchy_report sr WHERE sr.report_name = 'Reporte de tabla de auditoria (Roles y Usuarios)'), (SELECT sp.id FROM stretchy_parameter sp WHERE sp.parameter_name  = 'endDateSelect'), 'endDate');
+            ]]>
+        </sql>
+    </changeSet>
+
+    <changeSet author="fineract" id="3">
+        <insert tableName="m_permission">
+            <column name="grouping" value="report"/>
+            <column name="code" value="READ_Reporte de tabla de auditoria (Roles y Usuarios)"/>
+            <column name="entity_name" value="Reporte de tabla de auditoria (Roles y Usuarios)"/>
+            <column name="action_name" value="READ"/>
+            <column name="can_maker_checker" valueBoolean="false"/>
+        </insert>
+    </changeSet>
+
+    <changeSet author="fineract" id="4">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="stretchy_report_parameter" columnName="mandatory_parameter"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="stretchy_report_parameter">
+            <column name="mandatory_parameter" defaultValueBoolean="false" type="boolean"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="5">
+        <sql>
+            <![CDATA[
+                UPDATE  stretchy_report_parameter srp
+                SET mandatory_parameter = TRUE
+                FROM stretchy_parameter sp
+                INNER JOIN stretchy_report_parameter srp2 ON srp2.parameter_id = sp.id
+                INNER JOIN stretchy_report sr ON sr.id = srp2.report_id
+                WHERE srp.report_id = sr.id AND srp.parameter_id = sp.id AND sr.report_name = 'Reporte de tabla de auditoria (Roles y Usuarios)' AND sp.parameter_name IN ('startDateSelect', 'endDateSelect', 'moduleSelect');
+
+                UPDATE  stretchy_report_parameter srp
+                SET mandatory_parameter = FALSE
+                FROM stretchy_parameter sp
+                INNER JOIN stretchy_report_parameter srp2 ON srp2.parameter_id = sp.id
+                INNER JOIN stretchy_report sr ON sr.id = srp2.report_id
+                WHERE srp.report_id = sr.id AND srp.parameter_id = sp.id AND sr.report_name = 'Reporte de tabla de auditoria (Roles y Usuarios)' AND sp.parameter_name IN ('resourceSelect', 'actionSelect');
+
+                UPDATE stretchy_parameter
+                SET parameter_sql = 'SELECT * FROM ( SELECT ''ROLE'' AS id, ''Rol'' AS name UNION ALL SELECT ''USER'' AS id,''Usuario'' AS name) x ORDER BY x.id'
+                WHERE parameter_name = 'moduleSelect';
+            ]]>
+        </sql>
+        <sql>
+            <![CDATA[
+                    UPDATE stretchy_report
+                    SET report_sql = 'SELECT
+                    Concat(REPEAT(''..'',
+                    (( Length(ounder.hierarchy) - Length( REPLACE(ounder.hierarchy,
+                    ''.'',
+                    '''')) - 1 ))) ,
+                    ounder.name) AS "Oficina/Sucursal",
+                    mpcs.entity_name AS "Modulo",
+                    mpcs.rol_id AS "ID del rol",
+                    mpcs.rol_nombre AS "Nombre del Rol",
+                    mpcs.Usuario_Nombre AS "Nombre De usuario",
+                    TO_CHAR(mpcs.made_on_date_utc AT TIME ZONE ''${tenantTimezone}'', ''yyyy-MM-dd HH24:MI:SS'') AS "Fecha & Hora",
+                    mpcs.maker_id AS "Id del Usuario",
+                    mpcs.usuario_creacion_nombre AS "Usuario que reliza la acción",
+                    mpcs.maquina AS "Maquina",
+                    CASE
+                        WHEN mpcs.action_name = ''PERMISSIONS'' THEN ''MODIFICADO''
+                    WHEN mpcs.action_name = ''UPDATE'' THEN ''MODIFICADO''
+                    WHEN mpcs.action_name = ''CREATE'' THEN ''CREADO''
+                    WHEN mpcs.action_name = ''DELETE'' THEN ''ELIMINADO''
+                    WHEN mpcs.action_name = ''DELETE'' THEN ''ELIMINADO''
+                    WHEN mpcs.action_name = ''DELETE'' THEN ''ELIMINADO''
+                    WHEN mpcs.action_name = ''DISABLE'' THEN ''DESACTIVAR''
+                    WHEN mpcs.action_name = ''ENABLE'' THEN ''PERMITIR''
+                    ELSE mpcs.action_name
+                    END AS "Acción",
+                    mpcs.registro_anterior AS "Registro Anterior",
+                    mpcs.registro_posterior AS "Registro Posterior"
+                    FROM m_office mo
+                    INNER JOIN m_office ounder ON ounder.hierarchy LIKE CONCAT(mo.hierarchy, ''%'') AND ounder.hierarchy LIKE CONCAT(''${currentUserHierarchy}'', ''%'')
+                    INNER JOIN m_appuser maker ON maker.office_id = ounder.id
+                    INNER JOIN m_portfolio_command_source mpcs ON mpcs.maker_id = maker.id
+                    WHERE (mpcs.entity_name = ''${modulo}'' OR ''-1'' = ''${modulo}'')
+                    AND (DATE(mpcs.made_on_date_utc) BETWEEN ''${startDate}'' AND ''${endDate}'')
+                    AND (mpcs.resource_id = ''${resourceId}'' OR ''-1'' = ''${resourceId}'')
+                    AND (mpcs.action_name = (CASE
+                      WHEN ''${actionId}'' = 1 THEN ''CREATE''
+                      WHEN ''${actionId}'' = 2 THEN ''UPDATE''
+                      WHEN ''${actionId}'' = 3 THEN ''PERMISSIONS''
+                      WHEN ''${actionId}'' = 4 THEN ''DELETE''
+                      WHEN ''${actionId}'' = 5 THEN ''ENABLE''
+                      WHEN ''${actionId}'' = 6 THEN ''DISABLE''
+                      ELSE ''UNKNOWN''
+                    END ) OR ''-1'' = ''${actionId}'')
+                    AND mpcs.entity_name IN (''USER'', ''ROLE'') AND mpcs.status = 1
+                    ORDER BY ounder.hierarchy, mpcs.made_on_date_utc DESC'
+                    WHERE report_name = 'Reporte de tabla de auditoria (Roles y Usuarios)';
+            ]]>
+        </sql>
+    </changeSet>
+
+    <changeSet author="fineract" id="6">
+        <sql>
+            <![CDATA[
+                DELETE
+                FROM stretchy_report_parameter srp
+                WHERE srp.id = (SELECT srp.id FROM stretchy_report_parameter srp INNER JOIN stretchy_parameter sp ON sp.id = srp.parameter_id INNER JOIN stretchy_report sr ON sr.id = srp.report_id WHERE sr.report_name = 'Reporte de tabla de auditoria (Roles y Usuarios)' AND sp.parameter_name = 'makerSelect');
+            ]]>
+        </sql>
+    </changeSet>
+
+    <changeSet author="fineract" id="7">
+        <sql>
+            <![CDATA[
+            UPDATE stretchy_parameter SET parameter_sql='SELECT
+                sp.parameter_name,
+                sp.parameter_variable,
+                sp.parameter_label,
+                sp."parameter_displayType",
+                sp."parameter_FormatType",
+                sp.parameter_default,
+                sp."selectOne",
+                sp."selectAll",
+                spp.parameter_name AS parentParameterName,
+                srp.mandatory_parameter AS "mandatoryParameter"
+            FROM stretchy_parameter sp
+            INNER JOIN stretchy_report_parameter srp ON srp.parameter_id = sp.id
+            INNER JOIN stretchy_report sr ON srp.report_id = sr.id
+            LEFT JOIN stretchy_parameter spp ON spp.id = sp.parent_id
+            WHERE sr.self_service_user_report = ${isSelfServiceUser} AND sr.report_name IN(${reportListing}) AND sp.special IS NULL
+            GROUP BY srp.id, sp.parameter_name, sp.parameter_variable, sp.parameter_label, 	sp."parameter_displayType",
+            sp."parameter_FormatType", sp.parameter_default, sp."selectOne", sp."selectAll",spp.parameter_name, sp.id
+            ORDER BY sp.id' WHERE parameter_name='FullParameterList';
+            ]]>
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>
