@@ -169,7 +169,8 @@ public class BankAccountReadPlatformServiceImpl implements BankAccountReadPlatfo
             sqlBuilder.append("from m_bank_account ba ");
             sqlBuilder.append("join m_bank b on b.id = ba.bank_id ");
             sqlBuilder.append("join m_agency a on a.id = ba.agency_id ");
-            sqlBuilder.append("LEFT JOIN(select agency_id, linked_office_id from m_supervision GROUP BY agency_id ) supv ON supv.agency_id = a.id ");
+            sqlBuilder.append(
+                    "LEFT JOIN(select agency_id, linked_office_id from m_supervision GROUP BY agency_id ) supv ON supv.agency_id = a.id ");
             sqlBuilder.append("LEFT JOIN m_office mo on mo.id = supv.linked_office_id ");
             sqlBuilder.append("join acc_gl_account gl on gl.id = ba.gl_account_id ");
 
