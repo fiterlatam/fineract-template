@@ -17,4 +17,4 @@ echo "---
     - name: Apply the fineract/$1 k8s manifest
       shell: 'kubectl apply -f $1'
       
-" > deploy-fineract-backend-deployment-playbook.yaml
+" > $2
