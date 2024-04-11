@@ -1954,7 +1954,7 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
 
     @Transactional
     @Override
-    public CommandProcessingResult releaseAmount(final Long savingsId, final Long savingsTransactionId,LocalDate transactionDate) {
+    public CommandProcessingResult releaseAmount(final Long savingsId, final Long savingsTransactionId, LocalDate transactionDate) {
 
         final AppUser submittedBy = this.context.authenticatedUser();
         SavingsAccountTransaction holdTransaction = this.savingsAccountTransactionRepository
@@ -2241,7 +2241,6 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
         JsonObject object = element.getAsJsonObject();
         object.addProperty("transactionAmount", holdTransaction.getAmount());
         command.setJsonCommand(object.toString());
-
 
         return new CommandProcessingResultBuilder().withEntityId(releaseResult.resourceId())
                 .withOfficeId(holdTransaction.getSavingsAccount().officeId()).withClientId(holdTransaction.getSavingsAccount().clientId())
