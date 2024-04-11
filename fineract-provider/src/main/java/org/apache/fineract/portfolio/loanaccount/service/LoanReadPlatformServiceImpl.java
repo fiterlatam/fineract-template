@@ -833,7 +833,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                     + " LEFT JOIN (SELECT DISTINCT sc.loan_id AS loan_id, sc.duedate AS first_duedate"
                     + "            FROM m_loan_repayment_schedule sc " + "            WHERE sc.installment = 1 "
                     + "            ORDER BY sc.duedate DESC " + "            ) mlrs ON mlrs.loan_id = l.id "
-                    + "left join m_savings_account sa on sa.id = c.default_savings_account";
+                    + "left join m_savings_account sa on sa.client_id = c.id";
 
         }
 
@@ -1749,7 +1749,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
         loanCounter = this.jdbcTemplate.queryForObject(sql, new Object[] { clientId, productId }, Integer.class);
 
         final String clientDefinedLoanCycle = "Select c.loan_cycle as loanCycle from m_client c where c.id = ?";
-        Integer clientLoanCycle = this.jdbcTemplate.queryForObject(clientDefinedLoanCycle, new Object[] { clientId}, Integer.class);
+        Integer clientLoanCycle = this.jdbcTemplate.queryForObject(clientDefinedLoanCycle, new Object[] { clientId }, Integer.class);
         if (clientLoanCycle != null) {
             return clientLoanCycle;
         } else {

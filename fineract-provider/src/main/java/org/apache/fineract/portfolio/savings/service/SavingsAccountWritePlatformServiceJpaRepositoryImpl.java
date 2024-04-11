@@ -2154,31 +2154,36 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
             depositJsonCommand.setJsonCommand(jsonObject.toString());
 
             paymentDetail = this.paymentDetailWritePlatformService.createAndPersistPaymentDetail(depositJsonCommand, changes);
-            final SavingsAccountTransaction deposit = this.savingsAccountDomainService.handleDeposit(account,
-                    DateUtils.DEFAULT_DATE_FORMATER, transactionDate, depositAmount, paymentDetail, isAccountTransfer, isRegularTransaction,
-                    backdatedTxnsAllowedTill);
-            deposit.setLoanId(loanId);
 
-            if (isGsim && (deposit.getId() != null)) {
+            BigDecimal accountBalance = account.getAccountBalance();
+            BigDecimal amountToDeposit = requiredGuaranteeAmount;
+            if (accountBalance.compareTo(requiredGuaranteeAmount) < 0) {
+                amountToDeposit = requiredGuaranteeAmount.subtract(accountBalance);
+                final SavingsAccountTransaction deposit = this.savingsAccountDomainService.handleDeposit(account,
+                        DateUtils.DEFAULT_DATE_FORMATER, transactionDate, amountToDeposit, paymentDetail, isAccountTransfer,
+                        isRegularTransaction, backdatedTxnsAllowedTill);
+                deposit.setLoanId(loanId);
+                if (isGsim && (deposit.getId() != null)) {
 
-                LOG.debug("Deposit account has been created: {} ", deposit);
+                    LOG.debug("Deposit account has been created: {} ", deposit);
 
-                GroupSavingsIndividualMonitoring gsim = gsimRepository.findById(account.getGsim().getId()).orElseThrow();
-                LOG.info("parent deposit : {} ", gsim.getParentDeposit());
-                LOG.info("child account : {} ", savingsAccount.getId());
-                BigDecimal currentBalance = gsim.getParentDeposit();
-                BigDecimal newBalance = currentBalance.add(depositAmount);
-                gsim.setParentDeposit(newBalance);
-                gsimRepository.save(gsim);
-                LOG.info("balance after making deposit : {} ",
-                        gsimRepository.findById(account.getGsim().getId()).orElseThrow().getParentDeposit());
+                    GroupSavingsIndividualMonitoring gsim = gsimRepository.findById(account.getGsim().getId()).orElseThrow();
+                    LOG.info("parent deposit : {} ", gsim.getParentDeposit());
+                    LOG.info("child account : {} ", savingsAccount.getId());
+                    BigDecimal currentBalance = gsim.getParentDeposit();
+                    BigDecimal newBalance = currentBalance.add(amountToDeposit);
+                    gsim.setParentDeposit(newBalance);
+                    gsimRepository.save(gsim);
+                    LOG.info("balance after making deposit : {} ",
+                            gsimRepository.findById(account.getGsim().getId()).orElseThrow().getParentDeposit());
 
+                }
             }
 
             this.savingAccountRepositoryWrapper.saveAndFlush(account);
 
             // Hold Amount
-            Money runningBalance = Money.of(account.getCurrency(), account.getAccountBalance());
+            Money runningBalance = Money.of(account.getCurrency(), accountBalance);
             if (account.getSavingsHoldAmount() != null) {
                 runningBalance = runningBalance.minus(account.getSavingsHoldAmount()).minus(requiredGuaranteeAmount);
             } else {
@@ -2194,7 +2199,6 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
             final String reasonForBlock = "Hold deposit amount for disbursing loan";
             transaction.updateReason(reasonForBlock);
 
-            account.getAccountBalance();
             this.savingsAccountTransactionDataValidator.validateTransactionWithPivotDate(transaction.getTransactionLocalDate(), account);
 
             this.savingsAccountTransactionRepository.saveAndFlush(transaction);
@@ -2207,7 +2211,7 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
             this.savingAccountRepositoryWrapper.saveAndFlush(account);
 
             result = new CommandProcessingResultBuilder() //
-                    .withEntityId(deposit.getId()) //
+                    .withEntityId(loanId) //
                     .withOfficeId(account.officeId()) //
                     .withClientId(clientId) //
                     .withSavingsId(account.getId()) //
