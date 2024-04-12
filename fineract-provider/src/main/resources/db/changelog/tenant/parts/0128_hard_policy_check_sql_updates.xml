@@ -239,7 +239,7 @@
         </sql>
     </changeSet>
 
-    <changeSet id="9" author="fineract">
+    <changeSet id="10" author="fineract">
         <sql>
             <![CDATA[
                 UPDATE m_product_policy SET evaluation_type = 'INDIVIDUAL' WHERE policy_id = 29;
