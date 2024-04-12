@@ -27,7 +27,7 @@
     <changeSet id="1" author="fineract">
         <sql>
             <![CDATA[
-                UPDATE stretchy_report SET report_sql = "SELECT
+            UPDATE stretchy_report SET report_sql = "SELECT
                 housing_type.owner_percent,
                 CASE
                     WHEN (${loanProductId} = 2) AND (housing_type.owner_percent >=50) THEN 'GREEN'
@@ -50,7 +50,7 @@
     <changeSet id="2" author="fineract">
         <sql>
             <![CDATA[
-                UPDATE stretchy_report SET report_sql = "SELECT mc.id,
+            UPDATE stretchy_report SET report_sql = "SELECT mc.id,
                 UPPER(COALESCE(mc.nationality, '')) AS client_nationality,
                 CASE
                     WHEN (${loanProductId} = 6) AND ('${recreditCategorization}' = 'NUEVO') AND ('GUATEMAL' LIKE CONCAT('%',COALESCE(mc.nationality, ''),'%')) THEN 'GREEN'
@@ -68,7 +68,7 @@
     <changeSet id="3" author="fineract">
         <sql>
             <![CDATA[
-                UPDATE stretchy_report SET report_sql = "SELECT
+            UPDATE stretchy_report SET report_sql = "SELECT
                 COALESCE(client_details.principal_paid_percentage, 0) AS principal_paid_percentage,
                 CASE
                     WHEN ('${loanProductId}' = 7) AND ( COALESCE(client_details.principal_paid_percentage, 0) >= 50) THEN 'GREEN'
@@ -90,9 +90,9 @@
     <changeSet id="4" author="fineract">
         <sql>
             <![CDATA[
-                DELETE FROM m_product_policy WHERE product_id = 6 AND policy_id = (select id from m_policy where name = 'Present agricultural technical diagnosis (Commcare)' limit 1);
-                DELETE FROM m_product_policy WHERE product_id in (6,7,3) AND policy_id = (select id from m_policy where name = 'Categories of clients to accept' limit 1);
-                UPDATE m_product_policy set evaluation_type = 'GROUP' WHERE policy_id = (select id from m_policy where name = 'Present agricultural technical diagnosis (Commcare)' limit 1);
+            DELETE FROM m_product_policy WHERE product_id = 6 AND policy_id = (select id from m_policy where name = 'Present agricultural technical diagnosis (Commcare)' limit 1);
+            DELETE FROM m_product_policy WHERE product_id in (6,7,3) AND policy_id = (select id from m_policy where name = 'Categories of clients to accept' limit 1);
+            UPDATE m_product_policy set evaluation_type = 'GROUP' WHERE policy_id = (select id from m_policy where name = 'Present agricultural technical diagnosis (Commcare)' limit 1);
             ]]>
         </sql>
     </changeSet>
@@ -100,7 +100,7 @@
     <changeSet id="5" author="fineract">
         <sql>
             <![CDATA[
-                UPDATE stretchy_report SET report_sql = "SELECT CASE
+            UPDATE stretchy_report SET report_sql = "SELECT CASE
                 WHEN (${loanProductId} NOT IN (3,7)) AND (IFNULL(client_loan_details.number_of_loan_cycles, 0) >= 3) THEN 'RECURRING'
                 ELSE 'NEW'
                 END AS clientCategorization,
@@ -141,7 +141,7 @@
     <changeSet id="6" author="fineract">
         <sql>
             <![CDATA[
-                UPDATE stretchy_report SET report_sql = "SELECT
+            UPDATE stretchy_report SET report_sql = "SELECT
                 prequalification_details.recreditCategorization,
                 CASE
                 WHEN (${loanProductId} NOT IN (3,7)) AND (prequalification_details.recreditCategorization = 'RECREDITO') AND ('${clientArea}' = 'URBAN') AND (${recurringMembersCount} >= (${newMembersCount}*3)) THEN 'GREEN'
@@ -154,7 +154,7 @@
                 FROM m_prequalification_group p
                 )prequalification_details ON prequalification_details.prequalification_id = mpg.id
                 WHERE mpg.id = ${prequalificationId}"
-                WHERE report_name = "Acceptance of new clients Policy Check";
+            WHERE report_name = "Acceptance of new clients Policy Check";
             ]]>
         </sql>
     </changeSet>
@@ -162,7 +162,7 @@
     <changeSet id="7" author="fineract">
         <sql>
             <![CDATA[
-                UPDATE stretchy_report SET report_sql = "SELECT mc.id,
+            UPDATE stretchy_report SET report_sql = "SELECT mc.id,
                 UPPER(COALESCE(mc.nationality, '')) AS client_nationality,
                 CASE
                     WHEN (${loanProductId} = 6) AND (COALESCE(mc.nationality, '') LIKE '%GUATEMAL%') THEN 'GREEN'
@@ -178,7 +178,7 @@
     <changeSet id="8" author="fineract">
         <sql>
             <![CDATA[
-                UPDATE stretchy_report SET report_sql = "SELECT
+            UPDATE stretchy_report SET report_sql = "SELECT
                 COALESCE(client_details.principal_paid_percentage, 0) AS principal_paid_percentage,
                 CASE
                     WHEN ('${loanProductId}' = 7) AND ( COALESCE(client_details.principal_paid_percentage, 0) >= 50) THEN 'GREEN'
@@ -194,6 +194,47 @@
                 GROUP BY mc.id
                 )client_details ON client_details.client_id = mc.id
                 WHERE mc.id = ${clientId}" WHERE report_name = "Credits Policy Check";
+            ]]>
+        </sql>
+    </changeSet>
+
+    <changeSet id="9" author="fineract">
+        <sql>
+            <![CDATA[
+            UPDATE stretchy_report SET report_sql = "SELECT CASE
+                WHEN (${loanProductId} NOT IN (3,7)) AND (COALESCE(mc.loan_cycle, 0) >= 3) THEN 'RECURRING'
+                ELSE 'NEW'
+                END AS clientCategorization,
+                'GREEN' AS color,
+                CASE
+                WHEN client_area.code_value = 'Urbana' THEN 'URBANA'
+                WHEN client_area.code_value = 'Rural' THEN 'RURAL'
+                WHEN client_area.code_value = 'PeriUrbana' THEN 'PERI_URBANA'
+                ELSE 'RURAL'
+                END AS clientArea,
+                CASE
+                WHEN COALESCE(client_loan_details.number_of_submitted_loans, 0) > 0 THEN 'RECREDITO'
+                ELSE 'NUEVO'
+                END AS recreditCategorization,
+                client_loan_details.submittedon_years,
+                client_loan_details.rejoining_years,
+                client_loan_details.number_of_loan_cycles,
+                client_loan_details.number_of_closed_loans,
+                client_loan_details.number_of_submitted_loans
+                FROM m_client mc
+                INNER JOIN (
+                SELECT mcl.id AS client_id,
+                TIMESTAMPDIFF(YEAR, mcl.submittedon_date, CURDATE()) AS submittedon_years,
+                IFNULL(TIMESTAMPDIFF(YEAR, mcl.submittedon_date, mcl.reactivated_on_date), 0) AS rejoining_years,
+                COALESCE((SELECT COUNT(*) FROM m_loan WHERE client_id = mcl.id AND approvedon_date IS NOT NULL), 0) AS number_of_loan_cycles,
+                COALESCE((SELECT COUNT(*) FROM m_loan WHERE client_id = mcl.id AND loan_status_id = z), 0) AS number_of_closed_loans,
+                COALESCE((SELECT COUNT(*) FROM m_loan WHERE client_id = mcl.id), 0) AS number_of_submitted_loans
+                FROM  m_client mcl
+                )client_loan_details ON client_loan_details.client_id = mc.id
+                LEFT JOIN m_client_contact_info mcci ON mcci.client_id = mc.id
+                LEFT JOIN m_code_value client_area ON client_area.id = mcci.area
+                WHERE mc.id = ${clientId}
+                GROUP BY mc.id" WHERE report_name = "Client Categorization Policy Check";
             ]]>
         </sql>
     </changeSet>

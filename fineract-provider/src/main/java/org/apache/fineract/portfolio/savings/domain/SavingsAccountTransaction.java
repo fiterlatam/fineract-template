@@ -941,6 +941,7 @@ public final class SavingsAccountTransaction extends AbstractPersistableCustom {
     }
 
     public void updateDateOf(LocalDate transactionDate) {
-        this.dateOf =transactionDate;
+        this.dateOf = transactionDate;
     }
+
 }

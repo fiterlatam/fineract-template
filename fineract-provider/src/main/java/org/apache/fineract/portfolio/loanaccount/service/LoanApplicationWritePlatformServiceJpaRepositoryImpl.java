@@ -2994,11 +2994,10 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
 
             // TODO: FBR-47 Handle deposit to guarantee savings account here
             BigDecimal depositAmount = cheque.getGuaranteeAmount().subtract(cheque.getRequiredGuaranteeAmount());
-            if (depositAmount != null && depositAmount.compareTo(BigDecimal.ZERO) < 0) {
-                CommandProcessingResult depositCommandResult = this.savingsAccountWritePlatformService
-                        .depositAndHoldToClientGuaranteeAccount(depositAmount.abs(), cheque.getRequiredGuaranteeAmount(),
-                                loanAccount.getClientId(), loanAccount.getId(), localDate, cheque.getId(), command);
-            }
+            CommandProcessingResult depositCommandResult = this.savingsAccountWritePlatformService.depositAndHoldToClientGuaranteeAccount(
+                    depositAmount.abs(), cheque.getRequiredGuaranteeAmount(), loanAccount.getClientId(), loanAccount.getId(), localDate,
+                    cheque.getId(), command);
+
         }
         return new CommandProcessingResultBuilder().withCommandId(command.commandId()).build();
     }

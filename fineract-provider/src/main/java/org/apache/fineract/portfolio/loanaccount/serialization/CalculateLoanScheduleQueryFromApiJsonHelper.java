@@ -162,8 +162,8 @@ public final class CalculateLoanScheduleQueryFromApiJsonHelper {
     }
 
     public void validateSelectedPeriodFrequencyTypeIsTheSame(final List<ApiParameterError> dataValidationErrors,
-                                                             final Integer loanTermFrequency, final Integer loanTermFrequencyType, final Integer numberOfRepayments,
-                                                             final Integer repaymentEvery, final Integer repaymentEveryType) {
+            final Integer loanTermFrequency, final Integer loanTermFrequencyType, final Integer numberOfRepayments,
+            final Integer repaymentEvery, final Integer repaymentEveryType) {
         if (loanTermFrequencyType != null && !loanTermFrequencyType.equals(repaymentEveryType)) {
             final ApiParameterError error = ApiParameterError.parameterError(
                     "validation.msg.loan.loanTermFrequencyType.not.the.same.as.repaymentFrequencyType",
@@ -194,7 +194,7 @@ public final class CalculateLoanScheduleQueryFromApiJsonHelper {
     }
 
     private void validateRepaymentsStartingFromDateIsAfterDisbursementDate(final List<ApiParameterError> dataValidationErrors,
-                                                                           final LocalDate expectedDisbursementDate, final LocalDate repaymentsStartingFromDate) {
+            final LocalDate expectedDisbursementDate, final LocalDate repaymentsStartingFromDate) {
         if (expectedDisbursementDate != null) {
             if (repaymentsStartingFromDate != null && expectedDisbursementDate.isAfter(repaymentsStartingFromDate)) {
                 final ApiParameterError error = ApiParameterError.parameterError(
