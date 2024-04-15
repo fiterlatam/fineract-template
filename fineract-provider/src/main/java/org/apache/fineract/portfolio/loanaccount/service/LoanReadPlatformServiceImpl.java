@@ -559,7 +559,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
     @Override
     public LoanTransactionData retrieveLoanTransactionTemplate(final Long loanId) {
 
-        this.context.authenticatedUser();
+        String hierarchy = this.context.authenticatedUser().getOffice().getHierarchy();
 
         RepaymentTransactionTemplateMapper mapper = new RepaymentTransactionTemplateMapper(sqlGenerator);
         String sql = "select " + mapper.schema();
@@ -568,7 +568,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
         final Collection<PaymentTypeData> paymentOptions = this.paymentTypeReadPlatformService.retrieveAllPaymentTypes();
         BankAccountReadPlatformServiceImpl.BankAccountMapper bankAccountMapper = new BankAccountReadPlatformServiceImpl.BankAccountMapper();
         String bankAccSql = "select " + bankAccountMapper.schema();
-        List<BankAccountData> bankAccounts = this.jdbcTemplate.query(bankAccSql, bankAccountMapper);
+        bankAccSql = bankAccSql+" where (mo.hierarchy LIKE CONCAT(?, '%') OR ? like CONCAT(mo.hierarchy, '%')) ";
+        List<BankAccountData> bankAccounts = this.jdbcTemplate.query(bankAccSql, bankAccountMapper,hierarchy,hierarchy);
         LoanTransactionData loanTransactionDataTemplate = LoanTransactionData.templateOnTop(loanTransactionData, paymentOptions);
         loanTransactionDataTemplate.setBankAccounts(bankAccounts);
         return loanTransactionDataTemplate;
