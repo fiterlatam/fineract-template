@@ -568,8 +568,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
         final Collection<PaymentTypeData> paymentOptions = this.paymentTypeReadPlatformService.retrieveAllPaymentTypes();
         BankAccountReadPlatformServiceImpl.BankAccountMapper bankAccountMapper = new BankAccountReadPlatformServiceImpl.BankAccountMapper();
         String bankAccSql = "select " + bankAccountMapper.schema();
-        bankAccSql = bankAccSql+" where (mo.hierarchy LIKE CONCAT(?, '%') OR ? like CONCAT(mo.hierarchy, '%')) ";
-        List<BankAccountData> bankAccounts = this.jdbcTemplate.query(bankAccSql, bankAccountMapper,hierarchy,hierarchy);
+        bankAccSql = bankAccSql + " where (mo.hierarchy LIKE CONCAT(?, '%') OR ? like CONCAT(mo.hierarchy, '%')) ";
+        List<BankAccountData> bankAccounts = this.jdbcTemplate.query(bankAccSql, bankAccountMapper, hierarchy, hierarchy);
         LoanTransactionData loanTransactionDataTemplate = LoanTransactionData.templateOnTop(loanTransactionData, paymentOptions);
         loanTransactionDataTemplate.setBankAccounts(bankAccounts);
         return loanTransactionDataTemplate;

@@ -404,11 +404,11 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
                         "Guarantee amount is greater than savings account balance of" + availableBalance);
             }
 
-
             String accountNo = savingsAccountData.getAccountNo();
             final boolean backdatedTxnsAllowedTill = false;
 
-            final SavingsAccount fromSavingsAccount = this.savingsAccountAssembler.assembleFrom(savingsAccountData.getId(),backdatedTxnsAllowedTill);
+            final SavingsAccount fromSavingsAccount = this.savingsAccountAssembler.assembleFrom(savingsAccountData.getId(),
+                    backdatedTxnsAllowedTill);
 
             cheque.setStatus(BankChequeStatus.PENDING_ISSUANCE.getValue());
             cheque.setCaseId(payGuaranteeByChequeCommand.getCaseId());
@@ -459,12 +459,11 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
             final JsonCommand withdrawCommand = JsonCommand.fromJsonElement(savingsAccountData.getId(), jsonObject, this.fromApiJsonHelper);
             withdrawCommand.setJsonCommand(jsonObject.toString());
 
-            final PaymentDetail withdrawalDetail = this.paymentDetailWritePlatformService.createPaymentDetail(withdrawCommand,
-                    changes);
+            final PaymentDetail withdrawalDetail = this.paymentDetailWritePlatformService.createPaymentDetail(withdrawCommand, changes);
             final SavingsTransactionBooleanValues transactionBooleanValues = new SavingsTransactionBooleanValues(false, true,
                     fromSavingsAccount.isWithdrawalFeeApplicableForTransfer(), false, false, false, false, false, false, false);
-            final SavingsAccountTransaction withdrawal = this.savingsAccountDomainService.handleWithdrawal(fromSavingsAccount,
-                    fmt, localDateTime.toLocalDate(), cheque.getGuaranteeAmount(), withdrawalDetail, transactionBooleanValues,
+            final SavingsAccountTransaction withdrawal = this.savingsAccountDomainService.handleWithdrawal(fromSavingsAccount, fmt,
+                    localDateTime.toLocalDate(), cheque.getGuaranteeAmount(), withdrawalDetail, transactionBooleanValues,
                     backdatedTxnsAllowedTill);
             final Note note = Note.savingsTransactionNote(fromSavingsAccount, withdrawal, "Guarantias Payment by Cheque");
             this.noteRepository.save(note);
