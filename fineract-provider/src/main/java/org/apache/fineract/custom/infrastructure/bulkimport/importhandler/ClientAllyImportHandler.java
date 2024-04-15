@@ -13,7 +13,6 @@ import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformS
 import org.apache.fineract.custom.infrastructure.bulkimport.data.CustomGlobalEntityType;
 import org.apache.fineract.custom.infrastructure.bulkimport.enumerator.ClientAllyTemplatePopulateImportEnum;
 import org.apache.fineract.custom.portfolio.ally.data.ClientAllyData;
-import org.apache.fineract.infrastructure.bulkimport.constants.StaffConstants;
 import org.apache.fineract.infrastructure.bulkimport.constants.TemplatePopulateImportConstants;
 import org.apache.fineract.infrastructure.bulkimport.data.Count;
 import org.apache.fineract.infrastructure.bulkimport.importhandler.ImportHandler;
@@ -148,8 +147,8 @@ public class ClientAllyImportHandler implements ImportHandler {
         BigDecimal settledComission = BigDecimal
                 .valueOf(ImportHandlerUtils.readAsDouble(ClientAllyTemplatePopulateImportEnum.SETTLED_COMISSION.getColumnIndex(), row));
         if (Objects.nonNull(settledComission) && settledComission.compareTo(BigDecimal.valueOf(99.99)) > 0) {
-            ammenedEValidationMessages.append("La " + ClientAllyTemplatePopulateImportEnum.SETTLED_COMISSION.getColumnName()
-                    + " no debe ser major que 99.99; ");
+            ammenedEValidationMessages.append(
+                    "La " + ClientAllyTemplatePopulateImportEnum.SETTLED_COMISSION.getColumnName() + " no debe ser major que 99.99; ");
         }
     }
 
