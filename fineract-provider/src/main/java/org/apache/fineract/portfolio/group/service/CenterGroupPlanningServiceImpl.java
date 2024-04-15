@@ -90,12 +90,19 @@ public class CenterGroupPlanningServiceImpl implements CenterGroupPlanningServic
         // calculate the next meeting date
         for (PortfolioDetailedPlanningData portfolioPlanning : portfolioPlanningList) {
 
-            // check if needed to add more planning date for the current center and group
-            LocalDate currentNextMeetingDate = portfolioPlanning.getMeetingDate();
-
             final int meetingDayOfWeek = portfolioPlanning.getMeetingDayOfWeek();
             final int rangeStartDay = portfolioPlanning.getRangeStartDay();
             final int rangeEndDay = portfolioPlanning.getRangeEndDay();
+
+            // check if needed to add more planning date for the current center and group
+            LocalDate currentNextMeetingDate = PortfolioCenterGroupUtil.getNextMeetingDate(startDateRange, rangeStartDay, rangeEndDay,
+                    meetingDayOfWeek);
+
+            if (currentNextMeetingDate.isBefore(startDateRange)) {
+                currentNextMeetingDate = PortfolioCenterGroupUtil.calculateNextMeetingDate(currentNextMeetingDate, rangeStartDay,
+                        rangeEndDay, meetingDayOfWeek, PortfolioCenterFrecuencyMeeting.MENSUAL);
+            }
+            portfolioPlanning.setMeetingDate(currentNextMeetingDate);
 
             // generate the future planning for this group && loan
             while ((currentNextMeetingDate.isAfter(startDateRange) || currentNextMeetingDate.equals(startDateRange))
@@ -177,6 +184,7 @@ public class CenterGroupPlanningServiceImpl implements CenterGroupPlanningServic
                 // meetings with groups have a monthly frequency
                 LocalDate nextMeetingDate = PortfolioCenterGroupUtil.calculateNextMeetingDate(currentNextMeetingDate, rangeStartDay,
                         rangeEndDay, meetingDayOfWeek, PortfolioCenterFrecuencyMeeting.MENSUAL);
+
                 currentNextMeetingDate = nextMeetingDate;
             }
         }
@@ -355,14 +363,11 @@ public class CenterGroupPlanningServiceImpl implements CenterGroupPlanningServic
 
             final String meetingDayName = rs.getString("meetingDayName");
 
-            // calculate the next meeting date
-            LocalDate currentTenantDate = DateUtils.getLocalDateOfTenant();
+            // set the next meeting date as the current date just for initialization
             final int meetingDayOfWeek = rs.getInt("position");
             final int rangeStartDay = rs.getInt("rangeStartDay");
             final int rangeEndDay = rs.getInt("rangeEndDay");
-
-            final LocalDate nextMeetingDate = PortfolioCenterGroupUtil.calculateNextMeetingDate(currentTenantDate, rangeStartDay,
-                    rangeEndDay, meetingDayOfWeek, PortfolioCenterFrecuencyMeeting.MENSUAL);
+            LocalDate nextMeetingDate = DateUtils.getLocalDateOfTenant();
 
             return PortfolioDetailedPlanningData.instance(centerGroupId, centerGroupName, legacyGroupNumber, meetingStartTime,
                     meetingEndTime, portfolioCenterId, portfolioCenterName, legacyCenterNumber, meetingDayName, nextMeetingDate,
