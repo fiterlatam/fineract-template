@@ -9,12 +9,12 @@ echo "---
     ansible_become_user: 'ansible'
     ansible_become_pass: '4Ns1BL3-4DM1N**'
   tasks:
-    - name: Copy fineract/backend-deployment.yaml file to set up the Fineract deployment
+    - name: Copy fineract/$1 file to set up the Fineract deployment
       copy:
-        src: ./backend-deployment.yaml
+        src: ./$1
         dest: /home/ansible
 
-    - name: Apply the fineract/backend-deployment.yaml k8s manifest
-      shell: 'kubectl apply -f backend-deployment.yaml'
+    - name: Apply the fineract/$1 k8s manifest
+      shell: kubectl apply -f $1
       
-" > deploy-fineract-backend-deployment-playbook.yaml
+" > $2
