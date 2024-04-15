@@ -26,6 +26,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -77,9 +78,19 @@ import org.apache.fineract.portfolio.client.domain.ClientRepositoryWrapper;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
 import org.apache.fineract.portfolio.loanaccount.service.LoanWritePlatformService;
+import org.apache.fineract.portfolio.note.domain.Note;
+import org.apache.fineract.portfolio.note.domain.NoteRepository;
+import org.apache.fineract.portfolio.paymentdetail.PaymentDetailConstants;
+import org.apache.fineract.portfolio.paymentdetail.domain.PaymentDetail;
+import org.apache.fineract.portfolio.paymentdetail.service.PaymentDetailWritePlatformService;
 import org.apache.fineract.portfolio.paymenttype.data.PaymentTypeData;
 import org.apache.fineract.portfolio.paymenttype.service.PaymentTypeReadPlatformService;
+import org.apache.fineract.portfolio.savings.SavingsTransactionBooleanValues;
 import org.apache.fineract.portfolio.savings.data.SavingsAccountData;
+import org.apache.fineract.portfolio.savings.domain.SavingsAccount;
+import org.apache.fineract.portfolio.savings.domain.SavingsAccountAssembler;
+import org.apache.fineract.portfolio.savings.domain.SavingsAccountDomainService;
+import org.apache.fineract.portfolio.savings.domain.SavingsAccountTransaction;
 import org.apache.fineract.portfolio.savings.service.SavingsAccountReadPlatformService;
 import org.apache.fineract.portfolio.savings.service.SavingsAccountWritePlatformService;
 import org.apache.fineract.useradministration.domain.AppUser;
@@ -115,6 +126,10 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
     private final SavingsAccountWritePlatformService savingsAccountWritePlatformService;
     private final FromJsonHelper fromApiJsonHelper;
     private final PaymentTypeReadPlatformService paymentTypeReadPlatformService;
+    private final SavingsAccountAssembler savingsAccountAssembler;
+    private final SavingsAccountDomainService savingsAccountDomainService;
+    private final NoteRepository noteRepository;
+    private final PaymentDetailWritePlatformService paymentDetailWritePlatformService;
 
     @Override
     public CommandProcessingResult createBatch(JsonCommand command) {
@@ -388,6 +403,13 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
                 throw new BankChequeException("guarantee.amount.greater.than.available.savings.account.balance",
                         "Guarantee amount is greater than savings account balance of" + availableBalance);
             }
+
+
+            String accountNo = savingsAccountData.getAccountNo();
+            final boolean backdatedTxnsAllowedTill = false;
+
+            final SavingsAccount fromSavingsAccount = this.savingsAccountAssembler.assembleFrom(savingsAccountData.getId(),backdatedTxnsAllowedTill);
+
             cheque.setStatus(BankChequeStatus.PENDING_ISSUANCE.getValue());
             cheque.setCaseId(payGuaranteeByChequeCommand.getCaseId());
             cheque.setGuaranteeId(payGuaranteeByChequeCommand.getGuaranteeId());
@@ -399,6 +421,53 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
             final Long currentUserId = currentUser.getId();
             cheque.stampAudit(currentUserId, localDateTime);
             this.chequeBatchRepositoryWrapper.updateCheque(cheque);
+
+            final Locale locale = command.extractLocale();
+            final DateTimeFormatter fmt = DateTimeFormatter.ofPattern(command.dateFormat()).withLocale(locale);
+
+            final Map<String, Object> changes = new LinkedHashMap<>();
+            changes.put("transactionDate", localDateTime.toLocalDate());
+            changes.put("transactionAmount", cheque.getGuaranteeAmount());
+            changes.put("locale", command.locale());
+            changes.put("dateFormat", command.dateFormat());
+            changes.put("paymentTypeId", command.stringValueOfParameterNamed("paymentTypeId"));
+            changes.put("glAccountId", command.longValueOfParameterNamed("glAccountId"));
+            changes.put("billNumber", command.stringValueOfParameterNamed("billNumber"));
+            final Collection<PaymentTypeData> paymentTypeOptions = this.paymentTypeReadPlatformService.retrieveAllPaymentTypes();
+            Long paymentTypeId = 1L;
+            if (!paymentTypeOptions.isEmpty()) {
+                final Optional<PaymentTypeData> paymentTypeOptional = new ArrayList<>(paymentTypeOptions).stream()
+                        .filter(t -> "Pago automático".equalsIgnoreCase(t.getName())).findFirst();
+                if (paymentTypeOptional.isPresent()) {
+                    PaymentTypeData paymentTypeData = paymentTypeOptional.get();
+                    paymentTypeId = paymentTypeData.getId();
+                }
+            }
+            final String localeAsString = "en";
+            final String dateFormat = "dd MMMM yyyy";
+
+            final JsonObject jsonObject = new JsonObject();
+            jsonObject.addProperty(PaymentDetailConstants.paymentTypeParamName, paymentTypeId);
+            jsonObject.addProperty("transactionAmount", cheque.getGuaranteeAmount());
+            jsonObject.addProperty("transactionDate", localDateTime.toLocalDate().toString());
+            jsonObject.addProperty(PaymentDetailConstants.accountNumberParamName, accountNo);
+            jsonObject.addProperty("checkNumber", cheque.getChequeNo());
+            jsonObject.addProperty("glAccountId", savingsAccountData.getGlAccountIdForSavingsControl());
+            jsonObject.addProperty("locale", localeAsString);
+            jsonObject.addProperty("dateFormat", dateFormat);
+
+            final JsonCommand withdrawCommand = JsonCommand.fromJsonElement(savingsAccountData.getId(), jsonObject, this.fromApiJsonHelper);
+            withdrawCommand.setJsonCommand(jsonObject.toString());
+
+            final PaymentDetail withdrawalDetail = this.paymentDetailWritePlatformService.createPaymentDetail(withdrawCommand,
+                    changes);
+            final SavingsTransactionBooleanValues transactionBooleanValues = new SavingsTransactionBooleanValues(false, true,
+                    fromSavingsAccount.isWithdrawalFeeApplicableForTransfer(), false, false, false, false, false, false, false);
+            final SavingsAccountTransaction withdrawal = this.savingsAccountDomainService.handleWithdrawal(fromSavingsAccount,
+                    fmt, localDateTime.toLocalDate(), cheque.getGuaranteeAmount(), withdrawalDetail, transactionBooleanValues,
+                    backdatedTxnsAllowedTill);
+            final Note note = Note.savingsTransactionNote(fromSavingsAccount, withdrawal, "Guarantias Payment by Cheque");
+            this.noteRepository.save(note);
         }
         return new CommandProcessingResultBuilder().withCommandId(command.commandId()).build();
     }
