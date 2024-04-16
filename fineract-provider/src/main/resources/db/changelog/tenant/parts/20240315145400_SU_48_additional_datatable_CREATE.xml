@@ -884,4 +884,11 @@
         </dropColumn>
     </changeSet>
 
+    <changeSet id="35" author="fineract">
+        <preConditions onFail="MARK_RAN">
+            <columnExists tableName="campos_cliente_empresas" columnName="NIT confirming"/>
+        </preConditions>
+        <dropNotNullConstraint tableName="campos_cliente_empresas" columnName="NIT confirming" columnDataType="varchar(15)"/>
+    </changeSet>
+
 </databaseChangeLog>
