@@ -21,6 +21,7 @@ package org.apache.fineract.infrastructure.clientBlockingSettings.data;
 import java.io.Serializable;
 import java.util.List;
 import lombok.Data;
+import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 
 @Data
@@ -31,7 +32,7 @@ public class BlockingReasonsData implements Serializable {
     private EnumOptionData customerLevel;
     private EnumOptionData creditLevel;
 
-    private List<EnumOptionData> customerLevelOptions;
-    private List<EnumOptionData> creditLevelOptions;
+    private List<CodeValueData> customerLevelOptions;
+    private List<CodeValueData> creditLevelOptions;
 
 }

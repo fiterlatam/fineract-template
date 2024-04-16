@@ -18,11 +18,14 @@
  */
 package org.apache.fineract.infrastructure.clientBlockingSettings.service;
 
+import java.util.ArrayList;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.apache.fineract.infrastructure.clientBlockingSettings.data.BlockingReasonsData;
+import org.apache.fineract.infrastructure.codes.data.CodeValueData;
+import org.apache.fineract.infrastructure.codes.service.CodeValueReadPlatformService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -31,11 +34,19 @@ public class ManageBlockingReasonsReadPlatformServiceImpl implements ManageBlock
 
     private static final Logger LOG = LoggerFactory.getLogger(ManageBlockingReasonsReadPlatformServiceImpl.class);
 
-    private final JdbcTemplate jdbcTemplate;
+    private final CodeValueReadPlatformService codeValueReadPlatformService;
 
     @Override
     public BlockingReasonsData retrieveTemplate() {
-        return null;
+        BlockingReasonsData blockingReasonsData = new BlockingReasonsData();
+        final List<CodeValueData> customerLevelOptions = new ArrayList<>(
+                this.codeValueReadPlatformService.retrieveCodeValuesByCode("Nivel Cliente"));
+
+        final List<CodeValueData> creditLevelOptions = new ArrayList<>(
+                this.codeValueReadPlatformService.retrieveCodeValuesByCode("Nivel Crédito"));
+        blockingReasonsData.setCreditLevelOptions(creditLevelOptions);
+        blockingReasonsData.setCustomerLevelOptions(customerLevelOptions);
+        return blockingReasonsData;
     }
 
 }

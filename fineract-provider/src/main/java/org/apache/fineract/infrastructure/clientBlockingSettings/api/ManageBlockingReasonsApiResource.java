@@ -30,7 +30,6 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
-import org.apache.fineract.infrastructure.accountnumberformat.service.AccountNumberFormatConstants;
 import org.apache.fineract.infrastructure.clientBlockingSettings.data.BlockingReasonsData;
 import org.apache.fineract.infrastructure.clientBlockingSettings.service.BlockingReasonsConstants;
 import org.apache.fineract.infrastructure.clientBlockingSettings.service.ManageBlockingReasonsReadPlatformService;
@@ -40,7 +39,7 @@ import org.apache.fineract.infrastructure.core.serialization.ToApiJsonSerializer
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.springframework.stereotype.Component;
 
-@Path(AccountNumberFormatConstants.resourceRelativeURL)
+@Path(BlockingReasonsConstants.RESOURCE_URL)
 @Component
 @Tag(name = "Manage Blocking Reasons", description = "Manage Blocking Reasons settings for client Account")
 @RequiredArgsConstructor
@@ -60,7 +59,7 @@ public class ManageBlockingReasonsApiResource {
     @Produces({ MediaType.APPLICATION_JSON })
     public String retrieveTemplate(@Context final UriInfo uriInfo) {
 
-        this.context.authenticatedUser().validateHasReadPermission(AccountNumberFormatConstants.ENTITY_NAME);
+        this.context.authenticatedUser().validateHasReadPermission(BlockingReasonsConstants.ENTITY_NAME);
 
         BlockingReasonsData blockingReasonsData = this.manageBlockingReasonsReadPlatformService.retrieveTemplate();
 
