@@ -151,11 +151,11 @@ public final class ChargeEnumerations {
             break;
             case PERCENT_OF_AMOUNT:
                 optionData = new EnumOptionData(ChargeCalculationType.PERCENT_OF_AMOUNT.getValue().longValue(),
-                        ChargeCalculationType.PERCENT_OF_AMOUNT.getCode(), "% Amount");
+                        ChargeCalculationType.PERCENT_OF_AMOUNT.getCode(), "% Principal");
             break;
             case PERCENT_OF_AMOUNT_AND_INTEREST:
                 optionData = new EnumOptionData(ChargeCalculationType.PERCENT_OF_AMOUNT_AND_INTEREST.getValue().longValue(),
-                        ChargeCalculationType.PERCENT_OF_AMOUNT_AND_INTEREST.getCode(), "% Loan Amount + Interest");
+                        ChargeCalculationType.PERCENT_OF_AMOUNT_AND_INTEREST.getCode(), "% Principal + Interest");
             break;
             case PERCENT_OF_INTEREST:
                 optionData = new EnumOptionData(ChargeCalculationType.PERCENT_OF_INTEREST.getValue().longValue(),
@@ -166,8 +166,32 @@ public final class ChargeEnumerations {
                         ChargeCalculationType.PERCENT_OF_DISBURSEMENT_AMOUNT.getCode(), "% Disbursement Amount");
             break;
             default:
-                optionData = new EnumOptionData(ChargeCalculationType.INVALID.getValue().longValue(),
-                        ChargeCalculationType.INVALID.getCode(), "Invalid");
+                StringBuilder label = new StringBuilder();
+                if(type.getCode().contains(".amount")) {
+                    label.append("Principal + ");
+                }
+
+                if(type.getCode().contains(".interest")) {
+                    label.append("Interest + ");
+                }
+
+                if(type.getCode().contains(".outstanding_amount")) {
+                    label.append("Outstanding Principal + ");
+                }
+
+                if(type.getCode().contains(".insurance")) {
+                    label.append("Insurance + ");
+                }
+
+                if(type.getCode().contains(".aval")) {
+                    label.append("Aval + ");
+                }
+
+                if(type.getCode().contains(".honorarios")) {
+                    label.append("Fees + ");
+                }
+
+                optionData = new EnumOptionData(type.getValue().longValue(), type.getCode(), "% " + label.toString().substring(0, label.length() - 2));
             break;
         }
         return optionData;
