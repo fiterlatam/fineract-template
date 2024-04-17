@@ -18,9 +18,11 @@
  */
 package org.apache.fineract.infrastructure.clientBlockingSettings.api;
 
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Context;
@@ -30,10 +32,14 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
+import org.apache.fineract.commands.domain.CommandWrapper;
+import org.apache.fineract.commands.service.CommandWrapperBuilder;
+import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformService;
 import org.apache.fineract.infrastructure.clientBlockingSettings.data.BlockingReasonsData;
 import org.apache.fineract.infrastructure.clientBlockingSettings.service.BlockingReasonsConstants;
 import org.apache.fineract.infrastructure.clientBlockingSettings.service.ManageBlockingReasonsReadPlatformService;
 import org.apache.fineract.infrastructure.core.api.ApiRequestParameterHelper;
+import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.serialization.ApiRequestJsonSerializationSettings;
 import org.apache.fineract.infrastructure.core.serialization.ToApiJsonSerializer;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
@@ -49,6 +55,7 @@ public class ManageBlockingReasonsApiResource {
     private final ManageBlockingReasonsReadPlatformService manageBlockingReasonsReadPlatformService;
     private final ToApiJsonSerializer<BlockingReasonsData> toApiJsonSerializer;
     private final ApiRequestParameterHelper apiRequestParameterHelper;
+    private final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService;
     private static final Set<String> MANAGE_BLOCKING_REASONS_DATA_PARAMETERS = new HashSet<>(Arrays.asList(
             BlockingReasonsConstants.ID_PARAM, BlockingReasonsConstants.CREDIT_LEVEL_PARAM, BlockingReasonsConstants.CUSTOMER_LEVEL_PARAM,
             BlockingReasonsConstants.CREDIT_LEVEL_OPTIONS_PARAM, BlockingReasonsConstants.CUSTOMER_LEVEL_OPTIONS_PARAM));
@@ -65,5 +72,18 @@ public class ManageBlockingReasonsApiResource {
 
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
         return this.toApiJsonSerializer.serialize(settings, blockingReasonsData, MANAGE_BLOCKING_REASONS_DATA_PARAMETERS);
+    }
+
+    @POST
+    @Path("createBlockingReasonSettings")
+    @Consumes({ MediaType.APPLICATION_JSON })
+    @Produces({ MediaType.APPLICATION_JSON })
+    public String createBlockReasonSetting(@Parameter(hidden = true) final String apiRequestBodyAsJson) {
+
+        final CommandWrapper commandRequest = new CommandWrapperBuilder().createBlockReasonSetting().withJson(apiRequestBodyAsJson).build();
+
+        final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
+
+        return this.toApiJsonSerializer.serialize(result);
     }
 }

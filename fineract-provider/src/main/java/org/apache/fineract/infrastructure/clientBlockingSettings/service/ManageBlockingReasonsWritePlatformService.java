@@ -18,19 +18,10 @@
  */
 package org.apache.fineract.infrastructure.clientBlockingSettings.service;
 
-public class BlockingReasonsConstants {
+import org.apache.fineract.infrastructure.core.api.JsonCommand;
+import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 
-    // request parameters
-    public static final String ID_PARAM = "id";
-    public static final String ENTITY_NAME = "BLOCK_SETTINGS";
-    public static final String RESOURCE_URL = "/v1/blockSettings";
+public interface ManageBlockingReasonsWritePlatformService {
 
-    public static final String CUSTOMER_LEVEL_PARAM = "customerLevel";
-    public static final String CREDIT_LEVEL_PARAM = "creditLevel";
-    public static final String CUSTOMER_LEVEL_OPTIONS_PARAM = "customerLevelOptions";
-    public static final String CREDIT_LEVEL_OPTIONS_PARAM = "creditLevelOptions";
-    public static final String PRIORITY_PARAM = "priority";
-    public static final String NAME_OF_REASON_PARAM = "nameOfReason";
-    public static final String LEVEL_PARAM = "level";
-    public static final String DESCRIPTION_PARAM = "description";
+    CommandProcessingResult createBlockReasonSetting(JsonCommand command);
 }
