@@ -111,7 +111,7 @@ public class LoanChargeReadPlatformServiceImpl implements LoanChargeReadPlatform
             LocalDate dueAsOfDate = JdbcSupport.getLocalDate(rs, "dueAsOfDate");
 
             final int chargeCalculation = rs.getInt("chargeCalculation");
-            final EnumOptionData chargeCalculationType = ChargeEnumerations.chargeCalculationType(chargeCalculation);
+            final EnumOptionData chargeCalculationType = ChargeEnumerations.loanChargeCalculationType(chargeCalculation);
             final boolean penalty = rs.getBoolean("penalty");
 
             final int chargePaymentMode = rs.getInt("chargePaymentMode");

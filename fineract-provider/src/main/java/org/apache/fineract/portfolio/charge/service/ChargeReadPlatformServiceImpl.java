@@ -309,13 +309,16 @@ public class ChargeReadPlatformServiceImpl implements ChargeReadPlatformService 
                     currencyDisplaySymbol, currencyNameCode);
 
             final int chargeAppliesTo = rs.getInt("chargeAppliesTo");
+            final ChargeAppliesTo chargeAppliesToEnum = ChargeAppliesTo.fromInt(chargeAppliesTo);
             final EnumOptionData chargeAppliesToType = ChargeEnumerations.chargeAppliesTo(chargeAppliesTo);
-
             final int chargeTime = rs.getInt("chargeTime");
             final EnumOptionData chargeTimeType = ChargeEnumerations.chargeTimeType(chargeTime);
 
             final int chargeCalculation = rs.getInt("chargeCalculation");
-            final EnumOptionData chargeCalculationType = ChargeEnumerations.chargeCalculationType(chargeCalculation);
+            EnumOptionData chargeCalculationType = ChargeEnumerations.chargeCalculationType(chargeCalculation);
+            if (ChargeAppliesTo.LOAN.equals(chargeAppliesToEnum)) {
+                chargeCalculationType = ChargeEnumerations.loanChargeCalculationType(chargeCalculation);
+            }
 
             final int paymentMode = rs.getInt("chargePaymentMode");
             final EnumOptionData chargePaymentMode = ChargeEnumerations.chargePaymentMode(paymentMode);
