@@ -227,7 +227,7 @@
                 TIMESTAMPDIFF(YEAR, mcl.submittedon_date, CURDATE()) AS submittedon_years,
                 IFNULL(TIMESTAMPDIFF(YEAR, mcl.submittedon_date, mcl.reactivated_on_date), 0) AS rejoining_years,
                 COALESCE((SELECT COUNT(*) FROM m_loan WHERE client_id = mcl.id AND approvedon_date IS NOT NULL), 0) AS number_of_loan_cycles,
-                COALESCE((SELECT COUNT(*) FROM m_loan WHERE client_id = mcl.id AND loan_status_id = z), 0) AS number_of_closed_loans,
+                COALESCE((SELECT COUNT(*) FROM m_loan WHERE client_id = mcl.id AND loan_status_id = 600), 0) AS number_of_closed_loans,
                 COALESCE((SELECT COUNT(*) FROM m_loan WHERE client_id = mcl.id), 0) AS number_of_submitted_loans
                 FROM  m_client mcl
                 )client_loan_details ON client_loan_details.client_id = mc.id
@@ -235,6 +235,35 @@
                 LEFT JOIN m_code_value client_area ON client_area.id = mcci.area
                 WHERE mc.id = ${clientId}
                 GROUP BY mc.id" WHERE report_name = "Client Categorization Policy Check";
+            ]]>
+        </sql>
+    </changeSet>
+
+    <changeSet id="10" author="fineract">
+        <sql>
+            <![CDATA[
+            UPDATE m_product_policy SET evaluation_type = 'INDIVIDUAL' WHERE policy_id = 29;
+            ]]>
+        </sql>
+    </changeSet>
+
+    <changeSet id="11" author="fineract">
+        <sql>
+            <![CDATA[
+            UPDATE stretchy_report SET report_sql = "SELECT
+                prequalification_details.recreditCategorization,
+                CASE
+                WHEN (${loanProductId} NOT IN (3,7)) AND (prequalification_details.recreditCategorization = 'RECREDITO') AND ('${clientArea}' in ('URBAN', 'RURAL')) AND (${recurringMembersCount}<=3) AND (${newMembersCount}<=0) THEN 'GREEN'
+                WHEN (${loanProductId} NOT IN (3,7)) AND (prequalification_details.recreditCategorization = 'RECREDITO') AND ('${clientArea}' in ('URBAN','RURAL')) AND (${recurringMembersCount} >= (${newMembersCount}*3)) THEN 'GREEN'
+                END AS color
+                FROM m_prequalification_group mpg
+                LEFT JOIN (
+                SELECT p.id AS prequalification_id,
+                (CASE WHEN p.previous_prequalification IS NULL THEN 'NUEVO' ELSE 'RECREDITO' END) AS recreditCategorization
+                FROM m_prequalification_group p
+                )prequalification_details ON prequalification_details.prequalification_id = mpg.id
+                WHERE mpg.id = ${prequalificationId}"
+            WHERE report_name = "Acceptance of new clients Policy Check";
             ]]>
         </sql>
     </changeSet>
