@@ -21,6 +21,7 @@ package org.apache.fineract.portfolio.charge.service;
 import static org.apache.fineract.portfolio.charge.service.ChargeEnumerations.chargeCalculationType;
 import static org.apache.fineract.portfolio.charge.service.ChargeEnumerations.chargePaymentMode;
 import static org.apache.fineract.portfolio.charge.service.ChargeEnumerations.chargeTimeType;
+import static org.apache.fineract.portfolio.charge.service.ChargeEnumerations.loanChargeCalculationType;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -75,10 +76,15 @@ public class ChargeDropdownReadPlatformServiceImpl implements ChargeDropdownRead
     @Override
     public List<EnumOptionData> retrieveLoanCalculationTypes() {
         return Arrays.asList(chargeCalculationType(ChargeCalculationType.FLAT),
-                chargeCalculationType(ChargeCalculationType.PERCENT_OF_AMOUNT),
-                chargeCalculationType(ChargeCalculationType.PERCENT_OF_AMOUNT_AND_INTEREST),
-                chargeCalculationType(ChargeCalculationType.PERCENT_OF_INTEREST),
-                chargeCalculationType(ChargeCalculationType.PERCENT_OF_DISBURSEMENT_AMOUNT));
+                loanChargeCalculationType(ChargeCalculationType.PERCENT_OF_AMOUNT),
+                loanChargeCalculationType(ChargeCalculationType.PERCENT_OF_AMOUNT_AND_INTEREST),
+                loanChargeCalculationType(ChargeCalculationType.PERCENT_OF_INTEREST),
+                loanChargeCalculationType(ChargeCalculationType.PERCENT_OF_DISBURSEMENT_AMOUNT),
+                loanChargeCalculationType(ChargeCalculationType.PERCENT_OF_OUTSTANDING_PRINCIPAL_AMOUNT),
+                loanChargeCalculationType(ChargeCalculationType.PERCENT_OF_OUTSTANDING_INTEREST_AMOUNT),
+                loanChargeCalculationType(ChargeCalculationType.PERCENT_OF_OUTSTANDING_PRINCIPAL_AND_INTEREST_AMOUNT),
+                loanChargeCalculationType(ChargeCalculationType.PERCENT_OF_PRINCIPAL_TERM),
+                loanChargeCalculationType(ChargeCalculationType.PERCENT_OF_GUARANTEE_TERM));
     }
 
     @Override
