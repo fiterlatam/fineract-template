@@ -18,19 +18,21 @@
  */
 package org.apache.fineract.portfolio.charge.data;
 
-import java.io.Serializable;
-import java.math.BigDecimal;
-import java.time.MonthDay;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
 import lombok.Getter;
+import lombok.Setter;
 import org.apache.fineract.accounting.glaccount.data.GLAccountData;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.organisation.monetary.data.CurrencyData;
 import org.apache.fineract.portfolio.charge.domain.ChargeTimeType;
 import org.apache.fineract.portfolio.paymenttype.data.PaymentTypeData;
 import org.apache.fineract.portfolio.tax.data.TaxGroupData;
+
+import java.io.Serializable;
+import java.math.BigDecimal;
+import java.time.MonthDay;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Immutable data object for charge data.
@@ -87,6 +89,12 @@ public final class ChargeData implements Comparable<ChargeData>, Serializable {
     private final List<GLAccountData> expenseAccountOptions;
     private final List<GLAccountData> assetAccountOptions;
 
+    @Setter
+    private Short graceOnChargePeriodEnum = 1;
+
+    @Setter
+    private Long graceOnChargePeriodAmount = 0L;
+
     public static ChargeData template(final Collection<CurrencyData> currencyOptions,
             final List<EnumOptionData> chargeCalculationTypeOptions, final List<EnumOptionData> chargeAppliesToOptions,
             final List<EnumOptionData> chargeTimeTypeOptions, final List<EnumOptionData> chargePaymentModeOptions,
@@ -110,7 +118,7 @@ public final class ChargeData implements Comparable<ChargeData>, Serializable {
     }
 
     public static ChargeData withTemplate(final ChargeData charge, final ChargeData template) {
-        return new ChargeData(charge.id, charge.name, charge.amount, charge.currency, charge.chargeTimeType, charge.chargeAppliesTo,
+        ChargeData ret = new ChargeData(charge.id, charge.name, charge.amount, charge.currency, charge.chargeTimeType, charge.chargeAppliesTo,
                 charge.chargeCalculationType, charge.chargePaymentMode, charge.penalty, charge.active, charge.freeWithdrawal,
                 charge.freeWithdrawalChargeFrequency, charge.restartFrequency, charge.restartFrequencyEnum, charge.isPaymentType,
                 charge.paymentTypeOptions, charge.taxGroup, template.currencyOptions, template.chargeCalculationTypeOptions,
@@ -121,6 +129,26 @@ public final class ChargeData implements Comparable<ChargeData>, Serializable {
                 charge.incomeOrLiabilityAccount, template.incomeOrLiabilityAccountOptions, template.taxGroupOptions,
                 template.shareChargeCalculationTypeOptions, template.shareChargeTimeTypeOptions, template.accountMappingForChargeConfig,
                 template.expenseAccountOptions, template.assetAccountOptions);
+        ret.setGraceOnChargePeriodEnum(charge.getGraceOnChargePeriodEnum());
+        ret.setGraceOnChargePeriodAmount(charge.getGraceOnChargePeriodAmount());
+
+        return ret;
+    }
+
+    public static ChargeData instance(final Long id, final String name, final BigDecimal amount, final CurrencyData currency,
+                                      final EnumOptionData chargeTimeType, final EnumOptionData chargeAppliesTo, final EnumOptionData chargeCalculationType,
+                                      final EnumOptionData chargePaymentMode, final MonthDay feeOnMonthDay, final Integer feeInterval, final boolean penalty,
+                                      final boolean active, final boolean freeWithdrawal, final Integer freeWithdrawalChargeFrequency, final Integer restartFrequency,
+                                      final Integer restartFrequencyEnum, final boolean isPaymentType, final PaymentTypeData paymentTypeOptions,
+                                      final BigDecimal minCap, final BigDecimal maxCap, final EnumOptionData feeFrequency, final GLAccountData accountData,
+                                      TaxGroupData taxGroupData, Short graceOnChargePeriodEnum, Long graceOnChargePeriodAmount) {
+        ChargeData ret = instance(id, name, amount, currency, chargeTimeType, chargeAppliesTo, chargeCalculationType, chargePaymentMode,
+                feeOnMonthDay, feeInterval, penalty, active, freeWithdrawal, freeWithdrawalChargeFrequency, restartFrequency,
+                restartFrequencyEnum, isPaymentType, paymentTypeOptions, minCap, maxCap, feeFrequency, accountData, taxGroupData);
+        ret.setGraceOnChargePeriodEnum(graceOnChargePeriodEnum);
+        ret.setGraceOnChargePeriodAmount(graceOnChargePeriodAmount);
+
+        return ret;
     }
 
     public static ChargeData instance(final Long id, final String name, final BigDecimal amount, final CurrencyData currency,
