@@ -31,7 +31,7 @@ public interface ManageBlockingReasonSettingsRepository
     @Query("SELECT brs FROM BlockingReasonSetting brs WHERE brs.customerLevel = :customerLevel")
     List<BlockingReasonSetting> getBlockingReasonSettingByCustomerLevel(@Param("customerLevel") CodeValue customerLevel);
 
-    @Query("SELECT brs FROM BlockingReasonSetting brs WHERE brs.creditLevel.id = :creditLevel")
+    @Query("SELECT brs FROM BlockingReasonSetting brs WHERE brs.creditLevel = :creditLevel")
     List<BlockingReasonSetting> getBlockingReasonSettingByCreditLevel(@Param("creditLevel") CodeValue creditLevel);
 
     @Query("SELECT brs FROM BlockingReasonSetting brs WHERE brs.priority = :priority AND brs.level = :level")
