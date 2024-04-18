@@ -18,17 +18,12 @@
  */
 package org.apache.fineract.infrastructure.clientBlockingSettings.exception;
 
-import org.apache.fineract.infrastructure.core.exception.AbstractPlatformResourceNotFoundException;
+import org.apache.fineract.infrastructure.core.exception.AbstractPlatformDomainRuleException;
 
-public class BlockingReasonExceptionNotFoundException extends AbstractPlatformResourceNotFoundException {
+public class BlockLevelEntityException extends AbstractPlatformDomainRuleException {
 
-    public BlockingReasonExceptionNotFoundException(final Long id) {
-        super("error.msg.id.does.not.exist", "Blocking Reason Settings with identifier " + id + " does not exist", id);
+    public BlockLevelEntityException(final String blockLevel) {
+        super("error.msg.block.level.not.supported.exception", "The Block Level with name `" + blockLevel + "` is not supported",
+                blockLevel);
     }
-
-    public BlockingReasonExceptionNotFoundException(final Integer priority, final String level) {
-        super("error.msg.priority.is.already.assigned.to.client.level",
-                "Priority  [" + priority + "] is already assigned to client level " + level, priority, level);
-    }
-
 }

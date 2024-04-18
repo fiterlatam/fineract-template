@@ -20,8 +20,12 @@ package org.apache.fineract.infrastructure.clientBlockingSettings.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.Data;
+import org.apache.fineract.infrastructure.codes.domain.CodeValue;
 import org.apache.fineract.infrastructure.core.domain.AbstractAuditableCustom;
 
 @Data
@@ -31,10 +35,12 @@ public class BlockingReasonSetting extends AbstractAuditableCustom {
 
     @Column(name = "priority")
     private Integer priority;
-    @Column(name = "credit_level")
-    private Integer creditLevel;
-    @Column(name = "customer_level")
-    private Integer customerLevel;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "customer_level")
+    private CodeValue customerLevel;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "credit_level")
+    private CodeValue creditLevel;
     @Column(name = "description")
     private String description;
     @Column(name = "name_of_reason")

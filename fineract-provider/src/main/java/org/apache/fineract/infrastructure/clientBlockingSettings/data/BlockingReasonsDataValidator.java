@@ -75,9 +75,6 @@ public class BlockingReasonsDataValidator {
         final String nameOfReason = this.fromApiJsonHelper.extractStringNamed(BlockingReasonsConstants.NAME_OF_REASON_PARAM, element);
         baseDataValidator.reset().parameter(BlockingReasonsConstants.NAME_OF_REASON_PARAM).value(nameOfReason).notNull();
 
-        final String description = this.fromApiJsonHelper.extractStringNamed(BlockingReasonsConstants.DESCRIPTION_PARAM, element);
-        baseDataValidator.reset().parameter(BlockingReasonsConstants.DESCRIPTION_PARAM).value(description).notNull();
-
         throwExceptionIfValidationWarningsExist(dataValidationErrors);
 
     }

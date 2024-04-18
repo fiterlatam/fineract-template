@@ -26,7 +26,9 @@ public class BlockingReasonsConstants {
     public static final String RESOURCE_URL = "/v1/blockSettings";
 
     public static final String CUSTOMER_LEVEL_PARAM = "customerLevel";
+    public static final String CUSTOMER_CODE = "Nivel Cliente";
     public static final String CREDIT_LEVEL_PARAM = "creditLevel";
+    public static final String CREDIT_CODE = "Nivel Crédito";
     public static final String CUSTOMER_LEVEL_OPTIONS_PARAM = "customerLevelOptions";
     public static final String CREDIT_LEVEL_OPTIONS_PARAM = "creditLevelOptions";
     public static final String PRIORITY_PARAM = "priority";

@@ -20,15 +20,10 @@ package org.apache.fineract.infrastructure.clientBlockingSettings.exception;
 
 import org.apache.fineract.infrastructure.core.exception.AbstractPlatformResourceNotFoundException;
 
-public class BlockingReasonExceptionNotFoundException extends AbstractPlatformResourceNotFoundException {
+public class CustomerLevelExceptionNotFoundException extends AbstractPlatformResourceNotFoundException {
 
-    public BlockingReasonExceptionNotFoundException(final Long id) {
-        super("error.msg.id.does.not.exist", "Blocking Reason Settings with identifier " + id + " does not exist", id);
-    }
-
-    public BlockingReasonExceptionNotFoundException(final Integer priority, final String level) {
-        super("error.msg.priority.is.already.assigned.to.client.level",
-                "Priority  [" + priority + "] is already assigned to client level " + level, priority, level);
+    public CustomerLevelExceptionNotFoundException(final String customerLevel) {
+        super("error.msg.customer.level.id.already.exist", "Customer Level  " + customerLevel + "  already exists", customerLevel);
     }
 
 }

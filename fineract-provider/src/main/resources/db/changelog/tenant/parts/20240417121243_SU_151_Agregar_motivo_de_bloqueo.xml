@@ -37,10 +37,10 @@
                 <constraints nullable="false"/>
             </column>
             <column name="credit_level" type="int">
-                <constraints nullable="true"/>
+                <constraints nullable="true" foreignKeyName="FK_m_blocking_reason_setting_m_code_value_credit_level" references="m_code_value(id)"/>
             </column>
             <column name="customer_level" type="int">
-                <constraints nullable="true"/>
+                <constraints nullable="true" foreignKeyName="FK_m_blocking_reason_setting_m_code_value_customer_level" references="m_code_value(id)"/>
             </column>
             <column name="description" type="TEXT">
                 <constraints nullable="true"/>
