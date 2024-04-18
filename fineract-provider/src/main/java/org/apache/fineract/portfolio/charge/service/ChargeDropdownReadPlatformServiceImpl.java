@@ -18,19 +18,20 @@
  */
 package org.apache.fineract.portfolio.charge.service;
 
-import static org.apache.fineract.portfolio.charge.service.ChargeEnumerations.chargeCalculationType;
-import static org.apache.fineract.portfolio.charge.service.ChargeEnumerations.chargePaymentMode;
-import static org.apache.fineract.portfolio.charge.service.ChargeEnumerations.chargeTimeType;
-import static org.apache.fineract.portfolio.charge.service.ChargeEnumerations.loanChargeCalculationType;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.portfolio.charge.domain.ChargeAppliesTo;
 import org.apache.fineract.portfolio.charge.domain.ChargeCalculationType;
 import org.apache.fineract.portfolio.charge.domain.ChargePaymentMode;
 import org.apache.fineract.portfolio.charge.domain.ChargeTimeType;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import static org.apache.fineract.portfolio.charge.service.ChargeEnumerations.chargeCalculationType;
+import static org.apache.fineract.portfolio.charge.service.ChargeEnumerations.chargePaymentMode;
+import static org.apache.fineract.portfolio.charge.service.ChargeEnumerations.chargeTimeType;
+import static org.apache.fineract.portfolio.charge.service.ChargeEnumerations.loanChargeCalculationType;
 
 public class ChargeDropdownReadPlatformServiceImpl implements ChargeDropdownReadPlatformService {
 
@@ -75,16 +76,81 @@ public class ChargeDropdownReadPlatformServiceImpl implements ChargeDropdownRead
 
     @Override
     public List<EnumOptionData> retrieveLoanCalculationTypes() {
-        return Arrays.asList(chargeCalculationType(ChargeCalculationType.FLAT),
-                loanChargeCalculationType(ChargeCalculationType.PERCENT_OF_AMOUNT),
-                loanChargeCalculationType(ChargeCalculationType.PERCENT_OF_AMOUNT_AND_INTEREST),
-                loanChargeCalculationType(ChargeCalculationType.PERCENT_OF_INTEREST),
-                loanChargeCalculationType(ChargeCalculationType.PERCENT_OF_DISBURSEMENT_AMOUNT),
-                loanChargeCalculationType(ChargeCalculationType.PERCENT_OF_OUTSTANDING_PRINCIPAL_AMOUNT),
-                loanChargeCalculationType(ChargeCalculationType.PERCENT_OF_OUTSTANDING_INTEREST_AMOUNT),
-                loanChargeCalculationType(ChargeCalculationType.PERCENT_OF_OUTSTANDING_PRINCIPAL_AND_INTEREST_AMOUNT),
-                loanChargeCalculationType(ChargeCalculationType.PERCENT_OF_PRINCIPAL_TERM),
-                loanChargeCalculationType(ChargeCalculationType.PERCENT_OF_GUARANTEE_TERM));
+        return Arrays.asList(chargeCalculationType(ChargeCalculationType.FLAT), //
+                loanChargeCalculationType(ChargeCalculationType.PERCENT_OF_AMOUNT), //
+                loanChargeCalculationType(ChargeCalculationType.PERCENT_OF_AMOUNT_AND_INTEREST), //
+                loanChargeCalculationType(ChargeCalculationType.PERCENT_OF_INTEREST), //
+                loanChargeCalculationType(ChargeCalculationType.PERCENT_OF_DISBURSEMENT_AMOUNT), //
+                loanChargeCalculationType(ChargeCalculationType.PERCENT_OF_OUTSTANDING_PRINCIPAL_AMOUNT), //
+                loanChargeCalculationType(ChargeCalculationType.PERCENT_OF_OUTSTANDING_INTEREST_AMOUNT), //
+                loanChargeCalculationType(ChargeCalculationType.PERCENT_OF_OUTSTANDING_PRINCIPAL_AND_INTEREST_AMOUNT), //
+                loanChargeCalculationType(ChargeCalculationType.PERCENT_OF_PRINCIPAL_TERM), //
+                loanChargeCalculationType(ChargeCalculationType.PERCENT_OF_GUARANTEE_TERM), //
+
+                chargeCalculationType(ChargeCalculationType.PERCENT_OF_HONORARIOS), //
+                chargeCalculationType(ChargeCalculationType.PERCENT_OF_AVAL), //
+                chargeCalculationType(ChargeCalculationType.PERCENT_OF_AVAL_HONORARIOS), //
+                chargeCalculationType(ChargeCalculationType.PERCENT_OF_INSURANCE), //
+                chargeCalculationType(ChargeCalculationType.PERCENT_OF_INSURANCE_HONORARIOS), //
+                chargeCalculationType(ChargeCalculationType.PERCENT_OF_INSURANCE_AVAL), //
+                chargeCalculationType(ChargeCalculationType.PERCENT_OF_INSURANCE_AVAL_HONORARIOS), //
+//                chargeCalculationType(ChargeCalculationType.PERCENT_OF_OUTSTANDING_AMOUNT), //
+                chargeCalculationType(ChargeCalculationType.PERCENT_OF_OUTSTANDING_AMOUNT_HONORARIOS), //
+                chargeCalculationType(ChargeCalculationType.PERCENT_OF_OUTSTANDING_AMOUNT_AVAL), //
+                chargeCalculationType(ChargeCalculationType.PERCENT_OF_OUTSTANDING_AMOUNT_AVAL_HONORARIOS), //
+                chargeCalculationType(ChargeCalculationType.PERCENT_OF_OUTSTANDING_AMOUNT_INSURANCE), //
+                chargeCalculationType(ChargeCalculationType.PERCENT_OF_OUTSTANDING_AMOUNT_INSURANCE_HONORARIOS), //
+                chargeCalculationType(ChargeCalculationType.PERCENT_OF_OUTSTANDING_AMOUNT_INSURANCE_AVAL), //
+                chargeCalculationType(ChargeCalculationType.PERCENT_OF_OUTSTANDING_AMOUNT_INSURANCE_AVAL_HONORARIOS), //
+//                chargeCalculationType(ChargeCalculationType.PERCENT_OF_INTEREST), //
+                chargeCalculationType(ChargeCalculationType.PERCENT_OF_INTEREST_HONORARIOS), //
+                chargeCalculationType(ChargeCalculationType.PERCENT_OF_INTEREST_AVAL), //
+                chargeCalculationType(ChargeCalculationType.PERCENT_OF_INTEREST_AVAL_HONORARIOS), //
+                chargeCalculationType(ChargeCalculationType.PERCENT_OF_INTEREST_INSURANCE), //
+                chargeCalculationType(ChargeCalculationType.PERCENT_OF_INTEREST_INSURANCE_HONORARIOS), //
+                chargeCalculationType(ChargeCalculationType.PERCENT_OF_INTEREST_INSURANCE_AVAL), //
+                chargeCalculationType(ChargeCalculationType.PERCENT_OF_INTEREST_INSURANCE_AVAL_HONORARIOS), //
+                chargeCalculationType(ChargeCalculationType.PERCENT_OF_INTEREST_OUTSTANDING_AMOUNT), //
+                chargeCalculationType(ChargeCalculationType.PERCENT_OF_INTEREST_OUTSTANDING_AMOUNT_HONORARIOS), //
+                chargeCalculationType(ChargeCalculationType.PERCENT_OF_INTEREST_OUTSTANDING_AMOUNT_AVAL), //
+                chargeCalculationType(ChargeCalculationType.PERCENT_OF_INTEREST_OUTSTANDING_AMOUNT_AVAL_HONORARIOS), //
+                chargeCalculationType(ChargeCalculationType.PERCENT_OF_INTEREST_OUTSTANDING_AMOUNT_INSURANCE), //
+                chargeCalculationType(ChargeCalculationType.PERCENT_OF_INTEREST_OUTSTANDING_AMOUNT_INSURANCE_HONORARIOS), //
+                chargeCalculationType(ChargeCalculationType.PERCENT_OF_INTEREST_OUTSTANDING_AMOUNT_INSURANCE_AVAL), //
+                chargeCalculationType(ChargeCalculationType.PERCENT_OF_INTEREST_OUTSTANDING_AMOUNT_INSURANCE_AVAL_HONORARIOS), //
+//                chargeCalculationType(ChargeCalculationType.PERCENT_OF_AMOUNT), //
+                chargeCalculationType(ChargeCalculationType.PERCENT_OF_AMOUNT_HONORARIOS), //
+                chargeCalculationType(ChargeCalculationType.PERCENT_OF_AMOUNT_AVAL), //
+                chargeCalculationType(ChargeCalculationType.PERCENT_OF_AMOUNT_AVAL_HONORARIOS), //
+                chargeCalculationType(ChargeCalculationType.PERCENT_OF_AMOUNT_INSURANCE), //
+                chargeCalculationType(ChargeCalculationType.PERCENT_OF_AMOUNT_INSURANCE_HONORARIOS), //
+                chargeCalculationType(ChargeCalculationType.PERCENT_OF_AMOUNT_INSURANCE_AVAL), //
+                chargeCalculationType(ChargeCalculationType.PERCENT_OF_AMOUNT_INSURANCE_AVAL_HONORARIOS), //
+                chargeCalculationType(ChargeCalculationType.PERCENT_OF_AMOUNT_OUTSTANDING_AMOUNT), //
+                chargeCalculationType(ChargeCalculationType.PERCENT_OF_AMOUNT_OUTSTANDING_AMOUNT_HONORARIOS), //
+                chargeCalculationType(ChargeCalculationType.PERCENT_OF_AMOUNT_OUTSTANDING_AMOUNT_AVAL), //
+                chargeCalculationType(ChargeCalculationType.PERCENT_OF_AMOUNT_OUTSTANDING_AMOUNT_AVAL_HONORARIOS), //
+                chargeCalculationType(ChargeCalculationType.PERCENT_OF_AMOUNT_OUTSTANDING_AMOUNT_INSURANCE), //
+                chargeCalculationType(ChargeCalculationType.PERCENT_OF_AMOUNT_OUTSTANDING_AMOUNT_INSURANCE_HONORARIOS), //
+                chargeCalculationType(ChargeCalculationType.PERCENT_OF_AMOUNT_OUTSTANDING_AMOUNT_INSURANCE_AVAL), //
+                chargeCalculationType(ChargeCalculationType.PERCENT_OF_AMOUNT_OUTSTANDING_AMOUNT_INSURANCE_AVAL_HONORARIOS), //
+//                chargeCalculationType(ChargeCalculationType.PERCENT_OF_AMOUNT_INTEREST), //
+                chargeCalculationType(ChargeCalculationType.PERCENT_OF_AMOUNT_INTEREST_HONORARIOS), //
+                chargeCalculationType(ChargeCalculationType.PERCENT_OF_AMOUNT_INTEREST_AVAL), //
+                chargeCalculationType(ChargeCalculationType.PERCENT_OF_AMOUNT_INTEREST_AVAL_HONORARIOS), //
+                chargeCalculationType(ChargeCalculationType.PERCENT_OF_AMOUNT_INTEREST_INSURANCE), //
+                chargeCalculationType(ChargeCalculationType.PERCENT_OF_AMOUNT_INTEREST_INSURANCE_HONORARIOS), //
+                chargeCalculationType(ChargeCalculationType.PERCENT_OF_AMOUNT_INTEREST_INSURANCE_AVAL), //
+                chargeCalculationType(ChargeCalculationType.PERCENT_OF_AMOUNT_INTEREST_INSURANCE_AVAL_HONORARIOS), //
+                chargeCalculationType(ChargeCalculationType.PERCENT_OF_AMOUNT_INTEREST_OUTSTANDING_AMOUNT), //
+                chargeCalculationType(ChargeCalculationType.PERCENT_OF_AMOUNT_INTEREST_OUTSTANDING_AMOUNT_HONORARIOS), //
+                chargeCalculationType(ChargeCalculationType.PERCENT_OF_AMOUNT_INTEREST_OUTSTANDING_AMOUNT_AVAL), //
+                chargeCalculationType(ChargeCalculationType.PERCENT_OF_AMOUNT_INTEREST_OUTSTANDING_AMOUNT_AVAL_HONORARIOS), //
+                chargeCalculationType(ChargeCalculationType.PERCENT_OF_AMOUNT_INTEREST_OUTSTANDING_AMOUNT_INSURANCE), //
+                chargeCalculationType(ChargeCalculationType.PERCENT_OF_AMOUNT_INTEREST_OUTSTANDING_AMOUNT_INSURANCE_HONORARIOS), //
+                chargeCalculationType(ChargeCalculationType.PERCENT_OF_AMOUNT_INTEREST_OUTSTANDING_AMOUNT_INSURANCE_AVAL), //
+                chargeCalculationType(ChargeCalculationType.PERCENT_OF_AMOUNT_INTEREST_OUTSTANDING_AMOUNT_INSURANCE_AVAL_HONORARIOS) //
+        );
     }
 
     @Override

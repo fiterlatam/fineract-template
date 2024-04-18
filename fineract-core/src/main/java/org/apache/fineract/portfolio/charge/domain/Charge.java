@@ -122,6 +122,12 @@ public class Charge extends AbstractPersistableCustom {
     @Column(name = "is_payment_type", nullable = false)
     private boolean enablePaymentType;
 
+    @Column(name = "grace_on_charge_period_enum", nullable = false)
+    private Short graceOnChargePeriodEnum = 1;
+
+    @Column(name = "grace_on_charge_period_amount", nullable = false)
+    private Long graceOnChargePeriodAmount = 0L;
+
     @ManyToOne
     @JoinColumn(name = "payment_type_id", nullable = false)
     private PaymentType paymentType;
@@ -174,9 +180,11 @@ public class Charge extends AbstractPersistableCustom {
             countFrequencyType = PeriodFrequencyType.fromInt(command.integerValueOfParameterNamed("countFrequencyType"));
         }
 
+        final Long graceOnChargePeriodAmount = command.longValueOfParameterNamed("graceOnChargePeriodAmount");
+
         return new Charge(name, amount, currencyCode, chargeAppliesTo, chargeTimeType, chargeCalculationType, penalty, active, paymentMode,
                 feeOnMonthDay, feeInterval, minCap, maxCap, feeFrequency, enableFreeWithdrawalCharge, freeWithdrawalFrequency,
-                restartCountFrequency, countFrequencyType, account, taxGroup, enablePaymentType, paymentType);
+                restartCountFrequency, countFrequencyType, account, taxGroup, enablePaymentType, paymentType, graceOnChargePeriodAmount);
     }
 
     protected Charge() {}
@@ -186,7 +194,7 @@ public class Charge extends AbstractPersistableCustom {
             final ChargePaymentMode paymentMode, final MonthDay feeOnMonthDay, final Integer feeInterval, final BigDecimal minCap,
             final BigDecimal maxCap, final Integer feeFrequency, final boolean enableFreeWithdrawalCharge,
             final Integer freeWithdrawalFrequency, final Integer restartFrequency, final PeriodFrequencyType restartFrequencyEnum,
-            final GLAccount account, final TaxGroup taxGroup, final boolean enablePaymentType, final PaymentType paymentType) {
+            final GLAccount account, final TaxGroup taxGroup, final boolean enablePaymentType, final PaymentType paymentType, final Long graceOnChargePeriodAmount) {
         this.name = name;
         this.amount = amount;
         this.currencyCode = currencyCode;
@@ -259,6 +267,10 @@ public class Charge extends AbstractPersistableCustom {
             if (!isAllowedLoanChargeTime()) {
                 baseDataValidator.reset().parameter("chargeTimeType").value(this.chargeTimeType)
                         .failWithCodeNoParameterAddedToErrorCode("not.allowed.charge.time.for.loan");
+            }
+
+            if (graceOnChargePeriodAmount != null) {
+                this.graceOnChargePeriodAmount = graceOnChargePeriodAmount;
             }
         }
 
@@ -544,6 +556,19 @@ public class Charge extends AbstractPersistableCustom {
                 actualChanges.put("locale", locale.getLanguage());
                 this.chargePaymentMode = ChargePaymentMode.fromInt(newValue).getValue();
             }
+
+            // Load grace period, if any changes
+            if (command.isChangeInIntegerParameterNamed(ChargesApiConstants.graceOnChargePeriodEnumIdParamName, Integer.valueOf(this.graceOnChargePeriodEnum))) {
+                final Integer newValue = command.integerValueOfParameterNamed(ChargesApiConstants.graceOnChargePeriodEnumIdParamName);
+                actualChanges.put(ChargesApiConstants.graceOnChargePeriodEnumIdParamName, newValue);
+                this.graceOnChargePeriodEnum = newValue.shortValue();
+            }
+
+            if (command.isChangeInLongParameterNamed(ChargesApiConstants.graceOnChargePeriodAmountParamName, this.graceOnChargePeriodAmount)) {
+                final Long newValue = command.longValueOfParameterNamed(ChargesApiConstants.graceOnChargePeriodAmountParamName);
+                actualChanges.put(ChargesApiConstants.graceOnChargePeriodAmountParamName, newValue);
+                this.graceOnChargePeriodAmount = newValue;
+            }
         }
 
         if (command.hasParameter("feeOnMonthDay")) {
@@ -780,4 +805,10 @@ public class Charge extends AbstractPersistableCustom {
         return Objects.hash(name, amount, currencyCode, chargeAppliesTo, chargeTimeType, chargeCalculation, chargePaymentMode, feeOnDay,
                 feeInterval, feeOnMonth, penalty, active, deleted, minCap, maxCap, feeFrequency, account, taxGroup);
     }
+
+    public boolean hasCustomGracePeriodDefined() { return this.graceOnChargePeriodAmount.compareTo(0L) > 0; }
+
+    public Short getGraceOnChargePeriodEnum() { return graceOnChargePeriodEnum; }
+
+    public Long getGraceOnChargePeriodAmount() { return graceOnChargePeriodAmount; }
 }

@@ -20,18 +20,6 @@ package org.apache.fineract.portfolio.loanaccount.service;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -135,6 +123,19 @@ import org.apache.fineract.portfolio.paymentdetail.domain.PaymentDetail;
 import org.apache.fineract.portfolio.paymentdetail.service.PaymentDetailWritePlatformService;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccount;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -761,6 +762,17 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
         LocalDate recalculateFrom = DateUtils.getBusinessLocalDate();
         LocalDate lastChargeDate = null;
         for (final OverdueLoanScheduleData overdueInstallment : overdueLoanScheduleDataList) {
+
+            // If installment is overdue but within charge´s grace period, don´t apply charge
+            final Charge chargeDefinition = this.chargeRepository.findOneWithNotFoundDetection(overdueInstallment.getChargeId());
+            if(chargeDefinition.hasCustomGracePeriodDefined()) {
+                final LocalDate today = DateUtils.getBusinessLocalDate();
+                final LocalDate dueDate = DateUtils.parseLocalDate(overdueInstallment.getDueDate());
+                final LocalDate applyChargeFromDate = dueDate.plusDays(chargeDefinition.getGraceOnChargePeriodAmount());
+                if (today.isBefore(applyChargeFromDate)) {
+                    continue;
+                }
+            }
 
             final JsonElement parsedCommand = this.fromApiJsonHelper.parse(overdueInstallment.toString());
             final JsonCommand command = JsonCommand.from(overdueInstallment.toString(), parsedCommand, this.fromApiJsonHelper, null, null,
