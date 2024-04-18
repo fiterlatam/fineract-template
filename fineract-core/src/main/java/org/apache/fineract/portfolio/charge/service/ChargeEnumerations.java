@@ -142,6 +142,10 @@ public final class ChargeEnumerations {
         return chargeCalculationType(ChargeCalculationType.fromInt(id));
     }
 
+    public static EnumOptionData loanChargeCalculationType(final int id) {
+        return loanChargeCalculationType(ChargeCalculationType.fromInt(id));
+    }
+
     public static EnumOptionData chargeCalculationType(final ChargeCalculationType type) {
         EnumOptionData optionData = null;
         switch (type) {
@@ -164,6 +168,59 @@ public final class ChargeEnumerations {
             case PERCENT_OF_DISBURSEMENT_AMOUNT:
                 optionData = new EnumOptionData(ChargeCalculationType.PERCENT_OF_DISBURSEMENT_AMOUNT.getValue().longValue(),
                         ChargeCalculationType.PERCENT_OF_DISBURSEMENT_AMOUNT.getCode(), "% Disbursement Amount");
+            break;
+            default:
+                optionData = new EnumOptionData(ChargeCalculationType.INVALID.getValue().longValue(),
+                        ChargeCalculationType.INVALID.getCode(), "Invalid");
+            break;
+        }
+        return optionData;
+    }
+
+    public static EnumOptionData loanChargeCalculationType(final ChargeCalculationType type) {
+        EnumOptionData optionData;
+        switch (type) {
+            case FLAT:
+                optionData = new EnumOptionData(ChargeCalculationType.FLAT.getValue().longValue(), ChargeCalculationType.FLAT.getCode(),
+                        "Flat");
+            break;
+            case PERCENT_OF_AMOUNT:
+                optionData = new EnumOptionData(ChargeCalculationType.PERCENT_OF_AMOUNT.getValue().longValue(),
+                        "chargeCalculationType.percent.of.principal", "% Principal Amount");
+            break;
+            case PERCENT_OF_AMOUNT_AND_INTEREST:
+                optionData = new EnumOptionData(ChargeCalculationType.PERCENT_OF_AMOUNT_AND_INTEREST.getValue().longValue(),
+                        "chargeCalculationType.percent.of.principal.and.interest", "% Loan Principal + Interest");
+            break;
+            case PERCENT_OF_INTEREST:
+                optionData = new EnumOptionData(ChargeCalculationType.PERCENT_OF_INTEREST.getValue().longValue(),
+                        ChargeCalculationType.PERCENT_OF_INTEREST.getCode(), "% Interest");
+            break;
+            case PERCENT_OF_DISBURSEMENT_AMOUNT:
+                optionData = new EnumOptionData(ChargeCalculationType.PERCENT_OF_DISBURSEMENT_AMOUNT.getValue().longValue(),
+                        ChargeCalculationType.PERCENT_OF_DISBURSEMENT_AMOUNT.getCode(), "% Disbursement Amount");
+            break;
+            case PERCENT_OF_OUTSTANDING_PRINCIPAL_AMOUNT:
+                optionData = new EnumOptionData(ChargeCalculationType.PERCENT_OF_OUTSTANDING_PRINCIPAL_AMOUNT.getValue().longValue(),
+                        ChargeCalculationType.PERCENT_OF_OUTSTANDING_PRINCIPAL_AMOUNT.getCode(), "% Outstanding Principal Amount");
+            break;
+            case PERCENT_OF_OUTSTANDING_INTEREST_AMOUNT:
+                optionData = new EnumOptionData(ChargeCalculationType.PERCENT_OF_OUTSTANDING_INTEREST_AMOUNT.getValue().longValue(),
+                        ChargeCalculationType.PERCENT_OF_OUTSTANDING_INTEREST_AMOUNT.getCode(), "% Outstanding Interest Amount");
+            break;
+            case PERCENT_OF_OUTSTANDING_PRINCIPAL_AND_INTEREST_AMOUNT:
+                optionData = new EnumOptionData(
+                        ChargeCalculationType.PERCENT_OF_OUTSTANDING_PRINCIPAL_AND_INTEREST_AMOUNT.getValue().longValue(),
+                        ChargeCalculationType.PERCENT_OF_OUTSTANDING_PRINCIPAL_AND_INTEREST_AMOUNT.getCode(),
+                        "% Outstanding Principal + Outstanding Interest");
+            break;
+            case PERCENT_OF_PRINCIPAL_TERM:
+                optionData = new EnumOptionData(ChargeCalculationType.PERCENT_OF_PRINCIPAL_TERM.getValue().longValue(),
+                        ChargeCalculationType.PERCENT_OF_PRINCIPAL_TERM.getCode(), "% Principal Term");
+            break;
+            case PERCENT_OF_GUARANTEE_TERM:
+                optionData = new EnumOptionData(ChargeCalculationType.PERCENT_OF_GUARANTEE_TERM.getValue().longValue(),
+                        ChargeCalculationType.PERCENT_OF_GUARANTEE_TERM.getCode(), "% Guarantee Term");
             break;
             default:
                 optionData = new EnumOptionData(ChargeCalculationType.INVALID.getValue().longValue(),

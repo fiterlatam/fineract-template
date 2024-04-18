@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements. See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership. The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License. You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied. See the License for the
+    specific language governing permissions and limitations
+    under the License.
+
+-->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd">
+    <changeSet author="fineract" id="1">
+        <createTable schemaName="public" tableName="campos_cliente_persona">
+            <column name="client_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="Cedula" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="Primer apellido" type="VARCHAR(60)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="Segundo apellido" type="VARCHAR(20)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="Estado Civil_cd_Estado civil" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="Edad" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="Estrato" type="INT">
+                <constraints nullable="true"/>
+            </column>
+            <column name="Ciudad_cd_Ciudad" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="Tiene vehiculo propio" type="BOOLEAN" defaultValue="false">
+                <constraints nullable="true"/>
+            </column>
+            <column name="Tipo Vehiculo_cd_Tipo de vehiculo" type="INT">
+                <constraints nullable="true"/>
+            </column>
+            <column name="Nivel Academico_cd_Nivel academico" type="INT">
+                <constraints nullable="true"/>
+            </column>
+            <column name="Actividad Laboral_cd_Actividad laboral" type="INT">
+                <constraints nullable="true"/>
+            </column>
+            <column name="Tiempo de actividad laboral" type="INT">
+                <constraints nullable="true"/>
+            </column>
+            <column name="Media de ingresos" type="DECIMAL(14,2)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="Nombre empresa" type="VARCHAR(100)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="Direccion" type="VARCHAR(200)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="Telefono" type="VARCHAR(60)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="Cupo solicitado" type="BIGINT">
+                <constraints nullable="true"/>
+            </column>
+            <column name="Cupo aprobado" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="Cupo score" type="BIGINT">
+                <constraints nullable="true"/>
+            </column>
+            <column name="Valor score" type="INT">
+                <constraints nullable="true"/>
+            </column>
+            <column name="Modelo score" type="VARCHAR(10)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="Referencia" type="VARCHAR(60)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="Parentesco_cd_Parentesco" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="Celular referencia" type="VARCHAR(30)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="true"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP">
+                <constraints nullable="true"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet  author="fineract"  id="2">
+        <addForeignKeyConstraint  baseTableSchemaName="public"
+                                  baseTableName="campos_cliente_persona"
+                                  baseColumnNames="client_id"
+                                  referencedTableSchemaName="public"
+                                  referencedTableName="m_client"
+                                  referencedColumnNames="id"
+                                  constraintName="fk_campos_cliente_persona_client_id"
+                                  onDelete="CASCADE"
+                                  onUpdate="RESTRICT"
+                                  validate="true"/>
+    </changeSet>
+    <changeSet author="fineract" id="3">
+        <insert schemaName="public" tableName="x_registered_table">
+            <column name="registered_table_name" value="campos_cliente_persona"/>
+            <column name="application_table_name" value="m_client"/>
+            <column name="entity_subtype" value="Person"/>
+            <column name="category" valueNumeric="100"/>
+        </insert>
+    </changeSet>
+    <changeSet author="fineract" id="4">
+        <insert schemaName="public" tableName="m_entity_datatable_check">
+            <column name="application_table_name" value="m_client"/>
+            <column name="x_registered_table_name" value="campos_cliente_persona"/>
+            <column name="status_enum" valueNumeric="100"/>
+            <column name="system_defined" valueBoolean="true"/>
+            <column name="product_id" valueNumeric="NULL"/>
+        </insert>
+    </changeSet>
+</databaseChangeLog>

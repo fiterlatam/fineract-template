@@ -183,6 +183,12 @@
     <include file="parts/20240401200100_SU_15_c_channel_message_CREATE.xml" relativeToChangelogFile="true"/>
     <include file="parts/20240401200200_SU_15_c_client_buy_process_CREATE.xml" relativeToChangelogFile="true"/>
     <include file="parts/20240408121242_SU_150_Administrar_motivos_de_bloqueo_CREATE_CODE_VALUES.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20240415100000_SU_46_additional_datatable_CREATE.xml" relativeToChangelogFile="true" />
+    <include file="parts/20240415100100_SU_46_code_value_estado_civil_INSERT.xml" relativeToChangelogFile="true" />
+    <include file="parts/20240415100200_SU_46_code_value_tipo_vehiculo_INSERT.xml" relativeToChangelogFile="true" />
+    <include file="parts/20240415100300_SU_46_code_value_nivel_academico_INSERT.xml" relativeToChangelogFile="true" />
+    <include file="parts/20240415100400_SU_46_code_value_actividad_laboral_INSERT.xml" relativeToChangelogFile="true" />
+    <include file="parts/20240415100500_SU_46_code_value_parentesco_INSERT.xml" relativeToChangelogFile="true" />
     <include file="parts/20240417121243_SU_151_Agregar_motivo_de_bloqueo.xml" relativeToChangelogFile="true"/>
 
 </databaseChangeLog>
