@@ -25,7 +25,7 @@ public enum ChargeCalculationType {
     PERCENT_OF_AMOUNT(2, "chargeCalculationType.percent.of.amount"), //
     PERCENT_OF_AMOUNT_AND_INTEREST(3, "chargeCalculationType.percent.of.amount.and.interest"), //
     PERCENT_OF_INTEREST(4, "chargeCalculationType.percent.of.interest"), //
-    PERCENT_OF_DISBURSEMENT_AMOUNT(5,"chargeCalculationType.percent.of.disbursement.amount"), //
+    PERCENT_OF_DISBURSEMENT_AMOUNT(5, "chargeCalculationType.percent.of.disbursement.amount"), //
 
     PERCENT_OF_OUTSTANDING_PRINCIPAL_AMOUNT(6, "chargeCalculationType.percent.of.outstanding.principal.amount"), //
     PERCENT_OF_OUTSTANDING_INTEREST_AMOUNT(7, "chargeCalculationType.percent.of.outstanding.interest.amount"), //
@@ -40,15 +40,16 @@ public enum ChargeCalculationType {
     PERCENT_OF_INSURANCE_HONORARIOS(4000101, "chargeCalculationType.percent.of.insurance.honorarios"), //
     PERCENT_OF_INSURANCE_AVAL(4000110, "chargeCalculationType.percent.of.insurance.aval"), //
     PERCENT_OF_INSURANCE_AVAL_HONORARIOS(4000111, "chargeCalculationType.percent.of.insurance.aval.honorarios"), //
-//    PERCENT_OF_OUTSTANDING_AMOUNT(3001000, "chargeCalculationType.percent.of.outstanding_amount"), //
+    // PERCENT_OF_OUTSTANDING_AMOUNT(3001000, "chargeCalculationType.percent.of.outstanding_amount"), //
     PERCENT_OF_OUTSTANDING_AMOUNT_HONORARIOS(3001001, "chargeCalculationType.percent.of.outstanding_amount.honorarios"), //
     PERCENT_OF_OUTSTANDING_AMOUNT_AVAL(3001010, "chargeCalculationType.percent.of.outstanding_amount.aval"), //
     PERCENT_OF_OUTSTANDING_AMOUNT_AVAL_HONORARIOS(3001011, "chargeCalculationType.percent.of.outstanding_amount.aval.honorarios"), //
     PERCENT_OF_OUTSTANDING_AMOUNT_INSURANCE(3001100, "chargeCalculationType.percent.of.outstanding_amount.insurance"), //
     PERCENT_OF_OUTSTANDING_AMOUNT_INSURANCE_HONORARIOS(3001101, "chargeCalculationType.percent.of.outstanding_amount.insurance.honorarios"), //
     PERCENT_OF_OUTSTANDING_AMOUNT_INSURANCE_AVAL(3001110, "chargeCalculationType.percent.of.outstanding_amount.insurance.aval"), //
-    PERCENT_OF_OUTSTANDING_AMOUNT_INSURANCE_AVAL_HONORARIOS(3001111, "chargeCalculationType.percent.of.outstanding_amount.insurance.aval.honorarios"), //
-//    PERCENT_OF_INTEREST(2010000, "chargeCalculationType.percent.of.interest"), //
+    PERCENT_OF_OUTSTANDING_AMOUNT_INSURANCE_AVAL_HONORARIOS(3001111,
+            "chargeCalculationType.percent.of.outstanding_amount.insurance.aval.honorarios"), //
+    // PERCENT_OF_INTEREST(2010000, "chargeCalculationType.percent.of.interest"), //
     PERCENT_OF_INTEREST_HONORARIOS(2010001, "chargeCalculationType.percent.of.interest.honorarios"), //
     PERCENT_OF_INTEREST_AVAL(2010010, "chargeCalculationType.percent.of.interest.aval"), //
     PERCENT_OF_INTEREST_AVAL_HONORARIOS(2010011, "chargeCalculationType.percent.of.interest.aval.honorarios"), //
@@ -59,12 +60,16 @@ public enum ChargeCalculationType {
     PERCENT_OF_INTEREST_OUTSTANDING_AMOUNT(2011000, "chargeCalculationType.percent.of.interest.outstanding_amount"), //
     PERCENT_OF_INTEREST_OUTSTANDING_AMOUNT_HONORARIOS(2011001, "chargeCalculationType.percent.of.interest.outstanding_amount.honorarios"), //
     PERCENT_OF_INTEREST_OUTSTANDING_AMOUNT_AVAL(2011010, "chargeCalculationType.percent.of.interest.outstanding_amount.aval"), //
-    PERCENT_OF_INTEREST_OUTSTANDING_AMOUNT_AVAL_HONORARIOS(2011011, "chargeCalculationType.percent.of.interest.outstanding_amount.aval.honorarios"), //
+    PERCENT_OF_INTEREST_OUTSTANDING_AMOUNT_AVAL_HONORARIOS(2011011,
+            "chargeCalculationType.percent.of.interest.outstanding_amount.aval.honorarios"), //
     PERCENT_OF_INTEREST_OUTSTANDING_AMOUNT_INSURANCE(2011100, "chargeCalculationType.percent.of.interest.outstanding_amount.insurance"), //
-    PERCENT_OF_INTEREST_OUTSTANDING_AMOUNT_INSURANCE_HONORARIOS(2011101, "chargeCalculationType.percent.of.interest.outstanding_amount.insurance.honorarios"), //
-    PERCENT_OF_INTEREST_OUTSTANDING_AMOUNT_INSURANCE_AVAL(2011110, "chargeCalculationType.percent.of.interest.outstanding_amount.insurance.aval"), //
-    PERCENT_OF_INTEREST_OUTSTANDING_AMOUNT_INSURANCE_AVAL_HONORARIOS(2011111, "chargeCalculationType.percent.of.interest.outstanding_amount.insurance.aval.honorarios"), //
-//    PERCENT_OF_AMOUNT(1100000, "chargeCalculationType.percent.of.amount"), //
+    PERCENT_OF_INTEREST_OUTSTANDING_AMOUNT_INSURANCE_HONORARIOS(2011101,
+            "chargeCalculationType.percent.of.interest.outstanding_amount.insurance.honorarios"), //
+    PERCENT_OF_INTEREST_OUTSTANDING_AMOUNT_INSURANCE_AVAL(2011110,
+            "chargeCalculationType.percent.of.interest.outstanding_amount.insurance.aval"), //
+    PERCENT_OF_INTEREST_OUTSTANDING_AMOUNT_INSURANCE_AVAL_HONORARIOS(2011111,
+            "chargeCalculationType.percent.of.interest.outstanding_amount.insurance.aval.honorarios"), //
+    // PERCENT_OF_AMOUNT(1100000, "chargeCalculationType.percent.of.amount"), //
     PERCENT_OF_AMOUNT_HONORARIOS(1100001, "chargeCalculationType.percent.of.amount.honorarios"), //
     PERCENT_OF_AMOUNT_AVAL(1100010, "chargeCalculationType.percent.of.amount.aval"), //
     PERCENT_OF_AMOUNT_AVAL_HONORARIOS(1100011, "chargeCalculationType.percent.of.amount.aval.honorarios"), //
@@ -75,27 +80,38 @@ public enum ChargeCalculationType {
     PERCENT_OF_AMOUNT_OUTSTANDING_AMOUNT(1001000, "chargeCalculationType.percent.of.amount.outstanding_amount"), //
     PERCENT_OF_AMOUNT_OUTSTANDING_AMOUNT_HONORARIOS(1001001, "chargeCalculationType.percent.of.amount.outstanding_amount.honorarios"), //
     PERCENT_OF_AMOUNT_OUTSTANDING_AMOUNT_AVAL(1001010, "chargeCalculationType.percent.of.amount.outstanding_amount.aval"), //
-    PERCENT_OF_AMOUNT_OUTSTANDING_AMOUNT_AVAL_HONORARIOS(1001011, "chargeCalculationType.percent.of.amount.outstanding_amount.aval.honorarios"), //
+    PERCENT_OF_AMOUNT_OUTSTANDING_AMOUNT_AVAL_HONORARIOS(1001011,
+            "chargeCalculationType.percent.of.amount.outstanding_amount.aval.honorarios"), //
     PERCENT_OF_AMOUNT_OUTSTANDING_AMOUNT_INSURANCE(1001100, "chargeCalculationType.percent.of.amount.outstanding_amount.insurance"), //
-    PERCENT_OF_AMOUNT_OUTSTANDING_AMOUNT_INSURANCE_HONORARIOS(1001101, "chargeCalculationType.percent.of.amount.outstanding_amount.insurance.honorarios"), //
-    PERCENT_OF_AMOUNT_OUTSTANDING_AMOUNT_INSURANCE_AVAL(1001110, "chargeCalculationType.percent.of.amount.outstanding_amount.insurance.aval"), //
-    PERCENT_OF_AMOUNT_OUTSTANDING_AMOUNT_INSURANCE_AVAL_HONORARIOS(1001111, "chargeCalculationType.percent.of.amount.outstanding_amount.insurance.aval.honorarios"), //
-//    PERCENT_OF_AMOUNT_INTEREST(1110000, "chargeCalculationType.percent.of.amount.interest"), //
+    PERCENT_OF_AMOUNT_OUTSTANDING_AMOUNT_INSURANCE_HONORARIOS(1001101,
+            "chargeCalculationType.percent.of.amount.outstanding_amount.insurance.honorarios"), //
+    PERCENT_OF_AMOUNT_OUTSTANDING_AMOUNT_INSURANCE_AVAL(1001110,
+            "chargeCalculationType.percent.of.amount.outstanding_amount.insurance.aval"), //
+    PERCENT_OF_AMOUNT_OUTSTANDING_AMOUNT_INSURANCE_AVAL_HONORARIOS(1001111,
+            "chargeCalculationType.percent.of.amount.outstanding_amount.insurance.aval.honorarios"), //
+    // PERCENT_OF_AMOUNT_INTEREST(1110000, "chargeCalculationType.percent.of.amount.interest"), //
     PERCENT_OF_AMOUNT_INTEREST_HONORARIOS(1110001, "chargeCalculationType.percent.of.amount.interest.honorarios"), //
     PERCENT_OF_AMOUNT_INTEREST_AVAL(1110010, "chargeCalculationType.percent.of.amount.interest.aval"), //
     PERCENT_OF_AMOUNT_INTEREST_AVAL_HONORARIOS(1110011, "chargeCalculationType.percent.of.amount.interest.aval.honorarios"), //
     PERCENT_OF_AMOUNT_INTEREST_INSURANCE(1110100, "chargeCalculationType.percent.of.amount.interest.insurance"), //
     PERCENT_OF_AMOUNT_INTEREST_INSURANCE_HONORARIOS(1110101, "chargeCalculationType.percent.of.amount.interest.insurance.honorarios"), //
     PERCENT_OF_AMOUNT_INTEREST_INSURANCE_AVAL(1110110, "chargeCalculationType.percent.of.amount.interest.insurance.aval"), //
-    PERCENT_OF_AMOUNT_INTEREST_INSURANCE_AVAL_HONORARIOS(1110111, "chargeCalculationType.percent.of.amount.interest.insurance.aval.honorarios"), //
+    PERCENT_OF_AMOUNT_INTEREST_INSURANCE_AVAL_HONORARIOS(1110111,
+            "chargeCalculationType.percent.of.amount.interest.insurance.aval.honorarios"), //
     PERCENT_OF_AMOUNT_INTEREST_OUTSTANDING_AMOUNT(1011000, "chargeCalculationType.percent.of.amount.interest.outstanding_amount"), //
-    PERCENT_OF_AMOUNT_INTEREST_OUTSTANDING_AMOUNT_HONORARIOS(1011001, "chargeCalculationType.percent.of.amount.interest.outstanding_amount.honorarios"), //
+    PERCENT_OF_AMOUNT_INTEREST_OUTSTANDING_AMOUNT_HONORARIOS(1011001,
+            "chargeCalculationType.percent.of.amount.interest.outstanding_amount.honorarios"), //
     PERCENT_OF_AMOUNT_INTEREST_OUTSTANDING_AMOUNT_AVAL(1011010, "chargeCalculationType.percent.of.amount.interest.outstanding_amount.aval"), //
-    PERCENT_OF_AMOUNT_INTEREST_OUTSTANDING_AMOUNT_AVAL_HONORARIOS(1011011, "chargeCalculationType.percent.of.amount.interest.outstanding_amount.aval.honorarios"), //
-    PERCENT_OF_AMOUNT_INTEREST_OUTSTANDING_AMOUNT_INSURANCE(1011100, "chargeCalculationType.percent.of.amount.interest.outstanding_amount.insurance"), //
-    PERCENT_OF_AMOUNT_INTEREST_OUTSTANDING_AMOUNT_INSURANCE_HONORARIOS(1011101, "chargeCalculationType.percent.of.amount.interest.outstanding_amount.insurance.honorarios"), //
-    PERCENT_OF_AMOUNT_INTEREST_OUTSTANDING_AMOUNT_INSURANCE_AVAL(1011110, "chargeCalculationType.percent.of.amount.interest.outstanding_amount.insurance.aval"), //
-    PERCENT_OF_AMOUNT_INTEREST_OUTSTANDING_AMOUNT_INSURANCE_AVAL_HONORARIOS(1011111, "chargeCalculationType.percent.of.amount.interest.outstanding_amount.insurance.aval.honorarios"), //
+    PERCENT_OF_AMOUNT_INTEREST_OUTSTANDING_AMOUNT_AVAL_HONORARIOS(1011011,
+            "chargeCalculationType.percent.of.amount.interest.outstanding_amount.aval.honorarios"), //
+    PERCENT_OF_AMOUNT_INTEREST_OUTSTANDING_AMOUNT_INSURANCE(1011100,
+            "chargeCalculationType.percent.of.amount.interest.outstanding_amount.insurance"), //
+    PERCENT_OF_AMOUNT_INTEREST_OUTSTANDING_AMOUNT_INSURANCE_HONORARIOS(1011101,
+            "chargeCalculationType.percent.of.amount.interest.outstanding_amount.insurance.honorarios"), //
+    PERCENT_OF_AMOUNT_INTEREST_OUTSTANDING_AMOUNT_INSURANCE_AVAL(1011110,
+            "chargeCalculationType.percent.of.amount.interest.outstanding_amount.insurance.aval"), //
+    PERCENT_OF_AMOUNT_INTEREST_OUTSTANDING_AMOUNT_INSURANCE_AVAL_HONORARIOS(1011111,
+            "chargeCalculationType.percent.of.amount.interest.outstanding_amount.insurance.aval.honorarios"), //
     ;
 
     private final Integer value;
