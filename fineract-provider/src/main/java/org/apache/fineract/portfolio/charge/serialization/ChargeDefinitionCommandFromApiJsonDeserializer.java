@@ -20,6 +20,18 @@ package org.apache.fineract.portfolio.charge.serialization;
 
 import com.google.gson.JsonElement;
 import com.google.gson.reflect.TypeToken;
+import java.lang.reflect.Type;
+import java.math.BigDecimal;
+import java.time.MonthDay;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.infrastructure.core.data.ApiParameterError;
 import org.apache.fineract.infrastructure.core.data.DataValidatorBuilder;
@@ -33,19 +45,6 @@ import org.apache.fineract.portfolio.charge.domain.ChargePaymentMode;
 import org.apache.fineract.portfolio.charge.domain.ChargeTimeType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-
-import java.lang.reflect.Type;
-import java.math.BigDecimal;
-import java.time.MonthDay;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
 
 @Component
 public final class ChargeDefinitionCommandFromApiJsonDeserializer {
@@ -83,8 +82,7 @@ public final class ChargeDefinitionCommandFromApiJsonDeserializer {
             ACTIVE, CHARGE_PAYMENT_MODE, FEE_ON_MONTH_DAY, FEE_INTERVAL, MONTH_DAY_FORMAT, MIN_CAP, MAX_CAP, FEE_FREQUENCY,
             ENABLE_FREE_WITHDRAWAL_CHARGE, FREE_WITHDRAWAL_FREQUENCY, RESTART_COUNT_FREQUENCY, COUNT_FREQUENCY_TYPE, PAYMENT_TYPE_ID,
             ENABLE_PAYMENT_TYPE, ChargesApiConstants.glAccountIdParamName, ChargesApiConstants.taxGroupIdParamName,
-            ChargesApiConstants.graceOnChargePeriodEnumIdParamName, ChargesApiConstants.graceOnChargePeriodAmountParamName
-            ));
+            ChargesApiConstants.graceOnChargePeriodEnumIdParamName, ChargesApiConstants.graceOnChargePeriodAmountParamName));
     private final FromJsonHelper fromApiJsonHelper;
 
     @Autowired
@@ -186,8 +184,10 @@ public final class ChargeDefinitionCommandFromApiJsonDeserializer {
                 performChargeTimeNCalculationTypeValidation(baseDataValidator, chargeTimeType, chargeCalculationType);
             }
 
-            final Long graceOnChargePeriodAmount = this.fromApiJsonHelper.extractLongNamed(ChargesApiConstants.graceOnChargePeriodAmountParamName, element.getAsJsonObject());
-            baseDataValidator.reset().parameter(ChargesApiConstants.graceOnChargePeriodAmountParamName).value(graceOnChargePeriodAmount).notNull().notLessThanMin(0);
+            final Long graceOnChargePeriodAmount = this.fromApiJsonHelper
+                    .extractLongNamed(ChargesApiConstants.graceOnChargePeriodAmountParamName, element.getAsJsonObject());
+            baseDataValidator.reset().parameter(ChargesApiConstants.graceOnChargePeriodAmountParamName).value(graceOnChargePeriodAmount)
+                    .notNull().notLessThanMin(0);
 
         } else if (appliesTo.isSavingsCharge()) {
             // savings applicable validation
@@ -347,13 +347,13 @@ public final class ChargeDefinitionCommandFromApiJsonDeserializer {
         }
 
         // If Loan AND Charge Time Type IN (Installment Fee AND Overdue Fee)
-        if(Objects.nonNull(chargeAppliesTo) && chargeAppliesTo.compareTo(1) == 0) {
+        if (Objects.nonNull(chargeAppliesTo) && chargeAppliesTo.compareTo(1) == 0) {
             // If necessary, implement charge time here...
 
-            final Long graceOnChargePeriodAmount = this.fromApiJsonHelper.extractLongNamed(
-                    ChargesApiConstants.graceOnChargePeriodAmountParamName, element.getAsJsonObject());
-            baseDataValidator.reset().parameter(ChargesApiConstants.graceOnChargePeriodAmountParamName)
-                    .value(graceOnChargePeriodAmount).notNull().notLessThanMin(0);
+            final Long graceOnChargePeriodAmount = this.fromApiJsonHelper
+                    .extractLongNamed(ChargesApiConstants.graceOnChargePeriodAmountParamName, element.getAsJsonObject());
+            baseDataValidator.reset().parameter(ChargesApiConstants.graceOnChargePeriodAmountParamName).value(graceOnChargePeriodAmount)
+                    .notNull().notLessThanMin(0);
         }
 
         Boolean enableFreeWithdrawalCharge = false;
@@ -416,7 +416,7 @@ public final class ChargeDefinitionCommandFromApiJsonDeserializer {
         if (this.fromApiJsonHelper.parameterExists(CHARGE_CALCULATION_TYPE, element)) {
             final Integer chargeCalculationType = this.fromApiJsonHelper.extractIntegerNamed(CHARGE_CALCULATION_TYPE, element,
                     Locale.getDefault());
-            if(chargeCalculationType.compareTo(10) > 0 ) {
+            if (chargeCalculationType.compareTo(10) > 0) {
                 baseDataValidator.reset().parameter(CHARGE_CALCULATION_TYPE).value(chargeCalculationType)
                         .failWithCode("not.implemented.yet.charge.calculation.type");
             }

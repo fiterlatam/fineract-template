@@ -18,24 +18,20 @@
  */
 package org.apache.fineract.portfolio.loanaccount.data;
 
-import java.time.LocalDate;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * Immutable data object representing a loan assignor details.
+ * Immutable data object representing a Loan Additional Fields Data
  */
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class LoanAssignorData {
+public class LoanAdditionalFieldsData {
 
-    private Long id;
-    private String displayName;
+    private Long clientId;
+    private String tipo;
     private String nit;
-    private String email;
-    private String mobileNumber;
-    private String officeName;
-    private LocalDate submittedOnDate;
+    private String cedula;
 }

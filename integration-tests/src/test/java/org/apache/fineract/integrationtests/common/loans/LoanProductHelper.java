@@ -47,6 +47,6 @@ public class LoanProductHelper extends IntegrationTest {
     }
 
     public GetLoanProductsTemplateResponse getLoanProductTemplate(boolean isProductMixTemplate) {
-        return ok(fineract().loanProducts.retrieveTemplate11(isProductMixTemplate));
+        return ok(fineract().loanProducts.retrieveTemplate12(isProductMixTemplate));
     }
 }
