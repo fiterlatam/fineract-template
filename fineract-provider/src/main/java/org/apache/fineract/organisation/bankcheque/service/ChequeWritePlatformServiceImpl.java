@@ -35,6 +35,7 @@ import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuilder;
@@ -589,7 +590,9 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
             if (chequeAmount != null) {
                 final String amountInWords = NumberToWordsConverter.convertToWords(chequeAmount.intValue(),
                         NumberToWordsConverter.Language.SPANISH);
-                cheque.setAmountInWords(amountInWords);
+                String decimalValues = extractDecimals(chequeAmount);
+                cheque.setAmountInWords(
+                        new StringBuilder().append(amountInWords).append(" con ").append(decimalValues).append("/100").toString());
             }
             cheque.setStatus(BankChequeStatus.ISSUED.getValue());
             final LocalDateTime localDateTime = DateUtils.getLocalDateTimeOfSystem();
@@ -601,5 +604,13 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
             this.chequeBatchRepositoryWrapper.updateCheque(cheque);
         }
         return new CommandProcessingResultBuilder().withCommandId(command.commandId()).build();
+    }
+
+    public String extractDecimals(BigDecimal value) {
+        String[] parts = StringUtils.split(value.toPlainString(), ".");
+        if (parts.length > 1) {
+            return parts[1];
+        }
+        return "00";
     }
 }

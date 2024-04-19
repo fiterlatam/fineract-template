@@ -146,4 +146,5 @@
     <include file="parts/0126_FBR_595_disable_interest_rate_field_on_loan_products.xml" relativeToChangelogFile="true"/>
     <include file="parts/0127_FBR_615_improve_cron_jobs.xml" relativeToChangelogFile="true"/>
     <include file="parts/0128_hard_policy_check_sql_updates.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0129_update_loans_table_report.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
