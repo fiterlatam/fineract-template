@@ -60,9 +60,9 @@ public class CenterGroupPlanningServiceImpl implements CenterGroupPlanningServic
 
     @Autowired
     public CenterGroupPlanningServiceImpl(final JdbcTemplate jdbcTemplate, final DatabaseSpecificSQLGenerator sqlGenerator,
-            final PlatformSecurityContext context, final ColumnValidator columnValidator,
-            final AppUserReadPlatformService appUserReadPlatformService, final ConfigurationDomainServiceJpa configurationDomainServiceJpa,
-            final AccountDetailsReadPlatformService accountDetailsReadPlatformService, LoanReadPlatformService loanReadPlatformService) {
+                                          final PlatformSecurityContext context, final ColumnValidator columnValidator,
+                                          final AppUserReadPlatformService appUserReadPlatformService, final ConfigurationDomainServiceJpa configurationDomainServiceJpa,
+                                          final AccountDetailsReadPlatformService accountDetailsReadPlatformService, LoanReadPlatformService loanReadPlatformService) {
         this.jdbcTemplate = jdbcTemplate;
         this.sqlGenerator = sqlGenerator;
         this.context = context;
@@ -75,7 +75,7 @@ public class CenterGroupPlanningServiceImpl implements CenterGroupPlanningServic
 
     @Override
     public Collection<PortfolioDetailedPlanningData> retrievePlanningByPortfolio(Long portfolioId, LocalDate startDateRange,
-            LocalDate endDateRange) {
+                                                                                 LocalDate endDateRange) {
         PortfolioDetailedPlanningMapper portfolioDetailedPlanningMapper = new PortfolioDetailedPlanningMapper();
         String schemaSql = "select " + portfolioDetailedPlanningMapper.schema();
         schemaSql += "where pc.portfolio_id = ? ";
@@ -96,7 +96,7 @@ public class CenterGroupPlanningServiceImpl implements CenterGroupPlanningServic
 
             // check if needed to add more planning date for the current center and group
             LocalDate currentNextMeetingDate = PortfolioCenterGroupUtil.getNextMeetingDate(startDateRange, rangeStartDay, rangeEndDay,
-                    meetingDayOfWeek);
+                    meetingDayOfWeek, startDateRange, endDateRange);
 
             if (currentNextMeetingDate.isBefore(startDateRange)) {
                 currentNextMeetingDate = PortfolioCenterGroupUtil.calculateNextMeetingDate(currentNextMeetingDate, rangeStartDay,
