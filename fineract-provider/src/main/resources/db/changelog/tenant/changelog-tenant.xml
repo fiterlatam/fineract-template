@@ -190,4 +190,6 @@
     <include file="parts/20240415100300_SU_46_code_value_nivel_academico_INSERT.xml" relativeToChangelogFile="true" />
     <include file="parts/20240415100400_SU_46_code_value_actividad_laboral_INSERT.xml" relativeToChangelogFile="true" />
     <include file="parts/20240415100500_SU_46_code_value_parentesco_INSERT.xml" relativeToChangelogFile="true" />
+    <include file="parts/20240417121243_SU_151_Agregar_motivo_de_bloqueo.xml" relativeToChangelogFile="true"/>
+
 </databaseChangeLog>

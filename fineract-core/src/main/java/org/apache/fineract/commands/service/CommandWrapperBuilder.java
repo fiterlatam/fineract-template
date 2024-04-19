@@ -3735,4 +3735,11 @@ public class CommandWrapperBuilder {
         this.href = "/clientbuyprocess";
         return this;
     }
+
+    public CommandWrapperBuilder createBlockReasonSetting() {
+        this.actionName = "CREATE";
+        this.entityName = "BLOCKREASONSETTINGS";
+        this.href = "/createBlockReasonSettings";
+        return this;
+    }
 }
