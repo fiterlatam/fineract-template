@@ -96,7 +96,7 @@ public class CenterGroupPlanningServiceImpl implements CenterGroupPlanningServic
 
             // check if needed to add more planning date for the current center and group
             LocalDate currentNextMeetingDate = PortfolioCenterGroupUtil.getNextMeetingDate(startDateRange, rangeStartDay, rangeEndDay,
-                    meetingDayOfWeek);
+                    meetingDayOfWeek, startDateRange, endDateRange);
 
             if (currentNextMeetingDate.isBefore(startDateRange)) {
                 currentNextMeetingDate = PortfolioCenterGroupUtil.calculateNextMeetingDate(currentNextMeetingDate, rangeStartDay,

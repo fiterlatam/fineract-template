@@ -539,7 +539,8 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
                 final String amountInWords = NumberToWordsConverter.convertToWords(chequeAmount.intValue(),
                         NumberToWordsConverter.Language.SPANISH);
                 String decimalValues = extractDecimals(chequeAmount);
-                cheque.setAmountInWords(new StringBuilder().append(amountInWords).append(" con ").append(decimalValues).append("/100").toString());
+                cheque.setAmountInWords(
+                        new StringBuilder().append(amountInWords).append(" con ").append(decimalValues).append("/100").toString());
             }
             cheque.setStatus(BankChequeStatus.ISSUED.getValue());
             final LocalDateTime localDateTime = DateUtils.getLocalDateTimeOfSystem();
