@@ -171,31 +171,32 @@ public final class ChargeEnumerations {
             break;
             default:
                 StringBuilder label = new StringBuilder();
-                if(type.getCode().contains(".amount")) {
+                if (type.getCode().contains(".amount")) {
                     label.append("Principal + ");
                 }
 
-                if(type.getCode().contains(".interest")) {
+                if (type.getCode().contains(".interest")) {
                     label.append("Interest + ");
                 }
 
-                if(type.getCode().contains(".outstanding_amount")) {
+                if (type.getCode().contains(".outstanding_amount")) {
                     label.append("Outstanding Principal + ");
                 }
 
-                if(type.getCode().contains(".insurance")) {
+                if (type.getCode().contains(".insurance")) {
                     label.append("Insurance + ");
                 }
 
-                if(type.getCode().contains(".aval")) {
+                if (type.getCode().contains(".aval")) {
                     label.append("Aval + ");
                 }
 
-                if(type.getCode().contains(".honorarios")) {
+                if (type.getCode().contains(".honorarios")) {
                     label.append("Fees + ");
                 }
 
-                optionData = new EnumOptionData(type.getValue().longValue(), type.getCode(), "% " + label.toString().substring(0, label.length() - 2));
+                optionData = new EnumOptionData(type.getValue().longValue(), type.getCode(),
+                        "% " + label.toString().substring(0, label.length() - 2));
             break;
         }
         return optionData;

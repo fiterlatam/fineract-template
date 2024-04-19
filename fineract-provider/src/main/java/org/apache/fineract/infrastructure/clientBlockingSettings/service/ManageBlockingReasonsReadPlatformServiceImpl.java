@@ -18,14 +18,22 @@
  */
 package org.apache.fineract.infrastructure.clientBlockingSettings.service;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.apache.fineract.infrastructure.clientBlockingSettings.data.BlockingReasonsData;
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 import org.apache.fineract.infrastructure.codes.service.CodeValueReadPlatformService;
+import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
+import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -35,6 +43,8 @@ public class ManageBlockingReasonsReadPlatformServiceImpl implements ManageBlock
     private static final Logger LOG = LoggerFactory.getLogger(ManageBlockingReasonsReadPlatformServiceImpl.class);
 
     private final CodeValueReadPlatformService codeValueReadPlatformService;
+    private final JdbcTemplate jdbcTemplate;
+    private final PlatformSecurityContext context;
 
     @Override
     public BlockingReasonsData retrieveTemplate() {
@@ -47,6 +57,49 @@ public class ManageBlockingReasonsReadPlatformServiceImpl implements ManageBlock
         blockingReasonsData.setCreditLevelOptions(creditLevelOptions);
         blockingReasonsData.setCustomerLevelOptions(customerLevelOptions);
         return blockingReasonsData;
+    }
+
+    @Override
+    public Collection<BlockingReasonsData> retrieveAllBlockingReasons() {
+        this.context.authenticatedUser();
+
+        final BlockingReasonsMapper rm = new BlockingReasonsMapper();
+        final String sql = "SELECT " + rm.schema() + "order by id";
+
+        return this.jdbcTemplate.query(sql, rm, new Object[] {});
+    }
+
+    private static final class BlockingReasonsMapper implements RowMapper<BlockingReasonsData> {
+
+        public String schema() {
+            return "  brs.id as id, brs.priority as priority, " + "       mcv.id as creditLevelId,mcv.code_value as creditLevelCode,"
+                    + "       cv.id as customerLevelId, cv.code_value as customerLevelCode, " + "       brs.description as description, "
+                    + "       brs.name_of_reason as nameOfReason,brs.level as level, " + "       brs.created_date as createdDate "
+                    + "       FROM m_blocking_reason_setting brs " + "       LEFT JOIN m_code_value mcv on brs.credit_level = mcv.id "
+                    + "       LEFT JOIN m_code_value cv on brs.customer_level = cv.id ";
+        }
+
+        @Override
+        public BlockingReasonsData mapRow(final ResultSet rs, @SuppressWarnings("unused") final int rowNum) throws SQLException {
+
+            final Long id = rs.getLong("id");
+            final Integer priority = rs.getInt("priority");
+            final String description = rs.getString("description");
+            final String nameOfReason = rs.getString("nameOfReason");
+            final String level = rs.getString("level");
+            final LocalDate createdDate = JdbcSupport.getLocalDate(rs, "createdDate");
+
+            final Long creditLevelId = JdbcSupport.getLong(rs, "creditLevelId");
+            final String creditLevelCode = rs.getString("creditLevelCode");
+            final CodeValueData creditLevel = CodeValueData.instance(creditLevelId, creditLevelCode);
+
+            final Long customerLevelId = JdbcSupport.getLong(rs, "customerLevelId");
+            final String customerLevelCode = rs.getString("customerLevelCode");
+            final CodeValueData customerLevel = CodeValueData.instance(customerLevelId, customerLevelCode);
+
+            return new BlockingReasonsData(id, priority, description, nameOfReason, level, createdDate, customerLevel, creditLevel);
+
+        }
     }
 
 }

@@ -27,6 +27,7 @@ import java.util.List;
  * Sumas' charges
  */
 public class ChargeCalculationTypeEnumComposer {
+
     public static void main(String[] args) {
         List<List<String>> combinations = generateCombinations(
                 Arrays.asList("1AMOUNT", "2INTEREST", "3OUTSTANDING_AMOUNT", "4INSURANCE", "5AVAL", "6HONORARIOS"));
@@ -35,7 +36,7 @@ public class ChargeCalculationTypeEnumComposer {
         for (List<String> combination : combinations) {
 
             String idComposer = "";
-            if(combination.size() > 0 && combination.get(0).length() > 0) {
+            if (combination.size() > 0 && combination.get(0).length() > 0) {
                 idComposer = combination.get(0).substring(0, 1);
             }
 
@@ -87,7 +88,8 @@ public class ChargeCalculationTypeEnumComposer {
             }
 
             if (lineConcatenated.length() > 0) {
-                System.out.print("(" + idComposer + ", \"chargeCalculationType.percent.of." + lineConcatenated.substring(0, lineConcatenated.length() - 1) + "\"");
+                System.out.print("(" + idComposer + ", \"chargeCalculationType.percent.of."
+                        + lineConcatenated.substring(0, lineConcatenated.length() - 1) + "\"");
                 System.out.println("), //");
             }
         }
@@ -99,7 +101,8 @@ public class ChargeCalculationTypeEnumComposer {
         return combinations;
     }
 
-    private static void generateCombinationsHelper(List<String> variables, int index, List<String> currentCombination, List<List<String>> combinations) {
+    private static void generateCombinationsHelper(List<String> variables, int index, List<String> currentCombination,
+            List<List<String>> combinations) {
         if (index == variables.size()) {
             combinations.add(new ArrayList<>(currentCombination));
             return;
