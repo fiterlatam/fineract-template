@@ -24,7 +24,10 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.google.common.reflect.TypeToken;
-import com.google.gson.*;
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import io.restassured.specification.RequestSpecification;
 import io.restassured.specification.ResponseSpecification;
 import jakarta.ws.rs.core.HttpHeaders;
@@ -336,11 +339,11 @@ public class LoanTransactionHelper extends IntegrationTest {
     }
 
     public GetLoansLoanIdChargesTemplateResponse getLoanChargeTemplate(final Long loanId) {
-        return ok(fineract().loanCharges.retrieveTemplate8(loanId));
+        return ok(fineract().loanCharges.retrieveTemplate9(loanId));
     }
 
     public GetLoansLoanIdChargesTemplateResponse getLoanChargeTemplate(final String loanExternalId) {
-        return ok(fineract().loanCharges.retrieveTemplate9(loanExternalId));
+        return ok(fineract().loanCharges.retrieveTemplate10(loanExternalId));
     }
 
     public List getRepaymentTemplate(final Integer loanId) {

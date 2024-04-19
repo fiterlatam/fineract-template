@@ -169,6 +169,28 @@ public final class ChargeEnumerations {
                 optionData = new EnumOptionData(ChargeCalculationType.PERCENT_OF_DISBURSEMENT_AMOUNT.getValue().longValue(),
                         ChargeCalculationType.PERCENT_OF_DISBURSEMENT_AMOUNT.getCode(), "% Disbursement Amount");
             break;
+            case PERCENT_OF_OUTSTANDING_PRINCIPAL_AMOUNT:
+                optionData = new EnumOptionData(ChargeCalculationType.PERCENT_OF_OUTSTANDING_PRINCIPAL_AMOUNT.getValue().longValue(),
+                        ChargeCalculationType.PERCENT_OF_OUTSTANDING_PRINCIPAL_AMOUNT.getCode(), "% Outstanding Principal Amount");
+            break;
+            case PERCENT_OF_OUTSTANDING_INTEREST_AMOUNT:
+                optionData = new EnumOptionData(ChargeCalculationType.PERCENT_OF_OUTSTANDING_INTEREST_AMOUNT.getValue().longValue(),
+                        ChargeCalculationType.PERCENT_OF_OUTSTANDING_INTEREST_AMOUNT.getCode(), "% Outstanding Interest Amount");
+            break;
+            case PERCENT_OF_OUTSTANDING_PRINCIPAL_AND_INTEREST_AMOUNT:
+                optionData = new EnumOptionData(
+                        ChargeCalculationType.PERCENT_OF_OUTSTANDING_PRINCIPAL_AND_INTEREST_AMOUNT.getValue().longValue(),
+                        ChargeCalculationType.PERCENT_OF_OUTSTANDING_PRINCIPAL_AND_INTEREST_AMOUNT.getCode(),
+                        "% Outstanding Principal + Outstanding Interest");
+            break;
+            case PERCENT_OF_PRINCIPAL_TERM:
+                optionData = new EnumOptionData(ChargeCalculationType.PERCENT_OF_PRINCIPAL_TERM.getValue().longValue(),
+                        ChargeCalculationType.PERCENT_OF_PRINCIPAL_TERM.getCode(), "% Principal Term");
+            break;
+            case PERCENT_OF_GUARANTEE_TERM:
+                optionData = new EnumOptionData(ChargeCalculationType.PERCENT_OF_GUARANTEE_TERM.getValue().longValue(),
+                        ChargeCalculationType.PERCENT_OF_GUARANTEE_TERM.getCode(), "% Guarantee Term");
+            break;
             default:
                 StringBuilder label = new StringBuilder();
                 if (type.getCode().contains(".amount")) {
