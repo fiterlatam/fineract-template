@@ -194,7 +194,8 @@ public class Charge extends AbstractPersistableCustom {
             final ChargePaymentMode paymentMode, final MonthDay feeOnMonthDay, final Integer feeInterval, final BigDecimal minCap,
             final BigDecimal maxCap, final Integer feeFrequency, final boolean enableFreeWithdrawalCharge,
             final Integer freeWithdrawalFrequency, final Integer restartFrequency, final PeriodFrequencyType restartFrequencyEnum,
-            final GLAccount account, final TaxGroup taxGroup, final boolean enablePaymentType, final PaymentType paymentType, final Long graceOnChargePeriodAmount) {
+            final GLAccount account, final TaxGroup taxGroup, final boolean enablePaymentType, final PaymentType paymentType,
+            final Long graceOnChargePeriodAmount) {
         this.name = name;
         this.amount = amount;
         this.currencyCode = currencyCode;
@@ -558,13 +559,15 @@ public class Charge extends AbstractPersistableCustom {
             }
 
             // Load grace period, if any changes
-            if (command.isChangeInIntegerParameterNamed(ChargesApiConstants.graceOnChargePeriodEnumIdParamName, Integer.valueOf(this.graceOnChargePeriodEnum))) {
+            if (command.isChangeInIntegerParameterNamed(ChargesApiConstants.graceOnChargePeriodEnumIdParamName,
+                    Integer.valueOf(this.graceOnChargePeriodEnum))) {
                 final Integer newValue = command.integerValueOfParameterNamed(ChargesApiConstants.graceOnChargePeriodEnumIdParamName);
                 actualChanges.put(ChargesApiConstants.graceOnChargePeriodEnumIdParamName, newValue);
                 this.graceOnChargePeriodEnum = newValue.shortValue();
             }
 
-            if (command.isChangeInLongParameterNamed(ChargesApiConstants.graceOnChargePeriodAmountParamName, this.graceOnChargePeriodAmount)) {
+            if (command.isChangeInLongParameterNamed(ChargesApiConstants.graceOnChargePeriodAmountParamName,
+                    this.graceOnChargePeriodAmount)) {
                 final Long newValue = command.longValueOfParameterNamed(ChargesApiConstants.graceOnChargePeriodAmountParamName);
                 actualChanges.put(ChargesApiConstants.graceOnChargePeriodAmountParamName, newValue);
                 this.graceOnChargePeriodAmount = newValue;
@@ -806,9 +809,15 @@ public class Charge extends AbstractPersistableCustom {
                 feeInterval, feeOnMonth, penalty, active, deleted, minCap, maxCap, feeFrequency, account, taxGroup);
     }
 
-    public boolean hasCustomGracePeriodDefined() { return this.graceOnChargePeriodAmount.compareTo(0L) > 0; }
+    public boolean hasCustomGracePeriodDefined() {
+        return this.graceOnChargePeriodAmount.compareTo(0L) > 0;
+    }
 
-    public Short getGraceOnChargePeriodEnum() { return graceOnChargePeriodEnum; }
+    public Short getGraceOnChargePeriodEnum() {
+        return graceOnChargePeriodEnum;
+    }
 
-    public Long getGraceOnChargePeriodAmount() { return graceOnChargePeriodAmount; }
+    public Long getGraceOnChargePeriodAmount() {
+        return graceOnChargePeriodAmount;
+    }
 }
