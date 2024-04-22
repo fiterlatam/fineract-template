@@ -21,7 +21,6 @@ package org.apache.fineract.organisation.portfolioCenter.service;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.temporal.TemporalAdjusters;
-import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.organisation.portfolioCenter.domain.PortfolioCenterFrecuencyMeeting;
 
 public final class PortfolioCenterGroupUtil {
@@ -34,14 +33,14 @@ public final class PortfolioCenterGroupUtil {
      * @param dayOfWeekNumber
      * @return
      */
-    public static LocalDate getNextMeetingDate(LocalDate startDate, int startDay, int endDay, int dayOfWeekNumber) {
-        LocalDate currentDate = DateUtils.getLocalDateOfTenant();
+    public static LocalDate getNextMeetingDate(LocalDate startDate, int startDay, int endDay, int dayOfWeekNumber, LocalDate startDateRange,
+            LocalDate endDateRange) {
         DayOfWeek dow = DayOfWeek.of(dayOfWeekNumber);
         int weekOfMonth = getWeekOfMonth(startDay, endDay);
 
         // Find the next meeting date within the current month
         LocalDate nextMeetingDate = startDate.withDayOfMonth(1).with(dow).plusWeeks(weekOfMonth - 1);
-        while (nextMeetingDate.isBefore(currentDate)) {
+        while (nextMeetingDate.isBefore(startDateRange) || nextMeetingDate.isAfter(endDateRange)) {
             nextMeetingDate = nextMeetingDate.plusMonths(1); // Move to next month
         }
 
