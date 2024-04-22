@@ -899,4 +899,15 @@
         </sql>
     </changeSet>
 
+    <changeSet  author="fineract"  id="37">
+        <sql>
+            <![CDATA[
+                ALTER TABLE public.campos_cliente_empresas ALTER COLUMN "NIT" TYPE VARCHAR(20);
+                ALTER TABLE public.campos_cliente_empresas ALTER COLUMN "Cedula codeudor 1" TYPE VARCHAR(20);
+                ALTER TABLE public.campos_cliente_empresas ALTER COLUMN "Cedula codeudor 2" TYPE VARCHAR(20);
+                ALTER TABLE public.campos_cliente_empresas ALTER COLUMN "Cedula codeudor 3" TYPE VARCHAR(20);
+            ]]>
+        </sql>
+    </changeSet>
+
 </databaseChangeLog>
