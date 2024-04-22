@@ -112,4 +112,17 @@ public class ManageBlockingReasonsApiResource {
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
         return this.toApiJsonSerializer.serialize(settings, blockingReasonsDataCollection, MANAGE_BLOCKING_REASONS_DATA_PARAMETERS);
     }
+
+    @PUT
+    @Path("{id}")
+    @Consumes({ MediaType.APPLICATION_JSON })
+    @Produces({ MediaType.APPLICATION_JSON })
+    public String updateBlockReasonSetting(@PathParam("id") final Long id, @Parameter(hidden = true) final String apiRequestBodyAsJson) {
+
+        final CommandWrapper commandRequest = new CommandWrapperBuilder().updateBlockReasonSetting(id).withJson(apiRequestBodyAsJson)
+                .build();
+
+        final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
+        return this.toApiJsonSerializer.serialize(result);
+    }
 }
