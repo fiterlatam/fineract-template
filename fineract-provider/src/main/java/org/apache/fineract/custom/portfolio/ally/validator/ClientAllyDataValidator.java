@@ -134,7 +134,7 @@ public class ClientAllyDataValidator {
                 .departmentCodeValueId(departmentCodeValueId).liquidationFrequencyCodeValueId(liquidationFrequencyCodeValueId)
                 .applyCupoMaxSell(applyCupoMaxSell).cupoMaxSell(cupoMaxSell).settledComission(settledComission).buyEnabled(buyEnabled)
                 .collectionEnabled(collectionEnabled).bankEntityCodeValueId(bankEntityCodeValueId)
-                .accountTypeCodeValueId(accountTypeCodeValueId).accountNumber(accountNumber).taxProfileCodeValueId(taxProfileCodeValueId)
+                .accountTypeCodeValueId(accountTypeCodeValueId).accountNumber(String.valueOf(accountNumber)).taxProfileCodeValueId(taxProfileCodeValueId)
                 .stateCodeValueId(stateCodeValueId).build();
 
     }
@@ -225,7 +225,8 @@ public class ClientAllyDataValidator {
                 .cityCodeValueId(cityCodeValueId).departmentCodeValueId(departmentCodeValueId)
                 .liquidationFrequencyCodeValueId(liquidationFrequencyCodeValueId).applyCupoMaxSell(applyCupoMaxSell)
                 .cupoMaxSell(cupoMaxSell).settledComission(settledComission).buyEnabled(buyEnabled).collectionEnabled(collectionEnabled)
-                .bankEntityCodeValueId(bankEntityCodeValueId).accountTypeCodeValueId(accountTypeCodeValueId).accountNumber(accountNumber)
+                .bankEntityCodeValueId(bankEntityCodeValueId).accountTypeCodeValueId(accountTypeCodeValueId)
+                .accountNumber(String.valueOf(accountNumber))
                 .taxProfileCodeValueId(taxProfileCodeValueId).stateCodeValueId(stateCodeValueId).build();
 
         return ret;

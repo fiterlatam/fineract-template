@@ -891,4 +891,12 @@
         <dropNotNullConstraint tableName="campos_cliente_empresas" columnName="NIT confirming" columnDataType="varchar(15)"/>
     </changeSet>
 
+    <changeSet  author="fineract"  id="36">
+        <sql>
+            <![CDATA[
+                ALTER TABLE public.campos_cliente_empresas ADD CONSTRAINT unique_campos_cliente_empresas_nit UNIQUE ("NIT");
+            ]]>
+        </sql>
+    </changeSet>
+
 </databaseChangeLog>

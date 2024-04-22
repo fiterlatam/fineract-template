@@ -16,38 +16,36 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.custom.portfolio.buyprocess.data;
+package org.apache.fineract.custom.infrastructure.dataqueries.domain;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
+import jakarta.persistence.Cacheable;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+@Entity
+@Table(name = "campos_cliente_persona")
+@Cacheable(false)
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
 @Getter
 @Setter
-public class ClientBuyProcessData {
+public class IndividualAdditionalInformation {
 
-    private Long id;
-    private Long channelId;
+    @Id
+    @Column(name = "client_id", nullable = false)
     private Long clientId;
-    private String clientDocumentId;
-    private Long pointOfSalesId;
-    private String pointOfSalesCode;
-    private Long productId;
-    private Long creditId;
-    private LocalDate requestedDate;
-    private BigDecimal amount;
-    private Long term;
-    private LocalDateTime createdAt;
-    private Long createdBy;
-    private String ipDetails;
-    private Integer status;
-    private String errorMessage;
+
+    @Column(name = "Cupo aprobado", nullable = false)
+    private Long cupoLimit;
+
+    @Column(name = "Cedula", insertable = false, updatable = false)
+    private String cedula;
 }
