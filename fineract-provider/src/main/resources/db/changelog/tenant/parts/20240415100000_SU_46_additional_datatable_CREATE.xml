@@ -136,4 +136,11 @@
             <column name="product_id" valueNumeric="NULL"/>
         </insert>
     </changeSet>
+
+    <changeSet  author="fineract"  id="5">
+        <addUniqueConstraint  columnNames="Cedula"
+                              constraintName="unique_campos_cliente_persona_Cedula"
+                              tableName="campos_cliente_persona"/>
+    </changeSet>
+
 </databaseChangeLog>
