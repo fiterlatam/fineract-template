@@ -111,7 +111,7 @@ public class ClientBuyProcessReadWritePlatformServiceImpl implements ClientBuyPr
 
             repository.saveAndFlush(entity);
 
-            return new CommandProcessingResultBuilder().withEntityId(entity.getId()).build();
+            return new CommandProcessingResultBuilder().withEntityId(entity.getId()).withLoanId(entity.getLoanId()).build();
         } catch (final JpaSystemException | DataIntegrityViolationException dve) {
             handleDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
             return CommandProcessingResult.empty();

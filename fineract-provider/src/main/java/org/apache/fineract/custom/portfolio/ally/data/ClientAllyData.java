@@ -53,7 +53,7 @@ public class ClientAllyData extends CustomImporterData {
     private String bankEntityCodeValueDescription;
     private Long accountTypeCodeValueId;
     private String accountTypeCodeValueDescription;
-    private Long accountNumber;
+    private String accountNumber;
     private Long taxProfileCodeValueId;
     private String taxProfileCodeValueDescription;
     private Long stateCodeValueId;

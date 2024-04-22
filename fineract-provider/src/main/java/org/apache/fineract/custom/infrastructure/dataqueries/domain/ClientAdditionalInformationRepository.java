@@ -16,33 +16,18 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.custom.portfolio.buyprocess.domain;
+package org.apache.fineract.custom.infrastructure.dataqueries.domain;
 
-import jakarta.persistence.Cacheable;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import java.util.Optional;
 
-@Entity
-@Table(schema = "public", name = "campos_cliente_empresas")
-@Cacheable(false)
-@AllArgsConstructor
-@NoArgsConstructor
-@Builder
-@Getter
-@Setter
-public class ClientAdditionalInformation {
+import org.apache.fineract.custom.infrastructure.dataqueries.domain.ClientAdditionalInformation;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
-    @Id
-    @Column(name = "client_id", nullable = false)
-    private Long clientId;
+public interface ClientAdditionalInformationRepository
+        extends JpaRepository<ClientAdditionalInformation, Long>, JpaSpecificationExecutor<ClientAdditionalInformation> {
 
-    @Column(name = "Cupo", nullable = false)
-    private Long cupoLimit;
+    Optional<ClientAdditionalInformation> findByClientId(Long clientId);
+
+    Optional<ClientAdditionalInformation> findByNit(String nit);
 }

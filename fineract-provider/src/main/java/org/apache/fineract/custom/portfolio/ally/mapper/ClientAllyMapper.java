@@ -27,24 +27,49 @@ import org.apache.fineract.custom.portfolio.ally.domain.ClientAlly;
 public class ClientAllyMapper {
 
     public static ClientAlly toModel(ClientAllyData dto) {
-        return ClientAlly.builder().id(dto.getId()).companyName(dto.getCompanyName()).nit(dto.getNit()).nitDigit(dto.getNitDigit())
-                .address(dto.getAddress()).cityCodeValueId(dto.getCityCodeValueId()).departmentCodeValueId(dto.getDepartmentCodeValueId())
-                .liquidationFrequencyCodeValueId(dto.getLiquidationFrequencyCodeValueId()).applyCupoMaxSell(dto.getApplyCupoMaxSell())
-                .cupoMaxSell(dto.getCupoMaxSell()).settledComission(dto.getSettledComission()).buyEnabled(dto.getBuyEnabled())
-                .collectionEnabled(dto.getCollectionEnabled()).bankEntityCodeValueId(dto.getBankEntityCodeValueId())
-                .accountTypeCodeValueId(dto.getAccountTypeCodeValueId()).accountNumber(dto.getAccountNumber())
-                .taxProfileCodeValueId(dto.getTaxProfileCodeValueId()).stateCodeValueId(dto.getStateCodeValueId()).build();
+        return ClientAlly.builder() //
+                .id(dto.getId()) //
+                .companyName(dto.getCompanyName()) //
+                .nit(dto.getNit()) //
+                .nitDigit(dto.getNitDigit()) //
+                .address(dto.getAddress()) //
+                .cityCodeValueId(dto.getCityCodeValueId()) //
+                .departmentCodeValueId(dto.getDepartmentCodeValueId()) //
+                .liquidationFrequencyCodeValueId(dto.getLiquidationFrequencyCodeValueId()) //
+                .applyCupoMaxSell(dto.getApplyCupoMaxSell()) //
+                .cupoMaxSell(dto.getCupoMaxSell()) //
+                .settledComission(dto.getSettledComission()) //
+                .buyEnabled(dto.getBuyEnabled()) //
+                .collectionEnabled(dto.getCollectionEnabled()) //
+                .bankEntityCodeValueId(dto.getBankEntityCodeValueId()) //
+                .accountTypeCodeValueId(dto.getAccountTypeCodeValueId()) //
+                .accountNumber(dto.getAccountNumber()) //
+                .taxProfileCodeValueId(dto.getTaxProfileCodeValueId()) //
+                .stateCodeValueId(dto.getStateCodeValueId()) //
+                .build(); //
     }
 
     public static ClientAllyData toDTO(ClientAlly model) {
-        return ClientAllyData.builder().id(model.getId()).companyName(model.getCompanyName()).nit(model.getNit())
-                .nitDigit(model.getNitDigit()).address(model.getAddress()).cityCodeValueId(model.getCityCodeValueId())
-                .departmentCodeValueId(model.getDepartmentCodeValueId())
-                .liquidationFrequencyCodeValueId(model.getLiquidationFrequencyCodeValueId()).applyCupoMaxSell(model.getApplyCupoMaxSell())
-                .cupoMaxSell(model.getCupoMaxSell()).settledComission(model.getSettledComission()).buyEnabled(model.getBuyEnabled())
-                .collectionEnabled(model.getCollectionEnabled()).bankEntityCodeValueId(model.getBankEntityCodeValueId())
-                .accountTypeCodeValueId(model.getAccountTypeCodeValueId()).accountNumber(model.getAccountNumber())
-                .taxProfileCodeValueId(model.getTaxProfileCodeValueId()).stateCodeValueId(model.getStateCodeValueId()).build();
+        return ClientAllyData.builder()  //
+                .id(model.getId()) //
+                .companyName(model.getCompanyName()) //
+                .nit(model.getNit()) //
+                .nitDigit(model.getNitDigit()) //
+                .address(model.getAddress()) //
+                .cityCodeValueId(model.getCityCodeValueId()) //
+                .departmentCodeValueId(model.getDepartmentCodeValueId()) //
+                .liquidationFrequencyCodeValueId(model.getLiquidationFrequencyCodeValueId()) //
+                .applyCupoMaxSell(model.getApplyCupoMaxSell()) //
+                .cupoMaxSell(model.getCupoMaxSell()) //
+                .settledComission(model.getSettledComission()) //
+                .buyEnabled(model.getBuyEnabled()) //
+                .collectionEnabled(model.getCollectionEnabled()) //
+                .bankEntityCodeValueId(model.getBankEntityCodeValueId()) //
+                .accountTypeCodeValueId(model.getAccountTypeCodeValueId()) //
+                .accountNumber(model.getAccountNumber()) //
+                .taxProfileCodeValueId(model.getTaxProfileCodeValueId()) //
+                .stateCodeValueId(model.getStateCodeValueId()) //
+                .build();
     }
 
     public static List<ClientAllyData> toDTO(List<ClientAlly> model) {

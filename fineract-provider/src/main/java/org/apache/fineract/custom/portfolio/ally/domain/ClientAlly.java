@@ -88,8 +88,8 @@ public class ClientAlly {
     @Column(name = "account_type_id", nullable = false)
     private Long accountTypeCodeValueId;
 
-    @Column(name = "account_number", nullable = false)
-    private Long accountNumber;
+    @Column(name = "account_number", nullable = false, length = 100)
+    private String accountNumber;
 
     @Column(name = "tax_profile_id", nullable = false)
     private Long taxProfileCodeValueId;

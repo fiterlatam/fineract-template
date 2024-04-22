@@ -35,6 +35,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.apache.fineract.portfolio.client.domain.Client;
 
 @Entity
 @Table(schema = "custom", name = "c_client_buy_process")
@@ -98,6 +99,9 @@ public class ClientBuyProcess {
 
     @Transient
     private LinkedHashMap<String, String> errorMessageHM = new LinkedHashMap<>();
+
+    @Transient
+    private Client client;
 
     public ClientBuyProcess(Long channelId, String channelHash, Long clientId, Long pointOfSalesId, Long productId, Long creditId,
             LocalDate requestedDate, BigDecimal amount, Long term, LocalDateTime createdAt, Long createdBy, String ipDetails) {
