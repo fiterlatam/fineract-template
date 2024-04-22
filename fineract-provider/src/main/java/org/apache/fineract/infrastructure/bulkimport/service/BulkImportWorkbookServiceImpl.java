@@ -29,6 +29,7 @@ import java.net.URLConnection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Collection;
 import org.apache.commons.io.IOUtils;
 import org.apache.fineract.infrastructure.bulkimport.data.BulkImportEvent;
@@ -237,9 +238,11 @@ public class BulkImportWorkbookServiceImpl implements BulkImportWorkbookService 
             final Integer successCount = JdbcSupport.getInteger(rs, "successCount");
             final Integer failureCount = JdbcSupport.getInteger(rs, "failureCount");
             final Long createdBy = rs.getLong("createdBy");
+            final LocalDateTime importDateTime = LocalDateTime.from(JdbcSupport.getDateTime(rs, "importTime"));
+            final LocalDateTime endDateTime = LocalDateTime.from(JdbcSupport.getDateTime(rs, "endTime"));
 
             return ImportData.instance(id, documentId, importTime, endTime, completed, name, createdBy, totalRecords, successCount,
-                    failureCount);
+                    failureCount, importDateTime, endDateTime);
         }
     }
 

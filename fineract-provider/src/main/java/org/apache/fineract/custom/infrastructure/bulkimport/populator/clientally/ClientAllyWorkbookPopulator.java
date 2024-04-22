@@ -32,6 +32,8 @@ import org.apache.fineract.infrastructure.bulkimport.populator.AbstractWorkbookP
 import org.apache.poi.hssf.usermodel.HSSFDataValidationHelper;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
 import org.apache.poi.ss.SpreadsheetVersion;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.DataFormat;
 import org.apache.poi.ss.usermodel.DataValidation;
 import org.apache.poi.ss.usermodel.DataValidationConstraint;
 import org.apache.poi.ss.usermodel.DataValidationHelper;
@@ -62,6 +64,16 @@ public class ClientAllyWorkbookPopulator extends AbstractWorkbookPopulator {
 
         writeHeaders(staffSheet, CustomTemplatePopulateImportConstants.ROWHEADER_INDEX);
         setRules(staffSheet, dateFormat);
+        formatColumnAsText(workbook, staffSheet);
+    }
+
+    private void formatColumnAsText(Workbook workbook, Sheet staffSheet) {
+        // Set the Acc Nr cells to hold text
+        DataFormat fmt = workbook.createDataFormat();
+        CellStyle textStyle = workbook.createCellStyle();
+        textStyle.setDataFormat(fmt.getFormat("@"));
+        staffSheet.setDefaultColumnStyle(ClientAllyTemplatePopulateImportEnum.NIT.getColumnIndex(), textStyle);
+        staffSheet.setDefaultColumnStyle(ClientAllyTemplatePopulateImportEnum.ACCOUNT_NUMBER.getColumnIndex(), textStyle);
     }
 
     private void writeHeaders(Sheet staffSheet, Integer rowIndex) {
