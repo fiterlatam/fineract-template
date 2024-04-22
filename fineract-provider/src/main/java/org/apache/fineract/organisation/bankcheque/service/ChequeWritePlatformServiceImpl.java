@@ -539,8 +539,8 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
                 final String amountInWords = NumberToWordsConverter.convertToWords(chequeAmount.intValue(),
                         NumberToWordsConverter.Language.SPANISH);
                 String decimalValues = extractDecimals(chequeAmount);
-                cheque.setAmountInWords(
-                        new StringBuilder().append(amountInWords).append(" con ").append(decimalValues).append("/100").toString());
+                cheque.setAmountInWords(new StringBuilder().append(amountInWords).append(" con ").append
+                        (decimalValues).append("/100").toString());
             }
             cheque.setStatus(BankChequeStatus.ISSUED.getValue());
             final LocalDateTime localDateTime = DateUtils.getLocalDateTimeOfSystem();
@@ -557,7 +557,8 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
     public String extractDecimals(BigDecimal value) {
         String[] parts = StringUtils.split(value.toPlainString(), ".");
         if (parts.length > 1) {
-            return parts[1];
+            String padded = StringUtils.rightPad(parts[1], 2, "0");
+            return padded.substring(0,2);
         }
         return "00";
     }
