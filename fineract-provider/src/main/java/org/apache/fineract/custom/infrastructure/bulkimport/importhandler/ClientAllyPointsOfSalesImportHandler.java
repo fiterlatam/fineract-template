@@ -26,6 +26,7 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.tika.utils.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -82,6 +83,8 @@ public class ClientAllyPointsOfSalesImportHandler implements ImportHandler {
 
         if (StringUtils.EMPTY.equalsIgnoreCase(ammendedValidationMessages.toString())) {
 
+            String settledComissionAsString = getSettledComissionAsString(row);
+
             ret = ClientAllyPointOfSalesData.builder()
                     .clientAllyId(readCodeValueIdFromName(workbook, row, ClientAllyPointOfSalesTemplatePopulateImportEnum.COMPANY_NAME_ID, //
                             CustomGlobalEntityType.CLIENT_ALLY.getCode())) //
@@ -95,8 +98,7 @@ public class ClientAllyPointsOfSalesImportHandler implements ImportHandler {
                             readCodeValueIdFromName(workbook, row, ClientAllyPointOfSalesTemplatePopulateImportEnum.CATEGORY_ID)) //
                     .segmentCodeValueId(readCodeValueIdFromName(workbook, row, ClientAllyPointOfSalesTemplatePopulateImportEnum.SEGMENT_ID)) //
                     .typeCodeValueId(readCodeValueIdFromName(workbook, row, ClientAllyPointOfSalesTemplatePopulateImportEnum.TYPE_ID)) //
-                    .settledComission(BigDecimal.valueOf(ImportHandlerUtils
-                            .readAsDouble(ClientAllyPointOfSalesTemplatePopulateImportEnum.SETTLED_COMISSION.getColumnIndex(), row))) //
+                    .settledComission(new BigDecimal(settledComissionAsString)) //
                     .buyEnabled(ImportHandlerUtils
                             .readAsBoolean(ClientAllyPointOfSalesTemplatePopulateImportEnum.BUY_ENABLED.getColumnIndex(), row)) //
                     .collectionEnabled(ImportHandlerUtils
@@ -133,13 +135,25 @@ public class ClientAllyPointsOfSalesImportHandler implements ImportHandler {
             }
         }
 
-        BigDecimal settledComission = BigDecimal
-                .valueOf(ImportHandlerUtils.readAsDouble(ClientAllyTemplatePopulateImportEnum.SETTLED_COMISSION.getColumnIndex(), row));
+        BigDecimal settledComission = new BigDecimal(getSettledComissionAsString(row));
         if (Objects.nonNull(settledComission) && settledComission.compareTo(BigDecimal.valueOf(99.99)) > 0) {
             ammenedEValidationMessages.append(
                     "El campo " + ClientAllyTemplatePopulateImportEnum.SETTLED_COMISSION.getColumnName() + " no debe ser que 99.99; ");
         }
     }
+
+    @NotNull
+    private String getSettledComissionAsString(Row row) {
+        String settledComissionAsString = ImportHandlerUtils.readAsString(
+                ClientAllyPointOfSalesTemplatePopulateImportEnum.SETTLED_COMISSION.getColumnIndex(), row);
+        return fixUpDecimalSeparator(settledComissionAsString);
+    }
+
+    @NotNull
+    private String fixUpDecimalSeparator(String settledComissionAsString) {
+        return settledComissionAsString.replace(",", ".");
+    }
+
 
     private void validateTypeAndCasting(StringBuilder ammendedValidationMessages, ClientAllyPointOfSalesTemplatePopulateImportEnum currEnum,
             String representation, Object clazz) {
@@ -194,7 +208,11 @@ public class ClientAllyPointsOfSalesImportHandler implements ImportHandler {
                 try {
                     Double.valueOf(representation);
                 } catch (NumberFormatException e) {
-                    ammendedValidationMessages.append(currEnum.getColumnName()).append(" debe ser un valor Double (ex 138.6547); ");
+                    try {
+                        Double.valueOf(fixUpDecimalSeparator(representation));
+                    } catch (NumberFormatException ex) {
+                        ammendedValidationMessages.append(currEnum.getColumnName()).append(" debe ser un valor Double (ex 138.6547). ");
+                    }
                 }
             } else {
                 // TODO Not supported

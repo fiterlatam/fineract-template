@@ -162,11 +162,13 @@ public class ClientAllyPointOfSalesReadWritePlatformServiceImpl implements Clien
         try {
             this.context.authenticatedUser();
 
-            final ClientAllyPointOfSales entity = this.validatorClass.validateForUpdate(command.json());
-            entity.setClientAllyId(clientAllyId);
             Optional<ClientAllyPointOfSales> dbEntity = repository.findById(id);
+            ClientAllyPointOfSales entity;
 
             if (dbEntity.isPresent()) {
+                entity = this.validatorClass.validateForUpdate(command.json(), dbEntity.get());
+                entity.setClientAllyId(clientAllyId);
+
                 entity.setId(id);
                 repository.save(entity);
             } else {

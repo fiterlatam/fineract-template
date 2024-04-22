@@ -31,7 +31,7 @@ public enum ClientAllyTemplatePopulateImportEnum {
     COLLECTION_ENABLED(11, "Habilitado para recaudos", null, LARGE_COL_SIZE, true, Boolean.class), //
     BANK_ENTITY_ID(12, "Entidad Bancaria", "EntidadBancaria", LARGE_COL_SIZE, false, Long.class), //
     ACCOUNT_TYPE_ID(13, "Tipo Cuenta", "TipoCuentaBancaria", SMALL_COL_SIZE, false, Long.class), //
-    ACCOUNT_NUMBER(14, "Numero da Cuenta", null, SMALL_COL_SIZE, false, Integer.class), //
+    ACCOUNT_NUMBER(14, "Numero da Cuenta", null, SMALL_COL_SIZE, false, String.class, 20L), //
     TAX_PROFILE_ID(15, "Perfil Tributario Regimen IVA", "PerfilTributarioRegimenIVA", LARGE_COL_SIZE, true, Long.class), //
     STATE_ID(16, "Estado", "Estado", SMALL_COL_SIZE, true, Long.class), //
     IMPORT_STATUS_COLUMN(17, "Importacion", null, MEDIUM_COL_SIZE, false, String.class, 0L), //

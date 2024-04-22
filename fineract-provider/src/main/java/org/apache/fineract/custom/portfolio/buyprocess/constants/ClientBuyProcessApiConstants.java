@@ -38,7 +38,9 @@ public final class ClientBuyProcessApiConstants {
     public static final String idParamName = "id";
     public static final String channelIdParamName = "channelId";
     public static final String clientIdParamName = "clientId";
+    public static final String clientDocumentIdParamName = "clientDocumentId";
     public static final String pointOfSalesIdParamName = "pointOfSalesId";
+    public static final String pointOfSalesCodeParamName = "pointOfSalesCode";
     public static final String productIdParamName = "productId";
     public static final String creditIdParamName = "creditId";
     public static final String requestedDateParamName = "requestedDate";
@@ -51,5 +53,6 @@ public final class ClientBuyProcessApiConstants {
     // request parameters Set
     public static final Set<String> REQUEST_DATA_PARAMETERS = new HashSet<>(Arrays.asList(localeParamName, dateFormatParamName, idParamName,
             channelIdParamName, clientIdParamName, pointOfSalesIdParamName, productIdParamName, creditIdParamName, requestedDateParamName,
-            amountParamName, termParamName, createdAtParamName, createdByParamName, ipDetailsParamName));
+            amountParamName, termParamName, createdAtParamName, createdByParamName, ipDetailsParamName, pointOfSalesCodeParamName,
+            clientDocumentIdParamName));
 }

@@ -183,4 +183,8 @@
                                   validate="true"/>
     </changeSet>
 
+    <changeSet author="fineract" id="90">
+        <modifyDataType schemaName= "custom" tableName="c_client_ally" columnName="account_number" newDataType="VARCHAR(20)"/>
+    </changeSet>
+
 </databaseChangeLog>
