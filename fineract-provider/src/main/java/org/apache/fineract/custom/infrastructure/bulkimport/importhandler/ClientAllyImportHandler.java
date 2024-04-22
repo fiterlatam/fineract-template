@@ -25,6 +25,7 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.tika.utils.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -82,6 +83,8 @@ public class ClientAllyImportHandler implements ImportHandler {
 
         if (StringUtils.EMPTY.equalsIgnoreCase(ammendedValidationMessages.toString())) {
 
+            String settledComissionAsString = getSettledComissionAsString(row);
+
             ret = ClientAllyData.builder()
                     .companyName(ImportHandlerUtils.readAsString(ClientAllyTemplatePopulateImportEnum.COMPANY_NAME.getColumnIndex(), row)) //
                     .nit(ImportHandlerUtils.readAsString(ClientAllyTemplatePopulateImportEnum.NIT.getColumnIndex(), row)) //
@@ -94,14 +97,13 @@ public class ClientAllyImportHandler implements ImportHandler {
                     .applyCupoMaxSell(ImportHandlerUtils
                             .readAsBoolean(ClientAllyTemplatePopulateImportEnum.APPLY_CUPO_MAX_SELL.getColumnIndex(), row)) //
                     .cupoMaxSell(ImportHandlerUtils.readAsInt(ClientAllyTemplatePopulateImportEnum.CUPO_MAX_SELL.getColumnIndex(), row)) //
-                    .settledComission(BigDecimal.valueOf(
-                            ImportHandlerUtils.readAsDouble(ClientAllyTemplatePopulateImportEnum.SETTLED_COMISSION.getColumnIndex(), row))) //
+                    .settledComission(new BigDecimal(settledComissionAsString)) //
                     .buyEnabled(ImportHandlerUtils.readAsBoolean(ClientAllyTemplatePopulateImportEnum.BUY_ENABLED.getColumnIndex(), row)) //
                     .collectionEnabled(
                             ImportHandlerUtils.readAsBoolean(ClientAllyTemplatePopulateImportEnum.COLLECTION_ENABLED.getColumnIndex(), row)) //
                     .bankEntityCodeValueId(readCodeValueIdFromName(workbook, row, ClientAllyTemplatePopulateImportEnum.BANK_ENTITY_ID)) //
                     .accountTypeCodeValueId(readCodeValueIdFromName(workbook, row, ClientAllyTemplatePopulateImportEnum.ACCOUNT_TYPE_ID)) //
-                    .accountNumber(ImportHandlerUtils.readAsLong(ClientAllyTemplatePopulateImportEnum.ACCOUNT_NUMBER.getColumnIndex(), row)) //
+                    .accountNumber(ImportHandlerUtils.readAsLong(ClientAllyTemplatePopulateImportEnum.ACCOUNT_NUMBER.getColumnIndex(), row).toString()) //
                     .taxProfileCodeValueId(readCodeValueIdFromName(workbook, row, ClientAllyTemplatePopulateImportEnum.TAX_PROFILE_ID)) //
                     .stateCodeValueId(readCodeValueIdFromName(workbook, row, ClientAllyTemplatePopulateImportEnum.STATE_ID)) //
                     .build();
@@ -144,12 +146,22 @@ public class ClientAllyImportHandler implements ImportHandler {
                             + ClientAllyTemplatePopulateImportEnum.APPLY_CUPO_MAX_SELL.getColumnName() + " es verdadero; ");
         }
 
-        BigDecimal settledComission = BigDecimal
-                .valueOf(ImportHandlerUtils.readAsDouble(ClientAllyTemplatePopulateImportEnum.SETTLED_COMISSION.getColumnIndex(), row));
+        BigDecimal settledComission = new BigDecimal(getSettledComissionAsString(row));
         if (Objects.nonNull(settledComission) && settledComission.compareTo(BigDecimal.valueOf(99.99)) > 0) {
             ammenedEValidationMessages.append(
                     "La " + ClientAllyTemplatePopulateImportEnum.SETTLED_COMISSION.getColumnName() + " no debe ser major que 99.99; ");
         }
+    }
+
+    @NotNull
+    private String getSettledComissionAsString(Row row) {
+        String settledComissionAsString = ImportHandlerUtils.readAsString(ClientAllyTemplatePopulateImportEnum.SETTLED_COMISSION.getColumnIndex(), row);
+        return fixUpDecimalSeparator(settledComissionAsString);
+    }
+
+    @NotNull
+    private String fixUpDecimalSeparator(String settledComissionAsString) {
+        return settledComissionAsString.replace(",", ".");
     }
 
     private void validateTypeAndCasting(StringBuilder ammendedValidationMessages, ClientAllyTemplatePopulateImportEnum currEnum,
@@ -201,7 +213,11 @@ public class ClientAllyImportHandler implements ImportHandler {
                 try {
                     Double.valueOf(representation);
                 } catch (NumberFormatException e) {
-                    ammendedValidationMessages.append(currEnum.getColumnName()).append(" debe ser un valor Double (ex 138.6547). ");
+                    try {
+                        Double.valueOf(fixUpDecimalSeparator(representation));
+                    } catch (NumberFormatException ex) {
+                        ammendedValidationMessages.append(currEnum.getColumnName()).append(" debe ser un valor Double (ex 138.6547). ");
+                    }
                 }
             } else {
                 // TODO Not supported

@@ -172,4 +172,12 @@
                                   validate="true"/>
     </changeSet>
 
+    <changeSet  author="fineract"  id="90">
+        <addUniqueConstraint  columnNames="code"
+                              constraintName="unique_point_of_sales_code"
+                              schemaName="custom"
+                              tableName="c_client_ally_point_of_sales"/>
+    </changeSet>
+
+
 </databaseChangeLog>

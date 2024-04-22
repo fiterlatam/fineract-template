@@ -19,6 +19,7 @@
 package org.apache.fineract.infrastructure.bulkimport.data;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 public final class ImportData {
 
@@ -32,6 +33,10 @@ public final class ImportData {
     private LocalDate importTime;
     @SuppressWarnings("unused")
     private LocalDate endTime;
+    @SuppressWarnings("unused")
+    private LocalDateTime importDateTime;
+    @SuppressWarnings("unused")
+    private LocalDateTime endDateTime;
     @SuppressWarnings("unused")
     private Boolean completed;
     @SuppressWarnings("unused")
@@ -48,6 +53,17 @@ public final class ImportData {
             final Integer failureCount) {
         return new ImportData(importId, documentId, importTime, endTime, completed, name, createdBy, totalRecords, successCount,
                 failureCount);
+    }
+
+    public static ImportData instance(final Long importId, final Long documentId, final LocalDate importTime, final LocalDate endTime,
+                                      final Boolean completed, final String name, final Long createdBy, final Integer totalRecords, final Integer successCount,
+                                      final Integer failureCount, final LocalDateTime importDateTime, final LocalDateTime endDateTime) {
+        ImportData ret =  new ImportData(importId, documentId, importTime, endTime, completed, name, createdBy, totalRecords, successCount,
+                failureCount);
+        ret.importDateTime = importDateTime;
+        ret.endDateTime = endDateTime;
+
+        return ret;
     }
 
     public static ImportData instance(final Long importId) {

@@ -16,25 +16,17 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.custom.portfolio.buyprocess.domain;
+package org.apache.fineract.custom.infrastructure.dataqueries.domain;
 
-import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
-public interface ClientAdditionalInformationRepository
-        extends JpaRepository<ClientAdditionalInformation, Long>, JpaSpecificationExecutor<ClientAdditionalInformation> {
+import java.util.Optional;
 
-    /*
-     * String FIND_NON_CLOSED_LOAN_THAT_BELONGS_TO_CLIENT =
-     * "select loan from Loan loan where loan.id = :loanId and loan.loanStatus = 300 and loan.client.id = :clientId";
-     *
-     * @Query(FIND_GROUP_LOANS_DISBURSED_AFTER) List<Loan> getGroupLoansDisbursedAfter(@Param("disbursementDate") Date
-     * disbursementDate, @Param("groupId") Long groupId,
-     *
-     * @Param("loanType") Integer loanType);
-     */
+public interface IndividualAdditionalInformationRepository extends JpaRepository<IndividualAdditionalInformation, Long>, JpaSpecificationExecutor<IndividualAdditionalInformation> {
 
-    Optional<ClientAdditionalInformation> findByClientId(Long clientId);
+    Optional<IndividualAdditionalInformation> findByClientId(Long clientId);
+
+    Optional<IndividualAdditionalInformation> findByCedula(String cedula);
 
 }

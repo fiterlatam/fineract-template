@@ -28,6 +28,7 @@ import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.custom.portfolio.ally.api.ClientAllyPointOfSalesApiConstants;
 import org.apache.fineract.custom.portfolio.ally.domain.ClientAllyPointOfSales;
+import org.apache.fineract.custom.portfolio.ally.domain.ClientAllyPointOfSalesRepository;
 import org.apache.fineract.infrastructure.core.data.ApiParameterError;
 import org.apache.fineract.infrastructure.core.data.DataValidatorBuilder;
 import org.apache.fineract.infrastructure.core.exception.InvalidJsonException;
@@ -40,10 +41,13 @@ import org.springframework.stereotype.Component;
 public class ClientAllyPointOfSalesDataValidator {
 
     private final FromJsonHelper fromApiJsonHelper;
+    private ClientAllyPointOfSalesRepository clientAllyPointOfSalesRepository;
 
     @Autowired
-    public ClientAllyPointOfSalesDataValidator(final FromJsonHelper fromApiJsonHelper) {
+    public ClientAllyPointOfSalesDataValidator(final FromJsonHelper fromApiJsonHelper,
+                                               final ClientAllyPointOfSalesRepository clientAllyPointOfSalesRepository) {
         this.fromApiJsonHelper = fromApiJsonHelper;
+        this.clientAllyPointOfSalesRepository = clientAllyPointOfSalesRepository;
     }
 
     public ClientAllyPointOfSales validateForCreate(final String json) {
@@ -63,6 +67,11 @@ public class ClientAllyPointOfSalesDataValidator {
 
         final String code = this.fromApiJsonHelper.extractStringNamed(ClientAllyPointOfSalesApiConstants.codeParamName, element);
         baseDataValidator.reset().parameter(ClientAllyPointOfSalesApiConstants.codeParamName).value(code).notNull().notExceedingLengthOf(4);
+
+        if(clientAllyPointOfSalesRepository.findByCode(code).isPresent()) {
+            baseDataValidator.reset().parameter(ClientAllyPointOfSalesApiConstants.codeParamName).value(code)
+                    .failWithCode("duplicated.code");
+        }
 
         final String name = this.fromApiJsonHelper.extractStringNamed(ClientAllyPointOfSalesApiConstants.nameParamName, element);
         baseDataValidator.reset().parameter(ClientAllyPointOfSalesApiConstants.nameParamName).value(name).notNull()
@@ -120,7 +129,7 @@ public class ClientAllyPointOfSalesDataValidator {
                 .buyEnabled(buyEnabled).collectionEnabled(collectionEnabled).stateCodeValueId(stateCodeValueId).build();
     }
 
-    public ClientAllyPointOfSales validateForUpdate(final String json) {
+    public ClientAllyPointOfSales validateForUpdate(final String json, final ClientAllyPointOfSales clientAllyPointOfSales) {
 
         if (StringUtils.isBlank(json)) {
             throw new InvalidJsonException();
@@ -137,6 +146,14 @@ public class ClientAllyPointOfSalesDataValidator {
 
         final String code = this.fromApiJsonHelper.extractStringNamed(ClientAllyPointOfSalesApiConstants.codeParamName, element);
         baseDataValidator.reset().parameter(ClientAllyPointOfSalesApiConstants.codeParamName).value(code).notNull().notExceedingLengthOf(4);
+
+        // If curr Code is different from new Code and new Code already exists
+        if(Boolean.FALSE.equals(clientAllyPointOfSales.getCode().equalsIgnoreCase(code))) {
+            if(clientAllyPointOfSalesRepository.findByCode(code).isPresent()) {
+                baseDataValidator.reset().parameter(ClientAllyPointOfSalesApiConstants.codeParamName).value(code)
+                        .failWithCode("duplicated.code");
+            }
+        }
 
         final String name = this.fromApiJsonHelper.extractStringNamed(ClientAllyPointOfSalesApiConstants.nameParamName, element);
         baseDataValidator.reset().parameter(ClientAllyPointOfSalesApiConstants.nameParamName).value(name).notNull()

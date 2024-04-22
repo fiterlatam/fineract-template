@@ -13517,4 +13517,11 @@
         </insert>
     </changeSet>
 
+    <changeSet author="fineract" id="1126">
+        <update tableName="m_code_value">
+            <column name="parent_id" valueComputed="(SELECT id FROM m_code_value WHERE code_value = 'BOLIVAR' and code_score = 14)"/>
+            <where>parent_id IS NULL AND code_id = (SELECT id FROM m_code WHERE code_name='Ciudad')</where>
+        </update>
+    </changeSet>
+
 </databaseChangeLog>
