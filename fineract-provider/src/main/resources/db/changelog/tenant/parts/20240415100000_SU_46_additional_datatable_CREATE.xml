@@ -136,11 +136,33 @@
             <column name="product_id" valueNumeric="NULL"/>
         </insert>
     </changeSet>
-
     <changeSet  author="fineract"  id="5">
         <addUniqueConstraint  columnNames="Cedula"
                               constraintName="unique_campos_cliente_persona_Cedula"
                               tableName="campos_cliente_persona"/>
     </changeSet>
-
+    <changeSet author="fineract" id="6">
+        <preConditions onFail="MARK_RAN">
+            <columnExists tableName="campos_cliente_persona" columnName="Primer apellido"/>
+        </preConditions>
+        <dropColumn tableName="campos_cliente_persona">
+            <column name="Primer apellido"/>
+        </dropColumn>
+    </changeSet>
+    <changeSet author="fineract" id="7">
+        <preConditions onFail="MARK_RAN">
+            <columnExists tableName="campos_cliente_persona" columnName="Segundo apellido"/>
+        </preConditions>
+        <dropColumn tableName="campos_cliente_persona">
+            <column name="Segundo apellido"/>
+        </dropColumn>
+    </changeSet>
+    <changeSet author="fineract" id="8">
+        <preConditions onFail="MARK_RAN">
+            <columnExists tableName="campos_cliente_persona" columnName="Celular referencia"/>
+        </preConditions>
+        <dropColumn tableName="campos_cliente_persona">
+            <column name="Celular referencia"/>
+        </dropColumn>
+    </changeSet>
 </databaseChangeLog>
