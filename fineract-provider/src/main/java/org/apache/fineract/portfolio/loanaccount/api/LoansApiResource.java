@@ -497,7 +497,7 @@ public class LoansApiResource {
             final Collection<AgencyData> agencyOptions = this.agencyReadPlatformService.retrieveAllByUser();
             final List<AppUserData> facilitatorOptions = new ArrayList<>(
                     this.appUserReadPlatformService.retrieveUsersUnderHierarchy(Long.valueOf(OfficeHierarchyLevel.GRUPO.getValue())));
-            final Collection<GroupGeneralData> groupOptions = this.groupReadPlatformService.retrieveAll(null, null);
+            final Collection<GroupGeneralData> groupOptions = this.groupReadPlatformService.retrieveAllByOffice();
             final Collection<EnumOptionData> disbursementMethodOptions = List.of(LoanDisbursementMethod.status(1),
                     LoanDisbursementMethod.status(2), LoanDisbursementMethod.status(3));
             newLoanAccount = LoanAccountData.disburseLoanByCheques(agencyOptions, centerOptions, groupOptions, facilitatorOptions,
