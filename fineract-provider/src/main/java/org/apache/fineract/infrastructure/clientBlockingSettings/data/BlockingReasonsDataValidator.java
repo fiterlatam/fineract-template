@@ -79,6 +79,37 @@ public class BlockingReasonsDataValidator {
 
     }
 
+    public void validateForUpdate(final String json) {
+        if (StringUtils.isBlank(json)) {
+            throw new InvalidJsonException();
+        }
+        final Type typeOfMap = new TypeToken<Map<String, Object>>() {}.getType();
+        this.fromApiJsonHelper.checkForUnsupportedParameters(typeOfMap, json, MANAGE_BLOCKING_REASONS_DATA_PARAMETERS);
+        final JsonElement element = this.fromApiJsonHelper.parse(json);
+        final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
+
+        final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors)
+                .resource(BlockingReasonsConstants.ENTITY_NAME);
+        boolean atLeastOneParameterPassedForUpdate = false;
+
+        if (this.fromApiJsonHelper.parameterExists(BlockingReasonsConstants.PRIORITY_PARAM, element)) {
+            atLeastOneParameterPassedForUpdate = true;
+
+            final Integer priority = this.fromApiJsonHelper.extractIntegerSansLocaleNamed(BlockingReasonsConstants.PRIORITY_PARAM, element);
+            baseDataValidator.reset().parameter(BlockingReasonsConstants.PRIORITY_PARAM).value(priority).notNull().integerGreaterThanZero()
+                    .inMinMaxRange(1, 100);
+        }
+
+        if (this.fromApiJsonHelper.parameterExists(BlockingReasonsConstants.NAME_OF_REASON_PARAM, element)) {
+            atLeastOneParameterPassedForUpdate = true;
+
+            final String nameOfReason = this.fromApiJsonHelper.extractStringNamed(BlockingReasonsConstants.NAME_OF_REASON_PARAM, element);
+            baseDataValidator.reset().parameter(BlockingReasonsConstants.NAME_OF_REASON_PARAM).value(nameOfReason).notNull();
+        }
+        throwExceptionIfValidationWarningsExist(dataValidationErrors);
+
+    }
+
     private void throwExceptionIfValidationWarningsExist(final List<ApiParameterError> dataValidationErrors) {
         if (!dataValidationErrors.isEmpty()) {
             throw new PlatformApiDataValidationException(dataValidationErrors);

@@ -18,9 +18,14 @@
  */
 package org.apache.fineract.infrastructure.clientBlockingSettings.service;
 
+import java.util.Collection;
 import org.apache.fineract.infrastructure.clientBlockingSettings.data.BlockingReasonsData;
 
 public interface ManageBlockingReasonsReadPlatformService {
 
     BlockingReasonsData retrieveTemplate();
+
+    Collection<BlockingReasonsData> retrieveAllBlockingReasons();
+
+    BlockingReasonsData getBlockingReasonsById(Long id);
 }

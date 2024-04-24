@@ -20,15 +20,12 @@ package org.apache.fineract.infrastructure.clientBlockingSettings.api;
 
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.UriInfo;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
@@ -84,6 +81,48 @@ public class ManageBlockingReasonsApiResource {
 
         final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
 
+        return this.toApiJsonSerializer.serialize(result);
+    }
+
+    @GET
+    @Path("retrieveAllBlockingReasons")
+    @Consumes({ MediaType.APPLICATION_JSON })
+    @Produces({ MediaType.APPLICATION_JSON })
+    public String retrieveAllBlockingReasons(@Context final UriInfo uriInfo) {
+
+        this.context.authenticatedUser().validateHasReadPermission(BlockingReasonsConstants.ENTITY_NAME);
+
+        Collection<BlockingReasonsData> blockingReasonsDataCollection = this.manageBlockingReasonsReadPlatformService
+                .retrieveAllBlockingReasons();
+
+        final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
+        return this.toApiJsonSerializer.serialize(settings, blockingReasonsDataCollection, MANAGE_BLOCKING_REASONS_DATA_PARAMETERS);
+    }
+
+    @GET
+    @Path("getBlockingReasonsById/{id}")
+    @Consumes({ MediaType.APPLICATION_JSON })
+    @Produces({ MediaType.APPLICATION_JSON })
+    public String getBlockingReasonsById(@Context final UriInfo uriInfo, @PathParam("id") final Long id) {
+
+        this.context.authenticatedUser().validateHasReadPermission(BlockingReasonsConstants.ENTITY_NAME);
+
+        BlockingReasonsData blockingReasonsDataCollection = this.manageBlockingReasonsReadPlatformService.getBlockingReasonsById(id);
+
+        final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
+        return this.toApiJsonSerializer.serialize(settings, blockingReasonsDataCollection, MANAGE_BLOCKING_REASONS_DATA_PARAMETERS);
+    }
+
+    @PUT
+    @Path("{id}")
+    @Consumes({ MediaType.APPLICATION_JSON })
+    @Produces({ MediaType.APPLICATION_JSON })
+    public String updateBlockReasonSetting(@PathParam("id") final Long id, @Parameter(hidden = true) final String apiRequestBodyAsJson) {
+
+        final CommandWrapper commandRequest = new CommandWrapperBuilder().updateBlockReasonSetting(id).withJson(apiRequestBodyAsJson)
+                .build();
+
+        final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
         return this.toApiJsonSerializer.serialize(result);
     }
 }

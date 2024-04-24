@@ -24,4 +24,6 @@ import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 public interface ManageBlockingReasonsWritePlatformService {
 
     CommandProcessingResult createBlockReasonSetting(JsonCommand command);
+
+    CommandProcessingResult updateBlockReasonSetting(Long id, JsonCommand command);
 }
