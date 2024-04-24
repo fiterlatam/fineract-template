@@ -1030,6 +1030,11 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
         final Client client = this.clientRepository.findOneWithNotFoundDetection(entityId);
         final LocalDate reactivateDate = command.localDateValueOfParameterNamed(ClientApiConstants.reactivationDateParamName);
 
+        if (client.isClosed()) {
+            final String errorMessage = "Closed clients cannot reactivated.";
+            throw new InvalidClientStateTransitionException("reactivation", "on.closed.account", errorMessage);
+        }
+
         if (!client.isClosed()) {
             final String errorMessage = "only closed clients may be reactivated.";
             throw new InvalidClientStateTransitionException("reactivation", "on.nonclosed.account", errorMessage);
