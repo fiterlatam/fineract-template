@@ -103,7 +103,7 @@ public class ClientAllyImportHandler implements ImportHandler {
                             ImportHandlerUtils.readAsBoolean(ClientAllyTemplatePopulateImportEnum.COLLECTION_ENABLED.getColumnIndex(), row)) //
                     .bankEntityCodeValueId(readCodeValueIdFromName(workbook, row, ClientAllyTemplatePopulateImportEnum.BANK_ENTITY_ID)) //
                     .accountTypeCodeValueId(readCodeValueIdFromName(workbook, row, ClientAllyTemplatePopulateImportEnum.ACCOUNT_TYPE_ID)) //
-                    .accountNumber(ImportHandlerUtils.readAsLong(ClientAllyTemplatePopulateImportEnum.ACCOUNT_NUMBER.getColumnIndex(), row).toString()) //
+                    .accountNumber(ImportHandlerUtils.readAsString(ClientAllyTemplatePopulateImportEnum.ACCOUNT_NUMBER.getColumnIndex(), row).toString()) //
                     .taxProfileCodeValueId(readCodeValueIdFromName(workbook, row, ClientAllyTemplatePopulateImportEnum.TAX_PROFILE_ID)) //
                     .stateCodeValueId(readCodeValueIdFromName(workbook, row, ClientAllyTemplatePopulateImportEnum.STATE_ID)) //
                     .build();
