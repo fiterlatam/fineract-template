@@ -16,16 +16,14 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.infrastructure.clientBlockingSettings.service;
+package org.apache.fineract.infrastructure.clientblockingreasons.service;
 
-import java.util.Collection;
-import org.apache.fineract.infrastructure.clientBlockingSettings.data.BlockingReasonsData;
+import org.apache.fineract.infrastructure.core.api.JsonCommand;
+import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 
-public interface ManageBlockingReasonsReadPlatformService {
+public interface ManageBlockingReasonsWritePlatformService {
 
-    BlockingReasonsData retrieveTemplate();
+    CommandProcessingResult createBlockReasonSetting(JsonCommand command);
 
-    Collection<BlockingReasonsData> retrieveAllBlockingReasons();
-
-    BlockingReasonsData getBlockingReasonsById(Long id);
+    CommandProcessingResult updateBlockReasonSetting(Long id, JsonCommand command);
 }

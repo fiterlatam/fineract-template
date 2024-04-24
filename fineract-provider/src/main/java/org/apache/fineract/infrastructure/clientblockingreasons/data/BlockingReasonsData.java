@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.infrastructure.clientBlockingSettings.data;
+package org.apache.fineract.infrastructure.clientblockingreasons.data;
 
 import java.io.Serializable;
 import java.time.LocalDate;

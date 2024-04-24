@@ -736,6 +736,24 @@ public class CommandWrapperBuilder {
         return this;
     }
 
+    public CommandWrapperBuilder block(final Long clientId) {
+        this.actionName = "BLOCK";
+        this.entityName = "CLIENT";
+        this.entityId = clientId;
+        this.clientId = clientId;
+        this.href = "/clients/" + clientId + "?command=block";
+        return this;
+    }
+
+    public CommandWrapperBuilder undoBlock(final Long clientId) {
+        this.actionName = "UNDOBLOCK";
+        this.entityName = "CLIENT";
+        this.entityId = clientId;
+        this.clientId = clientId;
+        this.href = "/clients/" + clientId + "?command=undoBlock";
+        return this;
+    }
+
     public CommandWrapperBuilder createDatatableEntry(final String datatable, final Long apptableId, final Long datatableId) {
         this.actionName = "CREATE";
         commonDatatableSettings(datatable, apptableId, datatableId);

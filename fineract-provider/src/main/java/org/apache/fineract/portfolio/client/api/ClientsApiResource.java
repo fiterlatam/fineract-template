@@ -507,12 +507,17 @@ public class ClientsApiResource {
             commandRequest = builder.undoRejection(clientId).build();
         } else if (CommandParameterUtil.is(commandParam, "undoWithdrawal")) {
             commandRequest = builder.undoWithdrawal(clientId).build();
+        } else if (CommandParameterUtil.is(commandParam, "block")) {
+            commandRequest = builder.block(clientId).build();
+        } else if (CommandParameterUtil.is(commandParam, "undoBlock")) {
+            commandRequest = builder.undoBlock(clientId).build();
         }
 
         if (commandRequest == null) {
             throw new UnrecognizedQueryParamException("command", commandParam,
                     new Object[] { "activate", "unassignStaff", "assignStaff", "close", "proposeTransfer", "withdrawTransfer",
-                            "acceptTransfer", "rejectTransfer", "updateSavingsAccount", "reject", "withdraw", "reactivate" });
+                            "acceptTransfer", "rejectTransfer", "updateSavingsAccount", "reject", "withdraw", "reactivate", "block",
+                            "undoBlock" });
         }
 
         return commandRequest;

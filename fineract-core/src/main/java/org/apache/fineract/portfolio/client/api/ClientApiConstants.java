@@ -94,7 +94,12 @@ public class ClientApiConstants {
     public static final String staffIdParamName = "staffId";
     public static final String isStaffParamName = "isStaff";
     public static final String closureDateParamName = "closureDate";
+    public static final String blockedOnDateParamName = "blockedOnDate";
+    public static final String undoBlockedOnDateParamName = "undoBlockedOnDate";
+    public static final String blockingCommentParamName = "blockingComment";
+    public static final String undoBlockingCommentParamName = "undoBlockingComment";
     public static final String closureReasonIdParamName = "closureReasonId";
+    public static final String blockingReasonIdParamName = "blockingReasonId";
     public static final String reopenedDateParamName = "reopenedDate";
 
     public static final String rejectionDateParamName = "rejectionDate";

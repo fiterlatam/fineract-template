@@ -16,11 +16,11 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.infrastructure.clientBlockingSettings.handler;
+package org.apache.fineract.infrastructure.clientblockingreasons.handler;
 
 import org.apache.fineract.commands.annotation.CommandType;
 import org.apache.fineract.commands.handler.NewCommandSourceHandler;
-import org.apache.fineract.infrastructure.clientBlockingSettings.service.ManageBlockingReasonsWritePlatformService;
+import org.apache.fineract.infrastructure.clientblockingreasons.service.ManageBlockingReasonsWritePlatformService;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.springframework.beans.factory.annotation.Autowired;

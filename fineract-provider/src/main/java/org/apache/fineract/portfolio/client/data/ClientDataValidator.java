@@ -694,6 +694,51 @@ public final class ClientDataValidator {
         throwExceptionIfValidationWarningsExist(dataValidationErrors);
     }
 
+    public void validateBlock(final JsonCommand command) {
+        final String json = command.json();
+        if (StringUtils.isBlank(json)) {
+            throw new InvalidJsonException();
+        }
+        final Type typeOfMap = new TypeToken<Map<String, Object>>() {}.getType();
+        this.fromApiJsonHelper.checkForUnsupportedParameters(typeOfMap, json,
+                ClientApiCollectionConstants.CLIENT_BLOCK_REQUEST_DATA_PARAMETERS);
+        final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
+        final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors)
+                .resource(ClientApiCollectionConstants.CLIENT_RESOURCE_NAME);
+        final JsonElement element = command.parsedJson();
+        final LocalDate blockedOnDate = this.fromApiJsonHelper.extractLocalDateNamed(ClientApiConstants.blockedOnDateParamName, element);
+        baseDataValidator.reset().parameter(ClientApiConstants.blockedOnDateParamName).value(blockedOnDate).notNull();
+        final Long blockingReasonId = this.fromApiJsonHelper.extractLongNamed(ClientApiConstants.blockingReasonIdParamName, element);
+        baseDataValidator.reset().parameter(ClientApiConstants.blockingReasonIdParamName).value(blockingReasonId).notNull()
+                .longGreaterThanZero();
+        final String blockingComment = this.fromApiJsonHelper.extractStringNamed(ClientApiConstants.blockingCommentParamName, element);
+        baseDataValidator.reset().parameter(ClientApiConstants.blockingCommentParamName).value(blockingComment).notBlank()
+                .notExceedingLengthOf(255);
+        throwExceptionIfValidationWarningsExist(dataValidationErrors);
+    }
+
+    public void validateUndoBlock(final JsonCommand command) {
+        final String json = command.json();
+        if (StringUtils.isBlank(json)) {
+            throw new InvalidJsonException();
+        }
+        final Type typeOfMap = new TypeToken<Map<String, Object>>() {}.getType();
+        this.fromApiJsonHelper.checkForUnsupportedParameters(typeOfMap, json,
+                ClientApiCollectionConstants.CLIENT_UNDO_BLOCK_REQUEST_DATA_PARAMETERS);
+        final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
+        final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors)
+                .resource(ClientApiCollectionConstants.CLIENT_RESOURCE_NAME);
+        final JsonElement element = command.parsedJson();
+        final LocalDate undoBlockedOnDate = this.fromApiJsonHelper.extractLocalDateNamed(ClientApiConstants.undoBlockedOnDateParamName,
+                element);
+        baseDataValidator.reset().parameter(ClientApiConstants.undoBlockedOnDateParamName).value(undoBlockedOnDate).notNull();
+        final String undoBlockingComment = this.fromApiJsonHelper.extractStringNamed(ClientApiConstants.undoBlockingCommentParamName,
+                element);
+        baseDataValidator.reset().parameter(ClientApiConstants.blockingCommentParamName).value(undoBlockingComment).notBlank()
+                .notExceedingLengthOf(255);
+        throwExceptionIfValidationWarningsExist(dataValidationErrors);
+    }
+
     public void validateForSavingsAccount(final String json) {
 
         if (StringUtils.isBlank(json)) {

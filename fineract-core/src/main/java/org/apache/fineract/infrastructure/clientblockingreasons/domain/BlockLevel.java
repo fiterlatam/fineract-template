@@ -1,4 +1,4 @@
-package org.apache.fineract.infrastructure.clientBlockingSettings.domain;
+package org.apache.fineract.infrastructure.clientblockingreasons.domain;
 
 public enum BlockLevel {
 

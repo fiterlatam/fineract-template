@@ -20,8 +20,18 @@ package org.apache.fineract.custom.portfolio.buyprocess.validator;
 
 import com.google.gson.JsonElement;
 import com.google.gson.reflect.TypeToken;
+import java.lang.reflect.Type;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.fineract.custom.infrastructure.dataqueries.domain.ClientAdditionalInformation;
 import org.apache.fineract.custom.infrastructure.dataqueries.domain.ClientAdditionalInformationRepository;
 import org.apache.fineract.custom.infrastructure.dataqueries.domain.IndividualAdditionalInformation;
 import org.apache.fineract.custom.infrastructure.dataqueries.domain.IndividualAdditionalInformationRepository;
@@ -41,18 +51,6 @@ import org.apache.http.HttpStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.lang.reflect.Type;
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
-
 @Component
 public class ClientBuyProcessDataValidator {
 
@@ -62,12 +60,11 @@ public class ClientBuyProcessDataValidator {
     private final ClientAdditionalInformationRepository camposClienteEmpresaRepository;
     private final IndividualAdditionalInformationRepository individualAdditionalInformationRepository;
 
-
     @Autowired
     public ClientBuyProcessDataValidator(final FromJsonHelper fromApiJsonHelper, final PlatformSecurityContext platformSecurityContext,
-                                         final ClientAllyPointOfSalesRepository clientAllyPointOfSalesRepository,
-                                         final ClientAdditionalInformationRepository camposClienteEmpresaRepository,
-                                         final IndividualAdditionalInformationRepository individualAdditionalInformationRepository) {
+            final ClientAllyPointOfSalesRepository clientAllyPointOfSalesRepository,
+            final ClientAdditionalInformationRepository camposClienteEmpresaRepository,
+            final IndividualAdditionalInformationRepository individualAdditionalInformationRepository) {
         this.fromApiJsonHelper = fromApiJsonHelper;
         this.platformSecurityContext = platformSecurityContext;
         this.clientAllyPointOfSalesRepository = clientAllyPointOfSalesRepository;
@@ -100,11 +97,12 @@ public class ClientBuyProcessDataValidator {
 
         Long clientId = 0L;
         String clientDocumentId = StringUtils.EMPTY;
-        if(this.fromApiJsonHelper.parameterExists(ClientBuyProcessApiConstants.clientDocumentIdParamName,element)) {
+        if (this.fromApiJsonHelper.parameterExists(ClientBuyProcessApiConstants.clientDocumentIdParamName, element)) {
             clientDocumentId = this.fromApiJsonHelper.extractStringNamed(ClientBuyProcessApiConstants.clientDocumentIdParamName, element);
 
-            Optional<IndividualAdditionalInformation> camposClientePersona = individualAdditionalInformationRepository.findByCedula(clientDocumentId);
-            if(camposClientePersona.isPresent()) {
+            Optional<IndividualAdditionalInformation> camposClientePersona = individualAdditionalInformationRepository
+                    .findByCedula(clientDocumentId);
+            if (camposClientePersona.isPresent()) {
                 clientId = camposClientePersona.get().getClientId();
             } else {
                 clientId = 0L;
@@ -116,10 +114,10 @@ public class ClientBuyProcessDataValidator {
 
         Long pointOfSalesId = 0L;
         String pointOfSalesCode = StringUtils.EMPTY;
-        if(this.fromApiJsonHelper.parameterExists(ClientBuyProcessApiConstants.pointOfSalesCodeParamName,element)) {
+        if (this.fromApiJsonHelper.parameterExists(ClientBuyProcessApiConstants.pointOfSalesCodeParamName, element)) {
             pointOfSalesCode = this.fromApiJsonHelper.extractStringNamed(ClientBuyProcessApiConstants.pointOfSalesCodeParamName, element);
 
-            if(clientAllyPointOfSalesRepository.findByCode(pointOfSalesCode).isPresent()) {
+            if (clientAllyPointOfSalesRepository.findByCode(pointOfSalesCode).isPresent()) {
                 pointOfSalesId = clientAllyPointOfSalesRepository.findByCode(pointOfSalesCode).get().getId();
             } else {
                 pointOfSalesId = 0L;
@@ -128,7 +126,6 @@ public class ClientBuyProcessDataValidator {
         } else {
             baseDataValidator.reset().parameter(ClientBuyProcessApiConstants.pointOfSalesCodeParamName).value(null).notNull();
         }
-
 
         final Long productId = this.fromApiJsonHelper.extractLongNamed(ClientBuyProcessApiConstants.productIdParamName, element);
         baseDataValidator.reset().parameter(ClientBuyProcessApiConstants.productIdParamName).value(productId).notNull();

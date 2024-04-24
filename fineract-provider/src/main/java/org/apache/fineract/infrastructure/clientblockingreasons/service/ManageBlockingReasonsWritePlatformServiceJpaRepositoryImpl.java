@@ -16,20 +16,20 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.infrastructure.clientBlockingSettings.service;
+package org.apache.fineract.infrastructure.clientblockingreasons.service;
 
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.fineract.infrastructure.clientBlockingSettings.data.BlockingReasonsDataValidator;
-import org.apache.fineract.infrastructure.clientBlockingSettings.domain.BlockLevel;
-import org.apache.fineract.infrastructure.clientBlockingSettings.domain.BlockingReasonSetting;
-import org.apache.fineract.infrastructure.clientBlockingSettings.domain.ManageBlockingReasonSettingsRepositoryWrapper;
-import org.apache.fineract.infrastructure.clientBlockingSettings.exception.BlockLevelEntityException;
-import org.apache.fineract.infrastructure.clientBlockingSettings.exception.BlockingReasonExceptionNotFoundException;
-import org.apache.fineract.infrastructure.clientBlockingSettings.exception.CreditLevelExceptionNotFoundException;
-import org.apache.fineract.infrastructure.clientBlockingSettings.exception.CustomerLevelExceptionNotFoundException;
+import org.apache.fineract.infrastructure.clientblockingreasons.data.BlockingReasonsDataValidator;
+import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockLevel;
+import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSetting;
+import org.apache.fineract.infrastructure.clientblockingreasons.domain.ManageBlockingReasonSettingsRepositoryWrapper;
+import org.apache.fineract.infrastructure.clientblockingreasons.exception.BlockLevelEntityException;
+import org.apache.fineract.infrastructure.clientblockingreasons.exception.BlockingReasonExceptionNotFoundException;
+import org.apache.fineract.infrastructure.clientblockingreasons.exception.CreditLevelExceptionNotFoundException;
+import org.apache.fineract.infrastructure.clientblockingreasons.exception.CustomerLevelExceptionNotFoundException;
 import org.apache.fineract.infrastructure.codes.domain.CodeValue;
 import org.apache.fineract.infrastructure.codes.domain.CodeValueRepositoryWrapper;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;

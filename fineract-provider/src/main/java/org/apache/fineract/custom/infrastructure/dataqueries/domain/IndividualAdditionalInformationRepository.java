@@ -18,12 +18,12 @@
  */
 package org.apache.fineract.custom.infrastructure.dataqueries.domain;
 
+import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
-import java.util.Optional;
-
-public interface IndividualAdditionalInformationRepository extends JpaRepository<IndividualAdditionalInformation, Long>, JpaSpecificationExecutor<IndividualAdditionalInformation> {
+public interface IndividualAdditionalInformationRepository
+        extends JpaRepository<IndividualAdditionalInformation, Long>, JpaSpecificationExecutor<IndividualAdditionalInformation> {
 
     Optional<IndividualAdditionalInformation> findByClientId(Long clientId);
 
