@@ -3742,4 +3742,12 @@ public class CommandWrapperBuilder {
         this.href = "/createBlockReasonSettings";
         return this;
     }
+
+    public CommandWrapperBuilder updateBlockReasonSetting(final Long id) {
+        this.actionName = "UPDATE";
+        this.entityName = "BLOCKREASONSETTINGS";
+        this.entityId = id;
+        this.href = "/updateBlockReasonSetting/" + id;
+        return this;
+    }
 }

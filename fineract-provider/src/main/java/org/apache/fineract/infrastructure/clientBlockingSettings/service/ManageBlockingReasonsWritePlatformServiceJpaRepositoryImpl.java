@@ -18,7 +18,9 @@
  */
 package org.apache.fineract.infrastructure.clientBlockingSettings.service;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.fineract.infrastructure.clientBlockingSettings.data.BlockingReasonsDataValidator;
 import org.apache.fineract.infrastructure.clientBlockingSettings.domain.BlockLevel;
@@ -118,6 +120,21 @@ public class ManageBlockingReasonsWritePlatformServiceJpaRepositoryImpl implemen
 
         return new CommandProcessingResultBuilder() //
                 .withEntityId(blockingReasonSetting.getId()) //
+                .build();
+    }
+
+    @Override
+    public CommandProcessingResult updateBlockReasonSetting(Long id, JsonCommand command) {
+
+        BlockingReasonSetting blockingReasonSetting = this.blockingReasonSettingsRepositoryWrapper.findOneWithNotFoundDetection(id);
+        this.blockingReasonsDataValidator.validateForUpdate(command.json());
+
+        final Map<String, Object> actualChanges = new LinkedHashMap<>(9);
+
+        return new CommandProcessingResultBuilder() //
+                .withCommandId(command.commandId()) //
+                .withEntityId(id) //
+                .with(actualChanges) //
                 .build();
     }
 }
