@@ -107,7 +107,12 @@ public class ClientBuyProcessDataValidator {
             if(camposClientePersona.isPresent()) {
                 clientId = camposClientePersona.get().getClientId();
             } else {
-                clientId = 0L;
+                Optional<ClientAdditionalInformation> camposClienteEmpresa = camposClienteEmpresaRepository.findByNit(clientDocumentId);
+                if(camposClienteEmpresa.isPresent()) {
+                    clientId = camposClienteEmpresa.get().getClientId();
+                } else {
+                    clientId = 0L;
+                }
             }
 
         } else {
