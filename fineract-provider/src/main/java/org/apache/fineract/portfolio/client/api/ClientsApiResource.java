@@ -50,6 +50,8 @@ import org.apache.fineract.commands.service.CommandWrapperBuilder;
 import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformService;
 import org.apache.fineract.infrastructure.bulkimport.service.BulkImportWorkbookPopulatorService;
 import org.apache.fineract.infrastructure.bulkimport.service.BulkImportWorkbookService;
+import org.apache.fineract.infrastructure.clientblockingreasons.data.BlockingReasonsData;
+import org.apache.fineract.infrastructure.clientblockingreasons.service.ManageBlockingReasonsReadPlatformService;
 import org.apache.fineract.infrastructure.core.api.ApiRequestParameterHelper;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.UploadRequest;
@@ -93,6 +95,7 @@ public class ClientsApiResource {
     private final BulkImportWorkbookService bulkImportWorkbookService;
     private final BulkImportWorkbookPopulatorService bulkImportWorkbookPopulatorService;
     private final GuarantorReadPlatformService guarantorReadPlatformService;
+    private final ManageBlockingReasonsReadPlatformService manageBlockingReasonsReadPlatformService;
 
     @GET
     @Path("template")
@@ -113,6 +116,11 @@ public class ClientsApiResource {
         context.authenticatedUser().validateHasReadPermission(ClientApiConstants.CLIENT_RESOURCE_NAME);
         if (CommandParameterUtil.is(commandParam, "close")) {
             clientData = clientReadPlatformService.retrieveAllNarrations(ClientApiConstants.CLIENT_CLOSURE_REASON);
+        } else if (CommandParameterUtil.is(commandParam, "block")) {
+            Collection<BlockingReasonsData> blockingReasonsDataOptions = this.manageBlockingReasonsReadPlatformService
+                    .retrieveAllBlockingReasons("CLIENT");
+            clientData = new ClientData();
+            clientData.setBlockingReasonsDataOptions(blockingReasonsDataOptions);
         } else if (CommandParameterUtil.is(commandParam, "acceptTransfer")) {
             clientData = clientReadPlatformService.retrieveAllNarrations(ClientApiConstants.CLIENT_CLOSURE_REASON);
         } else if (CommandParameterUtil.is(commandParam, "reject")) {
@@ -452,12 +460,14 @@ public class ClientsApiResource {
 
     private ClientData retrieveClientData(final Long clientId, final boolean staffInSelectedOfficeOnly, final boolean isTemplate) {
         ClientData clientData = clientReadPlatformService.retrieveOne(clientId);
+        final LocalDate blockedOnDate = clientData.getBlockedOnDate();
         if (isTemplate) {
             final ClientData templateData = clientReadPlatformService.retrieveTemplate(clientData.getOfficeId(), staffInSelectedOfficeOnly);
             clientData = ClientData.templateOnTop(clientData, templateData);
             Collection<SavingsAccountData> savingAccountOptions = savingsAccountReadPlatformService.retrieveForLookup(clientId, null);
             if (savingAccountOptions != null && savingAccountOptions.size() > 0) {
                 clientData = ClientData.templateWithSavingAccountOptions(clientData, savingAccountOptions);
+                clientData.setBlockedOnDate(blockedOnDate);
             }
         }
         return clientData;

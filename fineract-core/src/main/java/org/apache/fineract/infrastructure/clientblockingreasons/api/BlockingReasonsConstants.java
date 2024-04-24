@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.infrastructure.clientblockingreasons.service;
+package org.apache.fineract.infrastructure.clientblockingreasons.api;
 
 public class BlockingReasonsConstants {
 

@@ -25,7 +25,7 @@ public interface ManageBlockingReasonsReadPlatformService {
 
     BlockingReasonsData retrieveTemplate();
 
-    Collection<BlockingReasonsData> retrieveAllBlockingReasons();
+    Collection<BlockingReasonsData> retrieveAllBlockingReasons(String level);
 
     BlockingReasonsData getBlockingReasonsById(Long id);
 }

@@ -626,7 +626,7 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
         this.undoBlockingComment = undoBlockingComment;
         this.undoBlockedOnDate = undoBlockedOnDate;
         this.undoBlockedBy = currentUser;
-        this.status = ClientStatus.BLOCKED.getValue();
+        this.status = ClientStatus.ACTIVE.getValue();
     }
 
     public CodeValue subStatus() {

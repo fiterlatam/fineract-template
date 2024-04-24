@@ -80,6 +80,8 @@ public interface ClientMapper {
     @Mapping(target = "legalFormId", ignore = true)
     @Mapping(target = "clientCollateralManagements", ignore = true)
     @Mapping(target = "groups", ignore = true)
+    @Mapping(target = "blockingReasonsDataOptions", ignore = true)
+    @Mapping(target = "blockedOnDate", source = "source.blockedOnDate")
     ClientData map(Client source);
 
     @Named("clientTypeCode")
