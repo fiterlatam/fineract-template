@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.infrastructure.clientBlockingSettings.api;
+package org.apache.fineract.infrastructure.clientblockingreasons.api;
 
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -32,9 +32,8 @@ import lombok.RequiredArgsConstructor;
 import org.apache.fineract.commands.domain.CommandWrapper;
 import org.apache.fineract.commands.service.CommandWrapperBuilder;
 import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformService;
-import org.apache.fineract.infrastructure.clientBlockingSettings.data.BlockingReasonsData;
-import org.apache.fineract.infrastructure.clientBlockingSettings.service.BlockingReasonsConstants;
-import org.apache.fineract.infrastructure.clientBlockingSettings.service.ManageBlockingReasonsReadPlatformService;
+import org.apache.fineract.infrastructure.clientblockingreasons.data.BlockingReasonsData;
+import org.apache.fineract.infrastructure.clientblockingreasons.service.ManageBlockingReasonsReadPlatformService;
 import org.apache.fineract.infrastructure.core.api.ApiRequestParameterHelper;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.serialization.ApiRequestJsonSerializationSettings;
@@ -93,7 +92,7 @@ public class ManageBlockingReasonsApiResource {
         this.context.authenticatedUser().validateHasReadPermission(BlockingReasonsConstants.ENTITY_NAME);
 
         Collection<BlockingReasonsData> blockingReasonsDataCollection = this.manageBlockingReasonsReadPlatformService
-                .retrieveAllBlockingReasons();
+                .retrieveAllBlockingReasons(null);
 
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
         return this.toApiJsonSerializer.serialize(settings, blockingReasonsDataCollection, MANAGE_BLOCKING_REASONS_DATA_PARAMETERS);

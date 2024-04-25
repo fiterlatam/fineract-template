@@ -16,14 +16,16 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.infrastructure.clientBlockingSettings.exception;
+package org.apache.fineract.infrastructure.clientblockingreasons.service;
 
-import org.apache.fineract.infrastructure.core.exception.AbstractPlatformResourceNotFoundException;
+import java.util.Collection;
+import org.apache.fineract.infrastructure.clientblockingreasons.data.BlockingReasonsData;
 
-public class CreditLevelExceptionNotFoundException extends AbstractPlatformResourceNotFoundException {
+public interface ManageBlockingReasonsReadPlatformService {
 
-    public CreditLevelExceptionNotFoundException(final String creditLevel) {
-        super("error.msg.credit.level.id.already.exist", "Credit Level  " + creditLevel + "  already exists", creditLevel);
-    }
+    BlockingReasonsData retrieveTemplate();
 
+    Collection<BlockingReasonsData> retrieveAllBlockingReasons(String level);
+
+    BlockingReasonsData getBlockingReasonsById(Long id);
 }

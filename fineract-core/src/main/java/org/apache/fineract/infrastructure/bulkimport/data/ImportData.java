@@ -56,9 +56,9 @@ public final class ImportData {
     }
 
     public static ImportData instance(final Long importId, final Long documentId, final LocalDate importTime, final LocalDate endTime,
-                                      final Boolean completed, final String name, final Long createdBy, final Integer totalRecords, final Integer successCount,
-                                      final Integer failureCount, final LocalDateTime importDateTime, final LocalDateTime endDateTime) {
-        ImportData ret =  new ImportData(importId, documentId, importTime, endTime, completed, name, createdBy, totalRecords, successCount,
+            final Boolean completed, final String name, final Long createdBy, final Integer totalRecords, final Integer successCount,
+            final Integer failureCount, final LocalDateTime importDateTime, final LocalDateTime endDateTime) {
+        ImportData ret = new ImportData(importId, documentId, importTime, endTime, completed, name, createdBy, totalRecords, successCount,
                 failureCount);
         ret.importDateTime = importDateTime;
         ret.endDateTime = endDateTime;

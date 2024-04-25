@@ -225,8 +225,8 @@ public class ClientAllyDataValidator {
                 .cityCodeValueId(cityCodeValueId).departmentCodeValueId(departmentCodeValueId)
                 .liquidationFrequencyCodeValueId(liquidationFrequencyCodeValueId).applyCupoMaxSell(applyCupoMaxSell)
                 .cupoMaxSell(cupoMaxSell).settledComission(settledComission).buyEnabled(buyEnabled).collectionEnabled(collectionEnabled)
-                .bankEntityCodeValueId(bankEntityCodeValueId).accountTypeCodeValueId(accountTypeCodeValueId)
-                .accountNumber(accountNumber).taxProfileCodeValueId(taxProfileCodeValueId).stateCodeValueId(stateCodeValueId).build();
+                .bankEntityCodeValueId(bankEntityCodeValueId).accountTypeCodeValueId(accountTypeCodeValueId).accountNumber(accountNumber)
+                .taxProfileCodeValueId(taxProfileCodeValueId).stateCodeValueId(stateCodeValueId).build();
 
         return ret;
     }

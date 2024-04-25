@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.infrastructure.clientBlockingSettings.service;
+package org.apache.fineract.infrastructure.clientblockingreasons.service;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -25,7 +25,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
-import org.apache.fineract.infrastructure.clientBlockingSettings.data.BlockingReasonsData;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.fineract.infrastructure.clientblockingreasons.data.BlockingReasonsData;
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 import org.apache.fineract.infrastructure.codes.service.CodeValueReadPlatformService;
 import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
@@ -60,13 +61,17 @@ public class ManageBlockingReasonsReadPlatformServiceImpl implements ManageBlock
     }
 
     @Override
-    public Collection<BlockingReasonsData> retrieveAllBlockingReasons() {
+    public Collection<BlockingReasonsData> retrieveAllBlockingReasons(final String level) {
         this.context.authenticatedUser();
-
         final BlockingReasonsMapper rm = new BlockingReasonsMapper();
-        final String sql = "SELECT " + rm.schema() + "order by id";
-
-        return this.jdbcTemplate.query(sql, rm, new Object[] {});
+        String sql = "SELECT " + rm.schema();
+        Object[] parmams = new Object[] {};
+        if (StringUtils.isNotBlank(level)) {
+            sql += " WHERE brs.level = ? ";
+            parmams = new Object[] { level };
+        }
+        sql += " order by brs.id";
+        return this.jdbcTemplate.query(sql, rm, parmams);
     }
 
     @Override

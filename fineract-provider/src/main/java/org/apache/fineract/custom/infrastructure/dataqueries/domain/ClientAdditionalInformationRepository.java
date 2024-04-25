@@ -19,8 +19,6 @@
 package org.apache.fineract.custom.infrastructure.dataqueries.domain;
 
 import java.util.Optional;
-
-import org.apache.fineract.custom.infrastructure.dataqueries.domain.ClientAdditionalInformation;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 

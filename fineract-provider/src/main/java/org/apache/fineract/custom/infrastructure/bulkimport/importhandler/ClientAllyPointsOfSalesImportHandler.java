@@ -144,8 +144,8 @@ public class ClientAllyPointsOfSalesImportHandler implements ImportHandler {
 
     @NotNull
     private String getSettledComissionAsString(Row row) {
-        String settledComissionAsString = ImportHandlerUtils.readAsString(
-                ClientAllyPointOfSalesTemplatePopulateImportEnum.SETTLED_COMISSION.getColumnIndex(), row);
+        String settledComissionAsString = ImportHandlerUtils
+                .readAsString(ClientAllyPointOfSalesTemplatePopulateImportEnum.SETTLED_COMISSION.getColumnIndex(), row);
         return fixUpDecimalSeparator(settledComissionAsString);
     }
 
@@ -153,7 +153,6 @@ public class ClientAllyPointsOfSalesImportHandler implements ImportHandler {
     private String fixUpDecimalSeparator(String settledComissionAsString) {
         return settledComissionAsString.replace(",", ".");
     }
-
 
     private void validateTypeAndCasting(StringBuilder ammendedValidationMessages, ClientAllyPointOfSalesTemplatePopulateImportEnum currEnum,
             String representation, Object clazz) {

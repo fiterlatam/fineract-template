@@ -45,7 +45,7 @@ public class ClientAllyPointOfSalesDataValidator {
 
     @Autowired
     public ClientAllyPointOfSalesDataValidator(final FromJsonHelper fromApiJsonHelper,
-                                               final ClientAllyPointOfSalesRepository clientAllyPointOfSalesRepository) {
+            final ClientAllyPointOfSalesRepository clientAllyPointOfSalesRepository) {
         this.fromApiJsonHelper = fromApiJsonHelper;
         this.clientAllyPointOfSalesRepository = clientAllyPointOfSalesRepository;
     }
@@ -68,7 +68,7 @@ public class ClientAllyPointOfSalesDataValidator {
         final String code = this.fromApiJsonHelper.extractStringNamed(ClientAllyPointOfSalesApiConstants.codeParamName, element);
         baseDataValidator.reset().parameter(ClientAllyPointOfSalesApiConstants.codeParamName).value(code).notNull().notExceedingLengthOf(4);
 
-        if(clientAllyPointOfSalesRepository.findByCode(code).isPresent()) {
+        if (clientAllyPointOfSalesRepository.findByCode(code).isPresent()) {
             baseDataValidator.reset().parameter(ClientAllyPointOfSalesApiConstants.codeParamName).value(code)
                     .failWithCode("duplicated.code");
         }
@@ -148,8 +148,8 @@ public class ClientAllyPointOfSalesDataValidator {
         baseDataValidator.reset().parameter(ClientAllyPointOfSalesApiConstants.codeParamName).value(code).notNull().notExceedingLengthOf(4);
 
         // If curr Code is different from new Code and new Code already exists
-        if(Boolean.FALSE.equals(clientAllyPointOfSales.getCode().equalsIgnoreCase(code))) {
-            if(clientAllyPointOfSalesRepository.findByCode(code).isPresent()) {
+        if (Boolean.FALSE.equals(clientAllyPointOfSales.getCode().equalsIgnoreCase(code))) {
+            if (clientAllyPointOfSalesRepository.findByCode(code).isPresent()) {
                 baseDataValidator.reset().parameter(ClientAllyPointOfSalesApiConstants.codeParamName).value(code)
                         .failWithCode("duplicated.code");
             }

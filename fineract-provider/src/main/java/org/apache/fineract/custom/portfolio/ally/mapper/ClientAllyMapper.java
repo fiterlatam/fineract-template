@@ -50,7 +50,7 @@ public class ClientAllyMapper {
     }
 
     public static ClientAllyData toDTO(ClientAlly model) {
-        return ClientAllyData.builder()  //
+        return ClientAllyData.builder() //
                 .id(model.getId()) //
                 .companyName(model.getCompanyName()) //
                 .nit(model.getNit()) //

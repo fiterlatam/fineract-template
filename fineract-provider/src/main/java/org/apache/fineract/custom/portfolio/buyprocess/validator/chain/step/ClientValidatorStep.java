@@ -46,7 +46,7 @@ public class ClientValidatorStep extends BuyProcessAbstractStepProcessor impleme
             if (LegalForm.ENTITY.equals(ClientEnumerations.legalForm(currEntity.getLegalForm()))) {
                 ammendErrorMessage(stepProcessorEnum, clientBuyProcess);
 
-            // Check if client is active
+                // Check if client is active
             } else if (Boolean.FALSE.equals(currEntity.isActive())) {
 
                 ammendErrorMessage(stepProcessorEnum, clientBuyProcess);

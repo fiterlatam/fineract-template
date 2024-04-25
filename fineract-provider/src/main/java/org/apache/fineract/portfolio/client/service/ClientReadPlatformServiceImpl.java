@@ -289,7 +289,7 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
             final String hierarchySearchString = hierarchy + "%";
 
             final Client client = clientRepositoryWrapper.getClientByClientIdAndHierarchy(clientId, hierarchySearchString);
-            final ClientData clientData = clientMapper.map(client);
+            ClientData clientData = clientMapper.map(client);
 
             // Get client collaterals
             final Collection<ClientCollateralManagement> clientCollateralManagements = this.clientCollateralManagementRepositoryWrapper
@@ -311,7 +311,9 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
             final Collection<GroupGeneralData> parentGroups = this.jdbcTemplate.query(clientGroupsSql, this.clientGroupsMapper, // NOSONAR
                     clientId);
 
-            return ClientData.setParentGroups(clientData, parentGroups, clientCollateralManagementDataSet);
+            clientData = ClientData.setParentGroups(clientData, parentGroups, clientCollateralManagementDataSet);
+            clientData.setBlockedOnDate(client.getBlockedOnDate());
+            return clientData;
 
         } catch (final EmptyResultDataAccessException e) {
             throw new ClientNotFoundException(clientId, e);

@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.infrastructure.clientBlockingSettings.domain;
+package org.apache.fineract.infrastructure.clientblockingreasons.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -24,27 +24,40 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import lombok.Data;
+import jakarta.persistence.UniqueConstraint;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.experimental.Accessors;
 import org.apache.fineract.infrastructure.codes.domain.CodeValue;
-import org.apache.fineract.infrastructure.core.domain.AbstractAuditableCustom;
+import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
 
-@Data
 @Entity
-@Table(name = "m_blocking_reason_setting")
-public class BlockingReasonSetting extends AbstractAuditableCustom {
+@Table(name = "m_blocking_reason_setting", uniqueConstraints = {
+        @UniqueConstraint(columnNames = { "name_of_reason" }, name = "name_of_reason") })
+@Getter
+@Setter
+@NoArgsConstructor
+@Accessors(chain = true)
+public class BlockingReasonSetting extends AbstractPersistableCustom {
 
     @Column(name = "priority")
     private Integer priority;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "customer_level")
     private CodeValue customerLevel;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "credit_level")
     private CodeValue creditLevel;
+
     @Column(name = "description")
     private String description;
+
     @Column(name = "name_of_reason")
     private String nameOfReason;
+
     @Column(name = "level")
     private String level;
 }

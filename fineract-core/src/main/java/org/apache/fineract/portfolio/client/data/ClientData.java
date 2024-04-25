@@ -30,6 +30,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.CompareToBuilder;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
+import org.apache.fineract.infrastructure.clientblockingreasons.data.BlockingReasonsData;
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.infrastructure.core.domain.ExternalId;
@@ -106,6 +107,7 @@ public final class ClientData implements Comparable<ClientData>, Serializable {
     private Collection<CodeValueData> clientNonPersonMainBusinessLineOptions;
     private List<EnumOptionData> clientLegalFormOptions;
     private ClientFamilyMembersData familyMemberOptions;
+    private Collection<BlockingReasonsData> blockingReasonsDataOptions;
 
     private ClientNonPersonData clientNonPersonDetails;
 
@@ -124,6 +126,7 @@ public final class ClientData implements Comparable<ClientData>, Serializable {
     private Long clientClassificationId;
     private Long legalFormId;
     private LocalDate submittedOnDate;
+    private LocalDate blockedOnDate;
 
     public static ClientData importClientEntityInstance(Long legalFormId, Integer rowIndex, String fullname, Long officeId,
             Long clientTypeId, Long clientClassificationId, Long staffId, Boolean active, LocalDate activationDate,
@@ -642,4 +645,5 @@ public final class ClientData implements Comparable<ClientData>, Serializable {
                 .append(this.displayName) //
                 .toHashCode();
     }
+
 }

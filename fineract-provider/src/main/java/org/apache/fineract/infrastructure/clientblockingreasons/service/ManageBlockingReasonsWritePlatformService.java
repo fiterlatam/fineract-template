@@ -16,14 +16,14 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.infrastructure.clientBlockingSettings.exception;
+package org.apache.fineract.infrastructure.clientblockingreasons.service;
 
-import org.apache.fineract.infrastructure.core.exception.AbstractPlatformResourceNotFoundException;
+import org.apache.fineract.infrastructure.core.api.JsonCommand;
+import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 
-public class CustomerLevelExceptionNotFoundException extends AbstractPlatformResourceNotFoundException {
+public interface ManageBlockingReasonsWritePlatformService {
 
-    public CustomerLevelExceptionNotFoundException(final String customerLevel) {
-        super("error.msg.customer.level.id.already.exist", "Customer Level  " + customerLevel + "  already exists", customerLevel);
-    }
+    CommandProcessingResult createBlockReasonSetting(JsonCommand command);
 
+    CommandProcessingResult updateBlockReasonSetting(Long id, JsonCommand command);
 }
