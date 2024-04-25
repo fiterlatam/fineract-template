@@ -76,8 +76,11 @@ public class ManageBlockingReasonsWritePlatformServiceJpaRepositoryImpl implemen
 
         List<BlockingReasonSetting> reasons = this.blockingReasonSettingsRepositoryWrapper.getBlockingReasonSettingByReason(nameOfReason,
                 blockLevel.name());
+
         if (!CollectionUtils.isEmpty(reasons)) {
+
             throw new BlockingReasonExceptionNotFoundException(nameOfReason, blockLevel.getCode());
+
         }
 
         BlockingReasonSetting blockingReasonSetting = new BlockingReasonSetting();
