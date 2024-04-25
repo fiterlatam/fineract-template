@@ -121,8 +121,8 @@ public final class ImportHandlerUtils {
         } else if (c.getCellType() == CellType.NUMERIC) {
             String valueAsString = String.valueOf(row.getCell(colIndex).getNumericCellValue());
 
-            if(valueAsString.endsWith(".0")) { // It is a numeric integer
-                return  String.valueOf(((Double)row.getCell(colIndex).getNumericCellValue()).intValue());
+            if (valueAsString.endsWith(".0")) { // It is a numeric integer
+                return String.valueOf(((Double) row.getCell(colIndex).getNumericCellValue()).intValue());
             }
 
             return valueAsString; // It is a numeric Double

@@ -36,6 +36,8 @@ import org.apache.fineract.commands.service.CommandWrapperBuilder;
 import org.apache.fineract.infrastructure.accountnumberformat.domain.AccountNumberFormat;
 import org.apache.fineract.infrastructure.accountnumberformat.domain.AccountNumberFormatRepositoryWrapper;
 import org.apache.fineract.infrastructure.accountnumberformat.domain.EntityAccountType;
+import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSetting;
+import org.apache.fineract.infrastructure.clientblockingreasons.domain.ManageBlockingReasonSettingsRepositoryWrapper;
 import org.apache.fineract.infrastructure.codes.domain.CodeValue;
 import org.apache.fineract.infrastructure.codes.domain.CodeValueRepositoryWrapper;
 import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
@@ -124,6 +126,7 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
     private final BusinessEventNotifierService businessEventNotifierService;
     private final EntityDatatableChecksWritePlatformService entityDatatableChecksWritePlatformService;
     private final ExternalIdFactory externalIdFactory;
+    private final ManageBlockingReasonSettingsRepositoryWrapper manageBlockingReasonSettingsRepositoryWrapper;
 
     @Transactional
     @Override
@@ -884,6 +887,106 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
             }
 
             client.close(currentUser, closureReason, closureDate);
+            this.clientRepository.saveAndFlush(client);
+            return new CommandProcessingResultBuilder() //
+                    .withCommandId(command.commandId()) //
+                    .withClientId(clientId) //
+                    .withEntityId(clientId) //
+                    .withEntityExternalId(client.getExternalId()) //
+                    .build();
+        } catch (final JpaSystemException | DataIntegrityViolationException dve) {
+            handleDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
+            return CommandProcessingResult.empty();
+        }
+    }
+
+    @Transactional
+    @Override
+    public CommandProcessingResult blockClient(final Long clientId, final JsonCommand command) {
+        try {
+            final AppUser currentUser = this.context.authenticatedUser();
+            this.fromApiJsonDeserializer.validateBlock(command);
+            final Client client = this.clientRepository.findOneWithNotFoundDetection(clientId);
+            final LocalDate blockedOnDate = command.localDateValueOfParameterNamed(ClientApiConstants.blockedOnDateParamName);
+            final Long blockingReasonId = command.longValueOfParameterNamed(ClientApiConstants.blockingReasonIdParamName);
+            final String blockingComment = command.stringValueOfParameterNamed(ClientApiConstants.blockingCommentParamName);
+            final BlockingReasonSetting blockingReason = this.manageBlockingReasonSettingsRepositoryWrapper
+                    .findOneWithNotFoundDetection(blockingReasonId);
+            if (ClientStatus.fromInt(client.getStatus()).isBlocked()) {
+                final String errorMessage = "Client is already blocked.";
+                throw new InvalidClientStateTransitionException("block", "is.already.blocked", errorMessage);
+            } else if (ClientStatus.fromInt(client.getStatus()).isUnderTransfer()) {
+                final String errorMessage = "Cannot blocked a Client under Transfer";
+                throw new InvalidClientStateTransitionException("block", "is.under.transfer", errorMessage);
+            }
+
+            if (client.isNotPending() && DateUtils.isAfter(client.getActivationDate(), blockedOnDate)) {
+                final String errorMessage = "The client blockedOnDate cannot be before the client ActivationDate.";
+                throw new InvalidClientStateTransitionException("block", "date.cannot.before.client.actvation.date", errorMessage,
+                        blockedOnDate, client.getActivationDate());
+            }
+            final LegalForm legalForm = LegalForm.fromInt(client.getLegalForm());
+            entityDatatableChecksWritePlatformService.runTheCheck(clientId, EntityTables.CLIENT.getName(), StatusEnum.CLOSE.getCode(),
+                    EntityTables.CLIENT.getForeignKeyColumnNameOnDatatable(), legalForm.getLabel());
+
+            final List<Loan> clientLoans = this.loanRepositoryWrapper.findLoanByClientId(clientId);
+            for (final Loan loan : clientLoans) {
+                final LoanStatusMapper loanStatus = new LoanStatusMapper(loan.getStatus().getValue());
+                if (loanStatus.isOpen() || loanStatus.isPendingApproval() || loanStatus.isAwaitingDisbursal()) {
+                    final String errorMessage = "Client cannot be blocked because of non-closed loans.";
+                    throw new InvalidClientStateTransitionException("block", "loan.non-closed", errorMessage);
+                } else if (loanStatus.isClosed() && DateUtils.isAfter(loan.getClosedOnDate(), blockedOnDate)) {
+                    final String errorMessage = "The client blockedOnDate cannot be before the loan closedOnDate.";
+                    throw new InvalidClientStateTransitionException("block", "date.cannot.before.loan.closed.date", errorMessage,
+                            blockedOnDate, loan.getClosedOnDate());
+                } else if (loanStatus.isOverpaid()) {
+                    final String errorMessage = "Client cannot be blocked because of overpaid loans.";
+                    throw new InvalidClientStateTransitionException("block", "loan.overpaid", errorMessage);
+                }
+            }
+            final List<SavingsAccount> clientSavingAccounts = this.savingsRepositoryWrapper.findSavingAccountByClientId(clientId);
+
+            for (final SavingsAccount saving : clientSavingAccounts) {
+                if (saving.isActive() || saving.isSubmittedAndPendingApproval() || saving.isApproved()) {
+                    final String errorMessage = "Client cannot be blocked because of non-closed savings account.";
+                    throw new InvalidClientStateTransitionException("block", "non-closed.savings.account", errorMessage);
+                }
+            }
+
+            client.block(currentUser, blockingReason, blockedOnDate, blockingComment);
+            this.clientRepository.saveAndFlush(client);
+            return new CommandProcessingResultBuilder() //
+                    .withCommandId(command.commandId()) //
+                    .withClientId(clientId) //
+                    .withEntityId(clientId) //
+                    .withEntityExternalId(client.getExternalId()) //
+                    .build();
+        } catch (final JpaSystemException | DataIntegrityViolationException dve) {
+            handleDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
+            return CommandProcessingResult.empty();
+        }
+    }
+
+    @Transactional
+    @Override
+    public CommandProcessingResult undoBlockClient(final Long clientId, final JsonCommand command) {
+        try {
+            final AppUser currentUser = this.context.authenticatedUser();
+            this.fromApiJsonDeserializer.validateUndoBlock(command);
+            final Client client = this.clientRepository.findOneWithNotFoundDetection(clientId);
+            final LocalDate undoBlockedOnDate = command.localDateValueOfParameterNamed(ClientApiConstants.undoBlockedOnDateParamName);
+            final String undoBlockingComment = command.stringValueOfParameterNamed(ClientApiConstants.undoBlockingCommentParamName);
+            if (ClientStatus.fromInt(client.getStatus()).isActive()) {
+                final String errorMessage = "Client is already active.";
+                throw new InvalidClientStateTransitionException("undoBlock", "is.already.active", errorMessage);
+            }
+
+            if (client.isBlocked() && DateUtils.isAfter(client.getBlockedOnDate(), undoBlockedOnDate)) {
+                final String errorMessage = "The client undoBlockedOnDate cannot be before the client blockedOnDate.";
+                throw new InvalidClientStateTransitionException("undoBlock", "date.cannot.before.client.blockedOnDate.date", errorMessage,
+                        undoBlockedOnDate, client.getBlockedOnDate());
+            }
+            client.undoBlock(currentUser, undoBlockedOnDate, undoBlockingComment);
             this.clientRepository.saveAndFlush(client);
             return new CommandProcessingResultBuilder() //
                     .withCommandId(command.commandId()) //

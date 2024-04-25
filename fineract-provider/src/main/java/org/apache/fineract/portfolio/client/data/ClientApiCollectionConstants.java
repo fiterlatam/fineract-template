@@ -61,6 +61,12 @@ public class ClientApiCollectionConstants extends ClientApiConstants {
     protected static final Set<String> CLIENT_CLOSE_REQUEST_DATA_PARAMETERS = new HashSet<>(
             Arrays.asList(localeParamName, dateFormatParamName, closureDateParamName, closureReasonIdParamName));
 
+    protected static final Set<String> CLIENT_BLOCK_REQUEST_DATA_PARAMETERS = new HashSet<>(Arrays.asList(localeParamName,
+            dateFormatParamName, blockedOnDateParamName, blockingReasonIdParamName, blockingCommentParamName));
+
+    protected static final Set<String> CLIENT_UNDO_BLOCK_REQUEST_DATA_PARAMETERS = new HashSet<>(
+            Arrays.asList(localeParamName, dateFormatParamName, undoBlockedOnDateParamName, undoBlockingCommentParamName));
+
     protected static final Set<String> CLIENT_REJECT_DATA_PARAMETERS = new HashSet<>(
             Arrays.asList(localeParamName, dateFormatParamName, rejectionDateParamName, rejectionReasonIdParamName));
 

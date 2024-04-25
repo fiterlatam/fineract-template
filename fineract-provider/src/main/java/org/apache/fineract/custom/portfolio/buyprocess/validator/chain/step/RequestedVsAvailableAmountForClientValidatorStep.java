@@ -1,5 +1,9 @@
 package org.apache.fineract.custom.portfolio.buyprocess.validator.chain.step;
 
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import org.apache.fineract.custom.infrastructure.dataqueries.domain.IndividualAdditionalInformation;
 import org.apache.fineract.custom.infrastructure.dataqueries.domain.IndividualAdditionalInformationRepository;
 import org.apache.fineract.custom.portfolio.buyprocess.domain.ChannelMessageRepository;
@@ -13,11 +17,6 @@ import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-
-import java.math.BigDecimal;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
 
 @Component
 public class RequestedVsAvailableAmountForClientValidatorStep extends BuyProcessAbstractStepProcessor
@@ -45,8 +44,8 @@ public class RequestedVsAvailableAmountForClientValidatorStep extends BuyProcess
         setSuperChannelMessageRepository(channelMessageRepository);
 
         Long allowedAmount = 0L;
-        if (Objects.isNull(clientBuyProcess.getClient()) ||
-                LegalForm.ENTITY.equals(ClientEnumerations.legalForm(clientBuyProcess.getClient().getLegalForm()))) {
+        if (Objects.isNull(clientBuyProcess.getClient())
+                || LegalForm.ENTITY.equals(ClientEnumerations.legalForm(clientBuyProcess.getClient().getLegalForm()))) {
 
             ammendErrorMessage(stepProcessorEnum, clientBuyProcess);
 

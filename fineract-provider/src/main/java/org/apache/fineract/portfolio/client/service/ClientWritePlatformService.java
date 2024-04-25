@@ -35,6 +35,10 @@ public interface ClientWritePlatformService {
 
     CommandProcessingResult closeClient(Long clientId, JsonCommand command);
 
+    CommandProcessingResult blockClient(Long clientId, JsonCommand command);
+
+    CommandProcessingResult undoBlockClient(Long clientId, JsonCommand command);
+
     CommandProcessingResult assignClientStaff(Long clientId, JsonCommand command);
 
     CommandProcessingResult updateDefaultSavingsAccount(Long clientId, JsonCommand command);

@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.infrastructure.clientBlockingSettings.domain;
+package org.apache.fineract.infrastructure.clientblockingreasons.domain;
 
 import java.util.List;
 import org.apache.fineract.infrastructure.codes.domain.CodeValue;
