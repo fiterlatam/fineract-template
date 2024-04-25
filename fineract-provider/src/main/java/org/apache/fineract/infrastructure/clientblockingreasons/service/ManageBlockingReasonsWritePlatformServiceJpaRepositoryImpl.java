@@ -29,9 +29,6 @@ import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingR
 import org.apache.fineract.infrastructure.clientblockingreasons.domain.ManageBlockingReasonSettingsRepositoryWrapper;
 import org.apache.fineract.infrastructure.clientblockingreasons.exception.BlockLevelEntityException;
 import org.apache.fineract.infrastructure.clientblockingreasons.exception.BlockingReasonExceptionNotFoundException;
-import org.apache.fineract.infrastructure.clientblockingreasons.exception.CreditLevelExceptionNotFoundException;
-import org.apache.fineract.infrastructure.clientblockingreasons.exception.CustomerLevelExceptionNotFoundException;
-import org.apache.fineract.infrastructure.codes.domain.CodeValue;
 import org.apache.fineract.infrastructure.codes.domain.CodeValueRepositoryWrapper;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
@@ -48,7 +45,6 @@ public class ManageBlockingReasonsWritePlatformServiceJpaRepositoryImpl implemen
     private static final Logger LOG = LoggerFactory.getLogger(ManageBlockingReasonsWritePlatformServiceJpaRepositoryImpl.class);
     private final ManageBlockingReasonSettingsRepositoryWrapper blockingReasonSettingsRepositoryWrapper;
     private final BlockingReasonsDataValidator blockingReasonsDataValidator;
-    private final CodeValueRepositoryWrapper codeValueRepository;
 
     @Autowired
     ManageBlockingReasonsWritePlatformServiceJpaRepositoryImpl(
@@ -56,7 +52,6 @@ public class ManageBlockingReasonsWritePlatformServiceJpaRepositoryImpl implemen
             final BlockingReasonsDataValidator blockingReasonsDataValidator, final CodeValueRepositoryWrapper codeValueRepository) {
         this.blockingReasonSettingsRepositoryWrapper = blockingReasonSettingsRepositoryWrapper;
         this.blockingReasonsDataValidator = blockingReasonsDataValidator;
-        this.codeValueRepository = codeValueRepository;
     }
 
     @Override
@@ -69,20 +64,6 @@ public class ManageBlockingReasonsWritePlatformServiceJpaRepositoryImpl implemen
         final String level = command.stringValueOfParameterNamed(BlockingReasonsConstants.LEVEL_PARAM);
         final String description = command.stringValueOfParameterNamed(BlockingReasonsConstants.DESCRIPTION_PARAM);
 
-        CodeValue customerLevel = null;
-        final Long customerId = command.longValueOfParameterNamed(BlockingReasonsConstants.CUSTOMER_LEVEL_PARAM);
-        if (customerId != null) {
-            customerLevel = this.codeValueRepository.findOneByCodeNameAndIdWithNotFoundDetection(BlockingReasonsConstants.CUSTOMER_CODE,
-                    customerId);
-        }
-
-        CodeValue creditLevel = null;
-        final Long creditId = command.longValueOfParameterNamed(BlockingReasonsConstants.CREDIT_LEVEL_PARAM);
-        if (creditId != null) {
-            creditLevel = this.codeValueRepository.findOneByCodeNameAndIdWithNotFoundDetection(BlockingReasonsConstants.CREDIT_CODE,
-                    creditId);
-        }
-
         BlockLevel blockLevel = BlockLevel.valueOf(level);
         if (blockLevel == null) {
             throw new BlockLevelEntityException(level);
@@ -93,20 +74,10 @@ public class ManageBlockingReasonsWritePlatformServiceJpaRepositoryImpl implemen
             throw new BlockingReasonExceptionNotFoundException(priority, blockLevel.getCode());
         }
 
-        if (blockLevel.isClient()) {
-            List<BlockingReasonSetting> customerLevels = this.blockingReasonSettingsRepositoryWrapper
-                    .getBlockingReasonSettingByCustomerLevel(customerLevel);
-            if (!CollectionUtils.isEmpty(customerLevels)) {
-                throw new CustomerLevelExceptionNotFoundException(customerLevel.getLabel());
-            }
-        }
-
-        if (blockLevel.isCredit()) {
-            List<BlockingReasonSetting> creditLevels = this.blockingReasonSettingsRepositoryWrapper
-                    .getBlockingReasonSettingByCreditLevel(creditLevel);
-            if (!CollectionUtils.isEmpty(creditLevels)) {
-                throw new CreditLevelExceptionNotFoundException(creditLevel.getLabel());
-            }
+        List<BlockingReasonSetting> reasons = this.blockingReasonSettingsRepositoryWrapper.getBlockingReasonSettingByReason(nameOfReason,
+                blockLevel.name());
+        if (!CollectionUtils.isEmpty(reasons)) {
+            throw new BlockingReasonExceptionNotFoundException(nameOfReason, blockLevel.getCode());
         }
 
         BlockingReasonSetting blockingReasonSetting = new BlockingReasonSetting();
@@ -114,8 +85,6 @@ public class ManageBlockingReasonsWritePlatformServiceJpaRepositoryImpl implemen
         blockingReasonSetting.setNameOfReason(nameOfReason);
         blockingReasonSetting.setLevel(level);
         blockingReasonSetting.setDescription(description);
-        blockingReasonSetting.setCustomerLevel(customerLevel);
-        blockingReasonSetting.setCreditLevel(creditLevel);
 
         this.blockingReasonSettingsRepositoryWrapper.saveAndFlush(blockingReasonSetting);
 

@@ -31,4 +31,9 @@ public class BlockingReasonExceptionNotFoundException extends AbstractPlatformRe
                 "Priority  [" + priority + "] is already assigned to client level " + level, priority, level);
     }
 
+    public BlockingReasonExceptionNotFoundException(final String reason, final String level) {
+        super("error.msg.block.reason.is.already.assigned.to.level",
+                "Block Reason  [" + reason + "] is already assigned to client level " + level, reason, level);
+    }
+
 }
