@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.fineract.custom.infrastructure.dataqueries.domain.ClientAdditionalInformation;
 import org.apache.fineract.custom.infrastructure.dataqueries.domain.ClientAdditionalInformationRepository;
 import org.apache.fineract.custom.infrastructure.dataqueries.domain.IndividualAdditionalInformation;
 import org.apache.fineract.custom.infrastructure.dataqueries.domain.IndividualAdditionalInformationRepository;
@@ -105,7 +106,12 @@ public class ClientBuyProcessDataValidator {
             if (camposClientePersona.isPresent()) {
                 clientId = camposClientePersona.get().getClientId();
             } else {
-                clientId = 0L;
+                Optional<ClientAdditionalInformation> camposClienteEmpresa = camposClienteEmpresaRepository.findByNit(clientDocumentId);
+                if (camposClienteEmpresa.isPresent()) {
+                    clientId = camposClienteEmpresa.get().getClientId();
+                } else {
+                    clientId = 0L;
+                }
             }
 
         } else {

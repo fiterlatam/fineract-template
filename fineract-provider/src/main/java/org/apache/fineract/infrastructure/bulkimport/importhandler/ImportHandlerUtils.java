@@ -94,7 +94,6 @@ public final class ImportHandlerUtils {
     }
 
     public static String readAsString(int colIndex, Row row) {
-
         Cell c = row.getCell(colIndex);
         if (c == null || c.getCellType() == CellType.BLANK) {
             return null;
@@ -119,9 +118,14 @@ public final class ImportHandlerUtils {
         } else if (c.getCellType() == CellType.STRING) {
             String res = trimEmptyDecimalPortion(c.getStringCellValue().trim());
             return res.trim();
-
         } else if (c.getCellType() == CellType.NUMERIC) {
-            return ((Double) row.getCell(colIndex).getNumericCellValue()).intValue() + "";
+            String valueAsString = String.valueOf(row.getCell(colIndex).getNumericCellValue());
+
+            if (valueAsString.endsWith(".0")) { // It is a numeric integer
+                return String.valueOf(((Double) row.getCell(colIndex).getNumericCellValue()).intValue());
+            }
+
+            return valueAsString; // It is a numeric Double
         } else if (c.getCellType() == CellType.BOOLEAN) {
             return c.getBooleanCellValue() + "";
         } else {
