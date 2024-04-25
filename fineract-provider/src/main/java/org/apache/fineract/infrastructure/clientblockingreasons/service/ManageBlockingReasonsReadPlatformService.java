@@ -23,8 +23,6 @@ import org.apache.fineract.infrastructure.clientblockingreasons.data.BlockingRea
 
 public interface ManageBlockingReasonsReadPlatformService {
 
-    BlockingReasonsData retrieveTemplate();
-
     Collection<BlockingReasonsData> retrieveAllBlockingReasons(String level);
 
     BlockingReasonsData getBlockingReasonsById(Long id);

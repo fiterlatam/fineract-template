@@ -20,9 +20,7 @@ package org.apache.fineract.infrastructure.clientblockingreasons.data;
 
 import java.io.Serializable;
 import java.time.LocalDate;
-import java.util.List;
 import lombok.Data;
-import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 
 @Data
 public class BlockingReasonsData implements Serializable {
@@ -33,23 +31,15 @@ public class BlockingReasonsData implements Serializable {
     private String nameOfReason;
     private String level;
     private LocalDate createdDate;
-    private CodeValueData customerLevel;
-    private CodeValueData creditLevel;
-
-    private List<CodeValueData> customerLevelOptions;
-    private List<CodeValueData> creditLevelOptions;
 
     public BlockingReasonsData() {}
 
-    public BlockingReasonsData(Long id, Integer priority, String description, String nameOfReason, String level, LocalDate createdDate,
-            CodeValueData customerLevel, CodeValueData creditLevel) {
+    public BlockingReasonsData(Long id, Integer priority, String description, String nameOfReason, String level, LocalDate createdDate) {
         this.id = id;
         this.priority = priority;
         this.description = description;
         this.nameOfReason = nameOfReason;
         this.level = level;
         this.createdDate = createdDate;
-        this.customerLevel = customerLevel;
-        this.creditLevel = creditLevel;
     }
 }

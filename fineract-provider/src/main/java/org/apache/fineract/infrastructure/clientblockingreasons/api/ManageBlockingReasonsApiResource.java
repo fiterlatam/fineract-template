@@ -20,7 +20,13 @@ package org.apache.fineract.infrastructure.clientblockingreasons.api;
 
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.ws.rs.*;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.UriInfo;
@@ -55,20 +61,6 @@ public class ManageBlockingReasonsApiResource {
     private static final Set<String> MANAGE_BLOCKING_REASONS_DATA_PARAMETERS = new HashSet<>(Arrays.asList(
             BlockingReasonsConstants.ID_PARAM, BlockingReasonsConstants.CREDIT_LEVEL_PARAM, BlockingReasonsConstants.CUSTOMER_LEVEL_PARAM,
             BlockingReasonsConstants.CREDIT_LEVEL_OPTIONS_PARAM, BlockingReasonsConstants.CUSTOMER_LEVEL_OPTIONS_PARAM));
-
-    @GET
-    @Path("template")
-    @Consumes({ MediaType.APPLICATION_JSON })
-    @Produces({ MediaType.APPLICATION_JSON })
-    public String retrieveTemplate(@Context final UriInfo uriInfo) {
-
-        this.context.authenticatedUser().validateHasReadPermission(BlockingReasonsConstants.ENTITY_NAME);
-
-        BlockingReasonsData blockingReasonsData = this.manageBlockingReasonsReadPlatformService.retrieveTemplate();
-
-        final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
-        return this.toApiJsonSerializer.serialize(settings, blockingReasonsData, MANAGE_BLOCKING_REASONS_DATA_PARAMETERS);
-    }
 
     @POST
     @Path("createBlockingReasonSettings")
