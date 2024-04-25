@@ -186,5 +186,15 @@
         </sql>
     </changeSet>
 
+    <changeSet id="21" author="fineract">
+        <dropColumn tableName="m_blocking_reason_setting">
+            <column name="credit_level"/>
+        </dropColumn>
+    </changeSet>
+    <changeSet id="22" author="fineract">
+        <dropColumn tableName="m_blocking_reason_setting">
+            <column name="customer_level"/>
+        </dropColumn>
+    </changeSet>
 
 </databaseChangeLog>

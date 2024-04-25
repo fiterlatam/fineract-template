@@ -20,16 +20,12 @@ package org.apache.fineract.infrastructure.clientblockingreasons.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.Accessors;
-import org.apache.fineract.infrastructure.codes.domain.CodeValue;
 import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
 
 @Entity
@@ -43,14 +39,6 @@ public class BlockingReasonSetting extends AbstractPersistableCustom {
 
     @Column(name = "priority")
     private Integer priority;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "customer_level")
-    private CodeValue customerLevel;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "credit_level")
-    private CodeValue creditLevel;
 
     @Column(name = "description")
     private String description;

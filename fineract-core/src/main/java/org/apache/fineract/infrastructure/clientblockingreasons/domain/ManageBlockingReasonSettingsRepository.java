@@ -19,7 +19,6 @@
 package org.apache.fineract.infrastructure.clientblockingreasons.domain;
 
 import java.util.List;
-import org.apache.fineract.infrastructure.codes.domain.CodeValue;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -28,12 +27,9 @@ import org.springframework.data.repository.query.Param;
 public interface ManageBlockingReasonSettingsRepository
         extends JpaRepository<BlockingReasonSetting, Long>, JpaSpecificationExecutor<BlockingReasonSetting> {
 
-    @Query("SELECT brs FROM BlockingReasonSetting brs WHERE brs.customerLevel = :customerLevel")
-    List<BlockingReasonSetting> getBlockingReasonSettingByCustomerLevel(@Param("customerLevel") CodeValue customerLevel);
-
-    @Query("SELECT brs FROM BlockingReasonSetting brs WHERE brs.creditLevel = :creditLevel")
-    List<BlockingReasonSetting> getBlockingReasonSettingByCreditLevel(@Param("creditLevel") CodeValue creditLevel);
-
     @Query("SELECT brs FROM BlockingReasonSetting brs WHERE brs.priority = :priority AND brs.level = :level")
     List<BlockingReasonSetting> getBlockingReasonSettingByPriority(@Param("priority") Integer priority, @Param("level") String level);
+
+    @Query("SELECT brs FROM BlockingReasonSetting brs WHERE brs.nameOfReason = :reason AND brs.level = :level")
+    List<BlockingReasonSetting> getBlockingReasonSettingByReason(@Param("reason") String reason, @Param("level") String level);
 }
