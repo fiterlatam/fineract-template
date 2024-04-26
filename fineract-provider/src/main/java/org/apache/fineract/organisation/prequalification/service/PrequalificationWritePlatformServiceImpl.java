@@ -550,7 +550,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             PrequalificationGroup prequalificationGroup = member.getPrequalificationGroup();
             Integer fromStatus = prequalificationGroup.getStatus();
 
-            prequalificationGroup.updateStatus(PrequalificationStatus.CONSENT_ADDED);
+            prequalificationGroup.updateStatus(PrequalificationStatus.BLACKLIST_CHECKED);
             AppUser addedBy = this.context.getAuthenticatedUserIfPresent();
             PrequalificationStatusLog statusLog = PrequalificationStatusLog.fromJson(addedBy, fromStatus, prequalificationGroup.getStatus(),
                     member.getComments(), prequalificationGroup);
