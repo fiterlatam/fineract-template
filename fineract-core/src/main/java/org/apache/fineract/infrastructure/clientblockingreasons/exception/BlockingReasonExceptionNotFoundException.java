@@ -23,16 +23,16 @@ import org.apache.fineract.infrastructure.core.exception.AbstractPlatformResourc
 public class BlockingReasonExceptionNotFoundException extends AbstractPlatformResourceNotFoundException {
 
     public BlockingReasonExceptionNotFoundException(final Long id) {
-        super("error.msg.id.does.not.exist", "Blocking Reason Settings with identifier " + id + " does not exist", id);
+        super("errors.error.msg.id.does.not.exist", "Blocking Reason Settings with identifier " + id + " does not exist", id);
     }
 
     public BlockingReasonExceptionNotFoundException(final Integer priority, final String level) {
-        super("error.msg.priority.is.already.assigned.to.client.level",
+        super("errors.error.msg.priority.is.already.assigned.to.client.level",
                 "Priority  [" + priority + "] is already assigned to client level " + level, priority, level);
     }
 
     public BlockingReasonExceptionNotFoundException(final String reason, final String level) {
-        super("error.msg.block.reason.is.already.assigned.to.level",
+        super("errors.error.msg.block.reason.is.already.assigned.to.level",
                 "Block Reason  [" + reason + "] is already assigned to client level " + level, reason, level);
     }
 

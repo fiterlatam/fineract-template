@@ -21,7 +21,6 @@ package org.apache.fineract.infrastructure.clientblockingreasons.domain;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -29,8 +28,7 @@ import lombok.experimental.Accessors;
 import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
 
 @Entity
-@Table(name = "m_blocking_reason_setting", uniqueConstraints = {
-        @UniqueConstraint(columnNames = { "name_of_reason" }, name = "name_of_reason") })
+@Table(name = "m_blocking_reason_setting")
 @Getter
 @Setter
 @NoArgsConstructor
