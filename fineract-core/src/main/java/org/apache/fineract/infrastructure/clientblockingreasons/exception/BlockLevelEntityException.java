@@ -23,7 +23,7 @@ import org.apache.fineract.infrastructure.core.exception.AbstractPlatformDomainR
 public class BlockLevelEntityException extends AbstractPlatformDomainRuleException {
 
     public BlockLevelEntityException(final String blockLevel) {
-        super("error.msg.block.level.not.supported.exception", "The Block Level with name `" + blockLevel + "` is not supported",
+        super("errors.error.msg.block.level.not.supported.exception", "The Block Level with name `" + blockLevel + "` is not supported",
                 blockLevel);
     }
 }
