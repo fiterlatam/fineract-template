@@ -197,4 +197,28 @@
         </dropColumn>
     </changeSet>
 
+    <changeSet id="23" author="fineract">
+        <sql>
+            <![CDATA[
+                INSERT INTO m_blocking_reason_setting (priority, description, name_of_reason, "level") VALUES(1, 'FALLECIMIENTO', 'FALLECIMIENTO', 'CLIENT') ON CONFLICT DO NOTHING;
+                INSERT INTO m_blocking_reason_setting (priority, description, name_of_reason, "level") VALUES(2, 'FRAUDE o SUPLANTACIÓN', 'FRAUDE o SUPLANTACIÓN', 'CLIENT') ON CONFLICT DO NOTHING;
+                INSERT INTO m_blocking_reason_setting (priority, description, name_of_reason, "level") VALUES(3, 'RIESGO DE CRÉDITO', 'RIESGO DE CRÉDITO', 'CLIENT') ON CONFLICT DO NOTHING;
+            ]]>
+        </sql>
+    </changeSet>
+
+    <changeSet id="24" author="fineract">
+        <sql>
+            <![CDATA[
+                INSERT INTO m_role ("name", description, is_disabled) VALUES('AUXILIAR DE CRÉDITO', 'AUXILIAR DE CRÉDITO', false) ON CONFLICT DO NOTHING;
+                INSERT INTO m_role_permission (role_id, permission_id) VALUES((SELECT mr.id FROM m_role mr WHERE mr.name = 'AUXILIAR DE CRÉDITO'),  (SELECT mp.id FROM m_permission mp WHERE mp.code = 'BLOCK_CLIENT')) ON CONFLICT DO NOTHING;
+                INSERT INTO m_role_permission (role_id, permission_id) VALUES((SELECT mr.id FROM m_role mr WHERE mr.name = 'AUXILIAR DE CRÉDITO'),  (SELECT mp.id FROM m_permission mp WHERE mp.code = 'UNDOBLOCK_CLIENT')) ON CONFLICT DO NOTHING;
+
+                INSERT INTO m_role ("name", description, is_disabled) VALUES('ANALISTA DE RIESGO', 'ANALISTA DE RIESGO', false) ON CONFLICT DO NOTHING;
+                INSERT INTO m_role_permission (role_id, permission_id) VALUES((SELECT mr.id FROM m_role mr WHERE mr.name = 'ANALISTA DE RIESGO'),  (SELECT mp.id FROM m_permission mp WHERE mp.code = 'BLOCK_CLIENT')) ON CONFLICT DO NOTHING;
+                INSERT INTO m_role_permission (role_id, permission_id) VALUES((SELECT mr.id FROM m_role mr WHERE mr.name = 'ANALISTA DE RIESGO'),  (SELECT mp.id FROM m_permission mp WHERE mp.code = 'UNDOBLOCK_CLIENT')) ON CONFLICT DO NOTHING;
+            ]]>
+        </sql>
+    </changeSet>
+
 </databaseChangeLog>
