@@ -594,6 +594,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                 throw new RequestedAmountGreaterThanOriginalException(member.getDpi(), newValue, member.getOriginalAmount());
             }
             member.updateAmountRequested(newValue);
+            member.updateApprovedAmount(newValue);
         }
 
         this.preQualificationMemberRepository.saveAndFlush(member);
