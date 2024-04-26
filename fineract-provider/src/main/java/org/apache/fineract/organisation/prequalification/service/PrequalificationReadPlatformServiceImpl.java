@@ -672,7 +672,8 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                     	m.id AS id,
                     	m.name,
                     	m.status,
-                    	m.status,
+                    	m.comments as comments,
+                    	m.agency_bureau_status as agencyBureauStatus,
                     	m.is_president as groupPresident,
                     	m.dpi,
                     	mc.id AS clientId,
@@ -680,6 +681,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                     	m.buro_check_status as buroCheckStatus,
                     	m.requested_amount AS requestedAmount,
                     	m.approved_amount AS approvedAmount,
+                    	m.original_amount AS originalAmount,
                     	COALESCE((SELECT sum(principal_disbursed_derived) FROM m_loan WHERE client_id = mc.id), 0) AS totalLoanAmount,
                     	COALESCE((SELECT sum(total_outstanding_derived) FROM m_loan WHERE client_id = mc.id), 0) AS totalLoanBalance,
                     	COALESCE((SELECT sum(mloan.total_outstanding_derived) FROM m_loan mloan INNER JOIN m_guarantor mg ON mg.loan_id = mloan.id WHERE mg.entity_id = mc.id), 0) AS totalGuaranteedLoanBalance,
@@ -785,7 +787,10 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             final String dpi = rs.getString("dpi");
             final BigDecimal requestedAmount = rs.getBigDecimal("requestedAmount");
             final BigDecimal approvedAmount = rs.getBigDecimal("approvedAmount");
+            final BigDecimal originalAmount = rs.getBigDecimal("originalAmount");
             final String puente = rs.getString("puente");
+            final String comments = rs.getString("comments");
+            final String agencyBureauStatus = rs.getString("agencyBureauStatus");
             final Long blacklistCount = rs.getLong("blacklistCount");
             final Long activeBlacklistCount = rs.getLong("activeBlacklistCount");
             final Long inActiveBlacklistCount = rs.getLong("inActiveBlacklistCount");
@@ -805,7 +810,8 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             MemberPrequalificationData memberPrequalificationData = MemberPrequalificationData.instance(id, name, dpi, dob, puente,
                     requestedAmount, status, blacklistCount, totalLoanAmount, totalLoanBalance, totalGuaranteedLoanBalance, noOfCycles,
                     additionalCreditsCount, additionalCreditsSum, activeBlacklistCount, inActiveBlacklistCount, greenValidationCount,
-                    yellowValidationCount, orangeValidationCount, redValidationCount, bureauCheckStatus, approvedAmount, groupPresident);
+                    yellowValidationCount, orangeValidationCount, redValidationCount, bureauCheckStatus, approvedAmount, groupPresident,
+                    originalAmount, comments, agencyBureauStatus);
             memberPrequalificationData.setBuroData(buroData);
             memberPrequalificationData.setClientId(clientId);
             return memberPrequalificationData;

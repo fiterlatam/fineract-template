@@ -68,9 +68,9 @@
                 IFNULL(facilator.id, created_by_user.id)  AS 'Cod Facilitador',
                 IFNULL(mp.name, 'Individual') AS 'Nombre Cartera',
                 CASE WHEN mpl.owner_type_enum = 1
-									THEN CONCAT(created_by_user.firstname, ' ', created_by_user.lastname)
-									ELSE CONCAT(portfolio_user.firstname, ' ', portfolio_user.lastname)
-								END AS 'Facilitador',
+                                    THEN CONCAT(created_by_user.firstname, ' ', created_by_user.lastname)
+                                    ELSE CONCAT(portfolio_user.firstname, ' ', portfolio_user.lastname)
+                                END AS 'Facilitador',
                 CASE WHEN ml.loan_status_id = 0   THEN 'Estado no válido'
                      WHEN ml.loan_status_id = 100 THEN 'Presentado y pendiente de aprobación'
                      WHEN ml.loan_status_id = 200 THEN 'Aprobado'
@@ -164,7 +164,7 @@
                 LEFT JOIN m_portfolio mp ON mp.id = center.portfolio_id
                 LEFT JOIN m_supervision ms ON ms.id = mp.supervision_id
                 LEFT JOIN m_agency ma ON ma.id = ms.agency_id
-								LEFT JOIN (select agency_id, linked_office_id from m_supervision GROUP BY agency_id ) supv ON supv.agency_id = ma.id
+                                LEFT JOIN (select agency_id, linked_office_id from m_supervision GROUP BY agency_id ) supv ON supv.agency_id = ma.id
                 LEFT JOIN m_office agency_office ON agency_office.id = supv.linked_office_id
                 LEFT JOIN m_appuser facilator ON facilator.id = mp.responsible_user_id
                 LEFT JOIN m_appuser created_by_user ON created_by_user.id = ml.created_by
@@ -187,9 +187,9 @@
                 LEFT JOIN m_code_value gender_cv ON gender_cv.id = mc.gender_cv_id
                 LEFT JOIN m_client_contact_info mcci ON mcci.client_id = mc.id
                 LEFT JOIN m_code_value village_cv ON village_cv.id = mcci.village
-								LEFT JOIN m_code_value department_cv ON department_cv.id = mcci.department_id
-								LEFT JOIN m_code_value department_dpi_cv ON department_dpi_cv.id = mc.department_dpi
-								LEFT JOIN m_code_value municipality_dpi_cv ON municipality_dpi_cv.id = mc.municipality_dpi
+                                LEFT JOIN m_code_value department_cv ON department_cv.id = mcci.department_id
+                                LEFT JOIN m_code_value department_dpi_cv ON department_dpi_cv.id = mc.department_dpi
+                                LEFT JOIN m_code_value municipality_dpi_cv ON municipality_dpi_cv.id = mc.municipality_dpi
                 LEFT JOIN m_code_value municipio_cv ON municipio_cv.id = mcci.municipality_id
                 LEFT JOIN (
                     SELECT
@@ -271,9 +271,9 @@
                 IFNULL(facilator.id, created_by_user.id)  AS 'Cod Facilitador',
                 IFNULL(mp.name, 'Individual') AS 'Nombre Cartera',
                 CASE WHEN mpl.owner_type_enum = 1
-									THEN CONCAT(created_by_user.firstname, ' ', created_by_user.lastname)
-									ELSE CONCAT(portfolio_user.firstname, ' ', portfolio_user.lastname)
-								END AS 'Facilitador',
+                                    THEN CONCAT(created_by_user.firstname, ' ', created_by_user.lastname)
+                                    ELSE CONCAT(portfolio_user.firstname, ' ', portfolio_user.lastname)
+                                END AS 'Facilitador',
                 CASE WHEN ml.loan_status_id = 0   THEN 'Estado no válido'
                      WHEN ml.loan_status_id = 100 THEN 'Presentado y pendiente de aprobación'
                      WHEN ml.loan_status_id = 200 THEN 'Aprobado'
@@ -367,7 +367,7 @@
                 LEFT JOIN m_portfolio mp ON mp.id = center.portfolio_id
                 LEFT JOIN m_supervision ms ON ms.id = mp.supervision_id
                 LEFT JOIN m_agency ma ON ma.id = ms.agency_id
-								LEFT JOIN (select agency_id, linked_office_id from m_supervision GROUP BY agency_id ) supv ON supv.agency_id = ma.id
+                                LEFT JOIN (select agency_id, linked_office_id from m_supervision GROUP BY agency_id ) supv ON supv.agency_id = ma.id
                 LEFT JOIN m_office agency_office ON agency_office.id = supv.linked_office_id
                 LEFT JOIN m_appuser facilator ON facilator.id = mp.responsible_user_id
                 LEFT JOIN m_appuser created_by_user ON created_by_user.id = ml.created_by
@@ -390,9 +390,9 @@
                 LEFT JOIN m_code_value gender_cv ON gender_cv.id = mc.gender_cv_id
                 LEFT JOIN m_client_contact_info mcci ON mcci.client_id = mc.id
                 LEFT JOIN m_code_value village_cv ON village_cv.id = mcci.village
-								LEFT JOIN m_code_value department_cv ON department_cv.id = mcci.department_id
-								LEFT JOIN m_code_value department_dpi_cv ON department_dpi_cv.id = mc.department_dpi
-								LEFT JOIN m_code_value municipality_dpi_cv ON municipality_dpi_cv.id = mc.municipality_dpi
+                                LEFT JOIN m_code_value department_cv ON department_cv.id = mcci.department_id
+                                LEFT JOIN m_code_value department_dpi_cv ON department_dpi_cv.id = mc.department_dpi
+                                LEFT JOIN m_code_value municipality_dpi_cv ON municipality_dpi_cv.id = mc.municipality_dpi
                 LEFT JOIN m_code_value municipio_cv ON municipio_cv.id = mcci.municipality_id
                 LEFT JOIN (
                     SELECT
@@ -474,9 +474,9 @@
                 IFNULL(facilator.id, created_by_user.id)  AS 'Cod Facilitador',
                 IFNULL(mp.name, 'Individual') AS 'Nombre Cartera',
                 CASE WHEN mpl.owner_type_enum = 1
-									THEN CONCAT(created_by_user.firstname, ' ', created_by_user.lastname)
-									ELSE CONCAT(portfolio_user.firstname, ' ', portfolio_user.lastname)
-								END AS 'Facilitador',
+                                    THEN CONCAT(created_by_user.firstname, ' ', created_by_user.lastname)
+                                    ELSE CONCAT(portfolio_user.firstname, ' ', portfolio_user.lastname)
+                                END AS 'Facilitador',
                 CASE WHEN ml.loan_status_id = 0   THEN 'Estado no válido'
                      WHEN ml.loan_status_id = 100 THEN 'Presentado y pendiente de aprobación'
                      WHEN ml.loan_status_id = 200 THEN 'Aprobado'
@@ -570,7 +570,7 @@
                 LEFT JOIN m_portfolio mp ON mp.id = center.portfolio_id
                 LEFT JOIN m_supervision ms ON ms.id = mp.supervision_id
                 LEFT JOIN m_agency ma ON ma.id = ms.agency_id
-								LEFT JOIN (select agency_id, linked_office_id from m_supervision GROUP BY agency_id ) supv ON supv.agency_id = ma.id
+                                LEFT JOIN (select agency_id, linked_office_id from m_supervision GROUP BY agency_id ) supv ON supv.agency_id = ma.id
                 LEFT JOIN m_office agency_office ON agency_office.id = supv.linked_office_id
                 LEFT JOIN m_appuser facilator ON facilator.id = mp.responsible_user_id
                 LEFT JOIN m_appuser created_by_user ON created_by_user.id = ml.created_by
@@ -592,9 +592,9 @@
                 LEFT JOIN m_actividad_economica mae ON mae.id = mc.economic_activity
                 LEFT JOIN m_code_value gender_cv ON gender_cv.id = mc.gender_cv_id
                 LEFT JOIN m_client_contact_info mcci ON mcci.client_id = mc.id
-				LEFT JOIN m_code_value department_cv ON department_cv.id = mcci.department_id
-				LEFT JOIN m_code_value department_dpi_cv ON department_dpi_cv.id = mc.department_dpi
-				LEFT JOIN m_code_value municipality_dpi_cv ON municipality_dpi_cv.id = mc.municipality_dpi
+                LEFT JOIN m_code_value department_cv ON department_cv.id = mcci.department_id
+                LEFT JOIN m_code_value department_dpi_cv ON department_dpi_cv.id = mc.department_dpi
+                LEFT JOIN m_code_value municipality_dpi_cv ON municipality_dpi_cv.id = mc.municipality_dpi
                 LEFT JOIN m_code_value municipio_cv ON municipio_cv.id = mcci.municipality_id
                 LEFT JOIN (
                     SELECT
