@@ -922,7 +922,7 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
 
             if (client.isNotPending() && DateUtils.isAfter(client.getActivationDate(), blockedOnDate)) {
                 final String errorMessage = "The client blockedOnDate cannot be before the client ActivationDate.";
-                throw new InvalidClientStateTransitionException("block", "date.cannot.before.client.actvation.date", errorMessage,
+                throw new InvalidClientStateTransitionException("block", "date.cannot.before.client.activation.date", errorMessage,
                         blockedOnDate, client.getActivationDate());
             }
             final LegalForm legalForm = LegalForm.fromInt(client.getLegalForm());

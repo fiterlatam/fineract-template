@@ -58,10 +58,14 @@ import org.apache.fineract.portfolio.loanaccount.command.LoanChargeCommand;
 import org.apache.fineract.portfolio.loanaccount.data.LoanChargeData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanChargePaidDetail;
 import org.apache.fineract.portfolio.loanaccount.data.LoanInstallmentChargeData;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Entity
 @Table(name = "m_loan_charge", uniqueConstraints = { @UniqueConstraint(columnNames = { "external_id" }, name = "external_id") })
 public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
+
+    private static final Logger LOG = LoggerFactory.getLogger(LoanCharge.class);
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "loan_id", referencedColumnName = "id", nullable = false)
@@ -241,6 +245,9 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
                 this.amountWaived = null;
                 this.amountWrittenOff = null;
             break;
+            default:
+                LOG.error("TODO Implement for other charge calculation types");
+            break;
         }
         this.amountOrPercentage = chargeAmount;
         if (this.loan != null && isInstalmentFee()) {
@@ -349,6 +356,9 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
                     }
                     this.amount = minimumAndMaximumCap(loanCharge);
                 break;
+                default:
+                    LOG.error("TODO Implement for other charge calculation types");
+                break;
             }
             this.amountOrPercentage = amount;
             this.amountOutstanding = calculateOutstanding();
@@ -442,6 +452,9 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
                     }
                     this.amount = minimumAndMaximumCap(loanCharge);
                     this.amountOutstanding = calculateOutstanding();
+                break;
+                default:
+                    LOG.error("TODO Implement for other charge calculation types");
                 break;
             }
             this.amountOrPercentage = newValue;
