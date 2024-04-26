@@ -36,6 +36,7 @@ public class MemberPrequalificationData {
     private final String workWithPuente;
     private final BigDecimal requestedAmount;
     private final BigDecimal approvedAmount;
+    private final BigDecimal originalAmount;
     private EnumOptionData status;
     private final Long blacklistCount;
     private final Long activeBlacklistCount;
@@ -55,13 +56,16 @@ public class MemberPrequalificationData {
     private final Boolean isSelected;
     private BuroData buroData;
     private Long clientId;
+    private String comments;
+    private String agencyBureauStatus;
 
     public MemberPrequalificationData(final Long id, final String name, final String dpi, final LocalDate dob, final String workWithPuente,
             final BigDecimal requestedAmount, final EnumOptionData status, Long blacklistCount, BigDecimal totalLoanAmount,
             BigDecimal totalLoanBalance, BigDecimal totalGuaranteedLoanBalance, Long noOfCycles, Long additionalCreditsCount,
             BigDecimal additionalCreditsSum, final Long activeBlacklistCount, final Long inActiveBlacklistCount, Long greenValidationCount,
             Long yellowValidationCount, Long orangeValidationCount, Long redValidationCount, EnumOptionData bureauCheckStatus,
-            BigDecimal approvedAmount, Boolean groupPresident, final Boolean isSelected) {
+            BigDecimal approvedAmount, Boolean groupPresident, final Boolean isSelected, final BigDecimal originalAmount,
+            final String comments, final String agencyBureauStatus) {
         this.id = id;
         this.name = name;
         this.dpi = dpi;
@@ -86,6 +90,9 @@ public class MemberPrequalificationData {
         this.approvedAmount = approvedAmount;
         this.groupPresident = groupPresident;
         this.isSelected = isSelected;
+        this.originalAmount = originalAmount;
+        this.comments = comments;
+        this.agencyBureauStatus = agencyBureauStatus;
     }
 
     public static MemberPrequalificationData instance(final Long id, final Boolean isSelected) {
@@ -111,10 +118,14 @@ public class MemberPrequalificationData {
         final EnumOptionData bureauCheckStatus = null;
         final BigDecimal approvedAmount = null;
         final Boolean groupPresident = null;
+        final BigDecimal originalAmount = null;
+        final String comments = null;
+        final String agencyBureauStatus = null;
         return new MemberPrequalificationData(id, name, dpi, dob, workWithPuente, requestedAmount, status, blacklistCount, totalLoanAmount,
                 totalLoanBalance, totalGuaranteedLoanBalance, noOfCycles, additionalCreditsCount, additionalCreditsSum,
                 activeBlacklistCount, inActiveBlacklistCount, greenValidationCount, yellowValidationCount, orangeValidationCount,
-                redValidationCount, bureauCheckStatus, approvedAmount, groupPresident, isSelected);
+                redValidationCount, bureauCheckStatus, approvedAmount, groupPresident, isSelected, originalAmount, comments,
+                agencyBureauStatus);
     }
 
     public static MemberPrequalificationData instance(final Long id, final String name, final String dpi, final LocalDate dob,
@@ -123,11 +134,11 @@ public class MemberPrequalificationData {
             Long additionalCreditsCount, BigDecimal additionalCreditsSum, final Long activeBlacklistCount,
             final Long inActiveBlacklistCount, final Long greenValidationCount, final Long yellowValidationCount,
             final Long orangeValidationCount, final Long redValidationCount, EnumOptionData bureauCheckStatus, BigDecimal approvedAmount,
-            Boolean groupPresident) {
+            Boolean groupPresident, BigDecimal originalAmount, String comments, String agencyBureauStatus) {
         return new MemberPrequalificationData(id, name, dpi, dob, workWithPuente, requestedAmount, status, blacklistCount, totalLoanAmount,
                 totalLoanBalance, totalGuaranteedLoanBalance, noOfCycles, additionalCreditsCount, additionalCreditsSum,
                 activeBlacklistCount, inActiveBlacklistCount, greenValidationCount, yellowValidationCount, orangeValidationCount,
-                redValidationCount, bureauCheckStatus, approvedAmount, groupPresident, null);
+                redValidationCount, bureauCheckStatus, approvedAmount, groupPresident, null, originalAmount, comments, agencyBureauStatus);
     }
 
     public Long getGreenValidationCount() {
