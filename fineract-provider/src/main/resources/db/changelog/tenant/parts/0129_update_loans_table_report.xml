@@ -633,5 +633,207 @@
             ]]>
         </sql>
     </changeSet>
+    <changeSet id="4" author="fineract">
+        <sql>
+            <![CDATA[
+                UPDATE stretchy_report SET report_sql = "
+                SELECT
+                IFNULL('${submittedOnEndDate}', 'N/A') AS 'Fecha',
+                COALESCE(agency_office.office_code, 'IND') AS 'Agencia',
+                ml.id AS 'ID de préstamo',
+                IFNULL(ml.contract, '') AS 'Contrato de Prestamo No',
+                mpl.name AS 'Producto',
+                mc.display_name AS 'Nombre de Cliente',
+                ml.external_id AS 'Solicitud No',
+                IFNULL(ml.principal_outstanding_derived, 0)  AS 'Saldo Ppal',
+                0 AS 'Prov Interes',
+                IFNULL(ml.interest_charged_derived , 0) AS 'Provisión Intereses',
+                IFNULL(ml.interest_repaid_derived, 0) AS 'Intereses Pagados',
+                0 AS 'Prov Otros Cargos',
+                0 AS 'Otros Cargos Pagados',
+                0 AS 'Prov Int Moratorios',
+                0 AS 'Int Moratorios Pagados',
+                IFNULL(ml.principal_disbursed_derived, 0) AS 'Monto Desembolsado',
+                IFNULL(ml.total_outstanding_derived, 0) AS 'Total Pendiente',
+                IFNULL(ml.interest_outstanding_derived, 0) AS 'Intereses Pendientes',
+                IFNULL(laa.principal_overdue_derived, 0) AS 'Monto Capital Vencido',
+                IFNULL(laa.principal_overdue_derived, 0) + IFNULL(laa.interest_overdue_derived, 0) AS 'Monto Vencido',
+                IFNULL(laa.interest_overdue_derived, 0) AS  'Intereses Vencidos',
+                0 AS 'Pago por Adelantado',
+                0 AS 'Int Prest Dif Recuperacion',
+                ml.approvedon_date AS 'Fecha procesado',
+                ml.approvedon_date AS 'Fecha Aprobado',
+                ml.approved_principal AS 'Monto Aprobado',
+                ml.maturedon_date AS 'Fecha Vencimiento',
+                ml.number_of_repayments AS 'No de Cuotas',
+                ml.principal_disbursed_derived AS 'CBL Monto Desembolsado',
+                ml.disbursedon_date AS 'Fecha Desembolso',
+                first_installment.installment_date  AS 'Fecha Primera Cuota',
+                0 AS 'Restructurado SN',
+                laa.overdue_since_date_derived AS 'Vencido Desde',
+                DATEDIFF(CURDATE(), laa.overdue_since_date_derived) AS 'Dias de Vencido',
+                mlt.last_repayment_date AS 'Fecha Ultimo Pago',
+                IFNULL(facilator.id, created_by_user.id)  AS 'Cod Facilitador',
+                IFNULL(mp.name, 'Individual') AS 'Nombre Cartera',
+                CASE WHEN mpl.owner_type_enum = 1
+                                    THEN CONCAT(created_by_user.firstname, ' ', created_by_user.lastname)
+                                    ELSE CONCAT(portfolio_user.firstname, ' ', portfolio_user.lastname)
+                                END AS 'Facilitador',
+                CASE WHEN ml.loan_status_id = 0   THEN 'Estado no válido'
+                     WHEN ml.loan_status_id = 100 THEN 'Presentado y pendiente de aprobación'
+                     WHEN ml.loan_status_id = 200 THEN 'Aprobado'
+                     WHEN ml.loan_status_id = 201 THEN 'Autorización de desembolso pendiente'
+                     WHEN ml.loan_status_id = 300 THEN 'Activo'
+                     WHEN ml.loan_status_id = 303 THEN 'Transferencia en proceso'
+                     WHEN ml.loan_status_id = 304 THEN 'Transferencia en espera'
+                     WHEN ml.loan_status_id = 400 THEN 'Retirado por solicitante'
+                     WHEN ml.loan_status_id = 500 THEN 'Rechazado'
+                     WHEN ml.loan_status_id = 600 THEN 'Cerrado (obligaciones cumplidas)'
+                     WHEN ml.loan_status_id = 601 THEN 'Cerrado (cancelado)'
+                     WHEN ml.loan_status_id = 602 THEN 'Cerrado (reprogramado)'
+                     WHEN ml.loan_status_id = 700 THEN 'Pagado en exceso'
+                END AS 'Estado de Cuenta',
+                '' AS 'Fecha Saneamiento',
+                0 AS 'No de Prestatarios',
+                0 AS 'Monto Saneado',
+                0 AS 'Recuperacion Saneamiento',
+                ml.nominal_interest_rate_per_period AS 'Tasa Int',
+                IFNULL(meeting_day_cv.code_value, 'N/A') AS 'Día de Reunión',
+                CASE
+                    WHEN week_day_enums.int_value IS NULL THEN 'N/A'
+                    WHEN week_day_enums.int_value = WEEKDAY(NOW()) THEN DATE(DATE_ADD(NOW(), INTERVAL 0 DAY))
+                    WHEN week_day_enums.int_value > WEEKDAY(NOW()) THEN DATE(DATE_ADD(NOW(), INTERVAL (week_day_enums.int_value - WEEKDAY(NOW())) DAY))
+                    WHEN week_day_enums.int_value < WEEKDAY(NOW()) THEN DATE(DATE_ADD(NOW(), INTERVAL (7 - WEEKDAY(NOW())) DAY))
+                END AS 'Fecha de Reunión',
+                center.display_name AS 'Nombre de Centro',
+                center.id AS 'Centro No',
+                mc.id AS 'Cliente No',
+                mg.id AS 'Grupo No',
+                first_installment.installment_amount AS 'Monto de Cuota',
+                mg.display_name AS 'Nombre de Grupo',
+                IFNULL(provision.category_id, 0) AS 'Clasif Activo',
+                0 AS 'Pendiente desde Cuota No',
+                0 AS 'Pendiente hasta Cuota No',
+                0 AS 'Capital Pend al Inicio de Mes',
+                0 AS 'Int Pend al Inicio de Mes',
+                0 AS 'Capital Pagado en el mes',
+                0 AS 'Int Pagados en el mes',
+                0 AS 'Capital Adeudado en el mes',
+                0 AS 'Int Adeudados en el mes',
+                0 AS 'Capital Vencido Ppio de Anio',
+                0 AS 'Int Vencidos Ppio de Anio',
+                0 AS 'Capital Pagado en el Anio',
+                0 AS 'Int Pagado en el Anio',
+                0 AS 'Capital Adeudado en el Anio',
+                0 AS 'Int Adeudados en el Anio',
+                mc.loan_cycle AS 'Ciclo de Prest',
+                mc.mobile_no AS 'Celular',
+                department_cv.code_description AS 'Dep No',
+                department_cv.code_value AS 'Departamento',
+                municipio_cv.code_description AS 'Mun No',
+                municipio_cv.code_value AS 'Municipio',
+                mcci.village AS 'Direccion',
+                'DPI' AS 'Tipo de Documento',
+                mc.dpi AS 'No Id Nac',
+                '' AS 'No Doc Adicional',
+                '' AS 'Estado Civil',
+                mc.date_of_birth  AS 'Fecha Nacimiento',
+                gender_cv.code_value AS 'Genero',
+                mcci.home_phone AS 'Tel',
+                '' AS 'Sec Celular',
+                '' AS 'Sec Dep No',
+                coalesce(department_dpi_cv.code_value,'') AS 'Sec Departamento',
+                '' AS 'Sec Mun No',
+                coalesce(municipality_dpi_cv.code_value,'') AS 'Sec Municipio',
+                '' AS 'Sec Direccion',
+                '' AS 'Sec Tel',
+                COALESCE(mae.name, '') AS 'Actividad',
+                IF(mpgm.is_president, 'Presidente', 'Miembro') AS 'Rol del Grupo'
+                FROM m_office mo
+                INNER JOIN m_office ounder ON ounder.hierarchy LIKE CONCAT(mo.hierarchy, '%') AND ounder.hierarchy LIKE CONCAT('${currentUserHierarchy}', '%')
+                INNER JOIN m_client mc ON mc.office_id=ounder.id
+                INNER JOIN m_loan ml ON ml.client_id = mc.id
+                LEFT JOIN m_product_loan mpl ON mpl.id = ml.product_id
+                LEFT JOIN m_loan_arrears_aging laa ON laa.loan_id = ml.id
+                LEFT JOIN (
+                            SELECT sc.loan_id AS loan_id, sc.duedate AS installment_date, (IFNULL(sc.principal_amount, 0) + IFNULL(sc.interest_amount, 0) + IFNULL(sc.fee_charges_amount, 0) + IFNULL(sc.penalty_charges_amount, 0)) AS installment_amount
+                            FROM m_loan_repayment_schedule sc
+                            WHERE sc.installment = 1
+                )first_installment ON first_installment.loan_id = ml.id
+                LEFT JOIN (SELECT
+                            DISTINCT tx.loan_id AS loan_id, tx.transaction_date AS last_repayment_date
+                            FROM m_loan_transaction tx
+                            WHERE tx.transaction_type_enum IN (2) and tx.is_reversed = false
+                            ORDER BY tx.transaction_date DESC, tx.created_on_utc DESC, tx.id DESC
+                            ) mlt ON mlt.loan_id = ml.id
+                LEFT JOIN m_group mg ON mg.id = ml.group_id
+                LEFT JOIN m_group center ON center.id = mg.parent_id
+                LEFT JOIN m_code_value meeting_day_cv ON meeting_day_cv.id = mg.meeting_day
+                LEFT JOIN m_portfolio mp ON mp.id = center.portfolio_id
+                LEFT JOIN m_supervision ms ON ms.id = mp.supervision_id
+                LEFT JOIN m_agency ma ON ma.id = ms.agency_id
+                                LEFT JOIN (select agency_id, linked_office_id from m_supervision GROUP BY agency_id ) supv ON supv.agency_id = ma.id
+                LEFT JOIN m_office agency_office ON agency_office.id = supv.linked_office_id
+                LEFT JOIN m_appuser facilator ON facilator.id = mp.responsible_user_id
+                LEFT JOIN m_appuser created_by_user ON created_by_user.id = ml.created_by
+                LEFT JOIN m_appuser portfolio_user ON portfolio_user.id = mp.responsible_user_id
+                LEFT JOIN m_prequalification_group mpg ON mpg.id = ml.prequalification_id
+                LEFT JOIN m_prequalification_group_members mpgm ON (mpgm.group_id = mpg.id AND mpgm.dpi = mc.dpi)
+                LEFT JOIN (
+                     SELECT mcv.id AS id,
+                     CASE
+                        WHEN mcv.code_value = 'Lunes' THEN 0
+                        WHEN mcv.code_value = 'Martes' THEN 1
+                        WHEN mcv.code_value = 'Miércoles' THEN 2
+                        WHEN mcv.code_value = 'Jueves' THEN 3
+                        WHEN mcv.code_value = 'Viernes' THEN 4
+                        ELSE 0
+                     END AS int_value
+                     FROM m_code_value mcv
+                ) week_day_enums ON week_day_enums.id = meeting_day_cv.id
+                LEFT JOIN m_sector_economico mae ON mae.id = mc.economic_sector
+                LEFT JOIN m_code_value gender_cv ON gender_cv.id = mc.gender_cv_id
+                LEFT JOIN m_client_contact_info mcci ON mcci.client_id = mc.id
+                LEFT JOIN m_code_value department_cv ON department_cv.id = mcci.department_id
+                LEFT JOIN m_code_value department_dpi_cv ON department_dpi_cv.id = mc.department_dpi
+                LEFT JOIN m_code_value municipality_dpi_cv ON municipality_dpi_cv.id = mc.municipality_dpi
+                LEFT JOIN m_code_value municipio_cv ON municipio_cv.id = mcci.municipality_id
+                LEFT JOIN (
+                    SELECT
+                    ml.id AS loan_id,
+                    mpl.name AS product_name,
+                    GREATEST(DATEDIFF(NOW(), MIN(sch.duedate)), 0) AS number_of_overdue_days,
+                    MIN(sch.duedate) AS installment_date,
+                    MIN(sch.installment) AS installment_number,
+                    pcd.category_id AS category_id,
+                    mpc.category_name AS category_name,
+                    pcd.provision_percentage AS provision_percentage,
+                    ml.total_outstanding_derived AS outstanding_balance,
+                    pcd.liability_account AS liability_account,
+                    pcd.expense_account AS expense_account
+                    FROM m_loan_repayment_schedule sch
+                    LEFT JOIN m_loan ml ON sch.loan_id = ml.id
+                    LEFT JOIN m_product_loan mpl ON mpl.id = ml.product_id
+                    INNER JOIN m_loanproduct_provisioning_mapping lpm ON lpm.product_id = ml.product_id
+                    INNER JOIN m_provisioning_criteria_definition pcd ON (
+                        pcd.criteria_id = lpm.criteria_id
+                        AND (pcd.min_age <= GREATEST(DATEDIFF(NOW(), sch.duedate), 0)
+                        AND GREATEST(DATEDIFF(NOW(), sch.duedate), 0) <= pcd.max_age)
+                        AND pcd.criteria_id IS NOT NULL)
+                    LEFT JOIN m_provision_category mpc ON mpc.id = pcd.category_id
+                    LEFT JOIN m_client mc ON mc.id = ml.client_id
+                    LEFT JOIN m_group mg ON mg.id = ml.group_id
+                    WHERE ml.loan_status_id = 300 AND sch.completed_derived = FALSE
+                    GROUP BY ml.id
+                ) provision ON provision.loan_id = ml.id
+                WHERE mo.id = '${officeId}'
+                AND (ml.product_id = '${productId}' OR '-1' = '${productId}')
+                AND (ml.submittedon_date BETWEEN '${submittedOnStartDate}' AND '${submittedOnEndDate}')
+                AND ('-1' = '${loanOwnerType}' OR '1' = '${loanOwnerType}')
+                GROUP BY ml.id, ounder.`hierarchy`
+                " WHERE report_name = "FB Tabla de Préstamos";
+            ]]>
+        </sql>
+    </changeSet>
 
 </databaseChangeLog>
