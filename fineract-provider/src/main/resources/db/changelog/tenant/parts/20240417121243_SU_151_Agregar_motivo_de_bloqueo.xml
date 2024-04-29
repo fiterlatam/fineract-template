@@ -221,4 +221,27 @@
         </sql>
     </changeSet>
 
+    <changeSet id="25" author="fineract">
+        <sql>
+            <![CDATA[
+                INSERT INTO m_blocking_reason_setting (priority, description, name_of_reason, "level") VALUES(4, 'CASTIGO', 'CASTIGO', 'CLIENT') ON CONFLICT DO NOTHING;
+                INSERT INTO m_blocking_reason_setting (priority, description, name_of_reason, "level") VALUES(5, 'LISTAS DE CONTROL', 'LISTAS DE CONTROL', 'CLIENT') ON CONFLICT DO NOTHING;
+                INSERT INTO m_blocking_reason_setting (priority, description, name_of_reason, "level") VALUES(6, 'MORA', 'MORA', 'CLIENT') ON CONFLICT DO NOTHING;
+                INSERT INTO m_blocking_reason_setting (priority, description, name_of_reason, "level") VALUES(7, 'REFINANCIACIÓN', 'REFINANCIACIÓN', 'CLIENT') ON CONFLICT DO NOTHING;
+                INSERT INTO m_blocking_reason_setting (priority, description, name_of_reason, "level") VALUES(8, 'INACTIVIDAD', 'INACTIVIDAD', 'CLIENT') ON CONFLICT DO NOTHING;
+                INSERT INTO m_blocking_reason_setting (priority, description, name_of_reason, "level") VALUES(9, 'RECLAMACIÓN A AVALADORA', 'RECLAMACIÓN A AVALADORA', 'CLIENT') ON CONFLICT DO NOTHING;
+            ]]>
+        </sql>
+        <sql>
+            <![CDATA[
+                INSERT INTO m_blocking_reason_setting (priority, description, name_of_reason, "level") VALUES(1, 'MORA', 'MORA', 'CREDIT') ON CONFLICT DO NOTHING;
+                INSERT INTO m_blocking_reason_setting (priority, description, name_of_reason, "level") VALUES(2, 'CASTIGADO', 'CASTIGADO', 'CREDIT') ON CONFLICT DO NOTHING;
+                INSERT INTO m_blocking_reason_setting (priority, description, name_of_reason, "level") VALUES(3, 'REFINANCIADO', 'REFINANCIADO', 'CREDIT') ON CONFLICT DO NOTHING;
+                INSERT INTO m_blocking_reason_setting (priority, description, name_of_reason, "level") VALUES(4, 'CANCELADO', 'CANCELADO', 'CREDIT') ON CONFLICT DO NOTHING;
+                INSERT INTO m_blocking_reason_setting (priority, description, name_of_reason, "level") VALUES(5, 'RECLAMADO A AVALADORA', 'RECLAMADO A AVALADORA', 'CREDIT') ON CONFLICT DO NOTHING;
+            ]]>
+        </sql>
+    </changeSet>
+
+
 </databaseChangeLog>
