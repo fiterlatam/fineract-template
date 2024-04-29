@@ -1643,8 +1643,9 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
     public LoanAdditionalData fromJsonCommand(final JsonCommand jsonCommand) {
         final LoanAdditionalData loanAdditionalData = new LoanAdditionalData();
         final String dateFormat = jsonCommand.dateFormat();
-        final String localeAsString = jsonCommand.locale();
+        final String localeAsString = jsonCommand.locale(); // "en";
         final Locale locale = JsonParserHelper.localeFromString(localeAsString);
+
         this.fromApiJsonDeserializer.validateLoanAdditionalData(jsonCommand);
         final JsonElement jsonElement = jsonCommand.jsonElement(LoanApiConstants.LOAN_ADDITIONAL_DATA);
         final String caseId = this.fromJsonHelper.extractStringNamed("caseId", jsonElement);
@@ -1767,16 +1768,16 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
         final BigDecimal cuentasPorPagar = this.fromJsonHelper.extractBigDecimalNamed("cuentasPorPagar", jsonElement, locale);
         loanAdditionalData.setCuentasPorPagar(cuentasPorPagar);
 
-        final Integer cuota = this.fromJsonHelper.extractIntegerNamed("cuota", jsonElement, locale);
+        final BigDecimal cuota = this.fromJsonHelper.extractBigDecimalNamed("cuota", jsonElement, locale);
         loanAdditionalData.setCuota(cuota);
 
-        final Integer cuotaOtros = this.fromJsonHelper.extractIntegerNamed("cuotaOtros", jsonElement, locale);
+        final BigDecimal cuotaOtros = this.fromJsonHelper.extractBigDecimalNamed("cuotaOtros", jsonElement, locale);
         loanAdditionalData.setCuotaOtros(cuotaOtros);
 
-        final Integer cuotaPuente = this.fromJsonHelper.extractIntegerNamed("cuotaPuente", jsonElement, locale);
+        final BigDecimal cuotaPuente = this.fromJsonHelper.extractBigDecimalNamed("cuotaPuente", jsonElement, locale);
         loanAdditionalData.setCuotaPuente(cuotaPuente);
 
-        final Integer cuotasPendientesBc = this.fromJsonHelper.extractIntegerNamed("cuotasPendientesBc", jsonElement, locale);
+        final BigDecimal cuotasPendientesBc = this.fromJsonHelper.extractBigDecimalNamed("cuotasPendientesBc", jsonElement, locale);
         loanAdditionalData.setCuotasPendientesBc(cuotasPendientesBc);
 
         final Integer dependientes = this.fromJsonHelper.extractIntegerNamed("dependientes", jsonElement, locale);
@@ -1813,7 +1814,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 locale);
         loanAdditionalData.setFechaPrimeraReunion(fechaPrimeraReunion);
 
-        final Integer flujoDisponible = this.fromJsonHelper.extractIntegerNamed("flujoDisponible", jsonElement, locale);
+        final BigDecimal flujoDisponible = this.fromJsonHelper.extractBigDecimalNamed("flujoDisponible", jsonElement, locale);
         loanAdditionalData.setFlujoDisponible(flujoDisponible);
 
         final String garantiaPrestamo = this.fromJsonHelper.extractStringNamed("garantiaPrestamo", jsonElement);
