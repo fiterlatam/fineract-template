@@ -510,7 +510,7 @@ public class CenterReadPlatformServiceImpl implements CenterReadPlatformService 
         final String sql = "select " + this.centerMapper.schema()
                 + " where g.parent_id is null and g.level_Id = ? and (o.hierarchy LIKE CONCAT(?, '%') OR ? like CONCAT(o.hierarchy, '%')) order by g.hierarchy";
 
-        return this.jdbcTemplate.query(sql, this.centerMapper, new Object[] { GroupTypes.CENTER.getId(), hierarchy,hierarchy }); // NOSONAR
+        return this.jdbcTemplate.query(sql, this.centerMapper, new Object[] { GroupTypes.CENTER.getId(), hierarchy, hierarchy }); // NOSONAR
     }
 
     @Override

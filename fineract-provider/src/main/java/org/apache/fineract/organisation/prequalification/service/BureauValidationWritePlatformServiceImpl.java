@@ -388,16 +388,16 @@ public class BureauValidationWritePlatformServiceImpl implements BureauValidatio
         final BigDecimal cuentasPorPagar = this.fromApiJsonHelper.extractBigDecimalNamed("cuentas_por_pagar", jsonElement, locale);
         loanAdditionalData.setCuentasPorPagar(cuentasPorPagar);
 
-        final Integer cuota = this.fromApiJsonHelper.extractIntegerNamed("cuota", jsonElement, locale);
+        final BigDecimal cuota = this.fromApiJsonHelper.extractBigDecimalNamed("cuota", jsonElement, locale);
         loanAdditionalData.setCuota(cuota);
 
-        final Integer cuotaOtros = this.fromApiJsonHelper.extractIntegerNamed("cuota_otros", jsonElement, locale);
+        final BigDecimal cuotaOtros = this.fromApiJsonHelper.extractBigDecimalNamed("cuota_otros", jsonElement, locale);
         loanAdditionalData.setCuotaOtros(cuotaOtros);
 
-        final Integer cuotaPuente = this.fromApiJsonHelper.extractIntegerNamed("cuota_puente", jsonElement, locale);
+        final BigDecimal cuotaPuente = this.fromApiJsonHelper.extractBigDecimalNamed("cuota_puente", jsonElement, locale);
         loanAdditionalData.setCuotaPuente(cuotaPuente);
 
-        final Integer cuotasPendientesBc = this.fromApiJsonHelper.extractIntegerNamed("cuotas_pendientes_bc", jsonElement, locale);
+        final BigDecimal cuotasPendientesBc = this.fromApiJsonHelper.extractBigDecimalNamed("cuotas_pendientes_bc", jsonElement, locale);
         loanAdditionalData.setCuotasPendientesBc(cuotasPendientesBc);
 
         final Integer dependientes = this.fromApiJsonHelper.extractIntegerNamed("dependientes", jsonElement, locale);
@@ -437,7 +437,7 @@ public class BureauValidationWritePlatformServiceImpl implements BureauValidatio
                 locale);
         loanAdditionalData.setFechaPrimeraReunion(fechaPrimeraReunion);
 
-        final Integer flujoDisponible = this.fromApiJsonHelper.extractIntegerNamed("flujo_disponible", jsonElement, locale);
+        final BigDecimal flujoDisponible = this.fromApiJsonHelper.extractBigDecimalNamed("flujo_disponible", jsonElement, locale);
         loanAdditionalData.setFlujoDisponible(flujoDisponible);
 
         final String garantiaPrestamo = this.fromApiJsonHelper.extractStringNamed("garantia_prestamo", jsonElement);

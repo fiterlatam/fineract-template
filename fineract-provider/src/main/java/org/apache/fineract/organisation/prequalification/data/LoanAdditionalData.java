@@ -116,13 +116,13 @@ public class LoanAdditionalData {
 
     private BigDecimal cuentasPorPagar;
 
-    private Integer cuota;
+    private BigDecimal cuota;
 
-    private Integer cuotaOtros;
+    private BigDecimal cuotaOtros;
 
-    private Integer cuotaPuente;
+    private BigDecimal cuotaPuente;
 
-    private Integer cuotasPendientesBc;
+    private BigDecimal cuotasPendientesBc;
 
     private Integer dependientes;
 
@@ -148,7 +148,7 @@ public class LoanAdditionalData {
 
     private LocalDate fechaPrimeraReunion;
 
-    private Integer flujoDisponible;
+    private BigDecimal flujoDisponible;
 
     private String garantiaPrestamo;
 
