@@ -80,14 +80,14 @@ public enum PrequalificationStatus {
             case 700:
                 enumeration = PrequalificationStatus.HARD_POLICY_CHECKED;
             break;
+            case 701:
+                enumeration = PrequalificationStatus.CONSENT_ADDED;
+                break;
             case 800:
                 enumeration = PrequalificationStatus.TIME_EXPIRED;
             break;
             case 900:
                 enumeration = PrequalificationStatus.COMPLETED;
-            break;
-            case 901:
-                enumeration = PrequalificationStatus.CONSENT_ADDED;
             break;
             case 902:
                 enumeration = PrequalificationStatus.AGENCY_LEAD_PENDING_APPROVAL;
