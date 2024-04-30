@@ -66,8 +66,10 @@ import org.apache.fineract.infrastructure.core.service.SearchParameters;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.portfolio.accountdetails.data.AccountSummaryCollectionData;
 import org.apache.fineract.portfolio.accountdetails.service.AccountDetailsReadPlatformService;
+import org.apache.fineract.portfolio.client.data.ClientBlockingReasonData;
 import org.apache.fineract.portfolio.client.data.ClientData;
 import org.apache.fineract.portfolio.client.exception.ClientNotFoundException;
+import org.apache.fineract.portfolio.client.service.ClientBlockingReasonReadPlatformService;
 import org.apache.fineract.portfolio.client.service.ClientReadPlatformService;
 import org.apache.fineract.portfolio.loanaccount.guarantor.data.ObligeeData;
 import org.apache.fineract.portfolio.loanaccount.guarantor.service.GuarantorReadPlatformService;
@@ -96,6 +98,7 @@ public class ClientsApiResource {
     private final BulkImportWorkbookPopulatorService bulkImportWorkbookPopulatorService;
     private final GuarantorReadPlatformService guarantorReadPlatformService;
     private final ManageBlockingReasonsReadPlatformService manageBlockingReasonsReadPlatformService;
+    private final ClientBlockingReasonReadPlatformService clientBlockingReasonReadPlatformService;
 
     @GET
     @Path("template")
@@ -325,6 +328,17 @@ public class ClientsApiResource {
             @ApiResponse(responseCode = "400", description = "Bad Request") })
     public String retrieveTransferTemplate(@PathParam("clientId") final Long clientId, @Context final UriInfo uriInfo) {
         return retrieveClientTransferTemplate(clientId, null);
+    }
+
+    @GET
+    @Path("{clientId}/clientblockingreason")
+    @Produces({ MediaType.APPLICATION_JSON })
+    @Operation(summary = "Retrieve client blocking reason", description = "Retrieve client blocking reason")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = ClientsApiResourceSwagger.GetClientBlockingReasonResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Bad Request") })
+    public String retrieveClientBlockingReasonData(@PathParam("clientId") final Long clientId) {
+        return retrieveClientBlockingReason(clientId);
     }
 
     @GET
@@ -611,4 +625,9 @@ public class ClientsApiResource {
         return toApiJsonSerializer.serialize(transferDate);
     }
 
+    private String retrieveClientBlockingReason(Long clientId) {
+        context.authenticatedUser().validateHasReadPermission(ClientApiConstants.CLIENT_RESOURCE_NAME);
+        final Collection<ClientBlockingReasonData> clientBlockingReasonData = clientBlockingReasonReadPlatformService.retrieveClientBlockingReason(clientId);
+        return toApiJsonSerializer.serialize(clientBlockingReasonData);
+    }
 }
