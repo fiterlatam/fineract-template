@@ -432,6 +432,23 @@ final class ClientsApiResourceSwagger {
         public LocalDate proposedTransferDate;
     }
 
+    @Schema(description = "GetClientBlockingReasonResponse")
+    public static final class GetClientBlockingReasonResponse {
+
+        private GetClientBlockingReasonResponse() {}
+
+        @Schema(example = "2")
+        public Long id;
+        @Schema(example = "Name of blocking reason")
+        public String name;
+        @Schema(example = "Description of blocking reason")
+        public String description;
+        @Schema(example = "[2024, 4, 15]")
+        public LocalDate blockDate;
+        @Schema(example = "2")
+        public Integer priority;
+    }
+
     @Schema(description = "GetClientObligeeDetailsResponse")
     public static final class GetClientObligeeDetailsResponse {
 
