@@ -78,9 +78,7 @@ public class RequestedVsAvailableAmountForAllyValidatorStep extends BuyProcessAb
             sqlBuilder.append("             and ccbp.status = 200 ");
             sqlBuilder.append("		) ");
             sqlBuilder.append("and ccaposForAllyPOSList.client_ally_id = ? ");
-            sqlBuilder.append("and DATE_PART('year',ml.disbursedon_date) = DATE_PART('year', CURRENT_DATE) "); // Condição
-                                                                                                               // para o
-                                                                                                               // ano
+            sqlBuilder.append("and DATE_PART('year',ml.disbursedon_date) = DATE_PART('year', CURRENT_DATE) ");
             sqlBuilder.append("and DATE_PART('month',disbursedon_date) = DATE_PART('month', CURRENT_DATE) ");
             sqlBuilder.append("and ml.loan_status_id = 300 ");
             sqlBuilder.append("and buyProcessByAlly.status = 200 ");
@@ -98,10 +96,6 @@ public class RequestedVsAvailableAmountForAllyValidatorStep extends BuyProcessAb
             if (availableAmount.compareTo(clientBuyProcess.getAmount()) < 0) {
                 ammendErrorMessage(stepProcessorEnum, clientBuyProcess);
             }
-
-        } else {
-
-            ammendErrorMessage(stepProcessorEnum, clientBuyProcess);
         }
     }
 }
