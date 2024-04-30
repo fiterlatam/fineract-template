@@ -3768,4 +3768,30 @@ public class CommandWrapperBuilder {
         this.href = "/updateBlockReasonSetting/" + id;
         return this;
     }
+
+    public CommandWrapperBuilder createCustomChargeTypeMap(Long customChargeTypeId) {
+        this.actionName = "CREATE";
+        this.entityName = "CUSTOMCHARGETYPEMAP";
+        this.entityId = customChargeTypeId;
+        this.href = "/customchargetypemap";
+        return this;
+    }
+
+    public CommandWrapperBuilder updateCustomChargeTypeMap(final Long id, Long customChargeTypeId) {
+        this.actionName = "UPDATE";
+        this.entityName = "CUSTOMCHARGETYPEMAP";
+        this.href = "/customchargetypemap/" + id;
+        this.entityId = customChargeTypeId;
+        this.subentityId = id;
+        return this;
+    }
+
+    public CommandWrapperBuilder deleteCustomChargeTypeMap(final Long id) {
+        this.actionName = "DELETE";
+        this.entityName = "CUSTOMCHARGETYPEMAP";
+        this.href = "/customchargetypemap/" + id;
+        this.entityId = id;
+        return this;
+    }
+
 }

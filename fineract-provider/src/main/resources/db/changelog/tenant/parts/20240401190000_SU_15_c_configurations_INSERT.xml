@@ -38,4 +38,17 @@
             <column name="description" value="Minimum amount to create a loan by thir parties"/>
         </insert>
     </changeSet>
+
+    <changeSet author="fineract" id="20">
+        <insert tableName="c_configuration">
+            <column name="name" value="custom-charge-aval-supay-max-term"/>
+            <column name="value" valueNumeric="36"/>
+            <column name="date_value"/>
+            <column name="string_value"/>
+            <column name="enabled" valueBoolean="false"/>
+            <column name="is_trap_door" valueBoolean="false"/>
+            <column name="description" value="Max number of buckets / installments when customizing Aval charge"/>
+        </insert>
+    </changeSet>
+
 </databaseChangeLog>
