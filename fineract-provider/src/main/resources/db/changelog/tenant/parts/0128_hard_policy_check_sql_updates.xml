@@ -275,5 +275,37 @@
             ]]>
         </sql>
     </changeSet>
+    <changeSet id="13" author="fineract">
+        <sql>
+            <![CDATA[
+                UPDATE stretchy_report SET report_sql = "SELECT
+            client_details.current_guarantee_amount,
+            client_details.current_loan_amount,
+            CASE
+             WHEN ('${loanProductId}' = 7) AND client_details.loan_cycle < 5  AND (${requestedAmount}>=((100/100)*client_details.current_guarantee_amount)) THEN 'GREEN'
+             WHEN ('${loanProductId}' = 7) AND client_details.loan_cycle = 5  AND (${requestedAmount}>=((125/100)*client_details.current_guarantee_amount)) THEN 'GREEN'
+             WHEN ('${loanProductId}' = 7) AND client_details.loan_cycle > 5  AND (${requestedAmount}>=((150/100)*client_details.current_guarantee_amount)) THEN 'GREEN'
+             WHEN ('${loanProductId}' = 3) AND (${requestedAmount} <= 3000) THEN 'GREEN'
+             WHEN ('${loanProductId}' = 3) AND (${requestedAmount} > client_details.current_loan_amount) THEN 'RED'
+             WHEN ('${loanProductId}' = 3) AND (${requestedAmount} > 3000) THEN 'RED'
+            END AS color
+            FROM m_client mc
+            INNER JOIN (
+            SELECT mc.id AS client_id, mc.loan_cycle, (
+                select (ml.principal_amount*(mpl.required_guarantee_percent/100))
+                from m_loan ml inner join m_product_loan mpl on ml.product_id = mpl.id
+                where ml.client_id = mc.id and mpl.owner_type_enum = 2 and ml.loan_status_id = 300 ORDER BY ml.id desc limit 1
+                ) as current_guarantee_amount,
+								(
+                select COALESCE(ml.principal_amount,0)
+                from m_loan ml inner join m_product_loan mpl on ml.product_id = mpl.id
+                where ml.client_id = mc.id and mpl.owner_type_enum = 2 and ml.loan_status_id = 300 ORDER BY ml.id desc limit 1
+                ) as current_loan_amount FROM m_client mc
+            )client_details ON client_details.client_id = mc.id
+            WHERE mc.id = ${clientId}"
+                WHERE report_name = "Amount requested in relation to the current amount of main products Policy Check";
+            ]]>
+        </sql>
+    </changeSet>
 
 </databaseChangeLog>
