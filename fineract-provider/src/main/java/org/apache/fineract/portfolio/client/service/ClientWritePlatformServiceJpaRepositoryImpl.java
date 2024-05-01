@@ -67,6 +67,8 @@ import org.apache.fineract.portfolio.client.api.ClientApiConstants;
 import org.apache.fineract.portfolio.client.data.ClientDataValidator;
 import org.apache.fineract.portfolio.client.domain.AccountNumberGenerator;
 import org.apache.fineract.portfolio.client.domain.Client;
+import org.apache.fineract.portfolio.client.domain.ClientBlockingReason;
+import org.apache.fineract.portfolio.client.domain.ClientBlockingReasonRepositoryWrapper;
 import org.apache.fineract.portfolio.client.domain.ClientEnumerations;
 import org.apache.fineract.portfolio.client.domain.ClientNonPerson;
 import org.apache.fineract.portfolio.client.domain.ClientNonPersonRepositoryWrapper;
@@ -127,6 +129,7 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
     private final EntityDatatableChecksWritePlatformService entityDatatableChecksWritePlatformService;
     private final ExternalIdFactory externalIdFactory;
     private final ManageBlockingReasonSettingsRepositoryWrapper manageBlockingReasonSettingsRepositoryWrapper;
+    private final ClientBlockingReasonRepositoryWrapper clientBlockingReasonRepositoryWrapper;
 
     @Transactional
     @Override
@@ -953,6 +956,9 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
                 }
             }
 
+            ClientBlockingReason clientBlockingReason = ClientBlockingReason.instance(clientId, blockingReasonId, currentUser.getId(),
+                    blockedOnDate, blockingComment, currentUser.getId());
+            this.clientBlockingReasonRepositoryWrapper.save(clientBlockingReason);
             client.block(currentUser, blockingReason, blockedOnDate, blockingComment);
             this.clientRepository.saveAndFlush(client);
             return new CommandProcessingResultBuilder() //
@@ -986,8 +992,20 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
                 throw new InvalidClientStateTransitionException("undoBlock", "date.cannot.before.client.blockedOnDate.date", errorMessage,
                         undoBlockedOnDate, client.getBlockedOnDate());
             }
-            client.undoBlock(currentUser, undoBlockedOnDate, undoBlockingComment);
-            this.clientRepository.saveAndFlush(client);
+
+            List<ClientBlockingReason> clientBlockingReason = this.clientBlockingReasonRepositoryWrapper.findClientBlockingReason(clientId, client.getBlockingReason().getId());
+            if(clientBlockingReason.size() >= 1) {
+                for(ClientBlockingReason item : clientBlockingReason) {
+                    item.updateAfterUnblock(undoBlockedOnDate, undoBlockingComment, currentUser.getId());
+                    clientBlockingReasonRepositoryWrapper.save(item);
+                }
+            }
+            List<ClientBlockingReason> remainingClientBlockingReason = this.clientBlockingReasonRepositoryWrapper.findClientBlockingReasonByClientId(clientId);
+            if(remainingClientBlockingReason.size() == 0) {
+                client.undoBlock(currentUser, undoBlockedOnDate, undoBlockingComment);
+                this.clientRepository.saveAndFlush(client);
+            }
+
             return new CommandProcessingResultBuilder() //
                     .withCommandId(command.commandId()) //
                     .withClientId(clientId) //
