@@ -80,9 +80,9 @@ public class LoanAdditionalData {
 
     private String area;
 
-    private Integer bienesInmuebles;
+    private BigDecimal bienesInmuebles;
 
-    private Integer bienesInmueblesFamiliares;
+    private BigDecimal bienesInmueblesFamiliares;
 
     private String cDpi;
 
@@ -128,7 +128,7 @@ public class LoanAdditionalData {
 
     private String destinoPrestamo;
 
-    private Integer educacion;
+    private BigDecimal educacion;
 
     private BigDecimal efectivo;
 
@@ -156,13 +156,13 @@ public class LoanAdditionalData {
 
     private BigDecimal gastosNegocio;
 
-    private Integer herramientas;
+    private BigDecimal herramientas;
 
     private Integer hijos;
 
     private Integer mortgages;
 
-    private Integer impuestos;
+    private BigDecimal impuestos;
 
     private String ingresadoPor;
 
@@ -204,7 +204,7 @@ public class LoanAdditionalData {
 
     private String poseeCuenta;
 
-    private Long prestamoPuente;
+    private BigDecimal prestamoPuente;
 
     private BigDecimal propuestaFacilitador;
 
@@ -230,7 +230,7 @@ public class LoanAdditionalData {
 
     private BigDecimal serviciosMedicos;
 
-    private Integer tarjetas;
+    private BigDecimal tarjetas;
 
     private String tipoVivienda;
 
@@ -258,7 +258,7 @@ public class LoanAdditionalData {
 
     private BigDecimal valorGarantia;
 
-    private Integer vehiculos;
+    private BigDecimal vehiculos;
 
     private BigDecimal vestimenta;
 
@@ -534,7 +534,7 @@ public class LoanAdditionalData {
 
     private Integer total_vehiculo_negocio;
 
-    private Integer total_vehiculos;
+    private BigDecimal total_vehiculos;
 
     private String ubicacion_cliente;
 
@@ -559,6 +559,14 @@ public class LoanAdditionalData {
     private String recuperacion_cuentas;
 
     private String tercer_nombre_solicitante;
+
+    private String categoria_fiador1;
+
+    private String cliente_activo_fiador1;
+
+    private String categoria_fiador2;
+
+    private String cliente_activo_fiador2;
 
     public LoanAdditionProperties toEntity() {
         final LoanAdditionProperties loanAdditionProperties = new LoanAdditionProperties();
