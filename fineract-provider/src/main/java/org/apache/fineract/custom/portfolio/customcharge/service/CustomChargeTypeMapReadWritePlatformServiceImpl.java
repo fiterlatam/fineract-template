@@ -19,6 +19,10 @@
 package org.apache.fineract.custom.portfolio.customcharge.service;
 
 import jakarta.persistence.PersistenceException;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.fineract.custom.portfolio.customcharge.data.CustomChargeTypeMapData;
@@ -41,11 +45,6 @@ import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Comparator;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
-
 @Slf4j
 @Service
 public class CustomChargeTypeMapReadWritePlatformServiceImpl implements CustomChargeTypeMapReadWritePlatformService {
@@ -56,23 +55,21 @@ public class CustomChargeTypeMapReadWritePlatformServiceImpl implements CustomCh
     private final PlatformSecurityContext context;
 
     @Autowired
-    public CustomChargeTypeMapReadWritePlatformServiceImpl(final JdbcTemplate jdbcTemplate,
-            final DatabaseSpecificSQLGenerator sqlGenerator,
-            final CustomChargeTypeMapDataValidator validatorClass,
-            final PlatformSecurityContext context) {
+    public CustomChargeTypeMapReadWritePlatformServiceImpl(final JdbcTemplate jdbcTemplate, final DatabaseSpecificSQLGenerator sqlGenerator,
+            final CustomChargeTypeMapDataValidator validatorClass, final PlatformSecurityContext context) {
         this.jdbcTemplate = jdbcTemplate;
         this.sqlGenerator = sqlGenerator;
         this.validatorClass = validatorClass;
         this.context = context;
     }
 
-	@Autowired
-	private CustomChargeTypeMapRepository repository;
+    @Autowired
+    private CustomChargeTypeMapRepository repository;
 
     @Override
     public List<CustomChargeTypeMapData> findAllActive(Long customChargeTypeId) {
-        return CustomChargeTypeMapMapper.toDTO(repository.findByCustomChargeTypeIdAndActive(customChargeTypeId, true)
-                .stream().sorted(Comparator.comparing(CustomChargeTypeMap::getTerm)).collect(Collectors.toList()));
+        return CustomChargeTypeMapMapper.toDTO(repository.findByCustomChargeTypeIdAndActive(customChargeTypeId, true).stream()
+                .sorted(Comparator.comparing(CustomChargeTypeMap::getTerm)).collect(Collectors.toList()));
     }
 
     @Override
@@ -94,15 +91,14 @@ public class CustomChargeTypeMapReadWritePlatformServiceImpl implements CustomCh
             final CustomChargeTypeMap entity = this.validatorClass.validateForCreate(command.json(), customChargeTypeId);
             entity.setCustomChargeTypeId(customChargeTypeId);
 
-            List<CustomChargeTypeMap> customChargeTypeMapList = repository.findByCustomChargeTypeIdAndTermAndActive(customChargeTypeId, entity.getTerm(), true);
+            List<CustomChargeTypeMap> customChargeTypeMapList = repository.findByCustomChargeTypeIdAndTermAndActive(customChargeTypeId,
+                    entity.getTerm(), true);
 
             // From Date must be bigger than on last active from date
             // Consider the case of not having a previous record
-            Optional<CustomChargeTypeMap> lastActive = customChargeTypeMapList.stream()
-                    .filter(active -> active.getActive())
-                    .findFirst();
+            Optional<CustomChargeTypeMap> lastActive = customChargeTypeMapList.stream().filter(active -> active.getActive()).findFirst();
 
-            if(lastActive.isPresent()) {
+            if (lastActive.isPresent()) {
                 CustomChargeTypeMap existent = lastActive.get();
 
                 // If date is before the last active date
@@ -113,13 +109,12 @@ public class CustomChargeTypeMapReadWritePlatformServiceImpl implements CustomCh
             }
 
             // Not updating! ETF!!!
-            int rowsAffected = repository.deactivatePreviousTermData(customChargeTypeId, entity.getTerm(), entity.getValidFrom().minusDays(1),
-                    DateUtils.getLocalDateTimeOfTenant(), this.context.authenticatedUser().getId());
+            int rowsAffected = repository.deactivatePreviousTermData(customChargeTypeId, entity.getTerm(),
+                    entity.getValidFrom().minusDays(1), DateUtils.getLocalDateTimeOfTenant(), this.context.authenticatedUser().getId());
 
             repository.saveAndFlush(entity);
 
-            return new CommandProcessingResultBuilder().withEntityId(customChargeTypeId).withSubEntityId(entity.getId())
-                    .build();
+            return new CommandProcessingResultBuilder().withEntityId(customChargeTypeId).withSubEntityId(entity.getId()).build();
         } catch (final JpaSystemException | DataIntegrityViolationException dve) {
             handleDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
             return CommandProcessingResult.empty();
@@ -129,35 +124,32 @@ public class CustomChargeTypeMapReadWritePlatformServiceImpl implements CustomCh
             return CommandProcessingResult.empty();
         }
     }
-    
 
     @Transactional
     @Override
     public CommandProcessingResult delete(final Long id) {
         this.context.authenticatedUser();
-        
+
         Optional<CustomChargeTypeMap> entity = repository.findById(id);
-        if(entity.isPresent()) {
+        if (entity.isPresent()) {
             CustomChargeTypeMap currEntity = entity.get();
 
             // It is only allowed to delete the last active record
-            if(Boolean.FALSE.equals(currEntity.getActive())) {
+            if (Boolean.FALSE.equals(currEntity.getActive())) {
                 throw new PlatformDataIntegrityException("error.msg.cannot.delete.not.last.active.record",
                         "Cannot delete a record that is not the last active record", "id", id);
             }
 
             // Only allowe4d to delete validFrom date in the future
-            if(currEntity.getValidFrom().isBefore(DateUtils.getLocalDateOfTenant())) {
+            if (currEntity.getValidFrom().isBefore(DateUtils.getLocalDateOfTenant())) {
                 throw new PlatformDataIntegrityException("error.msg.cannot.delete.record.with.from.date.in.the.past",
                         "Cannot delete a record with From Date in the past", "id", id);
             }
 
             // Revert last record, if any, to active status
             Optional<CustomChargeTypeMap> customChargeTypeMapList = repository
-                    .findByCustomChargeTypeIdAndTermAndActive(currEntity.getCustomChargeTypeId(), currEntity.getTerm(), false)
-                    .stream()
-                    .sorted(Comparator.comparing(CustomChargeTypeMap::getId).reversed())
-                    .findFirst();
+                    .findByCustomChargeTypeIdAndTermAndActive(currEntity.getCustomChargeTypeId(), currEntity.getTerm(), false).stream()
+                    .sorted(Comparator.comparing(CustomChargeTypeMap::getId).reversed()).findFirst();
 
             customChargeTypeMapList.ifPresent(customChargeTypeMap -> {
                 customChargeTypeMap.setActive(true);
@@ -171,12 +163,11 @@ public class CustomChargeTypeMapReadWritePlatformServiceImpl implements CustomCh
             repository.delete(entity.get());
             repository.flush();
         } else {
-                throw new CustomChargeTypeMapNotFoundException();
-        }       
-        
+            throw new CustomChargeTypeMapNotFoundException();
+        }
+
         return new CommandProcessingResultBuilder().withEntityId(id).build();
-    }    
-    
+    }
 
     @Transactional
     @Override
@@ -188,21 +179,21 @@ public class CustomChargeTypeMapReadWritePlatformServiceImpl implements CustomCh
             final CustomChargeTypeMap entity = this.validatorClass.validateForUpdate(command.json(), customChargeTypeId);
             Optional<CustomChargeTypeMap> dbEntity = repository.findById(id);
 
-            if(dbEntity.isPresent()) {
+            if (dbEntity.isPresent()) {
 
                 // It is only allowed to delete the last active record
-                if(Boolean.FALSE.equals(dbEntity.get().getActive())) {
+                if (Boolean.FALSE.equals(dbEntity.get().getActive())) {
                     throw new PlatformDataIntegrityException("error.msg.cannot.update.not.last.active.record",
                             "Cannot update a record that is not the last active record", "id", id);
                 }
 
                 // Only allowe4d to delete validFrom date in the future
-                if(dbEntity.get().getValidFrom().isBefore(DateUtils.getLocalDateOfTenant())) {
+                if (dbEntity.get().getValidFrom().isBefore(DateUtils.getLocalDateOfTenant())) {
                     throw new PlatformDataIntegrityException("error.msg.cannot.update.record.with.from.date.in.the.past",
                             "Cannot update a record with From Date in the past", "id", id);
                 }
 
-            	entity.setId(id);
+                entity.setId(id);
                 entity.setCreatedAt(dbEntity.get().getCreatedAt());
                 entity.setCreatedBy(dbEntity.get().getCreatedBy());
                 repository.save(entity);

@@ -18,13 +18,11 @@
  */
 package org.apache.fineract.custom.portfolio.customcharge.domain;
 
+import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
-import java.util.List;
-
-public interface  CustomChargeTypeRepository
-        extends JpaRepository< CustomChargeType, Long>, JpaSpecificationExecutor< CustomChargeType> {
+public interface CustomChargeTypeRepository extends JpaRepository<CustomChargeType, Long>, JpaSpecificationExecutor<CustomChargeType> {
 
     List<CustomChargeType> findByCustomChargeEntityId(Long customChargeEntityId);
 }

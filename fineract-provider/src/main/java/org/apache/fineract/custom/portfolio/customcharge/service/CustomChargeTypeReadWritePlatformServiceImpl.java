@@ -19,6 +19,8 @@
 package org.apache.fineract.custom.portfolio.customcharge.service;
 
 import jakarta.persistence.PersistenceException;
+import java.util.List;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.fineract.custom.portfolio.customcharge.data.CustomChargeTypeData;
@@ -40,9 +42,6 @@ import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.Optional;
-
 @Slf4j
 @Service
 public class CustomChargeTypeReadWritePlatformServiceImpl implements CustomChargeTypeReadWritePlatformService {
@@ -53,18 +52,16 @@ public class CustomChargeTypeReadWritePlatformServiceImpl implements CustomCharg
     private final PlatformSecurityContext context;
 
     @Autowired
-    public CustomChargeTypeReadWritePlatformServiceImpl(final JdbcTemplate jdbcTemplate,
-            final DatabaseSpecificSQLGenerator sqlGenerator,
-            final CustomChargeTypeDataValidator validatorClass,
-            final PlatformSecurityContext context) {
+    public CustomChargeTypeReadWritePlatformServiceImpl(final JdbcTemplate jdbcTemplate, final DatabaseSpecificSQLGenerator sqlGenerator,
+            final CustomChargeTypeDataValidator validatorClass, final PlatformSecurityContext context) {
         this.jdbcTemplate = jdbcTemplate;
         this.sqlGenerator = sqlGenerator;
         this.validatorClass = validatorClass;
         this.context = context;
     }
 
-	@Autowired
-	private CustomChargeTypeRepository repository;
+    @Autowired
+    private CustomChargeTypeRepository repository;
 
     @Override
     public List<CustomChargeTypeData> findAllActive() {
@@ -105,24 +102,22 @@ public class CustomChargeTypeReadWritePlatformServiceImpl implements CustomCharg
             return CommandProcessingResult.empty();
         }
     }
-    
 
     @Transactional
     @Override
     public CommandProcessingResult delete(final Long id) {
         this.context.authenticatedUser();
-        
+
         Optional<CustomChargeType> entity = repository.findById(id);
-        if(entity.isPresent()) {
+        if (entity.isPresent()) {
             repository.delete(entity.get());
             repository.flush();
         } else {
-                throw new CustomChargeTypeNotFoundException();
-        }       
-        
+            throw new CustomChargeTypeNotFoundException();
+        }
+
         return new CommandProcessingResultBuilder().withEntityId(id).build();
-    }    
-    
+    }
 
     @Transactional
     @Override
@@ -134,8 +129,8 @@ public class CustomChargeTypeReadWritePlatformServiceImpl implements CustomCharg
             final CustomChargeType entity = this.validatorClass.validateForUpdate(command.json());
             Optional<CustomChargeType> dbEntity = repository.findById(id);
 
-            if(dbEntity.isPresent()) {
-            	entity.setId(id);
+            if (dbEntity.isPresent()) {
+                entity.setId(id);
                 repository.save(entity);
             } else {
                 throw new CustomChargeTypeNotFoundException();

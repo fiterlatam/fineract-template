@@ -32,7 +32,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(schema="custom", name = "c_custom_charge_type")
+@Table(schema = "custom", name = "c_custom_charge_type")
 @Cacheable(false)
 @AllArgsConstructor
 @NoArgsConstructor
@@ -41,17 +41,17 @@ import lombok.Setter;
 @Setter
 public class CustomChargeType {
 
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	@Column(name = "id", nullable = false)
-	private Long id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id", nullable = false)
+    private Long id;
 
-	@Column(name = "custom_charge_entity_id", nullable = false)
-	private Long customChargeEntityId;
+    @Column(name = "custom_charge_entity_id", nullable = false)
+    private Long customChargeEntityId;
 
-	@Column(name = "name", nullable = false, length = 50)
-	private String name;
+    @Column(name = "name", nullable = false, length = 50)
+    private String name;
 
-	@Column(name = "code", nullable = false, length = 100)
-	private String code;
+    @Column(name = "code", nullable = false, length = 100)
+    private String code;
 }
