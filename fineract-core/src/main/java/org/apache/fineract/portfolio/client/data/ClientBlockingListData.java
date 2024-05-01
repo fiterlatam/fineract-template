@@ -16,12 +16,15 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.portfolio.client.service;
 
-import java.util.Collection;
-import org.apache.fineract.portfolio.client.data.ClientBlockingReasonData;
 
-public interface ClientBlockingReasonReadPlatformService {
+package org.apache.fineract.portfolio.client.data;
 
-    Collection<ClientBlockingReasonData> retrieveClientBlockingReason(Long clientId);
+import lombok.Builder;
+
+@Builder
+public record ClientBlockingListData(String idType, String idNumber, String firstName, String secondName,
+                                     String surname, String secondSurname, String companyName, String causal,
+                                     String blockingComment,Long blockingReasonId,String blockedOnDate,String dateFormat,String locale,Integer rowIndex) {
+
 }

@@ -18,6 +18,10 @@
  */
 package org.apache.fineract.portfolio.client.service;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.time.LocalDate;
+import java.util.Collection;
 import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.portfolio.client.data.ClientBlockingReasonData;
@@ -25,11 +29,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
-
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.time.LocalDate;
-import java.util.Collection;
 
 @Service
 public class ClientBlockingReasonReadPlatformServiceImpl implements ClientBlockingReasonReadPlatformService {
@@ -44,11 +43,12 @@ public class ClientBlockingReasonReadPlatformServiceImpl implements ClientBlocki
     }
 
     private static final class ClientBlockingReasonMapper implements RowMapper<ClientBlockingReasonData> {
+
         public String schema() {
-            return "cbr.id AS id, cbr.block_date AS blockDate, brs.priority AS priority, brs.name_of_reason AS name, brs.description AS description " +
-                    "FROM m_client_blocking_reason cbr " +
-                    "JOIN m_blocking_reason_setting brs ON brs.id = cbr.blocking_reason_id ";
+            return "cbr.id AS id, cbr.block_date AS blockDate, brs.priority AS priority, brs.name_of_reason AS name, brs.description AS description "
+                    + "FROM m_client_blocking_reason cbr " + "JOIN m_blocking_reason_setting brs ON brs.id = cbr.blocking_reason_id ";
         }
+
         @Override
         public ClientBlockingReasonData mapRow(final ResultSet rs, @SuppressWarnings("unused") final int rowNum) throws SQLException {
             final long id = rs.getLong("id");

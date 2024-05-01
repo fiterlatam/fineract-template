@@ -26,6 +26,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -67,6 +68,8 @@ import org.apache.fineract.portfolio.client.api.ClientApiConstants;
 import org.apache.fineract.portfolio.client.data.ClientDataValidator;
 import org.apache.fineract.portfolio.client.domain.AccountNumberGenerator;
 import org.apache.fineract.portfolio.client.domain.Client;
+import org.apache.fineract.portfolio.client.domain.ClientBlockList;
+import org.apache.fineract.portfolio.client.domain.ClientBlockListRepository;
 import org.apache.fineract.portfolio.client.domain.ClientBlockingReason;
 import org.apache.fineract.portfolio.client.domain.ClientBlockingReasonRepositoryWrapper;
 import org.apache.fineract.portfolio.client.domain.ClientEnumerations;
@@ -130,6 +133,7 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
     private final ExternalIdFactory externalIdFactory;
     private final ManageBlockingReasonSettingsRepositoryWrapper manageBlockingReasonSettingsRepositoryWrapper;
     private final ClientBlockingReasonRepositoryWrapper clientBlockingReasonRepositoryWrapper;
+    private final ClientBlockListRepository clientBlockListRepository;
 
     @Transactional
     @Override
@@ -982,6 +986,10 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
             final Client client = this.clientRepository.findOneWithNotFoundDetection(clientId);
             final LocalDate undoBlockedOnDate = command.localDateValueOfParameterNamed(ClientApiConstants.undoBlockedOnDateParamName);
             final String undoBlockingComment = command.stringValueOfParameterNamed(ClientApiConstants.undoBlockingCommentParamName);
+
+            final Optional<BlockingReasonSetting> listasDeControlBlockingReason = manageBlockingReasonSettingsRepositoryWrapper
+                    .getBlockingReasonSettingByReason("LISTAS DE CONTROL", "CLIENT").stream().findFirst();
+
             if (ClientStatus.fromInt(client.getStatus()).isActive()) {
                 final String errorMessage = "Client is already active.";
                 throw new InvalidClientStateTransitionException("undoBlock", "is.already.active", errorMessage);
@@ -993,15 +1001,20 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
                         undoBlockedOnDate, client.getBlockedOnDate());
             }
 
-            List<ClientBlockingReason> clientBlockingReason = this.clientBlockingReasonRepositoryWrapper.findClientBlockingReason(clientId, client.getBlockingReason().getId());
-            if(clientBlockingReason.size() >= 1) {
-                for(ClientBlockingReason item : clientBlockingReason) {
+            List<ClientBlockingReason> clientBlockingReason = this.clientBlockingReasonRepositoryWrapper.findClientBlockingReason(clientId,
+                    client.getBlockingReason().getId());
+
+            if (clientBlockingReason.size() >= 1) {
+                for (ClientBlockingReason item : clientBlockingReason) {
                     item.updateAfterUnblock(undoBlockedOnDate, undoBlockingComment, currentUser.getId());
                     clientBlockingReasonRepositoryWrapper.save(item);
+                    removeClientFromListasDeControl(listasDeControlBlockingReason, item.getBlockingReasonId(), clientId);
                 }
             }
-            List<ClientBlockingReason> remainingClientBlockingReason = this.clientBlockingReasonRepositoryWrapper.findClientBlockingReasonByClientId(clientId);
-            if(remainingClientBlockingReason.size() == 0) {
+
+            List<ClientBlockingReason> remainingClientBlockingReason = this.clientBlockingReasonRepositoryWrapper
+                    .findClientBlockingReasonByClientId(clientId);
+            if (remainingClientBlockingReason.size() == 0) {
                 client.undoBlock(currentUser, undoBlockedOnDate, undoBlockingComment);
                 this.clientRepository.saveAndFlush(client);
             }
@@ -1228,4 +1241,18 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
                 .withEntityExternalId(client.getExternalId()) //
                 .build();
     }
+
+    private void removeClientFromListasDeControl(final Optional<BlockingReasonSetting> listasDeControlBlockingReason,
+            final Long blockingReasonId, final Long clientId) {
+
+        if (listasDeControlBlockingReason.isPresent() && listasDeControlBlockingReason.get().getId().equals(blockingReasonId)) {
+            Optional<ClientBlockList> clientBlockingListItem = this.clientBlockListRepository.findByClientId(clientId);
+
+            if (clientBlockingListItem.isPresent()) {
+                clientBlockListRepository.delete(clientBlockingListItem.get());
+            }
+        }
+
+    }
+
 }

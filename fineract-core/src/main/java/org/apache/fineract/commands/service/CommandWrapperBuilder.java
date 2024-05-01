@@ -736,7 +736,7 @@ public class CommandWrapperBuilder {
         return this;
     }
 
-    public CommandWrapperBuilder block(final Long clientId) {
+    public CommandWrapperBuilder blockClient(final Long clientId) {
         this.actionName = "BLOCK";
         this.entityName = "CLIENT";
         this.entityId = clientId;
@@ -745,7 +745,7 @@ public class CommandWrapperBuilder {
         return this;
     }
 
-    public CommandWrapperBuilder undoBlock(final Long clientId) {
+    public CommandWrapperBuilder undoBlockClient(final Long clientId) {
         this.actionName = "UNDOBLOCK";
         this.entityName = "CLIENT";
         this.entityId = clientId;

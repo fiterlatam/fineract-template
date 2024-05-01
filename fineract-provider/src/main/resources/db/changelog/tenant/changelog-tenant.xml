@@ -195,4 +195,5 @@
     <include file="parts/20240423000200_SU_71_c_custom_charge_type_CREATE.xml" relativeToChangelogFile="true"/>
     <include file="parts/20240423000300_SU_71_c_custom_charge_type_map_CREATE.xml" relativeToChangelogFile="true"/>
     <include file="parts/20240429100000_SU_25_m_client_blocking_reason_CREATE.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20240501150000_SU_32_m_client_block_list_create.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

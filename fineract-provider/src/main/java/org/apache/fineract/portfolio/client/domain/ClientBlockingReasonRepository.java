@@ -18,18 +18,19 @@
  */
 package org.apache.fineract.portfolio.client.domain;
 
+import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import java.util.List;
-
-public interface ClientBlockingReasonRepository extends JpaRepository<ClientBlockingReason, Long>, JpaSpecificationExecutor<ClientBlockingReason> {
+public interface ClientBlockingReasonRepository
+        extends JpaRepository<ClientBlockingReason, Long>, JpaSpecificationExecutor<ClientBlockingReason> {
 
     @Query("SELECT cbr FROM ClientBlockingReason cbr WHERE cbr.clientId = :clientId AND cbr.unblockDate IS NULL ")
     List<ClientBlockingReason> findByClientId(@Param("clientId") Long clientId);
 
     @Query("SELECT cbr FROM ClientBlockingReason cbr WHERE cbr.clientId = :clientId AND cbr.blockingReasonId = :blockingReasonId AND cbr.unblockDate IS NULL ")
-    List<ClientBlockingReason> findByClientIdAndBlockingReasonId(@Param("clientId") Long clientId, @Param("blockingReasonId") long blockingReasonId);
+    List<ClientBlockingReason> findByClientIdAndBlockingReasonId(@Param("clientId") Long clientId,
+            @Param("blockingReasonId") long blockingReasonId);
 }
