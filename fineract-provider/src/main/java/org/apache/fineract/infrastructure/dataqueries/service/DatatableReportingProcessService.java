@@ -19,13 +19,14 @@
 package org.apache.fineract.infrastructure.dataqueries.service;
 
 import java.io.File;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
-import javax.ws.rs.core.StreamingOutput;
 import org.apache.fineract.infrastructure.core.api.ApiParameterHelper;
 import org.apache.fineract.infrastructure.core.serialization.ToApiJsonSerializer;
 import org.apache.fineract.infrastructure.dataqueries.api.RunreportsApiResource;
@@ -60,17 +61,16 @@ public class DatatableReportingProcessService implements ReportingProcessService
         final boolean exportCsv = ApiParameterHelper.exportCsv(queryParams);
         final boolean exportPdf = ApiParameterHelper.exportPdf(queryParams);
         final String parameterTypeValue = ApiParameterHelper.parameterType(queryParams) ? "parameter" : "report";
-
+        final String fileName = reportName.replaceAll("[^a-zA-Z0-9.\\-]", "_") + "_"
+                + new SimpleDateFormat("yyyyMMddHHmmss").format(new Date());
         // PDF format
         if (exportPdf) {
             final Map<String, String> reportParams = getReportParams(queryParams);
             final String pdfFileName = this.readExtraDataAndReportingService.retrieveReportPDF(reportName, parameterTypeValue, reportParams,
                     isSelfServiceUserReport);
-
             final File file = new File(pdfFileName);
-
             final ResponseBuilder response = Response.ok(file);
-            response.header("Content-Disposition", "attachment; filename=\"" + pdfFileName + "\"");
+            response.header("Content-Disposition", "attachment; filename=\"" + fileName + ".pdf" + "\"");
             response.header("content-Type", "application/pdf");
 
             return response.build();
@@ -101,10 +101,10 @@ public class DatatableReportingProcessService implements ReportingProcessService
 
         // CSV format
         final Map<String, String> reportParams = getReportParams(queryParams);
-        final StreamingOutput result = this.readExtraDataAndReportingService.retrieveReportCSV(reportName, parameterTypeValue, reportParams,
+        String csvFilePath = this.readExtraDataAndReportingService.retrieveReportCSV(reportName, parameterTypeValue, reportParams,
                 isSelfServiceUserReport);
-
-        return Response.ok().entity(result).type("text/csv")
-                .header("Content-Disposition", "attachment;filename=" + reportName.replaceAll(" ", "") + ".csv").build();
+        final File file = new File(csvFilePath);
+        return Response.ok().entity(file).type("text/csv").header("Content-Disposition", "attachment;filename=" + fileName + ".csv")
+                .header("Content-Length", file.length()).build();
     }
 }

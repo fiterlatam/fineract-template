@@ -41,6 +41,7 @@ import org.apache.fineract.organisation.bankAccount.exception.BankAccountNotFoun
 import org.apache.fineract.organisation.bankcheque.data.BatchData;
 import org.apache.fineract.organisation.bankcheque.service.ChequeReadPlatformServiceImpl;
 import org.apache.fineract.organisation.office.service.OfficeReadPlatformService;
+import org.apache.fineract.useradministration.domain.AppUser;
 import org.apache.fineract.useradministration.service.AppUserReadPlatformService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
@@ -156,7 +157,7 @@ public class BankAccountReadPlatformServiceImpl implements BankAccountReadPlatfo
         return this.paginationHelper.fetchPage(this.jdbcTemplate, sqlBuilder.toString(), paramList.toArray(), bankAccountMapper);
     }
 
-    private static final class BankAccountMapper implements RowMapper<BankAccountData> {
+    public static final class BankAccountMapper implements RowMapper<BankAccountData> {
 
         private final String schema;
 
@@ -166,8 +167,11 @@ public class BankAccountReadPlatformServiceImpl implements BankAccountReadPlatfo
                     + "ba.bank_id as bankId, b.name as bankName, b.code as bankCode, ba.gl_account_id as glAccountId, gl.name as glAccountName, ba.description as description ");
 
             sqlBuilder.append("from m_bank_account ba ");
-            sqlBuilder.append("join m_agency a on a.id = ba.agency_id ");
             sqlBuilder.append("join m_bank b on b.id = ba.bank_id ");
+            sqlBuilder.append("join m_agency a on a.id = ba.agency_id ");
+            sqlBuilder.append(
+                    "LEFT JOIN(select agency_id, linked_office_id from m_supervision GROUP BY agency_id ) supv ON supv.agency_id = a.id ");
+            sqlBuilder.append("LEFT JOIN m_office mo on mo.id = supv.linked_office_id ");
             sqlBuilder.append("join acc_gl_account gl on gl.id = ba.gl_account_id ");
 
             this.schema = sqlBuilder.toString();
@@ -211,6 +215,8 @@ public class BankAccountReadPlatformServiceImpl implements BankAccountReadPlatfo
         final String bankName = searchParameters.getBankName();
         final String bankCode = searchParameters.getBankCode();
 
+        AppUser appUser = this.context.getAuthenticatedUserIfPresent();
+
         String extraCriteria = "";
         if (sqlSearch != null) {
             extraCriteria = " and (" + sqlSearch + ")";
@@ -220,6 +226,13 @@ public class BankAccountReadPlatformServiceImpl implements BankAccountReadPlatfo
         if (accountNumber != null) {
             paramList.add("%" + accountNumber + "%");
             extraCriteria += " or ba.account_number like ? ";
+        }
+
+        if (appUser != null) {
+
+            extraCriteria += " and (mo.hierarchy LIKE CONCAT(?, '%') OR ? like CONCAT(mo.hierarchy, '%')) ";
+            paramList.add(appUser.getOffice().getHierarchy());
+            paramList.add(appUser.getOffice().getHierarchy());
         }
 
         if (bankName != null) {

@@ -20,6 +20,7 @@ package org.apache.fineract.organisation.bankcheque.service;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import java.math.BigDecimal;
 import java.nio.charset.Charset;
 import java.sql.ResultSet;
@@ -144,6 +145,7 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
                     	mbc.is_reassigned AS reassinged,
                     	mbc.status_enum AS statusEnum,
                     	mbc.description AS description,
+                    	mbc.guarantee_deposit_no As depositNumber,
                     	mbc.guarantee_amount As guaranteeAmount,
                     	ml.approved_principal as loanAmount,
                         CASE
@@ -153,6 +155,7 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
                      	END as chequeAmount,
                     	mbc.case_id AS caseId,
                     	mbc.guarantee_id AS guaranteeId,
+                    	mbc.numero_cliente AS numeroCliente,
                     	mc.account_no AS clientNo,
                     	mc.display_name AS clientName,
                     	mbc.guarantee_name AS guaranteeName,
@@ -170,6 +173,7 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
                     	mbc.created_date AS createdDate,
                     	mbc.usedon_date AS usedOnDate,
                     	mbc.printed_date AS printedDate,
+                    	aga.id AS glAccountId,
                     	mbc.void_authorized_date AS voidAuthorizedDate,
                     	voidedby.username AS voidedByUsername,
                     	createdby.username AS createdByUsername,
@@ -182,8 +186,11 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
                     LEFT JOIN m_group mpg ON mpg.id = mg.parent_id
                     LEFT JOIN m_payment_batch mpb ON mpb.id = mbc.batch_id
                     LEFT JOIN m_bank_account mba ON mba.id = mpb.bank_acc_id
+                    LEFT JOIN acc_gl_account aga ON aga.id = mba.gl_account_id
                     LEFT JOIN m_bank mb ON mb.id = mba.bank_id
                     LEFT JOIN m_agency mag ON mag.id = mba.agency_id
+                    LEFT JOIN(select agency_id, linked_office_id from m_supervision GROUP BY agency_id ) supv ON supv.agency_id = mag.id
+                    LEFT JOIN m_office mo on mo.id = supv.linked_office_id
                     LEFT JOIN m_appuser voidedby ON voidedby.id = mbc.voidedby_id
                     LEFT JOIN m_appuser createdby ON createdby.id = mbc.createdby_id
                     LEFT JOIN m_appuser printedby ON printedby.id = mbc.printedby_id
@@ -212,6 +219,7 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
             final String bankAccNo = rs.getString("bankAccNo");
             final Long bankAccId = JdbcSupport.getLong(rs, "bankAccId");
             final Long agencyId = JdbcSupport.getLong(rs, "agencyId");
+            final Long glAccountId = JdbcSupport.getLong(rs, "glAccountId");
             final String agencyName = rs.getString("agencyName");
             final String caseId = rs.getString("caseId");
             final String bankName = rs.getString("bankName");
@@ -225,6 +233,7 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
             final String printedByUsername = rs.getString("printedByUsername");
             final String voidAuthorizedByUsername = rs.getString("voidAuthorizedByUsername");
             final String lastModifiedByUsername = rs.getString("lastModifiedByUsername");
+            final String depositNumber = rs.getString("depositNumber");
             final Boolean reassinged = rs.getBoolean("reassinged");
             String clientName = rs.getString("clientName");
             final String guaranteeName = rs.getString("guaranteeName");
@@ -236,6 +245,7 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
             final String loanAccNo = rs.getString("loanAccNo");
             final Long loanAccId = JdbcSupport.getLong(rs, "loanAccId");
             final String groupNo = rs.getString("groupNo");
+            final String numeroCliente = rs.getString("numeroCliente");
             final BigDecimal loanAmount = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "loanAmount");
             final BigDecimal guaranteeAmount = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "guaranteeAmount");
             final BigDecimal chequeAmount = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "chequeAmount");
@@ -246,8 +256,8 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
                     .printedByUsername(printedByUsername).voidAuthorizedByUsername(voidAuthorizedByUsername)
                     .lastModifiedByUsername(lastModifiedByUsername).clientName(clientName).clientNo(clientNo).groupName(groupName)
                     .loanAccNo(loanAccNo).loanAmount(loanAmount).guaranteeAmount(guaranteeAmount).groupNo(groupNo).guaranteeId(guaranteeId)
-                    .caseId(caseId).chequeAmount(chequeAmount).agencyId(agencyId).loanAccId(loanAccId)
-                    .reassingedCheque(Boolean.valueOf(reassinged)).build();
+                    .caseId(caseId).chequeAmount(chequeAmount).agencyId(agencyId).loanAccId(loanAccId).reassingedCheque(reassinged)
+                    .depositNumber(depositNumber).numeroCliente(numeroCliente).glAccountId(glAccountId).build();
 
         }
     }
@@ -327,6 +337,7 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
         final Long to = chequeSearchParams.getTo();
         final Long groupId = chequeSearchParams.getGroupId();
         final Long centerId = chequeSearchParams.getCenterId();
+
         if (batchId != null) {
             extraCriteria.addNonNullCriteria("mpb.id = ", batchId);
         }
@@ -361,11 +372,16 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
             extraCriteria.addNonNullCriteria("mpg.id = ", centerId);
         }
 
-        sqlBuilder.append(" ").append(extraCriteria.getSQLTemplate());
+        String sqlTemplate = extraCriteria.getSQLTemplate();
+        sqlBuilder.append(" ").append(sqlTemplate);
         final Collection<AgencyData> agencyOptions = this.agencyReadPlatformService.retrieveAllByUser();
         final Set<Long> agencyIds = agencyOptions.stream().map(AgencyData::getId).collect(Collectors.toSet());
         final String agencyIdParams = StringUtils.join(agencyIds, ", ");
-        sqlBuilder.append(" AND mba.agency_id IN ( ").append(agencyIdParams).append(")");
+        if (sqlTemplate.isBlank()) {
+            sqlBuilder.append(" WHERE mba.agency_id IN ( ").append(agencyIdParams).append(")");
+        } else {
+            sqlBuilder.append(" AND mba.agency_id IN ( ").append(agencyIdParams).append(")");
+        }
         if (chequeSearchParams.getOrderBy() != null) {
             sqlBuilder.append(" order by ").append(chequeSearchParams.getOrderBy()).append(' ').append(chequeSearchParams.getSortOrder());
             this.columnValidator.validateSqlInjection(sqlBuilder.toString(), chequeSearchParams.getOrderBy(),
@@ -380,6 +396,12 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
         }
         return this.paginationHelper.fetchPage(this.jdbcTemplate, sqlBuilder.toString(), extraCriteria.getArguments(), this.chequeMapper);
 
+    }
+
+    @Override
+    public ChequeData retrieveChequeById(final Long chequeId) {
+        final String query = "SELECT " + this.chequeMapper.schema() + " WHERE mbc.id = ? ";
+        return this.jdbcTemplate.queryForObject(query, this.chequeMapper, chequeId);
     }
 
     @Override
@@ -418,32 +440,26 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
                 JsonArray jsonArray = jsonElement.getAsJsonArray();
                 for (int i = 0; i < jsonArray.size(); i++) {
                     final JsonElement element = jsonArray.get(i);
+
                     final Long id = this.fromApiJsonHelper.extractLongNamed("id", element);
                     final String status = ObjectUtils.defaultIfNull(this.fromApiJsonHelper.extractStringNamed("estado", element),
                             "Nueva Solicitud");
                     final JsonElement data = this.fromApiJsonHelper.extractJsonObjectNamed("datos", element);
-                    final String clientNo = this.fromApiJsonHelper.extractStringNamed("numero_cliente", data);
-                    final String clientName = this.fromApiJsonHelper.extractStringNamed("name", data);
-                    final String withdrawalReason = this.fromApiJsonHelper.extractStringNamed("razon_retiro", data);
-                    final BigDecimal requestedAmount = this.fromApiJsonHelper.extractBigDecimalNamed("monto", data, reqLocale);
+
+                    JsonObject asJsonObject = data.getAsJsonObject();
+                    asJsonObject.addProperty("locale", locale);
+                    JsonElement withLocale = this.fromApiJsonHelper.parse(asJsonObject.toString());
+
+                    final String clientNo = this.fromApiJsonHelper.extractStringNamed("numero_cliente", withLocale);
+                    final String clientName = this.fromApiJsonHelper.extractStringNamed("name", withLocale);
+                    final String withdrawalReason = this.fromApiJsonHelper.extractStringNamed("razon_retiro", withLocale);
+                    final BigDecimal requestedAmount = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed("monto", withLocale);
+                    final String requestedAmountString = String.valueOf(requestedAmount);
                     final GuaranteeData guarantee = GuaranteeData.builder().id(id).caseId(caseId).clientNo(clientNo).clientName(clientName)
-                            .withdrawalReason(withdrawalReason).requestedAmount(requestedAmount).status(status).build();
+                            .withdrawalReason(withdrawalReason).requestedAmount(requestedAmountString).status(status).build();
                     guaranteeDataList.add(guarantee);
                 }
             }
-        }
-
-        final String query = "SELECT " + this.chequeMapper.schema() + " WHERE mbc.case_id = ? ";
-        List<ChequeData> chequeDataList = this.jdbcTemplate.query(query, this.chequeMapper, caseId);
-        int index = 0;
-        for (final GuaranteeData data : List.copyOf(guaranteeDataList)) {
-            for (final ChequeData chequeData : chequeDataList) {
-                if (!(chequeData.getStatus().getId().equals(BankChequeStatus.VOIDED.getValue().longValue())
-                        && chequeData.getGuaranteeId().equals(data.getId()))) {
-                    guaranteeDataList.remove(index);
-                }
-            }
-            index++;
         }
         return guaranteeDataList;
     }

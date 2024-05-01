@@ -33,7 +33,6 @@ import javax.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuilder;
@@ -70,6 +69,7 @@ import org.apache.fineract.useradministration.domain.AppUser;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
@@ -323,10 +323,22 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
         final String clientId = String.valueOf(clientData.getClientId());
         final String reportName = Policies.THREE.getName() + " Policy Check";
         final String productId = Long.toString(clientData.getProductId());
+        final Long loanId = clientData.getLoanId();
+        final String percentageIncreaseSQL = """
+                SELECT
+                CASE WHEN (mlag.current_credit_value <= 0) THEN 0
+                     ELSE ((mlag.requested_value/mlag.current_credit_value) - 1) * 100
+                END AS percentageIncrease
+                FROM m_loan_additionals_group mlag
+                INNER JOIN m_loan ml ON ml.id = mlag.loan_id
+                WHERE ml.id = ?
+                """;
+        final Object[] params = new Object[] { loanId };
+        final BigDecimal percentageIncrease = this.jdbcTemplate.queryForObject(percentageIncreaseSQL, BigDecimal.class, params);
         final Map<String, String> reportParams = new HashMap<>();
         reportParams.put("${clientId}", clientId);
         reportParams.put("${loanProductId}", productId);
-        reportParams.put("${requestedAmount}", String.valueOf(clientData.getRequestedAmount()));
+        reportParams.put("${percentageIncrease}", String.valueOf(percentageIncrease));
         final GenericResultsetData result = this.readReportingService.retrieveGenericResultset(reportName, "report", reportParams, false);
         return extractColorFromResultset(result);
     }
@@ -339,18 +351,48 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
         final String reportName = Policies.FOUR.getName() + " Policy Check";
         final String productId = Long.toString(clientData.getProductId());
         final Long loanId = clientData.getLoanId();
-        final String documentCountSql = """
+        final String firstDocumentCountSql = """
                         SELECT COUNT(*)
                         FROM m_document md
                         LEFT JOIN m_code_value mcvd ON md.document_type = mcvd.id
                         WHERE md.parent_entity_type = 'loans' AND md.parent_entity_id = ? AND (md.name = ? OR mcvd.code_value = ?)
                 """;
-        Object[] params = new Object[] { loanId, "Plan de inversión", "Plan de inversión" };
-        final Long documentCount = this.jdbcTemplate.queryForObject(documentCountSql, Long.class, params);
+        Object[] firstDocumentParams = new Object[] { loanId, "Plan de inversión", "Plan de inversión" };
+        final Long firstDocumentCount = ObjectUtils
+                .defaultIfNull(this.jdbcTemplate.queryForObject(firstDocumentCountSql, Long.class, firstDocumentParams), 0L);
+        final String secondDocumentCountSql = """
+                        SELECT COUNT(*)
+                        FROM m_document md
+                        LEFT JOIN m_code_value mcvd ON md.document_type = mcvd.id
+                        WHERE md.parent_entity_type = 'loans' AND md.parent_entity_id = ? AND (md.name = ? OR mcvd.code_value = ?)
+                """;
+        Object[] secondDocumentParams = new Object[] { loanId, "Fotografias", "Fotografias" };
+        final Long secondDocumentCount = ObjectUtils
+                .defaultIfNull(this.jdbcTemplate.queryForObject(secondDocumentCountSql, Long.class, secondDocumentParams), 0L);
+        final String percentageIncreaseSQL = """
+                SELECT
+                CASE WHEN (mlag.current_credit_value <= 0) THEN 0
+                     ELSE ((mlag.requested_value/mlag.current_credit_value) - 1) * 100
+                END AS percentageIncrease
+                FROM m_loan_additionals_group mlag
+                INNER JOIN m_loan ml ON ml.id = mlag.loan_id
+                WHERE ml.id = ?
+                """;
+        Object[] params = new Object[] { loanId };
+
+        BigDecimal percentageIncrease;
+        try {
+            percentageIncrease = ObjectUtils
+                    .defaultIfNull(this.jdbcTemplate.queryForObject(percentageIncreaseSQL, BigDecimal.class, params), BigDecimal.ZERO);
+        } catch (EmptyResultDataAccessException e) {
+            percentageIncrease = BigDecimal.ZERO;
+        }
         final Map<String, String> reportParams = new HashMap<>();
         reportParams.put("${clientId}", clientId);
         reportParams.put("${loanProductId}", productId);
-        reportParams.put("${numberOfDocuments}", String.valueOf(documentCount));
+        reportParams.put("${numberOfFirstDocument}", Long.toString(firstDocumentCount));
+        reportParams.put("${numberOfSecondDocument}", Long.toString(secondDocumentCount));
+        reportParams.put("${percentageIncrease}", String.valueOf(percentageIncrease));
         final GenericResultsetData result = this.readReportingService.retrieveGenericResultset(reportName, "report", reportParams, false);
         return extractColorFromResultset(result);
     }
@@ -657,6 +699,7 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
         reportParams.put("${clientId}", clientId);
         reportParams.put("${loanProductId}", productId);
         reportParams.put("${numberOfDocuments}", String.valueOf(documentCount));
+        reportParams.put("${requestedAmount}", String.valueOf(clientData.getRequestedAmount()));
         final GenericResultsetData result = this.readReportingService.retrieveGenericResultset(reportName, "report", reportParams, false);
         return extractColorFromResultset(result);
     }
@@ -843,8 +886,7 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
         int yearsInBusiness = 0;
         if (!CollectionUtils.isEmpty(loanAdditionPropertiesList)) {
             final LoanAdditionProperties loanAdditionProperties = loanAdditionPropertiesList.get(0);
-            String antiguedadNegocio = ObjectUtils.defaultIfNull(loanAdditionProperties.getAntiguedadNegocio(), "");
-            yearsInBusiness = NumberUtils.toInt(antiguedadNegocio.replaceAll("[^0-9]", ""));
+            yearsInBusiness = ObjectUtils.defaultIfNull(loanAdditionProperties.getAniosDeActividadNegocio(), 0);
         }
         final Map<String, String> reportParams = new HashMap<>();
         reportParams.put("${clientId}", clientId);
@@ -925,7 +967,8 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
         reportParams.put("${prequalificationId}", prequalificationId);
         reportParams.put("${loanProductId}", productId);
         reportParams.put("${clientArea}", clientArea);
-        reportParams.put("${clientsRatio}", clientsRatio);
+        reportParams.put("${newMembersCount}", String.valueOf(newMembersCount));
+        reportParams.put("${recurringMembersCount}", String.valueOf(recurringMembersCount));
         final GenericResultsetData result = this.readReportingService.retrieveGenericResultset(reportName, "report", reportParams, false);
         return extractColorFromResultset(result);
     }

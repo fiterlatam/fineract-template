@@ -34,6 +34,7 @@ public class ChequeData {
     private Long batchNo;
     private String bankAccNo;
     private Long bankAccId;
+    private Long glAccountId;
     private Long agencyId;
     private String agencyName;
     private String bankName;
@@ -61,4 +62,6 @@ public class ChequeData {
     private Long guaranteeId;
     private BigDecimal chequeAmount;
     private Boolean reassingedCheque;
+    private String depositNumber;
+    private String numeroCliente;
 }

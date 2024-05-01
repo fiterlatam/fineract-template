@@ -2529,4 +2529,33 @@
                 splitStatements="true"
                 stripComments="true"/>
     </changeSet>
+
+    <changeSet author="fineract" id="208">
+        <preConditions onFail="MARK_RAN">
+            <columnExists tableName="m_client_loan_additional_properties" columnName="observaciones"/>
+        </preConditions>
+        <modifyDataType tableName="m_client_loan_additional_properties" columnName="observaciones" newDataType="LONGTEXT"/>
+    </changeSet>
+
+    <changeSet id="209" author="fineract">
+        <sql>
+            <![CDATA[
+                UPDATE stretchy_report SET report_sql = "SELECT
+                prequalification_details.recreditCategorization,
+                CASE
+                WHEN (${loanProductId} = 4) AND (prequalification_details.recreditCategorization = 'RECREDITO') AND ('${clientArea}' = 'URBAN') AND (${recurringMembersCount} >= (${newMembersCount}*3)) THEN 'GREEN'
+                WHEN (${loanProductId} = 4) AND (prequalification_details.recreditCategorization = 'RECREDITO') AND ('${clientArea}' = 'RURAL') AND (${recurringMembersCount} >= (${newMembersCount}*3)) THEN 'GREEN'
+                END AS color
+                FROM m_prequalification_group mpg
+                LEFT JOIN (
+                SELECT p.id AS prequalification_id,
+                (CASE WHEN p.previous_prequalification IS NULL THEN 'RECREDITO' ELSE 'NUEVO' END) AS recreditCategorization
+                FROM m_prequalification_group p
+                )prequalification_details ON prequalification_details.prequalification_id = mpg.id
+                WHERE mpg.id = ${prequalificationId}"
+                WHERE report_name = "Acceptance of new clients Policy Check";
+
+            ]]>
+        </sql>
+    </changeSet>
 </databaseChangeLog>

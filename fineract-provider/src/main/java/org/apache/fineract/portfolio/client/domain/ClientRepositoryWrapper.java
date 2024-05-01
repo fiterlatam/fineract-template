@@ -97,6 +97,14 @@ public class ClientRepositoryWrapper {
         return client;
     }
 
+    public Client getClientByExternalId(final String externalId) {
+        Client client = this.repository.getClientByExternalId(externalId);
+        if (client == null) {
+            throw new ClientNotFoundException(externalId);
+        }
+        return client;
+    }
+
     public Client getClientByDpiNumber(String dpi) {
         Client client = this.repository.getClientByDpiNumber(dpi);
         if (client != null) {

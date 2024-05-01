@@ -71,8 +71,8 @@ public final class CalculateLoanScheduleQueryFromApiJsonHelper {
             LoanApiConstants.datatables, LoanApiConstants.isEqualAmortizationParam, LoanProductConstants.RATES_PARAM_NAME,
             LoanApiConstants.daysInYearTypeParameterName, LoanApiConstants.fixedPrincipalPercentagePerInstallmentParamName,
             LoanApiConstants.cupoIdParameterName, LoanApiConstants.PREQUALIFICATION_ID, LoanApiConstants.CASE_ID,
-            LoanApiConstants.LOAN_ADDITIONAL_DATA, LoanApiConstants.loanCycleCompletedParamName, LoanApiConstants.rentMortgageFeeParamName,
-            LoanApiConstants.monthlyIncomeParamName, LoanApiConstants.familyExpensesParamName,
+            LoanApiConstants.LOAN_ADDITIONAL_DATA, LoanApiConstants.loanCycleCompletedParamName, LoanApiConstants.rentFeeParamName,
+            LoanApiConstants.mortgageFeeParamName, LoanApiConstants.monthlyIncomeParamName, LoanApiConstants.familyExpensesParamName,
             LoanApiConstants.totalExternalLoanAmountParamName, LoanApiConstants.totalInstallmentsParamName,
             LoanApiConstants.clientTypeParamName, LoanApiConstants.houseHoldGoodsParamName, LoanApiConstants.businessActivitiesParamName,
             LoanApiConstants.businessLocationParamName, LoanApiConstants.businessExperienceParamName, LoanApiConstants.salesValueParamName,
@@ -162,8 +162,8 @@ public final class CalculateLoanScheduleQueryFromApiJsonHelper {
     }
 
     public void validateSelectedPeriodFrequencyTypeIsTheSame(final List<ApiParameterError> dataValidationErrors,
-                                                             final Integer loanTermFrequency, final Integer loanTermFrequencyType, final Integer numberOfRepayments,
-                                                             final Integer repaymentEvery, final Integer repaymentEveryType) {
+            final Integer loanTermFrequency, final Integer loanTermFrequencyType, final Integer numberOfRepayments,
+            final Integer repaymentEvery, final Integer repaymentEveryType) {
         if (loanTermFrequencyType != null && !loanTermFrequencyType.equals(repaymentEveryType)) {
             final ApiParameterError error = ApiParameterError.parameterError(
                     "validation.msg.loan.loanTermFrequencyType.not.the.same.as.repaymentFrequencyType",
@@ -194,7 +194,7 @@ public final class CalculateLoanScheduleQueryFromApiJsonHelper {
     }
 
     private void validateRepaymentsStartingFromDateIsAfterDisbursementDate(final List<ApiParameterError> dataValidationErrors,
-                                                                           final LocalDate expectedDisbursementDate, final LocalDate repaymentsStartingFromDate) {
+            final LocalDate expectedDisbursementDate, final LocalDate repaymentsStartingFromDate) {
         if (expectedDisbursementDate != null) {
             if (repaymentsStartingFromDate != null && expectedDisbursementDate.isAfter(repaymentsStartingFromDate)) {
                 final ApiParameterError error = ApiParameterError.parameterError(

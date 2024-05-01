@@ -129,7 +129,7 @@ public final class SearchParameters {
 
     public static SearchParameters forPrequalification(final String displayName, final String status, final Integer offset,
             final Integer limit, final String orderBy, final String sortOrder, final String type, String searchText,
-            final String groupingType) {
+            final String groupingType, Long portfolioCenterId) {
 
         final Integer maxLimitAllowed = getCheckedLimit(limit);
         final Long staffId = null;
@@ -138,7 +138,8 @@ public final class SearchParameters {
         final Long savingsId = null;
 
         return new SearchParameters(searchText, null, null, displayName, null, null, null, status, offset, maxLimitAllowed, orderBy,
-                sortOrder, staffId, accountNo, loanId, savingsId, null, false, null, type, null, null, null, groupingType);
+                sortOrder, staffId, accountNo, loanId, savingsId, null, false, null, type, null, null, null, groupingType,
+                portfolioCenterId);
     }
 
     public static SearchParameters forBankCheques(final Long agencyId, final String chequeNo, final String bankAccNo, final Long batchId,
@@ -620,7 +621,8 @@ public final class SearchParameters {
             final String hierarchy, final String firstname, final String lastname, final String status, final Integer offset,
             final Integer limit, final String orderBy, final String sortOrder, final Long staffId, final String accountNo,
             final Long loanId, final Long savingsId, final Boolean orphansOnly, boolean isSelfUser, final String dpiNumber,
-            final String type, final String groupName, final String groupNumber, final String centerName, final String groupingType) {
+            final String type, final String groupName, final String groupNumber, final String centerName, final String groupingType,
+            Long portfolioCenterId) {
         this.sqlSearch = sqlSearch;
         this.officeId = officeId;
         this.externalId = externalId;
@@ -660,7 +662,7 @@ public final class SearchParameters {
         this.agencyId = null;
         this.clientNo = null;
         this.groupId = null;
-        this.centerId = null;
+        this.centerId = portfolioCenterId;
         this.facilitatorId = null;
         this.isIndividualBusinessLoan = null;
         this.groupingType = groupingType;

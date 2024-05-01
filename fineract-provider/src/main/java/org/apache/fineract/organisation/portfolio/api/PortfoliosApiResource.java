@@ -95,9 +95,9 @@ public class PortfoliosApiResource {
 
     @GET
     @Produces({ MediaType.APPLICATION_JSON })
-    public String retrieveAll() {
+    public String retrieveAll(@QueryParam("name") @Parameter(description = "name") final String name) {
         this.context.authenticatedUser().validateHasReadPermission(PortfolioConstants.PORTFOLIO_RESOURCE_NAME);
-        Collection<PortfolioData> portfolios = this.readPlatformService.retrieveAllByUser();
+        Collection<PortfolioData> portfolios = this.readPlatformService.retrieveAllByUser(name);
         return this.toApiJsonSerializer.serialize(portfolios);
     }
 

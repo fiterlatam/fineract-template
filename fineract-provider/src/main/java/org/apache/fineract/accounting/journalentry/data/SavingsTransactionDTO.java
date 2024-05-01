@@ -31,6 +31,7 @@ public class SavingsTransactionDTO {
 
     private final Long officeId;
     private final Long paymentTypeId;
+    private final Long savingsReferenceGlAccountId;
     private final String transactionId;
     private final LocalDate transactionDate;
     private final SavingsAccountTransactionEnumData transactionType;

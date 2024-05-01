@@ -112,7 +112,7 @@ public interface SavingsAccountWritePlatformService {
 
     CommandProcessingResult unblockDebits(Long savingsId);
 
-    CommandProcessingResult releaseAmount(Long savingsId, Long transactionId);
+    CommandProcessingResult releaseAmount(Long savingsId, Long transactionId, LocalDate transactionDate);
 
     CommandProcessingResult gsimActivate(Long gsimId, JsonCommand command);
 
@@ -121,7 +121,8 @@ public interface SavingsAccountWritePlatformService {
     CommandProcessingResult bulkGSIMClose(Long gsimId, JsonCommand command);
 
     CommandProcessingResult depositAndHoldToClientGuaranteeAccount(BigDecimal depositAmount, BigDecimal requiredGuaranteeAmount,
-            Long clientId, Long loanId, LocalDate transactionDate);
+            Long clientId, Long loanId, LocalDate transactionDate, Long chequeId, JsonCommand command);
 
-    CommandProcessingResult releaseLoanGuarantee(Long loanId, JsonCommand command);
+    CommandProcessingResult releaseLoanGuarantee(Long loanId, JsonCommand command, LocalDate transactionDate,
+            SavingsAccountTransaction holdTransaction);
 }

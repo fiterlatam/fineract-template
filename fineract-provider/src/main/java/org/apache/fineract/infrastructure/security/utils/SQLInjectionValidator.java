@@ -35,7 +35,7 @@ public final class SQLInjectionValidator {
 
     private static final String[] COMMENTS = { "--", "({", "/*", "#" };
 
-    private static final String SQL_PATTERN = "[a-zA-Z_=,\\-'!><.?\"`% ()0-9*\n\r]*";
+    private static final String SQL_PATTERN = "[a-zA-ZÀ-ÿ_=,\\-'!><.?\"`% ()0-9*\n\r]*";
 
     public static void validateSQLInput(final String sqlSearch) {
         if (StringUtils.isBlank(sqlSearch)) {
@@ -43,7 +43,7 @@ public final class SQLInjectionValidator {
         }
         String lowerCaseSQL = sqlSearch.toLowerCase();
         for (String ddl : DDL_COMMANDS) {
-            if (lowerCaseSQL.contains(ddl)) {
+            if (ddl.equals(lowerCaseSQL)) {
                 throw new SQLInjectionException();
             }
         }

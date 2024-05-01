@@ -56,6 +56,7 @@ import org.apache.fineract.portfolio.loanproduct.domain.AmortizationMethod;
 import org.apache.fineract.portfolio.loanproduct.domain.InterestCalculationPeriodMethod;
 import org.apache.fineract.portfolio.loanproduct.domain.InterestMethod;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProduct;
+import org.apache.fineract.portfolio.loanproduct.domain.LoanProductOwnerType;
 import org.apache.fineract.portfolio.loanproduct.exception.EqualAmortizationUnsupportedFeatureException;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccount;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -98,7 +99,7 @@ public final class LoanApplicationCommandFromApiJsonHelper {
             LoanApiConstants.applicationId, // glim specific
             LoanApiConstants.lastApplication, // glim specific
             LoanApiConstants.daysInYearTypeParameterName, LoanApiConstants.fixedPrincipalPercentagePerInstallmentParamName,
-            LoanApiConstants.loanCycleCompletedParamName, LoanApiConstants.rentMortgageFeeParamName,
+            LoanApiConstants.loanCycleCompletedParamName, LoanApiConstants.mortgageFeeParamName, LoanApiConstants.rentFeeParamName,
             LoanApiConstants.monthlyIncomeParamName, LoanApiConstants.familyExpensesParamName,
             LoanApiConstants.totalExternalLoanAmountParamName, LoanApiConstants.totalInstallmentsParamName,
             LoanApiConstants.clientTypeParamName, LoanApiConstants.houseHoldGoodsParamName, LoanApiConstants.businessActivitiesParamName,
@@ -126,7 +127,7 @@ public final class LoanApplicationCommandFromApiJsonHelper {
             LoanApiConstants.paymentCapacityParamName, LoanApiConstants.facilitatorParamName, LoanApiConstants.maidenNameParamName,
             LoanApiConstants.politicallyExposedParamName, LoanApiConstants.otherIncomeParamName, LoanApiConstants.currentLoansParamName,
             LoanApiConstants.dateOfBirthParamName, LoanApiConstants.businessActivityParamName, LoanApiConstants.LOAN_ADDITIONAL_DATA,
-            "borrowerCycle", "isBulkImport"));
+            "borrowerCycle", "isBulkImport", "isRestructuredLoan"));
 
     private final FromJsonHelper fromApiJsonHelper;
     private final CalculateLoanScheduleQueryFromApiJsonHelper apiJsonHelper;
@@ -134,8 +135,8 @@ public final class LoanApplicationCommandFromApiJsonHelper {
 
     @Autowired
     public LoanApplicationCommandFromApiJsonHelper(final FromJsonHelper fromApiJsonHelper,
-                                                   final CalculateLoanScheduleQueryFromApiJsonHelper apiJsonHelper,
-                                                   final ClientCollateralManagementRepositoryWrapper clientCollateralManagementRepositoryWrapper) {
+            final CalculateLoanScheduleQueryFromApiJsonHelper apiJsonHelper,
+            final ClientCollateralManagementRepositoryWrapper clientCollateralManagementRepositoryWrapper) {
         this.fromApiJsonHelper = fromApiJsonHelper;
         this.apiJsonHelper = apiJsonHelper;
         this.clientCollateralManagementRepositoryWrapper = clientCollateralManagementRepositoryWrapper;
@@ -262,6 +263,23 @@ public final class LoanApplicationCommandFromApiJsonHelper {
         final BigDecimal principal = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed("principal", element);
         baseDataValidator.reset().parameter("principal").value(principal).notNull().positiveAmount();
 
+        final Boolean isBulkImport = this.fromApiJsonHelper.extractBooleanNamed("isBulkImport", element);
+        if ((isBulkImport == null || !isBulkImport) && loanProduct.getOwnerType().equals(LoanProductOwnerType.GROUP.getValue())) {
+            final Long loanCycleCompleted = this.fromApiJsonHelper.extractLongNamed(LoanApiConstants.loanCycleCompletedParamName, element);
+            baseDataValidator.reset().parameter(LoanApiConstants.loanCycleCompletedParamName).value(loanCycleCompleted).notNull();
+
+            final Long sourceOfFunds = this.fromApiJsonHelper.extractLongNamed(LoanApiConstants.sourceOfFundsParamName, element);
+            baseDataValidator.reset().parameter(LoanApiConstants.sourceOfFundsParamName).value(sourceOfFunds).notNull();
+
+            final Long position = this.fromApiJsonHelper.extractLongNamed(LoanApiConstants.positionParamName, element);
+            baseDataValidator.reset().parameter(LoanApiConstants.positionParamName).value(position).notNull();
+
+            final Long facilitator = this.fromApiJsonHelper.extractLongNamed(LoanApiConstants.facilitatorParamName, element);
+            baseDataValidator.reset().parameter(LoanApiConstants.facilitatorParamName).value(facilitator).notNull();
+
+            final Long clientType = this.fromApiJsonHelper.extractLongNamed(LoanApiConstants.clientTypeParamName, element);
+            baseDataValidator.reset().parameter(LoanApiConstants.clientTypeParamName).value(clientType).notNull();
+        }
         final String loanTermFrequencyParameterName = "loanTermFrequency";
         final Integer loanTermFrequency = this.fromApiJsonHelper.extractIntegerWithLocaleNamed(loanTermFrequencyParameterName, element);
         baseDataValidator.reset().parameter(loanTermFrequencyParameterName).value(loanTermFrequency).notNull().integerGreaterThanZero();
@@ -1125,7 +1143,7 @@ public final class LoanApplicationCommandFromApiJsonHelper {
     }
 
     public void validateLoanTermAndRepaidEveryValues(final Integer loanTermFrequency, final Integer loanTermFrequencyType,
-                                                     final Integer numberOfRepayments, final Integer repaymentEvery, final Integer repaymentEveryType, final Loan loan) {
+            final Integer numberOfRepayments, final Integer repaymentEvery, final Integer repaymentEveryType, final Loan loan) {
         final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
         this.apiJsonHelper.validateSelectedPeriodFrequencyTypeIsTheSame(dataValidationErrors, loanTermFrequency, loanTermFrequencyType,
                 numberOfRepayments, repaymentEvery, repaymentEveryType);
@@ -1314,7 +1332,7 @@ public final class LoanApplicationCommandFromApiJsonHelper {
     }
 
     public void validateLoanMultiDisbursementDate(final JsonElement element, final DataValidatorBuilder baseDataValidator,
-                                                  LocalDate expectedDisbursement, BigDecimal totalPrincipal) {
+            LocalDate expectedDisbursement, BigDecimal totalPrincipal) {
 
         this.validateDisbursementsAreDatewiseOrdered(element, baseDataValidator);
 
@@ -1396,22 +1414,22 @@ public final class LoanApplicationCommandFromApiJsonHelper {
                         errorcode = "installment." + LoanApiConstants.LOAN_CHARGE_CAN_NOT_BE_ADDED_WITH_PRINCIPAL_CALCULATION_TYPE;
 
                     }
-                    break;
+                break;
                 case PERCENT_OF_AMOUNT_AND_INTEREST:
                     if (loanCharge.isInstalmentFee()) {
                         errorcode = "installment." + LoanApiConstants.LOAN_CHARGE_CAN_NOT_BE_ADDED_WITH_PRINCIPAL_CALCULATION_TYPE;
                     } else if (loanCharge.isSpecifiedDueDate()) {
                         errorcode = "specific." + LoanApiConstants.LOAN_CHARGE_CAN_NOT_BE_ADDED_WITH_INTEREST_CALCULATION_TYPE;
                     }
-                    break;
+                break;
                 case PERCENT_OF_INTEREST:
                     if (loanCharge.isSpecifiedDueDate()) {
                         errorcode = "specific." + LoanApiConstants.LOAN_CHARGE_CAN_NOT_BE_ADDED_WITH_INTEREST_CALCULATION_TYPE;
                     }
-                    break;
+                break;
 
                 default:
-                    break;
+                break;
             }
             if (errorcode != null) {
                 baseDataValidator.reset().parameter("charges").failWithCode(errorcode);
@@ -1443,7 +1461,7 @@ public final class LoanApplicationCommandFromApiJsonHelper {
     }
 
     private void validatePartialPeriodSupport(final Integer interestCalculationPeriodType, final DataValidatorBuilder baseDataValidator,
-                                              final JsonElement element, final LoanProduct loanProduct) {
+            final JsonElement element, final LoanProduct loanProduct) {
         if (interestCalculationPeriodType != null) {
             final InterestCalculationPeriodMethod interestCalculationPeriodMethod = InterestCalculationPeriodMethod
                     .fromInt(interestCalculationPeriodType);

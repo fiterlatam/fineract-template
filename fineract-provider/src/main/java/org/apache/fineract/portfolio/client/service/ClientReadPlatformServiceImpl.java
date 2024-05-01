@@ -29,6 +29,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 import org.apache.fineract.infrastructure.codes.service.CodeValueReadPlatformService;
@@ -40,13 +41,13 @@ import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
 import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidationException;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.core.service.Page;
-import org.apache.fineract.infrastructure.core.service.PaginationHelper;
 import org.apache.fineract.infrastructure.core.service.SearchParameters;
 import org.apache.fineract.infrastructure.core.service.database.DatabaseSpecificSQLGenerator;
 import org.apache.fineract.infrastructure.dataqueries.data.DatatableData;
 import org.apache.fineract.infrastructure.dataqueries.data.EntityTables;
 import org.apache.fineract.infrastructure.dataqueries.data.StatusEnum;
 import org.apache.fineract.infrastructure.dataqueries.service.EntityDatatableChecksReadService;
+import org.apache.fineract.infrastructure.dataqueries.service.GenericDataService;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.infrastructure.security.utils.ColumnValidator;
 import org.apache.fineract.organisation.office.data.OfficeData;
@@ -65,7 +66,6 @@ import org.apache.fineract.portfolio.client.data.ClientNonPersonData;
 import org.apache.fineract.portfolio.client.data.ClientTimelineData;
 import org.apache.fineract.portfolio.client.data.EconomicActivityData;
 import org.apache.fineract.portfolio.client.data.EconomicSectorData;
-import org.apache.fineract.portfolio.client.domain.ClientContactInformationRepository;
 import org.apache.fineract.portfolio.client.domain.ClientEnumerations;
 import org.apache.fineract.portfolio.client.domain.ClientStatus;
 import org.apache.fineract.portfolio.client.domain.LegalForm;
@@ -94,7 +94,6 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
     private final CodeValueReadPlatformService codeValueReadPlatformService;
     private final SavingsProductReadPlatformService savingsProductReadPlatformService;
     // data mappers
-    private final PaginationHelper paginationHelper;
     private final DatabaseSpecificSQLGenerator sqlGenerator;
     private final ClientMapper clientMapper = new ClientMapper();
     private final ClientLookupMapper lookupMapper = new ClientLookupMapper();
@@ -109,8 +108,8 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
     private final EntityDatatableChecksReadService entityDatatableChecksReadService;
     private final ColumnValidator columnValidator;
     private final ClientCollateralManagementRepositoryWrapper clientCollateralManagementRepositoryWrapper;
-    private final ClientContactInformationRepository clientContactInformationRepository;
     private final EconomicActivityReadPlatformService economicActivityReadPlatformService;
+    private final GenericDataService genericDataService;
 
     @Override
     public ClientData retrieveTemplate(final Long officeId, final boolean staffInSelectedOfficeOnly) {
@@ -198,10 +197,9 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
         // }
         List<Object> paramList = new ArrayList<>(Arrays.asList(underHierarchySearchString, underHierarchySearchString));
         final StringBuilder sqlBuilder = new StringBuilder(200);
-        sqlBuilder.append("select " + sqlGenerator.calcFoundRows() + " ");
-        sqlBuilder.append(this.clientMapper.schema());
+        sqlBuilder.append("select " + this.clientMapper.schema());
         sqlBuilder.append(" where (o.hierarchy like ? or transferToOffice.hierarchy like ?) ");
-        // sqlBuilder.append(" and  c.external_id in (select NumeroCliente from PDA_MIG_017_P_SALDOS) ");
+        String sqlCountRows = this.genericDataService.wrapSQLCount(sqlBuilder.toString());
 
         if (searchParameters != null) {
             if (searchParameters.isSelfUser()) {
@@ -224,7 +222,7 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
                     this.columnValidator.validateSqlInjection(sqlBuilder.toString(), searchParameters.getSortOrder());
                 }
             }
-
+            sqlCountRows = this.genericDataService.wrapSQLCount(sqlBuilder.toString());
             if (searchParameters.isLimited()) {
                 sqlBuilder.append(" ");
                 if (searchParameters.isOffset()) {
@@ -234,7 +232,10 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
                 }
             }
         }
-        return this.paginationHelper.fetchPage(this.jdbcTemplate, sqlBuilder.toString(), paramList.toArray(), this.clientMapper);
+        List<ClientData> pageItems = this.jdbcTemplate.query(sqlBuilder.toString(), this.clientMapper, paramList.toArray());
+        final Integer totalFilteredRecords = ObjectUtils
+                .defaultIfNull(this.jdbcTemplate.queryForObject(sqlCountRows, Integer.class, paramList.toArray()), 0);
+        return new Page<>(pageItems, totalFilteredRecords);
     }
 
     private String buildSqlStringFromClientCriteria(String schemaSql, final SearchParameters searchParameters, List<Object> paramList) {
@@ -575,7 +576,7 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
                     firstname, middlename, lastname, fullname, displayName, externalId, mobileNo, emailAddress, dateOfBirth, gender,
                     activationDate, imageId, staffId, staffName, timeline, savingsProductId, savingsProductName, savingsAccountId,
                     clienttype, classification, legalForm, clientNonPerson, isStaff, dpiNumber, oldCustomerNumber, null, null, null, null,
-                    null, null, null);
+                    null, null, null, null, null, null, null);
 
         }
     }
@@ -615,6 +616,8 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
                     "cvSubStatus.code_value as subStatusValue,cvSubStatus.code_description as subStatusDesc,c.office_id as officeId, o.name as officeName, ");
             builder.append("c.transfer_to_office_id as transferToOfficeId, transferToOffice.name as transferToOfficeName, ");
             builder.append("c.firstname as firstname, c.middlename as middlename, c.lastname as lastname, ");
+            builder.append(
+                    "c.marital_status as maritalStatusId, c.job_type as jobType, c.nit as nit, c.education_level_id as educationLevelId, ");
             builder.append("c.fullname as fullname, c.display_name as displayName, ");
             builder.append("c.mobile_no as mobileNo, ");
             builder.append("c.is_staff as isStaff, ");
@@ -784,6 +787,10 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
             final Long departmentDpi = rs.getLong("departmentDpi");
             final String municipalityDpiName = rs.getString("municipalityDpiName");
             final Long municipalityDpi = rs.getLong("municipalityDpi");
+            final Long maritalStatusId = rs.getLong("maritalStatusId");
+            final Long jobType = rs.getLong("jobType");
+            final String nit = rs.getString("nit");
+            final Long educationLevelId = rs.getLong("educationLevelId");
 
             ClientInfoRelatedDetailData detailData = ClientInfoRelatedDetailData.instance(loanCycle, groupNumber, maidenName, othernames,
                     groupMember, statusInGroup, retirementReason, civilStatus, educationLevel, ethinicity, nationality, languages,
@@ -799,7 +806,8 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
                     firstname, middlename, lastname, fullname, displayName, externalId, mobileNo, emailAddress, dateOfBirth, gender,
                     activationDate, imageId, staffId, staffName, timeline, savingsProductId, savingsProductName, savingsAccountId,
                     clienttype, classification, legalForm, clientNonPerson, isStaff, dpiNumber, oldCustomerNumber, detailData,
-                    firstlastname, secondlastname, departmentDpiName, departmentDpi, municipalityDpiName, municipalityDpi);
+                    firstlastname, secondlastname, departmentDpiName, departmentDpi, municipalityDpiName, municipalityDpi, maritalStatusId,
+                    jobType, nit, educationLevelId);
 
         }
     }

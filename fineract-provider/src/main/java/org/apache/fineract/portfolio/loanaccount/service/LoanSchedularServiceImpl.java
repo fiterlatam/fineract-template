@@ -46,7 +46,8 @@ import java.util.stream.Collectors;
 import javax.ws.rs.NotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.fineract.accounting.glaccount.domain.GLAccount;
+import org.apache.fineract.accounting.glaccount.domain.GLAccountRepositoryWrapper;
 import org.apache.fineract.cob.loan.ApplyChargeToOverdueLoansBusinessStep;
 import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
@@ -106,23 +107,23 @@ public class LoanSchedularServiceImpl implements LoanSchedularService {
     private final LoanRepaymentImportMapper loanRepaymentImportMapper = new LoanRepaymentImportMapper();
     private final FromJsonHelper fromApiJsonHelper;
     private final LoanRepaymentImportRepository loanRepaymentImportRepository;
+    private final GLAccountRepositoryWrapper glAccountRepository;
 
     @Override
     @CronTarget(jobName = JobName.APPLY_CHARGE_TO_OVERDUE_LOAN_INSTALLMENT)
     public void applyChargeForOverdueLoans() throws JobExecutionException {
-
         final Long penaltyWaitPeriodValue = this.configurationDomainService.retrievePenaltyWaitPeriod();
         final Boolean backdatePenalties = this.configurationDomainService.isBackdatePenaltiesEnabled();
         final Collection<OverdueLoanScheduleData> overdueLoanScheduledInstallments = this.loanReadPlatformService
                 .retrieveAllLoansWithOverdueInstallments(penaltyWaitPeriodValue, backdatePenalties);
-
         Set<Long> loanIds = overdueLoanScheduledInstallments.stream().map(OverdueLoanScheduleData::getLoanId).collect(Collectors.toSet());
-
+        Map<Long, List<OverdueLoanScheduleData>> groupedOverdueData = overdueLoanScheduledInstallments.stream()
+                .collect(Collectors.groupingBy(OverdueLoanScheduleData::getLoanId));
         if (!loanIds.isEmpty()) {
             List<Throwable> exceptions = new ArrayList<>();
-            for (final Long loanId : loanIds) {
+            for (final Long loanId : groupedOverdueData.keySet()) {
                 try {
-                    applyChargeToOverdueLoansBusinessStep.execute(loanRepository.getReferenceById(loanId));
+                    this.applyChargeToOverdueLoansBusinessStep.execute(loanId, groupedOverdueData.get(loanId));
                 } catch (final PlatformApiDataValidationException e) {
                     final List<ApiParameterError> errors = e.getErrors();
                     for (final ApiParameterError error : errors) {
@@ -356,7 +357,7 @@ public class LoanSchedularServiceImpl implements LoanSchedularService {
 
                     // Loan not found
                     if (loanAccountOptional.isEmpty()) {
-                        final String failMessage = "error.msg.loan.not.found: Loan ID :: " + loanCode;
+                        final String failMessage = "Préstamo no encontrado. ID: " + loanCode;
                         loanRepaymentImport.setStatus(LoanRepaymentImportStatus.ERROR.getId());
                         loanRepaymentImport.setErrorId(1L);
                         loanRepaymentImport.setOperationResult(failMessage);
@@ -369,7 +370,7 @@ public class LoanSchedularServiceImpl implements LoanSchedularService {
 
                     // Loan is already closed/cancelled
                     if (loanAccount.isClosed()) {
-                        final String failMessage = "error.msg.loan.is.closed.or.cancelled: Loan ID :: " + loanCode;
+                        final String failMessage = "El préstamo está cerrado o cancelado. ID: " + loanCode;
                         loanRepaymentImport.setStatus(LoanRepaymentImportStatus.ERROR.getId());
                         loanRepaymentImport.setErrorId(2L);
                         loanRepaymentImport.setOperationResult(failMessage);
@@ -397,9 +398,13 @@ public class LoanSchedularServiceImpl implements LoanSchedularService {
                     final Collection<PaymentTypeData> paymentTypeOptions = transactionData.getPaymentTypeOptions();
                     Long paymentTypeId = 1L;
                     if (!paymentTypeOptions.isEmpty()) {
-                        paymentTypeId = new ArrayList<>(paymentTypeOptions).get(0).getId();
+                        final Optional<PaymentTypeData> paymentTypeOptional = new ArrayList<>(paymentTypeOptions).stream()
+                                .filter(t -> "Pago automático".equalsIgnoreCase(t.getName())).findFirst();
+                        if (paymentTypeOptional.isPresent()) {
+                            PaymentTypeData paymentTypeData = paymentTypeOptional.get();
+                            paymentTypeId = paymentTypeData.getId();
+                        }
                     }
-
                     final BigDecimal scheduledAmount = transactionData.getAmount();
                     final Integer installmentNumber = transactionData.getInstallmentNumber();
                     final BigDecimal outstandingLoanBalance = transactionData.getOutstandingLoanBalance();
@@ -424,8 +429,8 @@ public class LoanSchedularServiceImpl implements LoanSchedularService {
                         final BigDecimal upperLimitAmount = scheduledAmount.add(limitPortion);
                         final BigDecimal lowerLimitAmount = scheduledAmount.subtract(limitPortion);
                         if (transactionAmount.compareTo(upperLimitAmount) > 0) {
-                            final String failMessage = "error.msg.the.provided.transaction.amount.is.greater.than.tolerance.limit:: Loan ID = "
-                                    + loanCode + " and transaction amount = " + transactionAmount;
+                            final String failMessage = "El monto de la transacción " + transactionAmount
+                                    + " es mayor que el límite de tolerancia del préstamo ID: " + loanCode;
                             loanRepaymentImport.setStatus(LoanRepaymentImportStatus.ERROR.getId());
                             loanRepaymentImport.setErrorId(4L);
                             loanRepaymentImport.setOperationResult(failMessage);
@@ -436,8 +441,8 @@ public class LoanSchedularServiceImpl implements LoanSchedularService {
                         }
 
                         if (transactionAmount.compareTo(lowerLimitAmount) < 0) {
-                            final String failMessage = "error.msg.the.provided.transaction.amount.is.less.than.tolerance.limit:: Loan ID = "
-                                    + loanCode + " and transaction amount = " + transactionAmount;
+                            final String failMessage = "El monto de la transacción " + transactionAmount
+                                    + " es menor que el límite de tolerancia del préstamo ID: " + loanCode;
                             loanRepaymentImport.setStatus(LoanRepaymentImportStatus.ERROR.getId());
                             loanRepaymentImport.setErrorId(5L);
                             loanRepaymentImport.setOperationResult(failMessage);
@@ -450,8 +455,8 @@ public class LoanSchedularServiceImpl implements LoanSchedularService {
 
                     // Payment amount greater than outstanding
                     if (Money.of(currency, transactionAmount).isGreaterThan(Money.of(currency, outstandingLoanBalance))) {
-                        final String failMessage = "error.msg.the.provided.transaction.amount.exceeds.the.amount.to.payoff.the.loans:: Loan ID = "
-                                + loanCode + " and transaction amount = " + transactionAmount;
+                        final String failMessage = "El monto de la transacción " + transactionAmount
+                                + " excede el monto de reembolso del préstamo ID: " + loanCode;
                         loanRepaymentImport.setStatus(LoanRepaymentImportStatus.ERROR.getId());
                         loanRepaymentImport.setErrorId(3L);
                         loanRepaymentImport.setOperationResult(failMessage);
@@ -462,20 +467,22 @@ public class LoanSchedularServiceImpl implements LoanSchedularService {
                     }
 
                     // Make loan repayment
+                    final String glCode = loanRepaymentImport.getGlCode();
+                    final GLAccount glAccount = this.glAccountRepository.findOneByGlCodeWithNotFoundDetection(glCode);
                     final JsonObject jsonObject = new JsonObject();
                     jsonObject.addProperty(PaymentDetailConstants.paymentTypeParamName, paymentTypeId);
                     jsonObject.addProperty("transactionAmount", transactionAmount);
                     jsonObject.addProperty("transactionDate", transactionDate);
                     jsonObject.addProperty(PaymentDetailConstants.accountNumberParamName, accountNumber);
                     jsonObject.addProperty("checkNumber", checkNumber);
+                    jsonObject.addProperty("billNumber", loanRepaymentImport.getReceiptNumber());
+                    jsonObject.addProperty("glAccountId", glAccount.getId());
                     jsonObject.addProperty(PaymentDetailConstants.bankNumberParamName, bankNumber);
                     jsonObject.addProperty(PaymentDetailConstants.receiptNumberParamName, receiptNumber);
                     jsonObject.addProperty("locale", localeAsString);
                     jsonObject.addProperty("dateFormat", dateFormat);
-                    if (StringUtils.equalsIgnoreCase(lastInstallment, "S") || outstandingLoanBalance.compareTo(transactionAmount) <= 0) {
-                        jsonObject.addProperty("adjustGuarantee", true);
-                    }
-                    final JsonCommand command = JsonCommand.fromJsonElement(loanId, jsonObject, fromApiJsonHelper);
+
+                    final JsonCommand command = JsonCommand.fromJsonElement(loanId, jsonObject, this.fromApiJsonHelper);
                     command.setJsonCommand(jsonObject.toString());
                     CommandProcessingResult result = loanWritePlatformService.makeLoanRepayment(LoanTransactionType.REPAYMENT, loanId,
                             command, isRecoveryRepayment);

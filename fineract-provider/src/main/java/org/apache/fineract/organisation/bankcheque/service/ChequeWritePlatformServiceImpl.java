@@ -18,28 +18,36 @@
  */
 package org.apache.fineract.organisation.bankcheque.service;
 
+import com.google.gson.JsonObject;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuilder;
 import org.apache.fineract.infrastructure.core.data.PaginationParameters;
+import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
+import org.apache.fineract.infrastructure.core.serialization.JsonParserHelper;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.core.service.Page;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.organisation.agency.domain.Agency;
 import org.apache.fineract.organisation.bankAccount.domain.BankAccount;
 import org.apache.fineract.organisation.bankAccount.domain.BankAccountRepositoryWrapper;
+import org.apache.fineract.organisation.bankcheque.api.BankChequeApiConstants;
 import org.apache.fineract.organisation.bankcheque.command.ApproveChequeIssuanceCommand;
 import org.apache.fineract.organisation.bankcheque.command.AuthorizeChequeIssuanceCommand;
 import org.apache.fineract.organisation.bankcheque.command.CreateChequeCommand;
@@ -65,9 +73,21 @@ import org.apache.fineract.organisation.bankcheque.serialization.ReassignChequeC
 import org.apache.fineract.organisation.bankcheque.serialization.UpdateChequeCommandFromApiJsonDeserializer;
 import org.apache.fineract.organisation.bankcheque.serialization.VoidChequeCommandFromApiJsonDeserializer;
 import org.apache.fineract.organisation.monetary.domain.NumberToWordsConverter;
+import org.apache.fineract.portfolio.client.domain.Client;
+import org.apache.fineract.portfolio.client.domain.ClientRepositoryWrapper;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
 import org.apache.fineract.portfolio.loanaccount.service.LoanWritePlatformService;
+import org.apache.fineract.portfolio.note.domain.NoteRepository;
+import org.apache.fineract.portfolio.paymentdetail.service.PaymentDetailWritePlatformService;
+import org.apache.fineract.portfolio.paymenttype.data.PaymentTypeData;
+import org.apache.fineract.portfolio.paymenttype.service.PaymentTypeReadPlatformService;
+import org.apache.fineract.portfolio.savings.data.SavingsAccountData;
+import org.apache.fineract.portfolio.savings.domain.SavingsAccount;
+import org.apache.fineract.portfolio.savings.domain.SavingsAccountAssembler;
+import org.apache.fineract.portfolio.savings.domain.SavingsAccountDomainService;
+import org.apache.fineract.portfolio.savings.service.SavingsAccountReadPlatformService;
+import org.apache.fineract.portfolio.savings.service.SavingsAccountWritePlatformService;
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -96,6 +116,15 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
     private final LoanWritePlatformService loanWritePlatformService;
     private final LoanRepositoryWrapper loanRepositoryWrapper;
     private final ChequeReadPlatformService chequeReadPlatformService;
+    private final SavingsAccountReadPlatformService savingsAccountReadPlatformService;
+    private final ClientRepositoryWrapper clientRepositoryWrapper;
+    private final SavingsAccountWritePlatformService savingsAccountWritePlatformService;
+    private final FromJsonHelper fromApiJsonHelper;
+    private final PaymentTypeReadPlatformService paymentTypeReadPlatformService;
+    private final SavingsAccountAssembler savingsAccountAssembler;
+    private final SavingsAccountDomainService savingsAccountDomainService;
+    private final NoteRepository noteRepository;
+    private final PaymentDetailWritePlatformService paymentDetailWritePlatformService;
 
     @Override
     public CommandProcessingResult createBatch(JsonCommand command) {
@@ -341,12 +370,48 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
         for (final PayGuaranteeByChequeCommand payGuaranteeByChequeCommand : payGuaranteeByChequeCommands) {
             final Cheque cheque = this.chequeBatchRepositoryWrapper
                     .findOneChequeWithNotFoundDetection(payGuaranteeByChequeCommand.getChequeId());
+            if (!BankChequeStatus.AVAILABLE.getValue().equals(cheque.getStatus())) {
+                throw new BankChequeException("status", "invalid.loan.status.for.pay.guarantee.by.cheque");
+            }
+            final BigDecimal guaranteeAmount = payGuaranteeByChequeCommand.getGuaranteeAmount();
+            final String clientExternalId = payGuaranteeByChequeCommand.getClientExternalId();
+            final Client client = clientRepositoryWrapper.getClientByExternalId(clientExternalId);
+            final Long clientId = client.getId();
+            final Collection<SavingsAccountData> clientSavingsAccounts = this.savingsAccountReadPlatformService
+                    .retrieveAllForLookup(clientId);
+            if (CollectionUtils.isEmpty(clientSavingsAccounts)) {
+                throw new BankChequeException("guarantee.savings.account.not.found",
+                        "Guarantee savings is not found for client ID" + clientExternalId);
+            }
+            final Optional<SavingsAccountData> savingsAccountDataOptional = clientSavingsAccounts.stream()
+                    .filter(accountData -> "Garantías".equals(accountData.getSavingsProductName())).findFirst();
+            if (savingsAccountDataOptional.isEmpty()) {
+                throw new BankChequeException("guarantee.savings.account.not.found",
+                        "Guarantee savings is not found for client ID" + clientExternalId);
+            }
+            BigDecimal availableBalance = BigDecimal.ZERO;
+            final SavingsAccountData savingsAccountData = savingsAccountDataOptional.get();
+            if (savingsAccountData.getSummary() != null) {
+                availableBalance = savingsAccountData.getSummary().getAvailableBalance();
+            }
+            if (guaranteeAmount.compareTo(availableBalance) > 0) {
+                throw new BankChequeException("guarantee.amount.greater.than.available.savings.account.balance",
+                        "Guarantee amount is greater than savings account balance of" + availableBalance);
+            }
+
+            String accountNo = savingsAccountData.getAccountNo();
+            final boolean backdatedTxnsAllowedTill = false;
+
+            final SavingsAccount fromSavingsAccount = this.savingsAccountAssembler.assembleFrom(savingsAccountData.getId(),
+                    backdatedTxnsAllowedTill);
+
             cheque.setStatus(BankChequeStatus.PENDING_ISSUANCE.getValue());
             cheque.setCaseId(payGuaranteeByChequeCommand.getCaseId());
             cheque.setGuaranteeId(payGuaranteeByChequeCommand.getGuaranteeId());
             cheque.setGuaranteeName(payGuaranteeByChequeCommand.getGuaranteeName());
             cheque.setDescription(payGuaranteeByChequeCommand.getDescription());
             cheque.setGuaranteeAmount(payGuaranteeByChequeCommand.getGuaranteeAmount());
+            cheque.setNumeroCliente(clientExternalId);
             final LocalDateTime localDateTime = DateUtils.getLocalDateTimeOfSystem();
             final Long currentUserId = currentUser.getId();
             cheque.stampAudit(currentUserId, localDateTime);
@@ -369,6 +434,11 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
             ChequeData chequeData = this.jdbcTemplate.queryForObject(query, this.chequeMapper, cheque.getId());
             BigDecimal chequeAmount = chequeData.getGuaranteeAmount();
             final Long loanAccId = chequeData.getLoanAccId();
+            final String bankAccNo = chequeData.getBankAccNo();
+            final String numeroCliente = chequeData.getNumeroCliente();
+            final Long guaranteeId = chequeData.getGuaranteeId();
+            final BigDecimal guaranteeAmount = chequeData.getGuaranteeAmount();
+            final Collection<PaymentTypeData> paymentTypeOptions = this.paymentTypeReadPlatformService.retrieveAllPaymentTypes();
             if (loanAccId != null && chequeData.getLoanAmount() != null) {
                 final Loan loan = this.loanRepositoryWrapper.findOneWithNotFoundDetection(loanAccId);
                 if (loan.getCheque() != null && (loan.getCheque().getId() != null && !loan.getCheque().getId().equals(cheque.getId()))) {
@@ -380,16 +450,98 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
                 }
 
                 if (!chequeData.getReassingedCheque()) {
-                    CommandProcessingResult result = this.loanWritePlatformService.disburseLoan(loanAccId, command, false);
+                    final JsonObject jsonObject = command.parsedJson().getAsJsonObject();
+                    jsonObject.addProperty("glAccountId", chequeData.getGlAccountId());
+                    jsonObject.addProperty("accountNumber", bankAccNo);
+                    jsonObject.addProperty("checkNumber", chequeData.getChequeNo());
+                    jsonObject.addProperty("routingCode", "");
+                    jsonObject.addProperty("receiptNumber", "");
+                    jsonObject.addProperty("note", "Desembolso de préstamo mediante cheque número " + chequeData.getChequeNo());
+                    if (!CollectionUtils.isEmpty(paymentTypeOptions)) {
+                        final Optional<PaymentTypeData> paymentTypeDataOptional = new ArrayList<>(paymentTypeOptions).stream()
+                                .filter(p -> BankChequeApiConstants.BANK_CHEQUE_PAYMENT_TYPE.equalsIgnoreCase(p.getName())).findFirst();
+                        if (paymentTypeDataOptional.isPresent()) {
+                            final PaymentTypeData paymentType = paymentTypeDataOptional.get();
+                            jsonObject.addProperty("paymentTypeId", paymentType.getId());
+                        }
+                    }
+                    final JsonCommand commandJson = JsonCommand.fromJsonElement(loanAccId, jsonObject, this.fromApiJsonHelper);
+                    commandJson.setJsonCommand(jsonObject.toString());
+                    CommandProcessingResult result = this.loanWritePlatformService.disburseLoan(loanAccId, commandJson, false);
                     if (result.getLoanId() == null) {
                         throw new BankChequeException("print.cheques", "failed.to.disburse.loan " + loanAccId);
                     }
                 }
                 chequeAmount = loan.getNetDisbursalAmount();
             }
-            final String amountInWords = NumberToWordsConverter.convertToWords(chequeAmount.intValue(),
-                    NumberToWordsConverter.Language.SPANISH);
-            cheque.setAmountInWords(amountInWords);
+
+            if (guaranteeId != null && guaranteeAmount != null) {
+                final Client client = clientRepositoryWrapper.getClientByExternalId(numeroCliente);
+                final Long clientId = client.getId();
+                final Collection<SavingsAccountData> clientSavingsAccounts = this.savingsAccountReadPlatformService
+                        .retrieveAllForLookup(clientId);
+                if (CollectionUtils.isEmpty(clientSavingsAccounts)) {
+                    throw new BankChequeException("guarantee.savings.account.not.found",
+                            "Guarantee savings is not found for client ID" + numeroCliente);
+                }
+                final Optional<SavingsAccountData> savingsAccountDataOptional = clientSavingsAccounts.stream()
+                        .filter(accountData -> "Garantías".equals(accountData.getSavingsProductName())).findFirst();
+                if (savingsAccountDataOptional.isEmpty()) {
+                    throw new BankChequeException("guarantee.savings.account.not.found",
+                            "Guarantee savings is not found for client ID" + numeroCliente);
+                }
+                BigDecimal availableBalance = BigDecimal.ZERO;
+                final SavingsAccountData savingsAccountData = savingsAccountDataOptional.get();
+                final Long savingsAccountId = savingsAccountData.getId();
+                if (savingsAccountData.getSummary() != null) {
+                    availableBalance = savingsAccountData.getSummary().getAvailableBalance();
+                }
+                if (guaranteeAmount.compareTo(availableBalance) > 0) {
+                    throw new BankChequeException("guarantee.amount.greater.than.available.savings.account.balance",
+                            "Guarantee amount is greater than savings account balance of" + availableBalance);
+                }
+                final String localeAsString = "en";
+                final String dateFormat = "dd MMMM yyyy";
+                final JsonObject jsonObject = new JsonObject();
+                final LocalDate localDate = DateUtils.getBusinessLocalDate();
+                Locale locale = JsonParserHelper.localeFromString(localeAsString);
+                final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(dateFormat).withLocale(locale);
+                final String localDateString = localDate.format(dateTimeFormatter);
+                jsonObject.addProperty("locale", localeAsString);
+                jsonObject.addProperty("dateFormat", dateFormat);
+                jsonObject.addProperty("transactionAmount", guaranteeAmount);
+                jsonObject.addProperty("transactionDate", localDateString);
+                if (!CollectionUtils.isEmpty(paymentTypeOptions)) {
+                    Optional<PaymentTypeData> paymentTypeOptional = new ArrayList<>(paymentTypeOptions).stream()
+                            .filter(pt -> BankChequeApiConstants.BANK_CHEQUE_PAYMENT_TYPE.equalsIgnoreCase(pt.getName())).findFirst();
+                    if (paymentTypeOptional.isPresent()) {
+                        PaymentTypeData paymentType = paymentTypeOptional.get();
+                        jsonObject.addProperty("paymentTypeId", paymentType.getId());
+                    }
+                }
+                jsonObject.addProperty("accountNumber", bankAccNo);
+                jsonObject.addProperty("checkNumber", chequeData.getChequeNo());
+                jsonObject.addProperty("receiptNumber", chequeData.getGuaranteeId());
+                jsonObject.addProperty("bankNumber", chequeData.getBankName());
+                jsonObject.addProperty("glAccountId", chequeData.getGlAccountId());
+                jsonObject.addProperty("routingCode", "");
+                final String note = "Retiro de garantía por ID de garantía " + guaranteeId;
+                jsonObject.addProperty("note", note);
+                final JsonCommand withdrawalJsonCommand = JsonCommand.fromJsonElement(savingsAccountId, jsonObject, this.fromApiJsonHelper);
+                withdrawalJsonCommand.setJsonCommand(jsonObject.toString());
+                CommandProcessingResult result = this.savingsAccountWritePlatformService.withdrawal(savingsAccountId,
+                        withdrawalJsonCommand);
+                if (result != null) {
+                    log.info("Guarantee withdrawal is successful for savings account ID {}", result.getSavingsId());
+                }
+            }
+            if (chequeAmount != null) {
+                final String amountInWords = NumberToWordsConverter.convertToWords(chequeAmount.intValue(),
+                        NumberToWordsConverter.Language.SPANISH);
+                String decimalValues = extractDecimals(chequeAmount);
+                cheque.setAmountInWords(new StringBuilder().append(amountInWords).append(" con ").append
+                        (decimalValues).append("/100").toString());
+            }
             cheque.setStatus(BankChequeStatus.ISSUED.getValue());
             final LocalDateTime localDateTime = DateUtils.getLocalDateTimeOfSystem();
             LocalDate localDate = DateUtils.getBusinessLocalDate();
@@ -400,5 +552,14 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
             this.chequeBatchRepositoryWrapper.updateCheque(cheque);
         }
         return new CommandProcessingResultBuilder().withCommandId(command.commandId()).build();
+    }
+
+    public String extractDecimals(BigDecimal value) {
+        String[] parts = StringUtils.split(value.toPlainString(), ".");
+        if (parts.length > 1) {
+            String padded = StringUtils.rightPad(parts[1], 2, "0");
+            return padded.substring(0,2);
+        }
+        return "00";
     }
 }

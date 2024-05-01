@@ -563,6 +563,7 @@ public final class SavingsAccountTransaction extends AbstractPersistableCustom {
 
         if (this.paymentDetail != null) {
             thisTransactionData.put("paymentTypeId", this.paymentDetail.getPaymentType().getId());
+            thisTransactionData.put("glAccountId", this.paymentDetail.getGlAccountId());
         }
 
         /***
@@ -938,4 +939,9 @@ public final class SavingsAccountTransaction extends AbstractPersistableCustom {
     public void setLoanId(Long loanId) {
         this.loanId = loanId;
     }
+
+    public void updateDateOf(LocalDate transactionDate) {
+        this.dateOf = transactionDate;
+    }
+
 }

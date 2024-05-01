@@ -253,13 +253,15 @@ public class PortfolioCenterReadPlatformServiceImpl implements PortfolioCenterRe
             sqlBuilder.append("pc.meeting_start_date as meetingStart, pc.meeting_end_date as meetingEnd, ");
             sqlBuilder.append("pc.meeting_day as meetingDay, cvMeetingDay.code_value as meetingDayValue, ");
             sqlBuilder.append("cvMeetingDay.order_position as meetingDayOrderPosition, pc.meeting_start_time as meetingStartTime, ");
-            sqlBuilder.append("pc.meeting_end_time as meetingEndTime, pc.reference_point as referencePoint ");
+            sqlBuilder.append("pc.meeting_end_time as meetingEndTime, pc.reference_point as referencePoint, mrt.code as range_code ");
             sqlBuilder.append("from m_group pc ");
             sqlBuilder.append("left join m_portfolio AS p ON p.id = pc.portfolio_id ");
             sqlBuilder.append("left join m_code_value cvCity on pc.city_id = cvCity.id ");
             sqlBuilder.append("left join m_code_value cvState on pc.state_province_id = cvState.id ");
             sqlBuilder.append("left join m_code_value cvType on pc.type_id = cvType.id ");
             sqlBuilder.append("left join m_code_value cvMeetingDay on pc.meeting_day = cvMeetingDay.id ");
+            sqlBuilder.append(
+                    "left join m_range_template mrt on mrt.month_start_day = pc.meeting_start_date and mrt.month_end_day = pc.meeting_end_date ");
             this.schema = sqlBuilder.toString();
         }
 
@@ -310,10 +312,11 @@ public class PortfolioCenterReadPlatformServiceImpl implements PortfolioCenterRe
             final LocalTime meetingEndTime = JdbcSupport.getLocalTime(rs, "meetingEndTime");
 
             final String referencePoint = rs.getString("referencePoint");
+            final String rangeCode = rs.getString("range_code");
 
             return PortfolioCenterData.instance(id, name, portfolioId, portfolioName, legacyCenterNumber, city, state, type, statusEnum,
                     distance, createdDate, meetingStart, meetingEnd, meetingDay, meetingStartTime.toString(), meetingEndTime.toString(),
-                    meetingDayValue, referencePoint, centerLocation);
+                    meetingDayValue, referencePoint, centerLocation, rangeCode);
         }
 
         public String schema() {

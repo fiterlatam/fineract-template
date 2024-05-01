@@ -39,7 +39,7 @@ public class AccountTransferDTO {
     private final String description;
     private final Locale locale;
     private final DateTimeFormatter fmt;
-    private final PaymentDetail paymentDetail;
+    private PaymentDetail paymentDetail;
     private final Integer fromTransferType;
     private final Integer toTransferType;
     private final Long chargeId;
@@ -222,4 +222,7 @@ public class AccountTransferDTO {
         return this.isExceptionForBalanceCheck;
     }
 
+    public void setPaymentDetail(PaymentDetail paymentDetail) {
+        this.paymentDetail = paymentDetail;
+    }
 }

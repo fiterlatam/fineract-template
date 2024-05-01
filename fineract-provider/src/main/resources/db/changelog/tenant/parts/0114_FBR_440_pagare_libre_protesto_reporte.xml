@@ -313,4 +313,345 @@
         </sql>
     </changeSet>
 
+
+    <changeSet id="4" author="fineract">
+        <sql splitStatements="true" endDelimiter="//" stripComments="true">
+            <![CDATA[
+            DROP FUNCTION IF EXISTS `number_to_string`;
+            //
+            CREATE FUNCTION `number_to_string`(n INT) RETURNS varchar(1000) CHARSET latin1 BEGIN
+                    declare ans varchar(1000);
+                    declare dig1, dig2, dig3,dig4,dig5,dig6,dig7,dig8,dig9 int;
+
+                    set ans = '';
+                    set dig9 = floor(n/100000000);
+                    set dig8 = floor(n/10000000) - dig9*10;
+                    set dig7 = floor(n/1000000) -(floor(n/10000000)*10);
+                    set dig6 = floor(n/100000) - (floor(n/1000000)*10);
+                    set dig5 = floor(n/10000) - (floor(n/100000)*10);
+                    set dig4 = floor(n/1000) - (floor(n/10000)*10);
+                    set dig3 = floor(n/100) - (floor(n/1000)*10);
+                    set dig2 = floor(n/10) - (floor(n/100)*10);
+                    set dig1 = n - (floor(n / 10)*10);
+
+                    IF (n = 0) THEN
+                        SET ans = 'cero';
+                    END IF;
+
+                    If dig9 > 0 then
+                    case
+                    when dig9=1 then set ans=concat(ans, 'Ciento');
+            when dig9=2 then set ans=concat(ans, 'Doscientos');
+            when dig9=3 then set ans=concat(ans, 'Trescientos');
+            when dig9=4 then set ans=concat(ans, 'Cuatrocientos');
+            when dig9=5 then set ans=concat(ans, 'Quinientos');
+            when dig9=6 then set ans=concat(ans, 'Seiscientos');
+            when dig9=7 then set ans=concat(ans, 'Setecientos');
+            when dig9=8 then set ans=concat(ans, 'Ochocientos');
+            when dig9=9 then set ans=concat(ans, 'Novecientos');
+            else set ans = ans;
+            end case;
+                    if ans <> '' and dig8 =0 and dig7 = 0 then
+                    set ans=concat(ans, ' Millones');
+            end if;
+            end if;
+                    if ans <> '' and dig8 > 0 then
+                    set ans=concat(ans, ' Y ');
+            end if;
+                    if dig8 = 1 then
+                    case
+                    when (dig8*10 + dig7) = 10 then set ans=concat(ans,'Diez Millones');
+            when (dig8*10 + dig7) = 11 then set ans=concat(ans,'Once Millones');
+            when (dig8*10 + dig7) = 12 then set ans=concat(ans,'Doce Millones');
+            when (dig8*10 + dig7) = 13 then set ans=concat(ans,'Trece Millones');
+            when (dig8*10 + dig7) = 14 then set ans=concat(ans,'Catorce Millones');
+            when (dig8*10 + dig7) = 15 then set ans=concat(ans,'Quince Millones');
+            when (dig8*10 + dig7) = 16 then set ans=concat(ans,'Dieciséis Millones');
+            when (dig8*10 + dig7) = 17 then set ans=concat(ans,'Diecisiete Millones');
+            when (dig8*10 + dig7) = 18 then set ans=concat(ans,'Dieciocho Millones');
+            when (dig8*10 + dig7) = 19 then set ans=concat(ans,'Diecinueve Millones');
+            else set ans=ans;
+            end case;
+            else
+                    if dig8 > 0 then
+                    case
+                    when dig8=2 then set ans=concat(ans, ' Veinte');
+            when dig8=3 then set ans=concat(ans, ' Treinta');
+            when dig8=4 then set ans=concat(ans, ' Cuarenta');
+            when dig8=5 then set ans=concat(ans, ' Cincuenta');
+            when dig8=6 then set ans=concat(ans, ' Sesenta');
+            when dig8=7 then set ans=concat(ans, ' Setenta');
+            when dig8=8 then set ans=concat(ans, ' Ochenta');
+            when dig8=9 then set ans=concat(ans, ' Noventa');
+            else set ans=ans;
+            end case;
+                    if ans <> '' and dig7 =0 then
+                    set ans=concat(ans, ' Millones');
+            end if;
+            end if;
+                    if ans <> '' and dig7 > 0 and dig8 =0 then
+                    set ans=concat(ans, ' Y ');
+            end if;
+                    if dig7 > 0 then
+                    case
+                    when dig7=1 then set ans=concat(ans, ' Un Millón');
+            when dig7=2 then set ans=concat(ans, ' Dos Millones');
+            when dig7=3 then set ans=concat(ans, ' Tres Millones');
+            when dig7=4 then set ans=concat(ans, ' Cuatro Millones');
+            when dig7=5 then set ans=concat(ans, ' Cinco Millones');
+            when dig7=6 then set ans=concat(ans, ' Seis Millones');
+            when dig7=7 then set ans=concat(ans, ' Siete Millones');
+            when dig7=8 then set ans=concat(ans, ' Ocho Millones');
+            when dig7=9 then set ans=concat(ans, ' Nueve Millones');
+            else set ans = ans;
+            end case;
+            end if;
+            end if;
+                    if ans <> '' and dig6 > 0 then
+                    set ans=concat(ans, ' Y ');
+            end if;
+
+                    if dig6 > 0 then
+                    case
+                    when dig6=1 then set ans=concat(ans, 'Ciento');
+            when dig6=2 then set ans=concat(ans, 'Doscientos');
+            when dig6=3 then set ans=concat(ans, 'Trescientos');
+            when dig6=4 then set ans=concat(ans, 'Cuatrocientos');
+            when dig6=5 then set ans=concat(ans, 'Quinientos');
+            when dig6=6 then set ans=concat(ans, 'Seiscientos');
+            when dig6=7 then set ans=concat(ans, 'Setecientos');
+            when dig6=8 then set ans=concat(ans, 'Ochocientos');
+            when dig6=9 then set ans=concat(ans, 'Novecientos');
+            else set ans = ans;
+            end case;
+                    if ans <> '' and dig4 =0 and dig5 = 0 then
+                    set ans=concat(ans, ' Mil');
+            end if;
+            end if;
+                    if ans <> '' and dig5 > 0 then
+                    set ans=concat(ans, ' Y ');
+            end if;
+                    if dig5 = 1 then
+                    case
+                    when (dig5*10 + dig4) = 10 then set ans=concat(ans,'Diez Mil');
+            when (dig5*10 + dig4) = 11 then set ans=concat(ans,'Once Mil');
+            when (dig5*10 + dig4) = 12 then set ans=concat(ans,'Doce Mil');
+            when (dig5*10 + dig4) = 13 then set ans=concat(ans,'Trece Mil');
+            when (dig5*10 + dig4) = 14 then set ans=concat(ans,'Catorce Mil');
+            when (dig5*10 + dig4) = 15 then set ans=concat(ans,'Quince Mil');
+            when (dig5*10 + dig4) = 16 then set ans=concat(ans,'Dieciséis Mil');
+            when (dig5*10 + dig4) = 17 then set ans=concat(ans,'Diecisiete Mil');
+            when (dig5*10 + dig4) = 18 then set ans=concat(ans,'Dieciocho Mil');
+            when (dig5*10 + dig4) = 19 then set ans=concat(ans,'Diecinueve Mil');
+            else set ans=ans;
+            end case;
+            else
+                    if dig5 > 0 then
+                    case
+                    when dig5=2 then set ans=concat(ans, ' Veinte');
+            when dig5=3 then set ans=concat(ans, ' Treinta');
+            when dig5=4 then set ans=concat(ans, ' Cuarenta');
+            when dig5=5 then set ans=concat(ans, ' Cincuenta');
+            when dig5=6 then set ans=concat(ans, ' Sesenta');
+            when dig5=7 then set ans=concat(ans, ' Setenta');
+            when dig5=8 then set ans=concat(ans, ' Ochenta');
+            when dig5=9 then set ans=concat(ans, ' Noventa');
+            else set ans=ans;
+            end case;
+                    if ans <> '' and dig4 =0 then
+                    set ans=concat(ans, ' Mil');
+            end if;
+            end if;
+                    if ans <> '' and dig4 > 0 and dig5 =0 then
+                    set ans=concat(ans, ' Y ');
+            end if;
+                    if dig4 > 0 then
+                    case
+                    when dig4=1 then set ans=concat(ans, ' Un Mil');
+            when dig4=2 then set ans=concat(ans, ' Dos Mil');
+            when dig4=3 then set ans=concat(ans, ' Tres Mil');
+            when dig4=4 then set ans=concat(ans, ' Cuatro Mil');
+            when dig4=5 then set ans=concat(ans, ' Cinco Mil');
+            when dig4=6 then set ans=concat(ans, ' Seis Mil');
+            when dig4=7 then set ans=concat(ans, ' Siete Mil');
+            when dig4=8 then set ans=concat(ans, ' Ocho Mil');
+            when dig4=9 then set ans=concat(ans, ' Nueve Mil');
+            else set ans = ans;
+            end case;
+            end if;
+            end if;
+                    if ans <> '' and dig3 > 0 then
+                    set ans=concat(ans, ' Y ');
+            end if;
+                    if dig3 > 0 then
+                    case
+                    when dig3=1 then set ans=concat(ans, 'Ciento');
+            when dig3=2 then set ans=concat(ans, 'Doscientos');
+            when dig3=3 then set ans=concat(ans, 'Trescientos');
+            when dig3=4 then set ans=concat(ans, 'Cuatrocientos');
+            when dig3=5 then set ans=concat(ans, 'Quinientos');
+            when dig3=6 then set ans=concat(ans, 'Seiscientos');
+            when dig3=7 then set ans=concat(ans, 'Setecientos');
+            when dig3=8 then set ans=concat(ans, 'Ochocientos');
+            when dig3=9 then set ans=concat(ans, 'Novecientos');
+            else set ans = ans;
+            end case;
+            end if;
+                    if ans <> '' and dig2 > 0 then
+                    set ans=concat(ans, ' Y ');
+            end if;
+                    if dig2 = 1 then
+                    case
+                    when (dig2*10 + dig1) = 10 then set ans=concat(ans,'Diez');
+            when (dig2*10 + dig1) = 11 then set ans=concat(ans,'Once');
+            when (dig2*10 + dig1) = 12 then set ans=concat(ans,'Doce');
+            when (dig2*10 + dig1) = 13 then set ans=concat(ans,'Trece');
+            when (dig2*10 + dig1) = 14 then set ans=concat(ans,'Catorce');
+            when (dig2*10 + dig1) = 15 then set ans=concat(ans,'Quince');
+            when (dig2*10 + dig1) = 16 then set ans=concat(ans,'Dieciséis');
+            when (dig2*10 + dig1) = 17 then set ans=concat(ans,'Diecisiete');
+            when (dig2*10 + dig1) = 18 then set ans=concat(ans,'Dieciocho');
+            when (dig2*10 + dig1) = 19 then set ans=concat(ans,'Diecinueve');
+            else set ans=ans;
+            end case;
+            else
+                    if dig2 > 0 then
+                    case
+                    when dig2=2 then set ans=concat(ans, ' Veinte');
+            when dig2=3 then set ans=concat(ans, ' Treinta');
+            when dig2=4 then set ans=concat(ans, ' Cuarenta');
+            when dig2=5 then set ans=concat(ans, ' Cincuenta');
+            when dig2=6 then set ans=concat(ans, ' Sesenta');
+            when dig2=7 then set ans=concat(ans, ' Setenta');
+            when dig2=8 then set ans=concat(ans, ' Ochenta');
+            when dig2=9 then set ans=concat(ans, ' Noventa');
+            else set ans=ans;
+            end case;
+            end if;
+                    if ans <> '' and dig1 > 0 and dig2 =0 then
+                    set ans=concat(ans, ' Y ');
+            end if;
+                    if dig1 > 0 then
+                    case
+                    when dig1=1 then set ans=concat(ans, ' Uno');
+            when dig1=2 then set ans=concat(ans, ' Dos');
+            when dig1=3 then set ans=concat(ans, ' Tres');
+            when dig1=4 then set ans=concat(ans, ' Cuatro');
+            when dig1=5 then set ans=concat(ans, ' Cinco');
+            when dig1=6 then set ans=concat(ans, ' Seis');
+            when dig1=7 then set ans=concat(ans, ' Siete');
+            when dig1=8 then set ans=concat(ans, ' Ocho');
+            when dig1=9 then set ans=concat(ans, ' Nueve');
+            else set ans=ans;
+            end case;
+            end if;
+            end if;
+
+            return trim(ans);
+            END //
+            ]]>
+        </sql>
+    </changeSet>
+
+    <changeSet id="5" author="fineract">
+        <sql>
+            <![CDATA[
+                UPDATE stretchy_parameter SET parameter_label='Nombre de agencia' WHERE parameter_name='AgencyIdSelectOne';
+                UPDATE stretchy_parameter SET parameter_label='Miembro' WHERE parameter_name='selectmember';
+                UPDATE stretchy_parameter SET parameter_label='Como en la fecha' WHERE parameter_name='asOnDate';
+            ]]>
+        </sql>
+    </changeSet>
+
+    <changeSet id="6" author="fineract">
+        <sql>
+            <![CDATA[
+                DELETE
+                FROM stretchy_report_parameter
+                WHERE id IN (SELECT x.id FROM (SELECT srp.id FROM  stretchy_report_parameter srp INNER JOIN stretchy_report sr ON sr.id = srp.report_id WHERE sr.report_name = 'Pagare Libre Protesto Individual') x);
+
+                INSERT INTO stretchy_parameter (parameter_name, parameter_variable, parameter_label, parameter_displayType, parameter_FormatType, parameter_default, special, selectOne, selectAll, parameter_sql, parent_id) VALUES('officeIdSelectAll', 'officeIdSelectAll', 'Oficina', 'select', 'number', '-1', NULL, NULL, 'Y',
+                                                                                                                                                                                                                                     "select id,
+                                                                                                                                                                                                                                     concat(substring('........................................', 1,
+                                                                                                                                                                                                                                     ((LENGTH(`hierarchy`) - LENGTH(REPLACE(`hierarchy`, '.', '')) - 1) * 4)),
+                                                                                                                                                                                                                                        `name`) as tc
+                                                                                                                                                                                                                                     from m_office
+                                                                                                                                                                                                                                     where hierarchy like concat
+                                                                                                                                                                                                                                     ('${currentUserHierarchy}', '%')
+                                                                                                                                                                                                                                     order by hierarchy", NULL);
+                INSERT INTO stretchy_parameter (parameter_name, parameter_variable, parameter_label, parameter_displayType, parameter_FormatType, parameter_default, special, selectOne, selectAll, parameter_sql, parent_id) VALUES('loanProductSelectAll', 'loanProductSelectAll', 'Producto', 'select', 'number', '-1', NULL, NULL, 'Y', "SELECT pl.id, pl.name as name FROM m_product_loan pl", (SELECT id FROM stretchy_parameter sp WHERE sp.parameter_name = 'officeIdSelectAll'));
+                INSERT INTO stretchy_parameter (parameter_name, parameter_variable, parameter_label, parameter_displayType, parameter_FormatType, parameter_default, special, selectOne, selectAll, parameter_sql, parent_id) VALUES('disbursementDate', 'disbursementDate', 'Fecha de desembolso', 'date', 'date', 'today', NULL, NULL, NULL, NULL, (SELECT id FROM stretchy_parameter sp WHERE sp.parameter_name = 'loanProductSelectAll'));
+                INSERT INTO stretchy_parameter (parameter_name, parameter_variable, parameter_label, parameter_displayType, parameter_FormatType, parameter_default, special, selectOne, selectAll, parameter_sql, parent_id) VALUES('clientIdSelectOne', 'clientIdSelectOne', 'ID de cliente', 'select', 'number', '0', NULL, 'Y', NULL,
+                                                                                                                                                                                                                                     "SELECT
+                                                                                                                                                                                                                                     mc.id AS id,
+                                                                                                                                                                                                                                     CONCAT(mc.display_name, ' (#', ml.id, ')') AS name
+                                                                                                                                                                                                                                     FROM m_client mc
+                                                                                                                                                                                                                                     LEFT JOIN m_office mo ON mo.id = mc.office_id
+                                                                                                                                                                                                                                     LEFT JOIN m_loan ml ON ml.client_id = mc.id
+                                                                                                                                                                                                                                     WHERE (mo.id = ${officeIdSelectAll} OR ${officeIdSelectAll} = '-1')
+                                                                                                                                                                                                                                     AND (ml.product_id = ${loanProductSelectAll} OR ${loanProductSelectAll} = '-1') AND ml.loan_status_id = 300 AND ml.disbursedon_date = '${disbursementDate}'", (SELECT id FROM stretchy_parameter sp WHERE sp.parameter_name = 'disbursementDate'));
+
+                INSERT INTO stretchy_report_parameter (report_id, parameter_id, report_parameter_name) VALUES ((SELECT id FROM stretchy_report sr WHERE sr.report_name = 'Pagare Libre Protesto Individual'), (SELECT id FROM stretchy_parameter sp WHERE sp.parameter_name = 'officeIdSelectAll'), 'officeIdSelectAll');
+                INSERT INTO stretchy_report_parameter (report_id, parameter_id, report_parameter_name) VALUES ((SELECT id FROM stretchy_report sr WHERE sr.report_name = 'Pagare Libre Protesto Individual'), (SELECT id FROM stretchy_parameter sp WHERE sp.parameter_name = 'loanProductSelectAll'), 'loanProductSelectAll');
+                INSERT INTO stretchy_report_parameter (report_id, parameter_id, report_parameter_name) VALUES ((SELECT id FROM stretchy_report sr WHERE sr.report_name = 'Pagare Libre Protesto Individual'), (SELECT id FROM stretchy_parameter sp WHERE sp.parameter_name = 'clientIdSelectOne'), 'clientIdSelectOne');
+                INSERT INTO stretchy_report_parameter (report_id, parameter_id, report_parameter_name) VALUES ((SELECT id FROM stretchy_report sr WHERE sr.report_name = 'Pagare Libre Protesto Individual'), (SELECT id FROM stretchy_parameter sp WHERE sp.parameter_name = 'disbursementDate'), 'disbursementDate');
+            ]]>
+        </sql>
+    </changeSet>
+
+    <changeSet id="7" author="fineract">
+        <sql>
+            <![CDATA[
+            DELETE
+            FROM stretchy_report_parameter
+            WHERE id IN (SELECT x.id FROM (SELECT srp.id FROM  stretchy_report_parameter srp INNER JOIN stretchy_report sr ON sr.id = srp.report_id WHERE sr.report_name = 'Pagare Libre Protesto Adicional') x);
+            INSERT INTO stretchy_report_parameter (report_id, parameter_id, report_parameter_name) VALUES ((SELECT id FROM stretchy_report sr WHERE sr.report_name = 'Pagare Libre Protesto Adicional'), (SELECT id FROM stretchy_parameter sp WHERE sp.parameter_name = 'officeIdSelectAll'), 'officeIdSelectAll');
+            INSERT INTO stretchy_report_parameter (report_id, parameter_id, report_parameter_name) VALUES ((SELECT id FROM stretchy_report sr WHERE sr.report_name = 'Pagare Libre Protesto Adicional'), (SELECT id FROM stretchy_parameter sp WHERE sp.parameter_name = 'loanProductSelectAll'), 'loanProductSelectAll');
+            INSERT INTO stretchy_report_parameter (report_id, parameter_id, report_parameter_name) VALUES ((SELECT id FROM stretchy_report sr WHERE sr.report_name = 'Pagare Libre Protesto Adicional'), (SELECT id FROM stretchy_parameter sp WHERE sp.parameter_name = 'clientIdSelectOne'), 'clientIdSelectOne');
+            INSERT INTO stretchy_report_parameter (report_id, parameter_id, report_parameter_name) VALUES ((SELECT id FROM stretchy_report sr WHERE sr.report_name = 'Pagare Libre Protesto Adicional'), (SELECT id FROM stretchy_parameter sp WHERE sp.parameter_name = 'disbursementDate'), 'disbursementDate');
+            ]]>
+        </sql>
+    </changeSet>
+
+    <changeSet id="8" author="fineract">
+        <sql>
+            <![CDATA[
+            UPDATE
+                stretchy_report_parameter srp
+                INNER JOIN stretchy_report sr ON sr.id = srp.report_id
+                INNER JOIN stretchy_parameter sp ON sp.id = srp.parameter_id
+                SET srp.report_parameter_name = 'clientLoanIdSelectOne'
+            WHERE sr.report_name = 'Pagare Libre Protesto Individual' AND sp.parameter_name  = 'clientIdSelectOne';
+
+            UPDATE
+                stretchy_report_parameter srp
+                INNER JOIN stretchy_report sr ON sr.id = srp.report_id
+                INNER JOIN stretchy_parameter sp ON sp.id = srp.parameter_id
+                SET srp.report_parameter_name = 'clientLoanIdSelectOne'
+            WHERE sr.report_name = 'Pagare Libre Protesto Adicional' AND sp.parameter_name  = 'clientIdSelectOne';
+
+            UPDATE  stretchy_parameter sp
+            SET sp.parameter_name = 'clientLoanIdSelectOne',
+                sp.parameter_variable = 'clientLoanIdSelectOne',
+                sp.parameter_sql = "SELECT
+                ml.id AS id,
+                CONCAT(mc.display_name, ' (#', ml.id, ')') AS name
+                FROM
+                    m_client mc
+                LEFT JOIN m_office mo ON
+                    mo.id = mc.office_id
+                LEFT JOIN m_loan ml ON
+                    ml.client_id = mc.id
+                WHERE
+                    (mo.id = ${officeIdSelectAll}
+                    OR ${officeIdSelectAll} = '-1')
+                AND (ml.product_id = ${loanProductSelectAll}
+                    OR ${loanProductSelectAll} = '-1')
+                AND ml.loan_status_id = 300
+                AND ml.disbursedon_date = '${disbursementDate}'"
+            WHERE sp.parameter_name = 'clientIdSelectOne';
+            ]]>
+        </sql>
+    </changeSet>
+
 </databaseChangeLog>

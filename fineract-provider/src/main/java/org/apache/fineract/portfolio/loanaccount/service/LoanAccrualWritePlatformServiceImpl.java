@@ -272,22 +272,22 @@ public class LoanAccrualWritePlatformServiceImpl implements LoanAccrualWritePlat
                 LoanTransactionType.ACCRUAL.getValue(), accruedTill, amount, interestportion, feeportion, penaltyportion,
                 DateUtils.getBusinessLocalDate());
         @SuppressWarnings("deprecation")
-        final Long transactonId = this.jdbcTemplate.queryForObject("SELECT " + sqlGenerator.lastInsertId(), Long.class); // NOSONAR
+        final Long transactionId = this.jdbcTemplate.queryForObject("SELECT " + sqlGenerator.lastInsertId(), Long.class); // NOSONAR
 
         Map<LoanChargeData, BigDecimal> applicableCharges = scheduleAccrualData.getApplicableCharges();
-        String chargespaidSql = "INSERT INTO m_loan_charge_paid_by (loan_transaction_id, loan_charge_id, amount,installment_number) VALUES (?,?,?,?)";
+        String chargesPaidSql = "INSERT INTO m_loan_charge_paid_by (loan_transaction_id, loan_charge_id, amount,installment_number) VALUES (?,?,?,?)";
         for (Map.Entry<LoanChargeData, BigDecimal> entry : applicableCharges.entrySet()) {
             LoanChargeData chargeData = entry.getKey();
-            this.jdbcTemplate.update(chargespaidSql, transactonId, chargeData.getId(), entry.getValue(),
+            this.jdbcTemplate.update(chargesPaidSql, transactionId, chargeData.getId(), entry.getValue(),
                     scheduleAccrualData.getInstallmentNumber());
         }
 
-        Map<String, Object> transactionMap = toMapData(transactonId, amount, interestportion, feeportion, penaltyportion,
+        Map<String, Object> transactionMap = toMapData(transactionId, amount, interestportion, feeportion, penaltyportion,
                 scheduleAccrualData, accruedTill);
 
-        String repaymetUpdatesql = "UPDATE m_loan_repayment_schedule SET accrual_interest_derived=?, accrual_fee_charges_derived=?, "
+        String repaymetUpdateSql = "UPDATE m_loan_repayment_schedule SET accrual_interest_derived=?, accrual_fee_charges_derived=?, "
                 + "accrual_penalty_charges_derived=? WHERE  id=?";
-        this.jdbcTemplate.update(repaymetUpdatesql, totalAccInterest, totalAccFee, totalAccPenalty,
+        this.jdbcTemplate.update(repaymetUpdateSql, totalAccInterest, totalAccFee, totalAccPenalty,
                 scheduleAccrualData.getRepaymentScheduleId());
 
         String updateLoan = "UPDATE m_loan  SET accrued_till=?  WHERE  id=?";

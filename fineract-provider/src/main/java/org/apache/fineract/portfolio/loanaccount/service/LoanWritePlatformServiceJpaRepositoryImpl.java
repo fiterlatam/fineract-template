@@ -18,6 +18,14 @@
  */
 package org.apache.fineract.portfolio.loanaccount.service;
 
+import static org.apache.fineract.portfolio.account.AccountDetailConstants.fromClientIdParamName;
+import static org.apache.fineract.portfolio.account.AccountDetailConstants.fromOfficeIdParamName;
+import static org.apache.fineract.portfolio.account.AccountDetailConstants.toClientIdParamName;
+import static org.apache.fineract.portfolio.account.AccountDetailConstants.toOfficeIdParamName;
+import static org.apache.fineract.portfolio.account.api.AccountTransfersApiConstants.transferAmountParamName;
+import static org.apache.fineract.portfolio.account.api.AccountTransfersApiConstants.transferDateParamName;
+import static org.apache.fineract.portfolio.account.api.AccountTransfersApiConstants.transferDescriptionParamName;
+
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -82,6 +90,7 @@ import org.apache.fineract.portfolio.account.data.PortfolioAccountData;
 import org.apache.fineract.portfolio.account.domain.AccountAssociationType;
 import org.apache.fineract.portfolio.account.domain.AccountAssociations;
 import org.apache.fineract.portfolio.account.domain.AccountAssociationsRepository;
+import org.apache.fineract.portfolio.account.domain.AccountTransferAssembler;
 import org.apache.fineract.portfolio.account.domain.AccountTransferDetailRepository;
 import org.apache.fineract.portfolio.account.domain.AccountTransferDetails;
 import org.apache.fineract.portfolio.account.domain.AccountTransferRecurrenceType;
@@ -144,6 +153,7 @@ import org.apache.fineract.portfolio.charge.exception.LoanChargeNotFoundExceptio
 import org.apache.fineract.portfolio.charge.exception.LoanChargeWaiveCannotBeReversedException;
 import org.apache.fineract.portfolio.charge.exception.LoanChargeWaiveCannotBeReversedException.LoanChargeWaiveCannotUndoReason;
 import org.apache.fineract.portfolio.client.domain.Client;
+import org.apache.fineract.portfolio.client.domain.ClientRepositoryWrapper;
 import org.apache.fineract.portfolio.client.exception.ClientNotActiveException;
 import org.apache.fineract.portfolio.collateralmanagement.domain.ClientCollateralManagement;
 import org.apache.fineract.portfolio.collateralmanagement.exception.LoanCollateralAmountNotSufficientException;
@@ -201,6 +211,7 @@ import org.apache.fineract.portfolio.loanaccount.exception.LoanOfficerUnassignme
 import org.apache.fineract.portfolio.loanaccount.exception.LoanTransactionNotFoundException;
 import org.apache.fineract.portfolio.loanaccount.exception.MultiDisbursementDataNotAllowedException;
 import org.apache.fineract.portfolio.loanaccount.exception.MultiDisbursementDataRequiredException;
+import org.apache.fineract.portfolio.loanaccount.exception.PaymentNotEnoughForAdjustmentException;
 import org.apache.fineract.portfolio.loanaccount.guarantor.service.GuarantorDomainService;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.data.OverdueLoanScheduleData;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.DefaultScheduledDateGenerator;
@@ -223,7 +234,11 @@ import org.apache.fineract.portfolio.paymentdetail.service.PaymentDetailWritePla
 import org.apache.fineract.portfolio.repaymentwithpostdatedchecks.domain.PostDatedChecks;
 import org.apache.fineract.portfolio.repaymentwithpostdatedchecks.domain.PostDatedChecksRepository;
 import org.apache.fineract.portfolio.repaymentwithpostdatedchecks.service.RepaymentWithPostDatedChecksAssembler;
+import org.apache.fineract.portfolio.savings.SavingsTransactionBooleanValues;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccount;
+import org.apache.fineract.portfolio.savings.domain.SavingsAccountDomainService;
+import org.apache.fineract.portfolio.savings.domain.SavingsAccountTransaction;
+import org.apache.fineract.portfolio.savings.domain.SavingsAccountTransactionRepository;
 import org.apache.fineract.portfolio.savings.service.SavingsAccountWritePlatformService;
 import org.apache.fineract.portfolio.transfer.api.TransferApiConstants;
 import org.apache.fineract.useradministration.domain.AppUser;
@@ -281,8 +296,13 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     private final LumaAccountingProcessorForLoan lumaAccountingProcessorForLoan;
     private final BitaCoraMasterRepository bitaCoraMasterRepository;
     private final ChequeJpaRepository chequeJpaRepository;
+    private final SavingsAccountTransactionRepository savingsAccountTransactionRepository;
+    private final SavingsAccountDomainService savingsAccountDomainService;
+    private final AccountTransferAssembler accountTransferAssembler;
 
     private final SavingsAccountWritePlatformService savingsAccountWritePlatformService;
+
+    private final ClientRepositoryWrapper clientRepository;
 
     private LoanLifecycleStateMachine defaultLoanLifecycleStateMachine() {
         final List<LoanStatus> allowedLoanStatuses = Arrays.asList(LoanStatus.values());
@@ -407,6 +427,13 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 .isPaymnetypeApplicableforDisbursementCharge();
 
         // Recalculate first repayment date based in actual disbursement date.
+        // Do not increment loan counter for migrated loans
+        if (loan.loanProduct().isIncludeInBorrowerCycle() && loan.getExternalId().equalsIgnoreCase(loan.getId().toString())) {
+            Client client = loan.getClient();
+            client.updateLoanCycle(client.getLoanCycle() + 1);
+            this.clientRepository.save(client);
+        }
+
         updateLoanCounters(loan, actualDisbursementDate, command);
         Money amountBeforeAdjust = loan.getPrincpal();
         loan.validateAccountStatus(LoanEvent.LOAN_DISBURSED);
@@ -479,7 +506,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
                 amountToDisburse = disburseAmount.minus(loanOutstanding);
 
-                disburseLoanToLoan(loan, command, loanOutstanding);
+                disburseLoanToLoan(loan, command, loanOutstanding, paymentDetail);
             }
 
             if (isAccountTransfer) {
@@ -974,6 +1001,11 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         changes.put("locale", command.locale());
         changes.put("dateFormat", command.dateFormat());
         changes.put("paymentTypeId", command.stringValueOfParameterNamed("paymentTypeId"));
+        changes.put("glAccountId", command.longValueOfParameterNamed("glAccountId"));
+        changes.put("billNumber", command.stringValueOfParameterNamed("billNumber"));
+
+        final Locale locale = command.extractLocale();
+        final DateTimeFormatter fmt = DateTimeFormatter.ofPattern(command.dateFormat()).withLocale(locale);
 
         final String noteText = command.stringValueOfParameterNamed("note");
         if (StringUtils.isNotBlank(noteText)) {
@@ -1008,9 +1040,76 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
         // FBR-437 release gurantee
         final boolean adjustGuarantee = command.booleanPrimitiveValueOfParameterNamed("adjustGuarantee");
+        BigDecimal totalOutstanding = loan.getSummary().getTotalOutstanding();
 
-        if (adjustGuarantee) {
-            this.savingsAccountWritePlatformService.releaseLoanGuarantee(loanId, command);
+        if (adjustGuarantee || totalOutstanding.compareTo(BigDecimal.ZERO) <= 0) {
+            List<SavingsAccountTransaction> savingsAccountTransactions = this.savingsAccountTransactionRepository
+                    .findAllTransactionByLoanId(loanId);
+
+            SavingsAccountTransaction holdTransaction = savingsAccountTransactions.stream().filter(sa -> sa.isAmountOnHoldNotReleased())
+                    .findFirst().orElse(null);
+
+            if (holdTransaction != null) {
+
+                SavingsAccount fromSavingsAccount = holdTransaction.getSavingsAccount();
+                JsonObject requestData = command.parsedJson().getAsJsonObject();
+                requestData.addProperty(fromOfficeIdParamName, fromSavingsAccount.officeId());
+                requestData.addProperty(fromClientIdParamName, fromSavingsAccount.getClient().getId());
+                requestData.addProperty(toClientIdParamName, loan.getClient().getId());
+                requestData.addProperty(toOfficeIdParamName, loan.getOfficeId());
+                final String dateFormat = "dd MMMM yyyy";
+                final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(dateFormat).withLocale(locale);
+                requestData.addProperty(transferDateParamName, transactionDate.format(dateTimeFormatter));
+                requestData.addProperty(transferAmountParamName, holdTransaction.getAmount());
+                requestData.addProperty(transferDescriptionParamName, noteText);
+                final JsonCommand assemblerCommand = JsonCommand.fromJsonElement(loanId, requestData, this.fromApiJsonHelper);
+                assemblerCommand.setJsonCommand(requestData.toString());
+
+                // if guarantee hold amount is not greater than outstanding loan amount we cant release
+                if (holdTransaction.getAmount().compareTo(totalOutstanding) < 0 && adjustGuarantee) {
+                    throw new PaymentNotEnoughForAdjustmentException(transactionAmount, totalOutstanding, holdTransaction.getAmount());
+                }
+                // release loan guarantee to make payment
+                this.savingsAccountWritePlatformService.releaseLoanGuarantee(loanId, command, transactionDate, holdTransaction);
+
+                if (totalOutstanding.compareTo(BigDecimal.ZERO) > 0) {
+
+                    // repay the loan balance with transfer
+
+                    // withdraw from savings account
+                    final SavingsTransactionBooleanValues transactionBooleanValues = new SavingsTransactionBooleanValues(true, true,
+                            fromSavingsAccount.isWithdrawalFeeApplicableForTransfer(), false, false, false, false, false, false, false);
+                    final SavingsAccountTransaction withdrawal = this.savingsAccountDomainService.handleWithdrawal(fromSavingsAccount, fmt,
+                            transactionDate, totalOutstanding, paymentDetail, transactionBooleanValues, false);
+
+                    final LoanTransaction loanRepaymentTransaction = this.loanAccountDomainService.makeRepayment(
+                            LoanTransactionType.REPAYMENT, loan, new CommandProcessingResultBuilder(), transactionDate, totalOutstanding,
+                            paymentDetail, null, null, isRecoveryRepayment, isAccountTransfer, holidayDetailDto, isHolidayValidationDone);
+
+                    final AccountTransferDetails accountTransferDetails = this.accountTransferAssembler.assembleSavingsToLoanTransfer(
+                            assemblerCommand, fromSavingsAccount, loan, withdrawal, loanRepaymentTransaction);
+                    this.accountTransferDetailRepository.saveAndFlush(accountTransferDetails);
+                } else {
+                    if (adjustGuarantee) {
+                        // withdraw the hold amount
+
+                        final PaymentDetail withdrawalDetail = this.paymentDetailWritePlatformService.createAndPersistPaymentDetail(command,
+                                changes);
+
+                        isAccountTransfer = false;
+                        final boolean backdatedTxnsAllowedTill = false;
+
+                        final SavingsTransactionBooleanValues transactionBooleanValues = new SavingsTransactionBooleanValues(false, true,
+                                fromSavingsAccount.isWithdrawalFeeApplicableForTransfer(), false, false, false, false, false, false, false);
+                        final SavingsAccountTransaction withdrawal = this.savingsAccountDomainService.handleWithdrawal(fromSavingsAccount,
+                                fmt, transactionDate, holdTransaction.getAmount(), withdrawalDetail, transactionBooleanValues,
+                                backdatedTxnsAllowedTill);
+                        final Note note = Note.savingsTransactionNote(fromSavingsAccount, withdrawal, "Guarantias Withdrawal");
+                        this.noteRepository.save(note);
+                    }
+                }
+            }
+
         }
 
         return commandProcessingResultBuilder.withCommandId(command.commandId()) //
@@ -1358,6 +1457,17 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
         postJournalEntries(loan, existingTransactionIds, existingReversedTransactionIds);
         loanAccountDomainService.recalculateAccruals(loan);
+
+        List<SavingsAccountTransaction> savingsAccountTransactions = this.savingsAccountTransactionRepository
+                .findAllTransactionByLoanId(loanId);
+
+        SavingsAccountTransaction holdTransaction = savingsAccountTransactions.stream().filter(sa -> sa.isAmountOnHoldNotReleased())
+                .findFirst().orElse(null);
+        SavingsAccount fromSavingsAccount = holdTransaction.getSavingsAccount();
+
+        this.savingsAccountWritePlatformService.releaseLoanGuarantee(loanId, command,
+                command.localDateValueOfParameterNamed("transactionDate"), holdTransaction);
+
         businessEventNotifierService.notifyPostBusinessEvent(new LoanWrittenOffPostBusinessEvent(writeOff));
         return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withEntityId(writeOff.getId())
                 .withOfficeId(loan.getOfficeId()).withClientId(loan.getClientId()).withGroupId(loan.getGroupId()).withLoanId(loanId)
@@ -2078,7 +2188,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 .withSavingsId(portfolioAccountData.accountId()).build();
     }
 
-    public void disburseLoanToLoan(final Loan loan, final JsonCommand command, final BigDecimal amount) {
+    public void disburseLoanToLoan(final Loan loan, final JsonCommand command, final BigDecimal amount, final PaymentDetail paymentDetail) {
 
         final LocalDate transactionDate = command.localDateValueOfParameterNamed("actualDisbursementDate");
         final String txnExternalId = command.stringValueOfParameterNamedAllowingNull("externalId");
@@ -2088,6 +2198,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         final AccountTransferDTO accountTransferDTO = new AccountTransferDTO(transactionDate, amount, PortfolioAccountType.LOAN,
                 PortfolioAccountType.LOAN, loan.getId(), loan.getTopupLoanDetails().getLoanIdToClose(), "Loan Topup", locale, fmt,
                 LoanTransactionType.DISBURSEMENT.getValue(), LoanTransactionType.REPAYMENT.getValue(), txnExternalId, loan, null);
+        accountTransferDTO.setPaymentDetail(paymentDetail);
         AccountTransferDetails accountTransferDetails = this.accountTransfersWritePlatformService.repayLoanWithTopup(accountTransferDTO);
         loan.getTopupLoanDetails().setAccountTransferDetails(accountTransferDetails.getId());
         loan.getTopupLoanDetails().setTopupAmount(amount);
@@ -2489,6 +2600,10 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         }
         loan.updateClientLoanCounter(null);
         loan.updateLoanProductLoanCounter(null);
+
+        Client client = loan.getClient();
+        client.updateLoanCycle(client.getLoanCycle() - 1);
+        this.clientRepository.save(client);
 
     }
 
