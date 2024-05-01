@@ -54,6 +54,7 @@ import org.apache.fineract.portfolio.charge.domain.ChargeRepositoryWrapper;
 import org.apache.fineract.portfolio.charge.domain.ChargeTimeType;
 import org.apache.fineract.portfolio.client.domain.Client;
 import org.apache.fineract.portfolio.client.domain.ClientRepositoryWrapper;
+import org.apache.fineract.portfolio.client.exception.ClientNotActiveException;
 import org.apache.fineract.portfolio.common.domain.PeriodFrequencyType;
 import org.apache.fineract.portfolio.savings.DepositAccountType;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccount;
@@ -187,6 +188,9 @@ public class ShareAccountDataSerializer {
         }
 
         Client client = this.clientRepositoryWrapper.findOneWithNotFoundDetection(clientId);
+        if (client.isNotActive()) {
+            throw new ClientNotActiveException(clientId);
+        }
         if (!this.savingsAccountReadPlatformService.isAccountBelongsToClient(clientId, savingsAccountId, DepositAccountType.SAVINGS_DEPOSIT,
                 shareProduct.getCurrency().getCode())) {
             throw new SavingsAccountNotFoundException(savingsAccountId);
