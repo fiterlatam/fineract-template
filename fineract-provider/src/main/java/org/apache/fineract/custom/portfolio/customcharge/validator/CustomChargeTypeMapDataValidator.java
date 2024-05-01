@@ -20,6 +20,13 @@ package org.apache.fineract.custom.portfolio.customcharge.validator;
 
 import com.google.gson.JsonElement;
 import com.google.gson.reflect.TypeToken;
+import java.lang.reflect.Type;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.custom.portfolio.customcharge.constants.CustomChargeTypeMapApiConstants;
 import org.apache.fineract.custom.portfolio.customcharge.domain.CustomChargeTypeMap;
@@ -35,28 +42,19 @@ import org.apache.fineract.infrastructure.security.service.PlatformSecurityConte
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.lang.reflect.Type;
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 @Component
 public class CustomChargeTypeMapDataValidator {
 
     private final FromJsonHelper fromApiJsonHelper;
-	private final PlatformSecurityContext platformSecurityContext;
-	private final ConfigurationReadPlatformService configurationReadPlatformService;
+    private final PlatformSecurityContext platformSecurityContext;
+    private final ConfigurationReadPlatformService configurationReadPlatformService;
 
     @Autowired
-    public CustomChargeTypeMapDataValidator(final FromJsonHelper fromApiJsonHelper,
-											final PlatformSecurityContext platformSecurityContext,
-											final ConfigurationReadPlatformService configurationReadPlatformService) {
+    public CustomChargeTypeMapDataValidator(final FromJsonHelper fromApiJsonHelper, final PlatformSecurityContext platformSecurityContext,
+            final ConfigurationReadPlatformService configurationReadPlatformService) {
         this.fromApiJsonHelper = fromApiJsonHelper;
-		this.platformSecurityContext = platformSecurityContext;
-		this.configurationReadPlatformService = configurationReadPlatformService;
+        this.platformSecurityContext = platformSecurityContext;
+        this.configurationReadPlatformService = configurationReadPlatformService;
     }
 
     public CustomChargeTypeMap validateForCreate(final String json, final Long customChargeTypeId) {
@@ -66,7 +64,7 @@ public class CustomChargeTypeMapDataValidator {
         }
 
         final Type typeOfMap = new TypeToken<Map<String, Object>>() {}.getType();
-        this.fromApiJsonHelper.checkForUnsupportedParameters(typeOfMap, json,  CustomChargeTypeMapApiConstants.REQUEST_DATA_PARAMETERS);
+        this.fromApiJsonHelper.checkForUnsupportedParameters(typeOfMap, json, CustomChargeTypeMapApiConstants.REQUEST_DATA_PARAMETERS);
         final JsonElement element = this.fromApiJsonHelper.parse(json);
 
         final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
@@ -74,40 +72,41 @@ public class CustomChargeTypeMapDataValidator {
         final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors)
                 .resource(CustomChargeTypeMapApiConstants.RESOURCE_NAME);
 
-		final GlobalConfigurationPropertyData customTermLength = this.configurationReadPlatformService
-				.retrieveGlobalConfiguration("custom-charge-aval-supay-max-term");
+        final GlobalConfigurationPropertyData customTermLength = this.configurationReadPlatformService
+                .retrieveGlobalConfiguration("custom-charge-aval-supay-max-term");
 
-		final Long term = this.fromApiJsonHelper.extractLongNamed(CustomChargeTypeMapApiConstants.termParamName, element);
-		baseDataValidator.reset().parameter(CustomChargeTypeMapApiConstants.termParamName).value(term).notNull().notGreaterThanMax(customTermLength.getValue().intValue());
+        final Long term = this.fromApiJsonHelper.extractLongNamed(CustomChargeTypeMapApiConstants.termParamName, element);
+        baseDataValidator.reset().parameter(CustomChargeTypeMapApiConstants.termParamName).value(term).notNull()
+                .notGreaterThanMax(customTermLength.getValue().intValue());
 
-		final BigDecimal percentage = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed(CustomChargeTypeMapApiConstants.percentageParamName, element);
-		baseDataValidator.reset().parameter(CustomChargeTypeMapApiConstants.percentageParamName).value(percentage).notNull();
+        final BigDecimal percentage = this.fromApiJsonHelper
+                .extractBigDecimalWithLocaleNamed(CustomChargeTypeMapApiConstants.percentageParamName, element);
+        baseDataValidator.reset().parameter(CustomChargeTypeMapApiConstants.percentageParamName).value(percentage).notNull();
 
-		final LocalDate validFrom = this.fromApiJsonHelper.extractLocalDateNamed(CustomChargeTypeMapApiConstants.validFromParamName, element);
-		baseDataValidator.reset().parameter(CustomChargeTypeMapApiConstants.validFromParamName).value(validFrom).notNull();
+        final LocalDate validFrom = this.fromApiJsonHelper.extractLocalDateNamed(CustomChargeTypeMapApiConstants.validFromParamName,
+                element);
+        baseDataValidator.reset().parameter(CustomChargeTypeMapApiConstants.validFromParamName).value(validFrom).notNull();
 
-		final LocalDate validTo = this.fromApiJsonHelper.extractLocalDateNamed(CustomChargeTypeMapApiConstants.validToParamName, element);
-		baseDataValidator.reset().parameter(CustomChargeTypeMapApiConstants.validToParamName).value(validTo);
+        final LocalDate validTo = this.fromApiJsonHelper.extractLocalDateNamed(CustomChargeTypeMapApiConstants.validToParamName, element);
+        baseDataValidator.reset().parameter(CustomChargeTypeMapApiConstants.validToParamName).value(validTo);
 
-		final Boolean active = true;
+        final Boolean active = true;
 
-		final Long createdBy = platformSecurityContext.authenticatedUser().getId();
+        final Long createdBy = platformSecurityContext.authenticatedUser().getId();
 
-		final LocalDateTime createdAt = DateUtils.getLocalDateTimeOfTenant();
-
+        final LocalDateTime createdAt = DateUtils.getLocalDateTimeOfTenant();
 
         throwExceptionIfValidationWarningsExist(dataValidationErrors);
-        
-        return CustomChargeTypeMap.builder()
-			.customChargeTypeId(customChargeTypeId) //
-			.term(term) //
-			.percentage(percentage) //
-			.validFrom(validFrom) //
-			.validTo(validTo) //
-			.active(active) //
-			.createdBy(createdBy) //
-			.createdAt(createdAt) //
-            .build();
+
+        return CustomChargeTypeMap.builder().customChargeTypeId(customChargeTypeId) //
+                .term(term) //
+                .percentage(percentage) //
+                .validFrom(validFrom) //
+                .validTo(validTo) //
+                .active(active) //
+                .createdBy(createdBy) //
+                .createdAt(createdAt) //
+                .build();
     }
 
     public CustomChargeTypeMap validateForUpdate(final String json, final Long customChargeTypeId) {
@@ -117,7 +116,7 @@ public class CustomChargeTypeMapDataValidator {
         }
 
         final Type typeOfMap = new TypeToken<Map<String, Object>>() {}.getType();
-        this.fromApiJsonHelper.checkForUnsupportedParameters(typeOfMap, json,  CustomChargeTypeMapApiConstants.REQUEST_DATA_PARAMETERS);
+        this.fromApiJsonHelper.checkForUnsupportedParameters(typeOfMap, json, CustomChargeTypeMapApiConstants.REQUEST_DATA_PARAMETERS);
         final JsonElement element = this.fromApiJsonHelper.parse(json);
 
         final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
@@ -125,39 +124,41 @@ public class CustomChargeTypeMapDataValidator {
         final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors)
                 .resource(CustomChargeTypeMapApiConstants.RESOURCE_NAME);
 
-		final GlobalConfigurationPropertyData customTermLength = this.configurationReadPlatformService
-				.retrieveGlobalConfiguration("custom-charge-aval-supay-max-term");
+        final GlobalConfigurationPropertyData customTermLength = this.configurationReadPlatformService
+                .retrieveGlobalConfiguration("custom-charge-aval-supay-max-term");
 
-		final Long term = this.fromApiJsonHelper.extractLongNamed(CustomChargeTypeMapApiConstants.termParamName, element);
-		baseDataValidator.reset().parameter(CustomChargeTypeMapApiConstants.termParamName).value(term).notNull().notGreaterThanMax(customTermLength.getValue().intValue());
+        final Long term = this.fromApiJsonHelper.extractLongNamed(CustomChargeTypeMapApiConstants.termParamName, element);
+        baseDataValidator.reset().parameter(CustomChargeTypeMapApiConstants.termParamName).value(term).notNull()
+                .notGreaterThanMax(customTermLength.getValue().intValue());
 
-		final BigDecimal percentage = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed(CustomChargeTypeMapApiConstants.percentageParamName, element);
-		baseDataValidator.reset().parameter(CustomChargeTypeMapApiConstants.percentageParamName).value(percentage).notNull();
+        final BigDecimal percentage = this.fromApiJsonHelper
+                .extractBigDecimalWithLocaleNamed(CustomChargeTypeMapApiConstants.percentageParamName, element);
+        baseDataValidator.reset().parameter(CustomChargeTypeMapApiConstants.percentageParamName).value(percentage).notNull();
 
-		final LocalDate validFrom = this.fromApiJsonHelper.extractLocalDateNamed(CustomChargeTypeMapApiConstants.validFromParamName, element);
-		baseDataValidator.reset().parameter(CustomChargeTypeMapApiConstants.validFromParamName).value(validFrom).notNull();
+        final LocalDate validFrom = this.fromApiJsonHelper.extractLocalDateNamed(CustomChargeTypeMapApiConstants.validFromParamName,
+                element);
+        baseDataValidator.reset().parameter(CustomChargeTypeMapApiConstants.validFromParamName).value(validFrom).notNull();
 
-		final LocalDate validTo = this.fromApiJsonHelper.extractLocalDateNamed(CustomChargeTypeMapApiConstants.validToParamName, element);
-		baseDataValidator.reset().parameter(CustomChargeTypeMapApiConstants.validToParamName).value(validTo);
+        final LocalDate validTo = this.fromApiJsonHelper.extractLocalDateNamed(CustomChargeTypeMapApiConstants.validToParamName, element);
+        baseDataValidator.reset().parameter(CustomChargeTypeMapApiConstants.validToParamName).value(validTo);
 
-		final Boolean active = true;
+        final Boolean active = true;
 
-		final Long updatedBy = platformSecurityContext.authenticatedUser().getId();
+        final Long updatedBy = platformSecurityContext.authenticatedUser().getId();
 
-		final LocalDateTime updatedAt = DateUtils.getLocalDateTimeOfTenant();
+        final LocalDateTime updatedAt = DateUtils.getLocalDateTimeOfTenant();
 
         throwExceptionIfValidationWarningsExist(dataValidationErrors);
-        
-        return CustomChargeTypeMap.builder()
-			.customChargeTypeId(customChargeTypeId) //
-			.term(term) //
-			.percentage(percentage) //
-			.validFrom(validFrom) //
-			.validTo(validTo) //
-			.active(active) //
-			.updatedBy(updatedBy) //
-			.updatedAt(updatedAt) //
-            .build();
+
+        return CustomChargeTypeMap.builder().customChargeTypeId(customChargeTypeId) //
+                .term(term) //
+                .percentage(percentage) //
+                .validFrom(validFrom) //
+                .validTo(validTo) //
+                .active(active) //
+                .updatedBy(updatedBy) //
+                .updatedAt(updatedAt) //
+                .build();
     }
 
     private void throwExceptionIfValidationWarningsExist(final List<ApiParameterError> dataValidationErrors) {

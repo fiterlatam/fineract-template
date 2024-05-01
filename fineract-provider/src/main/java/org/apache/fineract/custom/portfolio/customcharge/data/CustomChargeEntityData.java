@@ -31,7 +31,7 @@ import lombok.Setter;
 @Setter
 public class CustomChargeEntityData {
 
-	private Long id;
-	private String name;
-	private String code;
+    private Long id;
+    private String name;
+    private String code;
 }
