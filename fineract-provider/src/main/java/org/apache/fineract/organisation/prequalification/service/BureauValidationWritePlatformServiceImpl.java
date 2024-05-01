@@ -18,6 +18,7 @@
  */
 package org.apache.fineract.organisation.prequalification.service;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import java.math.BigDecimal;
 import java.nio.charset.Charset;
@@ -39,6 +40,7 @@ import org.apache.fineract.infrastructure.core.exception.PlatformDataIntegrityEx
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
 import org.apache.fineract.infrastructure.core.serialization.JsonParserHelper;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
+import org.apache.fineract.organisation.prequalification.data.BuroData;
 import org.apache.fineract.organisation.prequalification.data.LoanAdditionalData;
 import org.apache.fineract.organisation.prequalification.domain.BuroCheckClassification;
 import org.apache.fineract.organisation.prequalification.domain.PreQualificationMemberRepository;
@@ -108,11 +110,21 @@ public class BureauValidationWritePlatformServiceImpl implements BureauValidatio
         List<PrequalificationGroupMember> members = this.preQualificationMemberRepository
                 .findAllByPrequalificationGroup(prequalificationGroup);
         for (PrequalificationGroupMember member : members) {
-            EnumOptionData enumOptionData = this.makeBureauCheckApiCall(member.getDpi());
-            if (enumOptionData == null) {
+            final BuroData buroData = this.makeBureauCheckApiCall(member.getDpi());
+            if (buroData == null) {
                 throw new DpiBuroChequeException(member.getDpi());
             }
-            member.updateBuroCheckStatus(enumOptionData.getId().intValue());
+            if (buroData.getClassification() != null) {
+                EnumOptionData enumOptionData = buroData.getClassification();
+                member.updateBuroCheckStatus(enumOptionData.getId().intValue());
+            }
+            member.setNombre(buroData.getNombre());
+            member.setTipo(buroData.getTipo());
+            member.setNumero(buroData.getNumero());
+            member.setEstado(buroData.getEstado());
+            member.setFecha(buroData.getFecha());
+            member.setCuentas(buroData.getCuentas());
+            member.setResumen(buroData.getResumen());
             this.preQualificationMemberRepository.save(member);
         }
         prequalificationGroup.updateStatus(PrequalificationStatus.BURO_CHECKED);
@@ -130,8 +142,8 @@ public class BureauValidationWritePlatformServiceImpl implements BureauValidatio
                 .build();
     }
 
-    private EnumOptionData makeBureauCheckApiCall(final String dpi) {
-        EnumOptionData enumOptionData = null;
+    private BuroData makeBureauCheckApiCall(final String dpi) {
+        BuroData.BuroDataBuilder buroDataBuilder = BuroData.builder();
         final Collection<ExternalServicesPropertiesData> externalServicesPropertiesDatas = this.externalServicePropertiesReadPlatformService
                 .retrieveOne(ExternalServicesConstants.DPI_BURO_CHECK_SERVICE_NAME);
         String dpiBuroCheckApiUsername = null;
@@ -166,12 +178,28 @@ public class BureauValidationWritePlatformServiceImpl implements BureauValidatio
         if (responseEntity.hasBody()) {
             final JsonElement jsonElement = this.fromApiJsonHelper.parse(responseEntity.getBody());
             if (jsonElement.isJsonObject()) {
+                final String dateTimeFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'";
+                final String localeAsString = "en";
+                final Locale locale = JsonParserHelper.localeFromString(localeAsString);
                 final String classificationLetter = this.fromApiJsonHelper.extractStringNamed("Clasificacion", jsonElement);
-                enumOptionData = BuroCheckClassification.status(BuroCheckClassification.fromLetter(classificationLetter).getId());
+                final String cuentas = this.fromApiJsonHelper.extractStringNamed("Cuentas", jsonElement);
+                final String resumen = this.fromApiJsonHelper.extractStringNamed("Resumen", jsonElement);
+                final JsonArray identificacions = this.fromApiJsonHelper.extractJsonArrayNamed("Identificacion", jsonElement);
+                if (identificacions != null && !identificacions.isEmpty()) {
+                    final JsonElement identificacionJson = identificacions.get(0);
+                    final String tipo = this.fromApiJsonHelper.extractStringNamed("Tipo", identificacionJson);
+                    final String numero = this.fromApiJsonHelper.extractStringNamed("Numero", identificacionJson);
+                    final String estado = this.fromApiJsonHelper.extractStringNamed("Estado", identificacionJson);
+                    buroDataBuilder.tipo(tipo).numero(numero).estado(estado);
+                }
+                final LocalDateTime fetcha = this.fromApiJsonHelper.extractLocalDateTimeNamed("Fecha", jsonElement, dateTimeFormat, locale);
+                EnumOptionData enumOptionData = BuroCheckClassification
+                        .status(BuroCheckClassification.fromLetter(classificationLetter).getId());
+                buroDataBuilder.classification(enumOptionData).fecha(fetcha).cuentas(cuentas).resumen(resumen).build();
             }
         }
 
-        return enumOptionData;
+        return buroDataBuilder.build();
     }
 
     @Override

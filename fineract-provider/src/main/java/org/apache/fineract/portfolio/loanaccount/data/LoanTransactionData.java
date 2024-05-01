@@ -23,6 +23,7 @@ import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
+import org.apache.fineract.organisation.bankAccount.data.BankAccountData;
 import org.apache.fineract.organisation.monetary.data.CurrencyData;
 import org.apache.fineract.portfolio.account.data.AccountTransferData;
 import org.apache.fineract.portfolio.paymentdetail.data.PaymentDetailData;
@@ -86,8 +87,9 @@ public class LoanTransactionData {
     private transient Long accountId;
     private transient String transactionType;
     private List<LoanRepaymentScheduleInstallmentData> loanRepaymentScheduleInstallments;
-
     private String note;
+    private List<BankAccountData> bankAccounts;
+    private BigDecimal collateralAmount;
 
     public static LoanTransactionData importInstance(BigDecimal repaymentAmount, LocalDate lastRepaymentDate, Long repaymentTypeId,
             Integer rowIndex, String locale, String dateFormat) {
@@ -182,6 +184,14 @@ public class LoanTransactionData {
         this.numberOfRepayments = numberOfRepayments;
     }
 
+    public void setCollateralAmount(BigDecimal collateralAmount) {
+        this.collateralAmount = collateralAmount;
+    }
+
+    public BigDecimal getCollateralAmount() {
+        return this.collateralAmount;
+    }
+
     public Integer getNumberOfRepayments() {
         return numberOfRepayments;
     }
@@ -210,6 +220,7 @@ public class LoanTransactionData {
                 loanTransactionData.manuallyReversed);
         loanTransactionTemplate.setInstallmentNumber(loanTransactionData.getInstallmentNumber());
         loanTransactionTemplate.setNumberOfRepayments(loanTransactionData.getNumberOfRepayments());
+        loanTransactionTemplate.setCollateralAmount(loanTransactionData.getCollateralAmount());
         return loanTransactionTemplate;
 
     }
@@ -406,5 +417,13 @@ public class LoanTransactionData {
 
     public void setNote(String note) {
         this.note = note;
+    }
+
+    public List<BankAccountData> getBankAccounts() {
+        return bankAccounts;
+    }
+
+    public void setBankAccounts(List<BankAccountData> bankAccounts) {
+        this.bankAccounts = bankAccounts;
     }
 }

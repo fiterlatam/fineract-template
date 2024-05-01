@@ -68,6 +68,14 @@ public class DatabaseSpecificSQLGenerator {
         }
     }
 
+    /**
+     *
+     * @since MySQL 8.0.17
+     * @deprecated As a replacement, considering executing your query with LIMIT, and then a second query with COUNT(*)
+     *             and without LIMIT to determine the total number of record that would be return
+     */
+
+    @Deprecated
     public String calcFoundRows() {
         if (databaseTypeResolver.isMySQL()) {
             return "SQL_CALC_FOUND_ROWS";

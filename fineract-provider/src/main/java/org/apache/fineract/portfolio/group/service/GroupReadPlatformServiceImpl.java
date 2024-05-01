@@ -322,4 +322,15 @@ public class GroupReadPlatformServiceImpl implements GroupReadPlatformService {
         return GroupGeneralData.withClosureReasons(closureReasons);
     }
 
+    @Override
+    public Collection<GroupGeneralData> retrieveAllByOffice() {
+        final AppUser currentUser = this.context.authenticatedUser();
+        final String hierarchy = currentUser.getOffice().getHierarchy();
+
+        final String sql = "select " + this.allGroupTypesDataMapper.schema()
+                + " where g.parent_id is not null and g.level_Id = ? and (o.hierarchy LIKE CONCAT(?, '%') OR ? like CONCAT(o.hierarchy, '%')) order by g.hierarchy";
+
+        return this.jdbcTemplate.query(sql, this.allGroupTypesDataMapper, new Object[] { GroupTypes.GROUP.getId(), hierarchy,hierarchy });
+    }
+
 }

@@ -107,7 +107,9 @@ import org.apache.fineract.portfolio.charge.data.ChargeData;
 import org.apache.fineract.portfolio.charge.domain.ChargeTimeType;
 import org.apache.fineract.portfolio.charge.service.ChargeReadPlatformService;
 import org.apache.fineract.portfolio.client.data.ClientData;
+import org.apache.fineract.portfolio.client.data.EconomicSectorData;
 import org.apache.fineract.portfolio.client.service.ClientReadPlatformService;
+import org.apache.fineract.portfolio.client.service.EconomicActivityReadPlatformService;
 import org.apache.fineract.portfolio.collateralmanagement.data.LoanCollateralResponseData;
 import org.apache.fineract.portfolio.collateralmanagement.service.LoanCollateralManagementReadPlatformService;
 import org.apache.fineract.portfolio.cupo.data.CupoData;
@@ -287,35 +289,37 @@ public class LoansApiResource {
     private final AppUserReadPlatformService appUserReadPlatformService;
     private final AgencyReadPlatformServiceImpl agencyReadPlatformService;
     private final CenterReadPlatformServiceImpl centerReadPlatformService;
+    private final EconomicActivityReadPlatformService economicActivityReadPlatformService;
 
     public LoansApiResource(final PlatformSecurityContext context, final LoanReadPlatformService loanReadPlatformService,
-                            final LoanProductReadPlatformService loanProductReadPlatformService,
-                            final LoanDropdownReadPlatformService dropdownReadPlatformService, final FundReadPlatformService fundReadPlatformService,
-                            final ChargeReadPlatformService chargeReadPlatformService, final LoanChargeReadPlatformService loanChargeReadPlatformService,
-                            final LoanScheduleCalculationPlatformService calculationPlatformService,
-                            final GuarantorReadPlatformService guarantorReadPlatformService, final ClientReadPlatformService clientReadPlatformService,
-                            final CodeValueReadPlatformService codeValueReadPlatformService, final GroupReadPlatformService groupReadPlatformService,
-                            final DefaultToApiJsonSerializer<LoanAccountData> toApiJsonSerializer,
-                            final DefaultToApiJsonSerializer<LoanApprovalData> loanApprovalDataToApiJsonSerializer,
-                            final DefaultToApiJsonSerializer<LoanScheduleData> loanScheduleToApiJsonSerializer,
-                            final DefaultToApiJsonSerializer<EnumOptionData> ageLimitValidationJsonSerializer,
-                            final DefaultToApiJsonSerializer<GroupLoanAdditionalData> loanAdditionalDataToApiJsonSerializer,
-                            final ApiRequestParameterHelper apiRequestParameterHelper, final FromJsonHelper fromJsonHelper,
-                            final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService,
-                            final CalendarReadPlatformService calendarReadPlatformService, final NoteReadPlatformService noteReadPlatformService,
-                            final PortfolioAccountReadPlatformService portfolioAccountReadPlatformServiceImpl,
-                            final AccountAssociationsReadPlatformService accountAssociationsReadPlatformService,
-                            final LoanScheduleHistoryReadPlatformService loanScheduleHistoryReadPlatformService,
-                            final AccountDetailsReadPlatformService accountDetailsReadPlatformService,
-                            final EntityDatatableChecksReadService entityDatatableChecksReadService,
-                            final BulkImportWorkbookService bulkImportWorkbookService,
-                            final BulkImportWorkbookPopulatorService bulkImportWorkbookPopulatorService, final RateReadService rateReadService,
-                            final ConfigurationDomainService configurationDomainService,
-                            final DefaultToApiJsonSerializer<GlimRepaymentTemplate> glimTemplateToApiJsonSerializer,
-                            final GLIMAccountInfoReadPlatformService glimAccountInfoReadPlatformService,
-                            final LoanCollateralManagementReadPlatformService loanCollateralManagementReadPlatformService,
-                            final CupoReadService cupoReadService, AppUserReadPlatformService appUserReadPlatformService,
-                            AgencyReadPlatformServiceImpl agencyReadPlatformService, CenterReadPlatformServiceImpl centerReadPlatformService) {
+            final LoanProductReadPlatformService loanProductReadPlatformService,
+            final LoanDropdownReadPlatformService dropdownReadPlatformService, final FundReadPlatformService fundReadPlatformService,
+            final ChargeReadPlatformService chargeReadPlatformService, final LoanChargeReadPlatformService loanChargeReadPlatformService,
+            final LoanScheduleCalculationPlatformService calculationPlatformService,
+            final GuarantorReadPlatformService guarantorReadPlatformService, final ClientReadPlatformService clientReadPlatformService,
+            final CodeValueReadPlatformService codeValueReadPlatformService, final GroupReadPlatformService groupReadPlatformService,
+            final DefaultToApiJsonSerializer<LoanAccountData> toApiJsonSerializer,
+            final DefaultToApiJsonSerializer<LoanApprovalData> loanApprovalDataToApiJsonSerializer,
+            final DefaultToApiJsonSerializer<LoanScheduleData> loanScheduleToApiJsonSerializer,
+            final DefaultToApiJsonSerializer<EnumOptionData> ageLimitValidationJsonSerializer,
+            final DefaultToApiJsonSerializer<GroupLoanAdditionalData> loanAdditionalDataToApiJsonSerializer,
+            final ApiRequestParameterHelper apiRequestParameterHelper, final FromJsonHelper fromJsonHelper,
+            final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService,
+            final CalendarReadPlatformService calendarReadPlatformService, final NoteReadPlatformService noteReadPlatformService,
+            final PortfolioAccountReadPlatformService portfolioAccountReadPlatformServiceImpl,
+            final AccountAssociationsReadPlatformService accountAssociationsReadPlatformService,
+            final LoanScheduleHistoryReadPlatformService loanScheduleHistoryReadPlatformService,
+            final AccountDetailsReadPlatformService accountDetailsReadPlatformService,
+            final EntityDatatableChecksReadService entityDatatableChecksReadService,
+            final BulkImportWorkbookService bulkImportWorkbookService,
+            final BulkImportWorkbookPopulatorService bulkImportWorkbookPopulatorService, final RateReadService rateReadService,
+            final ConfigurationDomainService configurationDomainService,
+            final DefaultToApiJsonSerializer<GlimRepaymentTemplate> glimTemplateToApiJsonSerializer,
+            final GLIMAccountInfoReadPlatformService glimAccountInfoReadPlatformService,
+            final LoanCollateralManagementReadPlatformService loanCollateralManagementReadPlatformService,
+            final CupoReadService cupoReadService, AppUserReadPlatformService appUserReadPlatformService,
+            EconomicActivityReadPlatformService economicActivityReadPlatformService,
+            AgencyReadPlatformServiceImpl agencyReadPlatformService, CenterReadPlatformServiceImpl centerReadPlatformService) {
         this.context = context;
         this.loanReadPlatformService = loanReadPlatformService;
         this.loanProductReadPlatformService = loanProductReadPlatformService;
@@ -354,6 +358,7 @@ public class LoansApiResource {
         this.agencyReadPlatformService = agencyReadPlatformService;
         this.centerReadPlatformService = centerReadPlatformService;
         this.loanAdditionalDataToApiJsonSerializer = loanAdditionalDataToApiJsonSerializer;
+        this.economicActivityReadPlatformService = economicActivityReadPlatformService;
     }
 
     /*
@@ -367,8 +372,8 @@ public class LoansApiResource {
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     public String retrieveApprovalTemplate(@PathParam("loanId") @Parameter(description = "loanId") final Long loanId,
-                                           @QueryParam("templateType") @Parameter(description = "templateType") final String templateType,
-                                           @Context final UriInfo uriInfo) {
+            @QueryParam("templateType") @Parameter(description = "templateType") final String templateType,
+            @Context final UriInfo uriInfo) {
 
         this.context.authenticatedUser().validateHasReadPermission(this.resourceNameForPermissions);
 
@@ -391,7 +396,7 @@ public class LoansApiResource {
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     public String retrieveLoanAdditionals(@PathParam("loanId") @Parameter(description = "loanId") final Long loanId,
-                                          @Context final UriInfo uriInfo) {
+            @Context final UriInfo uriInfo) {
 
         this.context.authenticatedUser().validateHasReadPermission(this.resourceNameForPermissions);
 
@@ -413,12 +418,12 @@ public class LoansApiResource {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = LoansApiResourceSwagger.GetLoansTemplateResponse.class))) })
     public String template(@QueryParam("clientId") @Parameter(description = "clientId") final Long clientId,
-                           @QueryParam("groupId") @Parameter(description = "groupId") final Long groupId,
-                           @QueryParam("productId") @Parameter(description = "productId") final Long productId,
-                           @QueryParam("templateType") @Parameter(description = "templateType") final String templateType,
-                           @DefaultValue("false") @QueryParam("staffInSelectedOfficeOnly") @Parameter(description = "staffInSelectedOfficeOnly") final boolean staffInSelectedOfficeOnly,
-                           @DefaultValue("false") @QueryParam("activeOnly") @Parameter(description = "activeOnly") final boolean onlyActive,
-                           @Context final UriInfo uriInfo) {
+            @QueryParam("groupId") @Parameter(description = "groupId") final Long groupId,
+            @QueryParam("productId") @Parameter(description = "productId") final Long productId,
+            @QueryParam("templateType") @Parameter(description = "templateType") final String templateType,
+            @DefaultValue("false") @QueryParam("staffInSelectedOfficeOnly") @Parameter(description = "staffInSelectedOfficeOnly") final boolean staffInSelectedOfficeOnly,
+            @DefaultValue("false") @QueryParam("activeOnly") @Parameter(description = "activeOnly") final boolean onlyActive,
+            @Context final UriInfo uriInfo) {
 
         this.context.authenticatedUser().validateHasReadPermission(this.resourceNameForPermissions);
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
@@ -475,6 +480,7 @@ public class LoansApiResource {
             Collection<CodeValueData> cancellationReasonOptions = this.codeValueReadPlatformService
                     .retrieveCodeValuesByCode("cancellationReasonOptions");
             Collection<CodeValueData> documentTypeOptions = this.codeValueReadPlatformService.retrieveCodeValuesByCode("Document Type");
+            List<EconomicSectorData> economicSectorData = this.economicActivityReadPlatformService.retrieveSectorData();
 
             final List<AppUserData> facilitatorOptions = new ArrayList<>(
                     this.appUserReadPlatformService.retrieveUsersUnderHierarchy(Long.valueOf(OfficeHierarchyLevel.GRUPO.getValue())));
@@ -482,7 +488,8 @@ public class LoansApiResource {
             newLoanAccount = new LoanAccountData(loanCycleCompletedOptions, loanPurposeOptions, businessEvolutionOptions, yesnoOptions,
                     businessExperienceOptions, businessLocationOptions, clientTypeOptions, loanStatusOptions, institutionTypeOptions,
                     housingTypeOptions, classificationOptions, jobTypeOptions, educationLevelOptions, maritalStatusOptions,
-                    groupPositionOptions, sourceOfFundsOptions, cancellationReasonOptions, facilitatorOptions, documentTypeOptions);
+                    groupPositionOptions, sourceOfFundsOptions, cancellationReasonOptions, facilitatorOptions, documentTypeOptions,
+                    economicSectorData);
             return this.toApiJsonSerializer.serialize(settings, newLoanAccount, this.loanDataParameters);
         } else if ("cheque".equalsIgnoreCase(templateType)) {
             final Collection<CenterData> centerOptions = this.centerReadPlatformService
@@ -490,7 +497,7 @@ public class LoansApiResource {
             final Collection<AgencyData> agencyOptions = this.agencyReadPlatformService.retrieveAllByUser();
             final List<AppUserData> facilitatorOptions = new ArrayList<>(
                     this.appUserReadPlatformService.retrieveUsersUnderHierarchy(Long.valueOf(OfficeHierarchyLevel.GRUPO.getValue())));
-            final Collection<GroupGeneralData> groupOptions = this.groupReadPlatformService.retrieveAll(null, null);
+            final Collection<GroupGeneralData> groupOptions = this.groupReadPlatformService.retrieveAllByOffice();
             final Collection<EnumOptionData> disbursementMethodOptions = List.of(LoanDisbursementMethod.status(1),
                     LoanDisbursementMethod.status(2), LoanDisbursementMethod.status(3));
             newLoanAccount = LoanAccountData.disburseLoanByCheques(agencyOptions, centerOptions, groupOptions, facilitatorOptions,
@@ -596,7 +603,7 @@ public class LoansApiResource {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = LoansApiResourceSwagger.GetLoansTemplateResponse.class))) })
     public String template(@PathParam("clientId") @Parameter(description = "clientId") final Long clientId,
-                           @PathParam("productId") @Parameter(description = "productId") final Long productId, @Context final UriInfo uriInfo) {
+            @PathParam("productId") @Parameter(description = "productId") final Long productId, @Context final UriInfo uriInfo) {
 
         this.context.authenticatedUser().validateHasReadPermission(this.resourceNameForPermissions);
 
@@ -628,7 +635,7 @@ public class LoansApiResource {
     }
 
     private Collection<PortfolioAccountData> getaccountLinkingOptions(final LoanAccountData newLoanAccount, final Long clientId,
-                                                                      final Long groupId) {
+            final Long groupId) {
         final CurrencyData currencyData = newLoanAccount.currency();
         String currencyCode = null;
         if (currencyData != null) {
@@ -654,12 +661,12 @@ public class LoansApiResource {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = LoansApiResourceSwagger.GetLoansLoanIdResponse.class))) })
     public String retrieveLoan(@PathParam("loanId") @Parameter(description = "loanId") final Long loanId,
-                               @DefaultValue("false") @QueryParam("staffInSelectedOfficeOnly") @Parameter(description = "staffInSelectedOfficeOnly") final boolean staffInSelectedOfficeOnly,
-                               @DefaultValue("all") @QueryParam("associations") @Parameter(in = ParameterIn.QUERY, name = "associations", description = "Loan object relations to be included in the response", required = false, examples = {
-                                       @ExampleObject(value = "all"), @ExampleObject(value = "repaymentSchedule,transactions") }) final String associations,
-                               @QueryParam("exclude") @Parameter(in = ParameterIn.QUERY, name = "exclude", description = "Optional Loan object relation list to be filtered in the response", required = false, example = "guarantors,futureSchedule") final String exclude,
-                               @QueryParam("fields") @Parameter(in = ParameterIn.QUERY, name = "fields", description = "Optional Loan attribute list to be in the response", required = false, example = "id,principal,annualInterestRate") final String fields,
-                               @Context final UriInfo uriInfo) {
+            @DefaultValue("false") @QueryParam("staffInSelectedOfficeOnly") @Parameter(description = "staffInSelectedOfficeOnly") final boolean staffInSelectedOfficeOnly,
+            @DefaultValue("all") @QueryParam("associations") @Parameter(in = ParameterIn.QUERY, name = "associations", description = "Loan object relations to be included in the response", required = false, examples = {
+                    @ExampleObject(value = "all"), @ExampleObject(value = "repaymentSchedule,transactions") }) final String associations,
+            @QueryParam("exclude") @Parameter(in = ParameterIn.QUERY, name = "exclude", description = "Optional Loan object relation list to be filtered in the response", required = false, example = "guarantors,futureSchedule") final String exclude,
+            @QueryParam("fields") @Parameter(in = ParameterIn.QUERY, name = "fields", description = "Optional Loan attribute list to be in the response", required = false, example = "id,principal,annualInterestRate") final String fields,
+            @Context final UriInfo uriInfo) {
         this.context.authenticatedUser().validateHasReadPermission(this.resourceNameForPermissions);
 
         LoanAccountData loanBasicDetails = this.loanReadPlatformService.retrieveOne(loanId);
@@ -960,26 +967,26 @@ public class LoansApiResource {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = LoansApiResourceSwagger.GetLoansResponse.class))) })
     public String retrieveAll(@Context final UriInfo uriInfo,
-                              @QueryParam("sqlSearch") @Parameter(description = "sqlSearch") final String sqlSearch,
-                              @QueryParam("externalId") @Parameter(description = "externalId") final String externalId,
-                              // @QueryParam("underHierarchy") final String hierarchy,
-                              @QueryParam("offset") @Parameter(description = "offset") final Integer offset,
-                              @QueryParam("limit") @Parameter(description = "limit") final Integer limit,
-                              @QueryParam("orderBy") @Parameter(description = "orderBy") final String orderBy,
-                              @QueryParam("sortOrder") @Parameter(description = "sortOrder") final String sortOrder,
-                              @QueryParam("accountNo") @Parameter(description = "accountNo") final String accountNo,
-                              @QueryParam("clientNo") @Parameter(description = "accountNo") final String clientNo,
-                              @QueryParam("agencyId") @Parameter(description = "agencyId") final Long agencyId,
-                              @QueryParam("groupId") @Parameter(description = "groupId") final Long groupId,
-                              @QueryParam("centerId") @Parameter(description = "centerId") final Long centerId,
-                              @QueryParam("facilitatorId") @Parameter(description = "facilitatorId") final Long facilitatorId,
-                              @DefaultValue("false") @QueryParam("isIndividualBusinessLoan") @Parameter(description = "isIndividualBusinessLoan") final boolean isIndividualBusinessLoan,
-                              @QueryParam("approvalEndDate") @Parameter(description = "approvalEndDate") final DateParam approvalEndDateParam,
-                              @QueryParam("approvalStartDate") @Parameter(description = "approvalStartDate") final DateParam approvalStartDateParam,
-                              @QueryParam("disbursementStartDate") @Parameter(description = "disbursementStartDate") final DateParam disbursementStartDateParam,
-                              @QueryParam("disbursementEndDate") @Parameter(description = "disbursementEndDate") final DateParam disbursementEndDateParam,
-                              @QueryParam("locale") @Parameter(description = "locale") final String locale,
-                              @QueryParam("dateFormat") @Parameter(description = "dateFormat") final String dateFormat) {
+            @QueryParam("sqlSearch") @Parameter(description = "sqlSearch") final String sqlSearch,
+            @QueryParam("externalId") @Parameter(description = "externalId") final String externalId,
+            // @QueryParam("underHierarchy") final String hierarchy,
+            @QueryParam("offset") @Parameter(description = "offset") final Integer offset,
+            @QueryParam("limit") @Parameter(description = "limit") final Integer limit,
+            @QueryParam("orderBy") @Parameter(description = "orderBy") final String orderBy,
+            @QueryParam("sortOrder") @Parameter(description = "sortOrder") final String sortOrder,
+            @QueryParam("accountNo") @Parameter(description = "accountNo") final String accountNo,
+            @QueryParam("clientNo") @Parameter(description = "accountNo") final String clientNo,
+            @QueryParam("agencyId") @Parameter(description = "agencyId") final Long agencyId,
+            @QueryParam("groupId") @Parameter(description = "groupId") final Long groupId,
+            @QueryParam("centerId") @Parameter(description = "centerId") final Long centerId,
+            @QueryParam("facilitatorId") @Parameter(description = "facilitatorId") final Long facilitatorId,
+            @DefaultValue("false") @QueryParam("isIndividualBusinessLoan") @Parameter(description = "isIndividualBusinessLoan") final boolean isIndividualBusinessLoan,
+            @QueryParam("approvalEndDate") @Parameter(description = "approvalEndDate") final DateParam approvalEndDateParam,
+            @QueryParam("approvalStartDate") @Parameter(description = "approvalStartDate") final DateParam approvalStartDateParam,
+            @QueryParam("disbursementStartDate") @Parameter(description = "disbursementStartDate") final DateParam disbursementStartDateParam,
+            @QueryParam("disbursementEndDate") @Parameter(description = "disbursementEndDate") final DateParam disbursementEndDateParam,
+            @QueryParam("locale") @Parameter(description = "locale") final String locale,
+            @QueryParam("dateFormat") @Parameter(description = "dateFormat") final String dateFormat) {
         this.context.authenticatedUser().validateHasReadPermission(this.resourceNameForPermissions);
         LocalDate approvalStartDate = null;
         if (approvalStartDateParam != null) {
@@ -1054,7 +1061,7 @@ public class LoansApiResource {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = LoansApiResourceSwagger.PutLoansLoanIdResponse.class))) })
     public String modifyLoanApplication(@PathParam("loanId") @Parameter(description = "loanId") final Long loanId,
-                                        @Parameter(hidden = true) final String apiRequestBodyAsJson) {
+            @Parameter(hidden = true) final String apiRequestBodyAsJson) {
 
         final CommandWrapper commandRequest = new CommandWrapperBuilder().updateLoanApplication(loanId).withJson(apiRequestBodyAsJson)
                 .build();
@@ -1100,8 +1107,8 @@ public class LoansApiResource {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = LoansApiResourceSwagger.PostLoansLoanIdResponse.class))) })
     public String stateTransitions(@PathParam("loanId") @Parameter(description = "loanId") final Long loanId,
-                                   @QueryParam("command") @Parameter(description = "command") final String commandParam,
-                                   @Parameter(hidden = true) final String apiRequestBodyAsJson) {
+            @QueryParam("command") @Parameter(description = "command") final String commandParam,
+            @Parameter(hidden = true) final String apiRequestBodyAsJson) {
 
         final CommandWrapperBuilder builder = new CommandWrapperBuilder().withJson(apiRequestBodyAsJson);
 
@@ -1164,7 +1171,7 @@ public class LoansApiResource {
     @Path("downloadtemplate")
     @Produces("application/vnd.ms-excel")
     public Response getLoansTemplate(@QueryParam("officeId") final Long officeId, @QueryParam("staffId") final Long staffId,
-                                     @QueryParam("dateFormat") final String dateFormat) {
+            @QueryParam("dateFormat") final String dateFormat) {
         return bulkImportWorkbookPopulatorService.getTemplate(GlobalEntityType.LOANS.toString(), officeId, staffId, dateFormat);
     }
 
@@ -1195,7 +1202,7 @@ public class LoansApiResource {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = LoansApiResourceSwagger.PostLoansLoanIdResponse.class))) })
     public String glimStateTransitions(@PathParam("glimId") final Long glimId, @QueryParam("command") final String commandParam,
-                                       final String apiRequestBodyAsJson) {
+            final String apiRequestBodyAsJson) {
 
         final CommandWrapperBuilder builder = new CommandWrapperBuilder().withJson(apiRequestBodyAsJson);
 
@@ -1232,7 +1239,7 @@ public class LoansApiResource {
     @Path("repayments/downloadtemplate")
     @Produces("application/vnd.ms-excel")
     public Response getLoanRepaymentTemplate(@QueryParam("officeId") final Long officeId,
-                                             @QueryParam("dateFormat") final String dateFormat) {
+            @QueryParam("dateFormat") final String dateFormat) {
         return bulkImportWorkbookPopulatorService.getTemplate(GlobalEntityType.LOAN_TRANSACTIONS.toString(), officeId, null, dateFormat);
     }
 
@@ -1242,8 +1249,8 @@ public class LoansApiResource {
     @RequestBody(description = "Upload Loan template", content = {
             @Content(mediaType = MediaType.MULTIPART_FORM_DATA, schema = @Schema(implementation = UploadRequest.class)) })
     public String postLoanTemplate(@FormDataParam("file") InputStream uploadedInputStream,
-                                   @FormDataParam("file") FormDataContentDisposition fileDetail, @FormDataParam("locale") final String locale,
-                                   @FormDataParam("dateFormat") final String dateFormat) {
+            @FormDataParam("file") FormDataContentDisposition fileDetail, @FormDataParam("locale") final String locale,
+            @FormDataParam("dateFormat") final String dateFormat) {
         final Long importDocumentId = this.bulkImportWorkbookService.importWorkbook(GlobalEntityType.LOANS.toString(), uploadedInputStream,
                 fileDetail, locale, dateFormat);
         return this.toApiJsonSerializer.serialize(importDocumentId);
@@ -1255,8 +1262,8 @@ public class LoansApiResource {
     @RequestBody(description = "Upload Loan repayments template", content = {
             @Content(mediaType = MediaType.MULTIPART_FORM_DATA, schema = @Schema(implementation = UploadRequest.class)) })
     public String postLoanRepaymentTemplate(@FormDataParam("file") InputStream uploadedInputStream,
-                                            @FormDataParam("file") FormDataContentDisposition fileDetail, @FormDataParam("locale") final String locale,
-                                            @FormDataParam("dateFormat") final String dateFormat) {
+            @FormDataParam("file") FormDataContentDisposition fileDetail, @FormDataParam("locale") final String locale,
+            @FormDataParam("dateFormat") final String dateFormat) {
         final Long importDocumentId = this.bulkImportWorkbookService.importWorkbook(GlobalEntityType.LOAN_TRANSACTIONS.toString(),
                 uploadedInputStream, fileDetail, locale, dateFormat);
         return this.toApiJsonSerializer.serialize(importDocumentId);

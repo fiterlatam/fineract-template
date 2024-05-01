@@ -225,6 +225,21 @@ public final class AllGroupTypesDataMapper implements RowMapper<GroupGeneralData
         ret.setPrequalificationNumber(prequalificationNumber);
         ret.setPrequalificationId(prequalificationId);
         ret.setPrequalificationStatus(prequalificationStatus);
+        ret.setMeetingFrequencyRange(resolveMeetingFrequencyRange(meetingStart, meetingEnd));
         return ret;
+    }
+
+    private Integer resolveMeetingFrequencyRange(int meetingStart, int meetingEnd) {
+        if (meetingEnd >= 1 && meetingEnd <= 7) {
+            return 1;
+        } else if (meetingStart >= 8 && meetingEnd <= 14) {
+            return 2;
+        } else if (meetingStart >= 15 && meetingEnd <= 21) {
+            return 3;
+        } else if (meetingStart >= 22 && meetingEnd <= 28) {
+            return 4;
+        } else {
+            return null;
+        }
     }
 }

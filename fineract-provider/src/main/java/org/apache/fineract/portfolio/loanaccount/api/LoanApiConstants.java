@@ -162,7 +162,8 @@ public interface LoanApiConstants {
     String LOAN_ADDITIONAL_DATA = "loanAdditionalData";
     String LOAN_RESOURCE_NAME = "LOAN";
     String loanCycleCompletedParamName = "loanCycleCompleted";
-    String rentMortgageFeeParamName = "rentMortgageFee";
+    String rentFeeParamName = "rentFee";
+    String mortgageFeeParamName = "mortgageFee";
     String monthlyIncomeParamName = "monthlyIncome";
     String familyExpensesParamName = "familyExpenses";
     String totalExternalLoanAmountParamName = "totalExternalLoanAmount";

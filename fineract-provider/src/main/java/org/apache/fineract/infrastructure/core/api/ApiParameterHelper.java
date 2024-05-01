@@ -92,8 +92,8 @@ public final class ApiParameterHelper {
     }
 
     public static Locale extractLocale(final MultivaluedMap<String, String> queryParams) {
-        Locale locale = null;
-        if (queryParams.getFirst("locale") != null) {
+        Locale locale = Locale.ENGLISH;
+        if ("en".equals(queryParams.getFirst("locale"))) {
             final String localeAsString = queryParams.getFirst("locale");
             locale = JsonParserHelper.localeFromString(localeAsString);
         }
@@ -106,6 +106,10 @@ public final class ApiParameterHelper {
             final String exportCsvValue = queryParams.getFirst("exportCSV");
             exportCsv = "true".equalsIgnoreCase(exportCsvValue);
         }
+        if (queryParams.getFirst("outputType") != null) {
+            final String outputType = queryParams.getFirst("outputType");
+            exportCsv = "CSV".equalsIgnoreCase(outputType);
+        }
         return exportCsv;
     }
 
@@ -114,6 +118,11 @@ public final class ApiParameterHelper {
         if (queryParams.getFirst("exportPDF") != null) {
             final String exportPdfValue = queryParams.getFirst("exportPDF");
             exportPDF = "true".equalsIgnoreCase(exportPdfValue);
+        }
+
+        if (queryParams.getFirst("outputType") != null) {
+            final String outputType = queryParams.getFirst("outputType");
+            exportPDF = "PDF".equalsIgnoreCase(outputType);
         }
         return exportPDF;
     }

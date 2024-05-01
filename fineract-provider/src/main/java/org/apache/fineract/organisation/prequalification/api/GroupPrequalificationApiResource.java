@@ -110,16 +110,16 @@ public class GroupPrequalificationApiResource {
 
     @Autowired
     public GroupPrequalificationApiResource(final PlatformSecurityContext context,
-                                            final CodeValueReadPlatformService codeValueReadPlatformService, final AgencyReadPlatformServiceImpl agencyReadPlatformService,
-                                            final PrequalificationWritePlatformService prequalificationWritePlatformService,
-                                            final CenterReadPlatformServiceImpl centerReadPlatformService,
-                                            final LoanProductReadPlatformService loanProductReadPlatformService,
-                                            final AppUserReadPlatformService appUserReadPlatformService,
-                                            final DefaultToApiJsonSerializer<GroupPrequalificationData> toApiJsonSerializer,
-                                            final ConfigurationReadPlatformService configurationReadPlatformService,
-                                            final PrequalificationReadPlatformService prequalificationReadPlatformService, final FileUploadValidator fileUploadValidator,
-                                            final DocumentWritePlatformService documentWritePlatformService, final ApiRequestParameterHelper apiRequestParameterHelper,
-                                            final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService) {
+            final CodeValueReadPlatformService codeValueReadPlatformService, final AgencyReadPlatformServiceImpl agencyReadPlatformService,
+            final PrequalificationWritePlatformService prequalificationWritePlatformService,
+            final CenterReadPlatformServiceImpl centerReadPlatformService,
+            final LoanProductReadPlatformService loanProductReadPlatformService,
+            final AppUserReadPlatformService appUserReadPlatformService,
+            final DefaultToApiJsonSerializer<GroupPrequalificationData> toApiJsonSerializer,
+            final ConfigurationReadPlatformService configurationReadPlatformService,
+            final PrequalificationReadPlatformService prequalificationReadPlatformService, final FileUploadValidator fileUploadValidator,
+            final DocumentWritePlatformService documentWritePlatformService, final ApiRequestParameterHelper apiRequestParameterHelper,
+            final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService) {
         this.context = context;
         this.codeValueReadPlatformService = codeValueReadPlatformService;
         this.toApiJsonSerializer = toApiJsonSerializer;
@@ -141,14 +141,15 @@ public class GroupPrequalificationApiResource {
     @Produces({ MediaType.APPLICATION_JSON })
     @Operation(summary = "List all prequalifications", description = "Example Requests:\n" + "prequalification\n")
     public String retrieveAllBlacklistItems(@Context final UriInfo uriInfo,
-                                            @QueryParam("offset") @Parameter(description = "offset") final Integer offset,
-                                            @QueryParam("limit") @Parameter(description = "limit") final Integer limit,
-                                            @QueryParam("orderBy") @Parameter(description = "orderBy") final String orderBy,
-                                            @QueryParam("status") @Parameter(description = "status") final String status,
-                                            @QueryParam("type") @Parameter(description = "type") final String type,
-                                            @QueryParam("searchText") @Parameter(description = "searchText") final String searchText,
-                                            @QueryParam("sortOrder") @Parameter(description = "sortOrder") final String sortOrder,
-                                            @QueryParam("groupingType") @Parameter(description = "groupingType") final String groupingType) {
+            @QueryParam("offset") @Parameter(description = "offset") final Integer offset,
+            @QueryParam("limit") @Parameter(description = "limit") final Integer limit,
+            @QueryParam("orderBy") @Parameter(description = "orderBy") final String orderBy,
+            @QueryParam("status") @Parameter(description = "status") final String status,
+            @QueryParam("type") @Parameter(description = "type") final String type,
+            @QueryParam("portfolioCenterId") @Parameter(description = "type") final Long portfolioCenterId,
+            @QueryParam("searchText") @Parameter(description = "searchText") final String searchText,
+            @QueryParam("sortOrder") @Parameter(description = "sortOrder") final String sortOrder,
+            @QueryParam("groupingType") @Parameter(description = "groupingType") final String groupingType) {
 
         this.context.authenticatedUser().validateHasViewPermission(this.resourceNameForPermissions);
 
@@ -156,7 +157,7 @@ public class GroupPrequalificationApiResource {
 
         String clientName = queryParameters.getFirst("clientName");
         SearchParameters searchParameters = SearchParameters.forPrequalification(clientName, status, offset, limit, orderBy, sortOrder,
-                type, searchText, groupingType);
+                type, searchText, groupingType, portfolioCenterId);
         final Page<GroupPrequalificationData> clientData = this.prequalificationReadPlatformService.retrieveAll(searchParameters);
 
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(queryParameters);
@@ -181,10 +182,25 @@ public class GroupPrequalificationApiResource {
         String groupId = queryParameters.getFirst("groupId");
         Long agencyId = null;
         Long centerId = null;
+        Collection<CenterData> centerData = null;
+        Collection<AgencyData> agencies = null;
+        Collection<AppUserData> appUsers = null;
+        Collection<LoanProductData> loanProducts = null;
+        GlobalConfigurationPropertyData timespan = null;
+        List<EnumOptionData> statusOptions = Arrays.asList(status(PrequalificationStatus.CONSENT_ADDED),
+                status(PrequalificationStatus.BLACKLIST_CHECKED), status(PrequalificationStatus.BLACKLIST_REJECTED),
+                status(PrequalificationStatus.COMPLETED), status(PrequalificationStatus.BURO_CHECKED),
+                status(PrequalificationStatus.HARD_POLICY_CHECKED), status(PrequalificationStatus.TIME_EXPIRED),
+                status(PrequalificationStatus.PREQUALIFICATION_UPDATE_REQUESTED));
+        if (StringUtils.equalsIgnoreCase(type, "list")) {
+            final GroupPrequalificationData clientIdentifierData = GroupPrequalificationData.template(agencies, centerData, loanProducts,
+                    appUsers, timespan, statusOptions);
+            final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(queryParameters);
+            return this.toApiJsonSerializer.serialize(settings, clientIdentifierData, PRE_QUALIFICATION_DATA_PARAMETERS);
+        }
         if (!StringUtils.isBlank(groupId)) {
             GroupPrequalificationData prequalificationGroup = this.prequalificationReadPlatformService.retrieveOne(Long.valueOf(groupId));
             agencyId = prequalificationGroup.getAgencyId();
-            centerId = prequalificationGroup.getCenterId();
         }
 
         if (queryParameters.getFirst("agencyId") != null) {
@@ -194,7 +210,7 @@ public class GroupPrequalificationApiResource {
             centerId = NumberUtils.toLong(queryParameters.getFirst("centerId"), Long.MAX_VALUE);
         }
 
-        Collection<LoanProductData> loanProducts = this.loanProductReadPlatformService.retrieveAllLoanProducts();
+        loanProducts = this.loanProductReadPlatformService.retrieveAllLoanProducts();
         Integer prequalificationType = null;
         if (StringUtils.isNotBlank(groupingType)) {
             if (groupingType.equals("group")) {
@@ -211,26 +227,26 @@ public class GroupPrequalificationApiResource {
         }
 
         final String hierarchy = this.context.authenticatedUser().getOffice().getHierarchy();
-        final Collection<CenterData> centerData = this.centerReadPlatformService.retrieveByOfficeHierarchy(hierarchy, agencyId);
-        final Collection<AgencyData> agencies = this.agencyReadPlatformService.retrieveByOfficeHierarchy(hierarchy);
-        final Collection<AppUserData> appUsers = this.appUserReadPlatformService.retrieveByOfficeHierarchy(hierarchy, centerId);
+        centerData = this.centerReadPlatformService.retrieveByOfficeHierarchy(hierarchy, agencyId);
+        agencies = this.agencyReadPlatformService.retrieveAllByAgencyLeader();
+        if (agencies.isEmpty()) {
+            agencies = this.agencyReadPlatformService.retrieveByOfficeHierarchy(hierarchy);
+        }
+        appUsers = this.appUserReadPlatformService.retrieveByOfficeHierarchy(hierarchy, centerId);
 
-        List<EnumOptionData> statusOptions = Arrays.asList(status(PrequalificationStatus.CONSENT_ADDED),
-                status(PrequalificationStatus.BLACKLIST_CHECKED), status(PrequalificationStatus.COMPLETED),
+        statusOptions = Arrays.asList(status(PrequalificationStatus.CONSENT_ADDED), status(PrequalificationStatus.BLACKLIST_CHECKED),
+                status(PrequalificationStatus.COMPLETED), status(PrequalificationStatus.BURO_CHECKED),
                 status(PrequalificationStatus.HARD_POLICY_CHECKED), status(PrequalificationStatus.TIME_EXPIRED),
                 status(PrequalificationStatus.PREQUALIFICATION_UPDATE_REQUESTED));
+
         if (StringUtils.equalsIgnoreCase(type, "analysis")) {
             statusOptions = Arrays.asList(status(PrequalificationStatus.ANALYSIS_UNIT_PENDING_APPROVAL),
                     status(PrequalificationStatus.ANALYSIS_UNIT_PENDING_APPROVAL_WITH_EXCEPTIONS));
         }
-
         if (StringUtils.equalsIgnoreCase(type, "exceptionsqueue")) {
-            statusOptions = Arrays.asList(status(PrequalificationStatus.ANALYSIS_UNIT_PENDING_APPROVAL_WITH_EXCEPTIONS),
-                    status(PrequalificationStatus.AGENCY_LEAD_APPROVED_WITH_EXCEPTIONS));
+            statusOptions = Arrays.asList(status(PrequalificationStatus.AGENCY_LEAD_APPROVED_WITH_EXCEPTIONS));
         }
-
-        GlobalConfigurationPropertyData timespan = this.configurationReadPlatformService
-                .retrieveGlobalConfiguration("Prequalification Timespan");
+        timespan = this.configurationReadPlatformService.retrieveGlobalConfiguration("Prequalification Timespan");
         final GroupPrequalificationData clientIdentifierData = GroupPrequalificationData.template(agencies, centerData, loanProducts,
                 appUsers, timespan, statusOptions);
 
@@ -244,7 +260,7 @@ public class GroupPrequalificationApiResource {
     @Produces({ MediaType.APPLICATION_JSON })
     @Operation(summary = "Retrieve Prequalification Details")
     public String getBlacklistDetails(@Context final UriInfo uriInfo,
-                                      @PathParam("groupId") @Parameter(description = "groupId") final Long groupId) {
+            @PathParam("groupId") @Parameter(description = "groupId") final Long groupId) {
 
         this.context.authenticatedUser().validateHasViewPermission(this.resourceNameForPermissions);
 
@@ -260,8 +276,8 @@ public class GroupPrequalificationApiResource {
     @Produces({ MediaType.APPLICATION_JSON })
     @Operation(summary = "Retrieve Prequalification Details")
     public String prequalifyExistingGroup(@Context final UriInfo uriInfo,
-                                          @PathParam("groupId") @Parameter(description = "groupId") final Long groupId,
-                                          @Parameter(hidden = true) final String apiRequestBodyAsJson) {
+            @PathParam("groupId") @Parameter(description = "groupId") final Long groupId,
+            @Parameter(hidden = true) final String apiRequestBodyAsJson) {
 
         try {
             final CommandWrapper commandRequest = new CommandWrapperBuilder().createPrequalification().withGroupId(groupId)
@@ -299,7 +315,7 @@ public class GroupPrequalificationApiResource {
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     public String updatePrequalification(@Parameter(hidden = true) final String apiRequestBodyAsJson,
-                                         @PathParam("groupId") @Parameter(description = "groupId") final Long groupId) {
+            @PathParam("groupId") @Parameter(description = "groupId") final Long groupId) {
 
         try {
             final CommandWrapper commandRequest = new CommandWrapperBuilder().updatePrequalification(groupId).withJson(apiRequestBodyAsJson)
@@ -319,8 +335,8 @@ public class GroupPrequalificationApiResource {
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     public String updatePrequalificationMember(@Parameter(hidden = true) final String apiRequestBodyAsJson,
-                                               @PathParam("groupId") @Parameter(description = "groupId") final Long groupId,
-                                               @PathParam("memberId") @Parameter(description = "memberId") final Long memberId) {
+            @PathParam("groupId") @Parameter(description = "groupId") final Long groupId,
+            @PathParam("memberId") @Parameter(description = "memberId") final Long memberId) {
 
         try {
             final CommandWrapper commandRequest = new CommandWrapperBuilder().updatePrequalificationMemberDetails(memberId)
@@ -340,10 +356,10 @@ public class GroupPrequalificationApiResource {
     @Consumes({ MediaType.MULTIPART_FORM_DATA })
     @Produces({ MediaType.APPLICATION_JSON })
     public String createDocument(@PathParam("groupId") @Parameter(description = "groupId") final Long groupId,
-                                 @HeaderParam("Content-Length") @Parameter(description = "Content-Length") final Long fileSize,
-                                 @FormDataParam("file") final InputStream inputStream, @FormDataParam("file") final FormDataContentDisposition fileDetails,
-                                 @FormDataParam("file") final FormDataBodyPart bodyPart, @FormDataParam("name") final String name,
-                                 @FormDataParam("description") final String description, @FormDataParam("comment") final String comment) {
+            @HeaderParam("Content-Length") @Parameter(description = "Content-Length") final Long fileSize,
+            @FormDataParam("file") final InputStream inputStream, @FormDataParam("file") final FormDataContentDisposition fileDetails,
+            @FormDataParam("file") final FormDataBodyPart bodyPart, @FormDataParam("name") final String name,
+            @FormDataParam("description") final String description, @FormDataParam("comment") final String comment) {
 
         if (inputStream != null) {
             fileUploadValidator.validate(fileSize, inputStream, fileDetails, bodyPart);
