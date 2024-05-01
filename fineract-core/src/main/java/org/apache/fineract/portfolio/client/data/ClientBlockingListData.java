@@ -17,14 +17,13 @@
  * under the License.
  */
 
-
 package org.apache.fineract.portfolio.client.data;
 
 import lombok.Builder;
 
 @Builder
-public record ClientBlockingListData(String idType, String idNumber, String firstName, String secondName,
-                                     String surname, String secondSurname, String companyName, String causal,
-                                     String blockingComment,Long blockingReasonId,String blockedOnDate,String dateFormat,String locale,Integer rowIndex) {
+public record ClientBlockingListData(String idType, String idNumber, String firstName, String secondName, String surname,
+        String secondSurname, String companyName, String causal, String blockingComment, Long blockingReasonId, String blockedOnDate,
+        String dateFormat, String locale, Integer rowIndex) {
 
 }
