@@ -31,7 +31,7 @@ public enum PrequalificationStatus {
                             "prequalification.status.buro.checked"), HARD_POLICY_CHECKED(700,
                                     "prequalification.status.hard.policy.checked"), TIME_EXPIRED(800,
                                             "prequalification.status.expired"), COMPLETED(900,
-                                                    "prequalification.status.completed"), CONSENT_ADDED(901,
+                                                    "prequalification.status.completed"), CONSENT_ADDED(701,
                                                             "prequalification.status.concent.added"), AGENCY_LEAD_PENDING_APPROVAL(902,
                                                                     "prequalification.status.pending.approval"), PREQUALIFICATION_UPDATE_REQUESTED(
                                                                             903,
