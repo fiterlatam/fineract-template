@@ -823,6 +823,18 @@ public class LoanAdditionProperties extends AbstractPersistableCustom {
     @Column(name = "tercer_nombre_solicitante")
     private String tercer_nombre_solicitante;
 
+    @Column(name = "categoria_fiador1")
+    private String categoria_fiador1;
+
+    @Column(name = "cliente_activo_fiador1")
+    private String cliente_activo_fiador1;
+
+    @Column(name = "categoria_fiador2")
+    private String categoria_fiador2;
+
+    @Column(name = "cliente_activo_fiador2")
+    private String cliente_activo_fiador2;
+
     public LoanAdditionProperties() {}
 
     public LoanAdditionalData toData() {

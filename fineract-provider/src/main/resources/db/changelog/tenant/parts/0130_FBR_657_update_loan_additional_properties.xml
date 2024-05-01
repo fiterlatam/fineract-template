@@ -32,4 +32,24 @@
         <modifyDataType tableName="m_client_loan_additional_properties" columnName="flujo_disponible" newDataType="DECIMAL(19, 6)"/>
     </changeSet>
 
+    <changeSet id="2" author="fineract">
+        <modifyDataType tableName="m_client_loan_additional_properties" columnName="herramientas" newDataType="DECIMAL(19, 6)"/>
+        <modifyDataType tableName="m_client_loan_additional_properties" columnName="bienes_inmuebles" newDataType="DECIMAL(19, 6)"/>
+        <modifyDataType tableName="m_client_loan_additional_properties" columnName="bienes_inmuebles_familiares" newDataType="DECIMAL(19, 6)"/>
+        <modifyDataType tableName="m_client_loan_additional_properties" columnName="vehiculos" newDataType="DECIMAL(19, 6)"/>
+        <modifyDataType tableName="m_client_loan_additional_properties" columnName="prestamo_puente" newDataType="DECIMAL(19, 6)"/>
+        <modifyDataType tableName="m_client_loan_additional_properties" columnName="tarjetas" newDataType="DECIMAL(19, 6)"/>
+        <modifyDataType tableName="m_client_loan_additional_properties" columnName="impuestos" newDataType="DECIMAL(19, 6)"/>
+        <modifyDataType tableName="m_client_loan_additional_properties" columnName="educacion" newDataType="DECIMAL(19, 6)"/>
+    </changeSet>
+
+    <changeSet id="3" author="fineract">
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column name="categoria_fiador1" type="VARCHAR(100)"/>
+            <column name="cliente_activo_fiador1" type="VARCHAR(100)"/>
+            <column name="categoria_fiador2" type="VARCHAR(100)"/>
+            <column name="cliente_activo_fiador2" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
 </databaseChangeLog>
