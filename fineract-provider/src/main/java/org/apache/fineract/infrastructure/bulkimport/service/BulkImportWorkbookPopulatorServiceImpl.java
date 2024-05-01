@@ -48,6 +48,7 @@ import org.apache.fineract.infrastructure.bulkimport.populator.centers.CentersWo
 import org.apache.fineract.infrastructure.bulkimport.populator.chartofaccounts.ChartOfAccountsWorkbook;
 import org.apache.fineract.infrastructure.bulkimport.populator.client.ClientEntityWorkbookPopulator;
 import org.apache.fineract.infrastructure.bulkimport.populator.client.ClientPersonWorkbookPopulator;
+import org.apache.fineract.infrastructure.bulkimport.populator.clientblock.ClientBlockControlWorkbookPopulator;
 import org.apache.fineract.infrastructure.bulkimport.populator.fixeddeposits.FixedDepositTransactionWorkbookPopulator;
 import org.apache.fineract.infrastructure.bulkimport.populator.fixeddeposits.FixedDepositWorkbookPopulator;
 import org.apache.fineract.infrastructure.bulkimport.populator.group.GroupsWorkbookPopulator;
@@ -218,6 +219,8 @@ public class BulkImportWorkbookPopulatorServiceImpl implements BulkImportWorkboo
                 populator = populateFixedDepositTransactionsWorkbook(officeId);
             } else if (entityType.trim().equalsIgnoreCase(GlobalEntityType.USERS.toString())) {
                 populator = populateUserWorkbook(officeId, staffId);
+            } else if (entityType.trim().equalsIgnoreCase(GlobalEntityType.CLIENT_BLOCK.toString())) {
+                populator = populateClientBlockWorkbook();
             } else {
                 throw new GeneralPlatformDomainRuleException("error.msg.unable.to.find.resource", "Unable to find requested resource");
             }
@@ -675,6 +678,11 @@ public class BulkImportWorkbookPopulatorServiceImpl implements BulkImportWorkboo
         List<SavingsAccountData> savingsAccounts = fetchSavingsAccounts(officeId);
         return new FixedDepositTransactionWorkbookPopulator(new OfficeSheetPopulator(offices), new ClientSheetPopulator(clients, offices),
                 new ExtrasSheetPopulator(funds, paymentTypes, currencies), savingsAccounts);
+    }
+
+    private WorkbookPopulator populateClientBlockWorkbook() {
+
+        return new ClientBlockControlWorkbookPopulator();
     }
 
 }

@@ -16,12 +16,16 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.portfolio.client.service;
 
-import java.util.Collection;
-import org.apache.fineract.portfolio.client.data.ClientBlockingReasonData;
+package org.apache.fineract.portfolio.client.domain;
 
-public interface ClientBlockingReasonReadPlatformService {
+import java.util.Optional;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.stereotype.Repository;
 
-    Collection<ClientBlockingReasonData> retrieveClientBlockingReason(Long clientId);
+@Repository
+public interface ClientBlockListRepository extends JpaRepository<ClientBlockList, Long>, JpaSpecificationExecutor<ClientBlockList> {
+
+    Optional<ClientBlockList> findByClientId(Long clientId);
 }
