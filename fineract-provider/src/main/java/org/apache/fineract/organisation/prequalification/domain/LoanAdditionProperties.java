@@ -110,10 +110,10 @@ public class LoanAdditionProperties extends AbstractPersistableCustom {
     private String area;
 
     @Column(name = "bienes_inmuebles")
-    private Integer bienesInmuebles;
+    private BigDecimal bienesInmuebles;
 
     @Column(name = "bienes_inmuebles_familiares")
-    private Integer bienesInmueblesFamiliares;
+    private BigDecimal bienesInmueblesFamiliares;
 
     @Column(name = "c_dpi")
     private String cDpi;
@@ -164,16 +164,16 @@ public class LoanAdditionProperties extends AbstractPersistableCustom {
     private BigDecimal cuentasPorPagar;
 
     @Column(name = "cuota")
-    private Integer cuota;
+    private BigDecimal cuota;
 
     @Column(name = "cuota_otros")
-    private Integer cuotaOtros;
+    private BigDecimal cuotaOtros;
 
     @Column(name = "cuota_puente")
-    private Integer cuotaPuente;
+    private BigDecimal cuotaPuente;
 
     @Column(name = "cuotas_pendientes_bc")
-    private Integer cuotasPendientesBc;
+    private BigDecimal cuotasPendientesBc;
 
     @Column(name = "dependientes")
     private Integer dependientes;
@@ -182,7 +182,7 @@ public class LoanAdditionProperties extends AbstractPersistableCustom {
     private String destinoPrestamo;
 
     @Column(name = "educacion")
-    private Integer educacion;
+    private BigDecimal educacion;
 
     @Column(name = "efectivo")
     private BigDecimal efectivo;
@@ -212,7 +212,7 @@ public class LoanAdditionProperties extends AbstractPersistableCustom {
     private LocalDate fechaPrimeraReunion;
 
     @Column(name = "flujo_disponible")
-    private Integer flujoDisponible;
+    private BigDecimal flujoDisponible;
 
     @Column(name = "garantia_prestamo")
     private String garantiaPrestamo;
@@ -224,7 +224,7 @@ public class LoanAdditionProperties extends AbstractPersistableCustom {
     private BigDecimal gastosNegocio;
 
     @Column(name = "herramientas")
-    private Integer herramientas;
+    private BigDecimal herramientas;
 
     @Column(name = "hijos")
     private Integer hijos;
@@ -233,7 +233,7 @@ public class LoanAdditionProperties extends AbstractPersistableCustom {
     private Integer mortgages;
 
     @Column(name = "impuestos")
-    private Integer impuestos;
+    private BigDecimal impuestos;
 
     @Column(name = "ingresado_por")
     private String ingresadoPor;
@@ -296,7 +296,7 @@ public class LoanAdditionProperties extends AbstractPersistableCustom {
     private String poseeCuenta;
 
     @Column(name = "prestamo_puente")
-    private Long prestamoPuente;
+    private BigDecimal prestamoPuente;
 
     @Column(name = "propuesta_facilitador")
     private BigDecimal propuestaFacilitador;
@@ -335,7 +335,7 @@ public class LoanAdditionProperties extends AbstractPersistableCustom {
     private BigDecimal serviciosMedicos;
 
     @Column(name = "tarjetas")
-    private Integer tarjetas;
+    private BigDecimal tarjetas;
 
     @Column(name = "tipo_vivienda")
     private String tipoVivienda;
@@ -377,7 +377,7 @@ public class LoanAdditionProperties extends AbstractPersistableCustom {
     private BigDecimal valorGarantia;
 
     @Column(name = "vehiculos")
-    private Integer vehiculos;
+    private BigDecimal vehiculos;
 
     @Column(name = "vestimenta")
     private BigDecimal vestimenta;
@@ -791,7 +791,7 @@ public class LoanAdditionProperties extends AbstractPersistableCustom {
     private Integer total_vehiculo_negocio;
 
     @Column(name = "total_vehiculos")
-    private Integer total_vehiculos;
+    private BigDecimal total_vehiculos;
 
     @Column(name = "usa_facebook")
     private String usa_facebook;
@@ -822,6 +822,18 @@ public class LoanAdditionProperties extends AbstractPersistableCustom {
 
     @Column(name = "tercer_nombre_solicitante")
     private String tercer_nombre_solicitante;
+
+    @Column(name = "categoria_fiador1")
+    private String categoria_fiador1;
+
+    @Column(name = "cliente_activo_fiador1")
+    private String cliente_activo_fiador1;
+
+    @Column(name = "categoria_fiador2")
+    private String categoria_fiador2;
+
+    @Column(name = "cliente_activo_fiador2")
+    private String cliente_activo_fiador2;
 
     public LoanAdditionProperties() {}
 
@@ -923,11 +935,11 @@ public class LoanAdditionProperties extends AbstractPersistableCustom {
         this.area = area;
     }
 
-    public void setBienesInmuebles(Integer bienesInmuebles) {
+    public void setBienesInmuebles(BigDecimal bienesInmuebles) {
         this.bienesInmuebles = bienesInmuebles;
     }
 
-    public void setBienesInmueblesFamiliares(Integer bienesInmueblesFamiliares) {
+    public void setBienesInmueblesFamiliares(BigDecimal bienesInmueblesFamiliares) {
         this.bienesInmueblesFamiliares = bienesInmueblesFamiliares;
     }
 
@@ -995,19 +1007,19 @@ public class LoanAdditionProperties extends AbstractPersistableCustom {
         this.cuentasPorPagar = cuentasPorPagar;
     }
 
-    public void setCuota(Integer cuota) {
+    public void setCuota(BigDecimal cuota) {
         this.cuota = cuota;
     }
 
-    public void setCuotaOtros(Integer cuotaOtros) {
+    public void setCuotaOtros(BigDecimal cuotaOtros) {
         this.cuotaOtros = cuotaOtros;
     }
 
-    public void setCuotaPuente(Integer cuotaPuente) {
+    public void setCuotaPuente(BigDecimal cuotaPuente) {
         this.cuotaPuente = cuotaPuente;
     }
 
-    public void setCuotasPendientesBc(Integer cuotasPendientesBc) {
+    public void setCuotasPendientesBc(BigDecimal cuotasPendientesBc) {
         this.cuotasPendientesBc = cuotasPendientesBc;
     }
 
@@ -1019,7 +1031,7 @@ public class LoanAdditionProperties extends AbstractPersistableCustom {
         this.destinoPrestamo = destinoPrestamo;
     }
 
-    public void setEducacion(Integer educacion) {
+    public void setEducacion(BigDecimal educacion) {
         this.educacion = educacion;
     }
 
@@ -1059,7 +1071,7 @@ public class LoanAdditionProperties extends AbstractPersistableCustom {
         this.fechaPrimeraReunion = fechaPrimeraReunion;
     }
 
-    public void setFlujoDisponible(Integer flujoDisponible) {
+    public void setFlujoDisponible(BigDecimal flujoDisponible) {
         this.flujoDisponible = flujoDisponible;
     }
 
@@ -1075,7 +1087,7 @@ public class LoanAdditionProperties extends AbstractPersistableCustom {
         this.gastosNegocio = gastosNegocio;
     }
 
-    public void setHerramientas(Integer herramientas) {
+    public void setHerramientas(BigDecimal herramientas) {
         this.herramientas = herramientas;
     }
 
@@ -1087,7 +1099,7 @@ public class LoanAdditionProperties extends AbstractPersistableCustom {
         this.mortgages = mortgages;
     }
 
-    public void setImpuestos(Integer impuestos) {
+    public void setImpuestos(BigDecimal impuestos) {
         this.impuestos = impuestos;
     }
 
@@ -1171,7 +1183,7 @@ public class LoanAdditionProperties extends AbstractPersistableCustom {
         this.poseeCuenta = poseeCuenta;
     }
 
-    public void setPrestamoPuente(Long prestamoPuente) {
+    public void setPrestamoPuente(BigDecimal prestamoPuente) {
         this.prestamoPuente = prestamoPuente;
     }
 
@@ -1223,7 +1235,7 @@ public class LoanAdditionProperties extends AbstractPersistableCustom {
         this.serviciosMedicos = serviciosMedicos;
     }
 
-    public void setTarjetas(Integer tarjetas) {
+    public void setTarjetas(BigDecimal tarjetas) {
         this.tarjetas = tarjetas;
     }
 
@@ -1279,7 +1291,7 @@ public class LoanAdditionProperties extends AbstractPersistableCustom {
         this.valorGarantia = valorGarantia;
     }
 
-    public void setVehiculos(Integer vehiculos) {
+    public void setVehiculos(BigDecimal vehiculos) {
         this.vehiculos = vehiculos;
     }
 
@@ -1827,7 +1839,7 @@ public class LoanAdditionProperties extends AbstractPersistableCustom {
         this.total_vehiculo_negocio = total_vehiculo_negocio;
     }
 
-    public void setTotal_vehiculos(Integer total_vehiculos) {
+    public void setTotal_vehiculos(BigDecimal total_vehiculos) {
         this.total_vehiculos = total_vehiculos;
     }
 
@@ -1877,5 +1889,21 @@ public class LoanAdditionProperties extends AbstractPersistableCustom {
 
     public void setTercer_nombre_solicitante(String tercer_nombre_solicitante) {
         this.tercer_nombre_solicitante = tercer_nombre_solicitante;
+    }
+
+    public void setCategoria_fiador1(String categoria_fiador1) {
+        this.categoria_fiador1 = categoria_fiador1;
+    }
+
+    public void setCliente_activo_fiador1(String cliente_activo_fiador1) {
+        this.cliente_activo_fiador1 = cliente_activo_fiador1;
+    }
+
+    public void setCategoria_fiador2(String categoria_fiador2) {
+        this.categoria_fiador2 = categoria_fiador2;
+    }
+
+    public void setCliente_activo_fiador2(String cliente_activo_fiador2) {
+        this.cliente_activo_fiador2 = cliente_activo_fiador2;
     }
 }
