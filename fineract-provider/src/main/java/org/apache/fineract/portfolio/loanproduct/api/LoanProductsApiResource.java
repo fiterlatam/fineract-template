@@ -80,6 +80,7 @@ import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanSchedul
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleType;
 import org.apache.fineract.portfolio.loanproduct.LoanProductConstants;
 import org.apache.fineract.portfolio.loanproduct.data.LoanProductData;
+import org.apache.fineract.portfolio.loanproduct.data.MaximumCreditRateConfigurationData;
 import org.apache.fineract.portfolio.loanproduct.data.TransactionProcessingStrategyData;
 import org.apache.fineract.portfolio.loanproduct.domain.AllocationType;
 import org.apache.fineract.portfolio.loanproduct.domain.CreditAllocationTransactionType;
@@ -307,6 +308,26 @@ public class LoanProductsApiResource {
         }
 
         return getUpdateLoanProductResult(apiRequestBodyAsJson, productId);
+    }
+
+    @GET
+    @Path("maximumCreditRate")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public String getMaximumCreditConfigurations() {
+        this.context.authenticatedUser().validateHasReadPermission("MAXIMUM_CREDIT_RATE");
+        MaximumCreditRateConfigurationData result = this.loanProductReadPlatformService.retrieveMaximumCreditRateConfigurationData();
+        return this.toApiJsonSerializer.serialize(result);
+    }
+
+    @PUT
+    @Path("maximumCreditRate")
+    @Consumes({ MediaType.APPLICATION_JSON })
+    @Produces({ MediaType.APPLICATION_JSON })
+    public String updateMaximumRate(@Parameter(hidden = true) final String apiRequestBodyAsJson) {
+        final CommandWrapper commandRequest = new CommandWrapperBuilder().updateMaximumRate().withJson(apiRequestBodyAsJson).build();
+        final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
+        return this.toApiJsonSerializer.serialize(result);
     }
 
     private String getUpdateLoanProductResult(String apiRequestBodyAsJson, Long productId) {

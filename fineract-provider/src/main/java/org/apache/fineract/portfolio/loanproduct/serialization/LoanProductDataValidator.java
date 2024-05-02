@@ -107,6 +107,12 @@ public final class LoanProductDataValidator {
     public static final String MAX_DIFFERENTIAL_LENDING_RATE = "maxDifferentialLendingRate";
     public static final String IS_FLOATING_INTEREST_RATE_CALCULATION_ALLOWED = "isFloatingInterestRateCalculationAllowed";
     public static final String ACCOUNTING_RULE = "accountingRule";
+    public static final String MAXIMUM_EA_RATE = "eaRate";
+    public static final String MAXIMUM_ANNUAL_NOMINAL_RATE = "annualNominalRate";
+    public static final String MAXIMUM_MONTHLY_NOMINAL_RATE = "monthlyNominalRate";
+    public static final String MAXIMUM_DAILY_NOMINAL_RATE = "dailyNominalRate";
+    public static final String MAXIMUM_APPLIED_ON_DATE = "appliedOnDate";
+    public static final String MAXIMUM_APPLIED_BY = "appliedBy";
     /**
      * The parameters supported for this command.
      */
@@ -174,6 +180,9 @@ public final class LoanProductDataValidator {
             LoanProductConstants.ENABLE_AUTO_REPAYMENT_DOWN_PAYMENT, LoanProductConstants.REPAYMENT_START_DATE_TYPE,
             LoanProductConstants.ENABLE_INSTALLMENT_LEVEL_DELINQUENCY, LoanProductConstants.LOAN_SCHEDULE_TYPE,
             LoanProductConstants.LOAN_SCHEDULE_PROCESSING_TYPE));
+
+    private static final Set<String> MAXIMUM_RATE_SUPPORTED_PARAMETERS = new HashSet<>(Arrays.asList("locale", "dateFormat", "eaRate",
+            "annualNominalRate", "appliedBy", "appliedOnDate", "dailyNominalRate", "monthlyNominalRate"));
 
     private static final String[] SUPPORTED_LOAN_CONFIGURABLE_ATTRIBUTES = { LoanProductConstants.amortizationTypeParamName,
             LoanProductConstants.interestTypeParamName, LoanProductConstants.transactionProcessingStrategyCodeParamName,
@@ -1801,6 +1810,42 @@ public final class LoanProductDataValidator {
             baseDataValidator.reset().parameter(LoanProductConstants.LOAN_SCHEDULE_PROCESSING_TYPE).failWithCode(
                     "supported.only.for.progressive.loan.schedule.handling",
                     "Vertical repayment schedule processing is only available with `Advanced payment allocation` strategy");
+        }
+        throwExceptionIfValidationWarningsExist(dataValidationErrors);
+    }
+
+    public void validateMaximumRateForUpdate(final JsonCommand command) {
+        String json = command.json();
+        if (StringUtils.isBlank(json)) {
+            throw new InvalidJsonException();
+        }
+        final Type typeOfMap = new TypeToken<Map<String, Object>>() {}.getType();
+        this.fromApiJsonHelper.checkForUnsupportedParameters(typeOfMap, json, MAXIMUM_RATE_SUPPORTED_PARAMETERS);
+        final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
+        final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors).resource("maximumRate");
+        final JsonElement element = this.fromApiJsonHelper.parse(json);
+        if (this.fromApiJsonHelper.parameterExists(MAXIMUM_EA_RATE, element)) {
+            final BigDecimal eaRate = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed(MAXIMUM_EA_RATE, element);
+            baseDataValidator.reset().parameter(MAXIMUM_EA_RATE).value(eaRate).notBlank().inMinAndMaxAmountRange(BigDecimal.ZERO,
+                    BigDecimal.valueOf(100));
+        }
+        if (this.fromApiJsonHelper.parameterExists(MAXIMUM_ANNUAL_NOMINAL_RATE, element)) {
+            final BigDecimal annualNominalRate = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed(MAXIMUM_ANNUAL_NOMINAL_RATE,
+                    element);
+            baseDataValidator.reset().parameter(MAXIMUM_ANNUAL_NOMINAL_RATE).value(annualNominalRate).notBlank()
+                    .inMinAndMaxAmountRange(BigDecimal.ZERO, BigDecimal.valueOf(100));
+        }
+        if (this.fromApiJsonHelper.parameterExists(MAXIMUM_MONTHLY_NOMINAL_RATE, element)) {
+            final BigDecimal monthlyNominalRate = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed(MAXIMUM_MONTHLY_NOMINAL_RATE,
+                    element);
+            baseDataValidator.reset().parameter(MAXIMUM_MONTHLY_NOMINAL_RATE).value(monthlyNominalRate)
+                    .inMinAndMaxAmountRange(BigDecimal.ZERO, BigDecimal.valueOf(100));
+        }
+        if (this.fromApiJsonHelper.parameterExists(MAXIMUM_DAILY_NOMINAL_RATE, element)) {
+            final BigDecimal dailyNominalRate = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed(MAXIMUM_DAILY_NOMINAL_RATE,
+                    element);
+            baseDataValidator.reset().parameter(MAXIMUM_DAILY_NOMINAL_RATE).value(dailyNominalRate).inMinAndMaxAmountRange(BigDecimal.ZERO,
+                    BigDecimal.valueOf(100));
         }
         throwExceptionIfValidationWarningsExist(dataValidationErrors);
     }

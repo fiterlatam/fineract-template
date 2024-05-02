@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.fineract.accounting.producttoaccountmapping.service.ProductToGLAccountMappingWritePlatformService;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
@@ -60,12 +61,16 @@ import org.apache.fineract.portfolio.loanproduct.domain.LoanProduct;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductCreditAllocationRule;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductPaymentAllocationRule;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductRepository;
+import org.apache.fineract.portfolio.loanproduct.domain.MaximumCreditRateConfiguration;
+import org.apache.fineract.portfolio.loanproduct.domain.MaximumRateRepository;
 import org.apache.fineract.portfolio.loanproduct.exception.LoanProductCannotBeModifiedDueToNonClosedLoansException;
 import org.apache.fineract.portfolio.loanproduct.exception.LoanProductDateException;
 import org.apache.fineract.portfolio.loanproduct.exception.LoanProductNotFoundException;
+import org.apache.fineract.portfolio.loanproduct.exception.MaximumRateNotFoundException;
 import org.apache.fineract.portfolio.loanproduct.serialization.LoanProductDataValidator;
 import org.apache.fineract.portfolio.rate.domain.Rate;
 import org.apache.fineract.portfolio.rate.domain.RateRepositoryWrapper;
+import org.apache.fineract.useradministration.domain.AppUser;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.transaction.annotation.Transactional;
@@ -77,6 +82,7 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
     private final PlatformSecurityContext context;
     private final LoanProductDataValidator fromApiJsonDeserializer;
     private final LoanProductRepository loanProductRepository;
+    private final MaximumRateRepository maximumRateRepository;
     private final AprCalculator aprCalculator;
     private final FundRepository fundRepository;
     private final ChargeRepositoryWrapper chargeRepository;
@@ -274,6 +280,39 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
                     .withEntityId(loanProductId) //
                     .with(changes) //
                     .build();
+
+        } catch (final DataIntegrityViolationException | JpaSystemException dve) {
+            handleDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
+            return CommandProcessingResult.resourceResult(-1L);
+        } catch (final PersistenceException dve) {
+            Throwable throwable = ExceptionUtils.getRootCause(dve.getCause());
+            handleDataIntegrityIssues(command, throwable, dve);
+            return CommandProcessingResult.empty();
+        }
+
+    }
+
+    @Transactional
+    @Override
+    public CommandProcessingResult updateMaximumRate(final JsonCommand command) {
+
+        try {
+            final AppUser appliedBy = this.context.authenticatedUser();
+            final List<MaximumCreditRateConfiguration> maximumCreditRateConfigurations = this.maximumRateRepository.findAll();
+            if (CollectionUtils.isEmpty(maximumCreditRateConfigurations)) {
+                throw new MaximumRateNotFoundException();
+            }
+            final MaximumCreditRateConfiguration maximumCreditRateConfiguration = maximumCreditRateConfigurations.get(0);
+            final Long id = maximumCreditRateConfiguration.getId();
+            this.fromApiJsonDeserializer.validateMaximumRateForUpdate(command);
+            final LocalDate appliedOnDate = command.localDateValueOfParameterNamed("appliedOnDate");
+            final LocalDate currentDate = DateUtils.getLocalDateOfTenant();
+            if (DateUtils.isBefore(currentDate, appliedOnDate)) {
+                throw new MaximumRateNotFoundException(appliedOnDate);
+            }
+            final Map<String, Object> changes = maximumCreditRateConfiguration.update(command);
+            maximumCreditRateConfiguration.setAppliedBy(appliedBy);
+            return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withEntityId(id).with(changes).build();
 
         } catch (final DataIntegrityViolationException | JpaSystemException dve) {
             handleDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
