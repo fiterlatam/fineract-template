@@ -21,6 +21,7 @@ package org.apache.fineract.infrastructure.clientblockingreasons.service;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -30,29 +31,24 @@ import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockLeve
 import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSetting;
 import org.apache.fineract.infrastructure.clientblockingreasons.domain.ManageBlockingReasonSettingsRepositoryWrapper;
 import org.apache.fineract.infrastructure.clientblockingreasons.exception.BlockLevelEntityException;
+import org.apache.fineract.infrastructure.clientblockingreasons.exception.BlockReasonStateException;
 import org.apache.fineract.infrastructure.clientblockingreasons.exception.BlockingReasonExceptionNotFoundException;
-import org.apache.fineract.infrastructure.codes.domain.CodeValueRepositoryWrapper;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuilder;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.apache.fineract.infrastructure.core.service.DateUtils;
+import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class ManageBlockingReasonsWritePlatformServiceJpaRepositoryImpl implements ManageBlockingReasonsWritePlatformService {
 
     private final ManageBlockingReasonSettingsRepositoryWrapper blockingReasonSettingsRepositoryWrapper;
     private final BlockingReasonsDataValidator blockingReasonsDataValidator;
-
-    @Autowired
-    ManageBlockingReasonsWritePlatformServiceJpaRepositoryImpl(
-            final ManageBlockingReasonSettingsRepositoryWrapper blockingReasonSettingsRepositoryWrapper,
-            final BlockingReasonsDataValidator blockingReasonsDataValidator, final CodeValueRepositoryWrapper codeValueRepository) {
-        this.blockingReasonSettingsRepositoryWrapper = blockingReasonSettingsRepositoryWrapper;
-        this.blockingReasonsDataValidator = blockingReasonsDataValidator;
-    }
+    private final PlatformSecurityContext context;
 
     @Override
     @Transactional
@@ -143,6 +139,50 @@ public class ManageBlockingReasonsWritePlatformServiceJpaRepositoryImpl implemen
         }
 
         return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withEntityId(id).with(actualChanges).build();
+    }
+
+    @Override
+    public CommandProcessingResult disableBlockReasonSetting(Long id, JsonCommand command) {
+        final BlockingReasonSetting blockingReasonSetting = this.blockingReasonSettingsRepositoryWrapper.findOneWithNotFoundDetection(id);
+
+        if (!blockingReasonSetting.isEnabled()) {
+            throw new BlockReasonStateException("disable", "on.enabled.reason", "Block reason setting is already disabled.");
+        }
+
+        return updateBlockReasonStatus(blockingReasonSetting, "disable");
+    }
+
+    @Override
+    public CommandProcessingResult enableBlockReasonSetting(Long id, JsonCommand command) {
+        final BlockingReasonSetting blockingReasonSetting = this.blockingReasonSettingsRepositoryWrapper.findOneWithNotFoundDetection(id);
+
+        if (blockingReasonSetting.isEnabled()) {
+            throw new BlockReasonStateException("enable", "on.enabled.reason", "Block reason setting is already enabled.");
+        }
+
+        return updateBlockReasonStatus(blockingReasonSetting, "enable");
+    }
+
+    private CommandProcessingResult updateBlockReasonStatus(BlockingReasonSetting blockingReasonSetting, String status) {
+
+        final Map<String, Object> actualChanges = new LinkedHashMap<>(9);
+        if (status.equals("disable")) {
+            blockingReasonSetting.setIsEnabled(0);
+            actualChanges.put("is_enabled", 0);
+            blockingReasonSetting.setDisabledOnDate(DateUtils.getLocalDateOfTenant());
+            actualChanges.put("disabled_on_date", blockingReasonSetting.getDisabledOnDate());
+            blockingReasonSetting.setDisabledBy(this.context.getAuthenticatedUserIfPresent());
+        } else if (status.equals("enable")) {
+            blockingReasonSetting.setIsEnabled(1);
+            actualChanges.put("is_enabled", 1);
+            blockingReasonSetting.setEnabledOnDate(DateUtils.getBusinessLocalDate());
+            actualChanges.put("enabled_on_date", blockingReasonSetting.getEnabledOnDate());
+            blockingReasonSetting.setEnabledBy(this.context.getAuthenticatedUserIfPresent());
+        }
+
+        this.blockingReasonSettingsRepositoryWrapper.saveAndFlush(blockingReasonSetting);
+
+        return new CommandProcessingResultBuilder().withEntityId(blockingReasonSetting.getId()).with(actualChanges).build();
     }
 
     private void validateUniqueReason(JsonCommand command, BlockingReasonSetting blockingReasonSetting, String levelChange) {

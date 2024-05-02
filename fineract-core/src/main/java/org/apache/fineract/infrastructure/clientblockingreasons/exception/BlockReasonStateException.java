@@ -16,18 +16,17 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.infrastructure.clientblockingreasons.service;
 
-import org.apache.fineract.infrastructure.core.api.JsonCommand;
-import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
+package org.apache.fineract.infrastructure.clientblockingreasons.exception;
 
-public interface ManageBlockingReasonsWritePlatformService {
+import org.apache.fineract.infrastructure.core.exception.AbstractPlatformDomainRuleException;
 
-    CommandProcessingResult createBlockReasonSetting(JsonCommand command);
+public class BlockReasonStateException extends AbstractPlatformDomainRuleException {
 
-    CommandProcessingResult updateBlockReasonSetting(Long id, JsonCommand command);
+    public BlockReasonStateException(final String action, final String postFix, final String defaultUserMessage,
+            final Object... defaultUserMessageArgs) {
+        super("error.msg.block." + action + "." + postFix, defaultUserMessage, defaultUserMessageArgs);
 
-    CommandProcessingResult disableBlockReasonSetting(Long id, JsonCommand command);
+    }
 
-    CommandProcessingResult enableBlockReasonSetting(Long id, JsonCommand command);
 }
