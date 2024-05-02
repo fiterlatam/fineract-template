@@ -16,16 +16,21 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.portfolio.loanproduct.service;
+package org.apache.fineract.portfolio.loanproduct.exception;
 
-import org.apache.fineract.infrastructure.core.api.JsonCommand;
-import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
+import java.time.LocalDate;
+import org.apache.fineract.infrastructure.core.exception.AbstractPlatformResourceNotFoundException;
 
-public interface LoanProductWritePlatformService {
+/**
+ * A {@link RuntimeException} thrown when maximum rate update has invalid parameters.
+ */
+public class MaximumRateNotFoundException extends AbstractPlatformResourceNotFoundException {
 
-    CommandProcessingResult createLoanProduct(JsonCommand command);
+    public MaximumRateNotFoundException() {
+        super("error.msg.maximum.rate.not.found", "Maximum rate table is empty", "");
+    }
 
-    CommandProcessingResult updateLoanProduct(Long loanProductId, JsonCommand command);
-
-    CommandProcessingResult updateMaximumRate(JsonCommand command);
+    public MaximumRateNotFoundException(final LocalDate appliedOnDate) {
+        super("error.msg.applied.on.date.cannot.be.in.the.future", "Applied on date cannot be in the future date", appliedOnDate);
+    }
 }

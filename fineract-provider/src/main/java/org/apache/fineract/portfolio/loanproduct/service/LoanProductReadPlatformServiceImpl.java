@@ -52,6 +52,7 @@ import org.apache.fineract.portfolio.loanproduct.data.LoanProductBorrowerCycleVa
 import org.apache.fineract.portfolio.loanproduct.data.LoanProductData;
 import org.apache.fineract.portfolio.loanproduct.data.LoanProductGuaranteeData;
 import org.apache.fineract.portfolio.loanproduct.data.LoanProductInterestRecalculationData;
+import org.apache.fineract.portfolio.loanproduct.data.MaximumCreditRateConfigurationData;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProduct;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductConfigurableAttributes;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductParamType;
@@ -801,6 +802,47 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
             return LoanProductData.loanProductWithFloatingRates(id, name, isLinkedToFloatingInterestRates, floatingRateId, floatingRateName,
                     interestRateDifferential, minDifferentialLendingRate, defaultDifferentialLendingRate, maxDifferentialLendingRate,
                     isFloatingInterestRateCalculationAllowed);
+        }
+    }
+
+    @Override
+    public MaximumCreditRateConfigurationData retrieveMaximumCreditRateConfigurationData() {
+        final MaximumRateMapper rm = new MaximumRateMapper();
+        final String sql = "SELECT " + rm.schema() + " WHERE mcrc.id IS NOT NULL";
+        return this.jdbcTemplate.queryForObject(sql, rm, new Object[] {});
+    }
+
+    private static final class MaximumRateMapper implements RowMapper<MaximumCreditRateConfigurationData> { // NOSONAR
+
+        MaximumRateMapper() {}
+
+        public String schema() {
+            return """
+                    mcrc.id AS id,
+                    mcrc.ea_rate AS "eaRate",
+                    mcrc.annual_nominal_rate AS "annualNominalRate",
+                    mcrc.monthly_nominal_rate AS "monthlyNominalRate",
+                    mcrc.daily_nominal_rate AS "dailyNominalRate",
+                    mcrc.appliedon_date AS "appliedOnDate",
+                    CONCAT(ma.firstname, ' ', ma.lastname) AS "appliedByUsername"
+                    FROM m_maximum_credit_rate_configuration mcrc
+                    LEFT OUTER JOIN m_appuser ma ON ma.id = mcrc.appliedon_userid
+                    """;
+        }
+
+        @Override
+        public MaximumCreditRateConfigurationData mapRow(@NotNull final ResultSet rs, @SuppressWarnings("unused") final int rowNum)
+                throws SQLException {
+            final Long id = JdbcSupport.getLong(rs, "id");
+            final BigDecimal eaRate = rs.getBigDecimal("eaRate");
+            final String appliedByUsername = rs.getString("appliedByUsername");
+            final BigDecimal annualNominalRate = rs.getBigDecimal("annualNominalRate");
+            final BigDecimal monthlyNominalRate = rs.getBigDecimal("monthlyNominalRate");
+            final BigDecimal dailyNominalRate = rs.getBigDecimal("dailyNominalRate");
+            final LocalDate appliedOnDate = JdbcSupport.getLocalDate(rs, "appliedOnDate");
+            return MaximumCreditRateConfigurationData.builder().id(id).appliedByUsername(appliedByUsername).eaRate(eaRate)
+                    .annualNominalRate(annualNominalRate).monthlyNominalRate(monthlyNominalRate).dailyNominalRate(dailyNominalRate)
+                    .appliedOnDate(appliedOnDate).build();
         }
     }
 

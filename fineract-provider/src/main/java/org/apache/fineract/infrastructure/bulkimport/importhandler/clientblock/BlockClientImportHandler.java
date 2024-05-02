@@ -145,7 +145,7 @@ public class BlockClientImportHandler implements ImportHandler {
                 List<ClientAdditionalFieldsData> additionalFieldsData = clientReadPlatformService.retrieveAdditionalFieldsData(data,
                         client.idNumber());
 
-                final Long clientId = additionalFieldsData.getFirst().getClientId();
+                final Long clientId = additionalFieldsData.get(0).getClientId();
 
                 final CommandWrapper commandRequest = new CommandWrapperBuilder() //
                         .blockClient(clientId) //
