@@ -123,10 +123,17 @@ public class ManageBlockingReasonsApiResource {
     @Path("{id}")
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
-    public String updateBlockReasonSetting(@PathParam("id") final Long id, @Parameter(hidden = true) final String apiRequestBodyAsJson) {
+    public String updateBlockReasonSetting(@PathParam("id") final Long id, @Parameter(hidden = true) final String apiRequestBodyAsJson,
+            @QueryParam("command") final String command) {
 
-        final CommandWrapper commandRequest = new CommandWrapperBuilder().updateBlockReasonSetting(id).withJson(apiRequestBodyAsJson)
-                .build();
+        CommandWrapper commandRequest = null;
+        if ("disable".equalsIgnoreCase(command)) {
+            commandRequest = new CommandWrapperBuilder().disableBlockReasonSetting(id).withJson(apiRequestBodyAsJson).build();
+        } else if ("enable".equalsIgnoreCase(command)) {
+            commandRequest = new CommandWrapperBuilder().enableBlockReasonSetting(id).build();
+        } else {
+            commandRequest = new CommandWrapperBuilder().updateBlockReasonSetting(id).withJson(apiRequestBodyAsJson).build();
+        }
 
         final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
         return this.toApiJsonSerializer.serialize(result);
