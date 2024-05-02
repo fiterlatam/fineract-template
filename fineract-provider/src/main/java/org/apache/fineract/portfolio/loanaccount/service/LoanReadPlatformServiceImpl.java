@@ -829,9 +829,9 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                     + " left join m_group center on center.id = g.parent_id" //
                     + " left join m_office centeroffice on centeroffice.id = center.office_id"
                     + " left join m_office centerounder on centeroffice.hierarchy LIKE CONCAT(centerounder.hierarchy, '%')"
-                    + " left join m_agency agency on agency.linked_office_id = centerounder.id"
-                    + " left join m_agency mag on mag.responsible_user_id = center.responsible_user_id "
                     + " left join m_prequalification_group mpg on mpg.id = g.prequalification_id" //
+                    + " left join m_agency agency on agency.id = mpg.agency_id" //
+                    + " left join m_agency mag on mag.responsible_user_id = center.responsible_user_id "
                     + " left join m_loan_arrears_aging la on la.loan_id = l.id" //
                     + " left join m_fund f on f.id = l.fund_id" //
                     + " left join m_staff s on s.id = l.loan_officer_id" //
