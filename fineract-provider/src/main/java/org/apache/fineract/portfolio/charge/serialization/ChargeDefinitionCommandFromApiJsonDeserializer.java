@@ -416,8 +416,7 @@ public final class ChargeDefinitionCommandFromApiJsonDeserializer {
         if (this.fromApiJsonHelper.parameterExists(CHARGE_CALCULATION_TYPE, element)) {
             final Integer chargeCalculationType = this.fromApiJsonHelper.extractIntegerNamed(CHARGE_CALCULATION_TYPE, element,
                     Locale.getDefault());
-            baseDataValidator.reset().parameter(CHARGE_CALCULATION_TYPE).value(chargeCalculationType)
-                    .integerGreaterThanZero();
+            baseDataValidator.reset().parameter(CHARGE_CALCULATION_TYPE).value(chargeCalculationType).integerGreaterThanZero();
         }
 
         if (this.fromApiJsonHelper.parameterExists(CHARGE_PAYMENT_MODE, element)) {

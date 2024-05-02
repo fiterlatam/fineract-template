@@ -18,15 +18,14 @@
  */
 package org.apache.fineract.custom.portfolio.customcharge.data;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -35,15 +34,15 @@ import java.time.LocalDateTime;
 @Setter
 public class CustomChargeTypeMapData {
 
-	private Long id;
-	private Long customChargeTypeId;
-	private Long term;
-	private BigDecimal percentage;
-	private LocalDate validFrom;
-	private LocalDate validTo;
-	private Boolean active;
-	private Long createdBy;
-	private LocalDateTime createdAt;
-	private Long updatedBy;
-	private LocalDateTime updatedAt;
+    private Long id;
+    private Long customChargeTypeId;
+    private Long term;
+    private BigDecimal percentage;
+    private LocalDate validFrom;
+    private LocalDate validTo;
+    private Boolean active;
+    private Long createdBy;
+    private LocalDateTime createdAt;
+    private Long updatedBy;
+    private LocalDateTime updatedAt;
 }

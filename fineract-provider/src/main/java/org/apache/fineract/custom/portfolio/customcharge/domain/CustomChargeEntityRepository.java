@@ -21,7 +21,7 @@ package org.apache.fineract.custom.portfolio.customcharge.domain;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
-public interface  CustomChargeEntityRepository
-        extends JpaRepository< CustomChargeEntity, Long>, JpaSpecificationExecutor< CustomChargeEntity> {
+public interface CustomChargeEntityRepository
+        extends JpaRepository<CustomChargeEntity, Long>, JpaSpecificationExecutor<CustomChargeEntity> {
 
 }

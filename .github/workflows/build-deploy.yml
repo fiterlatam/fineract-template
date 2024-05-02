@@ -43,6 +43,7 @@ jobs:
           ./gradlew wrapper --version
           ./gradlew dropPGDB -PdbName=$FINERACT_DEFAULT_TENANTDB_NAME -PdbUserName=$FINERACT_HIKARI_USERNAME -PdbUserPassword=$FINERACT_HIKARI_PASSWORD -PjdbcURL=$FINERACT_HIKARI_JDBC_URL
           ./gradlew createPGDB -PdbName=$FINERACT_DEFAULT_TENANTDB_NAME -PdbUserName=$FINERACT_HIKARI_USERNAME -PdbUserPassword=$FINERACT_HIKARI_PASSWORD -PjdbcURL=$FINERACT_HIKARI_JDBC_URL
+          ./gradlew spotlessCheck
           ./gradlew --no-daemon --console=plain :fineract-provider:bootRun -q -x rat -x compileTestJava -x test --info & curl --connect-timeout 5 --retry 120 --retry-delay 5 --retry-connrefused -k https://localhost:8443/fineract-provider/actuator/health
       - name: Run Integration Tests
         run: |

@@ -16,22 +16,22 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.custom.portfolio.customcharge.data;
+package org.apache.fineract.portfolio.client.data;
 
 import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
+import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
+/**
+ * Immutable data object representing a Loan Additional Fields Data
+ */
+@Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Builder
-@Getter
-@Setter
-public class CustomChargeEntityData {
+public class ClientAdditionalFieldsData {
 
-    private Long id;
-    private String name;
-    private String code;
+    private Long clientId;
+    private String tipo;
+    private String nit;
+    private String cedula;
 }

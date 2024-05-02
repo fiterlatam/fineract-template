@@ -19,6 +19,7 @@
 package org.apache.fineract.portfolio.client.service;
 
 import java.math.BigDecimal;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
@@ -57,6 +58,7 @@ import org.apache.fineract.organisation.staff.service.StaffReadPlatformService;
 import org.apache.fineract.portfolio.address.data.AddressData;
 import org.apache.fineract.portfolio.address.service.AddressReadPlatformService;
 import org.apache.fineract.portfolio.client.api.ClientApiConstants;
+import org.apache.fineract.portfolio.client.data.ClientAdditionalFieldsData;
 import org.apache.fineract.portfolio.client.data.ClientCollateralManagementData;
 import org.apache.fineract.portfolio.client.data.ClientData;
 import org.apache.fineract.portfolio.client.data.ClientFamilyMembersData;
@@ -77,6 +79,7 @@ import org.apache.fineract.portfolio.savings.service.SavingsProductReadPlatformS
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.PreparedStatementCreator;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
@@ -858,6 +861,31 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
                     clienttype, classification, legalForm, clientNonPerson, isStaff);
 
         }
+    }
+
+    @Override
+    public List<ClientAdditionalFieldsData> retrieveAdditionalFieldsData(final CodeValueData idType, final String idValue) {
+
+        final ClientAdditionalFieldsMapper mapper = new ClientAdditionalFieldsMapper();
+        final Long tipo = idType.getId();
+        final String tipoName = idType.getName().toLowerCase();
+
+        final String sql = "select " + mapper.schema() + """
+                        where (cce."NIT" = ? and cce."Tipo ID_cd_Tipo ID" =  ? ) or
+                        (ccp."Cedula" = ? and 'cedula' = ?)
+                """;
+
+        PreparedStatementCreator psc = (connection) -> {
+            PreparedStatement ps = connection.prepareStatement(sql);
+            ps.setString(1, idValue);
+            ps.setLong(2, tipo);
+            ps.setString(3, idValue);
+            ps.setString(4, tipoName);
+
+            return ps;
+        };
+
+        return jdbcTemplate.query(psc, mapper);
     }
 
 }

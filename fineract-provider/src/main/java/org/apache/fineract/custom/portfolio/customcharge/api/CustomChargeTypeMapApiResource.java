@@ -18,7 +18,6 @@
  */
 package org.apache.fineract.custom.portfolio.customcharge.api;
 
-
 import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -66,15 +65,15 @@ public class CustomChargeTypeMapApiResource {
         this.apiRequestParameterHelper = apiRequestParameterHelper;
     }
 
-	@Autowired
+    @Autowired
     private CustomChargeTypeMapReadWritePlatformService service;
 
     @GET
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     public String get(@Context final UriInfo uriInfo,
-                      @PathParam("chargeEntityid") @Parameter(description = "chargeEntityid") final Long chargeEntityid,
-                      @PathParam("customChargeTypeId") @Parameter(description = "customChargeTypeId") final Long customChargeTypeId) {
+            @PathParam("chargeEntityid") @Parameter(description = "chargeEntityid") final Long chargeEntityid,
+            @PathParam("customChargeTypeId") @Parameter(description = "customChargeTypeId") final Long customChargeTypeId) {
         this.context.authenticatedUser().validateHasReadPermission(CustomChargeTypeMapApiConstants.RESOURCE_NAME);
         return this.toApiJsonSerializer.serialize(this.service.findAllActive(customChargeTypeId));
     }
@@ -83,8 +82,7 @@ public class CustomChargeTypeMapApiResource {
     @Path("{id}")
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
-    public String retrieveOne(@PathParam("id") @Parameter(description = "id") final Long id,
-            @Context final UriInfo uriInfo) {
+    public String retrieveOne(@PathParam("id") @Parameter(description = "id") final Long id, @Context final UriInfo uriInfo) {
 
         this.context.authenticatedUser().validateHasReadPermission(CustomChargeTypeMapApiConstants.RESOURCE_NAME);
 
@@ -95,31 +93,29 @@ public class CustomChargeTypeMapApiResource {
         return this.toApiJsonSerializer.serialize(settings, data, CustomChargeTypeMapApiConstants.REQUEST_DATA_PARAMETERS);
     }
 
-
     @POST
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     public String createNewHoliday(@Parameter(hidden = true) final String apiRequestBodyAsJson,
-                                   @PathParam("customChargeTypeId") @Parameter(description = "customChargeTypeId") final Long customChargeTypeId) {
+            @PathParam("customChargeTypeId") @Parameter(description = "customChargeTypeId") final Long customChargeTypeId) {
 
-        final CommandWrapper commandRequest = new CommandWrapperBuilder().createCustomChargeTypeMap(customChargeTypeId).withJson(apiRequestBodyAsJson).build();
+        final CommandWrapper commandRequest = new CommandWrapperBuilder().createCustomChargeTypeMap(customChargeTypeId)
+                .withJson(apiRequestBodyAsJson).build();
 
         final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
 
         return this.toApiJsonSerializer.serialize(result);
     }
 
-
     @PUT
     @Path("{id}")
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     public String update(@PathParam("id") @Parameter(description = "id") final Long id,
-                         @PathParam("customChargeTypeId") @Parameter(description = "customChargeTypeId") final Long customChargeTypeId,
-                         @Parameter(hidden = true) final String jsonRequestBody) {
+            @PathParam("customChargeTypeId") @Parameter(description = "customChargeTypeId") final Long customChargeTypeId,
+            @Parameter(hidden = true) final String jsonRequestBody) {
 
-        final CommandWrapper commandRequest = new CommandWrapperBuilder()
-                .updateCustomChargeTypeMap(customChargeTypeId, id)
+        final CommandWrapper commandRequest = new CommandWrapperBuilder().updateCustomChargeTypeMap(customChargeTypeId, id)
                 .withJson(jsonRequestBody).build();
 
         final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
@@ -127,17 +123,16 @@ public class CustomChargeTypeMapApiResource {
         return this.toApiJsonSerializer.serialize(result);
     }
 
-
     @DELETE
     @Path("{id}")
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     public String delete(@PathParam("id") @Parameter(description = "id") final Long id) {
-    
+
         final CommandWrapper commandRequest = new CommandWrapperBuilder().deleteCustomChargeTypeMap(id).build();
-        
+
         final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
-        
+
         return this.toApiJsonSerializer.serialize(result);
     }
 }

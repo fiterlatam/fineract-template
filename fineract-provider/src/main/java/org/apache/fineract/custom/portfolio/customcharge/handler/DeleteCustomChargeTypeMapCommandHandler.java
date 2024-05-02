@@ -34,7 +34,6 @@ public class DeleteCustomChargeTypeMapCommandHandler implements NewCommandSource
     @Autowired
     private CustomChargeTypeMapReadWritePlatformService service;
 
-
     @Transactional
     @Override
     public CommandProcessingResult processCommand(final JsonCommand command) {

@@ -18,15 +18,12 @@
  */
 package org.apache.fineract.custom.portfolio.customcharge.service;
 
-import org.apache.fineract.custom.portfolio.customcharge.data.CustomChargeEntityData;
-import org.apache.fineract.infrastructure.core.api.JsonCommand;
-import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
-
 import java.util.List;
+import org.apache.fineract.custom.portfolio.customcharge.data.CustomChargeEntityData;
 
 public interface CustomChargeEntityReadWritePlatformService {
 
     List<CustomChargeEntityData> findAllActive();
-    
+
     CustomChargeEntityData findById(Long id);
 }
