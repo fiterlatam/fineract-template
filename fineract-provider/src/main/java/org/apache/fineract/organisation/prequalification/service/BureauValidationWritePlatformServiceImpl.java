@@ -332,10 +332,10 @@ public class BureauValidationWritePlatformServiceImpl implements BureauValidatio
         final String area = this.fromApiJsonHelper.extractStringNamed("area", jsonElement);
         loanAdditionalData.setArea(area);
 
-        final Integer bienesInmuebles = this.fromApiJsonHelper.extractIntegerNamed("bienes_inmuebles", jsonElement, locale);
+        final BigDecimal bienesInmuebles = this.fromApiJsonHelper.extractBigDecimalNamed("bienes_inmuebles", jsonElement, locale);
         loanAdditionalData.setBienesInmuebles(bienesInmuebles);
 
-        final Integer bienesInmueblesFamiliares = this.fromApiJsonHelper.extractIntegerNamed("bienes_inmuebles_familiares", jsonElement,
+        final BigDecimal bienesInmueblesFamiliares = this.fromApiJsonHelper.extractBigDecimalNamed("bienes_inmuebles_familiares", jsonElement,
                 locale);
         loanAdditionalData.setBienesInmueblesFamiliares(bienesInmueblesFamiliares);
 
@@ -406,7 +406,7 @@ public class BureauValidationWritePlatformServiceImpl implements BureauValidatio
         final String destinoPrestamo = this.fromApiJsonHelper.extractStringNamed("destino_prestamo", jsonElement);
         loanAdditionalData.setDestinoPrestamo(destinoPrestamo);
 
-        final Integer educacion = this.fromApiJsonHelper.extractIntegerNamed("educacion", jsonElement, locale);
+        final BigDecimal educacion = this.fromApiJsonHelper.extractBigDecimalNamed("educacion", jsonElement, locale);
         loanAdditionalData.setEducacion(educacion);
 
         final BigDecimal efectivo = this.fromApiJsonHelper.extractBigDecimalNamed("efectivo", jsonElement, locale);
@@ -449,7 +449,7 @@ public class BureauValidationWritePlatformServiceImpl implements BureauValidatio
         final BigDecimal gastosNegocio = this.fromApiJsonHelper.extractBigDecimalNamed("gastos_negocio", jsonElement, locale);
         loanAdditionalData.setGastosNegocio(gastosNegocio);
 
-        final Integer herramientas = this.fromApiJsonHelper.extractIntegerNamed("herramientas", jsonElement, locale);
+        final BigDecimal herramientas = this.fromApiJsonHelper.extractBigDecimalNamed("herramientas", jsonElement, locale);
         loanAdditionalData.setHerramientas(herramientas);
 
         final Integer hijos = this.fromApiJsonHelper.extractIntegerNamed("hijos", jsonElement, locale);
@@ -458,7 +458,7 @@ public class BureauValidationWritePlatformServiceImpl implements BureauValidatio
         final Integer mortgages = this.fromApiJsonHelper.extractIntegerNamed("mortgages", jsonElement, locale);
         loanAdditionalData.setMortgages(mortgages);
 
-        final Integer impuestos = this.fromApiJsonHelper.extractIntegerNamed("impuestos", jsonElement, locale);
+        final BigDecimal impuestos = this.fromApiJsonHelper.extractBigDecimalNamed("impuestos", jsonElement, locale);
         loanAdditionalData.setImpuestos(impuestos);
 
         final String ingresadoPor = this.fromApiJsonHelper.extractStringNamed("ingresado_por", jsonElement);
@@ -521,7 +521,7 @@ public class BureauValidationWritePlatformServiceImpl implements BureauValidatio
         final String poseeCuenta = this.fromApiJsonHelper.extractStringNamed("posee_cuenta", jsonElement);
         loanAdditionalData.setPoseeCuenta(poseeCuenta);
 
-        final Long prestamoPuente = this.fromApiJsonHelper.extractLongNamed("prestamo_puente", jsonElement);
+        final BigDecimal prestamoPuente = this.fromApiJsonHelper.extractBigDecimalNamed("prestamo_puente", jsonElement, locale);
         loanAdditionalData.setPrestamoPuente(prestamoPuente);
 
         final BigDecimal propuestaFacilitador = this.fromApiJsonHelper.extractBigDecimalNamed("propuesta_facilitador", jsonElement, locale);
@@ -560,7 +560,7 @@ public class BureauValidationWritePlatformServiceImpl implements BureauValidatio
         final BigDecimal serviciosMedicos = this.fromApiJsonHelper.extractBigDecimalNamed("servicios_medicos", jsonElement, locale);
         loanAdditionalData.setServiciosMedicos(serviciosMedicos);
 
-        final Integer tarjetas = this.fromApiJsonHelper.extractIntegerNamed("tarjetas", jsonElement, locale);
+        final BigDecimal tarjetas = this.fromApiJsonHelper.extractBigDecimalNamed("tarjetas", jsonElement, locale);
         loanAdditionalData.setTarjetas(tarjetas);
 
         final String tipoVivienda = this.fromApiJsonHelper.extractStringNamed("tipo_vivienda", jsonElement);
@@ -603,7 +603,7 @@ public class BureauValidationWritePlatformServiceImpl implements BureauValidatio
         final BigDecimal valorGarantia = this.fromApiJsonHelper.extractBigDecimalNamed("valor_garantia", jsonElement, locale);
         loanAdditionalData.setValorGarantia(valorGarantia);
 
-        final Integer vehiculos = this.fromApiJsonHelper.extractIntegerNamed("vehiculos", jsonElement, locale);
+        final BigDecimal vehiculos = this.fromApiJsonHelper.extractBigDecimalNamed("vehiculos", jsonElement, locale);
         loanAdditionalData.setVehiculos(vehiculos);
 
         final BigDecimal vestimenta = this.fromApiJsonHelper.extractBigDecimalNamed("vestimenta", jsonElement, locale);
@@ -1027,7 +1027,7 @@ public class BureauValidationWritePlatformServiceImpl implements BureauValidatio
         final Integer total_vehiculo_negocio = this.fromApiJsonHelper.extractIntegerNamed("total_vehiculo_negocio", jsonElement, locale);
         loanAdditionalData.setTotal_vehiculo_negocio(total_vehiculo_negocio);
 
-        final Integer total_vehiculos = this.fromApiJsonHelper.extractIntegerNamed("total_vehiculos", jsonElement, locale);
+        final BigDecimal total_vehiculos = this.fromApiJsonHelper.extractBigDecimalNamed("total_vehiculos", jsonElement, locale);
         loanAdditionalData.setTotal_vehiculos(total_vehiculos);
 
         final String ubicacion_cliente = this.fromApiJsonHelper.extractStringNamed("ubicacion_cliente", jsonElement);
@@ -1065,6 +1065,18 @@ public class BureauValidationWritePlatformServiceImpl implements BureauValidatio
 
         final String tercer_nombre_solicitante = this.fromApiJsonHelper.extractStringNamed("tercer_nombre_solicitante", jsonElement);
         loanAdditionalData.setTercer_nombre_solicitante(tercer_nombre_solicitante);
+
+        final String categoria_fiador1 = this.fromApiJsonHelper.extractStringNamed("categoria_fiador1", jsonElement);
+        loanAdditionalData.setCategoria_fiador1(categoria_fiador1);
+
+        final String cliente_activo_fiador1 = this.fromApiJsonHelper.extractStringNamed("cliente_activo_fiador1", jsonElement);
+        loanAdditionalData.setCliente_activo_fiador1(cliente_activo_fiador1);
+
+        final String categoria_fiador2 = this.fromApiJsonHelper.extractStringNamed("categoria_fiador2", jsonElement);
+        loanAdditionalData.setCategoria_fiador2(categoria_fiador2);
+
+        final String cliente_activo_fiador2 = this.fromApiJsonHelper.extractStringNamed("cliente_activo_fiador2", jsonElement);
+        loanAdditionalData.setCliente_activo_fiador2(cliente_activo_fiador2);
 
         return loanAdditionalData;
     }
