@@ -34,6 +34,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.accounting.common.AccountingRuleType;
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
@@ -51,6 +54,8 @@ import org.apache.fineract.infrastructure.core.service.database.DatabaseSpecific
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.infrastructure.security.utils.ColumnValidator;
 import org.apache.fineract.infrastructure.security.utils.SQLInjectionValidator;
+import org.apache.fineract.organisation.agency.data.AgencyData;
+import org.apache.fineract.organisation.agency.service.AgencyReadPlatformService;
 import org.apache.fineract.organisation.bankAccount.data.BankAccountData;
 import org.apache.fineract.organisation.bankAccount.service.BankAccountReadPlatformServiceImpl;
 import org.apache.fineract.organisation.monetary.data.CurrencyData;
@@ -176,6 +181,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
     private final ColumnValidator columnValidator;
     private final DatabaseSpecificSQLGenerator sqlGenerator;
     private final LoanAdditionalPropertiesRepository loanAdditionalPropertiesRepository;
+    private final AgencyReadPlatformService agencyReadPlatformService;
     private final PrequalificationReadPlatformServiceImpl.PrequalificationIndividualMappingsMapper prequalificationIndividualMappingsMapper = new PrequalificationReadPlatformServiceImpl.PrequalificationIndividualMappingsMapper();
 
     @Autowired
@@ -192,7 +198,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
             final ConfigurationDomainService configurationDomainService, final CodeValueRepositoryWrapper codeValueRepositoryWrapper,
             final AccountDetailsReadPlatformService accountDetailsReadPlatformService, final LoanRepositoryWrapper loanRepositoryWrapper,
             final ColumnValidator columnValidator, DatabaseSpecificSQLGenerator sqlGenerator, PaginationHelper paginationHelper,
-            LoanAdditionalPropertiesRepository loanAdditionalPropertiesRepository) {
+            LoanAdditionalPropertiesRepository loanAdditionalPropertiesRepository, AgencyReadPlatformService agencyReadPlatformService) {
         this.context = context;
         this.loanRepositoryWrapper = loanRepositoryWrapper;
         this.applicationCurrencyRepository = applicationCurrencyRepository;
@@ -219,6 +225,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
         this.paginationHelper = paginationHelper;
         this.codeValueRepositoryWrapper = codeValueRepositoryWrapper;
         this.loanAdditionalPropertiesRepository = loanAdditionalPropertiesRepository;
+        this.agencyReadPlatformService = agencyReadPlatformService;
     }
 
     @Override
@@ -358,12 +365,12 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
         sqlBuilder.append(" left join m_office transferToOffice on transferToOffice.id = c.transfer_to_office_id ");
         sqlBuilder.append(" where (o.hierarchy LIKE CONCAT(?, '%') OR ? like CONCAT(o.hierarchy, '%'))");
 
-//        sqlBuilder.append(" where ( o.hierarchy like ? or transferToOffice.hierarchy like ?)");
-
-        //        final Collection<AgencyData> agencyOptions = this.agencyReadPlatformService.retrieveAllByUser();
-//        final Set<Long> agencyIds = agencyOptions.stream().map(AgencyData::getId).collect(Collectors.toSet());
-//        final String agencyIdParams = StringUtils.join(agencyIds, ", ");
-//        sqlBuilder.append(" WHERE agency.id IN ( ").append(agencyIdParams).append(")");
+        final Collection<AgencyData> agencyOptions = this.agencyReadPlatformService.retrieveAllByUser();
+        final Set<Long> agencyIds = agencyOptions.stream().map(AgencyData::getId).collect(Collectors.toSet());
+        if (!agencyIds.isEmpty() && searchParameters.getAgencyId()==null) {
+            final String agencyIdParams = StringUtils.join(agencyIds, ", ");
+            sqlBuilder.append(" AND agency.id IN ( ").append(agencyIdParams).append(") ");
+        }
 
         int arrayPos = 2;
         List<Object> extraCriterias = new ArrayList<>();
