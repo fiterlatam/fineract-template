@@ -18,30 +18,36 @@
  */
 package org.apache.fineract.portfolio.client.domain;
 
+import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-
 @Service
 public class ClientBlockingReasonRepositoryWrapper {
+
     private final ClientBlockingReasonRepository clientBlockingReasonRepository;
+
     @Autowired
     public ClientBlockingReasonRepositoryWrapper(final ClientBlockingReasonRepository clientBlockingReasonRepository) {
         this.clientBlockingReasonRepository = clientBlockingReasonRepository;
     }
+
     public List<ClientBlockingReason> findClientBlockingReason(final Long clientId, final Long blockingReasonId) {
         return this.clientBlockingReasonRepository.findByClientIdAndBlockingReasonId(clientId, blockingReasonId);
     }
+
     public List<ClientBlockingReason> findClientBlockingReasonByClientId(final Long clientId) {
         return this.clientBlockingReasonRepository.findByClientId(clientId);
     }
+
     public void save(final ClientBlockingReason clientBlockingReason) {
         this.clientBlockingReasonRepository.save(clientBlockingReason);
     }
+
     public void saveAndFlush(final ClientBlockingReason clientBlockingReason) {
         this.clientBlockingReasonRepository.saveAndFlush(clientBlockingReason);
     }
+
     public void delete(final ClientBlockingReason clientBlockingReason) {
         this.clientBlockingReasonRepository.delete(clientBlockingReason);
     }

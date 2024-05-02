@@ -18,10 +18,10 @@
  */
 package org.apache.fineract.portfolio.client.service;
 
+import java.util.Collection;
 import org.apache.fineract.portfolio.client.data.ClientBlockingReasonData;
 
-import java.util.Collection;
-
 public interface ClientBlockingReasonReadPlatformService {
+
     Collection<ClientBlockingReasonData> retrieveClientBlockingReason(Long clientId);
 }

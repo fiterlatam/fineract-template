@@ -81,10 +81,12 @@ import org.apache.fineract.portfolio.charge.data.ChargeData;
 import org.apache.fineract.portfolio.charge.domain.Charge;
 import org.apache.fineract.portfolio.charge.domain.ChargeTimeType;
 import org.apache.fineract.portfolio.charge.service.ChargeReadPlatformService;
+import org.apache.fineract.portfolio.client.data.ClientAdditionalFieldsData;
 import org.apache.fineract.portfolio.client.data.ClientData;
 import org.apache.fineract.portfolio.client.domain.Client;
 import org.apache.fineract.portfolio.client.domain.ClientEnumerations;
 import org.apache.fineract.portfolio.client.domain.LegalForm;
+import org.apache.fineract.portfolio.client.service.ClientAdditionalFieldsMapper;
 import org.apache.fineract.portfolio.client.service.ClientReadPlatformService;
 import org.apache.fineract.portfolio.common.domain.PeriodFrequencyType;
 import org.apache.fineract.portfolio.common.service.CommonEnumerations;
@@ -100,7 +102,6 @@ import org.apache.fineract.portfolio.group.service.GroupReadPlatformService;
 import org.apache.fineract.portfolio.loanaccount.api.LoanApiConstants;
 import org.apache.fineract.portfolio.loanaccount.data.DisbursementData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanAccountData;
-import org.apache.fineract.portfolio.loanaccount.data.LoanAdditionalFieldsData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanApplicationTimelineData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanApprovalData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanAssignorData;
@@ -2646,31 +2647,6 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         }
     }
 
-    private static final class ClientAdditionalFieldsMapper implements RowMapper<LoanAdditionalFieldsData> {
-
-        public String schema() {
-            return """
-                    mc.id AS clientId,
-                    cce."NIT" AS nit,
-                    tipo.code_value AS tipo,
-                    ccp."Cedula" AS cedula
-                    FROM m_client mc
-                    LEFT JOIN campos_cliente_empresas cce ON cce.client_id = mc.id
-                    LEFT JOIN m_code_value tipo ON tipo.id = cce."Tipo ID_cd_Tipo ID"
-                    LEFT JOIN campos_cliente_persona ccp ON ccp.client_id = mc.id
-                    """;
-        }
-
-        @Override
-        public LoanAdditionalFieldsData mapRow(@NotNull ResultSet rs, int rowNum) throws SQLException {
-            final Long clientId = JdbcSupport.getLong(rs, "clientId");
-            final String tipo = rs.getString("tipo");
-            final String nit = rs.getString("nit");
-            final String cedula = rs.getString("cedula");
-            return new LoanAdditionalFieldsData(clientId, tipo, nit, cedula);
-        }
-    }
-
     @Override
     public List<LoanAssignorData> retrieveLoanAssignorData(String searchTerm) {
         final String currentUserHierarchy = this.context.authenticatedUser().getOffice().getHierarchy();
@@ -2699,15 +2675,15 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
     }
 
     @Override
-    public LoanAdditionalFieldsData retrieveLoanClientAdditionals(Long clientId) {
+    public ClientAdditionalFieldsData retrieveLoanClientAdditionals(Long clientId) {
         final ClientAdditionalFieldsMapper rowMapper = new ClientAdditionalFieldsMapper();
         final String sql = "SELECT " + rowMapper.schema() + " WHERE mc.id = ? ";
         final Object[] params = new Object[] { clientId };
-        List<LoanAdditionalFieldsData> resultList = this.jdbcTemplate.query(sql, rowMapper, params);
+        List<ClientAdditionalFieldsData> resultList = this.jdbcTemplate.query(sql, rowMapper, params);
         if (!CollectionUtils.isEmpty(resultList)) {
             return resultList.get(0);
         }
-        return new LoanAdditionalFieldsData();
+        return new ClientAdditionalFieldsData();
     }
 
     @Override
@@ -2715,7 +2691,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         final Loan loan = this.loanRepositoryWrapper.findOneWithNotFoundDetection(loanId);
         final Client loanClient = loan.getClient();
         final Integer legalFormId = loanClient.getLegalForm();
-        final LoanAdditionalFieldsData loanAdditionalFieldsData = this.retrieveLoanClientAdditionals(loanClient.getId());
+        final ClientAdditionalFieldsData loanAdditionalFieldsData = this.retrieveLoanClientAdditionals(loanClient.getId());
         final String nit = loanAdditionalFieldsData.getNit();
         final String cedula = loanAdditionalFieldsData.getCedula();
         String clientFullName;

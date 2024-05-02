@@ -19,20 +19,19 @@
 
 package org.apache.fineract.custom.portfolio.customcharge.mapper;
 
-import org.apache.fineract.custom.portfolio.customcharge.data.CustomChargeEntityData;
-import org.apache.fineract.custom.portfolio.customcharge.domain.CustomChargeEntity;
-
 import java.util.List;
 import java.util.stream.Collectors;
+import org.apache.fineract.custom.portfolio.customcharge.data.CustomChargeEntityData;
+import org.apache.fineract.custom.portfolio.customcharge.domain.CustomChargeEntity;
 
 public class CustomChargeEntityMapper {
 
     public static CustomChargeEntity toModel(CustomChargeEntityData dto) {
         CustomChargeEntity ret = new CustomChargeEntity();
 
-		ret.setId(dto.getId());
-		ret.setName(dto.getName());
-		ret.setCode(dto.getCode());
+        ret.setId(dto.getId());
+        ret.setName(dto.getName());
+        ret.setCode(dto.getCode());
 
         return ret;
     }
@@ -40,16 +39,14 @@ public class CustomChargeEntityMapper {
     public static CustomChargeEntityData toDTO(CustomChargeEntity model) {
         CustomChargeEntityData ret = new CustomChargeEntityData();
 
-		ret.setId(model.getId());
-		ret.setName(model.getName());
-		ret.setCode(model.getCode());
-
+        ret.setId(model.getId());
+        ret.setName(model.getName());
+        ret.setCode(model.getCode());
 
         return ret;
     }
-    
-    public static List<CustomChargeEntityData> toDTO(List<CustomChargeEntity> model) {
-		return model.stream().map(obj ->toDTO(obj)).collect(Collectors.toList());
-	}
-}
 
+    public static List<CustomChargeEntityData> toDTO(List<CustomChargeEntity> model) {
+        return model.stream().map(obj -> toDTO(obj)).collect(Collectors.toList());
+    }
+}

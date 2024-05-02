@@ -35,12 +35,12 @@ public final class CustomChargeTypeApiConstants {
     public static final String dateFormatParamName = "dateFormat";
 
     // request parameters
-	public static final String idParamName = "id";
-	public static final String customChargeEntityIdParamName = "customChargeEntityId";
-	public static final String nameParamName = "name";
-	public static final String codeParamName = "code";
+    public static final String idParamName = "id";
+    public static final String customChargeEntityIdParamName = "customChargeEntityId";
+    public static final String nameParamName = "name";
+    public static final String codeParamName = "code";
 
-    
     // request parameters Set
-    public static final Set<String> REQUEST_DATA_PARAMETERS = new HashSet<>(Arrays.asList(localeParamName, dateFormatParamName, idParamName,customChargeEntityIdParamName,nameParamName,codeParamName));
+    public static final Set<String> REQUEST_DATA_PARAMETERS = new HashSet<>(
+            Arrays.asList(localeParamName, dateFormatParamName, idParamName, customChargeEntityIdParamName, nameParamName, codeParamName));
 }

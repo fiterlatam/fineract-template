@@ -16,22 +16,14 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.custom.portfolio.customcharge.data;
 
-import lombok.AllArgsConstructor;
+package org.apache.fineract.portfolio.client.data;
+
 import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
 
-@AllArgsConstructor
-@NoArgsConstructor
 @Builder
-@Getter
-@Setter
-public class CustomChargeEntityData {
+public record ClientBlockingListData(String idType, String idNumber, String firstName, String secondName, String surname,
+        String secondSurname, String companyName, String causal, String blockingComment, Long blockingReasonId, String blockedOnDate,
+        String dateFormat, String locale, Integer rowIndex) {
 
-    private Long id;
-    private String name;
-    private String code;
 }

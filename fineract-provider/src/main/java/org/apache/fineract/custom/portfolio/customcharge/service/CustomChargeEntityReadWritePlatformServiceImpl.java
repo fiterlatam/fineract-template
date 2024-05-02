@@ -18,6 +18,8 @@
  */
 package org.apache.fineract.custom.portfolio.customcharge.service;
 
+import java.util.List;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.custom.portfolio.customcharge.data.CustomChargeEntityData;
 import org.apache.fineract.custom.portfolio.customcharge.domain.CustomChargeEntity;
@@ -30,9 +32,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Optional;
-
 @Slf4j
 @Service
 public class CustomChargeEntityReadWritePlatformServiceImpl implements CustomChargeEntityReadWritePlatformService {
@@ -42,16 +41,15 @@ public class CustomChargeEntityReadWritePlatformServiceImpl implements CustomCha
     private final PlatformSecurityContext context;
 
     @Autowired
-    public CustomChargeEntityReadWritePlatformServiceImpl(final JdbcTemplate jdbcTemplate,
-            final DatabaseSpecificSQLGenerator sqlGenerator,
+    public CustomChargeEntityReadWritePlatformServiceImpl(final JdbcTemplate jdbcTemplate, final DatabaseSpecificSQLGenerator sqlGenerator,
             final PlatformSecurityContext context) {
         this.jdbcTemplate = jdbcTemplate;
         this.sqlGenerator = sqlGenerator;
         this.context = context;
     }
 
-	@Autowired
-	private CustomChargeEntityRepository repository;
+    @Autowired
+    private CustomChargeEntityRepository repository;
 
     @Override
     public List<CustomChargeEntityData> findAllActive() {

@@ -18,7 +18,12 @@
  */
 package org.apache.fineract.infrastructure.clientblockingreasons.api;
 
+import static org.apache.fineract.infrastructure.bulkimport.data.GlobalEntityType.CLIENT_BLOCK;
+
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
@@ -27,9 +32,12 @@ import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
+import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
@@ -38,13 +46,18 @@ import lombok.RequiredArgsConstructor;
 import org.apache.fineract.commands.domain.CommandWrapper;
 import org.apache.fineract.commands.service.CommandWrapperBuilder;
 import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformService;
+import org.apache.fineract.infrastructure.bulkimport.service.BulkImportWorkbookPopulatorService;
+import org.apache.fineract.infrastructure.bulkimport.service.BulkImportWorkbookService;
 import org.apache.fineract.infrastructure.clientblockingreasons.data.BlockingReasonsData;
 import org.apache.fineract.infrastructure.clientblockingreasons.service.ManageBlockingReasonsReadPlatformService;
 import org.apache.fineract.infrastructure.core.api.ApiRequestParameterHelper;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
+import org.apache.fineract.infrastructure.core.data.UploadRequest;
 import org.apache.fineract.infrastructure.core.serialization.ApiRequestJsonSerializationSettings;
 import org.apache.fineract.infrastructure.core.serialization.ToApiJsonSerializer;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
+import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
+import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.springframework.stereotype.Component;
 
 @Path(BlockingReasonsConstants.RESOURCE_URL)
@@ -61,6 +74,8 @@ public class ManageBlockingReasonsApiResource {
     private static final Set<String> MANAGE_BLOCKING_REASONS_DATA_PARAMETERS = new HashSet<>(Arrays.asList(
             BlockingReasonsConstants.ID_PARAM, BlockingReasonsConstants.CREDIT_LEVEL_PARAM, BlockingReasonsConstants.CUSTOMER_LEVEL_PARAM,
             BlockingReasonsConstants.CREDIT_LEVEL_OPTIONS_PARAM, BlockingReasonsConstants.CUSTOMER_LEVEL_OPTIONS_PARAM));
+    private final BulkImportWorkbookPopulatorService bulkImportWorkbookPopulatorService;
+    private final BulkImportWorkbookService bulkImportWorkbookService;
 
     @POST
     @Path("createBlockingReasonSettings")
@@ -116,4 +131,25 @@ public class ManageBlockingReasonsApiResource {
         final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
         return this.toApiJsonSerializer.serialize(result);
     }
+
+    @GET
+    @Path("downloadtemplate")
+    @Produces("application/vnd.ms-excel")
+    public Response getBlockClientListTemplate(final Long staffId, @QueryParam("dateFormat") final String dateFormat) {
+        return bulkImportWorkbookPopulatorService.getTemplate(CLIENT_BLOCK.toString(), null, staffId, dateFormat);
+    }
+
+    @POST
+    @Path("uploadtemplate")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @RequestBody(description = "Upload block client list template", content = {
+            @Content(mediaType = MediaType.MULTIPART_FORM_DATA, schema = @Schema(implementation = UploadRequest.class)) })
+    public String postBlockClientList(@FormDataParam("file") InputStream uploadedInputStream,
+            @FormDataParam("file") FormDataContentDisposition fileDetail, @FormDataParam("locale") final String locale,
+            @FormDataParam("dateFormat") final String dateFormat) {
+        Long importDocumentId = bulkImportWorkbookService.importWorkbook(CLIENT_BLOCK.toString(), uploadedInputStream, fileDetail, locale,
+                dateFormat);
+        return this.toApiJsonSerializer.serialize(importDocumentId);
+    }
+
 }

@@ -18,15 +18,14 @@
  */
 package org.apache.fineract.custom.portfolio.customcharge.domain;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.List;
 
 public interface CustomChargeTypeMapRepository
         extends JpaRepository<CustomChargeTypeMap, Long>, JpaSpecificationExecutor<CustomChargeTypeMap> {
@@ -36,13 +35,13 @@ public interface CustomChargeTypeMapRepository
     List<CustomChargeTypeMap> findByCustomChargeTypeIdAndTermAndActive(Long customChargeTypeId, Long term, boolean active);
 
     @Modifying
-    @Query("update CustomChargeTypeMap cctm set cctm.active = false, cctm.validTo = :validTo, cctm.updatedAt = :updatedAt, cctm.updatedBy = :updatedBy " +
-            "where cctm.customChargeTypeId = :customChargeTypeId and cctm.term = :term")
+    @Query("update CustomChargeTypeMap cctm set cctm.active = false, cctm.validTo = :validTo, cctm.updatedAt = :updatedAt, cctm.updatedBy = :updatedBy "
+            + "where cctm.customChargeTypeId = :customChargeTypeId and cctm.term = :term")
     int deactivatePreviousTermData(@Param("customChargeTypeId") Long customChargeTypeId, //
-                                   @Param("term") Long term, //
-                                   @Param("validTo") LocalDate validTo, //
-                                   @Param("updatedAt") LocalDateTime updatedAt, //
-                                   @Param("updatedBy") Long updatedBy //
+            @Param("term") Long term, //
+            @Param("validTo") LocalDate validTo, //
+            @Param("updatedAt") LocalDateTime updatedAt, //
+            @Param("updatedBy") Long updatedBy //
     );
 
 }

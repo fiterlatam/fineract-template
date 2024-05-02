@@ -532,9 +532,9 @@ public class ClientsApiResource {
         } else if (CommandParameterUtil.is(commandParam, "undoWithdrawal")) {
             commandRequest = builder.undoWithdrawal(clientId).build();
         } else if (CommandParameterUtil.is(commandParam, "block")) {
-            commandRequest = builder.block(clientId).build();
+            commandRequest = builder.blockClient(clientId).build();
         } else if (CommandParameterUtil.is(commandParam, "undoBlock")) {
-            commandRequest = builder.undoBlock(clientId).build();
+            commandRequest = builder.undoBlockClient(clientId).build();
         }
 
         if (commandRequest == null) {
@@ -627,7 +627,8 @@ public class ClientsApiResource {
 
     private String retrieveClientBlockingReason(Long clientId) {
         context.authenticatedUser().validateHasReadPermission(ClientApiConstants.CLIENT_RESOURCE_NAME);
-        final Collection<ClientBlockingReasonData> clientBlockingReasonData = clientBlockingReasonReadPlatformService.retrieveClientBlockingReason(clientId);
+        final Collection<ClientBlockingReasonData> clientBlockingReasonData = clientBlockingReasonReadPlatformService
+                .retrieveClientBlockingReason(clientId);
         return toApiJsonSerializer.serialize(clientBlockingReasonData);
     }
 }

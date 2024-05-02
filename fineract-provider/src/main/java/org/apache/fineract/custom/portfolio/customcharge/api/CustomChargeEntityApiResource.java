@@ -18,7 +18,6 @@
  */
 package org.apache.fineract.custom.portfolio.customcharge.api;
 
-
 import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
@@ -60,7 +59,7 @@ public class CustomChargeEntityApiResource {
         this.apiRequestParameterHelper = apiRequestParameterHelper;
     }
 
-	@Autowired
+    @Autowired
     private CustomChargeEntityReadWritePlatformService service;
 
     @GET
@@ -75,8 +74,7 @@ public class CustomChargeEntityApiResource {
     @Path("{id}")
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
-    public String retrieveOne(@PathParam("id") @Parameter(description = "id") final Long id,
-            @Context final UriInfo uriInfo) {
+    public String retrieveOne(@PathParam("id") @Parameter(description = "id") final Long id, @Context final UriInfo uriInfo) {
 
         this.context.authenticatedUser().validateHasReadPermission(CustomChargeEntityApiConstants.RESOURCE_NAME);
 

@@ -16,22 +16,16 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.custom.portfolio.customcharge.data;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+package org.apache.fineract.portfolio.client.domain;
 
-@AllArgsConstructor
-@NoArgsConstructor
-@Builder
-@Getter
-@Setter
-public class CustomChargeEntityData {
+import java.util.Optional;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.stereotype.Repository;
 
-    private Long id;
-    private String name;
-    private String code;
+@Repository
+public interface ClientBlockListRepository extends JpaRepository<ClientBlockList, Long>, JpaSpecificationExecutor<ClientBlockList> {
+
+    Optional<ClientBlockList> findByClientId(Long clientId);
 }

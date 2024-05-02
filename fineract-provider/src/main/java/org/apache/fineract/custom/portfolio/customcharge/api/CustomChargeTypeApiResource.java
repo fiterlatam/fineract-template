@@ -18,7 +18,6 @@
  */
 package org.apache.fineract.custom.portfolio.customcharge.api;
 
-
 import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
@@ -60,14 +59,14 @@ public class CustomChargeTypeApiResource {
         this.apiRequestParameterHelper = apiRequestParameterHelper;
     }
 
-	@Autowired
+    @Autowired
     private CustomChargeTypeReadWritePlatformService service;
 
     @GET
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     public String get(@Context final UriInfo uriInfo,
-                      @PathParam("chargeEntityid") @Parameter(description = "chargeEntityid") final Long chargeEntityid) {
+            @PathParam("chargeEntityid") @Parameter(description = "chargeEntityid") final Long chargeEntityid) {
         this.context.authenticatedUser().validateHasReadPermission(CustomChargeTypeApiConstants.RESOURCE_NAME);
         return this.toApiJsonSerializer.serialize(this.service.findAllByEntityId(chargeEntityid));
     }
@@ -76,8 +75,7 @@ public class CustomChargeTypeApiResource {
     @Path("{id}")
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
-    public String retrieveOne(@PathParam("id") @Parameter(description = "id") final Long id,
-            @Context final UriInfo uriInfo) {
+    public String retrieveOne(@PathParam("id") @Parameter(description = "id") final Long id, @Context final UriInfo uriInfo) {
 
         this.context.authenticatedUser().validateHasReadPermission(CustomChargeTypeApiConstants.RESOURCE_NAME);
 

@@ -21,13 +21,13 @@ package org.apache.fineract.portfolio.client.domain;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
-import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
-
 import java.time.LocalDate;
+import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
 
 @Entity
 @Table(name = "m_client_blocking_reason")
 public class ClientBlockingReason extends AbstractPersistableCustom {
+
     @Column(name = "client_id", nullable = false)
     private Long clientId;
     @Column(name = "blocking_reason_id", nullable = false)
@@ -50,12 +50,12 @@ public class ClientBlockingReason extends AbstractPersistableCustom {
     private LocalDate createdDate;
 
     public static ClientBlockingReason instance(final Long clientId, final Long blockingReasonId, final Long createdBy,
-                                                final LocalDate blockDate, final String blockComment, final Long blockBy) {
+            final LocalDate blockDate, final String blockComment, final Long blockBy) {
         return new ClientBlockingReason(clientId, blockingReasonId, createdBy, blockDate, blockComment, blockBy);
     }
 
-    private ClientBlockingReason(final Long clientId, final Long blockingReasonId, final Long createdBy,
-                                 final LocalDate blockDate, final String blockComment, final Long blockBy) {
+    private ClientBlockingReason(final Long clientId, final Long blockingReasonId, final Long createdBy, final LocalDate blockDate,
+            final String blockComment, final Long blockBy) {
         this.clientId = clientId;
         this.blockingReasonId = blockingReasonId;
         this.createdBy = createdBy;

@@ -19,52 +19,48 @@
 
 package org.apache.fineract.custom.portfolio.customcharge.mapper;
 
-import org.apache.fineract.custom.portfolio.customcharge.data.CustomChargeTypeMapData;
-import org.apache.fineract.custom.portfolio.customcharge.domain.CustomChargeTypeMap;
-
 import java.util.List;
 import java.util.stream.Collectors;
+import org.apache.fineract.custom.portfolio.customcharge.data.CustomChargeTypeMapData;
+import org.apache.fineract.custom.portfolio.customcharge.domain.CustomChargeTypeMap;
 
 public class CustomChargeTypeMapMapper {
 
     public static CustomChargeTypeMap toModel(CustomChargeTypeMapData dto) {
-        CustomChargeTypeMap ret = CustomChargeTypeMap.builder()
-			.id(dto.getId()) //
-			.customChargeTypeId(dto.getCustomChargeTypeId()) //
-			.term(dto.getTerm()) //
-			.percentage(dto.getPercentage()) //
-			.validFrom(dto.getValidFrom()) //
-			.validTo(dto.getValidTo()) //
-			.active(dto.getActive()) //
-			.createdBy(dto.getCreatedBy()) //
-			.createdAt(dto.getCreatedAt()) //
-			.updatedBy(dto.getUpdatedBy()) //
-			.updatedAt(dto.getUpdatedAt()) //
-            .build();
+        CustomChargeTypeMap ret = CustomChargeTypeMap.builder().id(dto.getId()) //
+                .customChargeTypeId(dto.getCustomChargeTypeId()) //
+                .term(dto.getTerm()) //
+                .percentage(dto.getPercentage()) //
+                .validFrom(dto.getValidFrom()) //
+                .validTo(dto.getValidTo()) //
+                .active(dto.getActive()) //
+                .createdBy(dto.getCreatedBy()) //
+                .createdAt(dto.getCreatedAt()) //
+                .updatedBy(dto.getUpdatedBy()) //
+                .updatedAt(dto.getUpdatedAt()) //
+                .build();
 
         return ret;
     }
 
     public static CustomChargeTypeMapData toDTO(CustomChargeTypeMap model) {
-        CustomChargeTypeMapData ret = CustomChargeTypeMapData.builder()
-			.id(model.getId()) //
-			.customChargeTypeId(model.getCustomChargeTypeId()) //
-			.term(model.getTerm()) //
-			.percentage(model.getPercentage()) //
-			.validFrom(model.getValidFrom()) //
-			.validTo(model.getValidTo()) //
-			.active(model.getActive()) //
-			.createdBy(model.getCreatedBy()) //
-			.createdAt(model.getCreatedAt()) //
-			.updatedBy(model.getUpdatedBy()) //
-			.updatedAt(model.getUpdatedAt()) //
-            .build();
+        CustomChargeTypeMapData ret = CustomChargeTypeMapData.builder().id(model.getId()) //
+                .customChargeTypeId(model.getCustomChargeTypeId()) //
+                .term(model.getTerm()) //
+                .percentage(model.getPercentage()) //
+                .validFrom(model.getValidFrom()) //
+                .validTo(model.getValidTo()) //
+                .active(model.getActive()) //
+                .createdBy(model.getCreatedBy()) //
+                .createdAt(model.getCreatedAt()) //
+                .updatedBy(model.getUpdatedBy()) //
+                .updatedAt(model.getUpdatedAt()) //
+                .build();
 
         return ret;
     }
-    
-    public static List<CustomChargeTypeMapData> toDTO(List<CustomChargeTypeMap> model) {
-		return model.stream().map(obj ->toDTO(obj)).collect(Collectors.toList());
-	}
-}
 
+    public static List<CustomChargeTypeMapData> toDTO(List<CustomChargeTypeMap> model) {
+        return model.stream().map(obj -> toDTO(obj)).collect(Collectors.toList());
+    }
+}
