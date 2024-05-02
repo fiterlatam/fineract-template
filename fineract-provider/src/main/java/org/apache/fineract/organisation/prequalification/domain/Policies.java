@@ -63,7 +63,15 @@ public enum Policies {
                                                                                                                                                                                             32,
                                                                                                                                                                                             "Percentage of members with agricultural business"), THIRTY_THREE(
                                                                                                                                                                                                     33,
-                                                                                                                                                                                                    "Percentage of members with their own business");
+                                                                                                                                                                                                    "Percentage of members with their own business"), THIRTY_FOUR(
+                                                                                                                                                                                                        34,
+                                                                                                                                                                                                        "Early Recapitalization Fee"), THIRTY_FIVE(
+                                                                                                                                                                                                            35,
+                                                                                                                                                                                                            "Number Of Cycles"), THIRTY_SIX(
+                                                                                                                                                                                                                36,
+                                                                                                                                                                                                                "Percentage Of Clients To Be Recredited In The Group"), THIRTY_SEVEN(
+                                                                                                                                                                                                                    37,
+                                                                                                                                                                                                                    "Clients In Arrears");
 
     private final Integer id;
     private final String name;

@@ -297,6 +297,10 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
             case THIRTY_ONE -> checkValidationColor = this.runCheck31(clientData);
             case THIRTY_TWO -> checkValidationColor = this.runCheck32(groupData);
             case THIRTY_THREE -> checkValidationColor = this.runCheck33(groupData);
+            case THIRTY_FOUR -> checkValidationColor = this.runCheck34(clientData);
+            case THIRTY_FIVE -> checkValidationColor = this.runCheck35(groupData);
+            case THIRTY_SIX -> checkValidationColor = this.runCheck36(groupData);
+            case THIRTY_SEVEN -> checkValidationColor = this.runCheck37(groupData);
             default -> checkValidationColor = CheckValidationColor.INVALID;
         }
         return checkValidationColor;
@@ -335,10 +339,12 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
                 """;
         final Object[] params = new Object[] { loanId };
         final BigDecimal percentageIncrease = this.jdbcTemplate.queryForObject(percentageIncreaseSQL, BigDecimal.class, params);
+        final BigDecimal currentCreditValue = getCurrentCreditValue(loanId);
         final Map<String, String> reportParams = new HashMap<>();
         reportParams.put("${clientId}", clientId);
         reportParams.put("${loanProductId}", productId);
         reportParams.put("${percentageIncrease}", String.valueOf(percentageIncrease));
+        reportParams.put("${currentCreditValue}", String.valueOf(currentCreditValue));
         final GenericResultsetData result = this.readReportingService.retrieveGenericResultset(reportName, "report", reportParams, false);
         return extractColorFromResultset(result);
     }
@@ -483,6 +489,7 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
         final String reportName = Policies.SIX.getName() + " Policy Check";
         final String productId = Long.toString(groupData.getProductId());
         final String numberOfMembers = String.valueOf(groupData.getNumberOfMembers());
+        final String numberOfRecurringMembers = String.valueOf(getRecurringMembers(Long.getLong(prequalificationId)));
         final Map<String, String> reportParams = new HashMap<>();
         reportParams.put("${prequalificationId}", prequalificationId);
         reportParams.put("${loanProductId}", productId);
@@ -490,6 +497,7 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
         reportParams.put("${clientArea}", clientArea);
         reportParams.put("${recreditCategorization}", recreditCategorization);
         reportParams.put("${numberOfMembers}", numberOfMembers);
+        reportParams.put("${numberOfRecurringMembers}", numberOfRecurringMembers);
         final GenericResultsetData result = this.readReportingService.retrieveGenericResultset(reportName, "report", reportParams, false);
         return extractColorFromResultset(result);
     }
@@ -667,14 +675,25 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
      */
     private CheckValidationColor runCheck14(final ClientData clientData) {
         final String clientId = String.valueOf(clientData.getClientId());
+        final Long loanId = clientData.getLoanId();
         final String reportName = Policies.FOURTEEN.getName() + " Policy Check";
         final String productId = Long.toString(clientData.getProductId());
         final String requestedAmount = clientData.getRequestedAmount().toPlainString();
         final ClientData params = retrieveClientParams(clientData.getClientId(), clientData.getProductId());
+        final String photographCountSql = """
+                        SELECT COUNT(*)
+                        FROM m_document md
+                        LEFT JOIN m_code_value mcvd ON md.document_type = mcvd.id
+                        WHERE md.parent_entity_type = 'loans' AND md.parent_entity_id = ? AND (md.name = ? OR mcvd.code_value = ?)
+                """;
+        Object[] photographParams = new Object[] { loanId, "Fotografias", "Fotografias" };
+        final Long photographCount = ObjectUtils
+                .defaultIfNull(this.jdbcTemplate.queryForObject(photographCountSql, Long.class, photographParams), 0L);
         final Map<String, String> reportParams = new HashMap<>();
         reportParams.put("${clientId}", clientId);
         reportParams.put("${loanProductId}", productId);
         reportParams.put("${requestedAmount}", requestedAmount);
+        reportParams.put("${photographCount}", String.valueOf(photographCount));
         final GenericResultsetData result = this.readReportingService.retrieveGenericResultset(reportName, "report", reportParams, false);
         return extractColorFromResultset(result);
     }
@@ -687,6 +706,11 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
         final String reportName = Policies.FIFTEEN.getName() + " Policy Check";
         final String productId = Long.toString(clientData.getProductId());
         final Long loanId = clientData.getLoanId();
+        Integer prequalificationId = clientData.getPrequalificationId();
+        String categoria_fiador1 = "";
+        String categoria_fiador2 = "";
+        String cliente_activo_fiador1 = "";
+        String cliente_activo_fiador2 = "";
         final String documentCountSql = """
                         SELECT COUNT(*)
                         FROM m_document md
@@ -695,6 +719,18 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
                 """;
         Object[] params = new Object[] { loanId, "Agregar aval", "Agregar aval" };
         final Long documentCount = this.jdbcTemplate.queryForObject(documentCountSql, Long.class, params);
+
+        String query = "Select categoria_fiador1, categoria_fiador2, cliente_activo_fiador1, cliente_activo_fiador2 " +
+                "from m_prequalification_group where id = ?";
+        List<Map<String, Object>> res = this.jdbcTemplate.queryForList(query,
+                new Object[] {prequalificationId});
+        if (!res.isEmpty()) {
+            Map<String, Object> guarantee_fields = res.get(0);
+            categoria_fiador1 = (String) guarantee_fields.get("categoria_fiador1");
+            categoria_fiador2 = (String) guarantee_fields.get("categoria_fiador2");
+            cliente_activo_fiador1 = (String) guarantee_fields.get("cliente_activo_fiador1");
+            cliente_activo_fiador2 = (String) guarantee_fields.get("cliente_activo_fiador2");
+        }
         final Map<String, String> reportParams = new HashMap<>();
         reportParams.put("${clientId}", clientId);
         reportParams.put("${loanProductId}", productId);
@@ -894,6 +930,7 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
         reportParams.put("${clientCategorization}", params.getClientCategorization());
         reportParams.put("${recreditCategorization}", params.getRecreditCategorization());
         reportParams.put("${businessAge}", String.valueOf(yearsInBusiness));
+        reportParams.put("${requestedAmount}", String.valueOf(clientData.getRequestedAmount()));
         final GenericResultsetData result = this.readReportingService.retrieveGenericResultset(reportName, "report", reportParams, false);
         return extractColorFromResultset(result);
     }
@@ -1087,4 +1124,85 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
         final GenericResultsetData result = this.readReportingService.retrieveGenericResultset(reportName, "report", reportParams, false);
         return extractColorFromResultset(result);
     }
+
+    private CheckValidationColor runCheck34(final ClientData clientData) {
+        final String clientId = String.valueOf(clientData.getClientId());
+        final String reportName = Policies.THIRTY_FOUR.getName() + " Policy Check";
+        final String productId = Long.toString(clientData.getProductId());
+        final ClientData params = retrieveClientParams(clientData.getClientId(), clientData.getProductId());
+        final Map<String, String> reportParams = new HashMap<>();
+        reportParams.put("${clientId}", clientId);
+        reportParams.put("${loanProductId}", productId);
+        final GenericResultsetData result = this.readReportingService.retrieveGenericResultset(reportName, "report", reportParams, false);
+        return extractColorFromResultset(result);
+    }
+
+    private CheckValidationColor runCheck35(final GroupData groupData) {
+        final String reportName = Policies.THIRTY_FIVE.getName() + " Policy Check";
+        final String numberOfMembers = String.valueOf(groupData.getNumberOfMembers());
+        final String prequalificationId = String.valueOf(groupData.getId());
+        final String productId = Long.toString(groupData.getProductId());
+
+        final Map<String, String> reportParams = new HashMap<>();
+        reportParams.put("${numberOfMembers}", numberOfMembers);
+        reportParams.put("${prequalificationId}", prequalificationId);
+        reportParams.put("${loanProductId}", productId);
+        final GenericResultsetData result = this.readReportingService.retrieveGenericResultset(reportName, "report", reportParams, false);
+        return extractColorFromResultset(result);
+    }
+
+    private CheckValidationColor runCheck36(final GroupData groupData) {
+        final String reportName = Policies.THIRTY_SIX.getName() + " Policy Check";
+        final String prequalificationId = String.valueOf(groupData.getId());
+        final String productId = Long.toString(groupData.getProductId());
+
+        final Map<String, String> reportParams = new HashMap<>();
+        reportParams.put("${prequalificationId}", prequalificationId);
+        reportParams.put("${loanProductId}", productId);
+        final GenericResultsetData result = this.readReportingService.retrieveGenericResultset(reportName, "report", reportParams, false);
+        return extractColorFromResultset(result);
+    }
+
+    private CheckValidationColor runCheck37(final GroupData groupData) {
+        final String reportName = Policies.THIRTY_SEVEN.getName() + " Policy Check";
+        final String prequalificationId = String.valueOf(groupData.getId());
+        final String productId = Long.toString(groupData.getProductId());
+
+        final Map<String, String> reportParams = new HashMap<>();
+        reportParams.put("${prequalificationId}", prequalificationId);
+        reportParams.put("${loanProductId}", productId);
+        final GenericResultsetData result = this.readReportingService.retrieveGenericResultset(reportName, "report", reportParams, false);
+        return extractColorFromResultset(result);
+    }
+
+    private BigDecimal getCurrentCreditValue(Long loanId) {
+        final String currentCreditValueSQL = """
+                SELECT
+                mlag.current_credit_value
+                FROM m_loan_additionals_group mlag
+                INNER JOIN m_loan ml ON ml.id = mlag.loan_id
+                WHERE ml.id = ?
+                """;
+        final Object[] params = new Object[] { loanId };
+        return this.jdbcTemplate.queryForObject(currentCreditValueSQL, BigDecimal.class, params);
+    }
+
+    private Integer getRecurringMembers(Long preQualificationId) {
+        final String currentCreditValueSQL = """
+                select count(*)
+                    FROM m_prequalification_group mp
+                    LEFT JOIN m_group_prequalification_relationship mgpr ON mgpr.prequalification_id = mp.id
+                    LEFT JOIN m_group mg ON (mg.prequalification_id = mp.id OR mg.id = mgpr.group_id)
+                    left join m_group_client mgc on mgc.group_id  = mg.id
+                    left join m_client mc on mc.id = mgc.client_id
+                    where
+                    mc.status_enum = 300
+                    and mp.id = ?
+                    and COALESCE(mc.loan_cycle, 0) >= 3
+                    GROUP BY mp.id
+                """;
+        final Object[] params = new Object[] { preQualificationId };
+        return this.jdbcTemplate.queryForObject(currentCreditValueSQL, Integer.class, params);
+    }
+
 }
