@@ -20,6 +20,7 @@ package org.apache.fineract.infrastructure.bulkimport.importhandler.clientblock;
 
 import com.google.api.client.util.ArrayMap;
 import com.google.gson.GsonBuilder;
+import java.text.DecimalFormat;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -27,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.commands.domain.CommandWrapper;
 import org.apache.fineract.commands.service.CommandWrapperBuilder;
 import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformService;
@@ -48,9 +50,13 @@ import org.apache.fineract.portfolio.client.data.ClientAdditionalFieldsData;
 import org.apache.fineract.portfolio.client.data.ClientBlockingListData;
 import org.apache.fineract.portfolio.client.domain.ClientBlockList;
 import org.apache.fineract.portfolio.client.domain.ClientBlockListRepository;
+import org.apache.fineract.portfolio.client.exception.ClientNotFoundException;
 import org.apache.fineract.portfolio.client.service.ClientReadPlatformService;
 import org.apache.logging.log4j.util.Strings;
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellType;
+import org.apache.poi.ss.usermodel.CellValue;
+import org.apache.poi.ss.usermodel.FormulaEvaluator;
 import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -95,13 +101,13 @@ public class BlockClientImportHandler implements ImportHandler {
                 .getBlockingReasonSettingByReason("LISTAS DE CONTROL", "CLIENT").stream().findFirst().orElseThrow();
         String blockedOnDate = DateUtils.format(DateUtils.getLocalDateOfTenant(), dateFormat);
         String idType = ImportHandlerUtils.readAsString(BlockClientConstants.ID_TYPE_COL, row);
-        String idNumber = ImportHandlerUtils.readAsString(BlockClientConstants.ID_NUMBER_COL, row);
+        String idNumber = readStringSpecial(BlockClientConstants.ID_NUMBER_COL, row);
         String firstName = ImportHandlerUtils.readAsString(BlockClientConstants.FIRST_NAME_COL, row);
         String secondName = ImportHandlerUtils.readAsString(BlockClientConstants.SECOND_NAME_COL, row);
         String surname = ImportHandlerUtils.readAsString(BlockClientConstants.SURNAME_COL, row);
         String secondSurname = ImportHandlerUtils.readAsString(BlockClientConstants.SECOND_SURNAME_COL, row);
         String companyName = ImportHandlerUtils.readAsString(BlockClientConstants.COMPANY_NAME_COL, row);
-        String causal = ImportHandlerUtils.readAsString(BlockClientConstants.CAUSAL_COL, row);
+        String causal = readStringSpecial(BlockClientConstants.CAUSAL_COL, row);
         String observation = ImportHandlerUtils.readAsString(BlockClientConstants.OBSERVATION_COL, row);
 
         if (Strings.isEmpty(idType) || Strings.isEmpty(idNumber)) {
@@ -145,6 +151,10 @@ public class BlockClientImportHandler implements ImportHandler {
                 List<ClientAdditionalFieldsData> additionalFieldsData = clientReadPlatformService.retrieveAdditionalFieldsData(data,
                         client.idNumber());
 
+                if (additionalFieldsData.isEmpty()) {
+                    throw new ClientNotFoundException(client.idNumber(), client.idType());
+                }
+
                 final Long clientId = additionalFieldsData.get(0).getClientId();
 
                 final CommandWrapper commandRequest = new CommandWrapperBuilder() //
@@ -165,12 +175,12 @@ public class BlockClientImportHandler implements ImportHandler {
                 errorCount++;
                 log.error("Problem occurred in importEntity function", ex);
                 errorMessage = ImportHandlerUtils.getErrorMessage(ex);
-                ImportHandlerUtils.writeErrorMessage(blockClientSheet, client.rowIndex(), errorMessage, ClientPersonConstants.STATUS_COL);
+                ImportHandlerUtils.writeErrorMessage(blockClientSheet, client.rowIndex(), errorMessage, BlockClientConstants.STATUS_COL);
             }
         }
 
-        blockClientSheet.setColumnWidth(ClientPersonConstants.STATUS_COL, TemplatePopulateImportConstants.SMALL_COL_SIZE);
-        ImportHandlerUtils.writeString(ClientPersonConstants.STATUS_COL,
+        blockClientSheet.setColumnWidth(BlockClientConstants.STATUS_COL, TemplatePopulateImportConstants.SMALL_COL_SIZE);
+        ImportHandlerUtils.writeString(BlockClientConstants.STATUS_COL,
                 blockClientSheet.getRow(TemplatePopulateImportConstants.ROWHEADER_INDEX),
                 TemplatePopulateImportConstants.STATUS_COLUMN_HEADER);
 
@@ -249,6 +259,42 @@ public class BlockClientImportHandler implements ImportHandler {
             } catch (RuntimeException ex) {
                 log.error("Problem deleting user from block list {1}", client.getIdNumber(), ex);
             }
+        }
+    }
+
+    private String readStringSpecial(final Integer colIndex, final Row row) {
+        Cell c = row.getCell(colIndex);
+        if (c == null || c.getCellType() == CellType.BLANK) {
+            return null;
+        }
+        FormulaEvaluator eval = row.getSheet().getWorkbook().getCreationHelper().createFormulaEvaluator();
+        if (c.getCellType() == CellType.FORMULA) {
+            if (eval != null) {
+                CellValue value;
+                try {
+                    value = eval.evaluate(c);
+
+                    String res = ImportHandlerUtils.trimEmptyDecimalPortion(value.getStringValue());
+
+                    if (!StringUtils.isNotEmpty(res)) {
+                        return res.trim();
+                    }
+                } catch (Exception e) {
+                    log.error("Cell evaluation error: ", e);
+                }
+            }
+            return null;
+        } else if (c.getCellType() == CellType.STRING) {
+            String res = ImportHandlerUtils.trimEmptyDecimalPortion(c.getStringCellValue().trim());
+            return res.trim();
+        } else if (c.getCellType() == CellType.NUMERIC) {
+            DecimalFormat df = new DecimalFormat("#");
+            df.setMaximumFractionDigits(0);
+            return df.format(c.getNumericCellValue());
+        } else if (c.getCellType() == CellType.BOOLEAN) {
+            return c.getBooleanCellValue() + "";
+        } else {
+            return null;
         }
     }
 
