@@ -39,6 +39,7 @@ import javax.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 import org.apache.fineract.infrastructure.codes.service.CodeValueReadPlatformService;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
@@ -85,12 +86,17 @@ import org.apache.fineract.organisation.prequalification.exception.MemberNotSele
 import org.apache.fineract.organisation.prequalification.exception.MemberSubmittedLoanNotFoundException;
 import org.apache.fineract.organisation.prequalification.exception.PrequalificationStatusNotChangedException;
 import org.apache.fineract.organisation.prequalification.exception.PrequalificationStatusNotCompletedException;
+import org.apache.fineract.organisation.prequalification.exception.RequestedAmountGreaterThanOriginalException;
 import org.apache.fineract.organisation.prequalification.serialization.PrequalificationMemberCommandFromApiJsonDeserializer;
 import org.apache.fineract.portfolio.blacklist.domain.BlacklistStatus;
 import org.apache.fineract.portfolio.client.service.ClientChargeWritePlatformServiceJpaRepositoryImpl;
 import org.apache.fineract.portfolio.client.service.ClientReadPlatformService;
 import org.apache.fineract.portfolio.group.domain.Group;
 import org.apache.fineract.portfolio.group.domain.GroupRepositoryWrapper;
+import org.apache.fineract.portfolio.loanaccount.domain.GroupLoanAdditionals;
+import org.apache.fineract.portfolio.loanaccount.domain.GroupLoanAdditionalsRepository;
+import org.apache.fineract.portfolio.loanaccount.domain.Loan;
+import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
 import org.apache.fineract.portfolio.loanaccount.service.LoanApplicationWritePlatformService;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProduct;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductOwnerType;
@@ -137,6 +143,8 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
     private final GroupTypeLoanMapper groupTypeLoanMapper = new GroupTypeLoanMapper();
     private final IndividualTypeLoanMapper individualTypeLoanMapper = new IndividualTypeLoanMapper();
     private final LoanApplicationWritePlatformService loanApplicationWritePlatformService;
+    private final GroupLoanAdditionalsRepository groupLoanAdditionalsRepository;
+    private final LoanRepositoryWrapper loanRepositoryWrapper;
 
     @Autowired
     public PrequalificationWritePlatformServiceImpl(final PlatformSecurityContext context,
@@ -153,8 +161,9 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             final GroupPrequalificationRelationshipRepository groupPrequalificationRelationshipRepository,
             final PrequalificationGroupRepositoryWrapper prequalificationGroupRepositoryWrapper,
             final PrequalificationStatusRangeRepository prequalificationStatusRangeRepository,
-            PrequalificationReadPlatformService prequalificationReadPlatformService, FromJsonHelper fromApiJsonHelper,
-            LoanApplicationWritePlatformService loanApplicationWritePlatformService) {
+            final PrequalificationReadPlatformService prequalificationReadPlatformService, FromJsonHelper fromApiJsonHelper,
+            final LoanApplicationWritePlatformService loanApplicationWritePlatformService,
+            final GroupLoanAdditionalsRepository groupLoanAdditionalsRepository, final LoanRepositoryWrapper loanRepositoryWrapper) {
         this.context = context;
         this.dataValidator = dataValidator;
         this.loanProductRepository = loanProductRepository;
@@ -177,6 +186,8 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         this.prequalificationReadPlatformService = prequalificationReadPlatformService;
         this.fromApiJsonHelper = fromApiJsonHelper;
         this.loanApplicationWritePlatformService = loanApplicationWritePlatformService;
+        this.groupLoanAdditionalsRepository = groupLoanAdditionalsRepository;
+        this.loanRepositoryWrapper = loanRepositoryWrapper;
     }
 
     @Transactional
@@ -518,6 +529,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         contentRepository.deleteFile(document.getLocation());
     }
 
+    @Transactional
     @Override
     public CommandProcessingResult updatePrequalificationGroupMember(Long memberId, JsonCommand command) {
         PrequalificationGroupMember member = this.preQualificationMemberRepository.findOneWithNotFoundDetection(memberId);
@@ -526,6 +538,62 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         final Map<String, Object> changes = member.update(command);
         if (changes.containsKey(PrequalificatoinApiConstants.approvedAmountParamName)) {
             final BigDecimal newValue = command.bigDecimalValueOfParameterNamed(PrequalificatoinApiConstants.approvedAmountParamName);
+            member.updateApprovedAmount(newValue);
+        }
+        if (changes.containsKey(PrequalificatoinApiConstants.memberCommentsParamName)) {
+            final String newValue = command.stringValueOfParameterNamed(PrequalificatoinApiConstants.memberCommentsParamName);
+            member.updateComments(newValue);
+        }
+        if (changes.containsKey(PrequalificatoinApiConstants.memberAgencyBureauStatusParamName)) {
+            final String newValue = command.stringValueOfParameterNamed(PrequalificatoinApiConstants.memberAgencyBureauStatusParamName);
+            member.updateAgencyBureauStatus(newValue);
+            PrequalificationGroup prequalificationGroup = member.getPrequalificationGroup();
+            Integer fromStatus = prequalificationGroup.getStatus();
+
+            prequalificationGroup.updateStatus(PrequalificationStatus.BLACKLIST_CHECKED);
+            AppUser addedBy = this.context.getAuthenticatedUserIfPresent();
+            PrequalificationStatusLog statusLog = PrequalificationStatusLog.fromJson(addedBy, fromStatus, prequalificationGroup.getStatus(),
+                    member.getComments(), prequalificationGroup);
+            List<LoanData> submittedLoans;
+            Long prequalificationId = prequalificationGroup.getId();
+
+            if (prequalificationGroup.isPrequalificationTypeGroup()) {
+                submittedLoans = jdbcTemplate.query(this.groupTypeLoanMapper.schema(), this.groupTypeLoanMapper, prequalificationId,
+                        member.getDpi(), prequalificationId);
+            } else {
+                submittedLoans = jdbcTemplate.query(this.individualTypeLoanMapper.schema(), this.individualTypeLoanMapper,
+                        prequalificationId, member.getDpi(), prequalificationId);
+            }
+            if (submittedLoans.isEmpty()) {
+                throw new MemberSubmittedLoanNotFoundException(member.getDpi());
+            }
+            LoanData loanData = submittedLoans.get(0);
+            Long loanId = loanData.getLoanId();
+            Loan loan = this.loanRepositoryWrapper.findOneWithNotFoundDetection(loanId);
+
+            GroupLoanAdditionals groupLoanAdditionalsByLoan = this.groupLoanAdditionalsRepository.getGroupLoanAdditionalsByLoan(loan);
+            if (groupLoanAdditionalsByLoan != null) {
+                Collection<CodeValueData> clientTypeOptions = this.codeValueReadPlatformService
+                        .retrieveCodeValuesByCode("clientTypeOptions");
+                for (CodeValueData clientType : clientTypeOptions) {
+                    if (clientType.getName().equals(newValue)) {
+                        groupLoanAdditionalsByLoan.updateClientType(clientType.getId());
+                        this.groupLoanAdditionalsRepository.saveAndFlush(groupLoanAdditionalsByLoan);
+                        break;
+                    }
+                }
+            }
+
+            this.preQualificationLogRepository.saveAndFlush(statusLog);
+            this.prequalificationGroupRepositoryWrapper.saveAndFlush(prequalificationGroup);
+        }
+        if (changes.containsKey(PrequalificatoinApiConstants.memberRequestedAmountParamName)) {
+            final BigDecimal newValue = command
+                    .bigDecimalValueOfParameterNamed(PrequalificatoinApiConstants.memberRequestedAmountParamName);
+            if (newValue.compareTo(member.getOriginalAmount()) > 0) {
+                throw new RequestedAmountGreaterThanOriginalException(member.getDpi(), newValue, member.getOriginalAmount());
+            }
+            member.updateAmountRequested(newValue);
             member.updateApprovedAmount(newValue);
         }
 

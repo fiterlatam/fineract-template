@@ -102,6 +102,15 @@ public class PrequalificationGroupMember extends AbstractPersistableCustom {
     @Column(name = "buro_resumen")
     private String resumen;
 
+    @Column(name = "original_amount")
+    private BigDecimal originalAmount;
+
+    @Column(name = "comments")
+    private String comments;
+
+    @Column(name = "agency_bureau_status")
+    private String agencyBureauStatus;
+
     protected PrequalificationGroupMember() {
         //
     }
@@ -119,6 +128,7 @@ public class PrequalificationGroupMember extends AbstractPersistableCustom {
         this.workWithPuente = puente;
         this.requestedAmount = requestedAmount;
         this.approvedAmount = requestedAmount;
+        this.originalAmount = requestedAmount;
         this.addedBy = appUser;
         this.status = status;
         this.groupPresident = groupPresident;
@@ -160,6 +170,14 @@ public class PrequalificationGroupMember extends AbstractPersistableCustom {
         this.workWithPuente = workWithPuente;
     }
 
+    public void updateComments(final String comments) {
+        this.comments = comments;
+    }
+
+    public void updateAgencyBureauStatus(final String agencyBureauStatus) {
+        this.agencyBureauStatus = agencyBureauStatus;
+    }
+
     public Map<String, Object> update(JsonCommand command) {
 
         final Map<String, Object> actualChanges = new LinkedHashMap<>(7);
@@ -198,6 +216,15 @@ public class PrequalificationGroupMember extends AbstractPersistableCustom {
         if (command.isChangeInBooleanParameterNamed(PrequalificatoinApiConstants.groupPresidentParamName, this.groupPresident)) {
             final Boolean newValue = command.booleanObjectValueOfParameterNamed(PrequalificatoinApiConstants.groupPresidentParamName);
             actualChanges.put(PrequalificatoinApiConstants.groupPresidentParamName, newValue);
+        }
+        if (command.isChangeInStringParameterNamed(PrequalificatoinApiConstants.memberCommentsParamName, this.comments)) {
+            final String newValue = command.stringValueOfParameterNamed(PrequalificatoinApiConstants.memberCommentsParamName);
+            actualChanges.put(PrequalificatoinApiConstants.memberCommentsParamName, newValue);
+        }
+        if (command.isChangeInStringParameterNamed(PrequalificatoinApiConstants.memberAgencyBureauStatusParamName,
+                this.agencyBureauStatus)) {
+            final String newValue = command.stringValueOfParameterNamed(PrequalificatoinApiConstants.memberAgencyBureauStatusParamName);
+            actualChanges.put(PrequalificatoinApiConstants.memberAgencyBureauStatusParamName, newValue);
         }
 
         return actualChanges;
