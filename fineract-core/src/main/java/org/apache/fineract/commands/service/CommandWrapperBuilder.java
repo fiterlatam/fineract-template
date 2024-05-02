@@ -3777,6 +3777,22 @@ public class CommandWrapperBuilder {
         return this;
     }
 
+    public CommandWrapperBuilder disableBlockReasonSetting(final Long id) {
+        this.actionName = "DISABLE";
+        this.entityName = "BLOCKREASONSETTINGS";
+        this.entityId = id;
+        this.href = "/updateBlockReasonSetting/" + id;
+        return this;
+    }
+
+    public CommandWrapperBuilder enableBlockReasonSetting(final Long id) {
+        this.actionName = "ENABLE";
+        this.entityName = "BLOCKREASONSETTINGS";
+        this.entityId = id;
+        this.href = "/updateBlockReasonSetting/" + id;
+        return this;
+    }
+
     public CommandWrapperBuilder createCustomChargeTypeMap(Long customChargeTypeId) {
         this.actionName = "CREATE";
         this.entityName = "CUSTOMCHARGETYPEMAP";

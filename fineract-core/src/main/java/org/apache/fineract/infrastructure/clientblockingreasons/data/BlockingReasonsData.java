@@ -20,9 +20,10 @@ package org.apache.fineract.infrastructure.clientblockingreasons.data;
 
 import java.io.Serializable;
 import java.time.LocalDate;
-import lombok.Data;
+import lombok.Builder;
 
-@Data
+@lombok.AllArgsConstructor
+@Builder
 public class BlockingReasonsData implements Serializable {
 
     private Long id;
@@ -30,7 +31,11 @@ public class BlockingReasonsData implements Serializable {
     private String description;
     private String nameOfReason;
     private String level;
+    private boolean isEnabled;
+    private String disabledBy;
     private LocalDate createdDate;
+    private LocalDate disabledOnDate;
+    private LocalDate enabledOnDate;
 
     public BlockingReasonsData() {}
 

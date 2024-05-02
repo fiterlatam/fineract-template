@@ -45,7 +45,7 @@ public class ManageBlockingReasonsReadPlatformServiceImpl implements ManageBlock
     @Override
     public Collection<BlockingReasonsData> retrieveAllBlockingReasons(final String level) {
         this.context.authenticatedUser();
-        final BlockingReasonsMapper rm = new BlockingReasonsMapper();
+        final BlockingReasonsMapper rm = new BlockingReasonsMapper(false);
         String sql = "SELECT " + rm.schema();
         Object[] parmams = new Object[] {};
         if (StringUtils.isNotBlank(level)) {
@@ -60,18 +60,36 @@ public class ManageBlockingReasonsReadPlatformServiceImpl implements ManageBlock
     public BlockingReasonsData getBlockingReasonsById(Long id) {
         this.context.authenticatedUser();
 
-        final BlockingReasonsSettingsMapper rm = new BlockingReasonsSettingsMapper();
-        final String sql = "SELECT " + rm.schema();
+        final BlockingReasonsMapper rm = new BlockingReasonsMapper(true);
+        final String sql = "SELECT " + rm.schema() + " WHERE brs.id = ?";
 
         return this.jdbcTemplate.queryForObject(sql, rm, id);
     }
 
+    @RequiredArgsConstructor
     private static final class BlockingReasonsMapper implements RowMapper<BlockingReasonsData> {
 
+        private final boolean requireExtras;
+
         public String schema() {
-            return "  brs.id as id, brs.priority as priority,    brs.description as description, "
-                    + "       brs.name_of_reason as nameOfReason,brs.level as level, " + "       brs.created_date as createdDate "
-                    + "       FROM m_blocking_reason_setting  brs";
+            String query = """
+                    brs.id as id, brs.priority as priority,  brs.description as description,
+                    brs.name_of_reason as nameOfReason,brs.level as level,
+                    brs.created_date as createdDate,
+                    brs.is_enabled as isEnabled
+                    """;
+            if (requireExtras) {
+                query += """
+                           , brs.enabled_on_date as enabledOnDate ,
+                            brs.disabled_on_date as disabledOnDate,
+                            concat(au.firstname,' ',au.lastname) as disabledBy
+                            FROM m_blocking_reason_setting brs  left join m_appuser au on au.id = brs.disabled_by
+                        """;
+            } else {
+                query += " FROM m_blocking_reason_setting brs ";
+            }
+            ;
+            return query;
         }
 
         @Override
@@ -83,31 +101,18 @@ public class ManageBlockingReasonsReadPlatformServiceImpl implements ManageBlock
             final String nameOfReason = rs.getString("nameOfReason");
             final String level = rs.getString("level");
             final LocalDate createdDate = JdbcSupport.getLocalDate(rs, "createdDate");
+            final boolean isEnabled = rs.getBoolean("isEnabled");
 
-            return new BlockingReasonsData(id, priority, description, nameOfReason, level, createdDate);
+            if (requireExtras) {
+                final LocalDate enabledOn = JdbcSupport.getLocalDate(rs, "enabledOnDate");
+                final String disabledBy = rs.getString("disabledBy");
+                return BlockingReasonsData.builder().id(id).priority(priority).description(description).nameOfReason(nameOfReason)
+                        .level(level).createdDate(createdDate).isEnabled(isEnabled).disabledOnDate(enabledOn).disabledBy(disabledBy)
+                        .build();
+            }
 
-        }
-    }
-
-    private static final class BlockingReasonsSettingsMapper implements RowMapper<BlockingReasonsData> {
-
-        public String schema() {
-            return "  brs.id as id, brs.priority as priority,  brs.description as description, "
-                    + "       brs.name_of_reason as nameOfReason,brs.level as level, " + "       brs.created_date as createdDate "
-                    + "       FROM m_blocking_reason_setting brs  WHERE brs.id = ?";
-        }
-
-        @Override
-        public BlockingReasonsData mapRow(final ResultSet rs, @SuppressWarnings("unused") final int rowNum) throws SQLException {
-
-            final Long id = rs.getLong("id");
-            final Integer priority = rs.getInt("priority");
-            final String description = rs.getString("description");
-            final String nameOfReason = rs.getString("nameOfReason");
-            final String level = rs.getString("level");
-            final LocalDate createdDate = JdbcSupport.getLocalDate(rs, "createdDate");
-
-            return new BlockingReasonsData(id, priority, description, nameOfReason, level, createdDate);
+            return BlockingReasonsData.builder().id(id).priority(priority).description(description).isEnabled(isEnabled)
+                    .nameOfReason(nameOfReason).level(level).createdDate(createdDate).build();
 
         }
     }
