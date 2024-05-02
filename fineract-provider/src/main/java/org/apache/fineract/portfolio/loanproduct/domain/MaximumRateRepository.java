@@ -16,16 +16,12 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.portfolio.loanproduct.service;
+package org.apache.fineract.portfolio.loanproduct.domain;
 
-import org.apache.fineract.infrastructure.core.api.JsonCommand;
-import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
-public interface LoanProductWritePlatformService {
+public interface MaximumRateRepository
+        extends JpaRepository<MaximumCreditRateConfiguration, Long>, JpaSpecificationExecutor<MaximumCreditRateConfiguration> {
 
-    CommandProcessingResult createLoanProduct(JsonCommand command);
-
-    CommandProcessingResult updateLoanProduct(Long loanProductId, JsonCommand command);
-
-    CommandProcessingResult updateMaximumRate(JsonCommand command);
 }

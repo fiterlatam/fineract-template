@@ -16,16 +16,29 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.portfolio.loanproduct.service;
+package org.apache.fineract.portfolio.loanproduct.data;
 
-import org.apache.fineract.infrastructure.core.api.JsonCommand;
-import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-public interface LoanProductWritePlatformService {
+/**
+ * Immutable data object representing Maximum Credit Rate Configuration details.
+ */
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
+public class MaximumCreditRateConfigurationData {
 
-    CommandProcessingResult createLoanProduct(JsonCommand command);
-
-    CommandProcessingResult updateLoanProduct(Long loanProductId, JsonCommand command);
-
-    CommandProcessingResult updateMaximumRate(JsonCommand command);
+    private Long id;
+    private BigDecimal eaRate;
+    private String appliedByUsername;
+    private BigDecimal annualNominalRate;
+    private BigDecimal monthlyNominalRate;
+    private BigDecimal dailyNominalRate;
+    private LocalDate appliedOnDate;
 }

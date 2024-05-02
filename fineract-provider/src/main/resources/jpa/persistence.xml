@@ -102,6 +102,7 @@
         <class>org.apache.fineract.portfolio.loanproduct.domain.LoanProduct</class>
         <class>org.apache.fineract.portfolio.loanproduct.domain.LoanProductBorrowerCycleVariations</class>
         <class>org.apache.fineract.portfolio.loanproduct.domain.LoanProductConfigurableAttributes</class>
+        <class>org.apache.fineract.portfolio.loanproduct.domain.MaximumCreditRateConfiguration</class>
         <class>org.apache.fineract.portfolio.loanproduct.domain.LoanProductFloatingRates</class>
         <class>org.apache.fineract.portfolio.loanproduct.domain.LoanProductGuaranteeDetails</class>
         <class>org.apache.fineract.portfolio.loanproduct.domain.LoanProductInterestRecalculationDetails</class>

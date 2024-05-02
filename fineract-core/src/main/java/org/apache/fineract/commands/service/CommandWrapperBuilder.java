@@ -540,6 +540,14 @@ public class CommandWrapperBuilder {
         return this;
     }
 
+    public CommandWrapperBuilder updateMaximumRate() {
+        this.actionName = "UPDATE";
+        this.entityName = "MAXIMUM_CREDIT_RATE";
+        this.entityId = null;
+        this.href = "/loanproducts/maximumCreditRate";
+        return this;
+    }
+
     public CommandWrapperBuilder updateLoanProduct(final Long productId) {
         this.actionName = "UPDATE";
         this.entityName = "LOANPRODUCT";
