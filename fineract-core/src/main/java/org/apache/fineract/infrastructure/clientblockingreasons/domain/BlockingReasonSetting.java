@@ -20,12 +20,16 @@ package org.apache.fineract.infrastructure.clientblockingreasons.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import java.time.LocalDate;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
+import org.apache.fineract.useradministration.domain.AppUser;
 
 @Entity
 @Table(name = "m_blocking_reason_setting")
@@ -46,4 +50,25 @@ public class BlockingReasonSetting extends AbstractPersistableCustom {
 
     @Column(name = "level")
     private String level;
+
+    @Column(name = "is_enabled")
+    private int isEnabled;
+
+    @Column(name = "disabled_on_date")
+    private LocalDate disabledOnDate;
+
+    @ManyToOne
+    @JoinColumn(name = "disabled_by", nullable = false)
+    private AppUser disabledBy;
+
+    @Column(name = "enabled_on_date")
+    private LocalDate enabledOnDate;
+
+    @ManyToOne
+    @JoinColumn(name = "enabled_by", nullable = false)
+    private AppUser enabledBy;
+
+    public boolean isEnabled() {
+        return this.isEnabled == 1;
+    }
 }
