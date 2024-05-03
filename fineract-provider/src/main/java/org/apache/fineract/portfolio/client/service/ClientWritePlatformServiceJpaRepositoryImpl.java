@@ -39,7 +39,7 @@ import org.apache.fineract.infrastructure.accountnumberformat.domain.AccountNumb
 import org.apache.fineract.infrastructure.accountnumberformat.domain.EntityAccountType;
 import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSetting;
 import org.apache.fineract.infrastructure.clientblockingreasons.domain.ManageBlockingReasonSettingsRepositoryWrapper;
-import org.apache.fineract.infrastructure.clientblockingreasons.exception.BlockingReasonExceptionNotFoundException;
+import org.apache.fineract.infrastructure.clientblockingreasons.exception.BlockReasonSettingNotFoundException;
 import org.apache.fineract.infrastructure.codes.domain.CodeValue;
 import org.apache.fineract.infrastructure.codes.domain.CodeValueRepositoryWrapper;
 import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
@@ -1268,7 +1268,7 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
             if (blockingReasonOptional.isPresent()) {
                 blockingReason = blockingReasonOptional.get();
             } else {
-                throw new BlockingReasonExceptionNotFoundException("Razón de bloqueo con id " + blockingReasonId + " no encontrada");
+                throw new BlockReasonSettingNotFoundException("Razón de bloqueo con id " + blockingReasonId + " no encontrada");
             }
 
             if (client.isNotPending() && DateUtils.isAfter(client.getActivationDate(), blockedOnDate)) {

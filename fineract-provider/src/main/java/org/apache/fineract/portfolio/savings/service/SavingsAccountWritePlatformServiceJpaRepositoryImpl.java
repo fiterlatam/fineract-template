@@ -1670,7 +1670,7 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
      *
      **/
     @Transactional
-    private void disableStandingInstructionsLinkedToClosedSavings(final SavingsAccount savingsAccount) {
+    protected void disableStandingInstructionsLinkedToClosedSavings(final SavingsAccount savingsAccount) {
         if (savingsAccount != null && savingsAccount.isClosed()) {
             final Integer standingInstructionStatus = StandingInstructionStatus.ACTIVE.getValue();
             final Collection<AccountTransferStandingInstruction> accountTransferStandingInstructions = this.standingInstructionRepository

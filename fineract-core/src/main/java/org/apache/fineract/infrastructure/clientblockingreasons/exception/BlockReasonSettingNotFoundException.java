@@ -20,23 +20,23 @@ package org.apache.fineract.infrastructure.clientblockingreasons.exception;
 
 import org.apache.fineract.infrastructure.core.exception.AbstractPlatformResourceNotFoundException;
 
-public class BlockingReasonExceptionNotFoundException extends AbstractPlatformResourceNotFoundException {
+public class BlockReasonSettingNotFoundException extends AbstractPlatformResourceNotFoundException {
 
-    public BlockingReasonExceptionNotFoundException(final Long id) {
-        super("errors.error.msg.id.does.not.exist", "Blocking Reason Settings with identifier " + id + " does not exist", id);
+    public BlockReasonSettingNotFoundException(final Long id) {
+        super("error.msg.id.does.not.exist", "Blocking Reason Settings with identifier " + id + " does not exist", id);
     }
 
-    public BlockingReasonExceptionNotFoundException(final Integer priority, final String level) {
-        super("errors.error.msg.priority.is.already.assigned.to.client.level",
+    public BlockReasonSettingNotFoundException(final Integer priority, final String level) {
+        super("error.msg.priority.is.already.assigned.to.client.level",
                 "Priority  [" + priority + "] is already assigned to client level " + level, priority, level);
     }
 
-    public BlockingReasonExceptionNotFoundException(final String reason, final String level) {
-        super("errors.error.msg.block.reason.is.already.assigned.to.level",
+    public BlockReasonSettingNotFoundException(final String reason, final String level) {
+        super("error.msg.block.reason.is.already.assigned.to.level",
                 "Block Reason  [" + reason + "] is already assigned to client level " + level, reason, level);
     }
 
-    public BlockingReasonExceptionNotFoundException(String message) {
+    public BlockReasonSettingNotFoundException(String message) {
         super("error.msg.block.reason.not.found", message);
     }
 
