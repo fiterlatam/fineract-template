@@ -490,10 +490,6 @@
     <changeSet id="13" author="fineract">
         <sql>
             <![CDATA[
-		ALTER TABLE m_prequalification_group ADD cliente_activo_fiador1 varchar(100) NULL;
-		ALTER TABLE m_prequalification_group ADD cliente_activo_fiador2 varchar(100) NULL;
-		ALTER TABLE m_prequalification_group ADD categoria_fiador1 varchar(100) NULL;
-		ALTER TABLE m_prequalification_group ADD categoria_fiador2 varchar(100) NULL;
                 UPDATE stretchy_report SET report_sql = "SELECT CASE
                            WHEN (${loanProductId} = 2) AND ${numberOfDocuments} > 0  THEN 'GREEN'
                            WHEN (${loanProductId} = 3) AND ${numberOfDocuments} > 0  THEN 'GREEN'
@@ -708,7 +704,7 @@ WHEN prequalification_details.client_count > 0 THEN ''RED''
             ]]>
         </sql>
     </changeSet>
-	<changeSet id="18" author="fineract">
+	<changeSet id="19" author="fineract">
         <sql>
             <![CDATA[
 		INSERT INTO m_policy (name, label, description) VALUES('Percentage Of Clients To Be Recredited In The Group', 'label.perct.clients.recredited', 'No. De ciclos');
@@ -754,7 +750,7 @@ VALUES('Percentage Of Clients To Be Recredited In The Group Policy Check', 'Tabl
             ]]>
         </sql>
     </changeSet>
-	<changeSet id="19" author="fineract">
+	<changeSet id="20" author="fineract">
         <sql>
             <![CDATA[
 		INSERT INTO m_policy (name, label, description) VALUES('Clients In Arrears', 'label.perct.clients.recredited', 'No. De ciclos');
@@ -802,7 +798,7 @@ VALUES('Clients In Arrears Policy Check', 'Table', NULL, 'Prequalification', 'SE
             ]]>
         </sql>
     </changeSet>
-	<changeSet id="14" author="fineract">
+	<changeSet id="21" author="fineract">
         <sql>
             <![CDATA[
             delete from m_product_policy where policy_id = (select id from m_policy where name=' Acceptance of new clients') AND product_id = 4;

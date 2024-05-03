@@ -1202,7 +1202,13 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
                     GROUP BY mp.id
                 """;
         final Object[] params = new Object[] { preQualificationId };
-        return this.jdbcTemplate.queryForObject(currentCreditValueSQL, Integer.class, params);
+        Integer count = 0;
+        try {
+            count = this.jdbcTemplate.queryForObject(currentCreditValueSQL, Integer.class, params);
+        } catch (EmptyResultDataAccessException e) {
+            count = 0;
+            }
+        return count;
     }
 
 }
