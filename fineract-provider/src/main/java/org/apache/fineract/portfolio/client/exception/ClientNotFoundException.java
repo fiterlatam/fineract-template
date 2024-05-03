@@ -46,4 +46,8 @@ public class ClientNotFoundException extends AbstractPlatformResourceNotFoundExc
     public ClientNotFoundException(Long id, EmptyResultDataAccessException e) {
         super("error.msg.client.id.invalid", "Client with identifier " + id + " does not exist", id, e);
     }
+
+    public ClientNotFoundException(String message) {
+        super("error.msg.client.id.invalid", message);
+    }
 }

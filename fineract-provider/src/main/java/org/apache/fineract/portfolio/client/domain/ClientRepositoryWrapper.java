@@ -20,6 +20,7 @@ package org.apache.fineract.portfolio.client.domain;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.apache.fineract.infrastructure.core.domain.ExternalId;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
@@ -102,6 +103,11 @@ public class ClientRepositoryWrapper {
 
     public Long findIdByExternalId(final ExternalId externalId) {
         return this.repository.findIdByExternalId(externalId);
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<Client> findById(Long id) {
+        return this.repository.findById(id);
     }
 
 }
