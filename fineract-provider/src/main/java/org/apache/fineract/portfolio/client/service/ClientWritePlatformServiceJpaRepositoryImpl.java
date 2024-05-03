@@ -39,6 +39,7 @@ import org.apache.fineract.infrastructure.accountnumberformat.domain.AccountNumb
 import org.apache.fineract.infrastructure.accountnumberformat.domain.EntityAccountType;
 import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSetting;
 import org.apache.fineract.infrastructure.clientblockingreasons.domain.ManageBlockingReasonSettingsRepositoryWrapper;
+import org.apache.fineract.infrastructure.clientblockingreasons.exception.BlockReasonSettingNotFoundException;
 import org.apache.fineract.infrastructure.codes.domain.CodeValue;
 import org.apache.fineract.infrastructure.codes.domain.CodeValueRepositoryWrapper;
 import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
@@ -81,6 +82,7 @@ import org.apache.fineract.portfolio.client.domain.LegalForm;
 import org.apache.fineract.portfolio.client.exception.ClientActiveForUpdateException;
 import org.apache.fineract.portfolio.client.exception.ClientHasNoStaffException;
 import org.apache.fineract.portfolio.client.exception.ClientMustBePendingToBeDeletedException;
+import org.apache.fineract.portfolio.client.exception.ClientNotFoundException;
 import org.apache.fineract.portfolio.client.exception.InvalidClientSavingProductException;
 import org.apache.fineract.portfolio.client.exception.InvalidClientStateTransitionException;
 import org.apache.fineract.portfolio.group.domain.Group;
@@ -1240,6 +1242,69 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
                 .withEntityId(entityId) //
                 .withEntityExternalId(client.getExternalId()) //
                 .build();
+    }
+
+    @Override
+    public CommandProcessingResult blockListOfClients(Long clientId, JsonCommand command) {
+        try {
+            final AppUser currentUser = this.context.authenticatedUser();
+            final Optional<Client> optionalClient = this.clientRepository.findById(clientId);
+            Client client;
+
+            if (optionalClient.isPresent()) {
+                client = optionalClient.get();
+            } else {
+                throw new ClientNotFoundException("Cliente con id " + clientId + " no encontrada");
+            }
+
+            final LocalDate blockedOnDate = command.localDateValueOfParameterNamed(ClientApiConstants.blockedOnDateParamName);
+            final Long blockingReasonId = command.longValueOfParameterNamed(ClientApiConstants.blockingReasonIdParamName);
+            final String blockingComment = command.stringValueOfParameterNamed(ClientApiConstants.blockingCommentParamName);
+
+            final Optional<BlockingReasonSetting> blockingReasonOptional = this.manageBlockingReasonSettingsRepositoryWrapper
+                    .findById(blockingReasonId);
+
+            BlockingReasonSetting blockingReason;
+            if (blockingReasonOptional.isPresent()) {
+                blockingReason = blockingReasonOptional.get();
+            } else {
+                throw new BlockReasonSettingNotFoundException("Razón de bloqueo con id " + blockingReasonId + " no encontrada");
+            }
+
+            if (client.isNotPending() && DateUtils.isAfter(client.getActivationDate(), blockedOnDate)) {
+                final String errorMessage = "El cliente bloqueadoOnDate no puede ser anterior al cliente ActivationDate.";
+                throw new InvalidClientStateTransitionException("block", "date.cannot.before.client.activation.date", errorMessage,
+                        blockedOnDate, client.getActivationDate());
+            }
+
+            final LegalForm legalForm = LegalForm.fromInt(client.getLegalForm());
+            entityDatatableChecksWritePlatformService.runTheCheck(clientId, EntityTables.CLIENT.getName(), StatusEnum.CLOSE.getCode(),
+                    EntityTables.CLIENT.getForeignKeyColumnNameOnDatatable(), legalForm.getLabel());
+
+            ClientBlockingReason clientBlockingReason = ClientBlockingReason.instance(clientId, blockingReasonId, currentUser.getId(),
+                    blockedOnDate, blockingComment, currentUser.getId());
+
+            this.clientBlockingReasonRepositoryWrapper.save(clientBlockingReason);
+            if (client.isBlocked() && client.getBlockingReason().getPriority() < blockingReason.getPriority()) {
+                client.block(currentUser, blockingReason, blockedOnDate, blockingComment);
+            }
+
+            if (!client.isBlocked()) {
+                client.block(currentUser, blockingReason, blockedOnDate, blockingComment);
+            }
+
+            this.clientRepository.saveAndFlush(client);
+
+            return new CommandProcessingResultBuilder() //
+                    .withCommandId(command.commandId()) //
+                    .withClientId(clientId) //
+                    .withEntityId(clientId) //
+                    .withEntityExternalId(client.getExternalId()) //
+                    .build();
+        } catch (final JpaSystemException | DataIntegrityViolationException dve) {
+            handleDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
+            return CommandProcessingResult.empty();
+        }
     }
 
     private void removeClientFromListasDeControl(final Optional<BlockingReasonSetting> listasDeControlBlockingReason,
