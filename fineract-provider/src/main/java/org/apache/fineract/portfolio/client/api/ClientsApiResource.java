@@ -532,7 +532,7 @@ public class ClientsApiResource {
         } else if (CommandParameterUtil.is(commandParam, "undoWithdrawal")) {
             commandRequest = builder.undoWithdrawal(clientId).build();
         } else if (CommandParameterUtil.is(commandParam, "block")) {
-            commandRequest = builder.blockClient(clientId).build();
+            commandRequest = builder.blockClient(clientId, "block").build();
         } else if (CommandParameterUtil.is(commandParam, "undoBlock")) {
             commandRequest = builder.undoBlockClient(clientId).build();
         }

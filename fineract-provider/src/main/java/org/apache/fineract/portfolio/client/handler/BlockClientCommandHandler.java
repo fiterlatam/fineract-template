@@ -42,6 +42,10 @@ public class BlockClientCommandHandler implements NewCommandSourceHandler {
     @Override
     public CommandProcessingResult processCommand(final JsonCommand command) {
 
-        return this.clientWritePlatformService.blockClient(command.entityId(), command);
+        if (command.getUrl().endsWith("command=blockList")) { // Doing this to avoid creating a new permission
+            return this.clientWritePlatformService.blockListOfClients(command.entityId(), command);
+        } else {
+            return this.clientWritePlatformService.blockClient(command.entityId(), command);
+        }
     }
 }

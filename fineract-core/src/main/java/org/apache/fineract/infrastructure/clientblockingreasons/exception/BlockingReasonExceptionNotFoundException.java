@@ -36,4 +36,8 @@ public class BlockingReasonExceptionNotFoundException extends AbstractPlatformRe
                 "Block Reason  [" + reason + "] is already assigned to client level " + level, reason, level);
     }
 
+    public BlockingReasonExceptionNotFoundException(String message) {
+        super("error.msg.block.reason.not.found", message);
+    }
+
 }

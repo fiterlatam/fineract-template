@@ -110,14 +110,6 @@ public class BlockClientImportHandler implements ImportHandler {
         String causal = readStringSpecial(BlockClientConstants.CAUSAL_COL, row);
         String observation = ImportHandlerUtils.readAsString(BlockClientConstants.OBSERVATION_COL, row);
 
-        if (Strings.isEmpty(idType) || Strings.isEmpty(idNumber)) {
-            throw new IllegalArgumentException("idType and idNumber cannot be null");
-        }
-
-        if (idType.equalsIgnoreCase("NIT") && Strings.isEmpty(companyName)) {
-            throw new IllegalArgumentException("companyName cannot be null");
-        }
-
         return ClientBlockingListData.builder().idType(idType).idNumber(idNumber).firstName(firstName).secondName(secondName)
                 .surname(surname).secondSurname(secondSurname).companyName(companyName).causal(causal).blockingComment(observation)
                 .blockingReasonId(blockingReasonSetting.getId()).blockedOnDate(blockedOnDate).dateFormat(dateFormat).locale(locale)
@@ -144,6 +136,14 @@ public class BlockClientImportHandler implements ImportHandler {
         for (ClientBlockingListData client : toAdd) {
             try {
 
+                if (Strings.isEmpty(client.idType()) || Strings.isEmpty(client.idNumber())) {
+                    throw new IllegalArgumentException("El tipo de ID y el número de ID no pueden estar vacíos");
+                }
+
+                if (client.idType().equalsIgnoreCase("NIT") && Strings.isEmpty(client.companyName())) {
+                    throw new IllegalArgumentException("El nombre de la empresa no puede estar vacío cuando el ID es NIT");
+                }
+
                 String payload = gsonBuilder.create().toJson(client);
 
                 CodeValueData data = idTypes.stream().filter(idType -> idType.getName().equalsIgnoreCase(client.idType())).findFirst()
@@ -158,7 +158,7 @@ public class BlockClientImportHandler implements ImportHandler {
                 final Long clientId = additionalFieldsData.get(0).getClientId();
 
                 final CommandWrapper commandRequest = new CommandWrapperBuilder() //
-                        .blockClient(clientId) //
+                        .blockClient(clientId, "blockList") //
                         .withJson(payload) //
                         .build(); //
                 final CommandProcessingResult result = commandsSourceWritePlatformService.logCommandSource(commandRequest);

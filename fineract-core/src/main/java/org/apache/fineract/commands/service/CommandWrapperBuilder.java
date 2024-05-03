@@ -744,12 +744,12 @@ public class CommandWrapperBuilder {
         return this;
     }
 
-    public CommandWrapperBuilder blockClient(final Long clientId) {
+    public CommandWrapperBuilder blockClient(final Long clientId, String commandValue) {
         this.actionName = "BLOCK";
         this.entityName = "CLIENT";
         this.entityId = clientId;
         this.clientId = clientId;
-        this.href = "/clients/" + clientId + "?command=block";
+        this.href = "/clients/" + clientId + "?command=" + commandValue;
         return this;
     }
 
