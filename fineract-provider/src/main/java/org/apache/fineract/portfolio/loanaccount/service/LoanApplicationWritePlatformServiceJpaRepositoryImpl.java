@@ -1643,7 +1643,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
     public LoanAdditionalData fromJsonCommand(final JsonCommand jsonCommand) {
         final LoanAdditionalData loanAdditionalData = new LoanAdditionalData();
         final String dateFormat = jsonCommand.dateFormat();
-        final String localeAsString = jsonCommand.locale(); // "en";
+        final String localeAsString = "en"; // "en";
         final Locale locale = JsonParserHelper.localeFromString(localeAsString);
 
         this.fromApiJsonDeserializer.validateLoanAdditionalData(jsonCommand);
