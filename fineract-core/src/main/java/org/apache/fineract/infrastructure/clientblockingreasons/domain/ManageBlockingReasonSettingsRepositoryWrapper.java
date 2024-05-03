@@ -19,7 +19,7 @@
 package org.apache.fineract.infrastructure.clientblockingreasons.domain;
 
 import java.util.List;
-import org.apache.fineract.infrastructure.clientblockingreasons.exception.BlockingReasonExceptionNotFoundException;
+import org.apache.fineract.infrastructure.clientblockingreasons.exception.BlockReasonSettingNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
@@ -34,7 +34,7 @@ public class ManageBlockingReasonSettingsRepositoryWrapper {
     }
 
     public BlockingReasonSetting findOneWithNotFoundDetection(final Long id) {
-        return this.repository.findById(id).orElseThrow(() -> new BlockingReasonExceptionNotFoundException(id));
+        return this.repository.findById(id).orElseThrow(() -> new BlockReasonSettingNotFoundException(id));
     }
 
     public void save(final BlockingReasonSetting blockingReasonSetting) {
