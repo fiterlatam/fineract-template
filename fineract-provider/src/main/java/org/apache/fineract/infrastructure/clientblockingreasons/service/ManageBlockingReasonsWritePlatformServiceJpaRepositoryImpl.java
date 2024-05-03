@@ -31,8 +31,8 @@ import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockLeve
 import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSetting;
 import org.apache.fineract.infrastructure.clientblockingreasons.domain.ManageBlockingReasonSettingsRepositoryWrapper;
 import org.apache.fineract.infrastructure.clientblockingreasons.exception.BlockLevelEntityException;
+import org.apache.fineract.infrastructure.clientblockingreasons.exception.BlockReasonSettingNotFoundException;
 import org.apache.fineract.infrastructure.clientblockingreasons.exception.BlockReasonStateException;
-import org.apache.fineract.infrastructure.clientblockingreasons.exception.BlockingReasonExceptionNotFoundException;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuilder;
@@ -67,7 +67,7 @@ public class ManageBlockingReasonsWritePlatformServiceJpaRepositoryImpl implemen
         List<BlockingReasonSetting> priorities = this.blockingReasonSettingsRepositoryWrapper.getBlockingReasonSettingByPriority(priority,
                 blockLevel.name());
         if (!CollectionUtils.isEmpty(priorities)) {
-            throw new BlockingReasonExceptionNotFoundException(priority, blockLevel.getCode());
+            throw new BlockReasonSettingNotFoundException(priority, blockLevel.getCode());
         }
 
         List<BlockingReasonSetting> reasons = this.blockingReasonSettingsRepositoryWrapper.getBlockingReasonSettingByReason(nameOfReason,
@@ -75,7 +75,7 @@ public class ManageBlockingReasonsWritePlatformServiceJpaRepositoryImpl implemen
 
         if (!CollectionUtils.isEmpty(reasons)) {
 
-            throw new BlockingReasonExceptionNotFoundException(nameOfReason, blockLevel.getCode());
+            throw new BlockReasonSettingNotFoundException(nameOfReason, blockLevel.getCode());
 
         }
 
@@ -97,7 +97,7 @@ public class ManageBlockingReasonsWritePlatformServiceJpaRepositoryImpl implemen
 
         BlockingReasonSetting blockingReasonSetting = this.blockingReasonSettingsRepositoryWrapper.findOneWithNotFoundDetection(id);
         if (blockingReasonSetting == null) {
-            throw new BlockingReasonExceptionNotFoundException(id);
+            throw new BlockReasonSettingNotFoundException(id);
         }
 
         this.blockingReasonsDataValidator.validateForUpdate(command.json());
@@ -199,7 +199,7 @@ public class ManageBlockingReasonsWritePlatformServiceJpaRepositoryImpl implemen
                 List<BlockingReasonSetting> reasons = this.blockingReasonSettingsRepositoryWrapper
                         .getBlockingReasonSettingByReason(nameOfReasonChange, blockLevel.name());
                 if (!CollectionUtils.isEmpty(reasons)) {
-                    throw new BlockingReasonExceptionNotFoundException(nameOfReasonChange, blockLevel.getCode());
+                    throw new BlockReasonSettingNotFoundException(nameOfReasonChange, blockLevel.getCode());
                 }
             }
         }
@@ -210,7 +210,7 @@ public class ManageBlockingReasonsWritePlatformServiceJpaRepositoryImpl implemen
                 List<BlockingReasonSetting> reasons = this.blockingReasonSettingsRepositoryWrapper
                         .getBlockingReasonSettingByReason(nameOfReasonChange, blockLevel.name());
                 if (!CollectionUtils.isEmpty(reasons)) {
-                    throw new BlockingReasonExceptionNotFoundException(nameOfReasonChange, blockLevel.getCode());
+                    throw new BlockReasonSettingNotFoundException(nameOfReasonChange, blockLevel.getCode());
                 }
             }
         }
@@ -230,7 +230,7 @@ public class ManageBlockingReasonsWritePlatformServiceJpaRepositoryImpl implemen
                 List<BlockingReasonSetting> reasons = this.blockingReasonSettingsRepositoryWrapper
                         .getBlockingReasonSettingByPriority(priorityChange, blockLevel.name());
                 if (!CollectionUtils.isEmpty(reasons)) {
-                    throw new BlockingReasonExceptionNotFoundException(priorityChange, blockLevel.getCode());
+                    throw new BlockReasonSettingNotFoundException(priorityChange, blockLevel.getCode());
                 }
             }
         }
@@ -241,7 +241,7 @@ public class ManageBlockingReasonsWritePlatformServiceJpaRepositoryImpl implemen
                 List<BlockingReasonSetting> reasons = this.blockingReasonSettingsRepositoryWrapper
                         .getBlockingReasonSettingByPriority(priorityChange, blockLevel.name());
                 if (!CollectionUtils.isEmpty(reasons)) {
-                    throw new BlockingReasonExceptionNotFoundException(priorityChange, blockLevel.getCode());
+                    throw new BlockReasonSettingNotFoundException(priorityChange, blockLevel.getCode());
                 }
             }
         }
