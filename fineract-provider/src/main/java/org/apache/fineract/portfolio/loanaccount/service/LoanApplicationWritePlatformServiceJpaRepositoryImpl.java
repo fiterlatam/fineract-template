@@ -1643,8 +1643,10 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
     public LoanAdditionalData fromJsonCommand(final JsonCommand jsonCommand) {
         final LoanAdditionalData loanAdditionalData = new LoanAdditionalData();
         final String dateFormat = jsonCommand.dateFormat();
-        final String localeAsString = jsonCommand.locale();
-        final Locale locale = JsonParserHelper.localeFromString(localeAsString);
+        final String localeAsString = jsonCommand.locale(); // "en";
+        final Locale dateLocal = JsonParserHelper.localeFromString(localeAsString);
+        final Locale locale = JsonParserHelper.localeFromString("en");
+
         this.fromApiJsonDeserializer.validateLoanAdditionalData(jsonCommand);
         final JsonElement jsonElement = jsonCommand.jsonElement(LoanApiConstants.LOAN_ADDITIONAL_DATA);
         final String caseId = this.fromJsonHelper.extractStringNamed("caseId", jsonElement);
@@ -1665,15 +1667,15 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
         final String estadoSolicitud = this.fromJsonHelper.extractStringNamed("estadoSolicitud", jsonElement);
         loanAdditionalData.setEstadoSolicitud(estadoSolicitud);
 
-        final LocalDate fechaInicio = this.fromJsonHelper.extractLocalDateNamed("fechaInicio", jsonElement, dateFormat, locale);
+        final LocalDate fechaInicio = this.fromJsonHelper.extractLocalDateNamed("fechaInicio", jsonElement, dateFormat, dateLocal);
         loanAdditionalData.setFechaInicio(fechaInicio);
 
         final String producto = this.fromJsonHelper.extractStringNamed("producto", jsonElement);
         loanAdditionalData.setProducto(producto);
 
-        LocalDate fechaSolicitud = this.fromJsonHelper.extractLocalDateNamed("fechaSolicitud", jsonElement, dateFormat, locale);
+        LocalDate fechaSolicitud = this.fromJsonHelper.extractLocalDateNamed("fechaSolicitud", jsonElement, dateFormat, dateLocal);
         if (fechaSolicitud == null) {
-            fechaSolicitud = this.fromJsonHelper.extractLocalDateNamed("fecha_solicitud", jsonElement, dateFormat, locale);
+            fechaSolicitud = this.fromJsonHelper.extractLocalDateNamed("fecha_solicitud", jsonElement, dateFormat, dateLocal);
         }
         loanAdditionalData.setFechaSolicitud(fechaSolicitud);
 
@@ -1725,7 +1727,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
         final Integer cEdad = this.fromJsonHelper.extractIntegerNamed("cEdad", jsonElement, locale);
         loanAdditionalData.setCEdad(cEdad);
 
-        final LocalDate cFechaNacimiento = this.fromJsonHelper.extractLocalDateNamed("cFechaNacimiento", jsonElement, dateFormat, locale);
+        final LocalDate cFechaNacimiento = this.fromJsonHelper.extractLocalDateNamed("cFechaNacimiento", jsonElement, dateFormat, dateLocal);
         loanAdditionalData.setCFechaNacimiento(cFechaNacimiento);
 
         final String cOtroNombre = this.fromJsonHelper.extractStringNamed("cOtroNombre", jsonElement);
@@ -1810,7 +1812,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
         loanAdditionalData.setFamiliares(familiares);
 
         final LocalDate fechaPrimeraReunion = this.fromJsonHelper.extractLocalDateNamed("fechaPrimeraReunion", jsonElement, dateFormat,
-                locale);
+                dateLocal);
         loanAdditionalData.setFechaPrimeraReunion(fechaPrimeraReunion);
 
         final Integer flujoDisponible = this.fromJsonHelper.extractIntegerNamed("flujoDisponible", jsonElement, locale);
@@ -1997,7 +1999,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
         final String caseName = this.fromJsonHelper.extractStringNamed("caseName", jsonElement);
         loanAdditionalData.setCaseName(caseName);
 
-        final LocalDate fechaFin = this.fromJsonHelper.extractLocalDateNamed("fechaFin", jsonElement, dateFormat, locale);
+        final LocalDate fechaFin = this.fromJsonHelper.extractLocalDateNamed("fechaFin", jsonElement, dateFormat, dateLocal);
         loanAdditionalData.setFechaFin(fechaFin);
 
         final BigDecimal ventas = this.fromJsonHelper.extractBigDecimalNamed("ventas", jsonElement, locale);
@@ -2181,25 +2183,25 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
         loanAdditionalData.setFacilitador(facilitador);
 
         final LocalDate fecha_estacionalidad = this.fromJsonHelper.extractLocalDateNamed("fecha_estacionalidad", jsonElement, dateFormat,
-                locale);
+                dateLocal);
         loanAdditionalData.setFecha_estacionalidad(fecha_estacionalidad);
 
         final LocalDate fecha_inico_operaciones = this.fromJsonHelper.extractLocalDateNamed("fecha_inico_operaciones", jsonElement,
-                dateFormat, locale);
+                dateFormat, dateLocal);
         loanAdditionalData.setFecha_inico_operaciones(fecha_inico_operaciones);
 
         final LocalDate fecha_integraciones = this.fromJsonHelper.extractLocalDateNamed("fecha_integraciones", jsonElement, dateFormat,
-                locale);
+                dateLocal);
         loanAdditionalData.setFecha_integraciones(fecha_integraciones);
 
-        final LocalDate fecha_inventario = this.fromJsonHelper.extractLocalDateNamed("fecha_inventario", jsonElement, dateFormat, locale);
+        final LocalDate fecha_inventario = this.fromJsonHelper.extractLocalDateNamed("fecha_inventario", jsonElement, dateFormat, dateLocal);
         loanAdditionalData.setFecha_inventario(fecha_inventario);
 
         final LocalDate fecha_nacimiento_solicitante = this.fromJsonHelper.extractLocalDateNamed("fecha_nacimiento_solicitante",
-                jsonElement, dateFormat, locale);
+                jsonElement, dateFormat, dateLocal);
         loanAdditionalData.setFecha_nacimiento_solicitante(fecha_nacimiento_solicitante);
 
-        final LocalDate fecha_visita = this.fromJsonHelper.extractLocalDateNamed("fecha_visita", jsonElement, dateFormat, locale);
+        final LocalDate fecha_visita = this.fromJsonHelper.extractLocalDateNamed("fecha_visita", jsonElement, dateFormat, dateLocal);
         loanAdditionalData.setFecha_visita(fecha_visita);
 
         final String frecuencia_compras = this.fromJsonHelper.extractStringNamed("frecuencia_compras", jsonElement);
