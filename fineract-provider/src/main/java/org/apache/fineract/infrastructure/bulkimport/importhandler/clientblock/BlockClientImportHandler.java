@@ -140,10 +140,6 @@ public class BlockClientImportHandler implements ImportHandler {
                     throw new IllegalArgumentException("El tipo de ID y el número de ID no pueden estar vacíos");
                 }
 
-                if (client.idType().equalsIgnoreCase("NIT") && Strings.isEmpty(client.companyName())) {
-                    throw new IllegalArgumentException("El nombre de la empresa no puede estar vacío cuando el ID es NIT");
-                }
-
                 String payload = gsonBuilder.create().toJson(client);
 
                 CodeValueData data = idTypes.stream().filter(idType -> idType.getName().equalsIgnoreCase(client.idType())).findFirst()
@@ -152,7 +148,8 @@ public class BlockClientImportHandler implements ImportHandler {
                         client.idNumber());
 
                 if (additionalFieldsData.isEmpty()) {
-                    throw new ClientNotFoundException(client.idNumber(), client.idType());
+                    throw new ClientNotFoundException(
+                            "El cliente no fue encontrado para los valores ingresados: " + client.idNumber() + " " + client.idType());
                 }
 
                 final Long clientId = additionalFieldsData.get(0).getClientId();
