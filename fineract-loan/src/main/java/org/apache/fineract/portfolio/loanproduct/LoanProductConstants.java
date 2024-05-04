@@ -158,6 +158,7 @@ public interface LoanProductConstants {
     // loan schedule type
     String LOAN_SCHEDULE_TYPE = "loanScheduleType";
     String LOAN_SCHEDULE_PROCESSING_TYPE = "loanScheduleProcessingType";
+    String REPAYMENT_RESCHEDULING_TYPE = "repaymentReschedulingType";
 
     // Repayment Strategies
     String ADVANCED_PAYMENT_ALLOCATION_STRATEGY = "advanced-payment-allocation-strategy";

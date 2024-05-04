@@ -198,4 +198,5 @@
     <include file="parts/20240501150000_SU_32_m_client_block_list_create.xml" relativeToChangelogFile="true"/>
     <include file="parts/20240501220000_SU_20_maximum_credit_rate_CREATE.xml" relativeToChangelogFile="true"/>
     <include file="parts/202405022124100_SU_153_m_block_reason_setting_MODIFY.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20240503100000_SU_53_add_repayment_rescheduling_enum_to_product_loan_ADD.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
