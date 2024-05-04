@@ -224,6 +224,9 @@ public class LoanProduct extends AbstractPersistableCustom {
     @Column(name = "repayment_start_date_type_enum", nullable = false)
     private RepaymentStartDateType repaymentStartDateType;
 
+    @Column(name = "repayment_rescheduling_enum")
+    private Integer repaymentReschedulingType;
+
     public static LoanProduct assembleFromJson(final Fund fund, final String loanTransactionProcessingStrategy,
             final List<Charge> productCharges, final JsonCommand command, final AprCalculator aprCalculator, FloatingRate floatingRate,
             final List<Rate> productRates, List<LoanProductPaymentAllocationRule> loanProductPaymentAllocationRules,
@@ -429,6 +432,8 @@ public class LoanProduct extends AbstractPersistableCustom {
         final boolean enableInstallmentLevelDelinquency = command
                 .booleanPrimitiveValueOfParameterNamed(LoanProductConstants.ENABLE_INSTALLMENT_LEVEL_DELINQUENCY);
 
+        final Integer repaymentReschedulingType = command.integerValueOfParameterNamed(LoanProductConstants.REPAYMENT_RESCHEDULING_TYPE);
+
         return new LoanProduct(fund, loanTransactionProcessingStrategy, loanProductPaymentAllocationRules, loanProductCreditAllocationRules,
                 name, shortName, description, currency, principal, minPrincipal, maxPrincipal, interestRatePerPeriod,
                 minInterestRatePerPeriod, maxInterestRatePerPeriod, interestFrequencyType, annualInterestRate, interestMethod,
@@ -447,7 +452,8 @@ public class LoanProduct extends AbstractPersistableCustom {
                 isEqualAmortization, productRates, fixedPrincipalPercentagePerInstallment, disallowExpectedDisbursements,
                 allowApprovedDisbursedAmountsOverApplied, overAppliedCalculationType, overAppliedNumber, dueDaysForRepaymentEvent,
                 overDueDaysForRepaymentEvent, enableDownPayment, disbursedAmountPercentageDownPayment, enableAutoRepaymentForDownPayment,
-                repaymentStartDateType, enableInstallmentLevelDelinquency, loanScheduleType, loanScheduleProcessingType);
+                repaymentStartDateType, enableInstallmentLevelDelinquency, loanScheduleType, loanScheduleProcessingType,
+                repaymentReschedulingType);
 
     }
 
@@ -664,7 +670,7 @@ public class LoanProduct extends AbstractPersistableCustom {
             final boolean enableDownPayment, final BigDecimal disbursedAmountPercentageForDownPayment,
             final boolean enableAutoRepaymentForDownPayment, final RepaymentStartDateType repaymentStartDateType,
             final boolean enableInstallmentLevelDelinquency, final LoanScheduleType loanScheduleType,
-            final LoanScheduleProcessingType loanScheduleProcessingType) {
+            final LoanScheduleProcessingType loanScheduleProcessingType, final Integer repaymentReschedulingType) {
         this.fund = fund;
         this.transactionProcessingStrategyCode = transactionProcessingStrategyCode;
 
@@ -768,6 +774,7 @@ public class LoanProduct extends AbstractPersistableCustom {
         this.repaymentStartDateType = repaymentStartDateType;
 
         this.enableInstallmentLevelDelinquency = enableInstallmentLevelDelinquency;
+        this.repaymentReschedulingType = repaymentReschedulingType;
 
         validateLoanProductPreSave();
     }
@@ -1364,6 +1371,12 @@ public class LoanProduct extends AbstractPersistableCustom {
             this.updateEnableInstallmentLevelDelinquency(newValue);
         }
 
+        if (command.isChangeInIntegerParameterNamed(LoanProductConstants.REPAYMENT_RESCHEDULING_TYPE, this.repaymentReschedulingType)) {
+            final Integer newValue = command.integerValueOfParameterNamed(LoanProductConstants.REPAYMENT_RESCHEDULING_TYPE);
+            actualChanges.put(LoanProductConstants.REPAYMENT_RESCHEDULING_TYPE, newValue);
+            this.repaymentReschedulingType = newValue;
+        }
+
         return actualChanges;
     }
 
@@ -1771,4 +1784,11 @@ public class LoanProduct extends AbstractPersistableCustom {
         this.enableInstallmentLevelDelinquency = enableInstallmentLevelDelinquency;
     }
 
+    public Integer getRepaymentReschedulingType() {
+        return repaymentReschedulingType;
+    }
+
+    public void setRepaymentReschedulingType(Integer repaymentReschedulingType) {
+        this.repaymentReschedulingType = repaymentReschedulingType;
+    }
 }

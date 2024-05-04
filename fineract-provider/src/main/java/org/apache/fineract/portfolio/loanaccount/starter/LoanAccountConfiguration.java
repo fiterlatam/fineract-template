@@ -370,10 +370,11 @@ public class LoanAccountConfiguration {
             CalendarInstanceRepository calendarInstanceRepository, ConfigurationDomainService configurationDomainService,
             HolidayRepository holidayRepository, WorkingDaysRepositoryWrapper workingDaysRepository,
             LoanScheduleGeneratorFactory loanScheduleFactory, FloatingRatesReadPlatformService floatingRatesReadPlatformService,
-            FromJsonHelper fromApiJsonHelper, CalendarReadPlatformService calendarReadPlatformService) {
+            FromJsonHelper fromApiJsonHelper, CalendarReadPlatformService calendarReadPlatformService,
+            LoanProductRepository loanProductRepository) {
         return new LoanUtilService(applicationCurrencyRepository, calendarInstanceRepository, configurationDomainService, holidayRepository,
                 workingDaysRepository, loanScheduleFactory, floatingRatesReadPlatformService, fromApiJsonHelper,
-                calendarReadPlatformService);
+                calendarReadPlatformService, loanProductRepository);
     }
 
     @Bean

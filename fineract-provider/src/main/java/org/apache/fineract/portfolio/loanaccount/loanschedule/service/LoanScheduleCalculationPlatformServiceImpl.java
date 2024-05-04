@@ -136,7 +136,7 @@ public class LoanScheduleCalculationPlatformServiceImpl implements LoanScheduleC
             throw new PlatformApiDataValidationException(dataValidationErrors);
         }
 
-        return this.loanScheduleAssembler.assembleLoanScheduleFrom(query.parsedJson());
+        return this.loanScheduleAssembler.assembleLoanScheduleFrom(query.parsedJson(), loanProduct);
     }
 
     @Override

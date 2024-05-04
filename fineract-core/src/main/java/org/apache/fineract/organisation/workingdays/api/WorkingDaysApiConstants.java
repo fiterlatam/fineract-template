@@ -46,4 +46,5 @@ public final class WorkingDaysApiConstants {
             repayment_rescheduling_enum, extendTermForDailyRepayments, extendTermForRepaymentsOnHolidays));
 
     static final Set<String> WORKING_DAYS_TEMPLATE_PARAMETERS = new HashSet<>(Arrays.asList(rescheduleRepaymentTemplate));
+    public static final String RECURRENCE_WEEKLY_ALL_DAYS = "FREQ=WEEKLY;INTERVAL=1;BYDAY=MO,TU,WE,TH,FR,SA,SU,";
 }
