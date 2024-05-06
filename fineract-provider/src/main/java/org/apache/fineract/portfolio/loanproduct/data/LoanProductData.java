@@ -225,6 +225,9 @@ public class LoanProductData implements Serializable {
     private final EnumOptionData loanScheduleType;
     private final EnumOptionData loanScheduleProcessingType;
 
+    @lombok.Setter
+    private Integer maxClientInactivityPeriod;
+
     /**
      * Used when returning lookup information about loan product for dropdowns.
      */

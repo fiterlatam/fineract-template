@@ -498,6 +498,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 // Trigger transaction replayed event
                 replayedTransactionBusinessEventService.raiseTransactionReplayedEvents(changedTransactionDetail);
             }
+            loan.getLoanCustomizationDetail().recordActivity();
             loan = saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
 
             final String noteText = command.stringValueOfParameterNamed("note");
@@ -882,6 +883,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 BigDecimal netDisbursalAmount = loan.getApprovedPrincipal().subtract(loanOutstanding);
                 loan.adjustNetDisbursalAmount(netDisbursalAmount);
             }
+            loan.getLoanCustomizationDetail().recordActivity();
             loan = saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
             this.accountTransfersWritePlatformService.reverseAllTransactions(loanId, PortfolioAccountType.LOAN);
             String noteText;
@@ -1417,6 +1419,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             // Trigger transaction replayed event
             replayedTransactionBusinessEventService.raiseTransactionReplayedEvents(changedTransactionDetail);
         }
+        loan.getLoanCustomizationDetail().recordActivity();
         loan = saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
 
         final String noteText = command.stringValueOfParameterNamed("note");
@@ -2528,6 +2531,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
         final LoanTransaction loanTransaction = this.loanAccountDomainService.creditBalanceRefund(loan, transactionDate, transactionAmount,
                 noteText, externalId, paymentDetail);
+        loan.getLoanCustomizationDetail().recordActivity();
+        loanAccountDomainService.saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
 
         return new CommandProcessingResultBuilder() //
                 .withEntityId(loanTransaction.getId()) //
@@ -2556,6 +2561,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         final boolean fraud = command.booleanPrimitiveValueOfParameterNamed(LoanApiConstants.FRAUD_ATTRIBUTE_NAME);
         if (loan.isFraud() != fraud) {
             loan.markAsFraud(fraud);
+            loan.getLoanCustomizationDetail().recordActivity();
             this.loanRepository.save(loan);
             changes.put(LoanApiConstants.FRAUD_ATTRIBUTE_NAME, fraud);
         }
@@ -2776,6 +2782,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
         final List<Long> existingTransactionIds = loan.findExistingTransactionIds();
         final List<Long> existingReversedTransactionIds = loan.findExistingReversedTransactionIds();
+        loan.getLoanCustomizationDetail().recordActivity();
 
         LoanTransaction chargeOffTransaction = LoanTransaction.chargeOff(loan, transactionDate, txnExternalId);
         loanTransactionRepository.saveAndFlush(chargeOffTransaction);
@@ -2838,6 +2845,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         chargedOffTransaction.manuallyAdjustedOrReversed();
 
         loan.liftChargeOff();
+        loan.getLoanCustomizationDetail().recordActivity();
         loanTransactionRepository.saveAndFlush(chargedOffTransaction);
         saveLoanWithDataIntegrityViolationChecks(loan);
         postJournalEntries(loan, existingTransactionIds, existingReversedTransactionIds);
