@@ -28,4 +28,6 @@ import org.springframework.stereotype.Repository;
 public interface ClientBlockListRepository extends JpaRepository<ClientBlockList, Long>, JpaSpecificationExecutor<ClientBlockList> {
 
     Optional<ClientBlockList> findByClientId(Long clientId);
+
+    Optional<ClientBlockList> findByIdNumberAndIdType(String idNumber, String idType);
 }

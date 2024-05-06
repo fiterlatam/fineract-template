@@ -19,6 +19,7 @@
 package org.apache.fineract.portfolio.client.service;
 
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import jakarta.persistence.PersistenceException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -34,6 +35,7 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.fineract.commands.domain.CommandWrapper;
 import org.apache.fineract.commands.service.CommandProcessingService;
 import org.apache.fineract.commands.service.CommandWrapperBuilder;
+import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformService;
 import org.apache.fineract.infrastructure.accountnumberformat.domain.AccountNumberFormat;
 import org.apache.fineract.infrastructure.accountnumberformat.domain.AccountNumberFormatRepositoryWrapper;
 import org.apache.fineract.infrastructure.accountnumberformat.domain.EntityAccountType;
@@ -66,6 +68,7 @@ import org.apache.fineract.organisation.staff.domain.Staff;
 import org.apache.fineract.organisation.staff.domain.StaffRepositoryWrapper;
 import org.apache.fineract.portfolio.address.service.AddressWritePlatformService;
 import org.apache.fineract.portfolio.client.api.ClientApiConstants;
+import org.apache.fineract.portfolio.client.data.ClientAdditionalFieldsData;
 import org.apache.fineract.portfolio.client.data.ClientDataValidator;
 import org.apache.fineract.portfolio.client.domain.AccountNumberGenerator;
 import org.apache.fineract.portfolio.client.domain.Client;
@@ -91,6 +94,7 @@ import org.apache.fineract.portfolio.group.exception.GroupMemberCountNotInPermis
 import org.apache.fineract.portfolio.group.exception.GroupNotFoundException;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
+import org.apache.fineract.portfolio.loanaccount.service.LoanReadPlatformService;
 import org.apache.fineract.portfolio.note.domain.Note;
 import org.apache.fineract.portfolio.note.domain.NoteRepository;
 import org.apache.fineract.portfolio.savings.data.SavingsAccountDataDTO;
@@ -136,6 +140,9 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
     private final ManageBlockingReasonSettingsRepositoryWrapper manageBlockingReasonSettingsRepositoryWrapper;
     private final ClientBlockingReasonRepositoryWrapper clientBlockingReasonRepositoryWrapper;
     private final ClientBlockListRepository clientBlockListRepository;
+    private final LoanReadPlatformService loanReadPlatformService;
+    private final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService;
+    private final ManageBlockingReasonSettingsRepositoryWrapper blockingReasonSettingsRepositoryWrapper;
 
     @Transactional
     @Override
@@ -339,6 +346,46 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
                 this.entityDatatableChecksWritePlatformService.saveDatatables(StatusEnum.CREATE.getCode().longValue(),
                         EntityTables.CLIENT.getName(), newClient.getId(), null,
                         command.arrayOfParameterNamed(ClientApiConstants.datatables));
+                final Long clientId = newClient.getId();
+                final ClientAdditionalFieldsData loanAdditionalFieldsData = this.loanReadPlatformService
+                        .retrieveLoanClientAdditionals(clientId);
+                if (loanAdditionalFieldsData != null) {
+                    String idType;
+                    String idNumber;
+                    if (LegalForm.PERSON.getValue().equals(newClient.getLegalForm())) {
+                        idNumber = loanAdditionalFieldsData.getCedula();
+                        idType = "CEDULA";
+                    } else {
+                        idNumber = loanAdditionalFieldsData.getNit();
+                        idType = "NIT";
+                        if (StringUtils.isNotBlank(loanAdditionalFieldsData.getTipo())) {
+                            idType = loanAdditionalFieldsData.getTipo().toUpperCase();
+                        }
+                    }
+                    Optional<ClientBlockList> optionalBlockedClient = this.clientBlockListRepository.findByIdNumberAndIdType(idNumber,
+                            idType);
+                    if (optionalBlockedClient.isPresent()) {
+                        JsonObject jsonObject = new JsonObject();
+                        jsonObject.addProperty("blockedOnDate", command.stringValueOfParameterNamed("submittedOnDate"));
+                        jsonObject.addProperty("dateFormat", command.dateFormat());
+                        jsonObject.addProperty("locale", command.locale());
+                        final Optional<BlockingReasonSetting> listasDeControlBlockingReason = manageBlockingReasonSettingsRepositoryWrapper
+                                .getBlockingReasonSettingByReason("LISTAS DE CONTROL", "CLIENT").stream().findFirst();
+                        if (listasDeControlBlockingReason.isPresent()) {
+                            final BlockingReasonSetting blockingReasonSetting = listasDeControlBlockingReason.get();
+                            jsonObject.addProperty("blockingReasonId", blockingReasonSetting.getId());
+                            jsonObject.addProperty("blockingComment", blockingReasonSetting.getDescription());
+                            final String payload = jsonObject.toString();
+                            final CommandWrapper commandRequest = new CommandWrapperBuilder().blockClient(clientId, "blockList")
+                                    .withJson(payload).build();
+                            try {
+                                commandsSourceWritePlatformService.logCommandSource(commandRequest);
+                            } catch (Exception ex) {
+                                log.error("Error in blocking a client", ex);
+                            }
+                        }
+                    }
+                }
             }
 
             legalForm = LegalForm.fromInt(newClient.getLegalForm());
