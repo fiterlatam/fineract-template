@@ -227,6 +227,9 @@ public class LoanProduct extends AbstractPersistableCustom {
     @Column(name = "repayment_rescheduling_enum")
     private Integer repaymentReschedulingType;
 
+    @Column(name = "max_client_inactivity_period")
+    private Integer maxClientInactivityPeriod;
+
     public static LoanProduct assembleFromJson(final Fund fund, final String loanTransactionProcessingStrategy,
             final List<Charge> productCharges, final JsonCommand command, final AprCalculator aprCalculator, FloatingRate floatingRate,
             final List<Rate> productRates, List<LoanProductPaymentAllocationRule> loanProductPaymentAllocationRules,
@@ -434,11 +437,13 @@ public class LoanProduct extends AbstractPersistableCustom {
 
         final Integer repaymentReschedulingType = command.integerValueOfParameterNamed(LoanProductConstants.REPAYMENT_RESCHEDULING_TYPE);
 
-        return new LoanProduct(fund, loanTransactionProcessingStrategy, loanProductPaymentAllocationRules, loanProductCreditAllocationRules,
-                name, shortName, description, currency, principal, minPrincipal, maxPrincipal, interestRatePerPeriod,
-                minInterestRatePerPeriod, maxInterestRatePerPeriod, interestFrequencyType, annualInterestRate, interestMethod,
-                interestCalculationPeriodMethod, allowPartialPeriodInterestCalcualtion, repaymentEvery, repaymentFrequencyType,
-                numberOfRepayments, minNumberOfRepayments, maxNumberOfRepayments, graceOnPrincipalPayment,
+        final Integer maxClientInActivityPeriod = command.integerValueOfParameterNamed(LoanProductConstants.MAX_CLIENT_INACTIVITY_PERIOD);
+
+        LoanProduct product = new LoanProduct(fund, loanTransactionProcessingStrategy, loanProductPaymentAllocationRules,
+                loanProductCreditAllocationRules, name, shortName, description, currency, principal, minPrincipal, maxPrincipal,
+                interestRatePerPeriod, minInterestRatePerPeriod, maxInterestRatePerPeriod, interestFrequencyType, annualInterestRate,
+                interestMethod, interestCalculationPeriodMethod, allowPartialPeriodInterestCalcualtion, repaymentEvery,
+                repaymentFrequencyType, numberOfRepayments, minNumberOfRepayments, maxNumberOfRepayments, graceOnPrincipalPayment,
                 recurringMoratoriumOnPrincipalPeriods, graceOnInterestPayment, graceOnInterestCharged, amortizationMethod,
                 inArrearsTolerance, productCharges, accountingRuleType, includeInBorrowerCycle, startDate, closeDate, externalId,
                 useBorrowerCycle, loanProductBorrowerCycleVariations, multiDisburseLoan, maxTrancheCount, outstandingLoanBalance,
@@ -454,6 +459,9 @@ public class LoanProduct extends AbstractPersistableCustom {
                 overDueDaysForRepaymentEvent, enableDownPayment, disbursedAmountPercentageDownPayment, enableAutoRepaymentForDownPayment,
                 repaymentStartDateType, enableInstallmentLevelDelinquency, loanScheduleType, loanScheduleProcessingType,
                 repaymentReschedulingType);
+
+        product.setMaxClientInactivityPeriod(maxClientInActivityPeriod);
+        return product;
 
     }
 
@@ -1377,6 +1385,12 @@ public class LoanProduct extends AbstractPersistableCustom {
             this.repaymentReschedulingType = newValue;
         }
 
+        if (command.isChangeInIntegerParameterNamed(LoanProductConstants.MAX_CLIENT_INACTIVITY_PERIOD, this.maxClientInactivityPeriod)) {
+            final int newValue = command.integerValueOfParameterNamed(LoanProductConstants.MAX_CLIENT_INACTIVITY_PERIOD);
+            actualChanges.put(LoanProductConstants.MAX_CLIENT_INACTIVITY_PERIOD, newValue);
+            this.maxClientInactivityPeriod = newValue;
+        }
+
         return actualChanges;
     }
 
@@ -1790,5 +1804,9 @@ public class LoanProduct extends AbstractPersistableCustom {
 
     public void setRepaymentReschedulingType(Integer repaymentReschedulingType) {
         this.repaymentReschedulingType = repaymentReschedulingType;
+    }
+
+    public void setMaxClientInactivityPeriod(final Integer maxClientInactivityPeriod) {
+        this.maxClientInactivityPeriod = maxClientInactivityPeriod;
     }
 }

@@ -2761,4 +2761,25 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         renderer.createPDF(outputStream);
         outputStream.close();
     }
+
+    @Override
+    public Collection<Long> retrieveClientsWithLoansInActive(Long loanProductId, Integer inactivityPeriod) {
+
+        final String query = """
+                select distinct c.id  from m_client c
+                inner join m_loan l on l.client_id = c.id
+                inner join m_product_loan p on p.id = l.product_id
+                where l.loan_status_id in ( 100,200,300,303,304 )\s
+                and c.id not in (
+                	select cbr.client_id from m_client_blocking_reason cbr inner join\s
+                	m_blocking_reason_setting mbrs on mbrs.id = cbr.blocking_reason_id and\s
+                	mbrs.name_of_reason = 'INACTIVIDAD'
+                )
+                and p.id = ? and (DATE_PART('year', ?::date) * 12 + DATE_PART('month', ?::date) - DATE_PART('year', COALESCE(l.last_activity_date, CURRENT_DATE)) * 12 - DATE_PART('month', COALESCE(l.last_activity_date, CURRENT_DATE))) >= ?
+                """;
+
+        final LocalDate currentDate = DateUtils.getBusinessLocalDate();
+
+        return this.jdbcTemplate.queryForList(query, Long.class, loanProductId, currentDate, currentDate, inactivityPeriod);
+    }
 }

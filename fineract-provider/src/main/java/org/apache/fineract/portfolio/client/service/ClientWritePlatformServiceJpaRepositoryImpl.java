@@ -1285,4 +1285,34 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
 
     }
 
+    @Transactional
+    @Override
+    public void blockClientWithInActiveLoan(Long clientId) {
+        final AppUser currentUser = context.authenticatedUser();
+
+        final LocalDate blockedOnDate = DateUtils.getBusinessLocalDate();
+        final BlockingReasonSetting inActividadBlockingReason = manageBlockingReasonSettingsRepositoryWrapper
+                .getSingleBlockingReasonSettingByReason(ClientApiConstants.BLOCKING_REASON_INACTIVIDAD,
+                        ClientApiConstants.CLIENT_BLOCKING_REASON_LEVEL);
+
+        final String blockingComment = "Inactiva más de los meses permitidos";
+
+        final Client client = clientRepository.findOneWithNotFoundDetection(clientId);
+
+        ClientBlockingReason clientBlockingReason = ClientBlockingReason.instance(clientId, inActividadBlockingReason.getId(),
+                currentUser.getId(), blockedOnDate, blockingComment, currentUser.getId());
+
+        this.clientBlockingReasonRepositoryWrapper.save(clientBlockingReason);
+
+        if (client.isBlocked() && client.getBlockingReason().getPriority() < inActividadBlockingReason.getPriority()) {
+            client.block(currentUser, inActividadBlockingReason, blockedOnDate, blockingComment);
+        }
+
+        if (!client.isBlocked()) {
+            client.block(currentUser, inActividadBlockingReason, blockedOnDate, blockingComment);
+        }
+
+        clientRepository.save(client);
+
+    }
 }
