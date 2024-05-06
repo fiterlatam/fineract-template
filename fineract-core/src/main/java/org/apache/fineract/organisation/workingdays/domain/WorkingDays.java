@@ -94,4 +94,9 @@ public class WorkingDays extends AbstractPersistableCustom {
         return actualChanges;
     }
 
+    public void update(final String recurrence, final Integer repaymentReschedulingType) {
+        this.recurrence = recurrence;
+        this.repaymentReschedulingType = repaymentReschedulingType;
+    }
+
 }
