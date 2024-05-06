@@ -25,5 +25,7 @@ public interface ManageBlockingReasonsReadPlatformService {
 
     Collection<BlockingReasonsData> retrieveAllBlockingReasons(String level);
 
+    Collection<BlockingReasonsData> retrieveClientBlockingReasons(String level, Long clientId);
+
     BlockingReasonsData getBlockingReasonsById(Long id);
 }

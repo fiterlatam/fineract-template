@@ -57,6 +57,15 @@ public class ManageBlockingReasonsReadPlatformServiceImpl implements ManageBlock
     }
 
     @Override
+    public Collection<BlockingReasonsData> retrieveClientBlockingReasons(String level, Long clientId) {
+        final BlockingReasonsMapper rm = new BlockingReasonsMapper(false);
+        String sql = "SELECT " + rm.clientSchema() + " WHERE mcbr.client_id = ? AND brs.level = ? AND mcbr.unblock_date IS NULL";
+        final Object[] params = new Object[] { clientId, level };
+        sql += " ORDER BY brs.id";
+        return this.jdbcTemplate.query(sql, rm, params);
+    }
+
+    @Override
     public BlockingReasonsData getBlockingReasonsById(Long id) {
         this.context.authenticatedUser();
 
@@ -88,8 +97,18 @@ public class ManageBlockingReasonsReadPlatformServiceImpl implements ManageBlock
             } else {
                 query += " FROM m_blocking_reason_setting brs ";
             }
-            ;
             return query;
+        }
+
+        public String clientSchema() {
+            return """
+                    brs.id as id, brs.priority as priority,  brs.description as description,
+                    brs.name_of_reason as nameOfReason,brs.level as level,
+                    brs.created_date as createdDate,
+                    brs.is_enabled as isEnabled
+                    FROM m_blocking_reason_setting brs
+                    INNER JOIN m_client_blocking_reason mcbr on mcbr.blocking_reason_id = brs.id
+                    """;
         }
 
         @Override
