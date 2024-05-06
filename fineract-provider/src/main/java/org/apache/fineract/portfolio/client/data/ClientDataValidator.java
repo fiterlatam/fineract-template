@@ -729,6 +729,8 @@ public final class ClientDataValidator {
         final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors)
                 .resource(ClientApiCollectionConstants.CLIENT_RESOURCE_NAME);
         final JsonElement element = command.parsedJson();
+        final Long blockingReasonId = this.fromApiJsonHelper.extractLongNamed(ClientApiConstants.blockingReasonIdParamName, element);
+        baseDataValidator.reset().parameter(ClientApiConstants.blockingReasonIdParamName).value(blockingReasonId).notNull();
         final LocalDate undoBlockedOnDate = this.fromApiJsonHelper.extractLocalDateNamed(ClientApiConstants.undoBlockedOnDateParamName,
                 element);
         baseDataValidator.reset().parameter(ClientApiConstants.undoBlockedOnDateParamName).value(undoBlockedOnDate).notNull();
