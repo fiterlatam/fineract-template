@@ -200,4 +200,9 @@
     <include file="parts/202405022124100_SU_153_m_block_reason_setting_MODIFY.xml" relativeToChangelogFile="true"/>
     <include file="parts/20240503100000_SU_53_add_repayment_rescheduling_enum_to_product_loan_ADD.xml" relativeToChangelogFile="true"/>
     <include file="parts/202405022224100_SU_35_m_loan_MODIFY.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20240430142349_SU_73_c_custom_charge_honorarios_map_CREATE.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20240430200000_SU_73_c_external_service_INSERT.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20240430200000_SU_73_c_external_service_properties_INSERT.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20240430200100_SU_73_job_INSERT.xml" relativeToChangelogFile="true"/>
+
 </databaseChangeLog>

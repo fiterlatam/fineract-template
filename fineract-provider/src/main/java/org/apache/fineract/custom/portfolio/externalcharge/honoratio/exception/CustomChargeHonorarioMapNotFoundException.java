@@ -16,13 +16,13 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.custom.portfolio.ally.domain;
+package org.apache.fineract.custom.portfolio.externalcharge.honoratio.exception;
 
-import java.util.Optional;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.apache.fineract.infrastructure.core.exception.AbstractPlatformResourceNotFoundException;
 
-public interface ClientAllyRepository extends JpaRepository<ClientAlly, Long>, JpaSpecificationExecutor<ClientAlly> {
+public class CustomChargeHonorarioMapNotFoundException extends AbstractPlatformResourceNotFoundException {
 
-    Optional<ClientAlly> findByNit(String nit);
+    public CustomChargeHonorarioMapNotFoundException() {
+        super("error.msg.customchargehonorariomap.id.invalid", "CustomChargeHonorarioMap does not exist");
+    }
 }
