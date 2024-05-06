@@ -40,5 +40,7 @@ public class MaximumCreditRateConfigurationData {
     private BigDecimal annualNominalRate;
     private BigDecimal monthlyNominalRate;
     private BigDecimal dailyNominalRate;
+    private BigDecimal currentInterestRate;
+    private BigDecimal overdueInterestRate;
     private LocalDate appliedOnDate;
 }

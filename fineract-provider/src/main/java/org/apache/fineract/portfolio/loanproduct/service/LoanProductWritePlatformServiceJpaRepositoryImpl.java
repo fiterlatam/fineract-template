@@ -21,6 +21,7 @@ package org.apache.fineract.portfolio.loanproduct.service;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import jakarta.persistence.PersistenceException;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -309,6 +310,17 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
             final LocalDate currentDate = DateUtils.getLocalDateOfTenant();
             if (DateUtils.isBefore(currentDate, appliedOnDate)) {
                 throw new MaximumRateNotFoundException(appliedOnDate);
+            }
+            final BigDecimal currentInterestRate = command.bigDecimalValueOfParameterNamed("currentInterestRate");
+            final BigDecimal overdueInterestRate = command.bigDecimalValueOfParameterNamed("overdueInterestRate");
+            final BigDecimal monthlyNominalRate = command.bigDecimalValueOfParameterNamed("monthlyNominalRate");
+            if (currentInterestRate.compareTo(monthlyNominalRate) > 0) {
+                throw new PlatformDataIntegrityException("error.msg.current.interest.rate.greater.than.monthly.nominal.rate",
+                        "Current interest rate cannot be greater than monthly nominal rate", currentInterestRate, monthlyNominalRate);
+            }
+            if (overdueInterestRate.compareTo(monthlyNominalRate) > 0) {
+                throw new PlatformDataIntegrityException("error.msg.overdue.interest.rate.greater.than.monthly.nominal.rate",
+                        "Overdue interest rate cannot be greater than monthly nominal rate", overdueInterestRate, monthlyNominalRate);
             }
             final Map<String, Object> changes = maximumCreditRateConfiguration.update(command);
             maximumCreditRateConfiguration.setAppliedBy(appliedBy);

@@ -55,6 +55,12 @@ public class MaximumCreditRateConfiguration extends AbstractPersistableCustom {
     @Column(name = "daily_nominal_rate")
     private BigDecimal dailyNominalRate;
 
+    @Column(name = "current_interest_rate")
+    private BigDecimal currentInterestRate;
+
+    @Column(name = "overdue_interest_rate")
+    private BigDecimal overdueInterestRate;
+
     @Column(name = "appliedon_date")
     private LocalDate appliedOnDate;
 
@@ -87,6 +93,18 @@ public class MaximumCreditRateConfiguration extends AbstractPersistableCustom {
             final BigDecimal newValue = command.bigDecimalValueOfParameterNamed(dailyNominalRate);
             actualChanges.put(dailyNominalRate, newValue);
             this.dailyNominalRate = newValue;
+        }
+        final String currentInterestRate = "currentInterestRate";
+        if (command.isChangeInBigDecimalParameterNamed(eaRate, this.currentInterestRate)) {
+            final BigDecimal newValue = command.bigDecimalValueOfParameterNamed(currentInterestRate);
+            actualChanges.put(currentInterestRate, newValue);
+            this.currentInterestRate = newValue;
+        }
+        final String overdueInterestRate = "overdueInterestRate";
+        if (command.isChangeInBigDecimalParameterNamed(eaRate, this.overdueInterestRate)) {
+            final BigDecimal newValue = command.bigDecimalValueOfParameterNamed(overdueInterestRate);
+            actualChanges.put(overdueInterestRate, newValue);
+            this.overdueInterestRate = newValue;
         }
         final String appliedOnDate = "appliedOnDate";
         if (command.isChangeInLocalDateParameterNamed(appliedOnDate, this.appliedOnDate)) {

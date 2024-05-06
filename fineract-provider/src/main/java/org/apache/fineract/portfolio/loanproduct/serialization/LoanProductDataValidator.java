@@ -111,8 +111,8 @@ public final class LoanProductDataValidator {
     public static final String MAXIMUM_ANNUAL_NOMINAL_RATE = "annualNominalRate";
     public static final String MAXIMUM_MONTHLY_NOMINAL_RATE = "monthlyNominalRate";
     public static final String MAXIMUM_DAILY_NOMINAL_RATE = "dailyNominalRate";
-    public static final String MAXIMUM_APPLIED_ON_DATE = "appliedOnDate";
-    public static final String MAXIMUM_APPLIED_BY = "appliedBy";
+    public static final String CURRENT_INTEREST_RATE = "currentInterestRate";
+    public static final String OVERDUE_INTEREST_RATE = "overdueInterestRate";
     /**
      * The parameters supported for this command.
      */
@@ -182,8 +182,9 @@ public final class LoanProductDataValidator {
             LoanProductConstants.LOAN_SCHEDULE_PROCESSING_TYPE, LoanProductConstants.REPAYMENT_RESCHEDULING_TYPE,
             LoanProductConstants.MAX_CLIENT_INACTIVITY_PERIOD));
 
-    private static final Set<String> MAXIMUM_RATE_SUPPORTED_PARAMETERS = new HashSet<>(Arrays.asList("locale", "dateFormat", "eaRate",
-            "annualNominalRate", "appliedBy", "appliedOnDate", "dailyNominalRate", "monthlyNominalRate"));
+    private static final Set<String> MAXIMUM_RATE_SUPPORTED_PARAMETERS = new HashSet<>(
+            Arrays.asList("locale", "dateFormat", "eaRate", "annualNominalRate", "appliedBy", "appliedOnDate", "dailyNominalRate",
+                    "monthlyNominalRate", "currentInterestRate", "overdueInterestRate"));
 
     private static final String[] SUPPORTED_LOAN_CONFIGURABLE_ATTRIBUTES = { LoanProductConstants.amortizationTypeParamName,
             LoanProductConstants.interestTypeParamName, LoanProductConstants.transactionProcessingStrategyCodeParamName,
@@ -1846,6 +1847,18 @@ public final class LoanProductDataValidator {
             final BigDecimal dailyNominalRate = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed(MAXIMUM_DAILY_NOMINAL_RATE,
                     element);
             baseDataValidator.reset().parameter(MAXIMUM_DAILY_NOMINAL_RATE).value(dailyNominalRate).inMinAndMaxAmountRange(BigDecimal.ZERO,
+                    BigDecimal.valueOf(100));
+        }
+
+        if (this.fromApiJsonHelper.parameterExists(CURRENT_INTEREST_RATE, element)) {
+            final BigDecimal currentInterestRate = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed(CURRENT_INTEREST_RATE, element);
+            baseDataValidator.reset().parameter(CURRENT_INTEREST_RATE).value(currentInterestRate).inMinAndMaxAmountRange(BigDecimal.ZERO,
+                    BigDecimal.valueOf(100));
+        }
+
+        if (this.fromApiJsonHelper.parameterExists(OVERDUE_INTEREST_RATE, element)) {
+            final BigDecimal overdueInterestRate = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed(OVERDUE_INTEREST_RATE, element);
+            baseDataValidator.reset().parameter(OVERDUE_INTEREST_RATE).value(overdueInterestRate).inMinAndMaxAmountRange(BigDecimal.ZERO,
                     BigDecimal.valueOf(100));
         }
         throwExceptionIfValidationWarningsExist(dataValidationErrors);

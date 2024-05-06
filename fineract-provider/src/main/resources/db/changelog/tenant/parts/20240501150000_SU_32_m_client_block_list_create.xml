@@ -56,4 +56,8 @@
             <column name="client_id"/>
         </createIndex>
     </changeSet>
+
+    <changeSet id="2" author="fineract">
+        <dropNotNullConstraint tableName="m_client_block_list" columnName="client_id" columnDataType="BIGINT"/>
+    </changeSet>
 </databaseChangeLog>

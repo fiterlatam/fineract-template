@@ -50,7 +50,6 @@ import org.apache.fineract.portfolio.client.data.ClientAdditionalFieldsData;
 import org.apache.fineract.portfolio.client.data.ClientBlockingListData;
 import org.apache.fineract.portfolio.client.domain.ClientBlockList;
 import org.apache.fineract.portfolio.client.domain.ClientBlockListRepository;
-import org.apache.fineract.portfolio.client.exception.ClientNotFoundException;
 import org.apache.fineract.portfolio.client.service.ClientReadPlatformService;
 import org.apache.logging.log4j.util.Strings;
 import org.apache.poi.ss.usermodel.Cell;
@@ -146,24 +145,16 @@ public class BlockClientImportHandler implements ImportHandler {
                         .orElseThrow();
                 List<ClientAdditionalFieldsData> additionalFieldsData = clientReadPlatformService.retrieveAdditionalFieldsData(data,
                         client.idNumber());
-
-                if (additionalFieldsData.isEmpty()) {
-                    throw new ClientNotFoundException(
-                            "El cliente no fue encontrado para los valores ingresados: " + client.idNumber() + " " + client.idType());
+                Long clientId = null;
+                if (!additionalFieldsData.isEmpty()) {
+                    clientId = additionalFieldsData.get(0).getClientId();
+                    final CommandWrapper commandRequest = new CommandWrapperBuilder() //
+                            .blockClient(clientId, "blockList") //
+                            .withJson(payload) //
+                            .build(); //
+                    commandsSourceWritePlatformService.logCommandSource(commandRequest);
                 }
-
-                final Long clientId = additionalFieldsData.get(0).getClientId();
-
-                final CommandWrapper commandRequest = new CommandWrapperBuilder() //
-                        .blockClient(clientId, "blockList") //
-                        .withJson(payload) //
-                        .build(); //
-                final CommandProcessingResult result = commandsSourceWritePlatformService.logCommandSource(commandRequest);
-
-                if (!result.isRollbackTransaction() && result.getResourceId() > 0) {
-                    addClientToBlockList(client, clientId);
-                }
-
+                addClientToBlockList(client, clientId);
                 successCount++;
                 Cell statusCell = blockClientSheet.getRow(client.rowIndex()).createCell(BlockClientConstants.STATUS_COL);
                 statusCell.setCellValue(TemplatePopulateImportConstants.STATUS_CELL_IMPORTED);
