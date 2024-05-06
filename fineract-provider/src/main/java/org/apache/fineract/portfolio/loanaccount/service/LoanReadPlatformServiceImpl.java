@@ -827,7 +827,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                     + " left join m_loan_recalculation_details lir on lir.loan_id = l.id " + " join m_currency rc on rc."
                     + sqlGenerator.escape("code") + " = l.currency_code" //
                     + " left join m_client c on c.id = l.client_id" //
-                    + " left join m_group g on g.id = l.group_id" //
+                    + " left join m_group_client gcl on gcl.client_id = c.id" //
+                    + " left join m_group g on g.id = gcl.group_id" //
                     + " left join m_group center on center.id = g.parent_id" //
                     + " left join m_portfolio portfolio on portfolio.id = center.portfolio_id" //
                     + " left join m_supervision supv on supv.id = portfolio.supervision_id" //
