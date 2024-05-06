@@ -280,7 +280,7 @@ public class LoanChargeReadPlatformServiceImpl implements LoanChargeReadPlatform
 
         final LoanChargeAccrualMapper rm = new LoanChargeAccrualMapper();
 
-        final String sql = "select " + rm.schema() + " where lc.loan_id=? AND lc.is_active = true group by  lc.id "
+        final String sql = "select " + rm.schema() + " where lc.loan_id=? AND lc.is_active = true group by  lc.id, c.name "
                 + " order by lc.charge_time_enum ASC, lc.due_for_collection_as_of_date ASC, lc.is_penalty ASC";
 
         Collection<LoanChargeData> charges = this.jdbcTemplate.query(sql, rm, // NOSONAR
@@ -312,7 +312,7 @@ public class LoanChargeReadPlatformServiceImpl implements LoanChargeReadPlatform
 
         LoanChargeAccrualMapper() {
             StringBuilder sb = new StringBuilder(50);
-            sb.append(" lc.id as id, lc.charge_id as chargeId, lc.external_id as externalId, ");
+            sb.append(" lc.id as id, lc.charge_id as chargeId, c.name as chargeName, lc.external_id as externalId, ");
             sb.append(" lc.amount as amountDue, ");
             sb.append(" lc.amount_waived_derived as amountWaived, ");
             sb.append(" lc.charge_time_enum as chargeTime, ");
@@ -321,6 +321,7 @@ public class LoanChargeReadPlatformServiceImpl implements LoanChargeReadPlatform
             sb.append(" lc.due_for_collection_as_of_date as dueAsOfDate, ");
             sb.append(" lc.submitted_on_date as submittedOnDate ");
             sb.append(" from m_loan_charge lc ");
+            sb.append(" left join m_charge c ON c.id = lc.charge_id ");
             sb.append(" left join ( ");
             sb.append(" select lcp.loan_charge_id, lcp.amount ");
             sb.append(" from m_loan_charge_paid_by lcp ");
@@ -340,6 +341,7 @@ public class LoanChargeReadPlatformServiceImpl implements LoanChargeReadPlatform
 
             final Long id = rs.getLong("id");
             final Long chargeId = rs.getLong("chargeId");
+            final String chargeName = rs.getString("chargeName");
             final BigDecimal amount = rs.getBigDecimal("amountDue");
             final BigDecimal amountAccrued = rs.getBigDecimal("amountAccrued");
             final BigDecimal amountWaived = rs.getBigDecimal("amountWaived");
@@ -354,8 +356,12 @@ public class LoanChargeReadPlatformServiceImpl implements LoanChargeReadPlatform
             final String externalIdStr = rs.getString("externalId");
             final ExternalId externalId = ExternalIdFactory.produce(externalIdStr);
 
-            return new LoanChargeData(id, chargeId, dueAsOfDate, submittedOnDate, chargeTimeType, amount, amountAccrued, amountWaived,
-                    penalty, externalId);
+            LoanChargeData ret = new LoanChargeData(id, chargeId, dueAsOfDate, submittedOnDate, chargeTimeType, amount, amountAccrued,
+                    amountWaived, penalty, externalId);
+
+            ret.setChargeName(chargeName);
+
+            return ret;
         }
     }
 

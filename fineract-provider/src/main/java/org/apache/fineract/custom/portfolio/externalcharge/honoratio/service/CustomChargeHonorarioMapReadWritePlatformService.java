@@ -16,13 +16,24 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.custom.portfolio.ally.domain;
+package org.apache.fineract.custom.portfolio.externalcharge.honoratio.service;
 
-import java.util.Optional;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import java.util.List;
+import org.apache.fineract.custom.portfolio.externalcharge.honoratio.data.CustomChargeHonorarioMapData;
+import org.apache.fineract.infrastructure.core.api.JsonCommand;
+import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 
-public interface ClientAllyRepository extends JpaRepository<ClientAlly, Long>, JpaSpecificationExecutor<ClientAlly> {
+public interface CustomChargeHonorarioMapReadWritePlatformService {
 
-    Optional<ClientAlly> findByNit(String nit);
+    List<CustomChargeHonorarioMapData> findAllActive();
+
+    CustomChargeHonorarioMapData findById(Long id);
+
+    CommandProcessingResult create(JsonCommand command);
+
+    CommandProcessingResult update(JsonCommand command, Long id);
+
+    CommandProcessingResult delete(Long id);
+
+    List<Throwable> executeJobLoanCustomChargeHonorarioUpdate(List<Throwable> exceptions, Long loanId);
 }

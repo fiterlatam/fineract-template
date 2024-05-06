@@ -16,13 +16,16 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.custom.portfolio.ally.domain;
+package org.apache.fineract.custom.portfolio.externalcharge.honoratio.service.external;
 
-import java.util.Optional;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import java.util.List;
+import org.apache.fineract.custom.portfolio.externalcharge.honoratio.service.external.data.ExternalCustomChargeHonorarioMapData;
+import retrofit2.Call;
+import retrofit2.http.GET;
+import retrofit2.http.Path;
 
-public interface ClientAllyRepository extends JpaRepository<ClientAlly, Long>, JpaSpecificationExecutor<ClientAlly> {
+public interface HonorarioApiService {
 
-    Optional<ClientAlly> findByNit(String nit);
+    @GET("{loanId}")
+    Call<List<ExternalCustomChargeHonorarioMapData>> getData(@Path("loanId") Long loanId);
 }
