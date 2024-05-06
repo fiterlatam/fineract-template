@@ -55,4 +55,6 @@ public interface ClientWritePlatformService {
 
     CommandProcessingResult blockListOfClients(Long clientId, JsonCommand command);
 
+    void blockClientWithInActiveLoan(Long clientId);
+
 }
