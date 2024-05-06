@@ -109,20 +109,22 @@ public class ClientsApiResource {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = ClientsApiResourceSwagger.GetClientsTemplateResponse.class))) })
     public String retrieveTemplate(@Context final UriInfo uriInfo,
+            @QueryParam("clientId") @Parameter(description = "clientId") final Long clientId,
             @Parameter(description = "officeId") @QueryParam("officeId") final Long officeId,
             @QueryParam("commandParam") @Parameter(description = "commandParam") final String commandParam,
             @DefaultValue("false") @QueryParam("staffInSelectedOfficeOnly") @Parameter(description = "staffInSelectedOfficeOnly") final boolean staffInSelectedOfficeOnly) {
-
         context.authenticatedUser().validateHasReadPermission(ClientApiConstants.CLIENT_RESOURCE_NAME);
-
-        ClientData clientData = null;
+        ClientData clientData = new ClientData();
         context.authenticatedUser().validateHasReadPermission(ClientApiConstants.CLIENT_RESOURCE_NAME);
         if (CommandParameterUtil.is(commandParam, "close")) {
             clientData = clientReadPlatformService.retrieveAllNarrations(ClientApiConstants.CLIENT_CLOSURE_REASON);
         } else if (CommandParameterUtil.is(commandParam, "block")) {
             Collection<BlockingReasonsData> blockingReasonsDataOptions = this.manageBlockingReasonsReadPlatformService
                     .retrieveAllBlockingReasons("CLIENT");
-            clientData = new ClientData();
+            clientData.setBlockingReasonsDataOptions(blockingReasonsDataOptions);
+        } else if (CommandParameterUtil.is(commandParam, "undoBlock")) {
+            Collection<BlockingReasonsData> blockingReasonsDataOptions = this.manageBlockingReasonsReadPlatformService
+                    .retrieveClientBlockingReasons("CLIENT", clientId);
             clientData.setBlockingReasonsDataOptions(blockingReasonsDataOptions);
         } else if (CommandParameterUtil.is(commandParam, "acceptTransfer")) {
             clientData = clientReadPlatformService.retrieveAllNarrations(ClientApiConstants.CLIENT_CLOSURE_REASON);

@@ -921,47 +921,11 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
             final String blockingComment = command.stringValueOfParameterNamed(ClientApiConstants.blockingCommentParamName);
             final BlockingReasonSetting blockingReason = this.manageBlockingReasonSettingsRepositoryWrapper
                     .findOneWithNotFoundDetection(blockingReasonId);
-            if (ClientStatus.fromInt(client.getStatus()).isBlocked()) {
-                final String errorMessage = "Client is already blocked.";
-                throw new InvalidClientStateTransitionException("block", "is.already.blocked", errorMessage);
-            } else if (ClientStatus.fromInt(client.getStatus()).isUnderTransfer()) {
-                final String errorMessage = "Cannot blocked a Client under Transfer";
-                throw new InvalidClientStateTransitionException("block", "is.under.transfer", errorMessage);
-            }
-
             if (client.isNotPending() && DateUtils.isAfter(client.getActivationDate(), blockedOnDate)) {
                 final String errorMessage = "The client blockedOnDate cannot be before the client ActivationDate.";
                 throw new InvalidClientStateTransitionException("block", "date.cannot.before.client.activation.date", errorMessage,
                         blockedOnDate, client.getActivationDate());
             }
-            final LegalForm legalForm = LegalForm.fromInt(client.getLegalForm());
-            entityDatatableChecksWritePlatformService.runTheCheck(clientId, EntityTables.CLIENT.getName(), StatusEnum.CLOSE.getCode(),
-                    EntityTables.CLIENT.getForeignKeyColumnNameOnDatatable(), legalForm.getLabel());
-
-            final List<Loan> clientLoans = this.loanRepositoryWrapper.findLoanByClientId(clientId);
-            for (final Loan loan : clientLoans) {
-                final LoanStatusMapper loanStatus = new LoanStatusMapper(loan.getStatus().getValue());
-                if (loanStatus.isOpen() || loanStatus.isPendingApproval() || loanStatus.isAwaitingDisbursal()) {
-                    final String errorMessage = "Client cannot be blocked because of non-closed loans.";
-                    throw new InvalidClientStateTransitionException("block", "loan.non-closed", errorMessage);
-                } else if (loanStatus.isClosed() && DateUtils.isAfter(loan.getClosedOnDate(), blockedOnDate)) {
-                    final String errorMessage = "The client blockedOnDate cannot be before the loan closedOnDate.";
-                    throw new InvalidClientStateTransitionException("block", "date.cannot.before.loan.closed.date", errorMessage,
-                            blockedOnDate, loan.getClosedOnDate());
-                } else if (loanStatus.isOverpaid()) {
-                    final String errorMessage = "Client cannot be blocked because of overpaid loans.";
-                    throw new InvalidClientStateTransitionException("block", "loan.overpaid", errorMessage);
-                }
-            }
-            final List<SavingsAccount> clientSavingAccounts = this.savingsRepositoryWrapper.findSavingAccountByClientId(clientId);
-
-            for (final SavingsAccount saving : clientSavingAccounts) {
-                if (saving.isActive() || saving.isSubmittedAndPendingApproval() || saving.isApproved()) {
-                    final String errorMessage = "Client cannot be blocked because of non-closed savings account.";
-                    throw new InvalidClientStateTransitionException("block", "non-closed.savings.account", errorMessage);
-                }
-            }
-
             ClientBlockingReason clientBlockingReason = ClientBlockingReason.instance(clientId, blockingReasonId, currentUser.getId(),
                     blockedOnDate, blockingComment, currentUser.getId());
             this.clientBlockingReasonRepositoryWrapper.save(clientBlockingReason);
@@ -988,6 +952,7 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
             final Client client = this.clientRepository.findOneWithNotFoundDetection(clientId);
             final LocalDate undoBlockedOnDate = command.localDateValueOfParameterNamed(ClientApiConstants.undoBlockedOnDateParamName);
             final String undoBlockingComment = command.stringValueOfParameterNamed(ClientApiConstants.undoBlockingCommentParamName);
+            final Long blockingReasonId = command.longValueOfParameterNamed(ClientApiConstants.blockingReasonIdParamName);
 
             final Optional<BlockingReasonSetting> listasDeControlBlockingReason = manageBlockingReasonSettingsRepositoryWrapper
                     .getBlockingReasonSettingByReason("LISTAS DE CONTROL", "CLIENT").stream().findFirst();
@@ -1004,9 +969,9 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
             }
 
             List<ClientBlockingReason> clientBlockingReason = this.clientBlockingReasonRepositoryWrapper.findClientBlockingReason(clientId,
-                    client.getBlockingReason().getId());
+                    blockingReasonId);
 
-            if (clientBlockingReason.size() >= 1) {
+            if (!clientBlockingReason.isEmpty()) {
                 for (ClientBlockingReason item : clientBlockingReason) {
                     item.updateAfterUnblock(undoBlockedOnDate, undoBlockingComment, currentUser.getId());
                     clientBlockingReasonRepositoryWrapper.save(item);
@@ -1016,7 +981,7 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
 
             List<ClientBlockingReason> remainingClientBlockingReason = this.clientBlockingReasonRepositoryWrapper
                     .findClientBlockingReasonByClientId(clientId);
-            if (remainingClientBlockingReason.size() == 0) {
+            if (remainingClientBlockingReason.isEmpty()) {
                 client.undoBlock(currentUser, undoBlockedOnDate, undoBlockingComment);
                 this.clientRepository.saveAndFlush(client);
             }

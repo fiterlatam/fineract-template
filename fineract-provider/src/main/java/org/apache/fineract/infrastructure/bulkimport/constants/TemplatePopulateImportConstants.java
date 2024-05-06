@@ -64,7 +64,7 @@ public class TemplatePopulateImportConstants {
     public static final int FIRST_COLUMN_INDEX = 0;
 
     // Status column
-    public static final String STATUS_CELL_IMPORTED = "Importardo";
+    public static final String STATUS_CELL_IMPORTED = "Importado";
     public static final String STATUS_CREATION_FAILED = "Creation failed";
     public static final String STATUS_APPROVAL_FAILED = "Approval failed";
     public static final String STATUS_ACTIVATION_FAILED = "Activation failed";
