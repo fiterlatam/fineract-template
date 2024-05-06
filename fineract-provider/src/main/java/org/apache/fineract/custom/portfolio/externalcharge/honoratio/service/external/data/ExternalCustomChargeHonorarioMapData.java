@@ -16,13 +16,27 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.custom.portfolio.ally.domain;
+package org.apache.fineract.custom.portfolio.externalcharge.honoratio.service.external.data;
 
-import java.util.Optional;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import java.math.BigDecimal;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
-public interface ClientAllyRepository extends JpaRepository<ClientAlly, Long>, JpaSpecificationExecutor<ClientAlly> {
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
+@Getter
+@Setter
+public class ExternalCustomChargeHonorarioMapData {
 
-    Optional<ClientAlly> findByNit(String nit);
+    private String nit;
+    private String clientDocumentId;
+    private Long loanId;
+    private Integer loanInstallmentNr;
+    private BigDecimal feeTotalAmount;
+    private BigDecimal feeBaseAmount;
+    private BigDecimal feeVatAmount;
 }

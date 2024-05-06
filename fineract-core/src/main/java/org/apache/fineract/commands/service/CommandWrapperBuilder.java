@@ -3818,4 +3818,27 @@ public class CommandWrapperBuilder {
         return this;
     }
 
+    public CommandWrapperBuilder createCustomChargeHonorarioMap() {
+        this.actionName = "CREATE";
+        this.entityName = "CUSTOMCHARGEHONORARIOMAP";
+        this.href = "/customchargehonorariomap";
+        return this;
+    }
+
+    public CommandWrapperBuilder updateCustomChargeHonorarioMap(final Long id) {
+        this.actionName = "UPDATE";
+        this.entityName = "CUSTOMCHARGEHONORARIOMAP";
+        this.href = "/customchargehonorariomap/" + id;
+        this.entityId = id;
+        return this;
+    }
+
+    public CommandWrapperBuilder deleteCustomChargeHonorarioMap(final Long id) {
+        this.actionName = "DELETE";
+        this.entityName = "CUSTOMCHARGEHONORARIOMAP";
+        this.href = "/customchargehonorariomap/" + id;
+        this.entityId = id;
+        return this;
+    }
+
 }

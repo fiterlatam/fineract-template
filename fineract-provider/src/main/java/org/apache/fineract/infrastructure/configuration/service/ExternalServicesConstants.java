@@ -27,6 +27,10 @@ public final class ExternalServicesConstants {
 
     }
 
+    public static final String CUSTOM_CHARGE_HONORARIO_SERVICE_NAME = "CUSTOM_CHARGE_HONORARIO_PROVIDER";
+    public static final String CUSTOM_CHARGE_HONORARIO_URL = "URL";
+    public static final String CUSTOM_CHARGE_HONORARIO_API_KEY = "API_KEY";
+
     public static final String S3_SERVICE_NAME = "S3";
     public static final String S3_BUCKET_NAME = "s3_bucket_name";
     public static final String S3_ACCESS_KEY = "s3_access_key";
@@ -195,6 +199,38 @@ public final class ExternalServicesConstants {
 
         static {
             for (final NotificationJSONinputParams type : NotificationJSONinputParams.values()) {
+                values.add(type.value);
+            }
+        }
+
+        public static Set<String> getAllValues() {
+            return values;
+        }
+
+        @Override
+        public String toString() {
+            return name().toString().replaceAll("_", " ");
+        }
+
+        public String getValue() {
+            return this.value;
+        }
+    }
+
+    public enum CustomChargeHonorarioJSONinputParams {
+
+        URL("URL"), API_KEY("API_KEY");
+
+        private final String value;
+
+        CustomChargeHonorarioJSONinputParams(final String value) {
+            this.value = value;
+        }
+
+        private static final Set<String> values = new HashSet<>();
+
+        static {
+            for (final CustomChargeHonorarioJSONinputParams type : CustomChargeHonorarioJSONinputParams.values()) {
                 values.add(type.value);
             }
         }
