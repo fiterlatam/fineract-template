@@ -50,6 +50,7 @@ import org.apache.fineract.organisation.monetary.domain.ApplicationCurrencyRepos
 import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
 import org.apache.fineract.organisation.monetary.domain.Money;
 import org.apache.fineract.organisation.monetary.domain.MoneyHelper;
+import org.apache.fineract.organisation.workingdays.api.WorkingDaysApiConstants;
 import org.apache.fineract.organisation.workingdays.domain.WorkingDays;
 import org.apache.fineract.organisation.workingdays.domain.WorkingDaysRepositoryWrapper;
 import org.apache.fineract.organisation.workingdays.service.WorkingDaysUtil;
@@ -628,11 +629,11 @@ public class LoanScheduleAssembler {
         return loanApplicationTerms.toLoanProductRelatedDetail();
     }
 
-    public LoanScheduleModel assembleLoanScheduleFrom(final JsonElement element) {
+    public LoanScheduleModel assembleLoanScheduleFrom(final JsonElement element, final LoanProduct loanProduct) {
         // This method is getting called from calculate loan schedule.
         final LoanApplicationTerms loanApplicationTerms = assembleLoanTerms(element);
         // Get holiday details
-        final boolean isHolidayEnabled = this.configurationDomainService.isRescheduleRepaymentsOnHolidaysEnabled();
+        boolean isHolidayEnabled = this.configurationDomainService.isRescheduleRepaymentsOnHolidaysEnabled();
 
         final Long clientId = this.fromApiJsonHelper.extractLongNamed("clientId", element);
         final Long groupId = this.fromApiJsonHelper.extractLongNamed("groupId", element);
@@ -652,6 +653,13 @@ public class LoanScheduleAssembler {
         final List<Holiday> holidays = this.holidayRepository.findByOfficeIdAndGreaterThanDate(officeId, expectedDisbursementDate,
                 HolidayStatusType.ACTIVE.getValue());
         final WorkingDays workingDays = this.workingDaysRepository.findOne();
+
+        final Integer loanProductRepaymentReschedulingType = loanProduct.getRepaymentReschedulingType();
+        if (loanProductRepaymentReschedulingType != null && loanProductRepaymentReschedulingType.equals(1)) {
+            this.workingDaysRepository.detach(workingDays);
+            workingDays.update(WorkingDaysApiConstants.RECURRENCE_WEEKLY_ALL_DAYS, 1);
+            isHolidayEnabled = false;
+        }
 
         validateDisbursementDateIsOnNonWorkingDay(loanApplicationTerms.getExpectedDisbursementDate(), workingDays);
         validateDisbursementDateIsOnHoliday(loanApplicationTerms.getExpectedDisbursementDate(), isHolidayEnabled, holidays);
