@@ -24,6 +24,7 @@ import java.util.Collection;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.Setter;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.infrastructure.core.domain.ExternalId;
 import org.apache.fineract.organisation.monetary.data.CurrencyData;
@@ -36,11 +37,13 @@ import org.apache.fineract.portfolio.charge.domain.ChargeTimeType;
  */
 @Getter
 @Builder
+@Setter
 @AllArgsConstructor
 public class LoanChargeData {
 
     private final Long id;
     private final Long chargeId;
+    private String chargeName;
     private final String name;
     private final EnumOptionData chargeTimeType;
 

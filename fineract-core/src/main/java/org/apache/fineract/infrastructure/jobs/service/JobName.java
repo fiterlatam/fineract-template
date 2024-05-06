@@ -58,7 +58,9 @@ public enum JobName {
     PURGE_EXTERNAL_EVENTS("Purge External Events"), //
     PURGE_PROCESSED_COMMANDS("Purge Processed Commands"), //
     REACTIVATE_BLOCKED_APP_USERS("Reactivate Blocked App Users"), //
-    BLOCK_INACTIVE_CLIENTS("Block Inactive Clients");//
+    BLOCK_INACTIVE_CLIENTS("Block Inactive Clients"), //
+    LOAN_CUSTOM_CHARGE_HONORARIO_UPDATE("Loans - Custom Charge Honorario Update"), //
+    ;
 
     private final String name;
 
