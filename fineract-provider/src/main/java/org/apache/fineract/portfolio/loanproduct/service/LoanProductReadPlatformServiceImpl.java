@@ -28,6 +28,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.fineract.accounting.common.AccountingEnumerations;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.infrastructure.core.domain.ExternalId;
@@ -279,7 +280,8 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
                     + "lvi.maximum_gap as maximumGap, dbuc.id as delinquencyBucketId, dbuc.name as delinquencyBucketName, "
                     + "lp.can_use_for_topup as canUseForTopup, lp.is_equal_amortization as isEqualAmortization, "
                     + "lp.loan_schedule_type as loanScheduleType, lp.loan_schedule_processing_type as loanScheduleProcessingType, "
-                    + "lp.repayment_rescheduling_enum as repaymentReschedulingType " + " from m_product_loan lp "
+                    + "lp.repayment_rescheduling_enum as repaymentReschedulingType, "
+                    + "lp.max_client_inactivity_period as maxClientInactivityPeriod " + " from m_product_loan lp "
                     + " left join m_fund f on f.id = lp.fund_id "
                     + " left join m_product_loan_recalculation_details lpr on lpr.product_id=lp.id "
                     + " left join m_product_loan_guarantee_details lpg on lpg.loan_product_id=lp.id "
@@ -530,10 +532,11 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
             final Integer repaymentReschedulingTypeInt = JdbcSupport.getInteger(rs, "repaymentReschedulingType");
             final EnumOptionData repaymentReschedulingType = (repaymentReschedulingTypeInt == null) ? null
                     : WorkingDaysEnumerations.workingDaysStatusType(repaymentReschedulingTypeInt);
+            final Integer maxClientInactivityPeriod = rs.getInt("maxClientInactivityPeriod");
 
-            return new LoanProductData(id, name, shortName, description, currency, principal, minPrincipal, maxPrincipal, tolerance,
-                    numberOfRepayments, minNumberOfRepayments, maxNumberOfRepayments, repaymentEvery, interestRatePerPeriod,
-                    minInterestRatePerPeriod, maxInterestRatePerPeriod, annualInterestRate, repaymentFrequencyType,
+            LoanProductData loanProductData = new LoanProductData(id, name, shortName, description, currency, principal, minPrincipal,
+                    maxPrincipal, tolerance, numberOfRepayments, minNumberOfRepayments, maxNumberOfRepayments, repaymentEvery,
+                    interestRatePerPeriod, minInterestRatePerPeriod, maxInterestRatePerPeriod, annualInterestRate, repaymentFrequencyType,
                     interestRateFrequencyType, amortizationType, interestType, interestCalculationPeriodType,
                     allowPartialPeriodInterestCalcualtion, fundId, fundName, transactionStrategyCode, transactionStrategyName,
                     graceOnPrincipalPayment, recurringMoratoriumOnPrincipalPeriods, graceOnInterestPayment, graceOnInterestCharged,
@@ -553,6 +556,9 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
                     enableAutoRepaymentForDownPayment, advancedPaymentData, creditAllocationData, repaymentStartDateType,
                     enableInstallmentLevelDelinquency, loanScheduleType.asEnumOptionData(), loanScheduleProcessingType.asEnumOptionData(),
                     repaymentReschedulingType);
+            loanProductData.setMaxClientInactivityPeriod(maxClientInactivityPeriod);
+
+            return loanProductData;
         }
     }
 
@@ -853,4 +859,13 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
         }
     }
 
+    @Override
+    public Collection<Pair<Long, Integer>> retrieveLoanProductClientInActivityConfiguration() {
+        final String query = "Select id,max_client_inactivity_period from m_product_loan where max_client_inactivity_period is not null";
+        return this.jdbcTemplate.query(query, (rs, rowNum) -> {
+            final Long id = rs.getLong("id");
+            final Integer maxClientInactivityPeriod = rs.getInt("max_client_inactivity_period");
+            return Pair.of(id, maxClientInactivityPeriod);
+        });
+    }
 }

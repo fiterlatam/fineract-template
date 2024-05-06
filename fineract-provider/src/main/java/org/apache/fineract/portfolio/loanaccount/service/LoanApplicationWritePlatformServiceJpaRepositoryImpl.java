@@ -1164,6 +1164,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 }
                 officeSpecificLoanProductValidation(existingLoanApplication.getLoanProduct().getId(), OfficeId);
             }
+            existingLoanApplication.getLoanCustomizationDetail().recordActivity();
 
             // updating loan interest recalculation details throwing null
             // pointer exception after saveAndFlush
@@ -1405,6 +1406,8 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 BigDecimal netDisbursalAmount = loan.getApprovedPrincipal().subtract(loanOutstanding);
                 loan.adjustNetDisbursalAmount(netDisbursalAmount);
             }
+
+            loan.getLoanCustomizationDetail().recordActivity();
 
             saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
 

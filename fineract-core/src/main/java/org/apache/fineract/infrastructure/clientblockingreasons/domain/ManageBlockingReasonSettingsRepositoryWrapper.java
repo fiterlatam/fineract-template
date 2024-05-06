@@ -58,6 +58,11 @@ public class ManageBlockingReasonSettingsRepositoryWrapper {
         return this.repository.getBlockingReasonSettingByReason(reason, level);
     }
 
+    public BlockingReasonSetting getSingleBlockingReasonSettingByReason(String reason, String level) {
+        return getBlockingReasonSettingByReason(reason, level).stream().findFirst()
+                .orElseThrow(() -> new BlockReasonSettingNotFoundException(reason, level));
+    }
+
     public Optional<BlockingReasonSetting> findById(Long reasonId) {
         return this.repository.findById(reasonId);
     }

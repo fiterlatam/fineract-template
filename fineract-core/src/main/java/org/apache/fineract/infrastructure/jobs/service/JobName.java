@@ -57,7 +57,8 @@ public enum JobName {
     SEND_ASYNCHRONOUS_EVENTS("Send Asynchronous Events"), //
     PURGE_EXTERNAL_EVENTS("Purge External Events"), //
     PURGE_PROCESSED_COMMANDS("Purge Processed Commands"), //
-    REACTIVATE_BLOCKED_APP_USERS("Reactivate Blocked App Users");
+    REACTIVATE_BLOCKED_APP_USERS("Reactivate Blocked App Users"), //
+    BLOCK_INACTIVE_CLIENTS("Block Inactive Clients");//
 
     private final String name;
 
