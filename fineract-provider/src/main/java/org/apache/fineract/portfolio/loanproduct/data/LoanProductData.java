@@ -1083,6 +1083,7 @@ public class LoanProductData implements Serializable {
         this.repaymentReschedulingTypeOptions = repaymentReschedulingTypeOptions;
         this.repaymentReschedulingTypeConfig = repaymentReschedulingTypeConfig;
         this.repaymentReschedulingType = productData.repaymentReschedulingType;
+        this.maxClientInactivityPeriod = productData.maxClientInactivityPeriod;
     }
 
     private Collection<ChargeData> nullIfEmpty(final Collection<ChargeData> charges) {
