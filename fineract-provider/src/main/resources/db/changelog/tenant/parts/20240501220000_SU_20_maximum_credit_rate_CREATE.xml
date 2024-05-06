@@ -85,4 +85,34 @@
             <column name="appliedon_userid" valueNumeric="1"/>
         </insert>
     </changeSet>
+
+    <changeSet author="fineract" id="5">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_maximum_credit_rate_configuration" columnName="current_interest_rate"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_maximum_credit_rate_configuration">
+            <column name="current_interest_rate" type="DECIMAL(10, 4)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="6">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_maximum_credit_rate_configuration" columnName="overdue_interest_rate"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_maximum_credit_rate_configuration">
+            <column name="overdue_interest_rate" type="DECIMAL(10, 4)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="7">
+        <sql>
+            <![CDATA[
+                UPDATE m_maximum_credit_rate_configuration SET current_interest_rate  = 2.5959, overdue_interest_rate = 2.5959 WHERE id IS NOT NULL;
+            ]]>
+        </sql>
+    </changeSet>
 </databaseChangeLog>

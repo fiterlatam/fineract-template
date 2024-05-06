@@ -836,6 +836,8 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
                     mcrc.annual_nominal_rate AS "annualNominalRate",
                     mcrc.monthly_nominal_rate AS "monthlyNominalRate",
                     mcrc.daily_nominal_rate AS "dailyNominalRate",
+                    mcrc.current_interest_rate AS "currentInterestRate",
+                    mcrc.overdue_interest_rate AS "overdueInterestRate",
                     mcrc.appliedon_date AS "appliedOnDate",
                     CONCAT(ma.firstname, ' ', ma.lastname) AS "appliedByUsername"
                     FROM m_maximum_credit_rate_configuration mcrc
@@ -852,10 +854,12 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
             final BigDecimal annualNominalRate = rs.getBigDecimal("annualNominalRate");
             final BigDecimal monthlyNominalRate = rs.getBigDecimal("monthlyNominalRate");
             final BigDecimal dailyNominalRate = rs.getBigDecimal("dailyNominalRate");
+            final BigDecimal currentInterestRate = rs.getBigDecimal("currentInterestRate");
+            final BigDecimal overdueInterestRate = rs.getBigDecimal("overdueInterestRate");
             final LocalDate appliedOnDate = JdbcSupport.getLocalDate(rs, "appliedOnDate");
             return MaximumCreditRateConfigurationData.builder().id(id).appliedByUsername(appliedByUsername).eaRate(eaRate)
                     .annualNominalRate(annualNominalRate).monthlyNominalRate(monthlyNominalRate).dailyNominalRate(dailyNominalRate)
-                    .appliedOnDate(appliedOnDate).build();
+                    .currentInterestRate(currentInterestRate).overdueInterestRate(overdueInterestRate).appliedOnDate(appliedOnDate).build();
         }
     }
 
