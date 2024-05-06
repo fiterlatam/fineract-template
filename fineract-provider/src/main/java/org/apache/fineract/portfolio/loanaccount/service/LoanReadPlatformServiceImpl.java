@@ -350,7 +350,6 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
 
         final AppUser currentUser = this.context.authenticatedUser();
         final String hierarchy = currentUser.getOffice().getHierarchy();
-        final String hierarchySearchString = hierarchy + "%";
 
         final StringBuilder sqlBuilder = new StringBuilder(200);
         sqlBuilder.append("select " + sqlGenerator.calcFoundRows() + " ");
@@ -363,7 +362,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
         // but that at present is an edge case
         sqlBuilder.append(" join m_office o on (o.id = c.office_id or o.id = g.office_id) ");
         sqlBuilder.append(" left join m_office transferToOffice on transferToOffice.id = c.transfer_to_office_id ");
-        sqlBuilder.append(" where ( o.hierarchy like ? or transferToOffice.hierarchy like ?)");
+        sqlBuilder.append(" where (o.hierarchy LIKE CONCAT(?, '%') OR ? like CONCAT(o.hierarchy, '%') " +
+                "OR transferToOffice.hierarchy LIKE CONCAT(?, '%') OR ? like CONCAT(transferToOffice.hierarchy, '%'))");
 
         final Collection<AgencyData> agencyOptions = this.agencyReadPlatformService.retrieveAllByUser();
         final Set<Long> agencyIds = agencyOptions.stream().map(AgencyData::getId).collect(Collectors.toSet());
@@ -372,12 +372,12 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
             sqlBuilder.append(" AND agency.id IN ( ").append(agencyIdParams).append(") ");
         }
 
-        int arrayPos = 2;
+        int arrayPos = 4;
         List<Object> extraCriterias = new ArrayList<>();
-        extraCriterias.add(hierarchySearchString);
-        extraCriterias.add(hierarchySearchString);
-//        extraCriterias.add(hierarchy);
-//        extraCriterias.add(hierarchy);
+        extraCriterias.add(hierarchy);
+        extraCriterias.add(hierarchy);
+        extraCriterias.add(hierarchy);
+        extraCriterias.add(hierarchy);
 
         if (searchParameters != null) {
             final LocalDate disbursementStartDate = searchParameters.getDisbursementStartDate();
