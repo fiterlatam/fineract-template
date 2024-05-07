@@ -230,6 +230,11 @@ public class LoanProduct extends AbstractPersistableCustom {
     @Column(name = "max_client_inactivity_period")
     private Integer maxClientInactivityPeriod;
 
+    @lombok.Setter
+    @lombok.Getter
+    @Column(name = "overdue_amount_for_arrears")
+    private BigDecimal overDueAmountForArrears;
+
     public static LoanProduct assembleFromJson(final Fund fund, final String loanTransactionProcessingStrategy,
             final List<Charge> productCharges, final JsonCommand command, final AprCalculator aprCalculator, FloatingRate floatingRate,
             final List<Rate> productRates, List<LoanProductPaymentAllocationRule> loanProductPaymentAllocationRules,
@@ -439,6 +444,8 @@ public class LoanProduct extends AbstractPersistableCustom {
 
         final Integer maxClientInActivityPeriod = command.integerValueOfParameterNamed(LoanProductConstants.MAX_CLIENT_INACTIVITY_PERIOD);
 
+        final BigDecimal overDueAmountForArrears = command.bigDecimalValueOfParameterNamed(LoanProductConstants.OVERDUE_AMOUNT_FOR_ARREARS);
+
         LoanProduct product = new LoanProduct(fund, loanTransactionProcessingStrategy, loanProductPaymentAllocationRules,
                 loanProductCreditAllocationRules, name, shortName, description, currency, principal, minPrincipal, maxPrincipal,
                 interestRatePerPeriod, minInterestRatePerPeriod, maxInterestRatePerPeriod, interestFrequencyType, annualInterestRate,
@@ -461,6 +468,7 @@ public class LoanProduct extends AbstractPersistableCustom {
                 repaymentReschedulingType);
 
         product.setMaxClientInactivityPeriod(maxClientInActivityPeriod);
+        product.setOverDueAmountForArrears(overDueAmountForArrears);
         return product;
 
     }
@@ -1389,6 +1397,12 @@ public class LoanProduct extends AbstractPersistableCustom {
             final int newValue = command.integerValueOfParameterNamed(LoanProductConstants.MAX_CLIENT_INACTIVITY_PERIOD);
             actualChanges.put(LoanProductConstants.MAX_CLIENT_INACTIVITY_PERIOD, newValue);
             this.maxClientInactivityPeriod = newValue;
+        }
+
+        if (command.isChangeInBigDecimalParameterNamed(LoanProductConstants.OVERDUE_AMOUNT_FOR_ARREARS, this.overDueAmountForArrears)) {
+            final BigDecimal newValue = command.bigDecimalValueOfParameterNamed(LoanProductConstants.OVERDUE_AMOUNT_FOR_ARREARS);
+            actualChanges.put(LoanProductConstants.OVERDUE_AMOUNT_FOR_ARREARS, newValue);
+            this.overDueAmountForArrears = newValue;
         }
 
         return actualChanges;

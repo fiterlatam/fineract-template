@@ -217,7 +217,11 @@ public class LoanArrearsAgingServiceImpl implements LoanArrearsAgingService {
                     }
                 }
             }
-            if (principalOverdue.compareTo(BigDecimal.ZERO) > 0) {
+
+            final BigDecimal overDueAmountForArrearsConsideration = retrieveOverDueAmountForArrearsConsideration(loanId);
+            if (principalOverdue.compareTo(BigDecimal.ZERO) > 0
+                    && (overDueAmountForArrearsConsideration == null || overDueAmountForArrearsConsideration
+                            .compareTo(principalOverdue.add(interestOverdue).add(feeOverdue).add(penaltyOverdue)) < 1)) {
                 String sqlStatement = null;
                 if (isInsertStatement) {
                     sqlStatement = constructInsertStatement(loanId, principalOverdue, interestOverdue, feeOverdue, penaltyOverdue,
@@ -333,6 +337,15 @@ public class LoanArrearsAgingServiceImpl implements LoanArrearsAgingService {
                 loanSchedulePeriodDataList.addAll(updatedPeriodData);
             }
         }
+    }
+
+    private BigDecimal retrieveOverDueAmountForArrearsConsideration(Long loanId) {
+        final String query = """
+                select mpl.overdue_amount_for_arrears from m_loan ml inner join m_product_loan mpl
+                on ml.product_id = mpl.id where m_loan.id = ?
+                """;
+        return jdbcTemplate.queryForObject(query, new Object[] { loanId }, new int[] { java.sql.Types.BIGINT },
+                (rs, rowNum) -> JdbcSupport.getBigDecimalDefaultToNullIfZero(rs, "overdue_amount_for_arrears"));
     }
 
     private static final class OriginalScheduleExtractor implements ResultSetExtractor<Map<Long, List<LoanSchedulePeriodData>>> {
