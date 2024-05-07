@@ -228,6 +228,9 @@ public class LoanProductData implements Serializable {
     @lombok.Setter
     private Integer maxClientInactivityPeriod;
 
+    @lombok.Setter
+    private BigDecimal overdueAmountForArrearsConsideration;
+
     /**
      * Used when returning lookup information about loan product for dropdowns.
      */
@@ -1084,6 +1087,7 @@ public class LoanProductData implements Serializable {
         this.repaymentReschedulingTypeConfig = repaymentReschedulingTypeConfig;
         this.repaymentReschedulingType = productData.repaymentReschedulingType;
         this.maxClientInactivityPeriod = productData.maxClientInactivityPeriod;
+        this.overdueAmountForArrearsConsideration = productData.overdueAmountForArrearsConsideration;
     }
 
     private Collection<ChargeData> nullIfEmpty(final Collection<ChargeData> charges) {

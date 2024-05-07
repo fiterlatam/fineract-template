@@ -164,4 +164,6 @@ public interface LoanProductConstants {
     String ADVANCED_PAYMENT_ALLOCATION_STRATEGY = "advanced-payment-allocation-strategy";
 
     String MAX_CLIENT_INACTIVITY_PERIOD = "maxClientInactivityPeriod";
+
+    String OVERDUE_AMOUNT_FOR_ARREARS = "overdueAmountForArrearsConsideration";
 }

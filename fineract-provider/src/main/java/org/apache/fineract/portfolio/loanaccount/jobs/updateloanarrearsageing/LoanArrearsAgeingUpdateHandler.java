@@ -119,31 +119,38 @@ public class LoanArrearsAgeingUpdateHandler {
         final String penaltyChargesOverdueCalculationSql = "SUM(COALESCE(mr.penalty_charges_amount, 0) - coalesce(mr.penalty_charges_writtenoff_derived, 0) - "
                 + "coalesce(mr.penalty_charges_waived_derived, 0) - coalesce(mr.penalty_charges_completed_derived, 0))";
 
+        final String amountsSummationQuery = "WITH overdue_amounts AS (SELECT mr.loan_id as loanId, " + principalOverdueCalculationSql
+                + " as principal_overdue, " + interestOverdueCalculationSql + " as interest_overdue, " + feeChargesOverdueCalculationSql
+                + " as fee_charges_overdue, " + penaltyChargesOverdueCalculationSql + " as penalty_charges_overdue, "
+                + " MIN(mr.duedate) AS overdue_since_date" + " FROM m_loan_repayment_schedule mr "
+                + " INNER JOIN m_loan ml ON ml.id = mr.loan_id " + " WHERE     mr.completed_derived IS FALSE AND mr.duedate < "
+                + sqlGenerator.subDate(sqlGenerator.currentBusinessDate(), "COALESCE(ml.grace_on_arrears_ageing, 0)", "day")
+                + "    GROUP BY mr.loan_id) ";
+
+        insertSqlStatementBuilder.append(amountsSummationQuery);
         insertSqlStatementBuilder.append(
                 "INSERT INTO m_loan_arrears_aging(loan_id,principal_overdue_derived,interest_overdue_derived,fee_charges_overdue_derived,penalty_charges_overdue_derived,total_overdue_derived,overdue_since_date_derived)");
-        insertSqlStatementBuilder.append("select ml.id as loanId,");
-        insertSqlStatementBuilder.append(principalOverdueCalculationSql + " as principal_overdue_derived,");
-        insertSqlStatementBuilder.append(interestOverdueCalculationSql + " as interest_overdue_derived,");
-        insertSqlStatementBuilder.append(feeChargesOverdueCalculationSql + " as fee_charges_overdue_derived,");
-        insertSqlStatementBuilder.append(penaltyChargesOverdueCalculationSql + " as penalty_charges_overdue_derived,");
-        insertSqlStatementBuilder.append(principalOverdueCalculationSql + "+" + interestOverdueCalculationSql + "+");
-        insertSqlStatementBuilder
-                .append(feeChargesOverdueCalculationSql + "+" + penaltyChargesOverdueCalculationSql + " as total_overdue_derived,");
-        insertSqlStatementBuilder.append("MIN(mr.duedate) as overdue_since_date_derived ");
-        insertSqlStatementBuilder.append(" FROM m_loan ml ");
-        insertSqlStatementBuilder.append(" INNER JOIN m_loan_repayment_schedule mr on mr.loan_id = ml.id ");
-        insertSqlStatementBuilder.append(" left join m_product_loan_recalculation_details prd on prd.product_id = ml.product_id ");
-        insertSqlStatementBuilder.append(" WHERE ml.loan_status_id = 300 ");// active
+        insertSqlStatementBuilder.append("SELECT ml.id AS loanId,");
+        insertSqlStatementBuilder.append(" COALESCE(oa.principal_overdue, 0) AS principal_overdue_derived,");
+        insertSqlStatementBuilder.append(" COALESCE(oa.interest_overdue, 0) AS interest_overdue_derived,");
+        insertSqlStatementBuilder.append(" COALESCE(oa.fee_charges_overdue, 0) AS fee_charges_overdue_derived,");
+        insertSqlStatementBuilder.append(" COALESCE(oa.penalty_charges_overdue, 0) AS penalty_charges_overdue_derived,");
+        insertSqlStatementBuilder.append(
+                " COALESCE(oa.principal_overdue, 0) + COALESCE(oa.interest_overdue, 0) + COALESCE(oa.fee_charges_overdue, 0) + COALESCE(oa.penalty_charges_overdue, 0) AS total_overdue_derived,");
+        insertSqlStatementBuilder.append(" oa.overdue_since_date AS overdue_since_date_derived");
+        insertSqlStatementBuilder.append(" FROM m_loan ml");
+        insertSqlStatementBuilder.append(" INNER JOIN  overdue_amounts oa ON ml.id = oa.loanId");
+        insertSqlStatementBuilder.append(" INNER JOIN  m_product_loan mpl ON mpl.id = ml.product_id");
+        insertSqlStatementBuilder.append(" LEFT JOIN  m_product_loan_recalculation_details prd ON prd.product_id = ml.product_id");
+        insertSqlStatementBuilder.append(" WHERE  ml.loan_status_id = 300");
         if (!isForAllLoans) {
-            insertSqlStatementBuilder.append(" and ml.id IN (?)");
+            insertSqlStatementBuilder.append(" AND ml.id = ?");
         }
-        insertSqlStatementBuilder.append(" and mr.completed_derived is false ");
-        insertSqlStatementBuilder.append(" and mr.duedate < ")
-                .append(sqlGenerator.subDate(sqlGenerator.currentBusinessDate(), "COALESCE(ml.grace_on_arrears_ageing, 0)", "day"))
-                .append(" ");
-        insertSqlStatementBuilder
-                .append(" and (prd.arrears_based_on_original_schedule = false or prd.arrears_based_on_original_schedule is null) ");
-        insertSqlStatementBuilder.append(" GROUP BY ml.id");
+        insertSqlStatementBuilder.append(" and (prd.arrears_based_on_original_schedule = false");
+        insertSqlStatementBuilder.append(" or prd.arrears_based_on_original_schedule is null)");
+        insertSqlStatementBuilder.append(" AND (mpl.overdue_amount_for_arrears IS NULL OR mpl.overdue_amount_for_arrears <");
+        insertSqlStatementBuilder.append(
+                " COALESCE(oa.principal_overdue, 0) + COALESCE(oa.interest_overdue, 0) + COALESCE(oa.fee_charges_overdue, 0) + COALESCE(oa.penalty_charges_overdue, 0))");
         return insertSqlStatementBuilder.toString();
     }
 
@@ -229,9 +236,9 @@ public class LoanArrearsAgeingUpdateHandler {
             final StringBuilder scheduleDetail = new StringBuilder();
             scheduleDetail.append("select ml.id as loanId, mr.duedate as dueDate, mr.principal_amount as principalAmount, ");
             scheduleDetail.append(
-                    "mr.interest_amount as interestAmount, mr.fee_charges_amount as feeAmount, mr.penalty_charges_amount as penaltyAmount  ");
+                    "mr.interest_amount as interestAmount, mr.fee_charges_amount as feeAmount, mr.penalty_charges_amount as penaltyAmount, mpl.overdue_amount_for_arrears as overDueAmountForArrearsConsideration ");
             scheduleDetail.append("from m_loan ml  INNER JOIN m_loan_repayment_schedule_history mr on mr.loan_id = ml.id ");
-            scheduleDetail.append("where mr.duedate  < "
+            scheduleDetail.append(" inner join m_product_loan mpl on mpl.id = ml.product_id where mr.duedate  < "
                     + sqlGenerator.subDate(sqlGenerator.currentBusinessDate(), "COALESCE(ml.grace_on_arrears_ageing, 0)", "day") + " and ");
             scheduleDetail.append("ml.id IN(:loanIds)").append(" and  mr.version = (");
             scheduleDetail.append("select max(lrs.version) from m_loan_repayment_schedule_history lrs where mr.loan_id = lrs.loan_id");
