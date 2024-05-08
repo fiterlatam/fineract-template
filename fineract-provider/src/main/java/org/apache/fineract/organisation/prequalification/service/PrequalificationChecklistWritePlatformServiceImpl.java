@@ -181,7 +181,7 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
 
         List<PrequalificationStatusLog> statusLogList = this.preQualificationStatusLogRepository.groupStatusLogs(fromStatus, prequalificationGroup);
         PrequalificationStatusLog statusLog = null;
-        if (!statusLogList.isEmpty() && statusLogList.get(0).getSubStatus().equals(PrequalificationSubStatus.RE_VALIDATE.getValue())) {
+        if (!statusLogList.isEmpty() && statusLogList.get(0).getSubStatus()!=null && statusLogList.get(0).getSubStatus().equals(PrequalificationSubStatus.RE_VALIDATE.getValue())) {
             statusLog = statusLogList.get(0);
             statusLog.updateSubStatus(PrequalificationSubStatus.IN_PROGRESS.getValue());
 
