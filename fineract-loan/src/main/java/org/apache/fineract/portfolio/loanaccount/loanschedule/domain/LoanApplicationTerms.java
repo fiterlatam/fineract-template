@@ -73,7 +73,7 @@ public final class LoanApplicationTerms {
     private final DayOfWeekType weekDayType;
     private final AmortizationMethod amortizationMethod;
 
-    private final InterestMethod interestMethod;
+    private InterestMethod interestMethod;
     private BigDecimal interestRatePerPeriod;
     private final PeriodFrequencyType interestRatePeriodFrequencyType;
     private BigDecimal annualNominalInterestRate;
@@ -222,6 +222,7 @@ public final class LoanApplicationTerms {
     private Money disbursedPrincipal;
     private final LoanScheduleType loanScheduleType;
     private final LoanScheduleProcessingType loanScheduleProcessingType;
+    private boolean extendTermForMonthlyRepayment;
 
     public static LoanApplicationTerms assembleFrom(final ApplicationCurrency currency, final Integer loanTermFrequency,
             final PeriodFrequencyType loanTermPeriodFrequencyType, final Integer numberOfRepayments, final Integer repaymentEvery,
@@ -1369,6 +1370,10 @@ public final class LoanApplicationTerms {
         return this.interestMethod;
     }
 
+    public void setInterestMethod(InterestMethod interestMethod) {
+        this.interestMethod = interestMethod;
+    }
+
     public AmortizationMethod getAmortizationMethod() {
         return this.amortizationMethod;
     }
@@ -1827,5 +1832,13 @@ public final class LoanApplicationTerms {
 
     public Money getDownPaymentAmount() {
         return downPaymentAmount;
+    }
+
+    public boolean getExtendTermForMonthlyRepayment() {
+        return extendTermForMonthlyRepayment;
+    }
+
+    public void setExtendTermForMonthlyRepayment(Boolean extendTermForMonthlyRepayment) {
+        this.extendTermForMonthlyRepayment = extendTermForMonthlyRepayment;
     }
 }

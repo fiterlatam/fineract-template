@@ -341,6 +341,7 @@ public class LoanAssembler {
         loanApplication.setLoanAssignor(loanAssignor);
 
         final LoanApplicationTerms loanApplicationTerms = this.loanScheduleAssembler.assembleLoanTerms(element);
+        loanApplicationTerms.setExtendTermForMonthlyRepayment(loanProduct.getExtendTermForMonthlyRepayments());
         boolean isHolidayEnabled = this.configurationDomainService.isRescheduleRepaymentsOnHolidaysEnabled();
         final List<Holiday> holidays = this.holidayRepository.findByOfficeIdAndGreaterThanDate(loanApplication.getOfficeId(),
                 loanApplicationTerms.getExpectedDisbursementDate(), HolidayStatusType.ACTIVE.getValue());

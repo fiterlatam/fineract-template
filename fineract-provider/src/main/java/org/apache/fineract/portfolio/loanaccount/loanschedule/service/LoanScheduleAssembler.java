@@ -632,6 +632,7 @@ public class LoanScheduleAssembler {
     public LoanScheduleModel assembleLoanScheduleFrom(final JsonElement element, final LoanProduct loanProduct) {
         // This method is getting called from calculate loan schedule.
         final LoanApplicationTerms loanApplicationTerms = assembleLoanTerms(element);
+        loanApplicationTerms.setExtendTermForMonthlyRepayment(loanProduct.getExtendTermForMonthlyRepayments());
         // Get holiday details
         boolean isHolidayEnabled = this.configurationDomainService.isRescheduleRepaymentsOnHolidaysEnabled();
 
@@ -659,6 +660,13 @@ public class LoanScheduleAssembler {
             this.workingDaysRepository.detach(workingDays);
             workingDays.update(WorkingDaysApiConstants.RECURRENCE_WEEKLY_ALL_DAYS, 1);
             isHolidayEnabled = false;
+        }
+
+        if (loanApplicationTerms.getAmortizationMethod().isCapitalAtEnd()) {
+            Integer principalGrace = loanApplicationTerms.getLoanTermFrequency() - 1;
+            loanApplicationTerms.updatePrincipalGrace(principalGrace);
+            loanApplicationTerms.setEqualAmortization(false);
+            loanApplicationTerms.setInterestMethod(InterestMethod.DECLINING_BALANCE);
         }
 
         validateDisbursementDateIsOnNonWorkingDay(loanApplicationTerms.getExpectedDisbursementDate(), workingDays);
