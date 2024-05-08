@@ -180,7 +180,7 @@ public final class LoanProductDataValidator {
             LoanProductConstants.ENABLE_AUTO_REPAYMENT_DOWN_PAYMENT, LoanProductConstants.REPAYMENT_START_DATE_TYPE,
             LoanProductConstants.ENABLE_INSTALLMENT_LEVEL_DELINQUENCY, LoanProductConstants.LOAN_SCHEDULE_TYPE,
             LoanProductConstants.LOAN_SCHEDULE_PROCESSING_TYPE, LoanProductConstants.REPAYMENT_RESCHEDULING_TYPE,
-            LoanProductConstants.MAX_CLIENT_INACTIVITY_PERIOD));
+            LoanProductConstants.MAX_CLIENT_INACTIVITY_PERIOD, LoanProductConstants.OVERDUE_AMOUNT_FOR_ARREARS));
 
     private static final Set<String> MAXIMUM_RATE_SUPPORTED_PARAMETERS = new HashSet<>(
             Arrays.asList("locale", "dateFormat", "eaRate", "annualNominalRate", "appliedBy", "appliedOnDate", "dailyNominalRate",
@@ -828,6 +828,20 @@ public final class LoanProductDataValidator {
                 && LoanScheduleProcessingType.HORIZONTAL.name().equals(loanScheduleProcessingType)) {
             advancedPaymentAllocationsValidator.checkGroupingOfAllocationRules(advancedPaymentAllocationsJsonParser
                     .assembleLoanProductPaymentAllocationRules(command, transactionProcessingStrategyCode));
+        }
+
+        if (this.fromApiJsonHelper.parameterExists(LoanProductConstants.OVERDUE_AMOUNT_FOR_ARREARS, element)) {
+            final BigDecimal overdueAmountForNPA = this.fromApiJsonHelper
+                    .extractBigDecimalWithLocaleNamed(LoanProductConstants.OVERDUE_AMOUNT_FOR_ARREARS, element);
+            baseDataValidator.reset().parameter(LoanProductConstants.OVERDUE_AMOUNT_FOR_ARREARS).value(overdueAmountForNPA).ignoreIfNull()
+                    .zeroOrPositiveAmount();
+        }
+
+        if (this.fromApiJsonHelper.parameterExists(LoanProductConstants.MAX_CLIENT_INACTIVITY_PERIOD, element)) {
+            final Integer maxClientInactivityPeriod = this.fromApiJsonHelper
+                    .extractIntegerWithLocaleNamed(LoanProductConstants.MAX_CLIENT_INACTIVITY_PERIOD, element);
+            baseDataValidator.reset().parameter(LoanProductConstants.MAX_CLIENT_INACTIVITY_PERIOD).value(maxClientInactivityPeriod)
+                    .ignoreIfNull().integerGreaterThanZero();
         }
 
         throwExceptionIfValidationWarningsExist(dataValidationErrors);
@@ -1860,6 +1874,20 @@ public final class LoanProductDataValidator {
             final BigDecimal overdueInterestRate = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed(OVERDUE_INTEREST_RATE, element);
             baseDataValidator.reset().parameter(OVERDUE_INTEREST_RATE).value(overdueInterestRate).inMinAndMaxAmountRange(BigDecimal.ZERO,
                     BigDecimal.valueOf(100));
+        }
+
+        if (this.fromApiJsonHelper.parameterExists(LoanProductConstants.OVERDUE_AMOUNT_FOR_ARREARS, element)) {
+            final BigDecimal overdueAmountForNPA = this.fromApiJsonHelper
+                    .extractBigDecimalWithLocaleNamed(LoanProductConstants.OVERDUE_AMOUNT_FOR_ARREARS, element);
+            baseDataValidator.reset().parameter(LoanProductConstants.OVERDUE_AMOUNT_FOR_ARREARS).value(overdueAmountForNPA).ignoreIfNull()
+                    .zeroOrPositiveAmount();
+        }
+
+        if (this.fromApiJsonHelper.parameterExists(LoanProductConstants.MAX_CLIENT_INACTIVITY_PERIOD, element)) {
+            final Integer maxClientInactivityPeriod = this.fromApiJsonHelper
+                    .extractIntegerWithLocaleNamed(LoanProductConstants.MAX_CLIENT_INACTIVITY_PERIOD, element);
+            baseDataValidator.reset().parameter(LoanProductConstants.MAX_CLIENT_INACTIVITY_PERIOD).value(maxClientInactivityPeriod)
+                    .ignoreIfNull().integerGreaterThanZero();
         }
         throwExceptionIfValidationWarningsExist(dataValidationErrors);
     }
