@@ -81,6 +81,7 @@ import org.apache.fineract.organisation.prequalification.domain.Prequalification
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationStatusRangeRepository;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationSubStatus;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationType;
+import org.apache.fineract.organisation.prequalification.exception.ApprovedAmountGreaterThanRequestedException;
 import org.apache.fineract.organisation.prequalification.exception.GroupMemberPreQualificationNotFound;
 import org.apache.fineract.organisation.prequalification.exception.MemberNotSelectedException;
 import org.apache.fineract.organisation.prequalification.exception.MemberSubmittedLoanNotFoundException;
@@ -98,6 +99,7 @@ import org.apache.fineract.portfolio.loanaccount.domain.GroupLoanAdditionalsRepo
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
 import org.apache.fineract.portfolio.loanaccount.service.LoanApplicationWritePlatformService;
+import org.apache.fineract.portfolio.loanaccount.service.LoanReadPlatformService;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProduct;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductOwnerType;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductRepository;
@@ -145,6 +147,8 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
     private final LoanApplicationWritePlatformService loanApplicationWritePlatformService;
     private final GroupLoanAdditionalsRepository groupLoanAdditionalsRepository;
     private final LoanRepositoryWrapper loanRepositoryWrapper;
+    private final PrequalificationChecklistWritePlatformService prequalificationChecklistWritePlatformService;
+    private final LoanReadPlatformService loanReadPlatformService;
 
     @Autowired
     public PrequalificationWritePlatformServiceImpl(final PlatformSecurityContext context,
@@ -163,6 +167,8 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             final PrequalificationStatusRangeRepository prequalificationStatusRangeRepository,
             final PrequalificationReadPlatformService prequalificationReadPlatformService, FromJsonHelper fromApiJsonHelper,
             final LoanApplicationWritePlatformService loanApplicationWritePlatformService,
+            final PrequalificationChecklistWritePlatformService prequalificationChecklistWritePlatformService,
+            final LoanReadPlatformService loanReadPlatformService,
             final GroupLoanAdditionalsRepository groupLoanAdditionalsRepository, final LoanRepositoryWrapper loanRepositoryWrapper) {
         this.context = context;
         this.dataValidator = dataValidator;
@@ -188,6 +194,8 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         this.loanApplicationWritePlatformService = loanApplicationWritePlatformService;
         this.groupLoanAdditionalsRepository = groupLoanAdditionalsRepository;
         this.loanRepositoryWrapper = loanRepositoryWrapper;
+        this.prequalificationChecklistWritePlatformService = prequalificationChecklistWritePlatformService;
+        this.loanReadPlatformService = loanReadPlatformService;
     }
 
     @Transactional
@@ -538,22 +546,29 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         final Map<String, Object> changes = member.update(command);
         if (changes.containsKey(PrequalificatoinApiConstants.approvedAmountParamName)) {
             final BigDecimal newValue = command.bigDecimalValueOfParameterNamed(PrequalificatoinApiConstants.approvedAmountParamName);
+            if (newValue.compareTo(member.getOriginalAmount()) > 0) {
+                throw new ApprovedAmountGreaterThanRequestedException(member.getDpi(), newValue, member.getRequestedAmount());
+            }
             member.updateApprovedAmount(newValue);
         }
         if (changes.containsKey(PrequalificatoinApiConstants.memberCommentsParamName)) {
             final String newValue = command.stringValueOfParameterNamed(PrequalificatoinApiConstants.memberCommentsParamName);
             member.updateComments(newValue);
         }
+        PrequalificationGroup prequalificationGroup = member.getPrequalificationGroup();
         if (changes.containsKey(PrequalificatoinApiConstants.memberAgencyBureauStatusParamName)) {
             final String newValue = command.stringValueOfParameterNamed(PrequalificatoinApiConstants.memberAgencyBureauStatusParamName);
             member.updateAgencyBureauStatus(newValue);
-            PrequalificationGroup prequalificationGroup = member.getPrequalificationGroup();
-            Integer fromStatus = prequalificationGroup.getStatus();
 
-            prequalificationGroup.updateStatus(PrequalificationStatus.BLACKLIST_CHECKED);
-            AppUser addedBy = this.context.getAuthenticatedUserIfPresent();
-            PrequalificationStatusLog statusLog = PrequalificationStatusLog.fromJson(addedBy, fromStatus, prequalificationGroup.getStatus(),
-                    member.getComments(), prequalificationGroup);
+            Integer status = prequalificationGroup.getStatus();
+            List<PrequalificationStatusLog> statusLogList = this.preQualificationLogRepository.groupStatusLogs(status, prequalificationGroup);
+            if (statusLogList.isEmpty())
+                throw new PrequalificationStatusNotCompletedException(PrequalificationStatus.fromInt(status).toString());
+
+            // retrieve latest log update assignee
+            PrequalificationStatusLog statusLog = statusLogList.get(0);
+            statusLog.updateSubStatus(PrequalificationSubStatus.BURO_EVIDENCE.getValue());
+
             List<LoanData> submittedLoans;
             Long prequalificationId = prequalificationGroup.getId();
 
@@ -887,6 +902,9 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         if (action.equals("sendtoagency")) {
             return sendToAgency(entityId, command);
         }
+        if (action.equals("revalidateHardPolicy")) {
+            return revalidateHardPolicy(entityId, command);
+        }
         PrequalificationStatus prequalificationStatus = resolveStatus(action);
         final List<MemberPrequalificationData> memberPrequalificationDataList = new ArrayList<>();
         if (command.parameterExists("members")) {
@@ -939,6 +957,10 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             this.preQualificationLogRepository.save(currentStatusLog);
         }
         return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withEntityId(prequalificationGroup.getId()).build();
+    }
+
+    private CommandProcessingResult revalidateHardPolicy(Long entityId, JsonCommand command) {
+        return this.prequalificationChecklistWritePlatformService.validatePrequalificationHardPolicies(entityId,command);
     }
 
     private void approveOrRejectLoanApplications(final PrequalificationGroup prequalificationGroup,
@@ -1106,6 +1128,20 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         prequalificationStatusLog.updateAssignedTo(currentUser);
         this.preQualificationLogRepository.saveAndFlush(prequalificationStatusLog);
         return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withEntityId(prequalificationGroup.getId()).build();
+    }
+
+    @Override
+    public void uploadMemberDocs(Long memberId) {
+        PrequalificationGroupMember groupMember = this.preQualificationMemberRepository.findOneWithNotFoundDetection(memberId);
+        PrequalificationGroup prequalificationGroup = groupMember.getPrequalificationGroup();
+        Integer status = prequalificationGroup.getStatus();
+        List<PrequalificationStatusLog> statusLogList = this.preQualificationLogRepository.groupStatusLogs(status, prequalificationGroup);
+        if (statusLogList.isEmpty())
+            throw new PrequalificationStatusNotCompletedException(PrequalificationStatus.fromInt(status).toString());
+
+        PrequalificationStatusLog prequalificationStatusLog = statusLogList.get(0);
+        prequalificationStatusLog.updateSubStatus(PrequalificationSubStatus.RE_VALIDATE.getValue());
+        this.preQualificationLogRepository.saveAndFlush(prequalificationStatusLog);
     }
 
     private PrequalificationStatus resolveCommitteeStatus(PrequalificationGroup prequalificationGroup, String action) {
