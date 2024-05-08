@@ -176,6 +176,13 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
             extendTermForDailyRepayments = true;
         }
 
+        if (loanApplicationTerms.getExtendTermForMonthlyRepayment()
+                && loanApplicationTerms.getRepaymentPeriodFrequencyType() == PeriodFrequencyType.MONTHS
+                && loanApplicationTerms.getRepaymentEvery() == 1) {
+            holidayDetailDTO.getWorkingDays().setRepaymentReschedulingType(RepaymentRescheduleType.MOVE_TO_NEXT_WORKING_DAY.getValue());
+            extendTermForDailyRepayments = true;
+        }
+
         final Collection<LoanTermVariationsData> interestRates = loanApplicationTerms.getLoanTermVariations().getInterestRateChanges();
         final Collection<LoanTermVariationsData> interestRatesForInstallments = loanApplicationTerms.getLoanTermVariations()
                 .getInterestRateFromInstallment();

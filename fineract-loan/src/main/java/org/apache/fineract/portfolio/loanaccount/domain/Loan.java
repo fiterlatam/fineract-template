@@ -2852,6 +2852,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         final MathContext mc = MoneyHelper.getMathContext();
 
         final LoanApplicationTerms loanApplicationTerms = constructLoanApplicationTerms(scheduleGeneratorDTO);
+        loanApplicationTerms.setExtendTermForMonthlyRepayment(this.loanProduct.getExtendTermForMonthlyRepayments());
         LoanScheduleGenerator loanScheduleGenerator;
         if (loanApplicationTerms.isEqualAmortization()) {
             if (loanApplicationTerms.getInterestMethod().isDecliningBalance()) {

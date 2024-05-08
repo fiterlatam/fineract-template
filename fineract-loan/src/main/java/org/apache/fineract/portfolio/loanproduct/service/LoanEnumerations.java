@@ -216,6 +216,8 @@ public final class LoanEnumerations {
                     AmortizationMethod.EQUAL_INSTALLMENTS.getCode(), "Equal installments");
             case EQUAL_PRINCIPAL -> new EnumOptionData(AmortizationMethod.EQUAL_PRINCIPAL.getValue().longValue(),
                     AmortizationMethod.EQUAL_PRINCIPAL.getCode(), "Equal principal payments");
+            case CAPITAL_AT_END -> new EnumOptionData(AmortizationMethod.CAPITAL_AT_END.getValue().longValue(),
+                    AmortizationMethod.CAPITAL_AT_END.getCode(), "Capital at end");
             default ->
                 new EnumOptionData(AmortizationMethod.INVALID.getValue().longValue(), AmortizationMethod.INVALID.getCode(), "Invalid");
         };

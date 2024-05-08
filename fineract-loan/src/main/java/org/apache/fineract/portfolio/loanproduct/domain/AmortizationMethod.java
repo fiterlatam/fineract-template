@@ -22,7 +22,8 @@ public enum AmortizationMethod {
 
     EQUAL_PRINCIPAL(0, "amortizationType.equal.principal"), //
     EQUAL_INSTALLMENTS(1, "amortizationType.equal.installments"), //
-    INVALID(2, "amortizationType.invalid");
+    INVALID(2, "amortizationType.invalid"), //
+    CAPITAL_AT_END(3, "amortizationType.capital.at.end");
 
     private final Integer value;
     private final String code;
@@ -49,6 +50,7 @@ public enum AmortizationMethod {
         return switch (selectedMethod) {
             case 0 -> AmortizationMethod.EQUAL_PRINCIPAL;
             case 1 -> AmortizationMethod.EQUAL_INSTALLMENTS;
+            case 3 -> AmortizationMethod.CAPITAL_AT_END;
             default -> AmortizationMethod.INVALID;
         };
     }
@@ -59,5 +61,9 @@ public enum AmortizationMethod {
 
     public boolean isEqualPrincipal() {
         return this.value.equals(AmortizationMethod.EQUAL_PRINCIPAL.getValue());
+    }
+
+    public boolean isCapitalAtEnd() {
+        return this.value.equals(AmortizationMethod.CAPITAL_AT_END.getValue());
     }
 }
