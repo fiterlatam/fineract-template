@@ -59,6 +59,7 @@ import org.apache.fineract.organisation.prequalification.domain.Prequalification
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationGroupRepositoryWrapper;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationStatus;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationStatusLog;
+import org.apache.fineract.organisation.prequalification.domain.PrequalificationSubStatus;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationType;
 import org.apache.fineract.organisation.prequalification.domain.ValidationChecklistResult;
 import org.apache.fineract.organisation.prequalification.domain.ValidationChecklistResultRepository;
@@ -176,12 +177,21 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
             prequalificationChecklistResult.setLastModifiedDate(localDateTime);
             validationChecklistResults.add(prequalificationChecklistResult);
         }
-        prequalificationGroup.updateStatus(PrequalificationStatus.HARD_POLICY_CHECKED);
-        prequalificationGroupRepositoryWrapper.saveAndFlush(prequalificationGroup);
-        this.validationChecklistResultRepository.saveAll(validationChecklistResults);
 
-        PrequalificationStatusLog statusLog = PrequalificationStatusLog.fromJson(appUser, fromStatus, prequalificationGroup.getStatus(),
-                null, prequalificationGroup);
+
+        List<PrequalificationStatusLog> statusLogList = this.preQualificationStatusLogRepository.groupStatusLogs(fromStatus, prequalificationGroup);
+        PrequalificationStatusLog statusLog = null;
+        if (!statusLogList.isEmpty() && statusLogList.get(0).getSubStatus().equals(PrequalificationSubStatus.RE_VALIDATE.getValue())) {
+            statusLog = statusLogList.get(0);
+            statusLog.updateSubStatus(PrequalificationSubStatus.IN_PROGRESS.getValue());
+
+        }else{
+            statusLog = PrequalificationStatusLog.fromJson(appUser, fromStatus, prequalificationGroup.getStatus(),
+                    null, prequalificationGroup);
+            prequalificationGroup.updateStatus(PrequalificationStatus.HARD_POLICY_CHECKED);
+        }
+        this.prequalificationGroupRepositoryWrapper.saveAndFlush(prequalificationGroup);
+        this.validationChecklistResultRepository.saveAll(validationChecklistResults);
         this.preQualificationStatusLogRepository.saveAndFlush(statusLog);
         return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withEntityId(prequalificationId).build();
     }

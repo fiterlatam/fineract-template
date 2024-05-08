@@ -51,8 +51,8 @@ import org.apache.fineract.organisation.prequalification.domain.PreQualification
 import org.apache.fineract.organisation.prequalification.domain.PreQualificationsMemberEnumerations;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationMemberIndication;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationStatus;
-import org.apache.fineract.organisation.prequalification.domain.PrequalificationSubStatus;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationType;
+import org.apache.fineract.organisation.prequalification.domain.SubStatusEnumerations;
 import org.apache.fineract.portfolio.client.service.ClientChargeWritePlatformServiceJpaRepositoryImpl;
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.apache.fineract.useradministration.domain.Role;
@@ -559,10 +559,8 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             final String processType = rs.getString("processType");
             final String processQuality = rs.getString("processQuality");
             final Integer substatus = rs.getInt("substatus");
-            String prequalificationSubStatus = PrequalificationSubStatus.PENDING.getCode();
-            if (substatus != null) {
-                prequalificationSubStatus = PrequalificationSubStatus.fromInt(substatus).getCode();
-            }
+
+            EnumOptionData substatusEnum = SubStatusEnumerations.status(substatus);
             final String assignedUser = rs.getString("assignedUser");
             final String assignedUserName = rs.getString("assignedUserName");
             final BigDecimal totalRequestedAmount = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "totalRequestedAmount");
@@ -583,7 +581,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                     productName, addedBy, createdAt, comments, groupId, agencyId, centerId, productId, facilitatorId, facilitatorName,
                     greenValidationCount, yellowValidationCount, orangeValidationCount, redValidationCount, prequalilficationTimespan,
                     lastPrequalificationStatus, statusChangedBy, statusChangedOn, processType, processQuality, totalRequestedAmount,
-                    totalApprovedAmount, prequalificationType, prequalificationSubStatus, assignedUser, assignedUserName, latestComments,
+                    totalApprovedAmount, prequalificationType, substatusEnum, assignedUser, assignedUserName, latestComments,
                     linkedGroupId);
 
         }
