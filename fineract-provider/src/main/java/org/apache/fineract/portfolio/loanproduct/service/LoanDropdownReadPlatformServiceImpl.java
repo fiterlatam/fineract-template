@@ -63,7 +63,8 @@ public class LoanDropdownReadPlatformServiceImpl implements LoanDropdownReadPlat
     @Override
     public List<EnumOptionData> retrieveLoanAmortizationTypeOptions() {
 
-        return Arrays.asList(amortizationType(AmortizationMethod.EQUAL_INSTALLMENTS), amortizationType(AmortizationMethod.EQUAL_PRINCIPAL));
+        return Arrays.asList(amortizationType(AmortizationMethod.EQUAL_INSTALLMENTS), amortizationType(AmortizationMethod.EQUAL_PRINCIPAL),
+                amortizationType(AmortizationMethod.CAPITAL_AT_END));
     }
 
     @Override

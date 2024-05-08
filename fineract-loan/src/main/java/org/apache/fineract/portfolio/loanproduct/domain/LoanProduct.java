@@ -235,6 +235,9 @@ public class LoanProduct extends AbstractPersistableCustom {
     @Column(name = "overdue_amount_for_arrears")
     private BigDecimal overDueAmountForArrears;
 
+    @Column(name = "extend_term_monthly_repayments")
+    private boolean extendTermForMonthlyRepayments;
+
     public static LoanProduct assembleFromJson(final Fund fund, final String loanTransactionProcessingStrategy,
             final List<Charge> productCharges, final JsonCommand command, final AprCalculator aprCalculator, FloatingRate floatingRate,
             final List<Rate> productRates, List<LoanProductPaymentAllocationRule> loanProductPaymentAllocationRules,
@@ -445,6 +448,8 @@ public class LoanProduct extends AbstractPersistableCustom {
         final Integer maxClientInActivityPeriod = command.integerValueOfParameterNamed(LoanProductConstants.MAX_CLIENT_INACTIVITY_PERIOD);
 
         final BigDecimal overDueAmountForArrears = command.bigDecimalValueOfParameterNamed(LoanProductConstants.OVERDUE_AMOUNT_FOR_ARREARS);
+        final boolean extendTermForMonthlyRepayments = command
+                .booleanPrimitiveValueOfParameterNamed(LoanProductConstants.EXTEND_TERM_FOR_MONTHLY_REPAYMENTS);
 
         LoanProduct product = new LoanProduct(fund, loanTransactionProcessingStrategy, loanProductPaymentAllocationRules,
                 loanProductCreditAllocationRules, name, shortName, description, currency, principal, minPrincipal, maxPrincipal,
@@ -469,6 +474,7 @@ public class LoanProduct extends AbstractPersistableCustom {
 
         product.setMaxClientInactivityPeriod(maxClientInActivityPeriod);
         product.setOverDueAmountForArrears(overDueAmountForArrears);
+        product.setExtendTermForMonthlyRepayments(extendTermForMonthlyRepayments);
         return product;
 
     }
@@ -1405,6 +1411,13 @@ public class LoanProduct extends AbstractPersistableCustom {
             this.overDueAmountForArrears = newValue;
         }
 
+        if (command.isChangeInBooleanParameterNamed(LoanProductConstants.EXTEND_TERM_FOR_MONTHLY_REPAYMENTS,
+                this.extendTermForMonthlyRepayments)) {
+            final boolean newValue = command.booleanPrimitiveValueOfParameterNamed(LoanProductConstants.EXTEND_TERM_FOR_MONTHLY_REPAYMENTS);
+            actualChanges.put(LoanProductConstants.EXTEND_TERM_FOR_MONTHLY_REPAYMENTS, newValue);
+            this.extendTermForMonthlyRepayments = newValue;
+        }
+
         return actualChanges;
     }
 
@@ -1822,5 +1835,13 @@ public class LoanProduct extends AbstractPersistableCustom {
 
     public void setMaxClientInactivityPeriod(final Integer maxClientInactivityPeriod) {
         this.maxClientInactivityPeriod = maxClientInactivityPeriod;
+    }
+
+    public boolean getExtendTermForMonthlyRepayments() {
+        return extendTermForMonthlyRepayments;
+    }
+
+    public void setExtendTermForMonthlyRepayments(boolean extendTermForMonthlyRepayments) {
+        this.extendTermForMonthlyRepayments = extendTermForMonthlyRepayments;
     }
 }
