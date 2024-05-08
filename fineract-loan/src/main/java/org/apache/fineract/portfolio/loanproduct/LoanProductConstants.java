@@ -166,4 +166,5 @@ public interface LoanProductConstants {
     String MAX_CLIENT_INACTIVITY_PERIOD = "maxClientInactivityPeriod";
 
     String OVERDUE_AMOUNT_FOR_ARREARS = "overdueAmountForArrearsConsideration";
+    String EXTEND_TERM_FOR_MONTHLY_REPAYMENTS = "extendTermForMonthlyRepayments";
 }

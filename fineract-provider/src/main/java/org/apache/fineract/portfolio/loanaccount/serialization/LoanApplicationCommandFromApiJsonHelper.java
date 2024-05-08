@@ -330,7 +330,8 @@ public final class LoanApplicationCommandFromApiJsonHelper {
         final Integer amortizationType = this.fromApiJsonHelper
                 .extractIntegerSansLocaleNamed(LoanApiConstants.amortizationTypeParameterName, element);
         baseDataValidator.reset().parameter(LoanApiConstants.amortizationTypeParameterName).value(amortizationType).notNull()
-                .inMinMaxRange(0, 1);
+                .isOneOfTheseValues(AmortizationMethod.EQUAL_INSTALLMENTS.getValue(), AmortizationMethod.EQUAL_PRINCIPAL.getValue(),
+                        AmortizationMethod.CAPITAL_AT_END.getValue());
 
         if (!AmortizationMethod.EQUAL_PRINCIPAL.getValue().equals(amortizationType) && fixedPrincipalPercentagePerInstallment != null) {
             baseDataValidator.reset().parameter(LoanApiConstants.fixedPrincipalPercentagePerInstallmentParamName).failWithCode(
@@ -844,7 +845,8 @@ public final class LoanApplicationCommandFromApiJsonHelper {
             amortizationType = this.fromApiJsonHelper.extractIntegerWithLocaleNamed(LoanApiConstants.amortizationTypeParameterName,
                     element);
             baseDataValidator.reset().parameter(LoanApiConstants.amortizationTypeParameterName).value(amortizationType).notNull()
-                    .inMinMaxRange(0, 1);
+                    .isOneOfTheseValues(AmortizationMethod.EQUAL_INSTALLMENTS.getValue(), AmortizationMethod.EQUAL_PRINCIPAL.getValue(),
+                            AmortizationMethod.CAPITAL_AT_END.getValue());
         }
 
         if (!AmortizationMethod.EQUAL_PRINCIPAL.getValue().equals(amortizationType) && fixedPrincipalPercentagePerInstallment != null) {

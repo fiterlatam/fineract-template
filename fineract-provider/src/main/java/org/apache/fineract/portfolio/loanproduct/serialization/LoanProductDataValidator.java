@@ -180,7 +180,8 @@ public final class LoanProductDataValidator {
             LoanProductConstants.ENABLE_AUTO_REPAYMENT_DOWN_PAYMENT, LoanProductConstants.REPAYMENT_START_DATE_TYPE,
             LoanProductConstants.ENABLE_INSTALLMENT_LEVEL_DELINQUENCY, LoanProductConstants.LOAN_SCHEDULE_TYPE,
             LoanProductConstants.LOAN_SCHEDULE_PROCESSING_TYPE, LoanProductConstants.REPAYMENT_RESCHEDULING_TYPE,
-            LoanProductConstants.MAX_CLIENT_INACTIVITY_PERIOD, LoanProductConstants.OVERDUE_AMOUNT_FOR_ARREARS));
+            LoanProductConstants.MAX_CLIENT_INACTIVITY_PERIOD, LoanProductConstants.OVERDUE_AMOUNT_FOR_ARREARS,
+            LoanProductConstants.EXTEND_TERM_FOR_MONTHLY_REPAYMENTS));
 
     private static final Set<String> MAXIMUM_RATE_SUPPORTED_PARAMETERS = new HashSet<>(
             Arrays.asList("locale", "dateFormat", "eaRate", "annualNominalRate", "appliedBy", "appliedOnDate", "dailyNominalRate",

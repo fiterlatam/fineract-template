@@ -282,7 +282,8 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
                     + "lp.loan_schedule_type as loanScheduleType, lp.loan_schedule_processing_type as loanScheduleProcessingType, "
                     + "lp.repayment_rescheduling_enum as repaymentReschedulingType, "
                     + "lp.max_client_inactivity_period as maxClientInactivityPeriod, "
-                    + "lp.overdue_amount_for_arrears overdueAmountForArrears " + " from m_product_loan lp "
+                    + "lp.overdue_amount_for_arrears overdueAmountForArrears, "
+                    + "lp.extend_term_monthly_repayments as extendTermForMonthlyRepayments " + " from m_product_loan lp "
                     + " left join m_fund f on f.id = lp.fund_id "
                     + " left join m_product_loan_recalculation_details lpr on lpr.product_id=lp.id "
                     + " left join m_product_loan_guarantee_details lpg on lpg.loan_product_id=lp.id "
@@ -535,6 +536,7 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
                     : WorkingDaysEnumerations.workingDaysStatusType(repaymentReschedulingTypeInt);
             final Integer maxClientInactivityPeriod = rs.getInt("maxClientInactivityPeriod");
             final BigDecimal overdueAmountForArrears = rs.getBigDecimal("overdueAmountForArrears");
+            final boolean extendTermForMonthlyRepayments = rs.getBoolean("extendTermForMonthlyRepayments");
 
             LoanProductData loanProductData = new LoanProductData(id, name, shortName, description, currency, principal, minPrincipal,
                     maxPrincipal, tolerance, numberOfRepayments, minNumberOfRepayments, maxNumberOfRepayments, repaymentEvery,
@@ -560,6 +562,7 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
                     repaymentReschedulingType);
             loanProductData.setMaxClientInactivityPeriod(maxClientInactivityPeriod);
             loanProductData.setOverdueAmountForArrearsConsideration(overdueAmountForArrears);
+            loanProductData.setExtendTermForMonthlyRepayments(extendTermForMonthlyRepayments);
 
             return loanProductData;
         }
