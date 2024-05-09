@@ -233,6 +233,9 @@ public class LoanProductData implements Serializable {
     @lombok.Setter
     private BigDecimal overdueAmountForArrearsConsideration;
 
+    @lombok.Setter
+    private MaximumCreditRateConfigurationData maximumCreditRateConfiguration;
+
     /**
      * Used when returning lookup information about loan product for dropdowns.
      */
