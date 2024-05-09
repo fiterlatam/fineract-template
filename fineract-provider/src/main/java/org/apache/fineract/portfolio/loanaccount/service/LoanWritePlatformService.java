@@ -23,6 +23,7 @@ import java.util.Collection;
 import java.util.Map;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
+import org.apache.fineract.infrastructure.jobs.exception.JobExecutionException;
 import org.apache.fineract.organisation.office.domain.Office;
 import org.apache.fineract.organisation.staff.domain.Staff;
 import org.apache.fineract.portfolio.calendar.domain.Calendar;
@@ -115,4 +116,6 @@ public interface LoanWritePlatformService {
 
     @Transactional
     CommandProcessingResult undoChargeOff(JsonCommand command);
+
+    void recalculateInterestForMaximumLegalRate() throws JobExecutionException;
 }

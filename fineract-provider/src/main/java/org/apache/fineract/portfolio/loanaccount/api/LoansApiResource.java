@@ -150,6 +150,7 @@ import org.apache.fineract.portfolio.loanaccount.service.LoanChargeReadPlatformS
 import org.apache.fineract.portfolio.loanaccount.service.LoanReadPlatformService;
 import org.apache.fineract.portfolio.loanproduct.LoanProductConstants;
 import org.apache.fineract.portfolio.loanproduct.data.LoanProductData;
+import org.apache.fineract.portfolio.loanproduct.data.MaximumCreditRateConfigurationData;
 import org.apache.fineract.portfolio.loanproduct.data.TransactionProcessingStrategyData;
 import org.apache.fineract.portfolio.loanproduct.domain.InterestMethod;
 import org.apache.fineract.portfolio.loanproduct.service.LoanDropdownReadPlatformService;
@@ -430,6 +431,10 @@ public class LoansApiResource {
 
         final List<LoanAssignorData> loanAssignorOptions = this.loanReadPlatformService.retrieveLoanAssignorData(null);
         newLoanAccount.setLoanAssignorOptions(loanAssignorOptions);
+
+        final MaximumCreditRateConfigurationData maximumCreditRateConfigurationData = this.loanProductReadPlatformService
+                .retrieveMaximumCreditRateConfigurationData();
+        newLoanAccount.setMaximumCreditRateConfiguration(maximumCreditRateConfigurationData);
 
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
         return this.toApiJsonSerializer.serialize(settings, newLoanAccount, LOAN_DATA_PARAMETERS);
