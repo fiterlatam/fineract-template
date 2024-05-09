@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements. See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership. The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License. You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied. See the License for the
+    specific language governing permissions AND limitations
+    under the License.
+
+-->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd">
+
+    <changeSet id="10" author="fineract">
+        <sql>
+            <![CDATA[
+                DROP VIEW IF EXISTS custom.v_custom_charge_type_choices;
+
+                CREATE VIEW custom.v_custom_charge_type_choices
+                AS
+                    SELECT
+                        avalMap.id as custom_charge_map_id, applicants.client_id, applicants.client_ally_id, applicants.custom_charge_type_id, term, percentage
+                    FROM
+                        custom.c_custom_charge_type_applicants applicants
+                        JOIN custom.c_custom_charge_type_map avalMap on avalMap.c_custom_charge_type_id = applicants.custom_charge_type_id
+                    WHERE
+                            applicants.active = true
+                        AND avalMap.active = true
+                        AND custom_charge_type_id IN (
+                                SELECT id
+                                FROM
+                                    custom.c_custom_charge_type ccct
+                                WHERE
+                                        custom_charge_entity_id = (	SELECT id FROM custom.c_custom_charge_entity ccce WHERE name = 'Aval' )
+                                    AND ccct.name IN ('VIP','Commerce')
+                            )
+
+                    UNION ALL
+
+                    SELECT
+                        avalMap.id as custom_charge_map_id, null as client_id, null as client_ally_id, avalMap.c_custom_charge_type_id as custom_charge_type_id, term, percentage
+                    FROM
+                        custom.c_custom_charge_type_map avalMap
+                    WHERE
+                            avalMap.active = true
+                            AND avalMap.c_custom_charge_type_id IN (
+                                    SELECT id
+                                        FROM custom.c_custom_charge_type ccct
+                                    WHERE
+                                            custom_charge_entity_id = (	SELECT id FROM custom.c_custom_charge_entity ccce WHERE name = 'Aval' )
+                                        AND ccct.name IN ('Product')
+                            )
+                -- ORDER BY
+                --      custom_charge_type_id, term
+                ;
+
+            ]]>
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>
