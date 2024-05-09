@@ -206,5 +206,7 @@
     <include file="parts/20240430200100_SU_73_job_INSERT.xml" relativeToChangelogFile="true"/>
     <include file="parts/20240506192410_SU_37_m_loan_product_MODIFY.xml" relativeToChangelogFile="true"/>
     <include file="parts/20240508100000_SU_58_add_extend_term_monthly_repayment_to_product_loan_ADD.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20240507200100_SU_72_c_custom_charge_type_applicants_CREATE.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20240507200200_SU_72_v_custom_charge_type_choices_CREATE.xml" relativeToChangelogFile="true"/>
 
 </databaseChangeLog>
