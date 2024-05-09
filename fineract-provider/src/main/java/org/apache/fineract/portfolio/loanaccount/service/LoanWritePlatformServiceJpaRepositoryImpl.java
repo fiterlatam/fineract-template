@@ -25,6 +25,8 @@ import com.google.gson.JsonObject;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.github.resilience4j.retry.annotation.Retry;
 import java.math.BigDecimal;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -39,10 +41,15 @@ import java.util.Objects;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.accounting.journalentry.service.JournalEntryWritePlatformService;
 import org.apache.fineract.cob.exceptions.LoanAccountLockCannotBeOverruledException;
 import org.apache.fineract.cob.service.LoanAccountLockService;
+import org.apache.fineract.commands.domain.CommandWrapper;
+import org.apache.fineract.commands.service.CommandWrapperBuilder;
+import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformService;
+import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 import org.apache.fineract.infrastructure.codes.domain.CodeValue;
 import org.apache.fineract.infrastructure.codes.domain.CodeValueRepositoryWrapper;
 import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
@@ -52,6 +59,8 @@ import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuilder;
 import org.apache.fineract.infrastructure.core.data.DataValidatorBuilder;
 import org.apache.fineract.infrastructure.core.domain.ExternalId;
+import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
+import org.apache.fineract.infrastructure.core.exception.AbstractPlatformDomainRuleException;
 import org.apache.fineract.infrastructure.core.exception.ErrorHandler;
 import org.apache.fineract.infrastructure.core.exception.GeneralPlatformDomainRuleException;
 import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidationException;
@@ -90,6 +99,7 @@ import org.apache.fineract.infrastructure.event.business.domain.loan.transaction
 import org.apache.fineract.infrastructure.event.business.domain.loan.transaction.LoanWrittenOffPostBusinessEvent;
 import org.apache.fineract.infrastructure.event.business.domain.loan.transaction.LoanWrittenOffPreBusinessEvent;
 import org.apache.fineract.infrastructure.event.business.service.BusinessEventNotifierService;
+import org.apache.fineract.infrastructure.jobs.exception.JobExecutionException;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.organisation.holiday.domain.Holiday;
 import org.apache.fineract.organisation.holiday.domain.HolidayRepositoryWrapper;
@@ -138,6 +148,7 @@ import org.apache.fineract.portfolio.group.exception.GroupNotActiveException;
 import org.apache.fineract.portfolio.loanaccount.api.LoanApiConstants;
 import org.apache.fineract.portfolio.loanaccount.command.LoanUpdateCommand;
 import org.apache.fineract.portfolio.loanaccount.data.HolidayDetailDTO;
+import org.apache.fineract.portfolio.loanaccount.data.LoanRescheduleData;
 import org.apache.fineract.portfolio.loanaccount.data.ScheduleGeneratorDTO;
 import org.apache.fineract.portfolio.loanaccount.domain.ChangedTransactionDetail;
 import org.apache.fineract.portfolio.loanaccount.domain.GLIMAccountInfoRepository;
@@ -179,12 +190,17 @@ import org.apache.fineract.portfolio.loanaccount.guarantor.service.GuarantorDoma
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleModel;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleModelPeriod;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.service.LoanScheduleHistoryWritePlatformService;
+import org.apache.fineract.portfolio.loanaccount.rescheduleloan.RescheduleLoansApiConstants;
+import org.apache.fineract.portfolio.loanaccount.rescheduleloan.data.LoanRescheduleRequestData;
 import org.apache.fineract.portfolio.loanaccount.rescheduleloan.domain.LoanRescheduleRequest;
+import org.apache.fineract.portfolio.loanaccount.rescheduleloan.service.LoanRescheduleRequestReadPlatformService;
 import org.apache.fineract.portfolio.loanaccount.serialization.LoanApplicationCommandFromApiJsonHelper;
 import org.apache.fineract.portfolio.loanaccount.serialization.LoanEventApiJsonValidator;
 import org.apache.fineract.portfolio.loanaccount.serialization.LoanUpdateCommandFromApiJsonDeserializer;
+import org.apache.fineract.portfolio.loanproduct.data.MaximumCreditRateConfigurationData;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProduct;
 import org.apache.fineract.portfolio.loanproduct.exception.LinkedAccountRequiredException;
+import org.apache.fineract.portfolio.loanproduct.service.LoanProductReadPlatformService;
 import org.apache.fineract.portfolio.note.domain.Note;
 import org.apache.fineract.portfolio.note.domain.NoteRepository;
 import org.apache.fineract.portfolio.paymentdetail.domain.PaymentDetail;
@@ -195,7 +211,10 @@ import org.apache.fineract.portfolio.repaymentwithpostdatedchecks.service.Repaym
 import org.apache.fineract.portfolio.savings.domain.SavingsAccount;
 import org.apache.fineract.portfolio.transfer.api.TransferApiConstants;
 import org.apache.fineract.useradministration.domain.AppUser;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
 import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -249,6 +268,10 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     private final LoanAccrualTransactionBusinessEventService loanAccrualTransactionBusinessEventService;
     private final ErrorHandler errorHandler;
     private final LoanDownPaymentHandlerService loanDownPaymentHandlerService;
+    private final LoanProductReadPlatformService loanProductReadPlatformService;
+    private final JdbcTemplate jdbcTemplate;
+    private final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService;
+    private final LoanRescheduleRequestReadPlatformService loanRescheduleRequestReadPlatformService;
 
     @Transactional
     @Override
@@ -2892,6 +2915,129 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                         TransferApiConstants.transferClientLoanExceptionMessage, transaction.getCreatedDateTime().toLocalDate(),
                         transferDate);
             }
+        }
+    }
+
+    @Override
+    public void recalculateInterestForMaximumLegalRate() throws JobExecutionException {
+        List<Throwable> exceptions = new ArrayList<>();
+        final MaximumCreditRateConfigurationData maximumCreditRateConfigurationData = this.loanProductReadPlatformService
+                .retrieveMaximumCreditRateConfigurationData();
+        final LocalDate appliedOnDate = maximumCreditRateConfigurationData.getAppliedOnDate();
+        final BigDecimal annualNominalRate = maximumCreditRateConfigurationData.getAnnualNominalRate();
+        final LoanRescheduleMapper rm = new LoanRescheduleMapper();
+        final String sql = "SELECT " + rm.schema();
+        final Object[] params = new Object[] { appliedOnDate, appliedOnDate, appliedOnDate, annualNominalRate };
+        List<LoanRescheduleData> loaLoanRescheduleDataList = this.jdbcTemplate.query(sql, rm, params);
+        if (CollectionUtils.isNotEmpty(loaLoanRescheduleDataList)) {
+            final String locale = "en";
+            final String dateFormat = "dd MMMM yyyy";
+            final String submittedOnDate = DateUtils.format(DateUtils.getBusinessLocalDate(), dateFormat, Locale.forLanguageTag(locale));
+            LoanRescheduleRequestData loanRescheduleReasons = this.loanRescheduleRequestReadPlatformService
+                    .retrieveAllRescheduleReasons(RescheduleLoansApiConstants.LOAN_RESCHEDULE_REASON);
+            Long rescheduleReasonId = null;
+            for (CodeValueData codeValueData : loanRescheduleReasons.getRescheduleReasons()) {
+                if (codeValueData.getName().equalsIgnoreCase("Recalcular la tasa de interés al máximo legal")) {
+                    rescheduleReasonId = codeValueData.getId();
+                    break;
+                }
+            }
+            final JsonObject rescheduleJsonObject = new JsonObject();
+            rescheduleJsonObject.addProperty("dateFormat", dateFormat);
+            rescheduleJsonObject.addProperty("locale", locale);
+            rescheduleJsonObject.addProperty("rescheduleReasonId", rescheduleReasonId);
+            rescheduleJsonObject.addProperty("submittedOnDate", submittedOnDate);
+            rescheduleJsonObject.addProperty("rescheduleReasonComment", "Recalcular la tasa de interés al máximo legal");
+            rescheduleJsonObject.addProperty("adjustedDueDate", "");
+            rescheduleJsonObject.addProperty("graceOnPrincipal", "");
+            rescheduleJsonObject.addProperty("extraTerms", "");
+            rescheduleJsonObject.addProperty("newInterestRate", annualNominalRate);
+            for (final LoanRescheduleData loanRescheduleData : loaLoanRescheduleDataList) {
+                final Long loanId = loanRescheduleData.getId();
+                final LocalDate rescheduleFromDate = loanRescheduleData.getNextDueDate();
+                final String rescheduleFromDateString = DateUtils.format(rescheduleFromDate, dateFormat, Locale.forLanguageTag(locale));
+                rescheduleJsonObject.addProperty("rescheduleFromDate", rescheduleFromDateString);
+                rescheduleJsonObject.addProperty("loanId", loanId);
+                final String rescheduleRequestBodyAsJson = rescheduleJsonObject.toString();
+                CommandWrapper commandWrapper = new CommandWrapperBuilder()
+                        .createLoanRescheduleRequest(RescheduleLoansApiConstants.ENTITY_NAME).withJson(rescheduleRequestBodyAsJson).build();
+                try {
+                    CommandProcessingResult commandProcessingResult = commandsSourceWritePlatformService.logCommandSource(commandWrapper);
+                    if (commandProcessingResult.getResourceId() != null) {
+                        final Long loanRescheduleId = commandProcessingResult.getResourceId();
+                        final JsonObject approvalJsonObject = new JsonObject();
+                        approvalJsonObject.addProperty("dateFormat", dateFormat);
+                        approvalJsonObject.addProperty("locale", locale);
+                        approvalJsonObject.addProperty("approvedOnDate", submittedOnDate);
+                        final String approvalRequestBodyAsJson = approvalJsonObject.toString();
+                        commandWrapper = new CommandWrapperBuilder()
+                                .approveLoanRescheduleRequest(RescheduleLoansApiConstants.ENTITY_NAME, loanRescheduleId)
+                                .withJson(approvalRequestBodyAsJson).build();
+                        commandProcessingResult = commandsSourceWritePlatformService.logCommandSource(commandWrapper);
+                        if (commandProcessingResult.getResourceId() != null) {
+                            final String successMessage = "Reprogramar la cuenta de préstamo: " + loanId
+                                    + " con la tasa de interés al máximo legal";
+                            log.info(successMessage);
+                        }
+                    }
+                } catch (final PlatformApiDataValidationException e) {
+                    final List<ApiParameterError> errors = e.getErrors();
+                    for (final ApiParameterError error : errors) {
+                        log.error("Reprogramar la cuenta de préstamo {} falló con el mensaje: {}", loanId, error.getDeveloperMessage(), e);
+                    }
+                    exceptions.add(e);
+                } catch (final AbstractPlatformDomainRuleException e) {
+                    log.error("Reprogramar la cuenta de préstamo: {} falló con el mensaje: {}", loanId, e.getDefaultUserMessage(), e);
+                    exceptions.add(e);
+                } catch (Exception e) {
+                    log.error("Reprogramar la cuenta de préstamo: {} falló con el mensaje: {}", loanId, e.getMessage(), e);
+                    exceptions.add(e);
+                }
+            }
+        }
+        if (!exceptions.isEmpty()) {
+            throw new JobExecutionException(exceptions);
+        }
+    }
+
+    private static final class LoanRescheduleMapper implements RowMapper<LoanRescheduleData> {
+
+        public String schema() {
+            return """
+                        ml.id AS "id",
+                    	ml.annual_nominal_interest_rate AS "annualNominalRate",
+                    	MIN(next_schedule.duedate) AS "nextDueDate",
+                    	MAX(term_variation.applicable_date) AS "applicableDate",
+                    	term_variation.decimal_value AS "rescheduledAnnualRate"
+                    FROM m_loan ml
+                    INNER JOIN m_loan_repayment_schedule mlrs ON mlrs.loan_id = ml.id
+                    LEFT JOIN (
+                    	SELECT *
+                    	FROM m_loan_repayment_schedule sch
+                    	WHERE sch.completed_derived = FALSE AND sch.duedate >= ?
+                    	ORDER BY sch.duedate ASC
+                    ) next_schedule ON next_schedule.loan_id = ml.id
+
+                    LEFT JOIN (
+                    	SELECT DISTINCT ON (ltv.loan_id) ltv.loan_id, ltv.applicable_date, ltv.decimal_value
+                    	FROM m_loan_term_variations ltv
+                    	WHERE ltv.term_type = 10 AND ltv.is_active = TRUE AND ltv.applied_on_loan_status = 300 AND ltv.applicable_date >= ?
+                    	ORDER BY ltv.loan_id, ltv.id DESC
+                    ) term_variation ON term_variation.loan_id = ml.id
+                    WHERE mlrs.duedate >= ? AND (CASE WHEN term_variation.decimal_value IS NOT NULL THEN term_variation.decimal_value ELSE ml.annual_nominal_interest_rate END) > ?
+                    GROUP BY term_variation.loan_id, ml.annual_nominal_interest_rate, term_variation.decimal_value, ml.id
+                    """;
+        }
+
+        @Override
+        public LoanRescheduleData mapRow(@NotNull final ResultSet rs, @SuppressWarnings("unused") final int rowNum) throws SQLException {
+            final Long id = JdbcSupport.getLong(rs, "id");
+            final BigDecimal annualNominalRate = rs.getBigDecimal("annualNominalRate");
+            final BigDecimal rescheduledAnnualRate = rs.getBigDecimal("rescheduledAnnualRate");
+            final LocalDate applicableDate = JdbcSupport.getLocalDate(rs, "applicableDate");
+            final LocalDate nextDueDate = JdbcSupport.getLocalDate(rs, "nextDueDate");
+            return LoanRescheduleData.builder().id(id).annualNominalRate(annualNominalRate).rescheduledAnnualRate(rescheduledAnnualRate)
+                    .applicableDate(applicableDate).nextDueDate(nextDueDate).build();
         }
     }
 }

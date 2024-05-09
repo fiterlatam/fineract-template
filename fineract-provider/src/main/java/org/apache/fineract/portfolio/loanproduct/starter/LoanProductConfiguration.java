@@ -80,11 +80,12 @@ public class LoanProductConfiguration {
             LoanRepositoryWrapper loanRepositoryWrapper, BusinessEventNotifierService businessEventNotifierService,
             DelinquencyBucketRepository delinquencyBucketRepository, MaximumRateRepository maximumRateRepository,
             LoanRepaymentScheduleTransactionProcessorFactory loanRepaymentScheduleTransactionProcessorFactory,
-            AdvancedPaymentAllocationsJsonParser advancedPaymentJsonParser, CreditAllocationsJsonParser creditAllocationsJsonParser) {
+            AdvancedPaymentAllocationsJsonParser advancedPaymentJsonParser, CreditAllocationsJsonParser creditAllocationsJsonParser,
+            LoanProductReadPlatformService loanProductReadPlatformService) {
         return new LoanProductWritePlatformServiceJpaRepositoryImpl(context, fromApiJsonDeserializer, loanProductRepository,
                 maximumRateRepository, aprCalculator, fundRepository, chargeRepository, rateRepository, accountMappingWritePlatformService,
                 fineractEntityAccessUtil, floatingRateRepository, loanRepositoryWrapper, businessEventNotifierService,
                 delinquencyBucketRepository, loanRepaymentScheduleTransactionProcessorFactory, advancedPaymentJsonParser,
-                creditAllocationsJsonParser);
+                creditAllocationsJsonParser, loanProductReadPlatformService);
     }
 }

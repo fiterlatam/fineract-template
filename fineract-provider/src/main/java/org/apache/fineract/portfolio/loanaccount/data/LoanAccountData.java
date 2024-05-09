@@ -51,6 +51,7 @@ import org.apache.fineract.portfolio.loanaccount.guarantor.data.GuarantorData;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.data.LoanScheduleData;
 import org.apache.fineract.portfolio.loanproduct.data.LoanProductBorrowerCycleVariationData;
 import org.apache.fineract.portfolio.loanproduct.data.LoanProductData;
+import org.apache.fineract.portfolio.loanproduct.data.MaximumCreditRateConfigurationData;
 import org.apache.fineract.portfolio.loanproduct.data.TransactionProcessingStrategyData;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductValueConditionType;
 import org.apache.fineract.portfolio.note.data.NoteData;
@@ -171,6 +172,7 @@ public class LoanAccountData {
     private List<EnumOptionData> loanScheduleTypeOptions;
     private List<EnumOptionData> loanScheduleProcessingTypeOptions;
     private List<LoanAssignorData> loanAssignorOptions;
+    private MaximumCreditRateConfigurationData maximumCreditRateConfiguration;
 
     @Transient
     private BigDecimal feeChargesAtDisbursementCharged;

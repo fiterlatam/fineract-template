@@ -115,4 +115,44 @@
             ]]>
         </sql>
     </changeSet>
+    <changeSet author="fineract" id="8">
+        <insert tableName="job">
+            <column name="name" value="Recalculate Loan Interest After Maximum Legal Rate Change"/>
+            <column name="display_name" value="Recalculate Loan Interest After Maximum Legal Rate Change"/>
+            <column name="cron_expression" value="0 1 0 1/1 * ? *"/>
+            <column name="create_time" valueDate="${current_datetime}"/>
+            <column name="task_priority" valueNumeric="5"/>
+            <column name="group_name"/>
+            <column name="previous_run_start_time"/>
+            <column name="job_key" value="Recalculate Loan Interest After Maximum Legal Rate ChangeJobDetail1 _ DEFAULT"/>
+            <column name="initializing_errorlog"/>
+            <column name="is_active" valueBoolean="true"/>
+            <column name="currently_running" valueBoolean="false"/>
+            <column name="updates_allowed" valueBoolean="true"/>
+            <column name="scheduler_group" valueNumeric="0"/>
+            <column name="is_misfired" valueBoolean="false"/>
+            <column name="node_id" valueNumeric="1"/>
+            <column name="is_mismatched_job" valueBoolean="true"/>
+        </insert>
+    </changeSet>
+
+    <changeSet author="fineract" id="9">
+        <insert tableName="m_appuser_role">
+            <column name="appuser_id" valueNumeric="2"/>
+            <column name="role_id" valueNumeric="1"/>
+        </insert>
+    </changeSet>
+
+    <changeSet author="fineract" id="10">
+        <insert tableName="m_code_value">
+            <column name="code_id" valueComputed="(SELECT id FROM m_code WHERE code_name='LoanRescheduleReason')"/>
+            <column name="code_value" value="Recalcular la tasa de interés al máximo legal"/>
+            <column name="code_description" value="Recalcular la tasa de interés al máximo legal"/>
+            <column name="order_position" valueNumeric="1"/>
+            <column name="code_score" valueNumeric="1"/>
+            <column name="is_active" valueBoolean="true"/>
+            <column name="is_mandatory" valueBoolean="false"/>
+        </insert>
+    </changeSet>
+
 </databaseChangeLog>
