@@ -45,6 +45,7 @@ import org.apache.fineract.infrastructure.security.service.PlatformSecurityConte
 import org.apache.fineract.organisation.monetary.exception.InvalidCurrencyException;
 import org.apache.fineract.portfolio.charge.domain.Charge;
 import org.apache.fineract.portfolio.charge.domain.ChargeRepositoryWrapper;
+import org.apache.fineract.portfolio.common.domain.PeriodFrequencyType;
 import org.apache.fineract.portfolio.delinquency.domain.DelinquencyBucket;
 import org.apache.fineract.portfolio.delinquency.domain.DelinquencyBucketRepository;
 import org.apache.fineract.portfolio.floatingrates.domain.FloatingRate;
@@ -56,6 +57,7 @@ import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleTra
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.AprCalculator;
 import org.apache.fineract.portfolio.loanproduct.LoanProductConstants;
+import org.apache.fineract.portfolio.loanproduct.data.MaximumCreditRateConfigurationData;
 import org.apache.fineract.portfolio.loanproduct.domain.AdvancedPaymentAllocationsJsonParser;
 import org.apache.fineract.portfolio.loanproduct.domain.CreditAllocationsJsonParser;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProduct;
@@ -99,6 +101,7 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
     private final CreditAllocationsJsonParser creditAllocationsJsonParser;
     private final LoanProductPaymentAllocationRuleMerger loanProductPaymentAllocationRuleMerger = new LoanProductPaymentAllocationRuleMerger();
     private final LoanProductCreditAllocationRuleMerger loanProductCreditAllocationRuleMerger = new LoanProductCreditAllocationRuleMerger();
+    private final LoanProductReadPlatformService loanProductReadPlatformService;
 
     @Transactional
     @Override
@@ -129,6 +132,7 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
             }
             final LoanProduct loanProduct = LoanProduct.assembleFromJson(fund, loanTransactionProcessingStrategyCode, charges, command,
                     this.aprCalculator, floatingRate, rates, loanProductPaymentAllocationRules, loanProductCreditAllocationRules);
+            this.validateMaximumInterestRate(loanProduct);
             loanProduct.updateLoanProductInRelatedClasses();
             loanProduct.setTransactionProcessingStrategyName(
                     loanRepaymentScheduleTransactionProcessorFactory.determineProcessor(loanTransactionProcessingStrategyCode).getName());
@@ -270,7 +274,7 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
                     changes.remove(LoanProductConstants.RATES_PARAM_NAME);
                 }
             }
-
+            this.validateMaximumInterestRate(product);
             if (!changes.isEmpty()) {
                 product.validateLoanProductPreSave();
                 this.loanProductRepository.saveAndFlush(product);
@@ -291,6 +295,54 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
             return CommandProcessingResult.empty();
         }
 
+    }
+
+    private void validateMaximumInterestRate(final LoanProduct loanProduct) {
+        final BigDecimal maxNominalInterestRatePerPeriod = loanProduct.getMaxNominalInterestRatePerPeriod();
+        final BigDecimal minNominalInterestRatePerPeriod = loanProduct.getMinNominalInterestRatePerPeriod();
+        final BigDecimal nominalInterestRatePerPeriod = loanProduct.getNominalInterestRatePerPeriod();
+        final PeriodFrequencyType interestPeriodFrequencyType = loanProduct.getInterestPeriodFrequencyType();
+        final MaximumCreditRateConfigurationData maximumCreditRateConfigurationData = this.loanProductReadPlatformService
+                .retrieveMaximumCreditRateConfigurationData();
+        switch (interestPeriodFrequencyType) {
+            case MONTHS -> {
+                final BigDecimal monthlyNominalRate = maximumCreditRateConfigurationData.getMonthlyNominalRate();
+                if (maxNominalInterestRatePerPeriod.compareTo(monthlyNominalRate) > 0) {
+                    throw new PlatformDataIntegrityException("error.msg.loanproduct.max.nominal.interest.rate.per.period",
+                            "Maximum nominal interest rate per period must be less than or equal to maximum legal rate for monthly interest period frequency",
+                            "maxNominalInterestRatePerPeriod", maxNominalInterestRatePerPeriod, monthlyNominalRate);
+                }
+                if (minNominalInterestRatePerPeriod.compareTo(monthlyNominalRate) > 0) {
+                    throw new PlatformDataIntegrityException("error.msg.loanproduct.min.nominal.interest.rate.per.period",
+                            "Minimum nominal interest rate per period must be greater than or equal to maximum legal rate  for monthly interest period frequency",
+                            "minNominalInterestRatePerPeriod", minNominalInterestRatePerPeriod, monthlyNominalRate);
+                }
+                if (nominalInterestRatePerPeriod.compareTo(monthlyNominalRate) > 0) {
+                    throw new PlatformDataIntegrityException("error.msg.loanproduct.nominal.interest.rate.per.period",
+                            "Nominal interest rate per period must be greater than or equal to maximum legal rate  for monthly interest period frequency",
+                            "nominalInterestRatePerPeriod", nominalInterestRatePerPeriod, monthlyNominalRate);
+                }
+            }
+
+            case YEARS -> {
+                final BigDecimal annualNominalRate = maximumCreditRateConfigurationData.getAnnualNominalRate();
+                if (maxNominalInterestRatePerPeriod.compareTo(annualNominalRate) > 0) {
+                    throw new PlatformDataIntegrityException("error.msg.loanproduct.max.nominal.interest.rate.per.period",
+                            "Maximum nominal interest rate per period must be less than or equal to maximum legal rate for monthly interest period frequency",
+                            "maxNominalInterestRatePerPeriod", maxNominalInterestRatePerPeriod, annualNominalRate);
+                }
+                if (minNominalInterestRatePerPeriod.compareTo(annualNominalRate) > 0) {
+                    throw new PlatformDataIntegrityException("error.msg.loanproduct.min.nominal.interest.rate.per.period",
+                            "Minimum nominal interest rate per period must be greater than or equal to maximum legal rate  for monthly interest period frequency",
+                            "minNominalInterestRatePerPeriod", minNominalInterestRatePerPeriod, annualNominalRate);
+                }
+                if (nominalInterestRatePerPeriod.compareTo(annualNominalRate) > 0) {
+                    throw new PlatformDataIntegrityException("error.msg.loanproduct.nominal.interest.rate.per.period",
+                            "Nominal interest rate per period must be greater than or equal to maximum legal rate  for monthly interest period frequency",
+                            "nominalInterestRatePerPeriod", nominalInterestRatePerPeriod, annualNominalRate);
+                }
+            }
+        }
     }
 
     @Transactional

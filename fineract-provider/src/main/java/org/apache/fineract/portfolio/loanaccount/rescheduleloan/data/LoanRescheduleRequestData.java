@@ -215,4 +215,11 @@ public final class LoanRescheduleRequestData {
 
         return value;
     }
+
+    /**
+     * @return the rescheduleReasons
+     */
+    public Collection<CodeValueData> getRescheduleReasons() {
+        return rescheduleReasons;
+    }
 }

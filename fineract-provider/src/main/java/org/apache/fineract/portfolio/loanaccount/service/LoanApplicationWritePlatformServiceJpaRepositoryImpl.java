@@ -130,6 +130,7 @@ import org.apache.fineract.portfolio.loanaccount.serialization.LoanApplicationCo
 import org.apache.fineract.portfolio.loanaccount.serialization.LoanApplicationTransitionApiJsonValidator;
 import org.apache.fineract.portfolio.loanproduct.LoanProductConstants;
 import org.apache.fineract.portfolio.loanproduct.data.LoanProductData;
+import org.apache.fineract.portfolio.loanproduct.data.MaximumCreditRateConfigurationData;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProduct;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductRelatedDetail;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductRepository;
@@ -253,6 +254,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             }
 
             final Loan newLoanApplication = this.loanAssembler.assembleFrom(command);
+            this.validMaximumInterestRate(newLoanApplication);
 
             checkForProductMixRestrictions(newLoanApplication);
 
@@ -684,6 +686,32 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
         final CalendarInstance calendarInstance = CalendarInstance.from(calendar, loan.loanInterestRecalculationDetails().getId(),
                 calendarEntityType.getValue());
         this.calendarInstanceRepository.save(calendarInstance);
+    }
+
+    private void validMaximumInterestRate(final Loan loanApplication) {
+        final BigDecimal nominalInterestRatePerPeriod = loanApplication.getLoanRepaymentScheduleDetail().getNominalInterestRatePerPeriod();
+        final PeriodFrequencyType interestPeriodFrequencyType = loanApplication.getLoanRepaymentScheduleDetail()
+                .getInterestPeriodFrequencyType();
+        final MaximumCreditRateConfigurationData maximumCreditRateConfigurationData = this.loanProductReadPlatformService
+                .retrieveMaximumCreditRateConfigurationData();
+        switch (interestPeriodFrequencyType) {
+            case MONTHS -> {
+                final BigDecimal monthlyNominalRate = maximumCreditRateConfigurationData.getMonthlyNominalRate();
+                if (nominalInterestRatePerPeriod.compareTo(monthlyNominalRate) > 0) {
+                    throw new PlatformDataIntegrityException("error.msg.loanproduct.nominal.interest.rate.per.period",
+                            "Nominal interest rate per period must be greater than or equal to maximum legal rate for monthly interest period frequency",
+                            "nominalInterestRatePerPeriod", nominalInterestRatePerPeriod, monthlyNominalRate);
+                }
+            }
+            case YEARS -> {
+                final BigDecimal annualNominalRate = maximumCreditRateConfigurationData.getAnnualNominalRate();
+                if (nominalInterestRatePerPeriod.compareTo(annualNominalRate) > 0) {
+                    throw new PlatformDataIntegrityException("error.msg.loanproduct.nominal.interest.rate.per.period",
+                            "Nominal interest rate per period must be greater than or equal to maximum legal rate  for monthly interest period frequency",
+                            "nominalInterestRatePerPeriod", nominalInterestRatePerPeriod, annualNominalRate);
+                }
+            }
+        }
     }
 
     @Transactional
@@ -1165,6 +1193,8 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 officeSpecificLoanProductValidation(existingLoanApplication.getLoanProduct().getId(), OfficeId);
             }
             existingLoanApplication.getLoanCustomizationDetail().recordActivity();
+
+            this.validMaximumInterestRate(existingLoanApplication);
 
             // updating loan interest recalculation details throwing null
             // pointer exception after saveAndFlush
