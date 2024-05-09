@@ -79,21 +79,29 @@ public class CustomChargeSelectorReadWritePlatformServiceImpl implements CustomC
         List<CustomChargeSelectorData> allyCurve = customChargeSelectorDataList.stream()
                 .filter(c -> Objects.equals(c.getCustomChargeTypeId(), CustomChargeTypeEnum.AVAL_ALLY.getCode())).toList();
 
-        // Merge curves to bring the minumum percentage per term
-        for (CustomChargeSelectorData vip : vipCurve) {
-            for (CustomChargeSelectorData ally : allyCurve) {
-                if (vip.getTerm().equals(ally.getTerm())) {
-                    ret.add(CustomChargeSelectorData.builder() //
-                            .customChargeMapId(vip.getCustomChargeMapId()) //
-                            .clientId(vip.getClientId()) //
-                            .clientAllyId(vip.getClientAllyId()) //
-                            .customChargeTypeId(vip.getCustomChargeTypeId()) //
-                            .customChargeTypeName(vip.getCustomChargeTypeName()) //
-                            .term(vip.getTerm()) //
-                            .percentage(vip.getPercentage().min(ally.getPercentage())) //
-                            .build());
+        if (Boolean.FALSE.equals(vipCurve.isEmpty()) && Boolean.FALSE.equals(allyCurve.isEmpty())) {
+            // Merge curves to bring the minumum percentage per term
+            for (CustomChargeSelectorData vip : vipCurve) {
+                for (CustomChargeSelectorData ally : allyCurve) {
+                    if (vip.getTerm().equals(ally.getTerm())) {
+                        ret.add(CustomChargeSelectorData.builder() //
+                                .customChargeMapId(vip.getCustomChargeMapId()) //
+                                .clientId(vip.getClientId()) //
+                                .clientAllyId(vip.getClientAllyId()) //
+                                .customChargeTypeId(vip.getCustomChargeTypeId()) //
+                                .customChargeTypeName(vip.getCustomChargeTypeName()) //
+                                .term(vip.getTerm()) //
+                                .percentage(vip.getPercentage().min(ally.getPercentage())) //
+                                .build());
+                    }
                 }
             }
+
+        } else if (Boolean.FALSE.equals(vipCurve.isEmpty()) && allyCurve.isEmpty()) {
+            ret.addAll(vipCurve);
+
+        } else if (vipCurve.isEmpty() && Boolean.FALSE.equals(allyCurve.isEmpty())) {
+            ret.addAll(allyCurve);
         }
 
         // Get all the custom charge type By Product, if nothing found.
