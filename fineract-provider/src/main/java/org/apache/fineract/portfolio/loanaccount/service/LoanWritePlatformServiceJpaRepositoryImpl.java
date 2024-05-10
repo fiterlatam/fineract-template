@@ -3024,7 +3024,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                     	WHERE ltv.term_type = 10 AND ltv.is_active = TRUE AND ltv.applied_on_loan_status = 300 AND ltv.applicable_date >= ?
                     	ORDER BY ltv.loan_id, ltv.id DESC
                     ) term_variation ON term_variation.loan_id = ml.id
-                    WHERE mlrs.duedate >= ? AND (CASE WHEN term_variation.decimal_value IS NOT NULL THEN term_variation.decimal_value ELSE ml.annual_nominal_interest_rate END) > ?
+                    WHERE ml.loan_status_id = 300 AND mlrs.duedate >= ? AND (CASE WHEN term_variation.decimal_value IS NOT NULL THEN term_variation.decimal_value ELSE ml.annual_nominal_interest_rate END) > ?
                     GROUP BY term_variation.loan_id, ml.annual_nominal_interest_rate, term_variation.decimal_value, ml.id
                     """;
         }
