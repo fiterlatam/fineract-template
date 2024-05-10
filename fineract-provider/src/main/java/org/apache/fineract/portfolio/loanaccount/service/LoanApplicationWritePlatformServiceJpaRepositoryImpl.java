@@ -203,17 +203,22 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
     public CommandProcessingResult submitApplication(final JsonCommand command) {
 
         try {
+            final Long clientId = this.fromJsonHelper.extractLongNamed("clientId", command.parsedJson());
+            final Long groupId = this.fromJsonHelper.extractLongNamed("groupId", command.parsedJson());
+
+            final Long entityId = clientId != null ? clientId : groupId;
+            this.fromApiJsonDeserializer.validateClientBlockingList(entityId);
+
             boolean isMeetingMandatoryForJLGLoans = configurationDomainService.isMeetingMandatoryForJLGLoans();
             final Long productId = this.fromJsonHelper.extractLongNamed("productId", command.parsedJson());
             final LoanProduct loanProduct = this.loanProductRepository.findById(productId)
                     .orElseThrow(() -> new LoanProductNotFoundException(productId));
 
-            final Long clientId = this.fromJsonHelper.extractLongNamed("clientId", command.parsedJson());
             if (clientId != null) {
                 Client client = this.clientRepository.findOneWithNotFoundDetection(clientId);
                 officeSpecificLoanProductValidation(productId, client.getOffice().getId());
             }
-            final Long groupId = this.fromJsonHelper.extractLongNamed("groupId", command.parsedJson());
+
             if (groupId != null) {
                 Group group = this.groupRepository.findOneWithNotFoundDetection(groupId);
                 officeSpecificLoanProductValidation(productId, group.getOffice().getId());
