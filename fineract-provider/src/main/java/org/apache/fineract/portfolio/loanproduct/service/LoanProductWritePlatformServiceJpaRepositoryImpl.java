@@ -31,6 +31,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.fineract.accounting.producttoaccountmapping.service.ProductToGLAccountMappingWritePlatformService;
+import org.apache.fineract.infrastructure.codes.domain.CodeValue;
+import org.apache.fineract.infrastructure.codes.domain.CodeValueRepositoryWrapper;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuilder;
@@ -102,6 +104,7 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
     private final LoanProductPaymentAllocationRuleMerger loanProductPaymentAllocationRuleMerger = new LoanProductPaymentAllocationRuleMerger();
     private final LoanProductCreditAllocationRuleMerger loanProductCreditAllocationRuleMerger = new LoanProductCreditAllocationRuleMerger();
     private final LoanProductReadPlatformService loanProductReadPlatformService;
+    private final CodeValueRepositoryWrapper codeValueRepository;
 
     @Transactional
     @Override
@@ -130,12 +133,15 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
                 floatingRate = this.floatingRateRepository
                         .findOneWithNotFoundDetection(command.longValueOfParameterNamed("floatingRatesId"));
             }
+            final CodeValue productType = findProductTypeByIdIfProvided(
+                    command.longValueOfParameterNamed(LoanProductConstants.PRODUCT_TYPE));
             final LoanProduct loanProduct = LoanProduct.assembleFromJson(fund, loanTransactionProcessingStrategyCode, charges, command,
                     this.aprCalculator, floatingRate, rates, loanProductPaymentAllocationRules, loanProductCreditAllocationRules);
             this.validateMaximumInterestRate(loanProduct);
             loanProduct.updateLoanProductInRelatedClasses();
             loanProduct.setTransactionProcessingStrategyName(
                     loanRepaymentScheduleTransactionProcessorFactory.determineProcessor(loanTransactionProcessingStrategyCode).getName());
+            loanProduct.setProductType(productType);
 
             if (command.parameterExists("delinquencyBucketId")) {
                 loanProduct
@@ -187,6 +193,14 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
         return delinquencyBucket;
     }
 
+    private CodeValue findProductTypeByIdIfProvided(final Long productTypeId) {
+        CodeValue productType = null;
+        if (productTypeId != null) {
+            productType = this.codeValueRepository.findOneWithNotFoundDetection(productTypeId);
+        }
+        return productType;
+    }
+
     @Transactional
     @Override
     public CommandProcessingResult updateLoanProduct(final Long loanProductId, final JsonCommand command) {
@@ -217,6 +231,12 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
                 final Long fundId = (Long) changes.get("fundId");
                 final Fund fund = findFundByIdIfProvided(fundId);
                 product.update(fund);
+            }
+
+            if (changes.containsKey(LoanProductConstants.PRODUCT_TYPE)) {
+                final Long parameterTypeId = (Long) changes.get(LoanProductConstants.PRODUCT_TYPE);
+                final CodeValue productType = this.codeValueRepository.findOneWithNotFoundDetection(parameterTypeId);
+                product.setProductType(productType);
             }
 
             if (changes.containsKey("delinquencyBucketId")) {

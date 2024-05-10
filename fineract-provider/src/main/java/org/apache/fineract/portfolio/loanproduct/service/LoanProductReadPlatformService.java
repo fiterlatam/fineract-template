@@ -63,4 +63,6 @@ public interface LoanProductReadPlatformService {
     MaximumCreditRateConfigurationData retrieveMaximumCreditRateConfigurationData();
 
     Collection<Pair<Long, Integer>> retrieveLoanProductClientInActivityConfiguration();
+
+    Collection<Long> retrieveAnyProductsThatCanBlockCredit(final Long clientId, final String productType);
 }

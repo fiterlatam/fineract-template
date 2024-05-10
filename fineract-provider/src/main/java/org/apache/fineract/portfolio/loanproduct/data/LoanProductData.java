@@ -32,6 +32,7 @@ import org.apache.fineract.accounting.common.AccountingRuleType;
 import org.apache.fineract.accounting.glaccount.data.GLAccountData;
 import org.apache.fineract.accounting.producttoaccountmapping.data.ChargeToGLAccountMapper;
 import org.apache.fineract.accounting.producttoaccountmapping.data.PaymentTypeToGLAccountMapper;
+import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.organisation.monetary.data.CurrencyData;
 import org.apache.fineract.portfolio.calendar.data.CalendarData;
@@ -235,6 +236,10 @@ public class LoanProductData implements Serializable {
 
     @lombok.Setter
     private MaximumCreditRateConfigurationData maximumCreditRateConfiguration;
+
+    @lombok.Setter
+    private CodeValueData productType;
+    private final Collection<CodeValueData> productTypeOptions;
 
     /**
      * Used when returning lookup information about loan product for dropdowns.
@@ -913,6 +918,7 @@ public class LoanProductData implements Serializable {
         this.repaymentReschedulingTypeOptions = null;
         this.repaymentReschedulingType = repaymentReschedulingType;
         this.repaymentReschedulingTypeConfig = null;
+        this.productTypeOptions = null;
     }
 
     public LoanProductData(final LoanProductData productData, final Collection<ChargeData> chargeOptions,
@@ -935,7 +941,7 @@ public class LoanProductData implements Serializable {
             final List<EnumOptionData> advancedPaymentAllocationTypes, final List<EnumOptionData> loanScheduleTypeOptions,
             final List<EnumOptionData> loanScheduleProcessingTypeOptions, final List<EnumOptionData> creditAllocationTransactionTypes,
             final List<EnumOptionData> creditAllocationAllocationTypes, final Collection<EnumOptionData> repaymentReschedulingTypeOptions,
-            final Integer repaymentReschedulingTypeConfig) {
+            final Integer repaymentReschedulingTypeConfig, final Collection<CodeValueData> productTypeOptions) {
 
         this.id = productData.id;
         this.name = productData.name;
@@ -1094,6 +1100,9 @@ public class LoanProductData implements Serializable {
         this.maxClientInactivityPeriod = productData.maxClientInactivityPeriod;
         this.overdueAmountForArrearsConsideration = productData.overdueAmountForArrearsConsideration;
         this.extendTermForMonthlyRepayments = productData.extendTermForMonthlyRepayments;
+        this.productTypeOptions = productTypeOptions;
+        this.productType = productData.productType;
+
     }
 
     private Collection<ChargeData> nullIfEmpty(final Collection<ChargeData> charges) {

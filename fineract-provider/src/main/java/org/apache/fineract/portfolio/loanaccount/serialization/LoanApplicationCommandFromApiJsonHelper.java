@@ -27,6 +27,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -37,6 +38,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.infrastructure.core.data.ApiParameterError;
 import org.apache.fineract.infrastructure.core.data.DataValidatorBuilder;
+import org.apache.fineract.infrastructure.core.exception.GeneralPlatformDomainRuleException;
 import org.apache.fineract.infrastructure.core.exception.InvalidJsonException;
 import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidationException;
 import org.apache.fineract.infrastructure.core.exception.UnsupportedParameterException;
@@ -44,6 +46,8 @@ import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.portfolio.accountdetails.domain.AccountType;
 import org.apache.fineract.portfolio.calendar.service.CalendarUtils;
+import org.apache.fineract.portfolio.client.domain.ClientBlockingReason;
+import org.apache.fineract.portfolio.client.domain.ClientBlockingReasonRepositoryWrapper;
 import org.apache.fineract.portfolio.collateralmanagement.domain.ClientCollateralManagement;
 import org.apache.fineract.portfolio.collateralmanagement.domain.ClientCollateralManagementRepositoryWrapper;
 import org.apache.fineract.portfolio.loanaccount.api.LoanApiConstants;
@@ -61,6 +65,7 @@ import org.apache.fineract.portfolio.loanproduct.domain.InterestMethod;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProduct;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductPaymentAllocationRule;
 import org.apache.fineract.portfolio.loanproduct.exception.EqualAmortizationUnsupportedFeatureException;
+import org.apache.fineract.portfolio.loanproduct.service.LoanProductReadPlatformService;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccount;
 import org.springframework.stereotype.Component;
 
@@ -114,6 +119,25 @@ public final class LoanApplicationCommandFromApiJsonHelper {
     private final LoanChargeApiJsonValidator loanChargeApiJsonValidator;
     private final LoanRepaymentScheduleTransactionProcessorFactory loanRepaymentScheduleTransactionProcessorFactory;
     private final AdvancedPaymentAllocationsValidator advancedPaymentAllocationsValidator;
+    private final ClientBlockingReasonRepositoryWrapper clientBlockingReasonRepositoryWrapper;
+    public final LoanProductReadPlatformService loanProductReadPlatformService;
+
+    public void validateClientBlockingList(final Long clientId) {
+
+        final List<ClientBlockingReason> clientBlockingReasonRepository = clientBlockingReasonRepositoryWrapper
+                .findClientBlockingReasonByClientId(clientId);
+
+        if (!clientBlockingReasonRepository.isEmpty()) {
+            throw new GeneralPlatformDomainRuleException("error.msg.client.blocked", "Cliente o bloqueo de crédito existente");
+        }
+
+        final Collection<Long> loansInArrearsThatBlockCredit = loanProductReadPlatformService
+                .retrieveAnyProductsThatCanBlockCredit(clientId, LoanProductConstants.PRODUCT_TYPES_THAT_BLOCK_CREDIT);
+        if (!loansInArrearsThatBlockCredit.isEmpty()) {
+            throw new GeneralPlatformDomainRuleException("error.msg.client.credit.blocked", "Cliente o bloqueo de crédito existente");
+        }
+
+    }
 
     public void validateForCreate(final String json, final boolean isMeetingMandatoryForJLGLoans, final LoanProduct loanProduct) {
         if (StringUtils.isBlank(json)) {

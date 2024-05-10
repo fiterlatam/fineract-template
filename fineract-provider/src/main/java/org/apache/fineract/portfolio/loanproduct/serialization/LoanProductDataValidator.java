@@ -181,7 +181,7 @@ public final class LoanProductDataValidator {
             LoanProductConstants.ENABLE_INSTALLMENT_LEVEL_DELINQUENCY, LoanProductConstants.LOAN_SCHEDULE_TYPE,
             LoanProductConstants.LOAN_SCHEDULE_PROCESSING_TYPE, LoanProductConstants.REPAYMENT_RESCHEDULING_TYPE,
             LoanProductConstants.MAX_CLIENT_INACTIVITY_PERIOD, LoanProductConstants.OVERDUE_AMOUNT_FOR_ARREARS,
-            LoanProductConstants.EXTEND_TERM_FOR_MONTHLY_REPAYMENTS));
+            LoanProductConstants.EXTEND_TERM_FOR_MONTHLY_REPAYMENTS, LoanProductConstants.PRODUCT_TYPE));
 
     private static final Set<String> MAXIMUM_RATE_SUPPORTED_PARAMETERS = new HashSet<>(
             Arrays.asList("locale", "dateFormat", "eaRate", "annualNominalRate", "appliedBy", "appliedOnDate", "dailyNominalRate",
@@ -1828,6 +1828,10 @@ public final class LoanProductDataValidator {
                     "supported.only.for.progressive.loan.schedule.handling",
                     "Vertical repayment schedule processing is only available with `Advanced payment allocation` strategy");
         }
+
+        baseDataValidator.reset().parameter(LoanProductConstants.PRODUCT_TYPE)
+                .value(this.fromApiJsonHelper.extractIntegerSansLocaleNamed(LoanProductConstants.PRODUCT_TYPE, element)).notNull()
+                .integerGreaterThanZero();
         throwExceptionIfValidationWarningsExist(dataValidationErrors);
     }
 
@@ -1890,6 +1894,11 @@ public final class LoanProductDataValidator {
             baseDataValidator.reset().parameter(LoanProductConstants.MAX_CLIENT_INACTIVITY_PERIOD).value(maxClientInactivityPeriod)
                     .ignoreIfNull().integerGreaterThanZero();
         }
+
+        baseDataValidator.reset().parameter(LoanProductConstants.PRODUCT_TYPE)
+                .value(this.fromApiJsonHelper.extractIntegerSansLocaleNamed(LoanProductConstants.PRODUCT_TYPE, element)).notNull()
+                .integerGreaterThanZero();
+
         throwExceptionIfValidationWarningsExist(dataValidationErrors);
     }
 
