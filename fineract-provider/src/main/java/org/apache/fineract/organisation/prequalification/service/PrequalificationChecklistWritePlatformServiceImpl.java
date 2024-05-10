@@ -403,6 +403,7 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
         reportParams.put("${numberOfFirstDocument}", Long.toString(firstDocumentCount));
         reportParams.put("${numberOfSecondDocument}", Long.toString(secondDocumentCount));
         reportParams.put("${percentageIncrease}", String.valueOf(percentageIncrease));
+        reportParams.put("${requestedAmount}", clientData.getRequestedAmount().toPlainString());
         final GenericResultsetData result = this.readReportingService.retrieveGenericResultset(reportName, "report", reportParams, false);
         return extractColorFromResultset(result);
     }
