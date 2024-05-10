@@ -46,6 +46,7 @@ import java.util.Map;
 import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.accounting.common.AccountingRuleType;
+import org.apache.fineract.infrastructure.codes.domain.CodeValue;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
 import org.apache.fineract.infrastructure.core.domain.ExternalId;
@@ -237,6 +238,11 @@ public class LoanProduct extends AbstractPersistableCustom {
 
     @Column(name = "extend_term_monthly_repayments")
     private boolean extendTermForMonthlyRepayments;
+
+    @lombok.Setter
+    @ManyToOne
+    @JoinColumn(name = "product_type")
+    private CodeValue productType;
 
     public static LoanProduct assembleFromJson(final Fund fund, final String loanTransactionProcessingStrategy,
             final List<Charge> productCharges, final JsonCommand command, final AprCalculator aprCalculator, FloatingRate floatingRate,
@@ -1409,6 +1415,14 @@ public class LoanProduct extends AbstractPersistableCustom {
             final BigDecimal newValue = command.bigDecimalValueOfParameterNamed(LoanProductConstants.OVERDUE_AMOUNT_FOR_ARREARS);
             actualChanges.put(LoanProductConstants.OVERDUE_AMOUNT_FOR_ARREARS, newValue);
             this.overDueAmountForArrears = newValue;
+        }
+        Long existingProductTypeId = null;
+        if (this.productType != null) {
+            existingProductTypeId = this.productType.getId();
+        }
+        if (command.isChangeInLongParameterNamed(LoanProductConstants.PRODUCT_TYPE, existingProductTypeId)) {
+            final Long newValue = command.longValueOfParameterNamed(LoanProductConstants.PRODUCT_TYPE);
+            actualChanges.put(LoanProductConstants.PRODUCT_TYPE, newValue);
         }
 
         if (command.isChangeInBooleanParameterNamed(LoanProductConstants.EXTEND_TERM_FOR_MONTHLY_REPAYMENTS,

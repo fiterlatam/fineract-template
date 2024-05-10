@@ -30,6 +30,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.fineract.accounting.common.AccountingEnumerations;
+import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.infrastructure.core.domain.ExternalId;
 import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
@@ -283,7 +284,8 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
                     + "lp.repayment_rescheduling_enum as repaymentReschedulingType, "
                     + "lp.max_client_inactivity_period as maxClientInactivityPeriod, "
                     + "lp.overdue_amount_for_arrears overdueAmountForArrears, "
-                    + "lp.extend_term_monthly_repayments as extendTermForMonthlyRepayments " + " from m_product_loan lp "
+                    + "lp.extend_term_monthly_repayments as extendTermForMonthlyRepayments, " + "pty.code_value as productTypeValue, "
+                    + "pty.id as productTypeId, " + "lp.overdue_days_for_npa as overdueDaysForNPA " + " from m_product_loan lp "
                     + " left join m_fund f on f.id = lp.fund_id "
                     + " left join m_product_loan_recalculation_details lpr on lpr.product_id=lp.id "
                     + " left join m_product_loan_guarantee_details lpg on lpg.loan_product_id=lp.id "
@@ -292,6 +294,7 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
                     + " left join m_floating_rates as fr on lfr.floating_rates_id = fr.id "
                     + " left join m_product_loan_variable_installment_config as lvi on lvi.loan_product_id = lp.id "
                     + " left join m_delinquency_bucket as dbuc on dbuc.id = lp.delinquency_bucket_id "
+                    + " left join m_code_value as pty on pty.id = lp.product_type "
                     + " join m_currency curr on curr.code = lp.currency_code";
 
         }
@@ -537,6 +540,13 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
             final Integer maxClientInactivityPeriod = rs.getInt("maxClientInactivityPeriod");
             final BigDecimal overdueAmountForArrears = rs.getBigDecimal("overdueAmountForArrears");
             final boolean extendTermForMonthlyRepayments = rs.getBoolean("extendTermForMonthlyRepayments");
+            final Long productTypeId = rs.getLong("productTypeId");
+
+            CodeValueData productType = null;
+            if (productTypeId != null) {
+                final String productTypeValue = rs.getString("productTypeValue");
+                productType = CodeValueData.instance(productTypeId, productTypeValue);
+            }
 
             LoanProductData loanProductData = new LoanProductData(id, name, shortName, description, currency, principal, minPrincipal,
                     maxPrincipal, tolerance, numberOfRepayments, minNumberOfRepayments, maxNumberOfRepayments, repaymentEvery,
@@ -563,6 +573,7 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
             loanProductData.setMaxClientInactivityPeriod(maxClientInactivityPeriod);
             loanProductData.setOverdueAmountForArrearsConsideration(overdueAmountForArrears);
             loanProductData.setExtendTermForMonthlyRepayments(extendTermForMonthlyRepayments);
+            loanProductData.setProductType(productType);
 
             return loanProductData;
         }
@@ -877,5 +888,17 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
             final Integer maxClientInactivityPeriod = rs.getInt("max_client_inactivity_period");
             return Pair.of(id, maxClientInactivityPeriod);
         });
+    }
+
+    @Override
+    public Collection<Long> retrieveAnyProductsThatCanBlockCredit(final Long clientId, String productType) {
+
+        final String query = "select mpl.id from m_client mc " + "inner join m_loan ml on ml.client_id = mc.id  "
+                + "inner join m_product_loan mpl on mpl.id = ml.product_id  "
+                + "inner join m_loan_arrears_aging mla on ml.id = mla.loan_id  " + "where  " + "mc.id = ? " + "and mpl.product_type in (  "
+                + " Select m_code_value.id from m_code_value inner join m_code on m_code.id = m_code_value.code_id  "
+                + " where m_code.code_name = 'ProductType'  " + " and m_code_value.code_value = ?)";
+
+        return jdbcTemplate.queryForList(query, Long.class, clientId, productType);
     }
 }

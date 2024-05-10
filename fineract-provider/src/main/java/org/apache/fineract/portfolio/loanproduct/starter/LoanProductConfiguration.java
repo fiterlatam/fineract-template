@@ -19,6 +19,7 @@
 package org.apache.fineract.portfolio.loanproduct.starter;
 
 import org.apache.fineract.accounting.producttoaccountmapping.service.ProductToGLAccountMappingWritePlatformService;
+import org.apache.fineract.infrastructure.codes.domain.CodeValueRepositoryWrapper;
 import org.apache.fineract.infrastructure.core.service.database.DatabaseSpecificSQLGenerator;
 import org.apache.fineract.infrastructure.entityaccess.service.FineractEntityAccessUtil;
 import org.apache.fineract.infrastructure.event.business.service.BusinessEventNotifierService;
@@ -81,11 +82,11 @@ public class LoanProductConfiguration {
             DelinquencyBucketRepository delinquencyBucketRepository, MaximumRateRepository maximumRateRepository,
             LoanRepaymentScheduleTransactionProcessorFactory loanRepaymentScheduleTransactionProcessorFactory,
             AdvancedPaymentAllocationsJsonParser advancedPaymentJsonParser, CreditAllocationsJsonParser creditAllocationsJsonParser,
-            LoanProductReadPlatformService loanProductReadPlatformService) {
+            LoanProductReadPlatformService loanProductReadPlatformService, CodeValueRepositoryWrapper codeValueRepositoryWrapper) {
         return new LoanProductWritePlatformServiceJpaRepositoryImpl(context, fromApiJsonDeserializer, loanProductRepository,
                 maximumRateRepository, aprCalculator, fundRepository, chargeRepository, rateRepository, accountMappingWritePlatformService,
                 fineractEntityAccessUtil, floatingRateRepository, loanRepositoryWrapper, businessEventNotifierService,
                 delinquencyBucketRepository, loanRepaymentScheduleTransactionProcessorFactory, advancedPaymentJsonParser,
-                creditAllocationsJsonParser, loanProductReadPlatformService);
+                creditAllocationsJsonParser, loanProductReadPlatformService, codeValueRepositoryWrapper);
     }
 }
