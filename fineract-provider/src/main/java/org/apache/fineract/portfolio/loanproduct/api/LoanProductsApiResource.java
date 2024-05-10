@@ -54,6 +54,8 @@ import org.apache.fineract.accounting.producttoaccountmapping.service.ProductToG
 import org.apache.fineract.commands.domain.CommandWrapper;
 import org.apache.fineract.commands.service.CommandWrapperBuilder;
 import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformService;
+import org.apache.fineract.infrastructure.codes.data.CodeValueData;
+import org.apache.fineract.infrastructure.codes.service.CodeValueReadPlatformService;
 import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
 import org.apache.fineract.infrastructure.core.api.ApiParameterHelper;
 import org.apache.fineract.infrastructure.core.api.ApiRequestParameterHelper;
@@ -155,6 +157,7 @@ public class LoanProductsApiResource {
     private final DelinquencyReadPlatformService delinquencyReadPlatformService;
     private final WorkingDaysReadPlatformService workingDaysReadPlatformService;
     private final WorkingDaysRepositoryWrapper workingDaysRepositoryWrapper;
+    private final CodeValueReadPlatformService codeValueReadPlatformService;
 
     @POST
     @Consumes({ MediaType.APPLICATION_JSON })
@@ -454,6 +457,8 @@ public class LoanProductsApiResource {
         final List<EnumOptionData> creditAllocationAllocationTypes = AllocationType.getValuesAsEnumOptionDataList();
         final WorkingDaysData workingDaysData = this.workingDaysReadPlatformService.repaymentRescheduleType();
         final WorkingDays workingDays = this.workingDaysRepositoryWrapper.findOne();
+        final Collection<CodeValueData> productTypeOptions = this.codeValueReadPlatformService.retrieveCodeValuesByCode("ProductType");
+        ;
 
         return new LoanProductData(productData, chargeOptions, penaltyOptions, paymentTypeOptions, currencyOptions, amortizationTypeOptions,
                 interestTypeOptions, interestCalculationPeriodTypeOptions, repaymentFrequencyTypeOptions, interestRateFrequencyTypeOptions,
@@ -466,7 +471,7 @@ public class LoanProductsApiResource {
                 advancedPaymentAllocationTypes, LoanScheduleType.getValuesAsEnumOptionDataList(),
                 LoanScheduleProcessingType.getValuesAsEnumOptionDataList(), creditAllocationTransactionTypes,
                 creditAllocationAllocationTypes, workingDaysData.getRepaymentRescheduleOptions(),
-                workingDays.getRepaymentReschedulingType());
+                workingDays.getRepaymentReschedulingType(), productTypeOptions);
     }
 
 }

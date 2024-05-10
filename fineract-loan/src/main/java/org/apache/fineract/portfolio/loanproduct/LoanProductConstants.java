@@ -19,6 +19,7 @@
 package org.apache.fineract.portfolio.loanproduct;
 
 import java.math.BigDecimal;
+import org.apache.fineract.portfolio.loanproduct.domain.LoanProductType;
 
 public interface LoanProductConstants {
 
@@ -167,4 +168,8 @@ public interface LoanProductConstants {
 
     String OVERDUE_AMOUNT_FOR_ARREARS = "overdueAmountForArrearsConsideration";
     String EXTEND_TERM_FOR_MONTHLY_REPAYMENTS = "extendTermForMonthlyRepayments";
+
+    String PRODUCT_TYPE = "productType";
+
+    String PRODUCT_TYPES_THAT_BLOCK_CREDIT = LoanProductType.SUMAS_PAY.getCode();
 }
