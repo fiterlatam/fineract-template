@@ -87,12 +87,12 @@ public class GroupReadPlatformServiceImpl implements GroupReadPlatformService {
 
     @Autowired
     public GroupReadPlatformServiceImpl(final PlatformSecurityContext context, final JdbcTemplate jdbcTemplate,
-            final CenterReadPlatformService centerReadPlatformService, final OfficeReadPlatformService officeReadPlatformService,
-            final StaffReadPlatformService staffReadPlatformService, final CodeValueReadPlatformService codeValueReadPlatformService,
-            final PaginationParametersDataValidator paginationParametersDataValidator, final ColumnValidator columnValidator,
-            DatabaseSpecificSQLGenerator sqlGenerator, PaginationHelper paginationHelper,
-            final AppUserReadPlatformService appUserReadPlatformService,
-            final PortfolioCenterReadPlatformService portfolioCenterReadPlatformService) {
+                                        final CenterReadPlatformService centerReadPlatformService, final OfficeReadPlatformService officeReadPlatformService,
+                                        final StaffReadPlatformService staffReadPlatformService, final CodeValueReadPlatformService codeValueReadPlatformService,
+                                        final PaginationParametersDataValidator paginationParametersDataValidator, final ColumnValidator columnValidator,
+                                        DatabaseSpecificSQLGenerator sqlGenerator, PaginationHelper paginationHelper,
+                                        final AppUserReadPlatformService appUserReadPlatformService,
+                                        final PortfolioCenterReadPlatformService portfolioCenterReadPlatformService) {
 
         this.context = context;
         this.jdbcTemplate = jdbcTemplate;
@@ -330,7 +330,7 @@ public class GroupReadPlatformServiceImpl implements GroupReadPlatformService {
         final String sql = "select " + this.allGroupTypesDataMapper.schema()
                 + " where g.parent_id is not null and g.level_Id = ? and (o.hierarchy LIKE CONCAT(?, '%') OR ? like CONCAT(o.hierarchy, '%')) order by g.hierarchy";
 
-        return this.jdbcTemplate.query(sql, this.allGroupTypesDataMapper, new Object[] { GroupTypes.GROUP.getId(), hierarchy,hierarchy });
+        return this.jdbcTemplate.query(sql, this.allGroupTypesDataMapper, new Object[] { GroupTypes.GROUP.getId(), hierarchy, hierarchy });
     }
 
 }
