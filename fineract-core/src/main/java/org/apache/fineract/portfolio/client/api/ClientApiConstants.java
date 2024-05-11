@@ -84,6 +84,7 @@ public class ClientApiConstants {
     public static final String firstnameParamName = "firstname";
     public static final String middlenameParamName = "middlename";
     public static final String lastnameParamName = "lastname";
+    public static final String lastname2ParamName = "lastname2";
     public static final String fullnameParamName = "fullname";
     public static final String displaynameParamName = "displayname";
     public static final String officeIdParamName = "officeId";
@@ -201,11 +202,11 @@ public class ClientApiConstants {
      */
     protected static final Set<String> CLIENT_RESPONSE_DATA_PARAMETERS = new HashSet<>(Arrays.asList(idParamName, accountNoParamName,
             externalIdParamName, statusParamName, activeParamName, activationDateParamName, firstnameParamName, middlenameParamName,
-            lastnameParamName, fullnameParamName, displayNameParamName, mobileNoParamName, emailAddressParamName, officeIdParamName,
-            officeNameParamName, transferToOfficeIdParamName, transferToOfficeNameParamName, hierarchyParamName, imageIdParamName,
-            imagePresentParamName, staffIdParamName, staffNameParamName, timelineParamName, groupsParamName, officeOptionsParamName,
-            staffOptionsParamName, dateOfBirthParamName, genderParamName, clientTypeParamName, clientClassificationParamName,
-            legalFormParamName, clientNonPersonDetailsParamName, isStaffParamName));
+            lastnameParamName, lastname2ParamName, fullnameParamName, displayNameParamName, mobileNoParamName, emailAddressParamName,
+            officeIdParamName, officeNameParamName, transferToOfficeIdParamName, transferToOfficeNameParamName, hierarchyParamName,
+            imageIdParamName, imagePresentParamName, staffIdParamName, staffNameParamName, timelineParamName, groupsParamName,
+            officeOptionsParamName, staffOptionsParamName, dateOfBirthParamName, genderParamName, clientTypeParamName,
+            clientClassificationParamName, legalFormParamName, clientNonPersonDetailsParamName, isStaffParamName));
 
     protected static final Set<String> CLIENT_CHARGES_RESPONSE_DATA_PARAMETERS = new HashSet<>(Arrays.asList(chargeIdParamName,
             clientIdParamName, chargeNameParamName, penaltyParamName, chargeTimeTypeParamName, dueAsOfDateParamName,

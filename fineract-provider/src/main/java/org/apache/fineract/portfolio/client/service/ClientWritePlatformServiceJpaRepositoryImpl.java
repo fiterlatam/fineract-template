@@ -273,6 +273,7 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
             final String firstname = command.stringValueOfParameterNamed(ClientApiConstants.firstnameParamName);
             final String middlename = command.stringValueOfParameterNamed(ClientApiConstants.middlenameParamName);
             final String lastname = command.stringValueOfParameterNamed(ClientApiConstants.lastnameParamName);
+            final String lastname2 = command.stringValueOfParameterNamed(ClientApiConstants.lastname2ParamName);
             final String fullname = command.stringValueOfParameterNamed(ClientApiConstants.fullnameParamName);
             final boolean isStaff = command.booleanPrimitiveValueOfParameterNamed(ClientApiConstants.isStaffParamName);
             final LocalDate dataOfBirth = command.localDateValueOfParameterNamed(ClientApiConstants.dateOfBirthParamName);
@@ -306,7 +307,7 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
                     lastname, fullname, activationDate, officeJoiningDate, externalId, mobileNo, emailAddress, staff, submittedOnDate,
                     savingsProductId, savingsAccountId, dataOfBirth, gender, clientType, clientClassification, legalForm.getValue(),
                     isStaff);
-
+            newClient.setLastname2(lastname2);
             this.clientRepository.saveAndFlush(newClient);
             boolean rollbackTransaction = false;
             if (newClient.isActive()) {
@@ -522,6 +523,12 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
                 final String newValue = command.stringValueOfParameterNamed(ClientApiConstants.lastnameParamName);
                 changes.put(ClientApiConstants.lastnameParamName, newValue);
                 clientForUpdate.setLastname(StringUtils.defaultIfEmpty(newValue, null));
+            }
+
+            if (command.isChangeInStringParameterNamed(ClientApiConstants.lastname2ParamName, clientForUpdate.getLastname2())) {
+                final String newValue = command.stringValueOfParameterNamed(ClientApiConstants.lastname2ParamName);
+                changes.put(ClientApiConstants.lastname2ParamName, newValue);
+                clientForUpdate.setLastname2(StringUtils.defaultIfEmpty(newValue, null));
             }
 
             if (command.isChangeInStringParameterNamed(ClientApiConstants.fullnameParamName, clientForUpdate.getFullname())) {

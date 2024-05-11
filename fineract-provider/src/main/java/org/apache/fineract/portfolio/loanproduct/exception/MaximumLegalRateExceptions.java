@@ -24,13 +24,13 @@ import org.apache.fineract.infrastructure.core.exception.AbstractPlatformResourc
 /**
  * A {@link RuntimeException} thrown when maximum rate update has invalid parameters.
  */
-public class MaximumRateNotFoundException extends AbstractPlatformResourceNotFoundException {
+public class MaximumLegalRateExceptions extends AbstractPlatformResourceNotFoundException {
 
-    public MaximumRateNotFoundException() {
+    public MaximumLegalRateExceptions() {
         super("error.msg.maximum.rate.not.found", "Maximum rate table is empty", "");
     }
 
-    public MaximumRateNotFoundException(final LocalDate appliedOnDate) {
+    public MaximumLegalRateExceptions(final LocalDate appliedOnDate) {
         super("error.msg.applied.on.date.cannot.be.in.the.future", "Applied on date cannot be in the future date", appliedOnDate);
     }
 }

@@ -63,6 +63,7 @@ public final class ClientData implements Comparable<ClientData>, Serializable {
     private String firstname;
     private String middlename;
     private String lastname;
+    private String lastname2;
     private String fullname;
     private String displayName;
     private String mobileNo;

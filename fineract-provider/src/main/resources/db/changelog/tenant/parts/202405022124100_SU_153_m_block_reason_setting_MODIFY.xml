@@ -53,4 +53,71 @@
         </insert>
     </changeSet>
 
+    <changeSet author="fineract" id="3">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_client" columnName="lastname2"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_client">
+            <column name="lastname2" type="VARCHAR(100)">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="4" author="fineract">
+        <sql>
+            <![CDATA[
+            -- Table: campos_cliente_persona_copy
+            DROP TABLE IF EXISTS campos_cliente_persona_copy;
+            CREATE TABLE campos_cliente_persona_copy (
+                                                         client_id int8 NOT NULL,
+                                                         "Cedula" varchar(20) NOT NULL,
+                                                         "Estado Civil_cd_Estado civil" int4 NOT NULL,
+                                                         "Edad" int4 NOT NULL,
+                                                         "Estrato" int4 NULL,
+                                                         "Ciudad_cd_Ciudad" int4 NOT NULL,
+                                                         "Tiene vehiculo propio" bool DEFAULT false NULL,
+                                                         "Tipo Vehiculo_cd_Tipo de vehiculo" int4 NULL,
+                                                         "Nivel Academico_cd_Nivel academico" int4 NULL,
+                                                         "Actividad Laboral_cd_Actividad laboral" int4 NULL,
+                                                         "Tiempo de actividad laboral" int4 NULL,
+                                                         "Media de ingresos" numeric(14, 2) NULL,
+                                                         "Nombre empresa" varchar(100) NULL,
+                                                         "Direccion" varchar(200) NOT NULL,
+                                                         "Telefono" varchar(60) NULL,
+                                                         "Cupo solicitado" int8 NULL,
+                                                         "Cupo aprobado" int8 NOT NULL,
+                                                         "Cupo score" int8 NULL,
+                                                         "Valor score" int4 NULL,
+                                                         "Modelo score" varchar(10) NULL,
+                                                         "Referencia" varchar(60) NOT NULL,
+                                                         "Celular Referencia" varchar(30) NOT NULL,
+                                                         "Parentesco_cd_Parentesco" int4 NOT NULL,
+                                                         created_at timestamp NULL,
+                                                         updated_at timestamp NULL,
+                                                         CONSTRAINT campos_cliente_personax_pkey PRIMARY KEY (client_id),
+                                                         CONSTRAINT "unique_campos_cliente_personax_Cedula" UNIQUE ("Cedula")
+            );
+
+            -- public.campos_cliente_persona foreign keys
+            ALTER TABLE public.campos_cliente_persona_copy ADD CONSTRAINT fk_campos_cliente_persona_client_id FOREIGN KEY (client_id) REFERENCES m_client(id) ON DELETE CASCADE ON UPDATE RESTRICT;
+
+            -- Copy data from campos_cliente_persona to campos_cliente_persona_copy
+            INSERT INTO campos_cliente_persona_copy (client_id, "Cedula", "Estado Civil_cd_Estado civil", "Edad", "Estrato", "Ciudad_cd_Ciudad", "Tiene vehiculo propio", "Tipo Vehiculo_cd_Tipo de vehiculo", "Nivel Academico_cd_Nivel academico", "Actividad Laboral_cd_Actividad laboral", "Tiempo de actividad laboral", "Media de ingresos", "Nombre empresa", "Direccion", "Telefono", "Cupo solicitado", "Cupo aprobado", "Cupo score", "Valor score", "Modelo score", "Referencia", "Celular Referencia", "Parentesco_cd_Parentesco", created_at, updated_at)
+            SELECT client_id, "Cedula", "Estado Civil_cd_Estado civil", "Edad", "Estrato", "Ciudad_cd_Ciudad", "Tiene vehiculo propio", "Tipo Vehiculo_cd_Tipo de vehiculo", "Nivel Academico_cd_Nivel academico", "Actividad Laboral_cd_Actividad laboral", "Tiempo de actividad laboral", "Media de ingresos", "Nombre empresa", "Direccion", "Telefono", "Cupo solicitado", "Cupo aprobado", "Cupo score", "Valor score", "Modelo score", "Referencia", '', "Parentesco_cd_Parentesco", created_at, updated_at
+            FROM campos_cliente_persona;
+
+            -- Drop campos_cliente_persona table
+            DROP TABLE campos_cliente_persona;
+
+            -- Rename campos_cliente_persona_copy to campos_cliente_persona
+            ALTER TABLE campos_cliente_persona_copy RENAME TO campos_cliente_persona;
+            ]]>
+        </sql>
+    </changeSet>
+
+
+
 </databaseChangeLog>

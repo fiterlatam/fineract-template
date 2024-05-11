@@ -316,6 +316,7 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
 
             clientData = ClientData.setParentGroups(clientData, parentGroups, clientCollateralManagementDataSet);
             clientData.setBlockedOnDate(client.getBlockedOnDate());
+            clientData.setLastname2(client.getLastname2());
             return clientData;
 
         } catch (final EmptyResultDataAccessException e) {
