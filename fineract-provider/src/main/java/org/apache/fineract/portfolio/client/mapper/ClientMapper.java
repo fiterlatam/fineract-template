@@ -82,6 +82,7 @@ public interface ClientMapper {
     @Mapping(target = "groups", ignore = true)
     @Mapping(target = "blockingReasonsDataOptions", ignore = true)
     @Mapping(target = "blockedOnDate", source = "source.blockedOnDate")
+    @Mapping(target = "lastname2", source = "source.lastname2")
     ClientData map(Client source);
 
     @Named("clientTypeCode")

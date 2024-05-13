@@ -477,6 +477,7 @@ public class ClientsApiResource {
     private ClientData retrieveClientData(final Long clientId, final boolean staffInSelectedOfficeOnly, final boolean isTemplate) {
         ClientData clientData = clientReadPlatformService.retrieveOne(clientId);
         final LocalDate blockedOnDate = clientData.getBlockedOnDate();
+        final String lastname2 = clientData.getLastname2();
         if (isTemplate) {
             final ClientData templateData = clientReadPlatformService.retrieveTemplate(clientData.getOfficeId(), staffInSelectedOfficeOnly);
             clientData = ClientData.templateOnTop(clientData, templateData);
@@ -486,6 +487,7 @@ public class ClientsApiResource {
                 clientData.setBlockedOnDate(blockedOnDate);
             }
         }
+        clientData.setLastname2(lastname2);
         return clientData;
     }
 
