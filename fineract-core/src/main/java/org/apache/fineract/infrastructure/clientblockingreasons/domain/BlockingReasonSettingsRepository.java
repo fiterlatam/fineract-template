@@ -24,7 +24,7 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-public interface ManageBlockingReasonSettingsRepository
+public interface BlockingReasonSettingsRepository
         extends JpaRepository<BlockingReasonSetting, Long>, JpaSpecificationExecutor<BlockingReasonSetting> {
 
     @Query("SELECT brs FROM BlockingReasonSetting brs WHERE brs.priority = :priority AND brs.level = :level")

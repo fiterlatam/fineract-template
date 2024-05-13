@@ -193,9 +193,6 @@ public class ClientApiConstants {
     public static final Set<String> CLIENT_ACCOUNTS_DATA_PARAMETERS = new HashSet<>(
             Arrays.asList("loanAccounts", "savingsAccounts", "shareAccounts"));
 
-    public static final String BLOCKING_REASON_INACTIVIDAD = "INACTIVIDAD";
-    public static final String CLIENT_BLOCKING_REASON_LEVEL = "CLIENT";
-
     /**
      * These parameters will match the class level parameters of ClientData. Where possible, we try to get response
      * parameters to match those of request parameters.
