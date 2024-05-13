@@ -31,6 +31,7 @@ import java.util.Map;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
+import org.apache.fineract.infrastructure.clientblockingreasons.data.BlockingReasonsData;
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.infrastructure.core.domain.ExternalId;
@@ -270,6 +271,7 @@ public class LoanAccountData {
 
     private EnumOptionData loanScheduleType;
     private EnumOptionData loanScheduleProcessingType;
+    private BlockingReasonsData blockStatus;
 
     public static LoanAccountData importInstanceIndividual(EnumOptionData loanTypeEnumOption, Long clientId, Long productId,
             Long loanOfficerId, LocalDate submittedOnDate, Long fundId, BigDecimal principal, Integer numberOfRepayments,
@@ -820,7 +822,7 @@ public class LoanAccountData {
                 .setEnableAutoRepaymentForDownPayment(acc.enableAutoRepaymentForDownPayment)
                 .setEnableInstallmentLevelDelinquency(acc.enableInstallmentLevelDelinquency).setLoanScheduleType(acc.loanScheduleType)
                 .setLoanScheduleProcessingType(acc.loanScheduleProcessingType).setLoanScheduleTypeOptions(loanScheduleTypeOptions)
-                .setLoanScheduleProcessingTypeOptions(loanScheduleProcessingTypeOptions);
+                .setLoanScheduleProcessingTypeOptions(loanScheduleProcessingTypeOptions).setBlockStatus(acc.blockStatus);
     }
 
     public static LoanAccountData associationsAndTemplate(final LoanAccountData acc, final Collection<LoanProductData> productOptions,

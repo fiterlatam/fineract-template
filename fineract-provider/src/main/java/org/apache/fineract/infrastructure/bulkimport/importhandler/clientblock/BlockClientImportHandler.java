@@ -40,7 +40,7 @@ import org.apache.fineract.infrastructure.bulkimport.importhandler.ImportHandler
 import org.apache.fineract.infrastructure.bulkimport.importhandler.ImportHandlerUtils;
 import org.apache.fineract.infrastructure.bulkimport.importhandler.helper.DateSerializer;
 import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSetting;
-import org.apache.fineract.infrastructure.clientblockingreasons.domain.ManageBlockingReasonSettingsRepositoryWrapper;
+import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSettingsRepositoryWrapper;
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 import org.apache.fineract.infrastructure.codes.service.CodeValueReadPlatformService;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
@@ -70,7 +70,7 @@ public class BlockClientImportHandler implements ImportHandler {
     private final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService;
     private final CodeValueReadPlatformService codeValueReadPlatformService;
     private final ClientReadPlatformService clientReadPlatformService;
-    private final ManageBlockingReasonSettingsRepositoryWrapper blockingReasonSettingsRepositoryWrapper;
+    private final BlockingReasonSettingsRepositoryWrapper blockingReasonSettingsRepositoryWrapper;
     private final ClientBlockListRepository clientBlockListRepository;
 
     @Override
