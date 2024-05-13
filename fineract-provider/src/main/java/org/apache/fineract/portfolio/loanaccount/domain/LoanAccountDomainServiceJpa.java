@@ -30,6 +30,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.accounting.journalentry.service.JournalEntryWritePlatformService;
+import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockLevel;
+import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSetting;
+import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSettingEnum;
+import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSettingsRepositoryWrapper;
 import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
 import org.apache.fineract.infrastructure.core.data.ApiParameterError;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuilder;
@@ -141,6 +145,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
     private final LoanAccrualTransactionBusinessEventService loanAccrualTransactionBusinessEventService;
     private final DelinquencyEffectivePauseHelper delinquencyEffectivePauseHelper;
     private final DelinquencyReadPlatformService delinquencyReadPlatformService;
+    private final BlockingReasonSettingsRepositoryWrapper blockingReasonSettingsRepositoryWrapper;
 
     @Transactional
     @Override
@@ -280,7 +285,21 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
             }
         }
 
+        setStatusToCanceledOnClosedLoan(loan);
+
         return newRepaymentTransaction;
+    }
+
+    private void setStatusToCanceledOnClosedLoan(Loan loan) {
+        if ((loan != null) && (loan.getStatus() != null) && loan.getStatus().isClosedObligationsMet()) {
+            final BlockingReasonSetting blockingReasonSetting = blockingReasonSettingsRepositoryWrapper
+                    .getSingleBlockingReasonSettingByReason(BlockingReasonSettingEnum.CREDIT_CANCELADO.getDatabaseString(),
+                            BlockLevel.CREDIT.toString());
+
+            if (blockingReasonSetting != null) {
+                loan.getLoanCustomizationDetail().setBlockStatus(blockingReasonSetting);
+            }
+        }
     }
 
     private LoanBusinessEvent getLoanRepaymentTypeBusinessEvent(LoanTransactionType repaymentTransactionType, boolean isRecoveryRepayment,

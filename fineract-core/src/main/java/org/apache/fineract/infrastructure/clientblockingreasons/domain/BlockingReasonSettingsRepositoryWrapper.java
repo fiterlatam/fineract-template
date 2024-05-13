@@ -25,12 +25,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public class ManageBlockingReasonSettingsRepositoryWrapper {
+public class BlockingReasonSettingsRepositoryWrapper {
 
-    private final ManageBlockingReasonSettingsRepository repository;
+    private final BlockingReasonSettingsRepository repository;
 
     @Autowired
-    public ManageBlockingReasonSettingsRepositoryWrapper(final ManageBlockingReasonSettingsRepository repository) {
+    public BlockingReasonSettingsRepositoryWrapper(final BlockingReasonSettingsRepository repository) {
         this.repository = repository;
     }
 
