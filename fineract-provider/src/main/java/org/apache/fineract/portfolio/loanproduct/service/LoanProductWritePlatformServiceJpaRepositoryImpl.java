@@ -71,7 +71,7 @@ import org.apache.fineract.portfolio.loanproduct.domain.MaximumRateRepository;
 import org.apache.fineract.portfolio.loanproduct.exception.LoanProductCannotBeModifiedDueToNonClosedLoansException;
 import org.apache.fineract.portfolio.loanproduct.exception.LoanProductDateException;
 import org.apache.fineract.portfolio.loanproduct.exception.LoanProductNotFoundException;
-import org.apache.fineract.portfolio.loanproduct.exception.MaximumRateNotFoundException;
+import org.apache.fineract.portfolio.loanproduct.exception.MaximumLegalRateExceptions;
 import org.apache.fineract.portfolio.loanproduct.serialization.LoanProductDataValidator;
 import org.apache.fineract.portfolio.rate.domain.Rate;
 import org.apache.fineract.portfolio.rate.domain.RateRepositoryWrapper;
@@ -373,7 +373,7 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
             final AppUser appliedBy = this.context.authenticatedUser();
             final List<MaximumCreditRateConfiguration> maximumCreditRateConfigurations = this.maximumRateRepository.findAll();
             if (CollectionUtils.isEmpty(maximumCreditRateConfigurations)) {
-                throw new MaximumRateNotFoundException();
+                throw new MaximumLegalRateExceptions();
             }
             final MaximumCreditRateConfiguration maximumCreditRateConfiguration = maximumCreditRateConfigurations.get(0);
             final Long id = maximumCreditRateConfiguration.getId();
@@ -381,18 +381,18 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
             final LocalDate appliedOnDate = command.localDateValueOfParameterNamed("appliedOnDate");
             final LocalDate currentDate = DateUtils.getLocalDateOfTenant();
             if (DateUtils.isBefore(currentDate, appliedOnDate)) {
-                throw new MaximumRateNotFoundException(appliedOnDate);
+                throw new MaximumLegalRateExceptions(appliedOnDate);
             }
             final BigDecimal currentInterestRate = command.bigDecimalValueOfParameterNamed("currentInterestRate");
             final BigDecimal overdueInterestRate = command.bigDecimalValueOfParameterNamed("overdueInterestRate");
-            final BigDecimal monthlyNominalRate = command.bigDecimalValueOfParameterNamed("monthlyNominalRate");
-            if (currentInterestRate.compareTo(monthlyNominalRate) > 0) {
+            final BigDecimal annualNominalRate = command.bigDecimalValueOfParameterNamed("annualNominalRate");
+            if (currentInterestRate.compareTo(annualNominalRate) > 0) {
                 throw new PlatformDataIntegrityException("error.msg.current.interest.rate.greater.than.monthly.nominal.rate",
-                        "Current interest rate cannot be greater than monthly nominal rate", currentInterestRate, monthlyNominalRate);
+                        "Current interest rate cannot be greater than monthly nominal rate", currentInterestRate, annualNominalRate);
             }
-            if (overdueInterestRate.compareTo(monthlyNominalRate) > 0) {
+            if (overdueInterestRate.compareTo(annualNominalRate) > 0) {
                 throw new PlatformDataIntegrityException("error.msg.overdue.interest.rate.greater.than.monthly.nominal.rate",
-                        "Overdue interest rate cannot be greater than monthly nominal rate", overdueInterestRate, monthlyNominalRate);
+                        "Overdue interest rate cannot be greater than monthly nominal rate", overdueInterestRate, annualNominalRate);
             }
             final Map<String, Object> changes = maximumCreditRateConfiguration.update(command);
             maximumCreditRateConfiguration.setAppliedBy(appliedBy);

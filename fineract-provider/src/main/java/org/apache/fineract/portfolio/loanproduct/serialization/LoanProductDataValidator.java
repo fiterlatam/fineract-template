@@ -1894,11 +1894,6 @@ public final class LoanProductDataValidator {
             baseDataValidator.reset().parameter(LoanProductConstants.MAX_CLIENT_INACTIVITY_PERIOD).value(maxClientInactivityPeriod)
                     .ignoreIfNull().integerGreaterThanZero();
         }
-
-        baseDataValidator.reset().parameter(LoanProductConstants.PRODUCT_TYPE)
-                .value(this.fromApiJsonHelper.extractIntegerSansLocaleNamed(LoanProductConstants.PRODUCT_TYPE, element)).notNull()
-                .integerGreaterThanZero();
-
         throwExceptionIfValidationWarningsExist(dataValidationErrors);
     }
 
