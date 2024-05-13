@@ -3004,28 +3004,30 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
         public String schema() {
             return """
-                        ml.id AS "id",
-                    	ml.annual_nominal_interest_rate AS "annualNominalRate",
-                    	MIN(next_schedule.duedate) AS "nextDueDate",
-                    	MAX(term_variation.applicable_date) AS "applicableDate",
-                    	term_variation.decimal_value AS "rescheduledAnnualRate"
-                    FROM m_loan ml
-                    INNER JOIN m_loan_repayment_schedule mlrs ON mlrs.loan_id = ml.id
-                    LEFT JOIN (
-                    	SELECT *
-                    	FROM m_loan_repayment_schedule sch
-                    	WHERE sch.completed_derived = FALSE AND sch.duedate >= ?
-                    	ORDER BY sch.duedate ASC
-                    ) next_schedule ON next_schedule.loan_id = ml.id
-
-                    LEFT JOIN (
-                    	SELECT DISTINCT ON (ltv.loan_id) ltv.loan_id, ltv.applicable_date, ltv.decimal_value
-                    	FROM m_loan_term_variations ltv
-                    	WHERE ltv.term_type = 10 AND ltv.is_active = TRUE AND ltv.applied_on_loan_status = 300 AND ltv.applicable_date >= ?
-                    	ORDER BY ltv.loan_id, ltv.id DESC
-                    ) term_variation ON term_variation.loan_id = ml.id
-                    WHERE ml.loan_status_id = 300 AND mlrs.duedate >= ? AND (CASE WHEN term_variation.decimal_value IS NOT NULL THEN term_variation.decimal_value ELSE ml.annual_nominal_interest_rate END) > ?
-                    GROUP BY term_variation.loan_id, ml.annual_nominal_interest_rate, term_variation.decimal_value, ml.id
+                            ml.id AS "id",
+                            ml.annual_nominal_interest_rate AS "annualNominalRate",
+                            MIN(next_schedule.duedate) AS "nextDueDate",
+                            MAX(term_variation.applicable_date) AS "applicableDate",
+                            term_variation.decimal_value AS "rescheduledAnnualRate"
+                        FROM m_loan ml
+                        INNER JOIN m_loan_repayment_schedule mlrs ON mlrs.loan_id = ml.id
+                        LEFT JOIN (
+                            SELECT sch.*
+                            FROM m_loan_repayment_schedule sch
+                            LEFT JOIN m_loan_arrears_aging mlaa ON mlaa.loan_id = sch.loan_id
+                            WHERE sch.completed_derived = FALSE AND sch.duedate >= ? AND (mlaa.overdue_since_date_derived IS NULL OR sch.fromdate > mlaa.overdue_since_date_derived)
+                            ORDER BY sch.duedate ASC
+                        ) next_schedule ON next_schedule.loan_id = ml.id
+                        LEFT JOIN (
+                            SELECT DISTINCT ON (ltv.loan_id) ltv.loan_id, ltv.applicable_date, ltv.decimal_value
+                            FROM m_loan_term_variations ltv
+                            WHERE ltv.term_type = 10 AND ltv.is_active = TRUE AND ltv.applied_on_loan_status = 300 AND ltv.applicable_date >= ?
+                            ORDER BY ltv.loan_id, ltv.id DESC
+                        ) term_variation ON term_variation.loan_id = ml.id
+                        WHERE ml.loan_status_id = 300 AND mlrs.duedate >= ?
+                        AND (CASE WHEN term_variation.decimal_value IS NOT NULL THEN term_variation.decimal_value ELSE ml.annual_nominal_interest_rate END) > ?
+                        GROUP BY term_variation.loan_id, ml.annual_nominal_interest_rate, term_variation.decimal_value, ml.id
+                        ORDER BY ml.id
                     """;
         }
 
