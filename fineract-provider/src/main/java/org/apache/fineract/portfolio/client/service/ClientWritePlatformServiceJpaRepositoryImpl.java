@@ -39,8 +39,10 @@ import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformS
 import org.apache.fineract.infrastructure.accountnumberformat.domain.AccountNumberFormat;
 import org.apache.fineract.infrastructure.accountnumberformat.domain.AccountNumberFormatRepositoryWrapper;
 import org.apache.fineract.infrastructure.accountnumberformat.domain.EntityAccountType;
+import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockLevel;
 import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSetting;
-import org.apache.fineract.infrastructure.clientblockingreasons.domain.ManageBlockingReasonSettingsRepositoryWrapper;
+import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSettingEnum;
+import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSettingsRepositoryWrapper;
 import org.apache.fineract.infrastructure.clientblockingreasons.exception.BlockReasonSettingNotFoundException;
 import org.apache.fineract.infrastructure.codes.domain.CodeValue;
 import org.apache.fineract.infrastructure.codes.domain.CodeValueRepositoryWrapper;
@@ -137,12 +139,11 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
     private final BusinessEventNotifierService businessEventNotifierService;
     private final EntityDatatableChecksWritePlatformService entityDatatableChecksWritePlatformService;
     private final ExternalIdFactory externalIdFactory;
-    private final ManageBlockingReasonSettingsRepositoryWrapper manageBlockingReasonSettingsRepositoryWrapper;
+    private final BlockingReasonSettingsRepositoryWrapper blockingReasonSettingsRepositoryWrapper;
     private final ClientBlockingReasonRepositoryWrapper clientBlockingReasonRepositoryWrapper;
     private final ClientBlockListRepository clientBlockListRepository;
     private final LoanReadPlatformService loanReadPlatformService;
     private final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService;
-    private final ManageBlockingReasonSettingsRepositoryWrapper blockingReasonSettingsRepositoryWrapper;
 
     @Transactional
     @Override
@@ -370,7 +371,7 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
                         jsonObject.addProperty("blockedOnDate", command.stringValueOfParameterNamed("submittedOnDate"));
                         jsonObject.addProperty("dateFormat", command.dateFormat());
                         jsonObject.addProperty("locale", command.locale());
-                        final Optional<BlockingReasonSetting> listasDeControlBlockingReason = manageBlockingReasonSettingsRepositoryWrapper
+                        final Optional<BlockingReasonSetting> listasDeControlBlockingReason = blockingReasonSettingsRepositoryWrapper
                                 .getBlockingReasonSettingByReason("LISTAS DE CONTROL", "CLIENT").stream().findFirst();
                         if (listasDeControlBlockingReason.isPresent()) {
                             final BlockingReasonSetting blockingReasonSetting = listasDeControlBlockingReason.get();
@@ -973,7 +974,7 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
             final LocalDate blockedOnDate = command.localDateValueOfParameterNamed(ClientApiConstants.blockedOnDateParamName);
             final Long blockingReasonId = command.longValueOfParameterNamed(ClientApiConstants.blockingReasonIdParamName);
             final String blockingComment = command.stringValueOfParameterNamed(ClientApiConstants.blockingCommentParamName);
-            final BlockingReasonSetting blockingReason = this.manageBlockingReasonSettingsRepositoryWrapper
+            final BlockingReasonSetting blockingReason = this.blockingReasonSettingsRepositoryWrapper
                     .findOneWithNotFoundDetection(blockingReasonId);
             if (client.isNotPending() && DateUtils.isAfter(client.getActivationDate(), blockedOnDate)) {
                 final String errorMessage = "The client blockedOnDate cannot be before the client ActivationDate.";
@@ -1008,7 +1009,7 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
             final String undoBlockingComment = command.stringValueOfParameterNamed(ClientApiConstants.undoBlockingCommentParamName);
             final Long blockingReasonId = command.longValueOfParameterNamed(ClientApiConstants.blockingReasonIdParamName);
 
-            final Optional<BlockingReasonSetting> listasDeControlBlockingReason = manageBlockingReasonSettingsRepositoryWrapper
+            final Optional<BlockingReasonSetting> listasDeControlBlockingReason = blockingReasonSettingsRepositoryWrapper
                     .getBlockingReasonSettingByReason("LISTAS DE CONTROL", "CLIENT").stream().findFirst();
 
             if (ClientStatus.fromInt(client.getStatus()).isActive()) {
@@ -1280,7 +1281,7 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
             final Long blockingReasonId = command.longValueOfParameterNamed(ClientApiConstants.blockingReasonIdParamName);
             final String blockingComment = command.stringValueOfParameterNamed(ClientApiConstants.blockingCommentParamName);
 
-            final Optional<BlockingReasonSetting> blockingReasonOptional = this.manageBlockingReasonSettingsRepositoryWrapper
+            final Optional<BlockingReasonSetting> blockingReasonOptional = this.blockingReasonSettingsRepositoryWrapper
                     .findById(blockingReasonId);
 
             BlockingReasonSetting blockingReason;
@@ -1345,9 +1346,9 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
         final AppUser currentUser = context.authenticatedUser();
 
         final LocalDate blockedOnDate = DateUtils.getBusinessLocalDate();
-        final BlockingReasonSetting inActividadBlockingReason = manageBlockingReasonSettingsRepositoryWrapper
-                .getSingleBlockingReasonSettingByReason(ClientApiConstants.BLOCKING_REASON_INACTIVIDAD,
-                        ClientApiConstants.CLIENT_BLOCKING_REASON_LEVEL);
+        final BlockingReasonSetting inActividadBlockingReason = blockingReasonSettingsRepositoryWrapper
+                .getSingleBlockingReasonSettingByReason(BlockingReasonSettingEnum.CLIENTE_INACTIVIDAD.getDatabaseString(),
+                        BlockLevel.CLIENT.toString());
 
         final String blockingComment = "Inactiva más de los meses permitidos";
 

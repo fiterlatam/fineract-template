@@ -21,16 +21,26 @@ package org.apache.fineract.portfolio.loanproduct.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import java.time.LocalDateTime;
 import lombok.Getter;
+import lombok.Setter;
+import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSetting;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 
 @Embeddable
 @Getter
+@Setter
 public class LoanCustomizationDetail {
 
     @Column(name = "last_activity_date")
     private LocalDateTime lastActivityDate;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "block_status_id")
+    private BlockingReasonSetting blockStatus;
 
     public void recordActivity() {
         this.lastActivityDate = DateUtils.getLocalDateTimeOfTenant();
