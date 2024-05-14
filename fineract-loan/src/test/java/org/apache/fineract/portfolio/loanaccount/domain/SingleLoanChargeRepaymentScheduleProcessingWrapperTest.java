@@ -133,7 +133,7 @@ public class SingleLoanChargeRepaymentScheduleProcessingWrapperTest {
         when(charge.getCurrencyCode()).thenReturn("UDS");
         when(charge.isPenalty()).thenReturn(penalty);
         LoanCharge loanCharge = new LoanCharge(null, charge, new BigDecimal(1000), new BigDecimal(10), ChargeTimeType.SPECIFIED_DUE_DATE,
-                ChargeCalculationType.FLAT, LocalDate.of(2023, 01, 15), ChargePaymentMode.REGULAR, 1, null, null);
+                ChargeCalculationType.FLAT_AMOUNT, LocalDate.of(2023, 01, 15), ChargePaymentMode.REGULAR, 1, null, null);
         return loanCharge;
     }
 

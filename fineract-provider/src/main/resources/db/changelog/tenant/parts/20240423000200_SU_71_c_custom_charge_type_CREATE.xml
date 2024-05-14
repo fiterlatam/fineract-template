@@ -88,4 +88,29 @@
         </insert>
     </changeSet>
 
+    <!-- IOnsert values VIP, Commerce and Product  for valueNumeric="2"-->
+    <changeSet author="fineract" id="60">
+        <insert schemaName= "custom" tableName="c_custom_charge_type">
+            <column name="custom_charge_entity_id" valueComputed="(SELECT id FROM custom.c_custom_charge_entity WHERE name='Insurance')"/>
+            <column name="name" value="VIP"/>
+            <column name="code" value="custom.charge.type.vip"/>
+        </insert>
+    </changeSet>
+
+    <changeSet author="fineract" id="70">
+        <insert schemaName= "custom" tableName="c_custom_charge_type">
+            <column name="custom_charge_entity_id" valueComputed="(SELECT id FROM custom.c_custom_charge_entity WHERE name='Insurance')"/>
+            <column name="name" value="Commerce"/>
+            <column name="code" value="custom.charge.type.commerce"/>
+        </insert>
+    </changeSet>
+
+    <changeSet author="fineract" id="80">
+        <insert schemaName= "custom" tableName="c_custom_charge_type">
+            <column name="custom_charge_entity_id" valueComputed="(SELECT id FROM custom.c_custom_charge_entity WHERE name='Insurance')"/>
+            <column name="name" value="Product"/>
+            <column name="code" value="custom.charge.type.product"/>
+        </insert>
+    </changeSet>
+
 </databaseChangeLog>

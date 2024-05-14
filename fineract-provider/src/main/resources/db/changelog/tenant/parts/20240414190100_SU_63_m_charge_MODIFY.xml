@@ -38,5 +38,12 @@
         </addColumn>
     </changeSet>
 
+    <changeSet author="fineract" id="30">
+        <addColumn tableName="m_charge">
+            <column name="parent_charge_id" type="INT4">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
 
 </databaseChangeLog>

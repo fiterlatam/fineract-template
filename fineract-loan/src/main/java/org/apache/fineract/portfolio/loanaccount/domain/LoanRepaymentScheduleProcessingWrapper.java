@@ -94,9 +94,9 @@ public class LoanRepaymentScheduleProcessingWrapper {
                     cumulative = cumulative.plus(loanCharge.chargeAmount());
                 } else if (isDue && loanCharge.getChargeCalculation().isPercentageBased()) {
                     BigDecimal amount = BigDecimal.ZERO;
-                    if (loanCharge.getChargeCalculation().isPercentageOfAmountAndInterest()) {
+                    if (loanCharge.getChargeCalculation().isPercentageOfInstallmentPrincipalAndInterest()) {
                         amount = amount.add(totalPrincipal.getAmount()).add(totalInterest.getAmount());
-                    } else if (loanCharge.getChargeCalculation().isPercentageOfInterest()) {
+                    } else if (loanCharge.getChargeCalculation().isPercentageOfInstallmentInterest()) {
                         amount = amount.add(totalInterest.getAmount());
                     } else {
                         // If charge type is specified due date and loan is
@@ -195,9 +195,9 @@ public class LoanRepaymentScheduleProcessingWrapper {
                     cumulative = cumulative.plus(loanCharge.chargeAmount());
                 } else if (isDue && loanCharge.getChargeCalculation().isPercentageBased()) {
                     BigDecimal amount = BigDecimal.ZERO;
-                    if (loanCharge.getChargeCalculation().isPercentageOfAmountAndInterest()) {
+                    if (loanCharge.getChargeCalculation().isPercentageOfInstallmentPrincipalAndInterest()) {
                         amount = amount.add(totalPrincipal.getAmount()).add(totalInterest.getAmount());
-                    } else if (loanCharge.getChargeCalculation().isPercentageOfInterest()) {
+                    } else if (loanCharge.getChargeCalculation().isPercentageOfInstallmentInterest()) {
                         amount = amount.add(totalInterest.getAmount());
                     } else {
                         amount = amount.add(totalPrincipal.getAmount());
@@ -226,10 +226,10 @@ public class LoanRepaymentScheduleProcessingWrapper {
     @NotNull
     private BigDecimal getBaseAmount(MonetaryCurrency monetaryCurrency, LoanRepaymentScheduleInstallment period, LoanCharge loanCharge,
             BigDecimal amount) {
-        if (loanCharge.getChargeCalculation().isPercentageOfAmountAndInterest()) {
+        if (loanCharge.getChargeCalculation().isPercentageOfInstallmentPrincipalAndInterest()) {
             amount = amount.add(period.getPrincipal(monetaryCurrency).getAmount())
                     .add(period.getInterestCharged(monetaryCurrency).getAmount());
-        } else if (loanCharge.getChargeCalculation().isPercentageOfInterest()) {
+        } else if (loanCharge.getChargeCalculation().isPercentageOfInstallmentInterest()) {
             amount = amount.add(period.getInterestCharged(monetaryCurrency).getAmount());
         } else {
             amount = amount.add(period.getPrincipal(monetaryCurrency).getAmount());
