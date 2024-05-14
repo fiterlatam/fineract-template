@@ -2060,8 +2060,8 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
     private Set<LoanCharge> separateTotalCompoundingPercentageCharges(final Set<LoanCharge> loanCharges) {
         Set<LoanCharge> interestCharges = new HashSet<>();
         for (final LoanCharge loanCharge : loanCharges) {
-            if (loanCharge.isSpecifiedDueDate() && (loanCharge.getChargeCalculation().isPercentageOfInterest()
-                    || loanCharge.getChargeCalculation().isPercentageOfAmountAndInterest())) {
+            if (loanCharge.isSpecifiedDueDate() && (loanCharge.getChargeCalculation().isPercentageOfInstallmentInterest()
+                    || loanCharge.getChargeCalculation().isPercentageOfInstallmentPrincipalAndInterest())) {
                 interestCharges.add(loanCharge);
             }
         }
@@ -2099,9 +2099,9 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
     private Money calculateSpecificDueDateChargeWithPercentage(final Money principalDisbursed,
             final Money totalInterestChargedForFullLoanTerm, Money cumulative, final LoanCharge loanCharge, final MathContext mc) {
         BigDecimal amount = BigDecimal.ZERO;
-        if (loanCharge.getChargeCalculation().isPercentageOfAmountAndInterest()) {
+        if (loanCharge.getChargeCalculation().isPercentageOfInstallmentPrincipalAndInterest()) {
             amount = amount.add(principalDisbursed.getAmount()).add(totalInterestChargedForFullLoanTerm.getAmount());
-        } else if (loanCharge.getChargeCalculation().isPercentageOfInterest()) {
+        } else if (loanCharge.getChargeCalculation().isPercentageOfInstallmentInterest()) {
             amount = amount.add(totalInterestChargedForFullLoanTerm.getAmount());
         } else {
             amount = amount.add(principalDisbursed.getAmount());
@@ -2115,10 +2115,10 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
             final LoanCharge loanCharge, final MathContext mc) {
         if (loanCharge.getChargeCalculation().isPercentageBased()) {
             BigDecimal amount = BigDecimal.ZERO;
-            if (loanCharge.getChargeCalculation().isPercentageOfAmountAndInterest()) {
+            if (loanCharge.getChargeCalculation().isPercentageOfInstallmentPrincipalAndInterest()) {
                 amount = amount.add(principalInterestForThisPeriod.principal().getAmount())
                         .add(principalInterestForThisPeriod.interest().getAmount());
-            } else if (loanCharge.getChargeCalculation().isPercentageOfInterest()) {
+            } else if (loanCharge.getChargeCalculation().isPercentageOfInstallmentInterest()) {
                 amount = amount.add(principalInterestForThisPeriod.interest().getAmount());
             } else {
                 amount = amount.add(principalInterestForThisPeriod.principal().getAmount());

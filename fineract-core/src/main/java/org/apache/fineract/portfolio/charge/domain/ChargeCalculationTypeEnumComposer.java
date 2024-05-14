@@ -18,102 +18,83 @@
  */
 package org.apache.fineract.portfolio.charge.domain;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
+import org.apache.fineract.portfolio.charge.enumerator.ChargeCalculationTypeBaseItemsEnum;
 
-/**
- * This class was created to help on generating all possible combinations given an array, that was used to generate the
- * Sumas' charges
- */
 public class ChargeCalculationTypeEnumComposer {
 
-    public static void main(String[] args) {
-        List<List<String>> combinations = generateCombinations(
-                Arrays.asList("1AMOUNT", "2INTEREST", "3OUTSTANDING_AMOUNT", "4INSURANCE", "5AVAL", "6HONORARIOS"));
+    private static Map<String, String> combinationsForDropDown = new HashMap<>();
 
-        System.out.println("Combinações possíveis:");
-        for (List<String> combination : combinations) {
+    private static Map<String, String> combinationsForAllowed = new HashMap<>();
 
-            String idComposer = "";
-            if (combination.size() > 0 && combination.get(0).length() > 0) {
-                idComposer = combination.get(0).substring(0, 1);
+    public static Map<String, String> generateCombinations() {
+        Map<String, String> combinations = new HashMap<>();
+
+        Map<String, String> combinationsForDropDown = new HashMap<>();
+
+        ChargeCalculationTypeBaseItemsEnum[] values = ChargeCalculationTypeBaseItemsEnum.values();
+        int totalCombinations = (int) Math.pow(2, values.length);
+
+        for (int i = 1; i < totalCombinations; i++) {
+            StringBuilder binary = new StringBuilder(Integer.toBinaryString(i));
+            while (binary.length() < values.length) {
+                binary.insert(0, "0");
             }
 
-            String lineConcatenated = "";
-            String lineConcatenatedUpperCase = "";
-            System.out.print("PERCENT_OF");
-            for (String line : combination) {
-                line = line.substring(1);
-                System.out.print("_" + line);
-                lineConcatenated = lineConcatenated.concat(line.toLowerCase()).concat(".");
-                lineConcatenatedUpperCase = lineConcatenatedUpperCase.concat(line).concat(".");
+            StringBuilder combinationAcronym = new StringBuilder();
+            StringBuilder combinationText = new StringBuilder();
+
+            StringBuilder locanCalculationTypes = new StringBuilder();
+
+            for (int j = 0; j < binary.length(); j++) {
+                if (binary.charAt(j) == '1') {
+                    if (combinationText.length() > 0) {
+                        combinationText.append(".");
+
+                        combinationAcronym.append("_");
+                    }
+                    combinationText.append(values[j].getCode());
+                    combinationAcronym.append(values[j].getAcronym());
+                }
             }
 
-            // "AMOUNT", "INTEREST", "OUTSTANDING_AMOUNT", "INSURANCE", "AVAL", "HONORARIOS"
-            if (lineConcatenatedUpperCase.contains("AMOUNT") && !lineConcatenatedUpperCase.contains("OUTSTANDING_AMOUNT")) {
-                idComposer = idComposer.concat("1");
-            } else {
-                idComposer = idComposer.concat("0");
-            }
+            System.out.println("chargeCalculationType(ChargeCalculationType." + combinationAcronym.toString() + "), //");
 
-            if (lineConcatenatedUpperCase.contains("INTEREST")) {
-                idComposer = idComposer.concat("1");
-            } else {
-                idComposer = idComposer.concat("0");
-            }
+            combinationAcronym.append("(@@code@@, \"@@ID@@\", ");
+            combinationAcronym.append("\"");
+            combinationAcronym.append(combinationText);
+            combinationAcronym.append("\"), //");
 
-            if (lineConcatenatedUpperCase.contains("OUTSTANDING_AMOUNT")) {
-                idComposer = idComposer.concat("1");
-            } else {
-                idComposer = idComposer.concat("0");
-            }
-
-            if (lineConcatenatedUpperCase.contains("INSURANCE")) {
-                idComposer = idComposer.concat("1");
-            } else {
-                idComposer = idComposer.concat("0");
-            }
-
-            if (lineConcatenatedUpperCase.contains("AVAL")) {
-                idComposer = idComposer.concat("1");
-            } else {
-                idComposer = idComposer.concat("0");
-            }
-
-            if (lineConcatenatedUpperCase.contains("HONORARIOS")) {
-                idComposer = idComposer.concat("1");
-            } else {
-                idComposer = idComposer.concat("0");
-            }
-
-            if (lineConcatenated.length() > 0) {
-                System.out.print("(" + idComposer + ", \"chargeCalculationType.percent.of."
-                        + lineConcatenated.substring(0, lineConcatenated.length() - 1) + "\"");
-                System.out.println("), //");
-            }
+            combinations.put(binary.toString(), combinationAcronym.toString());
         }
-    }
 
-    public static List<List<String>> generateCombinations(List<String> variables) {
-        List<List<String>> combinations = new ArrayList<>();
-        generateCombinationsHelper(variables, 0, new ArrayList<>(), combinations);
         return combinations;
     }
 
-    private static void generateCombinationsHelper(List<String> variables, int index, List<String> currentCombination,
-            List<List<String>> combinations) {
-        if (index == variables.size()) {
-            combinations.add(new ArrayList<>(currentCombination));
-            return;
+    // Método principal para testar
+    public static void main(String[] args) {
+
+        System.out.println("####################################################################################################");
+        System.out.println("Combination DropDown");
+        System.out.println("####################################################################################################");
+
+        Map<String, String> combinations = generateCombinations();
+        Long codeGenerator = 10L;
+
+        System.out.println("####################################################################################################");
+        System.out.println("Charge Claculation Type Enum");
+        System.out.println("####################################################################################################");
+        // Imprime todas as combinações possíveis
+        for (Map.Entry<String, String> entry : combinations.entrySet()) {
+            codeGenerator++;
+            System.out.println(entry.getValue().replaceAll("@@code@@", String.valueOf(codeGenerator)).replaceAll("@@ID@@", entry.getKey()));
         }
 
-        // Exclude the current variable
-        generateCombinationsHelper(variables, index + 1, currentCombination, combinations);
-
-        // Include the current variable
-        currentCombination.add(variables.get(index));
-        generateCombinationsHelper(variables, index + 1, currentCombination, combinations);
-        currentCombination.remove(currentCombination.size() - 1);
+        // Imprime todas as combinações possíveis
+        for (Map.Entry<String, String> entry : combinationsForDropDown.entrySet()) {
+            codeGenerator++;
+            System.out.println("");
+        }
     }
 }

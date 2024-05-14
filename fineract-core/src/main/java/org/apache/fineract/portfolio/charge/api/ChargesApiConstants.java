@@ -30,4 +30,6 @@ public final class ChargesApiConstants {
     public static final String graceOnChargePeriodEnumIdParamName = "graceOnChargePeriodEnum";
     public static final String graceOnChargePeriodAmountParamName = "graceOnChargePeriodAmount";
 
+    public static final String parentChargeIdParamName = "parentChargeId";
+
 }

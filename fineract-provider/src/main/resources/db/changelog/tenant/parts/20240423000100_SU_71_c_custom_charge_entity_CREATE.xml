@@ -38,6 +38,14 @@
         </createTable>
     </changeSet>
 
+    <changeSet author="fineract" id="11">
+        <addColumn tableName="c_custom_charge_entity" schemaName="custom">
+            <column name="is_external_service" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
     <changeSet author="fineract" id="15">
         <addAutoIncrement columnDataType="int"
                           columnName="id"
@@ -61,11 +69,19 @@
         </insert>
     </changeSet>
 
-    <!--changeSet author="fineract" id="40">
+    <changeSet author="fineract" id="40">
         <insert schemaName= "custom" tableName="c_custom_charge_entity">
             <column name="name" value="Insurance"/>
             <column name="code" value="custom.charge.entity.insurance"/>
         </insert>
-    </changeSet-->
+    </changeSet>
+
+    <changeSet author="fineract" id="50">
+        <insert schemaName= "custom" tableName="c_custom_charge_entity">
+            <column name="name" value="Honorario"/>
+            <column name="code" value="custom.charge.entity.honorario"/>
+            <column name="is_external_service" valueBoolean="true"/>
+        </insert>
+    </changeSet>
 
 </databaseChangeLog>

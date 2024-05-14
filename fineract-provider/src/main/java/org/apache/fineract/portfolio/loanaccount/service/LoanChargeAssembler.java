@@ -258,31 +258,32 @@ public class LoanChargeAssembler {
         final ChargeCalculationType chargeCalculation = null;
         final ChargePaymentMode chargePaymentMode = null;
         BigDecimal amountPercentageAppliedTo = BigDecimal.ZERO;
-        switch (ChargeCalculationType.fromInt(chargeDefinition.getChargeCalculation())) {
-            case PERCENT_OF_AMOUNT:
-                if (command.hasParameter("principal")) {
-                    amountPercentageAppliedTo = command.bigDecimalValueOfParameterNamed("principal");
-                } else {
-                    amountPercentageAppliedTo = loan.getPrincipal().getAmount();
-                }
-            break;
-            case PERCENT_OF_AMOUNT_AND_INTEREST:
-                if (command.hasParameter("principal") && command.hasParameter("interest")) {
-                    amountPercentageAppliedTo = command.bigDecimalValueOfParameterNamed("principal")
-                            .add(command.bigDecimalValueOfParameterNamed("interest"));
-                } else {
-                    amountPercentageAppliedTo = loan.getPrincipal().getAmount().add(loan.getTotalInterest());
-                }
-            break;
-            case PERCENT_OF_INTEREST:
-                if (command.hasParameter("interest")) {
-                    amountPercentageAppliedTo = command.bigDecimalValueOfParameterNamed("interest");
-                } else {
-                    amountPercentageAppliedTo = loan.getTotalInterest();
-                }
-            break;
-            default:
-            break;
+
+        ChargeCalculationType chargeCalculationType = ChargeCalculationType.fromInt(chargeDefinition.getChargeCalculation());
+
+        // Ammend amount components as configred
+        if (chargeCalculationType.isFlat()) {
+            amountPercentageAppliedTo = amountPercentageAppliedTo.add(chargeDefinition.getAmount());
+        }
+
+        if (chargeCalculationType.isPercentageOfDisbursement()) {
+            amountPercentageAppliedTo = amountPercentageAppliedTo.add(loan.getDisbursedAmount());
+        }
+
+        if (chargeCalculationType.isPercentageOfInstallmentPrincipal()) {
+            if (command.hasParameter("principal")) {
+                amountPercentageAppliedTo = amountPercentageAppliedTo.add(command.bigDecimalValueOfParameterNamed("principal"));
+            } else {
+                amountPercentageAppliedTo = amountPercentageAppliedTo.add(loan.getPrincipal().getAmount());
+            }
+        }
+
+        if (chargeCalculationType.isPercentageOfInstallmentInterest()) {
+            if (command.hasParameter("interest")) {
+                amountPercentageAppliedTo = amountPercentageAppliedTo.add(command.bigDecimalValueOfParameterNamed("interest"));
+            } else {
+                amountPercentageAppliedTo = amountPercentageAppliedTo.add(loan.getTotalInterest());
+            }
         }
 
         BigDecimal loanCharge = BigDecimal.ZERO;
