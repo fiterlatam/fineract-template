@@ -40,16 +40,17 @@
 -- Delete previous reports
 DELETE FROM stretchy_report_parameter WHERE report_id = (SELECT id FROM stretchy_report WHERE report_name = 'Plan de Pago Grupal');
 
-DELETE FROM stretchy_report WHERE report_name = 'Plan de Pago Grupal';
+DELETE FROM stretchy_report WHERE report_name = 'Plan de Pago Individual';
 
 
 -- Insert pentaho reports
 INSERT INTO stretchy_report(report_name, report_type, report_subtype, report_category, report_sql, description,
 core_report, use_report, self_service_user_report)
-VALUES('Plan de Pago Grupal', 'Pentaho', NULL, 'Loan', NULL, 'Plan de Pago Grupal', 0, 1, 0);
+VALUES('Plan de Pago Individual', 'Pentaho', NULL, 'Loan', NULL, 'Plan de Pago Individual', 0, 1, 0);
 
+-- Insert report parameters
+INSERT INTO stretchy_report_parameter (report_id, parameter_id, report_parameter_name) VALUES ((SELECT id FROM stretchy_report sr WHERE sr.report_name = 'Plan de Pago Individual'), (SELECT id FROM stretchy_parameter sp WHERE sp.parameter_name = 'officeIdSelectAll'), 'officeIdSelectAll');
+INSERT INTO stretchy_report_parameter (report_id, parameter_id, report_parameter_name) VALUES ((SELECT id FROM stretchy_report sr WHERE sr.report_name = 'Plan de Pago Individual'), (SELECT id FROM stretchy_parameter sp WHERE sp.parameter_name = 'loanProductSelectAll'), 'loanProductSelectAll');
+INSERT INTO stretchy_report_parameter (report_id, parameter_id, report_parameter_name) VALUES ((SELECT id FROM stretchy_report sr WHERE sr.report_name = 'Plan de Pago Individual'), (SELECT id FROM stretchy_parameter sp WHERE sp.parameter_name = 'clientLoanIdSelectOne'), 'clientIdSelectOne');
+INSERT INTO stretchy_report_parameter (report_id, parameter_id, report_parameter_name) VALUES ((SELECT id FROM stretchy_report sr WHERE sr.report_name = 'Plan de Pago Individual'), (SELECT id FROM stretchy_parameter sp WHERE sp.parameter_name = 'disbursementDate'), 'disbursementDate');
 
--- Insert parameter links
-INSERT INTO stretchy_report_parameter (report_id, parameter_id, report_parameter_name) VALUES ((SELECT id FROM stretchy_report sr WHERE sr.report_name = 'Plan de Pago Grupal'), (SELECT id FROM stretchy_parameter sp WHERE sp.parameter_name = 'disbursementDate'), 'disbursementDate');
-INSERT INTO stretchy_report_parameter (report_id, parameter_id, report_parameter_name) VALUES ((SELECT id FROM stretchy_report sr WHERE sr.report_name = 'Plan de Pago Grupal'), (SELECT id FROM stretchy_parameter sp WHERE sp.parameter_name = 'AgencyIdSelectOne'), 'selected_agency');
-INSERT INTO stretchy_report_parameter (report_id, parameter_id, report_parameter_name) VALUES ((SELECT id FROM stretchy_report sr WHERE sr.report_name = 'Plan de Pago Grupal'), (SELECT id FROM stretchy_parameter sp WHERE sp.parameter_name = 'groupIdSelectOne'), 'selectedGroup');
