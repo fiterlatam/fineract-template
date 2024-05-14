@@ -31,5 +31,23 @@
                 splitStatements="true"
                 stripComments="true"/>
     </changeSet>
+    <changeSet author="fineract" id="2">
+        <sqlFile
+                encoding="utf8"
+                path="db/changelog/tenant/commands/Plan_de_Pago_Individual.sql"
+                relativeToChangelogFile="false"
+                splitStatements="true"
+                stripComments="true"/>
+    </changeSet>
+
+    <changeSet id="3" author="fineract">
+        <sql>
+            <![CDATA[
+                INSERT IGNORE INTO stretchy_report_parameter (report_id, parameter_id, report_parameter_name) VALUES ((SELECT id FROM stretchy_report sr WHERE sr.report_name = 'Plan de Pago Grupal'), (SELECT id FROM stretchy_parameter sp WHERE sp.parameter_name = 'disbursementDate'), 'disbursementDate');
+                INSERT IGNORE INTO stretchy_report_parameter (report_id, parameter_id, report_parameter_name) VALUES ((SELECT id FROM stretchy_report sr WHERE sr.report_name = 'Plan de Pago Grupal'), (SELECT id FROM stretchy_parameter sp WHERE sp.parameter_name = 'AgencyIdSelectOne'), 'selected_agency');
+                INSERT IGNORE INTO stretchy_report_parameter (report_id, parameter_id, report_parameter_name) VALUES ((SELECT id FROM stretchy_report sr WHERE sr.report_name = 'Plan de Pago Grupal'), (SELECT id FROM stretchy_parameter sp WHERE sp.parameter_name = 'groupIdSelectOne'), 'selectedGroup');
+            ]]>
+        </sql>
+    </changeSet>
 
 </databaseChangeLog>
