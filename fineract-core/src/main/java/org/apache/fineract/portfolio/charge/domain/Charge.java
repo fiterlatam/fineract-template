@@ -128,6 +128,9 @@ public class Charge extends AbstractPersistableCustom {
     @Column(name = "grace_on_charge_period_amount", nullable = false)
     private Long graceOnChargePeriodAmount = 0L;
 
+    @Column(name = "parent_charge_id", nullable = false)
+    private Long parentChargeId = 0L;
+
     @ManyToOne
     @JoinColumn(name = "payment_type_id", nullable = false)
     private PaymentType paymentType;
@@ -182,9 +185,15 @@ public class Charge extends AbstractPersistableCustom {
 
         final Long graceOnChargePeriodAmount = command.longValueOfParameterNamed("graceOnChargePeriodAmount");
 
+        Long parentChargeId = null;
+        if (command.hasParameter("parentChargeId")) {
+            parentChargeId = command.longValueOfParameterNamed("parentChargeId");
+        }
+
         return new Charge(name, amount, currencyCode, chargeAppliesTo, chargeTimeType, chargeCalculationType, penalty, active, paymentMode,
                 feeOnMonthDay, feeInterval, minCap, maxCap, feeFrequency, enableFreeWithdrawalCharge, freeWithdrawalFrequency,
-                restartCountFrequency, countFrequencyType, account, taxGroup, enablePaymentType, paymentType, graceOnChargePeriodAmount);
+                restartCountFrequency, countFrequencyType, account, taxGroup, enablePaymentType, paymentType, graceOnChargePeriodAmount,
+                parentChargeId);
     }
 
     protected Charge() {}
@@ -195,7 +204,7 @@ public class Charge extends AbstractPersistableCustom {
             final BigDecimal maxCap, final Integer feeFrequency, final boolean enableFreeWithdrawalCharge,
             final Integer freeWithdrawalFrequency, final Integer restartFrequency, final PeriodFrequencyType restartFrequencyEnum,
             final GLAccount account, final TaxGroup taxGroup, final boolean enablePaymentType, final PaymentType paymentType,
-            final Long graceOnChargePeriodAmount) {
+            final Long graceOnChargePeriodAmount, Long parentChargeId) {
         this.name = name;
         this.amount = amount;
         this.currencyCode = currencyCode;
@@ -234,7 +243,7 @@ public class Charge extends AbstractPersistableCustom {
 
             if (!(ChargeTimeType.fromInt(getChargeTimeType()).isWithdrawalFee()
                     || ChargeTimeType.fromInt(getChargeTimeType()).isSavingsNoActivityFee())
-                    && ChargeCalculationType.fromInt(getChargeCalculation()).isPercentageOfAmount()) {
+                    && ChargeCalculationType.fromInt(getChargeCalculation()).isPercentageOfInstallmentPrincipal()) {
                 baseDataValidator.reset().parameter("chargeCalculationType").value(this.chargeCalculation)
                         .failWithCodeNoParameterAddedToErrorCode(
                                 "savings.charge.calculation.type.percentage.allowed.only.for.withdrawal.or.NoActivity");
@@ -272,6 +281,10 @@ public class Charge extends AbstractPersistableCustom {
 
             if (graceOnChargePeriodAmount != null) {
                 this.graceOnChargePeriodAmount = graceOnChargePeriodAmount;
+            }
+
+            if (parentChargeId != null) {
+                this.parentChargeId = parentChargeId;
             }
         }
 
@@ -350,11 +363,11 @@ public class Charge extends AbstractPersistableCustom {
     }
 
     public boolean isPercentageOfApprovedAmount() {
-        return ChargeCalculationType.fromInt(this.chargeCalculation).isPercentageOfAmount();
+        return ChargeCalculationType.fromInt(this.chargeCalculation).isPercentageOfInstallmentPrincipal();
     }
 
     public boolean isPercentageOfDisbursementAmount() {
-        return ChargeCalculationType.fromInt(this.chargeCalculation).isPercentageOfDisbursementAmount();
+        return ChargeCalculationType.fromInt(this.chargeCalculation).isPercentageOfDisbursement();
     }
 
     public BigDecimal getMinCap() {
@@ -535,7 +548,7 @@ public class Charge extends AbstractPersistableCustom {
 
                 if (!(ChargeTimeType.fromInt(getChargeTimeType()).isWithdrawalFee()
                         || ChargeTimeType.fromInt(getChargeTimeType()).isSavingsNoActivityFee())
-                        && ChargeCalculationType.fromInt(getChargeCalculation()).isPercentageOfAmount()) {
+                        && ChargeCalculationType.fromInt(getChargeCalculation()).isPercentageOfInstallmentPrincipal()) {
                     baseDataValidator.reset().parameter("chargeCalculationType").value(this.chargeCalculation)
                             .failWithCodeNoParameterAddedToErrorCode(
                                     "charge.calculation.type.percentage.allowed.only.for.withdrawal.or.noactivity");
@@ -571,6 +584,12 @@ public class Charge extends AbstractPersistableCustom {
                 final Long newValue = command.longValueOfParameterNamed(ChargesApiConstants.graceOnChargePeriodAmountParamName);
                 actualChanges.put(ChargesApiConstants.graceOnChargePeriodAmountParamName, newValue);
                 this.graceOnChargePeriodAmount = newValue;
+            }
+
+            if (command.isChangeInLongParameterNamed(ChargesApiConstants.parentChargeIdParamName, this.parentChargeId)) {
+                final Long newValue = command.longValueOfParameterNamed(ChargesApiConstants.parentChargeIdParamName);
+                actualChanges.put(ChargesApiConstants.parentChargeIdParamName, newValue);
+                this.parentChargeId = newValue;
             }
         }
 

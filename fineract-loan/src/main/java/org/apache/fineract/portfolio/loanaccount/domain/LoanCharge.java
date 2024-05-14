@@ -204,17 +204,19 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
     private void populateDerivedFields(final BigDecimal amountPercentageAppliedTo, final BigDecimal chargeAmount,
             Integer numberOfRepayments, BigDecimal loanCharge) {
 
-        switch (ChargeCalculationType.fromInt(this.chargeCalculation)) {
-            case INVALID:
-                this.percentage = null;
-                this.amount = null;
-                this.amountPercentageAppliedTo = null;
-                this.amountPaid = null;
-                this.amountOutstanding = BigDecimal.ZERO;
-                this.amountWaived = null;
-                this.amountWrittenOff = null;
-            break;
-            case FLAT:
+        ChargeCalculationType chargeCalculationType = ChargeCalculationType.fromInt(this.chargeCalculation);
+
+        if (ChargeCalculationType.INVALID.equals(chargeCalculationType)) {
+            this.percentage = null;
+            this.amount = null;
+            this.amountPercentageAppliedTo = null;
+            this.amountPaid = null;
+            this.amountOutstanding = BigDecimal.ZERO;
+            this.amountWaived = null;
+            this.amountWrittenOff = null;
+        } else {
+
+            if (chargeCalculationType.isFlat()) {
                 this.percentage = null;
                 this.amountPercentageAppliedTo = null;
                 this.amountPaid = null;
@@ -229,11 +231,9 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
                 this.amountOutstanding = this.amount;
                 this.amountWaived = null;
                 this.amountWrittenOff = null;
-            break;
-            case PERCENT_OF_AMOUNT:
-            case PERCENT_OF_AMOUNT_AND_INTEREST:
-            case PERCENT_OF_INTEREST:
-            case PERCENT_OF_DISBURSEMENT_AMOUNT:
+            } else if (chargeCalculationType.isPercentageOfInstallmentPrincipal()
+                    || chargeCalculationType.isPercentageOfInstallmentPrincipalAndInterest()
+                    || chargeCalculationType.isPercentageOfInstallmentInterest() || chargeCalculationType.isPercentageOfDisbursement()) {
                 this.percentage = chargeAmount;
                 this.amountPercentageAppliedTo = amountPercentageAppliedTo;
                 if (loanCharge.compareTo(BigDecimal.ZERO) == 0) {
@@ -244,11 +244,11 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
                 this.amountOutstanding = calculateOutstanding();
                 this.amountWaived = null;
                 this.amountWrittenOff = null;
-            break;
-            default:
+            } else {
                 LOG.error("TODO Implement for other charge calculation types");
-            break;
+            }
         }
+
         this.amountOrPercentage = chargeAmount;
         if (this.loan != null && isInstalmentFee()) {
             updateInstallmentCharges();
@@ -335,7 +335,7 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
             switch (ChargeCalculationType.fromInt(this.chargeCalculation)) {
                 case INVALID:
                 break;
-                case FLAT:
+                case FLAT_AMOUNT:
                     if (isInstalmentFee()) {
                         if (numberOfRepayments == null) {
                             numberOfRepayments = this.loan.fetchNumberOfInstallmensAfterExceptions();
@@ -428,7 +428,7 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
             switch (ChargeCalculationType.fromInt(this.chargeCalculation)) {
                 case INVALID:
                 break;
-                case FLAT:
+                case FLAT_AMOUNT:
                     if (isInstalmentFee()) {
                         this.amount = newValue.multiply(BigDecimal.valueOf(this.loan.fetchNumberOfInstallmensAfterExceptions()));
                     } else {

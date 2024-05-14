@@ -31,6 +31,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -1096,7 +1097,7 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
 
                 final LoanCharge loanCharge = loanChargeAssembler.createNewFromJson(loan, chargeDefinition, command, entry.getValue());
 
-                if (BigDecimal.ZERO.compareTo(loanCharge.amount()) == 0) {
+                if (Objects.isNull(loanCharge.amount()) || BigDecimal.ZERO.compareTo(loanCharge.amount()) == 0) {
                     continue;
                 }
                 LoanOverdueInstallmentCharge overdueInstallmentCharge = new LoanOverdueInstallmentCharge(loanCharge, installment,
