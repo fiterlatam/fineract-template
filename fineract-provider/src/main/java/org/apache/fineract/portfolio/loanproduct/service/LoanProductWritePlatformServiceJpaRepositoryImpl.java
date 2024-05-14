@@ -327,17 +327,17 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
         switch (interestPeriodFrequencyType) {
             case MONTHS -> {
                 final BigDecimal monthlyNominalRate = maximumCreditRateConfigurationData.getMonthlyNominalRate();
-                if (maxNominalInterestRatePerPeriod.compareTo(monthlyNominalRate) > 0) {
+                if (maxNominalInterestRatePerPeriod != null && maxNominalInterestRatePerPeriod.compareTo(monthlyNominalRate) > 0) {
                     throw new PlatformDataIntegrityException("error.msg.loanproduct.max.nominal.interest.rate.per.period",
                             "Maximum nominal interest rate per period must be less than or equal to maximum legal rate for monthly interest period frequency",
                             "maxNominalInterestRatePerPeriod", maxNominalInterestRatePerPeriod, monthlyNominalRate);
                 }
-                if (minNominalInterestRatePerPeriod.compareTo(monthlyNominalRate) > 0) {
+                if (minNominalInterestRatePerPeriod != null && minNominalInterestRatePerPeriod.compareTo(monthlyNominalRate) > 0) {
                     throw new PlatformDataIntegrityException("error.msg.loanproduct.min.nominal.interest.rate.per.period",
                             "Minimum nominal interest rate per period must be greater than or equal to maximum legal rate  for monthly interest period frequency",
                             "minNominalInterestRatePerPeriod", minNominalInterestRatePerPeriod, monthlyNominalRate);
                 }
-                if (nominalInterestRatePerPeriod.compareTo(monthlyNominalRate) > 0) {
+                if (nominalInterestRatePerPeriod != null && nominalInterestRatePerPeriod.compareTo(monthlyNominalRate) > 0) {
                     throw new PlatformDataIntegrityException("error.msg.loanproduct.nominal.interest.rate.per.period",
                             "Nominal interest rate per period must be greater than or equal to maximum legal rate  for monthly interest period frequency",
                             "nominalInterestRatePerPeriod", nominalInterestRatePerPeriod, monthlyNominalRate);
@@ -346,17 +346,17 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
 
             case YEARS -> {
                 final BigDecimal annualNominalRate = maximumCreditRateConfigurationData.getAnnualNominalRate();
-                if (maxNominalInterestRatePerPeriod.compareTo(annualNominalRate) > 0) {
+                if (maxNominalInterestRatePerPeriod != null && maxNominalInterestRatePerPeriod.compareTo(annualNominalRate) > 0) {
                     throw new PlatformDataIntegrityException("error.msg.loanproduct.max.nominal.interest.rate.per.period",
                             "Maximum nominal interest rate per period must be less than or equal to maximum legal rate for monthly interest period frequency",
                             "maxNominalInterestRatePerPeriod", maxNominalInterestRatePerPeriod, annualNominalRate);
                 }
-                if (minNominalInterestRatePerPeriod.compareTo(annualNominalRate) > 0) {
+                if (minNominalInterestRatePerPeriod != null && minNominalInterestRatePerPeriod.compareTo(annualNominalRate) > 0) {
                     throw new PlatformDataIntegrityException("error.msg.loanproduct.min.nominal.interest.rate.per.period",
                             "Minimum nominal interest rate per period must be greater than or equal to maximum legal rate  for monthly interest period frequency",
                             "minNominalInterestRatePerPeriod", minNominalInterestRatePerPeriod, annualNominalRate);
                 }
-                if (nominalInterestRatePerPeriod.compareTo(annualNominalRate) > 0) {
+                if (nominalInterestRatePerPeriod != null && nominalInterestRatePerPeriod.compareTo(annualNominalRate) > 0) {
                     throw new PlatformDataIntegrityException("error.msg.loanproduct.nominal.interest.rate.per.period",
                             "Nominal interest rate per period must be greater than or equal to maximum legal rate  for monthly interest period frequency",
                             "nominalInterestRatePerPeriod", nominalInterestRatePerPeriod, annualNominalRate);
