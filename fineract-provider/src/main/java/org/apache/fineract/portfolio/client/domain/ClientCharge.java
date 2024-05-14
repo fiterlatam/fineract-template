@@ -171,7 +171,7 @@ public class ClientCharge extends AbstractPersistableCustom {
                 this.amountWaived = null;
                 this.amountWrittenOff = null;
             break;
-            case FLAT:
+            case FLAT_AMOUNT:
                 this.amount = amount;
                 this.amountPaid = null;
                 this.amountOutstanding = amount;

@@ -24,6 +24,8 @@ import java.time.MonthDay;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.fineract.accounting.glaccount.data.GLAccountData;
@@ -37,7 +39,8 @@ import org.apache.fineract.portfolio.tax.data.TaxGroupData;
  * Immutable data object for charge data.
  */
 @Getter
-public final class ChargeData implements Comparable<ChargeData>, Serializable {
+@AllArgsConstructor
+public class ChargeData implements Comparable<ChargeData>, Serializable {
 
     private final Long id;
     private final String name;
@@ -94,6 +97,18 @@ public final class ChargeData implements Comparable<ChargeData>, Serializable {
     @Setter
     private Long graceOnChargePeriodAmount = 0L;
 
+    @Setter
+    private Long parentChargeId;
+
+    @Setter
+    private List<?> chargeDataList; // ChargeData
+
+    @Setter
+    private List<?> chargeFromTableList; // CustomChargeEntityData
+
+    @Setter
+    private List<?> chargeFromExternalCalculationList;
+
     public static ChargeData template(final Collection<CurrencyData> currencyOptions,
             final List<EnumOptionData> chargeCalculationTypeOptions, final List<EnumOptionData> chargeAppliesToOptions,
             final List<EnumOptionData> chargeTimeTypeOptions, final List<EnumOptionData> chargePaymentModeOptions,
@@ -131,6 +146,11 @@ public final class ChargeData implements Comparable<ChargeData>, Serializable {
                 template.assetAccountOptions);
         ret.setGraceOnChargePeriodEnum(charge.getGraceOnChargePeriodEnum());
         ret.setGraceOnChargePeriodAmount(charge.getGraceOnChargePeriodAmount());
+        ret.setParentChargeId(charge.getParentChargeId());
+
+        List<ChargeData> chargeDataList = (List<ChargeData>) template.getChargeDataList();
+
+        ret.setChargeDataList(chargeDataList.stream().filter(notId -> notId.id.compareTo(charge.id) != 0).collect(Collectors.toList()));
 
         return ret;
     }
@@ -141,13 +161,13 @@ public final class ChargeData implements Comparable<ChargeData>, Serializable {
             final boolean active, final boolean freeWithdrawal, final Integer freeWithdrawalChargeFrequency, final Integer restartFrequency,
             final Integer restartFrequencyEnum, final boolean isPaymentType, final PaymentTypeData paymentTypeOptions,
             final BigDecimal minCap, final BigDecimal maxCap, final EnumOptionData feeFrequency, final GLAccountData accountData,
-            TaxGroupData taxGroupData, Short graceOnChargePeriodEnum, Long graceOnChargePeriodAmount) {
+            TaxGroupData taxGroupData, Short graceOnChargePeriodEnum, Long graceOnChargePeriodAmount, Long parentChargeId) {
         ChargeData ret = instance(id, name, amount, currency, chargeTimeType, chargeAppliesTo, chargeCalculationType, chargePaymentMode,
                 feeOnMonthDay, feeInterval, penalty, active, freeWithdrawal, freeWithdrawalChargeFrequency, restartFrequency,
                 restartFrequencyEnum, isPaymentType, paymentTypeOptions, minCap, maxCap, feeFrequency, accountData, taxGroupData);
         ret.setGraceOnChargePeriodEnum(graceOnChargePeriodEnum);
         ret.setGraceOnChargePeriodAmount(graceOnChargePeriodAmount);
-
+        ret.setParentChargeId(parentChargeId);
         return ret;
     }
 

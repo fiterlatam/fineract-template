@@ -82,7 +82,8 @@ public final class ChargeDefinitionCommandFromApiJsonDeserializer {
             ACTIVE, CHARGE_PAYMENT_MODE, FEE_ON_MONTH_DAY, FEE_INTERVAL, MONTH_DAY_FORMAT, MIN_CAP, MAX_CAP, FEE_FREQUENCY,
             ENABLE_FREE_WITHDRAWAL_CHARGE, FREE_WITHDRAWAL_FREQUENCY, RESTART_COUNT_FREQUENCY, COUNT_FREQUENCY_TYPE, PAYMENT_TYPE_ID,
             ENABLE_PAYMENT_TYPE, ChargesApiConstants.glAccountIdParamName, ChargesApiConstants.taxGroupIdParamName,
-            ChargesApiConstants.graceOnChargePeriodEnumIdParamName, ChargesApiConstants.graceOnChargePeriodAmountParamName));
+            ChargesApiConstants.graceOnChargePeriodEnumIdParamName, ChargesApiConstants.graceOnChargePeriodAmountParamName,
+            ChargesApiConstants.parentChargeIdParamName));
     private final FromJsonHelper fromApiJsonHelper;
 
     @Autowired
@@ -175,11 +176,11 @@ public final class ChargeDefinitionCommandFromApiJsonDeserializer {
                         .isOneOfTheseValues(ChargePaymentMode.validValues());
             }
 
-            if (chargeCalculationType != null && chargeCalculationType > 5) {
-                baseDataValidator.reset().parameter(CHARGE_CALCULATION_TYPE).value(chargeCalculationType)
-                        .failWithCode("not.supported.charge.calculation.type");
-            }
-
+            // if (chargeCalculationType != null && chargeCalculationType > 5) {
+            // baseDataValidator.reset().parameter(CHARGE_CALCULATION_TYPE).value(chargeCalculationType)
+            // .failWithCode("not.supported.charge.calculation.type");
+            // }
+            // TODO Check if charge is pctOfAnotherCharge and if so, if value was provided
             if (chargeTimeType != null && chargeCalculationType != null) {
                 performChargeTimeNCalculationTypeValidation(baseDataValidator, chargeTimeType, chargeCalculationType);
             }

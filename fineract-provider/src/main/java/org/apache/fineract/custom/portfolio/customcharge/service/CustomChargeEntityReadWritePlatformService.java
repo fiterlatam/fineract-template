@@ -23,7 +23,9 @@ import org.apache.fineract.custom.portfolio.customcharge.data.CustomChargeEntity
 
 public interface CustomChargeEntityReadWritePlatformService {
 
-    List<CustomChargeEntityData> findAllActive();
+    List<CustomChargeEntityData> findAll();
+
+    List<CustomChargeEntityData> findByIsExternalService(Boolean isExternalService);
 
     CustomChargeEntityData findById(Long id);
 }

@@ -51,4 +51,7 @@ public class CustomChargeEntity {
 
     @Column(name = "code", nullable = false, length = 100)
     private String code;
+
+    @Column(name = "is_external_service", nullable = false)
+    private Boolean isExternalService;
 }

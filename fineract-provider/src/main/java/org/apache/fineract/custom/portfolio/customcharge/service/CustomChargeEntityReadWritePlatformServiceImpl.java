@@ -52,8 +52,13 @@ public class CustomChargeEntityReadWritePlatformServiceImpl implements CustomCha
     private CustomChargeEntityRepository repository;
 
     @Override
-    public List<CustomChargeEntityData> findAllActive() {
+    public List<CustomChargeEntityData> findAll() {
         return CustomChargeEntityMapper.toDTO(repository.findAll());
+    }
+
+    @Override
+    public List<CustomChargeEntityData> findByIsExternalService(Boolean isExternalService) {
+        return CustomChargeEntityMapper.toDTO(repository.findByIsExternalService(isExternalService));
     }
 
     @Override

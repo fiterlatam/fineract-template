@@ -262,7 +262,7 @@ public class SavingsAccountCharge extends AbstractAuditableWithUTCDateTimeCustom
                 this.amountWaived = null;
                 this.amountWrittenOff = null;
             break;
-            case FLAT:
+            case FLAT_AMOUNT:
                 this.percentage = null;
                 this.amount = chargeAmount;
                 this.amountPercentageAppliedTo = null;
@@ -416,7 +416,7 @@ public class SavingsAccountCharge extends AbstractAuditableWithUTCDateTimeCustom
             switch (ChargeCalculationType.fromInt(this.chargeCalculation)) {
                 case INVALID:
                 break;
-                case FLAT:
+                case FLAT_AMOUNT:
                     this.amount = amount;
                 break;
                 case PERCENT_OF_AMOUNT:
@@ -490,7 +490,7 @@ public class SavingsAccountCharge extends AbstractAuditableWithUTCDateTimeCustom
             switch (ChargeCalculationType.fromInt(this.chargeCalculation)) {
                 case INVALID:
                 break;
-                case FLAT:
+                case FLAT_AMOUNT:
                     this.amount = newValue;
                     this.amountOutstanding = calculateOutstanding();
                 break;
@@ -778,7 +778,7 @@ public class SavingsAccountCharge extends AbstractAuditableWithUTCDateTimeCustom
         BigDecimal amountPaybale = BigDecimal.ZERO;
         if (ChargeCalculationType.fromInt(this.chargeCalculation).isFlat()) {
             amountPaybale = this.amount;
-        } else if (ChargeCalculationType.fromInt(this.chargeCalculation).isPercentageOfAmount()) {
+        } else if (ChargeCalculationType.fromInt(this.chargeCalculation).isPercentageOfInstallmentPrincipal()) {
             amountPaybale = transactionAmount.multiply(this.percentage).divide(BigDecimal.valueOf(100L), MoneyHelper.getRoundingMode());
         }
         return amountPaybale;

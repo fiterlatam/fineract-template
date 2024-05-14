@@ -119,7 +119,7 @@ public class ShareAccountCharge extends AbstractPersistableCustom {
 
     private void populateDerivedFields(final BigDecimal transactionAmount, final BigDecimal chargeAmount) {
         this.amountOrPercentage = chargeAmount;
-        if (this.chargeCalculation.equals(ChargeCalculationType.FLAT.getValue())) {
+        if (this.chargeCalculation.equals(ChargeCalculationType.FLAT_AMOUNT.getValue())) {
             this.percentage = null;
             this.amount = BigDecimal.ZERO;
             this.amountPercentageAppliedTo = null;
@@ -342,7 +342,7 @@ public class ShareAccountCharge extends AbstractPersistableCustom {
         BigDecimal amountPaybale = BigDecimal.ZERO;
         if (ChargeCalculationType.fromInt(this.chargeCalculation).isFlat()) {
             amountPaybale = this.amount;
-        } else if (ChargeCalculationType.fromInt(this.chargeCalculation).isPercentageOfAmount()) {
+        } else if (ChargeCalculationType.fromInt(this.chargeCalculation).isPercentageOfInstallmentPrincipal()) {
             amountPaybale = transactionAmount.multiply(this.percentage).divide(BigDecimal.valueOf(100L));
         }
         this.amountOutstanding = amountPaybale;

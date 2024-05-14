@@ -23,12 +23,15 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.MonthDay;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.apache.fineract.accounting.common.AccountingDropdownReadPlatformService;
 import org.apache.fineract.accounting.glaccount.data.GLAccountData;
+import org.apache.fineract.custom.portfolio.customcharge.service.CustomChargeEntityReadWritePlatformServiceImpl;
 import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainServiceJpa;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
@@ -68,6 +71,7 @@ public class ChargeReadPlatformServiceImpl implements ChargeReadPlatformService 
     private final TaxReadPlatformService taxReadPlatformService;
     private final ConfigurationDomainServiceJpa configurationDomainServiceJpa;
     private final NamedParameterJdbcTemplate namedParameterJdbcTemplate;
+    private final CustomChargeEntityReadWritePlatformServiceImpl customChargeEntityReadWritePlatformServiceImpl;
 
     @Override
     @Cacheable(value = "charges", key = "T(org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil).getTenant().getTenantIdentifier().concat('ch')")
@@ -140,12 +144,19 @@ public class ChargeReadPlatformServiceImpl implements ChargeReadPlatformService 
         final List<GLAccountData> expenseAccountOptions = this.accountingDropdownReadPlatformService.retrieveExpenseAccountOptions();
         final List<GLAccountData> assetAccountOptions = this.accountingDropdownReadPlatformService.retrieveAssetAccountOptions();
 
-        return ChargeData.template(currencyOptions, allowedChargeCalculationTypeOptions, allowedChargeAppliesToOptions,
+        ChargeData ret = ChargeData.template(currencyOptions, allowedChargeCalculationTypeOptions, allowedChargeAppliesToOptions,
                 allowedChargeTimeOptions, chargePaymentOptions, loansChargeCalculationTypeOptions, loansChargeTimeTypeOptions,
                 savingsChargeCalculationTypeOptions, savingsChargeTimeTypeOptions, clientChargeCalculationTypeOptions,
                 clientChargeTimeTypeOptions, feeFrequencyOptions, incomeOrLiabilityAccountOptions, taxGroupOptions,
                 shareChargeCalculationTypeOptions, shareChargeTimeTypeOptions, accountMappingForChargeConfig, expenseAccountOptions,
                 assetAccountOptions);
+
+        ret.setChargeDataList((List<?>) this.retrieveAllCharges().stream().sorted(Comparator.comparing(ChargeData::getName))
+                .collect(Collectors.toList()));
+        ret.setChargeFromTableList(customChargeEntityReadWritePlatformServiceImpl.findByIsExternalService(false));
+        ret.setChargeFromExternalCalculationList(customChargeEntityReadWritePlatformServiceImpl.findByIsExternalService(true));
+
+        return ret;
     }
 
     @Override
@@ -275,8 +286,9 @@ public class ChargeReadPlatformServiceImpl implements ChargeReadPlatformService 
                     + "c.fee_interval as feeInterval, c.fee_frequency as feeFrequency,c.min_cap as minCap,c.max_cap as maxCap, "
                     + "c.income_or_liability_account_id as glAccountId , acc.name as glAccountName, acc.gl_code as glCode, "
                     + "tg.id as taxGroupId, c.is_payment_type as isPaymentType, pt.id as paymentTypeId, pt.value as paymentTypeName, tg.name as taxGroupName, "
-                    + "c,grace_on_charge_period_enum as graceOnChargePeriodEnum, c.grace_on_charge_period_amount as graceOnChargePeriodAmount "
-                    + "from m_charge c " + "join m_organisation_currency oc on c.currency_code = oc.code "
+                    + "c,grace_on_charge_period_enum as graceOnChargePeriodEnum, c.grace_on_charge_period_amount as graceOnChargePeriodAmount, "
+                    + "c,parent_charge_id as parentChargeId " + "from m_charge c "
+                    + "join m_organisation_currency oc on c.currency_code = oc.code "
                     + " LEFT JOIN acc_gl_account acc on acc.id = c.income_or_liability_account_id "
                     + " LEFT JOIN m_tax_group tg on tg.id = c.tax_group_id " + " LEFT JOIN m_payment_type pt on pt.id = c.payment_type_id ";
         }
@@ -375,11 +387,12 @@ public class ChargeReadPlatformServiceImpl implements ChargeReadPlatformService 
             // Grace Period for charge
             final Integer graceOnChargePeriodEnum = JdbcSupport.getInteger(rs, "graceOnChargePeriodEnum");
             final Long graceOnChargePeriodAmount = JdbcSupport.getLong(rs, "graceOnChargePeriodAmount");
+            final Long parentChargeId = JdbcSupport.getLong(rs, "parentChargeId");
 
             return ChargeData.instance(id, name, amount, currency, chargeTimeType, chargeAppliesToType, chargeCalculationType,
                     chargePaymentMode, feeOnMonthDay, feeInterval, penalty, active, isFreeWithdrawal, freeWithdrawalChargeFrequency,
                     restartFrequency, restartFrequencyEnum, isPaymentType, paymentTypeData, minCap, maxCap, feeFrequencyType, glAccountData,
-                    taxGroupData, Short.valueOf(String.valueOf(graceOnChargePeriodEnum)), graceOnChargePeriodAmount);
+                    taxGroupData, Short.valueOf(String.valueOf(graceOnChargePeriodEnum)), graceOnChargePeriodAmount, parentChargeId);
         }
     }
 

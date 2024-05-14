@@ -67,7 +67,7 @@ public class CustomChargeEntityApiResource {
     @Produces({ MediaType.APPLICATION_JSON })
     public String get(@Context final UriInfo uriInfo) {
         this.context.authenticatedUser().validateHasReadPermission(CustomChargeEntityApiConstants.RESOURCE_NAME);
-        return this.toApiJsonSerializer.serialize(this.service.findAllActive());
+        return this.toApiJsonSerializer.serialize(this.service.findByIsExternalService(false));
     }
 
     @GET
