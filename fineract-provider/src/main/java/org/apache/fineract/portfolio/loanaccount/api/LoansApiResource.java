@@ -125,6 +125,7 @@ import org.apache.fineract.portfolio.loanaccount.data.GlimRepaymentTemplate;
 import org.apache.fineract.portfolio.loanaccount.data.LoanAccountData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanApprovalData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanAssignorData;
+import org.apache.fineract.portfolio.loanaccount.data.LoanBlockingReasonData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanChargeData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanCollateralManagementData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanSummaryData;
@@ -146,6 +147,7 @@ import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanSchedul
 import org.apache.fineract.portfolio.loanaccount.loanschedule.service.LoanScheduleCalculationPlatformService;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.service.LoanScheduleHistoryReadPlatformService;
 import org.apache.fineract.portfolio.loanaccount.service.GLIMAccountInfoReadPlatformService;
+import org.apache.fineract.portfolio.loanaccount.service.LoanBlockReadPlatformService;
 import org.apache.fineract.portfolio.loanaccount.service.LoanChargeReadPlatformService;
 import org.apache.fineract.portfolio.loanaccount.service.LoanReadPlatformService;
 import org.apache.fineract.portfolio.loanproduct.LoanProductConstants;
@@ -290,6 +292,7 @@ public class LoansApiResource {
     private final LoanCollateralManagementReadPlatformService loanCollateralManagementReadPlatformService;
     private final DefaultToApiJsonSerializer<LoanDelinquencyTagHistoryData> jsonSerializerTagHistory;
     private final DelinquencyReadPlatformService delinquencyReadPlatformService;
+    private final LoanBlockReadPlatformService loanBlockingReasonReadPlatformService;
 
     @Autowired
     private SpringTemplateEngine templateEngine;
@@ -862,6 +865,37 @@ public class LoansApiResource {
             @PathParam("loanId") @Parameter(description = "loanId") final Long loanId) throws DocumentException, IOException {
         context.authenticatedUser().validateHasReadPermission(RESOURCE_NAME_FOR_PERMISSIONS);
         this.loanReadPlatformService.exportLoanDisbursementPDF(loanId, response);
+    }
+
+    @GET
+    @Path("{loanId}/loanblockingreasons")
+    @Consumes({ MediaType.APPLICATION_JSON })
+    @Produces({ MediaType.APPLICATION_JSON })
+    @Operation(summary = "Retrieve loan blocking reasons", description = "Retrieve loan blocking reasons\n" + "Example Requests:\n" + "\n"
+            + "loans/1/loanblockingreasons\n" + "\n" + "\n")
+    public String retrieveBlockingReasons(@PathParam("loanId") @Parameter(description = "loanId", required = true) final Long loanId,
+            @Context final UriInfo uriInfo) {
+
+        final Collection<LoanBlockingReasonData> blockingReasons = this.loanBlockingReasonReadPlatformService
+                .retrieveLoanBlockingReason(loanId);
+        return this.toApiJsonSerializer.serialize(blockingReasons);
+    }
+
+    @PUT
+    @Path("{loanId}/loanblockingreasons")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(summary = "Adds a new delinquency action for a loan", description = "")
+    @RequestBody(required = true, content = @Content(schema = @Schema(implementation = DelinquencyApiResourceSwagger.PostLoansDelinquencyActionRequest.class)))
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = DelinquencyApiResourceSwagger.PostLoansDelinquencyActionResponse.class))) })
+    public String deleteLoanBlockingReasons(@PathParam("loanId") @Parameter(description = "loanId", required = true) final Long loanId,
+            @Context final UriInfo uriInfo, @Parameter(hidden = true) final String apiRequestBodyAsJson) {
+
+        final CommandWrapper commandRequest = new CommandWrapperBuilder().deleteLoanBlockingReason(loanId).withJson(apiRequestBodyAsJson)
+                .build();
+        final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
+        return this.jsonSerializerTagHistory.serialize(result);
     }
 
     private String retrieveApprovalTemplate(final Long loanId, final String loanExternalIdStr, final String templateType,
