@@ -53,4 +53,3 @@ INSERT INTO stretchy_report_parameter (report_id, parameter_id, report_parameter
 INSERT INTO stretchy_report_parameter (report_id, parameter_id, report_parameter_name) VALUES ((SELECT id FROM stretchy_report sr WHERE sr.report_name = 'Plan de Pago Individual'), (SELECT id FROM stretchy_parameter sp WHERE sp.parameter_name = 'loanProductSelectAll'), 'loanProductSelectAll');
 INSERT INTO stretchy_report_parameter (report_id, parameter_id, report_parameter_name) VALUES ((SELECT id FROM stretchy_report sr WHERE sr.report_name = 'Plan de Pago Individual'), (SELECT id FROM stretchy_parameter sp WHERE sp.parameter_name = 'clientLoanIdSelectOne'), 'clientIdSelectOne');
 INSERT INTO stretchy_report_parameter (report_id, parameter_id, report_parameter_name) VALUES ((SELECT id FROM stretchy_report sr WHERE sr.report_name = 'Plan de Pago Individual'), (SELECT id FROM stretchy_parameter sp WHERE sp.parameter_name = 'disbursementDate'), 'disbursementDate');
-

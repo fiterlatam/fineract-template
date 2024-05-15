@@ -373,9 +373,9 @@ public class GroupPrequalificationApiResource {
     public String uploadBuroDocument(@PathParam("groupId") @Parameter(description = "groupId") final Long groupId,
             @HeaderParam("Content-Length") @Parameter(description = "Content-Length") final Long fileSize,
             @FormDataParam("file") final InputStream inputStream, @FormDataParam("file") final FormDataContentDisposition fileDetails,
-            @FormDataParam("file") final FormDataBodyPart bodyPart,
-            @FormDataParam("description") final String description, @FormDataParam("comment") final String comment,
-            @FormDataParam("memberId") final Long memberId, @FormDataParam("dpi") final String dpi) {
+            @FormDataParam("file") final FormDataBodyPart bodyPart, @FormDataParam("description") final String description,
+            @FormDataParam("comment") final String comment, @FormDataParam("memberId") final Long memberId,
+            @FormDataParam("dpi") final String dpi) {
 
         if (inputStream != null) {
             fileUploadValidator.validate(fileSize, inputStream, fileDetails, bodyPart);

@@ -168,8 +168,8 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             final PrequalificationReadPlatformService prequalificationReadPlatformService, FromJsonHelper fromApiJsonHelper,
             final LoanApplicationWritePlatformService loanApplicationWritePlatformService,
             final PrequalificationChecklistWritePlatformService prequalificationChecklistWritePlatformService,
-            final LoanReadPlatformService loanReadPlatformService,
-            final GroupLoanAdditionalsRepository groupLoanAdditionalsRepository, final LoanRepositoryWrapper loanRepositoryWrapper) {
+            final LoanReadPlatformService loanReadPlatformService, final GroupLoanAdditionalsRepository groupLoanAdditionalsRepository,
+            final LoanRepositoryWrapper loanRepositoryWrapper) {
         this.context = context;
         this.dataValidator = dataValidator;
         this.loanProductRepository = loanProductRepository;
@@ -561,7 +561,8 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             member.updateAgencyBureauStatus(newValue);
 
             Integer status = prequalificationGroup.getStatus();
-            List<PrequalificationStatusLog> statusLogList = this.preQualificationLogRepository.groupStatusLogs(status, prequalificationGroup);
+            List<PrequalificationStatusLog> statusLogList = this.preQualificationLogRepository.groupStatusLogs(status,
+                    prequalificationGroup);
             if (statusLogList.isEmpty())
                 throw new PrequalificationStatusNotCompletedException(PrequalificationStatus.fromInt(status).toString());
 
@@ -960,7 +961,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
     }
 
     private CommandProcessingResult revalidateHardPolicy(Long entityId, JsonCommand command) {
-        return this.prequalificationChecklistWritePlatformService.validatePrequalificationHardPolicies(entityId,command);
+        return this.prequalificationChecklistWritePlatformService.validatePrequalificationHardPolicies(entityId, command);
     }
 
     private void approveOrRejectLoanApplications(final PrequalificationGroup prequalificationGroup,
