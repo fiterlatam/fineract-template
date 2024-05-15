@@ -146,6 +146,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
     private final DelinquencyEffectivePauseHelper delinquencyEffectivePauseHelper;
     private final DelinquencyReadPlatformService delinquencyReadPlatformService;
     private final BlockingReasonSettingsRepositoryWrapper blockingReasonSettingsRepositoryWrapper;
+    private final LoanBlockingReasonRepository loanBlockingReasonRepository;
 
     @Transactional
     @Override
@@ -298,6 +299,9 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
 
             if (blockingReasonSetting != null) {
                 loan.getLoanCustomizationDetail().setBlockStatus(blockingReasonSetting);
+                LoanBlockingReason loanBlockingReason = LoanBlockingReason.instance(loan, blockingReasonSetting,
+                        "Préstamo cerrado con saldo cero");
+                loanBlockingReasonRepository.saveAndFlush(loanBlockingReason);
             }
         }
     }
