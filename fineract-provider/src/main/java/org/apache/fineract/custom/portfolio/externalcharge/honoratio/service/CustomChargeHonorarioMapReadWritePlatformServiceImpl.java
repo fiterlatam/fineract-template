@@ -26,13 +26,9 @@ import java.util.List;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.apache.fineract.custom.infrastructure.dataqueries.domain.ClientAdditionalInformation;
 import org.apache.fineract.custom.infrastructure.dataqueries.domain.ClientAdditionalInformationRepository;
-import org.apache.fineract.custom.infrastructure.dataqueries.domain.IndividualAdditionalInformation;
 import org.apache.fineract.custom.infrastructure.dataqueries.domain.IndividualAdditionalInformationRepository;
-import org.apache.fineract.custom.portfolio.ally.domain.ClientAlly;
 import org.apache.fineract.custom.portfolio.ally.domain.ClientAllyRepository;
-import org.apache.fineract.custom.portfolio.ally.exception.ClientAllyNotFoundException;
 import org.apache.fineract.custom.portfolio.externalcharge.honoratio.data.CustomChargeHonorarioMapData;
 import org.apache.fineract.custom.portfolio.externalcharge.honoratio.domain.CustomChargeHonorarioMap;
 import org.apache.fineract.custom.portfolio.externalcharge.honoratio.domain.CustomChargeHonorarioMapRepository;
@@ -50,7 +46,6 @@ import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.core.service.database.DatabaseSpecificSQLGenerator;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.portfolio.client.domain.ClientRepository;
-import org.apache.fineract.portfolio.client.exception.ClientNotFoundException;
 import org.apache.fineract.portfolio.loanaccount.data.LoanChargeData;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepository;
@@ -142,29 +137,6 @@ public class CustomChargeHonorarioMapReadWritePlatformServiceImpl implements Cus
 
             final CustomChargeHonorarioMap entity = this.validatorClass.validateForCreate(dto);
 
-            // Validate Client
-            Optional<IndividualAdditionalInformation> camposClientePersona = individualAdditionalInformationRepository
-                    .findByCedula(entity.getClientDocumentId());
-            if (camposClientePersona.isPresent()) {
-                entity.setClientId(camposClientePersona.get().getClientId());
-            } else {
-                Optional<ClientAdditionalInformation> camposClienteEmpresa = camposClienteEmpresaRepository
-                        .findByNit(entity.getClientDocumentId());
-                if (camposClienteEmpresa.isPresent()) {
-                    entity.setClientId(camposClienteEmpresa.get().getClientId());
-                } else {
-                    throw new ClientNotFoundException();
-                }
-            }
-
-            // Validate NIT Aliado
-            Optional<ClientAlly> clientAlly = clientAllyRepository.findByNit(entity.getNit());
-            if (clientAlly.isPresent()) {
-                entity.setClientAllyId(clientAlly.get().getId());
-            } else {
-                throw new ClientAllyNotFoundException();
-            }
-
             // Validate Loan
             Long loanId = 0L;
             Optional<Loan> loan = loanRepository.findById(entity.getLoanId());
@@ -185,8 +157,8 @@ public class CustomChargeHonorarioMapReadWritePlatformServiceImpl implements Cus
             }
 
             // Check if the entity already exists
-            Optional<CustomChargeHonorarioMap> entityOpt = repository.findByClientIdClientAllyIdLoanIdLoanInstallmentNr(
-                    entity.getClientId(), entity.getClientAllyId(), entity.getLoanId(), entity.getLoanInstallmentNr());
+            Optional<CustomChargeHonorarioMap> entityOpt = repository.findByNitLoanIdLoanInstallmentNr(entity.getNit(), entity.getLoanId(),
+                    entity.getLoanInstallmentNr());
 
             // If yes, update disabled, updated and changed fields AND insert a new one with the new data
             if (entityOpt.isPresent()) {

@@ -80,96 +80,62 @@
                           tableName="c_custom_charge_honorarios_map"/>
     </changeSet>
 
-
-    <!--changeSet  author="fineract"  id="20">
-        <addForeignKeyConstraint  baseTableSchemaName="custom"
-                                  baseTableName="c_custom_charge_honorarios_map"
-                                  baseColumnNames="city_id"
-                                  referencedTableSchemaName="public"
-                                  referencedTableName="m_code_value"
-                                  referencedColumnNames="id"
-                                  constraintName="fk_city_code_value"
-                                  onDelete="CASCADE"
-                                  onUpdate="RESTRICT"
-                                  validate="true"/>
+    <changeSet author="fineract" id="20">
+        <dropTable schemaName= "custom" tableName="c_custom_charge_honorarios_map"/>
     </changeSet>
 
-    <changeSet  author="fineract"  id="30">
-        <addForeignKeyConstraint  baseTableSchemaName="custom"
-                                  baseTableName="c_custom_charge_honorarios_map"
-                                  baseColumnNames="department_id"
-                                  referencedTableSchemaName="public"
-                                  referencedTableName="m_code_value"
-                                  referencedColumnNames="id"
-                                  constraintName="fk_department_code_value"
-                                  onDelete="CASCADE"
-                                  onUpdate="RESTRICT"
-                                  validate="true"/>
+    <changeSet author="fineract" id="30">
+        <createTable schemaName= "custom" tableName="c_custom_charge_honorarios_map">
+            <column name="id" type="INT4">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="nit" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="loan_id" type="INT4">
+                <constraints nullable="false"/>
+            </column>
+            <column name="loan_installment_nr" type="INT4">
+                <constraints nullable="false"/>
+            </column>
+            <column name="fee_total_amount" type="DECIMAL(19,4)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="fee_base_amount" type="DECIMAL(19,4)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="fee_vat_amount" type="DECIMAL(19,4)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_by" type="INT4">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="DATETIME">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_by" type="INT4">
+                <constraints nullable="true"/>
+            </column>
+            <column name="updated_at" type="DATETIME">
+                <constraints nullable="true"/>
+            </column>
+            <column name="disabled_by" type="INT4">
+                <constraints nullable="true"/>
+            </column>
+            <column name="disabled_at" type="DATETIME">
+                <constraints nullable="true"/>
+            </column>
+
+        </createTable>
     </changeSet>
 
-    <changeSet  author="fineract"  id="40">
-        <addForeignKeyConstraint  baseTableSchemaName="custom"
-                                  baseTableName="c_custom_charge_honorarios_map"
-                                  baseColumnNames="liquidation_frequency_id"
-                                  referencedTableSchemaName="public"
-                                  referencedTableName="m_code_value"
-                                  referencedColumnNames="id"
-                                  constraintName="fk_liquidation_frequency_code_value"
-                                  onDelete="CASCADE"
-                                  onUpdate="RESTRICT"
-                                  validate="true"/>
+    <changeSet author="fineract" id="40">
+        <addAutoIncrement columnDataType="int"
+                          columnName="id"
+                          incrementBy="1"
+                          schemaName="custom"
+                          startWith="1"
+                          tableName="c_custom_charge_honorarios_map"/>
     </changeSet>
-
-    <changeSet  author="fineract"  id="50">
-        <addForeignKeyConstraint  baseTableSchemaName="custom"
-                                  baseTableName="c_custom_charge_honorarios_map"
-                                  baseColumnNames="bank_entity_id"
-                                  referencedTableSchemaName="public"
-                                  referencedTableName="m_code_value"
-                                  referencedColumnNames="id"
-                                  constraintName="fk_bank_entity_code_value"
-                                  onDelete="CASCADE"
-                                  onUpdate="RESTRICT"
-                                  validate="true"/>
-    </changeSet>
-
-    <changeSet  author="fineract"  id="60">
-        <addForeignKeyConstraint  baseTableSchemaName="custom"
-                                  baseTableName="c_custom_charge_honorarios_map"
-                                  baseColumnNames="account_type_id"
-                                  referencedTableSchemaName="public"
-                                  referencedTableName="m_code_value"
-                                  referencedColumnNames="id"
-                                  constraintName="fk_account_type_code_value"
-                                  onDelete="CASCADE"
-                                  onUpdate="RESTRICT"
-                                  validate="true"/>
-    </changeSet>
-
-    <changeSet  author="fineract"  id="70">
-        <addForeignKeyConstraint  baseTableSchemaName="custom"
-                                  baseTableName="c_custom_charge_honorarios_map"
-                                  baseColumnNames="tax_profile_id"
-                                  referencedTableSchemaName="public"
-                                  referencedTableName="m_code_value"
-                                  referencedColumnNames="id"
-                                  constraintName="fk_tax_profile_code_value"
-                                  onDelete="CASCADE"
-                                  onUpdate="RESTRICT"
-                                  validate="true"/>
-    </changeSet>
-
-    <changeSet author="fineract"  id="80">
-        <addForeignKeyConstraint  baseTableSchemaName="custom"
-                                  baseTableName="c_custom_charge_honorarios_map"
-                                  baseColumnNames="state_id"
-                                  referencedTableSchemaName="public"
-                                  referencedTableName="m_code_value"
-                                  referencedColumnNames="id"
-                                  constraintName="fk_state_id_code_value"
-                                  onDelete="CASCADE"
-                                  onUpdate="RESTRICT"
-                                  validate="true"/>
-    </changeSet-->
 
 </databaseChangeLog>
