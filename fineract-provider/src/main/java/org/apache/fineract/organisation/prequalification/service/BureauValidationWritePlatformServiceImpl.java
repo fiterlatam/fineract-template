@@ -1058,7 +1058,7 @@ public class BureauValidationWritePlatformServiceImpl implements BureauValidatio
         final String detalle_fiadores = this.fromApiJsonHelper.extractStringNamed("detalle_fiadores", jsonElement);
         loanAdditionalData.setDetalle_fiadores(detalle_fiadores);
 
-        final String dpi_solicitante = this.fromApiJsonHelper.extractStringNamed("dpi_solicitante", jsonElement);
+        final String dpi_solicitante = this.fromApiJsonHelper.extractStringNamed("dpi", jsonElement);
         loanAdditionalData.setDpi_solicitante(dpi_solicitante);
 
         final String recuperacion_cuentas = this.fromApiJsonHelper.extractStringNamed("recuperacion_cuentas", jsonElement);
