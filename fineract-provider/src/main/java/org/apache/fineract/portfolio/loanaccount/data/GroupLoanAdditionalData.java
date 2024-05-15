@@ -114,5 +114,6 @@ public class GroupLoanAdditionalData {
     private BigDecimal availableMonthly;
     private BigDecimal facValue;
     private BigDecimal debtLevel;
+    private BigDecimal paymentCapacity;
     private Collection<AdditionalsExtraLoansData> extraLoansData;
 }
