@@ -136,7 +136,8 @@ public class HonorarioRetrofitConfig {
                             Request newRequest = originalRequest.newBuilder().header("API_KEY", apiKey).build();
 
                             // This is for DEMO purposes to connect to a Mock Service, as the Sumas external provider...
-                            if (originalRequest.url().toString().contains("sumas-dev.fiter.io")) {
+                            if (originalRequest.url().toString().contains("sumas-dev.fiter.io")
+                                    || originalRequest.url().toString().contains(STRING_FALLBACK_URL)) {
 
                                 newRequest = originalRequest.newBuilder().header("API_KEY", apiKey)
                                         .header("Fineract-Platform-TenantId", "default")

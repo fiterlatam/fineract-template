@@ -34,9 +34,6 @@ import lombok.Setter;
 public class CustomChargeHonorarioMapData {
 
     public Long id;
-    public Long clientAllyId;
-    public Long clientId;
-    public String clientDocumentId;
     public Long loanId;
     public Integer loanInstallmentNr;
     public BigDecimal feeTotalAmount;

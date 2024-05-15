@@ -25,7 +25,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import jakarta.persistence.Transient;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
@@ -49,11 +48,8 @@ public class CustomChargeHonorarioMap {
     @Column(name = "id", nullable = false)
     private Long id;
 
-    @Column(name = "client_ally_id", nullable = false, length = 20)
-    private Long clientAllyId;
-
-    @Column(name = "client_id", nullable = false, length = 20)
-    private Long clientId;
+    @Column(name = "nit", nullable = false, length = 20)
+    private String nit;
 
     @Column(name = "loan_id", nullable = false)
     private Long loanId;
@@ -87,10 +83,4 @@ public class CustomChargeHonorarioMap {
 
     @Column(name = "disabled_at", nullable = true)
     private LocalDateTime disabledAt;
-
-    @Transient
-    private String nit;
-
-    @Transient
-    private String clientDocumentId;
 }
