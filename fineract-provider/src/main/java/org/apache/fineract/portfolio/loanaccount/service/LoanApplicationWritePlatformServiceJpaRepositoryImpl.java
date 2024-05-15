@@ -536,6 +536,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                             prequalificationGroup.getPrequalificationNumber());
                 }
                 newLoanApplication.updateGroup(groupPrequalification);
+                this.fromApiJsonDeserializer.validateMinMaxValuesForGroupAdditionalData(command);
                 GroupLoanAdditionals groupLoanAdditionals = GroupLoanAdditionals.assembleFromJson(command, newLoanApplication, facilitator);
                 addExternalLoans(groupLoanAdditionals, command);
                 this.groupLoanAdditionalsRepository.save(groupLoanAdditionals);
@@ -1553,6 +1554,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             if (prequalificationGroup != null && prequalificationGroup.isPrequalificationTypeGroup()) {
                 GroupLoanAdditionals additionals = this.groupLoanAdditionalsRepository
                         .getGroupLoanAdditionalsByLoan(existingLoanApplication);
+                this.fromApiJsonDeserializer.validateMinMaxValuesForGroupAdditionalData(command);
                 if (additionals == null) {
                     Long facilitatorId = command.longValueOfParameterNamed("facilitator");
                     AppUser facilitator = null;
@@ -1718,7 +1720,8 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
         final BigDecimal bienesInmuebles = this.fromJsonHelper.extractBigDecimalNamed("bienesInmuebles", jsonElement, locale);
         loanAdditionalData.setBienesInmuebles(bienesInmuebles);
 
-        final BigDecimal bienesInmueblesFamiliares = this.fromJsonHelper.extractBigDecimalNamed("bienesInmueblesFamiliares", jsonElement, locale);
+        final BigDecimal bienesInmueblesFamiliares = this.fromJsonHelper.extractBigDecimalNamed("bienesInmueblesFamiliares", jsonElement,
+                locale);
         loanAdditionalData.setBienesInmueblesFamiliares(bienesInmueblesFamiliares);
 
         final String cDpi = this.fromJsonHelper.extractStringNamed("cDpi", jsonElement);
@@ -1727,7 +1730,8 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
         final Integer cEdad = this.fromJsonHelper.extractIntegerNamed("cEdad", jsonElement, locale);
         loanAdditionalData.setCEdad(cEdad);
 
-        final LocalDate cFechaNacimiento = this.fromJsonHelper.extractLocalDateNamed("cFechaNacimiento", jsonElement, dateFormat, dateLocal);
+        final LocalDate cFechaNacimiento = this.fromJsonHelper.extractLocalDateNamed("cFechaNacimiento", jsonElement, dateFormat,
+                dateLocal);
         loanAdditionalData.setCFechaNacimiento(cFechaNacimiento);
 
         final String cOtroNombre = this.fromJsonHelper.extractStringNamed("cOtroNombre", jsonElement);
@@ -2194,7 +2198,8 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 dateLocal);
         loanAdditionalData.setFecha_integraciones(fecha_integraciones);
 
-        final LocalDate fecha_inventario = this.fromJsonHelper.extractLocalDateNamed("fecha_inventario", jsonElement, dateFormat, dateLocal);
+        final LocalDate fecha_inventario = this.fromJsonHelper.extractLocalDateNamed("fecha_inventario", jsonElement, dateFormat,
+                dateLocal);
         loanAdditionalData.setFecha_inventario(fecha_inventario);
 
         final LocalDate fecha_nacimiento_solicitante = this.fromJsonHelper.extractLocalDateNamed("fecha_nacimiento_solicitante",

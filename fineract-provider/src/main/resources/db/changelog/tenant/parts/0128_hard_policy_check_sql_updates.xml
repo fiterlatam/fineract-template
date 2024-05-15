@@ -296,7 +296,7 @@
                 from m_loan ml inner join m_product_loan mpl on ml.product_id = mpl.id
                 where ml.client_id = mc.id and mpl.owner_type_enum = 2 and ml.loan_status_id = 300 ORDER BY ml.id desc limit 1
                 ) as current_guarantee_amount,
-								(
+                                (
                 select COALESCE(ml.principal_amount,0)
                 from m_loan ml inner join m_product_loan mpl on ml.product_id = mpl.id
                 where ml.client_id = mc.id and mpl.owner_type_enum = 2 and ml.loan_status_id = 300 ORDER BY ml.id desc limit 1

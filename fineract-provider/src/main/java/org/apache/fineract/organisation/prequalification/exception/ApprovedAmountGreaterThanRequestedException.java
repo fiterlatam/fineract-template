@@ -18,14 +18,13 @@
  */
 package org.apache.fineract.organisation.prequalification.exception;
 
-import org.apache.fineract.infrastructure.core.exception.AbstractPlatformDomainRuleException;
-
 import java.math.BigDecimal;
+import org.apache.fineract.infrastructure.core.exception.AbstractPlatformDomainRuleException;
 
 public class ApprovedAmountGreaterThanRequestedException extends AbstractPlatformDomainRuleException {
 
     public ApprovedAmountGreaterThanRequestedException(final String dpi, final BigDecimal approvedAmount,
-                                                       final BigDecimal requestedAmount) {
+            final BigDecimal requestedAmount) {
         super("error.msg.approved.amount.greater.than.requested", "Approved Amount " + approvedAmount
                 + " cannot be greater than the requested amount " + requestedAmount + " for member with dpi " + dpi, approvedAmount,
                 requestedAmount, dpi);

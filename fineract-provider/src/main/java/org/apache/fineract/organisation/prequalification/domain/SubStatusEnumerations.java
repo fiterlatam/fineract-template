@@ -31,7 +31,8 @@ public final class SubStatusEnumerations {
     }
 
     public static EnumOptionData status(final PrequalificationSubStatus status) {
-        new EnumOptionData(PrequalificationSubStatus.INVALID.getValue().longValue(), PrequalificationSubStatus.INVALID.getCode(), "INVALID");
+        new EnumOptionData(PrequalificationSubStatus.INVALID.getValue().longValue(), PrequalificationSubStatus.INVALID.getCode(),
+                "INVALID");
 
         return switch (status) {
             case PENDING -> new EnumOptionData(PrequalificationSubStatus.PENDING.getValue().longValue(),
@@ -44,8 +45,8 @@ public final class SubStatusEnumerations {
                     PrequalificationSubStatus.BURO_EVIDENCE.getCode(), "BURO_EVIDENCE");
             case RE_VALIDATE -> new EnumOptionData(PrequalificationSubStatus.RE_VALIDATE.getValue().longValue(),
                     PrequalificationSubStatus.RE_VALIDATE.getCode(), "RE_VALIDATE");
-            default -> new EnumOptionData(PrequalificationSubStatus.INVALID.getValue().longValue(), PrequalificationSubStatus.INVALID.getCode(),
-                    "INVALID");
+            default -> new EnumOptionData(PrequalificationSubStatus.INVALID.getValue().longValue(),
+                    PrequalificationSubStatus.INVALID.getCode(), "INVALID");
         };
     }
 }
