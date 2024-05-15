@@ -378,20 +378,15 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
             final MaximumCreditRateConfiguration maximumCreditRateConfiguration = maximumCreditRateConfigurations.get(0);
             final Long id = maximumCreditRateConfiguration.getId();
             this.fromApiJsonDeserializer.validateMaximumRateForUpdate(command);
-            final LocalDate appliedOnDate = command.localDateValueOfParameterNamed("appliedOnDate");
-            final LocalDate currentDate = DateUtils.getLocalDateOfTenant();
-            if (DateUtils.isBefore(currentDate, appliedOnDate)) {
-                throw new MaximumLegalRateExceptions(appliedOnDate);
-            }
             final BigDecimal currentInterestRate = command.bigDecimalValueOfParameterNamed("currentInterestRate");
             final BigDecimal overdueInterestRate = command.bigDecimalValueOfParameterNamed("overdueInterestRate");
             final BigDecimal annualNominalRate = command.bigDecimalValueOfParameterNamed("annualNominalRate");
-            if (currentInterestRate.compareTo(annualNominalRate) > 0) {
-                throw new PlatformDataIntegrityException("error.msg.current.interest.rate.greater.than.monthly.nominal.rate",
+            if (currentInterestRate != null && currentInterestRate.compareTo(annualNominalRate) > 0) {
+                throw new PlatformDataIntegrityException("error.msg.current.interest.rate.greater.than.annual.nominal.rate",
                         "Current interest rate cannot be greater than monthly nominal rate", currentInterestRate, annualNominalRate);
             }
-            if (overdueInterestRate.compareTo(annualNominalRate) > 0) {
-                throw new PlatformDataIntegrityException("error.msg.overdue.interest.rate.greater.than.monthly.nominal.rate",
+            if (overdueInterestRate != null && overdueInterestRate.compareTo(annualNominalRate) > 0) {
+                throw new PlatformDataIntegrityException("error.msg.overdue.interest.rate.greater.than.annual.nominal.rate",
                         "Overdue interest rate cannot be greater than monthly nominal rate", overdueInterestRate, annualNominalRate);
             }
             final Map<String, Object> changes = maximumCreditRateConfiguration.update(command);
