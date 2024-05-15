@@ -3841,4 +3841,11 @@ public class CommandWrapperBuilder {
         return this;
     }
 
+    public CommandWrapperBuilder deleteLoanBlockingReason(final Long id) {
+        this.actionName = "DELETE";
+        this.entityName = "LOANBLOCKINGREASON";
+        this.href = id + "/loanblockingreason";
+        this.entityId = id;
+        return this;
+    }
 }
