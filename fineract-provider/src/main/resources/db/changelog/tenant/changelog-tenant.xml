@@ -211,4 +211,6 @@
     <include file="parts/20240508192410_SU_38_m_code_code_values_MODIFY.xml" relativeToChangelogFile="true"/>
     <include file="parts/20240508192410_SU_38_m_loan_product_MODIFY.xml" relativeToChangelogFile="true"/>
     <include file="parts/20240513222410_SU_41_m_loan_MODIFY.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20240513222410_SU_39_m_credit_blocking_reason_ADD.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20240515222410_SU_39_m_permission_INSERT.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
