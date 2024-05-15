@@ -64,10 +64,6 @@ public class CustomChargeHonorarioMapDataValidator {
         baseDataValidator.reset().parameter(CustomChargeHonorarioMapApiConstants.nitParamName).value(nit).notNull()
                 .notExceedingLengthOf(20);
 
-        final String clientDocumentId = dto.getClientDocumentId();
-        baseDataValidator.reset().parameter(CustomChargeHonorarioMapApiConstants.clientDocumentIdParamName).value(clientDocumentId)
-                .notNull().notExceedingLengthOf(20);
-
         final Long loanId = dto.getLoanId();
         baseDataValidator.reset().parameter(CustomChargeHonorarioMapApiConstants.loanIdParamName).value(loanId).notNull();
 
@@ -90,7 +86,7 @@ public class CustomChargeHonorarioMapDataValidator {
 
         throwExceptionIfValidationWarningsExist(dataValidationErrors);
 
-        return CustomChargeHonorarioMap.builder().clientDocumentId(clientDocumentId) //
+        return CustomChargeHonorarioMap.builder() //
                 .loanId(loanId) //
                 .loanInstallmentNr(loanInstallmentNr) //
                 .feeTotalAmount(feeTotalAmount) //
@@ -116,11 +112,6 @@ public class CustomChargeHonorarioMapDataValidator {
 
         final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors)
                 .resource(CustomChargeHonorarioMapApiConstants.RESOURCE_NAME);
-
-        final String clientDocumentId = this.fromApiJsonHelper
-                .extractStringNamed(CustomChargeHonorarioMapApiConstants.clientDocumentIdParamName, element);
-        baseDataValidator.reset().parameter(CustomChargeHonorarioMapApiConstants.clientDocumentIdParamName).value(clientDocumentId)
-                .notNull().notExceedingLengthOf(20);
 
         final Long loanId = this.fromApiJsonHelper.extractLongNamed(CustomChargeHonorarioMapApiConstants.loanIdParamName, element);
         baseDataValidator.reset().parameter(CustomChargeHonorarioMapApiConstants.loanIdParamName).value(loanId).notNull();
@@ -152,7 +143,7 @@ public class CustomChargeHonorarioMapDataValidator {
 
         throwExceptionIfValidationWarningsExist(dataValidationErrors);
 
-        return CustomChargeHonorarioMap.builder().clientDocumentId(clientDocumentId) //
+        return CustomChargeHonorarioMap.builder() //
                 .loanId(loanId) //
                 .loanInstallmentNr(loanInstallmentNr) //
                 .feeTotalAmount(feeTotalAmount) //
@@ -178,11 +169,6 @@ public class CustomChargeHonorarioMapDataValidator {
 
         final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors)
                 .resource(CustomChargeHonorarioMapApiConstants.RESOURCE_NAME);
-
-        final String clientDocumentId = this.fromApiJsonHelper
-                .extractStringNamed(CustomChargeHonorarioMapApiConstants.clientDocumentIdParamName, element);
-        baseDataValidator.reset().parameter(CustomChargeHonorarioMapApiConstants.clientDocumentIdParamName).value(clientDocumentId)
-                .notNull().notExceedingLengthOf(20);
 
         final Long loanId = this.fromApiJsonHelper.extractLongNamed(CustomChargeHonorarioMapApiConstants.loanIdParamName, element);
         baseDataValidator.reset().parameter(CustomChargeHonorarioMapApiConstants.loanIdParamName).value(loanId).notNull();
@@ -216,7 +202,6 @@ public class CustomChargeHonorarioMapDataValidator {
         throwExceptionIfValidationWarningsExist(dataValidationErrors);
 
         return CustomChargeHonorarioMap.builder().id(id) //
-                .clientDocumentId(clientDocumentId) //
                 .loanId(loanId) //
                 .loanInstallmentNr(loanInstallmentNr) //
                 .feeTotalAmount(feeTotalAmount) //

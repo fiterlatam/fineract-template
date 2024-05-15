@@ -101,7 +101,6 @@ public class CustomChargeHonorarioMapMockApiResource {
             // Create JSON payload
             Map<String, Object> jsonMap = new HashMap<>();
             jsonMap.put("loanId", loanId);
-            jsonMap.put("clientDocumentId", clientDocumentId);
             jsonMap.put("nit", nit);
             jsonMap.put("loanInstallmentNr", i);
             jsonMap.put("feeTotalAmount", String.format("%.4f", feeTotalAmount));

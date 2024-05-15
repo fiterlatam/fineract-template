@@ -28,10 +28,7 @@ public class CustomChargeHonorarioMapMapper {
 
     public static CustomChargeHonorarioMap toModel(CustomChargeHonorarioMapData dto) {
         return CustomChargeHonorarioMap.builder().id(dto.getId()) //
-                .clientAllyId(dto.getClientAllyId()) //
                 .nit(dto.getNit()) //
-                .clientDocumentId(dto.getClientDocumentId()) //
-                .clientId(dto.getClientId()) //
                 .loanId(dto.getLoanId()) //
                 .loanInstallmentNr(dto.getLoanInstallmentNr()) //
                 .feeTotalAmount(dto.getFeeTotalAmount()) //
@@ -48,10 +45,7 @@ public class CustomChargeHonorarioMapMapper {
 
     public static CustomChargeHonorarioMapData toDTO(CustomChargeHonorarioMap model) {
         return CustomChargeHonorarioMapData.builder().id(model.getId()) //
-                .clientAllyId(model.getClientAllyId()) //
                 .nit(model.getNit()) //
-                .clientId(model.getClientId()) // )
-                .clientDocumentId(model.getClientDocumentId()) //
                 .loanId(model.getLoanId()) //
                 .loanInstallmentNr(model.getLoanInstallmentNr()) //
                 .feeTotalAmount(model.getFeeTotalAmount()) //

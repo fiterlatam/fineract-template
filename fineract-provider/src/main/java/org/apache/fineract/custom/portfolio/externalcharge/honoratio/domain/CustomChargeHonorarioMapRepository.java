@@ -30,11 +30,10 @@ public interface CustomChargeHonorarioMapRepository
     // Optional<CustomChargeHonorarioMap> findByClientIdClientAllyIdLoanIdLoanInstallmentNr2(Long clientId, Long
     // clientAllyId, Long loanId, Integer loanInstallmentNr);
 
-    String FIND_BY_CLIENT_ALLY_LOAN_INSTALLMENT_ACTIVE = "select cchm from CustomChargeHonorarioMap cchm where "
-            + "cchm.clientId = :clientId and cchm.clientAllyId = :clientAllyId and cchm.loanId = :loanId "
-            + "and cchm.loanInstallmentNr = :loanInstallmentNr and cchm.disabledBy = null";
+    String FIND_BY_NIT_LOAN_INSTALLMENT_ACTIVE = "select cchm from CustomChargeHonorarioMap cchm where "
+            + "cchm.nit = :nit and cchm.loanId = :loanId " + "and cchm.loanInstallmentNr = :loanInstallmentNr and cchm.disabledBy = null";
 
-    @Query(FIND_BY_CLIENT_ALLY_LOAN_INSTALLMENT_ACTIVE)
-    Optional<CustomChargeHonorarioMap> findByClientIdClientAllyIdLoanIdLoanInstallmentNr(@Param("clientId") Long clientId,
-            @Param("clientAllyId") Long clientAllyId, @Param("loanId") Long loanId, @Param("loanInstallmentNr") Integer loanInstallmentNr);
+    @Query(FIND_BY_NIT_LOAN_INSTALLMENT_ACTIVE)
+    Optional<CustomChargeHonorarioMap> findByNitLoanIdLoanInstallmentNr(@Param("nit") String nit, @Param("loanId") Long loanId,
+            @Param("loanInstallmentNr") Integer loanInstallmentNr);
 }
