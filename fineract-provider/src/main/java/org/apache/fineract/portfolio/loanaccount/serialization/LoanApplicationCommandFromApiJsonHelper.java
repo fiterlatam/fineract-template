@@ -154,6 +154,27 @@ public final class LoanApplicationCommandFromApiJsonHelper {
         }
     }
 
+    public void validateMinMaxValuesForGroupAdditionalData(final JsonCommand command) {
+        final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
+        final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors).resource("loan-addition-data");
+
+        BigDecimal paymentCapacity = command.bigDecimalValueOfParameterNamed("paymentCapacity");
+        baseDataValidator.reset().parameter("paymentCapacity").value(paymentCapacity).ignoreIfNull().inMinAndMaxAmountRange(BigDecimal.ZERO,
+                new BigDecimal(0.9));
+
+        BigDecimal facValue = command.bigDecimalValueOfParameterNamed("facValue");
+        baseDataValidator.reset().parameter("facValue").value(facValue).ignoreIfNull().inMinAndMaxAmountRange(BigDecimal.ZERO,
+                new BigDecimal(2));
+
+        BigDecimal debtLevel = command.bigDecimalValueOfParameterNamed("debtLevel");
+        baseDataValidator.reset().parameter("debtLevel").value(debtLevel).ignoreIfNull().inMinAndMaxAmountRange(BigDecimal.ZERO,
+                new BigDecimal(0.6));
+
+        if (!dataValidationErrors.isEmpty()) {
+            throw new PlatformApiDataValidationException(dataValidationErrors);
+        }
+    }
+
     public void validateForCreate(final String json, final boolean isMeetingMandatoryForJLGLoans, final LoanProduct loanProduct) {
         if (StringUtils.isBlank(json)) {
             throw new InvalidJsonException();
