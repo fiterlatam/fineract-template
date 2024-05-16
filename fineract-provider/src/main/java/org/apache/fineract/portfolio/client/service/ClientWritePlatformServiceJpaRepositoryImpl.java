@@ -23,11 +23,14 @@ import com.google.gson.JsonObject;
 import jakarta.persistence.PersistenceException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -1009,37 +1012,7 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
             final String undoBlockingComment = command.stringValueOfParameterNamed(ClientApiConstants.undoBlockingCommentParamName);
             final Long blockingReasonId = command.longValueOfParameterNamed(ClientApiConstants.blockingReasonIdParamName);
 
-            final Optional<BlockingReasonSetting> listasDeControlBlockingReason = blockingReasonSettingsRepositoryWrapper
-                    .getBlockingReasonSettingByReason("LISTAS DE CONTROL", "CLIENT").stream().findFirst();
-
-            if (ClientStatus.fromInt(client.getStatus()).isActive()) {
-                final String errorMessage = "Client is already active.";
-                throw new InvalidClientStateTransitionException("undoBlock", "is.already.active", errorMessage);
-            }
-
-            if (client.isBlocked() && DateUtils.isAfter(client.getBlockedOnDate(), undoBlockedOnDate)) {
-                final String errorMessage = "The client undoBlockedOnDate cannot be before the client blockedOnDate.";
-                throw new InvalidClientStateTransitionException("undoBlock", "date.cannot.before.client.blockedOnDate.date", errorMessage,
-                        undoBlockedOnDate, client.getBlockedOnDate());
-            }
-
-            List<ClientBlockingReason> clientBlockingReason = this.clientBlockingReasonRepositoryWrapper.findClientBlockingReason(clientId,
-                    blockingReasonId);
-
-            if (!clientBlockingReason.isEmpty()) {
-                for (ClientBlockingReason item : clientBlockingReason) {
-                    item.updateAfterUnblock(undoBlockedOnDate, undoBlockingComment, currentUser.getId());
-                    clientBlockingReasonRepositoryWrapper.save(item);
-                    removeClientFromListasDeControl(listasDeControlBlockingReason, item.getBlockingReasonId(), clientId);
-                }
-            }
-
-            List<ClientBlockingReason> remainingClientBlockingReason = this.clientBlockingReasonRepositoryWrapper
-                    .findClientBlockingReasonByClientId(clientId);
-            if (remainingClientBlockingReason.isEmpty()) {
-                client.undoBlock(currentUser, undoBlockedOnDate, undoBlockingComment);
-                this.clientRepository.saveAndFlush(client);
-            }
+            unblockClientBlockingReason(currentUser, client, undoBlockedOnDate, blockingReasonId, undoBlockingComment);
 
             return new CommandProcessingResultBuilder() //
                     .withCommandId(command.commandId()) //
@@ -1368,6 +1341,73 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
         }
 
         clientRepository.save(client);
+
+    }
+
+    private void unblockClientBlockingReason(final AppUser currentUser, final Client client, final LocalDate unblockDate,
+            final Long blockingReasonId, final String unblockComment) {
+        final Optional<BlockingReasonSetting> listasDeControlBlockingReason = blockingReasonSettingsRepositoryWrapper
+                .getBlockingReasonSettingByReason("LISTAS DE CONTROL", "CLIENT").stream().findFirst();
+
+        if (ClientStatus.fromInt(client.getStatus()).isActive()) {
+            final String errorMessage = "Client is already active.";
+            throw new InvalidClientStateTransitionException("undoBlock", "is.already.active", errorMessage);
+        }
+
+        if (client.isBlocked() && DateUtils.isAfter(client.getBlockedOnDate(), unblockDate)) {
+            final String errorMessage = "The client undoBlockedOnDate cannot be before the client blockedOnDate.";
+            throw new InvalidClientStateTransitionException("undoBlock", "date.cannot.before.client.blockedOnDate.date", errorMessage,
+                    unblockDate, client.getBlockedOnDate());
+        }
+
+        List<ClientBlockingReason> clientBlockingReason = this.clientBlockingReasonRepositoryWrapper
+                .findClientBlockingReason(client.getId(), blockingReasonId);
+
+        if (!clientBlockingReason.isEmpty()) {
+            for (ClientBlockingReason item : clientBlockingReason) {
+                item.updateAfterUnblock(unblockDate, unblockComment, currentUser.getId());
+                clientBlockingReasonRepositoryWrapper.save(item);
+                removeClientFromListasDeControl(listasDeControlBlockingReason, item.getBlockingReasonId(), client.getId());
+            }
+        }
+
+        List<ClientBlockingReason> remainingClientBlockingReason = this.clientBlockingReasonRepositoryWrapper
+                .findClientBlockingReasonByClientId(client.getId());
+        if (remainingClientBlockingReason.isEmpty()) {
+            client.undoBlock(currentUser, unblockDate, unblockComment);
+            this.clientRepository.saveAndFlush(client);
+        }
+    }
+
+    @Transactional
+    @Override
+    public CommandProcessingResult unblockClientMassively(JsonCommand command) {
+        try {
+            final AppUser currentUser = this.context.authenticatedUser();
+            this.fromApiJsonDeserializer.validateUnblockClientMassively(command);
+
+            final LocalDate unblockDate = command.localDateValueOfParameterNamed("unblockDate");
+            final Long blockingReasonId = command.longValueOfParameterNamed("blockingReasonId");
+            final String unblockComment = command.stringValueOfParameterNamed("unblockComment");
+            final Set<String> clientIds = new HashSet<>(Arrays.asList(command.arrayValueOfParameterNamed("clientId")));
+
+            final Set<Long> clientIdsLong = new HashSet<>();
+            for (String str : clientIds) {
+                long number = Long.parseLong(str);
+                clientIdsLong.add(number);
+            }
+
+            final List<Client> clients = this.clientRepository.findAll(clientIdsLong);
+
+            for (Client client : clients) {
+                unblockClientBlockingReason(currentUser, client, unblockDate, blockingReasonId, unblockComment);
+            }
+
+            return new CommandProcessingResultBuilder().withCommandId(command.commandId()).build();
+        } catch (final JpaSystemException | DataIntegrityViolationException dve) {
+            handleDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
+            return CommandProcessingResult.empty();
+        }
 
     }
 }
