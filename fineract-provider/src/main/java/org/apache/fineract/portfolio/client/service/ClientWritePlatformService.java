@@ -57,4 +57,6 @@ public interface ClientWritePlatformService {
 
     void blockClientWithInActiveLoan(Long clientId);
 
+    CommandProcessingResult unblockClientMassively(JsonCommand command);
+
 }

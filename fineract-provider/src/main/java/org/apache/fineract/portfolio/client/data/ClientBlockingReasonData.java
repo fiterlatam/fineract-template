@@ -28,19 +28,23 @@ public final class ClientBlockingReasonData {
     private final String description;
     private final LocalDate blockDate;
     private final Integer priority;
+    private final Long clientId;
+    private final String displayName;
 
     public static ClientBlockingReasonData create(final Long id, final String name, final String description, final LocalDate blockDate,
-            final Integer priority) {
-        return new ClientBlockingReasonData(id, name, description, blockDate, priority);
+            final Integer priority, final long clientId, final String displayName) {
+        return new ClientBlockingReasonData(id, name, description, blockDate, priority, clientId, displayName);
     }
 
     private ClientBlockingReasonData(final Long id, final String name, final String description, final LocalDate blockDate,
-            final Integer priority) {
+            final Integer priority, final long clientId, final String displayName) {
         this.id = id;
         this.name = name;
         this.description = description;
         this.blockDate = blockDate;
         this.priority = priority;
+        this.clientId = clientId;
+        this.displayName = displayName;
 
     }
 

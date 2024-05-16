@@ -3848,4 +3848,13 @@ public class CommandWrapperBuilder {
         this.entityId = id;
         return this;
     }
+
+    public CommandWrapperBuilder unblockClientWithBlockingReason() {
+        this.actionName = "UNBLOCKMASSIVELY";
+        this.entityName = "CLIENT";
+        this.entityId = null;
+        this.href = "/clientblockingreason/unblock";
+        return this;
+    }
+
 }
