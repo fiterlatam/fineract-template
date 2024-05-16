@@ -249,6 +249,9 @@ public class GroupLoanAdditionals extends AbstractPersistableCustom {
     @Column(name = "other_income", scale = 6, precision = 19, nullable = true)
     private BigDecimal otherIncome;
 
+    @Column(name = "payment_capacity", scale = 6, precision = 19, nullable = true)
+    private BigDecimal paymentCapacity;
+
     @OneToMany(mappedBy = "groupLoanAdditionals", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<AdditionalsExtraLoans> extraLoans;
 
@@ -267,7 +270,8 @@ public class GroupLoanAdditionals extends AbstractPersistableCustom {
             Long educationLevel, Integer schoolingYears, Integer noOfChildren, String nationality, String language, String dpi, String nit,
             Long jobType, Long occupancyClassification, Long actsOwnBehalf, String onBehalfOf, String politicalPosition,
             String politicalOffice, Long housingType, String address, String populatedPlace, String referencePoint, String phoneNumber,
-            String relativeNumber, Integer yearsInCommunity, Loan loan, LocalDate dateOfBirth, BigDecimal otherIncome) {
+            String relativeNumber, Integer yearsInCommunity, Loan loan, LocalDate dateOfBirth, BigDecimal otherIncome,
+            BigDecimal paymentCapacity) {
 
         this.loan = loan;
         this.facilitator = facilitator;
@@ -337,6 +341,7 @@ public class GroupLoanAdditionals extends AbstractPersistableCustom {
         this.facValue = facValue;
         this.debtLevel = debtLevel;
         this.otherIncome = otherIncome;
+        this.paymentCapacity = paymentCapacity;
     }
 
     public static GroupLoanAdditionals assembleFromJson(JsonCommand command, Loan loan, AppUser facilitator) {
@@ -407,6 +412,7 @@ public class GroupLoanAdditionals extends AbstractPersistableCustom {
         String relativeNumber = command.stringValueOfParameterNamed("relativeNumber");
         Integer yearsInCommunity = command.integerValueOfParameterNamed("yearsInCommunity");
         BigDecimal otherIncome = command.bigDecimalValueOfParameterNamed("otherIncome");
+        BigDecimal paymentCapacity = command.bigDecimalValueOfParameterNamed("paymentCapacity");
 
         return new GroupLoanAdditionals(loanCycleCompleted, rentFee, mortgageFee, monthlyIncome, familyExpenses, totalExternalLoanAmount,
                 totalInstallments, clientType, houseHoldGoods, businessActivities, businessLocation, businessExperience, salesValue,
@@ -417,7 +423,7 @@ public class GroupLoanAdditionals extends AbstractPersistableCustom {
                 clientLoanRequestNumber, dateRequested, position, fullName, lastName, maritalStatus, educationLevel, schoolingYears,
                 noOfChildren, nationality, language, dpi, nit, jobType, occupancyClassification, null, onBehalfOf, politicalPosition,
                 politicalOffice, housingType, address, populatedPlace, referencePoint, phoneNumber, relativeNumber, yearsInCommunity, loan,
-                dateOfBirth, otherIncome);
+                dateOfBirth, otherIncome, paymentCapacity);
     }
 
     public Loan getLoan() {
@@ -756,6 +762,11 @@ public class GroupLoanAdditionals extends AbstractPersistableCustom {
             final BigDecimal newValue = command.bigDecimalValueOfParameterNamed("otherIncome");
             actualChanges.put("otherIncome", newValue);
             this.otherIncome = newValue;
+        }
+        if (command.isChangeInBigDecimalParameterNamed("paymentCapacity", this.paymentCapacity)) {
+            final BigDecimal newValue = command.bigDecimalValueOfParameterNamed("paymentCapacity");
+            actualChanges.put("paymentCapacity", newValue);
+            this.paymentCapacity = newValue;
         }
 
         return actualChanges;

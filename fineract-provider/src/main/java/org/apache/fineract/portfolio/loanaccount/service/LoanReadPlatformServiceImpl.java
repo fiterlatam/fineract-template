@@ -2740,7 +2740,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                                 gla.total_expenditures as totalExpenditures,
                                 gla.available_monthly as availableMonthly,
                                 gla.f_a_c as facValue,
-                                gla.debt_level as debtLevel
+                                gla.debt_level as debtLevel,
+                                gla.payment_capacity as paymentCapacity
                     FROM m_loan_additionals_group gla
                     LEFT JOIN m_appuser user ON user.id = gla.facilitator
                     LEFT JOIN m_code_value loanCycleCV ON loanCycleCV.id = gla.loan_cycle_completed
@@ -2855,6 +2856,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
             final BigDecimal availableMonthly = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "availableMonthly");
             final BigDecimal facValue = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "facValue");
             final BigDecimal debtLevel = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "debtLevel");
+            final BigDecimal paymentCapacity = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "paymentCapacity");
 
             GroupLoanAdditionalData additionalGroupLoanData = GroupLoanAdditionalData.builder().id(id).facilitatorName(facilitatorName)
                     .facilitatorId(facilitatorId).loanCycleCompleted(loanCycleCompleted).loanCycleCompletedValue(loanCycleCompletedValue)
@@ -2883,7 +2885,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                     .facilitatorProposedValue(facilitatorProposedValue).proposedFee(proposedFee)
                     .agencyAuthorizedAmount(agencyAuthorizedAmount).authorizedFee(authorizedFee).totalIncome(totalIncome)
                     .totalExpenditures(totalExpenditures).availableMonthly(availableMonthly).facValue(facValue).debtLevel(debtLevel)
-                    .dateOfBirth(dateOfBirth).otherIncome(otherIncome).build();
+                    .dateOfBirth(dateOfBirth).otherIncome(otherIncome).paymentCapacity(paymentCapacity).build();
             return additionalGroupLoanData;
         }
 
