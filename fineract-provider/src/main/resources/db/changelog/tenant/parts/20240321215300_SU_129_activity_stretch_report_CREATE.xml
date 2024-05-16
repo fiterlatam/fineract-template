@@ -263,4 +263,74 @@
         </sql>
     </changeSet>
 
+    <changeSet author="fineract" id="8">
+        <sql>
+            <![CDATA[
+                UPDATE stretchy_parameter
+                SET parameter_sql='SELECT * FROM ( SELECT 1 AS id, ''CREADO'' AS name
+                    UNION ALL SELECT 2 AS id, ''MODIFICADO'' AS name
+                    UNION ALL SELECT 3 AS id, ''MODIFICAR PERMISO'' AS name
+                    UNION ALL SELECT 4 AS id, ''ELIMINADO'' AS name
+                    UNION ALL SELECT 5 AS id, ''PERMITIR'' AS name
+                    UNION ALL SELECT 6 AS id, ''DESACTIVAR'' AS name
+                    UNION ALL SELECT 7 AS id, ''ACTIVAR'' AS name
+                    ) x ORDER BY x.id'
+                WHERE parameter_name = 'actionSelect';
+            ]]>
+        </sql>
+        <sql>
+            <![CDATA[
+                UPDATE stretchy_report
+                    SET report_sql = 'SELECT
+                    mpcs.id AS "ID",
+                    Concat(REPEAT(''..'',
+                    (( Length(ounder.hierarchy) - Length( REPLACE(ounder.hierarchy,
+                    ''.'',
+                    '''')) - 1 ))) ,
+                    ounder.name) AS "Oficina/Sucursal",
+                    mpcs.entity_name AS "Modulo",
+                    mpcs.rol_id AS "ID del rol",
+                    mpcs.rol_nombre AS "Nombre del Rol",
+                    mpcs.Usuario_Nombre AS "Nombre De usuario",
+                    TO_CHAR(mpcs.made_on_date_utc AT TIME ZONE ''${tenantTimezone}'', ''yyyy-MM-dd HH24:MI:SS'') AS "Fecha & Hora",
+                    mpcs.maker_id AS "Id del Usuario",
+                    mpcs.usuario_creacion_nombre AS "Usuario que reliza la acción",
+                    mpcs.maquina AS "Maquina",
+                    CASE
+                        WHEN mpcs.action_name = ''PERMISSIONS'' THEN ''MODIFICADO''
+                    WHEN mpcs.action_name = ''UPDATE'' THEN ''MODIFICADO''
+                    WHEN mpcs.action_name = ''CREATE'' THEN ''CREADO''
+                    WHEN mpcs.action_name = ''DELETE'' THEN ''ELIMINADO''
+                    WHEN mpcs.action_name = ''DISABLE'' THEN ''DESACTIVAR''
+                    WHEN mpcs.action_name = ''ENABLE'' THEN ''PERMITIR''
+                    WHEN mpcs.action_name = ''REACTIVATE'' THEN ''ACTIVAR''
+                    WHEN mpcs.action_name = ''DEACTIVATE'' THEN ''DESACTIVAR''
+                    ELSE mpcs.action_name
+                    END AS "Acción",
+                    COALESCE(mpcs.registro_anterior, ''N/A'') AS "Registro Anterior",
+                    COALESCE(mpcs.registro_posterior, ''N/A'')  AS "Registro Posterior"
+                    FROM m_office mo
+                    INNER JOIN m_office ounder ON ounder.hierarchy LIKE CONCAT(mo.hierarchy, ''%'') AND ounder.hierarchy LIKE CONCAT(''${currentUserHierarchy}'', ''%'')
+                    INNER JOIN m_appuser maker ON maker.office_id = ounder.id
+                    INNER JOIN m_portfolio_command_source mpcs ON mpcs.maker_id = maker.id
+                    WHERE (mpcs.entity_name = ''${modulo}'' OR ''-1'' = ''${modulo}'')
+                    AND (DATE(mpcs.made_on_date_utc) BETWEEN ''${startDate}'' AND ''${endDate}'')
+                    AND (mpcs.resource_id = ''${resourceId}'' OR ''-1'' = ''${resourceId}'')
+                    AND ((CASE WHEN mpcs.action_name = ''DEACTIVATE'' THEN ''DISABLE'' ELSE mpcs.action_name END) = (CASE
+                      WHEN ''${actionId}'' = 1 THEN ''CREATE''
+                      WHEN ''${actionId}'' = 2 THEN ''UPDATE''
+                      WHEN ''${actionId}'' = 3 THEN ''PERMISSIONS''
+                      WHEN ''${actionId}'' = 4 THEN ''DELETE''
+                      WHEN ''${actionId}'' = 5 THEN ''ENABLE''
+                      WHEN ''${actionId}'' = 6 THEN ''DISABLE''
+                      WHEN ''${actionId}'' = 7 THEN ''REACTIVATE''
+                      ELSE ''UNKNOWN''
+                    END ) OR ''-1'' = ''${actionId}'')
+                    AND mpcs.entity_name IN (''USER'', ''ROLE'') AND mpcs.status = 1
+                    ORDER BY ounder.hierarchy, mpcs.made_on_date_utc DESC'
+                WHERE report_name = 'Reporte de tabla de auditoria (Roles y Usuarios)';
+            ]]>
+        </sql>
+    </changeSet>
+
 </databaseChangeLog>
