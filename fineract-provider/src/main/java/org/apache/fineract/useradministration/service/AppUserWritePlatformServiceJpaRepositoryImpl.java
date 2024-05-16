@@ -307,6 +307,9 @@ public class AppUserWritePlatformServiceJpaRepositoryImpl implements AppUserWrit
             final AppUser user = this.appUserRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
             final String usuarioNombre = user.getUsername();
             final Long usuarioId = user.getId();
+            final Set<Role> userRoles = user.getRoles();
+            final String roleIDs = userRoles.stream().map(r -> String.valueOf(r.getId())).collect(Collectors.joining(", "));
+            final String roleNames = userRoles.stream().map(Role::getName).collect(Collectors.joining(", "));
             final String registroAnteriorJson = objectMapper.writeValueAsString(user);
             if (user.isDeleted()) {
                 throw new UserNotFoundException(userId);
@@ -314,8 +317,8 @@ public class AppUserWritePlatformServiceJpaRepositoryImpl implements AppUserWrit
             user.delete();
             this.appUserRepository.save(user);
             return new CommandProcessingResultBuilder().withEntityId(userId).withOfficeId(user.getOffice().getId())
-                    .withRegistroAnterior(registroAnteriorJson).withUsuarioNombre(usuarioNombre).withUsuarioId(usuarioId)
-                    .withUsuarioCreacionNombre(usuarioCreacionNombre).build();
+                    .withRegistroAnterior(registroAnteriorJson).withUsuarioNombre(usuarioNombre).withUsuarioId(usuarioId).withRolId(roleIDs)
+                    .withRolNombre(roleNames).withUsuarioCreacionNombre(usuarioCreacionNombre).build();
         } catch (final JpaSystemException | PersistenceException | AuthenticationServiceException | JsonProcessingException dve) {
             log.error("updateUser: JpaSystemException | PersistenceException | AuthenticationServiceException | JsonProcessingException ",
                     dve);
@@ -354,9 +357,13 @@ public class AppUserWritePlatformServiceJpaRepositoryImpl implements AppUserWrit
             }
             this.appUserRepository.save(user);
             final String registroPosterior = objectMapper.writeValueAsString(user);
+            final Set<Role> userRoles = user.getRoles();
+            final String roleIDs = userRoles.stream().map(r -> String.valueOf(r.getId())).collect(Collectors.joining(", "));
+            final String roleNames = userRoles.stream().map(Role::getName).collect(Collectors.joining(", "));
             return new CommandProcessingResultBuilder().withEntityId(userId).withOfficeId(user.getOffice().getId())
                     .withRegistroAnterior(registroAnteriorJson).withRegistroPosterior(registroPosterior).withUsuarioNombre(usuarioNombre)
-                    .withUsuarioId(usuarioId).withUsuarioCreacionNombre(usuarioCreacionNombre).build();
+                    .withRolId(roleIDs).withRolNombre(roleNames).withUsuarioId(usuarioId).withUsuarioCreacionNombre(usuarioCreacionNombre)
+                    .build();
         } catch (final DataIntegrityViolationException dve) {
             throw handleDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
         } catch (final JpaSystemException | PersistenceException | AuthenticationServiceException | JsonProcessingException dve) {
@@ -384,10 +391,14 @@ public class AppUserWritePlatformServiceJpaRepositoryImpl implements AppUserWrit
             final String registroAnteriorJson = objectMapper.writeValueAsString(user);
             user.activate();
             this.appUserRepository.save(user);
+            final Set<Role> userRoles = user.getRoles();
+            final String roleIDs = userRoles.stream().map(r -> String.valueOf(r.getId())).collect(Collectors.joining(", "));
+            final String roleNames = userRoles.stream().map(Role::getName).collect(Collectors.joining(", "));
             final String registroPosterior = objectMapper.writeValueAsString(user);
             return new CommandProcessingResultBuilder().withEntityId(userId).withOfficeId(user.getOffice().getId())
                     .withRegistroAnterior(registroAnteriorJson).withRegistroPosterior(registroPosterior).withUsuarioNombre(usuarioNombre)
-                    .withUsuarioId(usuarioId).withUsuarioCreacionNombre(usuarioCreacionNombre).build();
+                    .withRolId(roleIDs).withRolNombre(roleNames).withUsuarioId(usuarioId).withUsuarioCreacionNombre(usuarioCreacionNombre)
+                    .build();
         } catch (final DataIntegrityViolationException dve) {
             throw handleDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
         } catch (final JpaSystemException | PersistenceException | AuthenticationServiceException | JsonProcessingException dve) {

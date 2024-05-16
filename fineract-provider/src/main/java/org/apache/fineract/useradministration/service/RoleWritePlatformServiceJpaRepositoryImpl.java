@@ -73,7 +73,7 @@ public class RoleWritePlatformServiceJpaRepositoryImpl implements RoleWritePlatf
             final String json = gson.toJson(entity);
             return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withEntityId(entity.getId())
                     .withRegistroPosterior(json).withUsuarioCreacionNombre(usuarioCreacionNombre).withRolNombre(rolNombre).withRolId(rolId)
-                    .build();
+                    .withUsuarioNombre(usuarioCreacionNombre).build();
         } catch (final JpaSystemException | DataIntegrityViolationException dve) {
             handleDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
             return new CommandProcessingResultBuilder() //
@@ -125,7 +125,8 @@ public class RoleWritePlatformServiceJpaRepositoryImpl implements RoleWritePlatf
                     .withEntityId(roleId) //
                     .with(changes) //
                     .withRegistroAnterior(registroAnteriorJson).withRegistroPosterior(registroPosterior)
-                    .withUsuarioCreacionNombre(usuarioCreacionNombre).withRolNombre(rolNombre).withRolId(rolId).build();
+                    .withUsuarioNombre(usuarioCreacionNombre).withUsuarioCreacionNombre(usuarioCreacionNombre).withRolNombre(rolNombre)
+                    .withRolId(rolId).build();
         } catch (final JpaSystemException | DataIntegrityViolationException dve) {
             handleDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
             return new CommandProcessingResultBuilder() //
@@ -175,7 +176,8 @@ public class RoleWritePlatformServiceJpaRepositoryImpl implements RoleWritePlatf
                 .withEntityId(roleId) //
                 .with(changes) //
                 .withRegistroAnterior(registroAnteriorJson).withRegistroPosterior(registroPosterior)
-                .withUsuarioCreacionNombre(usuarioCreacionNombre).withRolNombre(rolNombre).withRolId(rolId).build();
+                .withUsuarioNombre(usuarioCreacionNombre).withUsuarioCreacionNombre(usuarioCreacionNombre).withRolNombre(rolNombre)
+                .withRolId(rolId).build();
     }
 
     private Permission findPermissionByCode(final Collection<Permission> allPermissions, final String permissionCode) {
@@ -217,7 +219,8 @@ public class RoleWritePlatformServiceJpaRepositoryImpl implements RoleWritePlatf
 
             this.roleRepository.delete(role);
             return new CommandProcessingResultBuilder().withEntityId(roleId).withRegistroAnterior(registroAnteriorJson)
-                    .withUsuarioCreacionNombre(usuarioCreacionNombre).withRolNombre(rolNombre).withRolId(rolId).build();
+                    .withUsuarioCreacionNombre(usuarioCreacionNombre).withRolNombre(rolNombre).withRolId(rolId)
+                    .withUsuarioNombre(usuarioCreacionNombre).build();
         } catch (final JpaSystemException | DataIntegrityViolationException e) {
             throw ErrorHandler.getMappable(e, "error.msg.unknown.data.integrity.issue",
                     "Unknown data integrity issue with resource: " + e.getMostSpecificCause());
@@ -250,7 +253,7 @@ public class RoleWritePlatformServiceJpaRepositoryImpl implements RoleWritePlatf
                 throw new RoleAssociatedException("error.msg.role.associated.with.users.disabled", roleId);
             }
 
-            /**
+            /*
              * Disabling the role
              */
             role.disableRole();
@@ -258,7 +261,7 @@ public class RoleWritePlatformServiceJpaRepositoryImpl implements RoleWritePlatf
             this.roleRepository.saveAndFlush(role);
             return new CommandProcessingResultBuilder().withEntityId(roleId).withRegistroAnterior(registroAnteriorJson)
                     .withRegistroPosterior(registroPosterior).withUsuarioCreacionNombre(usuarioCreacionNombre).withRolNombre(rolNombre)
-                    .withRolId(rolId).build();
+                    .withUsuarioNombre(usuarioCreacionNombre).withRolId(rolId).build();
 
         } catch (final JpaSystemException | DataIntegrityViolationException e) {
             throw ErrorHandler.getMappable(e, "error.msg.unknown.data.integrity.issue",
@@ -289,7 +292,7 @@ public class RoleWritePlatformServiceJpaRepositoryImpl implements RoleWritePlatf
             final String registroPosterior = gson.toJson(role);
             return new CommandProcessingResultBuilder().withEntityId(roleId).withRegistroAnterior(registroAnteriorJson)
                     .withRegistroPosterior(registroPosterior).withUsuarioCreacionNombre(usuarioCreacionNombre).withRolNombre(rolNombre)
-                    .withRolId(rolId).build();
+                    .withUsuarioNombre(usuarioCreacionNombre).withRolId(rolId).build();
 
         } catch (final JpaSystemException | DataIntegrityViolationException e) {
             throw ErrorHandler.getMappable(e, "error.msg.unknown.data.integrity.issue",
