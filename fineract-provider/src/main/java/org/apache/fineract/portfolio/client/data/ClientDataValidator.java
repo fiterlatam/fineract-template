@@ -907,4 +907,33 @@ public final class ClientDataValidator {
 
     }
 
+    public void validateUnblockClientMassively(final JsonCommand command) {
+        final String json = command.json();
+
+        if (StringUtils.isBlank(json)) {
+            throw new InvalidJsonException();
+        }
+
+        final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
+        final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors)
+                .resource(ClientApiCollectionConstants.CLIENT_RESOURCE_NAME);
+
+        final JsonElement element = command.parsedJson();
+
+        final LocalDate unblockDate = this.fromApiJsonHelper.extractLocalDateNamed("unblockDate", element);
+        baseDataValidator.reset().parameter("unblockDate").value(unblockDate).notBlank()
+                .validateDateBeforeOrEqual(DateUtils.getBusinessLocalDate());
+
+        final Long blockingReasonId = this.fromApiJsonHelper.extractLongNamed("blockingReasonId", element);
+        baseDataValidator.reset().parameter("blockingReasonId").value(blockingReasonId).notBlank();
+
+        final String unblockComment = this.fromApiJsonHelper.extractStringNamed("unblockComment", element);
+        baseDataValidator.reset().parameter("unblockComment").value(unblockComment).notBlank();
+
+        final String[] clientId = this.fromApiJsonHelper.extractArrayNamed("clientId", element);
+        baseDataValidator.reset().parameter("clientId").value(clientId).notBlank().arrayNotEmpty();
+
+        throwExceptionIfValidationWarningsExist(dataValidationErrors);
+    }
+
 }

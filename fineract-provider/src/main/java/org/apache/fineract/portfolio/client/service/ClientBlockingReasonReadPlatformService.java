@@ -24,4 +24,6 @@ import org.apache.fineract.portfolio.client.data.ClientBlockingReasonData;
 public interface ClientBlockingReasonReadPlatformService {
 
     Collection<ClientBlockingReasonData> retrieveClientBlockingReason(Long clientId);
+
+    Collection<ClientBlockingReasonData> retrieveAllClientWithBlockingReason(Long blockingReasonId);
 }

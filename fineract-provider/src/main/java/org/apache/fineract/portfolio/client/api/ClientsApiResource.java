@@ -343,6 +343,34 @@ public class ClientsApiResource {
         return retrieveClientBlockingReason(clientId);
     }
 
+    @POST
+    @Path("clientblockingreason/unblock")
+    @Consumes({ MediaType.APPLICATION_JSON })
+    @Produces({ MediaType.APPLICATION_JSON })
+    @Operation(summary = "Undo block client with blocking reason", description = "Undo block client with blocking reason")
+    @ApiResponses({ @ApiResponse(responseCode = "200", description = "OK") })
+    public String unblockClientWithBlockingReason(@Parameter(hidden = true) final String apiRequestBodyAsJson) {
+        final CommandWrapper commandRequest = new CommandWrapperBuilder() //
+                .unblockClientWithBlockingReason() //
+                .withJson(apiRequestBodyAsJson) //
+                .build(); //
+
+        final CommandProcessingResult result = commandsSourceWritePlatformService.logCommandSource(commandRequest);
+
+        return toApiJsonSerializer.serialize(result);
+    }
+
+    @GET
+    @Path("clientblockingreason/{blockingReasonId}")
+    @Produces({ MediaType.APPLICATION_JSON })
+    @Operation(summary = "Retrieve all client with blocking reason", description = "Retrieve all client with blocking reason")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = ClientsApiResourceSwagger.GetClientBlockingReasonResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Bad Request") })
+    public String retrieveAllClientWithBlockingReasonData(@PathParam("blockingReasonId") final Long blockingReasonId) {
+        return retrieveAllClientWithBlockingReason(blockingReasonId);
+    }
+
     @GET
     @Path("/external-id/{externalId}")
     @Produces({ MediaType.APPLICATION_JSON })
@@ -633,6 +661,13 @@ public class ClientsApiResource {
         context.authenticatedUser().validateHasReadPermission(ClientApiConstants.CLIENT_RESOURCE_NAME);
         final Collection<ClientBlockingReasonData> clientBlockingReasonData = clientBlockingReasonReadPlatformService
                 .retrieveClientBlockingReason(clientId);
+        return toApiJsonSerializer.serialize(clientBlockingReasonData);
+    }
+
+    private String retrieveAllClientWithBlockingReason(Long blockingReasonId) {
+        context.authenticatedUser().validateHasReadPermission(ClientApiConstants.CLIENT_RESOURCE_NAME);
+        final Collection<ClientBlockingReasonData> clientBlockingReasonData = clientBlockingReasonReadPlatformService
+                .retrieveAllClientWithBlockingReason(blockingReasonId);
         return toApiJsonSerializer.serialize(clientBlockingReasonData);
     }
 }

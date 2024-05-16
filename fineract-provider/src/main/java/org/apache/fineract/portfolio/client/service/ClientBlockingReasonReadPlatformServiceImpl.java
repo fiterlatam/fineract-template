@@ -45,8 +45,11 @@ public class ClientBlockingReasonReadPlatformServiceImpl implements ClientBlocki
     private static final class ClientBlockingReasonMapper implements RowMapper<ClientBlockingReasonData> {
 
         public String schema() {
-            return "cbr.id AS id, cbr.block_date AS blockDate, brs.priority AS priority, brs.name_of_reason AS name, brs.description AS description "
-                    + "FROM m_client_blocking_reason cbr " + "JOIN m_blocking_reason_setting brs ON brs.id = cbr.blocking_reason_id ";
+            return "cbr.id AS id, cbr.block_date AS blockDate, brs.priority AS priority, brs.name_of_reason AS name, brs.description AS description, "
+                    + "client.id as clientId, client.display_name as displayName, client.status_enum as statusEnum, client.legal_form_enum as legalFormEnum, "
+                    + "client.office_id as officeId " + "FROM m_client_blocking_reason cbr "
+                    + "JOIN m_blocking_reason_setting brs ON brs.id = cbr.blocking_reason_id "
+                    + "JOIN m_client client ON client.id = cbr.client_id ";
         }
 
         @Override
@@ -56,8 +59,10 @@ public class ClientBlockingReasonReadPlatformServiceImpl implements ClientBlocki
             final String description = rs.getString("description");
             final Integer priority = rs.getInt("priority");
             final LocalDate blockDate = JdbcSupport.getLocalDate(rs, "blockDate");
+            final long clientId = rs.getLong("clientId");
+            final String displayName = rs.getString("displayName");
 
-            return ClientBlockingReasonData.create(id, name, description, blockDate, priority);
+            return ClientBlockingReasonData.create(id, name, description, blockDate, priority, clientId, displayName);
         }
     }
 
@@ -69,5 +74,16 @@ public class ClientBlockingReasonReadPlatformServiceImpl implements ClientBlocki
         final String sql = "select " + rm.schema() + " WHERE cbr.client_id=? AND cbr.unblock_date IS NULL ORDER BY brs.priority ASC";
 
         return this.jdbcTemplate.query(sql, rm, clientId); // NOSONAR
+    }
+
+    @Override
+    public Collection<ClientBlockingReasonData> retrieveAllClientWithBlockingReason(Long blockingReasonId) {
+        this.context.authenticatedUser();
+
+        final ClientBlockingReasonMapper rm = new ClientBlockingReasonMapper();
+        final String sql = "select " + rm.schema()
+                + " WHERE cbr.blocking_reason_id=? AND cbr.unblock_date IS NULL AND client.status_enum = 900 ORDER BY client.display_name ASC";
+
+        return this.jdbcTemplate.query(sql, rm, blockingReasonId); // NOSONAR
     }
 }
