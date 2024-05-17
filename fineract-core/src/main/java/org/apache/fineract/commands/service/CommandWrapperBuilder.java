@@ -3857,4 +3857,12 @@ public class CommandWrapperBuilder {
         return this;
     }
 
+    public CommandWrapperBuilder addLoanBlockingReason(final Long id) {
+        this.actionName = "CREATE";
+        this.entityName = "LOANBLOCKINGREASON";
+        this.href = id + "/loanblockingreason";
+        this.entityId = id;
+        return this;
+    }
+
 }

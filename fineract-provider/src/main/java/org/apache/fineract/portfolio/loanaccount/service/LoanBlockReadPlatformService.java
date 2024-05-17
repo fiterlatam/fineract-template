@@ -20,10 +20,13 @@
 package org.apache.fineract.portfolio.loanaccount.service;
 
 import java.util.Collection;
+import org.apache.fineract.infrastructure.clientblockingreasons.data.BlockingReasonsData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanBlockingReasonData;
 
 public interface LoanBlockReadPlatformService {
 
     Collection<LoanBlockingReasonData> retrieveLoanBlockingReason(Long loanId);
+
+    BlockingReasonsData retrieveLoanBlockingSettings(String level, String nameOfReason);
 
 }

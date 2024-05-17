@@ -286,12 +286,12 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
             }
         }
 
-        setStatusToCanceledOnClosedLoan(loan);
+        setStatusToCanceledOnClosedLoan(loan, transactionDate);
 
         return newRepaymentTransaction;
     }
 
-    private void setStatusToCanceledOnClosedLoan(Loan loan) {
+    private void setStatusToCanceledOnClosedLoan(final Loan loan, final LocalDate transactionDate) {
         if ((loan != null) && (loan.getStatus() != null) && loan.getStatus().isClosedObligationsMet()) {
             final BlockingReasonSetting blockingReasonSetting = blockingReasonSettingsRepositoryWrapper
                     .getSingleBlockingReasonSettingByReason(BlockingReasonSettingEnum.CREDIT_CANCELADO.getDatabaseString(),
@@ -300,7 +300,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
             if (blockingReasonSetting != null) {
                 loan.getLoanCustomizationDetail().setBlockStatus(blockingReasonSetting);
                 LoanBlockingReason loanBlockingReason = LoanBlockingReason.instance(loan, blockingReasonSetting,
-                        "Préstamo cerrado con saldo cero");
+                        "Préstamo cerrado con saldo cero", transactionDate);
                 loanBlockingReasonRepository.saveAndFlush(loanBlockingReason);
             }
         }

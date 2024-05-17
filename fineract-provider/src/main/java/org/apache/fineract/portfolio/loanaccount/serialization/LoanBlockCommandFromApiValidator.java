@@ -45,6 +45,10 @@ public class LoanBlockCommandFromApiValidator {
 
     private static final String[] SUPPORTED_PARAMETERS = new String[] { "dateFormat", "loanBlockIds", "locale", BLOCKING_DATE,
             BLOCKING_COMMENT };
+    public static final String BLOCKING_REASON_ID = "blockingReasonId";
+    public static final String BLOCK_COMMENT = "blockComment";
+    public static final String BLOCK_DATE = "blockDate";
+    public static final String DATE_FORMAT = "dateFormat";
     private final FromJsonHelper fromApiJsonHelper;
 
     public void validateForDelete(String json) {
@@ -75,4 +79,27 @@ public class LoanBlockCommandFromApiValidator {
         }
     }
 
+    public void validateForBlockGuarantee(final String json) {
+        if (StringUtils.isBlank(json)) {
+            throw new InvalidJsonException();
+        }
+
+        final Type typeOfMap = new TypeToken<Map<String, Object>>() {}.getType();
+        this.fromApiJsonHelper.checkForUnsupportedParameters(typeOfMap, json,
+                Arrays.stream(new String[] { BLOCKING_REASON_ID, BLOCK_COMMENT, BLOCK_DATE, DATE_FORMAT, "locale" }).toList());
+
+        final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
+        final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors).resource("loan");
+        final JsonElement element = this.fromApiJsonHelper.parse(json);
+
+        final Long blockId = this.fromApiJsonHelper.extractLongNamed(BLOCKING_REASON_ID, element);
+        baseDataValidator.reset().parameter(BLOCKING_REASON_ID).value(blockId).notNull().integerGreaterThanZero();
+
+        final String comment = this.fromApiJsonHelper.extractStringNamed(BLOCK_COMMENT, element);
+        baseDataValidator.reset().parameter(BLOCK_COMMENT).value(comment).notNull().notExceedingLengthOf(500);
+
+        if (!dataValidationErrors.isEmpty()) {
+            throw new PlatformApiDataValidationException(dataValidationErrors);
+        }
+    }
 }

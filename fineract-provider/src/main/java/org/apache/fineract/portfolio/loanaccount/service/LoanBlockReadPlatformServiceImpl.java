@@ -78,7 +78,23 @@ public class LoanBlockReadPlatformServiceImpl implements LoanBlockReadPlatformSe
     @Override
     public Collection<LoanBlockingReasonData> retrieveLoanBlockingReason(Long loanId) {
         LoanBlockingReasonMapper mapper = new LoanBlockingReasonMapper();
-        final String query = "SELECT " + mapper.schema() + " where mcbr.loan_id = ?";
+        final String query = "SELECT " + mapper.schema() + " where mcbr.loan_id = ? and mcbr.is_active = true";
         return jdbcTemplate.query(query, mapper, loanId);
+    }
+
+    @Override
+    public BlockingReasonsData retrieveLoanBlockingSettings(final String level, final String nameOfReason) {
+
+        final String query = """
+                Select mbrs.id as id, mbrs.priority as priority, mbrs.name_of_reason as nameOfReason, mbrs.is_enabled as isEnabled
+                from m_blocking_reason_setting mbrs
+                where mbrs.level = ? and mbrs.name_of_reason = ?
+                """;
+
+        return jdbcTemplate
+                .queryForObject(query,
+                        (rs, rowNum) -> BlockingReasonsData.builder().id(rs.getLong("id")).priority(rs.getInt("priority"))
+                                .nameOfReason(rs.getString("nameOfReason")).isEnabled(rs.getBoolean("isEnabled")).build(),
+                        level, nameOfReason);
     }
 }
