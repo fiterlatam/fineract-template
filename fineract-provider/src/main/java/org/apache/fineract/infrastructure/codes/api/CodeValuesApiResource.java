@@ -71,7 +71,7 @@ public class CodeValuesApiResource {
     private static final Set<String> RESPONSE_DATA_PARAMETERS = new HashSet<>(
             Arrays.asList(CodevalueJSONinputParams.CODEVALUE_ID.getValue(), CodevalueJSONinputParams.NAME.getValue(),
                     CodevalueJSONinputParams.POSITION.getValue(), CodevalueJSONinputParams.IS_MANDATORY.getValue(),
-                    CodevalueJSONinputParams.DESCRIPTION.getValue()));
+                    CodevalueJSONinputParams.SCORE.getValue(), CodevalueJSONinputParams.DESCRIPTION.getValue()));
     private static final String RESOURCE_NAME_FOR_PERMISSIONS = "CODEVALUE";
 
     private final PlatformSecurityContext context;
