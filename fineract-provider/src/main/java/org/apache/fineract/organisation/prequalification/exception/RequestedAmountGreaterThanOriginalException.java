@@ -23,11 +23,11 @@ import org.apache.fineract.infrastructure.core.exception.AbstractPlatformDomainR
 
 public class RequestedAmountGreaterThanOriginalException extends AbstractPlatformDomainRuleException {
 
-    public RequestedAmountGreaterThanOriginalException(final String dpi, final BigDecimal requestedAmount,
+    public RequestedAmountGreaterThanOriginalException(final String dpi, final String clientName, final BigDecimal requestedAmount,
             final BigDecimal originalAmount) {
         super("error.msg.requested.amount.greater.than.original", "Requested Amount " + requestedAmount
-                + " cannot be greater than the original amount " + originalAmount + " for member with dpi " + dpi, requestedAmount,
-                originalAmount, dpi);
+                + " cannot be greater than the original amount " + originalAmount + " for member "+clientName+" with dpi " + dpi, requestedAmount,
+                originalAmount, dpi, clientName);
     }
 
 }

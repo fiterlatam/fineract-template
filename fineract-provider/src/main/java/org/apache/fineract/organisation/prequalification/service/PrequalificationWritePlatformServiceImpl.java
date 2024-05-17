@@ -547,7 +547,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         if (changes.containsKey(PrequalificatoinApiConstants.approvedAmountParamName)) {
             final BigDecimal newValue = command.bigDecimalValueOfParameterNamed(PrequalificatoinApiConstants.approvedAmountParamName);
             if (newValue.compareTo(member.getOriginalAmount()) > 0) {
-                throw new ApprovedAmountGreaterThanRequestedException(member.getDpi(), newValue, member.getRequestedAmount());
+                throw new ApprovedAmountGreaterThanRequestedException(member.getDpi(), member.getName(), newValue, member.getRequestedAmount());
             }
             member.updateApprovedAmount(newValue);
         }
@@ -607,7 +607,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             final BigDecimal newValue = command
                     .bigDecimalValueOfParameterNamed(PrequalificatoinApiConstants.memberRequestedAmountParamName);
             if (newValue.compareTo(member.getOriginalAmount()) > 0) {
-                throw new RequestedAmountGreaterThanOriginalException(member.getDpi(), newValue, member.getOriginalAmount());
+                throw new RequestedAmountGreaterThanOriginalException(member.getDpi(), member.getName(), newValue, member.getOriginalAmount());
             }
             member.updateAmountRequested(newValue);
             member.updateApprovedAmount(newValue);
