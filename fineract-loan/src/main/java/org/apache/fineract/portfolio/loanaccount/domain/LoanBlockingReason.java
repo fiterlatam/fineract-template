@@ -53,6 +53,11 @@ public class LoanBlockingReason extends AbstractAuditableCustom {
     private String comment;
 
     @Setter
+    @Getter
+    @Column(name = "block_date")
+    private LocalDate blockDate;
+
+    @Setter
     @Column(name = "unblock_comment")
     private String unblockComment;
 
@@ -68,22 +73,24 @@ public class LoanBlockingReason extends AbstractAuditableCustom {
     }
 
     private LoanBlockingReason(Loan loan, BlockingReasonSetting blockingReasonSetting, boolean isActive, String comment,
-            AppUser deactivatedBy, LocalDate deactivatedOn) {
+            AppUser deactivatedBy, LocalDate deactivatedOn, LocalDate blockDate) {
         this.loan = loan;
         this.blockingReasonSetting = blockingReasonSetting;
         this.isActive = isActive;
         this.comment = comment;
         this.deactivatedBy = deactivatedBy;
         this.deactivatedOn = deactivatedOn;
+        this.blockDate = blockDate;
     }
 
     public static LoanBlockingReason instance(Loan loan, BlockingReasonSetting blockingReasonSetting, boolean isActive, String comment,
-            AppUser deactivatedBy, LocalDate deactivatedOn) {
-        return new LoanBlockingReason(loan, blockingReasonSetting, isActive, comment, deactivatedBy, deactivatedOn);
+            AppUser deactivatedBy, LocalDate deactivatedOn, LocalDate blockDate) {
+        return new LoanBlockingReason(loan, blockingReasonSetting, isActive, comment, deactivatedBy, deactivatedOn, blockDate);
     }
 
-    public static LoanBlockingReason instance(final Loan loan, final BlockingReasonSetting blockingReasonSetting, final String comment) {
-        return new LoanBlockingReason(loan, blockingReasonSetting, true, comment, null, null);
+    public static LoanBlockingReason instance(final Loan loan, final BlockingReasonSetting blockingReasonSetting, final String comment,
+            final LocalDate blockDate) {
+        return new LoanBlockingReason(loan, blockingReasonSetting, true, comment, null, null, blockDate);
     }
 
 }

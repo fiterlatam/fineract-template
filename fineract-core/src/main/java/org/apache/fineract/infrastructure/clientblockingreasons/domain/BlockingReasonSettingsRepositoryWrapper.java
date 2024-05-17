@@ -23,6 +23,7 @@ import java.util.Optional;
 import org.apache.fineract.infrastructure.clientblockingreasons.exception.BlockReasonSettingNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 @Repository
 public class BlockingReasonSettingsRepositoryWrapper {
@@ -54,6 +55,7 @@ public class BlockingReasonSettingsRepositoryWrapper {
         return this.repository.getBlockingReasonSettingByPriority(priority, level);
     }
 
+    @Transactional(readOnly = true)
     public List<BlockingReasonSetting> getBlockingReasonSettingByReason(String reason, String level) {
         return this.repository.getBlockingReasonSettingByReason(reason, level);
     }

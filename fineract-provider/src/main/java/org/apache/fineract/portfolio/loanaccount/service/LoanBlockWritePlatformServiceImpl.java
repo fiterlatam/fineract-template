@@ -20,14 +20,25 @@
 package org.apache.fineract.portfolio.loanaccount.service;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
+import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockLevel;
 import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSetting;
+import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSettingEnum;
+import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSettingsRepositoryWrapper;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
+import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuilder;
+import org.apache.fineract.infrastructure.core.exception.GeneralPlatformDomainRuleException;
+import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
+import org.apache.fineract.portfolio.client.domain.Client;
+import org.apache.fineract.portfolio.client.exception.InvalidClientStateTransitionException;
+import org.apache.fineract.portfolio.client.service.ClientWritePlatformService;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanBlockingReason;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanBlockingReasonRepository;
@@ -36,6 +47,7 @@ import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
 import org.apache.fineract.portfolio.loanaccount.serialization.LoanBlockCommandFromApiValidator;
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -46,7 +58,10 @@ public class LoanBlockWritePlatformServiceImpl implements LoanBlockWritePlatform
     private final LoanRepository loanRepository;
     private final LoanBlockingReasonRepository loanBlockingReasonRepository;
     private final PlatformSecurityContext context;
+    private final BlockingReasonSettingsRepositoryWrapper blockingReasonSettingRepositoryWrapper;
+    private final ClientWritePlatformService clientWritePlatformService;
 
+    @Transactional
     @Override
     public CommandProcessingResult deleteLoanBlockReason(final JsonCommand command) {
 
@@ -54,7 +69,7 @@ public class LoanBlockWritePlatformServiceImpl implements LoanBlockWritePlatform
 
         final String[] loanBlockIds = command.arrayValueOfParameterNamed(LoanBlockCommandFromApiValidator.LOAN_BLOCK_IDS);
         final String comment = command.stringValueOfParameterNamed(LoanBlockCommandFromApiValidator.BLOCKING_COMMENT);
-        final LocalDate date = command.dateValueOfParameterNamed(LoanBlockCommandFromApiValidator.BLOCKING_DATE);
+        final LocalDate unblockDate = command.dateValueOfParameterNamed(LoanBlockCommandFromApiValidator.BLOCKING_DATE);
         final Long loanId = command.entityId();
         final AppUser currentUser = this.context.authenticatedUser();
 
@@ -64,14 +79,14 @@ public class LoanBlockWritePlatformServiceImpl implements LoanBlockWritePlatform
         final Collection<LoanBlockingReason> blockingReasons = loanBlockingReasonRepository.findActiveByLoanIdAndBlocks(loanId,
                 loanBlockIds);
 
+        final Collection<LoanBlockingReason> unBlocked = new ArrayList();
+
         // Deactivate the blocking reasons
         for (String loanBlockId : loanBlockIds) {
             for (LoanBlockingReason blockingReason : blockingReasons) {
                 if (blockingReason.getId().equals(Long.valueOf(loanBlockId))) {
-                    blockingReason.setActive(false);
-                    blockingReason.setDeactivatedBy(currentUser);
-                    blockingReason.setUnblockComment(comment);
-                    blockingReason.setDeactivatedOn(date);
+                    handleDelete(blockingReason, unblockDate, currentUser, comment);
+                    unBlocked.add(blockingReason);
                 }
 
                 if (blockingReasonSetting != null) {
@@ -95,8 +110,98 @@ public class LoanBlockWritePlatformServiceImpl implements LoanBlockWritePlatform
         this.loanRepository.save(loan);
         this.loanBlockingReasonRepository.saveAllAndFlush(blockingReasons);
 
+        // Check if reason affects client too
+        deleteBlockReasonFromClientIfPresent(unBlocked, loan.client(), currentUser, unblockDate, comment);
+
         return CommandProcessingResult.commandOnlyResult(command.commandId());
 
+    }
+
+    private void handleDelete(final LoanBlockingReason blockingReason, final LocalDate unblockDate, final AppUser currentUser,
+            final String comment) {
+        if (DateUtils.isAfter(blockingReason.getBlockDate(), unblockDate)) {
+            final String errorMessage = "The loan unblock date cannot be before the loan block date.";
+            throw new InvalidClientStateTransitionException("undoBlock", "date.cannot.before.loan.blockedOnDate.date", errorMessage,
+                    unblockDate, blockingReason.getBlockDate());
+        }
+
+        blockingReason.setActive(false);
+        blockingReason.setDeactivatedBy(currentUser);
+        blockingReason.setUnblockComment(comment);
+        blockingReason.setDeactivatedOn(unblockDate);
+    }
+
+    private void deleteBlockReasonFromClientIfPresent(final Collection<LoanBlockingReason> unBlocked, final Client client,
+            final AppUser currentUser, final LocalDate unblockDate, final String comment) {
+        for (LoanBlockingReason obj : unBlocked) {
+            if (obj.getBlockingReasonSetting().isAffectsClientLevel()) {
+                final List<BlockingReasonSetting> settings = blockingReasonSettingRepositoryWrapper
+                        .getBlockingReasonSettingByReason(obj.getBlockingReasonSetting().getNameOfReason(), BlockLevel.CLIENT.toString());
+                final Long blockReasonId = settings.get(0).getId();
+                clientWritePlatformService.unblockClientBlockingReason(currentUser, client, unblockDate, blockReasonId, comment);
+            }
+        }
+    }
+
+    @Transactional
+    @Override
+    public CommandProcessingResult blockLoanWithGuarantee(final JsonCommand command) {
+
+        this.loanBlockCommandFromApiValidator.validateForBlockGuarantee(command.json());
+        final Long loanId = command.entityId();
+        final String comment = command.stringValueOfParameterNamed(LoanBlockCommandFromApiValidator.BLOCK_COMMENT);
+        final Long blockId = command.longValueOfParameterNamed(LoanBlockCommandFromApiValidator.BLOCKING_REASON_ID);
+        final LocalDate blockDate = command.localDateValueOfParameterNamed(LoanBlockCommandFromApiValidator.BLOCK_DATE);
+
+        final BlockingReasonSetting blockingReasonSetting = this.blockingReasonSettingRepositoryWrapper
+                .findOneWithNotFoundDetection(blockId);
+
+        if (!blockingReasonSetting.getNameOfReason()
+                .equalsIgnoreCase(BlockingReasonSettingEnum.CREDIT_RECLAMADO_A_AVALADORA.getDatabaseString())) {
+            throw new GeneralPlatformDomainRuleException("error.msg.loan.blocking.reason.not.allowed",
+                    "Operation supported only for RECLAMADO A AVALADORA blocking reason");
+        }
+
+        final LoanBlockingReason blockingReason = this.blockLoan(loanId, blockingReasonSetting, comment, blockDate);
+
+        return new CommandProcessingResultBuilder() //
+                .withCommandId(command.commandId()) //
+                .withLoanId(loanId).withEntityId(blockingReason.getId()) //
+                .build();
+
+    }
+
+    @Transactional
+    @Override
+    public LoanBlockingReason blockLoan(final Long loanId, final BlockingReasonSetting blockingReasonSetting, final String comment,
+            final LocalDate blockDate) {
+
+        final Optional<LoanBlockingReason> existingBlockingReason = this.loanBlockingReasonRepository.findExistingBlockingReason(loanId,
+                blockingReasonSetting.getId());
+
+        if (existingBlockingReason.isPresent()) {
+            throw new GeneralPlatformDomainRuleException("error.msg.loan.blocking.reason.already.exists",
+                    "Loan is already blocked with blocking reason");
+        }
+
+        final Loan loan = this.loanRepositoryWrapper.findOneWithNotFoundDetection(loanId);
+
+        // check if current blocking reason on loan has higher priority, if so, replace it with this blocking reason
+        if (loan.getLoanCustomizationDetail().getBlockStatus() == null
+                || loan.getLoanCustomizationDetail().getBlockStatus().getPriority() > blockingReasonSetting.getPriority()) {
+            loan.getLoanCustomizationDetail().setBlockStatus(blockingReasonSetting);
+        }
+
+        final LoanBlockingReason loanBlockingReason = LoanBlockingReason.instance(loan, blockingReasonSetting, comment, blockDate);
+        loanBlockingReasonRepository.saveAndFlush(loanBlockingReason);
+
+        // Check if reason affects client too
+        if (blockingReasonSetting.isAffectsClientLevel()) {
+            clientWritePlatformService.blockClientWithInActiveLoan(loan.getClientId(), blockingReasonSetting.getNameOfReason(), comment,
+                    false);
+        }
+
+        return loanBlockingReason;
     }
 
 }
