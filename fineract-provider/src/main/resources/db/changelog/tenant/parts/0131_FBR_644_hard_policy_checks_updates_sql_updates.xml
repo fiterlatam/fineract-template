@@ -707,7 +707,7 @@ WHEN prequalification_details.client_count > 0 THEN ''RED''
 	<changeSet id="19" author="fineract">
         <sql>
             <![CDATA[
-		INSERT INTO m_policy (name, label, description) VALUES('Percentage Of Clients To Be Recredited In The Group', 'label.perct.clients.recredited', 'No. De ciclos');
+		INSERT INTO m_policy (name, label, description) VALUES('Percentage Of Clients To Be Recredited In The Group', 'label.perct.clients.recredited', '% de clientes a re creditar del grupo');
 		INSERT INTO m_product_policy (policy_id, product_id, evaluation_type) VALUES((select id from m_policy where name = 'Percentage Of Clients To Be Recredited In The Group'), 2, 'GROUP');
 		INSERT INTO m_product_policy (policy_id, product_id, evaluation_type) VALUES((select id from m_policy where name = 'Percentage Of Clients To Be Recredited In The Group'), 4, 'GROUP');
 		INSERT INTO m_product_policy (policy_id, product_id, evaluation_type) VALUES((select id from m_policy where name = 'Percentage Of Clients To Be Recredited In The Group'), 5, 'GROUP');
@@ -753,7 +753,7 @@ VALUES('Percentage Of Clients To Be Recredited In The Group Policy Check', 'Tabl
 	<changeSet id="20" author="fineract">
         <sql>
             <![CDATA[
-		INSERT INTO m_policy (name, label, description) VALUES('Clients In Arrears', 'label.perct.clients.recredited', 'No. De ciclos');
+		INSERT INTO m_policy (name, label, description) VALUES('Clients In Arrears', 'label.perct.clients.recredited', 'Clientas en mora');
 		INSERT INTO m_product_policy (policy_id, product_id, evaluation_type) VALUES((select id from m_policy where name = 'Clients In Arrears'), 2, 'GROUP');
 		INSERT INTO m_product_policy (policy_id, product_id, evaluation_type) VALUES((select id from m_policy where name = 'Clients In Arrears'), 4, 'GROUP');
 		INSERT INTO m_product_policy (policy_id, product_id, evaluation_type) VALUES((select id from m_policy where name = 'Clients In Arrears'), 5, 'GROUP');
@@ -763,9 +763,9 @@ VALUES('Percentage Of Clients To Be Recredited In The Group Policy Check', 'Tabl
 (report_name, report_type, report_subtype, report_category, report_sql, description, core_report, use_report, self_service_user_report)
 VALUES('Clients In Arrears Policy Check', 'Table', NULL, 'Prequalification', 'SELECT overdue_loans.loan_count, recredit_loans.loan_count,
  CASE 
-	 WHEN recredit_loans.loan_count > 0 AND overdue_loans.loan_count = 0 THEN 'GREEN'
-	 WHEN recredit_loans.loan_count > 0 AND overdue_loans.loan_count > 0 THEN 'RED'
-	 WHEN recredit_loans.loan_count = 0 THEN 'GREEN'
+	 WHEN recredit_loans.loan_count > 0 AND overdue_loans.loan_count = 0 THEN ''GREEN''
+	 WHEN recredit_loans.loan_count > 0 AND overdue_loans.loan_count > 0 THEN ''RED''
+	 WHEN recredit_loans.loan_count = 0 THEN ''GREEN''
  END as color
  FROM m_prequalification_group mpg
  	LEFT JOIN (
