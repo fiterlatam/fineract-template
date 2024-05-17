@@ -76,7 +76,9 @@ public final class CodeValueCommandFromApiJsonDeserializer {
 
         if (this.fromApiJsonHelper.parameterExists(CodevalueJSONinputParams.POSITION.getValue(), element)) {
             // Validate input value is a valid Integer
-            this.fromApiJsonHelper.extractIntegerSansLocaleNamed(CodevalueJSONinputParams.POSITION.getValue(), element);
+            final Integer position = this.fromApiJsonHelper.extractIntegerSansLocaleNamed(CodevalueJSONinputParams.POSITION.getValue(),
+                    element);
+            baseDataValidator.reset().parameter(CodevalueJSONinputParams.POSITION.getValue()).value(position).notNull();
         }
 
         if (this.fromApiJsonHelper.parameterExists(CodevalueJSONinputParams.IS_ACTIVE.getValue(), element)) {
@@ -112,7 +114,9 @@ public final class CodeValueCommandFromApiJsonDeserializer {
 
         if (this.fromApiJsonHelper.parameterExists(CodevalueJSONinputParams.POSITION.getValue(), element)) {
             // Validate input value is a valid Integer
-            this.fromApiJsonHelper.extractIntegerSansLocaleNamed(CodevalueJSONinputParams.POSITION.getValue(), element);
+            final Integer position = this.fromApiJsonHelper.extractIntegerSansLocaleNamed(CodevalueJSONinputParams.POSITION.getValue(),
+                    element);
+            baseDataValidator.reset().parameter(CodevalueJSONinputParams.POSITION.getValue()).value(position).notNull();
         }
 
         if (this.fromApiJsonHelper.parameterExists(CodevalueJSONinputParams.IS_ACTIVE.getValue(), element)) {
