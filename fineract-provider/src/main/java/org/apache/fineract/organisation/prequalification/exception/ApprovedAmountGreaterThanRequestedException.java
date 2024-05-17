@@ -23,11 +23,11 @@ import org.apache.fineract.infrastructure.core.exception.AbstractPlatformDomainR
 
 public class ApprovedAmountGreaterThanRequestedException extends AbstractPlatformDomainRuleException {
 
-    public ApprovedAmountGreaterThanRequestedException(final String dpi, final BigDecimal approvedAmount,
+    public ApprovedAmountGreaterThanRequestedException(final String dpi, final String clientName, final BigDecimal approvedAmount,
             final BigDecimal requestedAmount) {
         super("error.msg.approved.amount.greater.than.requested", "Approved Amount " + approvedAmount
-                + " cannot be greater than the requested amount " + requestedAmount + " for member with dpi " + dpi, approvedAmount,
-                requestedAmount, dpi);
+                + " cannot be greater than the requested amount " + requestedAmount + " for member "+clientName+" with dpi " + dpi, approvedAmount,
+                requestedAmount, dpi, clientName);
     }
 
 }
