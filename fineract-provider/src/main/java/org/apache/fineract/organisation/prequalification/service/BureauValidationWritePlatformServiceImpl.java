@@ -117,6 +117,7 @@ public class BureauValidationWritePlatformServiceImpl implements BureauValidatio
             if (buroData.getClassification() != null) {
                 EnumOptionData enumOptionData = buroData.getClassification();
                 member.updateBuroCheckStatus(enumOptionData.getId().intValue());
+                member.updateAgencyBureauStatus(enumOptionData.getCode());
             }
             member.setNombre(buroData.getNombre());
             member.setTipo(buroData.getTipo());

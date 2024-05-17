@@ -34,6 +34,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.accounting.common.AccountingRuleType;
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
@@ -51,6 +53,8 @@ import org.apache.fineract.infrastructure.core.service.database.DatabaseSpecific
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.infrastructure.security.utils.ColumnValidator;
 import org.apache.fineract.infrastructure.security.utils.SQLInjectionValidator;
+import org.apache.fineract.organisation.agency.data.AgencyData;
+import org.apache.fineract.organisation.agency.service.AgencyReadPlatformService;
 import org.apache.fineract.organisation.bankAccount.data.BankAccountData;
 import org.apache.fineract.organisation.bankAccount.service.BankAccountReadPlatformServiceImpl;
 import org.apache.fineract.organisation.monetary.data.CurrencyData;
@@ -176,6 +180,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
     private final ColumnValidator columnValidator;
     private final DatabaseSpecificSQLGenerator sqlGenerator;
     private final LoanAdditionalPropertiesRepository loanAdditionalPropertiesRepository;
+    private final AgencyReadPlatformService agencyReadPlatformService;
     private final PrequalificationReadPlatformServiceImpl.PrequalificationIndividualMappingsMapper prequalificationIndividualMappingsMapper = new PrequalificationReadPlatformServiceImpl.PrequalificationIndividualMappingsMapper();
 
     @Autowired
@@ -192,7 +197,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
             final ConfigurationDomainService configurationDomainService, final CodeValueRepositoryWrapper codeValueRepositoryWrapper,
             final AccountDetailsReadPlatformService accountDetailsReadPlatformService, final LoanRepositoryWrapper loanRepositoryWrapper,
             final ColumnValidator columnValidator, DatabaseSpecificSQLGenerator sqlGenerator, PaginationHelper paginationHelper,
-            LoanAdditionalPropertiesRepository loanAdditionalPropertiesRepository) {
+            LoanAdditionalPropertiesRepository loanAdditionalPropertiesRepository, AgencyReadPlatformService agencyReadPlatformService) {
         this.context = context;
         this.loanRepositoryWrapper = loanRepositoryWrapper;
         this.applicationCurrencyRepository = applicationCurrencyRepository;
@@ -219,6 +224,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
         this.paginationHelper = paginationHelper;
         this.codeValueRepositoryWrapper = codeValueRepositoryWrapper;
         this.loanAdditionalPropertiesRepository = loanAdditionalPropertiesRepository;
+        this.agencyReadPlatformService = agencyReadPlatformService;
     }
 
     @Override
@@ -343,7 +349,6 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
 
         final AppUser currentUser = this.context.authenticatedUser();
         final String hierarchy = currentUser.getOffice().getHierarchy();
-        final String hierarchySearchString = hierarchy + "%";
 
         final StringBuilder sqlBuilder = new StringBuilder(200);
         sqlBuilder.append("select " + sqlGenerator.calcFoundRows() + " ");
@@ -356,12 +361,22 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
         // but that at present is an edge case
         sqlBuilder.append(" join m_office o on (o.id = c.office_id or o.id = g.office_id) ");
         sqlBuilder.append(" left join m_office transferToOffice on transferToOffice.id = c.transfer_to_office_id ");
-        sqlBuilder.append(" where ( o.hierarchy like ? or transferToOffice.hierarchy like ?)");
+        sqlBuilder.append(" where (o.hierarchy LIKE CONCAT(?, '%') OR ? like CONCAT(o.hierarchy, '%') "
+                + "OR transferToOffice.hierarchy LIKE CONCAT(?, '%') OR ? like CONCAT(transferToOffice.hierarchy, '%'))");
 
-        int arrayPos = 2;
+        final Collection<AgencyData> agencyOptions = this.agencyReadPlatformService.retrieveAllByUser();
+        final Set<Long> agencyIds = agencyOptions.stream().map(AgencyData::getId).collect(Collectors.toSet());
+        if (!agencyIds.isEmpty() && searchParameters.getAgencyId() == null) {
+            final String agencyIdParams = StringUtils.join(agencyIds, ", ");
+            sqlBuilder.append(" AND agency.id IN ( ").append(agencyIdParams).append(") ");
+        }
+
+        int arrayPos = 4;
         List<Object> extraCriterias = new ArrayList<>();
-        extraCriterias.add(hierarchySearchString);
-        extraCriterias.add(hierarchySearchString);
+        extraCriterias.add(hierarchy);
+        extraCriterias.add(hierarchy);
+        extraCriterias.add(hierarchy);
+        extraCriterias.add(hierarchy);
 
         if (searchParameters != null) {
             final LocalDate disbursementStartDate = searchParameters.getDisbursementStartDate();
@@ -811,12 +826,15 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                     + " left join m_loan_recalculation_details lir on lir.loan_id = l.id " + " join m_currency rc on rc."
                     + sqlGenerator.escape("code") + " = l.currency_code" //
                     + " left join m_client c on c.id = l.client_id" //
-                    + " left join m_group g on g.id = l.group_id" //
+                    + " left join m_group_client gcl on gcl.client_id = c.id" //
+                    + " left join m_group g on g.id = gcl.group_id" //
                     + " left join m_group center on center.id = g.parent_id" //
+                    + " left join m_portfolio portfolio on portfolio.id = center.portfolio_id" //
+                    + " left join m_supervision supv on supv.id = portfolio.supervision_id" //
+                    + " left join m_agency agency on agency.id = supv.agency_id" //
+                    + " left join m_agency mag on mag.responsible_user_id = center.responsible_user_id "
                     + " left join m_office centeroffice on centeroffice.id = center.office_id"
                     + " left join m_office centerounder on centeroffice.hierarchy LIKE CONCAT(centerounder.hierarchy, '%')"
-                    + " left join m_agency agency on agency.linked_office_id = centerounder.id"
-                    + " left join m_agency mag on mag.responsible_user_id = center.responsible_user_id "
                     + " left join m_prequalification_group mpg on mpg.id = g.prequalification_id" //
                     + " left join m_loan_arrears_aging la on la.loan_id = l.id" //
                     + " left join m_fund f on f.id = l.fund_id" //

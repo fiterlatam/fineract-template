@@ -371,4 +371,26 @@ public class GroupPrequalificationApiResource {
         this.prequalificationWritePlatformService.addCommentsToPrequalification(groupId, comment);
         return this.toApiJsonSerializer.serialize(CommandProcessingResult.resourceResult(groupId, null));
     }
+
+    @POST
+    @Path("members/{groupId}")
+    @Consumes({ MediaType.MULTIPART_FORM_DATA })
+    @Produces({ MediaType.APPLICATION_JSON })
+    public String uploadBuroDocument(@PathParam("groupId") @Parameter(description = "groupId") final Long groupId,
+            @HeaderParam("Content-Length") @Parameter(description = "Content-Length") final Long fileSize,
+            @FormDataParam("file") final InputStream inputStream, @FormDataParam("file") final FormDataContentDisposition fileDetails,
+            @FormDataParam("file") final FormDataBodyPart bodyPart, @FormDataParam("description") final String description,
+            @FormDataParam("comment") final String comment, @FormDataParam("memberId") final Long memberId,
+            @FormDataParam("dpi") final String dpi) {
+
+        if (inputStream != null) {
+            fileUploadValidator.validate(fileSize, inputStream, fileDetails, bodyPart);
+            final DocumentCommand documentCommand = new DocumentCommand(null, null, "prequalifications", groupId, dpi,
+                    fileDetails.getFileName(), fileSize, bodyPart.getMediaType().toString(), description, null);
+            this.documentWritePlatformService.createDocument(documentCommand, inputStream);
+        }
+
+        this.prequalificationWritePlatformService.uploadMemberDocs(memberId);
+        return this.toApiJsonSerializer.serialize(CommandProcessingResult.resourceResult(groupId, null));
+    }
 }
