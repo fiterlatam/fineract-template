@@ -136,8 +136,8 @@ public class GroupPrequalificationData {
             Long greenValidationCount, Long yellowValidationCount, Long orangeValidationCount, Long redValidationCount,
             Long prequalilficationTimespan, EnumOptionData lastPrequalificationStatus, String statusChangedBy, LocalDate statusChangedOn,
             String processType, String processQuality, BigDecimal totalRequestedAmount, BigDecimal totalApprovedAmount,
-            EnumOptionData prequalificationType, EnumOptionData substatus, String assignedUser, String assignedUserName, String latestComments,
-            Long linkedGroupId) {
+            EnumOptionData prequalificationType, EnumOptionData substatus, String assignedUser, String assignedUserName,
+            String latestComments, Long linkedGroupId) {
         this.id = id;
         this.productName = productName;
         this.prequalificationNumber = prequalificationNumber;

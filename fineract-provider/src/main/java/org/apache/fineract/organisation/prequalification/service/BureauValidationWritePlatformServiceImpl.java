@@ -336,8 +336,8 @@ public class BureauValidationWritePlatformServiceImpl implements BureauValidatio
         final BigDecimal bienesInmuebles = this.fromApiJsonHelper.extractBigDecimalNamed("bienes_inmuebles", jsonElement, locale);
         loanAdditionalData.setBienesInmuebles(bienesInmuebles);
 
-        final BigDecimal bienesInmueblesFamiliares = this.fromApiJsonHelper.extractBigDecimalNamed("bienes_inmuebles_familiares", jsonElement,
-                locale);
+        final BigDecimal bienesInmueblesFamiliares = this.fromApiJsonHelper.extractBigDecimalNamed("bienes_inmuebles_familiares",
+                jsonElement, locale);
         loanAdditionalData.setBienesInmueblesFamiliares(bienesInmueblesFamiliares);
 
         final String cDpi = this.fromApiJsonHelper.extractStringNamed("c_dpi", jsonElement);
@@ -1058,7 +1058,7 @@ public class BureauValidationWritePlatformServiceImpl implements BureauValidatio
         final String detalle_fiadores = this.fromApiJsonHelper.extractStringNamed("detalle_fiadores", jsonElement);
         loanAdditionalData.setDetalle_fiadores(detalle_fiadores);
 
-        final String dpi_solicitante = this.fromApiJsonHelper.extractStringNamed("dpi_solicitante", jsonElement);
+        final String dpi_solicitante = this.fromApiJsonHelper.extractStringNamed("dpi", jsonElement);
         loanAdditionalData.setDpi_solicitante(dpi_solicitante);
 
         final String recuperacion_cuentas = this.fromApiJsonHelper.extractStringNamed("recuperacion_cuentas", jsonElement);
