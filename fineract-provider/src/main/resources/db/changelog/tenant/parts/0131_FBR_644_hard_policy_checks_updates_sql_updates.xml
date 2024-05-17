@@ -833,7 +833,7 @@ VALUES('Clients In Arrears Policy Check', 'Table', NULL, 'Prequalification', 'SE
 	<changeSet id="26" author="fineract">
         <sql>
             <![CDATA[
-		UPDATE stretchy_report SET report_sql = "SELECT main_loans.loan_count, recredit_loans.loan_count,
+		UPDATE stretchy_report SET report_sql = "SELECT main_loans.loan_count main_loan_count, recredit_loans.loan_count recredit_loan_count,
  CASE 
 	 WHEN recredit_loans.loan_count > 0 AND main_loans.loan_count = recredit_loans.loan_count THEN 'GREEN'
 	 WHEN recredit_loans.loan_count > 0 AND main_loans.loan_count != recredit_loans.loan_count THEN 'RED'
