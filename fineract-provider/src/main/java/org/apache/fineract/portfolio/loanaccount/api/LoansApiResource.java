@@ -66,6 +66,9 @@ import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformS
 import org.apache.fineract.infrastructure.bulkimport.data.GlobalEntityType;
 import org.apache.fineract.infrastructure.bulkimport.service.BulkImportWorkbookPopulatorService;
 import org.apache.fineract.infrastructure.bulkimport.service.BulkImportWorkbookService;
+import org.apache.fineract.infrastructure.clientblockingreasons.data.BlockingReasonsData;
+import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockLevel;
+import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSettingEnum;
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 import org.apache.fineract.infrastructure.codes.service.CodeValueReadPlatformService;
 import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
@@ -885,14 +888,36 @@ public class LoansApiResource {
     @Path("{loanId}/loanblockingreasons")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @Operation(summary = "Adds a new delinquency action for a loan", description = "")
-    @RequestBody(required = true, content = @Content(schema = @Schema(implementation = DelinquencyApiResourceSwagger.PostLoansDelinquencyActionRequest.class)))
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = DelinquencyApiResourceSwagger.PostLoansDelinquencyActionResponse.class))) })
+    @Operation(summary = "Deletes a blocking reason from a loan", description = "")
     public String deleteLoanBlockingReasons(@PathParam("loanId") @Parameter(description = "loanId", required = true) final Long loanId,
             @Context final UriInfo uriInfo, @Parameter(hidden = true) final String apiRequestBodyAsJson) {
 
         final CommandWrapper commandRequest = new CommandWrapperBuilder().deleteLoanBlockingReason(loanId).withJson(apiRequestBodyAsJson)
+                .build();
+        final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
+        return this.jsonSerializerTagHistory.serialize(result);
+    }
+
+    @GET
+    @Path("block-guarantee/template")
+    @Operation(summary = "Get the template for block guarantee")
+    public String getBlockGuaranteeTemplate(@Context HttpServletResponse response,
+            @PathParam("loanId") @Parameter(description = "loanId") final Long loanId) throws DocumentException, IOException {
+        context.authenticatedUser().validateHasReadPermission(RESOURCE_NAME_FOR_PERMISSIONS);
+        final BlockingReasonsData blockingReasonSetting = loanBlockingReasonReadPlatformService.retrieveLoanBlockingSettings(
+                BlockLevel.CREDIT.toString(), BlockingReasonSettingEnum.CREDIT_RECLAMADO_A_AVALADORA.getDatabaseString());
+        return this.toApiJsonSerializer.serialize(blockingReasonSetting);
+    }
+
+    @POST
+    @Path("{loanId}/loanblockingreasons")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(summary = "Adds a new delinquency action for a loan", description = "")
+    public String addBlockingReasonToLoan(@PathParam("loanId") @Parameter(description = "loanId", required = true) final Long loanId,
+            @Context final UriInfo uriInfo, @Parameter(hidden = true) final String apiRequestBodyAsJson) {
+
+        final CommandWrapper commandRequest = new CommandWrapperBuilder().addLoanBlockingReason(loanId).withJson(apiRequestBodyAsJson)
                 .build();
         final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
         return this.jsonSerializerTagHistory.serialize(result);

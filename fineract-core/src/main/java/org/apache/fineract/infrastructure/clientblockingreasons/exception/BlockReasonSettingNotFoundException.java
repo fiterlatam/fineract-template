@@ -32,8 +32,7 @@ public class BlockReasonSettingNotFoundException extends AbstractPlatformResourc
     }
 
     public BlockReasonSettingNotFoundException(final String reason, final String level) {
-        super("error.msg.block.reason.is.already.assigned.to.level",
-                "Block Reason  [" + reason + "] is already assigned to client level " + level, reason, level);
+        super("error.msg.block.reason.not.found", "Block Reason  [" + reason + "] could not be found " + level, reason, level);
     }
 
     public BlockReasonSettingNotFoundException(String message) {

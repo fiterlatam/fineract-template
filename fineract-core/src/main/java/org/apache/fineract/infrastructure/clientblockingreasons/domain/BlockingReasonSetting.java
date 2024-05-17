@@ -68,6 +68,12 @@ public class BlockingReasonSetting extends AbstractPersistableCustom {
     @JoinColumn(name = "enabled_by", nullable = false)
     private AppUser enabledBy;
 
+    @Column(name = "affects_client_level")
+    private boolean affectsClientLevel;
+
+    @Column(name = "affects_credit_level")
+    private boolean affectsCreditLevel;
+
     public boolean isEnabled() {
         return this.isEnabled == 1;
     }

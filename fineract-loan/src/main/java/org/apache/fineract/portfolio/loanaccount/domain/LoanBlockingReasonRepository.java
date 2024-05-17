@@ -20,6 +20,7 @@
 package org.apache.fineract.portfolio.loanaccount.domain;
 
 import java.util.Collection;
+import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -29,4 +30,7 @@ public interface LoanBlockingReasonRepository
 
     @Query("select lbr from LoanBlockingReason lbr where lbr.loan.id = ?1 and lbr.isActive = true and lbr.id in ?2")
     Collection<LoanBlockingReason> findActiveByLoanIdAndBlocks(Long loanId, String[] loanBlockIds);
+
+    @Query("select lbr from LoanBlockingReason lbr where lbr.loan.id = ?1 and lbr.isActive = true and lbr.blockingReasonSetting.id = ?2")
+    Optional<LoanBlockingReason> findExistingBlockingReason(Long loanId, Long blockingReasonId);
 }
