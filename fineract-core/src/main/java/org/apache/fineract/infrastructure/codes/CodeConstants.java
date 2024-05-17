@@ -29,7 +29,7 @@ public class CodeConstants {
     public enum CodevalueJSONinputParams {
 
         CODEVALUE_ID("id"), NAME("name"), POSITION("position"), DESCRIPTION("description"), IS_ACTIVE("isActive"), IS_MANDATORY(
-                "isMandatory");
+                "isMandatory"), SCORE("score");
 
         private final String value;
 
