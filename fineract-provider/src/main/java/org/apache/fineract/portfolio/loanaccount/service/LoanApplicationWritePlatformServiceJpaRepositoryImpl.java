@@ -536,7 +536,8 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                             prequalificationGroup.getPrequalificationNumber());
                 }
                 newLoanApplication.updateGroup(groupPrequalification);
-                this.fromApiJsonDeserializer.validateMinMaxValuesForGroupAdditionalData(command);
+                // FBR-664 - Disable validation for group loan
+                // this.fromApiJsonDeserializer.validateMinMaxValuesForGroupAdditionalData(command);
                 GroupLoanAdditionals groupLoanAdditionals = GroupLoanAdditionals.assembleFromJson(command, newLoanApplication, facilitator);
                 addExternalLoans(groupLoanAdditionals, command);
                 this.groupLoanAdditionalsRepository.save(groupLoanAdditionals);
@@ -1554,7 +1555,8 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             if (prequalificationGroup != null && prequalificationGroup.isPrequalificationTypeGroup()) {
                 GroupLoanAdditionals additionals = this.groupLoanAdditionalsRepository
                         .getGroupLoanAdditionalsByLoan(existingLoanApplication);
-                this.fromApiJsonDeserializer.validateMinMaxValuesForGroupAdditionalData(command);
+                // FBR-664 - Disable validation for group loan additional data
+                // this.fromApiJsonDeserializer.validateMinMaxValuesForGroupAdditionalData(command);
                 if (additionals == null) {
                     Long facilitatorId = command.longValueOfParameterNamed("facilitator");
                     AppUser facilitator = null;
