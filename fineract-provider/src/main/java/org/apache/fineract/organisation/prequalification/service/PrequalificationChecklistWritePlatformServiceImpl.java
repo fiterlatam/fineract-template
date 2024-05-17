@@ -748,6 +748,10 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
         reportParams.put("${loanProductId}", productId);
         reportParams.put("${numberOfDocuments}", String.valueOf(documentCount));
         reportParams.put("${requestedAmount}", String.valueOf(clientData.getRequestedAmount()));
+        reportParams.put("${categoria_fiador1}", categoria_fiador1);
+        reportParams.put("${categoria_fiador2}", categoria_fiador2);
+        reportParams.put("${cliente_activo_fiador1}", cliente_activo_fiador1);
+        reportParams.put("${cliente_activo_fiador2}", cliente_activo_fiador2);
         final GenericResultsetData result = this.readReportingService.retrieveGenericResultset(reportName, "report", reportParams, false);
         return extractColorFromResultset(result);
     }
