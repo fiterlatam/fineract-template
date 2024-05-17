@@ -733,7 +733,7 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
         final Long documentCount = this.jdbcTemplate.queryForObject(documentCountSql, Long.class, params);
 
         String query = "Select categoria_fiador1, categoria_fiador2, cliente_activo_fiador1, cliente_activo_fiador2 " +
-                "from m_prequalification_group where id = ?";
+                "from m_client_loan_additional_properties where id = ?";
         List<Map<String, Object>> res = this.jdbcTemplate.queryForList(query,
                 new Object[] {prequalificationId});
         if (!res.isEmpty()) {
