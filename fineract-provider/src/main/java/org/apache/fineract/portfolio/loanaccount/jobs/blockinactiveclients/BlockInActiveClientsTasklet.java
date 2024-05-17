@@ -24,6 +24,7 @@ import java.util.Collection;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSettingEnum;
 import org.apache.fineract.infrastructure.core.data.ApiParameterError;
 import org.apache.fineract.infrastructure.core.exception.AbstractPlatformDomainRuleException;
 import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidationException;
@@ -76,7 +77,9 @@ public class BlockInActiveClientsTasklet implements Tasklet {
                     for (Long clientId : clientIds) {
                         try {
                             // Block the client
-                            clientWritePlatformService.blockClientWithInActiveLoan(clientId);
+                            clientWritePlatformService.blockClientWithInActiveLoan(clientId,
+                                    BlockingReasonSettingEnum.CLIENTE_INACTIVIDAD.getDatabaseString(),
+                                    "Inactiva más de los meses permitidos", true);
 
                         } catch (final PlatformApiDataValidationException e) {
                             final List<ApiParameterError> errors = e.getErrors();

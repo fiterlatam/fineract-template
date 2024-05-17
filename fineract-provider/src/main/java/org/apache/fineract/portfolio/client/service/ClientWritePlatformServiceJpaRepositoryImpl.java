@@ -44,7 +44,6 @@ import org.apache.fineract.infrastructure.accountnumberformat.domain.AccountNumb
 import org.apache.fineract.infrastructure.accountnumberformat.domain.EntityAccountType;
 import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockLevel;
 import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSetting;
-import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSettingEnum;
 import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSettingsRepositoryWrapper;
 import org.apache.fineract.infrastructure.clientblockingreasons.exception.BlockReasonSettingNotFoundException;
 import org.apache.fineract.infrastructure.codes.domain.CodeValue;
@@ -55,6 +54,7 @@ import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuilder;
 import org.apache.fineract.infrastructure.core.domain.ExternalId;
 import org.apache.fineract.infrastructure.core.exception.ErrorHandler;
+import org.apache.fineract.infrastructure.core.exception.GeneralPlatformDomainRuleException;
 import org.apache.fineract.infrastructure.core.exception.PlatformDataIntegrityException;
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
@@ -1315,36 +1315,46 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
 
     @Transactional
     @Override
-    public void blockClientWithInActiveLoan(Long clientId) {
+    public void blockClientWithInActiveLoan(final Long clientId, final String blockingReasonSetting, final String blockingComment,
+            final boolean withException) {
         final AppUser currentUser = context.authenticatedUser();
 
         final LocalDate blockedOnDate = DateUtils.getBusinessLocalDate();
-        final BlockingReasonSetting inActividadBlockingReason = blockingReasonSettingsRepositoryWrapper
-                .getSingleBlockingReasonSettingByReason(BlockingReasonSettingEnum.CLIENTE_INACTIVIDAD.getDatabaseString(),
-                        BlockLevel.CLIENT.toString());
-
-        final String blockingComment = "Inactiva más de los meses permitidos";
+        final BlockingReasonSetting blockReasonSetting = blockingReasonSettingsRepositoryWrapper
+                .getSingleBlockingReasonSettingByReason(blockingReasonSetting, BlockLevel.CLIENT.toString());
 
         final Client client = clientRepository.findOneWithNotFoundDetection(clientId);
 
-        ClientBlockingReason clientBlockingReason = ClientBlockingReason.instance(clientId, inActividadBlockingReason.getId(),
+        final Optional<ClientBlockingReason> blockingReason = this.clientBlockingReasonRepositoryWrapper
+                .findClientBlockingReason(clientId, blockReasonSetting.getId()).stream().findFirst();
+
+        if (blockingReason.isPresent()) {
+            if (withException) {
+                throw new GeneralPlatformDomainRuleException("error.msg.client.blocking.reason.already.exists",
+                        "Client is already blocked with blocking reason");
+            }
+            return;
+        }
+
+        final ClientBlockingReason clientBlockingReason = ClientBlockingReason.instance(clientId, blockReasonSetting.getId(),
                 currentUser.getId(), blockedOnDate, blockingComment, currentUser.getId());
 
         this.clientBlockingReasonRepositoryWrapper.save(clientBlockingReason);
 
-        if (client.isBlocked() && client.getBlockingReason().getPriority() < inActividadBlockingReason.getPriority()) {
-            client.block(currentUser, inActividadBlockingReason, blockedOnDate, blockingComment);
+        if (client.isBlocked() && client.getBlockingReason().getPriority() < blockReasonSetting.getPriority()) {
+            client.block(currentUser, blockReasonSetting, blockedOnDate, blockingComment);
         }
 
         if (!client.isBlocked()) {
-            client.block(currentUser, inActividadBlockingReason, blockedOnDate, blockingComment);
+            client.block(currentUser, blockReasonSetting, blockedOnDate, blockingComment);
         }
 
         clientRepository.save(client);
 
     }
 
-    private void unblockClientBlockingReason(final AppUser currentUser, final Client client, final LocalDate unblockDate,
+    @Override
+    public void unblockClientBlockingReason(final AppUser currentUser, final Client client, final LocalDate unblockDate,
             final Long blockingReasonId, final String unblockComment) {
         final Optional<BlockingReasonSetting> listasDeControlBlockingReason = blockingReasonSettingsRepositoryWrapper
                 .getBlockingReasonSettingByReason("LISTAS DE CONTROL", "CLIENT").stream().findFirst();
