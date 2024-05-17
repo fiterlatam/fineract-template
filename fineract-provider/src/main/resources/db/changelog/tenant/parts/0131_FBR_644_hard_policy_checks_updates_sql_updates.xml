@@ -487,7 +487,7 @@
             ]]>
         </sql>
     </changeSet>
-    <changeSet id="13" author="fineract">
+    <changeSet id="22" author="fineract">
         <sql>
             <![CDATA[
                 UPDATE stretchy_report SET report_sql = "SELECT CASE
@@ -496,9 +496,9 @@
                            WHEN (${loanProductId} = 4) AND ${numberOfDocuments} > 0  THEN 'GREEN'
                            WHEN (${loanProductId} = 5) AND ${numberOfDocuments} > 0  THEN 'GREEN'
                            WHEN (${loanProductId} = 6) AND ${numberOfDocuments} > 0  THEN 'GREEN'
-                           WHEN (${loanProductId} = 7) AND ${requestedAmount} <= 7000)   THEN 'GREEN'
-                           WHEN (${loanProductId} = 7) AND ${requestedAmount} BETWEEN 7001 AND 10000) AND upper(${cliente_activo_fiador1}) = 'SI' AND ${categoria_fiador1} IN ('A', 'B', 'C', 'D')   THEN 'GREEN'
-                           WHEN (${loanProductId} = 7) AND ${requestedAmount} > 10000) AND upper(${cliente_activo_fiador1}) = 'SI' AND upper(${cliente_activo_fiador2}) = 'SI' AND ${categoria_fiador1} IN ('A', 'B', 'C', 'D') AND ${categoria_fiador2} IN ('A', 'B', 'C', 'D')  THEN 'GREEN'
+                           WHEN (${loanProductId} = 7) AND ${requestedAmount} <= 7000   THEN 'GREEN'
+                           WHEN (${loanProductId} = 7) AND (${requestedAmount} BETWEEN 7001 AND 10000) AND upper('${cliente_activo_fiador1}') = 'SI' AND '${categoria_fiador1}' IN ('A', 'B', 'C', 'D')   THEN 'GREEN'
+                           WHEN (${loanProductId} = 7) AND (${requestedAmount} > 10000) AND upper('${cliente_activo_fiador1}') = 'SI' AND upper('${cliente_activo_fiador2}') = 'SI' AND '${categoria_fiador1}' IN ('A', 'B', 'C', 'D') AND '${categoria_fiador2}' IN ('A', 'B', 'C', 'D')  THEN 'GREEN'
                            WHEN (${loanProductId} = 8) AND ${numberOfDocuments} > 0  THEN 'GREEN'
                            WHEN (${loanProductId} = 9) AND ${numberOfDocuments} > 0  THEN 'GREEN'
                            WHEN (${loanProductId} = 10) AND ${numberOfDocuments} > 0  THEN 'GREEN'
@@ -509,7 +509,7 @@
             ]]>
         </sql>
     </changeSet>
-	<changeSet id="14" author="fineract">
+	<changeSet id="23" author="fineract">
         <sql>
             <![CDATA[
 		UPDATE stretchy_report SET report_sql = "SELECT
@@ -536,7 +536,7 @@
 		     FROM m_client mc
 		     LEFT JOIN m_loan ml ON ml.client_id = mc.id
 		     LEFT JOIN m_loan_repayment_schedule RS ON RS.loan_id = ml.id
-		     WHERE  ml.product_id IN (7) AND (ml.loan_status_id < 300)
+		     WHERE   ml.product_id = ${loanProductId} AND (ml.loan_status_id < 300)
 		     GROUP BY mc.id
 		 )client_loan_details ON client_loan_details.client_id = mc.id
 		 WHERE mc.id = ${clientId}" WHERE report_name = "Payments outside the current term of the main product Policy Check";
@@ -802,6 +802,109 @@ VALUES('Clients In Arrears Policy Check', 'Table', NULL, 'Prequalification', 'SE
         <sql>
             <![CDATA[
             delete from m_product_policy where policy_id = (select id from m_policy where name=' Acceptance of new clients') AND product_id = 4;
+            ]]>
+        </sql>
+    </changeSet>
+	<changeSet id="25" author="fineract">
+        <sql>
+            <![CDATA[
+		UPDATE stretchy_report SET report_sql = "SELECT prequalification_details.client_count,
+		 CASE WHEN prequalification_details.client_count / ${numberOfMembers} * 100 > 50 THEN 'GREEN'
+		WHEN prequalification_details.client_count > 0 THEN 'RED'
+		 END as color
+		 FROM m_prequalification_group mpg
+		 	LEFT JOIN (
+			     SELECT p.id AS prequalification_id,
+			     (SELECT COUNT(mc.id)
+			     FROM m_prequalification_group mp
+			     JOIN m_prequalification_group_members mpgm ON mpgm.group_id = mp.id
+			 JOIN m_client mc ON mc.dpi = mpgm.dpi
+			 JOIN m_loan ml ON ml.client_id = mc.id
+			 WHERE ml.loan_status_id < 300 AND ml.product_id = ${loanProductId}  AND ml.is_topup = 1
+			 AND mc.loan_cycle >= 2
+			 AND mp.id = ${prequalificationId}
+			 ) AS client_count
+			     FROM m_prequalification_group p where p.id = ${prequalificationId}
+		 	)prequalification_details ON prequalification_details.prequalification_id = mpg.id
+		 WHERE mpg.id = ${prequalificationId}" WHERE report_name = "Number Of Cycles Policy Check";
+            ]]>
+        </sql>
+    </changeSet>
+	<changeSet id="26" author="fineract">
+        <sql>
+            <![CDATA[
+		UPDATE stretchy_report SET report_sql = "SELECT main_loans.loan_count, recredit_loans.loan_count,
+ CASE 
+	 WHEN recredit_loans.loan_count > 0 AND main_loans.loan_count = recredit_loans.loan_count THEN 'GREEN'
+	 WHEN recredit_loans.loan_count > 0 AND main_loans.loan_count != recredit_loans.loan_count THEN 'RED'
+	 WHEN recredit_loans.loan_count = 0 THEN 'GREEN'
+ END as color
+ FROM m_prequalification_group mpg
+ 	LEFT JOIN (
+	     SELECT p.id AS prequalification_id,
+	     (SELECT COUNT(ml.id)
+	     FROM m_prequalification_group mp
+	     JOIN m_prequalification_group_members mpgm ON mpgm.group_id = mp.id
+         JOIN m_client mc ON mc.dpi = mpgm.dpi
+         JOIN m_loan ml ON ml.client_id = mc.id
+         WHERE ml.loan_status_id < 300 AND ml.product_id = ${loanProductId}  AND ml.is_topup = 1
+         AND mp.id = ${prequalificationId}
+         ) AS loan_count
+	     FROM m_prequalification_group p where p.id = ${prequalificationId}
+ 	)recredit_loans ON recredit_loans.prequalification_id = mpg.id
+ 	LEFT JOIN (
+	     SELECT p.id AS prequalification_id,
+	     (SELECT COUNT(ml.id)
+	     FROM m_prequalification_group mp
+	     JOIN m_prequalification_group_members mpgm ON mpgm.group_id = mp.id
+         JOIN m_client mc ON mc.dpi = mpgm.dpi
+         JOIN m_loan ml ON ml.client_id = mc.id
+         WHERE ml.loan_status_id = 300 AND ml.product_id = ${loanProductId}  AND (ml.is_topup IS NULL OR ml.is_topup = 0)
+         AND mp.id = ${prequalificationId}
+         ) AS loan_count
+	     FROM m_prequalification_group p where p.id = ${prequalificationId}
+ 	)main_loans ON main_loans.prequalification_id = mpg.id
+ WHERE mpg.id = ${prequalificationId}" WHERE report_name = "Percentage Of Clients To Be Recredited In The Group Policy Check";
+            ]]>
+        </sql>
+    </changeSet>
+	<changeSet id="27" author="fineract">
+        <sql>
+            <![CDATA[
+		UPDATE stretchy_report SET report_sql = "SELECT overdue_loans.loan_count overdue_loan_count, recredit_loans.loan_count recredit_loan_count,
+ CASE 
+	 WHEN recredit_loans.loan_count > 0 AND overdue_loans.loan_count = 0 THEN 'GREEN'
+	 WHEN recredit_loans.loan_count > 0 AND overdue_loans.loan_count > 0 THEN 'RED'
+	 WHEN recredit_loans.loan_count = 0 THEN 'GREEN'
+ END as color
+ FROM m_prequalification_group mpg
+ 	LEFT JOIN (
+	     SELECT p.id AS prequalification_id,
+	     (SELECT COUNT(distinct ml.id)
+	     FROM m_prequalification_group mp
+	     JOIN m_prequalification_group_members mpgm ON mpgm.group_id = mp.id
+         JOIN m_client mc ON mc.dpi = mpgm.dpi
+         JOIN m_loan ml ON ml.client_id = mc.id
+         JOIN m_loan_repayment_schedule mlrs on mlrs.loan_id = ml.id
+         WHERE ml.loan_status_id = 300 AND ml.product_id = ${loanProductId}  AND (ml.is_topup IS NULL OR ml.is_topup = 0)
+         AND mlrs.duedate < CURRENT_DATE() AND mlrs.obligations_met_on_date IS NULL
+         AND mp.id = ${prequalificationId}
+         ) AS loan_count
+	     FROM m_prequalification_group p where p.id = ${prequalificationId}
+ 	)overdue_loans ON overdue_loans.prequalification_id = mpg.id
+ 	LEFT JOIN (
+	     SELECT p.id AS prequalification_id,
+	     (SELECT COUNT(ml.id)
+	     FROM m_prequalification_group mp
+	     JOIN m_prequalification_group_members mpgm ON mpgm.group_id = mp.id
+         JOIN m_client mc ON mc.dpi = mpgm.dpi
+         JOIN m_loan ml ON ml.client_id = mc.id
+         WHERE ml.loan_status_id < 300 AND ml.product_id = ${loanProductId}  AND ml.is_topup = 1
+         AND mp.id = ${prequalificationId}
+         ) AS loan_count
+	     FROM m_prequalification_group p where p.id = ${prequalificationId}
+ 	)recredit_loans ON recredit_loans.prequalification_id = mpg.id
+ WHERE mpg.id = ${prequalificationId}" WHERE report_name = "Clients In Arrears Policy Check";
             ]]>
         </sql>
     </changeSet>
