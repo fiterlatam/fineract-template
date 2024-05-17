@@ -34,6 +34,7 @@ public class CodeValueData implements Serializable {
     protected Long id;
     protected String name;
     protected Integer position;
+    protected Integer score;
     protected String description;
     protected boolean active;
     protected boolean mandatory;
@@ -71,8 +72,8 @@ public class CodeValueData implements Serializable {
     }
 
     public static CodeValueData instance(final Long id, final String name, final Integer position, final String description,
-            final boolean isActive, final boolean mandatory) {
+            final boolean isActive, final boolean mandatory, final Integer score) {
         return new CodeValueData().setId(id).setName(name).setPosition(position).setDescription(description).setActive(isActive)
-                .setMandatory(mandatory);
+                .setMandatory(mandatory).setScore(score);
     }
 }

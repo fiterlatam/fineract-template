@@ -48,7 +48,7 @@ public class CodeValueReadPlatformServiceImpl implements CodeValueReadPlatformSe
     private static final class CodeValueDataMapper implements RowMapper<CodeValueData> {
 
         public String schema() {
-            return " cv.id as id, cv.code_value as value, cv.code_id as codeId, cv.code_description as description, cv.order_position as position,"
+            return " cv.id as id, cv.code_value as value, cv.code_id as codeId, cv.code_description as description, cv.order_position as position, cv.code_score as score, "
                     + " cv.is_active isActive, cv.is_mandatory as mandatory from m_code_value as cv join m_code c on cv.code_id = c.id ";
         }
 
@@ -58,11 +58,12 @@ public class CodeValueReadPlatformServiceImpl implements CodeValueReadPlatformSe
             final Long id = rs.getLong("id");
             final String value = rs.getString("value");
             final Integer position = rs.getInt("position");
+            final Integer score = rs.getInt("score");
             final String description = rs.getString("description");
             final boolean isActive = rs.getBoolean("isActive");
             final boolean mandatory = rs.getBoolean("mandatory");
 
-            return CodeValueData.instance(id, value, position, description, isActive, mandatory);
+            return CodeValueData.instance(id, value, position, description, isActive, mandatory, score);
         }
     }
 
