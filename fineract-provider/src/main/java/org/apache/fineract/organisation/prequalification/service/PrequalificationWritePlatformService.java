@@ -43,4 +43,6 @@ public interface PrequalificationWritePlatformService {
     CommandProcessingResult processAnalysisRequest(Long entityId, JsonCommand command);
 
     CommandProcessingResult assignPrequalification(Long entityId, JsonCommand command);
+
+    void uploadMemberDocs(Long memberId);
 }

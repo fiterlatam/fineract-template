@@ -52,5 +52,7 @@ public class PrequalificatoinApiConstants {
     public static final String memberWorkWithPuenteParamName = "workWithPuente";
     public static final String memberStatusParamName = "status";
     public static final String memberClientIdParamName = "clientId";
+    public static final String memberCommentsParamName = "comments";
+    public static final String memberAgencyBureauStatusParamName = "agencyBureauStatus";
     public static String approvedAmountParamName = "approvedAmount";
 }

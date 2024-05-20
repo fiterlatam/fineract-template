@@ -51,8 +51,8 @@ import org.apache.fineract.organisation.prequalification.domain.PreQualification
 import org.apache.fineract.organisation.prequalification.domain.PreQualificationsMemberEnumerations;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationMemberIndication;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationStatus;
-import org.apache.fineract.organisation.prequalification.domain.PrequalificationSubStatus;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationType;
+import org.apache.fineract.organisation.prequalification.domain.SubStatusEnumerations;
 import org.apache.fineract.portfolio.client.service.ClientChargeWritePlatformServiceJpaRepositoryImpl;
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.apache.fineract.useradministration.domain.Role;
@@ -559,10 +559,8 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             final String processType = rs.getString("processType");
             final String processQuality = rs.getString("processQuality");
             final Integer substatus = rs.getInt("substatus");
-            String prequalificationSubStatus = PrequalificationSubStatus.PENDING.getCode();
-            if (substatus != null) {
-                prequalificationSubStatus = PrequalificationSubStatus.fromInt(substatus).getCode();
-            }
+
+            EnumOptionData substatusEnum = SubStatusEnumerations.status(substatus);
             final String assignedUser = rs.getString("assignedUser");
             final String assignedUserName = rs.getString("assignedUserName");
             final BigDecimal totalRequestedAmount = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "totalRequestedAmount");
@@ -583,7 +581,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                     productName, addedBy, createdAt, comments, groupId, agencyId, centerId, productId, facilitatorId, facilitatorName,
                     greenValidationCount, yellowValidationCount, orangeValidationCount, redValidationCount, prequalilficationTimespan,
                     lastPrequalificationStatus, statusChangedBy, statusChangedOn, processType, processQuality, totalRequestedAmount,
-                    totalApprovedAmount, prequalificationType, prequalificationSubStatus, assignedUser, assignedUserName, latestComments,
+                    totalApprovedAmount, prequalificationType, substatusEnum, assignedUser, assignedUserName, latestComments,
                     linkedGroupId);
 
         }
@@ -672,7 +670,8 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                     	m.id AS id,
                     	m.name,
                     	m.status,
-                    	m.status,
+                    	m.comments as comments,
+                    	m.agency_bureau_status as agencyBureauStatus,
                     	m.is_president as groupPresident,
                     	m.dpi,
                     	mc.id AS clientId,
@@ -680,6 +679,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                     	m.buro_check_status as buroCheckStatus,
                     	m.requested_amount AS requestedAmount,
                     	m.approved_amount AS approvedAmount,
+                    	m.original_amount AS originalAmount,
                     	COALESCE((SELECT sum(principal_disbursed_derived) FROM m_loan WHERE client_id = mc.id), 0) AS totalLoanAmount,
                     	COALESCE((SELECT sum(total_outstanding_derived) FROM m_loan WHERE client_id = mc.id), 0) AS totalLoanBalance,
                     	COALESCE((SELECT sum(mloan.total_outstanding_derived) FROM m_loan mloan INNER JOIN m_guarantor mg ON mg.loan_id = mloan.id WHERE mg.entity_id = mc.id), 0) AS totalGuaranteedLoanBalance,
@@ -785,7 +785,10 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             final String dpi = rs.getString("dpi");
             final BigDecimal requestedAmount = rs.getBigDecimal("requestedAmount");
             final BigDecimal approvedAmount = rs.getBigDecimal("approvedAmount");
+            final BigDecimal originalAmount = rs.getBigDecimal("originalAmount");
             final String puente = rs.getString("puente");
+            final String comments = rs.getString("comments");
+            final String agencyBureauStatus = rs.getString("agencyBureauStatus");
             final Long blacklistCount = rs.getLong("blacklistCount");
             final Long activeBlacklistCount = rs.getLong("activeBlacklistCount");
             final Long inActiveBlacklistCount = rs.getLong("inActiveBlacklistCount");
@@ -805,7 +808,8 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             MemberPrequalificationData memberPrequalificationData = MemberPrequalificationData.instance(id, name, dpi, dob, puente,
                     requestedAmount, status, blacklistCount, totalLoanAmount, totalLoanBalance, totalGuaranteedLoanBalance, noOfCycles,
                     additionalCreditsCount, additionalCreditsSum, activeBlacklistCount, inActiveBlacklistCount, greenValidationCount,
-                    yellowValidationCount, orangeValidationCount, redValidationCount, bureauCheckStatus, approvedAmount, groupPresident);
+                    yellowValidationCount, orangeValidationCount, redValidationCount, bureauCheckStatus, approvedAmount, groupPresident,
+                    originalAmount, comments, agencyBureauStatus);
             memberPrequalificationData.setBuroData(buroData);
             memberPrequalificationData.setClientId(clientId);
             return memberPrequalificationData;

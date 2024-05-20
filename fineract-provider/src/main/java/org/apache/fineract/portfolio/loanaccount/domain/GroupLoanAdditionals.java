@@ -160,7 +160,7 @@ public class GroupLoanAdditionals extends AbstractPersistableCustom {
     private Integer totalInstallments;
 
     @Column(name = "client_type")
-    private Integer clientType;
+    private Long clientType;
 
     @Column(name = "house_hold_goods")
     private String houseHoldGoods;
@@ -258,7 +258,7 @@ public class GroupLoanAdditionals extends AbstractPersistableCustom {
     protected GroupLoanAdditionals() {}
 
     public GroupLoanAdditionals(Integer loanCycleCompleted, BigDecimal rentFee, BigDecimal mortgageFee, BigDecimal monthlyIncome,
-            BigDecimal familyExpenses, BigDecimal totalExternalLoanAmount, Integer totalInstallments, Integer clientType,
+            BigDecimal familyExpenses, BigDecimal totalExternalLoanAmount, Integer totalInstallments, Long clientType,
             String houseHoldGoods, String businessActivities, Long businessLocation, Integer businessExperience, BigDecimal salesValue,
             BigDecimal businessPurchases, BigDecimal businessProfit, BigDecimal clientProfit, BigDecimal inventories, Long visitBusiness,
             Long familySupport, Long businessEvolution, Integer numberOfApprovals, String recommenderName,
@@ -353,7 +353,7 @@ public class GroupLoanAdditionals extends AbstractPersistableCustom {
         BigDecimal familyExpenses = command.bigDecimalValueOfParameterNamed("familyExpenses");
         BigDecimal totalExternalLoanAmount = command.bigDecimalValueOfParameterNamed("totalExternalLoanAmount");
         Integer totalInstallments = command.integerValueOfParameterNamed("totalInstallments");
-        Integer clientType = command.integerValueOfParameterNamed("clientType");
+        Long clientType = command.longValueOfParameterNamed("clientType");
         String houseHoldGoods = command.stringValueOfParameterNamed("houseHoldGoods");
         String businessActivities = command.stringValueOfParameterNamed("businessActivities");
         Long businessLocation = command.longValueOfParameterNamed("businessLocation");
@@ -473,8 +473,8 @@ public class GroupLoanAdditionals extends AbstractPersistableCustom {
             actualChanges.put("totalInstallments", newValue);
             this.totalInstallments = newValue;
         }
-        if (command.isChangeInIntegerParameterNamed("clientType", this.clientType)) {
-            final Integer newValue = command.integerValueOfParameterNamed("clientType");
+        if (command.isChangeInLongParameterNamed("clientType", this.clientType)) {
+            final Long newValue = command.longValueOfParameterNamed("clientType");
             actualChanges.put("clientType", newValue);
             this.clientType = newValue;
         }
@@ -770,5 +770,9 @@ public class GroupLoanAdditionals extends AbstractPersistableCustom {
         }
 
         return actualChanges;
+    }
+
+    public void updateClientType(Long clientType) {
+        this.clientType = clientType;
     }
 }
