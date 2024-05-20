@@ -26,6 +26,7 @@ import org.apache.fineract.portfolio.client.data.ClientData;
 import org.apache.fineract.portfolio.client.data.ClientTimelineData;
 import org.apache.fineract.portfolio.client.domain.Client;
 import org.apache.fineract.portfolio.client.domain.ClientEnumerations;
+import org.apache.fineract.portfolio.client.domain.ClientStatus;
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -81,7 +82,6 @@ public interface ClientMapper {
     @Mapping(target = "clientCollateralManagements", ignore = true)
     @Mapping(target = "groups", ignore = true)
     @Mapping(target = "blockingReasonsDataOptions", ignore = true)
-    @Mapping(target = "blockedOnDate", source = "source.blockedOnDate")
     @Mapping(target = "lastname2", source = "source.lastname2")
     ClientData map(Client source);
 
@@ -128,7 +128,11 @@ public interface ClientMapper {
 
     @Named("clientStatusEnum")
     default EnumOptionData clientStatusEnum(Client client) {
-        return ClientEnumerations.status(client.getStatus());
+        if (client.getBlockingReason() != null) {
+            return ClientEnumerations.status(ClientStatus.BLOCKED);
+        } else {
+            return ClientEnumerations.status(client.getStatus());
+        }
     }
 
     @Named("clientTimelineData")
