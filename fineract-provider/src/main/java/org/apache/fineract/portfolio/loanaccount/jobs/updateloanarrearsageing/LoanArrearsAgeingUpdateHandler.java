@@ -29,8 +29,11 @@ import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSettingEnum;
 import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
+import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.core.service.database.DatabaseSpecificSQLGenerator;
+import org.apache.fineract.portfolio.client.service.ClientWritePlatformService;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.data.LoanSchedulePeriodData;
 import org.apache.fineract.portfolio.loanaccount.service.LoanArrearsAgingService;
 import org.springframework.dao.DataAccessException;
@@ -46,9 +49,11 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class LoanArrearsAgeingUpdateHandler {
 
+    public static final String BLOCKING_REASON_NAME = BlockingReasonSettingEnum.CLIENT_MORA.getDatabaseString();
     private final JdbcTemplate jdbcTemplate;
     private final DatabaseSpecificSQLGenerator sqlGenerator;
     private final LoanArrearsAgingService loanArrearsAgingService;
+    private final ClientWritePlatformService clientWritePlatformService;
 
     private void truncateLoanArrearsAgingDetails() {
         jdbcTemplate.execute("truncate table m_loan_arrears_aging");
@@ -74,6 +79,9 @@ public class LoanArrearsAgeingUpdateHandler {
             }
             log.debug("Records affected by updateLoanArrearsAgeingDetails: {}", result);
         }
+
+        handleBlockingAfterAreasAging();
+        handleUnBlockingAfterArrearsAging();
     }
 
     public void updateLoanArrearsAgeingDetails(List<Long> loanIdsForUpdate) {
@@ -94,6 +102,9 @@ public class LoanArrearsAgeingUpdateHandler {
             recordsUpdatedWithOriginalSchedule = this.jdbcTemplate.batchUpdate(insertStatements.toArray(new String[0]));
 
         }
+
+        handleBlockingAfterAreasAging();
+        handleUnBlockingAfterArrearsAging();
         if (log.isDebugEnabled()) {
             int result = 0;
             for (int recordWithoutOriginalSchedule : recordsUpdatedWithoutOriginalSchedule) {
@@ -275,6 +286,48 @@ public class LoanArrearsAgeingUpdateHandler {
                     totalInstallmentAmount);
 
         }
+    }
+
+    public void handleBlockingAfterAreasAging() {
+
+        final String query = """
+                    select distinct l.client_id from m_loan_arrears_aging mlaa
+                    inner join m_loan l on l.id = mlaa.loan_id
+                    left join m_client_blocking_reason mcbr
+                    on mcbr.client_id = l.client_id
+                    left join m_blocking_reason_setting mbrs
+                    on mbrs.id = mcbr.blocking_reason_id and mbrs.name_of_reason = ?
+                    where mbrs.id is null;
+                """;
+
+        final List<Long> clientIds = jdbcTemplate.queryForList(query, Long.class, BLOCKING_REASON_NAME);
+
+        for (Long clientId : clientIds) {
+            clientWritePlatformService.blockClientWithInActiveLoan(clientId, BLOCKING_REASON_NAME, "Cliente bloqueado por defecto", false);
+        }
+
+    }
+
+    public void handleUnBlockingAfterArrearsAging() {
+
+        final String query = """
+                   SELECT DISTINCT mcbr.client_id
+                   FROM m_client_blocking_reason mcbr
+                   JOIN m_blocking_reason_setting mbrs ON mbrs.id = mcbr.blocking_reason_id
+                   AND mbrs.name_of_reason = ?
+                   WHERE mcbr.client_id NOT IN (
+                       SELECT DISTINCT client_id
+                       FROM m_loan_arrears_aging
+                   );
+                """;
+
+        final List<Long> clientIds = jdbcTemplate.queryForList(query, Long.class, BLOCKING_REASON_NAME);
+
+        for (Long clientId : clientIds) {
+            clientWritePlatformService.unblockClientBlockingReason(clientId, DateUtils.getLocalDateOfTenant(), BLOCKING_REASON_NAME,
+                    "Cliente desbloqueado por defecto");
+        }
+
     }
 
 }

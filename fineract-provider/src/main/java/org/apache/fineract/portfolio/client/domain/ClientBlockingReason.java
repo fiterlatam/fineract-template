@@ -22,6 +22,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import java.time.LocalDate;
+import lombok.Getter;
 import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
 
 @Entity
@@ -32,6 +33,7 @@ public class ClientBlockingReason extends AbstractPersistableCustom {
     private Long clientId;
     @Column(name = "blocking_reason_id", nullable = false)
     private Long blockingReasonId;
+    @Getter
     @Column(name = "block_date")
     private LocalDate blockDate;
     @Column(name = "block_comment")
