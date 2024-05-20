@@ -48,6 +48,7 @@ import org.apache.fineract.portfolio.delinquency.data.DelinquencyBucketData;
 import org.apache.fineract.portfolio.delinquency.service.DelinquencyReadPlatformService;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleProcessingType;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleType;
+import org.apache.fineract.portfolio.loanproduct.data.AdvanceQuotaConfigurationData;
 import org.apache.fineract.portfolio.loanproduct.data.AdvancedPaymentData;
 import org.apache.fineract.portfolio.loanproduct.data.AdvancedPaymentData.PaymentAllocationOrder;
 import org.apache.fineract.portfolio.loanproduct.data.CreditAllocationData;
@@ -842,9 +843,7 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
         return this.jdbcTemplate.queryForObject(sql, rm, new Object[] {});
     }
 
-    private static final class MaximumRateMapper implements RowMapper<MaximumCreditRateConfigurationData> { // NOSONAR
-
-        MaximumRateMapper() {}
+    private static final class MaximumRateMapper implements RowMapper<MaximumCreditRateConfigurationData> {
 
         public String schema() {
             return """
@@ -900,5 +899,39 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
                 + " where m_code.code_name = 'ProductType'  " + " and m_code_value.code_value = ?)";
 
         return jdbcTemplate.queryForList(query, Long.class, clientId, productType);
+    }
+
+    @Override
+    public AdvanceQuotaConfigurationData retrieveAdvanceQuotaConfigurationData() {
+        final AdvanceQuotaMapper rm = new AdvanceQuotaMapper();
+        final String sql = "SELECT " + rm.schema() + " WHERE maqc.id IS NOT NULL";
+        return this.jdbcTemplate.queryForObject(sql, rm, new Object[] {});
+    }
+
+    private static final class AdvanceQuotaMapper implements RowMapper<AdvanceQuotaConfigurationData> {
+
+        public String schema() {
+            return """
+                    maqc.id AS id,
+                    maqc.percentage_value AS "percentageValue",
+                    maqc.is_enabled AS "enabled",
+                    maqc.modifiedon_date AS "modifiedOnDate",
+                    CONCAT(ma.firstname, ' ', ma.lastname) AS "modifiedByUsername"
+                    FROM m_advance_quota_configuration maqc
+                    LEFT OUTER JOIN m_appuser ma ON ma.id = maqc.modifiedon_userid
+                    """;
+        }
+
+        @Override
+        public AdvanceQuotaConfigurationData mapRow(@NotNull final ResultSet rs, @SuppressWarnings("unused") final int rowNum)
+                throws SQLException {
+            final Long id = JdbcSupport.getLong(rs, "id");
+            final BigDecimal percentageValue = rs.getBigDecimal("percentageValue");
+            final String modifiedByUsername = rs.getString("modifiedByUsername");
+            final LocalDate modifiedOnDate = JdbcSupport.getLocalDate(rs, "modifiedOnDate");
+            final Boolean enabled = rs.getBoolean("enabled");
+            return AdvanceQuotaConfigurationData.builder().id(id).modifiedByUsername(modifiedByUsername).percentageValue(percentageValue)
+                    .modifiedOnDate(modifiedOnDate).enabled(enabled).build();
+        }
     }
 }

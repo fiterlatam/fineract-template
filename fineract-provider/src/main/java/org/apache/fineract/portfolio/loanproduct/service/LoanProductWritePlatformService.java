@@ -28,4 +28,6 @@ public interface LoanProductWritePlatformService {
     CommandProcessingResult updateLoanProduct(Long loanProductId, JsonCommand command);
 
     CommandProcessingResult updateMaximumRate(JsonCommand command);
+
+    CommandProcessingResult updateAdvanceQuota(JsonCommand command);
 }

@@ -60,6 +60,8 @@ import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.AprCalculator;
 import org.apache.fineract.portfolio.loanproduct.LoanProductConstants;
 import org.apache.fineract.portfolio.loanproduct.data.MaximumCreditRateConfigurationData;
+import org.apache.fineract.portfolio.loanproduct.domain.AdvanceQuotaConfiguration;
+import org.apache.fineract.portfolio.loanproduct.domain.AdvanceQuotaRepository;
 import org.apache.fineract.portfolio.loanproduct.domain.AdvancedPaymentAllocationsJsonParser;
 import org.apache.fineract.portfolio.loanproduct.domain.CreditAllocationsJsonParser;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProduct;
@@ -68,6 +70,7 @@ import org.apache.fineract.portfolio.loanproduct.domain.LoanProductPaymentAlloca
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductRepository;
 import org.apache.fineract.portfolio.loanproduct.domain.MaximumCreditRateConfiguration;
 import org.apache.fineract.portfolio.loanproduct.domain.MaximumRateRepository;
+import org.apache.fineract.portfolio.loanproduct.exception.AdvanceQuotaExceptions;
 import org.apache.fineract.portfolio.loanproduct.exception.LoanProductCannotBeModifiedDueToNonClosedLoansException;
 import org.apache.fineract.portfolio.loanproduct.exception.LoanProductDateException;
 import org.apache.fineract.portfolio.loanproduct.exception.LoanProductNotFoundException;
@@ -88,6 +91,7 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
     private final LoanProductDataValidator fromApiJsonDeserializer;
     private final LoanProductRepository loanProductRepository;
     private final MaximumRateRepository maximumRateRepository;
+    private final AdvanceQuotaRepository advanceQuotaRepository;
     private final AprCalculator aprCalculator;
     private final FundRepository fundRepository;
     private final ChargeRepositoryWrapper chargeRepository;
@@ -391,6 +395,35 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
             }
             final Map<String, Object> changes = maximumCreditRateConfiguration.update(command);
             maximumCreditRateConfiguration.setAppliedBy(appliedBy);
+            this.maximumRateRepository.saveAndFlush(maximumCreditRateConfiguration);
+            return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withEntityId(id).with(changes).build();
+        } catch (final DataIntegrityViolationException | JpaSystemException dve) {
+            handleDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
+            return CommandProcessingResult.resourceResult(-1L);
+        } catch (final PersistenceException dve) {
+            Throwable throwable = ExceptionUtils.getRootCause(dve.getCause());
+            handleDataIntegrityIssues(command, throwable, dve);
+            return CommandProcessingResult.empty();
+        }
+
+    }
+
+    @Transactional
+    @Override
+    public CommandProcessingResult updateAdvanceQuota(final JsonCommand command) {
+        try {
+            final AppUser modifiedBy = this.context.authenticatedUser();
+            final List<AdvanceQuotaConfiguration> advanceQuotaConfigurations = this.advanceQuotaRepository.findAll();
+            if (CollectionUtils.isEmpty(advanceQuotaConfigurations)) {
+                throw new AdvanceQuotaExceptions();
+            }
+            final AdvanceQuotaConfiguration advanceQuotaConfiguration = advanceQuotaConfigurations.get(0);
+            final Long id = advanceQuotaConfiguration.getId();
+            this.fromApiJsonDeserializer.validateAdvanceQuotaForUpdate(command);
+            final Map<String, Object> changes = advanceQuotaConfiguration.update(command);
+            advanceQuotaConfiguration.setModifiedBy(modifiedBy);
+            advanceQuotaConfiguration.setModifiedOnDate(DateUtils.getLocalDateOfTenant());
+            this.advanceQuotaRepository.saveAndFlush(advanceQuotaConfiguration);
             return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withEntityId(id).with(changes).build();
 
         } catch (final DataIntegrityViolationException | JpaSystemException dve) {

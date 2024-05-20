@@ -16,24 +16,24 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.portfolio.client.data;
+package org.apache.fineract.portfolio.loanproduct.data;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * Immutable data object representing a Loan Additional Fields Data
- */
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class ClientAdditionalFieldsData {
+@Builder
+public class AdvanceQuotaConfigurationData {
 
-    private Long clientId;
-    private String tipo;
-    private String nit;
-    private String cedula;
-    private BigDecimal cupo;
+    private Long id;
+    private BigDecimal percentageValue;
+    private String modifiedByUsername;
+    private Boolean enabled;
+    private LocalDate modifiedOnDate;
 }

@@ -33,6 +33,7 @@ import org.apache.fineract.portfolio.fund.domain.FundRepository;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleTransactionProcessorFactory;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.AprCalculator;
+import org.apache.fineract.portfolio.loanproduct.domain.AdvanceQuotaRepository;
 import org.apache.fineract.portfolio.loanproduct.domain.AdvancedPaymentAllocationsJsonParser;
 import org.apache.fineract.portfolio.loanproduct.domain.CreditAllocationsJsonParser;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductRepository;
@@ -80,13 +81,14 @@ public class LoanProductConfiguration {
             FineractEntityAccessUtil fineractEntityAccessUtil, FloatingRateRepositoryWrapper floatingRateRepository,
             LoanRepositoryWrapper loanRepositoryWrapper, BusinessEventNotifierService businessEventNotifierService,
             DelinquencyBucketRepository delinquencyBucketRepository, MaximumRateRepository maximumRateRepository,
+            AdvanceQuotaRepository advanceQuotaRepository,
             LoanRepaymentScheduleTransactionProcessorFactory loanRepaymentScheduleTransactionProcessorFactory,
             AdvancedPaymentAllocationsJsonParser advancedPaymentJsonParser, CreditAllocationsJsonParser creditAllocationsJsonParser,
             LoanProductReadPlatformService loanProductReadPlatformService, CodeValueRepositoryWrapper codeValueRepositoryWrapper) {
         return new LoanProductWritePlatformServiceJpaRepositoryImpl(context, fromApiJsonDeserializer, loanProductRepository,
-                maximumRateRepository, aprCalculator, fundRepository, chargeRepository, rateRepository, accountMappingWritePlatformService,
-                fineractEntityAccessUtil, floatingRateRepository, loanRepositoryWrapper, businessEventNotifierService,
-                delinquencyBucketRepository, loanRepaymentScheduleTransactionProcessorFactory, advancedPaymentJsonParser,
-                creditAllocationsJsonParser, loanProductReadPlatformService, codeValueRepositoryWrapper);
+                maximumRateRepository, advanceQuotaRepository, aprCalculator, fundRepository, chargeRepository, rateRepository,
+                accountMappingWritePlatformService, fineractEntityAccessUtil, floatingRateRepository, loanRepositoryWrapper,
+                businessEventNotifierService, delinquencyBucketRepository, loanRepaymentScheduleTransactionProcessorFactory,
+                advancedPaymentJsonParser, creditAllocationsJsonParser, loanProductReadPlatformService, codeValueRepositoryWrapper);
     }
 }
