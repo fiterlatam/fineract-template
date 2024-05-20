@@ -361,7 +361,7 @@ public class ClientsApiResource {
     }
 
     @GET
-    @Path("clientblockingreason/{blockingReasonId}")
+    @Path("clientblockingreason/{blockingReasonsumas" + "Id}")
     @Produces({ MediaType.APPLICATION_JSON })
     @Operation(summary = "Retrieve all client with blocking reason", description = "Retrieve all client with blocking reason")
     @ApiResponses({

@@ -19,6 +19,7 @@
 
 package org.apache.fineract.portfolio.client.service;
 
+import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
@@ -33,7 +34,8 @@ public class ClientAdditionalFieldsMapper implements RowMapper<ClientAdditionalF
                 mc.id AS clientId,
                 cce."NIT" AS nit,
                 tipo.code_value AS tipo,
-                ccp."Cedula" AS cedula
+                ccp."Cedula" AS cedula,
+                COALESCE(ccp."Cupo aprobado", cce."Cupo") AS cupo
                 FROM m_client mc
                 LEFT JOIN campos_cliente_empresas cce ON cce.client_id = mc.id
                 LEFT JOIN m_code_value tipo ON tipo.id = cce."Tipo ID_cd_Tipo ID"
@@ -47,6 +49,7 @@ public class ClientAdditionalFieldsMapper implements RowMapper<ClientAdditionalF
         final String tipo = rs.getString("tipo");
         final String nit = rs.getString("nit");
         final String cedula = rs.getString("cedula");
-        return new ClientAdditionalFieldsData(clientId, tipo, nit, cedula);
+        final BigDecimal cupo = rs.getBigDecimal("cupo");
+        return new ClientAdditionalFieldsData(clientId, tipo, nit, cedula, cupo);
     }
 }

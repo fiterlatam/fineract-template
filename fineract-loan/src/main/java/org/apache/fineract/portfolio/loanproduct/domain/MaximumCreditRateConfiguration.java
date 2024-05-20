@@ -77,31 +77,31 @@ public class MaximumCreditRateConfiguration extends AbstractPersistableCustom {
             this.eaRate = newValue;
         }
         final String annualNominalRate = "annualNominalRate";
-        if (command.isChangeInBigDecimalParameterNamed(eaRate, this.annualNominalRate)) {
+        if (command.isChangeInBigDecimalParameterNamed(annualNominalRate, this.annualNominalRate)) {
             final BigDecimal newValue = command.bigDecimalValueOfParameterNamed(annualNominalRate);
             actualChanges.put(annualNominalRate, newValue);
             this.annualNominalRate = newValue;
         }
         final String monthlyNominalRate = "monthlyNominalRate";
-        if (command.isChangeInBigDecimalParameterNamed(eaRate, this.monthlyNominalRate)) {
+        if (command.isChangeInBigDecimalParameterNamed(monthlyNominalRate, this.monthlyNominalRate)) {
             final BigDecimal newValue = command.bigDecimalValueOfParameterNamed(monthlyNominalRate);
             actualChanges.put(monthlyNominalRate, newValue);
             this.monthlyNominalRate = newValue;
         }
         final String dailyNominalRate = "dailyNominalRate";
-        if (command.isChangeInBigDecimalParameterNamed(eaRate, this.dailyNominalRate)) {
+        if (command.isChangeInBigDecimalParameterNamed(dailyNominalRate, this.dailyNominalRate)) {
             final BigDecimal newValue = command.bigDecimalValueOfParameterNamed(dailyNominalRate);
             actualChanges.put(dailyNominalRate, newValue);
             this.dailyNominalRate = newValue;
         }
         final String currentInterestRate = "currentInterestRate";
-        if (command.isChangeInBigDecimalParameterNamed(eaRate, this.currentInterestRate)) {
+        if (command.isChangeInBigDecimalParameterNamed(currentInterestRate, this.currentInterestRate)) {
             final BigDecimal newValue = command.bigDecimalValueOfParameterNamed(currentInterestRate);
             actualChanges.put(currentInterestRate, newValue);
             this.currentInterestRate = newValue;
         }
         final String overdueInterestRate = "overdueInterestRate";
-        if (command.isChangeInBigDecimalParameterNamed(eaRate, this.overdueInterestRate)) {
+        if (command.isChangeInBigDecimalParameterNamed(overdueInterestRate, this.overdueInterestRate)) {
             final BigDecimal newValue = command.bigDecimalValueOfParameterNamed(overdueInterestRate);
             actualChanges.put(overdueInterestRate, newValue);
             this.overdueInterestRate = newValue;

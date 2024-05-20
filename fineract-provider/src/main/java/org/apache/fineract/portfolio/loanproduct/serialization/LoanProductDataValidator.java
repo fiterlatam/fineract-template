@@ -113,6 +113,7 @@ public final class LoanProductDataValidator {
     public static final String MAXIMUM_DAILY_NOMINAL_RATE = "dailyNominalRate";
     public static final String CURRENT_INTEREST_RATE = "currentInterestRate";
     public static final String OVERDUE_INTEREST_RATE = "overdueInterestRate";
+    public static final String PERCENTAGE_VALUE = "percentageValue";
     /**
      * The parameters supported for this command.
      */
@@ -186,6 +187,9 @@ public final class LoanProductDataValidator {
     private static final Set<String> MAXIMUM_RATE_SUPPORTED_PARAMETERS = new HashSet<>(
             Arrays.asList("locale", "dateFormat", "eaRate", "annualNominalRate", "appliedBy", "appliedOnDate", "dailyNominalRate",
                     "monthlyNominalRate", "currentInterestRate", "overdueInterestRate"));
+
+    private static final Set<String> ADVANCE_QUOTA_SUPPORTED_PARAMETERS = new HashSet<>(
+            Arrays.asList("locale", "dateFormat", "percentageValue", "enabled", "modifiedBy", "modifiedOnDate"));
 
     private static final String[] SUPPORTED_LOAN_CONFIGURABLE_ATTRIBUTES = { LoanProductConstants.amortizationTypeParamName,
             LoanProductConstants.interestTypeParamName, LoanProductConstants.transactionProcessingStrategyCodeParamName,
@@ -1893,6 +1897,24 @@ public final class LoanProductDataValidator {
                     .extractIntegerWithLocaleNamed(LoanProductConstants.MAX_CLIENT_INACTIVITY_PERIOD, element);
             baseDataValidator.reset().parameter(LoanProductConstants.MAX_CLIENT_INACTIVITY_PERIOD).value(maxClientInactivityPeriod)
                     .ignoreIfNull().integerGreaterThanZero();
+        }
+        throwExceptionIfValidationWarningsExist(dataValidationErrors);
+    }
+
+    public void validateAdvanceQuotaForUpdate(final JsonCommand command) {
+        String json = command.json();
+        if (StringUtils.isBlank(json)) {
+            throw new InvalidJsonException();
+        }
+        final Type typeOfMap = new TypeToken<Map<String, Object>>() {}.getType();
+        this.fromApiJsonHelper.checkForUnsupportedParameters(typeOfMap, json, ADVANCE_QUOTA_SUPPORTED_PARAMETERS);
+        final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
+        final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors).resource("advanceQuota");
+        final JsonElement element = this.fromApiJsonHelper.parse(json);
+        if (this.fromApiJsonHelper.parameterExists(PERCENTAGE_VALUE, element)) {
+            final BigDecimal percentageValue = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed(PERCENTAGE_VALUE, element);
+            baseDataValidator.reset().parameter(PERCENTAGE_VALUE).value(percentageValue).notBlank().inMinAndMaxAmountRange(BigDecimal.ZERO,
+                    BigDecimal.valueOf(100));
         }
         throwExceptionIfValidationWarningsExist(dataValidationErrors);
     }
