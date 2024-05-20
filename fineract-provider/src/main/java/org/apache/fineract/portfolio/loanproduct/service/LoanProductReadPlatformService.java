@@ -21,6 +21,7 @@ package org.apache.fineract.portfolio.loanproduct.service;
 import java.util.Collection;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.fineract.infrastructure.core.domain.ExternalId;
+import org.apache.fineract.portfolio.loanproduct.data.AdvanceQuotaConfigurationData;
 import org.apache.fineract.portfolio.loanproduct.data.AdvancedPaymentData;
 import org.apache.fineract.portfolio.loanproduct.data.CreditAllocationData;
 import org.apache.fineract.portfolio.loanproduct.data.LoanProductBorrowerCycleVariationData;
@@ -61,6 +62,8 @@ public interface LoanProductReadPlatformService {
     LoanProductData retrieveLoanProductFloatingDetails(Long loanProductId);
 
     MaximumCreditRateConfigurationData retrieveMaximumCreditRateConfigurationData();
+
+    AdvanceQuotaConfigurationData retrieveAdvanceQuotaConfigurationData();
 
     Collection<Pair<Long, Integer>> retrieveLoanProductClientInActivityConfiguration();
 

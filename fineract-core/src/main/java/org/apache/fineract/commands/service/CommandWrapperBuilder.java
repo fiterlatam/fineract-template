@@ -548,6 +548,14 @@ public class CommandWrapperBuilder {
         return this;
     }
 
+    public CommandWrapperBuilder updateAdvanceQuota() {
+        this.actionName = "UPDATE";
+        this.entityName = "ADVANCE_QUOTA";
+        this.entityId = null;
+        this.href = "/loanproducts/advanceQuotaConfiguration";
+        return this;
+    }
+
     public CommandWrapperBuilder updateLoanProduct(final Long productId) {
         this.actionName = "UPDATE";
         this.entityName = "LOANPRODUCT";

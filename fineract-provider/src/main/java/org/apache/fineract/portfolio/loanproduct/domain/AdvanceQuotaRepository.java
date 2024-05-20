@@ -16,24 +16,10 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.portfolio.client.data;
+package org.apache.fineract.portfolio.loanproduct.domain;
 
-import java.math.BigDecimal;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
-/**
- * Immutable data object representing a Loan Additional Fields Data
- */
-@Data
-@AllArgsConstructor
-@NoArgsConstructor
-public class ClientAdditionalFieldsData {
-
-    private Long clientId;
-    private String tipo;
-    private String nit;
-    private String cedula;
-    private BigDecimal cupo;
-}
+public interface AdvanceQuotaRepository
+        extends JpaRepository<AdvanceQuotaConfiguration, Long>, JpaSpecificationExecutor<AdvanceQuotaConfiguration> {}

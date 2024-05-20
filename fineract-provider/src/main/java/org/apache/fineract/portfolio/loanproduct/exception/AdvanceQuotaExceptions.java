@@ -16,24 +16,18 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.portfolio.client.data;
+package org.apache.fineract.portfolio.loanproduct.exception;
 
-import java.math.BigDecimal;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import java.time.LocalDate;
+import org.apache.fineract.infrastructure.core.exception.AbstractPlatformResourceNotFoundException;
 
-/**
- * Immutable data object representing a Loan Additional Fields Data
- */
-@Data
-@AllArgsConstructor
-@NoArgsConstructor
-public class ClientAdditionalFieldsData {
+public class AdvanceQuotaExceptions extends AbstractPlatformResourceNotFoundException {
 
-    private Long clientId;
-    private String tipo;
-    private String nit;
-    private String cedula;
-    private BigDecimal cupo;
+    public AdvanceQuotaExceptions() {
+        super("error.msg.advance.quota.not.found", "Advance quota configuration table is empty", "");
+    }
+
+    public AdvanceQuotaExceptions(final LocalDate appliedOnDate) {
+        super("error.msg.applied.on.date.cannot.be.in.the.future", "Applied on date cannot be in the future date", appliedOnDate);
+    }
 }

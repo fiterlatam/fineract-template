@@ -135,6 +135,7 @@ import org.apache.fineract.portfolio.calendar.domain.CalendarInstanceRepository;
 import org.apache.fineract.portfolio.calendar.domain.CalendarRepository;
 import org.apache.fineract.portfolio.calendar.domain.CalendarType;
 import org.apache.fineract.portfolio.calendar.exception.CalendarParameterUpdateNotSupportedException;
+import org.apache.fineract.portfolio.client.data.ClientAdditionalFieldsData;
 import org.apache.fineract.portfolio.client.domain.Client;
 import org.apache.fineract.portfolio.client.exception.ClientNotActiveException;
 import org.apache.fineract.portfolio.collateralmanagement.domain.ClientCollateralManagement;
@@ -312,6 +313,9 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         Loan loan = this.loanAssembler.assembleFrom(loanId);
         // Fail fast if client/group is not active or actual loan status disallows disbursal
         checkClientOrGroupActive(loan);
+
+        // Fail fast if cupo is not enough
+        checkCupo(loan);
 
         final LocalDate actualDisbursementDate = command.localDateValueOfParameterNamed("actualDisbursementDate");
 
@@ -2222,6 +2226,28 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         if (group != null && group.isNotActive()) {
             throw new GroupNotActiveException(group.getId());
         }
+    }
+
+    private void checkCupo(final Loan loan) {
+        final Client client = loan.client();
+        if (client != null) {
+            final Long clientId = client.getId();
+            final ClientAdditionalFieldsData loanAdditionalFieldsData = this.loanReadPlatformService
+                    .retrieveLoanClientAdditionals(clientId);
+            final BigDecimal cupo = loanAdditionalFieldsData.getCupo();
+            BigDecimal totalOutstandingPrincipalAmount = this.jdbcTemplate.queryForObject(
+                    "SELECT COALESCE(SUM(ml.principal_outstanding_derived), 0) AS totalOutstandingPrincipalAmount FROM m_loan ml WHERE ml.loan_status_id = 300 AND ml.client_id = ?",
+                    BigDecimal.class, new Object[] { clientId });
+            if (totalOutstandingPrincipalAmount != null) {
+                totalOutstandingPrincipalAmount = totalOutstandingPrincipalAmount.add(loan.getApprovedPrincipal());
+                if (totalOutstandingPrincipalAmount.compareTo(cupo) > 0) {
+                    throw new GeneralPlatformDomainRuleException("error.msg.loan.cupo.limit.exceeded", "Cupo:" + cupo + " limit exceeded",
+                            cupo);
+                }
+            }
+
+        }
+
     }
 
     @Override

@@ -214,4 +214,5 @@
     <include file="parts/20240513222410_SU_39_m_credit_blocking_reason_ADD.xml" relativeToChangelogFile="true"/>
     <include file="parts/20240515222410_SU_39_m_permission_INSERT.xml" relativeToChangelogFile="true"/>
     <include file="parts/20240516222410_SU_42_m_blocking_reason_setting_INSERT.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20240520101800_SU_50_advance_quota_configuration.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
