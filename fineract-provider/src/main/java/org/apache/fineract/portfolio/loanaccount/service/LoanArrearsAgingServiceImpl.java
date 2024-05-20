@@ -18,6 +18,8 @@
  */
 package org.apache.fineract.portfolio.loanaccount.service;
 
+import static org.apache.fineract.portfolio.loanaccount.jobs.updateloanarrearsageing.LoanArrearsAgeingUpdateHandler.BLOCKING_REASON_NAME;
+
 import jakarta.annotation.PostConstruct;
 import java.math.BigDecimal;
 import java.sql.ResultSet;
@@ -50,6 +52,7 @@ import org.apache.fineract.infrastructure.event.business.domain.loan.transaction
 import org.apache.fineract.infrastructure.event.business.domain.loan.transaction.LoanUndoWrittenOffBusinessEvent;
 import org.apache.fineract.infrastructure.event.business.domain.loan.transaction.LoanWaiveInterestBusinessEvent;
 import org.apache.fineract.infrastructure.event.business.service.BusinessEventNotifierService;
+import org.apache.fineract.portfolio.client.service.ClientWritePlatformService;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanCharge;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleInstallment;
@@ -69,6 +72,7 @@ public class LoanArrearsAgingServiceImpl implements LoanArrearsAgingService {
     private final JdbcTemplate jdbcTemplate;
     private final BusinessEventNotifierService businessEventNotifierService;
     private final DatabaseSpecificSQLGenerator sqlGenerator;
+    private final ClientWritePlatformService clientWritePlatformService;
 
     @PostConstruct
     public void registerForNotification() {
@@ -110,9 +114,12 @@ public class LoanArrearsAgingServiceImpl implements LoanArrearsAgingService {
             createInsertStatements(updateStatement, scheduleDate, count == 0);
             if (updateStatement.size() == 1) {
                 this.jdbcTemplate.update(updateStatement.get(0));
+                handleMoraAddition(loan);
             } else {
                 String deletestatement = "DELETE FROM m_loan_arrears_aging WHERE  loan_id=?";
-                this.jdbcTemplate.update(deletestatement, loan.getId()); // NOSONAR
+                this.jdbcTemplate.update(deletestatement, loan.getId());// NOSONAR
+                handleMoraRemoval(loan.getClientId());
+
             }
         }
     }
@@ -132,8 +139,11 @@ public class LoanArrearsAgingServiceImpl implements LoanArrearsAgingService {
             if (updateStatement == null) {
                 String deletestatement = "DELETE FROM m_loan_arrears_aging WHERE  loan_id=?";
                 this.jdbcTemplate.update(deletestatement, loan.getId()); // NOSONAR
+                handleMoraRemoval(loan.getClientId());
             } else {
                 this.jdbcTemplate.update(updateStatement);
+                handleMoraAddition(loan);
+
             }
         }
     }
@@ -548,5 +558,24 @@ public class LoanArrearsAgingServiceImpl implements LoanArrearsAgingService {
             Loan loan = event.get();
             handleArrearsForLoan(loan);
         }
+    }
+
+    private void handleMoraRemoval(final Long clientId) {
+        if (clientHasNoAdditionalLoanInArrears(clientId)) {
+            clientWritePlatformService.unblockClientBlockingReason(clientId, DateUtils.getLocalDateOfTenant(), BLOCKING_REASON_NAME,
+                    "Cliente desbloqueado por defecto");
+
+        }
+    }
+
+    private boolean clientHasNoAdditionalLoanInArrears(final Long clientId) {
+        final String sql = "SELECT COUNT(1) FROM m_loan_arrears_aging mlaa inner join m_loan ml on ml.id = mlaa.loan_id   inner join m_client mc on mc.id = ml.client_id  where ml.client_id = ?";
+        final Integer totalCount = this.jdbcTemplate.queryForObject(sql, Integer.class, clientId);
+        return totalCount == null || totalCount == 0;
+    }
+
+    private void handleMoraAddition(Loan loan) {
+        clientWritePlatformService.blockClientWithInActiveLoan(loan.getClientId(), BLOCKING_REASON_NAME, "Cliente bloqueado por defecto",
+                false);
     }
 }

@@ -65,4 +65,6 @@ public interface ClientWritePlatformService {
     void unblockClientBlockingReason(AppUser currentUser, Client client, LocalDate unblockDate, Long blockingReasonId,
             String unblockComment);
 
+    void unblockClientBlockingReason(Long clientId, LocalDate unblockDate, String blockingReasonName, String unblockComment);
+
 }

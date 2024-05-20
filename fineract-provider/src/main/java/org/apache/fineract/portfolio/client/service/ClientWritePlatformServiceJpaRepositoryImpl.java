@@ -979,26 +979,45 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
             final String blockingComment = command.stringValueOfParameterNamed(ClientApiConstants.blockingCommentParamName);
             final BlockingReasonSetting blockingReason = this.blockingReasonSettingsRepositoryWrapper
                     .findOneWithNotFoundDetection(blockingReasonId);
-            if (client.isNotPending() && DateUtils.isAfter(client.getActivationDate(), blockedOnDate)) {
-                final String errorMessage = "The client blockedOnDate cannot be before the client ActivationDate.";
-                throw new InvalidClientStateTransitionException("block", "date.cannot.before.client.activation.date", errorMessage,
-                        blockedOnDate, client.getActivationDate());
-            }
-            ClientBlockingReason clientBlockingReason = ClientBlockingReason.instance(clientId, blockingReasonId, currentUser.getId(),
-                    blockedOnDate, blockingComment, currentUser.getId());
-            this.clientBlockingReasonRepositoryWrapper.save(clientBlockingReason);
-            client.block(currentUser, blockingReason, blockedOnDate, blockingComment);
-            this.clientRepository.saveAndFlush(client);
+
+            final ClientBlockingReason clientBlockingReason = blockClient(client, blockedOnDate, blockingComment, blockingReason,
+                    currentUser);
+
             return new CommandProcessingResultBuilder() //
                     .withCommandId(command.commandId()) //
                     .withClientId(clientId) //
-                    .withEntityId(clientId) //
+                    .withEntityId(clientBlockingReason.getId()) //
                     .withEntityExternalId(client.getExternalId()) //
                     .build();
         } catch (final JpaSystemException | DataIntegrityViolationException dve) {
             handleDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
             return CommandProcessingResult.empty();
         }
+    }
+
+    private ClientBlockingReason blockClient(final Client client, LocalDate blockedOnDate, String blockingComment,
+            BlockingReasonSetting blockingReason, AppUser currentUser) {
+        if (client.isNotPending() && DateUtils.isAfter(client.getActivationDate(), blockedOnDate)) {
+            final String errorMessage = "The client blockedOnDate cannot be before the client ActivationDate.";
+            throw new InvalidClientStateTransitionException("block", "date.cannot.before.client.activation.date", errorMessage,
+                    blockedOnDate, client.getActivationDate());
+        }
+
+        ClientBlockingReason clientBlockingReason = ClientBlockingReason.instance(client.getId(), blockingReason.getId(),
+                currentUser.getId(), blockedOnDate, blockingComment, currentUser.getId());
+        this.clientBlockingReasonRepositoryWrapper.saveAndFlush(clientBlockingReason);
+
+        if (client.isBlocked() && client.getBlockingReason().getPriority() < blockingReason.getPriority()) {
+            client.block(blockingReason);
+        }
+
+        if (!client.isBlocked()) {
+            client.block(blockingReason);
+        }
+
+        this.clientRepository.saveAndFlush(client);
+
+        return clientBlockingReason;
     }
 
     @Transactional
@@ -1017,7 +1036,7 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
             return new CommandProcessingResultBuilder() //
                     .withCommandId(command.commandId()) //
                     .withClientId(clientId) //
-                    .withEntityId(clientId) //
+                    .withEntityId(blockingReasonId) //
                     .withEntityExternalId(client.getExternalId()) //
                     .build();
         } catch (final JpaSystemException | DataIntegrityViolationException dve) {
@@ -1274,24 +1293,12 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
             entityDatatableChecksWritePlatformService.runTheCheck(clientId, EntityTables.CLIENT.getName(), StatusEnum.CLOSE.getCode(),
                     EntityTables.CLIENT.getForeignKeyColumnNameOnDatatable(), legalForm.getLabel());
 
-            ClientBlockingReason clientBlockingReason = ClientBlockingReason.instance(clientId, blockingReasonId, currentUser.getId(),
-                    blockedOnDate, blockingComment, currentUser.getId());
-
-            this.clientBlockingReasonRepositoryWrapper.save(clientBlockingReason);
-            if (client.isBlocked() && client.getBlockingReason().getPriority() < blockingReason.getPriority()) {
-                client.block(currentUser, blockingReason, blockedOnDate, blockingComment);
-            }
-
-            if (!client.isBlocked()) {
-                client.block(currentUser, blockingReason, blockedOnDate, blockingComment);
-            }
-
-            this.clientRepository.saveAndFlush(client);
+            ClientBlockingReason clientBlockingReason = blockClient(client, blockedOnDate, blockingComment, blockingReason, currentUser);
 
             return new CommandProcessingResultBuilder() //
                     .withCommandId(command.commandId()) //
                     .withClientId(clientId) //
-                    .withEntityId(clientId) //
+                    .withEntityId(clientBlockingReason.getId()) //
                     .withEntityExternalId(client.getExternalId()) //
                     .build();
         } catch (final JpaSystemException | DataIntegrityViolationException dve) {
@@ -1306,9 +1313,7 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
         if (listasDeControlBlockingReason.isPresent() && listasDeControlBlockingReason.get().getId().equals(blockingReasonId)) {
             Optional<ClientBlockList> clientBlockingListItem = this.clientBlockListRepository.findByClientId(clientId);
 
-            if (clientBlockingListItem.isPresent()) {
-                clientBlockListRepository.delete(clientBlockingListItem.get());
-            }
+            clientBlockingListItem.ifPresent(clientBlockListRepository::delete);
         }
 
     }
@@ -1323,8 +1328,6 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
         final BlockingReasonSetting blockReasonSetting = blockingReasonSettingsRepositoryWrapper
                 .getSingleBlockingReasonSettingByReason(blockingReasonSetting, BlockLevel.CLIENT.toString());
 
-        final Client client = clientRepository.findOneWithNotFoundDetection(clientId);
-
         final Optional<ClientBlockingReason> blockingReason = this.clientBlockingReasonRepositoryWrapper
                 .findClientBlockingReason(clientId, blockReasonSetting.getId()).stream().findFirst();
 
@@ -1336,20 +1339,9 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
             return;
         }
 
-        final ClientBlockingReason clientBlockingReason = ClientBlockingReason.instance(clientId, blockReasonSetting.getId(),
-                currentUser.getId(), blockedOnDate, blockingComment, currentUser.getId());
+        final Client client = clientRepository.findOneWithNotFoundDetection(clientId);
 
-        this.clientBlockingReasonRepositoryWrapper.save(clientBlockingReason);
-
-        if (client.isBlocked() && client.getBlockingReason().getPriority() < blockReasonSetting.getPriority()) {
-            client.block(currentUser, blockReasonSetting, blockedOnDate, blockingComment);
-        }
-
-        if (!client.isBlocked()) {
-            client.block(currentUser, blockReasonSetting, blockedOnDate, blockingComment);
-        }
-
-        clientRepository.save(client);
+        blockClient(client, blockedOnDate, blockingComment, blockReasonSetting, currentUser);
 
     }
 
@@ -1359,22 +1351,12 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
         final Optional<BlockingReasonSetting> listasDeControlBlockingReason = blockingReasonSettingsRepositoryWrapper
                 .getBlockingReasonSettingByReason("LISTAS DE CONTROL", "CLIENT").stream().findFirst();
 
-        if (ClientStatus.fromInt(client.getStatus()).isActive()) {
-            final String errorMessage = "Client is already active.";
-            throw new InvalidClientStateTransitionException("undoBlock", "is.already.active", errorMessage);
-        }
-
-        if (client.isBlocked() && DateUtils.isAfter(client.getBlockedOnDate(), unblockDate)) {
-            final String errorMessage = "The client undoBlockedOnDate cannot be before the client blockedOnDate.";
-            throw new InvalidClientStateTransitionException("undoBlock", "date.cannot.before.client.blockedOnDate.date", errorMessage,
-                    unblockDate, client.getBlockedOnDate());
-        }
-
         List<ClientBlockingReason> clientBlockingReason = this.clientBlockingReasonRepositoryWrapper
                 .findClientBlockingReason(client.getId(), blockingReasonId);
 
         if (!clientBlockingReason.isEmpty()) {
             for (ClientBlockingReason item : clientBlockingReason) {
+                validateUnblockDate(item.getBlockDate(), unblockDate);
                 item.updateAfterUnblock(unblockDate, unblockComment, currentUser.getId());
                 clientBlockingReasonRepositoryWrapper.save(item);
                 removeClientFromListasDeControl(listasDeControlBlockingReason, item.getBlockingReasonId(), client.getId());
@@ -1384,8 +1366,16 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
         List<ClientBlockingReason> remainingClientBlockingReason = this.clientBlockingReasonRepositoryWrapper
                 .findClientBlockingReasonByClientId(client.getId());
         if (remainingClientBlockingReason.isEmpty()) {
-            client.undoBlock(currentUser, unblockDate, unblockComment);
+            client.undoBlock();
             this.clientRepository.saveAndFlush(client);
+        }
+    }
+
+    private void validateUnblockDate(final LocalDate blockDate, final LocalDate unblockDate) {
+        if (DateUtils.isAfter(blockDate, unblockDate)) {
+            final String errorMessage = "The client undoBlockedOnDate cannot be before the client blockedOnDate.";
+            throw new InvalidClientStateTransitionException("undoBlock", "date.cannot.before.client.blockedOnDate.date", errorMessage,
+                    unblockDate, blockDate);
         }
     }
 
@@ -1418,6 +1408,20 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
             handleDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
             return CommandProcessingResult.empty();
         }
+
+    }
+
+    @Override
+    public void unblockClientBlockingReason(Long clientId, LocalDate unblockDate, String blockingReasonName, String unblockComment) {
+
+        final AppUser currentUser = context.authenticatedUser();
+
+        final BlockingReasonSetting blockReasonSetting = blockingReasonSettingsRepositoryWrapper
+                .getSingleBlockingReasonSettingByReason(blockingReasonName, BlockLevel.CLIENT.toString());
+
+        final Client client = clientRepository.findOneWithNotFoundDetection(clientId);
+
+        unblockClientBlockingReason(currentUser, client, unblockDate, blockReasonSetting.getId(), unblockComment);
 
     }
 }
