@@ -127,7 +127,6 @@ public final class ClientData implements Comparable<ClientData>, Serializable {
     private Long clientClassificationId;
     private Long legalFormId;
     private LocalDate submittedOnDate;
-    private LocalDate blockedOnDate;
 
     public static ClientData importClientEntityInstance(Long legalFormId, Integer rowIndex, String fullname, Long officeId,
             Long clientTypeId, Long clientClassificationId, Long staffId, Boolean active, LocalDate activationDate,

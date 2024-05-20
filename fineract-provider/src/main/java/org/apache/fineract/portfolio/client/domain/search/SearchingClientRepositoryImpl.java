@@ -29,6 +29,7 @@ import jakarta.persistence.criteria.Root;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSetting;
 import org.apache.fineract.infrastructure.core.jpa.CriteriaQueryFactory;
 import org.apache.fineract.organisation.office.domain.Office;
 import org.apache.fineract.portfolio.client.domain.Client;
@@ -59,6 +60,7 @@ public class SearchingClientRepositoryImpl implements SearchingClientRepository 
 
         Root<Client> root = query.from(Client.class);
         Path<Office> office = root.get("office");
+        Path<BlockingReasonSetting> blockingReasonSetting = root.get("blockingReason");
 
         Specification<Client> spec = (r, q, builder) -> {
             Path<Office> o = r.get("office");
@@ -78,8 +80,9 @@ public class SearchingClientRepositoryImpl implements SearchingClientRepository 
         query.orderBy(orders);
 
         query.select(cb.construct(SearchedClient.class, root.get("id"), root.get("displayName"), root.get("externalId"),
-                root.get("accountNumber"), office.get("id"), office.get("name"), root.get("mobileNo"), root.get("status"),
-                root.get("activationDate"), root.get("createdDate")));
+                root.get("accountNumber"), office.get("id"), office.get("name"), root.get("mobileNo"),
+                cb.selectCase().when(cb.isNotNull(blockingReasonSetting), 900).otherwise(root.get("status")), root.get("activationDate"),
+                root.get("createdDate")));
 
         TypedQuery<SearchedClient> queryToExecute = entityManager.createQuery(query);
 

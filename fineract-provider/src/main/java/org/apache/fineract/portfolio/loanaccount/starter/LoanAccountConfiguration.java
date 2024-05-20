@@ -60,6 +60,7 @@ import org.apache.fineract.portfolio.charge.service.ChargeReadPlatformService;
 import org.apache.fineract.portfolio.client.domain.AccountNumberGenerator;
 import org.apache.fineract.portfolio.client.domain.ClientRepositoryWrapper;
 import org.apache.fineract.portfolio.client.service.ClientReadPlatformService;
+import org.apache.fineract.portfolio.client.service.ClientWritePlatformService;
 import org.apache.fineract.portfolio.collateralmanagement.service.LoanCollateralAssembler;
 import org.apache.fineract.portfolio.common.service.DropdownReadPlatformService;
 import org.apache.fineract.portfolio.delinquency.service.DelinquencyReadPlatformService;
@@ -250,8 +251,9 @@ public class LoanAccountConfiguration {
     @Bean
     @ConditionalOnMissingBean(LoanArrearsAgingService.class)
     public LoanArrearsAgingService loanArrearsAgingService(JdbcTemplate jdbcTemplate,
-            BusinessEventNotifierService businessEventNotifierService, DatabaseSpecificSQLGenerator sqlGenerator) {
-        return new LoanArrearsAgingServiceImpl(jdbcTemplate, businessEventNotifierService, sqlGenerator);
+            BusinessEventNotifierService businessEventNotifierService, DatabaseSpecificSQLGenerator sqlGenerator,
+            ClientWritePlatformService clientWritePlatformService) {
+        return new LoanArrearsAgingServiceImpl(jdbcTemplate, businessEventNotifierService, sqlGenerator, clientWritePlatformService);
     }
 
     @Bean

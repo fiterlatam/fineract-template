@@ -151,12 +151,6 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
     @Column(name = "closedon_date")
     private LocalDate closureDate;
 
-    @Column(name = "blockedon_date")
-    private LocalDate blockedOnDate;
-
-    @Column(name = "undo_blockedon_date")
-    private LocalDate undoBlockedOnDate;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "reject_reason_cv_id")
     private CodeValue rejectionReason;
@@ -189,20 +183,6 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
     @ManyToOne(optional = true, fetch = FetchType.LAZY)
     @JoinColumn(name = "closedon_userid")
     private AppUser closedBy;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "blocked_by_userid")
-    private AppUser blockedBy;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "undo_blocked_by_userid")
-    private AppUser undoBlockedBy;
-
-    @Column(name = "blocking_comment")
-    private String blockingComment;
-
-    @Column(name = "undo_blocking_comment")
-    private String undoBlockingComment;
 
     @Column(name = "submittedon_date")
     private LocalDate submittedOnDate;
@@ -616,20 +596,12 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
         this.status = ClientStatus.CLOSED.getValue();
     }
 
-    public void block(final AppUser currentUser, final BlockingReasonSetting blockingReason, final LocalDate blockedOnDate,
-            final String blockingComment) {
+    public void block(final BlockingReasonSetting blockingReason) {
         this.blockingReason = blockingReason;
-        this.blockingComment = blockingComment;
-        this.blockedOnDate = blockedOnDate;
-        this.blockedBy = currentUser;
-        this.status = ClientStatus.BLOCKED.getValue();
     }
 
-    public void undoBlock(final AppUser currentUser, final LocalDate undoBlockedOnDate, final String undoBlockingComment) {
-        this.undoBlockingComment = undoBlockingComment;
-        this.undoBlockedOnDate = undoBlockedOnDate;
-        this.undoBlockedBy = currentUser;
-        this.status = ClientStatus.ACTIVE.getValue();
+    public void undoBlock() {
+        this.blockingReason = null;
     }
 
     public CodeValue subStatus() {

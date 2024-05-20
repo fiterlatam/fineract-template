@@ -315,7 +315,6 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
                     clientId);
 
             clientData = ClientData.setParentGroups(clientData, parentGroups, clientCollateralManagementDataSet);
-            clientData.setBlockedOnDate(client.getBlockedOnDate());
             clientData.setLastname2(client.getLastname2());
             return clientData;
 
@@ -743,6 +742,7 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
             builder.append("c.activation_date as activationDate, c.image_id as imageId, ");
             builder.append("c.staff_id as staffId, s.display_name as staffName, ");
             builder.append("c.default_savings_product as savingsProductId, sp.name as savingsProductName, ");
+            builder.append("c.block_reason_id as blockReasonId, ");
             builder.append("c.default_savings_account as savingsAccountId ");
             builder.append("from m_client c ");
             builder.append("join m_office o on o.id = c.office_id ");
@@ -772,7 +772,12 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
 
             final String accountNo = rs.getString("accountNo");
 
-            final Integer statusEnum = JdbcSupport.getInteger(rs, "statusEnum");
+            Integer statusEnum;
+            if (JdbcSupport.getIntegerDefaultToNullIfZero(rs, "blockReasonId") == null) {
+                statusEnum = JdbcSupport.getIntegerDefaultToNullIfZero(rs, "statusEnum");
+            } else {
+                statusEnum = ClientStatus.BLOCKED.getValue();
+            }
             final EnumOptionData status = ClientEnumerations.status(statusEnum);
 
             final Long subStatusId = JdbcSupport.getLong(rs, "subStatus");
