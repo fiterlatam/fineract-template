@@ -339,7 +339,7 @@ public final class LoanProductDataValidator {
 
         // settings
         final Integer amortizationType = this.fromApiJsonHelper.extractIntegerNamed(AMORTIZATION_TYPE, element, Locale.getDefault());
-        baseDataValidator.reset().parameter(AMORTIZATION_TYPE).value(amortizationType).notNull().inMinMaxRange(0, 1);
+        baseDataValidator.reset().parameter(AMORTIZATION_TYPE).value(amortizationType).notNull().inMinMaxRange(0, 3);
 
         final Integer interestType = this.fromApiJsonHelper.extractIntegerNamed(INTEREST_TYPE, element, Locale.getDefault());
         baseDataValidator.reset().parameter(INTEREST_TYPE).value(interestType).notNull().inMinMaxRange(0, 1);
@@ -1334,7 +1334,7 @@ public final class LoanProductDataValidator {
         Integer amortizationType = null;
         if (this.fromApiJsonHelper.parameterExists(AMORTIZATION_TYPE, element)) {
             amortizationType = this.fromApiJsonHelper.extractIntegerNamed(AMORTIZATION_TYPE, element, Locale.getDefault());
-            baseDataValidator.reset().parameter(AMORTIZATION_TYPE).value(amortizationType).notNull().inMinMaxRange(0, 1);
+            baseDataValidator.reset().parameter(AMORTIZATION_TYPE).value(amortizationType).notNull().inMinMaxRange(0, 3);
         }
 
         if (this.fromApiJsonHelper.parameterExists(INTEREST_TYPE, element)) {

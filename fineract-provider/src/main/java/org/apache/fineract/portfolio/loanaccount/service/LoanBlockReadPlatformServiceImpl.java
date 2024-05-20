@@ -51,6 +51,8 @@ public class LoanBlockReadPlatformServiceImpl implements LoanBlockReadPlatformSe
                           from
                           m_credit_blocking_reason mcbr
                           left join m_blocking_reason_setting mbrs on mbrs.id = mcbr.blocking_reason_id
+                          left join m_loan loan on loan.id = mcbr.loan_id
+                          left join m_client client on client.id = loan.client_id
                     """;
         }
 
@@ -96,5 +98,19 @@ public class LoanBlockReadPlatformServiceImpl implements LoanBlockReadPlatformSe
                         (rs, rowNum) -> BlockingReasonsData.builder().id(rs.getLong("id")).priority(rs.getInt("priority"))
                                 .nameOfReason(rs.getString("nameOfReason")).isEnabled(rs.getBoolean("isEnabled")).build(),
                         level, nameOfReason);
+    }
+
+    @Override
+    public Collection<LoanBlockingReasonData> retrieveAllLoanWithBlockingReason(Long blockingReasonId) {
+        LoanBlockingReasonMapper mapper = new LoanBlockingReasonMapper();
+        final String query = "SELECT " + mapper.schema() + " where mbrs.id = ? and mcbr.is_active = true";
+        return jdbcTemplate.query(query, mapper, blockingReasonId);
+    }
+
+    @Override
+    public Collection<LoanBlockingReasonData> retrieveAllLoanWithClientAndBlockingReason(Long clientId, Long blockingReasonId) {
+        LoanBlockingReasonMapper mapper = new LoanBlockingReasonMapper();
+        final String query = "SELECT " + mapper.schema() + " where client.id = ? and mbrs.id = ? and mcbr.is_active = true";
+        return jdbcTemplate.query(query, mapper, blockingReasonId);
     }
 }

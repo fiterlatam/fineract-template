@@ -22,6 +22,7 @@ package org.apache.fineract.portfolio.loanaccount.serialization;
 import com.google.gson.JsonElement;
 import com.google.gson.reflect.TypeToken;
 import java.lang.reflect.Type;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -33,6 +34,8 @@ import org.apache.fineract.infrastructure.core.data.DataValidatorBuilder;
 import org.apache.fineract.infrastructure.core.exception.InvalidJsonException;
 import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidationException;
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
+import org.apache.fineract.infrastructure.core.service.DateUtils;
+import org.apache.fineract.portfolio.client.data.ClientApiCollectionConstants;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -97,6 +100,38 @@ public class LoanBlockCommandFromApiValidator {
 
         final String comment = this.fromApiJsonHelper.extractStringNamed(BLOCK_COMMENT, element);
         baseDataValidator.reset().parameter(BLOCK_COMMENT).value(comment).notNull().notExceedingLengthOf(500);
+
+        if (!dataValidationErrors.isEmpty()) {
+            throw new PlatformApiDataValidationException(dataValidationErrors);
+        }
+    }
+
+    public void validateUnblockLoanMassively(final String json) {
+        if (StringUtils.isBlank(json)) {
+            throw new InvalidJsonException();
+        }
+
+        final Type typeOfMap = new TypeToken<Map<String, Object>>() {}.getType();
+        this.fromApiJsonHelper.checkForUnsupportedParameters(typeOfMap, json, Arrays.stream(new String[] { "unblockDate",
+                "blockingReasonLevel", "blockingReasonId", "unblockComment", "loanId", "dateFormat", "locale" }).toList());
+
+        final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
+        final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors)
+                .resource(ClientApiCollectionConstants.CLIENT_RESOURCE_NAME);
+        final JsonElement element = this.fromApiJsonHelper.parse(json);
+
+        final LocalDate unblockDate = this.fromApiJsonHelper.extractLocalDateNamed("unblockDate", element);
+        baseDataValidator.reset().parameter("unblockDate").value(unblockDate).notBlank()
+                .validateDateBeforeOrEqual(DateUtils.getBusinessLocalDate());
+
+        final Long blockingReasonId = this.fromApiJsonHelper.extractLongNamed("blockingReasonId", element);
+        baseDataValidator.reset().parameter("blockingReasonId").value(blockingReasonId).notBlank();
+
+        final String unblockComment = this.fromApiJsonHelper.extractStringNamed("unblockComment", element);
+        baseDataValidator.reset().parameter("unblockComment").value(unblockComment).notBlank();
+
+        final String[] loanId = this.fromApiJsonHelper.extractArrayNamed("loanId", element);
+        baseDataValidator.reset().parameter("loanId").value(loanId).notBlank().arrayNotEmpty();
 
         if (!dataValidationErrors.isEmpty()) {
             throw new PlatformApiDataValidationException(dataValidationErrors);

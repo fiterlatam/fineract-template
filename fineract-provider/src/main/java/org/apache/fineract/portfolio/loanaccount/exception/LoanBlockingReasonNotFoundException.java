@@ -16,22 +16,14 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+package org.apache.fineract.portfolio.loanaccount.exception;
 
-package org.apache.fineract.portfolio.loanaccount.service;
+import org.apache.fineract.infrastructure.core.exception.AbstractPlatformResourceNotFoundException;
 
-import java.time.LocalDate;
-import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSetting;
-import org.apache.fineract.infrastructure.core.api.JsonCommand;
-import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanBlockingReason;
+public class LoanBlockingReasonNotFoundException extends AbstractPlatformResourceNotFoundException {
 
-public interface LoanBlockWritePlatformService {
-
-    CommandProcessingResult deleteLoanBlockReason(JsonCommand command);
-
-    CommandProcessingResult blockLoanWithGuarantee(JsonCommand command);
-
-    LoanBlockingReason blockLoan(Long loanId, BlockingReasonSetting blockingReasonSetting, String comment, LocalDate blockDate);
-
-    CommandProcessingResult unblockLoanMassively(JsonCommand command);
+    public LoanBlockingReasonNotFoundException(final Long loanId, final Long blockingReasonId) {
+        super("error.msg.loan.blocking.reason.not.found",
+                "Loan blocking reason with loan ID " + loanId + " and blocking reason ID " + blockingReasonId + " not found");
+    }
 }
