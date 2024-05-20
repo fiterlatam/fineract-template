@@ -923,6 +923,33 @@ public class LoansApiResource {
         return this.jsonSerializerTagHistory.serialize(result);
     }
 
+    @POST
+    @Path("loanblockingreason/unblock")
+    @Consumes({ MediaType.APPLICATION_JSON })
+    @Produces({ MediaType.APPLICATION_JSON })
+    @Operation(summary = "Undo block loan with blocking reason", description = "Undo block loan with blocking reason")
+    @ApiResponses({ @ApiResponse(responseCode = "200", description = "OK") })
+    public String unblockLoanWithBlockingReason(@Parameter(hidden = true) final String apiRequestBodyAsJson) {
+        final CommandWrapper commandRequest = new CommandWrapperBuilder() //
+                .unblockLoanWithBlockingReason() //
+                .withJson(apiRequestBodyAsJson) //
+                .build(); //
+
+        final CommandProcessingResult result = commandsSourceWritePlatformService.logCommandSource(commandRequest);
+
+        return toApiJsonSerializer.serialize(result);
+    }
+
+    @GET
+    @Path("loanblockingreason/{blockingReasonId}")
+    @Produces({ MediaType.APPLICATION_JSON })
+    @Operation(summary = "Retrieve all loan with blocking reason", description = "Retrieve all loan with blocking reason")
+    @ApiResponses({ @ApiResponse(responseCode = "200", description = "OK"),
+            @ApiResponse(responseCode = "400", description = "Bad Request") })
+    public String retrieveAllLoanWithBlockingReasonData(@PathParam("blockingReasonId") final Long blockingReasonId) {
+        return retrieveAllLoanWithBlockingReason(blockingReasonId);
+    }
+
     private String retrieveApprovalTemplate(final Long loanId, final String loanExternalIdStr, final String templateType,
             final UriInfo uriInfo) {
         this.context.authenticatedUser().validateHasReadPermission(RESOURCE_NAME_FOR_PERMISSIONS);
@@ -1325,6 +1352,13 @@ public class LoansApiResource {
         builder.withJson(apiRequestBodyAsJson);
         CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(builder.build());
         return delinquencyActionSerializer.serialize(result);
+    }
+
+    private String retrieveAllLoanWithBlockingReason(Long blockingReasonId) {
+        this.context.authenticatedUser().validateHasReadPermission(RESOURCE_NAME_FOR_PERMISSIONS);
+        final Collection<LoanBlockingReasonData> loanBlockingReasonData = this.loanBlockingReasonReadPlatformService
+                .retrieveAllLoanWithBlockingReason(blockingReasonId);
+        return this.toApiJsonSerializer.serialize(loanBlockingReasonData);
     }
 
 }

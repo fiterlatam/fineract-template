@@ -29,4 +29,8 @@ public interface LoanBlockReadPlatformService {
 
     BlockingReasonsData retrieveLoanBlockingSettings(String level, String nameOfReason);
 
+    Collection<LoanBlockingReasonData> retrieveAllLoanWithBlockingReason(Long blockingReasonId);
+
+    Collection<LoanBlockingReasonData> retrieveAllLoanWithClientAndBlockingReason(Long clientId, Long blockingReasonId);
+
 }

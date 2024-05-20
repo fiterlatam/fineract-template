@@ -17,21 +17,27 @@
  * under the License.
  */
 
-package org.apache.fineract.portfolio.loanaccount.service;
+package org.apache.fineract.portfolio.loanaccount.handler;
 
-import java.time.LocalDate;
-import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSetting;
+import lombok.RequiredArgsConstructor;
+import org.apache.fineract.commands.annotation.CommandType;
+import org.apache.fineract.commands.handler.NewCommandSourceHandler;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanBlockingReason;
+import org.apache.fineract.portfolio.loanaccount.service.LoanBlockWritePlatformService;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-public interface LoanBlockWritePlatformService {
+@Service
+@RequiredArgsConstructor
+@CommandType(entity = "LOAN", action = "UNBLOCKMASSIVELY")
+public class UnblockLoanMassivelyCommandHandler implements NewCommandSourceHandler {
 
-    CommandProcessingResult deleteLoanBlockReason(JsonCommand command);
+    private final LoanBlockWritePlatformService writePlatformService;
 
-    CommandProcessingResult blockLoanWithGuarantee(JsonCommand command);
-
-    LoanBlockingReason blockLoan(Long loanId, BlockingReasonSetting blockingReasonSetting, String comment, LocalDate blockDate);
-
-    CommandProcessingResult unblockLoanMassively(JsonCommand command);
+    @Transactional
+    @Override
+    public CommandProcessingResult processCommand(final JsonCommand command) {
+        return this.writePlatformService.unblockLoanMassively(command);
+    }
 }
