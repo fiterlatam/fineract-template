@@ -21,11 +21,15 @@ package org.apache.fineract.portfolio.loanaccount.service;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockLevel;
 import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSetting;
 import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSettingEnum;
@@ -33,6 +37,7 @@ import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingR
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuilder;
+import org.apache.fineract.infrastructure.core.exception.ErrorHandler;
 import org.apache.fineract.infrastructure.core.exception.GeneralPlatformDomainRuleException;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
@@ -44,12 +49,16 @@ import org.apache.fineract.portfolio.loanaccount.domain.LoanBlockingReason;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanBlockingReasonRepository;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepository;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
+import org.apache.fineract.portfolio.loanaccount.exception.LoanBlockingReasonNotFoundException;
 import org.apache.fineract.portfolio.loanaccount.serialization.LoanBlockCommandFromApiValidator;
 import org.apache.fineract.useradministration.domain.AppUser;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class LoanBlockWritePlatformServiceImpl implements LoanBlockWritePlatformService {
 
@@ -204,4 +213,63 @@ public class LoanBlockWritePlatformServiceImpl implements LoanBlockWritePlatform
         return loanBlockingReason;
     }
 
+    @Transactional
+    @Override
+    public CommandProcessingResult unblockLoanMassively(JsonCommand command) {
+        try {
+            final AppUser currentUser = this.context.authenticatedUser();
+            this.loanBlockCommandFromApiValidator.validateUnblockLoanMassively(command.json());
+
+            final LocalDate unblockDate = command.localDateValueOfParameterNamed("unblockDate");
+            final Long blockingReasonId = command.longValueOfParameterNamed("blockingReasonId");
+            final String unblockComment = command.stringValueOfParameterNamed("unblockComment");
+            final Set<String> loanIds = new HashSet<>(Arrays.asList(command.arrayValueOfParameterNamed("loanId")));
+
+            final Set<Long> loanIdsLong = new HashSet<>();
+            for (String str : loanIds) {
+                long number = Long.parseLong(str);
+                loanIdsLong.add(number);
+            }
+
+            final List<Loan> loans = this.loanRepository.findAllById(loanIdsLong);
+            for (Loan loan : loans) {
+                LoanBlockingReason loanBlockingReason = this.loanBlockingReasonRepository
+                        .findExistingBlockingReason(loan.getId(), blockingReasonId)
+                        .orElseThrow(() -> new LoanBlockingReasonNotFoundException(loan.getId(), blockingReasonId));
+                handleDelete(loanBlockingReason, unblockDate, currentUser, unblockComment);
+
+                final BlockingReasonSetting blockingReasonSetting = loan.getLoanCustomizationDetail().getBlockStatus();
+                if (blockingReasonSetting != null) {
+                    // Check if the loan is still blocked
+                    blockingReasonSetting.equals(loanBlockingReason.getBlockingReasonSetting());
+                    loan.getLoanCustomizationDetail().setBlockStatus(null);
+                }
+
+                this.loanRepository.save(loan);
+                this.loanBlockingReasonRepository.saveAndFlush(loanBlockingReason);
+
+                final Collection<LoanBlockingReason> unBlocked = new ArrayList();
+                unBlocked.add(loanBlockingReason);
+                Client client = loan.getClient();
+                if (client.isBlocked()) {
+                    deleteBlockReasonFromClientIfPresent(unBlocked, client, currentUser, unblockDate, unblockComment);
+                }
+            }
+
+            return new CommandProcessingResultBuilder().build();
+        } catch (final JpaSystemException | DataIntegrityViolationException dve) {
+            handleDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
+            return CommandProcessingResult.empty();
+        }
+    }
+
+    private void logAsErrorUnexpectedDataIntegrityException(final Exception dve) {
+        log.error("Error occured.", dve);
+    }
+
+    private void handleDataIntegrityIssues(final JsonCommand command, final Throwable realCause, final Exception dve) {
+        logAsErrorUnexpectedDataIntegrityException(dve);
+        throw ErrorHandler.getMappable(dve, "error.msg.loan.blocking.reason.unknown.data.integrity.issue",
+                "Unknown data integrity issue with resource: " + realCause.getMessage());
+    }
 }
