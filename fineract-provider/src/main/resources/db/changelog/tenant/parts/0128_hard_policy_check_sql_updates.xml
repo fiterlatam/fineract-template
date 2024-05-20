@@ -412,4 +412,55 @@
         </sql>
     </changeSet>
 
+    <changeSet id="16" author="fineract">
+        <sql>
+            <![CDATA[
+            UPDATE stretchy_report SET report_sql = "SELECT CASE
+                -- Banco Comunal
+                WHEN (${loanProductId} = 2) AND (IFNULL(mc.loan_cycle, 0) > 0) THEN 'GREEN'
+                WHEN (${loanProductId} = 2) AND (IFNULL(client_years.rejoining_years, 0) < 1) THEN 'GREEN'
+                WHEN (${loanProductId} = 2) AND (${requestedAmount} < 6000) THEN 'GREEN'
+
+                -- Banco Comunal temporal
+                WHEN (${loanProductId} = 9) AND (IFNULL(mc.loan_cycle, 0) > 0) THEN 'GREEN'
+                WHEN (${loanProductId} = 9) AND (IFNULL(client_years.rejoining_years, 0) < 1) THEN 'GREEN'
+                WHEN (${loanProductId} = 9) AND (${requestedAmount} < 6000) THEN 'GREEN'
+
+                -- Banco Comunal Agricola
+                WHEN (${loanProductId} = 8) AND (IFNULL( client_years.number_of_documents, 0) > 0) THEN 'GREEN'
+
+                -- Grupo Solidario
+                WHEN (${loanProductId} = 4) AND (IFNULL( client_years.number_of_documents, 0) > 0) THEN 'GREEN'
+
+                -- Grupo Solidario Agricola
+                WHEN (${loanProductId} = 5) AND (IFNULL( client_years.number_of_documents, 0) > 0) THEN 'GREEN'
+
+                -- Paralelo
+                WHEN (${loanProductId} = 7) AND (IFNULL( client_years.number_of_documents, 0) >= 3) THEN 'GREEN'
+
+                ELSE 'RED'
+                END AS color,
+                client_years.submittedon_years,
+                client_years.rejoining_years,
+                mc.loan_cycle as number_of_loan_cycles,
+                client_closed_loans.number_of_closed_loans,
+                client_years.number_of_documents
+                FROM m_client mc
+                LEFT JOIN (
+                SELECT mcl.id AS client_id,
+                TIMESTAMPDIFF(YEAR, mcl.submittedon_date, CURDATE()) AS submittedon_years,
+                IFNULL(TIMESTAMPDIFF(YEAR, mcl.submittedon_date, mcl.reactivated_on_date), 0) AS rejoining_years,
+                (SELECT COUNT(*) FROM m_document md WHERE md.parent_entity_id = ${clientId} AND md.parent_entity_type ='clients' AND md.document_type = (select id from m_code_value where code_value='Fotografias' limit 1)) AS number_of_documents
+                FROM  m_client mcl
+                )client_years ON client_years.client_id = mc.id
+                LEFT JOIN (
+                    SELECT COALESCE(COUNT(*), 0) AS number_of_closed_loans, mln.client_id AS client_id FROM m_loan mln WHERE mln.loan_status_id IN (700, 600, 602, 601) GROUP BY mln.client_id
+                ) client_closed_loans ON client_closed_loans.client_id = mc.id
+                WHERE mc.id = ${clientId}
+                GROUP BY mc.id"
+            WHERE report_name = "Mandatory to attach photographs and investment plan Policy Check";
+            ]]>
+        </sql>
+    </changeSet>
+
 </databaseChangeLog>
