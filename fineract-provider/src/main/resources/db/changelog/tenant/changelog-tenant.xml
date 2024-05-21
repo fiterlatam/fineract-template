@@ -148,4 +148,5 @@
     <include file="parts/0128_hard_policy_check_sql_updates.xml" relativeToChangelogFile="true"/>
     <include file="parts/0129_update_loans_table_report.xml" relativeToChangelogFile="true"/>
     <include file="parts/0130_FBR_657_update_loan_additional_properties.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0132_AddConfigurationForAmountFormats.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

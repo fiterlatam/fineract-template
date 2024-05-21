@@ -34,10 +34,13 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.accounting.journalentry.api.JournalEntryJsonInputParams;
 import org.apache.fineract.accounting.journalentry.command.JournalEntryCommand;
 import org.apache.fineract.accounting.journalentry.command.SingleDebitOrCreditEntryCommand;
+import org.apache.fineract.infrastructure.configuration.domain.GlobalConfigurationProperty;
+import org.apache.fineract.infrastructure.configuration.domain.GlobalConfigurationRepositoryWrapper;
 import org.apache.fineract.infrastructure.core.exception.InvalidJsonException;
 import org.apache.fineract.infrastructure.core.serialization.AbstractFromApiJsonDeserializer;
 import org.apache.fineract.infrastructure.core.serialization.FromApiJsonDeserializer;
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
+import org.apache.fineract.infrastructure.core.serialization.JsonParserHelper;
 import org.springframework.stereotype.Component;
 
 /**
@@ -48,6 +51,7 @@ import org.springframework.stereotype.Component;
 public final class JournalEntryCommandFromApiJsonDeserializer extends AbstractFromApiJsonDeserializer<JournalEntryCommand> {
 
     private final FromJsonHelper fromApiJsonHelper;
+    private final GlobalConfigurationRepositoryWrapper globalConfigurationRepository;
 
     @Override
     public JournalEntryCommand commandFromApiJson(final String json) {
@@ -73,9 +77,14 @@ public final class JournalEntryCommandFromApiJsonDeserializer extends AbstractFr
                 element);
         final JsonObject topLevelJsonElement = element.getAsJsonObject();
         final Locale locale = this.fromApiJsonHelper.extractLocaleParameter(topLevelJsonElement);
+        Locale amountLocale = this.fromApiJsonHelper.extractLocaleParameter(topLevelJsonElement);
 
+        GlobalConfigurationProperty maintainAmountFormatToEN = this.globalConfigurationRepository.findOneByNameWithNotFoundDetection("maintainAmountFormatToEN");
+        if (maintainAmountFormatToEN.isEnabled()) {
+            amountLocale = JsonParserHelper.localeFromString("en");
+        }
         final BigDecimal amount = this.fromApiJsonHelper.extractBigDecimalNamed(JournalEntryJsonInputParams.AMOUNT.getValue(), element,
-                locale);
+                amountLocale);
         final Long paymentTypeId = this.fromApiJsonHelper.extractLongNamed(JournalEntryJsonInputParams.PAYMENT_TYPE_ID.getValue(), element);
         final String accountNumber = this.fromApiJsonHelper.extractStringNamed(JournalEntryJsonInputParams.ACCOUNT_NUMBER.getValue(),
                 element);
@@ -107,7 +116,7 @@ public final class JournalEntryCommandFromApiJsonDeserializer extends AbstractFr
      * @param topLevelJsonElement
      * @param locale
      */
-    private SingleDebitOrCreditEntryCommand[] populateCreditsOrDebitsArray(final JsonObject topLevelJsonElement, final Locale locale,
+    private SingleDebitOrCreditEntryCommand[] populateCreditsOrDebitsArray(final JsonObject topLevelJsonElement, Locale locale,
             SingleDebitOrCreditEntryCommand[] debitOrCredits, final String paramName) {
         final JsonArray array = topLevelJsonElement.get(paramName).getAsJsonArray();
         debitOrCredits = new SingleDebitOrCreditEntryCommand[array.size()];
@@ -118,6 +127,11 @@ public final class JournalEntryCommandFromApiJsonDeserializer extends AbstractFr
 
             final Long glAccountId = this.fromApiJsonHelper.extractLongNamed("glAccountId", creditElement);
             final String comments = this.fromApiJsonHelper.extractStringNamed("comments", creditElement);
+
+            GlobalConfigurationProperty maintainAmountFormatToEN = this.globalConfigurationRepository.findOneByNameWithNotFoundDetection("maintainAmountFormatToEN");
+            if (maintainAmountFormatToEN.isEnabled()) {
+                locale = JsonParserHelper.localeFromString("en");
+            }
             final BigDecimal amount = this.fromApiJsonHelper.extractBigDecimalNamed("amount", creditElement, locale);
 
             debitOrCredits[i] = new SingleDebitOrCreditEntryCommand(glAccountId, amount, comments, parametersPassedInForCreditsCommand);
