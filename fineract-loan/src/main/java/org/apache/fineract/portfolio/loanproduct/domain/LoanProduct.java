@@ -240,6 +240,7 @@ public class LoanProduct extends AbstractPersistableCustom {
     private boolean extendTermForMonthlyRepayments;
 
     @lombok.Setter
+    @lombok.Getter
     @ManyToOne
     @JoinColumn(name = "product_type")
     private CodeValue productType;
