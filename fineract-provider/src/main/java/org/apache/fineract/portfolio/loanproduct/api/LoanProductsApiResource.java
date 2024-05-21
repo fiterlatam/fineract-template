@@ -479,7 +479,6 @@ public class LoanProductsApiResource {
         final WorkingDaysData workingDaysData = this.workingDaysReadPlatformService.repaymentRescheduleType();
         final WorkingDays workingDays = this.workingDaysRepositoryWrapper.findOne();
         final Collection<CodeValueData> productTypeOptions = this.codeValueReadPlatformService.retrieveCodeValuesByCode("ProductType");
-        ;
 
         return new LoanProductData(productData, chargeOptions, penaltyOptions, paymentTypeOptions, currencyOptions, amortizationTypeOptions,
                 interestTypeOptions, interestCalculationPeriodTypeOptions, repaymentFrequencyTypeOptions, interestRateFrequencyTypeOptions,

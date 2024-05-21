@@ -170,6 +170,7 @@ public interface LoanProductConstants {
     String EXTEND_TERM_FOR_MONTHLY_REPAYMENTS = "extendTermForMonthlyRepayments";
 
     String PRODUCT_TYPE = "productType";
+    String ADVANCE_PARAM = "advance";
 
     String PRODUCT_TYPES_THAT_BLOCK_CREDIT = LoanProductType.SUMAS_PAY.getCode();
 }
