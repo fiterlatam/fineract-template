@@ -23,7 +23,7 @@
                    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd">
 
-    <changeSet id="20" author="fineract">
+    <changeSet id="1" author="fineract">
         <sql>
             <![CDATA[
             UPDATE stretchy_report SET report_sql = 'SELECT overdue_loans.loan_count, recredit_loans.loan_count as recredit_loan_count,
