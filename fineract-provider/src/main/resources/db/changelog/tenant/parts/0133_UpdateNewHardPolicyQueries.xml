@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements. See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership. The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License. You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied. See the License for the
+    specific language governing permissions and limitations
+    under the License.
+
+-->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd">
+
+    <changeSet id="1" author="fineract">
+        <sql>
+            <![CDATA[
+            UPDATE stretchy_report SET report_sql = 'SELECT overdue_loans.loan_count, recredit_loans.loan_count as recredit_loan_count,
+               CASE
+	             WHEN recredit_loans.loan_count > 0 AND overdue_loans.loan_count = 0 THEN ''GREEN''
+	             WHEN recredit_loans.loan_count > 0 AND overdue_loans.loan_count > 0 THEN ''RED''
+	             WHEN recredit_loans.loan_count = 0 THEN ''GREEN'' END as color
+           FROM m_prequalification_group mpg
+ 	        LEFT JOIN (
+	        SELECT p.id AS prequalification_id,
+	        (SELECT COUNT(distinct ml.id)
+	        FROM m_prequalification_group mp
+	        JOIN m_prequalification_group_members mpgm ON mpgm.group_id = mp.id
+            JOIN m_client mc ON mc.dpi = mpgm.dpi
+            JOIN m_loan ml ON ml.client_id = mc.id
+            JOIN m_loan_repayment_schedule mlrs on mlrs.loan_id = ml.id
+            WHERE ml.loan_status_id = 300 AND ml.product_id = ${loanProductId}  AND (ml.is_topup IS NULL OR ml.is_topup = 0)
+            AND mlrs.duedate < CURRENT_DATE AND mlrs.obligations_met_on_date IS NULL
+            AND mp.id = ${prequalificationId}
+            ) AS loan_count
+	        FROM m_prequalification_group p
+ 	        )overdue_loans ON overdue_loans.prequalification_id = mpg.id
+ 	      LEFT JOIN (
+	        SELECT p.id AS prequalification_id,
+	        (SELECT COUNT(ml.id)
+	        FROM m_prequalification_group mp
+	        JOIN m_prequalification_group_members mpgm ON mpgm.group_id = mp.id
+            JOIN m_client mc ON mc.dpi = mpgm.dpi
+            JOIN m_loan ml ON ml.client_id = mc.id
+            WHERE ml.loan_status_id < 300 AND ml.product_id = ${loanProductId}  AND ml.is_topup = 1
+            AND mp.id = ${prequalificationId}
+            ) AS loan_count
+	        FROM m_prequalification_group p
+ 	      )recredit_loans ON recredit_loans.prequalification_id = mpg.id
+ 	      WHERE mpg.id = ${prequalificationId}' WHERE report_name = 'Clients In Arrears Policy Check';
+            ]]>
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>

@@ -152,4 +152,5 @@
     <include file="parts/0131_FBR_648_Plan de Pago Grupal.xml" relativeToChangelogFile="true"/>
     <include file="parts/0131_FBR_644_hard_policy_checks_updates_sql_updates.xml" relativeToChangelogFile="true"/>
     <include file="parts/0132_AddConfigurationForAmountFormats.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0133_UpdateNewHardPolicyQueries.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
