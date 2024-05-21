@@ -78,4 +78,15 @@
         </insert>
     </changeSet>
 
+    <changeSet author="fineract" id="5">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_product_loan" columnName="is_advance"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_product_loan">
+            <column name="is_advance" type="boolean" defaultValueBoolean="false"/>
+        </addColumn>
+    </changeSet>
+
 </databaseChangeLog>
