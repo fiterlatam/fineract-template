@@ -105,6 +105,7 @@ import org.apache.fineract.organisation.holiday.domain.Holiday;
 import org.apache.fineract.organisation.holiday.domain.HolidayRepositoryWrapper;
 import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
 import org.apache.fineract.organisation.monetary.domain.Money;
+import org.apache.fineract.organisation.monetary.domain.MoneyHelper;
 import org.apache.fineract.organisation.office.domain.Office;
 import org.apache.fineract.organisation.staff.domain.Staff;
 import org.apache.fineract.organisation.teller.data.CashierTransactionDataValidator;
@@ -198,6 +199,7 @@ import org.apache.fineract.portfolio.loanaccount.rescheduleloan.service.LoanResc
 import org.apache.fineract.portfolio.loanaccount.serialization.LoanApplicationCommandFromApiJsonHelper;
 import org.apache.fineract.portfolio.loanaccount.serialization.LoanEventApiJsonValidator;
 import org.apache.fineract.portfolio.loanaccount.serialization.LoanUpdateCommandFromApiJsonDeserializer;
+import org.apache.fineract.portfolio.loanproduct.data.AdvanceQuotaConfigurationData;
 import org.apache.fineract.portfolio.loanproduct.data.MaximumCreditRateConfigurationData;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProduct;
 import org.apache.fineract.portfolio.loanproduct.exception.LinkedAccountRequiredException;
@@ -2230,24 +2232,52 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
     private void checkCupo(final Loan loan) {
         final Client client = loan.client();
+        final MonetaryCurrency currency = loan.getCurrency();
         if (client != null) {
             final Long clientId = client.getId();
+            final Money approvedPrincipal = Money.of(currency, loan.getApprovedPrincipal());
+            final boolean isAdvanceLoanProduct = loan.getLoanProduct().isAdvance();
             final ClientAdditionalFieldsData loanAdditionalFieldsData = this.loanReadPlatformService
                     .retrieveLoanClientAdditionals(clientId);
-            final BigDecimal cupo = loanAdditionalFieldsData.getCupo();
-            BigDecimal totalOutstandingPrincipalAmount = this.jdbcTemplate.queryForObject(
-                    "SELECT COALESCE(SUM(ml.principal_outstanding_derived), 0) AS totalOutstandingPrincipalAmount FROM m_loan ml WHERE ml.loan_status_id = 300 AND ml.client_id = ?",
-                    BigDecimal.class, new Object[] { clientId });
-            if (totalOutstandingPrincipalAmount != null) {
-                totalOutstandingPrincipalAmount = totalOutstandingPrincipalAmount.add(loan.getApprovedPrincipal());
-                if (totalOutstandingPrincipalAmount.compareTo(cupo) > 0) {
-                    throw new GeneralPlatformDomainRuleException("error.msg.loan.cupo.limit.exceeded", "Cupo:" + cupo + " limit exceeded",
-                            cupo);
-                }
+            final Money cupo = Money.of(currency, loanAdditionalFieldsData.getCupo());
+            Money advanceTotalOutstandingPrincipalAmount = Money.of(currency, this.jdbcTemplate.queryForObject(
+                    "SELECT COALESCE(SUM(ml.principal_outstanding_derived), 0) AS totalOutstandingPrincipalAmount FROM m_loan ml INNER JOIN m_product_loan mpl ON mpl.id = ml.product_id WHERE ml.loan_status_id = 300 AND ml.client_id = ? AND mpl.is_advance = ?",
+                    BigDecimal.class, new Object[] { clientId, true }));
+            Money purchaseTotalOutstandingPrincipalAmount = Money.of(currency, this.jdbcTemplate.queryForObject(
+                    "SELECT COALESCE(SUM(ml.principal_outstanding_derived), 0) AS totalOutstandingPrincipalAmount FROM m_loan ml INNER JOIN m_product_loan mpl ON mpl.id = ml.product_id WHERE ml.loan_status_id = 300 AND ml.client_id = ? AND mpl.is_advance = ?",
+                    BigDecimal.class, new Object[] { clientId, false }));
+            if (isAdvanceLoanProduct) {
+                advanceTotalOutstandingPrincipalAmount = advanceTotalOutstandingPrincipalAmount.add(approvedPrincipal);
+            } else {
+                purchaseTotalOutstandingPrincipalAmount = purchaseTotalOutstandingPrincipalAmount.add(approvedPrincipal);
             }
 
+            final Money totalOutstandingPrincipalAmount = advanceTotalOutstandingPrincipalAmount
+                    .add(purchaseTotalOutstandingPrincipalAmount);
+            final AdvanceQuotaConfigurationData advanceQuotaConfigurationData = this.loanProductReadPlatformService
+                    .retrieveAdvanceQuotaConfigurationData();
+            final Money advanceQuotaPercentage = Money.of(currency, advanceQuotaConfigurationData.getPercentageValue());
+            final Boolean isAdvanceQuotaEnabled = advanceQuotaConfigurationData.getEnabled();
+            if (isAdvanceQuotaEnabled) {
+                final Money maximumAdvanceQuota = cupo.multipliedBy(advanceQuotaPercentage.getAmount()).dividedBy(BigDecimal.valueOf(100L),
+                        MoneyHelper.getRoundingMode());
+                if (advanceTotalOutstandingPrincipalAmount.isGreaterThan(maximumAdvanceQuota)) {
+                    throw new GeneralPlatformDomainRuleException("error.msg.loan.maximum.advance.cupo.limit.exceeded",
+                            "Cupo:" + cupo + " limit exceeded", maximumAdvanceQuota.toString());
+                }
+                final Money maximumPurchaseQuota = cupo
+                        .multipliedBy((BigDecimal.valueOf(100L).subtract(advanceQuotaPercentage.getAmount())))
+                        .dividedBy(BigDecimal.valueOf(100L), MoneyHelper.getRoundingMode());
+                if (purchaseTotalOutstandingPrincipalAmount.isGreaterThan(maximumPurchaseQuota)) {
+                    throw new GeneralPlatformDomainRuleException("error.msg.loan.maximum.purchase.cupo.limit.exceeded",
+                            "Maximum purchase cupo:" + maximumPurchaseQuota + " limit exceeded", maximumPurchaseQuota.toString());
+                }
+            }
+            if (totalOutstandingPrincipalAmount.isGreaterThan(cupo)) {
+                throw new GeneralPlatformDomainRuleException("error.msg.loan.maximum.cupo.limit.exceeded",
+                        "Cupo:" + cupo + " limit exceeded", cupo.toString());
+            }
         }
-
     }
 
     @Override

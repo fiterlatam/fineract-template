@@ -245,6 +245,11 @@ public class LoanProduct extends AbstractPersistableCustom {
     @JoinColumn(name = "product_type")
     private CodeValue productType;
 
+    @lombok.Setter
+    @lombok.Getter
+    @Column(name = "is_advance", nullable = false)
+    private boolean advance;
+
     public static LoanProduct assembleFromJson(final Fund fund, final String loanTransactionProcessingStrategy,
             final List<Charge> productCharges, final JsonCommand command, final AprCalculator aprCalculator, FloatingRate floatingRate,
             final List<Rate> productRates, List<LoanProductPaymentAllocationRule> loanProductPaymentAllocationRules,
@@ -457,6 +462,7 @@ public class LoanProduct extends AbstractPersistableCustom {
         final BigDecimal overDueAmountForArrears = command.bigDecimalValueOfParameterNamed(LoanProductConstants.OVERDUE_AMOUNT_FOR_ARREARS);
         final boolean extendTermForMonthlyRepayments = command
                 .booleanPrimitiveValueOfParameterNamed(LoanProductConstants.EXTEND_TERM_FOR_MONTHLY_REPAYMENTS);
+        final boolean advance = command.booleanPrimitiveValueOfParameterNamed(LoanProductConstants.ADVANCE_PARAM);
 
         LoanProduct product = new LoanProduct(fund, loanTransactionProcessingStrategy, loanProductPaymentAllocationRules,
                 loanProductCreditAllocationRules, name, shortName, description, currency, principal, minPrincipal, maxPrincipal,
@@ -482,6 +488,7 @@ public class LoanProduct extends AbstractPersistableCustom {
         product.setMaxClientInactivityPeriod(maxClientInActivityPeriod);
         product.setOverDueAmountForArrears(overDueAmountForArrears);
         product.setExtendTermForMonthlyRepayments(extendTermForMonthlyRepayments);
+        product.setAdvance(advance);
         return product;
 
     }
@@ -1074,6 +1081,13 @@ public class LoanProduct extends AbstractPersistableCustom {
             final boolean newValue = command.booleanPrimitiveValueOfParameterNamed(includeInBorrowerCycleParamName);
             actualChanges.put(includeInBorrowerCycleParamName, newValue);
             this.includeInBorrowerCycle = newValue;
+        }
+
+        final String advanceParamName = "advance";
+        if (command.isChangeInBooleanParameterNamed(advanceParamName, this.advance)) {
+            final boolean newValue = command.booleanPrimitiveValueOfParameterNamed(advanceParamName);
+            actualChanges.put(advanceParamName, newValue);
+            this.advance = newValue;
         }
 
         if (command.isChangeInBooleanParameterNamed(LoanProductConstants.USE_BORROWER_CYCLE_PARAMETER_NAME, this.useBorrowerCycle)) {

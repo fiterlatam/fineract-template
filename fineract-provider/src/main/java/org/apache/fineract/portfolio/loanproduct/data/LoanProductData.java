@@ -241,6 +241,9 @@ public class LoanProductData implements Serializable {
     private CodeValueData productType;
     private final Collection<CodeValueData> productTypeOptions;
 
+    @lombok.Setter
+    private boolean advance;
+
     /**
      * Used when returning lookup information about loan product for dropdowns.
      */
@@ -1102,6 +1105,7 @@ public class LoanProductData implements Serializable {
         this.extendTermForMonthlyRepayments = productData.extendTermForMonthlyRepayments;
         this.productTypeOptions = productTypeOptions;
         this.productType = productData.productType;
+        this.advance = productData.advance;
 
     }
 
