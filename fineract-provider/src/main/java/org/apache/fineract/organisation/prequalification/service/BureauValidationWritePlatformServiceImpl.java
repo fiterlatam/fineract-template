@@ -203,7 +203,7 @@ public class BureauValidationWritePlatformServiceImpl implements BureauValidatio
     }
 
     @Override
-    public LoanAdditionalData retrieveAdditionProperties(final Long productId, final Long clientId, final String caseId) {
+    public LoanAdditionalData retrieveAdditionProperties(final Long productId, final Long clientId, final String caseId, String locale) {
         final Collection<ExternalServicesPropertiesData> externalServicesPropertiesDatas = this.externalServicePropertiesReadPlatformService
                 .retrieveOne(ExternalServicesConstants.LOAN_ADDITIONAL_PROPERTIES_SERVICE_NAME);
         final LoanProduct loanProduct = this.loanProductRepository.findById(productId)
@@ -247,7 +247,7 @@ public class BureauValidationWritePlatformServiceImpl implements BureauValidatio
                     throw new PlatformDataIntegrityException("error.msg.external.service.provider.error.occurred",
                             error + " Case ID == " + caseId);
                 }
-                loanAdditionalData = this.mapFromJson(jsonElement);
+                loanAdditionalData = this.mapFromJson(jsonElement, locale);
             }
         }
         if (loanAdditionalData == null) {
@@ -262,12 +262,13 @@ public class BureauValidationWritePlatformServiceImpl implements BureauValidatio
         return loanAdditionalData;
     }
 
-    public LoanAdditionalData mapFromJson(final JsonElement jsonElement) {
+    public LoanAdditionalData mapFromJson(final JsonElement jsonElement, String dateLocaleString) {
         final LoanAdditionalData loanAdditionalData = new LoanAdditionalData();
         final String dateFormat = "yyyy-MM-dd";
         final String dateTimeFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'";
         final String localeAsString = "en";
         final Locale locale = JsonParserHelper.localeFromString(localeAsString);
+        final Locale dateLocale = JsonParserHelper.localeFromString(dateLocaleString);
 
         final String caseId = this.fromApiJsonHelper.extractStringNamed("case_id", jsonElement);
         loanAdditionalData.setCaseId(caseId);
@@ -287,13 +288,13 @@ public class BureauValidationWritePlatformServiceImpl implements BureauValidatio
         final String estadoSolicitud = this.fromApiJsonHelper.extractStringNamed("estado_solicitud", jsonElement);
         loanAdditionalData.setEstadoSolicitud(estadoSolicitud);
 
-        final LocalDate fechaInicio = this.fromApiJsonHelper.extractLocalDateNamed("fecha_inicio", jsonElement, dateFormat, locale);
+        final LocalDate fechaInicio = this.fromApiJsonHelper.extractLocalDateNamed("fecha_inicio", jsonElement, dateFormat, dateLocale);
         loanAdditionalData.setFechaInicio(fechaInicio);
 
         final String producto = this.fromApiJsonHelper.extractStringNamed("producto", jsonElement);
         loanAdditionalData.setProducto(producto);
 
-        final LocalDate fechaSolicitud = this.fromApiJsonHelper.extractLocalDateNamed("Fecha_Solicitud", jsonElement, dateFormat, locale);
+        final LocalDate fechaSolicitud = this.fromApiJsonHelper.extractLocalDateNamed("Fecha_Solicitud", jsonElement, dateFormat, dateLocale);
         loanAdditionalData.setFechaSolicitud(fechaSolicitud);
 
         final String codigoCliente = this.fromApiJsonHelper.extractStringNamed("codigo_cliente", jsonElement);
@@ -346,7 +347,7 @@ public class BureauValidationWritePlatformServiceImpl implements BureauValidatio
         loanAdditionalData.setCEdad(cEdad);
 
         final LocalDate cFechaNacimiento = this.fromApiJsonHelper.extractLocalDateNamed("c_fecha_nacimiento", jsonElement, dateFormat,
-                locale);
+                dateLocale);
         loanAdditionalData.setCFechaNacimiento(cFechaNacimiento);
 
         final String cOtroNombre = this.fromApiJsonHelper.extractStringNamed("c_otro_nombre", jsonElement);
@@ -434,7 +435,7 @@ public class BureauValidationWritePlatformServiceImpl implements BureauValidatio
         loanAdditionalData.setFamiliares(familiares);
 
         final LocalDate fechaPrimeraReunion = this.fromApiJsonHelper.extractLocalDateNamed("fecha_primera_reunion", jsonElement, dateFormat,
-                locale);
+                dateLocale);
         loanAdditionalData.setFechaPrimeraReunion(fechaPrimeraReunion);
 
         final BigDecimal flujoDisponible = this.fromApiJsonHelper.extractBigDecimalNamed("flujo_disponible", jsonElement, locale);
@@ -622,10 +623,10 @@ public class BureauValidationWritePlatformServiceImpl implements BureauValidatio
         loanAdditionalData.setCaseName(caseName);
 
         final LocalDateTime dateOpened = this.fromApiJsonHelper.extractLocalDateTimeNamed("date_opened", jsonElement, dateTimeFormat,
-                locale);
+                dateLocale);
         loanAdditionalData.setDateOpened(dateOpened);
 
-        final LocalDate fechaFin = this.fromApiJsonHelper.extractLocalDateNamed("fecha_fin", jsonElement, dateFormat, locale);
+        final LocalDate fechaFin = this.fromApiJsonHelper.extractLocalDateNamed("fecha_fin", jsonElement, dateFormat, dateLocale);
         loanAdditionalData.setFechaFin(fechaFin);
 
         final BigDecimal ventas = this.fromApiJsonHelper.extractBigDecimalNamed("ventas", jsonElement, locale);
@@ -810,26 +811,26 @@ public class BureauValidationWritePlatformServiceImpl implements BureauValidatio
         loanAdditionalData.setFacilitador(facilitador);
 
         final LocalDate fecha_estacionalidad = this.fromApiJsonHelper.extractLocalDateNamed("fecha_estacionalidad", jsonElement, dateFormat,
-                locale);
+                dateLocale);
         loanAdditionalData.setFecha_estacionalidad(fecha_estacionalidad);
 
         final LocalDate fecha_inico_operaciones = this.fromApiJsonHelper.extractLocalDateNamed("fecha_inico_operaciones", jsonElement,
-                dateFormat, locale);
+                dateFormat, dateLocale);
         loanAdditionalData.setFecha_inico_operaciones(fecha_inico_operaciones);
 
         final LocalDate fecha_integraciones = this.fromApiJsonHelper.extractLocalDateNamed("fecha_integraciones", jsonElement, dateFormat,
-                locale);
+                dateLocale);
         loanAdditionalData.setFecha_integraciones(fecha_integraciones);
 
         final LocalDate fecha_inventario = this.fromApiJsonHelper.extractLocalDateNamed("fecha_inventario", jsonElement, dateFormat,
-                locale);
+                dateLocale);
         loanAdditionalData.setFecha_inventario(fecha_inventario);
 
         final LocalDate fecha_nacimiento_solicitante = this.fromApiJsonHelper.extractLocalDateNamed("fecha_nacimiento_solicitante",
-                jsonElement, dateFormat, locale);
+                jsonElement, dateFormat, dateLocale);
         loanAdditionalData.setFecha_nacimiento_solicitante(fecha_nacimiento_solicitante);
 
-        final LocalDate fecha_visita = this.fromApiJsonHelper.extractLocalDateNamed("fecha_visita", jsonElement, dateFormat, locale);
+        final LocalDate fecha_visita = this.fromApiJsonHelper.extractLocalDateNamed("fecha_visita", jsonElement, dateFormat, dateLocale);
         loanAdditionalData.setFecha_visita(fecha_visita);
 
         final String frecuencia_compras = this.fromApiJsonHelper.extractStringNamed("frecuencia_compras", jsonElement);
