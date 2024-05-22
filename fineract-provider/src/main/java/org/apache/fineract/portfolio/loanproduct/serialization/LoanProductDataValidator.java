@@ -182,8 +182,11 @@ public final class LoanProductDataValidator {
             LoanProductConstants.ENABLE_INSTALLMENT_LEVEL_DELINQUENCY, LoanProductConstants.LOAN_SCHEDULE_TYPE,
             LoanProductConstants.LOAN_SCHEDULE_PROCESSING_TYPE, LoanProductConstants.REPAYMENT_RESCHEDULING_TYPE,
             LoanProductConstants.MAX_CLIENT_INACTIVITY_PERIOD, LoanProductConstants.OVERDUE_AMOUNT_FOR_ARREARS,
-            LoanProductConstants.EXTEND_TERM_FOR_MONTHLY_REPAYMENTS, LoanProductConstants.PRODUCT_TYPE,
-            LoanProductConstants.ADVANCE_PARAM));
+            LoanProductConstants.EXTEND_TERM_FOR_MONTHLY_REPAYMENTS, LoanProductConstants.PRODUCT_TYPE, LoanProductConstants.ADVANCE_PARAM,
+            LoanProductConstants.CUSTOM_ALLOW_CREATE_OR_DISBUSE_PARAM_NAME, LoanProductConstants.CUSTOM_ALLOW_COLLECTIONS_PARAM_NAME,
+            LoanProductConstants.CUSTOM_ALLOW_CREDIT_NOTE_PARAM_NAME, LoanProductConstants.CUSTOM_ALLOW_DEBIT_NOTE_PARAM_NAME,
+            LoanProductConstants.CUSTOM_ALLOW_FORGIVENESS_PARAM_NAME, LoanProductConstants.CUSTOM_ALLOW_REVERSAL_OR_CANCELATION_PARAM_NAME,
+            LoanProductConstants.CUSTOM_COLLECTION_SUBCHANNEL_LOAN_PRODUC_MAPPER_PARAM_NAME));
 
     private static final Set<String> MAXIMUM_RATE_SUPPORTED_PARAMETERS = new HashSet<>(
             Arrays.asList("locale", "dateFormat", "eaRate", "annualNominalRate", "appliedBy", "appliedOnDate", "dailyNominalRate",

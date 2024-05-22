@@ -205,13 +205,13 @@ public class UserAdministrationTest extends IntegrationTest {
 
         // From then on the originalPassword is not working anymore
         CallFailedRuntimeException callFailedRuntimeException = Assertions.assertThrows(CallFailedRuntimeException.class, () -> {
-            ok(newFineract(simpleUsername, originalPassword).users.retrieveOne39(userId));
+            ok(newFineract(simpleUsername, originalPassword).users.retrieveOne42(userId));
         });
         Assertions.assertEquals(401, callFailedRuntimeException.getResponse().raw().code());
         Assertions.assertTrue(callFailedRuntimeException.getMessage().contains("Unauthorized"));
 
         // The update password is still working perfectly
-        GetUsersUserIdResponse ok = ok(newFineract(simpleUsername, updatedPassword).users.retrieveOne39(userId));
+        GetUsersUserIdResponse ok = ok(newFineract(simpleUsername, updatedPassword).users.retrieveOne42(userId));
     }
 
     @Test

@@ -3881,4 +3881,18 @@ public class CommandWrapperBuilder {
         return this;
     }
 
+    public CommandWrapperBuilder createSubChannelLoanProduct() {
+        this.actionName = "CREATE";
+        this.entityName = "SUBCHANNELLOANPRODUCT";
+        this.href = "/subchannelloanproduct";
+        return this;
+    }
+
+    public CommandWrapperBuilder deleteSubChannelLoanProduct(final Long id) {
+        this.actionName = "DELETE";
+        this.entityName = "SUBCHANNELLOANPRODUCT";
+        this.href = "/subchannelloanproduct/" + id;
+        this.entityId = id;
+        return this;
+    }
 }

@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements. See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership. The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License. You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied. See the License for the
+    specific language governing permissions and limitations
+    under the License.
+
+-->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd">
+
+    <changeSet author="fineract" id="10">
+        <createTable schemaName= "custom" tableName="c_subchannel_loan_product">
+            <column name="id" type="INT4">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="subchannel_id" type="INT4">
+                <constraints nullable="false"/>
+            </column>
+            <column name="loan_product_id" type="INT4">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet author="fineract" id="15">
+        <addAutoIncrement columnDataType="int"
+                          columnName="id"
+                          incrementBy="1"
+                          schemaName="custom"
+                          startWith="1"
+                          tableName="c_subchannel_loan_product"/>
+    </changeSet>
+
+
+    <changeSet  author="fineract"  id="20">
+        <addForeignKeyConstraint  baseTableSchemaName="custom"
+                                  baseTableName="c_subchannel_loan_product"
+                                  baseColumnNames="subchannel_id"
+                                  referencedTableSchemaName="custom"
+                                  referencedTableName="c_channel_subchannel"
+                                  referencedColumnNames="id"
+                                  constraintName="fk_c_subchannel_loan_product_c_channel_subchannel"
+                                  onDelete="CASCADE"
+                                  onUpdate="RESTRICT"
+                                  validate="true"/>
+    </changeSet>
+
+    <changeSet  author="fineract"  id="30">
+        <addForeignKeyConstraint  baseTableSchemaName="custom"
+                                  baseTableName="c_subchannel_loan_product"
+                                  baseColumnNames="loan_product_id"
+                                  referencedTableSchemaName="public"
+                                  referencedTableName="m_product_loan"
+                                  referencedColumnNames="id"
+                                  constraintName="fk_c_subchannel_loan_product_m_product_loan"
+                                  onDelete="CASCADE"
+                                  onUpdate="RESTRICT"
+                                  validate="true"/>
+    </changeSet>
+
+</databaseChangeLog>

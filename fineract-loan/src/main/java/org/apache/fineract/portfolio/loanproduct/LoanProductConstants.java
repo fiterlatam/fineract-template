@@ -173,4 +173,13 @@ public interface LoanProductConstants {
     String ADVANCE_PARAM = "advance";
 
     String PRODUCT_TYPES_THAT_BLOCK_CREDIT = LoanProductType.SUMAS_PAY.getCode();
+
+    String CUSTOM_ALLOW_CREATE_OR_DISBUSE_PARAM_NAME = "customAllowCreateOrDisburse";
+    String CUSTOM_ALLOW_COLLECTIONS_PARAM_NAME = "customAllowCollections";
+    String CUSTOM_ALLOW_CREDIT_NOTE_PARAM_NAME = "customAllowCreditNote";
+    String CUSTOM_ALLOW_DEBIT_NOTE_PARAM_NAME = "customAllowDebitNote";
+    String CUSTOM_ALLOW_FORGIVENESS_PARAM_NAME = "customAllowForgiveness";
+    String CUSTOM_ALLOW_REVERSAL_OR_CANCELATION_PARAM_NAME = "customAllowReversalCancellation";
+
+    String CUSTOM_COLLECTION_SUBCHANNEL_LOAN_PRODUC_MAPPER_PARAM_NAME = "subChannelLoanProductMapper";
 }
