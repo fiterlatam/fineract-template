@@ -18,19 +18,28 @@
  */
 package org.apache.fineract.portfolio.loanproduct.service;
 
+import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import com.google.gson.reflect.TypeToken;
 import jakarta.persistence.PersistenceException;
+import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.fineract.accounting.producttoaccountmapping.service.ProductToGLAccountMappingWritePlatformService;
+import org.apache.fineract.custom.infrastructure.channel.domain.SubChannelRepository;
+import org.apache.fineract.custom.portfolio.loanproduct.data.SubChannelLoanProductData;
+import org.apache.fineract.custom.portfolio.loanproduct.domain.SubChannelLoanProduct;
+import org.apache.fineract.custom.portfolio.loanproduct.domain.SubChannelLoanProductRepository;
+import org.apache.fineract.custom.portfolio.loanproduct.service.SubChannelLoanProductReadWritePlatformService;
 import org.apache.fineract.infrastructure.codes.domain.CodeValue;
 import org.apache.fineract.infrastructure.codes.domain.CodeValueRepositoryWrapper;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
@@ -109,6 +118,9 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
     private final LoanProductCreditAllocationRuleMerger loanProductCreditAllocationRuleMerger = new LoanProductCreditAllocationRuleMerger();
     private final LoanProductReadPlatformService loanProductReadPlatformService;
     private final CodeValueRepositoryWrapper codeValueRepository;
+    private final SubChannelLoanProductReadWritePlatformService subChannelLoanProductReadWritePlatformService;
+    private final SubChannelLoanProductRepository subChannelLoanProductRepository;
+    private final SubChannelRepository subChannelRepository;
 
     @Transactional
     @Override
@@ -152,7 +164,9 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
                         .setDelinquencyBucket(findDelinquencyBucketIdIfProvided(command.longValueOfParameterNamed("delinquencyBucketId")));
             }
 
-            this.loanProductRepository.saveAndFlush(loanProduct);
+            populateProductCustomAllowance(command, loanProduct);
+
+            this.loanProductRepository.save(loanProduct);
 
             // save accounting mappings
             this.accountMappingWritePlatformService.createLoanProductToGLAccountMapping(loanProduct.getId(), command);
@@ -176,6 +190,68 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
             Throwable throwable = ExceptionUtils.getRootCause(dve.getCause());
             handleDataIntegrityIssues(command, throwable, dve);
             return CommandProcessingResult.empty();
+        }
+
+    }
+
+    private void populateProductCustomAllowance(JsonCommand command, LoanProduct loanProduct) {
+        if (command.parameterExists(LoanProductConstants.CUSTOM_ALLOW_CREATE_OR_DISBUSE_PARAM_NAME)) {
+            Boolean res = command.booleanPrimitiveValueOfParameterNamed(LoanProductConstants.CUSTOM_ALLOW_CREATE_OR_DISBUSE_PARAM_NAME);
+            loanProduct.setCustomAllowCreateOrDisburse(res);
+        }
+
+        if (command.parameterExists(LoanProductConstants.CUSTOM_ALLOW_COLLECTIONS_PARAM_NAME)) {
+            Boolean res = command.booleanPrimitiveValueOfParameterNamed(LoanProductConstants.CUSTOM_ALLOW_COLLECTIONS_PARAM_NAME);
+            loanProduct.setCustomAllowCollections(res);
+        }
+
+        if (command.parameterExists(LoanProductConstants.CUSTOM_ALLOW_CREDIT_NOTE_PARAM_NAME)) {
+            Boolean res = command.booleanPrimitiveValueOfParameterNamed(LoanProductConstants.CUSTOM_ALLOW_CREDIT_NOTE_PARAM_NAME);
+            loanProduct.setCustomAllowCreditNote(res);
+        }
+
+        if (command.parameterExists(LoanProductConstants.CUSTOM_ALLOW_DEBIT_NOTE_PARAM_NAME)) {
+            Boolean res = command.booleanPrimitiveValueOfParameterNamed(LoanProductConstants.CUSTOM_ALLOW_DEBIT_NOTE_PARAM_NAME);
+            loanProduct.setCustomAllowDebitNote(res);
+        }
+
+        if (command.parameterExists(LoanProductConstants.CUSTOM_ALLOW_FORGIVENESS_PARAM_NAME)) {
+            Boolean res = command.booleanPrimitiveValueOfParameterNamed(LoanProductConstants.CUSTOM_ALLOW_FORGIVENESS_PARAM_NAME);
+            loanProduct.setCustomAllowForgiveness(res);
+        }
+
+        if (command.parameterExists(LoanProductConstants.CUSTOM_ALLOW_REVERSAL_OR_CANCELATION_PARAM_NAME)) {
+            Boolean res = command
+                    .booleanPrimitiveValueOfParameterNamed(LoanProductConstants.CUSTOM_ALLOW_REVERSAL_OR_CANCELATION_PARAM_NAME);
+            loanProduct.setCustomAllowReversalCancellation(res);
+        }
+
+        this.loanProductRepository.saveAndFlush(loanProduct);
+
+        JsonArray jsonArraySubChannelLoanProductMapper = command.arrayOfParameterNamed("subChannelLoanProductMapper");
+        Gson gson = new Gson();
+        Type listType = new TypeToken<List<SubChannelLoanProductData>>() {}.getType();
+        List<SubChannelLoanProductData> dataList = gson.fromJson(jsonArraySubChannelLoanProductMapper, listType);
+
+        // Retrieve the list with current mapping
+        List<SubChannelLoanProductData> subChannelLoanProductDataList = subChannelLoanProductReadWritePlatformService
+                .findAllByProductId(loanProduct.getId());
+
+        // Exclude the ones that are not in the new list
+        subChannelLoanProductRepository.findByLoanProductId(loanProduct.getId()).forEach(subChannelLoanProduct -> {
+            if (Boolean.FALSE.equals(loanProduct.getCustomAllowCollections())
+                    || dataList.stream().noneMatch(data -> data.getSubChannelId().equals(subChannelLoanProduct.getSubChannelId()))) {
+                subChannelLoanProductRepository.delete(subChannelLoanProduct);
+            }
+        });
+
+        // Add new ones (negative ids)
+        if (Objects.nonNull(dataList)) {
+            dataList.stream().filter(data -> data.getId() < 0).forEach(data -> {
+                SubChannelLoanProduct subChannelLoanProduct = SubChannelLoanProduct.builder().loanProductId(loanProduct.getId())
+                        .subChannelId(data.getSubChannelId()).build();
+                subChannelLoanProductRepository.save(subChannelLoanProduct);
+            });
         }
 
     }
@@ -299,6 +375,9 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
                 }
             }
             this.validateMaximumInterestRate(product);
+
+            populateProductCustomAllowance(command, product);
+
             if (!changes.isEmpty()) {
                 product.validateLoanProductPreSave();
                 this.loanProductRepository.saveAndFlush(product);

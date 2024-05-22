@@ -27,11 +27,13 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import lombok.Getter;
+import lombok.Setter;
 import org.apache.fineract.accounting.common.AccountingEnumerations;
 import org.apache.fineract.accounting.common.AccountingRuleType;
 import org.apache.fineract.accounting.glaccount.data.GLAccountData;
 import org.apache.fineract.accounting.producttoaccountmapping.data.ChargeToGLAccountMapper;
 import org.apache.fineract.accounting.producttoaccountmapping.data.PaymentTypeToGLAccountMapper;
+import org.apache.fineract.custom.portfolio.loanproduct.data.SubChannelLoanProductData;
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.organisation.monetary.data.CurrencyData;
@@ -243,6 +245,26 @@ public class LoanProductData implements Serializable {
 
     @lombok.Setter
     private boolean advance;
+    @Setter
+    private Boolean customAllowCreateOrDisburse;
+
+    @Setter
+    private Boolean customAllowCollections;
+
+    @Setter
+    private Boolean customAllowDebitNote;
+
+    @Setter
+    private Boolean customAllowCreditNote;
+
+    @Setter
+    private Boolean customAllowForgiveness;
+
+    @Setter
+    private Boolean customAllowReversalCancellation;
+
+    @Setter
+    private List<SubChannelLoanProductData> customCollectionsSubChannelList;
 
     /**
      * Used when returning lookup information about loan product for dropdowns.

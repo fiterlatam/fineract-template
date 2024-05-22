@@ -285,9 +285,18 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
                     + "lp.repayment_rescheduling_enum as repaymentReschedulingType, "
                     + "lp.max_client_inactivity_period as maxClientInactivityPeriod, "
                     + "lp.overdue_amount_for_arrears overdueAmountForArrears, "
-                    + "lp.extend_term_monthly_repayments as extendTermForMonthlyRepayments, " + "pty.code_value as productTypeValue, "
-                    + "pty.id as productTypeId, " + "lp.overdue_days_for_npa as overdueDaysForNPA " + " from m_product_loan lp "
-                    + " left join m_fund f on f.id = lp.fund_id "
+                    + "lp.extend_term_monthly_repayments as extendTermForMonthlyRepayments, " //
+                    + "pty.code_value as productTypeValue, " //
+                    + "pty.id as productTypeId, " //
+                    + "lp.overdue_days_for_npa as overdueDaysForNPA, " //
+                    + "lp.custom_allow_create_or_disburse as customAllowCreateOrDisburse, " //
+                    + "lp.custom_allow_collections as customAllowCollections, " //
+                    + "lp.custom_allow_credit_note as customAllowCreditNote, " //
+                    + "lp.custom_allow_debit_note as customAllowDebitNote, " //
+                    + "lp.custom_allow_forgiveness as customAllowForgiveness, " //
+                    + "lp.custom_allow_reversal_cancellation as customAllowReversalCancellation " //
+                    + " from m_product_loan lp " //
+                    + " left join m_fund f on f.id = lp.fund_id " //
                     + " left join m_product_loan_recalculation_details lpr on lpr.product_id=lp.id "
                     + " left join m_product_loan_guarantee_details lpg on lpg.loan_product_id=lp.id "
                     + " left join m_product_loan_configurable_attributes lca on lca.loan_product_id = lp.id "
@@ -550,6 +559,13 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
             }
             final boolean advance = rs.getBoolean("advance");
 
+            final Boolean customAllowCreateOrDisburse = rs.getBoolean("customAllowCreateOrDisburse");
+            final Boolean customAllowCollections = rs.getBoolean("customAllowCollections");
+            final Boolean customAllowDebitNote = rs.getBoolean("customAllowDebitNote");
+            final Boolean customAllowCreditNote = rs.getBoolean("customAllowCreditNote");
+            final Boolean customAllowForgiveness = rs.getBoolean("customAllowForgiveness");
+            final Boolean customAllowReversalCancellation = rs.getBoolean("customAllowReversalCancellation");
+
             LoanProductData loanProductData = new LoanProductData(id, name, shortName, description, currency, principal, minPrincipal,
                     maxPrincipal, tolerance, numberOfRepayments, minNumberOfRepayments, maxNumberOfRepayments, repaymentEvery,
                     interestRatePerPeriod, minInterestRatePerPeriod, maxInterestRatePerPeriod, annualInterestRate, repaymentFrequencyType,
@@ -577,6 +593,12 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
             loanProductData.setExtendTermForMonthlyRepayments(extendTermForMonthlyRepayments);
             loanProductData.setProductType(productType);
             loanProductData.setAdvance(advance);
+            loanProductData.setCustomAllowCreateOrDisburse(customAllowCreateOrDisburse);
+            loanProductData.setCustomAllowCollections(customAllowCollections);
+            loanProductData.setCustomAllowDebitNote(customAllowDebitNote);
+            loanProductData.setCustomAllowCreditNote(customAllowCreditNote);
+            loanProductData.setCustomAllowForgiveness(customAllowForgiveness);
+            loanProductData.setCustomAllowReversalCancellation(customAllowReversalCancellation);
 
             return loanProductData;
         }

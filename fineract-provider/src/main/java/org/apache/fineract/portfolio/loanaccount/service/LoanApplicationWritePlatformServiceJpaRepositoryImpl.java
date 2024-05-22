@@ -237,6 +237,9 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 }
             }
 
+            // validate if the loan product allows creation and disbursement
+            checkIfIsAllowedCreationAndDisbursal(loanProduct);
+
             final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
             final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors).resource("loan");
 
@@ -741,6 +744,8 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
 
             this.fromApiJsonDeserializer.validateForModify(command.json(), loanProductForValidations, existingLoanApplication);
 
+            checkIfIsAllowedCreationAndDisbursal(loanProductForValidations);
+
             checkClientOrGroupActive(existingLoanApplication);
 
             final Set<LoanCharge> existingCharges = existingLoanApplication.getActiveCharges();
@@ -1233,6 +1238,14 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
         }
     }
 
+    private void checkIfIsAllowedCreationAndDisbursal(LoanProduct loanProductForValidations) {
+        // validate if the loan product allows creation and disbursement
+        if (Boolean.FALSE.equals(loanProductForValidations.getCustomAllowCreateOrDisburse())) {
+            throw new GeneralPlatformDomainRuleException("error.msg.loan.product.does.not.allow.creation.nor.disbursement",
+                    "Loan product does not allow creation and disbursement.");
+        }
+    }
+
     /*
      * Guaranteed to throw an exception no matter what the data integrity issue is.
      */
@@ -1374,6 +1387,9 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
         if (loan.loanProduct().isMultiDisburseLoan()) {
             this.validateMultiDisbursementData(command, expectedDisbursementDate);
         }
+
+        // validate if the loan product allows creation and disbursement
+        checkIfIsAllowedCreationAndDisbursal(loan.loanProduct());
 
         checkClientOrGroupActive(loan);
         Boolean isSkipRepaymentOnFirstMonth = false;
