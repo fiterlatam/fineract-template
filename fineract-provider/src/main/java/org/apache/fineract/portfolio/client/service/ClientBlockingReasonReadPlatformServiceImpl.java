@@ -82,7 +82,7 @@ public class ClientBlockingReasonReadPlatformServiceImpl implements ClientBlocki
 
         final ClientBlockingReasonMapper rm = new ClientBlockingReasonMapper();
         final String sql = "select " + rm.schema()
-                + " WHERE cbr.blocking_reason_id=? AND cbr.unblock_date IS NULL AND client.status_enum = 900 ORDER BY client.display_name ASC";
+                + " WHERE cbr.blocking_reason_id=? AND cbr.unblock_date IS NULL AND client.status_enum = 300 ORDER BY client.display_name ASC";
 
         return this.jdbcTemplate.query(sql, rm, blockingReasonId); // NOSONAR
     }

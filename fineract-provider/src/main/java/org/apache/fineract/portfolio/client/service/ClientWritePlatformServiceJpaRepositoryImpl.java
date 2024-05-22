@@ -23,14 +23,8 @@ import com.google.gson.JsonObject;
 import jakarta.persistence.PersistenceException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
+
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -97,8 +91,8 @@ import org.apache.fineract.portfolio.group.domain.Group;
 import org.apache.fineract.portfolio.group.domain.GroupRepository;
 import org.apache.fineract.portfolio.group.exception.GroupMemberCountNotInPermissibleRangeException;
 import org.apache.fineract.portfolio.group.exception.GroupNotFoundException;
-import org.apache.fineract.portfolio.loanaccount.domain.Loan;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
+import org.apache.fineract.portfolio.loanaccount.domain.*;
+import org.apache.fineract.portfolio.loanaccount.exception.LoanBlockingReasonNotFoundException;
 import org.apache.fineract.portfolio.loanaccount.service.LoanReadPlatformService;
 import org.apache.fineract.portfolio.note.domain.Note;
 import org.apache.fineract.portfolio.note.domain.NoteRepository;
@@ -147,6 +141,10 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
     private final ClientBlockListRepository clientBlockListRepository;
     private final LoanReadPlatformService loanReadPlatformService;
     private final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService;
+
+    private final LoanBlockingReasonRepository loanBlockingReasonRepository;
+
+    private LoanRepository loanRepository;
 
     @Transactional
     @Override
@@ -1371,6 +1369,31 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
         }
     }
 
+    public void  unblockLoanClient(Long loanIds,Long blockingReasonId,String unblockComment){
+        final Set<Long> loanIdsLong = new HashSet<>();
+        loanIdsLong.add(loanIds);
+
+        final List<Loan> loans = this.loanRepository.findAllById(loanIdsLong);
+        for (Loan loan : loans) {
+//            LoanBlockingReason loanBlockingReason = this.loanBlockingReasonRepository
+//                    .findExistingBlockingReason(loan.getId(), blockingReasonId)
+//                    .orElseThrow(() -> new LoanBlockingReasonNotFoundException(loan.getId(), blockingReasonId));
+//
+//
+//            final BlockingReasonSetting blockingReasonSetting = loan.getLoanCustomizationDetail().getBlockStatus();
+//            if (blockingReasonSetting != null) {
+//                // Check if the loan is still blocked
+//                blockingReasonSetting.equals(loanBlockingReason.getBlockingReasonSetting());
+                loan.getLoanCustomizationDetail().setBlockStatus(null);
+//            }
+
+            this.loanRepository.save(loan);
+//            this.loanBlockingReasonRepository.saveAndFlush(loanBlockingReason);
+        }
+
+
+    }
+
     private void validateUnblockDate(final LocalDate blockDate, final LocalDate unblockDate) {
         if (DateUtils.isAfter(blockDate, unblockDate)) {
             final String errorMessage = "The client undoBlockedOnDate cannot be before the client blockedOnDate.";
@@ -1400,6 +1423,10 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
             final List<Client> clients = this.clientRepository.findAll(clientIdsLong);
 
             for (Client client : clients) {
+                final List<Loan> clientLoans = this.loanRepositoryWrapper.findLoanByClientId(client.getId());
+                for (final Loan loan : clientLoans) {
+                    unblockLoanClient(loan.getId(),blockingReasonId,unblockComment);
+                }
                 unblockClientBlockingReason(currentUser, client, unblockDate, blockingReasonId, unblockComment);
             }
 
@@ -1410,6 +1437,9 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
         }
 
     }
+
+
+
 
     @Override
     public void unblockClientBlockingReason(Long clientId, LocalDate unblockDate, String blockingReasonName, String unblockComment) {
