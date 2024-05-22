@@ -217,4 +217,7 @@
     <include file="parts/20240517222410_SU_38_m_client_MODIFY.xml" relativeToChangelogFile="true"/>
     <include file="parts/20240520101800_SU_50_advance_quota_configuration.xml" relativeToChangelogFile="true"/>
     <include file="parts/20240521222410_SU_40_m_blocking_setting_MODIFY.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20240515200100_SU_55_m_loan_product_MODIFY.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20240515200200_SU_55_c_channel_subchannel_CREATE.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20240515200300_SU_55_c_product_subchannel_CREATE.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

@@ -16,17 +16,13 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.custom.portfolio.buyprocess.domain;
+package org.apache.fineract.custom.infrastructure.channel.exception;
 
-import java.util.Optional;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
+import org.apache.fineract.infrastructure.core.exception.AbstractPlatformResourceNotFoundException;
 
-public interface ChannelMessageRepository extends JpaRepository<ChannelMessage, Long>, JpaSpecificationExecutor<ChannelMessage> {
+public class ChannelNotFoundException extends AbstractPlatformResourceNotFoundException {
 
-    @Query("select ent from ChannelMessage ent where ent.channelId = :channelId and ent.validationId = :validationId")
-    Optional<ChannelMessage> getChannelMessage(@Param("channelId") Long channelId, @Param("validationId") Long validationId);
-
+    public ChannelNotFoundException() {
+        super("error.msg.channel.id.invalid", "Channel does not exist");
+    }
 }

@@ -54,6 +54,7 @@ import org.apache.fineract.accounting.producttoaccountmapping.service.ProductToG
 import org.apache.fineract.commands.domain.CommandWrapper;
 import org.apache.fineract.commands.service.CommandWrapperBuilder;
 import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformService;
+import org.apache.fineract.custom.portfolio.loanproduct.service.SubChannelLoanProductReadWritePlatformService;
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 import org.apache.fineract.infrastructure.codes.service.CodeValueReadPlatformService;
 import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
@@ -159,6 +160,7 @@ public class LoanProductsApiResource {
     private final WorkingDaysReadPlatformService workingDaysReadPlatformService;
     private final WorkingDaysRepositoryWrapper workingDaysRepositoryWrapper;
     private final CodeValueReadPlatformService codeValueReadPlatformService;
+    private final SubChannelLoanProductReadWritePlatformService subChannelLoanProductReadWritePlatformService;
 
     @POST
     @Consumes({ MediaType.APPLICATION_JSON })
@@ -401,6 +403,9 @@ public class LoanProductsApiResource {
         if (settings.isTemplate()) {
             loanProduct = handleTemplate(loanProduct);
         }
+
+        loanProduct.setCustomCollectionsSubChannelList(subChannelLoanProductReadWritePlatformService.findAllByProductId(productId));
+
         return this.toApiJsonSerializer.serialize(settings, loanProduct, LOAN_PRODUCT_DATA_PARAMETERS);
     }
 
@@ -480,10 +485,10 @@ public class LoanProductsApiResource {
         final WorkingDays workingDays = this.workingDaysRepositoryWrapper.findOne();
         final Collection<CodeValueData> productTypeOptions = this.codeValueReadPlatformService.retrieveCodeValuesByCode("ProductType");
 
-        return new LoanProductData(productData, chargeOptions, penaltyOptions, paymentTypeOptions, currencyOptions, amortizationTypeOptions,
-                interestTypeOptions, interestCalculationPeriodTypeOptions, repaymentFrequencyTypeOptions, interestRateFrequencyTypeOptions,
-                fundOptions, transactionProcessingStrategyOptions, rateOptions, accountOptions, accountingRuleTypeOptions,
-                loanCycleValueConditionTypeOptions, daysInMonthTypeOptions, daysInYearTypeOptions,
+        LoanProductData ret = new LoanProductData(productData, chargeOptions, penaltyOptions, paymentTypeOptions, currencyOptions,
+                amortizationTypeOptions, interestTypeOptions, interestCalculationPeriodTypeOptions, repaymentFrequencyTypeOptions,
+                interestRateFrequencyTypeOptions, fundOptions, transactionProcessingStrategyOptions, rateOptions, accountOptions,
+                accountingRuleTypeOptions, loanCycleValueConditionTypeOptions, daysInMonthTypeOptions, daysInYearTypeOptions,
                 interestRecalculationCompoundingTypeOptions, rescheduleStrategyTypeOptions, interestRecalculationFrequencyTypeOptions,
                 preCloseInterestCalculationStrategyOptions, floatingRateOptions, interestRecalculationNthDayTypeOptions,
                 interestRecalculationDayOfWeekTypeOptions, isRatesEnabled, delinquencyBucketOptions, repaymentStartDateTypeOptions,
@@ -492,6 +497,14 @@ public class LoanProductsApiResource {
                 LoanScheduleProcessingType.getValuesAsEnumOptionDataList(), creditAllocationTransactionTypes,
                 creditAllocationAllocationTypes, workingDaysData.getRepaymentRescheduleOptions(),
                 workingDays.getRepaymentReschedulingType(), productTypeOptions);
-    }
 
+        ret.setCustomAllowCreateOrDisburse(productData.getCustomAllowCreateOrDisburse());
+        ret.setCustomAllowCollections(productData.getCustomAllowCollections());
+        ret.setCustomAllowCreditNote(productData.getCustomAllowCreditNote());
+        ret.setCustomAllowDebitNote(productData.getCustomAllowDebitNote());
+        ret.setCustomAllowForgiveness(productData.getCustomAllowForgiveness());
+        ret.setCustomAllowReversalCancellation(productData.getCustomAllowReversalCancellation());
+
+        return ret;
+    }
 }
