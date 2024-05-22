@@ -16,45 +16,25 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.custom.portfolio.buyprocess.domain;
+package org.apache.fineract.custom.portfolio.loanproduct.data;
 
-import jakarta.persistence.Cacheable;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-@Entity
-@Table(schema = "custom", name = "c_channel_message")
-@Cacheable(false)
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
 @Getter
 @Setter
-public class ChannelMessage {
+public class SubChannelLoanProductData {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id", nullable = false)
     private Long id;
-
-    @Column(name = "channel_id", nullable = true)
     private Long channelId;
-
-    @Column(name = "validation_id", nullable = false)
-    private Long validationId;
-
-    @Column(name = "message", nullable = false, length = 5000)
-    private String message;
-
-    @Column(name = "enabled", nullable = false)
-    private Boolean enabled;
+    private String channelName;
+    private Long subChannelId;
+    private String subChannelName;
+    private Long loanProductId;
 }

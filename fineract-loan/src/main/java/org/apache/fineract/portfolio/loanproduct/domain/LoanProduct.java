@@ -44,6 +44,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import lombok.Getter;
+import lombok.Setter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.accounting.common.AccountingRuleType;
 import org.apache.fineract.infrastructure.codes.domain.CodeValue;
@@ -249,6 +251,35 @@ public class LoanProduct extends AbstractPersistableCustom {
     @lombok.Getter
     @Column(name = "is_advance", nullable = false)
     private boolean advance;
+    @Getter
+    @Setter
+    @Column(name = "custom_allow_create_or_disburse")
+    private Boolean customAllowCreateOrDisburse = false;
+
+    @Getter
+    @Setter
+    @Column(name = "custom_allow_collections")
+    private Boolean customAllowCollections = false;
+
+    @Getter
+    @Setter
+    @Column(name = "custom_allow_debit_note")
+    private Boolean customAllowDebitNote = false;
+
+    @Getter
+    @Setter
+    @Column(name = "custom_allow_credit_note")
+    private Boolean customAllowCreditNote = false;
+
+    @Getter
+    @Setter
+    @Column(name = "custom_allow_forgiveness")
+    private Boolean customAllowForgiveness = false;
+
+    @Getter
+    @Setter
+    @Column(name = "custom_allow_reversal_cancellation")
+    private Boolean customAllowReversalCancellation = false;
 
     public static LoanProduct assembleFromJson(final Fund fund, final String loanTransactionProcessingStrategy,
             final List<Charge> productCharges, final JsonCommand command, final AprCalculator aprCalculator, FloatingRate floatingRate,
@@ -986,7 +1017,7 @@ public class LoanProduct extends AbstractPersistableCustom {
             actualChanges.put(isLinkedToFloatingInterestRates, newValue);
             this.isLinkedToFloatingInterestRate = newValue;
         }
-
+        // command.arrayOfParameterNamed("subChannelLoanProductMapper")fads
         if (this.isLinkedToFloatingInterestRate) {
             actualChanges.putAll(loanProductFloatingRates().update(command, floatingRate));
             this.loanProductRelatedDetail.updateForFloatingInterestRates();

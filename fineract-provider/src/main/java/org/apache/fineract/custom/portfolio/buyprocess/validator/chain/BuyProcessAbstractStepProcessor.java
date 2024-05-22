@@ -2,8 +2,8 @@ package org.apache.fineract.custom.portfolio.buyprocess.validator.chain;
 
 import java.util.Objects;
 import java.util.Optional;
-import org.apache.fineract.custom.portfolio.buyprocess.domain.ChannelMessage;
-import org.apache.fineract.custom.portfolio.buyprocess.domain.ChannelMessageRepository;
+import org.apache.fineract.custom.infrastructure.channel.domain.ChannelMessage;
+import org.apache.fineract.custom.infrastructure.channel.domain.ChannelMessageRepository;
 import org.apache.fineract.custom.portfolio.buyprocess.domain.ClientBuyProcess;
 import org.apache.fineract.custom.portfolio.buyprocess.enumerator.ClientBuyProcessValidatorEnum;
 import org.apache.tika.utils.StringUtils;
@@ -48,14 +48,4 @@ public abstract class BuyProcessAbstractStepProcessor implements BuyProcessValid
 
         clientBuyProcess.getErrorMessageHM().put(validatorEnum.getColumnName(), returnMessage);
     }
-
-    // public void ammendErrorMessage(ClientBuyProcessValidatorEnum validatorEnum, ClientBuyProcess clientBuyProcess,
-    // Long channelId) {
-    // String returnMessage = StringUtils.EMPTY;
-    //
-    // returnMessage = getTranslatedMessage(validatorEnum,
-    // (Objects.isNull(channelId) ? 1L : channelId), returnMessage);
-    //
-    // clientBuyProcess.setErrorMessage(clientBuyProcess.getErrorMessage().concat(returnMessage).concat(" | ").);
-    // }
 }

@@ -319,6 +319,12 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         // Fail fast if cupo is not enough
         checkCupo(loan);
 
+        // validate if the loan product allows creation and disbursement
+        if (Boolean.FALSE.equals(loan.loanProduct().getCustomAllowCreateOrDisburse())) {
+            throw new GeneralPlatformDomainRuleException("error.msg.loan.product.does.not.allow.creation.nor.disbursement",
+                    "Loan product does not allow creation and disbursement.");
+        }
+
         final LocalDate actualDisbursementDate = command.localDateValueOfParameterNamed("actualDisbursementDate");
 
         if (loan.isChargedOff() && DateUtils.isBefore(actualDisbursementDate, loan.getChargedOffOnDate())) {
@@ -1119,6 +1125,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         }
         checkClientOrGroupActive(loan);
 
+        checkIfProductAllowsCancelationOrReversal(loan);
+
         businessEventNotifierService.notifyPreBusinessEvent(
                 new LoanAdjustTransactionBusinessEvent(new LoanAdjustTransactionBusinessEvent.Data(transactionToAdjust)));
         if (this.accountTransfersReadPlatformService.isAccountTransfer(transactionId, PortfolioAccountType.LOAN)) {
@@ -1276,6 +1284,14 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 .with(changes).build();
     }
 
+    private void checkIfProductAllowsCancelationOrReversal(Loan loan) {
+        // validate if the loan product allows Cancellation or Reversal
+        if (Boolean.FALSE.equals(loan.loanProduct().getCustomAllowReversalCancellation())) {
+            throw new GeneralPlatformDomainRuleException("error.msg.loan.product.does.not.allow.reversal.nor.cancellation",
+                    "Loan product does not allow Reversal nor Cancellation.");
+        }
+    }
+
     @Transactional
     @Override
     public CommandProcessingResult chargebackLoanTransaction(final Long loanId, final Long transactionId, final JsonCommand command) {
@@ -1389,6 +1405,13 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         }
     }
 
+    private void checkIfProductAllowsWaivePrincipalOrInterest(Loan loan) {
+        if (Boolean.FALSE.equals(loan.loanProduct().getCustomAllowForgiveness())) {
+            throw new GeneralPlatformDomainRuleException("error.msg.loan.product.does.not.allow.forgiveness",
+                    "Loan product does not allow Waive Principal Nor Interest.");
+        }
+    }
+
     @Transactional
     @Override
     public CommandProcessingResult waiveInterestOnLoan(final Long loanId, final JsonCommand command) {
@@ -1406,6 +1429,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
         Loan loan = this.loanAssembler.assembleFrom(loanId);
         checkClientOrGroupActive(loan);
+
+        checkIfProductAllowsWaivePrincipalOrInterest(loan);
 
         final List<Long> existingTransactionIds = new ArrayList<>();
         final List<Long> existingReversedTransactionIds = new ArrayList<>();
@@ -2846,6 +2871,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             throw new GeneralPlatformDomainRuleException("error.msg.loan.transaction.cannot.be.a.future.date", errorMessage,
                     transactionDate);
         }
+
+        checkIfProductAllowsCancelationOrReversal(loan);
 
         businessEventNotifierService.notifyPreBusinessEvent(new LoanChargeOffPreBusinessEvent(loan));
 
