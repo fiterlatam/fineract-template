@@ -26,5 +26,5 @@ public interface BureauValidationWritePlatformService {
 
     CommandProcessingResult validatePrequalificationWithBureau(Long prequalificationId, JsonCommand command);
 
-    LoanAdditionalData retrieveAdditionProperties(Long productId, Long clientId, String caseId);
+    LoanAdditionalData retrieveAdditionProperties(Long productId, Long clientId, String caseId, String locale);
 }
