@@ -139,10 +139,11 @@ public class IndividualPrequalificationApiResource {
     @Operation(summary = "Retrieve Loan AdditionalData", description = "Example Requests:\n" + "?clientId=234&productId=41&caseId=caseid\n")
     public String retrieveLoanAdditionalData(@QueryParam("clientId") @Parameter(description = "clientId") final Long clientId,
             @QueryParam("productId") @Parameter(description = "productId") final Long productId,
-            @QueryParam("caseId") @Parameter(description = "caseId") final String caseId) {
+            @QueryParam("caseId") @Parameter(description = "caseId") final String caseId,
+            @QueryParam("locale") @Parameter(description = "locale") final String locale) {
         this.context.authenticatedUser().validateHasViewPermission(this.resourceNameForPermissions);
         final LoanAdditionalData loanAdditionalData = this.bureauValidationWritePlatformService.retrieveAdditionProperties(productId,
-                clientId, caseId);
+                clientId, caseId, locale);
         return this.toApiJsonSerializer.serialize(loanAdditionalData);
 
     }
