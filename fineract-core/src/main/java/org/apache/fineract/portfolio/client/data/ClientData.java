@@ -19,6 +19,7 @@
 package org.apache.fineract.portfolio.client.data;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
@@ -63,7 +64,7 @@ public final class ClientData implements Comparable<ClientData>, Serializable {
     private String firstname;
     private String middlename;
     private String lastname;
-    private String lastname2;
+    private String secondLastname;
     private String fullname;
     private String displayName;
     private String mobileNo;
@@ -127,6 +128,8 @@ public final class ClientData implements Comparable<ClientData>, Serializable {
     private Long clientClassificationId;
     private Long legalFormId;
     private LocalDate submittedOnDate;
+
+    private BigDecimal cupoBalance;
 
     public static ClientData importClientEntityInstance(Long legalFormId, Integer rowIndex, String fullname, Long officeId,
             Long clientTypeId, Long clientClassificationId, Long staffId, Boolean active, LocalDate activationDate,

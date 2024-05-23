@@ -30,6 +30,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 import org.apache.fineract.infrastructure.codes.service.CodeValueReadPlatformService;
@@ -315,7 +316,15 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
                     clientId);
 
             clientData = ClientData.setParentGroups(clientData, parentGroups, clientCollateralManagementDataSet);
-            clientData.setLastname2(client.getLastname2());
+            clientData.setSecondLastname(client.getSecondLastname());
+
+            final ClientAdditionalFieldsData loanAdditionalFieldsData = this.retrieveClientAdditionalData(clientId);
+            final BigDecimal cupo = ObjectUtils.defaultIfNull(loanAdditionalFieldsData.getCupo(), BigDecimal.ZERO);
+            final BigDecimal totalOutstandingPrincipalAmount = ObjectUtils.defaultIfNull(this.jdbcTemplate.queryForObject(
+                    "SELECT COALESCE(SUM(ml.principal_outstanding_derived), 0) AS totalOutstandingPrincipalAmount FROM m_loan ml WHERE ml.loan_status_id = 300 AND ml.client_id = ?",
+                    BigDecimal.class, new Object[] { clientId }), BigDecimal.ZERO);
+            final BigDecimal cupoBalance = cupo.subtract(totalOutstandingPrincipalAmount);
+            clientData.setCupoBalance(cupoBalance);
             return clientData;
 
         } catch (final EmptyResultDataAccessException e) {
@@ -892,6 +901,18 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
         };
 
         return jdbcTemplate.query(psc, mapper);
+    }
+
+    @Override
+    public ClientAdditionalFieldsData retrieveClientAdditionalData(Long clientId) {
+        final ClientAdditionalFieldsMapper rowMapper = new ClientAdditionalFieldsMapper();
+        final String sql = "SELECT " + rowMapper.schema() + " WHERE mc.id = ? ";
+        final Object[] params = new Object[] { clientId };
+        List<ClientAdditionalFieldsData> resultList = this.jdbcTemplate.query(sql, rowMapper, params);
+        if (!CollectionUtils.isEmpty(resultList)) {
+            return resultList.get(0);
+        }
+        return new ClientAdditionalFieldsData();
     }
 
 }
