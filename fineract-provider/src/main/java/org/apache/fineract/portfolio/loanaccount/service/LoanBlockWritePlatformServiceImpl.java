@@ -241,8 +241,23 @@ public class LoanBlockWritePlatformServiceImpl implements LoanBlockWritePlatform
                 final BlockingReasonSetting blockingReasonSetting = loan.getLoanCustomizationDetail().getBlockStatus();
                 if (blockingReasonSetting != null) {
                     // Check if the loan is still blocked
-                    blockingReasonSetting.equals(loanBlockingReason.getBlockingReasonSetting());
-                    loan.getLoanCustomizationDetail().setBlockStatus(null);
+                    if (blockingReasonSetting.equals(loanBlockingReason.getBlockingReasonSetting())) {
+                        loan.getLoanCustomizationDetail().setBlockStatus(null);
+                    }
+                }
+
+                if (loan.getLoanCustomizationDetail().getBlockStatus() == null) {
+                    Collection<LoanBlockingReason> loanBlockingReasonCollection = this.loanBlockingReasonRepository
+                            .findAllActiveByLoanId(loan.getId());
+                    if (loanBlockingReasonCollection.size() > 0) {
+                        final Optional<LoanBlockingReason> highestPriorityReason = loanBlockingReasonCollection.stream()
+                                .filter(LoanBlockingReason::isActive)
+                                .sorted(Comparator.comparingInt(t -> t.getBlockingReasonSetting().getPriority())).findFirst();
+
+                        if (highestPriorityReason.isPresent()) {
+                            loan.getLoanCustomizationDetail().setBlockStatus(highestPriorityReason.get().getBlockingReasonSetting());
+                        }
+                    }
                 }
 
                 this.loanRepository.save(loan);
@@ -251,7 +266,7 @@ public class LoanBlockWritePlatformServiceImpl implements LoanBlockWritePlatform
                 final Collection<LoanBlockingReason> unBlocked = new ArrayList();
                 unBlocked.add(loanBlockingReason);
                 Client client = loan.getClient();
-                if (client.isBlocked()) {
+                if (client.getBlockingReason() != null) {
                     deleteBlockReasonFromClientIfPresent(unBlocked, client, currentUser, unblockDate, unblockComment);
                 }
             }
