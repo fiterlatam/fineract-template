@@ -87,7 +87,6 @@ import org.apache.fineract.portfolio.client.data.ClientData;
 import org.apache.fineract.portfolio.client.domain.Client;
 import org.apache.fineract.portfolio.client.domain.ClientEnumerations;
 import org.apache.fineract.portfolio.client.domain.LegalForm;
-import org.apache.fineract.portfolio.client.service.ClientAdditionalFieldsMapper;
 import org.apache.fineract.portfolio.client.service.ClientReadPlatformService;
 import org.apache.fineract.portfolio.common.domain.PeriodFrequencyType;
 import org.apache.fineract.portfolio.common.service.CommonEnumerations;
@@ -158,7 +157,6 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import org.thymeleaf.TemplateEngine;
-import org.thymeleaf.spring6.SpringTemplateEngine;
 import org.thymeleaf.templatemode.TemplateMode;
 import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
 import org.xhtmlrenderer.pdf.ITextRenderer;
@@ -196,7 +194,6 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
     private final LoanTransactionRelationRepository loanTransactionRelationRepository;
     private final LoanTransactionRelationMapper loanTransactionRelationMapper;
     private final LoanChargePaidByReadPlatformService loanChargePaidByReadPlatformService;
-    private final SpringTemplateEngine templateEngine;
 
     @Override
     public LoanAccountData retrieveOne(final Long loanId) {
@@ -2686,23 +2683,12 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
     }
 
     @Override
-    public ClientAdditionalFieldsData retrieveLoanClientAdditionals(Long clientId) {
-        final ClientAdditionalFieldsMapper rowMapper = new ClientAdditionalFieldsMapper();
-        final String sql = "SELECT " + rowMapper.schema() + " WHERE mc.id = ? ";
-        final Object[] params = new Object[] { clientId };
-        List<ClientAdditionalFieldsData> resultList = this.jdbcTemplate.query(sql, rowMapper, params);
-        if (!CollectionUtils.isEmpty(resultList)) {
-            return resultList.get(0);
-        }
-        return new ClientAdditionalFieldsData();
-    }
-
-    @Override
     public void exportLoanDisbursementPDF(Long loanId, HttpServletResponse httpServletResponse) throws DocumentException, IOException {
         final Loan loan = this.loanRepositoryWrapper.findOneWithNotFoundDetection(loanId);
         final Client loanClient = loan.getClient();
         final Integer legalFormId = loanClient.getLegalForm();
-        final ClientAdditionalFieldsData loanAdditionalFieldsData = this.retrieveLoanClientAdditionals(loanClient.getId());
+        final ClientAdditionalFieldsData loanAdditionalFieldsData = this.clientReadPlatformService
+                .retrieveClientAdditionalData(loanClient.getId());
         final String nit = loanAdditionalFieldsData.getNit();
         final String cedula = loanAdditionalFieldsData.getCedula();
         String clientFullName;

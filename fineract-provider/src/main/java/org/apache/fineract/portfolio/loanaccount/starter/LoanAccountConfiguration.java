@@ -151,7 +151,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Scope;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
-import org.thymeleaf.spring6.SpringTemplateEngine;
 
 @Configuration
 public class LoanAccountConfiguration {
@@ -348,7 +347,7 @@ public class LoanAccountConfiguration {
             DelinquencyReadPlatformService delinquencyReadPlatformService, LoanTransactionRepository loanTransactionRepository,
             LoanTransactionRelationRepository loanTransactionRelationRepository,
             LoanTransactionRelationMapper loanTransactionRelationMapper,
-            LoanChargePaidByReadPlatformService loanChargePaidByReadPlatformService, SpringTemplateEngine templateEngine) {
+            LoanChargePaidByReadPlatformService loanChargePaidByReadPlatformService) {
         return new LoanReadPlatformServiceImpl(jdbcTemplate, context, loanRepositoryWrapper, applicationCurrencyRepository,
                 loanProductReadPlatformService, clientReadPlatformService, groupReadPlatformService, loanDropdownReadPlatformService,
                 fundReadPlatformService, chargeReadPlatformService, codeValueReadPlatformService, calendarReadPlatformService,
@@ -356,7 +355,7 @@ public class LoanAccountConfiguration {
                 loanRepaymentScheduleTransactionProcessorFactory, floatingRatesReadPlatformService, loanUtilService,
                 configurationDomainService, accountDetailsReadPlatformService, columnValidator, sqlGenerator,
                 delinquencyReadPlatformService, loanTransactionRepository, loanTransactionRelationRepository, loanTransactionRelationMapper,
-                loanChargePaidByReadPlatformService, templateEngine
+                loanChargePaidByReadPlatformService
 
         );
     }
@@ -411,7 +410,8 @@ public class LoanAccountConfiguration {
             LoanAccrualTransactionBusinessEventService loanAccrualTransactionBusinessEventService, ErrorHandler errorHandler,
             LoanDownPaymentHandlerService loanDownPaymentHandlerService, LoanProductReadPlatformService loanProductReadPlatformService,
             JdbcTemplate jdbcTemplate, PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService,
-            LoanRescheduleRequestReadPlatformService loanRescheduleRequestReadPlatformService) {
+            LoanRescheduleRequestReadPlatformService loanRescheduleRequestReadPlatformService,
+            ClientReadPlatformService clientReadPlatformService) {
         return new LoanWritePlatformServiceJpaRepositoryImpl(context, loanEventApiJsonValidator, loanUpdateCommandFromApiJsonDeserializer,
                 loanRepositoryWrapper, loanAccountDomainService, noteRepository, loanTransactionRepository,
                 loanTransactionRelationRepository, loanAssembler, journalEntryWritePlatformService, calendarInstanceRepository,
@@ -425,7 +425,7 @@ public class LoanAccountConfiguration {
                 postDatedChecksRepository, loanDisbursementDetailsRepository, loanRepaymentScheduleInstallmentRepository,
                 defaultLoanLifecycleStateMachine, loanAccountLockService, externalIdFactory, replayedTransactionBusinessEventService,
                 loanAccrualTransactionBusinessEventService, errorHandler, loanDownPaymentHandlerService, loanProductReadPlatformService,
-                jdbcTemplate, commandsSourceWritePlatformService, loanRescheduleRequestReadPlatformService);
+                jdbcTemplate, commandsSourceWritePlatformService, loanRescheduleRequestReadPlatformService, clientReadPlatformService);
     }
 
     @Bean

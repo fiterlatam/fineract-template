@@ -315,8 +315,8 @@ public final class ClientDataValidator {
         baseDataValidator.reset().parameter(ClientApiConstants.lastnameParamName).value(lastnameParamName).notBlank()
                 .notExceedingLengthOf(50);
 
-        final String lastname2ParamName = this.fromApiJsonHelper.extractStringNamed(ClientApiConstants.lastname2ParamName, element);
-        baseDataValidator.reset().parameter(ClientApiConstants.lastname2ParamName).value(lastname2ParamName).ignoreIfNull()
+        final String secondLastname = this.fromApiJsonHelper.extractStringNamed(ClientApiConstants.secondLastnameParamName, element);
+        baseDataValidator.reset().parameter(ClientApiConstants.secondLastnameParamName).value(secondLastname).ignoreIfNull()
                 .notExceedingLengthOf(50);
     }
 

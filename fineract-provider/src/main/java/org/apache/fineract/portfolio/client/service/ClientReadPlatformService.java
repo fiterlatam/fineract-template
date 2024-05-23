@@ -67,4 +67,6 @@ public interface ClientReadPlatformService {
 
     List<ClientAdditionalFieldsData> retrieveAdditionalFieldsData(CodeValueData idType, String idValue);
 
+    ClientAdditionalFieldsData retrieveClientAdditionalData(Long clientId);
+
 }
