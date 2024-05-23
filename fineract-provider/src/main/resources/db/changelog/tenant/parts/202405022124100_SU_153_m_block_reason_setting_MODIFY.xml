@@ -118,6 +118,11 @@
         </sql>
     </changeSet>
 
-
+    <changeSet author="fineract" id="5" >
+        <preConditions onFail="MARK_RAN">
+            <columnExists tableName="m_client" columnName="lastname2"/>
+        </preConditions>
+        <renameColumn tableName="m_client" oldColumnName="lastname2" newColumnName="second_lastname" columnDataType="VARCHAR(100)"/>
+    </changeSet>
 
 </databaseChangeLog>

@@ -139,6 +139,7 @@ import org.apache.fineract.portfolio.calendar.exception.CalendarParameterUpdateN
 import org.apache.fineract.portfolio.client.data.ClientAdditionalFieldsData;
 import org.apache.fineract.portfolio.client.domain.Client;
 import org.apache.fineract.portfolio.client.exception.ClientNotActiveException;
+import org.apache.fineract.portfolio.client.service.ClientReadPlatformService;
 import org.apache.fineract.portfolio.collateralmanagement.domain.ClientCollateralManagement;
 import org.apache.fineract.portfolio.collateralmanagement.exception.LoanCollateralAmountNotSufficientException;
 import org.apache.fineract.portfolio.collectionsheet.command.CollectionSheetBulkDisbursalCommand;
@@ -275,6 +276,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     private final JdbcTemplate jdbcTemplate;
     private final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService;
     private final LoanRescheduleRequestReadPlatformService loanRescheduleRequestReadPlatformService;
+    private final ClientReadPlatformService clientReadPlatformService;
 
     @Transactional
     @Override
@@ -2262,8 +2264,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             final Long clientId = client.getId();
             final Money approvedPrincipal = Money.of(currency, loan.getApprovedPrincipal());
             final boolean isAdvanceLoanProduct = loan.getLoanProduct().isAdvance();
-            final ClientAdditionalFieldsData loanAdditionalFieldsData = this.loanReadPlatformService
-                    .retrieveLoanClientAdditionals(clientId);
+            final ClientAdditionalFieldsData loanAdditionalFieldsData = this.clientReadPlatformService
+                    .retrieveClientAdditionalData(clientId);
             final Money cupo = Money.of(currency, loanAdditionalFieldsData.getCupo());
             Money advanceTotalOutstandingPrincipalAmount = Money.of(currency, this.jdbcTemplate.queryForObject(
                     "SELECT COALESCE(SUM(ml.principal_outstanding_derived), 0) AS totalOutstandingPrincipalAmount FROM m_loan ml INNER JOIN m_product_loan mpl ON mpl.id = ml.product_id WHERE ml.loan_status_id = 300 AND ml.client_id = ? AND mpl.is_advance = ?",
@@ -2290,12 +2292,9 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                     throw new GeneralPlatformDomainRuleException("error.msg.loan.maximum.advance.cupo.limit.exceeded",
                             "Cupo:" + cupo + " limit exceeded", maximumAdvanceQuota.toString());
                 }
-                final Money maximumPurchaseQuota = cupo
-                        .multipliedBy((BigDecimal.valueOf(100L).subtract(advanceQuotaPercentage.getAmount())))
-                        .dividedBy(BigDecimal.valueOf(100L), MoneyHelper.getRoundingMode());
-                if (purchaseTotalOutstandingPrincipalAmount.isGreaterThan(maximumPurchaseQuota)) {
+                if (purchaseTotalOutstandingPrincipalAmount.isGreaterThan(cupo)) {
                     throw new GeneralPlatformDomainRuleException("error.msg.loan.maximum.purchase.cupo.limit.exceeded",
-                            "Maximum purchase cupo:" + maximumPurchaseQuota + " limit exceeded", maximumPurchaseQuota.toString());
+                            "Maximum purchase cupo:" + cupo + " limit exceeded", cupo.toString());
                 }
             }
             if (totalOutstandingPrincipalAmount.isGreaterThan(cupo)) {

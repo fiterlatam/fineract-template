@@ -504,7 +504,7 @@ public class ClientsApiResource {
 
     private ClientData retrieveClientData(final Long clientId, final boolean staffInSelectedOfficeOnly, final boolean isTemplate) {
         ClientData clientData = clientReadPlatformService.retrieveOne(clientId);
-        final String lastname2 = clientData.getLastname2();
+        final String secondLastname = clientData.getSecondLastname();
         if (isTemplate) {
             final ClientData templateData = clientReadPlatformService.retrieveTemplate(clientData.getOfficeId(), staffInSelectedOfficeOnly);
             clientData = ClientData.templateOnTop(clientData, templateData);
@@ -513,7 +513,7 @@ public class ClientsApiResource {
                 clientData = ClientData.templateWithSavingAccountOptions(clientData, savingAccountOptions);
             }
         }
-        clientData.setLastname2(lastname2);
+        clientData.setSecondLastname(secondLastname);
         return clientData;
     }
 

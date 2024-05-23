@@ -99,7 +99,6 @@ import org.apache.fineract.portfolio.group.exception.GroupMemberCountNotInPermis
 import org.apache.fineract.portfolio.group.exception.GroupNotFoundException;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
-import org.apache.fineract.portfolio.loanaccount.service.LoanReadPlatformService;
 import org.apache.fineract.portfolio.note.domain.Note;
 import org.apache.fineract.portfolio.note.domain.NoteRepository;
 import org.apache.fineract.portfolio.savings.data.SavingsAccountDataDTO;
@@ -145,8 +144,8 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
     private final BlockingReasonSettingsRepositoryWrapper blockingReasonSettingsRepositoryWrapper;
     private final ClientBlockingReasonRepositoryWrapper clientBlockingReasonRepositoryWrapper;
     private final ClientBlockListRepository clientBlockListRepository;
-    private final LoanReadPlatformService loanReadPlatformService;
     private final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService;
+    private final ClientReadPlatformService clientReadPlatformService;
 
     @Transactional
     @Override
@@ -277,7 +276,7 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
             final String firstname = command.stringValueOfParameterNamed(ClientApiConstants.firstnameParamName);
             final String middlename = command.stringValueOfParameterNamed(ClientApiConstants.middlenameParamName);
             final String lastname = command.stringValueOfParameterNamed(ClientApiConstants.lastnameParamName);
-            final String lastname2 = command.stringValueOfParameterNamed(ClientApiConstants.lastname2ParamName);
+            final String secondLastname = command.stringValueOfParameterNamed(ClientApiConstants.secondLastnameParamName);
             final String fullname = command.stringValueOfParameterNamed(ClientApiConstants.fullnameParamName);
             final boolean isStaff = command.booleanPrimitiveValueOfParameterNamed(ClientApiConstants.isStaffParamName);
             final LocalDate dataOfBirth = command.localDateValueOfParameterNamed(ClientApiConstants.dateOfBirthParamName);
@@ -311,7 +310,7 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
                     lastname, fullname, activationDate, officeJoiningDate, externalId, mobileNo, emailAddress, staff, submittedOnDate,
                     savingsProductId, savingsAccountId, dataOfBirth, gender, clientType, clientClassification, legalForm.getValue(),
                     isStaff);
-            newClient.setLastname2(lastname2);
+            newClient.setSecondLastname(secondLastname);
             this.clientRepository.saveAndFlush(newClient);
             boolean rollbackTransaction = false;
             if (newClient.isActive()) {
@@ -352,8 +351,8 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
                         EntityTables.CLIENT.getName(), newClient.getId(), null,
                         command.arrayOfParameterNamed(ClientApiConstants.datatables));
                 final Long clientId = newClient.getId();
-                final ClientAdditionalFieldsData loanAdditionalFieldsData = this.loanReadPlatformService
-                        .retrieveLoanClientAdditionals(clientId);
+                final ClientAdditionalFieldsData loanAdditionalFieldsData = this.clientReadPlatformService
+                        .retrieveClientAdditionalData(clientId);
                 if (loanAdditionalFieldsData != null) {
                     String idType;
                     String idNumber;
@@ -529,10 +528,10 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
                 clientForUpdate.setLastname(StringUtils.defaultIfEmpty(newValue, null));
             }
 
-            if (command.isChangeInStringParameterNamed(ClientApiConstants.lastname2ParamName, clientForUpdate.getLastname2())) {
-                final String newValue = command.stringValueOfParameterNamed(ClientApiConstants.lastname2ParamName);
-                changes.put(ClientApiConstants.lastname2ParamName, newValue);
-                clientForUpdate.setLastname2(StringUtils.defaultIfEmpty(newValue, null));
+            if (command.isChangeInStringParameterNamed(ClientApiConstants.secondLastnameParamName, clientForUpdate.getSecondLastname())) {
+                final String newValue = command.stringValueOfParameterNamed(ClientApiConstants.secondLastnameParamName);
+                changes.put(ClientApiConstants.secondLastnameParamName, newValue);
+                clientForUpdate.setSecondLastname(StringUtils.defaultIfEmpty(newValue, null));
             }
 
             if (command.isChangeInStringParameterNamed(ClientApiConstants.fullnameParamName, clientForUpdate.getFullname())) {
