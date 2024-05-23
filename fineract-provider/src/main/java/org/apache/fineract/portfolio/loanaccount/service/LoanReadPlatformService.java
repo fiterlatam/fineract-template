@@ -28,7 +28,6 @@ import org.apache.fineract.infrastructure.core.service.Page;
 import org.apache.fineract.infrastructure.core.service.SearchParameters;
 import org.apache.fineract.organisation.staff.data.StaffData;
 import org.apache.fineract.portfolio.calendar.data.CalendarData;
-import org.apache.fineract.portfolio.client.data.ClientAdditionalFieldsData;
 import org.apache.fineract.portfolio.floatingrates.data.InterestRatePeriodData;
 import org.apache.fineract.portfolio.loanaccount.data.DisbursementData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanAccountData;
@@ -173,8 +172,6 @@ public interface LoanReadPlatformService {
     List<LoanAssignorData> retrieveLoanAssignorData(String searchTerm);
 
     LoanAssignorData retrieveLoanAssignorDataById(Long loanAssignorId);
-
-    ClientAdditionalFieldsData retrieveLoanClientAdditionals(Long clientId);
 
     void exportLoanDisbursementPDF(Long loanId, HttpServletResponse httpServletResponse) throws IOException;
 
