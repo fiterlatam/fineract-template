@@ -33,4 +33,7 @@ public interface LoanBlockingReasonRepository
 
     @Query("select lbr from LoanBlockingReason lbr where lbr.loan.id = ?1 and lbr.isActive = true and lbr.blockingReasonSetting.id = ?2")
     Optional<LoanBlockingReason> findExistingBlockingReason(Long loanId, Long blockingReasonId);
+
+    @Query("select lbr from LoanBlockingReason lbr where lbr.loan.id = ?1 and lbr.isActive = true")
+    Collection<LoanBlockingReason> findAllActiveByLoanId(Long loanId);
 }
