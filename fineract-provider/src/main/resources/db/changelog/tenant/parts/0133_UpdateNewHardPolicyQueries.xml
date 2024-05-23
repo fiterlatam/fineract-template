@@ -62,5 +62,12 @@
             ]]>
         </sql>
     </changeSet>
+    <changeSet id="2" author="fineract">
+        <sql>
+            <![CDATA[
+                Delete from m_product_policy where product_id = 9 and policy_id = (select id from m_policy where name = 'Percentage of members with their own home' limit 1);
+            ]]>
+        </sql>
+    </changeSet>
 
 </databaseChangeLog>
