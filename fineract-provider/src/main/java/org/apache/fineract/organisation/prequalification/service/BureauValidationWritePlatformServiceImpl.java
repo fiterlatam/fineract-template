@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Locale;
 import javax.net.ssl.HttpsURLConnection;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.infrastructure.configuration.data.ExternalServicesPropertiesData;
 import org.apache.fineract.infrastructure.configuration.service.ExternalServicesConstants;
 import org.apache.fineract.infrastructure.configuration.service.ExternalServicesPropertiesReadPlatformService;
@@ -117,7 +118,9 @@ public class BureauValidationWritePlatformServiceImpl implements BureauValidatio
             if (buroData.getClassification() != null) {
                 EnumOptionData enumOptionData = buroData.getClassification();
                 member.updateBuroCheckStatus(enumOptionData.getId().intValue());
-                member.updateAgencyBureauStatus(enumOptionData.getCode());
+                if (StringUtils.isBlank(member.getAgencyBureauStatus())){
+                    member.updateAgencyBureauStatus(enumOptionData.getCode());
+                }
             }
             member.setNombre(buroData.getNombre());
             member.setTipo(buroData.getTipo());

@@ -654,4 +654,41 @@
         </sql>
     </changeSet>
 
+    <changeSet id="9" author="fineract">
+        <sql splitStatements="true" endDelimiter="//" stripComments="true">
+            <![CDATA[
+                DROP FUNCTION IF EXISTS DateToSpanishWordsSimple;
+                //
+                CREATE FUNCTION DateToSpanishWordsSimple(input_date DATE)
+                    RETURNS VARCHAR(255)
+                BEGIN
+                DECLARE spanish_text VARCHAR(255);
+                SET spanish_text = CONCAT(
+                    DAY(input_date),
+                    ' ',
+                    CASE MONTH(input_date)
+                        WHEN 1 THEN 'enero'
+                        WHEN 2 THEN 'febrero'
+                        WHEN 3 THEN 'marzo'
+                        WHEN 4 THEN 'abril'
+                        WHEN 5 THEN 'mayo'
+                        WHEN 6 THEN 'junio'
+                        WHEN 7 THEN 'julio'
+                        WHEN 8 THEN 'agosto'
+                        WHEN 9 THEN 'septiembre'
+                        WHEN 10 THEN 'octubre'
+                        WHEN 11 THEN 'noviembre'
+                        WHEN 12 THEN 'diciembre'
+                    END,
+                    ' ',
+                    YEAR(input_date)
+                );
+                RETURN spanish_text;
+                END
+                //
+            ]]>
+        </sql>
+    </changeSet>
+
+
 </databaseChangeLog>
