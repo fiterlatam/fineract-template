@@ -133,6 +133,7 @@ public class SynchronousCommandProcessingService implements CommandProcessingSer
             commandSource.setUsuarioCreacionNombre(result.getUsuarioCreacionNombre());
             commandSource.setUsuarioId(result.getUsuarioId());
             commandSource.setRolId(result.getRolId());
+            commandSource.setEaRate(result.getEaRate());
         } catch (Throwable t) { // NOSONAR
             RuntimeException mappable = ErrorHandler.getMappable(t);
             ErrorInfo errorInfo = commandSourceService.generateErrorInfo(mappable);
