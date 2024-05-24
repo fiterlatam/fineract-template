@@ -155,4 +155,15 @@
         </insert>
     </changeSet>
 
+    <changeSet author="fineract" id="11">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_portfolio_command_source" columnName="ea_rate"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_portfolio_command_source">
+            <column name="ea_rate" type="DECIMAL(10, 4)"/>
+        </addColumn>
+    </changeSet>
+
 </databaseChangeLog>
