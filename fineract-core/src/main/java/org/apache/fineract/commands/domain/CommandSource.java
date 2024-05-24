@@ -23,6 +23,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
@@ -170,6 +171,9 @@ public class CommandSource extends AbstractPersistableCustom {
      */
     @Column(name = "rol_id")
     private String rolId;
+
+    @Column(name = "ea_rate")
+    private BigDecimal eaRate;
 
     private CommandSource(final String actionName, final String entityName, final String href, final Long resourceId,
             final Long subResourceId, final String commandSerializedAsJson, final AppUser maker, final String idempotencyKey,
@@ -454,5 +458,9 @@ public class CommandSource extends AbstractPersistableCustom {
 
     public void setRolId(String rolId) {
         this.rolId = rolId;
+    }
+
+    public void setEaRate(BigDecimal eaRate) {
+        this.eaRate = eaRate;
     }
 }
