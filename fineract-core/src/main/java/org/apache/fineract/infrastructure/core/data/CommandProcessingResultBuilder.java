@@ -18,6 +18,7 @@
  */
 package org.apache.fineract.infrastructure.core.data;
 
+import java.math.BigDecimal;
 import java.util.Map;
 import org.apache.fineract.infrastructure.core.domain.ExternalId;
 
@@ -53,6 +54,7 @@ public class CommandProcessingResultBuilder {
     private String usuarioCreacionNombre;
     private Long usuarioId;
     private String rolId;
+    private BigDecimal eaRate;
 
     public CommandProcessingResult build() {
         CommandProcessingResult commandProcessingResult = CommandProcessingResult.fromDetails(this.commandId, this.officeId, this.groupId,
@@ -66,6 +68,7 @@ public class CommandProcessingResultBuilder {
         commandProcessingResult.setUsuarioCreacionNombre(this.usuarioCreacionNombre);
         commandProcessingResult.setUsuarioId(this.usuarioId);
         commandProcessingResult.setRolId(this.rolId);
+        commandProcessingResult.setEaRate(this.eaRate);
         return commandProcessingResult;
     }
 
@@ -196,6 +199,11 @@ public class CommandProcessingResultBuilder {
 
     public CommandProcessingResultBuilder withRolId(String rolId) {
         this.rolId = rolId;
+        return this;
+    }
+
+    public CommandProcessingResultBuilder withEaRate(BigDecimal eaRate) {
+        this.eaRate = eaRate;
         return this;
     }
 
