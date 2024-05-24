@@ -19,6 +19,7 @@
 package org.apache.fineract.portfolio.client.data;
 
 import java.time.LocalDate;
+import lombok.Setter;
 
 @SuppressWarnings("unused")
 public final class ClientBlockingReasonData {
@@ -30,6 +31,12 @@ public final class ClientBlockingReasonData {
     private final Integer priority;
     private final Long clientId;
     private final String displayName;
+    @Setter
+    private String cedula;
+    @Setter
+    private String nit;
+    @Setter
+    private String legalForm;
 
     public static ClientBlockingReasonData create(final Long id, final String name, final String description, final LocalDate blockDate,
             final Integer priority, final long clientId, final String displayName) {
