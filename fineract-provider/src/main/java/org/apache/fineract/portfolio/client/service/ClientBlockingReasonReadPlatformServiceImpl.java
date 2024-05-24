@@ -25,6 +25,7 @@ import java.util.Collection;
 import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.portfolio.client.data.ClientBlockingReasonData;
+import org.apache.fineract.portfolio.client.domain.LegalForm;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -47,9 +48,11 @@ public class ClientBlockingReasonReadPlatformServiceImpl implements ClientBlocki
         public String schema() {
             return "cbr.id AS id, cbr.block_date AS blockDate, brs.priority AS priority, brs.name_of_reason AS name, brs.description AS description, "
                     + "client.id as clientId, client.display_name as displayName, client.status_enum as statusEnum, client.legal_form_enum as legalFormEnum, "
-                    + "client.office_id as officeId " + "FROM m_client_blocking_reason cbr "
-                    + "JOIN m_blocking_reason_setting brs ON brs.id = cbr.blocking_reason_id "
-                    + "JOIN m_client client ON client.id = cbr.client_id ";
+                    + "client.office_id as officeId, client.legal_form_enum as legalFormEnum, ccp.\"Cedula\" as cedula, cce.\"NIT\" as nit "
+                    + "FROM m_client_blocking_reason cbr " + "JOIN m_blocking_reason_setting brs ON brs.id = cbr.blocking_reason_id "
+                    + "JOIN m_client client ON client.id = cbr.client_id "
+                    + "LEFT JOIN campos_cliente_persona ccp ON ccp.client_id = client.id "
+                    + "LEFT JOIN campos_cliente_empresas cce ON cce.client_id = client.id ";
         }
 
         @Override
@@ -61,8 +64,16 @@ public class ClientBlockingReasonReadPlatformServiceImpl implements ClientBlocki
             final LocalDate blockDate = JdbcSupport.getLocalDate(rs, "blockDate");
             final long clientId = rs.getLong("clientId");
             final String displayName = rs.getString("displayName");
+            final Integer legalFormEnum = rs.getInt("legalFormEnum");
+            final String cedula = rs.getString("cedula");
+            final String nit = rs.getString("nit");
 
-            return ClientBlockingReasonData.create(id, name, description, blockDate, priority, clientId, displayName);
+            ClientBlockingReasonData clientBlockingReasonData = ClientBlockingReasonData.create(id, name, description, blockDate, priority,
+                    clientId, displayName);
+            clientBlockingReasonData.setLegalForm(LegalForm.fromInt(legalFormEnum).getLabel());
+            clientBlockingReasonData.setNit(nit);
+            clientBlockingReasonData.setCedula(cedula);
+            return clientBlockingReasonData;
         }
     }
 
@@ -82,7 +93,7 @@ public class ClientBlockingReasonReadPlatformServiceImpl implements ClientBlocki
 
         final ClientBlockingReasonMapper rm = new ClientBlockingReasonMapper();
         final String sql = "select " + rm.schema()
-                + " WHERE cbr.blocking_reason_id=? AND cbr.unblock_date IS NULL AND client.status_enum = 900 ORDER BY client.display_name ASC";
+                + " WHERE cbr.blocking_reason_id=? AND cbr.unblock_date IS NULL ORDER BY client.display_name ASC";
 
         return this.jdbcTemplate.query(sql, rm, blockingReasonId); // NOSONAR
     }
