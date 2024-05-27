@@ -63,9 +63,6 @@ public class ChannelDataValidator {
         final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors)
                 .resource(ChannelApiConstants.RESOURCE_NAME);
 
-        final Long id = this.fromApiJsonHelper.extractLongNamed(ChannelApiConstants.idParamName, element);
-        baseDataValidator.reset().parameter(ChannelApiConstants.idParamName).value(id).notNull();
-
         final String hash = this.fromApiJsonHelper.extractStringNamed(ChannelApiConstants.hashParamName, element);
         baseDataValidator.reset().parameter(ChannelApiConstants.hashParamName).value(hash).notNull().notExceedingLengthOf(5000);
 
@@ -80,16 +77,14 @@ public class ChannelDataValidator {
 
         throwExceptionIfValidationWarningsExist(dataValidationErrors);
 
-        return Channel.builder().id(id) //
-                .hash(hash) //
+        return Channel.builder().hash(hash) //
                 .name(name) //
                 .description(description) //
                 .active(active) //
-
                 .build();
     }
 
-    public Channel validateForUpdate(final String json) {
+    public Channel validateForUpdate(final String json, Long channelId) {
 
         if (StringUtils.isBlank(json)) {
             throw new InvalidJsonException();
@@ -104,9 +99,6 @@ public class ChannelDataValidator {
         final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors)
                 .resource(ChannelApiConstants.RESOURCE_NAME);
 
-        final Long id = this.fromApiJsonHelper.extractLongNamed(ChannelApiConstants.idParamName, element);
-        baseDataValidator.reset().parameter(ChannelApiConstants.idParamName).value(id).notNull();
-
         final String hash = this.fromApiJsonHelper.extractStringNamed(ChannelApiConstants.hashParamName, element);
         baseDataValidator.reset().parameter(ChannelApiConstants.hashParamName).value(hash).notNull().notExceedingLengthOf(5000);
 
@@ -121,7 +113,8 @@ public class ChannelDataValidator {
 
         throwExceptionIfValidationWarningsExist(dataValidationErrors);
 
-        return Channel.builder().id(id) //
+        return Channel.builder() //
+                .id(channelId) //
                 .hash(hash) //
                 .name(name) //
                 .description(description) //

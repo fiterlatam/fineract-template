@@ -20,18 +20,24 @@ package org.apache.fineract.custom.infrastructure.channel.api;
 
 import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.UriInfo;
+import org.apache.fineract.commands.domain.CommandWrapper;
+import org.apache.fineract.commands.service.CommandWrapperBuilder;
 import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformService;
 import org.apache.fineract.custom.infrastructure.channel.constants.SubChannelApiConstants;
 import org.apache.fineract.custom.infrastructure.channel.data.SubChannelData;
 import org.apache.fineract.custom.infrastructure.channel.service.SubChannelReadWritePlatformService;
 import org.apache.fineract.infrastructure.core.api.ApiRequestParameterHelper;
+import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.serialization.ApiRequestJsonSerializationSettings;
 import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
@@ -67,7 +73,7 @@ public class SubChannelApiResource {
     @Produces({ MediaType.APPLICATION_JSON })
     public String get(@PathParam("channelId") Long channelId, @Context final UriInfo uriInfo) {
         this.context.authenticatedUser().validateHasReadPermission(SubChannelApiConstants.RESOURCE_NAME);
-        return this.toApiJsonSerializer.serialize(this.service.findAllActive(channelId));
+        return this.toApiJsonSerializer.serialize(this.service.findAll(channelId));
     }
 
     @GET
@@ -83,5 +89,45 @@ public class SubChannelApiResource {
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
 
         return this.toApiJsonSerializer.serialize(settings, data, SubChannelApiConstants.REQUEST_DATA_PARAMETERS);
+    }
+
+    @POST
+    @Consumes({ MediaType.APPLICATION_JSON })
+    @Produces({ MediaType.APPLICATION_JSON })
+    public String createNewHoliday(@PathParam("channelId") Long channelId, @Parameter(hidden = true) final String apiRequestBodyAsJson) {
+
+        final CommandWrapper commandRequest = new CommandWrapperBuilder().createSubChannel(channelId).withJson(apiRequestBodyAsJson)
+                .build();
+
+        final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
+
+        return this.toApiJsonSerializer.serialize(result);
+    }
+
+    @PUT
+    @Path("{id}")
+    @Consumes({ MediaType.APPLICATION_JSON })
+    @Produces({ MediaType.APPLICATION_JSON })
+    public String update(@PathParam("channelId") Long channelId, @PathParam("id") @Parameter(description = "id") final Long id,
+            @Parameter(hidden = true) final String jsonRequestBody) {
+
+        final CommandWrapper commandRequest = new CommandWrapperBuilder().updateSubChannel(channelId, id).withJson(jsonRequestBody).build();
+
+        final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
+
+        return this.toApiJsonSerializer.serialize(result);
+    }
+
+    @DELETE
+    @Path("{id}")
+    @Consumes({ MediaType.APPLICATION_JSON })
+    @Produces({ MediaType.APPLICATION_JSON })
+    public String delete(@PathParam("id") @Parameter(description = "id") final Long id) {
+
+        final CommandWrapper commandRequest = new CommandWrapperBuilder().deleteSubChannel(id).build();
+
+        final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
+
+        return this.toApiJsonSerializer.serialize(result);
     }
 }
