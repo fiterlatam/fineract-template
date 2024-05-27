@@ -3006,10 +3006,10 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         final MaximumCreditRateConfigurationData maximumCreditRateConfigurationData = this.loanProductReadPlatformService
                 .retrieveMaximumCreditRateConfigurationData();
         final LocalDate appliedOnDate = maximumCreditRateConfigurationData.getAppliedOnDate();
-        final BigDecimal annualNominalRate = maximumCreditRateConfigurationData.getAnnualNominalRate();
+        final BigDecimal maximumLegalAnnualNominalRate = maximumCreditRateConfigurationData.getAnnualNominalRate();
         final LoanRescheduleMapper rm = new LoanRescheduleMapper();
         final String sql = "SELECT " + rm.schema();
-        final Object[] params = new Object[] { appliedOnDate, appliedOnDate, appliedOnDate, annualNominalRate };
+        final Object[] params = new Object[] { appliedOnDate, appliedOnDate, appliedOnDate, maximumLegalAnnualNominalRate };
         List<LoanRescheduleData> loaLoanRescheduleDataList = this.jdbcTemplate.query(sql, rm, params);
         if (CollectionUtils.isNotEmpty(loaLoanRescheduleDataList)) {
             final String locale = "en";
@@ -3033,8 +3033,23 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             rescheduleJsonObject.addProperty("adjustedDueDate", "");
             rescheduleJsonObject.addProperty("graceOnPrincipal", "");
             rescheduleJsonObject.addProperty("extraTerms", "");
-            rescheduleJsonObject.addProperty("newInterestRate", annualNominalRate);
+            rescheduleJsonObject.addProperty("newInterestRate", maximumLegalAnnualNominalRate);
+
             for (final LoanRescheduleData loanRescheduleData : loaLoanRescheduleDataList) {
+                BigDecimal newInterestRate = maximumLegalAnnualNominalRate;
+                if (loanRescheduleData.getRescheduledAnnualRate() != null) {
+                    if (loanRescheduleData.getRescheduledAnnualRate().compareTo(maximumLegalAnnualNominalRate) == 0) {
+                        continue;
+                    } else if (loanRescheduleData.getRescheduledAnnualRate().compareTo(loanRescheduleData.getAnnualNominalRate()) == 0
+                            && loanRescheduleData.getRescheduledAnnualRate().compareTo(maximumLegalAnnualNominalRate) == 0) {
+                        continue;
+                    } else if (loanRescheduleData.getRescheduledAnnualRate().compareTo(maximumLegalAnnualNominalRate) < 0) {
+                        newInterestRate = loanRescheduleData.getAnnualNominalRate();
+                    }
+                } else if (loanRescheduleData.getAnnualNominalRate().compareTo(maximumLegalAnnualNominalRate) <= 0) {
+                    continue;
+                }
+                rescheduleJsonObject.addProperty("newInterestRate", newInterestRate);
                 final Long loanId = loanRescheduleData.getId();
                 final LocalDate rescheduleFromDate = loanRescheduleData.getNextDueDate();
                 final String rescheduleFromDateString = DateUtils.format(rescheduleFromDate, dateFormat, Locale.forLanguageTag(locale));
@@ -3098,6 +3113,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                             FROM m_loan_repayment_schedule sch
                             LEFT JOIN m_loan_arrears_aging mlaa ON mlaa.loan_id = sch.loan_id
                             WHERE sch.completed_derived = FALSE AND sch.duedate >= ? AND (mlaa.overdue_since_date_derived IS NULL OR sch.fromdate > mlaa.overdue_since_date_derived)
+                            AND (COALESCE(sch.penalty_charges_amount, 0) - COALESCE(sch.penalty_charges_completed_derived, 0) - COALESCE(sch.penalty_charges_writtenoff_derived, 0) - COALESCE(sch.penalty_charges_waived_derived, 0)) <= 0
                             ORDER BY sch.duedate ASC
                         ) next_schedule ON next_schedule.loan_id = ml.id
                         LEFT JOIN (
@@ -3107,7 +3123,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                             ORDER BY ltv.loan_id, ltv.id DESC
                         ) term_variation ON term_variation.loan_id = ml.id
                         WHERE ml.loan_status_id = 300 AND mlrs.duedate >= ?
-                        AND (CASE WHEN term_variation.decimal_value IS NOT NULL THEN term_variation.decimal_value ELSE ml.annual_nominal_interest_rate END) > ?
+                        AND (CASE WHEN term_variation.decimal_value IS NOT NULL THEN term_variation.decimal_value ELSE ml.annual_nominal_interest_rate END) != ?
+                        AND ml.block_status_id IS NULL
                         GROUP BY term_variation.loan_id, ml.annual_nominal_interest_rate, term_variation.decimal_value, ml.id
                         ORDER BY ml.id
                     """;

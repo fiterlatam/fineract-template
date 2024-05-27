@@ -68,4 +68,7 @@ public class AdvanceQuotaConfiguration extends AbstractPersistableCustom {
         return actualChanges;
     }
 
+    public BigDecimal getPercentageValue() {
+        return percentageValue;
+    }
 }
