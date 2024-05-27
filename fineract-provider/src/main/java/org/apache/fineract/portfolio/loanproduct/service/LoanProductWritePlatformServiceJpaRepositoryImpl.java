@@ -25,6 +25,8 @@ import com.google.gson.reflect.TypeToken;
 import jakarta.persistence.PersistenceException;
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -35,7 +37,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.fineract.accounting.producttoaccountmapping.service.ProductToGLAccountMappingWritePlatformService;
-import org.apache.fineract.custom.infrastructure.channel.domain.SubChannelRepository;
 import org.apache.fineract.custom.portfolio.loanproduct.data.SubChannelLoanProductData;
 import org.apache.fineract.custom.portfolio.loanproduct.domain.SubChannelLoanProduct;
 import org.apache.fineract.custom.portfolio.loanproduct.domain.SubChannelLoanProductRepository;
@@ -45,6 +46,7 @@ import org.apache.fineract.infrastructure.codes.domain.CodeValueRepositoryWrappe
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuilder;
+import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
 import org.apache.fineract.infrastructure.core.exception.ErrorHandler;
 import org.apache.fineract.infrastructure.core.exception.PlatformDataIntegrityException;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
@@ -53,6 +55,7 @@ import org.apache.fineract.infrastructure.entityaccess.service.FineractEntityAcc
 import org.apache.fineract.infrastructure.event.business.domain.loan.product.LoanProductCreateBusinessEvent;
 import org.apache.fineract.infrastructure.event.business.service.BusinessEventNotifierService;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
+import org.apache.fineract.organisation.monetary.domain.MoneyHelper;
 import org.apache.fineract.organisation.monetary.exception.InvalidCurrencyException;
 import org.apache.fineract.portfolio.charge.domain.Charge;
 import org.apache.fineract.portfolio.charge.domain.ChargeRepositoryWrapper;
@@ -68,6 +71,7 @@ import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleTra
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.AprCalculator;
 import org.apache.fineract.portfolio.loanproduct.LoanProductConstants;
+import org.apache.fineract.portfolio.loanproduct.data.ClientCupoData;
 import org.apache.fineract.portfolio.loanproduct.data.MaximumCreditRateConfigurationData;
 import org.apache.fineract.portfolio.loanproduct.domain.AdvanceQuotaConfiguration;
 import org.apache.fineract.portfolio.loanproduct.domain.AdvanceQuotaRepository;
@@ -88,7 +92,10 @@ import org.apache.fineract.portfolio.loanproduct.serialization.LoanProductDataVa
 import org.apache.fineract.portfolio.rate.domain.Rate;
 import org.apache.fineract.portfolio.rate.domain.RateRepositoryWrapper;
 import org.apache.fineract.useradministration.domain.AppUser;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
 import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -120,7 +127,7 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
     private final CodeValueRepositoryWrapper codeValueRepository;
     private final SubChannelLoanProductReadWritePlatformService subChannelLoanProductReadWritePlatformService;
     private final SubChannelLoanProductRepository subChannelLoanProductRepository;
-    private final SubChannelRepository subChannelRepository;
+    private final JdbcTemplate jdbcTemplate;
 
     @Transactional
     @Override
@@ -493,6 +500,23 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
             final Map<String, Object> changes = advanceQuotaConfiguration.update(command);
             advanceQuotaConfiguration.setModifiedBy(modifiedBy);
             advanceQuotaConfiguration.setModifiedOnDate(DateUtils.getLocalDateOfTenant());
+            final ClientCupoMapper rowMapper = new ClientCupoMapper();
+            final String sql = "SELECT " + rowMapper.schema();
+            List<ClientCupoData> resultList = this.jdbcTemplate.query(sql, rowMapper, new Object[] {});
+            final List<Long> clientIDs = new ArrayList<>();
+            if (CollectionUtils.isNotEmpty(resultList)) {
+                final BigDecimal percentageValue = advanceQuotaConfiguration.getPercentageValue();
+                for (ClientCupoData clientCupoData : resultList) {
+                    final BigDecimal maximumAvailableCupo = percentageValue.multiply(clientCupoData.getCupoAmount())
+                            .divide(BigDecimal.valueOf(100L), MoneyHelper.getRoundingMode());
+                    if (clientCupoData.getTotalOutstandingAmount().compareTo(maximumAvailableCupo) > 0) {
+                        clientIDs.add(clientCupoData.getClientId());
+                    }
+                }
+            }
+            if (!clientIDs.isEmpty()) {
+                throw new AdvanceQuotaExceptions(clientIDs);
+            }
             this.advanceQuotaRepository.saveAndFlush(advanceQuotaConfiguration);
             return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withEntityId(id).with(changes).build();
 
@@ -505,6 +529,32 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
             return CommandProcessingResult.empty();
         }
 
+    }
+
+    private static final class ClientCupoMapper implements RowMapper<ClientCupoData> {
+
+        public String schema() {
+            return """
+                        mc.id AS clientId,
+                        COALESCE(SUM(ml.principal_outstanding_derived), 0) AS "totalOutstandingAmount",
+                        COALESCE(ccp."Cupo aprobado", cce."Cupo") AS cupo
+                        FROM m_loan ml
+                        INNER JOIN m_client mc ON mc.id = ml.client_id
+                        INNER JOIN m_product_loan mpl ON mpl.id = ml.product_id
+                        LEFT JOIN campos_cliente_empresas cce ON cce.client_id = mc.id
+                        LEFT JOIN campos_cliente_persona ccp ON ccp.client_id = mc.id
+                        WHERE ml.loan_status_id = 300 AND mpl.is_advance = TRUE
+                        GROUP BY mc.id, ccp."Cupo aprobado", cce."Cupo"
+                    """;
+        }
+
+        @Override
+        public ClientCupoData mapRow(@NotNull ResultSet rs, int rowNum) throws SQLException {
+            final Long clientId = JdbcSupport.getLong(rs, "clientId");
+            final BigDecimal totalOutstandingAmount = rs.getBigDecimal("totalOutstandingAmount");
+            final BigDecimal cupo = rs.getBigDecimal("cupo");
+            return new ClientCupoData(clientId, totalOutstandingAmount, cupo);
+        }
     }
 
     private boolean anyChangeInCriticalFloatingRateLinkedParams(JsonCommand command, LoanProduct product) {

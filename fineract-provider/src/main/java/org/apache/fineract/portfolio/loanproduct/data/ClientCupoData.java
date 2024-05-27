@@ -16,21 +16,21 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.portfolio.loanproduct.exception;
+package org.apache.fineract.portfolio.loanproduct.data;
 
-import java.util.List;
-import org.apache.fineract.infrastructure.core.exception.AbstractPlatformResourceNotFoundException;
+import java.math.BigDecimal;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-public class AdvanceQuotaExceptions extends AbstractPlatformResourceNotFoundException {
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
+public class ClientCupoData {
 
-    public AdvanceQuotaExceptions() {
-        super("error.msg.advance.quota.not.found", "Advance quota configuration table is empty", "");
-    }
-
-    public AdvanceQuotaExceptions(List<Long> clientIDs) {
-        super("error.msg.advance.quota.client.advances.exceeded.the.percentage", String.format(
-                "The reduction of the advance quota cannot be carried out since the following clients [ %s] have advances above this percentage",
-                clientIDs.toString()), clientIDs.toString());
-    }
-
+    private Long clientId;
+    private BigDecimal totalOutstandingAmount;
+    private BigDecimal cupoAmount;
 }
