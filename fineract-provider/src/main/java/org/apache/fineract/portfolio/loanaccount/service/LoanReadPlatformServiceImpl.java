@@ -368,7 +368,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
         final Set<Long> agencyIds = agencyOptions.stream().map(AgencyData::getId).collect(Collectors.toSet());
         if (!agencyIds.isEmpty() && searchParameters.getAgencyId() == null) {
             final String agencyIdParams = StringUtils.join(agencyIds, ", ");
-            sqlBuilder.append(" AND agency.id IN ( ").append(agencyIdParams).append(") ");
+            sqlBuilder.append(" AND (agency.id IN ( ").append(agencyIdParams).append(") OR agency.id is null )");
         }
 
         int arrayPos = 4;
