@@ -35,5 +35,6 @@ public class ChannelData {
     private String hash;
     private String name;
     private String description;
+    private Integer nrOfSubChannels;
     private Boolean active;
 }

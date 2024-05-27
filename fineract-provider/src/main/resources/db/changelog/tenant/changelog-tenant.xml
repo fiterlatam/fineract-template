@@ -220,4 +220,6 @@
     <include file="parts/20240515200100_SU_55_m_loan_product_MODIFY.xml" relativeToChangelogFile="true"/>
     <include file="parts/20240515200200_SU_55_c_channel_subchannel_CREATE.xml" relativeToChangelogFile="true"/>
     <include file="parts/20240515200300_SU_55_c_product_subchannel_CREATE.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20240523200100_SU_54_m_permission_channel_INSERT.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20240523200200_SU_54_m_permission_subchannel_INSERT.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

@@ -48,7 +48,7 @@ public class SubChannelDataValidator {
         this.platformSecurityContext = platformSecurityContext;
     }
 
-    public SubChannel validateForCreate(final String json) {
+    public SubChannel validateForCreate(final String json, Long channelId) {
 
         if (StringUtils.isBlank(json)) {
             throw new InvalidJsonException();
@@ -63,12 +63,6 @@ public class SubChannelDataValidator {
         final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors)
                 .resource(SubChannelApiConstants.RESOURCE_NAME);
 
-        final Long id = this.fromApiJsonHelper.extractLongNamed(SubChannelApiConstants.idParamName, element);
-        baseDataValidator.reset().parameter(SubChannelApiConstants.idParamName).value(id).notNull();
-
-        final Long channelId = this.fromApiJsonHelper.extractLongNamed(SubChannelApiConstants.channelIdParamName, element);
-        baseDataValidator.reset().parameter(SubChannelApiConstants.channelIdParamName).value(channelId).notNull();
-
         final String name = this.fromApiJsonHelper.extractStringNamed(SubChannelApiConstants.nameParamName, element);
         baseDataValidator.reset().parameter(SubChannelApiConstants.nameParamName).value(name).notNull().notExceedingLengthOf(100);
 
@@ -81,16 +75,15 @@ public class SubChannelDataValidator {
 
         throwExceptionIfValidationWarningsExist(dataValidationErrors);
 
-        return SubChannel.builder().id(id) //
+        return SubChannel.builder()//
                 .channelId(channelId) //
                 .name(name) //
                 .description(description) //
                 .active(active) //
-
                 .build();
     }
 
-    public SubChannel validateForUpdate(final String json) {
+    public SubChannel validateForUpdate(final String json, Long channelId, Long id) {
 
         if (StringUtils.isBlank(json)) {
             throw new InvalidJsonException();
@@ -105,12 +98,6 @@ public class SubChannelDataValidator {
         final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors)
                 .resource(SubChannelApiConstants.RESOURCE_NAME);
 
-        final Long id = this.fromApiJsonHelper.extractLongNamed(SubChannelApiConstants.idParamName, element);
-        baseDataValidator.reset().parameter(SubChannelApiConstants.idParamName).value(id).notNull();
-
-        final Long channelId = this.fromApiJsonHelper.extractLongNamed(SubChannelApiConstants.channelIdParamName, element);
-        baseDataValidator.reset().parameter(SubChannelApiConstants.channelIdParamName).value(channelId).notNull();
-
         final String name = this.fromApiJsonHelper.extractStringNamed(SubChannelApiConstants.nameParamName, element);
         baseDataValidator.reset().parameter(SubChannelApiConstants.nameParamName).value(name).notNull().notExceedingLengthOf(100);
 
@@ -123,12 +110,12 @@ public class SubChannelDataValidator {
 
         throwExceptionIfValidationWarningsExist(dataValidationErrors);
 
-        return SubChannel.builder().id(id) //
+        return SubChannel.builder() //
+                .id(id) //
                 .channelId(channelId) //
                 .name(name) //
                 .description(description) //
                 .active(active) //
-
                 .build();
     }
 
