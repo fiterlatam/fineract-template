@@ -24,5 +24,7 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
 public interface SubChannelRepository extends JpaRepository<SubChannel, Long>, JpaSpecificationExecutor<SubChannel> {
 
-    List<SubChannel> findAllByChannelIdAndActiveOrderByName(Long channelId, boolean active);
+    List<SubChannel> findAllByChannelIdOrderByActiveDescNameAsc(Long channelId);
+
+    List<SubChannel> findAllByChannelIdAndActiveOrderByActiveDescNameAsc(Long channelId, boolean active);
 }

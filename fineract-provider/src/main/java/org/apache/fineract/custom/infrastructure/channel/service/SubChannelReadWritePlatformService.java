@@ -20,10 +20,24 @@ package org.apache.fineract.custom.infrastructure.channel.service;
 
 import java.util.List;
 import org.apache.fineract.custom.infrastructure.channel.data.SubChannelData;
+import org.apache.fineract.infrastructure.core.api.JsonCommand;
+import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
+import org.springframework.transaction.annotation.Transactional;
 
 public interface SubChannelReadWritePlatformService {
+
+    List<SubChannelData> findAll(Long channelId);
 
     List<SubChannelData> findAllActive(Long channelId);
 
     SubChannelData findById(Long id);
+
+    @Transactional
+    CommandProcessingResult create(JsonCommand command, Long channelId);
+
+    @Transactional
+    CommandProcessingResult delete(Long id);
+
+    @Transactional
+    CommandProcessingResult update(JsonCommand command, Long channelId, Long id);
 }

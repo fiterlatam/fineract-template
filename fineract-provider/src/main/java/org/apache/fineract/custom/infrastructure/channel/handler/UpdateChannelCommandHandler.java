@@ -16,28 +16,28 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.custom.infrastructure.channel.service;
+package org.apache.fineract.custom.infrastructure.channel.handler;
 
-import java.util.List;
-import org.apache.fineract.custom.infrastructure.channel.data.ChannelData;
+import org.apache.fineract.commands.annotation.CommandType;
+import org.apache.fineract.commands.handler.NewCommandSourceHandler;
+import org.apache.fineract.custom.infrastructure.channel.service.ChannelReadWritePlatformService;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-public interface ChannelReadWritePlatformService {
+@Service
+@CommandType(entity = "CHANNEL", action = "UPDATE")
+public class UpdateChannelCommandHandler implements NewCommandSourceHandler {
 
-    List<ChannelData> findAllActive();
-
-    List<ChannelData> findByName(String name);
-
-    ChannelData findById(Long id);
-
-    @Transactional
-    CommandProcessingResult create(JsonCommand command);
+    @Autowired
+    private ChannelReadWritePlatformService service;
 
     @Transactional
-    CommandProcessingResult delete(Long id);
+    @Override
+    public CommandProcessingResult processCommand(final JsonCommand command) {
 
-    @Transactional
-    CommandProcessingResult update(JsonCommand command, Long id);
+        return service.update(command, command.entityId());
+    }
 }

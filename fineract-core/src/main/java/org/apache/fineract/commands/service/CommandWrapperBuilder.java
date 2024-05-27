@@ -48,6 +48,8 @@ public class CommandWrapperBuilder {
     private String jobName;
     private String idempotencyKey;
 
+    private Long channelId;
+
     @SuppressFBWarnings(value = "UWF_UNWRITTEN_FIELD", justification = "TODO: fix this!")
     public CommandWrapper build() {
         return new CommandWrapper(this.officeId, this.groupId, this.clientId, this.loanId, this.savingsId, this.actionName, this.entityName,
@@ -3892,6 +3894,54 @@ public class CommandWrapperBuilder {
         this.actionName = "DELETE";
         this.entityName = "SUBCHANNELLOANPRODUCT";
         this.href = "/subchannelloanproduct/" + id;
+        this.entityId = id;
+        return this;
+    }
+
+    public CommandWrapperBuilder createChannel() {
+        this.actionName = "CREATE";
+        this.entityName = "CHANNEL";
+        this.href = "/channel";
+        return this;
+    }
+
+    public CommandWrapperBuilder updateChannel(final Long id) {
+        this.actionName = "UPDATE";
+        this.entityName = "CHANNEL";
+        this.href = "/channel/" + id;
+        this.entityId = id;
+        return this;
+    }
+
+    public CommandWrapperBuilder deleteChannel(final Long id) {
+        this.actionName = "DELETE";
+        this.entityName = "CHANNEL";
+        this.href = "/channel/" + id;
+        this.entityId = id;
+        return this;
+    }
+
+    public CommandWrapperBuilder createSubChannel(Long channelId) {
+        this.actionName = "CREATE";
+        this.entityName = "SUBCHANNEL";
+        this.entityId = channelId;
+        this.href = "/subchannel";
+        return this;
+    }
+
+    public CommandWrapperBuilder updateSubChannel(Long channelId, final Long id) {
+        this.actionName = "UPDATE";
+        this.entityName = "SUBCHANNEL";
+        this.href = "/subchannel/" + id;
+        this.entityId = channelId;
+        this.subentityId = id;
+        return this;
+    }
+
+    public CommandWrapperBuilder deleteSubChannel(final Long id) {
+        this.actionName = "DELETE";
+        this.entityName = "SUBCHANNEL";
+        this.href = "/subchannel/" + id;
         this.entityId = id;
         return this;
     }
