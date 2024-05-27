@@ -39,7 +39,7 @@ public final class SearchParameters {
     private final String sortOrder;
     private final String accountNo;
     private final String currencyCode;
-
+    private Long interestRateId;
     private final Long staffId;
 
     private final Long loanId;
@@ -470,6 +470,10 @@ public final class SearchParameters {
 
     public Long getSavingsId() {
         return this.savingsId;
+    }
+
+    public Long getInterestRateId() {
+        return interestRateId;
     }
 
     public Boolean isOrphansOnly() {

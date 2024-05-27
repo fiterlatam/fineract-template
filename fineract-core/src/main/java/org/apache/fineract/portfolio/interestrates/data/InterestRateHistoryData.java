@@ -16,28 +16,27 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.custom.infrastructure.channel.service;
+package org.apache.fineract.portfolio.interestrates.data;
 
-import java.util.List;
-import org.apache.fineract.custom.infrastructure.channel.data.ChannelData;
-import org.apache.fineract.infrastructure.core.api.JsonCommand;
-import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
-import org.springframework.transaction.annotation.Transactional;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-public interface ChannelReadWritePlatformService {
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
+public class InterestRateHistoryData {
 
-    List<ChannelData> findAllActive();
-
-    List<ChannelData> findByName(String name);
-
-    ChannelData findById(Long id);
-
-    @Transactional
-    CommandProcessingResult create(JsonCommand command);
-
-    @Transactional
-    CommandProcessingResult delete(Long id);
-
-    @Transactional
-    CommandProcessingResult update(JsonCommand command, Long id);
+    private Long id;
+    private Long interestRateId;
+    private String name;
+    private BigDecimal currentRate;
+    private LocalDate appliedOnDate;
+    private Boolean active;
+    private String createdBy;
+    private LocalDate createdDate;
 }

@@ -16,28 +16,31 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.custom.infrastructure.channel.service;
+package org.apache.fineract.portfolio.interestrates.handler;
 
-import java.util.List;
-import org.apache.fineract.custom.infrastructure.channel.data.ChannelData;
+import org.apache.fineract.commands.annotation.CommandType;
+import org.apache.fineract.commands.handler.NewCommandSourceHandler;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
+import org.apache.fineract.portfolio.interestrates.service.InterestRateWritePlatformService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-public interface ChannelReadWritePlatformService {
+@Service
+@CommandType(entity = "INTEREST_RATE", action = "CREATE")
+public class CreateInterestRateCommandHandler implements NewCommandSourceHandler {
 
-    List<ChannelData> findAllActive();
+    private final InterestRateWritePlatformService interestRateWritePlatformService;
 
-    List<ChannelData> findByName(String name);
-
-    ChannelData findById(Long id);
-
-    @Transactional
-    CommandProcessingResult create(JsonCommand command);
-
-    @Transactional
-    CommandProcessingResult delete(Long id);
+    @Autowired
+    public CreateInterestRateCommandHandler(final InterestRateWritePlatformService interestRateWritePlatformService) {
+        this.interestRateWritePlatformService = interestRateWritePlatformService;
+    }
 
     @Transactional
-    CommandProcessingResult update(JsonCommand command, Long id);
+    @Override
+    public CommandProcessingResult processCommand(final JsonCommand command) {
+        return this.interestRateWritePlatformService.createInterestRate(command);
+    }
 }

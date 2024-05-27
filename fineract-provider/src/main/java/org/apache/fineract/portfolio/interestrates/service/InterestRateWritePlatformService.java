@@ -16,28 +16,14 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.custom.infrastructure.channel.service;
+package org.apache.fineract.portfolio.interestrates.service;
 
-import java.util.List;
-import org.apache.fineract.custom.infrastructure.channel.data.ChannelData;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
-import org.springframework.transaction.annotation.Transactional;
 
-public interface ChannelReadWritePlatformService {
+public interface InterestRateWritePlatformService {
 
-    List<ChannelData> findAllActive();
+    CommandProcessingResult createInterestRate(JsonCommand command);
 
-    List<ChannelData> findByName(String name);
-
-    ChannelData findById(Long id);
-
-    @Transactional
-    CommandProcessingResult create(JsonCommand command);
-
-    @Transactional
-    CommandProcessingResult delete(Long id);
-
-    @Transactional
-    CommandProcessingResult update(JsonCommand command, Long id);
+    CommandProcessingResult updateInterestRate(Long interestRateId, JsonCommand command);
 }
