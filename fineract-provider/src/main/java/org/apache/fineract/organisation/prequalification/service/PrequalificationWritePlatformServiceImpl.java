@@ -690,6 +690,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             if (newValue != null) {
                 prequalificationGroupMember.updateAmountRequested(newValue);
                 prequalificationGroupMember.updateApprovedAmount(newValue);
+                prequalificationGroupMember.updateOriginalAmount(newValue);
             }
         }
 
