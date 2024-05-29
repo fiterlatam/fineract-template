@@ -244,4 +244,8 @@ public class PrequalificationGroup extends AbstractPersistableCustom {
     public BigDecimal getTotalRequestedAmount() {
         return this.getMembers().stream().map(PrequalificationGroupMember::getRequestedAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
     }
+
+    public Long getPreviousPrequalification() {
+        return parent != null ? parent.getId() : null;
+    }
 }
