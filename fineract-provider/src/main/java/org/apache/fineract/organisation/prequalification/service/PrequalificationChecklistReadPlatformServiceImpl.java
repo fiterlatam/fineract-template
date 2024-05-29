@@ -71,17 +71,20 @@ public class PrequalificationChecklistReadPlatformServiceImpl implements Prequal
         final List<ChecklistValidationResult> validationResults = this.jdbcTemplate.query(sql, validationChecklistMapper,
                 prequalificationId);
         final List<String> prequalificationRow = new ArrayList<>(List.of(prequalificationGroup.getGroupName()));
-        for (PolicyData policy : groupPolicies) {
-            prequalificationColumnHeaders.add(policy.getDescription());
-            for (ChecklistValidationResult validationResult : validationResults) {
+        for (ChecklistValidationResult validationResult : validationResults) {
+            for (PolicyData policy : groupPolicies) {
                 if (policy.getId().equals(validationResult.getPolicyId())
                         && PrequalificationType.GROUP.getValue().equals(validationResult.getPrequalificationTypeEnum())) {
+                    prequalificationColumnHeaders.add(policy.getDescription());
+
                     final String validationColor = CheckValidationColor.fromInt(validationResult.getColorEnum()).name();
                     prequalificationRow.add(validationColor);
                     break;
                 }
             }
+
         }
+
         prequalificationRows.add(prequalificationRow);
         final GenericValidationResultSet groupValidationResultSet = new GenericValidationResultSet(prequalificationColumnHeaders,
                 prequalificationRows);
