@@ -29,6 +29,7 @@ public class GroupData {
 
     private Long id;
     private Long productId;
+    private Long previousPrequalification;
     private BigDecimal requestedAmount;
     private Integer numberOfMembers;
     private List<ClientData> members;

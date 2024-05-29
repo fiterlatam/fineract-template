@@ -114,7 +114,7 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
         final BigDecimal totalAmountRequested = prequalificationGroup.getMembers().stream()
                 .map(PrequalificationGroupMember::getRequestedAmount).reduce(BigDecimal.ONE, BigDecimal::add);
         final GroupData groupData = GroupData.builder().id(prequalificationId).productId(productId).numberOfMembers(noOfMembers)
-                .requestedAmount(totalAmountRequested).members(clientDatas).build();
+                .requestedAmount(totalAmountRequested).members(clientDatas).previousPrequalification(prequalificationGroup.getPreviousPrequalification()).build();
         Integer fromStatus = prequalificationGroup.getStatus();
         List<ValidationChecklistResult> validationChecklistResults = new ArrayList<>();
         final List<PolicyData> groupPolicies = this.jdbcTemplate.query(this.policyMapper.schema(), this.policyMapper, productId,
@@ -161,21 +161,23 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
         }
 
         for (final PolicyData groupPolicy : groupPolicies) {
-            ValidationChecklistResult prequalificationChecklistResult = new ValidationChecklistResult();
-            prequalificationChecklistResult.setPrequalificationId(prequalificationId);
-            prequalificationChecklistResult.setPolicyId(groupPolicy.getId());
-            prequalificationChecklistResult.setPrequalificationType(PrequalificationType.GROUP.getValue());
             CheckValidationColor checkValidationColor = this.validateGenericPolicy(Policies.fromInt(groupPolicy.getId()), null, groupData);
-            prequalificationChecklistResult.setValidationColor(checkValidationColor.getValue());
-            AppUser authenticatedUser = platformSecurityContext.getAuthenticatedUserIfPresent();
-            final LocalDateTime localDateTime = DateUtils.getLocalDateTimeOfSystem();
-            if (authenticatedUser != null && authenticatedUser.getId() != null) {
-                prequalificationChecklistResult.setCreatedBy(authenticatedUser.getId());
-                prequalificationChecklistResult.setLastModifiedBy(authenticatedUser.getId());
+            if (checkValidationColor!=null) {
+                ValidationChecklistResult prequalificationChecklistResult = new ValidationChecklistResult();
+                prequalificationChecklistResult.setPrequalificationId(prequalificationId);
+                prequalificationChecklistResult.setPolicyId(groupPolicy.getId());
+                prequalificationChecklistResult.setPrequalificationType(PrequalificationType.GROUP.getValue());
+                prequalificationChecklistResult.setValidationColor(checkValidationColor.getValue());
+                AppUser authenticatedUser = platformSecurityContext.getAuthenticatedUserIfPresent();
+                final LocalDateTime localDateTime = DateUtils.getLocalDateTimeOfSystem();
+                if (authenticatedUser != null && authenticatedUser.getId() != null) {
+                    prequalificationChecklistResult.setCreatedBy(authenticatedUser.getId());
+                    prequalificationChecklistResult.setLastModifiedBy(authenticatedUser.getId());
+                }
+                prequalificationChecklistResult.setCreatedDate(localDateTime);
+                prequalificationChecklistResult.setLastModifiedDate(localDateTime);
+                validationChecklistResults.add(prequalificationChecklistResult);
             }
-            prequalificationChecklistResult.setCreatedDate(localDateTime);
-            prequalificationChecklistResult.setLastModifiedDate(localDateTime);
-            validationChecklistResults.add(prequalificationChecklistResult);
         }
 
         List<PrequalificationStatusLog> statusLogList = this.preQualificationStatusLogRepository.groupStatusLogs(fromStatus,
@@ -1154,6 +1156,9 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
     }
 
     private CheckValidationColor runCheck35(final GroupData groupData) {
+        if (groupData.getPreviousPrequalification()==null) {
+            return null;
+        }
         final String reportName = Policies.THIRTY_FIVE.getName() + " Policy Check";
         final String numberOfMembers = String.valueOf(groupData.getNumberOfMembers());
         final String prequalificationId = String.valueOf(groupData.getId());
@@ -1168,6 +1173,9 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
     }
 
     private CheckValidationColor runCheck36(final GroupData groupData) {
+        if (groupData.getPreviousPrequalification()==null) {
+            return null;
+        }
         final String reportName = Policies.THIRTY_SIX.getName() + " Policy Check";
         final String prequalificationId = String.valueOf(groupData.getId());
         final String productId = Long.toString(groupData.getProductId());
@@ -1180,6 +1188,9 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
     }
 
     private CheckValidationColor runCheck37(final GroupData groupData) {
+        if (groupData.getPreviousPrequalification()==null) {
+            return null;
+        }
         final String reportName = Policies.THIRTY_SEVEN.getName() + " Policy Check";
         final String prequalificationId = String.valueOf(groupData.getId());
         final String productId = Long.toString(groupData.getProductId());
