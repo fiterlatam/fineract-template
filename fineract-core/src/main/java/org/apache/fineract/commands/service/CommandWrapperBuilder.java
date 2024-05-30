@@ -3096,6 +3096,22 @@ public class CommandWrapperBuilder {
         return this;
     }
 
+    public CommandWrapperBuilder updateInterestRate(final Long interestRate) {
+        this.actionName = "UPDATE";
+        this.entityName = "INTEREST_RATE";
+        this.entityId = interestRate;
+        this.href = "/interestRates/" + interestRate;
+        return this;
+    }
+
+    public CommandWrapperBuilder createInterestRate() {
+        this.actionName = "CREATE";
+        this.entityName = "INTEREST_RATE";
+        this.entityId = null;
+        this.href = "/interestRates";
+        return this;
+    }
+
     public CommandWrapperBuilder createScheduleExceptions(final Long loanId) {
         this.actionName = "CREATESCHEDULEEXCEPTIONS";
         this.entityName = "LOAN";

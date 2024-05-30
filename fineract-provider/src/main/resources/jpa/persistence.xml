@@ -62,6 +62,7 @@
         <class>org.apache.fineract.portfolio.tax.domain.TaxComponentHistory</class>
         <class>org.apache.fineract.portfolio.floatingrates.domain.FloatingRate</class>
         <class>org.apache.fineract.portfolio.floatingrates.domain.FloatingRatePeriod</class>
+        <class>org.apache.fineract.portfolio.interestrates.domain.InterestRate</class>
         <class>org.apache.fineract.portfolio.calendar.domain.Calendar</class>
         <class>org.apache.fineract.portfolio.calendar.domain.CalendarHistory</class>
         <class>org.apache.fineract.portfolio.calendar.domain.CalendarInstance</class>
