@@ -267,7 +267,10 @@ public class LoanBlockWritePlatformServiceImpl implements LoanBlockWritePlatform
                 unBlocked.add(loanBlockingReason);
                 Client client = loan.getClient();
                 if (client.getBlockingReason() != null) {
-                    deleteBlockReasonFromClientIfPresent(unBlocked, client, currentUser, unblockDate, unblockComment);
+                    if (isHaveBlockLoan(client) == false) {
+                        deleteBlockReasonFromClientIfPresent(unBlocked, client, currentUser, unblockDate, unblockComment);
+                    }
+
                 }
             }
 
@@ -276,6 +279,18 @@ public class LoanBlockWritePlatformServiceImpl implements LoanBlockWritePlatform
             handleDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
             return CommandProcessingResult.empty();
         }
+    }
+
+    private boolean isHaveBlockLoan(final Client client) {
+        final List<Loan> allLoans = this.loanRepositoryWrapper.findLoanByClientId(client.getId());
+        for (Loan clientloan : allLoans) {
+            Collection<LoanBlockingReason> loanBlockingReasonCollection = this.loanBlockingReasonRepository
+                    .findAllActiveByLoanId(clientloan.getId());
+            if (loanBlockingReasonCollection.size() > 0) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void logAsErrorUnexpectedDataIntegrityException(final Exception dve) {
