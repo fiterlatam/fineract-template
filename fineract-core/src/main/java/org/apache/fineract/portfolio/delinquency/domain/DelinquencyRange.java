@@ -29,6 +29,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.apache.fineract.infrastructure.core.domain.AbstractAuditableWithUTCDateTimeCustom;
 
+import java.math.BigDecimal;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -46,17 +48,27 @@ public class DelinquencyRange extends AbstractAuditableWithUTCDateTimeCustom {
     @Column(name = "max_age_days", nullable = true)
     private Integer maximumAgeDays;
 
+
+    @Column(name = "curent_interest", nullable = true)
+    private BigDecimal curentInterest;
+
+    @Column(name = "penalty_interest", nullable = true)
+    private BigDecimal penaltyInterest;
+
     @Version
     private Long version;
 
-    protected DelinquencyRange(@NotNull String classification, @NotNull Integer minimumAgeDays, Integer maximumAgeDays) {
+
+    protected DelinquencyRange(@NotNull String classification, @NotNull Integer minimumAgeDays, Integer maximumAgeDays, BigDecimal curentInterest, BigDecimal penaltyInterest) {
         this.classification = classification;
         this.minimumAgeDays = minimumAgeDays;
         this.maximumAgeDays = maximumAgeDays;
+        this.curentInterest = curentInterest;
+        this.penaltyInterest = penaltyInterest;
     }
 
-    public static DelinquencyRange instance(@NotNull String classification, @NotNull Integer minimumAge, Integer maximumAge) {
-        return new DelinquencyRange(classification, minimumAge, maximumAge);
+    public static DelinquencyRange instance(@NotNull String classification, @NotNull Integer minimumAge, Integer maximumAge, BigDecimal curentInterest, BigDecimal penaltyInterest) {
+        return new DelinquencyRange(classification, minimumAge, maximumAge, curentInterest, penaltyInterest);
     }
 
 }

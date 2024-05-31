@@ -297,7 +297,7 @@ public class DelinquencyWritePlatformServiceImpl implements DelinquencyWritePlat
                 throw new DelinquencyRangeInvalidAgesException(errorMessage, data.getMinimumAgeDays(), data.getMaximumAgeDays());
             }
             DelinquencyRange newDelinquencyRange = DelinquencyRange.instance(data.getClassification(), data.getMinimumAgeDays(),
-                    data.getMaximumAgeDays());
+                    data.getMaximumAgeDays(), data.getCurentInterest(), data.getPenaltyInterest());
             return repositoryRange.saveAndFlush(newDelinquencyRange);
         } else {
             throw new PlatformDataIntegrityException("error.msg.data.integrity.issue.entity.duplicated",

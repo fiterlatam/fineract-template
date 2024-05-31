@@ -19,6 +19,8 @@
 package org.apache.fineract.portfolio.delinquency.data;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
@@ -34,13 +36,15 @@ public class DelinquencyRangeData implements Serializable {
     private String classification;
     private Integer minimumAgeDays;
     private Integer maximumAgeDays;
+    private BigDecimal curentInterest;
+    private BigDecimal penaltyInterest;
 
-    public static DelinquencyRangeData instance(String classification, Integer minimumAgeDays, Integer maximumAgeDays) {
-        return new DelinquencyRangeData(null, classification, minimumAgeDays, maximumAgeDays);
+    public static DelinquencyRangeData instance(String classification, Integer minimumAgeDays, Integer maximumAgeDays, BigDecimal curentInterest, BigDecimal penaltyInterest) {
+        return new DelinquencyRangeData(null, classification, minimumAgeDays, maximumAgeDays, curentInterest, penaltyInterest);
     }
 
     public static DelinquencyRangeData reference(Long id) {
-        return new DelinquencyRangeData(id, "", 0, 0);
+        return new DelinquencyRangeData(id, "", 0, 0, BigDecimal.valueOf(0), BigDecimal.valueOf(0));
     }
 
 }

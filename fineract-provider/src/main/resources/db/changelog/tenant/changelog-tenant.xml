@@ -223,4 +223,5 @@
     <include file="parts/20240523200100_SU_54_m_permission_channel_INSERT.xml" relativeToChangelogFile="true"/>
     <include file="parts/20240523200200_SU_54_m_permission_subchannel_INSERT.xml" relativeToChangelogFile="true"/>
     <include file="parts/20240529122200_SU_229_loan_interest_rate.xml" relativeToChangelogFile="true"/>
+    <include file="parts/202405031224100_SU_75_m_delinquency_add_interest.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

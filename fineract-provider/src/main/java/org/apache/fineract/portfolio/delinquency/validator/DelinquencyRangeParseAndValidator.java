@@ -20,6 +20,8 @@ package org.apache.fineract.portfolio.delinquency.validator;
 
 import com.google.gson.JsonObject;
 import jakarta.validation.constraints.NotNull;
+
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -56,7 +58,7 @@ public class DelinquencyRangeParseAndValidator extends ParseAndValidator {
 
         jsonHelper.checkForUnsupportedParameters(element,
                 List.of(DelinquencyApiConstants.CLASSIFICATION_PARAM_NAME, DelinquencyApiConstants.MINIMUMAGEDAYS_PARAM_NAME,
-                        DelinquencyApiConstants.MAXIMUMAGEDAYS_PARAM_NAME, DelinquencyApiConstants.LOCALE_PARAM_NAME));
+                        DelinquencyApiConstants.MAXIMUMAGEDAYS_PARAM_NAME, DelinquencyApiConstants.LOCALE_PARAM_NAME, DelinquencyApiConstants.CURENTINTEREST, DelinquencyApiConstants.PENALTYINTEREST));
 
         final String localeValue = jsonHelper.extractStringNamed(DelinquencyApiConstants.LOCALE_PARAM_NAME, element);
         dataValidator.reset().parameter(DelinquencyApiConstants.LOCALE_PARAM_NAME).value(localeValue).notBlank();
@@ -71,7 +73,14 @@ public class DelinquencyRangeParseAndValidator extends ParseAndValidator {
         dataValidator.reset().parameter(DelinquencyApiConstants.MAXIMUMAGEDAYS_PARAM_NAME).value(maximumAge).ignoreIfNull()
                 .integerGreaterThanNumber(0);
 
-        return dataValidator.hasError() ? null : DelinquencyRangeData.instance(classification, minimumAge, maximumAge);
+        BigDecimal curentInterest = null;
+        BigDecimal penaltyInterest = null;
+        curentInterest = jsonHelper.extractBigDecimalNamed(DelinquencyApiConstants.CURENTINTEREST, element, locale);
+        dataValidator.reset().parameter(DelinquencyApiConstants.CURENTINTEREST).value(curentInterest).notBlank().ignoreIfNull();
+         penaltyInterest = jsonHelper.extractBigDecimalNamed(DelinquencyApiConstants.PENALTYINTEREST, element, locale);
+        dataValidator.reset().parameter(DelinquencyApiConstants.PENALTYINTEREST).value(penaltyInterest).notBlank().ignoreIfNull();
+
+        return dataValidator.hasError() ? null : DelinquencyRangeData.instance(classification, minimumAge, maximumAge, curentInterest, penaltyInterest);
     }
 
 }
