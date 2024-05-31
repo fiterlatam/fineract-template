@@ -65,9 +65,9 @@ public class CodeValue extends AbstractPersistableCustom {
     private boolean mandatory;
 
     @Column(name = "code_score")
-    private Integer score;
+    private String score;
 
-    public static CodeValue createNew(final Code code, final String label, final int position, final int score, final String description,
+    public static CodeValue createNew(final Code code, final String label, final int position, final String score, final String description,
             final boolean isActive, final boolean mandatory) {
         return new CodeValue().setCode(code).setLabel(StringUtils.defaultIfEmpty(label, null)).setPosition(position)
                 .setDescription(description).setActive(isActive).setMandatory(mandatory).setScore(score);
@@ -77,11 +77,11 @@ public class CodeValue extends AbstractPersistableCustom {
 
         final String label = command.stringValueOfParameterNamed(CodevalueJSONinputParams.NAME.getValue());
         Integer position = command.integerValueSansLocaleOfParameterNamed(CodevalueJSONinputParams.POSITION.getValue());
-        Integer score = command.integerValueSansLocaleOfParameterNamed(CodevalueJSONinputParams.SCORE.getValue());
+        String score = command.stringValueOfParameterNamed(CodevalueJSONinputParams.SCORE.getValue());
         String description = command.stringValueOfParameterNamed(CodevalueJSONinputParams.DESCRIPTION.getValue());
         Boolean isActiveObj = command.booleanObjectValueOfParameterNamed(CodevalueJSONinputParams.IS_ACTIVE.getValue());
         boolean isActive = true;
-        Integer isScoreEmpty = null;
+        String isScoreEmpty = null;
         if (isActiveObj != null) {
             isActive = isActiveObj;
         }
@@ -123,8 +123,8 @@ public class CodeValue extends AbstractPersistableCustom {
             this.position = newValue;
         }
         final String scoreParamName = CodevalueJSONinputParams.SCORE.getValue();
-        if (command.isChangeInIntegerSansLocaleParameterNamed(scoreParamName, this.score)) {
-            final Integer newValue = command.integerValueSansLocaleOfParameterNamed(scoreParamName);
+        if (command.isChangeInStringParameterNamed(scoreParamName, this.score)) {
+            final String newValue = command.stringValueOfParameterNamed(scoreParamName);
             actualChanges.put(scoreParamName, newValue);
             this.score = newValue;
         }

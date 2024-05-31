@@ -53,6 +53,7 @@ import static org.apache.fineract.infrastructure.dataqueries.api.DataTableApiCon
 import static org.apache.fineract.infrastructure.dataqueries.api.DataTableApiConstant.API_PARAM_COLUMNS;
 import static org.apache.fineract.infrastructure.dataqueries.api.DataTableApiConstant.API_PARAM_DATATABLE_NAME;
 import static org.apache.fineract.infrastructure.dataqueries.api.DataTableApiConstant.API_PARAM_DROPCOLUMNS;
+import static org.apache.fineract.infrastructure.dataqueries.api.DataTableApiConstant.API_PARAM_FIELD_MASK;
 import static org.apache.fineract.infrastructure.dataqueries.api.DataTableApiConstant.API_PARAM_MULTIROW;
 import static org.apache.fineract.infrastructure.dataqueries.api.DataTableApiConstant.API_PARAM_SUBTYPE;
 import static org.apache.fineract.infrastructure.dataqueries.api.DataTableApiConstant.TABLE_FIELD_ID;
@@ -90,13 +91,14 @@ public class DatatableCommandFromApiJsonDeserializer {
     private static final Set<String> SUPPORTED_PARAMETERS_FOR_CREATE = Set.of(API_PARAM_DATATABLE_NAME, API_PARAM_SUBTYPE,
             API_PARAM_APPTABLE_NAME, API_PARAM_MULTIROW, API_PARAM_COLUMNS);
     private static final Set<String> SUPPORTED_PARAMETERS_FOR_CREATE_COLUMNS = Set.of(API_FIELD_NAME, API_FIELD_TYPE, API_FIELD_LENGTH,
-            API_FIELD_MANDATORY, API_FIELD_CODE, API_FIELD_UNIQUE, API_FIELD_INDEXED);
+            API_FIELD_MANDATORY, API_FIELD_CODE, API_FIELD_UNIQUE, API_FIELD_INDEXED, API_PARAM_FIELD_MASK);
     private static final Set<String> SUPPORTED_PARAMETERS_FOR_UPDATE = Set.of(API_PARAM_APPTABLE_NAME, API_PARAM_SUBTYPE,
-            API_PARAM_CHANGECOLUMNS, API_PARAM_ADDCOLUMNS, API_PARAM_DROPCOLUMNS);
+            API_PARAM_CHANGECOLUMNS, API_PARAM_ADDCOLUMNS, API_PARAM_DROPCOLUMNS, API_PARAM_FIELD_MASK);
     private static final Set<String> SUPPORTED_PARAMETERS_FOR_ADD_COLUMNS = Set.of(API_FIELD_NAME, API_FIELD_TYPE, API_FIELD_LENGTH,
-            API_FIELD_MANDATORY, API_FIELD_AFTER, API_FIELD_CODE, API_FIELD_UNIQUE, API_FIELD_INDEXED);
+            API_FIELD_MANDATORY, API_FIELD_AFTER, API_FIELD_CODE, API_FIELD_UNIQUE, API_FIELD_INDEXED, API_PARAM_FIELD_MASK);
     private static final Set<String> SUPPORTED_PARAMETERS_FOR_CHANGE_COLUMNS = Set.of(API_FIELD_NAME, API_FIELD_NEWNAME, API_FIELD_LENGTH,
-            API_FIELD_MANDATORY, API_FIELD_AFTER, API_FIELD_CODE, API_FIELD_NEWCODE, API_FIELD_UNIQUE, API_FIELD_INDEXED);
+            API_FIELD_MANDATORY, API_FIELD_AFTER, API_FIELD_CODE, API_FIELD_NEWCODE, API_FIELD_UNIQUE, API_FIELD_INDEXED,
+            API_PARAM_FIELD_MASK);
     private static final Set<String> SUPPORTED_PARAMETERS_FOR_DROP_COLUMNS = Set.of(API_FIELD_NAME);
     private static final Object[] SUPPORTED_COLUMN_TYPES = { API_FIELD_TYPE_STRING, API_FIELD_TYPE_NUMBER, API_FIELD_TYPE_BOOLEAN,
             API_FIELD_TYPE_DECIMAL, API_FIELD_TYPE_DATE, API_FIELD_TYPE_DATETIME, API_FIELD_TYPE_TEXT, API_FIELD_TYPE_JSON,
