@@ -22,6 +22,9 @@ import jakarta.validation.constraints.NotNull;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import lombok.Getter;
+import lombok.Setter;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.infrastructure.core.exception.PlatformDataIntegrityException;
 import org.apache.fineract.infrastructure.core.service.database.DatabaseType;
 import org.apache.fineract.infrastructure.core.service.database.JdbcJavaType;
@@ -42,6 +45,10 @@ public final class ResultsetColumnHeaderData implements Serializable {
 
     private final List<ResultsetColumnValueData> columnValues;
     private final String columnCode;
+
+    @Setter
+    @Getter
+    private String fieldMask = StringUtils.EMPTY;
 
     public static ResultsetColumnHeaderData basic(final String columnName, final String columnType, DatabaseType dialect) {
         final Long columnLength = null;

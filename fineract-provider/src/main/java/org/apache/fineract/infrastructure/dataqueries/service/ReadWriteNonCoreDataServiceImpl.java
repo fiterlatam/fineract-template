@@ -66,6 +66,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -100,6 +101,8 @@ import org.apache.fineract.infrastructure.dataqueries.data.EntityTables;
 import org.apache.fineract.infrastructure.dataqueries.data.GenericResultsetData;
 import org.apache.fineract.infrastructure.dataqueries.data.ResultsetColumnHeaderData;
 import org.apache.fineract.infrastructure.dataqueries.data.ResultsetRowData;
+import org.apache.fineract.infrastructure.dataqueries.domain.RegisteredDatatableFieldMask;
+import org.apache.fineract.infrastructure.dataqueries.domain.RegisteredDatatableFieldMaskRepository;
 import org.apache.fineract.infrastructure.dataqueries.exception.DatatableEntryRequiredException;
 import org.apache.fineract.infrastructure.dataqueries.exception.DatatableNotFoundException;
 import org.apache.fineract.infrastructure.dataqueries.exception.DatatableSystemErrorException;
@@ -144,6 +147,7 @@ public class ReadWriteNonCoreDataServiceImpl implements ReadWriteNonCoreDataServ
     private final NamedParameterJdbcTemplate namedParameterJdbcTemplate;
     private final SqlInjectionPreventerService preventSqlInjectionService;
     private final DatatableKeywordGenerator datatableKeywordGenerator;
+    private final RegisteredDatatableFieldMaskRepository registeredDatatableFieldMaskRepository;
 
     @Override
     public List<DatatableData> retrieveDatatableNames(final String appTable) {
@@ -732,6 +736,16 @@ public class ReadWriteNonCoreDataServiceImpl implements ReadWriteNonCoreDataServ
                 final StringBuilder constrainBuilder = new StringBuilder();
                 final List<String> codeMappings = new ArrayList<>();
                 for (final JsonElement column : dropColumns) {
+
+                    // Update table mask if existent
+                    Optional<RegisteredDatatableFieldMask> fieldMaskOpt = registeredDatatableFieldMaskRepository
+                            .findByDatatableNameAndColumnName(datatableName, column.getAsJsonObject().get("name").getAsString());
+
+                    if (fieldMaskOpt.isPresent()) {
+                        RegisteredDatatableFieldMask curr = fieldMaskOpt.get();
+                        registeredDatatableFieldMaskRepository.delete(curr);
+                    }
+
                     parseDatatableColumnForDrop(column.getAsJsonObject(), sqlBuilder, datatableName, constrainBuilder, codeMappings);
                 }
 
@@ -749,6 +763,14 @@ public class ReadWriteNonCoreDataServiceImpl implements ReadWriteNonCoreDataServ
                 final StringBuilder constrainBuilder = new StringBuilder();
                 final Map<String, Long> codeMappings = new HashMap<>();
                 for (final JsonElement column : addColumns) {
+
+                    // Insert table mask if existent
+                    RegisteredDatatableFieldMask curr = RegisteredDatatableFieldMask.builder().datatableName(datatableName)
+                            .columnName(column.getAsJsonObject().get("name").getAsString())
+                            .columnMask(column.getAsJsonObject().get("fieldMask").getAsString()).build();
+
+                    registeredDatatableFieldMaskRepository.save(curr);
+
                     JsonObject columnAsJson = column.getAsJsonObject();
                     if (rowCount > 0 && columnAsJson.has(API_FIELD_MANDATORY) && columnAsJson.get(API_FIELD_MANDATORY).getAsBoolean()) {
                         throw new GeneralPlatformDomainRuleException("error.msg.non.empty.datatable.mandatory.column.cannot.be.added",
@@ -775,6 +797,18 @@ public class ReadWriteNonCoreDataServiceImpl implements ReadWriteNonCoreDataServ
                 final Map<String, Long> codeMappings = new HashMap<>();
                 final List<String> removeMappings = new ArrayList<>();
                 for (final JsonElement column : changeColumns) {
+
+                    // Update table mask if existent
+                    Optional<RegisteredDatatableFieldMask> fieldMaskOpt = registeredDatatableFieldMaskRepository
+                            .findByDatatableNameAndColumnName(datatableName, column.getAsJsonObject().get("name").getAsString());
+
+                    if (fieldMaskOpt.isPresent()) {
+                        RegisteredDatatableFieldMask curr = fieldMaskOpt.get();
+                        curr.setColumnMask(column.getAsJsonObject().get("fieldMask").getAsString());
+                        curr.setColumnName(column.getAsJsonObject().get("newName").getAsString());
+                        registeredDatatableFieldMaskRepository.save(curr);
+                    }
+
                     // remove NULL values from column where mandatory is true
                     removeNullValuesFromStringColumn(datatableName, column.getAsJsonObject(), mapColumnNameDefinition);
                     parseDatatableColumnForUpdate(column.getAsJsonObject(), mapColumnNameDefinition, datatableName, renameBuilder,
