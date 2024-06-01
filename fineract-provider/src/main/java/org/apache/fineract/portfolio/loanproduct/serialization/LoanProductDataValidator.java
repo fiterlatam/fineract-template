@@ -70,6 +70,7 @@ import org.springframework.stereotype.Component;
 @Component
 public final class LoanProductDataValidator {
 
+    public static final String INTEREST_RATE_ID = "interestRateId";
     public static final String NAME = "name";
     public static final String DESCRIPTION = "description";
     public static final String FUND_ID = "fundId";
@@ -186,7 +187,8 @@ public final class LoanProductDataValidator {
             LoanProductConstants.CUSTOM_ALLOW_CREATE_OR_DISBUSE_PARAM_NAME, LoanProductConstants.CUSTOM_ALLOW_COLLECTIONS_PARAM_NAME,
             LoanProductConstants.CUSTOM_ALLOW_CREDIT_NOTE_PARAM_NAME, LoanProductConstants.CUSTOM_ALLOW_DEBIT_NOTE_PARAM_NAME,
             LoanProductConstants.CUSTOM_ALLOW_FORGIVENESS_PARAM_NAME, LoanProductConstants.CUSTOM_ALLOW_REVERSAL_OR_CANCELATION_PARAM_NAME,
-            LoanProductConstants.CUSTOM_COLLECTION_SUBCHANNEL_LOAN_PRODUC_MAPPER_PARAM_NAME));
+            LoanProductConstants.CUSTOM_COLLECTION_SUBCHANNEL_LOAN_PRODUC_MAPPER_PARAM_NAME, LoanProductConstants.REQUIRE_POINT_PARAM_NAME,
+            LoanProductConstants.INTEREST_RATE_ID_PARAM_NAME));
 
     private static final Set<String> MAXIMUM_RATE_SUPPORTED_PARAMETERS = new HashSet<>(
             Arrays.asList("locale", "dateFormat", "eaRate", "annualNominalRate", "appliedBy", "appliedOnDate", "dailyNominalRate",
@@ -224,6 +226,9 @@ public final class LoanProductDataValidator {
         final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors).resource(LOANPRODUCT);
 
         final JsonElement element = this.fromApiJsonHelper.parse(json);
+
+        final Long interestRateId = this.fromApiJsonHelper.extractLongNamed(INTEREST_RATE_ID, element);
+        baseDataValidator.reset().parameter(INTEREST_RATE_ID).value(interestRateId).notNull().integerGreaterThanZero();
 
         final String name = this.fromApiJsonHelper.extractStringNamed(NAME, element);
         baseDataValidator.reset().parameter(NAME).value(name).notBlank().notExceedingLengthOf(100);

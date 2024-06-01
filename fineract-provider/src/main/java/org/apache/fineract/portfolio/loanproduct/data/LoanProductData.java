@@ -46,6 +46,7 @@ import org.apache.fineract.portfolio.common.service.CommonEnumerations;
 import org.apache.fineract.portfolio.delinquency.data.DelinquencyBucketData;
 import org.apache.fineract.portfolio.floatingrates.data.FloatingRateData;
 import org.apache.fineract.portfolio.fund.data.FundData;
+import org.apache.fineract.portfolio.interestrates.data.InterestRateData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanInterestRecalculationData;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleProcessingType;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleType;
@@ -265,6 +266,15 @@ public class LoanProductData implements Serializable {
 
     @Setter
     private List<SubChannelLoanProductData> customCollectionsSubChannelList;
+
+    @Setter
+    private List<InterestRateData> interestRateOptions;
+
+    @Setter
+    private Boolean requirePoints;
+
+    @Setter
+    private InterestRateData interestRate;
 
     /**
      * Used when returning lookup information about loan product for dropdowns.
@@ -1128,6 +1138,8 @@ public class LoanProductData implements Serializable {
         this.productTypeOptions = productTypeOptions;
         this.productType = productData.productType;
         this.advance = productData.advance;
+        this.requirePoints = productData.requirePoints;
+        this.interestRate = productData.interestRate;
 
     }
 

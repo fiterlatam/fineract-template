@@ -55,9 +55,8 @@ public class InterestRateReadPlatformServiceImpl implements InterestRateReadPlat
 
     @Override
     public List<InterestRateData> retrieveAll() {
-        InterestRateRowMapper rateMapper = new InterestRateRowMapper();
-        final String sql = "SELECT " + rateMapper.schema();
-        return this.jdbcTemplate.query(sql, rateMapper);
+        final String sql = "SELECT " + this.interestRateRowMapper.schema();
+        return this.jdbcTemplate.query(sql, this.interestRateRowMapper);
     }
 
     @Override
@@ -69,6 +68,13 @@ public class InterestRateReadPlatformServiceImpl implements InterestRateReadPlat
             log.error(e.getMessage(), e);
             throw new InterestRateException(interestRateId);
         }
+    }
+
+    @Override
+    public List<InterestRateData> retrieveInterestRates(SearchParameters searchParameters) {
+        final List<Object> paramList = new ArrayList<>(Collections.singletonList(searchParameters.getActive()));
+        final String sql = "SELECT " + this.interestRateRowMapper.schema() + " WHERE mir.is_active = ? ";
+        return this.jdbcTemplate.query(sql, this.interestRateRowMapper, paramList.toArray());
     }
 
     private static final class InterestRateRowMapper implements RowMapper<InterestRateData> {
@@ -109,7 +115,7 @@ public class InterestRateReadPlatformServiceImpl implements InterestRateReadPlat
 
     @Override
     public Page<InterestRateHistoryData> retrieveHistory(SearchParameters searchParameters) {
-        List<Object> paramList = new ArrayList<>(Collections.singletonList(searchParameters.getInterestRateId()));
+        final List<Object> paramList = new ArrayList<>(Collections.singletonList(searchParameters.getInterestRateId()));
         final StringBuilder sqlBuilder = new StringBuilder(200);
         sqlBuilder.append("SELECT ").append(sqlGenerator.calcFoundRows()).append(" ");
         sqlBuilder.append(this.interestRateHistoryRowMapper.schema());

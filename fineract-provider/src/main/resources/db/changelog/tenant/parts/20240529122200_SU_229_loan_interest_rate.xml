@@ -214,4 +214,41 @@
             <column name="last_modified_on_utc"  valueDate="${current_datetime}"/>
         </insert>
     </changeSet>
+
+    <changeSet author="fineract" id="8">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_product_loan" columnName="require_points"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_product_loan">
+            <column name="require_points" type="boolean" defaultValueBoolean="false"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="9">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_product_loan" columnName="interest_rate_id"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_product_loan">
+            <column name="interest_rate_id" type="BIGINT">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="10">
+        <addForeignKeyConstraint baseColumnNames="interest_rate_id"
+                                 baseTableName="m_product_loan"
+                                 constraintName="FK_m_product_loan_interest_rate_id"
+                                 deferrable="false"
+                                 initiallyDeferred="false"
+                                 onDelete="RESTRICT"
+                                 onUpdate="RESTRICT"
+                                 referencedColumnNames="id"
+                                 referencedTableName="m_interest_rate"
+                                 validate="true"/>
+    </changeSet>
 </databaseChangeLog>

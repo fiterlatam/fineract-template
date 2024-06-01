@@ -31,4 +31,6 @@ public interface InterestRateReadPlatformService {
     InterestRateData retrieveOne(Long interestRateId);
 
     Page<InterestRateHistoryData> retrieveHistory(SearchParameters searchParameters);
+
+    List<InterestRateData> retrieveInterestRates(SearchParameters searchParameters);
 }
