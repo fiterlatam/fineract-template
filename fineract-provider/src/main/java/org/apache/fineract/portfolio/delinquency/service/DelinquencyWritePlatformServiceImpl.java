@@ -290,14 +290,20 @@ public class DelinquencyWritePlatformServiceImpl implements DelinquencyWritePlat
 
     private DelinquencyRange createDelinquencyRange(DelinquencyRangeData data, Map<String, Object> changes) {
         Optional<DelinquencyRange> delinquencyRange = repositoryRange.findByClassification(data.getClassification());
-
+        DelinquencyRange newDelinquencyRange = new DelinquencyRange();
         if (delinquencyRange.isEmpty()) {
             if (data.getMaximumAgeDays() != null && data.getMinimumAgeDays() > data.getMaximumAgeDays()) {
                 final String errorMessage = "The age days values are invalid, the maximum age days can't be lower than minimum age days";
                 throw new DelinquencyRangeInvalidAgesException(errorMessage, data.getMinimumAgeDays(), data.getMaximumAgeDays());
             }
-            DelinquencyRange newDelinquencyRange = DelinquencyRange.instance(data.getClassification(), data.getMinimumAgeDays(),
-                    data.getMaximumAgeDays(), data.getCurentInterest(), data.getPenaltyInterest());
+            if(data.getCurentInterest() != null && data.getPenaltyInterest() != null){
+                newDelinquencyRange = DelinquencyRange.instance(data.getClassification(), data.getMinimumAgeDays(),
+                        data.getMaximumAgeDays(), data.getCurentInterest(), data.getPenaltyInterest());
+            }else{
+                newDelinquencyRange = DelinquencyRange.instance(data.getClassification(), data.getMinimumAgeDays(),
+                        data.getMaximumAgeDays());
+            }
+
             return repositoryRange.saveAndFlush(newDelinquencyRange);
         } else {
             throw new PlatformDataIntegrityException("error.msg.data.integrity.issue.entity.duplicated",
@@ -318,6 +324,12 @@ public class DelinquencyWritePlatformServiceImpl implements DelinquencyWritePlat
         if (!data.getMaximumAgeDays().equals(delinquencyRange.getMaximumAgeDays())) {
             delinquencyRange.setMaximumAgeDays(data.getMaximumAgeDays());
             changes.put(DelinquencyApiConstants.MAXIMUMAGEDAYS_PARAM_NAME, data.getMaximumAgeDays());
+        }
+        if(data.getCurentInterest() != null && data.getPenaltyInterest() != null){
+            delinquencyRange.setCurentInterest(data.getCurentInterest());
+            changes.put(DelinquencyApiConstants.CURENTINTEREST, data.getCurentInterest());
+            delinquencyRange.setPenaltyInterest(data.getPenaltyInterest());
+            changes.put(DelinquencyApiConstants.PENALTYINTEREST, data.getPenaltyInterest());
         }
         if (!changes.isEmpty()) {
             delinquencyRange = repositoryRange.saveAndFlush(delinquencyRange);

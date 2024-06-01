@@ -76,9 +76,9 @@ public class DelinquencyRangeParseAndValidator extends ParseAndValidator {
         BigDecimal curentInterest = null;
         BigDecimal penaltyInterest = null;
         curentInterest = jsonHelper.extractBigDecimalNamed(DelinquencyApiConstants.CURENTINTEREST, element, locale);
-        dataValidator.reset().parameter(DelinquencyApiConstants.CURENTINTEREST).value(curentInterest).notBlank().ignoreIfNull();
+        dataValidator.reset().parameter(DelinquencyApiConstants.CURENTINTEREST).value(curentInterest).ignoreIfNull();
          penaltyInterest = jsonHelper.extractBigDecimalNamed(DelinquencyApiConstants.PENALTYINTEREST, element, locale);
-        dataValidator.reset().parameter(DelinquencyApiConstants.PENALTYINTEREST).value(penaltyInterest).notBlank().ignoreIfNull();
+        dataValidator.reset().parameter(DelinquencyApiConstants.PENALTYINTEREST).value(penaltyInterest).ignoreIfNull();
 
         return dataValidator.hasError() ? null : DelinquencyRangeData.instance(classification, minimumAge, maximumAge, curentInterest, penaltyInterest);
     }

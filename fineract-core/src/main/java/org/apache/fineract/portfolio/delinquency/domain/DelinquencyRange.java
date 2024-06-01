@@ -67,6 +67,11 @@ public class DelinquencyRange extends AbstractAuditableWithUTCDateTimeCustom {
         this.penaltyInterest = penaltyInterest;
     }
 
+    public static DelinquencyRange instance(@NotNull String classification, @NotNull Integer minimumAge, Integer maximumAge) {
+
+        return new DelinquencyRange(classification, minimumAge, maximumAge,null,null);
+    }
+
     public static DelinquencyRange instance(@NotNull String classification, @NotNull Integer minimumAge, Integer maximumAge, BigDecimal curentInterest, BigDecimal penaltyInterest) {
         return new DelinquencyRange(classification, minimumAge, maximumAge, curentInterest, penaltyInterest);
     }

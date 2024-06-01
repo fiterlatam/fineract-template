@@ -44,7 +44,7 @@ public class DelinquencyRangeData implements Serializable {
     }
 
     public static DelinquencyRangeData reference(Long id) {
-        return new DelinquencyRangeData(id, "", 0, 0, BigDecimal.valueOf(0), BigDecimal.valueOf(0));
+        return new DelinquencyRangeData(id, "", 0, 0, BigDecimal.ZERO, BigDecimal.ZERO);
     }
 
 }
