@@ -251,4 +251,30 @@
                                  referencedTableName="m_interest_rate"
                                  validate="true"/>
     </changeSet>
+
+    <changeSet author="fineract" id="11">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_loan" columnName="interest_rate_points"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_loan">
+            <column name="interest_rate_points" type="BIGINT">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="12">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_product_loan" columnName="interest_rate_points"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_product_loan">
+            <column name="interest_rate_points" type="BIGINT">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
 </databaseChangeLog>

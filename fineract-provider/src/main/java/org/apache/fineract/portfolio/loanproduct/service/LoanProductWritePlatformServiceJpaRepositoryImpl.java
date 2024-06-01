@@ -168,7 +168,7 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
             final CodeValue productType = findProductTypeByIdIfProvided(
                     command.longValueOfParameterNamed(LoanProductConstants.PRODUCT_TYPE));
             final LoanProduct loanProduct = LoanProduct.assembleFromJson(fund, loanTransactionProcessingStrategyCode, charges, command,
-                    this.aprCalculator, floatingRate, rates, loanProductPaymentAllocationRules, loanProductCreditAllocationRules);
+                    floatingRate, rates, loanProductPaymentAllocationRules, loanProductCreditAllocationRules, interestRate);
             this.validateMaximumInterestRate(loanProduct);
             loanProduct.updateLoanProductInRelatedClasses();
             loanProduct.setTransactionProcessingStrategyName(
@@ -329,6 +329,13 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
                 final InterestRate interestRate = this.interestRateRepository.findById(interestRateId)
                         .orElseThrow(() -> new InterestRateException(interestRateId));
                 product.setInterestRate(interestRate);
+                final BigDecimal currentRate = interestRate.getCurrentRate();
+                final PeriodFrequencyType interestFrequencyType = PeriodFrequencyType.YEARS;
+                product.loanProductMinMaxConstraints().setMinNominalInterestRatePerPeriod(currentRate);
+                product.loanProductMinMaxConstraints().setMaxNominalInterestRatePerPeriod(currentRate);
+                product.getLoanProductRelatedDetail().setNominalInterestRatePerPeriod(currentRate);
+                product.getLoanProductRelatedDetail().setAnnualNominalInterestRate(currentRate);
+                product.getLoanProductRelatedDetail().updateInterestPeriodFrequencyType(interestFrequencyType);
             }
 
             if (changes.containsKey("fundId")) {

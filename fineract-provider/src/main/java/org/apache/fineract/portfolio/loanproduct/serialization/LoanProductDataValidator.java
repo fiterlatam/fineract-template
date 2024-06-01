@@ -546,49 +546,6 @@ public final class LoanProductDataValidator {
                         "isFloatingInterestRateCalculationAllowed param is not supported when isLinkedToFloatingInterestRates is not supplied or false");
             }
 
-            final BigDecimal interestRatePerPeriod = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed(INTEREST_RATE_PER_PERIOD,
-                    element);
-            baseDataValidator.reset().parameter(INTEREST_RATE_PER_PERIOD).value(interestRatePerPeriod).notNull().zeroOrPositiveAmount();
-
-            final String minInterestRatePerPeriodParameterName = MIN_INTEREST_RATE_PER_PERIOD;
-            BigDecimal minInterestRatePerPeriod = null;
-            if (this.fromApiJsonHelper.parameterExists(minInterestRatePerPeriodParameterName, element)) {
-                minInterestRatePerPeriod = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed(minInterestRatePerPeriodParameterName,
-                        element);
-                baseDataValidator.reset().parameter(minInterestRatePerPeriodParameterName).value(minInterestRatePerPeriod).ignoreIfNull()
-                        .zeroOrPositiveAmount();
-            }
-
-            final String maxInterestRatePerPeriodParameterName = MAX_INTEREST_RATE_PER_PERIOD;
-            BigDecimal maxInterestRatePerPeriod = null;
-            if (this.fromApiJsonHelper.parameterExists(maxInterestRatePerPeriodParameterName, element)) {
-                maxInterestRatePerPeriod = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed(maxInterestRatePerPeriodParameterName,
-                        element);
-                baseDataValidator.reset().parameter(maxInterestRatePerPeriodParameterName).value(maxInterestRatePerPeriod).ignoreIfNull()
-                        .zeroOrPositiveAmount();
-            }
-
-            if (maxInterestRatePerPeriod != null && maxInterestRatePerPeriod.compareTo(BigDecimal.ZERO) >= 0) {
-                if (minInterestRatePerPeriod != null && minInterestRatePerPeriod.compareTo(BigDecimal.ZERO) >= 0) {
-                    baseDataValidator.reset().parameter(maxInterestRatePerPeriodParameterName).value(maxInterestRatePerPeriod)
-                            .notLessThanMin(minInterestRatePerPeriod);
-                    if (minInterestRatePerPeriod.compareTo(maxInterestRatePerPeriod) <= 0) {
-                        baseDataValidator.reset().parameter(INTEREST_RATE_PER_PERIOD).value(interestRatePerPeriod)
-                                .inMinAndMaxAmountRange(minInterestRatePerPeriod, maxInterestRatePerPeriod);
-                    }
-                } else {
-                    baseDataValidator.reset().parameter(INTEREST_RATE_PER_PERIOD).value(interestRatePerPeriod)
-                            .notGreaterThanMax(maxInterestRatePerPeriod);
-                }
-            } else if (minInterestRatePerPeriod != null && minInterestRatePerPeriod.compareTo(BigDecimal.ZERO) >= 0) {
-                baseDataValidator.reset().parameter(INTEREST_RATE_PER_PERIOD).value(interestRatePerPeriod)
-                        .notLessThanMin(minInterestRatePerPeriod);
-            }
-
-            final Integer interestRateFrequencyType = this.fromApiJsonHelper.extractIntegerNamed(INTEREST_RATE_FREQUENCY_TYPE, element,
-                    Locale.getDefault());
-            baseDataValidator.reset().parameter(INTEREST_RATE_FREQUENCY_TYPE).value(interestRateFrequencyType).notNull().inMinMaxRange(0,
-                    4);
         }
 
         // Guarantee Funds
@@ -1552,38 +1509,6 @@ public final class LoanProductDataValidator {
                         "not.supported.when.isLinkedToFloatingInterestRates.is.false",
                         "isFloatingInterestRateCalculationAllowed param is not supported when isLinkedToFloatingInterestRates is not supplied or false");
             }
-
-            final String minInterestRatePerPeriodParameterName = MIN_INTEREST_RATE_PER_PERIOD;
-            BigDecimal minInterestRatePerPeriod = loanProduct.getMinNominalInterestRatePerPeriod();
-            if (this.fromApiJsonHelper.parameterExists(minInterestRatePerPeriodParameterName, element)) {
-                minInterestRatePerPeriod = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed(minInterestRatePerPeriodParameterName,
-                        element);
-            }
-            baseDataValidator.reset().parameter(minInterestRatePerPeriodParameterName).value(minInterestRatePerPeriod).ignoreIfNull()
-                    .zeroOrPositiveAmount();
-
-            final String maxInterestRatePerPeriodParameterName = MAX_INTEREST_RATE_PER_PERIOD;
-            BigDecimal maxInterestRatePerPeriod = loanProduct.getMaxNominalInterestRatePerPeriod();
-            if (this.fromApiJsonHelper.parameterExists(maxInterestRatePerPeriodParameterName, element)) {
-                maxInterestRatePerPeriod = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed(maxInterestRatePerPeriodParameterName,
-                        element);
-            }
-            baseDataValidator.reset().parameter(maxInterestRatePerPeriodParameterName).value(maxInterestRatePerPeriod).ignoreIfNull()
-                    .zeroOrPositiveAmount();
-
-            BigDecimal interestRatePerPeriod = loanProduct.getLoanProductRelatedDetail().getNominalInterestRatePerPeriod();
-            if (this.fromApiJsonHelper.parameterExists(INTEREST_RATE_PER_PERIOD, element)) {
-                interestRatePerPeriod = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed(INTEREST_RATE_PER_PERIOD, element);
-            }
-            baseDataValidator.reset().parameter(INTEREST_RATE_PER_PERIOD).value(interestRatePerPeriod).notNull().zeroOrPositiveAmount();
-
-            Integer interestRateFrequencyType = loanProduct.getLoanProductRelatedDetail().getInterestPeriodFrequencyType().getValue();
-            if (this.fromApiJsonHelper.parameterExists(INTEREST_RATE_FREQUENCY_TYPE, element)) {
-                interestRateFrequencyType = this.fromApiJsonHelper.extractIntegerNamed(INTEREST_RATE_FREQUENCY_TYPE, element,
-                        Locale.getDefault());
-            }
-            baseDataValidator.reset().parameter(INTEREST_RATE_FREQUENCY_TYPE).value(interestRateFrequencyType).notNull().inMinMaxRange(0,
-                    4);
         }
 
         // Guarantee Funds

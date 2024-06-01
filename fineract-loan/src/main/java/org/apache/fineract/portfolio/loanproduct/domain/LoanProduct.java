@@ -295,9 +295,9 @@ public class LoanProduct extends AbstractPersistableCustom {
     private Boolean customAllowReversalCancellation = false;
 
     public static LoanProduct assembleFromJson(final Fund fund, final String loanTransactionProcessingStrategy,
-            final List<Charge> productCharges, final JsonCommand command, final AprCalculator aprCalculator, FloatingRate floatingRate,
-            final List<Rate> productRates, List<LoanProductPaymentAllocationRule> loanProductPaymentAllocationRules,
-            List<LoanProductCreditAllocationRule> loanProductCreditAllocationRules) {
+            final List<Charge> productCharges, final JsonCommand command, FloatingRate floatingRate, final List<Rate> productRates,
+            List<LoanProductPaymentAllocationRule> loanProductPaymentAllocationRules,
+            List<LoanProductCreditAllocationRule> loanProductCreditAllocationRules, final InterestRate interestRate) {
 
         final String name = command.stringValueOfParameterNamed("name");
         final String shortName = command.stringValueOfParameterNamed(LoanProductConstants.SHORT_NAME);
@@ -344,12 +344,12 @@ public class LoanProduct extends AbstractPersistableCustom {
             isFloatingInterestRateCalculationAllowed = command
                     .booleanObjectValueOfParameterNamed("isFloatingInterestRateCalculationAllowed");
         } else {
-            interestFrequencyType = PeriodFrequencyType.fromInt(command.integerValueOfParameterNamed("interestRateFrequencyType"));
-            interestRatePerPeriod = command.bigDecimalValueOfParameterNamed("interestRatePerPeriod");
-            minInterestRatePerPeriod = command.bigDecimalValueOfParameterNamed("minInterestRatePerPeriod");
-            maxInterestRatePerPeriod = command.bigDecimalValueOfParameterNamed("maxInterestRatePerPeriod");
-            annualInterestRate = aprCalculator.calculateFrom(interestFrequencyType, interestRatePerPeriod, numberOfRepayments,
-                    repaymentEvery, repaymentFrequencyType);
+            final BigDecimal currentRate = interestRate.getCurrentRate();
+            interestFrequencyType = PeriodFrequencyType.YEARS;
+            interestRatePerPeriod = currentRate;
+            minInterestRatePerPeriod = currentRate;
+            maxInterestRatePerPeriod = currentRate;
+            annualInterestRate = currentRate;
 
         }
 
@@ -781,6 +781,7 @@ public class LoanProduct extends AbstractPersistableCustom {
         if (charges != null) {
             this.charges = charges;
         }
+        final Long interestRatePoints = null;
 
         this.isLinkedToFloatingInterestRate = isLinkedToFloatingInterestRates != null && isLinkedToFloatingInterestRates;
         if (isLinkedToFloatingInterestRate) {
@@ -796,12 +797,12 @@ public class LoanProduct extends AbstractPersistableCustom {
         }
 
         this.loanProductRelatedDetail = new LoanProductRelatedDetail(currency, defaultPrincipal, defaultNominalInterestRatePerPeriod,
-                interestPeriodFrequencyType, defaultAnnualNominalInterestRate, interestMethod, interestCalculationPeriodMethod,
-                considerPartialPeriodInterest, repayEvery, repaymentFrequencyType, defaultNumberOfInstallments, graceOnPrincipalPayment,
-                recurringMoratoriumOnPrincipalPeriods, graceOnInterestPayment, graceOnInterestCharged, amortizationMethod,
-                inArrearsTolerance, graceOnArrearsAgeing, daysInMonthType.getValue(), daysInYearType.getValue(),
-                isInterestRecalculationEnabled, isEqualAmortization, enableDownPayment, disbursedAmountPercentageForDownPayment,
-                enableAutoRepaymentForDownPayment, loanScheduleType, loanScheduleProcessingType);
+                interestRatePoints, interestPeriodFrequencyType, defaultAnnualNominalInterestRate, interestMethod,
+                interestCalculationPeriodMethod, considerPartialPeriodInterest, repayEvery, repaymentFrequencyType,
+                defaultNumberOfInstallments, graceOnPrincipalPayment, recurringMoratoriumOnPrincipalPeriods, graceOnInterestPayment,
+                graceOnInterestCharged, amortizationMethod, inArrearsTolerance, graceOnArrearsAgeing, daysInMonthType.getValue(),
+                daysInYearType.getValue(), isInterestRecalculationEnabled, isEqualAmortization, enableDownPayment,
+                disbursedAmountPercentageForDownPayment, enableAutoRepaymentForDownPayment, loanScheduleType, loanScheduleProcessingType);
 
         this.loanProductRelatedDetail.validateRepaymentPeriodWithGraceSettings();
 
