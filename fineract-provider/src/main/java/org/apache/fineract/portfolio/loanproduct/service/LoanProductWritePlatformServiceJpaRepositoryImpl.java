@@ -67,6 +67,9 @@ import org.apache.fineract.portfolio.floatingrates.domain.FloatingRateRepository
 import org.apache.fineract.portfolio.fund.domain.Fund;
 import org.apache.fineract.portfolio.fund.domain.FundRepository;
 import org.apache.fineract.portfolio.fund.exception.FundNotFoundException;
+import org.apache.fineract.portfolio.interestrates.domain.InterestRate;
+import org.apache.fineract.portfolio.interestrates.domain.InterestRateRepository;
+import org.apache.fineract.portfolio.interestrates.exception.InterestRateException;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleTransactionProcessorFactory;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.AprCalculator;
@@ -128,6 +131,7 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
     private final SubChannelLoanProductReadWritePlatformService subChannelLoanProductReadWritePlatformService;
     private final SubChannelLoanProductRepository subChannelLoanProductRepository;
     private final JdbcTemplate jdbcTemplate;
+    private final InterestRateRepository interestRateRepository;
 
     @Transactional
     @Override
@@ -141,7 +145,12 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
             validateInputDates(command);
 
             final Fund fund = findFundByIdIfProvided(command.longValueOfParameterNamed("fundId"));
-
+            final Long interestRateId = command.longValueOfParameterNamed("interestRateId");
+            final InterestRate interestRate = this.interestRateRepository.findById(interestRateId)
+                    .orElseThrow(() -> new InterestRateException(interestRateId));
+            if (!interestRate.isActive()) {
+                throw new InterestRateException(interestRateId);
+            }
             final String loanTransactionProcessingStrategyCode = command.stringValueOfParameterNamed("transactionProcessingStrategyCode");
 
             final String currencyCode = command.stringValueOfParameterNamed("currencyCode");
@@ -159,7 +168,7 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
             final CodeValue productType = findProductTypeByIdIfProvided(
                     command.longValueOfParameterNamed(LoanProductConstants.PRODUCT_TYPE));
             final LoanProduct loanProduct = LoanProduct.assembleFromJson(fund, loanTransactionProcessingStrategyCode, charges, command,
-                    this.aprCalculator, floatingRate, rates, loanProductPaymentAllocationRules, loanProductCreditAllocationRules);
+                    floatingRate, rates, loanProductPaymentAllocationRules, loanProductCreditAllocationRules, interestRate);
             this.validateMaximumInterestRate(loanProduct);
             loanProduct.updateLoanProductInRelatedClasses();
             loanProduct.setTransactionProcessingStrategyName(
@@ -172,6 +181,7 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
             }
 
             populateProductCustomAllowance(command, loanProduct);
+            loanProduct.setInterestRate(interestRate);
 
             this.loanProductRepository.save(loanProduct);
 
@@ -313,6 +323,20 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
             }
 
             final Map<String, Object> changes = product.update(command, this.aprCalculator, floatingRate);
+
+            if (changes.containsKey("interestRateId")) {
+                final Long interestRateId = (Long) changes.get("interestRateId");
+                final InterestRate interestRate = this.interestRateRepository.findById(interestRateId)
+                        .orElseThrow(() -> new InterestRateException(interestRateId));
+                product.setInterestRate(interestRate);
+                final BigDecimal currentRate = interestRate.getCurrentRate();
+                final PeriodFrequencyType interestFrequencyType = PeriodFrequencyType.YEARS;
+                product.loanProductMinMaxConstraints().setMinNominalInterestRatePerPeriod(currentRate);
+                product.loanProductMinMaxConstraints().setMaxNominalInterestRatePerPeriod(currentRate);
+                product.getLoanProductRelatedDetail().setNominalInterestRatePerPeriod(currentRate);
+                product.getLoanProductRelatedDetail().setAnnualNominalInterestRate(currentRate);
+                product.getLoanProductRelatedDetail().updateInterestPeriodFrequencyType(interestFrequencyType);
+            }
 
             if (changes.containsKey("fundId")) {
                 final Long fundId = (Long) changes.get("fundId");

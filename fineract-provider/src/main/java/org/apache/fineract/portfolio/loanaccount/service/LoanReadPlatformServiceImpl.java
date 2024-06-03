@@ -630,7 +630,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         }
 
         public String loanSchema() {
-            return "l.id as id, l.account_no as accountNo, l.external_id as externalId, l.fund_id as fundId, f.name as fundName,"
+            return "l.id as id, l.account_no as accountNo, l.interest_rate_points as interestRatePoints, l.external_id as externalId, l.fund_id as fundId, f.name as fundName,"
                     + " l.loan_type_enum as loanType, l.loanpurpose_cv_id as loanPurposeId, cv.code_value as loanPurposeName,"
                     + " lp.id as loanProductId, lp.name as loanProductName, lp.description as loanProductDescription,"
                     + " lp.is_linked_to_floating_interest_rates as isLoanProductLinkedToFloatingRate, "
@@ -1093,6 +1093,9 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                     loanScheduleType.asEnumOptionData(), loanScheduleProcessingType.asEnumOptionData());
             basicLoanDetails.setLoanAssignorId(loanAssignorId);
             basicLoanDetails.setBlockStatus(blockStatusData);
+            final Long interestRatePoints = JdbcSupport.getLong(rs, "interestRatePoints");
+            basicLoanDetails.setInterestRatePoints(interestRatePoints);
+
             return basicLoanDetails;
 
         }

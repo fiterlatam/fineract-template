@@ -262,7 +262,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             }
 
             final Loan newLoanApplication = this.loanAssembler.assembleFrom(command);
-            this.validMaximumInterestRate(newLoanApplication);
+            this.validMaximumLegalInterestRate(newLoanApplication);
 
             checkForProductMixRestrictions(newLoanApplication);
 
@@ -696,7 +696,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
         this.calendarInstanceRepository.save(calendarInstance);
     }
 
-    private void validMaximumInterestRate(final Loan loanApplication) {
+    private void validMaximumLegalInterestRate(final Loan loanApplication) {
         final BigDecimal nominalInterestRatePerPeriod = loanApplication.getLoanRepaymentScheduleDetail().getNominalInterestRatePerPeriod();
         final PeriodFrequencyType interestPeriodFrequencyType = loanApplication.getLoanRepaymentScheduleDetail()
                 .getInterestPeriodFrequencyType();
@@ -1019,6 +1019,14 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 final JsonQuery query = JsonQuery.from(command.json(), parsedQuery, this.fromJsonHelper);
 
                 final LoanScheduleModel loanSchedule = this.calculationPlatformService.calculateLoanSchedule(query, false);
+                final BigDecimal annualNominalInterestRate = loanSchedule.getLoanApplicationTerms().getAnnualNominalInterestRate();
+                final BigDecimal interestRatePerPeriod = loanSchedule.getLoanApplicationTerms().getInterestRatePerPeriod();
+                final PeriodFrequencyType interestRatePeriodFrequencyType = loanSchedule.getLoanApplicationTerms()
+                        .getInterestRatePeriodFrequencyType();
+
+                existingLoanApplication.getLoanRepaymentScheduleDetail().setAnnualNominalInterestRate(annualNominalInterestRate);
+                existingLoanApplication.getLoanRepaymentScheduleDetail().setNominalInterestRatePerPeriod(interestRatePerPeriod);
+                existingLoanApplication.getLoanRepaymentScheduleDetail().updateInterestPeriodFrequencyType(interestRatePeriodFrequencyType);
                 existingLoanApplication.updateLoanSchedule(loanSchedule);
                 existingLoanApplication.recalculateAllCharges();
             }
@@ -1204,7 +1212,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             }
             existingLoanApplication.getLoanCustomizationDetail().recordActivity();
 
-            this.validMaximumInterestRate(existingLoanApplication);
+            this.validMaximumLegalInterestRate(existingLoanApplication);
 
             // updating loan interest recalculation details throwing null
             // pointer exception after saveAndFlush

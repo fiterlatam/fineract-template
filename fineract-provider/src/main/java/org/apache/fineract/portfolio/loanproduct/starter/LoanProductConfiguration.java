@@ -32,6 +32,7 @@ import org.apache.fineract.portfolio.delinquency.domain.DelinquencyBucketReposit
 import org.apache.fineract.portfolio.delinquency.service.DelinquencyReadPlatformService;
 import org.apache.fineract.portfolio.floatingrates.domain.FloatingRateRepositoryWrapper;
 import org.apache.fineract.portfolio.fund.domain.FundRepository;
+import org.apache.fineract.portfolio.interestrates.domain.InterestRateRepository;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleTransactionProcessorFactory;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.AprCalculator;
@@ -88,12 +89,13 @@ public class LoanProductConfiguration {
             AdvancedPaymentAllocationsJsonParser advancedPaymentJsonParser, CreditAllocationsJsonParser creditAllocationsJsonParser,
             LoanProductReadPlatformService loanProductReadPlatformService, CodeValueRepositoryWrapper codeValueRepositoryWrapper,
             SubChannelLoanProductReadWritePlatformService subChannelLoanProductReadWritePlatformService,
-            SubChannelLoanProductRepository subChannelLoanProductRepository, JdbcTemplate jdbcTemplate) {
+            SubChannelLoanProductRepository subChannelLoanProductRepository, JdbcTemplate jdbcTemplate,
+            InterestRateRepository interestRateRepository) {
         return new LoanProductWritePlatformServiceJpaRepositoryImpl(context, fromApiJsonDeserializer, loanProductRepository,
                 maximumRateRepository, advanceQuotaRepository, aprCalculator, fundRepository, chargeRepository, rateRepository,
                 accountMappingWritePlatformService, fineractEntityAccessUtil, floatingRateRepository, loanRepositoryWrapper,
                 businessEventNotifierService, delinquencyBucketRepository, loanRepaymentScheduleTransactionProcessorFactory,
                 advancedPaymentJsonParser, creditAllocationsJsonParser, loanProductReadPlatformService, codeValueRepositoryWrapper,
-                subChannelLoanProductReadWritePlatformService, subChannelLoanProductRepository, jdbcTemplate);
+                subChannelLoanProductReadWritePlatformService, subChannelLoanProductRepository, jdbcTemplate, interestRateRepository);
     }
 }

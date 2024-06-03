@@ -165,6 +165,7 @@ public interface LoanApiConstants {
 
     String TRANSACTION_AMOUNT_PARAMNAME = "transactionAmount";
     String PAYMENT_TYPE_PARAMNAME = "paymentTypeId";
+    String INTEREST_RATE_POINTS = "interestRatePoints";
     String FRAUD_ATTRIBUTE_NAME = "fraud";
 
     // Commands

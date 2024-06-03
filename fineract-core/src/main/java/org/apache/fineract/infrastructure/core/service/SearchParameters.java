@@ -41,7 +41,7 @@ public final class SearchParameters {
     private final String currencyCode;
     private Long interestRateId;
     private final Long staffId;
-
+    private Boolean active;
     private final Long loanId;
 
     private final Long savingsId;
@@ -509,6 +509,10 @@ public final class SearchParameters {
 
     public boolean isSelfUser() {
         return this.isSelfUser;
+    }
+
+    public Boolean getActive() {
+        return Boolean.TRUE.equals(this.active);
     }
 
     /**

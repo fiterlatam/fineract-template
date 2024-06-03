@@ -110,7 +110,7 @@ public final class LoanApplicationCommandFromApiJsonHelper {
             LoanApiConstants.lastApplication, // glim specific
             LoanApiConstants.daysInYearTypeParameterName, LoanApiConstants.fixedPrincipalPercentagePerInstallmentParamName,
             LoanApiConstants.DISALLOW_EXPECTED_DISBURSEMENTS, LoanApiConstants.FRAUD_ATTRIBUTE_NAME,
-            LoanProductConstants.LOAN_SCHEDULE_PROCESSING_TYPE));
+            LoanProductConstants.LOAN_SCHEDULE_PROCESSING_TYPE, LoanApiConstants.INTEREST_RATE_POINTS));
     public static final String LOANAPPLICATION_UNDO = "loanapplication.undo";
 
     private final FromJsonHelper fromApiJsonHelper;
@@ -237,6 +237,12 @@ public final class LoanApplicationCommandFromApiJsonHelper {
             baseDataValidator.reset().parameter(LoanApiConstants.fundIdParameterName).value(fundId).ignoreIfNull().integerGreaterThanZero();
         }
 
+        if (this.fromApiJsonHelper.parameterExists(LoanApiConstants.INTEREST_RATE_POINTS, element)) {
+            final String interestRatePoints = this.fromApiJsonHelper.extractStringNamed(LoanApiConstants.INTEREST_RATE_POINTS, element);
+            baseDataValidator.reset().parameter(LoanApiConstants.INTEREST_RATE_POINTS).value(interestRatePoints)
+                    .matchesRegularExpression("\\d+");
+        }
+
         if (this.fromApiJsonHelper.parameterExists(LoanApiConstants.loanOfficerIdParameterName, element)) {
             final Long loanOfficerId = this.fromApiJsonHelper.extractLongNamed(LoanApiConstants.loanOfficerIdParameterName, element);
             baseDataValidator.reset().parameter(LoanApiConstants.loanOfficerIdParameterName).value(loanOfficerId).ignoreIfNull()
@@ -343,12 +349,6 @@ public final class LoanApplicationCommandFromApiJsonHelper {
                         "not.supported.loanproduct.not.linked.to.floating.rate",
                         "interestRateDifferential param is not supported, selected Loan Product is not linked with floating interest rate.");
             }
-
-            final BigDecimal interestRatePerPeriod = this.fromApiJsonHelper
-                    .extractBigDecimalWithLocaleNamed(LoanApiConstants.interestRatePerPeriodParameterName, element);
-            baseDataValidator.reset().parameter(LoanApiConstants.interestRatePerPeriodParameterName).value(interestRatePerPeriod).notNull()
-                    .zeroOrPositiveAmount();
-
         }
 
         final Integer amortizationType = this.fromApiJsonHelper
