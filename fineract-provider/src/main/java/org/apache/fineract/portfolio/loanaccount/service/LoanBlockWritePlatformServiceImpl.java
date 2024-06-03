@@ -145,9 +145,10 @@ public class LoanBlockWritePlatformServiceImpl implements LoanBlockWritePlatform
         for (LoanBlockingReason obj : unBlocked) {
             if (obj.getBlockingReasonSetting().isAffectsClientLevel()) {
                 final List<BlockingReasonSetting> settings = blockingReasonSettingRepositoryWrapper
-                        .getBlockingReasonSettingByReason(obj.getBlockingReasonSetting().getNameOfReason(), BlockLevel.CLIENT.toString());
-                final Long blockReasonId = settings.get(0).getId();
-                clientWritePlatformService.unblockClientBlockingReason(currentUser, client, unblockDate, blockReasonId, comment);
+                        .getBlockingReasonCreditByClientEffect(BlockLevel.CLIENT.getValue());
+                for(BlockingReasonSetting reasonBlock : settings){
+                clientWritePlatformService.unblockClientBlockingReason(client.getId(), unblockDate, reasonBlock.getNameOfReason(), comment);
+                }
             }
         }
     }
@@ -267,7 +268,8 @@ public class LoanBlockWritePlatformServiceImpl implements LoanBlockWritePlatform
                 unBlocked.add(loanBlockingReason);
                 Client client = loan.getClient();
                 if (client.getBlockingReason() != null) {
-                    if (isHaveBlockLoan(client) == false) {
+
+                    if (isHaveBlockLoan(client) == false && loanBlockingReason.getBlockingReasonSetting().isAffectsClientLevel() == true) {
                         deleteBlockReasonFromClientIfPresent(unBlocked, client, currentUser, unblockDate, unblockComment);
                     }
 
