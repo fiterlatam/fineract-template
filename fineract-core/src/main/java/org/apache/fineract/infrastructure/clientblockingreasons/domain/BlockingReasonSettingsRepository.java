@@ -32,4 +32,7 @@ public interface BlockingReasonSettingsRepository
 
     @Query("SELECT brs FROM BlockingReasonSetting brs WHERE brs.nameOfReason = :reason AND brs.level = :level")
     List<BlockingReasonSetting> getBlockingReasonSettingByReason(@Param("reason") String reason, @Param("level") String level);
+
+    @Query("SELECT brs FROM BlockingReasonSetting brs WHERE brs.affectsClientLevel = :clientlvl")
+    List<BlockingReasonSetting> getBlockingReasonCreditByClientEffect(@Param("clientlvl") Integer clientlvl);
 }

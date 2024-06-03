@@ -68,4 +68,9 @@ public class BlockingReasonSettingsRepositoryWrapper {
     public Optional<BlockingReasonSetting> findById(Long reasonId) {
         return this.repository.findById(reasonId);
     }
+
+
+    public List<BlockingReasonSetting> getBlockingReasonCreditByClientEffect(Integer affectsClientLevel){
+        return this.repository.getBlockingReasonCreditByClientEffect(affectsClientLevel);
+    }
 }
