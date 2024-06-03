@@ -1024,7 +1024,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 final PeriodFrequencyType interestRatePeriodFrequencyType = loanSchedule.getLoanApplicationTerms()
                         .getInterestRatePeriodFrequencyType();
 
-                existingLoanApplication.getLoanRepaymentScheduleDetail().setNominalInterestRatePerPeriod(annualNominalInterestRate);
+                existingLoanApplication.getLoanRepaymentScheduleDetail().setAnnualNominalInterestRate(annualNominalInterestRate);
                 existingLoanApplication.getLoanRepaymentScheduleDetail().setNominalInterestRatePerPeriod(interestRatePerPeriod);
                 existingLoanApplication.getLoanRepaymentScheduleDetail().updateInterestPeriodFrequencyType(interestRatePeriodFrequencyType);
                 existingLoanApplication.updateLoanSchedule(loanSchedule);
