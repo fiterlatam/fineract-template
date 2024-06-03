@@ -146,8 +146,9 @@ public class LoanBlockWritePlatformServiceImpl implements LoanBlockWritePlatform
             if (obj.getBlockingReasonSetting().isAffectsClientLevel()) {
                 final List<BlockingReasonSetting> settings = blockingReasonSettingRepositoryWrapper
                         .getBlockingReasonCreditByClientEffect(BlockLevel.CLIENT.getValue());
-                for(BlockingReasonSetting reasonBlock : settings){
-                clientWritePlatformService.unblockClientBlockingReason(client.getId(), unblockDate, reasonBlock.getNameOfReason(), comment);
+                for (BlockingReasonSetting reasonBlock : settings) {
+                    clientWritePlatformService.unblockClientBlockingReason(client.getId(), unblockDate, reasonBlock.getNameOfReason(),
+                            comment);
                 }
             }
         }
