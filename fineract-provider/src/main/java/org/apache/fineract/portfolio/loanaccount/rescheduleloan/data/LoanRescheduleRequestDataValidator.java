@@ -213,7 +213,8 @@ public class LoanRescheduleRequestDataValidator {
             LocalDate rescheduleFromDate = installment.getFromDate();
             Collection<LoanCharge> charges = loan.getLoanCharges();
             for (LoanCharge loanCharge : charges) {
-                if (loanCharge.isOverdueInstallmentCharge() && DateUtils.isAfter(loanCharge.getDueLocalDate(), rescheduleFromDate)) {
+                if (loanCharge.isOverdueInstallmentCharge() && DateUtils.isAfter(loanCharge.getDueLocalDate(), rescheduleFromDate)
+                        && loanCharge.isActive()) {
                     dataValidatorBuilder.failWithCodeNoParameterAddedToErrorCode("not.allowed.due.to.overdue.charges");
                     break;
                 }
