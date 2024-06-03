@@ -272,6 +272,7 @@ public class LoanAccountData {
     private EnumOptionData loanScheduleType;
     private EnumOptionData loanScheduleProcessingType;
     private BlockingReasonsData blockStatus;
+    private Long interestRatePoints;
 
     public static LoanAccountData importInstanceIndividual(EnumOptionData loanTypeEnumOption, Long clientId, Long productId,
             Long loanOfficerId, LocalDate submittedOnDate, Long fundId, BigDecimal principal, Integer numberOfRepayments,

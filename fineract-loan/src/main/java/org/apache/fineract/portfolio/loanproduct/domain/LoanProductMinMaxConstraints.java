@@ -109,25 +109,6 @@ public class LoanProductMinMaxConstraints {
             actualChanges.put("locale", localeAsInput);
             this.maxNumberOfRepayments = newValue;
         }
-
-        final String minInterestRatePerPeriodParamName = "minInterestRatePerPeriod";
-        if (command.isChangeInBigDecimalParameterNamedWithNullCheck(minInterestRatePerPeriodParamName,
-                this.minNominalInterestRatePerPeriod)) {
-            final BigDecimal newValue = command.bigDecimalValueOfParameterNamed(minInterestRatePerPeriodParamName);
-            actualChanges.put(minInterestRatePerPeriodParamName, newValue);
-            actualChanges.put("locale", localeAsInput);
-            this.minNominalInterestRatePerPeriod = newValue;
-        }
-
-        final String maxInterestRatePerPeriodParamName = "maxInterestRatePerPeriod";
-        if (command.isChangeInBigDecimalParameterNamedWithNullCheck(maxInterestRatePerPeriodParamName,
-                this.maxNominalInterestRatePerPeriod)) {
-            final BigDecimal newValue = command.bigDecimalValueOfParameterNamed(maxInterestRatePerPeriodParamName);
-            actualChanges.put(maxInterestRatePerPeriodParamName, newValue);
-            actualChanges.put("locale", localeAsInput);
-            this.maxNominalInterestRatePerPeriod = newValue;
-        }
-
         return actualChanges;
     }
 

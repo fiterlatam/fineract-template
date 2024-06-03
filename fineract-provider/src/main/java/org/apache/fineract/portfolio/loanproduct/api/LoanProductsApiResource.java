@@ -66,6 +66,7 @@ import org.apache.fineract.infrastructure.core.domain.ExternalId;
 import org.apache.fineract.infrastructure.core.serialization.ApiRequestJsonSerializationSettings;
 import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
 import org.apache.fineract.infrastructure.core.service.ExternalIdFactory;
+import org.apache.fineract.infrastructure.core.service.SearchParameters;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.organisation.monetary.data.CurrencyData;
 import org.apache.fineract.organisation.monetary.service.CurrencyReadPlatformService;
@@ -82,6 +83,8 @@ import org.apache.fineract.portfolio.floatingrates.data.FloatingRateData;
 import org.apache.fineract.portfolio.floatingrates.service.FloatingRatesReadPlatformService;
 import org.apache.fineract.portfolio.fund.data.FundData;
 import org.apache.fineract.portfolio.fund.service.FundReadPlatformService;
+import org.apache.fineract.portfolio.interestrates.data.InterestRateData;
+import org.apache.fineract.portfolio.interestrates.service.InterestRateReadPlatformService;
 import org.apache.fineract.portfolio.loanaccount.api.LoanApiConstants;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleProcessingType;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleType;
@@ -161,6 +164,7 @@ public class LoanProductsApiResource {
     private final WorkingDaysRepositoryWrapper workingDaysRepositoryWrapper;
     private final CodeValueReadPlatformService codeValueReadPlatformService;
     private final SubChannelLoanProductReadWritePlatformService subChannelLoanProductReadWritePlatformService;
+    private final InterestRateReadPlatformService interestRateReadPlatformService;
 
     @POST
     @Consumes({ MediaType.APPLICATION_JSON })
@@ -243,6 +247,9 @@ public class LoanProductsApiResource {
                 .retrieveMaximumCreditRateConfigurationData();
         loanProduct.setMaximumCreditRateConfiguration(maximumCreditRateConfigurationData);
 
+        final SearchParameters searchParameters = SearchParameters.builder().active(true).build();
+        final List<InterestRateData> interestRateOptions = this.interestRateReadPlatformService.retrieveInterestRates(searchParameters);
+        loanProduct.setInterestRateOptions(interestRateOptions);
         return this.toApiJsonSerializer.serialize(settings, loanProduct, LOAN_PRODUCT_DATA_PARAMETERS);
     }
 
@@ -504,6 +511,10 @@ public class LoanProductsApiResource {
         ret.setCustomAllowDebitNote(productData.getCustomAllowDebitNote());
         ret.setCustomAllowForgiveness(productData.getCustomAllowForgiveness());
         ret.setCustomAllowReversalCancellation(productData.getCustomAllowReversalCancellation());
+
+        final SearchParameters searchParameters = SearchParameters.builder().active(true).build();
+        final List<InterestRateData> interestRateOptions = this.interestRateReadPlatformService.retrieveInterestRates(searchParameters);
+        ret.setInterestRateOptions(interestRateOptions);
 
         return ret;
     }

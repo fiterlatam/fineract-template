@@ -43,6 +43,7 @@ public final class LoanScheduleModel {
     private final BigDecimal totalPenaltyChargesCharged;
     private final BigDecimal totalRepaymentExpected;
     private final BigDecimal totalOutstanding;
+    private LoanApplicationTerms loanApplicationTerms;
 
     public static LoanScheduleModel from(final List<LoanScheduleModelPeriod> periods, final ApplicationCurrency applicationCurrency,
             final int loanTermInDays, final Money principalDisbursed, final BigDecimal totalPrincipalExpected,
@@ -126,4 +127,11 @@ public final class LoanScheduleModel {
         return this.totalInterestCharged;
     }
 
+    public LoanApplicationTerms getLoanApplicationTerms() {
+        return loanApplicationTerms;
+    }
+
+    public void setLoanApplicationTerms(LoanApplicationTerms loanApplicationTerms) {
+        this.loanApplicationTerms = loanApplicationTerms;
+    }
 }

@@ -46,6 +46,7 @@ import org.apache.fineract.portfolio.charge.service.ChargeReadPlatformService;
 import org.apache.fineract.portfolio.common.service.CommonEnumerations;
 import org.apache.fineract.portfolio.delinquency.data.DelinquencyBucketData;
 import org.apache.fineract.portfolio.delinquency.service.DelinquencyReadPlatformService;
+import org.apache.fineract.portfolio.interestrates.data.InterestRateData;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleProcessingType;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleType;
 import org.apache.fineract.portfolio.loanproduct.data.AdvanceQuotaConfigurationData;
@@ -95,7 +96,7 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
                     .retrieveAllDelinquencyBuckets();
             final LoanProductMapper rm = new LoanProductMapper(charges, borrowerCycleVariationDatas, rates, delinquencyBucketOptions,
                     advancedPaymentData, creditAllocationData);
-            final String sql = "select " + rm.loanProductSchema() + " where lp.id = ?";
+            final String sql = "select " + rm.loanProductSchema() + " where lp.id = ? ";
 
             return this.jdbcTemplate.queryForObject(sql, rm, loanProductId); // NOSONAR
 
@@ -233,7 +234,8 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
         }
 
         public String loanProductSchema() {
-            return "lp.id as id, lp.fund_id as fundId, lp.is_advance as advance, f.name as fundName, lp.loan_transaction_strategy_code as transactionStrategyCode, lp.loan_transaction_strategy_name as transactionStrategyName, "
+            return "lp.id as id, lp.fund_id as fundId, lp.is_advance as advance, lp.require_points as requirePoints, f.name as fundName, lp.loan_transaction_strategy_code as transactionStrategyCode, lp.loan_transaction_strategy_name as transactionStrategyName, "
+                    + "mir.id as interestRateId, mir.name as interestRateName, mir.current_rate as interestCurrentRate, mir.appliedon_date as interestRateAppliedOnDate, mir.is_active as interestRateActive, "
                     + "lp.name as name, lp.short_name as shortName, lp.description as description, "
                     + "lp.principal_amount as principal, lp.min_principal_amount as minPrincipal, lp.max_principal_amount as maxPrincipal, lp.currency_code as currencyCode, lp.currency_digits as currencyDigits, lp.currency_multiplesof as inMultiplesOf, "
                     + "lp.nominal_interest_rate_per_period as interestRatePerPeriod, lp.min_nominal_interest_rate_per_period as minInterestRatePerPeriod, lp.max_nominal_interest_rate_per_period as maxInterestRatePerPeriod, lp.interest_period_frequency_enum as interestRatePerPeriodFreq, "
@@ -305,7 +307,8 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
                     + " left join m_product_loan_variable_installment_config as lvi on lvi.loan_product_id = lp.id "
                     + " left join m_delinquency_bucket as dbuc on dbuc.id = lp.delinquency_bucket_id "
                     + " left join m_code_value as pty on pty.id = lp.product_type "
-                    + " join m_currency curr on curr.code = lp.currency_code";
+                    + " join m_currency curr on curr.code = lp.currency_code "
+                    + " left join m_interest_rate mir on mir.id = lp.interest_rate_id ";
 
         }
 
@@ -558,6 +561,7 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
                 productType = CodeValueData.instance(productTypeId, productTypeValue);
             }
             final boolean advance = rs.getBoolean("advance");
+            final boolean requirePoints = rs.getBoolean("requirePoints");
 
             final Boolean customAllowCreateOrDisburse = rs.getBoolean("customAllowCreateOrDisburse");
             final Boolean customAllowCollections = rs.getBoolean("customAllowCollections");
@@ -592,7 +596,8 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
             loanProductData.setOverdueAmountForArrearsConsideration(overdueAmountForArrears);
             loanProductData.setExtendTermForMonthlyRepayments(extendTermForMonthlyRepayments);
             loanProductData.setProductType(productType);
-            loanProductData.setAdvance(advance);
+            loanProductData.setAdvance(requirePoints);
+            loanProductData.setRequirePoints(advance);
             loanProductData.setCustomAllowCreateOrDisburse(customAllowCreateOrDisburse);
             loanProductData.setCustomAllowCollections(customAllowCollections);
             loanProductData.setCustomAllowDebitNote(customAllowDebitNote);
@@ -600,6 +605,14 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
             loanProductData.setCustomAllowForgiveness(customAllowForgiveness);
             loanProductData.setCustomAllowReversalCancellation(customAllowReversalCancellation);
 
+            final Long interestRateId = rs.getLong("interestRateId");
+            final String interestRateName = rs.getString("interestRateName");
+            final BigDecimal interestCurrentRate = rs.getBigDecimal("interestCurrentRate");
+            final LocalDate interestRateAppliedOnDate = JdbcSupport.getLocalDate(rs, "interestRateAppliedOnDate");
+            final Boolean InterestRateActive = rs.getBoolean("InterestRateActive");
+            final InterestRateData interestRateData = InterestRateData.builder().id(interestRateId).name(interestRateName)
+                    .currentRate(interestCurrentRate).appliedOnDate(interestRateAppliedOnDate).active(InterestRateActive).build();
+            loanProductData.setInterestRate(interestRateData);
             return loanProductData;
         }
     }
