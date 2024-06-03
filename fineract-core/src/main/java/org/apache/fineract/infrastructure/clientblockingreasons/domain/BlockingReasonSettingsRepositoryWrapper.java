@@ -70,7 +70,7 @@ public class BlockingReasonSettingsRepositoryWrapper {
     }
 
     @Transactional(readOnly = true)
-    public List<BlockingReasonSetting> getBlockingReasonCreditByClientEffect(Integer affectsClientLevel){
+    public List<BlockingReasonSetting> getBlockingReasonCreditByClientEffect(Integer affectsClientLevel) {
         return this.repository.getBlockingReasonCreditByClientEffect(affectsClientLevel);
     }
 }
