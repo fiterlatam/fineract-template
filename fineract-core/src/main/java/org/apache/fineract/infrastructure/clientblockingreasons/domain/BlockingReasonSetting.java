@@ -79,10 +79,10 @@ public class BlockingReasonSetting extends AbstractPersistableCustom {
     }
 
     public boolean isAffectsClientLevel(){
-        return this.affectsClientLevel==1;
+        return this.affectsClientLevel == 1;
     }
 
     public boolean isAffectsCreditLevel(){
-        return this.affectsClientLevel==1;
+        return this.affectsClientLevel == 1;
     }
 }
