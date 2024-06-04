@@ -1046,6 +1046,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             this.schema = """
                     SELECT ml.id AS loanId,
                     mc.id AS clientId,
+                    ml.is_topup AS isTopup,
                     mpg.id AS prequalificationId,
                     mg.id AS groupId,
                     ml.principal_amount AS principalAmount
@@ -1071,10 +1072,11 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             final Long loanId = JdbcSupport.getLong(rs, "loanId");
             final Long clientId = JdbcSupport.getLong(rs, "clientId");
             final Long prequalificationId = JdbcSupport.getLong(rs, "prequalificationId");
+            final Boolean isTopup = rs.getBoolean("isTopup");
             final Long groupId = JdbcSupport.getLong(rs, "groupId");
             final BigDecimal principalAmount = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "principalAmount");
             return LoanData.builder().loanId(loanId).clientId(clientId).prequalificationId(prequalificationId).groupId(groupId)
-                    .principalAmount(principalAmount).build();
+                    .principalAmount(principalAmount).isTopup(isTopup).build();
 
         }
     }
@@ -1088,6 +1090,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                         SELECT ml.id AS loanId,
                         mc.id AS clientId,
                         mpg.id AS prequalificationId,
+                        ml.is_topup AS isTopup,
                         ml.principal_amount AS principalAmount
                         FROM m_prequalification_group mpg
                         INNER JOIN m_prequalification_group_members mpgm ON mpg.id = mpgm.group_id
@@ -1107,9 +1110,10 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             final Long loanId = JdbcSupport.getLong(rs, "loanId");
             final Long clientId = JdbcSupport.getLong(rs, "clientId");
             final Long prequalificationId = JdbcSupport.getLong(rs, "prequalificationId");
+            final Boolean isTopup = rs.getBoolean("isTopup");
             final BigDecimal principalAmount = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "principalAmount");
             return LoanData.builder().loanId(loanId).clientId(clientId).prequalificationId(prequalificationId)
-                    .principalAmount(principalAmount).build();
+                    .principalAmount(principalAmount).isTopup(isTopup).build();
         }
     }
 

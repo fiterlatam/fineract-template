@@ -33,4 +33,5 @@ public class GroupData {
     private BigDecimal requestedAmount;
     private Integer numberOfMembers;
     private List<ClientData> members;
+    private List<ClientData> topupMembers;
 }
