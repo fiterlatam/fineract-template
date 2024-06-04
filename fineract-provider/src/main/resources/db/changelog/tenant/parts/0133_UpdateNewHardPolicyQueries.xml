@@ -190,5 +190,14 @@
             ]]>
         </sql>
     </changeSet>
+    <changeSet id="8" author="fineract">
+        <sql>
+            <![CDATA[
+            update m_policy set description = 'Cantidad de ciclos cancelados como grupo' where description = 'Cantidade ciclos cancelados como grupo';
+
+            update m_policy set description = 'Categorízación de clienta recurrente' where description = 'Categorízación de clienta recurrente';
+            ]]>
+        </sql>
+    </changeSet>
 
 </databaseChangeLog>
