@@ -18,6 +18,7 @@
  */
 package org.apache.fineract.portfolio.client.service;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import jakarta.persistence.PersistenceException;
@@ -355,9 +356,36 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
             }
 
             if (command.parameterExists(ClientApiConstants.datatables)) {
-                this.entityDatatableChecksWritePlatformService.saveDatatables(StatusEnum.CREATE.getCode().longValue(),
-                        EntityTables.CLIENT.getName(), newClient.getId(), null,
-                        command.arrayOfParameterNamed(ClientApiConstants.datatables));
+
+                try {
+                    this.entityDatatableChecksWritePlatformService.saveDatatables(StatusEnum.CREATE.getCode().longValue(),
+                            EntityTables.CLIENT.getName(), newClient.getId(), null,
+                            command.arrayOfParameterNamed(ClientApiConstants.datatables));
+                } catch (PlatformDataIntegrityException e) {
+                    final Throwable realCause = e.getCause();
+                    final String exceptionMessage = e.getMessage();
+                    final String realCauseMessage = realCause != null ? realCause.getMessage() : exceptionMessage;
+                    log.error("Error occurred: " + realCauseMessage, realCauseMessage);
+                    if (realCauseMessage
+                            .contains("ERROR: duplicate key value violates unique constraint \"unique_campos_cliente_empresas_nit\"")
+                            || exceptionMessage.contains(
+                                    "ERROR: duplicate key value violates unique constraint \"unique_campos_cliente_empresas_nit\"")) {
+                        final JsonArray datatables = command.arrayOfParameterNamed(ClientApiConstants.datatables);
+                        String nit = getNitString(datatables);
+                        throw new GeneralPlatformDomainRuleException("error.msg.entity.datatable.check.duplicate.entry.nit.already.exist",
+                                "Duplicate entry exist with the provided NIT", nit);
+                    } else if (realCauseMessage
+                            .contains("ERROR: duplicate key value violates unique constraint \"unique_campos_cliente_personax_Cedula\"")
+                            || exceptionMessage.contains(
+                                    "ERROR: duplicate key value violates unique constraint \"unique_campos_cliente_personax_Cedula\"")) {
+                        final JsonArray datatables = command.arrayOfParameterNamed(ClientApiConstants.datatables);
+                        String cedula = getCedulaString(datatables);
+                        throw new GeneralPlatformDomainRuleException(
+                                "error.msg.entity.datatable.check.duplicate.entry.cedula.already.exist",
+                                "Duplicate entry exist with the provided Cedula", cedula);
+                    }
+                    throw e;
+                }
                 final Long clientId = newClient.getId();
                 final ClientAdditionalFieldsData loanAdditionalFieldsData = this.clientReadPlatformService
                         .retrieveClientAdditionalData(clientId);
@@ -427,6 +455,48 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
             handleDataIntegrityIssues(command, throwable, dve);
             return CommandProcessingResult.empty();
         }
+    }
+
+    public static String getNitString(JsonArray datatables) {
+        String nit = "";
+        if (datatables != null && !datatables.isEmpty()) {
+            for (JsonElement datatable : datatables) {
+                JsonObject datatableObject = datatable.getAsJsonObject();
+                if (datatableObject.has("data")) {
+                    final JsonElement data = datatableObject.get("data");
+                    if (data.isJsonObject()) {
+                        JsonObject dataObject = data.getAsJsonObject();
+                        if (dataObject.has("NIT")) {
+                            nit = dataObject.get("NIT").getAsString();
+                            break;
+                        }
+                    }
+                    break;
+                }
+            }
+        }
+        return nit;
+    }
+
+    public static String getCedulaString(JsonArray datatables) {
+        String nit = "";
+        if (datatables != null && !datatables.isEmpty()) {
+            for (JsonElement datatable : datatables) {
+                JsonObject datatableObject = datatable.getAsJsonObject();
+                if (datatableObject.has("data")) {
+                    final JsonElement data = datatableObject.get("data");
+                    if (data.isJsonObject()) {
+                        JsonObject dataObject = data.getAsJsonObject();
+                        if (dataObject.has("Cedula")) {
+                            nit = dataObject.get("Cedula").getAsString();
+                            break;
+                        }
+                    }
+                    break;
+                }
+            }
+        }
+        return nit;
     }
 
     /**
