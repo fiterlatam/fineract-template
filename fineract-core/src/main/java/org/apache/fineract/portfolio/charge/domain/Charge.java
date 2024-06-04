@@ -18,13 +18,8 @@
  */
 package org.apache.fineract.portfolio.charge.domain;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.*;
+
 import java.math.BigDecimal;
 import java.time.MonthDay;
 import java.util.ArrayList;
@@ -45,6 +40,8 @@ import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.organisation.monetary.data.CurrencyData;
 import org.apache.fineract.portfolio.charge.api.ChargesApiConstants;
 import org.apache.fineract.portfolio.charge.data.ChargeData;
+import org.apache.fineract.portfolio.charge.data.ChargeInsuranceDetailData;
+import org.apache.fineract.portfolio.charge.exception.ChargeCannotBeCreatedException;
 import org.apache.fineract.portfolio.charge.exception.ChargeDueAtDisbursementCannotBePenaltyException;
 import org.apache.fineract.portfolio.charge.exception.ChargeMustBePenaltyException;
 import org.apache.fineract.portfolio.charge.exception.ChargeParameterUpdateNotSupportedException;
@@ -143,6 +140,9 @@ public class Charge extends AbstractPersistableCustom {
     @JoinColumn(name = "tax_group_id")
     private TaxGroup taxGroup;
 
+    @Embedded
+    private ChargeInsuranceDetail chargeInsuranceDetail;
+
     public static Charge fromJson(final JsonCommand command, final GLAccount account, final TaxGroup taxGroup,
             final PaymentType paymentType) {
 
@@ -189,11 +189,31 @@ public class Charge extends AbstractPersistableCustom {
         if (command.hasParameter("parentChargeId")) {
             parentChargeId = command.longValueOfParameterNamed("parentChargeId");
         }
-
+        //Voluntary Insurance details
+        ChargeInsuranceDetail chargeInsuranceDetail = null;
+        if (chargeCalculationType.isVoluntaryInsurance()) {
+            validateVoluntaryInsuranceCondition(chargeCalculationType);
+            final String insuranceName = command.stringValueOfParameterNamed("insuranceName");
+            final ChargeInsuranceType insuranceChargeAs = ChargeInsuranceType
+                    .fromInt(command.integerValueOfParameterNamed("insuranceChargedAs"));
+            final String insuranceCompany = command.stringValueOfParameterNamed("insuranceCompany");
+            final String insurerName = command.stringValueOfParameterNamed("insurerName");
+            final Long insuranceCode = command.longValueOfParameterNamed("insuranceCode");
+            final String insurancePlan = command.stringValueOfParameterNamed("insurancePlan");
+            final BigDecimal baseValue = command.bigDecimalValueOfParameterNamed("baseValue");
+            final BigDecimal vatValue = command.bigDecimalValueOfParameterNamed("vatValue");
+            final BigDecimal totalValue = command.bigDecimalValueOfParameterNamed("totalValue");
+            Long deadline = null;
+            if (insuranceChargeAs.isCompra()) {
+                deadline = command.longValueOfParameterNamed("deadline");
+            }
+            chargeInsuranceDetail = new ChargeInsuranceDetail(insuranceName, insuranceChargeAs, insuranceCompany, insurerName,
+                    insuranceCode, insurancePlan, baseValue, vatValue, totalValue, deadline);
+        }
         return new Charge(name, amount, currencyCode, chargeAppliesTo, chargeTimeType, chargeCalculationType, penalty, active, paymentMode,
                 feeOnMonthDay, feeInterval, minCap, maxCap, feeFrequency, enableFreeWithdrawalCharge, freeWithdrawalFrequency,
                 restartCountFrequency, countFrequencyType, account, taxGroup, enablePaymentType, paymentType, graceOnChargePeriodAmount,
-                parentChargeId);
+                parentChargeId, chargeInsuranceDetail);
     }
 
     protected Charge() {}
@@ -204,7 +224,7 @@ public class Charge extends AbstractPersistableCustom {
             final BigDecimal maxCap, final Integer feeFrequency, final boolean enableFreeWithdrawalCharge,
             final Integer freeWithdrawalFrequency, final Integer restartFrequency, final PeriodFrequencyType restartFrequencyEnum,
             final GLAccount account, final TaxGroup taxGroup, final boolean enablePaymentType, final PaymentType paymentType,
-            final Long graceOnChargePeriodAmount, Long parentChargeId) {
+            final Long graceOnChargePeriodAmount, Long parentChargeId, ChargeInsuranceDetail chargeInsuranceDetail) {
         this.name = name;
         this.amount = amount;
         this.currencyCode = currencyCode;
@@ -216,6 +236,7 @@ public class Charge extends AbstractPersistableCustom {
         this.account = account;
         this.taxGroup = taxGroup;
         this.chargePaymentMode = paymentMode == null ? null : paymentMode.getValue();
+        this.chargeInsuranceDetail = chargeInsuranceDetail;
 
         final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
         final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors).resource("charges");
@@ -591,6 +612,13 @@ public class Charge extends AbstractPersistableCustom {
                 actualChanges.put(ChargesApiConstants.parentChargeIdParamName, newValue);
                 this.parentChargeId = newValue;
             }
+
+            final ChargeCalculationType chargeCalculationType = ChargeCalculationType
+                    .fromInt(command.integerValueOfParameterNamed(chargeCalculationParamName));
+            if (chargeCalculationType.isVoluntaryInsurance()) {
+                validateVoluntaryInsuranceCondition(chargeCalculationType);
+                this.chargeInsuranceDetail.update(command, actualChanges);
+            }
         }
 
         if (command.hasParameter("feeOnMonthDay")) {
@@ -723,11 +751,16 @@ public class Charge extends AbstractPersistableCustom {
             paymentTypeData = PaymentTypeData.instance(paymentType.getId(), paymentType.getName());
         }
 
+        ChargeInsuranceDetailData chargeInsuranceDetailData = new ChargeInsuranceDetailData(null, this.chargeInsuranceDetail.getInsuranceName(),
+                this.chargeInsuranceDetail.getInsuranceChargedAs().getValue().longValue(), this.chargeInsuranceDetail.getInsuranceCompany(),
+                this.chargeInsuranceDetail.getInsurerName(), this.chargeInsuranceDetail.getInsuranceCode(), this.chargeInsuranceDetail.getInsurancePlan(),
+                this.chargeInsuranceDetail.getBaseValue(), this.chargeInsuranceDetail.getVatValue(), this.chargeInsuranceDetail.getTotalValue(),
+                this.chargeInsuranceDetail.getDeadline(), null);
         final CurrencyData currency = new CurrencyData(this.currencyCode, null, 0, 0, null, null);
         return ChargeData.instance(getId(), this.name, this.amount, currency, chargeTimeType, chargeAppliesTo, chargeCalculationType,
                 chargePaymentMode, getFeeOnMonthDay(), this.feeInterval, this.penalty, this.active, this.enableFreeWithdrawal,
                 this.freeWithdrawalFrequency, this.restartFrequency, this.restartFrequencyEnum, this.enablePaymentType, paymentTypeData,
-                this.minCap, this.maxCap, feeFrequencyType, accountData, taxGroupData);
+                this.minCap, this.maxCap, feeFrequencyType, accountData, taxGroupData, chargeInsuranceDetailData);
     }
 
     public Integer getChargePaymentMode() {
@@ -838,5 +871,16 @@ public class Charge extends AbstractPersistableCustom {
 
     public Long getGraceOnChargePeriodAmount() {
         return graceOnChargePeriodAmount;
+    }
+
+    private static void validateVoluntaryInsuranceCondition(ChargeCalculationType chargeCalculationType) {
+        if (!chargeCalculationType.isFlat() || chargeCalculationType.isPercentageOfDisbursement() || chargeCalculationType.isPercentageOfInstallmentPrincipal() ||
+            chargeCalculationType.isPercentageOfInstallmentInterest() || chargeCalculationType.isPercentageOfOutstandingPrincipal() ||
+            chargeCalculationType.isPercentageOfOutstandingInterest() || chargeCalculationType.isPercentageOfInsurance() ||
+            chargeCalculationType.isPercentageOfAval() || chargeCalculationType.isPercentageOfHonorarios() ||
+            chargeCalculationType.isPercentageOfAnotherCharge()) {
+            throw new ChargeCannotBeCreatedException("error.msg.charge.calculation.type.invalid.forVoluntaryInsurance",
+                    "Only Flat Charge Calculation Type can be selected for Voluntary Insurance",chargeCalculationType.isVoluntaryInsurance());
+        }
     }
 }

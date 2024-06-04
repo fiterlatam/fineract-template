@@ -19,10 +19,7 @@
 package org.apache.fineract.portfolio.charge.service;
 
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
-import org.apache.fineract.portfolio.charge.domain.ChargeAppliesTo;
-import org.apache.fineract.portfolio.charge.domain.ChargeCalculationType;
-import org.apache.fineract.portfolio.charge.domain.ChargePaymentMode;
-import org.apache.fineract.portfolio.charge.domain.ChargeTimeType;
+import org.apache.fineract.portfolio.charge.domain.*;
 import org.apache.fineract.portfolio.common.domain.PeriodFrequencyType;
 
 public final class ChargeEnumerations {
@@ -342,6 +339,28 @@ public final class ChargeEnumerations {
             case WHOLE_TERM -> optionData = new EnumOptionData(PeriodFrequencyType.WHOLE_TERM.getValue().longValue(),
                     PeriodFrequencyType.WHOLE_TERM.getCode(), "Whole term");
             default -> throw new UnsupportedOperationException(frequencyType + " is not supported");
+        }
+        return optionData;
+    }
+
+    public static EnumOptionData chargeInsuranceType(final int id) {
+        return chargeInsuranceType(ChargeInsuranceType.fromInt(id));
+    }
+
+    public static EnumOptionData chargeInsuranceType(final ChargeInsuranceType type) {
+        EnumOptionData optionData = null;
+        switch (type) {
+            case CARGO:
+                optionData = new EnumOptionData(ChargeInsuranceType.CARGO.getValue().longValue(), ChargeInsuranceType.CARGO.getCode(),
+                        "Cargo");
+                break;
+            case COMPRA:
+                optionData = new EnumOptionData(ChargeInsuranceType.COMPRA.getValue().longValue(),
+                        ChargeInsuranceType.COMPRA.getCode(), "Compra");
+                break;
+            default:
+                optionData = new EnumOptionData(ChargeTimeType.INVALID.getValue().longValue(), ChargeTimeType.INVALID.getCode(), "Invalid");
+                break;
         }
         return optionData;
     }

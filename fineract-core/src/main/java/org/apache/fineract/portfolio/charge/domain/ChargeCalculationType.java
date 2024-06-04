@@ -27,38 +27,38 @@ import org.apache.fineract.portfolio.charge.enumerator.ChargeCalculationTypeBase
 @Getter
 public enum ChargeCalculationType {
 
-    INVALID(0, "0000000000", "chargeCalculationType.invalid"), //
-    FLAT_AMOUNT(1, "1000000000", "chargeCalculationType.flat"), //
-    PERCENT_OF_AMOUNT(2, "0010000000", "chargeCalculationType.percent.of.amount"), //
-    PERCENT_OF_AMOUNT_AND_INTEREST(3, "0011000000", "chargeCalculationType.percent.of.amount.and.interest"), //
-    PERCENT_OF_INTEREST(4, "0001000000", "chargeCalculationType.percent.of.interest"), //
-    PERCENT_OF_DISBURSEMENT_AMOUNT(5, "0100000000", "chargeCalculationType.percent.of.disbursement.amount"), //
-    PERCENT_OF_OUTSTANDING_PRINCIPAL_AMOUNT(6, "0000100000", "chargeCalculationType.percent.of.outstanding.principal"), //
-    PERCENT_OF_OUTSTANDING_INTEREST_AMOUNT(7, "0000010000", "chargeCalculationType.percent.of.outstanding.interest"), //
+    INVALID(0, "00000000000", "chargeCalculationType.invalid"), //
+    FLAT_AMOUNT(1, "10000000000", "chargeCalculationType.flat"), //
+    PERCENT_OF_AMOUNT(2, "00100000000", "chargeCalculationType.percent.of.amount"), //
+    PERCENT_OF_AMOUNT_AND_INTEREST(3, "00110000000", "chargeCalculationType.percent.of.amount.and.interest"), //
+    PERCENT_OF_INTEREST(4, "00010000000", "chargeCalculationType.percent.of.interest"), //
+    PERCENT_OF_DISBURSEMENT_AMOUNT(5, "01000000000", "chargeCalculationType.percent.of.disbursement.amount"), //
+    PERCENT_OF_OUTSTANDING_PRINCIPAL_AMOUNT(6, "00001000000", "chargeCalculationType.percent.of.outstanding.principal"), //
+    PERCENT_OF_OUTSTANDING_INTEREST_AMOUNT(7, "00000100000", "chargeCalculationType.percent.of.outstanding.interest"), //
 
-    PERCENT_OF_ANOTHER_CHARGE(8, "0000000001", "chargeCalculationType.percent.of.another.charge"), //
+    PERCENT_OF_ANOTHER_CHARGE(8, "00000000010", "chargeCalculationType.percent.of.another.charge"), //
     AMOUNT_FROM_EXTERNAL_CALCULATION(9, "9", "chargeCalculationType.amount.from.external"), //
 
-    IPRIN_IINT_OPRIN_SEGO_ACHG(11, "0011101001",
+    IPRIN_IINT_OPRIN_SEGO_ACHG(11, "00111010010",
             "installmentprincipal.installmentinterest.outstandingprincipal.seguroobrigatorio.percentofanothercharge"), //
-    IPRIN_IINT_OPRIN_SEGO(12, "0011101000", "installmentprincipal.installmentinterest.outstandingprincipal.seguroobrigatorio"), //
-    OPRIN_OINT_SEGO_AVAL_HONO_ACHG(13, "0000111111",
+    IPRIN_IINT_OPRIN_SEGO(12, "00111010000", "installmentprincipal.installmentinterest.outstandingprincipal.seguroobrigatorio"), //
+    OPRIN_OINT_SEGO_AVAL_HONO_ACHG(13, "00001111110",
             "outstandingprincipal.outstandinginterest.seguroobrigatorio.aval.honorarios.percentofanothercharge"), //
-    DISB_AVAL_HONO(14, "0100000110", "disbursedamount.aval.honorarios"), //
-    DISB_IPRIN_OPRIN(15, "0110100000", "disbursedamount.installmentprincipal.outstandingprincipal"), //
-    FLAT_DISB_OPRIN_SEGO_AVAL_ACHG(16, "1100101101",
+    DISB_AVAL_HONO(14, "01000001100", "disbursedamount.aval.honorarios"), //
+    DISB_IPRIN_OPRIN(15, "01101000000", "disbursedamount.installmentprincipal.outstandingprincipal"), //
+    FLAT_DISB_OPRIN_SEGO_AVAL_ACHG(16, "11001011010",
             "flat.disbursedamount.outstandingprincipal.seguroobrigatorio.aval.percentofanothercharge"), //
-    IINT_SEGO_AVAL_HONO_ACHG(17, "0001001111", "installmentinterest.seguroobrigatorio.aval.honorarios.percentofanothercharge"), //
-    IINT_SEGO_AVAL_HONO(18, "0001001110", "installmentinterest.seguroobrigatorio.aval.honorarios"), //
-    DISB_AVAL_HONO_ACHG(19, "0100000111", "disbursedamount.aval.honorarios.percentofanothercharge"), //
-    FLAT_IPRIN_IINT_OPRIN_OINT_HONO(20, "1011110010",
+    IINT_SEGO_AVAL_HONO_ACHG(17, "00010011110", "installmentinterest.seguroobrigatorio.aval.honorarios.percentofanothercharge"), //
+    IINT_SEGO_AVAL_HONO(18, "00010011100", "installmentinterest.seguroobrigatorio.aval.honorarios"), //
+    DISB_AVAL_HONO_ACHG(19, "01000001110", "disbursedamount.aval.honorarios.percentofanothercharge"), //
+    FLAT_IPRIN_IINT_OPRIN_OINT_HONO(20, "10111100100",
             "flat.installmentprincipal.installmentinterest.outstandingprincipal.outstandinginterest.honorarios"), //
-    FLAT_IPRIN_IINT_OPRIN_OINT_SEGO_AVAL(21, "1011111100",
+    FLAT_IPRIN_IINT_OPRIN_OINT_SEGO_AVAL(21, "10111111000",
             "flat.installmentprincipal.installmentinterest.outstandingprincipal.outstandinginterest.seguroobrigatorio.aval"), //
-    FLAT_IPRIN_IINT_OPRIN_OINT_HONO_ACHG(22, "1011110011",
+    FLAT_IPRIN_IINT_OPRIN_OINT_HONO_ACHG(22, "10111100110",
             "flat.installmentprincipal.installmentinterest.outstandingprincipal.outstandinginterest.honorarios.percentofanothercharge"), //
-    IPRIN_IINT_OINT_AVAL(23, "0011010100", "installmentprincipal.installmentinterest.outstandinginterest.aval"), //
-    FLAT_IPRIN_IINT_OPRIN_OINT_ACHG(24, "1011110001",
+    IPRIN_IINT_OINT_AVAL(23, "00110101000", "installmentprincipal.installmentinterest.outstandinginterest.aval"), //
+    FLAT_IPRIN_IINT_OPRIN_OINT_ACHG(24, "10111100010",
             "flat.installmentprincipal.installmentinterest.outstandingprincipal.outstandinginterest.percentofanothercharge"), //
     IPRIN_IINT_OINT_AVAL_ACHG(25, "0011010101", "installmentprincipal.installmentinterest.outstandinginterest.aval.percentofanothercharge"), //
     DISB_OINT_SEGO(26, "0100011000", "disbursedamount.outstandinginterest.seguroobrigatorio"), //
@@ -1473,7 +1473,7 @@ public enum ChargeCalculationType {
     FLAT_IINT_OINT_SEGO_AVAL_HONO_ACHG(1032, "1001011111",
             "flat.installmentinterest.outstandinginterest.seguroobrigatorio.aval.honorarios.percentofanothercharge"), //
     FLAT_IINT_OINT_SEGO_AVAL_HONO(1033, "1001011110", "flat.installmentinterest.outstandinginterest.seguroobrigatorio.aval.honorarios"), //
-
+    FLAT_SEGOVOLUNTARIO(1034, "10000000001", "flat.segurovoluntarioasistencia"), //
     ;
 
     private final Integer value;
@@ -1589,6 +1589,15 @@ public enum ChargeCalculationType {
 
     public boolean isAmountFromExternal() {
         return this.value.equals(ChargeCalculationType.AMOUNT_FROM_EXTERNAL_CALCULATION.getValue());
+    }
+
+    public boolean isVoluntaryInsurance() {
+        String val = this.byteRepresentation;
+        if (this.byteRepresentation.length() == 10) {
+            // Adding a leading 0 because voluntaryInsurance has position 10 while byterepresentation of all codes is 10 character
+            val = this.byteRepresentation + "0";
+        }
+        return val.charAt(ChargeCalculationTypeBaseItemsEnum.SEGURO_VOLUNTARIO.getIndex()) == '1';
     }
 
 }

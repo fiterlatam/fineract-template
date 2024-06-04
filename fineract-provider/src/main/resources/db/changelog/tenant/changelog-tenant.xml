@@ -226,4 +226,5 @@
     <include file="parts/20240528200000_SU_220_code_value_MODIFY.xml" relativeToChangelogFile="true"/>
     <include file="parts/20240528200100_SU_220_code_value_UPDATE.xml" relativeToChangelogFile="true"/>
     <include file="parts/20240528200200_SU_220_x_registered_table_field_mask_CREATE.xml" relativeToChangelogFile="true"/>
+    <include file="parts/202405312224100_SU_69_m_charge_MODIFY.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

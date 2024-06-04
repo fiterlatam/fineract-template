@@ -39,10 +39,7 @@ import org.apache.fineract.infrastructure.core.exception.InvalidJsonException;
 import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidationException;
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
 import org.apache.fineract.portfolio.charge.api.ChargesApiConstants;
-import org.apache.fineract.portfolio.charge.domain.ChargeAppliesTo;
-import org.apache.fineract.portfolio.charge.domain.ChargeCalculationType;
-import org.apache.fineract.portfolio.charge.domain.ChargePaymentMode;
-import org.apache.fineract.portfolio.charge.domain.ChargeTimeType;
+import org.apache.fineract.portfolio.charge.domain.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -83,7 +80,10 @@ public final class ChargeDefinitionCommandFromApiJsonDeserializer {
             ENABLE_FREE_WITHDRAWAL_CHARGE, FREE_WITHDRAWAL_FREQUENCY, RESTART_COUNT_FREQUENCY, COUNT_FREQUENCY_TYPE, PAYMENT_TYPE_ID,
             ENABLE_PAYMENT_TYPE, ChargesApiConstants.glAccountIdParamName, ChargesApiConstants.taxGroupIdParamName,
             ChargesApiConstants.graceOnChargePeriodEnumIdParamName, ChargesApiConstants.graceOnChargePeriodAmountParamName,
-            ChargesApiConstants.parentChargeIdParamName));
+            ChargesApiConstants.parentChargeIdParamName, ChargesApiConstants.insuranceNameParamName, ChargesApiConstants.insuranceChargedAsParamName,
+            ChargesApiConstants.insuranceCompanyParamName, ChargesApiConstants.insurerNameParamName, ChargesApiConstants.insuranceCodeParamName,
+            ChargesApiConstants.insurancePlanParamName, ChargesApiConstants.baseValueParamName, ChargesApiConstants.vatValueParamName,
+            ChargesApiConstants.totalValueParamName, ChargesApiConstants.deadlineParamName));
     private final FromJsonHelper fromApiJsonHelper;
 
     @Autowired
@@ -189,6 +189,11 @@ public final class ChargeDefinitionCommandFromApiJsonDeserializer {
                     .extractLongNamed(ChargesApiConstants.graceOnChargePeriodAmountParamName, element.getAsJsonObject());
             baseDataValidator.reset().parameter(ChargesApiConstants.graceOnChargePeriodAmountParamName).value(graceOnChargePeriodAmount)
                     .notNull().notLessThanMin(0);
+
+            // Insurance details validation
+            ChargeCalculationType calculationType = ChargeCalculationType.fromInt(chargeCalculationType);
+            validateChargeInsuranceDetails(calculationType, element, baseDataValidator);
+
 
         } else if (appliesTo.isSavingsCharge()) {
             // savings applicable validation
@@ -458,7 +463,58 @@ public final class ChargeDefinitionCommandFromApiJsonDeserializer {
             baseDataValidator.reset().parameter(ChargesApiConstants.taxGroupIdParamName).value(taxGroupId).notNull().longGreaterThanZero();
         }
 
+        //Charge Voluntary Insurance validation
+        // Insurance details validation
+        final ChargeAppliesTo appliesTo = ChargeAppliesTo.fromInt(chargeAppliesTo);
+        if (appliesTo.isLoanCharge()) {
+            final Integer chargeCalculationType = this.fromApiJsonHelper.extractIntegerNamed(CHARGE_CALCULATION_TYPE, element,
+                    Locale.getDefault());
+            ChargeCalculationType calculationType = ChargeCalculationType.fromInt(chargeCalculationType);
+            validateChargeInsuranceDetails(calculationType, element, baseDataValidator);
+        }
         throwExceptionIfValidationWarningsExist(dataValidationErrors);
+    }
+
+    private void validateChargeInsuranceDetails(ChargeCalculationType calculationType, JsonElement element, DataValidatorBuilder baseDataValidator) {
+        if (calculationType.isVoluntaryInsurance()) {
+            final String insuranceName = this.fromApiJsonHelper.extractStringNamed(ChargesApiConstants.insuranceNameParamName, element);
+            baseDataValidator.reset().parameter(ChargesApiConstants.insuranceNameParamName).value(insuranceName).notBlank().notExceedingLengthOf(100);
+
+            final Long insuranceChargedAs = this.fromApiJsonHelper
+                    .extractLongNamed(ChargesApiConstants.insuranceChargedAsParamName, element.getAsJsonObject());
+            baseDataValidator.reset().parameter(ChargesApiConstants.insuranceChargedAsParamName).value(insuranceChargedAs)
+                    .notNull().inMinMaxRange(ChargeInsuranceType.COMPRA.getValue(), ChargeInsuranceType.CARGO.getValue());
+
+            final String insuranceCompany = this.fromApiJsonHelper.extractStringNamed(ChargesApiConstants.insuranceCompanyParamName, element);
+            baseDataValidator.reset().parameter(ChargesApiConstants.insuranceCompanyParamName).value(insuranceCompany).notBlank().notExceedingLengthOf(100);
+
+            final String insurerName = this.fromApiJsonHelper.extractStringNamed(ChargesApiConstants.insurerNameParamName, element);
+            baseDataValidator.reset().parameter(ChargesApiConstants.insurerNameParamName).value(insurerName).notBlank().notExceedingLengthOf(100);
+
+            final Long insuranceCode = this.fromApiJsonHelper
+                    .extractLongNamed(ChargesApiConstants.insuranceCodeParamName, element.getAsJsonObject());
+            baseDataValidator.reset().parameter(ChargesApiConstants.insuranceCodeParamName).value(insuranceCode)
+                    .notNull().longGreaterThanZero();
+
+            final String insurancePlan = this.fromApiJsonHelper.extractStringNamed(ChargesApiConstants.insurancePlanParamName, element);
+            baseDataValidator.reset().parameter(ChargesApiConstants.insurancePlanParamName).value(insurancePlan).notBlank().notExceedingLengthOf(100);
+
+            final BigDecimal baseValue = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed(ChargesApiConstants.baseValueParamName, element.getAsJsonObject());
+            baseDataValidator.reset().parameter(ChargesApiConstants.baseValueParamName).value(baseValue).notNull().positiveAmount();
+
+            final BigDecimal vatValue = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed(ChargesApiConstants.vatValueParamName, element.getAsJsonObject());
+            baseDataValidator.reset().parameter(ChargesApiConstants.vatValueParamName).value(vatValue).notNull().positiveAmount();
+
+            final BigDecimal totalValue = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed(ChargesApiConstants.totalValueParamName, element.getAsJsonObject());
+            baseDataValidator.reset().parameter(ChargesApiConstants.totalValueParamName).value(totalValue).notNull().positiveAmount();
+
+            if (insuranceChargedAs.intValue() == ChargeInsuranceType.COMPRA.getValue()) {
+                final Integer deadline = this.fromApiJsonHelper
+                        .extractIntegerSansLocaleNamed(ChargesApiConstants.deadlineParamName, element.getAsJsonObject());
+                baseDataValidator.reset().parameter(ChargesApiConstants.deadlineParamName).value(deadline)
+                        .notNull().integerGreaterThanZero();
+            }
+        }
     }
 
     public void validateChargeTimeNCalculationType(Integer chargeTimeType, Integer chargeCalculationType) {
