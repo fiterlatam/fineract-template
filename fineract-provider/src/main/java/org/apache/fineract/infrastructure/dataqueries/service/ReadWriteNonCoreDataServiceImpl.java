@@ -110,12 +110,15 @@ import org.apache.fineract.infrastructure.security.service.PlatformSecurityConte
 import org.apache.fineract.infrastructure.security.service.SqlInjectionPreventerService;
 import org.apache.fineract.infrastructure.security.utils.ColumnValidator;
 import org.apache.fineract.infrastructure.security.utils.SQLInjectionValidator;
+import org.apache.fineract.portfolio.client.api.ClientApiConstants;
+import org.apache.fineract.portfolio.client.service.ClientWritePlatformServiceJpaRepositoryImpl;
 import org.apache.fineract.portfolio.search.data.AdvancedQueryData;
 import org.apache.fineract.portfolio.search.data.ColumnFilterData;
 import org.apache.fineract.portfolio.search.service.SearchUtil;
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -1464,7 +1467,33 @@ public class ReadWriteNonCoreDataServiceImpl implements ReadWriteNonCoreDataServ
             params.add(primaryKey);
             final String sql = sqlGenerator.buildUpdate(dataTableName, updateColumns, headersByName) + " WHERE " + pkColumn.getColumnName()
                     + " = ?";
-            int updated = jdbcTemplate.update(sql, params.toArray(Object[]::new)); // NOSONAR
+            int updated;
+            try {
+                updated = jdbcTemplate.update(sql, params.toArray(Object[]::new)); // NOSONAR
+            } catch (DuplicateKeyException e) {
+                final Throwable realCause = e.getCause();
+                final String exceptionMessage = e.getMessage();
+                final String realCauseMessage = realCause != null ? realCause.getMessage() : exceptionMessage;
+                log.error("Error occurred: " + realCauseMessage, realCauseMessage);
+                if (realCauseMessage
+                        .contains("ERROR: duplicate key value violates unique constraint \"unique_campos_cliente_empresas_nit\"")
+                        || exceptionMessage
+                                .contains("ERROR: duplicate key value violates unique constraint \"unique_campos_cliente_empresas_nit\"")) {
+                    final JsonArray datatables = command.arrayOfParameterNamed(ClientApiConstants.datatables);
+                    String nit = ClientWritePlatformServiceJpaRepositoryImpl.getNitString(datatables);
+                    throw new GeneralPlatformDomainRuleException("error.msg.entity.datatable.check.duplicate.entry.nit.already.exist",
+                            "Duplicate entry exist with the provided NIT", nit);
+                } else if (realCauseMessage
+                        .contains("ERROR: duplicate key value violates unique constraint \"unique_campos_cliente_personax_Cedula\"")
+                        || exceptionMessage.contains(
+                                "ERROR: duplicate key value violates unique constraint \"unique_campos_cliente_personax_Cedula\"")) {
+                    final JsonArray datatables = command.arrayOfParameterNamed(ClientApiConstants.datatables);
+                    String cedula = ClientWritePlatformServiceJpaRepositoryImpl.getCedulaString(datatables);
+                    throw new GeneralPlatformDomainRuleException("error.msg.entity.datatable.check.duplicate.entry.cedula.already.exist",
+                            "Duplicate entry exist with the provided Cedula", cedula);
+                }
+                throw e;
+            }
             if (updated != 1) {
                 throw new PlatformDataIntegrityException("error.msg.invalid.update", "Expected one updated row.");
             }
@@ -1778,6 +1807,8 @@ public class ReadWriteNonCoreDataServiceImpl implements ReadWriteNonCoreDataServ
         String param = null;
         Object[] msgArgs;
         final Throwable cause = e.getCause();
+        log.error(cause.getMessage());
+        log.error(realCause.getMessage());
         if ((realCause != null && realCause.getMessage().contains("Duplicate entry"))
                 || (cause != null && cause.getMessage().contains("Duplicate entry"))) {
             msgCode += ".entry.duplicate";
@@ -1801,7 +1832,7 @@ public class ReadWriteNonCoreDataServiceImpl implements ReadWriteNonCoreDataServ
             msgCode += ".unknown.data.integrity.issue";
             msgArgs = new Object[] { dataTableName, e };
         }
-        log.error("Error occured.", e);
+        log.error("Error occurred.", e);
         throw ErrorHandler.getMappable(e, msgCode, msg, param, msgArgs);
     }
 }
