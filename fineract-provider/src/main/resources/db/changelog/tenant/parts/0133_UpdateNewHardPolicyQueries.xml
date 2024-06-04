@@ -195,7 +195,7 @@
             <![CDATA[
             update m_policy set description = 'Cantidad de ciclos cancelados como grupo' where description = 'Cantidade ciclos cancelados como grupo';
 
-            update m_policy set description = 'Categorízación de clienta recurrente' where description = 'Categorízación de clienta recurrente';
+            update m_policy set description = 'Categorízación de clienta recurrente' where description = 'Categoríazación de clienta recurruente';
             ]]>
         </sql>
     </changeSet>
