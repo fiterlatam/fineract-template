@@ -307,7 +307,7 @@ public class LoanArrearsAgeingUpdateHandler {
                     on mcbr.client_id = l.client_id
                     left join m_blocking_reason_setting mbrs
                     on mbrs.id = mcbr.blocking_reason_id and mbrs.name_of_reason = ?
-                    where mcbr.unblock_date  is null;
+                    where mbrs.id  is null;
                 """;
 
         final List<Long> clientIds = jdbcTemplate.queryForList(query, Long.class, BLOCKING_REASON_NAME);
@@ -343,7 +343,7 @@ public class LoanArrearsAgeingUpdateHandler {
     public void handleBlockingReasonCreadit(final List<Long> loanIds) {
         BlockingReasonSetting blockingReasonSetting = blockingReasonSettingsRepositoryWrapper
                 .getSingleBlockingReasonSettingByReason(BLOCKING_REASON_NAME, BlockLevel.CREDIT.toString());
-        log.info("Block of credit loan with mora");
+
         for (Long loanId : loanIds) {
             loanBlockWritePlatformService.blockLoan(loanId, blockingReasonSetting, "Cliente desbloqueado por defecto",
                     DateUtils.getLocalDateOfTenant());
