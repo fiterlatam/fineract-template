@@ -197,7 +197,6 @@ public class LoanArrearsAgeingUpdateHandler {
         String sqlForLoanIdentifiers = buildQueryForLoanIdentifiersWithOriginalSchedule(Boolean.TRUE);
         List<Long> loanIds = this.jdbcTemplate.queryForList(sqlForLoanIdentifiers, Long.class);
         if (!loanIds.isEmpty()) {
-            System.out.println("update Arreas :" + sqlForLoanIdentifiers);
             Map<Long, List<LoanSchedulePeriodData>> scheduleDate = getScheduleDate(loanIds);
             List<Map<String, Object>> loanSummary = getLoanSummary(loanIds);
             loanArrearsAgingService.updateScheduleWithPaidDetail(scheduleDate, loanSummary);
@@ -307,7 +306,7 @@ public class LoanArrearsAgeingUpdateHandler {
                     on mcbr.client_id = l.client_id
                     left join m_blocking_reason_setting mbrs
                     on mbrs.id = mcbr.blocking_reason_id and mbrs.name_of_reason = ?
-                    where mbrs.id  is null;
+                    where mbrs.id is null;
                 """;
 
         final List<Long> clientIds = jdbcTemplate.queryForList(query, Long.class, BLOCKING_REASON_NAME);
