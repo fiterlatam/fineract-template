@@ -4,6 +4,7 @@ import java.util.Optional;
 import org.apache.fineract.custom.infrastructure.channel.domain.Channel;
 import org.apache.fineract.custom.infrastructure.channel.domain.ChannelMessageRepository;
 import org.apache.fineract.custom.infrastructure.channel.domain.ChannelRepository;
+import org.apache.fineract.custom.infrastructure.channel.domain.ChannelType;
 import org.apache.fineract.custom.portfolio.buyprocess.domain.ClientBuyProcess;
 import org.apache.fineract.custom.portfolio.buyprocess.enumerator.ClientBuyProcessValidatorEnum;
 import org.apache.fineract.custom.portfolio.buyprocess.validator.chain.BuyProcessAbstractStepProcessor;
@@ -31,17 +32,17 @@ public class ChannelValidatorStep extends BuyProcessAbstractStepProcessor implem
     public void validateStepChain(ClientBuyProcess clientBuyProcess) {
         setSuperChannelMessageRepository(channelMessageRepository);
 
-        String hash = clientBuyProcess.getChannelHash();
+        String channelName = clientBuyProcess.getChannelName();
 
-        Optional<Channel> optionalChannel = channelRepository.findByHash(hash);
+        Optional<Channel> optionalChannel = channelRepository.findByHash(channelName);
 
         if (optionalChannel.isPresent()) {
 
             Channel curr = optionalChannel.get();
             clientBuyProcess.setChannelId(curr.getId());
 
-            // Check if channel is enabled
-            if (Boolean.FALSE.equals(curr.getActive())) {
+            // Check if channel is enabled and off type Compra/Avance
+            if (Boolean.FALSE.equals(curr.getActive()) || !ChannelType.DISBURSEMENT.getValue().equals(curr.getChannelType())) {
                 ammendErrorMessage(clazzEnum, clientBuyProcess, curr.getId());
             }
 

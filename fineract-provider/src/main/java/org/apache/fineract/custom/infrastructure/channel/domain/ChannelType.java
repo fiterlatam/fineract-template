@@ -16,29 +16,32 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.custom.infrastructure.channel.data;
+package org.apache.fineract.custom.infrastructure.channel.domain;
 
-import java.util.List;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 
-@AllArgsConstructor
-@NoArgsConstructor
-@Builder
-@Getter
-@Setter
-public class ChannelData {
+@lombok.AllArgsConstructor
+@lombok.Getter
+public enum ChannelType {
 
-    private Long id;
-    private String hash;
-    private String name;
-    private String description;
-    private Integer nrOfSubChannels;
-    private Boolean active;
-    private EnumOptionData channelType;
-    private List<EnumOptionData> channelTypeOptions;
+    DISBURSEMENT(1, "channel.type.disbursement"), REPAYMENT(2, "channel.type.repayment"), INVALID(0, "channel.type.invalid");
+
+    private final Integer value;
+    private final String code;
+
+    public static ChannelType fromInt(final Integer typeValue) {
+        if (typeValue != null) {
+            return switch (typeValue) {
+                case 1 -> ChannelType.DISBURSEMENT;
+                case 2 -> ChannelType.REPAYMENT;
+                default -> ChannelType.INVALID;
+            };
+        }
+        return ChannelType.INVALID;
+    }
+
+    public EnumOptionData asEnumOptionData() {
+        return new EnumOptionData(this.value.longValue(), this.code, this.name());
+    }
+
 }
