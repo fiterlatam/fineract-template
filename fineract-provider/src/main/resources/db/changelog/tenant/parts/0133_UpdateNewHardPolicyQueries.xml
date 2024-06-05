@@ -69,5 +69,135 @@
             ]]>
         </sql>
     </changeSet>
+    <changeSet id="3" author="fineract">
+        <sql>
+            <![CDATA[
+                INSERT INTO m_product_policy (policy_id, product_id, evaluation_type) VALUES((select id from m_policy where name = 'Categories of clients to accept' limit 1), 3, 'INDIVIDUAL');
+            ]]>
+        </sql>
+    </changeSet>
+    <changeSet id="4" author="fineract">
+        <sql>
+            <![CDATA[
+                INSERT INTO m_product_policy (policy_id, product_id, evaluation_type) VALUES((select id from m_policy where name = 'Payments outside the current term of the main product' limit 1), 3, 'INDIVIDUAL');
+            ]]>
+        </sql>
+    </changeSet>
+
+    <changeSet id="5" author="fineract">
+        <sql>
+            <![CDATA[
+		UPDATE stretchy_report SET report_sql = "SELECT prequalification_details.client_count,
+		    CASE WHEN prequalification_details.client_count / ${numberOfMembers} * 100 >= 50 THEN 'GREEN'
+		    ELSE 'RED'
+		    END as color
+		    FROM m_prequalification_group mpg
+		 	LEFT JOIN (
+			     SELECT p.id AS prequalification_id,
+			     (SELECT COUNT(mc.id)
+			     FROM m_prequalification_group mp
+			     JOIN m_prequalification_group_members mpgm ON mpgm.group_id = mp.id
+			JOIN m_client mc ON mc.dpi = mpgm.dpi
+			JOIN m_loan ml ON ml.client_id = mc.id
+			WHERE ml.loan_status_id < 300 AND ml.product_id = ${loanProductId}  AND ml.is_topup = 1
+			AND mc.loan_cycle >= 2
+			AND mp.id = ${prequalificationId}
+			) AS client_count
+			FROM m_prequalification_group p where p.id = ${prequalificationId}
+		 	) prequalification_details ON prequalification_details.prequalification_id = mpg.id
+		 WHERE mpg.id = ${prequalificationId}" WHERE report_name = "Number Of Cycles Policy Check";
+            ]]>
+        </sql>
+    </changeSet>
+
+    <changeSet id="6" author="fineract">
+        <sql>
+            <![CDATA[
+		UPDATE stretchy_report SET report_sql = "SELECT overdue_loans.loan_count overdue_loan_count, recredit_loans.loan_count recredit_loan_count,
+        CASE
+	        WHEN overdue_loans.loan_count <= 0 THEN 'GREEN'
+	        ELSE 'RED'
+        END as color
+        FROM m_prequalification_group mpg
+ 	    LEFT JOIN (
+	        SELECT p.id AS prequalification_id,
+	        (SELECT COUNT(distinct ml.id)
+	        FROM m_prequalification_group mp
+	        JOIN m_prequalification_group_members mpgm ON mpgm.group_id = mp.id
+            JOIN m_client mc ON mc.dpi = mpgm.dpi
+            JOIN m_loan ml ON ml.client_id = mc.id
+            JOIN m_loan_repayment_schedule mlrs on mlrs.loan_id = ml.id
+            WHERE ml.loan_status_id = 300 AND ml.product_id = ${loanProductId}  AND (ml.is_topup IS NULL OR ml.is_topup = 0)
+            AND mlrs.duedate < CURRENT_DATE AND mlrs.obligations_met_on_date IS NULL
+            AND mp.id = ${prequalificationId}
+            ) AS loan_count
+	        FROM m_prequalification_group p where p.id = ${prequalificationId}
+ 	        )overdue_loans ON overdue_loans.prequalification_id = mpg.id
+ 	    LEFT JOIN (
+	        SELECT p.id AS prequalification_id,
+	        (SELECT COUNT(ml.id)
+	        FROM m_prequalification_group mp
+	        JOIN m_prequalification_group_members mpgm ON mpgm.group_id = mp.id
+            JOIN m_client mc ON mc.dpi = mpgm.dpi
+            JOIN m_loan ml ON ml.client_id = mc.id
+            WHERE ml.loan_status_id < 300 AND ml.product_id = ${loanProductId}  AND ml.is_topup = 1
+            AND mp.id = ${prequalificationId}
+            ) AS loan_count
+	        FROM m_prequalification_group p where p.id = ${prequalificationId}
+ 	        )recredit_loans ON recredit_loans.prequalification_id = mpg.id
+         WHERE mpg.id = ${prequalificationId} AND recredit_loans.loan_count>0"
+        WHERE report_name = "Clients In Arrears Policy Check";
+            ]]>
+        </sql>
+    </changeSet>
+
+    <changeSet id="7" author="fineract">
+        <sql>
+            <![CDATA[
+            UPDATE stretchy_report
+            SET report_sql = "SELECT main_loans.loan_count main_loan_count, recredit_loans.loan_count recredit_loan_count,
+                CASE
+                WHEN recredit_loans.loan_count = main_loans.loan_count THEN 'GREEN'
+                ELSE 'RED'
+                END as color
+                FROM m_prequalification_group mpg
+                LEFT JOIN (
+                SELECT p.id AS prequalification_id,
+                (SELECT COUNT(ml.id)
+                FROM m_prequalification_group mp
+                JOIN m_prequalification_group_members mpgm ON mpgm.group_id = mp.id
+                JOIN m_client mc ON mc.dpi = mpgm.dpi
+                JOIN m_loan ml ON ml.client_id = mc.id
+                WHERE ml.loan_status_id < 300 AND ml.product_id = ${loanProductId}  AND ml.is_topup = 1
+                AND mp.id = ${prequalificationId}
+                ) AS loan_count
+                FROM m_prequalification_group p where p.id = ${prequalificationId}
+                )recredit_loans ON recredit_loans.prequalification_id = mpg.id
+                LEFT JOIN (
+                SELECT p.id AS prequalification_id,
+                (SELECT COUNT(ml.id)
+                FROM m_prequalification_group mp
+                JOIN m_group_client mgc ON mgc.group_id = (SELECT group_id from m_loan where prequalification_id = ${prequalificationId} 			limit 1)
+                JOIN m_client mc ON mc.id = mgc.client_id
+                JOIN m_loan ml ON ml.client_id = mc.id
+                WHERE ml.loan_status_id = 300 AND ml.product_id = ${loanProductId}  AND (ml.is_topup IS NULL OR ml.is_topup = 0)
+                AND mp.id = ${prequalificationId} AND ml.prequalification_id is not null
+                ) AS loan_count
+                FROM m_prequalification_group p where p.id = ${prequalificationId}
+                )main_loans ON main_loans.prequalification_id = mpg.id
+                WHERE mpg.id = ${prequalificationId}"
+            WHERE report_name = "Percentage Of Clients To Be Recredited In The Group Policy Check";
+            ]]>
+        </sql>
+    </changeSet>
+    <changeSet id="8" author="fineract">
+        <sql>
+            <![CDATA[
+            update m_policy set description = 'Cantidad de ciclos cancelados como grupo' where description = 'Cantidade ciclos cancelados como grupo';
+
+            update m_policy set description = 'Categorízación de clienta recurrente' where description = 'Categoríazación de clienta recurruente';
+            ]]>
+        </sql>
+    </changeSet>
 
 </databaseChangeLog>

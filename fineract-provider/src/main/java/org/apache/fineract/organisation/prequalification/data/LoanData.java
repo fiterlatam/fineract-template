@@ -33,4 +33,5 @@ public class LoanData {
     private Long prequalificationMemberId;
     private String dpi;
     private BigDecimal principalAmount;
+    private Boolean isTopup;
 }

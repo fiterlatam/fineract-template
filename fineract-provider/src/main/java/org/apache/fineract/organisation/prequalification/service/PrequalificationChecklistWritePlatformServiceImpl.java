@@ -113,8 +113,11 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
         final Integer noOfMembers = prequalificationGroup.getMembers().size();
         final BigDecimal totalAmountRequested = prequalificationGroup.getMembers().stream()
                 .map(PrequalificationGroupMember::getRequestedAmount).reduce(BigDecimal.ONE, BigDecimal::add);
+        // get all loan topup clients
+        List<ClientData> loanTopupClients = clientDatas.stream().filter(ClientData::getIsLoanTopup).toList();
+
         final GroupData groupData = GroupData.builder().id(prequalificationId).productId(productId).numberOfMembers(noOfMembers)
-                .requestedAmount(totalAmountRequested).members(clientDatas).previousPrequalification(prequalificationGroup.getPreviousPrequalification()).build();
+                .requestedAmount(totalAmountRequested).members(clientDatas).topupMembers(loanTopupClients).previousPrequalification(prequalificationGroup.getPreviousPrequalification()).build();
         Integer fromStatus = prequalificationGroup.getStatus();
         List<ValidationChecklistResult> validationChecklistResults = new ArrayList<>();
         final List<PolicyData> groupPolicies = this.jdbcTemplate.query(this.policyMapper.schema(), this.policyMapper, productId,
@@ -138,6 +141,7 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
                 }
                 final LoanData submittedLoanData = submittedLoans.get(0);
                 clientData.setLoanId(submittedLoanData.getLoanId());
+                clientData.setIsLoanTopup(submittedLoanData.getIsTopup());
                 clientData.setProductId(productId);
                 ValidationChecklistResult validationChecklistResult = new ValidationChecklistResult();
                 validationChecklistResult.setPrequalificationId(prequalificationId);
@@ -243,13 +247,15 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
 
         public String schema() {
             return """
-                    SELECT mc.id AS clientId, mpgm.id AS prequalificationMemberId, IFNULL(mc.display_name,mpgm.name) AS name, mpg.id AS prequalificationId,\s
+                    SELECT mc.id AS clientId,mc.loan_cycle as loanCycle, mpgm.id AS prequalificationMemberId, IFNULL(mc.display_name,mpgm.name) AS name, mpg.id AS prequalificationId,\s
                     mpgm.requested_amount AS requestedAmount, IFNULL(mc.date_of_birth, mpgm.dob) AS dateOfBirth, IFNULL(mc.dpi, mpgm.dpi) AS dpi,
-                    mpgm.work_with_puente AS workWithPuente, mcv.code_value As gender, mpgm.is_president AS president, mpgm.buro_check_status buroCheckStatus
+                    mpgm.work_with_puente AS workWithPuente, mcv.code_value As gender, mpgm.is_president AS president, mpgm.buro_check_status buroCheckStatus,
+                    ml.is_topup AS isTopup, ml.id AS loanId
                     FROM m_prequalification_group_members mpgm\s
                     LEFT JOIN m_client mc ON mc.dpi = mpgm.dpi\s
                     LEFT JOIN m_code_value mcv ON mcv.id = mc.gender_cv_id
                     LEFT JOIN m_prequalification_group mpg ON mpg.id = mpgm.group_id
+                    LEFT JOIN m_loan ml ON ml.client_id = mc.id AND ml.loan_status_id = 100 AND ml.prequalification_id = mpg.id 
                     WHERE mpg.id = ?
                     """;
         }
@@ -257,10 +263,12 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
         @Override
         public ClientData mapRow(@NotNull ResultSet rs, int rowNum) throws SQLException {
             final Long clientId = JdbcSupport.getLong(rs, "clientId");
+            final Long loanCycle = JdbcSupport.getLong(rs, "loanCycle");
             final Integer prequalificationMemberId = JdbcSupport.getInteger(rs, "prequalificationMemberId");
             final Integer prequalificationId = JdbcSupport.getInteger(rs, "prequalificationId");
             final String name = rs.getString("name");
             final boolean president = rs.getBoolean("president");
+            final boolean isTopup = rs.getBoolean("isTopup");
             final Integer buroCheckStatus = JdbcSupport.getInteger(rs, "buroCheckStatus");
             final Date dateOfBirth = rs.getDate("dateOfBirth");
             final String dpi = rs.getString("dpi");
@@ -270,7 +278,7 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
             return ClientData.builder().clientId(clientId).prequalificationId(prequalificationId)
                     .prequalificationMemberId(prequalificationMemberId).name(name).dateOfBirth(dateOfBirth).dpi(dpi)
                     .requestedAmount(requestedAmount).gender(gender).workWithPuente(workWithPuente).president(president)
-                    .buroCheckStatus(buroCheckStatus).build();
+                    .buroCheckStatus(buroCheckStatus).isLoanTopup(isTopup).loanCycle(loanCycle).build();
         }
     }
 
@@ -1156,11 +1164,12 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
     }
 
     private CheckValidationColor runCheck35(final GroupData groupData) {
-        if (groupData.getPreviousPrequalification()==null) {
+        if (groupData.getTopupMembers().size()<=0) {
             return null;
         }
         final String reportName = Policies.THIRTY_FIVE.getName() + " Policy Check";
-        final String numberOfMembers = String.valueOf(groupData.getNumberOfMembers());
+        //only validate with topup members only
+        final String numberOfMembers = String.valueOf(groupData.getTopupMembers().size());
         final String prequalificationId = String.valueOf(groupData.getId());
         final String productId = Long.toString(groupData.getProductId());
 
@@ -1173,7 +1182,7 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
     }
 
     private CheckValidationColor runCheck36(final GroupData groupData) {
-        if (groupData.getPreviousPrequalification()==null) {
+        if (groupData.getTopupMembers().size()<=0) {
             return null;
         }
         final String reportName = Policies.THIRTY_SIX.getName() + " Policy Check";
@@ -1188,7 +1197,7 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
     }
 
     private CheckValidationColor runCheck37(final GroupData groupData) {
-        if (groupData.getPreviousPrequalification()==null) {
+        if (groupData.getTopupMembers().size()<=0) {
             return null;
         }
         final String reportName = Policies.THIRTY_SEVEN.getName() + " Policy Check";

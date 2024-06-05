@@ -44,4 +44,6 @@ public class ClientData {
     private String recreditCategorization;
     private Boolean president;
     private Integer buroCheckStatus;
+    private Boolean isLoanTopup;
+    private Long loanCycle;
 }
