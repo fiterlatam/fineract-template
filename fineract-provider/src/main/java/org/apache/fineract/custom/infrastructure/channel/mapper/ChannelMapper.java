@@ -23,6 +23,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.fineract.custom.infrastructure.channel.data.ChannelData;
 import org.apache.fineract.custom.infrastructure.channel.domain.Channel;
+import org.apache.fineract.custom.infrastructure.channel.domain.ChannelType;
+import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 
 public class ChannelMapper {
 
@@ -36,9 +38,11 @@ public class ChannelMapper {
     }
 
     public static ChannelData toDTO(Channel model) {
+        final EnumOptionData channelTypeEnumOptionData = ChannelType.fromInt(model.getChannelType()).asEnumOptionData();
         return ChannelData.builder().id(model.getId()) //
                 .hash(model.getHash()) //
                 .name(model.getName()) //
+                .channelType(channelTypeEnumOptionData) //
                 .description(model.getDescription()) //
                 .active(model.getActive()) //
                 .build();

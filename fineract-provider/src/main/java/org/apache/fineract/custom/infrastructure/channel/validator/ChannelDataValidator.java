@@ -69,6 +69,9 @@ public class ChannelDataValidator {
         final String name = this.fromApiJsonHelper.extractStringNamed(ChannelApiConstants.nameParamName, element);
         baseDataValidator.reset().parameter(ChannelApiConstants.nameParamName).value(name).notNull().notExceedingLengthOf(100);
 
+        final Integer channelType = this.fromApiJsonHelper.extractIntegerWithLocaleNamed(ChannelApiConstants.CHANNEL_TYPE, element);
+        baseDataValidator.reset().parameter(ChannelApiConstants.CHANNEL_TYPE).value(channelType).notNull().inMinMaxRange(1, 2);
+
         final String description = this.fromApiJsonHelper.extractStringNamed(ChannelApiConstants.descriptionParamName, element);
         baseDataValidator.reset().parameter(ChannelApiConstants.descriptionParamName).value(description).notExceedingLengthOf(1000);
 
@@ -79,7 +82,7 @@ public class ChannelDataValidator {
 
         return Channel.builder().hash(hash) //
                 .name(name) //
-                .description(description) //
+                .channelType(channelType).description(description) //
                 .active(active) //
                 .build();
     }
@@ -105,6 +108,9 @@ public class ChannelDataValidator {
         final String name = this.fromApiJsonHelper.extractStringNamed(ChannelApiConstants.nameParamName, element);
         baseDataValidator.reset().parameter(ChannelApiConstants.nameParamName).value(name).notNull().notExceedingLengthOf(100);
 
+        final Integer channelType = this.fromApiJsonHelper.extractIntegerWithLocaleNamed(ChannelApiConstants.CHANNEL_TYPE, element);
+        baseDataValidator.reset().parameter(ChannelApiConstants.CHANNEL_TYPE).value(channelType).notNull().inMinMaxRange(1, 2);
+
         final String description = this.fromApiJsonHelper.extractStringNamed(ChannelApiConstants.descriptionParamName, element);
         baseDataValidator.reset().parameter(ChannelApiConstants.descriptionParamName).value(description).notExceedingLengthOf(1000);
 
@@ -117,9 +123,8 @@ public class ChannelDataValidator {
                 .id(channelId) //
                 .hash(hash) //
                 .name(name) //
-                .description(description) //
+                .channelType(channelType).description(description) //
                 .active(active) //
-
                 .build();
     }
 

@@ -50,6 +50,9 @@ public class Channel {
     @Column(name = "name", nullable = false, length = 100)
     private String name;
 
+    @Column(name = "channel_type")
+    private Integer channelType;
+
     @Column(name = "description", nullable = true, length = 1000)
     private String description;
 

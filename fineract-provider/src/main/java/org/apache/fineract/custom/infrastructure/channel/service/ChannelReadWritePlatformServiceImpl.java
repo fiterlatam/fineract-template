@@ -29,12 +29,14 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.fineract.custom.infrastructure.channel.data.ChannelData;
 import org.apache.fineract.custom.infrastructure.channel.domain.Channel;
 import org.apache.fineract.custom.infrastructure.channel.domain.ChannelRepository;
+import org.apache.fineract.custom.infrastructure.channel.domain.ChannelType;
 import org.apache.fineract.custom.infrastructure.channel.exception.ChannelNotFoundException;
 import org.apache.fineract.custom.infrastructure.channel.mapper.ChannelMapper;
 import org.apache.fineract.custom.infrastructure.channel.validator.ChannelDataValidator;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuilder;
+import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.infrastructure.core.exception.PlatformDataIntegrityException;
 import org.apache.fineract.infrastructure.core.service.database.DatabaseSpecificSQLGenerator;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
@@ -73,7 +75,7 @@ public class ChannelReadWritePlatformServiceImpl implements ChannelReadWritePlat
     }
 
     @Override
-    public List<ChannelData> findByName(String name) {
+    public List<ChannelData> findBySearchParam(String name) {
         this.context.authenticatedUser();
         final ChannelRowMapper rm = new ChannelRowMapper();
 
@@ -86,9 +88,21 @@ public class ChannelReadWritePlatformServiceImpl implements ChannelReadWritePlat
     }
 
     @Override
+    public ChannelData findByName(String name) {
+        this.context.authenticatedUser();
+        final ChannelRowMapper rm = new ChannelRowMapper();
+        final String sql = "SELECT " + rm.schema() + " WHERE c.name = ? ";
+        List<ChannelData> channelDataList = this.jdbcTemplate.query(sql, rm, new Object[] { name });
+        if (channelDataList.isEmpty()) {
+            return null;
+        }
+        return channelDataList.get(0);
+    }
+
+    @Override
     public ChannelData findById(Long id) {
         Optional<Channel> entity = repository.findById(id);
-        if (!entity.isPresent()) {
+        if (entity.isEmpty()) {
             throw new ChannelNotFoundException();
         }
         return ChannelMapper.toDTO(entity.get());
@@ -97,13 +111,10 @@ public class ChannelReadWritePlatformServiceImpl implements ChannelReadWritePlat
     @Transactional
     @Override
     public CommandProcessingResult create(final JsonCommand command) {
-
         try {
             this.context.authenticatedUser();
-
             final Channel entity = this.validatorClass.validateForCreate(command.json());
             repository.saveAndFlush(entity);
-
             return new CommandProcessingResultBuilder().withEntityId(entity.getId()).build();
         } catch (final JpaSystemException | DataIntegrityViolationException dve) {
             handleDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
@@ -162,15 +173,16 @@ public class ChannelReadWritePlatformServiceImpl implements ChannelReadWritePlat
     private static final class ChannelRowMapper implements RowMapper<ChannelData> {
 
         public String schema() {
-            return " id, hash, \"name\", description, active, "
+            return " id, hash, \"name\", c.channel_type AS \"channelType\", description, active, "
                     + " (SELECT COUNT(1) FROM custom.c_channel_subchannel WHERE channel_id = c.id) as subChannelsCounterC "
                     + "FROM custom.c_channel c ";
         }
 
         @Override
         public ChannelData mapRow(final ResultSet rs, @SuppressWarnings("unused") final int rowNum) throws SQLException {
+            EnumOptionData channelType = ChannelType.fromInt(rs.getInt("channelType")).asEnumOptionData();
             return ChannelData.builder().id(rs.getLong("id")).hash(rs.getString("hash")).name(rs.getString("name"))
-                    .description(rs.getString("description")).nrOfSubChannels(rs.getInt("subChannelsCounterC"))
+                    .description(rs.getString("description")).nrOfSubChannels(rs.getInt("subChannelsCounterC")).channelType(channelType)
                     .active(rs.getBoolean("active")).build();
         }
     }

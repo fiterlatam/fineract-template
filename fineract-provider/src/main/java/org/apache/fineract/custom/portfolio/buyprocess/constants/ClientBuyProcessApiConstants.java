@@ -21,6 +21,7 @@ package org.apache.fineract.custom.portfolio.buyprocess.constants;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
+import org.apache.fineract.portfolio.loanaccount.api.LoanApiConstants;
 
 public final class ClientBuyProcessApiConstants {
 
@@ -51,8 +52,8 @@ public final class ClientBuyProcessApiConstants {
     public static final String ipDetailsParamName = "ipDetails";
 
     // request parameters Set
-    public static final Set<String> REQUEST_DATA_PARAMETERS = new HashSet<>(
-            Arrays.asList(localeParamName, dateFormatParamName, idParamName, channelIdParamName, clientIdParamName, pointOfSalesIdParamName,
-                    productIdParamName, creditIdParamName, requestedDateParamName, amountParamName, termParamName, createdAtParamName,
-                    createdByParamName, ipDetailsParamName, pointOfSalesCodeParamName, clientDocumentIdParamName));
+    public static final Set<String> REQUEST_DATA_PARAMETERS = new HashSet<>(Arrays.asList(localeParamName, dateFormatParamName, idParamName,
+            channelIdParamName, clientIdParamName, pointOfSalesIdParamName, productIdParamName, creditIdParamName, requestedDateParamName,
+            amountParamName, termParamName, createdAtParamName, createdByParamName, ipDetailsParamName, pointOfSalesCodeParamName,
+            clientDocumentIdParamName, LoanApiConstants.CHANNEL_NAME));
 }
