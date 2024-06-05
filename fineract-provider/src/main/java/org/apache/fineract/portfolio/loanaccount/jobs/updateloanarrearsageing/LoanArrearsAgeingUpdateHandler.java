@@ -313,14 +313,14 @@ public class LoanArrearsAgeingUpdateHandler {
         final List<Long> clientIds = jdbcTemplate.queryForList(query, Long.class, BLOCKING_REASON_NAME);
 
         for (Long clientId : clientIds) {
-            // edit in here
+
             clientWritePlatformService.blockClientWithInActiveLoan(clientId, BLOCKING_REASON_NAME, "Cliente bloqueado por defecto", false);
         }
 
     }
 
     public void handleUnBlockingAfterArrearsAging() {
-        log.debug("handleUnBlockingAfterArrearsAging");
+
         final String query = """
                    SELECT DISTINCT mcbr.client_id
                    FROM m_client_blocking_reason mcbr
