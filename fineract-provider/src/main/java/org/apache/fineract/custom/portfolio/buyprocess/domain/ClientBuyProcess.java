@@ -56,7 +56,7 @@ public class ClientBuyProcess {
     private Long channelId;
 
     @Transient
-    private String channelHash;
+    private String channelName;
 
     @Column(name = "client_id", nullable = false)
     private Long clientId;
@@ -103,10 +103,10 @@ public class ClientBuyProcess {
     @Transient
     private Client client;
 
-    public ClientBuyProcess(Long channelId, String channelHash, Long clientId, Long pointOfSalesId, Long productId, Long creditId,
+    public ClientBuyProcess(Long channelId, String channelName, Long clientId, Long pointOfSalesId, Long productId, Long creditId,
             LocalDate requestedDate, BigDecimal amount, Long term, LocalDateTime createdAt, Long createdBy, String ipDetails) {
         this.channelId = channelId;
-        this.channelHash = channelHash;
+        this.channelName = channelName;
         this.clientId = clientId;
         this.pointOfSalesId = pointOfSalesId;
         this.productId = productId;

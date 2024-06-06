@@ -85,7 +85,6 @@ public class RequestedVsAvailableAmountForAllyValidatorStep extends BuyProcessAb
 
             usedAmount = this.jdbcTemplate.queryForObject(sqlBuilder.toString(), BigDecimal.class, currEntity.getAllyId(),
                     currEntity.getAllyId());
-            ;
             if (Objects.isNull(usedAmount)) {
                 usedAmount = BigDecimal.ZERO;
             }

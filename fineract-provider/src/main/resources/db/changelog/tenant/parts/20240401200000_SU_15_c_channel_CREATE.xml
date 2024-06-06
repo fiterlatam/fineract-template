@@ -104,4 +104,27 @@
         </insert>
     </changeSet>
 
+    <changeSet author="fineract" id="61">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists schemaName="custom" tableName="c_channel" columnName="channel_type"/>
+            </not>
+        </preConditions>
+        <addColumn schemaName="custom" tableName="c_channel">
+            <column name="channel_type" type="INT">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="62" >
+        <insert schemaName="custom" tableName="c_channel">
+            <column name="hash" value="Mifos"/>
+            <column name="name" value="Mifos"/>
+            <column name="description" value="Mifos"/>
+            <column name="active" valueBoolean="true"/>
+            <column name="channel_type" valueNumeric="1"/>
+        </insert>
+    </changeSet>
+
 </databaseChangeLog>

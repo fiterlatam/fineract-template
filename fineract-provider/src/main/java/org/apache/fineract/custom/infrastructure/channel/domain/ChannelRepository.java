@@ -31,6 +31,8 @@ public interface ChannelRepository extends JpaRepository<Channel, Long>, JpaSpec
 
     Optional<Channel> findByHash(String hash);
 
+    Optional<Channel> findByName(String name);
+
     @Query(FIND_NON_CORE_ACTIVE_CHANNELS)
     List<Channel> findAllActive(@Param("active") Boolean active);
 }
