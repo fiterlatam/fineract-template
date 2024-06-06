@@ -29,13 +29,17 @@ import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockLevel;
+import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSetting;
 import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSettingEnum;
+import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSettingsRepositoryWrapper;
 import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.core.service.database.DatabaseSpecificSQLGenerator;
 import org.apache.fineract.portfolio.client.service.ClientWritePlatformService;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.data.LoanSchedulePeriodData;
 import org.apache.fineract.portfolio.loanaccount.service.LoanArrearsAgingService;
+import org.apache.fineract.portfolio.loanaccount.service.LoanBlockWritePlatformServiceImpl;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.ResultSetExtractor;
@@ -54,6 +58,8 @@ public class LoanArrearsAgeingUpdateHandler {
     private final DatabaseSpecificSQLGenerator sqlGenerator;
     private final LoanArrearsAgingService loanArrearsAgingService;
     private final ClientWritePlatformService clientWritePlatformService;
+    private final BlockingReasonSettingsRepositoryWrapper blockingReasonSettingsRepositoryWrapper;
+    private final LoanBlockWritePlatformServiceImpl loanBlockWritePlatformService;
 
     private void truncateLoanArrearsAgingDetails() {
         jdbcTemplate.execute("truncate table m_loan_arrears_aging");
@@ -105,6 +111,7 @@ public class LoanArrearsAgeingUpdateHandler {
 
         handleBlockingAfterAreasAging();
         handleUnBlockingAfterArrearsAging();
+        handleBlockingReasonCreadit(loanIdsForUpdate);
         if (log.isDebugEnabled()) {
             int result = 0;
             for (int recordWithoutOriginalSchedule : recordsUpdatedWithoutOriginalSchedule) {
@@ -179,6 +186,7 @@ public class LoanArrearsAgeingUpdateHandler {
             List<Map<String, Object>> loanSummary = getLoanSummary(loanIds);
             loanArrearsAgingService.updateScheduleWithPaidDetail(scheduleDate, loanSummary);
             loanArrearsAgingService.createInsertStatements(insertStatement, scheduleDate, true);
+
         }
 
         return insertStatement;
@@ -193,6 +201,7 @@ public class LoanArrearsAgeingUpdateHandler {
             List<Map<String, Object>> loanSummary = getLoanSummary(loanIds);
             loanArrearsAgingService.updateScheduleWithPaidDetail(scheduleDate, loanSummary);
             loanArrearsAgingService.createInsertStatements(insertStatement, scheduleDate, true);
+            handleBlockingReasonCreadit(loanIds);
         }
 
         return insertStatement;
@@ -303,6 +312,7 @@ public class LoanArrearsAgeingUpdateHandler {
         final List<Long> clientIds = jdbcTemplate.queryForList(query, Long.class, BLOCKING_REASON_NAME);
 
         for (Long clientId : clientIds) {
+
             clientWritePlatformService.blockClientWithInActiveLoan(clientId, BLOCKING_REASON_NAME, "Cliente bloqueado por defecto", false);
         }
 
@@ -322,12 +332,21 @@ public class LoanArrearsAgeingUpdateHandler {
                 """;
 
         final List<Long> clientIds = jdbcTemplate.queryForList(query, Long.class, BLOCKING_REASON_NAME);
-
         for (Long clientId : clientIds) {
             clientWritePlatformService.unblockClientBlockingReason(clientId, DateUtils.getLocalDateOfTenant(), BLOCKING_REASON_NAME,
                     "Cliente desbloqueado por defecto");
         }
 
+    }
+
+    public void handleBlockingReasonCreadit(final List<Long> loanIds) {
+        BlockingReasonSetting blockingReasonSetting = blockingReasonSettingsRepositoryWrapper
+                .getSingleBlockingReasonSettingByReason(BLOCKING_REASON_NAME, BlockLevel.CREDIT.toString());
+
+        for (Long loanId : loanIds) {
+            loanBlockWritePlatformService.blockLoan(loanId, blockingReasonSetting, "Cliente desbloqueado por defecto",
+                    DateUtils.getLocalDateOfTenant());
+        }
     }
 
 }
