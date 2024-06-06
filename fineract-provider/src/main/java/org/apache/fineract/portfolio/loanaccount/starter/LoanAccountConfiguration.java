@@ -22,6 +22,7 @@ import org.apache.fineract.accounting.journalentry.service.JournalEntryWritePlat
 import org.apache.fineract.cob.service.LoanAccountLockService;
 import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformService;
 import org.apache.fineract.infrastructure.accountnumberformat.domain.AccountNumberFormatRepositoryWrapper;
+import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSettingsRepositoryWrapper;
 import org.apache.fineract.infrastructure.codes.domain.CodeValueRepositoryWrapper;
 import org.apache.fineract.infrastructure.codes.service.CodeValueReadPlatformService;
 import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
@@ -113,6 +114,7 @@ import org.apache.fineract.portfolio.loanaccount.service.LoanApplicationWritePla
 import org.apache.fineract.portfolio.loanaccount.service.LoanArrearsAgingService;
 import org.apache.fineract.portfolio.loanaccount.service.LoanArrearsAgingServiceImpl;
 import org.apache.fineract.portfolio.loanaccount.service.LoanAssembler;
+import org.apache.fineract.portfolio.loanaccount.service.LoanBlockWritePlatformServiceImpl;
 import org.apache.fineract.portfolio.loanaccount.service.LoanCalculateRepaymentPastDueService;
 import org.apache.fineract.portfolio.loanaccount.service.LoanChargeAssembler;
 import org.apache.fineract.portfolio.loanaccount.service.LoanChargePaidByReadPlatformService;
@@ -251,8 +253,10 @@ public class LoanAccountConfiguration {
     @ConditionalOnMissingBean(LoanArrearsAgingService.class)
     public LoanArrearsAgingService loanArrearsAgingService(JdbcTemplate jdbcTemplate,
             BusinessEventNotifierService businessEventNotifierService, DatabaseSpecificSQLGenerator sqlGenerator,
-            ClientWritePlatformService clientWritePlatformService) {
-        return new LoanArrearsAgingServiceImpl(jdbcTemplate, businessEventNotifierService, sqlGenerator, clientWritePlatformService);
+            ClientWritePlatformService clientWritePlatformService, LoanBlockWritePlatformServiceImpl loanBlockWritePlatformService,
+            BlockingReasonSettingsRepositoryWrapper blockingReasonSettingsRepositoryWrapper) {
+        return new LoanArrearsAgingServiceImpl(jdbcTemplate, businessEventNotifierService, sqlGenerator, clientWritePlatformService,
+                loanBlockWritePlatformService, blockingReasonSettingsRepositoryWrapper);
     }
 
     @Bean
