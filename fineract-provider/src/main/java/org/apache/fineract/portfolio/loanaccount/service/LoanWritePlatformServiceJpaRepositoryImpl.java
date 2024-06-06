@@ -49,6 +49,9 @@ import org.apache.fineract.cob.service.LoanAccountLockService;
 import org.apache.fineract.commands.domain.CommandWrapper;
 import org.apache.fineract.commands.service.CommandWrapperBuilder;
 import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformService;
+import org.apache.fineract.custom.infrastructure.channel.data.ChannelData;
+import org.apache.fineract.custom.infrastructure.channel.domain.ChannelType;
+import org.apache.fineract.custom.infrastructure.channel.service.ChannelReadWritePlatformService;
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 import org.apache.fineract.infrastructure.codes.domain.CodeValue;
 import org.apache.fineract.infrastructure.codes.domain.CodeValueRepositoryWrapper;
@@ -277,6 +280,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     private final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService;
     private final LoanRescheduleRequestReadPlatformService loanRescheduleRequestReadPlatformService;
     private final ClientReadPlatformService clientReadPlatformService;
+    private final ChannelReadWritePlatformService channelReadWritePlatformService;
+    private final PlatformSecurityContext platformSecurityContext;
 
     @Transactional
     @Override
@@ -301,6 +306,23 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         return result;
     }
 
+    private void validateChannel(final String channelName) {
+        if (StringUtils.isBlank(channelName)) {
+            throw new GeneralPlatformDomainRuleException("validation.msg.channel.is.blank", "Channel is blank");
+        }
+        final ChannelData channelData = this.channelReadWritePlatformService.findByName(channelName);
+        if (channelData == null) {
+            throw new GeneralPlatformDomainRuleException("validation.msg.channel.not.found", "Channel not found", channelName);
+        }
+        if (!channelData.getActive()) {
+            throw new GeneralPlatformDomainRuleException("validation.msg.channel.not.active", "Channel is not active", channelName);
+        }
+        if (ChannelType.DISBURSEMENT.getValue().longValue() != channelData.getChannelType().getId()) {
+            throw new GeneralPlatformDomainRuleException("validation.msg.channel.not.disbursement", "Channel is not disbursement channel",
+                    channelName);
+        }
+    }
+
     @Transactional
     @Override
     public CommandProcessingResult disburseLoan(final Long loanId, final JsonCommand command, Boolean isAccountTransfer) {
@@ -308,6 +330,11 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         final AppUser currentUser = getAppUserIfPresent();
 
         this.loanEventApiJsonValidator.validateDisbursement(command.json(), isAccountTransfer);
+        String channelName = command.stringValueOfParameterNamed("channelName");
+        if (channelName == null) {
+            channelName = this.platformSecurityContext.getApiRequestChannel();
+        }
+        this.validateChannel(channelName);
 
         if (command.parameterExists("postDatedChecks")) {
             // validate with post dated checks for the disbursement

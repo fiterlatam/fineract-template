@@ -31,11 +31,13 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.UriInfo;
+import java.util.List;
 import org.apache.fineract.commands.domain.CommandWrapper;
 import org.apache.fineract.commands.service.CommandWrapperBuilder;
 import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformService;
 import org.apache.fineract.custom.infrastructure.channel.constants.ChannelApiConstants;
 import org.apache.fineract.custom.infrastructure.channel.data.ChannelData;
+import org.apache.fineract.custom.infrastructure.channel.domain.ChannelType;
 import org.apache.fineract.custom.infrastructure.channel.service.ChannelReadWritePlatformService;
 import org.apache.fineract.infrastructure.core.api.ApiRequestParameterHelper;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
@@ -75,7 +77,7 @@ public class ChannelApiResource {
     public String get(@Context final UriInfo uriInfo,
             @QueryParam("sqlSearch") @Parameter(description = "sqlSearch") final String sqlSearch) {
         this.context.authenticatedUser().validateHasReadPermission(ChannelApiConstants.RESOURCE_NAME);
-        return this.toApiJsonSerializer.serialize(this.service.findByName(sqlSearch));
+        return this.toApiJsonSerializer.serialize(this.service.findBySearchParam(sqlSearch));
     }
 
     @GET
@@ -83,20 +85,32 @@ public class ChannelApiResource {
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     public String retrieveOne(@PathParam("id") @Parameter(description = "id") final Long id, @Context final UriInfo uriInfo) {
-
         this.context.authenticatedUser().validateHasReadPermission(ChannelApiConstants.RESOURCE_NAME);
-
-        final ChannelData data = this.service.findById(id);
-
+        final ChannelData channelData = this.service.findById(id);
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
+        if (settings.isTemplate()) {
+            channelData
+                    .setChannelTypeOptions(List.of(ChannelType.DISBURSEMENT.asEnumOptionData(), ChannelType.REPAYMENT.asEnumOptionData()));
+        }
+        return this.toApiJsonSerializer.serialize(settings, channelData, ChannelApiConstants.REQUEST_DATA_PARAMETERS);
+    }
 
-        return this.toApiJsonSerializer.serialize(settings, data, ChannelApiConstants.REQUEST_DATA_PARAMETERS);
+    @GET
+    @Path("template")
+    @Consumes({ MediaType.APPLICATION_JSON })
+    @Produces({ MediaType.APPLICATION_JSON })
+    public String retrieveTemplate(final Long id, @Context final UriInfo uriInfo) {
+        this.context.authenticatedUser().validateHasReadPermission(ChannelApiConstants.RESOURCE_NAME);
+        final ChannelData channelData = ChannelData.builder()
+                .channelTypeOptions(List.of(ChannelType.DISBURSEMENT.asEnumOptionData(), ChannelType.REPAYMENT.asEnumOptionData())).build();
+        final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
+        return this.toApiJsonSerializer.serialize(settings, channelData, ChannelApiConstants.REQUEST_DATA_PARAMETERS);
     }
 
     @POST
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
-    public String createNewHoliday(@Parameter(hidden = true) final String apiRequestBodyAsJson) {
+    public String createChannel(@Parameter(hidden = true) final String apiRequestBodyAsJson) {
 
         final CommandWrapper commandRequest = new CommandWrapperBuilder().createChannel().withJson(apiRequestBodyAsJson).build();
 
