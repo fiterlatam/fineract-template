@@ -284,7 +284,7 @@
         </sql>
     </changeSet>
 
-    <changeSet id="10" author="fineract">
+    <changeSet id="12" author="fineract">
         <sql>
             <![CDATA[
                 UPDATE stretchy_report SET report_sql = "SELECT
