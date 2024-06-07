@@ -263,7 +263,7 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
                     LEFT JOIN m_code_value areacv ON areacv.id = cinf.area 
                     LEFT JOIN m_prequalification_group mpg ON mpg.id = mpgm.group_id
                     LEFT JOIN m_loan ml ON ml.client_id = mc.id AND ml.loan_status_id = 100 AND ml.prequalification_id = mpg.id 
-                    WHERE mpg.id = ?
+                    WHERE mpg.id = ? GROUP BY mc.id
                     """;
         }
 
