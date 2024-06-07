@@ -284,4 +284,44 @@
         </sql>
     </changeSet>
 
+    <changeSet id="12" author="fineract">
+        <sql>
+            <![CDATA[
+                UPDATE stretchy_report SET report_sql = "SELECT
+		  CASE
+		      WHEN (${isTopup} = true) AND (${loanProductId} IN (2,8,9)) AND (${requestedAmount} BETWEEN 1500 AND 20000) THEN 'GREEN'
+		      WHEN (${isTopup} = true) AND (${loanProductId} IN (4,5)) AND (${requestedAmount} BETWEEN 5000 AND 25000) THEN 'GREEN'
+
+		      WHEN (${isTopup} = false) AND (${loanProductId} = 2) AND ('${categorization}' = 'NUEVO') AND ('${clientArea}' = 'URBAN') AND (${requestedAmount} BETWEEN 1500 AND 5000) THEN 'GREEN'
+		      WHEN (${isTopup} = false) AND (${loanProductId} = 2) AND ('${categorization}' = 'RECREDITO') AND ('${clientArea}' = 'URBAN') AND (${requestedAmount} BETWEEN 1500 AND 20000) THEN 'GREEN'
+		      WHEN (${isTopup} = false) AND (${loanProductId} = 2) AND ('${categorization}' = 'NUEVO') AND ('${clientArea}' = 'RURAL') AND (${requestedAmount} BETWEEN 1500 AND 5000) THEN 'GREEN'
+		      WHEN (${isTopup} = false) AND (${loanProductId} = 2) AND ('${categorization}' = 'RECREDITO') AND ('${clientArea}' = 'URBAN') AND (${requestedAmount} BETWEEN 1500 AND 20000) THEN 'GREEN'
+
+		      WHEN (${isTopup} = false) AND (${loanProductId} = 8) AND ('${categorization}' = 'NUEVO') AND ('${clientArea}' = 'URBAN') AND (${requestedAmount} BETWEEN 1500 AND 5000) THEN 'GREEN'
+		      WHEN (${isTopup} = false) AND (${loanProductId} = 8) AND ('${categorization}' = 'RECREDITO') AND ('${clientArea}' = 'URBAN') AND (${requestedAmount} BETWEEN 1500 AND 20000) THEN 'GREEN'
+		      WHEN (${isTopup} = false) AND (${loanProductId} = 8) AND ('${categorization}' = 'NUEVO') AND ('${clientArea}' = 'RURAL') AND (${requestedAmount} BETWEEN 1500 AND 5000) THEN 'GREEN'
+		      WHEN (${isTopup} = false) AND (${loanProductId} = 8) AND ('${categorization}' = 'RECREDITO') AND ('${clientArea}' = 'URBAN') AND (${requestedAmount} BETWEEN 1500 AND 20000) THEN 'GREEN'
+
+		      WHEN (${isTopup} = false) AND (${loanProductId} = 9) AND ('${categorization}' = 'NUEVO') AND ('${clientArea}' = 'URBAN') AND (${requestedAmount} BETWEEN 1500 AND 5000) THEN 'GREEN'
+		      WHEN (${isTopup} = false) AND (${loanProductId} = 9) AND ('${categorization}' = 'RECREDITO') AND ('${clientArea}' = 'URBAN') AND (${requestedAmount} BETWEEN 1500 AND 20000) THEN 'GREEN'
+		      WHEN (${isTopup} = false) AND (${loanProductId} = 9) AND ('${categorization}' = 'NUEVO') AND ('${clientArea}' = 'RURAL') AND (${requestedAmount} BETWEEN 1500 AND 5000) THEN 'GREEN'
+		      WHEN (${isTopup} = false) AND (${loanProductId} = 9) AND ('${categorization}' = 'RECREDITO') AND ('${clientArea}' = 'URBAN') AND (${requestedAmount} BETWEEN 1500 AND 20000) THEN 'GREEN'
+
+		      WHEN (${isTopup} = false) AND (${loanProductId} = 4) AND ('${categorization}' = 'NUEVO') AND ('${clientArea}' = 'URBAN') AND (${requestedAmount} BETWEEN 5000 AND 10000) THEN 'GREEN'
+		      WHEN (${isTopup} = false) AND (${loanProductId} = 4) AND ('${categorization}' = 'RECREDITO') AND ('${clientArea}' = 'URBAN') AND (${requestedAmount} BETWEEN 5000 AND 25000) THEN 'GREEN'
+		      WHEN (${isTopup} = false) AND (${loanProductId} = 4) AND ('${categorization}' = 'NUEVO') AND ('${clientArea}' = 'RURAL') AND (${requestedAmount} BETWEEN 5000 AND 10000) THEN 'GREEN'
+		      WHEN (${isTopup} = false) AND (${loanProductId} = 4) AND ('${categorization}' = 'RECREDITO') AND ('${clientArea}' = 'URBAN') AND (${requestedAmount} BETWEEN 5000 AND 25000) THEN 'GREEN'
+
+		      WHEN (${isTopup} = false) AND (${loanProductId} = 5) AND ('${categorization}' = 'NUEVO') AND ('${clientArea}' = 'URBAN') AND (${requestedAmount} BETWEEN 5000 AND 10000) THEN 'GREEN'
+		      WHEN (${isTopup} = false) AND (${loanProductId} = 5) AND ('${categorization}' = 'RECREDITO') AND ('${clientArea}' = 'URBAN') AND (${requestedAmount} BETWEEN 5000 AND 20000) THEN 'GREEN'
+		      WHEN (${isTopup} = false) AND (${loanProductId} = 5) AND ('${categorization}' = 'NUEVO') AND ('${clientArea}' = 'RURAL') AND (${requestedAmount} BETWEEN 5000 AND 10000) THEN 'GREEN'
+		      WHEN (${isTopup} = false) AND (${loanProductId} = 5) AND ('${categorization}' = 'RECREDITO') AND ('${clientArea}' = 'URBAN') AND (${requestedAmount} BETWEEN 5000 AND 20000) THEN 'GREEN'
+
+              ELSE 'RED'
+		  END AS color"
+		  WHERE report_name = "Minimum and maximum amount Policy Check";
+		  ]]>
+        </sql>
+    </changeSet>
+
 </databaseChangeLog>
