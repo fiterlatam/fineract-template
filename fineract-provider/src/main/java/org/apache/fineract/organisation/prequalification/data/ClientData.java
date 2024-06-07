@@ -46,4 +46,5 @@ public class ClientData {
     private Integer buroCheckStatus;
     private Boolean isLoanTopup;
     private Long loanCycle;
+    private String categorization;
 }
