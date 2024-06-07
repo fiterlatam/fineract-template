@@ -34,4 +34,5 @@ public class LoanData {
     private String dpi;
     private BigDecimal principalAmount;
     private Boolean isTopup;
+    private String loanCycleCompleted;
 }
