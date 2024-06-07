@@ -205,7 +205,7 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
             Integer numberOfRepayments, BigDecimal loanCharge) {
 
         ChargeCalculationType chargeCalculationType = ChargeCalculationType.fromInt(this.chargeCalculation);
-
+        LOG.warn("Loan Charge : "+this.chargeCalculation+"-"+this.loan.getId());
         if (ChargeCalculationType.INVALID.equals(chargeCalculationType)) {
             this.percentage = null;
             this.amount = null;
@@ -233,7 +233,9 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
                 this.amountWrittenOff = null;
             } else if (chargeCalculationType.isPercentageOfInstallmentPrincipal()
                     || chargeCalculationType.isPercentageOfInstallmentPrincipalAndInterest()
-                    || chargeCalculationType.isPercentageOfInstallmentInterest() || chargeCalculationType.isPercentageOfDisbursement()) {
+                    || chargeCalculationType.isPercentageOfInstallmentInterest() || chargeCalculationType.isPercentageOfDisbursement()
+                    || chargeCalculationType.isPercentageOfInsurance() || chargeCalculationType.isPercentageOfHonorarios()
+            ) {
                 this.percentage = chargeAmount;
                 this.amountPercentageAppliedTo = amountPercentageAppliedTo;
                 if (loanCharge.compareTo(BigDecimal.ZERO) == 0) {

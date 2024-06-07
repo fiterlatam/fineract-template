@@ -148,8 +148,6 @@ public class LoanArrearsAgingServiceImpl implements LoanArrearsAgingService {
             } else {
                 this.jdbcTemplate.update(updateStatement);
                 handleMoraAddition(loan);
-                handleBlockingCredit(loan.getId());
-
             }
         }
     }
@@ -585,10 +583,4 @@ public class LoanArrearsAgingServiceImpl implements LoanArrearsAgingService {
                 false);
     }
 
-    private void handleBlockingCredit(Long loanId) {
-        BlockingReasonSetting blockingReasonSetting = blockingReasonSettingsRepositoryWrapper
-                .getSingleBlockingReasonSettingByReason(BLOCKING_REASON_NAME, BlockLevel.CREDIT.toString());
-        loanBlockWritePlatformService.blockLoan(loanId, blockingReasonSetting, "Cliente bloqueado por defecto",
-                DateUtils.getLocalDateOfTenant());
-    }
 }
