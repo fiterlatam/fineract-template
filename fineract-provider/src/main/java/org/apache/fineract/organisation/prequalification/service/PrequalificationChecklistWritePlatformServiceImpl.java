@@ -143,24 +143,29 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
                 clientData.setLoanId(submittedLoanData.getLoanId());
                 clientData.setIsLoanTopup(submittedLoanData.getIsTopup());
                 clientData.setProductId(productId);
-                ValidationChecklistResult validationChecklistResult = new ValidationChecklistResult();
-                validationChecklistResult.setPrequalificationId(prequalificationId);
-                validationChecklistResult.setPolicyId(policyCategoryData.getId());
-                validationChecklistResult.setClientId(clientData.getClientId());
-                validationChecklistResult.setPrequalificationMemberId(clientData.getPrequalificationMemberId());
-                validationChecklistResult.setPrequalificationType(PrequalificationType.INDIVIDUAL.getValue());
+
+                String loanCycleCompleted = submittedLoanData.getLoanCycleCompleted();
+                clientData.setCategorization(StringUtils.equalsIgnoreCase(loanCycleCompleted, "fromAnotherGroup") ? "RECREDITO" : "NUEVO");
                 CheckValidationColor checkValidationColor = this.validateGenericPolicy(Policies.fromInt(policyCategoryData.getId()),
                         clientData, groupData);
-                validationChecklistResult.setValidationColor(checkValidationColor.getValue());
-                AppUser authenticatedUser = platformSecurityContext.authenticatedUser();
-                final LocalDateTime localDateTime = DateUtils.getLocalDateTimeOfSystem();
-                if (authenticatedUser != null && authenticatedUser.getId() != null) {
-                    validationChecklistResult.setCreatedBy(authenticatedUser.getId());
-                    validationChecklistResult.setLastModifiedBy(authenticatedUser.getId());
+                if (checkValidationColor!=null){
+                    ValidationChecklistResult validationChecklistResult = new ValidationChecklistResult();
+                    validationChecklistResult.setPrequalificationId(prequalificationId);
+                    validationChecklistResult.setPolicyId(policyCategoryData.getId());
+                    validationChecklistResult.setClientId(clientData.getClientId());
+                    validationChecklistResult.setPrequalificationMemberId(clientData.getPrequalificationMemberId());
+                    validationChecklistResult.setPrequalificationType(PrequalificationType.INDIVIDUAL.getValue());
+                    validationChecklistResult.setValidationColor(checkValidationColor.getValue());
+                    AppUser authenticatedUser = platformSecurityContext.authenticatedUser();
+                    final LocalDateTime localDateTime = DateUtils.getLocalDateTimeOfSystem();
+                    if (authenticatedUser != null && authenticatedUser.getId() != null) {
+                        validationChecklistResult.setCreatedBy(authenticatedUser.getId());
+                        validationChecklistResult.setLastModifiedBy(authenticatedUser.getId());
+                    }
+                    validationChecklistResult.setCreatedDate(localDateTime);
+                    validationChecklistResult.setLastModifiedDate(localDateTime);
+                    validationChecklistResults.add(validationChecklistResult);
                 }
-                validationChecklistResult.setCreatedDate(localDateTime);
-                validationChecklistResult.setLastModifiedDate(localDateTime);
-                validationChecklistResults.add(validationChecklistResult);
             }
         }
 
@@ -250,13 +255,15 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
                     SELECT mc.id AS clientId,mc.loan_cycle as loanCycle, mpgm.id AS prequalificationMemberId, IFNULL(mc.display_name,mpgm.name) AS name, mpg.id AS prequalificationId,\s
                     mpgm.requested_amount AS requestedAmount, IFNULL(mc.date_of_birth, mpgm.dob) AS dateOfBirth, IFNULL(mc.dpi, mpgm.dpi) AS dpi,
                     mpgm.work_with_puente AS workWithPuente, mcv.code_value As gender, mpgm.is_president AS president, mpgm.buro_check_status buroCheckStatus,
-                    ml.is_topup AS isTopup, ml.id AS loanId
-                    FROM m_prequalification_group_members mpgm\s
-                    LEFT JOIN m_client mc ON mc.dpi = mpgm.dpi\s
-                    LEFT JOIN m_code_value mcv ON mcv.id = mc.gender_cv_id
+                    ml.is_topup AS isTopup, ml.id AS loanId, areacv.code_value as clientArea
+                    FROM m_prequalification_group_members mpgm 
+                    LEFT JOIN m_client mc ON mc.dpi = mpgm.dpi 
+                    LEFT JOIN m_client_contact_info cinf ON cinf.client_id = mc.id 
+                    LEFT JOIN m_code_value mcv ON mcv.id = mc.gender_cv_id 
+                    LEFT JOIN m_code_value areacv ON areacv.id = cinf.area 
                     LEFT JOIN m_prequalification_group mpg ON mpg.id = mpgm.group_id
                     LEFT JOIN m_loan ml ON ml.client_id = mc.id AND ml.loan_status_id = 100 AND ml.prequalification_id = mpg.id 
-                    WHERE mpg.id = ?
+                    WHERE mpg.id = ? GROUP BY mc.id
                     """;
         }
 
@@ -275,7 +282,8 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
             final BigDecimal requestedAmount = rs.getBigDecimal("requestedAmount");
             final String workWithPuente = rs.getString("workWithPuente");
             final String gender = rs.getString("gender");
-            return ClientData.builder().clientId(clientId).prequalificationId(prequalificationId)
+            final String clientArea = StringUtils.equalsIgnoreCase(rs.getString("clientArea"), "Rural")?"RURAL":"URBAN";
+            return ClientData.builder().clientId(clientId).prequalificationId(prequalificationId).clientArea(clientArea)
                     .prequalificationMemberId(prequalificationMemberId).name(name).dateOfBirth(dateOfBirth).dpi(dpi)
                     .requestedAmount(requestedAmount).gender(gender).workWithPuente(workWithPuente).president(president)
                     .buroCheckStatus(buroCheckStatus).isLoanTopup(isTopup).loanCycle(loanCycle).build();
@@ -291,7 +299,7 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
             case FOUR -> checkValidationColor = this.runCheck4(clientData);
             case FIVE -> checkValidationColor = this.runCheck5(clientData);
             case SIX -> checkValidationColor = this.runCheck6(groupData);
-            case SEVEN -> checkValidationColor = this.runCheck7(groupData);
+            case SEVEN -> checkValidationColor = this.runCheck7(clientData);
             case EIGHT -> checkValidationColor = this.runCheck8(groupData);
             case NINE -> checkValidationColor = this.runCheck9(groupData);
             case TEN -> checkValidationColor = this.runCheck10(groupData);
@@ -526,22 +534,20 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
 
     /**
      * Minimum and maximum amount
+     * @param clientData
      */
-    private CheckValidationColor runCheck7(final GroupData groupData) {
-        String clientArea = "RURAL";
-        if (!CollectionUtils.isEmpty(groupData.getMembers())) {
-            final ClientData clientData = groupData.getMembers().get(0);
-            final ClientData params = retrieveClientParams(clientData.getClientId(), clientData.getProductId());
-            clientArea = params.getClientArea();
-        }
-        final String prequalificationId = String.valueOf(groupData.getId());
+    private CheckValidationColor runCheck7(final ClientData clientData) {
+        String clientArea = clientData.getClientArea();
+        final String prequalificationId = String.valueOf(clientData.getPrequalificationId());
         final String reportName = Policies.SEVEN.getName() + " Policy Check";
-        final String productId = Long.toString(groupData.getProductId());
+        final String productId = Long.toString(clientData.getProductId());
         final Map<String, String> reportParams = new HashMap<>();
         reportParams.put("${prequalificationId}", prequalificationId);
         reportParams.put("${loanProductId}", productId);
         reportParams.put("${clientArea}", clientArea);
-        reportParams.put("${requestedAmount}", String.valueOf(groupData.getRequestedAmount()));
+        reportParams.put("${categorization}", String.valueOf(clientData.getCategorization()));
+        reportParams.put("${isTopup}", String.valueOf(clientData.getIsLoanTopup()));
+        reportParams.put("${requestedAmount}", String.valueOf(clientData.getRequestedAmount()));
         final GenericResultsetData result = this.readReportingService.retrieveGenericResultset(reportName, "report", reportParams, false);
         return extractColorFromResultset(result);
     }
@@ -1152,13 +1158,12 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
     }
 
     private CheckValidationColor runCheck34(final ClientData clientData) {
-        final String clientId = String.valueOf(clientData.getClientId());
+        if (!clientData.getIsLoanTopup()){
+            return null;
+        }
         final String reportName = Policies.THIRTY_FOUR.getName() + " Policy Check";
-        final String productId = Long.toString(clientData.getProductId());
-        final ClientData params = retrieveClientParams(clientData.getClientId(), clientData.getProductId());
         final Map<String, String> reportParams = new HashMap<>();
-        reportParams.put("${clientId}", clientId);
-        reportParams.put("${loanProductId}", productId);
+        reportParams.put("${loanId}", String.valueOf(clientData.getLoanId()));
         final GenericResultsetData result = this.readReportingService.retrieveGenericResultset(reportName, "report", reportParams, false);
         return extractColorFromResultset(result);
     }
