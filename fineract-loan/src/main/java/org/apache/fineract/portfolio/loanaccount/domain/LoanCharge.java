@@ -234,8 +234,7 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
             } else if (chargeCalculationType.isPercentageOfInstallmentPrincipal()
                     || chargeCalculationType.isPercentageOfInstallmentPrincipalAndInterest()
                     || chargeCalculationType.isPercentageOfInstallmentInterest() || chargeCalculationType.isPercentageOfDisbursement()
-                    || chargeCalculationType.isPercentageOfInsurance() || chargeCalculationType.isPercentageOfHonorarios()
-            ) {
+                    || chargeCalculationType.isPercentageOfInsurance() || chargeCalculationType.isPercentageOfHonorarios()) {
                 this.percentage = chargeAmount;
                 this.amountPercentageAppliedTo = amountPercentageAppliedTo;
                 if (loanCharge.compareTo(BigDecimal.ZERO) == 0) {
