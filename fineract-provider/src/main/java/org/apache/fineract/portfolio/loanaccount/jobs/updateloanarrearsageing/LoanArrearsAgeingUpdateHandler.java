@@ -23,7 +23,11 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.time.LocalDate;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -114,7 +118,7 @@ public class LoanArrearsAgeingUpdateHandler {
 
         handleBlockingAfterAreasAging();
         handleUnBlockingAfterArrearsAging();
-        handleBlockingReasonCreadit(loanIdsForUpdate);
+
         if (log.isDebugEnabled()) {
             int result = 0;
             for (int recordWithoutOriginalSchedule : recordsUpdatedWithoutOriginalSchedule) {
@@ -351,7 +355,6 @@ public class LoanArrearsAgeingUpdateHandler {
                     blockingReasonSetting.getId());
             if(!existingBlockingReason.isPresent()){
                 final Loan loan = loanRepositoryWrapper.findOneWithNotFoundDetection(loanId);
-
                 if (loan.getLoanCustomizationDetail().getBlockStatus() == null
                         || loan.getLoanCustomizationDetail().getBlockStatus().getPriority() > blockingReasonSetting.getPriority()) {
                     loan.getLoanCustomizationDetail().setBlockStatus(blockingReasonSetting);
