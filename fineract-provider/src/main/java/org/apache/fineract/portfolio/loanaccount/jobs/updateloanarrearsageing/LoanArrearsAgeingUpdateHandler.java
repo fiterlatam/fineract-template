@@ -28,7 +28,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockLevel;
@@ -45,7 +44,6 @@ import org.apache.fineract.portfolio.loanaccount.domain.LoanBlockingReasonReposi
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.data.LoanSchedulePeriodData;
 import org.apache.fineract.portfolio.loanaccount.service.LoanArrearsAgingService;
-import org.apache.fineract.portfolio.loanaccount.service.LoanBlockWritePlatformServiceImpl;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.ResultSetExtractor;
@@ -347,20 +345,20 @@ public class LoanArrearsAgeingUpdateHandler {
     }
 
     public void handleBlockingReasonCreadit(final List<Long> loanIds) {
-        BlockingReasonSetting blockingReasonSetting = blockingReasonSettingsRepositoryWrapper
-                .getSingleBlockingReasonSettingByReason(BlockingReasonSettingEnum.CREDIT_RECLAMADO_A_AVALADORA.getDatabaseString(), BlockLevel.CREDIT.toString());
+        BlockingReasonSetting blockingReasonSetting = blockingReasonSettingsRepositoryWrapper.getSingleBlockingReasonSettingByReason(
+                BlockingReasonSettingEnum.CREDIT_RECLAMADO_A_AVALADORA.getDatabaseString(), BlockLevel.CREDIT.toString());
 
         for (Long loanId : loanIds) {
             final Optional<LoanBlockingReason> existingBlockingReason = this.loanBlockingReasonRepository.findExistingBlockingReason(loanId,
                     blockingReasonSetting.getId());
-            if(!existingBlockingReason.isPresent()){
+            if (!existingBlockingReason.isPresent()) {
                 final Loan loan = loanRepositoryWrapper.findOneWithNotFoundDetection(loanId);
                 if (loan.getLoanCustomizationDetail().getBlockStatus() == null
                         || loan.getLoanCustomizationDetail().getBlockStatus().getPriority() > blockingReasonSetting.getPriority()) {
                     loan.getLoanCustomizationDetail().setBlockStatus(blockingReasonSetting);
                 }
-                final LoanBlockingReason loanBlockingReason = LoanBlockingReason.instance(loan, blockingReasonSetting, "Cliente desbloqueado por defecto",
-                        DateUtils.getLocalDateOfTenant());
+                final LoanBlockingReason loanBlockingReason = LoanBlockingReason.instance(loan, blockingReasonSetting,
+                        "Cliente desbloqueado por defecto", DateUtils.getLocalDateOfTenant());
                 loanBlockingReasonRepository.saveAndFlush(loanBlockingReason);
             }
 
