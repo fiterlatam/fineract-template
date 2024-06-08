@@ -205,7 +205,7 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
             Integer numberOfRepayments, BigDecimal loanCharge) {
 
         ChargeCalculationType chargeCalculationType = ChargeCalculationType.fromInt(this.chargeCalculation);
-        LOG.warn("Loan Charge : "+this.chargeCalculation+"-"+this.loan.getId());
+
         if (ChargeCalculationType.INVALID.equals(chargeCalculationType)) {
             this.percentage = null;
             this.amount = null;
