@@ -80,6 +80,7 @@ import org.apache.fineract.portfolio.common.service.DropdownReadPlatformService;
 import org.apache.fineract.portfolio.delinquency.data.DelinquencyBucketData;
 import org.apache.fineract.portfolio.delinquency.service.DelinquencyReadPlatformService;
 import org.apache.fineract.portfolio.floatingrates.data.FloatingRateData;
+import org.apache.fineract.portfolio.floatingrates.domain.InterestRateType;
 import org.apache.fineract.portfolio.floatingrates.service.FloatingRatesReadPlatformService;
 import org.apache.fineract.portfolio.fund.data.FundData;
 import org.apache.fineract.portfolio.fund.service.FundReadPlatformService;
@@ -247,7 +248,8 @@ public class LoanProductsApiResource {
                 .retrieveMaximumCreditRateConfigurationData();
         loanProduct.setMaximumCreditRateConfiguration(maximumCreditRateConfigurationData);
 
-        final SearchParameters searchParameters = SearchParameters.builder().active(true).build();
+        final SearchParameters searchParameters = SearchParameters.builder().active(true)
+                .interestRateTypeId(InterestRateType.REGULAR.getValue()).build();
         final List<InterestRateData> interestRateOptions = this.interestRateReadPlatformService.retrieveInterestRates(searchParameters);
         loanProduct.setInterestRateOptions(interestRateOptions);
         return this.toApiJsonSerializer.serialize(settings, loanProduct, LOAN_PRODUCT_DATA_PARAMETERS);
@@ -512,7 +514,8 @@ public class LoanProductsApiResource {
         ret.setCustomAllowForgiveness(productData.getCustomAllowForgiveness());
         ret.setCustomAllowReversalCancellation(productData.getCustomAllowReversalCancellation());
 
-        final SearchParameters searchParameters = SearchParameters.builder().active(true).build();
+        final SearchParameters searchParameters = SearchParameters.builder().active(true)
+                .interestRateTypeId(InterestRateType.REGULAR.getValue()).build();
         final List<InterestRateData> interestRateOptions = this.interestRateReadPlatformService.retrieveInterestRates(searchParameters);
         ret.setInterestRateOptions(interestRateOptions);
 

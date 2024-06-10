@@ -20,10 +20,12 @@ package org.apache.fineract.infrastructure.core.service;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 
 @Builder
 @AllArgsConstructor
+@Getter
 public final class SearchParameters {
 
     private final Long officeId;
@@ -52,6 +54,7 @@ public final class SearchParameters {
     private final Long productId;
     private final Long categoryId;
     private final boolean isSelfUser;
+    private Integer interestRateTypeId;
 
     public static SearchParameters from(final Long officeId, final String externalId, final String name, final String hierarchy) {
         final Long staffId = null;
