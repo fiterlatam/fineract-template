@@ -32,8 +32,6 @@ import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockLevel;
-import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSetting;
 import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSettingsRepositoryWrapper;
 import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
@@ -148,8 +146,6 @@ public class LoanArrearsAgingServiceImpl implements LoanArrearsAgingService {
             } else {
                 this.jdbcTemplate.update(updateStatement);
                 handleMoraAddition(loan);
-                handleBlockingCredit(loan.getId());
-
             }
         }
     }
@@ -585,10 +581,4 @@ public class LoanArrearsAgingServiceImpl implements LoanArrearsAgingService {
                 false);
     }
 
-    private void handleBlockingCredit(Long loanId) {
-        BlockingReasonSetting blockingReasonSetting = blockingReasonSettingsRepositoryWrapper
-                .getSingleBlockingReasonSettingByReason(BLOCKING_REASON_NAME, BlockLevel.CREDIT.toString());
-        loanBlockWritePlatformService.blockLoan(loanId, blockingReasonSetting, "Cliente bloqueado por defecto",
-                DateUtils.getLocalDateOfTenant());
-    }
 }
