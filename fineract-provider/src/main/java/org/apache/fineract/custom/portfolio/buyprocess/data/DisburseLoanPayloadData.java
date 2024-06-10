@@ -23,5 +23,6 @@ public class DisburseLoanPayloadData {
     private String note = StringUtils.EMPTY;
     private String dateFormat;
     private String locale;
+    private String channelName;
 
 }
