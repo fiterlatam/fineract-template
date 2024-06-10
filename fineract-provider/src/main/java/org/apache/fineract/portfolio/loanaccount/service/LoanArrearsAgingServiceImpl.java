@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSettingsRepositoryWrapper;
 import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.core.service.MathUtil;
@@ -73,6 +74,8 @@ public class LoanArrearsAgingServiceImpl implements LoanArrearsAgingService {
     private final BusinessEventNotifierService businessEventNotifierService;
     private final DatabaseSpecificSQLGenerator sqlGenerator;
     private final ClientWritePlatformService clientWritePlatformService;
+    private final LoanBlockWritePlatformServiceImpl loanBlockWritePlatformService;
+    private final BlockingReasonSettingsRepositoryWrapper blockingReasonSettingsRepositoryWrapper;
 
     @PostConstruct
     public void registerForNotification() {
@@ -143,7 +146,6 @@ public class LoanArrearsAgingServiceImpl implements LoanArrearsAgingService {
             } else {
                 this.jdbcTemplate.update(updateStatement);
                 handleMoraAddition(loan);
-
             }
         }
     }
@@ -578,4 +580,5 @@ public class LoanArrearsAgingServiceImpl implements LoanArrearsAgingService {
         clientWritePlatformService.blockClientWithInActiveLoan(loan.getClientId(), BLOCKING_REASON_NAME, "Cliente bloqueado por defecto",
                 false);
     }
+
 }

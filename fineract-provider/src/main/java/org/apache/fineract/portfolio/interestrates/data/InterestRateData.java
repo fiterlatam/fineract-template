@@ -20,10 +20,13 @@ package org.apache.fineract.portfolio.interestrates.data;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.apache.fineract.infrastructure.core.data.EnumOptionData;
+import org.apache.fineract.portfolio.loanproduct.data.MaximumCreditRateConfigurationData;
 
 @Data
 @AllArgsConstructor
@@ -40,4 +43,7 @@ public class InterestRateData {
     private LocalDate createdDate;
     private String lastModifiedBy;
     private LocalDate lastModifiedDate;
+    private EnumOptionData interestRateType;
+    private List<EnumOptionData> interestRateTypeOptions;
+    private MaximumCreditRateConfigurationData maximumCreditRateConfiguration;
 }

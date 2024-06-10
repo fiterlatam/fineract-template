@@ -31,10 +31,15 @@ public class InterestRate extends AbstractAuditableWithUTCDateTimeCustom {
     @Column(name = "is_active")
     private boolean active;
 
+    @Column(name = "interest_rate_type_id")
+    private Integer interestRateTypeId;
+
     public static InterestRate createNew(final JsonCommand command) {
         final InterestRate interestRate = new InterestRate();
         final String name = command.stringValueOfParameterNamed("name");
         interestRate.setName(name);
+        final Integer interestRateId = command.integerValueOfParameterNamed("interestRateTypeId");
+        interestRate.setInterestRateTypeId(interestRateId);
         final BigDecimal currentRate = command.bigDecimalValueOfParameterNamed("currentRate");
         interestRate.setCurrentRate(currentRate);
         final LocalDate appliedOnDate = command.localDateValueOfParameterNamed("appliedOnDate");
@@ -52,7 +57,12 @@ public class InterestRate extends AbstractAuditableWithUTCDateTimeCustom {
             actualChanges.put(name, newValue);
             this.name = newValue;
         }
-
+        final String interestRateTypeId = "interestRateTypeId";
+        if (command.isChangeInIntegerParameterNamed(interestRateTypeId, this.interestRateTypeId)) {
+            final Integer newValue = command.integerValueOfParameterNamed(interestRateTypeId);
+            actualChanges.put(interestRateTypeId, newValue);
+            this.interestRateTypeId = newValue;
+        }
         final String currentRate = "currentRate";
         if (command.isChangeInBigDecimalParameterNamed(currentRate, this.currentRate)) {
             final BigDecimal newValue = command.bigDecimalValueOfParameterNamed(currentRate);

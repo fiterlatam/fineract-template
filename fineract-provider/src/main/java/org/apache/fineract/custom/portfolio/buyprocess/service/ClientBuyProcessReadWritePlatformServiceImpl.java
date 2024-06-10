@@ -149,7 +149,8 @@ public class ClientBuyProcessReadWritePlatformServiceImpl implements ClientBuyPr
 
         DisburseLoanPayloadData payloadData = DisburseLoanPayloadData.builder()
                 .actualDisbursementDate(DateUtils.format(entity.getRequestedDate(), CustomDateUtils.SPANISH_DATE_FORMAT))
-                .transactionAmount(entity.getAmount()).locale("en").dateFormat(CustomDateUtils.SPANISH_DATE_FORMAT).build();
+                .transactionAmount(entity.getAmount()).locale("en").dateFormat(CustomDateUtils.SPANISH_DATE_FORMAT)
+                .channelName(entity.getChannelName()).build();
 
         // Execute create loan command
         GsonBuilder gsonBuilder = GoogleGsonSerializerHelper.createGsonBuilder();
@@ -202,7 +203,10 @@ public class ClientBuyProcessReadWritePlatformServiceImpl implements ClientBuyPr
                                                                                                                                              // product
                 .transactionProcessingStrategyCode(prodiuctEntity.getTransactionProcessingStrategyCode()).charges(Collections.emptyList())
                 .collateral(Collections.emptyList()).dateFormat(CustomDateUtils.SPANISH_DATE_FORMAT).locale("es")
-                .clientId(entity.getClientId()).loanType("individual").principal(entity.getAmount()).build();
+                .clientId(entity.getClientId()).loanType("individual").principal(entity.getAmount())
+                .graceOnPrincipalPayment(prodiuctEntity.getLoanProductRelatedDetail().getGraceOnPrincipalPayment())
+                .graceOnInterestPayment(prodiuctEntity.getLoanProductRelatedDetail().getGraceOnInterestPayment())
+                .graceOnInterestCharged(prodiuctEntity.getLoanProductRelatedDetail().graceOnInterestCharged()).build();
 
         // Execute create loan command
         GsonBuilder gsonBuilder = GoogleGsonSerializerHelper.createGsonBuilder();

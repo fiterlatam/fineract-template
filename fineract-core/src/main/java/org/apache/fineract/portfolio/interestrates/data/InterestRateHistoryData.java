@@ -24,6 +24,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 
 @Data
 @AllArgsConstructor
@@ -39,4 +40,5 @@ public class InterestRateHistoryData {
     private Boolean active;
     private String createdBy;
     private LocalDate createdDate;
+    private EnumOptionData interestRateType;
 }

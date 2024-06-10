@@ -28,7 +28,9 @@ public interface ChannelReadWritePlatformService {
 
     List<ChannelData> findAllActive();
 
-    List<ChannelData> findByName(String name);
+    List<ChannelData> findBySearchParam(String name);
+
+    ChannelData findByName(String name);
 
     ChannelData findById(Long id);
 

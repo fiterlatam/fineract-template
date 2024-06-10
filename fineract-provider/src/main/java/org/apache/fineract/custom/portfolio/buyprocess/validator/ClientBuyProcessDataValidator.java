@@ -30,7 +30,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.custom.infrastructure.dataqueries.domain.ClientAdditionalInformation;
 import org.apache.fineract.custom.infrastructure.dataqueries.domain.ClientAdditionalInformationRepository;
@@ -48,6 +47,9 @@ import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidati
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
+import org.apache.fineract.portfolio.client.domain.Client;
+import org.apache.fineract.portfolio.client.domain.ClientRepository;
+import org.apache.fineract.portfolio.loanaccount.api.LoanApiConstants;
 import org.apache.http.HttpStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -60,17 +62,20 @@ public class ClientBuyProcessDataValidator {
     private final ClientAllyPointOfSalesRepository clientAllyPointOfSalesRepository;
     private final ClientAdditionalInformationRepository camposClienteEmpresaRepository;
     private final IndividualAdditionalInformationRepository individualAdditionalInformationRepository;
+    private final ClientRepository clientRepository;
 
     @Autowired
     public ClientBuyProcessDataValidator(final FromJsonHelper fromApiJsonHelper, final PlatformSecurityContext platformSecurityContext,
             final ClientAllyPointOfSalesRepository clientAllyPointOfSalesRepository,
             final ClientAdditionalInformationRepository camposClienteEmpresaRepository,
-            final IndividualAdditionalInformationRepository individualAdditionalInformationRepository) {
+            final IndividualAdditionalInformationRepository individualAdditionalInformationRepository,
+            final ClientRepository clientRepository) {
         this.fromApiJsonHelper = fromApiJsonHelper;
         this.platformSecurityContext = platformSecurityContext;
         this.clientAllyPointOfSalesRepository = clientAllyPointOfSalesRepository;
         this.camposClienteEmpresaRepository = camposClienteEmpresaRepository;
         this.individualAdditionalInformationRepository = individualAdditionalInformationRepository;
+        this.clientRepository = clientRepository;
     }
 
     @Autowired
@@ -90,17 +95,15 @@ public class ClientBuyProcessDataValidator {
 
         final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors)
                 .resource(ClientBuyProcessApiConstants.RESOURCE_NAME);
-
-        final String channelAlias = this.platformSecurityContext.getApiRequestChannel();
-        final Long channelId = null;
-        ;
-        baseDataValidator.reset().parameter(ClientBuyProcessApiConstants.channelIdParamName).value(channelAlias).notNull();
-
+        String channelName = this.fromApiJsonHelper.extractStringNamed(LoanApiConstants.CHANNEL_NAME, element);
+        if (channelName == null) {
+            channelName = this.platformSecurityContext.getApiRequestChannel();
+        }
         Long clientId = 0L;
-        String clientDocumentId = StringUtils.EMPTY;
+        String clientDocumentId;
+        Client client = null;
         if (this.fromApiJsonHelper.parameterExists(ClientBuyProcessApiConstants.clientDocumentIdParamName, element)) {
             clientDocumentId = this.fromApiJsonHelper.extractStringNamed(ClientBuyProcessApiConstants.clientDocumentIdParamName, element);
-
             Optional<IndividualAdditionalInformation> camposClientePersona = individualAdditionalInformationRepository
                     .findByCedula(clientDocumentId);
             if (camposClientePersona.isPresent()) {
@@ -114,15 +117,22 @@ public class ClientBuyProcessDataValidator {
                 }
             }
 
+            if (clientId > 0L) {
+                Optional<Client> clientObject = clientRepository.findById(clientId);
+
+                if (clientObject.isPresent()) {
+                    client = clientObject.get();
+                }
+            }
+
         } else {
             baseDataValidator.reset().parameter(ClientBuyProcessApiConstants.clientDocumentIdParamName).value(null).notNull();
         }
 
         Long pointOfSalesId = 0L;
-        String pointOfSalesCode = StringUtils.EMPTY;
+        String pointOfSalesCode;
         if (this.fromApiJsonHelper.parameterExists(ClientBuyProcessApiConstants.pointOfSalesCodeParamName, element)) {
             pointOfSalesCode = this.fromApiJsonHelper.extractStringNamed(ClientBuyProcessApiConstants.pointOfSalesCodeParamName, element);
-
             if (clientAllyPointOfSalesRepository.findByCode(pointOfSalesCode).isPresent()) {
                 pointOfSalesId = clientAllyPointOfSalesRepository.findByCode(pointOfSalesCode).get().getId();
             } else {
@@ -156,8 +166,18 @@ public class ClientBuyProcessDataValidator {
 
         final String ipDetails = platformSecurityContext.getApiRequestClientIP();
 
-        ClientBuyProcess ret = new ClientBuyProcess(channelId, channelAlias, clientId, pointOfSalesId, productId, creditId, requestedDate,
-                amount, term, createdAt, createdBy, ipDetails);
+        final Long codigoSeguro = this.fromApiJsonHelper.extractLongNamed(ClientBuyProcessApiConstants.codigoSeguroParamName, element);
+        baseDataValidator.reset().parameter(ClientBuyProcessApiConstants.codigoSeguroParamName).value(codigoSeguro).ignoreIfNull()
+                .longGreaterThanZero();
+
+        final Long cedulaSeguroVoluntario = this.fromApiJsonHelper
+                .extractLongNamed(ClientBuyProcessApiConstants.cedulaSeguroVoluntarioParamName, element);
+        baseDataValidator.reset().parameter(ClientBuyProcessApiConstants.cedulaSeguroVoluntarioParamName).value(cedulaSeguroVoluntario)
+                .ignoreIfNull().longGreaterThanZero();
+
+        ClientBuyProcess ret = new ClientBuyProcess(null, channelName, clientId, pointOfSalesId, productId, creditId, requestedDate, amount,
+                term, createdAt, createdBy, ipDetails, codigoSeguro, cedulaSeguroVoluntario);
+        ret.setClient(client);
 
         // If there is no primary errors, then execute second level validation chain
         if (dataValidationErrors.isEmpty()) {
@@ -172,7 +192,7 @@ public class ClientBuyProcessDataValidator {
                 });
 
                 // Concatenate errorMessage to persist in the database and set status to 403
-                String errorMessage = errorMessageHM.values().stream().collect(Collectors.joining(" | "));
+                String errorMessage = String.join(" | ", errorMessageHM.values());
                 ret.setErrorMessage(errorMessage);
                 ret.setStatus(HttpStatus.SC_FORBIDDEN);
 
@@ -239,10 +259,19 @@ public class ClientBuyProcessDataValidator {
         final String ipDetails = this.fromApiJsonHelper.extractStringNamed(ClientBuyProcessApiConstants.ipDetailsParamName, element);
         baseDataValidator.reset().parameter(ClientBuyProcessApiConstants.ipDetailsParamName).value(ipDetails).notExceedingLengthOf(5000);
 
+        final Long codigoSeguro = this.fromApiJsonHelper.extractLongNamed(ClientBuyProcessApiConstants.codigoSeguroParamName, element);
+        baseDataValidator.reset().parameter(ClientBuyProcessApiConstants.codigoSeguroParamName).value(codigoSeguro).ignoreIfNull()
+                .longGreaterThanZero();
+
+        final Long cedulaSeguroVoluntario = this.fromApiJsonHelper
+                .extractLongNamed(ClientBuyProcessApiConstants.cedulaSeguroVoluntarioParamName, element);
+        baseDataValidator.reset().parameter(ClientBuyProcessApiConstants.cedulaSeguroVoluntarioParamName).value(cedulaSeguroVoluntario)
+                .ignoreIfNull().longGreaterThanZero();
+
         throwExceptionIfValidationWarningsExist(dataValidationErrors);
 
         return new ClientBuyProcess(channelId, null, clientId, pointOfSalesId, null, creditId, requestedDate, amount, term, createdAt,
-                createdBy, ipDetails);
+                createdBy, ipDetails, codigoSeguro, cedulaSeguroVoluntario);
     }
 
     private void throwExceptionIfValidationWarningsExist(final List<ApiParameterError> dataValidationErrors) {

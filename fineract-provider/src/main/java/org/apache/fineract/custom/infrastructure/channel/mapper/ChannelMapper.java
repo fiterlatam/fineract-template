@@ -23,28 +23,23 @@ import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.fineract.custom.infrastructure.channel.data.ChannelData;
 import org.apache.fineract.custom.infrastructure.channel.domain.Channel;
+import org.apache.fineract.custom.infrastructure.channel.domain.ChannelType;
+import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 
 public class ChannelMapper {
 
-    public static Channel toModel(ChannelData dto) {
-        return Channel.builder().id(dto.getId()) //
-                .hash(dto.getHash()) //
-                .name(dto.getName()) //
-                .description(dto.getDescription()) //
-                .active(dto.getActive()) //
-                .build();
-    }
-
     public static ChannelData toDTO(Channel model) {
+        final EnumOptionData channelTypeEnumOptionData = ChannelType.fromInt(model.getChannelType()).asEnumOptionData();
         return ChannelData.builder().id(model.getId()) //
                 .hash(model.getHash()) //
                 .name(model.getName()) //
+                .channelType(channelTypeEnumOptionData) //
                 .description(model.getDescription()) //
                 .active(model.getActive()) //
                 .build();
     }
 
     public static List<ChannelData> toDTO(List<Channel> model) {
-        return model.stream().map(obj -> toDTO(obj)).collect(Collectors.toList());
+        return model.stream().map(ChannelMapper::toDTO).collect(Collectors.toList());
     }
 }

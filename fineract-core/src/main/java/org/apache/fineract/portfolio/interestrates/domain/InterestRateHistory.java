@@ -30,6 +30,9 @@ public class InterestRateHistory extends AbstractPersistableCustom {
     @Column(name = "current_rate")
     private BigDecimal currentRate;
 
+    @Column(name = "interest_rate_type_id")
+    private Integer interestRateTypeId;
+
     @Column(name = "appliedon_date")
     private LocalDate appliedOnDate;
 
@@ -47,6 +50,7 @@ public class InterestRateHistory extends AbstractPersistableCustom {
         interestRateHistory.name = interestRate.getName();
         interestRateHistory.interestRate = interestRate;
         interestRateHistory.active = interestRate.isActive();
+        interestRateHistory.interestRateTypeId = interestRate.getInterestRateTypeId();
         interestRateHistory.currentRate = interestRate.getCurrentRate();
         interestRateHistory.appliedOnDate = interestRate.getAppliedOnDate();
         interestRateHistory.createdBy = interestRate.getCreatedBy()

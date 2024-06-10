@@ -38,10 +38,11 @@ public final class ChannelApiConstants {
     public static final String idParamName = "id";
     public static final String hashParamName = "hash";
     public static final String nameParamName = "name";
+    public static final String CHANNEL_TYPE = "channelType";
     public static final String descriptionParamName = "description";
     public static final String activeParamName = "active";
 
     // request parameters Set
     public static final Set<String> REQUEST_DATA_PARAMETERS = new HashSet<>(Arrays.asList(localeParamName, dateFormatParamName, idParamName,
-            hashParamName, nameParamName, descriptionParamName, activeParamName));
+            hashParamName, nameParamName, descriptionParamName, activeParamName, CHANNEL_TYPE));
 }
