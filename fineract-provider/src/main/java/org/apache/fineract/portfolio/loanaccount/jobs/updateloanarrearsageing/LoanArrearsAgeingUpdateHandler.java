@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockLevel;
@@ -37,9 +38,12 @@ import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.core.service.database.DatabaseSpecificSQLGenerator;
 import org.apache.fineract.portfolio.client.service.ClientWritePlatformService;
+import org.apache.fineract.portfolio.loanaccount.domain.Loan;
+import org.apache.fineract.portfolio.loanaccount.domain.LoanBlockingReason;
+import org.apache.fineract.portfolio.loanaccount.domain.LoanBlockingReasonRepository;
+import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.data.LoanSchedulePeriodData;
 import org.apache.fineract.portfolio.loanaccount.service.LoanArrearsAgingService;
-import org.apache.fineract.portfolio.loanaccount.service.LoanBlockWritePlatformServiceImpl;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.ResultSetExtractor;
@@ -59,7 +63,8 @@ public class LoanArrearsAgeingUpdateHandler {
     private final LoanArrearsAgingService loanArrearsAgingService;
     private final ClientWritePlatformService clientWritePlatformService;
     private final BlockingReasonSettingsRepositoryWrapper blockingReasonSettingsRepositoryWrapper;
-    private final LoanBlockWritePlatformServiceImpl loanBlockWritePlatformService;
+    private final LoanRepositoryWrapper loanRepositoryWrapper;
+    private final LoanBlockingReasonRepository loanBlockingReasonRepository;
 
     private void truncateLoanArrearsAgingDetails() {
         jdbcTemplate.execute("truncate table m_loan_arrears_aging");
@@ -111,7 +116,7 @@ public class LoanArrearsAgeingUpdateHandler {
 
         handleBlockingAfterAreasAging();
         handleUnBlockingAfterArrearsAging();
-        handleBlockingReasonCreadit(loanIdsForUpdate);
+
         if (log.isDebugEnabled()) {
             int result = 0;
             for (int recordWithoutOriginalSchedule : recordsUpdatedWithoutOriginalSchedule) {
@@ -340,12 +345,23 @@ public class LoanArrearsAgeingUpdateHandler {
     }
 
     public void handleBlockingReasonCreadit(final List<Long> loanIds) {
-        BlockingReasonSetting blockingReasonSetting = blockingReasonSettingsRepositoryWrapper
-                .getSingleBlockingReasonSettingByReason(BLOCKING_REASON_NAME, BlockLevel.CREDIT.toString());
+        BlockingReasonSetting blockingReasonSetting = blockingReasonSettingsRepositoryWrapper.getSingleBlockingReasonSettingByReason(
+                BlockingReasonSettingEnum.CREDIT_RECLAMADO_A_AVALADORA.getDatabaseString(), BlockLevel.CREDIT.toString());
 
         for (Long loanId : loanIds) {
-            loanBlockWritePlatformService.blockLoan(loanId, blockingReasonSetting, "Cliente desbloqueado por defecto",
-                    DateUtils.getLocalDateOfTenant());
+            final Optional<LoanBlockingReason> existingBlockingReason = this.loanBlockingReasonRepository.findExistingBlockingReason(loanId,
+                    blockingReasonSetting.getId());
+            if (!existingBlockingReason.isPresent()) {
+                final Loan loan = loanRepositoryWrapper.findOneWithNotFoundDetection(loanId);
+                if (loan.getLoanCustomizationDetail().getBlockStatus() == null
+                        || loan.getLoanCustomizationDetail().getBlockStatus().getPriority() > blockingReasonSetting.getPriority()) {
+                    loan.getLoanCustomizationDetail().setBlockStatus(blockingReasonSetting);
+                }
+                final LoanBlockingReason loanBlockingReason = LoanBlockingReason.instance(loan, blockingReasonSetting,
+                        "Cliente desbloqueado por defecto", DateUtils.getLocalDateOfTenant());
+                loanBlockingReasonRepository.saveAndFlush(loanBlockingReason);
+            }
+
         }
     }
 

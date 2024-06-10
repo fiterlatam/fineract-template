@@ -263,7 +263,6 @@ public class LoanChargeReadPlatformServiceImpl implements LoanChargeReadPlatform
     @Override
     public Collection<Integer> retrieveOverdueInstallmentChargeFrequencyNumber(final Loan loan, final Charge charge,
             final Integer periodNumber) {
-
         List<Integer> frequencyNumbers = new ArrayList<>();
         for (LoanCharge loanCharge : loan.getLoanCharges()) {
             if (loanCharge.isOverdueInstallmentCharge() && charge.equals(loanCharge.getCharge()) && loanCharge.isActive()
