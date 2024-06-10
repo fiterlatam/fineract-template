@@ -111,7 +111,7 @@ public class ClientBuyProcess {
 
     public ClientBuyProcess(Long channelId, String channelName, Long clientId, Long pointOfSalesId, Long productId, Long creditId,
             LocalDate requestedDate, BigDecimal amount, Long term, LocalDateTime createdAt, Long createdBy, String ipDetails,
-                           Long codigoSeguro, Long cedulaSeguroVoluntario) {
+            Long codigoSeguro, Long cedulaSeguroVoluntario) {
         this.channelId = channelId;
         this.channelName = channelName;
         this.clientId = clientId;

@@ -68,7 +68,8 @@ public class ClientBuyProcessDataValidator {
     public ClientBuyProcessDataValidator(final FromJsonHelper fromApiJsonHelper, final PlatformSecurityContext platformSecurityContext,
             final ClientAllyPointOfSalesRepository clientAllyPointOfSalesRepository,
             final ClientAdditionalInformationRepository camposClienteEmpresaRepository,
-            final IndividualAdditionalInformationRepository individualAdditionalInformationRepository, final ClientRepository clientRepository) {
+            final IndividualAdditionalInformationRepository individualAdditionalInformationRepository,
+            final ClientRepository clientRepository) {
         this.fromApiJsonHelper = fromApiJsonHelper;
         this.platformSecurityContext = platformSecurityContext;
         this.clientAllyPointOfSalesRepository = clientAllyPointOfSalesRepository;
@@ -166,10 +167,13 @@ public class ClientBuyProcessDataValidator {
         final String ipDetails = platformSecurityContext.getApiRequestClientIP();
 
         final Long codigoSeguro = this.fromApiJsonHelper.extractLongNamed(ClientBuyProcessApiConstants.codigoSeguroParamName, element);
-        baseDataValidator.reset().parameter(ClientBuyProcessApiConstants.codigoSeguroParamName).value(codigoSeguro).ignoreIfNull().longGreaterThanZero();
+        baseDataValidator.reset().parameter(ClientBuyProcessApiConstants.codigoSeguroParamName).value(codigoSeguro).ignoreIfNull()
+                .longGreaterThanZero();
 
-        final Long cedulaSeguroVoluntario = this.fromApiJsonHelper.extractLongNamed(ClientBuyProcessApiConstants.cedulaSeguroVoluntarioParamName, element);
-        baseDataValidator.reset().parameter(ClientBuyProcessApiConstants.cedulaSeguroVoluntarioParamName).value(cedulaSeguroVoluntario).ignoreIfNull().longGreaterThanZero();
+        final Long cedulaSeguroVoluntario = this.fromApiJsonHelper
+                .extractLongNamed(ClientBuyProcessApiConstants.cedulaSeguroVoluntarioParamName, element);
+        baseDataValidator.reset().parameter(ClientBuyProcessApiConstants.cedulaSeguroVoluntarioParamName).value(cedulaSeguroVoluntario)
+                .ignoreIfNull().longGreaterThanZero();
 
         ClientBuyProcess ret = new ClientBuyProcess(null, channelName, clientId, pointOfSalesId, productId, creditId, requestedDate, amount,
                 term, createdAt, createdBy, ipDetails, codigoSeguro, cedulaSeguroVoluntario);
@@ -256,15 +260,18 @@ public class ClientBuyProcessDataValidator {
         baseDataValidator.reset().parameter(ClientBuyProcessApiConstants.ipDetailsParamName).value(ipDetails).notExceedingLengthOf(5000);
 
         final Long codigoSeguro = this.fromApiJsonHelper.extractLongNamed(ClientBuyProcessApiConstants.codigoSeguroParamName, element);
-        baseDataValidator.reset().parameter(ClientBuyProcessApiConstants.codigoSeguroParamName).value(codigoSeguro).ignoreIfNull().longGreaterThanZero();
+        baseDataValidator.reset().parameter(ClientBuyProcessApiConstants.codigoSeguroParamName).value(codigoSeguro).ignoreIfNull()
+                .longGreaterThanZero();
 
-        final Long cedulaSeguroVoluntario = this.fromApiJsonHelper.extractLongNamed(ClientBuyProcessApiConstants.cedulaSeguroVoluntarioParamName, element);
-        baseDataValidator.reset().parameter(ClientBuyProcessApiConstants.cedulaSeguroVoluntarioParamName).value(cedulaSeguroVoluntario).ignoreIfNull().longGreaterThanZero();
+        final Long cedulaSeguroVoluntario = this.fromApiJsonHelper
+                .extractLongNamed(ClientBuyProcessApiConstants.cedulaSeguroVoluntarioParamName, element);
+        baseDataValidator.reset().parameter(ClientBuyProcessApiConstants.cedulaSeguroVoluntarioParamName).value(cedulaSeguroVoluntario)
+                .ignoreIfNull().longGreaterThanZero();
 
         throwExceptionIfValidationWarningsExist(dataValidationErrors);
 
         return new ClientBuyProcess(channelId, null, clientId, pointOfSalesId, null, creditId, requestedDate, amount, term, createdAt,
-                createdBy, ipDetails, codigoSeguro, cedulaSeguroVoluntario );
+                createdBy, ipDetails, codigoSeguro, cedulaSeguroVoluntario);
     }
 
     private void throwExceptionIfValidationWarningsExist(final List<ApiParameterError> dataValidationErrors) {

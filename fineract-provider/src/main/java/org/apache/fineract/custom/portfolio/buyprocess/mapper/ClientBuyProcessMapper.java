@@ -39,7 +39,8 @@ public class ClientBuyProcessMapper {
                 .pointOfSalesId(model.getPointOfSalesId()).productId(model.getProductId()).creditId(model.getCreditId())
                 .requestedDate(model.getRequestedDate()).amount(model.getAmount()).term(model.getTerm()).createdAt(model.getCreatedAt())
                 .createdBy(model.getCreatedBy()).ipDetails(model.getIpDetails()).status(model.getStatus())
-                .errorMessage(model.getErrorMessage()).codigoSeguro(model.getCodigoSeguro()).cedulaSeguroVoluntario(model.getCedulaSeguroVoluntario()).build();
+                .errorMessage(model.getErrorMessage()).codigoSeguro(model.getCodigoSeguro())
+                .cedulaSeguroVoluntario(model.getCedulaSeguroVoluntario()).build();
     }
 
     public static List<ClientBuyProcessData> toDTO(List<ClientBuyProcess> model) {
