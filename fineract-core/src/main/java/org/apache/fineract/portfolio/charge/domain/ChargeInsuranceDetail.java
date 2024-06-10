@@ -4,12 +4,10 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import java.math.BigDecimal;
+import java.util.Map;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.portfolio.charge.api.ChargesApiConstants;
-
-import java.math.BigDecimal;
-import java.util.LinkedHashMap;
-import java.util.Map;
 
 @Embeddable
 public class ChargeInsuranceDetail {
@@ -49,7 +47,8 @@ public class ChargeInsuranceDetail {
 
     }
 
-    public ChargeInsuranceDetail(String insuranceName, ChargeInsuranceType insuranceChargedAs, String insuranceCompany, String insurerName, Long insuranceCode, String insurancePlan, BigDecimal baseValue, BigDecimal vatValue, BigDecimal totalValue, Long deadline) {
+    public ChargeInsuranceDetail(String insuranceName, ChargeInsuranceType insuranceChargedAs, String insuranceCompany, String insurerName,
+            Long insuranceCode, String insurancePlan, BigDecimal baseValue, BigDecimal vatValue, BigDecimal totalValue, Long deadline) {
         this.insuranceName = insuranceName;
         this.insuranceChargedAs = insuranceChargedAs;
         this.insuranceCompany = insuranceCompany;

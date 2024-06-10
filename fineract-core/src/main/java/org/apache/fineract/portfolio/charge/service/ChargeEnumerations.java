@@ -353,14 +353,14 @@ public final class ChargeEnumerations {
             case CARGO:
                 optionData = new EnumOptionData(ChargeInsuranceType.CARGO.getValue().longValue(), ChargeInsuranceType.CARGO.getCode(),
                         "Cargo");
-                break;
+            break;
             case COMPRA:
-                optionData = new EnumOptionData(ChargeInsuranceType.COMPRA.getValue().longValue(),
-                        ChargeInsuranceType.COMPRA.getCode(), "Compra");
-                break;
+                optionData = new EnumOptionData(ChargeInsuranceType.COMPRA.getValue().longValue(), ChargeInsuranceType.COMPRA.getCode(),
+                        "Compra");
+            break;
             default:
                 optionData = new EnumOptionData(ChargeTimeType.INVALID.getValue().longValue(), ChargeTimeType.INVALID.getCode(), "Invalid");
-                break;
+            break;
         }
         return optionData;
     }

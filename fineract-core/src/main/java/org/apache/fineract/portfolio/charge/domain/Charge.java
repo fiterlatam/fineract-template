@@ -19,7 +19,6 @@
 package org.apache.fineract.portfolio.charge.domain;
 
 import jakarta.persistence.*;
-
 import java.math.BigDecimal;
 import java.time.MonthDay;
 import java.util.ArrayList;
@@ -189,7 +188,7 @@ public class Charge extends AbstractPersistableCustom {
         if (command.hasParameter("parentChargeId")) {
             parentChargeId = command.longValueOfParameterNamed("parentChargeId");
         }
-        //Voluntary Insurance details
+        // Voluntary Insurance details
         ChargeInsuranceDetail chargeInsuranceDetail = null;
         if (chargeCalculationType.isVoluntaryInsurance()) {
             validateVoluntaryInsuranceCondition(chargeCalculationType);
@@ -751,11 +750,12 @@ public class Charge extends AbstractPersistableCustom {
             paymentTypeData = PaymentTypeData.instance(paymentType.getId(), paymentType.getName());
         }
 
-        ChargeInsuranceDetailData chargeInsuranceDetailData = new ChargeInsuranceDetailData(null, this.chargeInsuranceDetail.getInsuranceName(),
-                this.chargeInsuranceDetail.getInsuranceChargedAs().getValue().longValue(), this.chargeInsuranceDetail.getInsuranceCompany(),
-                this.chargeInsuranceDetail.getInsurerName(), this.chargeInsuranceDetail.getInsuranceCode(), this.chargeInsuranceDetail.getInsurancePlan(),
-                this.chargeInsuranceDetail.getBaseValue(), this.chargeInsuranceDetail.getVatValue(), this.chargeInsuranceDetail.getTotalValue(),
-                this.chargeInsuranceDetail.getDeadline(), null);
+        ChargeInsuranceDetailData chargeInsuranceDetailData = new ChargeInsuranceDetailData(null,
+                this.chargeInsuranceDetail.getInsuranceName(), this.chargeInsuranceDetail.getInsuranceChargedAs().getValue().longValue(),
+                this.chargeInsuranceDetail.getInsuranceCompany(), this.chargeInsuranceDetail.getInsurerName(),
+                this.chargeInsuranceDetail.getInsuranceCode(), this.chargeInsuranceDetail.getInsurancePlan(),
+                this.chargeInsuranceDetail.getBaseValue(), this.chargeInsuranceDetail.getVatValue(),
+                this.chargeInsuranceDetail.getTotalValue(), this.chargeInsuranceDetail.getDeadline(), null);
         final CurrencyData currency = new CurrencyData(this.currencyCode, null, 0, 0, null, null);
         return ChargeData.instance(getId(), this.name, this.amount, currency, chargeTimeType, chargeAppliesTo, chargeCalculationType,
                 chargePaymentMode, getFeeOnMonthDay(), this.feeInterval, this.penalty, this.active, this.enableFreeWithdrawal,
@@ -874,13 +874,14 @@ public class Charge extends AbstractPersistableCustom {
     }
 
     private static void validateVoluntaryInsuranceCondition(ChargeCalculationType chargeCalculationType) {
-        if (!chargeCalculationType.isFlat() || chargeCalculationType.isPercentageOfDisbursement() || chargeCalculationType.isPercentageOfInstallmentPrincipal() ||
-            chargeCalculationType.isPercentageOfInstallmentInterest() || chargeCalculationType.isPercentageOfOutstandingPrincipal() ||
-            chargeCalculationType.isPercentageOfOutstandingInterest() || chargeCalculationType.isPercentageOfInsurance() ||
-            chargeCalculationType.isPercentageOfAval() || chargeCalculationType.isPercentageOfHonorarios() ||
-            chargeCalculationType.isPercentageOfAnotherCharge()) {
+        if (!chargeCalculationType.isFlat() || chargeCalculationType.isPercentageOfDisbursement()
+                || chargeCalculationType.isPercentageOfInstallmentPrincipal() || chargeCalculationType.isPercentageOfInstallmentInterest()
+                || chargeCalculationType.isPercentageOfOutstandingPrincipal() || chargeCalculationType.isPercentageOfOutstandingInterest()
+                || chargeCalculationType.isPercentageOfInsurance() || chargeCalculationType.isPercentageOfAval()
+                || chargeCalculationType.isPercentageOfHonorarios() || chargeCalculationType.isPercentageOfAnotherCharge()) {
             throw new ChargeCannotBeCreatedException("error.msg.charge.calculation.type.invalid.forVoluntaryInsurance",
-                    "Only Flat Charge Calculation Type can be selected for Voluntary Insurance",chargeCalculationType.isVoluntaryInsurance());
+                    "Only Flat Charge Calculation Type can be selected for Voluntary Insurance",
+                    chargeCalculationType.isVoluntaryInsurance());
         }
     }
 }

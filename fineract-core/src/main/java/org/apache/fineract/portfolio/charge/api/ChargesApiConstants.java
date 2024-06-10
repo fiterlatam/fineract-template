@@ -44,6 +44,4 @@ public final class ChargesApiConstants {
     public static final String totalValueParamName = "totalValue";
     public static final String deadlineParamName = "deadline";
 
-
-
 }

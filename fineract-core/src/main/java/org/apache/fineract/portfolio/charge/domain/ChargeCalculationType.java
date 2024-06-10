@@ -1594,7 +1594,8 @@ public enum ChargeCalculationType {
     public boolean isVoluntaryInsurance() {
         String val = this.byteRepresentation;
         if (this.byteRepresentation.length() == 10) {
-            // Adding a leading 0 because voluntaryInsurance has position 10 while byterepresentation of all codes is 10 character
+            // Adding a leading 0 because voluntaryInsurance has position 10 while byterepresentation of all codes is 10
+            // character
             val = this.byteRepresentation + "0";
         }
         return val.charAt(ChargeCalculationTypeBaseItemsEnum.SEGURO_VOLUNTARIO.getIndex()) == '1';

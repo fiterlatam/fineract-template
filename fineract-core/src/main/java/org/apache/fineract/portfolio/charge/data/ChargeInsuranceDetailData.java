@@ -1,15 +1,15 @@
 package org.apache.fineract.portfolio.charge.data;
 
+import java.math.BigDecimal;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 
-import java.math.BigDecimal;
-import java.util.List;
-
 @Getter
 @AllArgsConstructor
 public class ChargeInsuranceDetailData {
+
     private final String insuranceType;
     private final String insuranceName;
     private final Long insuranceChargedAs;

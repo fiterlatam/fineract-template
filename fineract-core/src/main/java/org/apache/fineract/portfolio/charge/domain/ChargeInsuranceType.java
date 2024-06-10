@@ -1,9 +1,9 @@
 package org.apache.fineract.portfolio.charge.domain;
 
 public enum ChargeInsuranceType {
+
     INVALID(0, "chargeInsuranceType.invalid"), //
-    COMPRA(1, "chargeInsuranceType.compra"),
-    CARGO(2, "chargeInsuranceType.cargo");
+    COMPRA(1, "chargeInsuranceType.compra"), CARGO(2, "chargeInsuranceType.cargo");
 
     private final Integer value;
     private final String code;
@@ -27,10 +27,10 @@ public enum ChargeInsuranceType {
             switch (type) {
                 case 1:
                     chargeInsuranceType = ChargeInsuranceType.COMPRA;
-                    break;
+                break;
                 case 2:
                     chargeInsuranceType = ChargeInsuranceType.CARGO;
-                    break;
+                break;
             }
         }
         return chargeInsuranceType;
