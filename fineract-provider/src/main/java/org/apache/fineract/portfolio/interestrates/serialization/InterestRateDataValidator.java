@@ -43,12 +43,14 @@ public class InterestRateDataValidator {
     public static final String NAME = "name";
     public static final String CURRENT_RATE = "currentRate";
     public static final String ACTIVE = "active";
+    public static final String INTEREST_RATE_TYPE_ID = "interestRateTypeId";
     public static final String APPLIED_ON_DATE = "appliedOnDate";
     public static final String LOCALE = "locale";
     public static final String DATE_FORMAT = "dateFormat";
-    private static final Set<String> SUPPORTED_PARAMETERS_FOR_INTEREST_RATES = new HashSet<>(
-            Arrays.asList(InterestRateDataValidator.NAME, InterestRateDataValidator.CURRENT_RATE, InterestRateDataValidator.ACTIVE,
-                    InterestRateDataValidator.APPLIED_ON_DATE, InterestRateDataValidator.LOCALE, InterestRateDataValidator.DATE_FORMAT));
+    private static final Set<String> SUPPORTED_PARAMETERS_FOR_INTEREST_RATES = new HashSet<>(Arrays.asList(InterestRateDataValidator.NAME,
+            InterestRateDataValidator.CURRENT_RATE, InterestRateDataValidator.ACTIVE, InterestRateDataValidator.INTEREST_RATE_TYPE_ID,
+            InterestRateDataValidator.APPLIED_ON_DATE, InterestRateDataValidator.LOCALE, InterestRateDataValidator.INTEREST_RATE_TYPE_ID,
+            InterestRateDataValidator.DATE_FORMAT));
     private final FromJsonHelper fromApiJsonHelper;
 
     @Autowired
@@ -65,6 +67,10 @@ public class InterestRateDataValidator {
         final JsonElement element = this.fromApiJsonHelper.parse(json);
         final String name = this.fromApiJsonHelper.extractStringNamed(InterestRateDataValidator.NAME, element);
         baseDataValidator.reset().parameter(InterestRateDataValidator.NAME).value(name).notBlank().notExceedingLengthOf(100);
+        final Integer interestRateTypeId = this.fromApiJsonHelper
+                .extractIntegerWithLocaleNamed(InterestRateDataValidator.INTEREST_RATE_TYPE_ID, element);
+        baseDataValidator.reset().parameter(InterestRateDataValidator.INTEREST_RATE_TYPE_ID).value(interestRateTypeId).notNull()
+                .inMinMaxRange(1, 2);
         final BigDecimal currentRate = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed(InterestRateDataValidator.CURRENT_RATE,
                 element);
         baseDataValidator.reset().parameter(InterestRateDataValidator.CURRENT_RATE).value(currentRate).notBlank()
@@ -90,6 +96,12 @@ public class InterestRateDataValidator {
         if (this.fromApiJsonHelper.parameterExists(InterestRateDataValidator.NAME, element)) {
             final String name = this.fromApiJsonHelper.extractStringNamed(InterestRateDataValidator.NAME, element);
             baseDataValidator.reset().parameter(InterestRateDataValidator.NAME).value(name).notBlank().notExceedingLengthOf(100);
+        }
+        if (this.fromApiJsonHelper.parameterExists(InterestRateDataValidator.INTEREST_RATE_TYPE_ID, element)) {
+            final Integer interestRateTypeId = this.fromApiJsonHelper
+                    .extractIntegerWithLocaleNamed(InterestRateDataValidator.INTEREST_RATE_TYPE_ID, element);
+            baseDataValidator.reset().parameter(InterestRateDataValidator.INTEREST_RATE_TYPE_ID).value(interestRateTypeId).notNull()
+                    .inMinMaxRange(1, 2);
         }
         if (this.fromApiJsonHelper.parameterExists(InterestRateDataValidator.CURRENT_RATE, element)) {
             final BigDecimal currentRate = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed(InterestRateDataValidator.CURRENT_RATE,

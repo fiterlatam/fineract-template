@@ -277,4 +277,38 @@
             </column>
         </addColumn>
     </changeSet>
+
+    <changeSet author="fineract" id="13">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_interest_rate" columnName="interest_rate_type_id"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_interest_rate">
+            <column name="interest_rate_type_id" type="INT">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="14">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_interest_rate_history" columnName="interest_rate_type_id"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_interest_rate_history">
+            <column name="interest_rate_type_id" type="INT">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+    <changeSet author="fineract" id="15">
+        <sql>
+            <![CDATA[
+                UPDATE m_interest_rate SET interest_rate_type_id  = 1 WHERE id IS NOT NULL;
+            ]]>
+        </sql>
+    </changeSet>
+
 </databaseChangeLog>
