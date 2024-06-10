@@ -37,7 +37,7 @@ public class RequestedVsProductTermValidatorStep extends BuyProcessAbstractStepP
         if (entityOpt.isPresent()) {
 
             LoanProduct entity = entityOpt.get();
-            if (clientBuyProcess.getTerm() > entity.getMaxNumberOfRepayments()) {
+            if (entity.getMaxNumberOfRepayments() != null && clientBuyProcess.getTerm() > entity.getMaxNumberOfRepayments()) {
                 ammendErrorMessage(stepProcessorEnum, clientBuyProcess);
             }
 

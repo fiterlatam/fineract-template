@@ -97,6 +97,12 @@ public class ClientBuyProcess {
     @Column(name = "loan_id", nullable = true)
     private Long loanId;
 
+    @Column(name = "codigo_seguro", nullable = true)
+    private Long codigoSeguro;
+
+    @Column(name = "cedula_seguro_voluntario", nullable = true)
+    private Long cedulaSeguroVoluntario;
+
     @Transient
     private LinkedHashMap<String, String> errorMessageHM = new LinkedHashMap<>();
 
@@ -104,7 +110,8 @@ public class ClientBuyProcess {
     private Client client;
 
     public ClientBuyProcess(Long channelId, String channelName, Long clientId, Long pointOfSalesId, Long productId, Long creditId,
-            LocalDate requestedDate, BigDecimal amount, Long term, LocalDateTime createdAt, Long createdBy, String ipDetails) {
+            LocalDate requestedDate, BigDecimal amount, Long term, LocalDateTime createdAt, Long createdBy, String ipDetails,
+            Long codigoSeguro, Long cedulaSeguroVoluntario) {
         this.channelId = channelId;
         this.channelName = channelName;
         this.clientId = clientId;
@@ -117,5 +124,7 @@ public class ClientBuyProcess {
         this.createdAt = createdAt;
         this.createdBy = createdBy;
         this.ipDetails = ipDetails;
+        this.codigoSeguro = codigoSeguro;
+        this.cedulaSeguroVoluntario = cedulaSeguroVoluntario;
     }
 }
