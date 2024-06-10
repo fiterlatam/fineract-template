@@ -60,7 +60,7 @@ public class InterestRateApiResource {
     private final InterestRateReadPlatformService interestRateReadPlatformService;
     private final ApiRequestParameterHelper apiRequestParameterHelper;
     private static final Set<String> PARAMETER_LIST = Set.of("id", "name", "active", "currentRate", "appliedOnDate", "createdBy",
-            "createdDate", "lastModifiedBy", "lastModifiedDate");
+            "createdDate", "lastModifiedBy", "lastModifiedDate", "interestRateTypeOptions", "maximumCreditRateConfiguration");
 
     @POST
     @Consumes({ MediaType.APPLICATION_JSON })
@@ -88,6 +88,22 @@ public class InterestRateApiResource {
     public String retrieveOne(@PathParam("interestRateId") final Long interestRateId, @Context final UriInfo uriInfo) {
         this.context.authenticatedUser().validateHasReadPermission(RESOURCE_NAME);
         final InterestRateData interestRateData = this.interestRateReadPlatformService.retrieveOne(interestRateId);
+        final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
+        if (settings.isTemplate()) {
+            final InterestRateData templateData = this.interestRateReadPlatformService.retrieveTemplate();
+            interestRateData.setInterestRateTypeOptions(templateData.getInterestRateTypeOptions());
+            interestRateData.setMaximumCreditRateConfiguration(templateData.getMaximumCreditRateConfiguration());
+        }
+        return this.toApiJsonSerializer.serialize(settings, interestRateData, InterestRateApiResource.PARAMETER_LIST);
+    }
+
+    @GET
+    @Path("template")
+    @Consumes({ MediaType.APPLICATION_JSON })
+    @Produces({ MediaType.APPLICATION_JSON })
+    public String retrieveTemplate(@Context final UriInfo uriInfo) {
+        this.context.authenticatedUser().validateHasReadPermission(RESOURCE_NAME);
+        final InterestRateData interestRateData = this.interestRateReadPlatformService.retrieveTemplate();
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
         return this.toApiJsonSerializer.serialize(settings, interestRateData, InterestRateApiResource.PARAMETER_LIST);
     }

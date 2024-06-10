@@ -28,15 +28,6 @@ import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 
 public class ChannelMapper {
 
-    public static Channel toModel(ChannelData dto) {
-        return Channel.builder().id(dto.getId()) //
-                .hash(dto.getHash()) //
-                .name(dto.getName()) //
-                .description(dto.getDescription()) //
-                .active(dto.getActive()) //
-                .build();
-    }
-
     public static ChannelData toDTO(Channel model) {
         final EnumOptionData channelTypeEnumOptionData = ChannelType.fromInt(model.getChannelType()).asEnumOptionData();
         return ChannelData.builder().id(model.getId()) //
@@ -49,6 +40,6 @@ public class ChannelMapper {
     }
 
     public static List<ChannelData> toDTO(List<Channel> model) {
-        return model.stream().map(obj -> toDTO(obj)).collect(Collectors.toList());
+        return model.stream().map(ChannelMapper::toDTO).collect(Collectors.toList());
     }
 }
