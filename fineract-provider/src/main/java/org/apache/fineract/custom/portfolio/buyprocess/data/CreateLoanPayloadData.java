@@ -46,4 +46,7 @@ public class CreateLoanPayloadData {
     private Long clientId;
     private String loanType;
     private BigDecimal principal;
+    private Integer graceOnPrincipalPayment;
+    private Integer graceOnInterestPayment;
+    private Integer graceOnInterestCharged;
 }

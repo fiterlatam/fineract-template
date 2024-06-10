@@ -50,4 +50,6 @@ public class ClientBuyProcessData {
     private String ipDetails;
     private Integer status;
     private String errorMessage;
+    public Long codigoSeguro;
+    public Long cedulaSeguroVoluntario;
 }

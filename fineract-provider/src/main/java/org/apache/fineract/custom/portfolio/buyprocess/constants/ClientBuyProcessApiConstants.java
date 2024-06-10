@@ -50,10 +50,12 @@ public final class ClientBuyProcessApiConstants {
     public static final String createdAtParamName = "createdAt";
     public static final String createdByParamName = "createdBy";
     public static final String ipDetailsParamName = "ipDetails";
+    public static final String codigoSeguroParamName = "codigoSeguro";
+    public static final String cedulaSeguroVoluntarioParamName = "cedulaSeguroVoluntario";
 
     // request parameters Set
     public static final Set<String> REQUEST_DATA_PARAMETERS = new HashSet<>(Arrays.asList(localeParamName, dateFormatParamName, idParamName,
             channelIdParamName, clientIdParamName, pointOfSalesIdParamName, productIdParamName, creditIdParamName, requestedDateParamName,
             amountParamName, termParamName, createdAtParamName, createdByParamName, ipDetailsParamName, pointOfSalesCodeParamName,
-            clientDocumentIdParamName, LoanApiConstants.CHANNEL_NAME));
+            clientDocumentIdParamName, LoanApiConstants.CHANNEL_NAME, codigoSeguroParamName, cedulaSeguroVoluntarioParamName));
 }
