@@ -26,8 +26,8 @@ public class ApprovedAmountGreaterThanRequestedException extends AbstractPlatfor
     public ApprovedAmountGreaterThanRequestedException(final String dpi, final String clientName, final BigDecimal approvedAmount,
             final BigDecimal requestedAmount) {
         super("error.msg.approved.amount.greater.than.requested", "Approved Amount " + approvedAmount
-                + " cannot be greater than the requested amount " + requestedAmount + " for member "+clientName+" with dpi " + dpi, approvedAmount,
-                requestedAmount, dpi, clientName);
+                + " cannot be greater than the requested amount " + requestedAmount + " for member " + clientName + " with dpi " + dpi,
+                approvedAmount, requestedAmount, dpi, clientName);
     }
 
 }

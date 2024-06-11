@@ -26,8 +26,8 @@ public class RequestedAmountGreaterThanOriginalException extends AbstractPlatfor
     public RequestedAmountGreaterThanOriginalException(final String dpi, final String clientName, final BigDecimal requestedAmount,
             final BigDecimal originalAmount) {
         super("error.msg.requested.amount.greater.than.original", "Requested Amount " + requestedAmount
-                + " cannot be greater than the original amount " + originalAmount + " for member "+clientName+" with dpi " + dpi, requestedAmount,
-                originalAmount, dpi, clientName);
+                + " cannot be greater than the original amount " + originalAmount + " for member " + clientName + " with dpi " + dpi,
+                requestedAmount, originalAmount, dpi, clientName);
     }
 
 }

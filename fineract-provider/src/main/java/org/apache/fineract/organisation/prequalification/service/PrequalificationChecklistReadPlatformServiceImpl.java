@@ -99,9 +99,9 @@ public class PrequalificationChecklistReadPlatformServiceImpl implements Prequal
             String memberId = null;
             String clientName;
             String dpi;
-                for (PolicyData policy : individualPolicies) {
-                    for (ChecklistValidationResult validationResult : validationResults) {
-                        if (policy.getId().equals(validationResult.getPolicyId())
+            for (PolicyData policy : individualPolicies) {
+                for (ChecklistValidationResult validationResult : validationResults) {
+                    if (policy.getId().equals(validationResult.getPolicyId())
                             && PrequalificationType.INDIVIDUAL.getValue().equals(validationResult.getPrequalificationTypeEnum())
                             && member.getId().equals(validationResult.getMemberId().longValue())) {
                         final String validationColor = CheckValidationColor.fromInt(validationResult.getColorEnum()).name();
