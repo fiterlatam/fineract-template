@@ -43,7 +43,6 @@ import org.apache.fineract.organisation.monetary.service.CurrencyReadPlatformSer
 import org.apache.fineract.portfolio.charge.data.ChargeData;
 import org.apache.fineract.portfolio.charge.data.ChargeInsuranceDetailData;
 import org.apache.fineract.portfolio.charge.domain.ChargeAppliesTo;
-import org.apache.fineract.portfolio.charge.domain.ChargeInsuranceDetail;
 import org.apache.fineract.portfolio.charge.domain.ChargeTimeType;
 import org.apache.fineract.portfolio.charge.exception.ChargeNotFoundException;
 import org.apache.fineract.portfolio.common.service.CommonEnumerations;
@@ -293,8 +292,7 @@ public class ChargeReadPlatformServiceImpl implements ChargeReadPlatformService 
                     + "c,parent_charge_id as parentChargeId, "
                     + "c.insurance_name as insuranceName, c.insurance_charged_as insuranceChargedAs, c.insurance_company as insuranceCompany, c.insurer_name as insurerName, c.insurance_code as insuranceCode, "
                     + "c.insurance_plan as insurancePlan, c.base_value as baseValue, c.vat_value as vatValue, c.total_value as totalValue, c.deadline as deadLine "
-                    + "from m_charge c "
-                    + "join m_organisation_currency oc on c.currency_code = oc.code "
+                    + "from m_charge c " + "join m_organisation_currency oc on c.currency_code = oc.code "
                     + " LEFT JOIN acc_gl_account acc on acc.id = c.income_or_liability_account_id "
                     + " LEFT JOIN m_tax_group tg on tg.id = c.tax_group_id " + " LEFT JOIN m_payment_type pt on pt.id = c.payment_type_id ";
         }
@@ -395,7 +393,7 @@ public class ChargeReadPlatformServiceImpl implements ChargeReadPlatformService 
             final Long graceOnChargePeriodAmount = JdbcSupport.getLong(rs, "graceOnChargePeriodAmount");
             final Long parentChargeId = JdbcSupport.getLong(rs, "parentChargeId");
 
-            //Voluntary Insurance Details
+            // Voluntary Insurance Details
             ChargeInsuranceDetailData chargeInsuranceDetailData = null;
 
             if (rs.getString("insuranceName") != null) {
@@ -408,19 +406,18 @@ public class ChargeReadPlatformServiceImpl implements ChargeReadPlatformService 
                 final BigDecimal baseValue = rs.getBigDecimal("baseValue");
                 final BigDecimal vatValue = rs.getBigDecimal("vatValue");
                 final BigDecimal totalValue = rs.getBigDecimal("totalValue");
-                final Long deadline =JdbcSupport.getLong(rs, "deadLine");
+                final Long deadline = JdbcSupport.getLong(rs, "deadLine");
 
-                chargeInsuranceDetailData = new ChargeInsuranceDetailData(null, insuranceName, insuranceChargedAs, insuranceCompany, insurerName, insuranceCode, insurancePlan, baseValue, vatValue, totalValue, deadline, null);
+                chargeInsuranceDetailData = new ChargeInsuranceDetailData(null, insuranceName, insuranceChargedAs, insuranceCompany,
+                        insurerName, insuranceCode, insurancePlan, baseValue, vatValue, totalValue, deadline, null);
 
             }
-
-
-
 
             return ChargeData.instance(id, name, amount, currency, chargeTimeType, chargeAppliesToType, chargeCalculationType,
                     chargePaymentMode, feeOnMonthDay, feeInterval, penalty, active, isFreeWithdrawal, freeWithdrawalChargeFrequency,
                     restartFrequency, restartFrequencyEnum, isPaymentType, paymentTypeData, minCap, maxCap, feeFrequencyType, glAccountData,
-                    taxGroupData, Short.valueOf(String.valueOf(graceOnChargePeriodEnum)), graceOnChargePeriodAmount, parentChargeId, chargeInsuranceDetailData);
+                    taxGroupData, Short.valueOf(String.valueOf(graceOnChargePeriodEnum)), graceOnChargePeriodAmount, parentChargeId,
+                    chargeInsuranceDetailData);
         }
     }
 

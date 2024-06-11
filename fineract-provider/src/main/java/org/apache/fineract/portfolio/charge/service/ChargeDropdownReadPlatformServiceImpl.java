@@ -2179,7 +2179,6 @@ public class ChargeDropdownReadPlatformServiceImpl implements ChargeDropdownRead
 
     @Override
     public List<EnumOptionData> retrieveChargeInsuranceTypeOptions() {
-        return Arrays.asList(chargeInsuranceType(ChargeInsuranceType.CARGO),
-                chargeInsuranceType(ChargeInsuranceType.COMPRA));
+        return Arrays.asList(chargeInsuranceType(ChargeInsuranceType.CARGO), chargeInsuranceType(ChargeInsuranceType.COMPRA));
     }
 }
