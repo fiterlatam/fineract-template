@@ -184,6 +184,7 @@ public class ClientBuyProcessReadWritePlatformServiceImpl implements ClientBuyPr
     private void createLoanApplication(ClientBuyProcess entity, LoanProduct prodiuctEntity) {
 
         CreateLoanPayloadData payloadData = CreateLoanPayloadData.builder().productId(entity.getProductId())
+                .interestRatePoints(entity.getInterestRatePoints())
                 .submittedOnDate(DateUtils.format(entity.getRequestedDate(), CustomDateUtils.SPANISH_DATE_FORMAT))
                 .expectedDisbursementDate(DateUtils.format(entity.getRequestedDate(), CustomDateUtils.SPANISH_DATE_FORMAT))
                 .loanTermFrequency(entity.getTerm())

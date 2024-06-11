@@ -175,9 +175,13 @@ public class ClientBuyProcessDataValidator {
         baseDataValidator.reset().parameter(ClientBuyProcessApiConstants.cedulaSeguroVoluntarioParamName).value(cedulaSeguroVoluntario)
                 .ignoreIfNull().longGreaterThanZero();
 
+        final Integer interestRatePoints = this.fromApiJsonHelper.extractIntegerWithLocaleNamed(LoanApiConstants.INTEREST_RATE_POINTS,
+                element);
+
         ClientBuyProcess ret = new ClientBuyProcess(null, channelName, clientId, pointOfSalesId, productId, creditId, requestedDate, amount,
                 term, createdAt, createdBy, ipDetails, codigoSeguro, cedulaSeguroVoluntario);
         ret.setClient(client);
+        ret.setInterestRatePoints(interestRatePoints);
 
         // If there is no primary errors, then execute second level validation chain
         if (dataValidationErrors.isEmpty()) {
