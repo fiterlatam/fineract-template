@@ -71,7 +71,7 @@ public enum Policies {
                                                                                                                                                                                                                 36,
                                                                                                                                                                                                                 "Percentage Of Clients To Be Recredited In The Group"), THIRTY_SEVEN(
                                                                                                                                                                                                                     37,
-                                                                                                                                                                                                                    "Clients In Arrears");
+                                                                                                                                                                                                                    "Clients In Arrears"), THIRTY_EIGHT(38, "Number of Recurring members according to policy");
 
     private final Integer id;
     private final String name;

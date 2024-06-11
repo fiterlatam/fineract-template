@@ -254,7 +254,7 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
             return """
                     SELECT mc.id AS clientId,mc.loan_cycle as loanCycle, mpgm.id AS prequalificationMemberId, IFNULL(mc.display_name,mpgm.name) AS name, mpg.id AS prequalificationId,\s
                     mpgm.requested_amount AS requestedAmount, IFNULL(mc.date_of_birth, mpgm.dob) AS dateOfBirth, IFNULL(mc.dpi, mpgm.dpi) AS dpi,
-                    mpgm.work_with_puente AS workWithPuente, mcv.code_value As gender, mpgm.is_president AS president, mpgm.buro_check_status buroCheckStatus,
+                    mpgm.work_with_puente AS workWithPuente, mcv.code_value As gender, mpgm.is_president AS president, mpgm.buro_check_status as buroCheckStatus, mpgm.agency_bureau_status as agencyBuroStatus,
                     ml.is_topup AS isTopup, ml.id AS loanId, areacv.code_value as clientArea
                     FROM m_prequalification_group_members mpgm 
                     LEFT JOIN m_client mc ON mc.dpi = mpgm.dpi 
@@ -277,6 +277,7 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
             final boolean president = rs.getBoolean("president");
             final boolean isTopup = rs.getBoolean("isTopup");
             final Integer buroCheckStatus = JdbcSupport.getInteger(rs, "buroCheckStatus");
+            final String agencyBuroStatus = rs.getString("agencyBuroStatus");
             final Date dateOfBirth = rs.getDate("dateOfBirth");
             final String dpi = rs.getString("dpi");
             final BigDecimal requestedAmount = rs.getBigDecimal("requestedAmount");
@@ -286,7 +287,7 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
             return ClientData.builder().clientId(clientId).prequalificationId(prequalificationId).clientArea(clientArea)
                     .prequalificationMemberId(prequalificationMemberId).name(name).dateOfBirth(dateOfBirth).dpi(dpi)
                     .requestedAmount(requestedAmount).gender(gender).workWithPuente(workWithPuente).president(president)
-                    .buroCheckStatus(buroCheckStatus).isLoanTopup(isTopup).loanCycle(loanCycle).build();
+                    .buroCheckStatus(buroCheckStatus).agencyBuroStatus(agencyBuroStatus).isLoanTopup(isTopup).loanCycle(loanCycle).build();
         }
     }
 
@@ -330,6 +331,7 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
             case THIRTY_FIVE -> checkValidationColor = this.runCheck35(groupData);
             case THIRTY_SIX -> checkValidationColor = this.runCheck36(groupData);
             case THIRTY_SEVEN -> checkValidationColor = this.runCheck37(groupData);
+            case THIRTY_EIGHT -> checkValidationColor = this.runCheck38(groupData);
             default -> checkValidationColor = CheckValidationColor.INVALID;
         }
         return checkValidationColor;
@@ -519,6 +521,41 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
         final String reportName = Policies.SIX.getName() + " Policy Check";
         final String productId = Long.toString(groupData.getProductId());
         final String numberOfMembers = String.valueOf(groupData.getNumberOfMembers());
+        final String numberOfTopupMembers = String.valueOf(groupData.getTopupMembers().size());
+        final String numberOfRecurringMembers = String.valueOf(getRecurringMembers(Long.getLong(prequalificationId)));
+        BigDecimal recreditPercent = BigDecimal.valueOf((groupData.getTopupMembers().size()/groupData.getMembers().size())* 100L);
+        final Map<String, String> reportParams = new HashMap<>();
+        reportParams.put("${prequalificationId}", prequalificationId);
+        reportParams.put("${loanProductId}", productId);
+        reportParams.put("${clientCategorization}", clientCategorization);
+        reportParams.put("${clientArea}", clientArea);
+        reportParams.put("${categorization}", groupData.getTopupMembers().size()>0 ? "NUEVO" : "RECREDITO");
+        reportParams.put("${numberOfMembers}", numberOfMembers);
+        reportParams.put("${numberOfRecurringMembers}", numberOfRecurringMembers);
+        reportParams.put("${recreditPercent}", recreditPercent.toPlainString());
+        reportParams.put("${numberOfTopupMembers}", numberOfTopupMembers);
+        final GenericResultsetData result = this.readReportingService.retrieveGenericResultset(reportName, "report", reportParams, false);
+        return extractColorFromResultset(result);
+    }
+    /**
+     * Number of Recurring members according to policy
+     */
+    private CheckValidationColor runCheck38(final GroupData groupData) {
+        String clientArea = "RURAL";
+        String clientCategorization = "NEW";
+        String recreditCategorization = "NUEVO";
+        if (!CollectionUtils.isEmpty(groupData.getMembers())) {
+            final ClientData clientData = groupData.getMembers().get(0);
+            final ClientData params = retrieveClientParams(clientData.getClientId(), clientData.getProductId());
+            clientArea = params.getClientArea();
+            recreditCategorization = params.getRecreditCategorization();
+            clientCategorization = params.getClientCategorization();
+        }
+        final String prequalificationId = String.valueOf(groupData.getId());
+        final String reportName = Policies.THIRTY_EIGHT.getName() + " Policy Check";
+        final String productId = Long.toString(groupData.getProductId());
+        final String numberOfMembers = String.valueOf(groupData.getNumberOfMembers());
+        final String numberOfTopupMembers = String.valueOf(groupData.getTopupMembers().size());
         final String numberOfRecurringMembers = String.valueOf(getRecurringMembers(Long.getLong(prequalificationId)));
         final Map<String, String> reportParams = new HashMap<>();
         reportParams.put("${prequalificationId}", prequalificationId);
@@ -527,6 +564,7 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
         reportParams.put("${clientArea}", clientArea);
         reportParams.put("${recreditCategorization}", recreditCategorization);
         reportParams.put("${numberOfMembers}", numberOfMembers);
+        reportParams.put("${numberOfTopupMembers}", numberOfTopupMembers);
         reportParams.put("${numberOfRecurringMembers}", numberOfRecurringMembers);
         final GenericResultsetData result = this.readReportingService.retrieveGenericResultset(reportName, "report", reportParams, false);
         return extractColorFromResultset(result);
@@ -693,7 +731,9 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
         reportParams.put("${loanProductId}", productId);
         reportParams.put("${clientCategorization}", params.getClientCategorization());
         reportParams.put("${recreditCategorization}", params.getRecreditCategorization());
-        reportParams.put("${buroCheckClassification}", buroCheckClassification.getLetter());
+        String buroCheckLetter = StringUtils.isBlank(clientData.getAgencyBuroStatus())?
+                buroCheckClassification.getLetter():clientData.getAgencyBuroStatus();
+        reportParams.put("${buroCheckClassification}", buroCheckLetter);
         final GenericResultsetData result = this.readReportingService.retrieveGenericResultset(reportName, "report", reportParams, false);
         return extractColorFromResultset(result);
     }
@@ -792,22 +832,18 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
      * Percentage of members of the same group who they can have parallel product
      */
     private CheckValidationColor runCheck17(final GroupData groupData) {
-        String clientArea = "RURAL";
+        ClientData clientData = null;
         if (!CollectionUtils.isEmpty(groupData.getMembers())) {
-            final ClientData clientData = groupData.getMembers().get(0);
+            clientData = groupData.getMembers().get(0);
             final ClientData params = retrieveClientParams(clientData.getClientId(), clientData.getProductId());
-            clientArea = params.getClientArea();
         }
         final String prequalificationId = String.valueOf(groupData.getId());
         final String reportName = Policies.SEVENTEEN.getName() + " Policy Check";
         final String productId = Long.toString(groupData.getProductId());
-        final String numberOfMembers = String.valueOf(groupData.getNumberOfMembers());
         final Map<String, String> reportParams = new HashMap<>();
         reportParams.put("${prequalificationId}", prequalificationId);
         reportParams.put("${loanProductId}", productId);
-        reportParams.put("${clientArea}", clientArea);
-        reportParams.put("${numberOfMembers}", numberOfMembers);
-        reportParams.put("${requestedAmount}", String.valueOf(groupData.getRequestedAmount()));
+        reportParams.put("${clientId}", String.valueOf(clientData.getClientId()));
         final GenericResultsetData result = this.readReportingService.retrieveGenericResultset(reportName, "report", reportParams, false);
         return extractColorFromResultset(result);
     }
