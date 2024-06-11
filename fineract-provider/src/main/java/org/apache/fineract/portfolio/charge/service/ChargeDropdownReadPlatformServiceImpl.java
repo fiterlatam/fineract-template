@@ -18,19 +18,13 @@
  */
 package org.apache.fineract.portfolio.charge.service;
 
-import static org.apache.fineract.portfolio.charge.service.ChargeEnumerations.chargeCalculationType;
-import static org.apache.fineract.portfolio.charge.service.ChargeEnumerations.chargePaymentMode;
-import static org.apache.fineract.portfolio.charge.service.ChargeEnumerations.chargeTimeType;
-import static org.apache.fineract.portfolio.charge.service.ChargeEnumerations.loanChargeCalculationType;
+import static org.apache.fineract.portfolio.charge.service.ChargeEnumerations.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
-import org.apache.fineract.portfolio.charge.domain.ChargeAppliesTo;
-import org.apache.fineract.portfolio.charge.domain.ChargeCalculationType;
-import org.apache.fineract.portfolio.charge.domain.ChargePaymentMode;
-import org.apache.fineract.portfolio.charge.domain.ChargeTimeType;
+import org.apache.fineract.portfolio.charge.domain.*;
 
 public class ChargeDropdownReadPlatformServiceImpl implements ChargeDropdownReadPlatformService {
 
@@ -2133,7 +2127,8 @@ public class ChargeDropdownReadPlatformServiceImpl implements ChargeDropdownRead
                 loanChargeCalculationType(ChargeCalculationType.FLAT_DISB_IPRIN_IINT_OPRIN_OINT_SEGO_AVAL), //
                 loanChargeCalculationType(ChargeCalculationType.FLAT_DISB_IPRIN_IINT_OPRIN_OINT_SEGO_AVAL_ACHG), //
                 loanChargeCalculationType(ChargeCalculationType.FLAT_DISB_IPRIN_IINT_OPRIN_OINT_SEGO_AVAL_HONO), //
-                loanChargeCalculationType(ChargeCalculationType.FLAT_DISB_IPRIN_IINT_OPRIN_OINT_SEGO_AVAL_HONO_ACHG) //
+                loanChargeCalculationType(ChargeCalculationType.FLAT_DISB_IPRIN_IINT_OPRIN_OINT_SEGO_AVAL_HONO_ACHG), //
+                loanChargeCalculationType(ChargeCalculationType.FLAT_SEGOVOLUNTARIO) //
 
         );
     }
@@ -2180,5 +2175,11 @@ public class ChargeDropdownReadPlatformServiceImpl implements ChargeDropdownRead
     public List<EnumOptionData> retrieveSharesCollectionTimeTypes() {
         return Arrays.asList(chargeTimeType(ChargeTimeType.SHAREACCOUNT_ACTIVATION), chargeTimeType(ChargeTimeType.SHARE_PURCHASE),
                 chargeTimeType(ChargeTimeType.SHARE_REDEEM));
+    }
+
+    @Override
+    public List<EnumOptionData> retrieveChargeInsuranceTypeOptions() {
+        return Arrays.asList(chargeInsuranceType(ChargeInsuranceType.CARGO),
+                chargeInsuranceType(ChargeInsuranceType.COMPRA));
     }
 }
