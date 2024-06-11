@@ -103,6 +103,9 @@ public class ClientBuyProcess {
     @Column(name = "cedula_seguro_voluntario", nullable = true)
     private Long cedulaSeguroVoluntario;
 
+    @Column(name = "interest_rate_points")
+    private Integer interestRatePoints;
+
     @Transient
     private LinkedHashMap<String, String> errorMessageHM = new LinkedHashMap<>();
 

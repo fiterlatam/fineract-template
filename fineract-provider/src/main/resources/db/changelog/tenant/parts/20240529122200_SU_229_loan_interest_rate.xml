@@ -311,4 +311,17 @@
         </sql>
     </changeSet>
 
+    <changeSet author="fineract" id="16">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists schemaName="custom"  tableName="c_client_buy_process" columnName="interest_rate_points"/>
+            </not>
+        </preConditions>
+        <addColumn schemaName="custom" tableName="c_client_buy_process">
+            <column name="interest_rate_points" type="INT">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
 </databaseChangeLog>
