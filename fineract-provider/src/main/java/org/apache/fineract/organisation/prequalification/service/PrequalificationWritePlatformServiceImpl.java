@@ -547,7 +547,8 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         if (changes.containsKey(PrequalificatoinApiConstants.approvedAmountParamName)) {
             final BigDecimal newValue = command.bigDecimalValueOfParameterNamed(PrequalificatoinApiConstants.approvedAmountParamName);
             if (newValue.compareTo(member.getOriginalAmount()) > 0) {
-                throw new ApprovedAmountGreaterThanRequestedException(member.getDpi(), member.getName(), newValue, member.getRequestedAmount());
+                throw new ApprovedAmountGreaterThanRequestedException(member.getDpi(), member.getName(), newValue,
+                        member.getRequestedAmount());
             }
             member.updateApprovedAmount(newValue);
         }
@@ -607,7 +608,8 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             final BigDecimal newValue = command
                     .bigDecimalValueOfParameterNamed(PrequalificatoinApiConstants.memberRequestedAmountParamName);
             if (newValue.compareTo(member.getOriginalAmount()) > 0) {
-                throw new RequestedAmountGreaterThanOriginalException(member.getDpi(), member.getName(), newValue, member.getOriginalAmount());
+                throw new RequestedAmountGreaterThanOriginalException(member.getDpi(), member.getName(), newValue,
+                        member.getOriginalAmount());
             }
             member.updateAmountRequested(newValue);
             member.updateApprovedAmount(newValue);
@@ -1058,7 +1060,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                     INNER JOIN m_group mg ON mg.id = mgc.group_id
                     INNER JOIN m_client mc ON (mgc.client_id = mc.id AND mpgm.dpi = mc.dpi)
                     INNER JOIN m_loan ml ON (ml.client_id = mc.id OR ml.group_id = mg.id)
-                    LEFT JOIN m_loan_additionals_group mlad ON mlad.loan_id = ml.id 
+                    LEFT JOIN m_loan_additionals_group mlad ON mlad.loan_id = ml.id
                     LEFT JOIN m_code_value mcv ON mcv.id = mlad.loan_cycle_completed
                     WHERE mpg.id = ? AND mpg.prequalification_type_enum = 2 AND (ml.client_id = (SELECT mt.id FROM m_client mt WHERE mt.dpi = ?))
                     AND ml.loan_status_id = 100 AND ml.prequalification_id = ?
