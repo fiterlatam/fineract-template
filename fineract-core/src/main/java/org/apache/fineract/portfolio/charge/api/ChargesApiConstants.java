@@ -32,4 +32,16 @@ public final class ChargesApiConstants {
 
     public static final String parentChargeIdParamName = "parentChargeId";
 
+    public static final String isVoluntaryInsuranceParamName = "isVoluntaryInsurance";
+    public static final String insuranceNameParamName = "insuranceName";
+    public static final String insuranceChargedAsParamName = "insuranceChargedAs";
+    public static final String insuranceCompanyParamName = "insuranceCompany";
+    public static final String insurerNameParamName = "insurerName";
+    public static final String insuranceCodeParamName = "insuranceCode";
+    public static final String insurancePlanParamName = "insurancePlan";
+    public static final String baseValueParamName = "baseValue";
+    public static final String vatValueParamName = "vatValue";
+    public static final String totalValueParamName = "totalValue";
+    public static final String deadlineParamName = "deadline";
+
 }
