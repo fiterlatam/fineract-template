@@ -200,8 +200,7 @@ public class CustomChargeHonorarioMapDataValidator {
         final LocalDateTime updatedAt = DateUtils.getLocalDateTimeOfTenant();
 
         throwExceptionIfValidationWarningsExist(dataValidationErrors);
-        CustomChargeHonorarioMap map = CustomChargeHonorarioMap.builder()
-                .loanId(loanId) //
+        CustomChargeHonorarioMap map = CustomChargeHonorarioMap.builder().loanId(loanId) //
                 .loanInstallmentNr(loanInstallmentNr) //
                 .feeTotalAmount(feeTotalAmount) //
                 .feeBaseAmount(feeBaseAmount) //

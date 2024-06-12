@@ -52,7 +52,6 @@ import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformS
 import org.apache.fineract.custom.infrastructure.channel.data.ChannelData;
 import org.apache.fineract.custom.infrastructure.channel.domain.ChannelType;
 import org.apache.fineract.custom.infrastructure.channel.service.ChannelReadWritePlatformService;
-import org.apache.fineract.custom.portfolio.externalcharge.honoratio.domain.CustomChargeHonorarioMap;
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 import org.apache.fineract.infrastructure.codes.domain.CodeValue;
 import org.apache.fineract.infrastructure.codes.domain.CodeValueRepositoryWrapper;

@@ -32,8 +32,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
-
-import org.apache.fineract.custom.portfolio.externalcharge.honoratio.domain.CustomChargeHonorarioMap;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.core.service.MathUtil;
 import org.apache.fineract.organisation.monetary.domain.ApplicationCurrency;
@@ -464,9 +462,10 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
             final MathContext mc) {
         PrincipalInterest principalInterest = new PrincipalInterest(currentPeriodParams.getPrincipalForThisPeriod(),
                 currentPeriodParams.getInterestForThisPeriod(), null);
-        currentPeriodParams.setFeeChargesForInstallment(cumulativeFeeChargesDueWithin(scheduleParams.getPeriodStartDate(), scheduledDueDate,
-                loanCharges, currency, principalInterest, scheduleParams.getPrincipalToBeScheduled(),
-                scheduleParams.getTotalCumulativeInterest(), true, scheduleParams.isFirstPeriod(), mc, scheduleParams.getInstalmentNumber()));
+        currentPeriodParams.setFeeChargesForInstallment(
+                cumulativeFeeChargesDueWithin(scheduleParams.getPeriodStartDate(), scheduledDueDate, loanCharges, currency,
+                        principalInterest, scheduleParams.getPrincipalToBeScheduled(), scheduleParams.getTotalCumulativeInterest(), true,
+                        scheduleParams.isFirstPeriod(), mc, scheduleParams.getInstalmentNumber()));
         currentPeriodParams.setPenaltyChargesForInstallment(cumulativePenaltyChargesDueWithin(scheduleParams.getPeriodStartDate(),
                 scheduledDueDate, loanCharges, currency, principalInterest, scheduleParams.getPrincipalToBeScheduled(),
                 scheduleParams.getTotalCumulativeInterest(), true, scheduleParams.isFirstPeriod(), mc));
@@ -483,7 +482,8 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                 Money feeChargesForInstallment = cumulativeFeeChargesDueWithin(loanScheduleModelPeriod.periodFromDate(),
                         loanScheduleModelPeriod.periodDueDate(), nonCompoundingCharges, currency, principalInterest,
                         scheduleParams.getPrincipalToBeScheduled(), scheduleParams.getTotalCumulativeInterest(),
-                        !loanScheduleModelPeriod.isRecalculatedInterestComponent(), scheduleParams.isFirstPeriod(), mc, scheduleParams.getInstalmentNumber());
+                        !loanScheduleModelPeriod.isRecalculatedInterestComponent(), scheduleParams.isFirstPeriod(), mc,
+                        scheduleParams.getInstalmentNumber());
                 Money penaltyChargesForInstallment = cumulativePenaltyChargesDueWithin(loanScheduleModelPeriod.periodFromDate(),
                         loanScheduleModelPeriod.periodDueDate(), nonCompoundingCharges, currency, principalInterest,
                         scheduleParams.getPrincipalToBeScheduled(), scheduleParams.getTotalCumulativeInterest(),
@@ -1838,8 +1838,7 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                 if (DateUtils.isBefore(compoundingDate, endDate)) {
                     boolean isFirst = DateUtils.isEqual(startDate, lastCompoundingDate);
                     Money feeChargesForInstallment = cumulativeFeeChargesDueWithin(lastCompoundingDate, compoundingDate, charges, currency,
-                            null, loanApplicationTerms.getPrincipal(), null, false, isFirst, mc,
-                            scheduleParams.getInstalmentNumber());
+                            null, loanApplicationTerms.getPrincipal(), null, false, isFirst, mc, scheduleParams.getInstalmentNumber());
                     Money penaltyChargesForInstallment = cumulativePenaltyChargesDueWithin(lastCompoundingDate, compoundingDate, charges,
                             currency, null, loanApplicationTerms.getPrincipal(), null, false, isFirst, mc);
                     Money compoundAmount = feeChargesForInstallment.plus(penaltyChargesForInstallment);
@@ -2133,8 +2132,7 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
         } else {
             if (loanCharge.isCustomFeeChargeApplicableOnInstallment(installmentNumber)) {
                 cumulative = cumulative.plus(loanCharge.calculateCustomFeeChargeToInstallment(installmentNumber));
-            }
-            else {
+            } else {
                 cumulative = cumulative.plus(loanCharge.amountOrPercentage());
             }
         }

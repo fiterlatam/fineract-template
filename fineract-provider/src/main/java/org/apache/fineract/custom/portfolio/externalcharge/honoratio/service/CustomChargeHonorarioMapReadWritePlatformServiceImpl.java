@@ -20,9 +20,7 @@ package org.apache.fineract.custom.portfolio.externalcharge.honoratio.service;
 
 import jakarta.persistence.PersistenceException;
 import java.io.IOException;
-import java.time.LocalDate;
 import java.util.*;
-
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.fineract.custom.infrastructure.dataqueries.domain.ClientAdditionalInformationRepository;
@@ -47,13 +45,11 @@ import org.apache.fineract.infrastructure.security.service.PlatformSecurityConte
 import org.apache.fineract.portfolio.charge.domain.ChargeCalculationType;
 import org.apache.fineract.portfolio.client.domain.ClientRepository;
 import org.apache.fineract.portfolio.loanaccount.data.LoanChargeData;
-import org.apache.fineract.portfolio.loanaccount.data.ScheduleGeneratorDTO;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanCharge;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleInstallment;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepository;
 import org.apache.fineract.portfolio.loanaccount.exception.InstallmentNotFoundException;
-import org.apache.fineract.portfolio.loanaccount.exception.LoanInstallmentAlreadyPaidException;
 import org.apache.fineract.portfolio.loanaccount.exception.LoanNotFoundException;
 import org.apache.fineract.portfolio.loanaccount.service.LoanChargeReadPlatformService;
 import org.apache.fineract.portfolio.loanaccount.service.LoanUtilService;
@@ -168,13 +164,12 @@ public class CustomChargeHonorarioMapReadWritePlatformServiceImpl implements Cus
                     throw new InstallmentNotFoundException(entity.getLoanInstallmentNr().longValue());
                 } else {
                     List<LoanRepaymentScheduleInstallment> installments = curr.getRepaymentScheduleInstallments().stream()
-                            .sorted(Comparator.comparingInt(LoanRepaymentScheduleInstallment::getInstallmentNumber))
-                            .toList();
+                            .sorted(Comparator.comparingInt(LoanRepaymentScheduleInstallment::getInstallmentNumber)).toList();
                     for (LoanRepaymentScheduleInstallment inst : installments) {
                         if (inst.getInstallmentNumber().equals(entity.getLoanInstallmentNr())) {
                             if (inst.isObligationsMet()) {
-                                //Cannot throw exception here as it will rollback everything including any new fee rows
-                                //throw new LoanInstallmentAlreadyPaidException(loanId, inst.getInstallmentNumber());
+                                // Cannot throw exception here as it will rollback everything including any new fee rows
+                                // throw new LoanInstallmentAlreadyPaidException(loanId, inst.getInstallmentNumber());
                                 insallmentAlreadyPaid = true;
                                 break;
                             }
