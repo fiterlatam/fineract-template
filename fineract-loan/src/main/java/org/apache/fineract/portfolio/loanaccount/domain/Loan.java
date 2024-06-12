@@ -61,6 +61,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.fineract.custom.portfolio.externalcharge.honoratio.domain.CustomChargeHonorarioMap;
 import org.apache.fineract.infrastructure.codes.domain.CodeValue;
 import org.apache.fineract.infrastructure.configuration.service.TemporaryConfigurationServiceContainer;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
@@ -5155,6 +5156,18 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 BigDecimal amount;
                 if (loanCharge.getChargeCalculation().isFlat()) {
                     amount = loanCharge.amountOrPercentage();
+                    if (loanCharge.getChargeCalculation().isFlatHono() && !loanCharge.getCustomChargeHonorarioMaps().isEmpty()) {
+                        BigDecimal amt = BigDecimal.ZERO;
+                        for (CustomChargeHonorarioMap customCharge : loanCharge.getCustomChargeHonorarioMaps()) {
+                            if (customCharge.getLoanInstallmentNr().equals(installment.getInstallmentNumber())) {
+                                amount = customCharge.getFeeTotalAmount();
+                                break;
+                            }
+                        }
+                        if (amount.compareTo(BigDecimal.ZERO) == 0) {
+                            amount = loanCharge.amountOrPercentage();
+                        }
+                    }
                 } else {
                     amount = calculateInstallmentChargeAmount(loanCharge.getChargeCalculation(), loanCharge.getPercentage(), installment)
                             .getAmount();
@@ -7252,5 +7265,12 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             this.loanCustomizationDetail = new LoanCustomizationDetail();
         }
         return this.loanCustomizationDetail;
+    }
+
+    public void updateLoanScheduleAfterCustomChargeApplied() {
+        final LoanRepaymentScheduleProcessingWrapper wrapper = new LoanRepaymentScheduleProcessingWrapper();
+        wrapper.reprocess(getCurrency(), getDisbursementDate(), getRepaymentScheduleInstallments(), getActiveCharges());
+
+        updateLoanSummaryDerivedFields();
     }
 }

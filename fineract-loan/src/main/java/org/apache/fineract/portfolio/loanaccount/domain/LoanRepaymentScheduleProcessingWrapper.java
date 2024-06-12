@@ -89,7 +89,11 @@ public class LoanRepaymentScheduleProcessingWrapper {
             if (loanCharge.isFeeCharge() && !loanCharge.isDueAtDisbursement()) {
                 boolean isDue = loanChargeIsDue(periodStart, periodEnd, isFirstPeriod, loanCharge);
                 if (loanCharge.isInstalmentFee() && isInstallmentChargeApplicable) {
-                    cumulative = cumulative.plus(getInstallmentFee(monetaryCurrency, period, loanCharge));
+                    if (loanCharge.isCustomFeeChargeApplicableOnInstallment(period.getInstallmentNumber())) {
+                        cumulative = cumulative.plus(loanCharge.calculateCustomFeeChargeToInstallment(period.getInstallmentNumber()));
+                    } else {
+                        cumulative = cumulative.plus(getInstallmentFee(monetaryCurrency, period, loanCharge));
+                    }
                 } else if (loanCharge.isOverdueInstallmentCharge() && isDue && loanCharge.getChargeCalculation().isPercentageBased()) {
                     cumulative = cumulative.plus(loanCharge.chargeAmount());
                 } else if (isDue && loanCharge.getChargeCalculation().isPercentageBased()) {

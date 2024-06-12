@@ -27,7 +27,8 @@ import org.apache.fineract.custom.portfolio.externalcharge.honoratio.domain.Cust
 public class CustomChargeHonorarioMapMapper {
 
     public static CustomChargeHonorarioMap toModel(CustomChargeHonorarioMapData dto) {
-        return CustomChargeHonorarioMap.builder().id(dto.getId()) //
+
+        CustomChargeHonorarioMap map = CustomChargeHonorarioMap.builder() //
                 .nit(dto.getNit()) //
                 .loanId(dto.getLoanId()) //
                 .loanInstallmentNr(dto.getLoanInstallmentNr()) //
@@ -41,6 +42,8 @@ public class CustomChargeHonorarioMapMapper {
                 .disabledBy(dto.getDisabledBy()) //
                 .disabledAt(dto.getDisabledAt()) //
                 .build();
+        map.setId(dto.getId());
+        return map;
     }
 
     public static CustomChargeHonorarioMapData toDTO(CustomChargeHonorarioMap model) {
