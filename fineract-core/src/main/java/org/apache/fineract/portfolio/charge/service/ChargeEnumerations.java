@@ -288,6 +288,10 @@ public final class ChargeEnumerations {
                 optionData = new EnumOptionData(ChargeCalculationType.AMOUNT_FROM_EXTERNAL_CALCULATION.getValue().longValue(),
                         ChargeCalculationType.AMOUNT_FROM_EXTERNAL_CALCULATION.getCode(), "Amount from External System");
             break;
+            case FLAT_HONO:
+                optionData = new EnumOptionData(ChargeCalculationType.FLAT_HONO.getValue().longValue(),
+                        ChargeCalculationType.FLAT_HONO.getCode(), "Flat honorarios");
+                break;
             case INVALID:
                 optionData = new EnumOptionData(ChargeCalculationType.INVALID.getValue().longValue(),
                         ChargeCalculationType.INVALID.getCode(), "Invalid");

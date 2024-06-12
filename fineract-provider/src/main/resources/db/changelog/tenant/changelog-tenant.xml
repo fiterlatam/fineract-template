@@ -227,4 +227,5 @@
     <include file="parts/20240528200100_SU_220_code_value_UPDATE.xml" relativeToChangelogFile="true"/>
     <include file="parts/20240528200200_SU_220_x_registered_table_field_mask_CREATE.xml" relativeToChangelogFile="true"/>
     <include file="parts/202006092224100_SU_244_c_culient_buy_process_MODIFY.xml" relativeToChangelogFile="true"/>
+    <include file="parts/202006101618100_SU_288_c_custom_charge_honorarios_map_MODIFY.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

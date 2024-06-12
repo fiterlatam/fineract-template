@@ -22,6 +22,8 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.function.Predicate;
+
+import org.apache.fineract.custom.portfolio.externalcharge.honoratio.domain.CustomChargeHonorarioMap;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
 import org.apache.fineract.organisation.monetary.domain.Money;
@@ -80,7 +82,11 @@ public class SingleLoanChargeRepaymentScheduleProcessingWrapper {
         if (loanCharge.isFeeCharge() && !loanCharge.isDueAtDisbursement()) {
             boolean isDue = loanChargeIsDue(periodStart, periodEnd, isFirstPeriod, loanCharge);
             if (loanCharge.isInstalmentFee() && isInstallmentChargeApplicable) {
-                return Money.of(monetaryCurrency, getInstallmentFee(monetaryCurrency, period, loanCharge));
+                if (loanCharge.isCustomFeeChargeApplicableOnInstallment(period.getInstallmentNumber())) {
+                    return Money.of(monetaryCurrency, loanCharge.calculateCustomFeeChargeToInstallment(period.getInstallmentNumber()));
+                } else {
+                    return Money.of(monetaryCurrency, getInstallmentFee(monetaryCurrency, period, loanCharge));
+                }
             } else if (loanCharge.isOverdueInstallmentCharge() && isDue && loanCharge.getChargeCalculation().isPercentageBased()) {
                 return Money.of(monetaryCurrency, loanCharge.chargeAmount());
             } else if (isDue && loanCharge.getChargeCalculation().isPercentageBased()) {

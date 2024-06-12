@@ -41,6 +41,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import org.apache.fineract.custom.portfolio.externalcharge.honoratio.domain.CustomChargeHonorarioMap;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.infrastructure.core.domain.AbstractAuditableWithUTCDateTimeCustom;
@@ -146,6 +148,10 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
 
     @OneToMany(mappedBy = "loanCharge", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private Set<LoanChargePaidBy> loanChargePaidBySet = new HashSet<>();
+
+    @OneToMany(fetch = FetchType.EAGER)
+    @JoinColumn(name = "loan_charge_id", referencedColumnName = "id", insertable = false, updatable = false)
+    private Set<CustomChargeHonorarioMap> customChargeHonorarioMaps = new HashSet<>();
 
     protected LoanCharge() {
         //
@@ -500,6 +506,7 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
             amount = amount.plus(charge.getAmount());
         }
         this.amount = amount.getAmount();
+        this.amountOutstanding = calculateOutstanding();
     }
 
     public boolean isDueAtDisbursement() {
@@ -685,6 +692,10 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
 
     public BigDecimal getMaxCap() {
         return this.maxCap;
+    }
+
+    public Set<CustomChargeHonorarioMap> getCustomChargeHonorarioMaps() {
+        return this.customChargeHonorarioMaps;
     }
 
     public boolean isPaidOrPartiallyPaid(final MonetaryCurrency currency) {
@@ -1065,5 +1076,35 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
                 .amountPercentageAppliedTo(amountPercentageAppliedTo).amountOrPercentage(amountOrPercentage).penalty(penaltyCharge)
                 .chargePaymentMode(chargePaymentModeData).paid(paid).waived(waived).loanId(loan.getId()).minCap(minCap).maxCap(maxCap)
                 .installmentChargeData(loanInstallmentChargeDataSet).externalId(externalId).build();
+    }
+
+    public boolean isCustomFeeChargeApplicableOnInstallment(Integer installmentNumber) {
+        boolean isApplicable = false;
+        if (this.getChargeCalculation().isFlatHono() && !this.getCustomChargeHonorarioMaps().isEmpty()) {
+            for (CustomChargeHonorarioMap customCharge : this.getCustomChargeHonorarioMaps()) {
+                if (customCharge.getLoanInstallmentNr().equals(installmentNumber)) {
+                    isApplicable = true;
+                    break;
+                }
+            }
+        }
+        return isApplicable;
+    }
+
+    public BigDecimal calculateCustomFeeChargeToInstallment(Integer installmentNumber) {
+        BigDecimal customAmout = BigDecimal.ZERO;
+        if (this.getChargeCalculation().isFlatHono() && !this.getCustomChargeHonorarioMaps().isEmpty()) {
+            for (CustomChargeHonorarioMap customCharge : this.getCustomChargeHonorarioMaps()) {
+                if (customCharge.getLoanInstallmentNr().equals(installmentNumber)) {
+                    customAmout = customAmout.add(customCharge.getFeeTotalAmount());
+                    break;
+                }
+            }
+        }
+        return customAmout;
+    }
+
+    public void updateCustomFeeCharge() {
+        updateInstallmentCharges();
     }
 }

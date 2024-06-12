@@ -18,13 +18,8 @@
  */
 package org.apache.fineract.custom.portfolio.externalcharge.honoratio.domain;
 
-import jakarta.persistence.Cacheable;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
@@ -32,6 +27,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.apache.fineract.infrastructure.core.domain.AbstractAuditableWithUTCDateTimeCustom;
+import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
 
 @Entity
 @Table(schema = "custom", name = "c_custom_charge_honorarios_map")
@@ -41,12 +38,7 @@ import lombok.Setter;
 @Builder
 @Getter
 @Setter
-public class CustomChargeHonorarioMap {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id", nullable = false)
-    private Long id;
+public class CustomChargeHonorarioMap extends AbstractPersistableCustom {
 
     @Column(name = "nit", nullable = false, length = 20)
     private String nit;
@@ -83,4 +75,12 @@ public class CustomChargeHonorarioMap {
 
     @Column(name = "disabled_at", nullable = true)
     private LocalDateTime disabledAt;
+
+    @Column(name = "loan_charge_id", nullable = true)
+    private Long loanChargeId;
+
+//    @Column(name = "is_installment_already_paid")
+    @Transient
+    private boolean isInstallmentAlreadyPaid;
+
 }

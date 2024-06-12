@@ -200,8 +200,7 @@ public class CustomChargeHonorarioMapDataValidator {
         final LocalDateTime updatedAt = DateUtils.getLocalDateTimeOfTenant();
 
         throwExceptionIfValidationWarningsExist(dataValidationErrors);
-
-        return CustomChargeHonorarioMap.builder().id(id) //
+        CustomChargeHonorarioMap map = CustomChargeHonorarioMap.builder()
                 .loanId(loanId) //
                 .loanInstallmentNr(loanInstallmentNr) //
                 .feeTotalAmount(feeTotalAmount) //
@@ -211,6 +210,8 @@ public class CustomChargeHonorarioMapDataValidator {
                 .updatedBy(updatedBy) //
                 .updatedAt(updatedAt) //
                 .build();
+        map.setId(id);
+        return map;
     }
 
     private void throwExceptionIfValidationWarningsExist(final List<ApiParameterError> dataValidationErrors) {

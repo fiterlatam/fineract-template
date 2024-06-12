@@ -1591,4 +1591,8 @@ public enum ChargeCalculationType {
         return this.value.equals(ChargeCalculationType.AMOUNT_FROM_EXTERNAL_CALCULATION.getValue());
     }
 
+    public boolean isFlatHono() {
+        return isFlat() && this.byteRepresentation.charAt(ChargeCalculationTypeBaseItemsEnum.HOORARIOS.getIndex()) == '1';
+    }
+
 }

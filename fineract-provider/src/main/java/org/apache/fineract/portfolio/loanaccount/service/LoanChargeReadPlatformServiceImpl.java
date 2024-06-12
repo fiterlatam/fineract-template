@@ -36,6 +36,7 @@ import org.apache.fineract.infrastructure.core.service.ExternalIdFactory;
 import org.apache.fineract.organisation.monetary.data.CurrencyData;
 import org.apache.fineract.portfolio.charge.data.ChargeData;
 import org.apache.fineract.portfolio.charge.domain.Charge;
+import org.apache.fineract.portfolio.charge.domain.ChargeCalculationType;
 import org.apache.fineract.portfolio.charge.exception.LoanChargeNotFoundException;
 import org.apache.fineract.portfolio.charge.service.ChargeDropdownReadPlatformService;
 import org.apache.fineract.portfolio.charge.service.ChargeEnumerations;
@@ -318,7 +319,8 @@ public class LoanChargeReadPlatformServiceImpl implements LoanChargeReadPlatform
             sb.append(" sum(cp.amount) as amountAccrued, ");
             sb.append(" lc.is_penalty as penalty, ");
             sb.append(" lc.due_for_collection_as_of_date as dueAsOfDate, ");
-            sb.append(" lc.submitted_on_date as submittedOnDate ");
+            sb.append(" lc.submitted_on_date as submittedOnDate, ");
+            sb.append(" lc.charge_calculation_enum as chargeCalculation ");
             sb.append(" from m_loan_charge lc ");
             sb.append(" left join m_charge c ON c.id = lc.charge_id ");
             sb.append(" left join ( ");
@@ -348,6 +350,9 @@ public class LoanChargeReadPlatformServiceImpl implements LoanChargeReadPlatform
             final int chargeTime = rs.getInt("chargeTime");
             final EnumOptionData chargeTimeType = ChargeEnumerations.chargeTimeType(chargeTime);
 
+            final int chargeCalculation = rs.getInt("chargeCalculation");
+            final EnumOptionData chargeCalculationType = ChargeEnumerations.loanChargeCalculationType(chargeCalculation);
+
             final LocalDate dueAsOfDate = JdbcSupport.getLocalDate(rs, "dueAsOfDate");
             final LocalDate submittedOnDate = JdbcSupport.getLocalDate(rs, "submittedOnDate");
             final boolean penalty = rs.getBoolean("penalty");
@@ -356,7 +361,7 @@ public class LoanChargeReadPlatformServiceImpl implements LoanChargeReadPlatform
             final ExternalId externalId = ExternalIdFactory.produce(externalIdStr);
 
             LoanChargeData ret = new LoanChargeData(id, chargeId, dueAsOfDate, submittedOnDate, chargeTimeType, amount, amountAccrued,
-                    amountWaived, penalty, externalId);
+                    amountWaived, penalty, externalId, chargeCalculationType);
 
             ret.setChargeName(chargeName);
 

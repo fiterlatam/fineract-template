@@ -52,6 +52,7 @@ import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformS
 import org.apache.fineract.custom.infrastructure.channel.data.ChannelData;
 import org.apache.fineract.custom.infrastructure.channel.domain.ChannelType;
 import org.apache.fineract.custom.infrastructure.channel.service.ChannelReadWritePlatformService;
+import org.apache.fineract.custom.portfolio.externalcharge.honoratio.domain.CustomChargeHonorarioMap;
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 import org.apache.fineract.infrastructure.codes.domain.CodeValue;
 import org.apache.fineract.infrastructure.codes.domain.CodeValueRepositoryWrapper;
@@ -3167,5 +3168,17 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             return LoanRescheduleData.builder().id(id).annualNominalRate(annualNominalRate).rescheduledAnnualRate(rescheduledAnnualRate)
                     .applicableDate(applicableDate).nextDueDate(nextDueDate).build();
         }
+    }
+
+    public void updateLoanScheduleAfterCustomChargeApplied(Loan loan) {
+        loan.setHelpers(defaultLoanLifecycleStateMachine, this.loanSummaryWrapper, this.transactionProcessingStrategy);
+        for (LoanCharge loanCharge : loan.getCharges()) {
+            if (loanCharge.getChargeCalculation().isFlatHono()) {
+                loanCharge.updateCustomFeeCharge();
+            }
+
+        }
+        loan.updateLoanScheduleAfterCustomChargeApplied();
+        saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
     }
 }
