@@ -21,8 +21,11 @@ package org.apache.fineract.portfolio.charge.service;
 import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.time.MonthDay;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -36,6 +39,7 @@ import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDoma
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
+import org.apache.fineract.infrastructure.core.service.SearchParameters;
 import org.apache.fineract.infrastructure.entityaccess.domain.FineractEntityType;
 import org.apache.fineract.infrastructure.entityaccess.service.FineractEntityAccessUtil;
 import org.apache.fineract.organisation.monetary.data.CurrencyData;
@@ -47,6 +51,9 @@ import org.apache.fineract.portfolio.charge.domain.ChargeTimeType;
 import org.apache.fineract.portfolio.charge.exception.ChargeNotFoundException;
 import org.apache.fineract.portfolio.common.service.CommonEnumerations;
 import org.apache.fineract.portfolio.common.service.DropdownReadPlatformService;
+import org.apache.fineract.portfolio.floatingrates.domain.InterestRateType;
+import org.apache.fineract.portfolio.interestrates.data.InterestRateData;
+import org.apache.fineract.portfolio.interestrates.service.InterestRateReadPlatformServiceImpl;
 import org.apache.fineract.portfolio.paymenttype.data.PaymentTypeData;
 import org.apache.fineract.portfolio.tax.data.TaxGroupData;
 import org.apache.fineract.portfolio.tax.service.TaxReadPlatformService;
@@ -158,7 +165,23 @@ public class ChargeReadPlatformServiceImpl implements ChargeReadPlatformService 
         ret.setChargeFromTableList(customChargeEntityReadWritePlatformServiceImpl.findByIsExternalService(false));
         ret.setChargeFromExternalCalculationList(customChargeEntityReadWritePlatformServiceImpl.findByIsExternalService(true));
 
+        final SearchParameters searchParameters = SearchParameters.builder().active(true)
+                .interestRateTypeId(InterestRateType.OVERDUE.getValue()).build();
+        final List<InterestRateData> interestRateOptions = this.retrieveInterestRates(searchParameters);
+        ret.setInterestRateOptions(interestRateOptions);
         return ret;
+    }
+
+    public List<InterestRateData> retrieveInterestRates(SearchParameters searchParameters) {
+        InterestRateReadPlatformServiceImpl.InterestRateRowMapper interestRateRowMapper = new InterestRateReadPlatformServiceImpl.InterestRateRowMapper();
+        final List<Object> paramList = new ArrayList<>(Collections.singletonList(searchParameters.getActive()));
+        String sql = "SELECT " + interestRateRowMapper.schema() + " WHERE mir.is_active = ? ";
+        final Integer interestRateTypeId = searchParameters.getInterestRateTypeId();
+        if (interestRateTypeId != null) {
+            sql = sql + " AND mir.interest_rate_type_id = ? ";
+            paramList.add(interestRateTypeId);
+        }
+        return this.jdbcTemplate.query(sql, interestRateRowMapper, paramList.toArray());
     }
 
     @Override
@@ -277,24 +300,64 @@ public class ChargeReadPlatformServiceImpl implements ChargeReadPlatformService 
     private static final class ChargeMapper implements RowMapper<ChargeData> {
 
         public String chargeSchema() {
-            return "c.id as id, c.name as name, c.amount as amount, c.currency_code as currencyCode, "
-                    + "c.charge_applies_to_enum as chargeAppliesTo, c.charge_time_enum as chargeTime, "
-                    + "c.charge_payment_mode_enum as chargePaymentMode, "
-                    + "c.charge_calculation_enum as chargeCalculation, c.is_penalty as penalty, "
-                    + "c.is_active as active, c.is_free_withdrawal as isFreeWithdrawal, c.free_withdrawal_charge_frequency as freeWithdrawalChargeFrequency, c.restart_frequency as restartFrequency, c.restart_frequency_enum as restartFrequencyEnum,"
-                    + "oc.name as currencyName, oc.decimal_places as currencyDecimalPlaces, "
-                    + "oc.currency_multiplesof as inMultiplesOf, oc.display_symbol as currencyDisplaySymbol, "
-                    + "oc.internationalized_name_code as currencyNameCode, c.fee_on_day as feeOnDay, c.fee_on_month as feeOnMonth, "
-                    + "c.fee_interval as feeInterval, c.fee_frequency as feeFrequency,c.min_cap as minCap,c.max_cap as maxCap, "
-                    + "c.income_or_liability_account_id as glAccountId , acc.name as glAccountName, acc.gl_code as glCode, "
-                    + "tg.id as taxGroupId, c.is_payment_type as isPaymentType, pt.id as paymentTypeId, pt.value as paymentTypeName, tg.name as taxGroupName, "
-                    + "c,grace_on_charge_period_enum as graceOnChargePeriodEnum, c.grace_on_charge_period_amount as graceOnChargePeriodAmount, "
-                    + "c,parent_charge_id as parentChargeId, "
-                    + "c.insurance_name as insuranceName, c.insurance_charged_as insuranceChargedAs, c.insurance_company as insuranceCompany, c.insurer_name as insurerName, c.insurance_code as insuranceCode, "
-                    + "c.insurance_plan as insurancePlan, c.base_value as baseValue, c.vat_value as vatValue, c.total_value as totalValue, c.deadline as deadLine "
-                    + "from m_charge c " + "join m_organisation_currency oc on c.currency_code = oc.code "
-                    + " LEFT JOIN acc_gl_account acc on acc.id = c.income_or_liability_account_id "
-                    + " LEFT JOIN m_tax_group tg on tg.id = c.tax_group_id " + " LEFT JOIN m_payment_type pt on pt.id = c.payment_type_id ";
+            return """
+                        c.id AS id,
+                        c.name AS name,
+                        c.amount AS amount,
+                        c.currency_code AS "currencyCode",
+                        c.charge_applies_to_enum AS "chargeAppliesTo",
+                        c.charge_time_enum AS "chargeTime",
+                        c.charge_payment_mode_enum AS "chargePaymentMode",
+                        c.charge_calculation_enum AS "chargeCalculation",
+                        c.is_penalty AS penalty,
+                        c.is_active AS active,
+                        c.is_free_withdrawal AS "isFreeWithdrawal",
+                        c.free_withdrawal_charge_frequency AS "freeWithdrawalChargeFrequency",
+                        c.restart_frequency AS "restartFrequency",
+                        c.restart_frequency_enum AS "restartFrequencyEnum",
+                        oc.name AS "currencyName",
+                        oc.decimal_places AS "currencyDecimalPlaces",
+                        oc.currency_multiplesof AS "inMultiplesOf",
+                        oc.display_symbol AS "currencyDisplaySymbol",
+                        oc.internationalized_name_code AS "currencyNameCode",
+                        c.fee_on_day AS "feeOnDay",
+                        c.fee_on_month AS "feeOnMonth",
+                        c.fee_interval AS "feeInterval",
+                        c.fee_frequency AS "feeFrequency",
+                        c.min_cap AS "minCap",
+                        c.max_cap AS "maxCap",
+                        c.income_or_liability_account_id AS "glAccountId" ,
+                        acc.name AS "glAccountName",
+                        acc.gl_code AS "glCode",
+                        tg.id AS "taxGroupId",
+                        c.is_payment_type AS "isPaymentType",
+                        pt.id AS "paymentTypeId",
+                        pt.value AS "paymentTypeName",
+                        tg.name AS "taxGroupName",
+                        grace_on_charge_period_enum AS "graceOnChargePeriodEnum",
+                        c.grace_on_charge_period_amount AS "graceOnChargePeriodAmount",
+                        parent_charge_id AS "parentChargeId",
+                        c.insurance_name AS "insuranceName",
+                        c.insurance_charged_as "insuranceChargedAs",
+                        c.insurance_company AS "insuranceCompany",
+                        c.insurer_name AS "insurerName",
+                        c.insurance_code AS "insuranceCode",
+                        c.insurance_plan AS "insurancePlan",
+                        c.base_value AS "baseValue",
+                        c.vat_value AS "vatValue",
+                        c.total_value AS "totalValue",
+                        c.deadline AS "deadLine",
+                        mir.id  AS "interestRateId",
+                        mir.name AS "interestRateName",
+                        mir.current_rate AS "interestRateCurrentRate",
+                        mir.appliedon_date AS "interestRateAppliedOnDate"
+                    FROM m_charge c
+                    JOIN m_organisation_currency oc ON c.currency_code = oc.code
+                    LEFT JOIN acc_gl_account acc ON acc.id = c.income_or_liability_account_id
+                    LEFT JOIN m_tax_group tg ON tg.id = c.tax_group_id
+                    LEFT JOIN m_payment_type pt ON pt.id = c.payment_type_id
+                    LEFT JOIN m_interest_rate mir ON mir.id = c.interest_rate_id
+                    """;
         }
 
         public String loanProductChargeSchema() {
@@ -412,12 +475,22 @@ public class ChargeReadPlatformServiceImpl implements ChargeReadPlatformService 
                         insurerName, insuranceCode, insurancePlan, baseValue, vatValue, totalValue, deadline, null);
 
             }
+            final ChargeData chargeData = ChargeData.instance(id, name, amount, currency, chargeTimeType, chargeAppliesToType,
+                    chargeCalculationType, chargePaymentMode, feeOnMonthDay, feeInterval, penalty, active, isFreeWithdrawal,
+                    freeWithdrawalChargeFrequency, restartFrequency, restartFrequencyEnum, isPaymentType, paymentTypeData, minCap, maxCap,
+                    feeFrequencyType, glAccountData, taxGroupData, Short.valueOf(String.valueOf(graceOnChargePeriodEnum)),
+                    graceOnChargePeriodAmount, parentChargeId, chargeInsuranceDetailData);
+            final Long interestRateId = JdbcSupport.getLong(rs, "interestRateId");
+            final String interestRateName = rs.getString("interestRateName");
+            final BigDecimal interestRateCurrentRate = rs.getBigDecimal("interestRateCurrentRate");
+            final LocalDate interestRateAppliedOnDate = JdbcSupport.getLocalDate(rs, "interestRateAppliedOnDate");
+            if (interestRateId != null) {
+                final InterestRateData interestRateData = InterestRateData.builder().id(interestRateId)
+                        .appliedOnDate(interestRateAppliedOnDate).currentRate(interestRateCurrentRate).name(interestRateName).build();
+                chargeData.setInterestRate(interestRateData);
+            }
+            return chargeData;
 
-            return ChargeData.instance(id, name, amount, currency, chargeTimeType, chargeAppliesToType, chargeCalculationType,
-                    chargePaymentMode, feeOnMonthDay, feeInterval, penalty, active, isFreeWithdrawal, freeWithdrawalChargeFrequency,
-                    restartFrequency, restartFrequencyEnum, isPaymentType, paymentTypeData, minCap, maxCap, feeFrequencyType, glAccountData,
-                    taxGroupData, Short.valueOf(String.valueOf(graceOnChargePeriodEnum)), graceOnChargePeriodAmount, parentChargeId,
-                    chargeInsuranceDetailData);
         }
     }
 

@@ -97,7 +97,7 @@ public class InterestRateReadPlatformServiceImpl implements InterestRateReadPlat
         return this.jdbcTemplate.query(sql, this.interestRateRowMapper, paramList.toArray());
     }
 
-    private static final class InterestRateRowMapper implements RowMapper<InterestRateData> {
+    public static final class InterestRateRowMapper implements RowMapper<InterestRateData> {
 
         public String schema() {
             return """

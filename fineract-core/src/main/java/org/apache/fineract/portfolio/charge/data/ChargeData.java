@@ -32,6 +32,7 @@ import org.apache.fineract.accounting.glaccount.data.GLAccountData;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.organisation.monetary.data.CurrencyData;
 import org.apache.fineract.portfolio.charge.domain.ChargeTimeType;
+import org.apache.fineract.portfolio.interestrates.data.InterestRateData;
 import org.apache.fineract.portfolio.paymenttype.data.PaymentTypeData;
 import org.apache.fineract.portfolio.tax.data.TaxGroupData;
 
@@ -39,6 +40,7 @@ import org.apache.fineract.portfolio.tax.data.TaxGroupData;
  * Immutable data object for charge data.
  */
 @Getter
+@Setter
 @AllArgsConstructor
 public class ChargeData implements Comparable<ChargeData>, Serializable {
 
@@ -113,6 +115,9 @@ public class ChargeData implements Comparable<ChargeData>, Serializable {
     @Setter
     private List<?> chargeFromExternalCalculationList;
 
+    private InterestRateData interestRate;
+    private List<InterestRateData> interestRateOptions;
+
     public static ChargeData template(final Collection<CurrencyData> currencyOptions,
             final List<EnumOptionData> chargeCalculationTypeOptions, final List<EnumOptionData> chargeAppliesToOptions,
             final List<EnumOptionData> chargeTimeTypeOptions, final List<EnumOptionData> chargePaymentModeOptions,
@@ -152,10 +157,10 @@ public class ChargeData implements Comparable<ChargeData>, Serializable {
         ret.setGraceOnChargePeriodEnum(charge.getGraceOnChargePeriodEnum());
         ret.setGraceOnChargePeriodAmount(charge.getGraceOnChargePeriodAmount());
         ret.setParentChargeId(charge.getParentChargeId());
-
         List<ChargeData> chargeDataList = (List<ChargeData>) template.getChargeDataList();
-
         ret.setChargeDataList(chargeDataList.stream().filter(notId -> notId.id.compareTo(charge.id) != 0).collect(Collectors.toList()));
+        ret.setInterestRateOptions(template.getInterestRateOptions());
+        ret.setInterestRate(charge.getInterestRate());
 
         return ret;
     }

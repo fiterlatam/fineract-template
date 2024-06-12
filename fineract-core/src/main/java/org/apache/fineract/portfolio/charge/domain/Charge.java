@@ -27,6 +27,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import lombok.Getter;
+import lombok.Setter;
 import org.apache.fineract.accounting.glaccount.data.GLAccountData;
 import org.apache.fineract.accounting.glaccount.domain.GLAccount;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
@@ -46,6 +48,7 @@ import org.apache.fineract.portfolio.charge.exception.ChargeMustBePenaltyExcepti
 import org.apache.fineract.portfolio.charge.exception.ChargeParameterUpdateNotSupportedException;
 import org.apache.fineract.portfolio.charge.service.ChargeEnumerations;
 import org.apache.fineract.portfolio.common.domain.PeriodFrequencyType;
+import org.apache.fineract.portfolio.interestrates.domain.InterestRate;
 import org.apache.fineract.portfolio.paymenttype.data.PaymentTypeData;
 import org.apache.fineract.portfolio.paymenttype.domain.PaymentType;
 import org.apache.fineract.portfolio.tax.data.TaxGroupData;
@@ -138,6 +141,12 @@ public class Charge extends AbstractPersistableCustom {
     @ManyToOne
     @JoinColumn(name = "tax_group_id")
     private TaxGroup taxGroup;
+
+    @Setter
+    @Getter
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "interest_rate_id")
+    private InterestRate interestRate;
 
     @Embedded
     private ChargeInsuranceDetail chargeInsuranceDetail;
@@ -434,6 +443,14 @@ public class Charge extends AbstractPersistableCustom {
         return paymentTypeId;
     }
 
+    private Long getInterestRateId() {
+        Long interestRateId = null;
+        if (this.interestRate != null) {
+            interestRateId = this.interestRate.getId();
+        }
+        return interestRateId;
+    }
+
     public Map<String, Object> update(final JsonCommand command) {
         final Map<String, Object> actualChanges = new LinkedHashMap<>(7);
 
@@ -538,6 +555,12 @@ public class Charge extends AbstractPersistableCustom {
         if (command.isChangeInLongParameterNamed(paymentTypeParamName, getPaymentTypeId())) {
             final Long newValue = command.longValueOfParameterNamed(paymentTypeParamName);
             actualChanges.put(paymentTypeParamName, newValue);
+        }
+
+        final String interestRateParamName = "interestRateId";
+        if (command.isChangeInLongParameterNamed(interestRateParamName, getInterestRateId())) {
+            final Long newValue = command.longValueOfParameterNamed(interestRateParamName);
+            actualChanges.put(interestRateParamName, newValue);
         }
 
         final String chargeAppliesToParamName = "chargeAppliesTo";
@@ -884,4 +907,5 @@ public class Charge extends AbstractPersistableCustom {
                     chargeCalculationType.isVoluntaryInsurance());
         }
     }
+
 }
