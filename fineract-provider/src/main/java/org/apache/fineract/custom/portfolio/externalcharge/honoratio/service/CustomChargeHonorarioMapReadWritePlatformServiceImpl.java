@@ -20,10 +20,7 @@ package org.apache.fineract.custom.portfolio.externalcharge.honoratio.service;
 
 import jakarta.persistence.PersistenceException;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.fineract.custom.infrastructure.dataqueries.domain.ClientAdditionalInformationRepository;
@@ -45,13 +42,18 @@ import org.apache.fineract.infrastructure.core.exception.PlatformDataIntegrityEx
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.core.service.database.DatabaseSpecificSQLGenerator;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
+import org.apache.fineract.portfolio.charge.domain.ChargeCalculationType;
 import org.apache.fineract.portfolio.client.domain.ClientRepository;
 import org.apache.fineract.portfolio.loanaccount.data.LoanChargeData;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
+import org.apache.fineract.portfolio.loanaccount.domain.LoanCharge;
+import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleInstallment;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepository;
 import org.apache.fineract.portfolio.loanaccount.exception.InstallmentNotFoundException;
 import org.apache.fineract.portfolio.loanaccount.exception.LoanNotFoundException;
 import org.apache.fineract.portfolio.loanaccount.service.LoanChargeReadPlatformService;
+import org.apache.fineract.portfolio.loanaccount.service.LoanUtilService;
+import org.apache.fineract.portfolio.loanaccount.service.LoanWritePlatformServiceJpaRepositoryImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -79,6 +81,8 @@ public class CustomChargeHonorarioMapReadWritePlatformServiceImpl implements Cus
     private final ClientAdditionalInformationRepository camposClienteEmpresaRepository;
 
     private final LoanChargeReadPlatformService loanChargeReadPlatformService;
+    private final LoanUtilService loanUtilService;
+    private final LoanWritePlatformServiceJpaRepositoryImpl loanWritePlatformService;
 
     @Autowired
     public CustomChargeHonorarioMapReadWritePlatformServiceImpl(final JdbcTemplate jdbcTemplate,
@@ -87,7 +91,8 @@ public class CustomChargeHonorarioMapReadWritePlatformServiceImpl implements Cus
             final ClientAllyRepository clientAllyRepository,
             final IndividualAdditionalInformationRepository individualAdditionalInformationRepository,
             final ClientAdditionalInformationRepository camposClienteEmpresaRepository,
-            final LoanChargeReadPlatformService loanChargeReadPlatformService) {
+            final LoanChargeReadPlatformService loanChargeReadPlatformService, final LoanUtilService loanUtilService,
+            final LoanWritePlatformServiceJpaRepositoryImpl loanWritePlatformService) {
         this.jdbcTemplate = jdbcTemplate;
         this.sqlGenerator = sqlGenerator;
         this.validatorClass = validatorClass;
@@ -98,6 +103,8 @@ public class CustomChargeHonorarioMapReadWritePlatformServiceImpl implements Cus
         this.individualAdditionalInformationRepository = individualAdditionalInformationRepository;
         this.camposClienteEmpresaRepository = camposClienteEmpresaRepository;
         this.loanChargeReadPlatformService = loanChargeReadPlatformService;
+        this.loanUtilService = loanUtilService;
+        this.loanWritePlatformService = loanWritePlatformService;
     }
 
     @Autowired
@@ -130,18 +137,23 @@ public class CustomChargeHonorarioMapReadWritePlatformServiceImpl implements Cus
     }
 
     @Transactional
-    private CommandProcessingResult create(final ExternalCustomChargeHonorarioMapData dto) {
+    public CommandProcessingResult create(final ExternalCustomChargeHonorarioMapData dto, Long chargeId) {
 
         try {
             this.context.authenticatedUser();
 
-            final CustomChargeHonorarioMap entity = this.validatorClass.validateForCreate(dto);
-
+            CustomChargeHonorarioMap entity = this.validatorClass.validateForCreate(dto);
+            // Check if the entity already exists
+            Optional<CustomChargeHonorarioMap> entityOpt = repository.findByNitLoanIdLoanInstallmentNr(entity.getNit(), entity.getLoanId(),
+                    entity.getLoanInstallmentNr());
             // Validate Loan
             Long loanId = 0L;
+            Loan curr = null;
+            CustomChargeHonorarioMap current = null;
+            boolean insallmentAlreadyPaid = false;
             Optional<Loan> loan = loanRepository.findById(entity.getLoanId());
             if (loan.isPresent()) {
-                Loan curr = loan.get();
+                curr = loan.get();
                 loanId = curr.getId();
 
                 entity.setLoanId(curr.getId());
@@ -150,43 +162,75 @@ public class CustomChargeHonorarioMapReadWritePlatformServiceImpl implements Cus
                 // Validate Installment
                 if (curr.getLoanRepaymentScheduleInstallmentsSize().compareTo(entity.getLoanInstallmentNr()) < 0) {
                     throw new InstallmentNotFoundException(entity.getLoanInstallmentNr().longValue());
+                } else {
+                    List<LoanRepaymentScheduleInstallment> installments = curr.getRepaymentScheduleInstallments().stream()
+                            .sorted(Comparator.comparingInt(LoanRepaymentScheduleInstallment::getInstallmentNumber)).toList();
+                    for (LoanRepaymentScheduleInstallment inst : installments) {
+                        if (inst.getInstallmentNumber().equals(entity.getLoanInstallmentNr())) {
+                            if (inst.isObligationsMet()) {
+                                // Cannot throw exception here as it will rollback everything including any new fee rows
+                                // throw new LoanInstallmentAlreadyPaidException(loanId, inst.getInstallmentNumber());
+                                insallmentAlreadyPaid = true;
+                                break;
+                            }
+
+                        }
+                    }
                 }
 
             } else {
                 throw new LoanNotFoundException(loanId);
             }
-
-            // Check if the entity already exists
-            Optional<CustomChargeHonorarioMap> entityOpt = repository.findByNitLoanIdLoanInstallmentNr(entity.getNit(), entity.getLoanId(),
-                    entity.getLoanInstallmentNr());
-
-            // If yes, update disabled, updated and changed fields AND insert a new one with the new data
-            if (entityOpt.isPresent()) {
-                CustomChargeHonorarioMap current = entityOpt.get();
-
-                // Just save in case of any changes, in order to the db´s table not become too big
-                if (current.getFeeTotalAmount().compareTo(entity.getFeeTotalAmount()) != 0
-                        || current.getFeeBaseAmount().compareTo(entity.getFeeBaseAmount()) != 0
-                        || current.getFeeVatAmount().compareTo(entity.getFeeVatAmount()) != 0) {
-
+            Long id = null;
+            if (!insallmentAlreadyPaid) {
+                if (entityOpt.isPresent()) {
+                    current = entityOpt.get();
+                    current.setFeeBaseAmount(entity.getFeeBaseAmount());
+                    current.setFeeTotalAmount(entity.getFeeTotalAmount());
+                    current.setFeeVatAmount(entity.getFeeVatAmount());
                     current.setUpdatedBy(context.authenticatedUser().getId());
                     current.setUpdatedAt(DateUtils.getLocalDateTimeOfTenant());
-
-                    current.setDisabledBy(context.authenticatedUser().getId());
-                    current.setDisabledAt(DateUtils.getLocalDateTimeOfTenant());
-
-                    repository.save(current);
-
+                    current.setLoanChargeId(chargeId);
+                    current = repository.save(current);
+                    id = current.getId();
                 } else {
-                    entity.setId(current.getId());
-                    entity.setUpdatedBy(context.authenticatedUser().getId());
-                    entity.setUpdatedAt(DateUtils.getLocalDateTimeOfTenant());
+                    entity.setLoanChargeId(chargeId);
+                    entity = repository.saveAndFlush(entity);
+                    id = entity.getId();
+                }
+
+                if (curr != null) {
+                    Optional<Loan> optionalLoan = this.loanRepository.findById(curr.getId());
+                    List<CustomChargeHonorarioMap> removeList = new ArrayList<>();
+                    if (optionalLoan.isPresent()) {
+                        Loan loanToUpdate = optionalLoan.get();
+                        for (LoanCharge loanCharge : loanToUpdate.getCharges()) {
+                            if (loanCharge.getChargeCalculation().isFlatHono()) {
+                                Set<CustomChargeHonorarioMap> maps = loanCharge.getCustomChargeHonorarioMaps();
+                                for (CustomChargeHonorarioMap map : maps) {
+                                    if (entityOpt.isPresent()) {
+                                        if (map.getLoanInstallmentNr().equals(current.getLoanInstallmentNr())) {
+                                            removeList.add(map);
+                                            break;
+                                        }
+                                    }
+                                }
+                                removeList.forEach(maps::remove);
+                                if (current != null) {
+                                    maps.add(current);
+                                } else {
+                                    maps.add(entity);
+                                }
+
+                            }
+                        }
+                        this.loanWritePlatformService.updateLoanScheduleAfterCustomChargeApplied(loanToUpdate);
+                    }
+
                 }
             }
 
-            repository.saveAndFlush(entity);
-
-            return new CommandProcessingResultBuilder().withEntityId(entity.getId()).build();
+            return new CommandProcessingResultBuilder().withEntityId(id).build();
         } catch (final JpaSystemException | DataIntegrityViolationException dve) {
             handleDataIntegrityIssues(dve.getMostSpecificCause(), dve);
             return CommandProcessingResult.empty();
@@ -264,11 +308,26 @@ public class CustomChargeHonorarioMapReadWritePlatformServiceImpl implements Cus
             // TODO - Filter loans that HAVE custom charge honorario instead all charges
             // Later, after understanding their charges, we have to go back here and find by Calculation Type instead
             Long rowsFound = chargesList.stream().count();
+            Long chargeId = null;
+            boolean chargeFound = false;
             if (0l == rowsFound) {
+                return exceptions;
+            } else {
+                for (LoanChargeData chargeData : chargesList) {
+                    ChargeCalculationType type = ChargeCalculationType.fromInt(chargeData.getChargeCalculationType().getId().intValue());
+                    if (type.isFlatHono()) {
+                        chargeId = chargeData.getId();
+                        chargeFound = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!chargeFound) {
                 return exceptions;
             }
 
-            persistNewRates(exceptions, loanId);
+            persistNewRates(exceptions, loanId, chargeId);
 
         } else {
             return exceptions;
@@ -277,7 +336,7 @@ public class CustomChargeHonorarioMapReadWritePlatformServiceImpl implements Cus
         return exceptions;
     }
 
-    private void persistNewRates(List<Throwable> exceptions, Long loanId) {
+    private void persistNewRates(List<Throwable> exceptions, Long loanId, Long chargeId) {
         List<ExternalCustomChargeHonorarioMapData> honorarioToPersistList = new ArrayList<>();
 
         try {
@@ -287,7 +346,7 @@ public class CustomChargeHonorarioMapReadWritePlatformServiceImpl implements Cus
             for (ExternalCustomChargeHonorarioMapData currentMap : honorarioToPersistList) {
 
                 try {
-                    create(currentMap);
+                    create(currentMap, chargeId);
 
                 } catch (Exception e) {
                     log.error("Apply Charges due for overdue loans failed for account {}", currentMap.getLoanId(), e);

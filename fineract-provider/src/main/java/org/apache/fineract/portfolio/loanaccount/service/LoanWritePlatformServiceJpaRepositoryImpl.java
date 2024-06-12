@@ -3168,4 +3168,16 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                     .applicableDate(applicableDate).nextDueDate(nextDueDate).build();
         }
     }
+
+    public void updateLoanScheduleAfterCustomChargeApplied(Loan loan) {
+        loan.setHelpers(defaultLoanLifecycleStateMachine, this.loanSummaryWrapper, this.transactionProcessingStrategy);
+        for (LoanCharge loanCharge : loan.getCharges()) {
+            if (loanCharge.getChargeCalculation().isFlatHono()) {
+                loanCharge.updateCustomFeeCharge();
+            }
+
+        }
+        loan.updateLoanScheduleAfterCustomChargeApplied();
+        saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
+    }
 }
