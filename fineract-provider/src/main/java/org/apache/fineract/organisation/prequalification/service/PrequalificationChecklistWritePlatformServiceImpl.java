@@ -108,8 +108,9 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
         if (attachedGroup <= 0 && prequalificationGroup.getPrequalificationType().equals(PrequalificationType.GROUP.getValue()))
             throw new PrequalificationNotMappedException(prequalificationGroup.getPrequalificationNumber());
 
-        List<ClientData> clientDatas = this.jdbcTemplate.query(clientDataMapper.schema(), clientDataMapper, prequalificationId);
         final Long productId = prequalificationGroup.getLoanProduct().getId();
+        List<ClientData> clientDatas = this.jdbcTemplate.query(clientDataMapper.schema(), clientDataMapper, productId, productId,
+                prequalificationId);
         final Integer noOfMembers = prequalificationGroup.getMembers().size();
         final BigDecimal totalAmountRequested = prequalificationGroup.getMembers().stream()
                 .map(PrequalificationGroupMember::getRequestedAmount).reduce(BigDecimal.ONE, BigDecimal::add);
@@ -256,7 +257,15 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
                     SELECT mc.id AS clientId,mc.loan_cycle as loanCycle, mpgm.id AS prequalificationMemberId, IFNULL(mc.display_name,mpgm.name) AS name, mpg.id AS prequalificationId,\s
                     mpgm.requested_amount AS requestedAmount, IFNULL(mc.date_of_birth, mpgm.dob) AS dateOfBirth, IFNULL(mc.dpi, mpgm.dpi) AS dpi,
                     mpgm.work_with_puente AS workWithPuente, mcv.code_value As gender, mpgm.is_president AS president, mpgm.buro_check_status as buroCheckStatus, mpgm.agency_bureau_status as agencyBuroStatus,
-                    ml.is_topup AS isTopup, ml.id AS loanId, areacv.code_value as clientArea
+                    ml.is_topup AS isTopup, ml.id AS loanId,
+                    CASE WHEN (? NOT IN (3,7,4,5)) AND (COALESCE(mc.loan_cycle, 0) >= 3) THEN 'RECURRING'
+                    WHEN (? IN (4,5)) AND (COALESCE(mc.loan_cycle, 0) >= 1) THEN 'RECURRING'
+                    ELSE 'NEW' END as clientCategorization,
+                    CASE WHEN areacv.code_value = 'Urbana' THEN 'URBANA'
+                    WHEN areacv.code_value = 'Rural' THEN 'RURAL'
+                    WHEN areacv.code_value = 'PeriUrbana' THEN 'PERI_URBANA'
+                    ELSE 'RURAL'
+                    END AS clientArea
                     FROM m_prequalification_group_members mpgm
                     LEFT JOIN m_client mc ON mc.dpi = mpgm.dpi
                     LEFT JOIN m_client_contact_info cinf ON cinf.client_id = mc.id
@@ -284,11 +293,13 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
             final BigDecimal requestedAmount = rs.getBigDecimal("requestedAmount");
             final String workWithPuente = rs.getString("workWithPuente");
             final String gender = rs.getString("gender");
-            final String clientArea = StringUtils.equalsIgnoreCase(rs.getString("clientArea"), "Rural") ? "RURAL" : "URBAN";
+            final String clientArea = rs.getString("clientArea");
+            final String clientCategorization = rs.getString("clientCategorization");
             return ClientData.builder().clientId(clientId).prequalificationId(prequalificationId).clientArea(clientArea)
-                    .prequalificationMemberId(prequalificationMemberId).name(name).dateOfBirth(dateOfBirth).dpi(dpi)
-                    .requestedAmount(requestedAmount).gender(gender).workWithPuente(workWithPuente).president(president)
-                    .buroCheckStatus(buroCheckStatus).agencyBuroStatus(agencyBuroStatus).isLoanTopup(isTopup).loanCycle(loanCycle).build();
+                    .clientCategorization(clientCategorization).prequalificationMemberId(prequalificationMemberId).name(name)
+                    .dateOfBirth(dateOfBirth).dpi(dpi).requestedAmount(requestedAmount).gender(gender).workWithPuente(workWithPuente)
+                    .president(president).buroCheckStatus(buroCheckStatus).agencyBuroStatus(agencyBuroStatus).isLoanTopup(isTopup)
+                    .loanCycle(loanCycle).build();
         }
     }
 
@@ -511,12 +522,19 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
         String clientArea = "RURAL";
         String clientCategorization = "NEW";
         String recreditCategorization = "NUEVO";
-        if (!CollectionUtils.isEmpty(groupData.getMembers())) {
-            final ClientData clientData = groupData.getMembers().get(0);
+        Long recurringNumber = 0L;
+        List<ClientData> members = groupData.getMembers();
+        if (!CollectionUtils.isEmpty(members)) {
+            final ClientData clientData = members.get(0);
             final ClientData params = retrieveClientParams(clientData.getClientId(), clientData.getProductId());
             clientArea = params.getClientArea();
             recreditCategorization = params.getRecreditCategorization();
             clientCategorization = params.getClientCategorization();
+        }
+        for (ClientData member : members) {
+            if (StringUtils.equalsIgnoreCase("RECURRING", member.getClientCategorization())) {
+                recurringNumber++;
+            }
         }
         final String prequalificationId = String.valueOf(groupData.getId());
         final String reportName = Policies.SIX.getName() + " Policy Check";
@@ -524,13 +542,13 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
         final String numberOfMembers = String.valueOf(groupData.getNumberOfMembers());
         final String numberOfTopupMembers = String.valueOf(groupData.getTopupMembers().size());
         final String numberOfRecurringMembers = String.valueOf(getRecurringMembers(Long.getLong(prequalificationId)));
-        BigDecimal recreditPercent = BigDecimal.valueOf((groupData.getTopupMembers().size() / groupData.getMembers().size()) * 100L);
+        BigDecimal recreditPercent = BigDecimal.valueOf((recurringNumber / members.size()) * 100L);
         final Map<String, String> reportParams = new HashMap<>();
         reportParams.put("${prequalificationId}", prequalificationId);
         reportParams.put("${loanProductId}", productId);
         reportParams.put("${clientCategorization}", clientCategorization);
         reportParams.put("${clientArea}", clientArea);
-        reportParams.put("${categorization}", groupData.getTopupMembers().size() > 0 ? "NUEVO" : "RECREDITO");
+        reportParams.put("${categorization}", groupData.getTopupMembers().size() > 0 ? "RECREDITO" : "NUEVO");
         reportParams.put("${numberOfMembers}", numberOfMembers);
         reportParams.put("${numberOfRecurringMembers}", numberOfRecurringMembers);
         reportParams.put("${recreditPercent}", recreditPercent.toPlainString());
