@@ -363,4 +363,17 @@
                                  validate="true"/>
     </changeSet>
 
+    <changeSet author="fineract" id="20">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_loan" columnName="grace_on_charges_periods"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_loan">
+            <column defaultValueComputed="NULL" name="grace_on_charges_periods" type="INT">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
 </databaseChangeLog>
