@@ -109,7 +109,8 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
             throw new PrequalificationNotMappedException(prequalificationGroup.getPrequalificationNumber());
 
         final Long productId = prequalificationGroup.getLoanProduct().getId();
-        List<ClientData> clientDatas = this.jdbcTemplate.query(clientDataMapper.schema(), clientDataMapper, productId, productId, prequalificationId);
+        List<ClientData> clientDatas = this.jdbcTemplate.query(clientDataMapper.schema(), clientDataMapper, productId, productId,
+                prequalificationId);
         final Integer noOfMembers = prequalificationGroup.getMembers().size();
         final BigDecimal totalAmountRequested = prequalificationGroup.getMembers().stream()
                 .map(PrequalificationGroupMember::getRequestedAmount).reduce(BigDecimal.ONE, BigDecimal::add);
@@ -259,7 +260,7 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
                     ml.is_topup AS isTopup, ml.id AS loanId,
                     CASE WHEN (? NOT IN (3,7,4,5)) AND (COALESCE(mc.loan_cycle, 0) >= 3) THEN 'RECURRING'
                     WHEN (? IN (4,5)) AND (COALESCE(mc.loan_cycle, 0) >= 1) THEN 'RECURRING'
-                    ELSE 'NEW' END as clientCategorization, 
+                    ELSE 'NEW' END as clientCategorization,
                     CASE WHEN areacv.code_value = 'Urbana' THEN 'URBANA'
                     WHEN areacv.code_value = 'Rural' THEN 'RURAL'
                     WHEN areacv.code_value = 'PeriUrbana' THEN 'PERI_URBANA'
@@ -294,10 +295,11 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
             final String gender = rs.getString("gender");
             final String clientArea = rs.getString("clientArea");
             final String clientCategorization = rs.getString("clientCategorization");
-            return ClientData.builder().clientId(clientId).prequalificationId(prequalificationId).clientArea(clientArea).clientCategorization(clientCategorization)
-                    .prequalificationMemberId(prequalificationMemberId).name(name).dateOfBirth(dateOfBirth).dpi(dpi)
-                    .requestedAmount(requestedAmount).gender(gender).workWithPuente(workWithPuente).president(president)
-                    .buroCheckStatus(buroCheckStatus).agencyBuroStatus(agencyBuroStatus).isLoanTopup(isTopup).loanCycle(loanCycle).build();
+            return ClientData.builder().clientId(clientId).prequalificationId(prequalificationId).clientArea(clientArea)
+                    .clientCategorization(clientCategorization).prequalificationMemberId(prequalificationMemberId).name(name)
+                    .dateOfBirth(dateOfBirth).dpi(dpi).requestedAmount(requestedAmount).gender(gender).workWithPuente(workWithPuente)
+                    .president(president).buroCheckStatus(buroCheckStatus).agencyBuroStatus(agencyBuroStatus).isLoanTopup(isTopup)
+                    .loanCycle(loanCycle).build();
         }
     }
 
@@ -529,8 +531,8 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
             recreditCategorization = params.getRecreditCategorization();
             clientCategorization = params.getClientCategorization();
         }
-        for (ClientData member:members){
-            if (StringUtils.equalsIgnoreCase("RECURRING", member.getClientCategorization())){
+        for (ClientData member : members) {
+            if (StringUtils.equalsIgnoreCase("RECURRING", member.getClientCategorization())) {
                 recurringNumber++;
             }
         }

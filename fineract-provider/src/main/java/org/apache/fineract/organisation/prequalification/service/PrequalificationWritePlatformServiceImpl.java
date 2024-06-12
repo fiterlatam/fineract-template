@@ -547,7 +547,8 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         if (changes.containsKey(PrequalificatoinApiConstants.approvedAmountParamName)) {
             final BigDecimal newValue = command.bigDecimalValueOfParameterNamed(PrequalificatoinApiConstants.approvedAmountParamName);
             if (newValue.compareTo(member.getOriginalAmount()) > 0) {
-                throw new ApprovedAmountGreaterThanRequestedException(member.getDpi(), member.getName(), newValue, member.getRequestedAmount());
+                throw new ApprovedAmountGreaterThanRequestedException(member.getDpi(), member.getName(), newValue,
+                        member.getRequestedAmount());
             }
             member.updateApprovedAmount(newValue);
         }
@@ -607,7 +608,8 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             final BigDecimal newValue = command
                     .bigDecimalValueOfParameterNamed(PrequalificatoinApiConstants.memberRequestedAmountParamName);
             if (newValue.compareTo(member.getOriginalAmount()) > 0) {
-                throw new RequestedAmountGreaterThanOriginalException(member.getDpi(), member.getName(), newValue, member.getOriginalAmount());
+                throw new RequestedAmountGreaterThanOriginalException(member.getDpi(), member.getName(), newValue,
+                        member.getOriginalAmount());
             }
             member.updateAmountRequested(newValue);
             member.updateApprovedAmount(newValue);
@@ -1049,6 +1051,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                     ml.is_topup AS isTopup,
                     mpg.id AS prequalificationId,
                     mg.id AS groupId,
+                    mcv.code_description AS loanCycleCompleted,
                     ml.principal_amount AS principalAmount
                     FROM m_prequalification_group mpg
                     INNER JOIN m_prequalification_group_members mpgm ON mpgm.group_id = mpg.id
@@ -1057,6 +1060,8 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                     INNER JOIN m_group mg ON mg.id = mgc.group_id
                     INNER JOIN m_client mc ON (mgc.client_id = mc.id AND mpgm.dpi = mc.dpi)
                     INNER JOIN m_loan ml ON (ml.client_id = mc.id OR ml.group_id = mg.id)
+                    LEFT JOIN m_loan_additionals_group mlad ON mlad.loan_id = ml.id
+                    LEFT JOIN m_code_value mcv ON mcv.id = mlad.loan_cycle_completed
                     WHERE mpg.id = ? AND mpg.prequalification_type_enum = 2 AND (ml.client_id = (SELECT mt.id FROM m_client mt WHERE mt.dpi = ?))
                     AND ml.loan_status_id = 100 AND ml.prequalification_id = ?
                     GROUP BY ml.id
@@ -1073,10 +1078,11 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             final Long clientId = JdbcSupport.getLong(rs, "clientId");
             final Long prequalificationId = JdbcSupport.getLong(rs, "prequalificationId");
             final Boolean isTopup = rs.getBoolean("isTopup");
+            final String loanCycleCompleted = rs.getString("loanCycleCompleted");
             final Long groupId = JdbcSupport.getLong(rs, "groupId");
             final BigDecimal principalAmount = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "principalAmount");
             return LoanData.builder().loanId(loanId).clientId(clientId).prequalificationId(prequalificationId).groupId(groupId)
-                    .principalAmount(principalAmount).isTopup(isTopup).build();
+                    .principalAmount(principalAmount).isTopup(isTopup).loanCycleCompleted(loanCycleCompleted).build();
 
         }
     }

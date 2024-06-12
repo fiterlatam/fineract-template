@@ -118,7 +118,7 @@ public class BureauValidationWritePlatformServiceImpl implements BureauValidatio
             if (buroData.getClassification() != null) {
                 EnumOptionData enumOptionData = buroData.getClassification();
                 member.updateBuroCheckStatus(enumOptionData.getId().intValue());
-                if (StringUtils.isBlank(member.getAgencyBureauStatus())){
+                if (StringUtils.isBlank(member.getAgencyBureauStatus())) {
                     member.updateAgencyBureauStatus(enumOptionData.getCode());
                 }
             }
@@ -298,7 +298,8 @@ public class BureauValidationWritePlatformServiceImpl implements BureauValidatio
         final String producto = this.fromApiJsonHelper.extractStringNamed("producto", jsonElement);
         loanAdditionalData.setProducto(producto);
 
-        final LocalDate fechaSolicitud = this.fromApiJsonHelper.extractLocalDateNamed("Fecha_Solicitud", jsonElement, dateFormat, dateLocale);
+        final LocalDate fechaSolicitud = this.fromApiJsonHelper.extractLocalDateNamed("Fecha_Solicitud", jsonElement, dateFormat,
+                dateLocale);
         loanAdditionalData.setFechaSolicitud(fechaSolicitud);
 
         final String codigoCliente = this.fromApiJsonHelper.extractStringNamed("codigo_cliente", jsonElement);

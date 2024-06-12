@@ -79,7 +79,8 @@ public final class JournalEntryCommandFromApiJsonDeserializer extends AbstractFr
         final Locale locale = this.fromApiJsonHelper.extractLocaleParameter(topLevelJsonElement);
         Locale amountLocale = this.fromApiJsonHelper.extractLocaleParameter(topLevelJsonElement);
 
-        GlobalConfigurationProperty maintainAmountFormatToEN = this.globalConfigurationRepository.findOneByNameWithNotFoundDetection("maintainAmountFormatToEN");
+        GlobalConfigurationProperty maintainAmountFormatToEN = this.globalConfigurationRepository
+                .findOneByNameWithNotFoundDetection("maintainAmountFormatToEN");
         if (maintainAmountFormatToEN.isEnabled()) {
             amountLocale = JsonParserHelper.localeFromString("en");
         }
@@ -128,7 +129,8 @@ public final class JournalEntryCommandFromApiJsonDeserializer extends AbstractFr
             final Long glAccountId = this.fromApiJsonHelper.extractLongNamed("glAccountId", creditElement);
             final String comments = this.fromApiJsonHelper.extractStringNamed("comments", creditElement);
 
-            GlobalConfigurationProperty maintainAmountFormatToEN = this.globalConfigurationRepository.findOneByNameWithNotFoundDetection("maintainAmountFormatToEN");
+            GlobalConfigurationProperty maintainAmountFormatToEN = this.globalConfigurationRepository
+                    .findOneByNameWithNotFoundDetection("maintainAmountFormatToEN");
             if (maintainAmountFormatToEN.isEnabled()) {
                 locale = JsonParserHelper.localeFromString("en");
             }
