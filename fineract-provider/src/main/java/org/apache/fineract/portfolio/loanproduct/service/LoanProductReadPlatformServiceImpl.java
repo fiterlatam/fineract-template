@@ -596,8 +596,8 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
             loanProductData.setOverdueAmountForArrearsConsideration(overdueAmountForArrears);
             loanProductData.setExtendTermForMonthlyRepayments(extendTermForMonthlyRepayments);
             loanProductData.setProductType(productType);
-            loanProductData.setAdvance(requirePoints);
-            loanProductData.setRequirePoints(advance);
+            loanProductData.setAdvance(advance);
+            loanProductData.setRequirePoints(requirePoints);
             loanProductData.setCustomAllowCreateOrDisburse(customAllowCreateOrDisburse);
             loanProductData.setCustomAllowCollections(customAllowCollections);
             loanProductData.setCustomAllowDebitNote(customAllowDebitNote);

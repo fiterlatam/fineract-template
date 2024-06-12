@@ -41,6 +41,7 @@ import org.apache.fineract.infrastructure.entityaccess.service.FineractEntityAcc
 import org.apache.fineract.organisation.monetary.data.CurrencyData;
 import org.apache.fineract.organisation.monetary.service.CurrencyReadPlatformService;
 import org.apache.fineract.portfolio.charge.data.ChargeData;
+import org.apache.fineract.portfolio.charge.data.ChargeInsuranceDetailData;
 import org.apache.fineract.portfolio.charge.domain.ChargeAppliesTo;
 import org.apache.fineract.portfolio.charge.domain.ChargeTimeType;
 import org.apache.fineract.portfolio.charge.exception.ChargeNotFoundException;
@@ -143,13 +144,14 @@ public class ChargeReadPlatformServiceImpl implements ChargeReadPlatformService 
         final String accountMappingForChargeConfig = this.configurationDomainServiceJpa.getAccountMappingForCharge();
         final List<GLAccountData> expenseAccountOptions = this.accountingDropdownReadPlatformService.retrieveExpenseAccountOptions();
         final List<GLAccountData> assetAccountOptions = this.accountingDropdownReadPlatformService.retrieveAssetAccountOptions();
-
+        final List<EnumOptionData> chargeInsuranceTypeOptions = this.chargeDropdownReadPlatformService.retrieveChargeInsuranceTypeOptions();
+        final ChargeInsuranceDetailData chargeInsuranceDetailData = null;
         ChargeData ret = ChargeData.template(currencyOptions, allowedChargeCalculationTypeOptions, allowedChargeAppliesToOptions,
                 allowedChargeTimeOptions, chargePaymentOptions, loansChargeCalculationTypeOptions, loansChargeTimeTypeOptions,
                 savingsChargeCalculationTypeOptions, savingsChargeTimeTypeOptions, clientChargeCalculationTypeOptions,
                 clientChargeTimeTypeOptions, feeFrequencyOptions, incomeOrLiabilityAccountOptions, taxGroupOptions,
                 shareChargeCalculationTypeOptions, shareChargeTimeTypeOptions, accountMappingForChargeConfig, expenseAccountOptions,
-                assetAccountOptions);
+                assetAccountOptions, chargeInsuranceTypeOptions);
 
         ret.setChargeDataList((List<?>) this.retrieveAllCharges().stream().sorted(Comparator.comparing(ChargeData::getName))
                 .collect(Collectors.toList()));
@@ -212,7 +214,7 @@ public class ChargeReadPlatformServiceImpl implements ChargeReadPlatformService 
     /**
      * @param excludeChargeTimes
      * @param excludeClause
-     * @param params
+     * @param
      * @return
      */
     private void processChargeExclusionsForLoans(ChargeTimeType[] excludeChargeTimes, StringBuilder excludeClause) {
@@ -287,8 +289,10 @@ public class ChargeReadPlatformServiceImpl implements ChargeReadPlatformService 
                     + "c.income_or_liability_account_id as glAccountId , acc.name as glAccountName, acc.gl_code as glCode, "
                     + "tg.id as taxGroupId, c.is_payment_type as isPaymentType, pt.id as paymentTypeId, pt.value as paymentTypeName, tg.name as taxGroupName, "
                     + "c,grace_on_charge_period_enum as graceOnChargePeriodEnum, c.grace_on_charge_period_amount as graceOnChargePeriodAmount, "
-                    + "c,parent_charge_id as parentChargeId " + "from m_charge c "
-                    + "join m_organisation_currency oc on c.currency_code = oc.code "
+                    + "c,parent_charge_id as parentChargeId, "
+                    + "c.insurance_name as insuranceName, c.insurance_charged_as insuranceChargedAs, c.insurance_company as insuranceCompany, c.insurer_name as insurerName, c.insurance_code as insuranceCode, "
+                    + "c.insurance_plan as insurancePlan, c.base_value as baseValue, c.vat_value as vatValue, c.total_value as totalValue, c.deadline as deadLine "
+                    + "from m_charge c " + "join m_organisation_currency oc on c.currency_code = oc.code "
                     + " LEFT JOIN acc_gl_account acc on acc.id = c.income_or_liability_account_id "
                     + " LEFT JOIN m_tax_group tg on tg.id = c.tax_group_id " + " LEFT JOIN m_payment_type pt on pt.id = c.payment_type_id ";
         }
@@ -389,10 +393,31 @@ public class ChargeReadPlatformServiceImpl implements ChargeReadPlatformService 
             final Long graceOnChargePeriodAmount = JdbcSupport.getLong(rs, "graceOnChargePeriodAmount");
             final Long parentChargeId = JdbcSupport.getLong(rs, "parentChargeId");
 
+            // Voluntary Insurance Details
+            ChargeInsuranceDetailData chargeInsuranceDetailData = null;
+
+            if (rs.getString("insuranceName") != null) {
+                final String insuranceName = rs.getString("insuranceName");
+                final Long insuranceChargedAs = JdbcSupport.getLong(rs, "insuranceChargedAs");
+                final String insuranceCompany = rs.getString("insuranceCompany");
+                final String insurerName = rs.getString("insurerName");
+                final Long insuranceCode = JdbcSupport.getLong(rs, "insuranceCode");
+                final String insurancePlan = rs.getString("insurancePlan");
+                final BigDecimal baseValue = rs.getBigDecimal("baseValue");
+                final BigDecimal vatValue = rs.getBigDecimal("vatValue");
+                final BigDecimal totalValue = rs.getBigDecimal("totalValue");
+                final Long deadline = JdbcSupport.getLong(rs, "deadLine");
+
+                chargeInsuranceDetailData = new ChargeInsuranceDetailData(null, insuranceName, insuranceChargedAs, insuranceCompany,
+                        insurerName, insuranceCode, insurancePlan, baseValue, vatValue, totalValue, deadline, null);
+
+            }
+
             return ChargeData.instance(id, name, amount, currency, chargeTimeType, chargeAppliesToType, chargeCalculationType,
                     chargePaymentMode, feeOnMonthDay, feeInterval, penalty, active, isFreeWithdrawal, freeWithdrawalChargeFrequency,
                     restartFrequency, restartFrequencyEnum, isPaymentType, paymentTypeData, minCap, maxCap, feeFrequencyType, glAccountData,
-                    taxGroupData, Short.valueOf(String.valueOf(graceOnChargePeriodEnum)), graceOnChargePeriodAmount, parentChargeId);
+                    taxGroupData, Short.valueOf(String.valueOf(graceOnChargePeriodEnum)), graceOnChargePeriodAmount, parentChargeId,
+                    chargeInsuranceDetailData);
         }
     }
 

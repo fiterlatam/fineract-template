@@ -163,12 +163,13 @@ public class LoanChargeReadPlatformServiceImpl implements LoanChargeReadPlatform
         final String accountMappingForChargeConfig = null;
         final List<GLAccountData> expenseAccountOptions = null;
         final List<GLAccountData> assetAccountOptions = null;
+        List<EnumOptionData> chargeInsuranceTypeOptions = null;
 
         return ChargeData.template(null, allowedChargeCalculationTypeOptions, null, allowedChargeTimeOptions, null,
                 loansChargeCalculationTypeOptions, loansChargeTimeTypeOptions, savingsChargeCalculationTypeOptions,
                 savingsChargeTimeTypeOptions, clientChargeCalculationTypeOptions, clientChargeTimeTypeOptions, feeFrequencyOptions,
                 incomeOrLiabilityAccountOptions, taxGroupOptions, shareChargeCalculationTypeOptions, shareChargeTimeTypeOptions,
-                accountMappingForChargeConfig, expenseAccountOptions, assetAccountOptions);
+                accountMappingForChargeConfig, expenseAccountOptions, assetAccountOptions, chargeInsuranceTypeOptions);
     }
 
     @Override
