@@ -368,6 +368,7 @@ public class LoanProduct extends AbstractPersistableCustom {
         final Integer graceOnPrincipalPayment = command.integerValueOfParameterNamed("graceOnPrincipalPayment");
         final Integer recurringMoratoriumOnPrincipalPeriods = command.integerValueOfParameterNamed("recurringMoratoriumOnPrincipalPeriods");
         final Integer graceOnInterestPayment = command.integerValueOfParameterNamed("graceOnInterestPayment");
+        final Integer graceOnChargesPayment = command.integerValueOfParameterNamed("graceOnChargesPayment");
         final Integer graceOnInterestCharged = command.integerValueOfParameterNamed("graceOnInterestCharged");
         final Integer minimumDaysBetweenDisbursalAndFirstRepayment = command
                 .integerValueOfParameterNamed(LoanProductConstants.MINIMUM_DAYS_BETWEEN_DISBURSAL_AND_FIRST_REPAYMENT);
@@ -514,21 +515,21 @@ public class LoanProduct extends AbstractPersistableCustom {
                 interestRatePerPeriod, minInterestRatePerPeriod, maxInterestRatePerPeriod, interestFrequencyType, annualInterestRate,
                 interestMethod, interestCalculationPeriodMethod, allowPartialPeriodInterestCalcualtion, repaymentEvery,
                 repaymentFrequencyType, numberOfRepayments, minNumberOfRepayments, maxNumberOfRepayments, graceOnPrincipalPayment,
-                recurringMoratoriumOnPrincipalPeriods, graceOnInterestPayment, graceOnInterestCharged, amortizationMethod,
-                inArrearsTolerance, productCharges, accountingRuleType, includeInBorrowerCycle, startDate, closeDate, externalId,
-                useBorrowerCycle, loanProductBorrowerCycleVariations, multiDisburseLoan, maxTrancheCount, outstandingLoanBalance,
-                graceOnArrearsAgeing, overdueDaysForNPA, daysInMonthType, daysInYearType, isInterestRecalculationEnabled,
-                interestRecalculationSettings, minimumDaysBetweenDisbursalAndFirstRepayment, holdGuarantorFunds,
-                loanProductGuaranteeDetails, principalThresholdForLastInstallment, accountMovesOutOfNPAOnlyOnArrearsCompletion,
-                canDefineEmiAmount, installmentAmountInMultiplesOf, loanConfigurableAttributes, isLinkedToFloatingInterestRates,
-                floatingRate, interestRateDifferential, minDifferentialLendingRate, maxDifferentialLendingRate,
-                defaultDifferentialLendingRate, isFloatingInterestRateCalculationAllowed, isVariableInstallmentsAllowed,
-                minimumGapBetweenInstallments, maximumGapBetweenInstallments, syncExpectedWithDisbursementDate, canUseForTopup,
-                isEqualAmortization, productRates, fixedPrincipalPercentagePerInstallment, disallowExpectedDisbursements,
-                allowApprovedDisbursedAmountsOverApplied, overAppliedCalculationType, overAppliedNumber, dueDaysForRepaymentEvent,
-                overDueDaysForRepaymentEvent, enableDownPayment, disbursedAmountPercentageDownPayment, enableAutoRepaymentForDownPayment,
-                repaymentStartDateType, enableInstallmentLevelDelinquency, loanScheduleType, loanScheduleProcessingType,
-                repaymentReschedulingType);
+                recurringMoratoriumOnPrincipalPeriods, graceOnInterestPayment, graceOnChargesPayment, graceOnInterestCharged,
+                amortizationMethod, inArrearsTolerance, productCharges, accountingRuleType, includeInBorrowerCycle, startDate, closeDate,
+                externalId, useBorrowerCycle, loanProductBorrowerCycleVariations, multiDisburseLoan, maxTrancheCount,
+                outstandingLoanBalance, graceOnArrearsAgeing, overdueDaysForNPA, daysInMonthType, daysInYearType,
+                isInterestRecalculationEnabled, interestRecalculationSettings, minimumDaysBetweenDisbursalAndFirstRepayment,
+                holdGuarantorFunds, loanProductGuaranteeDetails, principalThresholdForLastInstallment,
+                accountMovesOutOfNPAOnlyOnArrearsCompletion, canDefineEmiAmount, installmentAmountInMultiplesOf, loanConfigurableAttributes,
+                isLinkedToFloatingInterestRates, floatingRate, interestRateDifferential, minDifferentialLendingRate,
+                maxDifferentialLendingRate, defaultDifferentialLendingRate, isFloatingInterestRateCalculationAllowed,
+                isVariableInstallmentsAllowed, minimumGapBetweenInstallments, maximumGapBetweenInstallments,
+                syncExpectedWithDisbursementDate, canUseForTopup, isEqualAmortization, productRates, fixedPrincipalPercentagePerInstallment,
+                disallowExpectedDisbursements, allowApprovedDisbursedAmountsOverApplied, overAppliedCalculationType, overAppliedNumber,
+                dueDaysForRepaymentEvent, overDueDaysForRepaymentEvent, enableDownPayment, disbursedAmountPercentageDownPayment,
+                enableAutoRepaymentForDownPayment, repaymentStartDateType, enableInstallmentLevelDelinquency, loanScheduleType,
+                loanScheduleProcessingType, repaymentReschedulingType);
 
         product.setMaxClientInactivityPeriod(maxClientInActivityPeriod);
         product.setOverDueAmountForArrears(overDueAmountForArrears);
@@ -729,14 +730,14 @@ public class LoanProduct extends AbstractPersistableCustom {
             final Integer repayEvery, final PeriodFrequencyType repaymentFrequencyType, final Integer defaultNumberOfInstallments,
             final Integer defaultMinNumberOfInstallments, final Integer defaultMaxNumberOfInstallments,
             final Integer graceOnPrincipalPayment, final Integer recurringMoratoriumOnPrincipalPeriods,
-            final Integer graceOnInterestPayment, final Integer graceOnInterestCharged, final AmortizationMethod amortizationMethod,
-            final BigDecimal inArrearsTolerance, final List<Charge> charges, final AccountingRuleType accountingRuleType,
-            final boolean includeInBorrowerCycle, final LocalDate startDate, final LocalDate closeDate, final ExternalId externalId,
-            final boolean useBorrowerCycle, final Set<LoanProductBorrowerCycleVariations> loanProductBorrowerCycleVariations,
-            final boolean multiDisburseLoan, final Integer maxTrancheCount, final BigDecimal outstandingLoanBalance,
-            final Integer graceOnArrearsAgeing, final Integer overdueDaysForNPA, final DaysInMonthType daysInMonthType,
-            final DaysInYearType daysInYearType, final boolean isInterestRecalculationEnabled,
-            final LoanProductInterestRecalculationDetails productInterestRecalculationDetails,
+            final Integer graceOnInterestPayment, final Integer graceOnChargesPayment, final Integer graceOnInterestCharged,
+            final AmortizationMethod amortizationMethod, final BigDecimal inArrearsTolerance, final List<Charge> charges,
+            final AccountingRuleType accountingRuleType, final boolean includeInBorrowerCycle, final LocalDate startDate,
+            final LocalDate closeDate, final ExternalId externalId, final boolean useBorrowerCycle,
+            final Set<LoanProductBorrowerCycleVariations> loanProductBorrowerCycleVariations, final boolean multiDisburseLoan,
+            final Integer maxTrancheCount, final BigDecimal outstandingLoanBalance, final Integer graceOnArrearsAgeing,
+            final Integer overdueDaysForNPA, final DaysInMonthType daysInMonthType, final DaysInYearType daysInYearType,
+            final boolean isInterestRecalculationEnabled, final LoanProductInterestRecalculationDetails productInterestRecalculationDetails,
             final Integer minimumDaysBetweenDisbursalAndFirstRepayment, final boolean holdGuarantorFunds,
             final LoanProductGuaranteeDetails loanProductGuaranteeDetails, final BigDecimal principalThresholdForLastInstallment,
             final boolean accountMovesOutOfNPAOnlyOnArrearsCompletion, final boolean canDefineEmiAmount,
@@ -800,9 +801,10 @@ public class LoanProduct extends AbstractPersistableCustom {
                 interestRatePoints, interestPeriodFrequencyType, defaultAnnualNominalInterestRate, interestMethod,
                 interestCalculationPeriodMethod, considerPartialPeriodInterest, repayEvery, repaymentFrequencyType,
                 defaultNumberOfInstallments, graceOnPrincipalPayment, recurringMoratoriumOnPrincipalPeriods, graceOnInterestPayment,
-                graceOnInterestCharged, amortizationMethod, inArrearsTolerance, graceOnArrearsAgeing, daysInMonthType.getValue(),
-                daysInYearType.getValue(), isInterestRecalculationEnabled, isEqualAmortization, enableDownPayment,
-                disbursedAmountPercentageForDownPayment, enableAutoRepaymentForDownPayment, loanScheduleType, loanScheduleProcessingType);
+                graceOnChargesPayment, graceOnInterestCharged, amortizationMethod, inArrearsTolerance, graceOnArrearsAgeing,
+                daysInMonthType.getValue(), daysInYearType.getValue(), isInterestRecalculationEnabled, isEqualAmortization,
+                enableDownPayment, disbursedAmountPercentageForDownPayment, enableAutoRepaymentForDownPayment, loanScheduleType,
+                loanScheduleProcessingType);
 
         this.loanProductRelatedDetail.validateRepaymentPeriodWithGraceSettings();
 

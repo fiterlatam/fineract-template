@@ -21,9 +21,11 @@ package org.apache.fineract.portfolio.charge.service;
 import jakarta.persistence.PersistenceException;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.fineract.accounting.glaccount.domain.GLAccount;
 import org.apache.fineract.accounting.glaccount.domain.GLAccountRepositoryWrapper;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
@@ -41,6 +43,10 @@ import org.apache.fineract.portfolio.charge.exception.ChargeCannotBeDeletedExcep
 import org.apache.fineract.portfolio.charge.exception.ChargeCannotBeUpdatedException;
 import org.apache.fineract.portfolio.charge.exception.ChargeNotFoundException;
 import org.apache.fineract.portfolio.charge.serialization.ChargeDefinitionCommandFromApiJsonDeserializer;
+import org.apache.fineract.portfolio.floatingrates.domain.InterestRateType;
+import org.apache.fineract.portfolio.interestrates.domain.InterestRate;
+import org.apache.fineract.portfolio.interestrates.domain.InterestRateRepository;
+import org.apache.fineract.portfolio.interestrates.exception.InterestRateException;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProduct;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductRepository;
 import org.apache.fineract.portfolio.paymentdetail.PaymentDetailConstants;
@@ -67,6 +73,7 @@ public class ChargeWritePlatformServiceJpaRepositoryImpl implements ChargeWriteP
     private final GLAccountRepositoryWrapper glAccountRepository;
     private final TaxGroupRepositoryWrapper taxGroupRepository;
     private final PaymentTypeRepositoryWrapper paymentTyperepositoryWrapper;
+    private final InterestRateRepository interestRateRepository;
 
     @Transactional
     @Override
@@ -98,8 +105,17 @@ public class ChargeWritePlatformServiceJpaRepositoryImpl implements ChargeWriteP
                     paymentType = this.paymentTyperepositoryWrapper.findOneWithNotFoundDetection(paymentTypeId);
                 }
             }
-
+            final Long interestRateId = command.longValueOfParameterNamed(ChargesApiConstants.INTEREST_RATE_ID_PARAM_NAME);
+            InterestRate interestRate = null;
+            if (interestRateId != null) {
+                interestRate = this.interestRateRepository.findById(interestRateId)
+                        .orElseThrow(() -> new InterestRateException(interestRateId));
+                if (!InterestRateType.OVERDUE.getValue().equals(interestRate.getInterestRateTypeId())) {
+                    throw new InterestRateException(interestRateId);
+                }
+            }
             final Charge charge = Charge.fromJson(command, glAccount, taxGroup, paymentType);
+            charge.setInterestRate(interestRate);
             this.chargeRepository.saveAndFlush(charge);
 
             // check if the office specific products are enabled. If yes, then
@@ -170,17 +186,26 @@ public class ChargeWritePlatformServiceJpaRepositoryImpl implements ChargeWriteP
 
             final String paymentTypeIdParamName = "paymentTypeId";
             if (changes.containsKey(paymentTypeIdParamName)) {
-
                 final Integer paymentTypeIdNewValue = command.integerValueOfParameterNamed(paymentTypeIdParamName);
-
                 PaymentType paymentType = null;
                 if (paymentTypeIdNewValue != null) {
                     final Long paymentTypeId = paymentTypeIdNewValue.longValue();
-
                     paymentType = this.paymentTyperepositoryWrapper.findOneWithNotFoundDetection(paymentTypeId);
                     chargeForUpdate.setPaymentType(paymentType);
                 }
+            }
 
+            final String interestRateIdParamName = "interestRateId";
+            if (changes.containsKey(interestRateIdParamName)) {
+                final Long newValue = command.longValueOfParameterNamed(interestRateIdParamName);
+                InterestRate interestRate = null;
+                if (newValue != null && !Objects.equals(NumberUtils.LONG_ZERO, newValue)) {
+                    interestRate = this.interestRateRepository.findById(newValue).orElseThrow(() -> new InterestRateException(newValue));
+                    if (!InterestRateType.OVERDUE.getValue().equals(interestRate.getInterestRateTypeId())) {
+                        throw new InterestRateException(newValue);
+                    }
+                }
+                chargeForUpdate.setInterestRate(interestRate);
             }
 
             if (changes.containsKey(ChargesApiConstants.taxGroupIdParamName)) {

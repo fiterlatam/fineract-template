@@ -69,6 +69,7 @@ import org.springframework.util.CollectionUtils;
  * Immutable data object to represent loan products.
  */
 @Getter
+@Setter
 public class LoanProductData implements Serializable {
 
     private final Long id;
@@ -126,6 +127,7 @@ public class LoanProductData implements Serializable {
     private final Integer graceOnPrincipalPayment;
     private final Integer recurringMoratoriumOnPrincipalPeriods;
     private final Integer graceOnInterestPayment;
+    private Integer graceOnChargesPayment;
     private final Integer graceOnInterestCharged;
     private final Integer graceOnArrearsAgeing;
     private final Integer overdueDaysForNPA;

@@ -392,6 +392,7 @@ public class LoanProductsApiResource {
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
 
         LoanProductData loanProduct = this.loanProductReadPlatformService.retrieveLoanProduct(productId);
+        final Integer graceOnChargesPayment = loanProduct.getGraceOnChargesPayment();
 
         Map<String, Object> accountingMappings;
         Collection<PaymentTypeToGLAccountMapper> paymentChannelToFundSourceMappings;
@@ -414,6 +415,7 @@ public class LoanProductsApiResource {
         }
 
         loanProduct.setCustomCollectionsSubChannelList(subChannelLoanProductReadWritePlatformService.findAllByProductId(productId));
+        loanProduct.setGraceOnChargesPayment(graceOnChargesPayment);
 
         return this.toApiJsonSerializer.serialize(settings, loanProduct, LOAN_PRODUCT_DATA_PARAMETERS);
     }

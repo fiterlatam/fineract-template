@@ -29,6 +29,7 @@
     <!--  You can find the runtime configuration in the JPAConfig class  -->
     <persistence-unit name="jpa-pu" transaction-type="RESOURCE_LOCAL">
         <provider>org.eclipse.persistence.jpa.PersistenceProvider</provider>
+        <class>org.apache.fineract.portfolio.interestrates.domain.InterestRate</class>
         <exclude-unlisted-classes>false</exclude-unlisted-classes>
         <properties>
             <property name="eclipselink.weaving" value="static" />

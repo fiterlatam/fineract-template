@@ -36,6 +36,8 @@ public interface LoanProductMinimumRepaymentScheduleRelatedDetail {
 
     Integer graceOnInterestPayment();
 
+    Integer graceOnChargesPayment();
+
     Integer graceOnPrincipalPayment();
 
     Integer recurringMoratoriumOnPrincipalPeriods();

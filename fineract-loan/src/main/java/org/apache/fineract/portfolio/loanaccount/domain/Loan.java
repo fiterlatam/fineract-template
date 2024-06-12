@@ -6157,6 +6157,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
         final Integer graceOnPrincipalPayment = this.loanRepaymentScheduleDetail.graceOnPrincipalPayment();
         final Integer graceOnInterestPayment = this.loanRepaymentScheduleDetail.graceOnInterestPayment();
+        final Integer graceOnChargesPayment = this.loanRepaymentScheduleDetail.graceOnChargesPayment();
         final Integer graceOnInterestCharged = this.loanRepaymentScheduleDetail.graceOnInterestCharged();
         final LocalDate interestChargedFromDate = getInterestChargedFromDate();
         final Integer graceOnArrearsAgeing = this.loanRepaymentScheduleDetail.getGraceOnDueDate();

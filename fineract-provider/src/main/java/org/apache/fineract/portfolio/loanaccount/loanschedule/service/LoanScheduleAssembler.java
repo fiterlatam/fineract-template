@@ -330,6 +330,7 @@ public class LoanScheduleAssembler {
         final Integer recurringMoratoriumOnPrincipalPeriods = this.fromApiJsonHelper
                 .extractIntegerWithLocaleNamed("recurringMoratoriumOnPrincipalPeriods", element);
         final Integer graceOnInterestPayment = this.fromApiJsonHelper.extractIntegerWithLocaleNamed("graceOnInterestPayment", element);
+        final Integer graceOnChargesPayment = this.fromApiJsonHelper.extractIntegerWithLocaleNamed("graceOnChargesPayment", element);
         final Integer graceOnInterestCharged = this.fromApiJsonHelper.extractIntegerWithLocaleNamed("graceOnInterestCharged", element);
         final LocalDate interestChargedFromDate = this.fromApiJsonHelper.extractLocalDateNamed("interestChargedFromDate", element);
         final Boolean isInterestChargedFromDateSameAsDisbursalDateEnabled = this.configurationDomainService
@@ -492,10 +493,10 @@ public class LoanScheduleAssembler {
                 interestRatePerPeriod, interestRatePoints, interestRatePeriodFrequencyType, annualNominalInterestRate,
                 interestCalculationPeriodMethod, allowPartialPeriodInterestCalcualtion, principalMoney, expectedDisbursementDate,
                 repaymentsStartingFromDate, calculatedRepaymentsStartingFromDate, graceOnPrincipalPayment,
-                recurringMoratoriumOnPrincipalPeriods, graceOnInterestPayment, graceOnInterestCharged, interestChargedFromDate,
-                inArrearsToleranceMoney, loanProduct.isMultiDisburseLoan(), emiAmount, disbursementDatas, maxOutstandingBalance,
-                graceOnArrearsAgeing, daysInMonthType, daysInYearType, isInterestRecalculationEnabled, recalculationFrequencyType,
-                restCalendarInstance, compoundingMethod, compoundingCalendarInstance, compoundingFrequencyType,
+                recurringMoratoriumOnPrincipalPeriods, graceOnInterestPayment, graceOnChargesPayment, graceOnInterestCharged,
+                interestChargedFromDate, inArrearsToleranceMoney, loanProduct.isMultiDisburseLoan(), emiAmount, disbursementDatas,
+                maxOutstandingBalance, graceOnArrearsAgeing, daysInMonthType, daysInYearType, isInterestRecalculationEnabled,
+                recalculationFrequencyType, restCalendarInstance, compoundingMethod, compoundingCalendarInstance, compoundingFrequencyType,
                 principalThresholdForLastInstalment, installmentAmountInMultiplesOf, loanProduct.preCloseInterestCalculationStrategy(),
                 calendar, BigDecimal.ZERO, loanTermVariations, isInterestChargedFromDateSameAsDisbursalDateEnabled, numberOfDays,
                 isSkipMeetingOnFirstDay, detailDTO, allowCompoundingOnEod, isEqualAmortization,

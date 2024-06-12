@@ -34,6 +34,7 @@ import org.apache.fineract.portfolio.charge.service.ChargeReadPlatformServiceImp
 import org.apache.fineract.portfolio.charge.service.ChargeWritePlatformService;
 import org.apache.fineract.portfolio.charge.service.ChargeWritePlatformServiceJpaRepositoryImpl;
 import org.apache.fineract.portfolio.common.service.DropdownReadPlatformService;
+import org.apache.fineract.portfolio.interestrates.domain.InterestRateRepository;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductRepository;
 import org.apache.fineract.portfolio.paymenttype.domain.PaymentTypeRepositoryWrapper;
 import org.apache.fineract.portfolio.tax.domain.TaxGroupRepositoryWrapper;
@@ -72,8 +73,9 @@ public class ChargeConfiguration {
             ChargeDefinitionCommandFromApiJsonDeserializer fromApiJsonDeserializer, ChargeRepository chargeRepository,
             LoanProductRepository loanProductRepository, JdbcTemplate jdbcTemplate, FineractEntityAccessUtil fineractEntityAccessUtil,
             GLAccountRepositoryWrapper glAccountRepository, TaxGroupRepositoryWrapper taxGroupRepository,
-            PaymentTypeRepositoryWrapper paymentTyperepositoryWrapper) {
+            PaymentTypeRepositoryWrapper paymentTyperepositoryWrapper, InterestRateRepository interestRateRepository) {
         return new ChargeWritePlatformServiceJpaRepositoryImpl(context, fromApiJsonDeserializer, chargeRepository, loanProductRepository,
-                jdbcTemplate, fineractEntityAccessUtil, glAccountRepository, taxGroupRepository, paymentTyperepositoryWrapper);
+                jdbcTemplate, fineractEntityAccessUtil, glAccountRepository, taxGroupRepository, paymentTyperepositoryWrapper,
+                interestRateRepository);
     }
 }
