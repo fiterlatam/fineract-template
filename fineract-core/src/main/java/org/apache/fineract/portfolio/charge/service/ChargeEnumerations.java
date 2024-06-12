@@ -288,7 +288,7 @@ public final class ChargeEnumerations {
             case FLAT_HONO:
                 optionData = new EnumOptionData(ChargeCalculationType.FLAT_HONO.getValue().longValue(),
                         ChargeCalculationType.FLAT_HONO.getCode(), "Flat honorarios");
-                break;
+            break;
             case INVALID:
                 optionData = new EnumOptionData(ChargeCalculationType.INVALID.getValue().longValue(),
                         ChargeCalculationType.INVALID.getCode(), "Invalid");
