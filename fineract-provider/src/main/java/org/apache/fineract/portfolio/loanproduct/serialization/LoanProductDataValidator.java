@@ -95,6 +95,7 @@ public final class LoanProductDataValidator {
     public static final String CREDIT_ALLOCATIONS = "creditAllocation";
     public static final String GRACE_ON_PRINCIPAL_PAYMENT = "graceOnPrincipalPayment";
     public static final String GRACE_ON_INTEREST_PAYMENT = "graceOnInterestPayment";
+    public static final String GRACE_ON_CHARGES_PAYMENT = "graceOnChargesPayment";
     public static final String GRACE_ON_INTEREST_CHARGED = "graceOnInterestCharged";
     public static final String IS_LINKED_TO_FLOATING_INTEREST_RATES = "isLinkedToFloatingInterestRates";
     public static final String INTEREST_RATE_PER_PERIOD = "interestRatePerPeriod";
@@ -124,8 +125,8 @@ public final class LoanProductDataValidator {
             MIN_INTEREST_RATE_PER_PERIOD, MAX_INTEREST_RATE_PER_PERIOD, INTEREST_RATE_FREQUENCY_TYPE, AMORTIZATION_TYPE, INTEREST_TYPE,
             INTEREST_CALCULATION_PERIOD_TYPE, LoanProductConstants.ALLOW_PARTIAL_PERIOD_INTEREST_CALCUALTION_PARAM_NAME,
             IN_ARREARS_TOLERANCE, TRANSACTION_PROCESSING_STRATEGY_CODE, ADVANCED_PAYMENT_ALLOCATIONS, CREDIT_ALLOCATIONS,
-            GRACE_ON_PRINCIPAL_PAYMENT, "recurringMoratoriumOnPrincipalPeriods", GRACE_ON_INTEREST_PAYMENT, GRACE_ON_INTEREST_CHARGED,
-            "charges", ACCOUNTING_RULE, INCLUDE_IN_BORROWER_CYCLE, "startDate", "closeDate", "externalId",
+            GRACE_ON_PRINCIPAL_PAYMENT, "recurringMoratoriumOnPrincipalPeriods", GRACE_ON_INTEREST_PAYMENT, GRACE_ON_CHARGES_PAYMENT,
+            GRACE_ON_INTEREST_CHARGED, "charges", ACCOUNTING_RULE, INCLUDE_IN_BORROWER_CYCLE, "startDate", "closeDate", "externalId",
             IS_LINKED_TO_FLOATING_INTEREST_RATES, FLOATING_RATES_ID, INTEREST_RATE_DIFFERENTIAL, MIN_DIFFERENTIAL_LENDING_RATE,
             DEFAULT_DIFFERENTIAL_LENDING_RATE, MAX_DIFFERENTIAL_LENDING_RATE, IS_FLOATING_INTEREST_RATE_CALCULATION_ALLOWED,
             "syncExpectedWithDisbursementDate", LoanProductAccountingParams.FEES_RECEIVABLE.getValue(),
@@ -380,6 +381,9 @@ public final class LoanProductDataValidator {
 
         final Integer graceOnInterestPayment = this.fromApiJsonHelper.extractIntegerWithLocaleNamed(GRACE_ON_INTEREST_PAYMENT, element);
         baseDataValidator.reset().parameter(GRACE_ON_INTEREST_PAYMENT).value(graceOnInterestPayment).zeroOrPositiveAmount();
+
+        final Integer graceOnChargesPayment = this.fromApiJsonHelper.extractIntegerWithLocaleNamed(GRACE_ON_CHARGES_PAYMENT, element);
+        baseDataValidator.reset().parameter(GRACE_ON_CHARGES_PAYMENT).value(graceOnChargesPayment).ignoreIfNull().zeroOrPositiveAmount();
 
         final Integer graceOnInterestCharged = this.fromApiJsonHelper.extractIntegerWithLocaleNamed(GRACE_ON_INTEREST_CHARGED, element);
         baseDataValidator.reset().parameter(GRACE_ON_INTEREST_CHARGED).value(graceOnInterestCharged).zeroOrPositiveAmount();
@@ -1269,6 +1273,11 @@ public final class LoanProductDataValidator {
         if (this.fromApiJsonHelper.parameterExists(GRACE_ON_INTEREST_PAYMENT, element)) {
             final Integer graceOnInterestPayment = this.fromApiJsonHelper.extractIntegerWithLocaleNamed(GRACE_ON_INTEREST_PAYMENT, element);
             baseDataValidator.reset().parameter(GRACE_ON_INTEREST_PAYMENT).value(graceOnInterestPayment).zeroOrPositiveAmount();
+        }
+
+        if (this.fromApiJsonHelper.parameterExists(GRACE_ON_CHARGES_PAYMENT, element)) {
+            final Integer graceOnChargesPayment = this.fromApiJsonHelper.extractIntegerWithLocaleNamed(GRACE_ON_CHARGES_PAYMENT, element);
+            baseDataValidator.reset().parameter(GRACE_ON_CHARGES_PAYMENT).value(graceOnChargesPayment).zeroOrPositiveAmount();
         }
 
         if (this.fromApiJsonHelper.parameterExists(GRACE_ON_INTEREST_CHARGED, element)) {

@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License. You may obtain a copy of the License at
- *
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -20,19 +20,11 @@ package org.apache.fineract.portfolio.charge.api;
 
 public final class ChargesApiConstants {
 
-    private ChargesApiConstants() {
-
-    }
-
     public static final String glAccountIdParamName = "incomeAccountId";
     public static final String taxGroupIdParamName = "taxGroupId";
-
     public static final String graceOnChargePeriodEnumIdParamName = "graceOnChargePeriodEnum";
     public static final String graceOnChargePeriodAmountParamName = "graceOnChargePeriodAmount";
-
     public static final String parentChargeIdParamName = "parentChargeId";
-
-    public static final String isVoluntaryInsuranceParamName = "isVoluntaryInsurance";
     public static final String insuranceNameParamName = "insuranceName";
     public static final String insuranceChargedAsParamName = "insuranceChargedAs";
     public static final String insuranceCompanyParamName = "insuranceCompany";
@@ -43,5 +35,5 @@ public final class ChargesApiConstants {
     public static final String vatValueParamName = "vatValue";
     public static final String totalValueParamName = "totalValue";
     public static final String deadlineParamName = "deadline";
-
+    public static final String INTEREST_RATE_ID_PARAM_NAME = "interestRateId";
 }

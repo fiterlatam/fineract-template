@@ -324,4 +324,43 @@
         </addColumn>
     </changeSet>
 
+    <changeSet author="fineract" id="17">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_product_loan" columnName="grace_on_charges_periods"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_product_loan">
+            <column defaultValueComputed="NULL" name="grace_on_charges_periods" type="SMALLINT">
+                 <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="18">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_charge" columnName="interest_rate_id"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_charge">
+            <column name="interest_rate_id" type="BIGINT">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="19">
+        <addForeignKeyConstraint baseColumnNames="interest_rate_id"
+                                 baseTableName="m_product_loan"
+                                 constraintName="FK_m_m_charge_interest_rate_id"
+                                 deferrable="false"
+                                 initiallyDeferred="false"
+                                 onDelete="RESTRICT"
+                                 onUpdate="RESTRICT"
+                                 referencedColumnNames="id"
+                                 referencedTableName="m_interest_rate"
+                                 validate="true"/>
+    </changeSet>
+
 </databaseChangeLog>
