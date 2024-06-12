@@ -19,7 +19,6 @@
 package org.apache.fineract.custom.portfolio.externalcharge.honoratio.domain;
 
 import jakarta.persistence.*;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
@@ -27,7 +26,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.apache.fineract.infrastructure.core.domain.AbstractAuditableWithUTCDateTimeCustom;
 import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
 
 @Entity
@@ -79,7 +77,7 @@ public class CustomChargeHonorarioMap extends AbstractPersistableCustom {
     @Column(name = "loan_charge_id", nullable = true)
     private Long loanChargeId;
 
-//    @Column(name = "is_installment_already_paid")
+    // @Column(name = "is_installment_already_paid")
     @Transient
     private boolean isInstallmentAlreadyPaid;
 

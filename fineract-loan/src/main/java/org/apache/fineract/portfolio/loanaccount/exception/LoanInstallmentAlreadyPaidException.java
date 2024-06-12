@@ -23,6 +23,7 @@ import org.apache.fineract.infrastructure.core.exception.AbstractPlatformDomainR
 public class LoanInstallmentAlreadyPaidException extends AbstractPlatformDomainRuleException {
 
     public LoanInstallmentAlreadyPaidException(final Long id, final Integer installmentNumber) {
-        super("error.msg.loan.installment.already.paid.", "Installment Number " + installmentNumber + " for  Loan with identifier " + id + " is already paid", id);
+        super("error.msg.loan.installment.already.paid.",
+                "Installment Number " + installmentNumber + " for  Loan with identifier " + id + " is already paid", id);
     }
 }
