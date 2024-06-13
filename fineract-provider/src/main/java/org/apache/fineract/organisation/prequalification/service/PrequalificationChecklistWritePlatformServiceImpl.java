@@ -22,7 +22,9 @@ import java.math.BigDecimal;
 import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -1012,7 +1014,10 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
         int yearsInBusiness = 0;
         if (!CollectionUtils.isEmpty(loanAdditionPropertiesList)) {
             final LoanAdditionProperties loanAdditionProperties = loanAdditionPropertiesList.get(0);
-            yearsInBusiness = ObjectUtils.defaultIfNull(loanAdditionProperties.getAniosDeActividadNegocio(), 0);
+            LocalDate businessStartDate = loanAdditionProperties.getFecha_inicio_negocio();
+            LocalDate currentDate = DateUtils.getLocalDateOfTenant();
+            Integer monthsBetween = Math.toIntExact(ChronoUnit.MONTHS.between(currentDate, businessStartDate));
+            yearsInBusiness = monthsBetween / 12;
         }
         final Map<String, String> reportParams = new HashMap<>();
         reportParams.put("${clientId}", clientId);
@@ -1029,6 +1034,9 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
      * Credits
      */
     private CheckValidationColor runCheck26(final ClientData clientData) {
+        if (!clientData.getIsLoanTopup()){
+            return null;
+        }
         final String clientId = String.valueOf(clientData.getClientId());
         final String reportName = Policies.TWENTY_SIX.getName() + " Policy Check";
         final String productId = Long.toString(clientData.getProductId());

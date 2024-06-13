@@ -2192,6 +2192,10 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 dateLocal);
         loanAdditionalData.setFecha_estacionalidad(fecha_estacionalidad);
 
+        final LocalDate fecha_inicio_negocio = this.fromJsonHelper.extractLocalDateNamed("fecha_inicio_negocio", jsonElement, dateFormat,
+                dateLocal);
+        loanAdditionalData.setFecha_inicio_negocio(fecha_inicio_negocio);
+
         final LocalDate fecha_inico_operaciones = this.fromJsonHelper.extractLocalDateNamed("fecha_inico_operaciones", jsonElement,
                 dateFormat, dateLocal);
         loanAdditionalData.setFecha_inico_operaciones(fecha_inico_operaciones);
