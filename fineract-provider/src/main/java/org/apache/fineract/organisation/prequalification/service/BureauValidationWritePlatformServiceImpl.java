@@ -295,6 +295,8 @@ public class BureauValidationWritePlatformServiceImpl implements BureauValidatio
         final LocalDate fechaInicio = this.fromApiJsonHelper.extractLocalDateNamed("fecha_inicio", jsonElement, dateFormat, dateLocale);
         loanAdditionalData.setFechaInicio(fechaInicio);
 
+        loanAdditionalData.setFecha_inicio_negocio(fechaInicio);
+
         final String producto = this.fromApiJsonHelper.extractStringNamed("producto", jsonElement);
         loanAdditionalData.setProducto(producto);
 
