@@ -712,7 +712,9 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
             reportParams.put("${prequalificationId}", prequalificationId);
             reportParams.put("${loanProductId}", productId);
             reportParams.put("${clientArea}", clientArea);
-            reportParams.put("${buroCheckClassification}", buroCheckClassification.getLetter());
+            String buroCheckLetter = StringUtils.isBlank(presidentData.getAgencyBuroStatus()) ? buroCheckClassification.getLetter()
+                    : presidentData.getAgencyBuroStatus();
+            reportParams.put("${buroCheckClassification}", buroCheckLetter);
             final GenericResultsetData result = this.readReportingService.retrieveGenericResultset(reportName, "report", reportParams,
                     false);
             return extractColorFromResultset(result);
