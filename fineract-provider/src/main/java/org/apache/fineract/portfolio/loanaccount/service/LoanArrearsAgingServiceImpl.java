@@ -26,12 +26,11 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockLevel;
+import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSetting;
 import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSettingsRepositoryWrapper;
 import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
@@ -54,11 +53,7 @@ import org.apache.fineract.infrastructure.event.business.domain.loan.transaction
 import org.apache.fineract.infrastructure.event.business.domain.loan.transaction.LoanWaiveInterestBusinessEvent;
 import org.apache.fineract.infrastructure.event.business.service.BusinessEventNotifierService;
 import org.apache.fineract.portfolio.client.service.ClientWritePlatformService;
-import org.apache.fineract.portfolio.loanaccount.domain.Loan;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanCharge;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleInstallment;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanSummary;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanTransaction;
+import org.apache.fineract.portfolio.loanaccount.domain.*;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.data.LoanSchedulePeriodData;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -118,6 +113,7 @@ public class LoanArrearsAgingServiceImpl implements LoanArrearsAgingService {
             if (updateStatement.size() == 1) {
                 this.jdbcTemplate.update(updateStatement.get(0));
                 handleMoraAddition(loan);
+                handleBlockingCredit(loan.getId());
             } else {
                 String deletestatement = "DELETE FROM m_loan_arrears_aging WHERE  loan_id=?";
                 this.jdbcTemplate.update(deletestatement, loan.getId());// NOSONAR
@@ -146,6 +142,7 @@ public class LoanArrearsAgingServiceImpl implements LoanArrearsAgingService {
             } else {
                 this.jdbcTemplate.update(updateStatement);
                 handleMoraAddition(loan);
+                handleBlockingCredit(loan.getId());
             }
         }
     }
@@ -579,6 +576,13 @@ public class LoanArrearsAgingServiceImpl implements LoanArrearsAgingService {
     private void handleMoraAddition(Loan loan) {
         clientWritePlatformService.blockClientWithInActiveLoan(loan.getClientId(), BLOCKING_REASON_NAME, "Cliente bloqueado por defecto",
                 false);
+    }
+
+    private void handleBlockingCredit(Long loanId) {
+        BlockingReasonSetting blockingReasonSetting = blockingReasonSettingsRepositoryWrapper
+                .getSingleBlockingReasonSettingByReason(BLOCKING_REASON_NAME, BlockLevel.CREDIT.toString());
+        loanBlockWritePlatformService.blockLoan(loanId, blockingReasonSetting, "Cliente bloqueado por defecto",
+                DateUtils.getLocalDateOfTenant());
     }
 
 }

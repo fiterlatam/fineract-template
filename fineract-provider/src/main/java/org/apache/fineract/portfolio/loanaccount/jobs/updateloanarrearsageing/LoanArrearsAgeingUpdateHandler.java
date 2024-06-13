@@ -93,6 +93,7 @@ public class LoanArrearsAgeingUpdateHandler {
 
         handleBlockingAfterAreasAging();
         handleUnBlockingAfterArrearsAging();
+        handleBlockingReasonCreadit();
     }
 
     public void updateLoanArrearsAgeingDetails(List<Long> loanIdsForUpdate) {
@@ -116,7 +117,7 @@ public class LoanArrearsAgeingUpdateHandler {
 
         handleBlockingAfterAreasAging();
         handleUnBlockingAfterArrearsAging();
-
+        handleBlockingReasonCreadit();
         if (log.isDebugEnabled()) {
             int result = 0;
             for (int recordWithoutOriginalSchedule : recordsUpdatedWithoutOriginalSchedule) {
@@ -206,7 +207,7 @@ public class LoanArrearsAgeingUpdateHandler {
             List<Map<String, Object>> loanSummary = getLoanSummary(loanIds);
             loanArrearsAgingService.updateScheduleWithPaidDetail(scheduleDate, loanSummary);
             loanArrearsAgingService.createInsertStatements(insertStatement, scheduleDate, true);
-            handleBlockingReasonCreadit(loanIds);
+
         }
 
         return insertStatement;
@@ -344,11 +345,20 @@ public class LoanArrearsAgeingUpdateHandler {
 
     }
 
-    public void handleBlockingReasonCreadit(final List<Long> loanIds) {
-        BlockingReasonSetting blockingReasonSetting = blockingReasonSettingsRepositoryWrapper.getSingleBlockingReasonSettingByReason(
-                BlockingReasonSettingEnum.CREDIT_RECLAMADO_A_AVALADORA.getDatabaseString(), BlockLevel.CREDIT.toString());
+    public void handleBlockingReasonCreadit() {
+        BlockingReasonSetting blockingReasonSetting = blockingReasonSettingsRepositoryWrapper
+                .getSingleBlockingReasonSettingByReason(BLOCKING_REASON_NAME, BlockLevel.CREDIT.toString());
+        final String query = """
+                    SELECT distinct mlaa.loan_id FROM m_loan_arrears_aging mlaa
+                    INNER JOIN m_loan l on l.id = mlaa.loan_id
+                    LEFT JOIN m_credit_blocking_reason  mcbr on mcbr.loan_id  = l.id
+                    LEFT join m_blocking_reason_setting mbrs
+                    on mbrs.id = mcbr.blocking_reason_id and mbrs.name_of_reason = ?
+                    WHERE mbrs.id is null;
+                """;
 
-        for (Long loanId : loanIds) {
+        final List<Long> loans = jdbcTemplate.queryForList(query, Long.class, BLOCKING_REASON_NAME);
+        for (Long loanId : loans) {
             final Optional<LoanBlockingReason> existingBlockingReason = this.loanBlockingReasonRepository.findExistingBlockingReason(loanId,
                     blockingReasonSetting.getId());
             if (!existingBlockingReason.isPresent()) {
