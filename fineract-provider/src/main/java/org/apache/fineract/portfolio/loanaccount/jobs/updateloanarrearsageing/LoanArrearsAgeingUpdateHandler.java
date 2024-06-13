@@ -346,8 +346,8 @@ public class LoanArrearsAgeingUpdateHandler {
     }
 
     public void handleBlockingReasonCreadit() {
-        BlockingReasonSetting blockingReasonSetting = blockingReasonSettingsRepositoryWrapper.getSingleBlockingReasonSettingByReason(
-                BLOCKING_REASON_NAME, BlockLevel.CREDIT.toString());
+        BlockingReasonSetting blockingReasonSetting = blockingReasonSettingsRepositoryWrapper
+                .getSingleBlockingReasonSettingByReason(BLOCKING_REASON_NAME, BlockLevel.CREDIT.toString());
         final String query = """
                     SELECT distinct mlaa.loan_id FROM m_loan_arrears_aging mlaa
                     INNER JOIN m_loan l on l.id = mlaa.loan_id
