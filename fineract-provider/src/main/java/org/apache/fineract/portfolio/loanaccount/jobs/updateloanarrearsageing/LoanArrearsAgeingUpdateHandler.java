@@ -370,8 +370,8 @@ public class LoanArrearsAgeingUpdateHandler {
                 final LoanBlockingReason loanBlockingReason = LoanBlockingReason.instance(loan, blockingReasonSetting,
                         "Cliente desbloqueado por defecto", DateUtils.getLocalDateOfTenant());
                 loanBlockingReasonRepository.saveAndFlush(loanBlockingReason);
-            }else {
-                System.out.println("Not To Block if have a active loan : "+loanId);
+            } else {
+                System.out.println("Not To Block if have a active loan : " + loanId);
             }
 
         }
