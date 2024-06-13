@@ -115,7 +115,6 @@ public class LoanArrearsAgingServiceImpl implements LoanArrearsAgingService {
                 this.jdbcTemplate.update(updateStatement.get(0));
                 handleMoraAddition(loan);
                 handleBlockingCredit(loan.getId());
-                handleBlockingCredit(loan.getId());
             } else {
                 String deletestatement = "DELETE FROM m_loan_arrears_aging WHERE  loan_id=?";
                 this.jdbcTemplate.update(deletestatement, loan.getId());// NOSONAR
@@ -144,6 +143,7 @@ public class LoanArrearsAgingServiceImpl implements LoanArrearsAgingService {
             } else {
                 this.jdbcTemplate.update(updateStatement);
                 handleMoraAddition(loan);
+                handleBlockingCredit(loan.getId());
             }
         }
     }
