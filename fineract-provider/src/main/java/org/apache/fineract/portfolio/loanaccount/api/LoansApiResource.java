@@ -1079,9 +1079,8 @@ public class LoansApiResource {
                     this.calculationPlatformService.updateFutureSchedule(repaymentSchedule, resolvedLoanId);
                 }
 
-                if (associationParameters.contains(DataTableApiConstant.originalScheduleAssociateParamName)
-                        && loanBasicDetails.isInterestRecalculationEnabled()
-                        && LoanStatus.fromInt(loanBasicDetails.getStatus().getId().intValue()).isActive()) {
+                // Farooq - 14/06/2024 - Added to retrieve original schedule irrespective of loan status and interest recalculation
+                if (associationParameters.contains(DataTableApiConstant.originalScheduleAssociateParamName)) {
                     mandatoryResponseParameters.add(DataTableApiConstant.originalScheduleAssociateParamName);
                     LoanScheduleData loanScheduleData = this.loanScheduleHistoryReadPlatformService.retrieveRepaymentArchiveSchedule(
                             resolvedLoanId, repaymentScheduleRelatedData, disbursementData,
