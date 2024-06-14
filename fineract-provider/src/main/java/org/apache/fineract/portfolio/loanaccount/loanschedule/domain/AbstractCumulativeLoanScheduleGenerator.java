@@ -338,7 +338,8 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
             }
 
             // applies charges for the period
-            applyChargesForCurrentPeriod(loanCharges, currency, scheduleParams, scheduledDueDate, currentPeriodParams, mc, isLastInstallmentPeriod);
+            applyChargesForCurrentPeriod(loanCharges, currency, scheduleParams, scheduledDueDate, currentPeriodParams, mc,
+                    isLastInstallmentPeriod);
 
             // sum up real totalInstallmentDue from components
             final Money totalInstallmentDue = currentPeriodParams.fetchTotalAmountForPeriod();
@@ -593,8 +594,8 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                 currentPeriodParams.getInterestForThisPeriod(), null);
         outstanding = outstanding.minus(cumulativeFeeChargesDueWithin(transactionDate, scheduledDueDate, loanCharges,
                 totalInterestChargedForFullLoanTerm.getCurrency(), tempPrincipalInterest, scheduleParams.getPrincipalToBeScheduled(),
-                scheduleParams.getTotalCumulativeInterest(), true, scheduleParams.isFirstPeriod(), mc,
-                scheduleParams.getInstalmentNumber(), false));
+                scheduleParams.getTotalCumulativeInterest(), true, scheduleParams.isFirstPeriod(), mc, scheduleParams.getInstalmentNumber(),
+                false));
         outstanding = outstanding.minus(cumulativePenaltyChargesDueWithin(transactionDate, scheduledDueDate, loanCharges,
                 totalInterestChargedForFullLoanTerm.getCurrency(), tempPrincipalInterest, scheduleParams.getPrincipalToBeScheduled(),
                 scheduleParams.getTotalCumulativeInterest(), true, scheduleParams.isFirstPeriod(), mc));
@@ -1843,7 +1844,8 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                 if (DateUtils.isBefore(compoundingDate, endDate)) {
                     boolean isFirst = DateUtils.isEqual(startDate, lastCompoundingDate);
                     Money feeChargesForInstallment = cumulativeFeeChargesDueWithin(lastCompoundingDate, compoundingDate, charges, currency,
-                            null, loanApplicationTerms.getPrincipal(), null, false, isFirst, mc, scheduleParams.getInstalmentNumber(), false);
+                            null, loanApplicationTerms.getPrincipal(), null, false, isFirst, mc, scheduleParams.getInstalmentNumber(),
+                            false);
                     Money penaltyChargesForInstallment = cumulativePenaltyChargesDueWithin(lastCompoundingDate, compoundingDate, charges,
                             currency, null, loanApplicationTerms.getPrincipal(), null, false, isFirst, mc);
                     Money compoundAmount = feeChargesForInstallment.plus(penaltyChargesForInstallment);
@@ -2093,25 +2095,31 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                     if (loanCharge.isVoluntaryInsuranceCharge()) {
                         if (!loanCharge.installmentCharges().isEmpty()) {
                             if (isLastInstallmentPeriod) {
-                                cumulative = cumulative.plus(Money.of(monetaryCurrency, loanCharge.getLastInstallmentRoundOffAmountForVoluntaryInsurance(installmentNumber)));
+                                cumulative = cumulative.plus(Money.of(monetaryCurrency,
+                                        loanCharge.getLastInstallmentRoundOffAmountForVoluntaryInsurance(installmentNumber)));
                             } else {
-                                // When loan is rescheduled and installments are extended then for voluntary insurance there is no installment charge present for the
+                                // When loan is rescheduled and installments are extended then for voluntary insurance
+                                // there is no installment charge present for the
                                 // new installments. Just assign computed AmountPercentageAppliedTo value
                                 if (installmentNumber > loanCharge.installmentCharges().size()) {
                                     cumulative = cumulative.plus(Money.of(monetaryCurrency, loanCharge.getAmountPercentageAppliedTo()));
                                 } else {
-                                    cumulative = cumulative.plus(Money.of(monetaryCurrency, loanCharge.getInstallmentLoanCharge(installmentNumber).getAmount()));
+                                    cumulative = cumulative.plus(
+                                            Money.of(monetaryCurrency, loanCharge.getInstallmentLoanCharge(installmentNumber).getAmount()));
                                 }
                             }
                         } else {
                             if (isLastInstallmentPeriod) {
-                                cumulative = cumulative.plus(Money.of(monetaryCurrency, loanCharge.getLastInstallmentRoundOffAmountForVoluntaryInsurance(installmentNumber)));
+                                cumulative = cumulative.plus(Money.of(monetaryCurrency,
+                                        loanCharge.getLastInstallmentRoundOffAmountForVoluntaryInsurance(installmentNumber)));
                             } else {
-                                cumulative = cumulative.plus(calculateInstallmentCharge(principalInterestForThisPeriod, cumulative, loanCharge, mc, installmentNumber));
+                                cumulative = cumulative.plus(calculateInstallmentCharge(principalInterestForThisPeriod, cumulative,
+                                        loanCharge, mc, installmentNumber));
                             }
                         }
                     } else {
-                        cumulative = calculateInstallmentCharge(principalInterestForThisPeriod, cumulative, loanCharge, mc, installmentNumber);
+                        cumulative = calculateInstallmentCharge(principalInterestForThisPeriod, cumulative, loanCharge, mc,
+                                installmentNumber);
                     }
                 } else if (loanCharge.isOverdueInstallmentCharge() && isDue && loanCharge.getChargeCalculation().isPercentageBased()) {
                     cumulative = cumulative.plus(loanCharge.chargeAmount());

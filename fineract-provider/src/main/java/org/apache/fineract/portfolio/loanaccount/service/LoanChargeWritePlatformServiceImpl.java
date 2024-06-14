@@ -255,8 +255,7 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
                         }
                     }
                     for (LoanRepaymentScheduleInstallment installment : loan.getRepaymentScheduleInstallments()) {
-                        if (!installment.isObligationsMet()
-                                && installment.getInstallmentNumber() < applicableFromInstallment) {
+                        if (!installment.isObligationsMet() && installment.getInstallmentNumber() < applicableFromInstallment) {
                             applicableFromInstallment = installment.getInstallmentNumber();
                         }
                     }

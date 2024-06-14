@@ -533,11 +533,11 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
         }
 
         Money amount = Money.zero(this.loan.getCurrency());
-        //adjust decimal difference in amount that comes due to division of Charge amount with number of repayments
+        // adjust decimal difference in amount that comes due to division of Charge amount with number of repayments
         if (isVoluntaryInsuranceCharge() && this.charge.isInstallmentFee()) {
             int i = 1;
             for (LoanInstallmentCharge charge : this.loanInstallmentCharge) {
-                if (i == this.loanInstallmentCharge.size()){
+                if (i == this.loanInstallmentCharge.size()) {
                     amount = amount.plus(charge.getAmount());
                     if (amount.getAmount().compareTo(this.amount) != 0) {
                         if (amount.getAmount().compareTo(this.amount) < 0) {
@@ -551,9 +551,8 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
                         charge.setAmountOutstanding(charge.getAmount());
                         amount = Money.of(amount.getCurrency(), this.amount);
 
-
                     }
-                } else{
+                } else {
                     amount = amount.plus(charge.getAmount());
                 }
                 i++;
@@ -1172,7 +1171,8 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
                 }
             }
         } else if (this.isVoluntaryInsuranceCharge()) {
-            customAmout = customAmout.add(this.installmentCharges().isEmpty() ? this.amountOrPercentage : this.getInstallmentLoanCharge(installmentNumber).getAmount());
+            customAmout = customAmout.add(this.installmentCharges().isEmpty() ? this.amountOrPercentage
+                    : this.getInstallmentLoanCharge(installmentNumber).getAmount());
         }
         return customAmout;
     }
@@ -1196,7 +1196,7 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
         }
         BigDecimal installmentAmount = this.amount.divide(BigDecimal.valueOf(numberOfRepayments), 2, RoundingMode.CEILING);
         BigDecimal amt = BigDecimal.ZERO;
-        for (int i = 1; i<= numberOfRepayments; i++) {
+        for (int i = 1; i <= numberOfRepayments; i++) {
             amt = amt.add(installmentAmount);
         }
 

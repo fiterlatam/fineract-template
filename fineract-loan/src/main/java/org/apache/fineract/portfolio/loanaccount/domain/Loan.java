@@ -5172,8 +5172,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         final List<LoanInstallmentCharge> loanChargePerInstallments = new ArrayList<>();
         if (loanCharge.isInstalmentFee()) {
             List<LoanRepaymentScheduleInstallment> installments = getRepaymentScheduleInstallments().stream()
-                    .sorted(Comparator.comparingInt(LoanRepaymentScheduleInstallment::getInstallmentNumber))
-                    .toList();
+                    .sorted(Comparator.comparingInt(LoanRepaymentScheduleInstallment::getInstallmentNumber)).toList();
             for (final LoanRepaymentScheduleInstallment installment : installments) {
                 if (installment.isRecalculatedInterestComponent()) {
                     continue;
