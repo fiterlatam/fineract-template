@@ -229,4 +229,6 @@
     <include file="parts/202006092224100_SU_244_c_culient_buy_process_MODIFY.xml" relativeToChangelogFile="true"/>
     <include file="parts/202405312224100_SU_69_m_charge_MODIFY.xml" relativeToChangelogFile="true"/>
     <include file="parts/202006101618100_SU_288_c_custom_charge_honorarios_map_MODIFY.xml" relativeToChangelogFile="true"/>
+    <include file="parts/202406141026_SU_243_Credit_Mora_Fixing_DisbursmentPassdate.xml" relativeToChangelogFile="true"/>
+
 </databaseChangeLog>
