@@ -245,7 +245,7 @@ public class LoanAccountConfiguration {
             BlockingReasonSettingsRepositoryWrapper blockingReasonSettingsRepositoryWrapper, LoanRepository loanRepository,
             PlatformSecurityContext context) {
         return new LoanArrearsAgingServiceImpl(jdbcTemplate, businessEventNotifierService, sqlGenerator, clientWritePlatformService,
-                loanBlockWritePlatformService, blockingReasonSettingsRepositoryWrapper);
+                loanBlockWritePlatformService, blockingReasonSettingsRepositoryWrapper, loanRepository, context);
     }
 
     @Bean
