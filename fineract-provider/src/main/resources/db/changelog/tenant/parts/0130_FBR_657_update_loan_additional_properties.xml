@@ -51,5 +51,10 @@
             <column name="cliente_activo_fiador2" type="VARCHAR(100)"/>
         </addColumn>
     </changeSet>
+    <changeSet id="4" author="fineract">
+        <addColumn tableName="m_client_loan_additional_properties">
+            <column name="fecha_inicio_negocio" type="DATE"/>
+        </addColumn>
+    </changeSet>
 
 </databaseChangeLog>
