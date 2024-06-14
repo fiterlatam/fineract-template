@@ -213,7 +213,11 @@ public class LoanChargeAssembler {
                 }
             }
         }
-
+        for (LoanCharge loanCharge : loanCharges) {
+            if (loanCharge.getApplicableFromInstallment() == null) {
+                loanCharge.setApplicableFromInstallment(1);
+            }
+        }
         return loanCharges;
     }
 

@@ -36,5 +36,10 @@
             <column name="deadline" type="INT"/>
         </addColumn>
     </changeSet>
+    <changeSet author="fineract" id="2">
+        <addColumn tableName="m_loan_charge">
+            <column name="applicable_from_installment" type="INT"/>
+        </addColumn>
+    </changeSet>
 
 </databaseChangeLog>

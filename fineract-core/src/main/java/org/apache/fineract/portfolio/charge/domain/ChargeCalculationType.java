@@ -1598,7 +1598,8 @@ public enum ChargeCalculationType {
             // character
             val = this.byteRepresentation + "0";
         }
-        return val.charAt(ChargeCalculationTypeBaseItemsEnum.SEGURO_VOLUNTARIO.getIndex()) == '1';
+        return val.charAt(ChargeCalculationTypeBaseItemsEnum.SEGURO_VOLUNTARIO.getIndex()) == '1'
+                && val.charAt(ChargeCalculationTypeBaseItemsEnum.FLAT.getIndex()) == '1';
     }
 
     public boolean isFlatHono() {
