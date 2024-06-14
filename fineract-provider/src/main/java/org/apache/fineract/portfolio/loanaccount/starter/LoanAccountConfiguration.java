@@ -72,19 +72,7 @@ import org.apache.fineract.portfolio.fund.service.FundReadPlatformService;
 import org.apache.fineract.portfolio.group.domain.GroupRepository;
 import org.apache.fineract.portfolio.group.domain.GroupRepositoryWrapper;
 import org.apache.fineract.portfolio.group.service.GroupReadPlatformService;
-import org.apache.fineract.portfolio.loanaccount.domain.GLIMAccountInfoRepository;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanAccountDomainService;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanAccountDomainServiceJpa;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanChargeRepository;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanDisbursementDetailsRepository;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanLifecycleStateMachine;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleInstallmentRepository;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleTransactionProcessorFactory;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanRepository;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanSummaryWrapper;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionRelationRepository;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionRepository;
+import org.apache.fineract.portfolio.loanaccount.domain.*;
 import org.apache.fineract.portfolio.loanaccount.guarantor.service.GuarantorDomainService;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.AprCalculator;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleGeneratorFactory;
@@ -115,7 +103,6 @@ import org.apache.fineract.portfolio.loanaccount.service.LoanApplicationWritePla
 import org.apache.fineract.portfolio.loanaccount.service.LoanArrearsAgingService;
 import org.apache.fineract.portfolio.loanaccount.service.LoanArrearsAgingServiceImpl;
 import org.apache.fineract.portfolio.loanaccount.service.LoanAssembler;
-import org.apache.fineract.portfolio.loanaccount.service.LoanBlockWritePlatformServiceImpl;
 import org.apache.fineract.portfolio.loanaccount.service.LoanCalculateRepaymentPastDueService;
 import org.apache.fineract.portfolio.loanaccount.service.LoanChargeAssembler;
 import org.apache.fineract.portfolio.loanaccount.service.LoanChargePaidByReadPlatformService;
@@ -254,8 +241,9 @@ public class LoanAccountConfiguration {
     @ConditionalOnMissingBean(LoanArrearsAgingService.class)
     public LoanArrearsAgingService loanArrearsAgingService(JdbcTemplate jdbcTemplate,
             BusinessEventNotifierService businessEventNotifierService, DatabaseSpecificSQLGenerator sqlGenerator,
-            ClientWritePlatformService clientWritePlatformService, LoanBlockWritePlatformServiceImpl loanBlockWritePlatformService,
-            BlockingReasonSettingsRepositoryWrapper blockingReasonSettingsRepositoryWrapper) {
+            ClientWritePlatformService clientWritePlatformService, LoanBlockingReasonRepository loanBlockWritePlatformService,
+            BlockingReasonSettingsRepositoryWrapper blockingReasonSettingsRepositoryWrapper, LoanRepository loanRepository,
+            PlatformSecurityContext context) {
         return new LoanArrearsAgingServiceImpl(jdbcTemplate, businessEventNotifierService, sqlGenerator, clientWritePlatformService,
                 loanBlockWritePlatformService, blockingReasonSettingsRepositoryWrapper);
     }
