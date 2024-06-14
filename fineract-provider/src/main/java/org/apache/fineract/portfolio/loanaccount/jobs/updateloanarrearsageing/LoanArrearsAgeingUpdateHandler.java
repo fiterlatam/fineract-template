@@ -354,7 +354,7 @@ public class LoanArrearsAgeingUpdateHandler {
                     LEFT JOIN m_credit_blocking_reason  mcbr on mcbr.loan_id  = l.id
                     LEFT join m_blocking_reason_setting mbrs
                     on mbrs.id = mcbr.blocking_reason_id and mbrs.name_of_reason = ?
-                    WHERE mbrs.id is null;
+                    ;
                 """;
 
         final List<Long> loans = jdbcTemplate.queryForList(query, Long.class, BLOCKING_REASON_NAME);
