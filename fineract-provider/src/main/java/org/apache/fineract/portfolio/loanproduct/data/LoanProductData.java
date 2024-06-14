@@ -33,6 +33,7 @@ import org.apache.fineract.accounting.common.AccountingRuleType;
 import org.apache.fineract.accounting.glaccount.data.GLAccountData;
 import org.apache.fineract.accounting.producttoaccountmapping.data.ChargeToGLAccountMapper;
 import org.apache.fineract.accounting.producttoaccountmapping.data.PaymentTypeToGLAccountMapper;
+import org.apache.fineract.custom.infrastructure.channel.data.ChannelData;
 import org.apache.fineract.custom.portfolio.loanproduct.data.SubChannelLoanProductData;
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
@@ -277,6 +278,12 @@ public class LoanProductData implements Serializable {
 
     @Setter
     private InterestRateData interestRate;
+
+    @Setter
+    private List<ChannelData> channelOptions;
+
+    @Setter
+    private ChannelData channel;
 
     /**
      * Used when returning lookup information about loan product for dropdowns.
@@ -1142,6 +1149,7 @@ public class LoanProductData implements Serializable {
         this.advance = productData.advance;
         this.requirePoints = productData.requirePoints;
         this.interestRate = productData.interestRate;
+        this.channel = productData.getChannel();
 
     }
 

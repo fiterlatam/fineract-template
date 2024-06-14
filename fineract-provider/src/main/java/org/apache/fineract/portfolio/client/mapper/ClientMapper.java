@@ -84,6 +84,7 @@ public interface ClientMapper {
     @Mapping(target = "blockingReasonsDataOptions", ignore = true)
     @Mapping(target = "secondLastname", source = "source.secondLastname")
     @Mapping(target = "cupoBalance", ignore = true)
+    @Mapping(target = "advanceCupoBalance", ignore = true)
     ClientData map(Client source);
 
     @Named("clientTypeCode")

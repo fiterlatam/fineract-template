@@ -54,6 +54,8 @@ import org.apache.fineract.accounting.producttoaccountmapping.service.ProductToG
 import org.apache.fineract.commands.domain.CommandWrapper;
 import org.apache.fineract.commands.service.CommandWrapperBuilder;
 import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformService;
+import org.apache.fineract.custom.infrastructure.channel.data.ChannelData;
+import org.apache.fineract.custom.infrastructure.channel.service.ChannelReadWritePlatformService;
 import org.apache.fineract.custom.portfolio.loanproduct.service.SubChannelLoanProductReadWritePlatformService;
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 import org.apache.fineract.infrastructure.codes.service.CodeValueReadPlatformService;
@@ -166,6 +168,7 @@ public class LoanProductsApiResource {
     private final CodeValueReadPlatformService codeValueReadPlatformService;
     private final SubChannelLoanProductReadWritePlatformService subChannelLoanProductReadWritePlatformService;
     private final InterestRateReadPlatformService interestRateReadPlatformService;
+    private final ChannelReadWritePlatformService channelReadWritePlatformService;
 
     @POST
     @Consumes({ MediaType.APPLICATION_JSON })
@@ -252,6 +255,9 @@ public class LoanProductsApiResource {
                 .interestRateTypeId(InterestRateType.REGULAR.getValue()).build();
         final List<InterestRateData> interestRateOptions = this.interestRateReadPlatformService.retrieveInterestRates(searchParameters);
         loanProduct.setInterestRateOptions(interestRateOptions);
+
+        final List<ChannelData> channelOptions = channelReadWritePlatformService.findBySearchParam(null);
+        loanProduct.setChannelOptions(channelOptions);
         return this.toApiJsonSerializer.serialize(settings, loanProduct, LOAN_PRODUCT_DATA_PARAMETERS);
     }
 
@@ -521,6 +527,8 @@ public class LoanProductsApiResource {
         final List<InterestRateData> interestRateOptions = this.interestRateReadPlatformService.retrieveInterestRates(searchParameters);
         ret.setInterestRateOptions(interestRateOptions);
 
+        final List<ChannelData> channelOptions = channelReadWritePlatformService.findBySearchParam(null);
+        ret.setChannelOptions(channelOptions);
         return ret;
     }
 }

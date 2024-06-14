@@ -48,6 +48,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.accounting.common.AccountingRuleType;
+import org.apache.fineract.custom.insfrastructure.channel.domain.Channel;
 import org.apache.fineract.infrastructure.codes.domain.CodeValue;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
@@ -293,6 +294,12 @@ public class LoanProduct extends AbstractPersistableCustom {
     @Setter
     @Column(name = "custom_allow_reversal_cancellation")
     private Boolean customAllowReversalCancellation = false;
+
+    @lombok.Setter
+    @lombok.Getter
+    @ManyToOne
+    @JoinColumn(name = "channel_id")
+    private Channel channel;
 
     public static LoanProduct assembleFromJson(final Fund fund, final String loanTransactionProcessingStrategy,
             final List<Charge> productCharges, final JsonCommand command, FloatingRate floatingRate, final List<Rate> productRates,
@@ -1103,6 +1110,16 @@ public class LoanProduct extends AbstractPersistableCustom {
         if (command.isChangeInLongParameterNamed(interestRateIdParamName, existingInterestRateId)) {
             final Long newValue = command.longValueOfParameterNamed(interestRateIdParamName);
             actualChanges.put(interestRateIdParamName, newValue);
+        }
+
+        Long existingChannelId = null;
+        if (this.channel != null) {
+            existingChannelId = this.channel.getId();
+        }
+        final String channelIdParamName = "channelId";
+        if (command.isChangeInLongParameterNamed(channelIdParamName, existingChannelId)) {
+            final Long newValue = command.longValueOfParameterNamed(channelIdParamName);
+            actualChanges.put(channelIdParamName, newValue);
         }
 
         final String transactionProcessingStrategyCodeParamName = "transactionProcessingStrategyCode";

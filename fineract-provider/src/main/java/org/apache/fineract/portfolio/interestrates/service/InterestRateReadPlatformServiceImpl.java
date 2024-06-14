@@ -65,6 +65,18 @@ public class InterestRateReadPlatformServiceImpl implements InterestRateReadPlat
     }
 
     @Override
+    public List<InterestRateData> retrieveBySearchParams(SearchParameters searchParameters) {
+        String sql = "SELECT " + this.interestRateRowMapper.schema();
+        final BigDecimal currentRate = searchParameters.getCurrentRate();
+        List<Object> paramList = new ArrayList<>();
+        if (currentRate != null) {
+            paramList.add(currentRate);
+            sql = sql + " WHERE mir.current_rate > ?";
+        }
+        return this.jdbcTemplate.query(sql, this.interestRateRowMapper, paramList.toArray());
+    }
+
+    @Override
     public InterestRateData retrieveOne(final Long interestRateId) {
         try {
             final String sql = "SELECT " + this.interestRateRowMapper.schema() + " WHERE mir.id = ?";

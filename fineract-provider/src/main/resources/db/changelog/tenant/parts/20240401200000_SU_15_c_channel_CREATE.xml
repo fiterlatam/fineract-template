@@ -127,4 +127,31 @@
         </insert>
     </changeSet>
 
+    <changeSet author="fineract" id="63">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists schemaName="public" tableName="m_product_loan" columnName="channel_id"/>
+            </not>
+        </preConditions>
+        <addColumn schemaName="public" tableName="m_product_loan">
+            <column name="channel_id" type="BIGINT">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="64">
+        <addForeignKeyConstraint baseColumnNames="channel_id"
+                                 baseTableName="m_product_loan"
+                                 constraintName="FK_m_product_loan_channel_id"
+                                 deferrable="false"
+                                 initiallyDeferred="false"
+                                 onDelete="RESTRICT"
+                                 onUpdate="RESTRICT"
+                                 referencedColumnNames="id"
+                                 referencedTableSchemaName="custom"
+                                 referencedTableName="c_channel"
+                                 validate="true"/>
+    </changeSet>
+
 </databaseChangeLog>
