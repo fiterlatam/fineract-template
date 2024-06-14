@@ -30,16 +30,9 @@ import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import java.math.BigDecimal;
 import java.math.MathContext;
+import java.math.RoundingMode;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import org.apache.fineract.custom.portfolio.externalcharge.honoratio.domain.CustomChargeHonorarioMap;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
@@ -131,7 +124,7 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
     private BigDecimal maxCap;
 
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "loancharge", orphanRemoval = true, fetch = FetchType.EAGER)
-    private Set<LoanInstallmentCharge> loanInstallmentCharge = new HashSet<>();
+    private TreeSet<LoanInstallmentCharge> loanInstallmentCharge = new TreeSet<>();
 
     @Column(name = "is_active", nullable = false)
     private boolean active = true;
@@ -151,6 +144,9 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
     @OneToMany(fetch = FetchType.EAGER)
     @JoinColumn(name = "loan_charge_id", referencedColumnName = "id", insertable = false, updatable = false)
     private Set<CustomChargeHonorarioMap> customChargeHonorarioMaps = new HashSet<>();
+
+    @Column(name = "applicable_from_installment", nullable = true)
+    private Integer applicableFromInstallment;
 
     protected LoanCharge() {
         //
@@ -229,7 +225,23 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
                     if (numberOfRepayments == null) {
                         numberOfRepayments = this.loan.fetchNumberOfInstallmensAfterExceptions();
                     }
-                    this.amount = chargeAmount.multiply(BigDecimal.valueOf(numberOfRepayments));
+                    if (isVoluntaryInsuranceCharge()) {
+                        if (this.loan != null) {
+                            numberOfRepayments = this.loan.fetchUnpaidNumberOfInstallments(null);
+                            if (this.applicableFromInstallment == null) {
+                                for (LoanRepaymentScheduleInstallment installment : loan.getRepaymentScheduleInstallments()) {
+                                    if (!installment.isObligationsMet()) {
+                                        this.applicableFromInstallment = installment.getInstallmentNumber();
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        this.amountOrPercentage = chargeAmount.divide(BigDecimal.valueOf(numberOfRepayments), 2, RoundingMode.CEILING);
+                        this.amount = chargeAmount;
+                    } else {
+                        this.amount = chargeAmount.multiply(BigDecimal.valueOf(numberOfRepayments));
+                    }
                 } else {
                     this.amount = chargeAmount;
                 }
@@ -255,7 +267,9 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
             }
         }
 
-        this.amountOrPercentage = chargeAmount;
+        if (!isVoluntaryInsuranceCharge()) {
+            this.amountOrPercentage = chargeAmount;
+        }
         if (this.loan != null && isInstalmentFee()) {
             updateInstallmentCharges();
         }
@@ -342,11 +356,20 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
                 case INVALID:
                 break;
                 case FLAT_AMOUNT:
+                case FLAT_SEGOVOLUNTARIO:
                     if (isInstalmentFee()) {
                         if (numberOfRepayments == null) {
                             numberOfRepayments = this.loan.fetchNumberOfInstallmensAfterExceptions();
                         }
-                        this.amount = amount.multiply(BigDecimal.valueOf(numberOfRepayments));
+                        if (isVoluntaryInsuranceCharge()) {
+                            if (this.loan != null) {
+                                numberOfRepayments = this.loan.fetchUnpaidNumberOfInstallments(this.getApplicableFromInstallment());
+                            }
+                            this.amountOrPercentage = amount.divide(BigDecimal.valueOf(numberOfRepayments), 2, RoundingMode.CEILING);
+                            this.amount = amount;
+                        } else {
+                            this.amount = amount.multiply(BigDecimal.valueOf(numberOfRepayments));
+                        }
                     } else {
                         this.amount = amount;
                     }
@@ -366,7 +389,11 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
                     LOG.error("TODO Implement for other charge calculation types");
                 break;
             }
-            this.amountOrPercentage = amount;
+            if (isVoluntaryInsuranceCharge()) {
+                this.amountOrPercentage = amount.divide(BigDecimal.valueOf(numberOfRepayments), 2, RoundingMode.CEILING);
+            } else {
+                this.amountOrPercentage = amount;
+            }
             this.amountOutstanding = calculateOutstanding();
             if (this.loan != null && isInstalmentFee()) {
                 updateInstallmentCharges();
@@ -471,6 +498,10 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
         return actualChanges;
     }
 
+    public void resetAndUpdateInstallmentCharges() {
+        updateInstallmentCharges();
+    }
+
     private void updateInstallmentCharges() {
         final Collection<LoanInstallmentCharge> remove = new HashSet<>();
         final List<LoanInstallmentCharge> newChargeInstallments = this.loan.generateInstallmentLoanCharges(this);
@@ -500,9 +531,37 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
                 this.loanInstallmentCharge.add(loanChargePerInstallmentArray[index++]);
             }
         }
+
         Money amount = Money.zero(this.loan.getCurrency());
-        for (LoanInstallmentCharge charge : this.loanInstallmentCharge) {
-            amount = amount.plus(charge.getAmount());
+        //adjust decimal difference in amount that comes due to division of Charge amount with number of repayments
+        if (isVoluntaryInsuranceCharge() && this.charge.isInstallmentFee()) {
+            int i = 1;
+            for (LoanInstallmentCharge charge : this.loanInstallmentCharge) {
+                if (i == this.loanInstallmentCharge.size()){
+                    amount = amount.plus(charge.getAmount());
+                    if (amount.getAmount().compareTo(this.amount) != 0) {
+                        if (amount.getAmount().compareTo(this.amount) < 0) {
+                            BigDecimal difference = this.amount.subtract(amount.getAmount());
+                            charge.setAmount(charge.getAmount().add(difference));
+                        }
+                        if (amount.getAmount().compareTo(this.amount) > 0) {
+                            BigDecimal difference = amount.getAmount().subtract(this.amount);
+                            charge.setAmount(charge.getAmount().subtract(difference));
+                        }
+                        charge.setAmountOutstanding(charge.getAmount());
+                        amount = Money.of(amount.getCurrency(), this.amount);
+
+
+                    }
+                } else{
+                    amount = amount.plus(charge.getAmount());
+                }
+                i++;
+            }
+        } else {
+            for (LoanInstallmentCharge charge : this.loanInstallmentCharge) {
+                amount = amount.plus(charge.getAmount());
+            }
         }
         this.amount = amount.getAmount();
         this.amountOutstanding = calculateOutstanding();
@@ -717,6 +776,17 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
 
     public Money getAmountWrittenOff(final MonetaryCurrency currency) {
         return Money.of(currency, this.amountWrittenOff);
+    }
+
+    public Integer getApplicableFromInstallment() {
+        if (applicableFromInstallment == null) {
+            return 1;
+        }
+        return applicableFromInstallment;
+    }
+
+    public void setApplicableFromInstallment(Integer applicableFromInstallment) {
+        this.applicableFromInstallment = applicableFromInstallment;
     }
 
     /**
@@ -1086,6 +1156,8 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
                     break;
                 }
             }
+        } else if (this.isVoluntaryInsuranceCharge()) {
+            isApplicable = true;
         }
         return isApplicable;
     }
@@ -1099,11 +1171,39 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
                     break;
                 }
             }
+        } else if (this.isVoluntaryInsuranceCharge()) {
+            customAmout = customAmout.add(this.installmentCharges().isEmpty() ? this.amountOrPercentage : this.getInstallmentLoanCharge(installmentNumber).getAmount());
         }
         return customAmout;
     }
 
     public void updateCustomFeeCharge() {
         updateInstallmentCharges();
+    }
+
+    public boolean isVoluntaryInsuranceCharge() {
+        return getChargeCalculation().isVoluntaryInsurance();
+    }
+
+    public BigDecimal getLastInstallmentRoundOffAmountForVoluntaryInsurance(Integer lastInstallmentNumber) {
+        Integer numberOfRepayments = 1;
+        if (lastInstallmentNumber > 1) {
+            if (this.applicableFromInstallment == null) {
+                numberOfRepayments = lastInstallmentNumber;
+            } else {
+                numberOfRepayments = lastInstallmentNumber - this.applicableFromInstallment + 1;
+            }
+        }
+        BigDecimal installmentAmount = this.amount.divide(BigDecimal.valueOf(numberOfRepayments), 2, RoundingMode.CEILING);
+        BigDecimal amt = BigDecimal.ZERO;
+        for (int i = 1; i<= numberOfRepayments; i++) {
+            amt = amt.add(installmentAmount);
+        }
+
+        if (amt.compareTo(this.amount) > 0) {
+            BigDecimal difference = amt.subtract(this.amount);
+            installmentAmount = installmentAmount.subtract(difference);
+        }
+        return installmentAmount;
     }
 }

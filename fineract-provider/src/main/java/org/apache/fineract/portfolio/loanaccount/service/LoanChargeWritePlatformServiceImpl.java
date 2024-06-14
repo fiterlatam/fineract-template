@@ -245,6 +245,27 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
             loanCharge = loanChargeAssembler.createNewFromJson(loan, chargeDefinition, command);
             businessEventNotifierService.notifyPreBusinessEvent(new LoanAddChargeBusinessEvent(loanCharge));
 
+            if (loanCharge.isInstalmentFee()) {
+                Integer applicableFromInstallment = 1;
+                if (loanCharge.isVoluntaryInsuranceCharge()) {
+                    for (LoanRepaymentScheduleInstallment installment : loan.getRepaymentScheduleInstallments()) {
+                        if (!installment.isObligationsMet()) {
+                            applicableFromInstallment = installment.getInstallmentNumber();
+                            break;
+                        }
+                    }
+                    for (LoanRepaymentScheduleInstallment installment : loan.getRepaymentScheduleInstallments()) {
+                        if (!installment.isObligationsMet()
+                                && installment.getInstallmentNumber() < applicableFromInstallment) {
+                            applicableFromInstallment = installment.getInstallmentNumber();
+                        }
+                    }
+                }
+                loanCharge.setApplicableFromInstallment(applicableFromInstallment);
+
+                loanCharge.resetAndUpdateInstallmentCharges();
+            }
+
             validateAddLoanCharge(loan, chargeDefinition, loanCharge);
             isAppliedOnBackDate = addCharge(loan, chargeDefinition, loanCharge);
             if (loanCharge.getDueLocalDate() == null || DateUtils.isAfter(recalculateFrom, loanCharge.getDueLocalDate())) {

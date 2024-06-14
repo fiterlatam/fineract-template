@@ -695,7 +695,11 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 totalChargeAmt = loanCharge.amountOutstanding();
             }
         } else {
-            chargeAmt = loanCharge.amountOrPercentage();
+            if (loanCharge.isVoluntaryInsuranceCharge()) {
+                chargeAmt = loanCharge.getAmount(this.getCurrency()).getAmount();
+            } else {
+                chargeAmt = loanCharge.amountOrPercentage();
+            }
         }
         loanCharge.update(chargeAmt, loanCharge.getDueLocalDate(), amount, fetchNumberOfInstallmensAfterExceptions(), totalChargeAmt);
 
@@ -1258,7 +1262,11 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                     totalChargeAmt = calculatePerInstallmentChargeAmount(loanCharge);
                 }
             } else {
-                chargeAmt = loanCharge.amountOrPercentage();
+                if (loanCharge.isVoluntaryInsuranceCharge()) {
+                    chargeAmt = loanCharge.getAmount(this.getCurrency()).getAmount();
+                } else {
+                    chargeAmt = loanCharge.amountOrPercentage();
+                }
             }
             if (charge != null) {
                 charge.update(chargeAmt, loanCharge.getDueLocalDate(), amount, fetchNumberOfInstallmensAfterExceptions(), totalChargeAmt);
@@ -1739,6 +1747,17 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         return actualChanges;
     }
 
+    public void recalculateVoluntaryInsuranceCharges() {
+        Set<LoanCharge> charges = this.getActiveCharges();
+        int penaltyWaitPeriod = 0;
+        for (final LoanCharge loanCharge : charges) {
+            if (loanCharge.isVoluntaryInsuranceCharge()) {
+                recalculateLoanCharge(loanCharge, penaltyWaitPeriod);
+            }
+        }
+        updateSummaryWithTotalFeeChargesDueAtDisbursement(deriveSumTotalOfChargesDueAtDisbursement());
+    }
+
     public void recalculateAllCharges() {
         Set<LoanCharge> charges = this.getActiveCharges();
         int penaltyWaitPeriod = 0;
@@ -1786,7 +1805,11 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 totalChargeAmt = calculatePerInstallmentChargeAmount(loanCharge);
             }
         } else {
-            chargeAmt = loanCharge.amountOrPercentage();
+            if (loanCharge.isVoluntaryInsuranceCharge()) {
+                chargeAmt = loanCharge.getAmount(loanCharge.getLoan().getCurrency()).getAmount();
+            } else {
+                chargeAmt = loanCharge.amountOrPercentage();
+            }
         }
         if (loanCharge.isActive()) {
             clearLoanInstallmentChargesBeforeRegeneration(loanCharge);
@@ -5148,7 +5171,9 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     public List<LoanInstallmentCharge> generateInstallmentLoanCharges(final LoanCharge loanCharge) {
         final List<LoanInstallmentCharge> loanChargePerInstallments = new ArrayList<>();
         if (loanCharge.isInstalmentFee()) {
-            List<LoanRepaymentScheduleInstallment> installments = getRepaymentScheduleInstallments();
+            List<LoanRepaymentScheduleInstallment> installments = getRepaymentScheduleInstallments().stream()
+                    .sorted(Comparator.comparingInt(LoanRepaymentScheduleInstallment::getInstallmentNumber))
+                    .toList();
             for (final LoanRepaymentScheduleInstallment installment : installments) {
                 if (installment.isRecalculatedInterestComponent()) {
                     continue;
@@ -5157,7 +5182,6 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 if (loanCharge.getChargeCalculation().isFlat()) {
                     amount = loanCharge.amountOrPercentage();
                     if (loanCharge.getChargeCalculation().isFlatHono() && !loanCharge.getCustomChargeHonorarioMaps().isEmpty()) {
-                        BigDecimal amt = BigDecimal.ZERO;
                         for (CustomChargeHonorarioMap customCharge : loanCharge.getCustomChargeHonorarioMaps()) {
                             if (customCharge.getLoanInstallmentNr().equals(installment.getInstallmentNumber())) {
                                 amount = customCharge.getFeeTotalAmount();
@@ -5171,6 +5195,10 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 } else {
                     amount = calculateInstallmentChargeAmount(loanCharge.getChargeCalculation(), loanCharge.getPercentage(), installment)
                             .getAmount();
+                }
+                if ((loanCharge.isVoluntaryInsuranceCharge()
+                        && loanCharge.getApplicableFromInstallment() > installment.getInstallmentNumber())) {
+                    amount = BigDecimal.ZERO;
                 }
                 final LoanInstallmentCharge loanInstallmentCharge = new LoanInstallmentCharge(amount, loanCharge, installment);
                 installment.getInstallmentCharges().add(loanInstallmentCharge);
@@ -6616,6 +6644,9 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             } else if (loanTermVariations.getTermType().isDeleteInstallment()) {
                 repaymetsForAdjust--;
             }
+            if (loanTermVariations.getTermType().isExtendRepaymentPeriod()) {
+                repaymetsForAdjust = repaymetsForAdjust + loanTermVariations.getTermValue().intValue();
+            }
         }
         return repaymetsForAdjust;
     }
@@ -6628,6 +6659,30 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 if (!installment.isRecalculatedInterestComponent()) {
                     numberOfInstallments++;
                 }
+            }
+            return numberOfInstallments;
+        }
+        return this.repaymentScheduleDetail().getNumberOfRepayments() + adjustNumberOfRepayments();
+    }
+
+    public int fetchUnpaidNumberOfInstallments(Integer applicableFromInstallment) {
+
+        if (!this.repaymentScheduleInstallments.isEmpty()) {
+            List<LoanRepaymentScheduleInstallment> installments = getRepaymentScheduleInstallments();
+            int numberOfInstallments = 0;
+            for (final LoanRepaymentScheduleInstallment installment : installments) {
+                if (applicableFromInstallment == null) {
+                    if (installment.isObligationsMet()) {
+                        continue;
+                    } else {
+                        numberOfInstallments++;
+                    }
+                } else if (installment.getInstallmentNumber() < applicableFromInstallment) {
+                    continue;
+                } else {
+                    numberOfInstallments++;
+                }
+
             }
             return numberOfInstallments;
         }
