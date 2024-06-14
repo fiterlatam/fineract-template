@@ -52,6 +52,7 @@ import org.apache.fineract.infrastructure.dataqueries.data.StatusEnum;
 import org.apache.fineract.infrastructure.dataqueries.service.EntityDatatableChecksReadService;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.infrastructure.security.utils.ColumnValidator;
+import org.apache.fineract.organisation.monetary.domain.MoneyHelper;
 import org.apache.fineract.organisation.office.data.OfficeData;
 import org.apache.fineract.organisation.office.service.OfficeReadPlatformService;
 import org.apache.fineract.organisation.staff.data.StaffData;
@@ -75,6 +76,8 @@ import org.apache.fineract.portfolio.client.mapper.ClientMapper;
 import org.apache.fineract.portfolio.collateralmanagement.domain.ClientCollateralManagement;
 import org.apache.fineract.portfolio.collateralmanagement.domain.ClientCollateralManagementRepositoryWrapper;
 import org.apache.fineract.portfolio.group.data.GroupGeneralData;
+import org.apache.fineract.portfolio.loanproduct.data.AdvanceQuotaConfigurationData;
+import org.apache.fineract.portfolio.loanproduct.service.LoanProductReadPlatformService;
 import org.apache.fineract.portfolio.savings.data.SavingsProductData;
 import org.apache.fineract.portfolio.savings.service.SavingsProductReadPlatformService;
 import org.apache.fineract.useradministration.domain.AppUser;
@@ -111,6 +114,7 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
     private final ConfigurationDomainService configurationDomainService;
     private final ClientRepositoryWrapper clientRepositoryWrapper;
     private final ClientMapper clientMapper;
+    private final LoanProductReadPlatformService loanProductReadPlatformService;
 
     @Override
     public ClientData retrieveTemplate(final Long officeId, final boolean staffInSelectedOfficeOnly) {
@@ -325,6 +329,19 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
                     BigDecimal.class, new Object[] { clientId }), BigDecimal.ZERO);
             final BigDecimal cupoBalance = cupo.subtract(totalOutstandingPrincipalAmount);
             clientData.setCupoBalance(cupoBalance);
+            AdvanceQuotaConfigurationData advanceQuotaConfigurationData = this.loanProductReadPlatformService
+                    .retrieveAdvanceQuotaConfigurationData();
+            BigDecimal advanceCupoBalance = cupoBalance;
+            if (advanceQuotaConfigurationData.getEnabled()) {
+                final BigDecimal advanceOutstandingPrincipalAmount = ObjectUtils.defaultIfNull(this.jdbcTemplate.queryForObject(
+                        "SELECT COALESCE(SUM(ml.principal_outstanding_derived), 0) AS totalOutstandingPrincipalAmount FROM m_loan ml  INNER JOIN m_product_loan mpl ON mpl.id = ml.product_id WHERE ml.loan_status_id = 300 AND mpl.is_advance = TRUE AND ml.client_id = ?",
+                        BigDecimal.class, new Object[] { clientId }), BigDecimal.ZERO);
+                final BigDecimal percentageValue = advanceQuotaConfigurationData.getPercentageValue();
+                final BigDecimal advanceCupo = ObjectUtils.defaultIfNull(percentageValue, BigDecimal.ZERO).multiply(cupo)
+                        .divide(BigDecimal.valueOf(100), MoneyHelper.getRoundingMode());
+                advanceCupoBalance = advanceCupo.subtract(advanceOutstandingPrincipalAmount);
+            }
+            clientData.setAdvanceCupoBalance(advanceCupoBalance);
             return clientData;
 
         } catch (final EmptyResultDataAccessException e) {
