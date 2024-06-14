@@ -136,7 +136,6 @@ import org.apache.fineract.portfolio.loanaccount.data.LoanTermVariationsData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanTransactionData;
 import org.apache.fineract.portfolio.loanaccount.data.PaidInAdvanceData;
 import org.apache.fineract.portfolio.loanaccount.data.RepaymentScheduleRelatedLoanData;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanStatus;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanTermVariationType;
 import org.apache.fineract.portfolio.loanaccount.exception.LoanNotFoundException;
 import org.apache.fineract.portfolio.loanaccount.exception.LoanTemplateTypeRequiredException;
@@ -1079,9 +1078,9 @@ public class LoansApiResource {
                     this.calculationPlatformService.updateFutureSchedule(repaymentSchedule, resolvedLoanId);
                 }
 
-                if (associationParameters.contains(DataTableApiConstant.originalScheduleAssociateParamName)
-                        && loanBasicDetails.isInterestRecalculationEnabled()
-                        && LoanStatus.fromInt(loanBasicDetails.getStatus().getId().intValue()).isActive()) {
+                // Farooq - 14/06/2024 - Added to retrieve original schedule irrespective of loan status and interest
+                // recalculation
+                if (associationParameters.contains(DataTableApiConstant.originalScheduleAssociateParamName)) {
                     mandatoryResponseParameters.add(DataTableApiConstant.originalScheduleAssociateParamName);
                     LoanScheduleData loanScheduleData = this.loanScheduleHistoryReadPlatformService.retrieveRepaymentArchiveSchedule(
                             resolvedLoanId, repaymentScheduleRelatedData, disbursementData,
