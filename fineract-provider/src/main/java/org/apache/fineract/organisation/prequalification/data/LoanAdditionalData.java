@@ -142,6 +142,8 @@ public class LoanAdditionalData {
 
     private String evolucionNegocio;
 
+    private LocalDate fecha_inicio_negocio;
+
     private String fPep;
 
     private Integer familiares;
@@ -567,6 +569,7 @@ public class LoanAdditionalData {
     private String categoria_fiador2;
 
     private String cliente_activo_fiador2;
+
 
     public LoanAdditionProperties toEntity() {
         final LoanAdditionProperties loanAdditionProperties = new LoanAdditionProperties();
