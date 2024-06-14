@@ -143,6 +143,7 @@
         <!-- Fineract Accounting module -->
         <class>org.apache.fineract.accounting.rule.domain.AccountingRule</class>
         <class>org.apache.fineract.accounting.rule.domain.AccountingTagRule</class>
+        <class>org.apache.fineract.custom.insfrastructure.channel.domain.Channel</class>
         <exclude-unlisted-classes>false</exclude-unlisted-classes>
         <properties>
             <property name="eclipselink.weaving" value="static" />

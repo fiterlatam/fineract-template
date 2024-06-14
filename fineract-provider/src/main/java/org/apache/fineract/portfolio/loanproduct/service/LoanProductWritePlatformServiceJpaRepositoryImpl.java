@@ -37,6 +37,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.fineract.accounting.producttoaccountmapping.service.ProductToGLAccountMappingWritePlatformService;
+import org.apache.fineract.custom.infrastructure.channel.domain.ChannelRepository;
+import org.apache.fineract.custom.infrastructure.channel.exception.ChannelNotFoundException;
+import org.apache.fineract.custom.insfrastructure.channel.domain.Channel;
 import org.apache.fineract.custom.portfolio.loanproduct.data.SubChannelLoanProductData;
 import org.apache.fineract.custom.portfolio.loanproduct.domain.SubChannelLoanProduct;
 import org.apache.fineract.custom.portfolio.loanproduct.domain.SubChannelLoanProductRepository;
@@ -48,8 +51,10 @@ import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuilder;
 import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
 import org.apache.fineract.infrastructure.core.exception.ErrorHandler;
+import org.apache.fineract.infrastructure.core.exception.GeneralPlatformDomainRuleException;
 import org.apache.fineract.infrastructure.core.exception.PlatformDataIntegrityException;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
+import org.apache.fineract.infrastructure.core.service.SearchParameters;
 import org.apache.fineract.infrastructure.entityaccess.domain.FineractEntityAccessType;
 import org.apache.fineract.infrastructure.entityaccess.service.FineractEntityAccessUtil;
 import org.apache.fineract.infrastructure.event.business.domain.loan.product.LoanProductCreateBusinessEvent;
@@ -67,9 +72,11 @@ import org.apache.fineract.portfolio.floatingrates.domain.FloatingRateRepository
 import org.apache.fineract.portfolio.fund.domain.Fund;
 import org.apache.fineract.portfolio.fund.domain.FundRepository;
 import org.apache.fineract.portfolio.fund.exception.FundNotFoundException;
+import org.apache.fineract.portfolio.interestrates.data.InterestRateData;
 import org.apache.fineract.portfolio.interestrates.domain.InterestRate;
 import org.apache.fineract.portfolio.interestrates.domain.InterestRateRepository;
 import org.apache.fineract.portfolio.interestrates.exception.InterestRateException;
+import org.apache.fineract.portfolio.interestrates.service.InterestRateReadPlatformService;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleTransactionProcessorFactory;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.AprCalculator;
@@ -132,6 +139,8 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
     private final SubChannelLoanProductRepository subChannelLoanProductRepository;
     private final JdbcTemplate jdbcTemplate;
     private final InterestRateRepository interestRateRepository;
+    private final InterestRateReadPlatformService interestRateReadPlatformService;
+    private final ChannelRepository channelRepository;
 
     @Transactional
     @Override
@@ -182,6 +191,13 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
 
             populateProductCustomAllowance(command, loanProduct);
             loanProduct.setInterestRate(interestRate);
+
+            if (command.parameterExists("channelId")) {
+                final Long channelId = command.longValueOfParameterNamed("channelId");
+                final Channel channel = this.channelRepository.findById(channelId)
+                        .orElseThrow(() -> new ChannelNotFoundException(channelId));
+                loanProduct.setChannel(channel);
+            }
 
             this.loanProductRepository.save(loanProduct);
 
@@ -344,6 +360,13 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
                 product.update(fund);
             }
 
+            if (changes.containsKey("channelId")) {
+                final Long channelId = (Long) changes.get("channelId");
+                final Channel channel = this.channelRepository.findById(channelId)
+                        .orElseThrow(() -> new ChannelNotFoundException(channelId));
+                product.setChannel(channel);
+            }
+
             if (changes.containsKey(LoanProductConstants.PRODUCT_TYPE)) {
                 final Long parameterTypeId = (Long) changes.get(LoanProductConstants.PRODUCT_TYPE);
                 final CodeValue productType = this.codeValueRepository.findOneWithNotFoundDetection(parameterTypeId);
@@ -494,6 +517,14 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
             this.fromApiJsonDeserializer.validateMaximumRateForUpdate(command);
             final BigDecimal eaRate = command.bigDecimalValueOfParameterNamed("eaRate");
             final Map<String, Object> changes = maximumCreditRateConfiguration.update(command);
+            final BigDecimal annualNominalRate = maximumCreditRateConfiguration.getAnnualNominalRate();
+            final SearchParameters searchParameters = SearchParameters.builder().currentRate(annualNominalRate).build();
+            List<InterestRateData> interestRateDataList = this.interestRateReadPlatformService.retrieveBySearchParams(searchParameters);
+            if (CollectionUtils.isNotEmpty(interestRateDataList)) {
+                throw new GeneralPlatformDomainRuleException("error.msg.interest.rates.exist.above.this.rate",
+                        "The change cannot be made since there is interest rates above the new rate, you must first modify the rates",
+                        annualNominalRate);
+            }
             maximumCreditRateConfiguration.setAppliedBy(appliedBy);
             this.maximumRateRepository.saveAndFlush(maximumCreditRateConfiguration);
             return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withEntityId(id).withEaRate(eaRate).with(changes)

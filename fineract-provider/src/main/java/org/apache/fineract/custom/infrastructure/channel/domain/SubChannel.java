@@ -32,6 +32,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.apache.fineract.custom.insfrastructure.channel.domain.Channel;
 
 @Entity
 @Table(schema = "custom", name = "c_channel_subchannel")

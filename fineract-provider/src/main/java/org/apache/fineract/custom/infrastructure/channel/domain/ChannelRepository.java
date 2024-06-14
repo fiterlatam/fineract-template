@@ -20,6 +20,7 @@ package org.apache.fineract.custom.infrastructure.channel.domain;
 
 import java.util.List;
 import java.util.Optional;
+import org.apache.fineract.custom.insfrastructure.channel.domain.Channel;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;

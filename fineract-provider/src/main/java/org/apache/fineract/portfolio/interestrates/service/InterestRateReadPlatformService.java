@@ -28,6 +28,8 @@ public interface InterestRateReadPlatformService {
 
     List<InterestRateData> retrieveAll();
 
+    List<InterestRateData> retrieveBySearchParams(SearchParameters searchParameters);
+
     InterestRateData retrieveOne(Long interestRateId);
 
     InterestRateData retrieveTemplate();

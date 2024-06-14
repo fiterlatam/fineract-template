@@ -22,7 +22,7 @@ import org.apache.fineract.infrastructure.core.exception.AbstractPlatformResourc
 
 public class ChannelNotFoundException extends AbstractPlatformResourceNotFoundException {
 
-    public ChannelNotFoundException() {
-        super("error.msg.channel.id.invalid", "Channel does not exist");
+    public ChannelNotFoundException(final Long channelId) {
+        super("error.msg.channel.id.invalid", "Channel does not exist", channelId);
     }
 }

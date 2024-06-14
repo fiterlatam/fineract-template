@@ -27,18 +27,17 @@ import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.fineract.custom.infrastructure.channel.data.ChannelData;
-import org.apache.fineract.custom.infrastructure.channel.domain.Channel;
 import org.apache.fineract.custom.infrastructure.channel.domain.ChannelRepository;
 import org.apache.fineract.custom.infrastructure.channel.domain.ChannelType;
 import org.apache.fineract.custom.infrastructure.channel.exception.ChannelNotFoundException;
 import org.apache.fineract.custom.infrastructure.channel.mapper.ChannelMapper;
 import org.apache.fineract.custom.infrastructure.channel.validator.ChannelDataValidator;
+import org.apache.fineract.custom.insfrastructure.channel.domain.Channel;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuilder;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.infrastructure.core.exception.PlatformDataIntegrityException;
-import org.apache.fineract.infrastructure.core.service.database.DatabaseSpecificSQLGenerator;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -53,15 +52,13 @@ import org.springframework.transaction.annotation.Transactional;
 public class ChannelReadWritePlatformServiceImpl implements ChannelReadWritePlatformService {
 
     private final JdbcTemplate jdbcTemplate;
-    private final DatabaseSpecificSQLGenerator sqlGenerator;
     private final ChannelDataValidator validatorClass;
     private final PlatformSecurityContext context;
 
     @Autowired
-    public ChannelReadWritePlatformServiceImpl(final JdbcTemplate jdbcTemplate, final DatabaseSpecificSQLGenerator sqlGenerator,
-            final ChannelDataValidator validatorClass, final PlatformSecurityContext context) {
+    public ChannelReadWritePlatformServiceImpl(final JdbcTemplate jdbcTemplate, final ChannelDataValidator validatorClass,
+            final PlatformSecurityContext context) {
         this.jdbcTemplate = jdbcTemplate;
-        this.sqlGenerator = sqlGenerator;
         this.validatorClass = validatorClass;
         this.context = context;
     }
@@ -103,7 +100,7 @@ public class ChannelReadWritePlatformServiceImpl implements ChannelReadWritePlat
     public ChannelData findById(Long id) {
         Optional<Channel> entity = repository.findById(id);
         if (entity.isEmpty()) {
-            throw new ChannelNotFoundException();
+            throw new ChannelNotFoundException(id);
         }
         return ChannelMapper.toDTO(entity.get());
     }
@@ -136,7 +133,7 @@ public class ChannelReadWritePlatformServiceImpl implements ChannelReadWritePlat
             entity.get().setActive(false);
             repository.saveAndFlush(entity.get());
         } else {
-            throw new ChannelNotFoundException();
+            throw new ChannelNotFoundException(id);
         }
 
         return new CommandProcessingResultBuilder().withEntityId(id).build();
@@ -156,7 +153,7 @@ public class ChannelReadWritePlatformServiceImpl implements ChannelReadWritePlat
                 entity.setId(channelId);
                 repository.save(entity);
             } else {
-                throw new ChannelNotFoundException();
+                throw new ChannelNotFoundException(channelId);
             }
 
             return new CommandProcessingResultBuilder().withEntityId(entity.getId()).build();

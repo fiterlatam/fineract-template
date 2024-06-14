@@ -115,4 +115,7 @@ public class MaximumCreditRateConfiguration extends AbstractPersistableCustom {
         return actualChanges;
     }
 
+    public BigDecimal getAnnualNominalRate() {
+        return annualNominalRate;
+    }
 }
