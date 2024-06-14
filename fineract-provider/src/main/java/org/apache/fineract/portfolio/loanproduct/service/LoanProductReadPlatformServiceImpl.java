@@ -26,10 +26,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.fineract.accounting.common.AccountingEnumerations;
+import org.apache.fineract.custom.infrastructure.channel.data.ChannelData;
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.infrastructure.core.domain.ExternalId;
@@ -234,81 +237,162 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
         }
 
         public String loanProductSchema() {
-            return "lp.id as id, lp.fund_id as fundId, lp.is_advance as advance, lp.require_points as requirePoints, f.name as fundName, lp.loan_transaction_strategy_code as transactionStrategyCode, lp.loan_transaction_strategy_name as transactionStrategyName, "
-                    + "mir.id as interestRateId, mir.name as interestRateName, mir.current_rate as interestCurrentRate, mir.appliedon_date as interestRateAppliedOnDate, mir.is_active as interestRateActive, "
-                    + "lp.name as name, lp.short_name as shortName, lp.description as description, "
-                    + "lp.principal_amount as principal, lp.min_principal_amount as minPrincipal, lp.max_principal_amount as maxPrincipal, lp.currency_code as currencyCode, lp.currency_digits as currencyDigits, lp.currency_multiplesof as inMultiplesOf, "
-                    + "lp.nominal_interest_rate_per_period as interestRatePerPeriod, lp.min_nominal_interest_rate_per_period as minInterestRatePerPeriod, lp.max_nominal_interest_rate_per_period as maxInterestRatePerPeriod, lp.interest_period_frequency_enum as interestRatePerPeriodFreq, "
-                    + "lp.annual_nominal_interest_rate as annualInterestRate, lp.interest_method_enum as interestMethod, lp.interest_calculated_in_period_enum as interestCalculationInPeriodMethod,lp.allow_partial_period_interest_calcualtion as allowPartialPeriodInterestCalcualtion, "
-                    + "lp.repay_every as repaidEvery, lp.repayment_period_frequency_enum as repaymentPeriodFrequency, lp.number_of_repayments as numberOfRepayments, lp.min_number_of_repayments as minNumberOfRepayments, lp.max_number_of_repayments as maxNumberOfRepayments, "
-                    + "lp.grace_on_principal_periods as graceOnPrincipalPayment, lp.recurring_moratorium_principal_periods as recurringMoratoriumOnPrincipalPeriods, lp.grace_on_interest_periods as graceOnInterestPayment, lp.grace_on_charges_periods as graceOnChargesPayment, lp.grace_interest_free_periods as graceOnInterestCharged,lp.grace_on_arrears_ageing as graceOnArrearsAgeing,lp.overdue_days_for_npa as overdueDaysForNPA, "
-                    + "lp.min_days_between_disbursal_and_first_repayment As minimumDaysBetweenDisbursalAndFirstRepayment, "
-                    + "lp.amortization_method_enum as amortizationMethod, lp.arrearstolerance_amount as tolerance, "
-                    + "lp.accounting_type as accountingType, lp.include_in_borrower_cycle as includeInBorrowerCycle,lp.use_borrower_cycle as useBorrowerCycle, lp.start_date as startDate, lp.close_date as closeDate,  "
-                    + "lp.allow_multiple_disbursals as multiDisburseLoan, lp.max_disbursals as maxTrancheCount, lp.max_outstanding_loan_balance as outstandingLoanBalance, "
-                    + "lp.disallow_expected_disbursements as disallowExpectedDisbursements, lp.allow_approved_disbursed_amounts_over_applied as allowApprovedDisbursedAmountsOverApplied, lp.over_applied_calculation_type as overAppliedCalculationType, over_applied_number as overAppliedNumber, "
-                    + "lp.days_in_month_enum as daysInMonth, lp.days_in_year_enum as daysInYear, lp.interest_recalculation_enabled as isInterestRecalculationEnabled, "
-                    + "lp.can_define_fixed_emi_amount as canDefineInstallmentAmount, lp.instalment_amount_in_multiples_of as installmentAmountInMultiplesOf, "
-                    + "lp.due_days_for_repayment_event as dueDaysForRepaymentEvent, lp.overdue_days_for_repayment_event as overDueDaysForRepaymentEvent, lp.enable_down_payment as enableDownPayment, lp.disbursed_amount_percentage_for_down_payment as disbursedAmountPercentageForDownPayment, lp.enable_auto_repayment_for_down_payment as enableAutoRepaymentForDownPayment, lp.repayment_start_date_type_enum as repaymentStartDateType, "
-                    + "lp.enable_installment_level_delinquency as enableInstallmentLevelDelinquency, "
-                    + "lpr.pre_close_interest_calculation_strategy as preCloseInterestCalculationStrategy, "
-                    + "lpr.id as lprId, lpr.product_id as productId, lpr.compound_type_enum as compoundType, lpr.reschedule_strategy_enum as rescheduleStrategy, "
-                    + "lpr.rest_frequency_type_enum as restFrequencyEnum, lpr.rest_frequency_interval as restFrequencyInterval, "
-                    + "lpr.rest_frequency_nth_day_enum as restFrequencyNthDayEnum, "
-                    + "lpr.rest_frequency_weekday_enum as restFrequencyWeekDayEnum, " + "lpr.rest_frequency_on_day as restFrequencyOnDay, "
-                    + "lpr.arrears_based_on_original_schedule as isArrearsBasedOnOriginalSchedule, "
-                    + "lpr.compounding_frequency_type_enum as compoundingFrequencyTypeEnum, lpr.compounding_frequency_interval as compoundingInterval, "
-                    + "lpr.compounding_frequency_nth_day_enum as compoundingFrequencyNthDayEnum, "
-                    + "lpr.compounding_frequency_weekday_enum as compoundingFrequencyWeekDayEnum, "
-                    + "lpr.compounding_frequency_on_day as compoundingFrequencyOnDay, "
-                    + "lpr.is_compounding_to_be_posted_as_transaction as isCompoundingToBePostedAsTransaction, "
-                    + "lpr.allow_compounding_on_eod as allowCompoundingOnEod, " + "lp.hold_guarantee_funds as holdGuaranteeFunds, "
-                    + "lp.principal_threshold_for_last_installment as principalThresholdForLastInstallment, "
-                    + "lp.fixed_principal_percentage_per_installment fixedPrincipalPercentagePerInstallment, "
-                    + "lp.sync_expected_with_disbursement_date as syncExpectedWithDisbursementDate, "
-                    + "lpg.id as lpgId, lpg.mandatory_guarantee as mandatoryGuarantee, "
-                    + "lpg.minimum_guarantee_from_own_funds as minimumGuaranteeFromOwnFunds, lpg.minimum_guarantee_from_guarantor_funds as minimumGuaranteeFromGuarantor, "
-                    + "lp.account_moves_out_of_npa_only_on_arrears_completion as accountMovesOutOfNPAOnlyOnArrearsCompletion, "
-                    + "curr.name as currencyName, curr.internationalized_name_code as currencyNameCode, curr.display_symbol as currencyDisplaySymbol, lp.external_id as externalId, "
-                    + "lca.id as lcaId, lca.amortization_method_enum as amortizationBoolean, lca.interest_method_enum as interestMethodConfigBoolean, "
-                    + "lca.loan_transaction_strategy_code as transactionProcessingStrategyBoolean,lca.interest_calculated_in_period_enum as interestCalcPeriodBoolean, lca.arrearstolerance_amount as arrearsToleranceBoolean, "
-                    + "lca.repay_every as repaymentFrequencyBoolean, lca.moratorium as graceOnPrincipalAndInterestBoolean, lca.grace_on_arrears_ageing as graceOnArrearsAgingBoolean, "
-                    + "lp.is_linked_to_floating_interest_rates as isLinkedToFloatingInterestRates, "
-                    + "lfr.floating_rates_id as floatingRateId, " + "fr.name as floatingRateName, "
-                    + "lfr.interest_rate_differential as interestRateDifferential, "
-                    + "lfr.min_differential_lending_rate as minDifferentialLendingRate, "
-                    + "lfr.default_differential_lending_rate as defaultDifferentialLendingRate, "
-                    + "lfr.max_differential_lending_rate as maxDifferentialLendingRate, "
-                    + "lfr.is_floating_interest_rate_calculation_allowed as isFloatingInterestRateCalculationAllowed, "
-                    + "lp.allow_variabe_installments as isVariableIntallmentsAllowed, " + "lvi.minimum_gap as minimumGap, "
-                    + "lvi.maximum_gap as maximumGap, dbuc.id as delinquencyBucketId, dbuc.name as delinquencyBucketName, "
-                    + "lp.can_use_for_topup as canUseForTopup, lp.is_equal_amortization as isEqualAmortization, "
-                    + "lp.loan_schedule_type as loanScheduleType, lp.loan_schedule_processing_type as loanScheduleProcessingType, "
-                    + "lp.repayment_rescheduling_enum as repaymentReschedulingType, "
-                    + "lp.max_client_inactivity_period as maxClientInactivityPeriod, "
-                    + "lp.overdue_amount_for_arrears overdueAmountForArrears, "
-                    + "lp.extend_term_monthly_repayments as extendTermForMonthlyRepayments, " //
-                    + "pty.code_value as productTypeValue, " //
-                    + "pty.id as productTypeId, " //
-                    + "lp.overdue_days_for_npa as overdueDaysForNPA, " //
-                    + "lp.custom_allow_create_or_disburse as customAllowCreateOrDisburse, " //
-                    + "lp.custom_allow_collections as customAllowCollections, " //
-                    + "lp.custom_allow_credit_note as customAllowCreditNote, " //
-                    + "lp.custom_allow_debit_note as customAllowDebitNote, " //
-                    + "lp.custom_allow_forgiveness as customAllowForgiveness, " //
-                    + "lp.custom_allow_reversal_cancellation as customAllowReversalCancellation " //
-                    + " from m_product_loan lp " //
-                    + " left join m_fund f on f.id = lp.fund_id " //
-                    + " left join m_product_loan_recalculation_details lpr on lpr.product_id=lp.id "
-                    + " left join m_product_loan_guarantee_details lpg on lpg.loan_product_id=lp.id "
-                    + " left join m_product_loan_configurable_attributes lca on lca.loan_product_id = lp.id "
-                    + " left join m_product_loan_floating_rates as lfr on lfr.loan_product_id = lp.id "
-                    + " left join m_floating_rates as fr on lfr.floating_rates_id = fr.id "
-                    + " left join m_product_loan_variable_installment_config as lvi on lvi.loan_product_id = lp.id "
-                    + " left join m_delinquency_bucket as dbuc on dbuc.id = lp.delinquency_bucket_id "
-                    + " left join m_code_value as pty on pty.id = lp.product_type "
-                    + " join m_currency curr on curr.code = lp.currency_code "
-                    + " left join m_interest_rate mir on mir.id = lp.interest_rate_id ";
+            return """
+                                	lp.id AS id,
+                                	lp.fund_id AS "fundId",
+                                	lp.is_advance AS "advance",
+                                	lp.require_points AS "requirePoints",
+                                	f.name AS "fundName",
+                                	lp.loan_transaction_strategy_code AS "transactionStrategyCode",
+                                	lp.loan_transaction_strategy_name AS "transactionStrategyName",
+                                	mir.id AS "interestRateId",
+                                	mir.name AS "interestRateName",
+                                	mir.current_rate AS "interestCurrentRate",
+                                	mir.appliedon_date AS "interestRateAppliedOnDate",
+                                	mir.is_active AS "interestRateActive",
+                                	lp.name AS name,
+                                	lp.short_name AS "shortName",
+                                	lp.description AS "description",
+                                	lp.principal_amount AS "principal",
+                                	lp.min_principal_amount AS "minPrincipal",
+                                	lp.max_principal_amount AS "maxPrincipal",
+                                	lp.currency_code AS "currencyCode",
+                                	lp.currency_digits AS "currencyDigits",
+                                	lp.currency_multiplesof AS "inMultiplesOf",
+                                	lp.nominal_interest_rate_per_period AS "interestRatePerPeriod",
+                                	lp.min_nominal_interest_rate_per_period AS "minInterestRatePerPeriod",
+                                	lp.max_nominal_interest_rate_per_period AS "maxInterestRatePerPeriod",
+                                	lp.interest_period_frequency_enum AS "interestRatePerPeriodFreq",
+                                	lp.annual_nominal_interest_rate AS "annualInterestRate",
+                                	lp.interest_method_enum AS "interestMethod",
+                                	lp.interest_calculated_in_period_enum AS "interestCalculationInPeriodMethod",
+                                	lp.allow_partial_period_interest_calcualtion AS "allowPartialPeriodInterestCalcualtion",
+                                	lp.repay_every AS "repaidEvery",
+                                	lp.repayment_period_frequency_enum AS "repaymentPeriodFrequency",
+                                	lp.number_of_repayments AS "numberOfRepayments",
+                                	lp.min_number_of_repayments AS "minNumberOfRepayments",
+                                	lp.max_number_of_repayments AS "maxNumberOfRepayments",
+                                	lp.grace_on_principal_periods AS "graceOnPrincipalPayment",
+                                	lp.recurring_moratorium_principal_periods AS "recurringMoratoriumOnPrincipalPeriods",
+                                	lp.grace_on_interest_periods AS "graceOnInterestPayment",
+                                	lp.grace_on_charges_periods AS "graceOnChargesPayment",
+                                	lp.grace_interest_free_periods AS "graceOnInterestCharged",
+                                	lp.grace_on_arrears_ageing AS "graceOnArrearsAgeing",
+                                	lp.overdue_days_for_npa AS "overdueDaysForNPA",
+                                	lp.min_days_between_disbursal_and_first_repayment AS "minimumDaysBetweenDisbursalAndFirstRepayment",
+                                	lp.amortization_method_enum AS "amortizationMethod",
+                                	lp.arrearstolerance_amount AS "tolerance",
+                                	lp.accounting_type AS "accountingType",
+                                	lp.include_in_borrower_cycle AS "includeInBorrowerCycle",
+                                	lp.use_borrower_cycle AS "useBorrowerCycle",
+                                	lp.start_date AS "startDate",
+                                	lp.close_date AS "closeDate",
+                                	lp.allow_multiple_disbursals AS "multiDisburseLoan",
+                                	lp.max_disbursals AS "maxTrancheCount",
+                                	lp.max_outstanding_loan_balance AS "outstandingLoanBalance",
+                                	lp.disallow_expected_disbursements AS "disallowExpectedDisbursements",
+                                	lp.allow_approved_disbursed_amounts_over_applied AS "allowApprovedDisbursedAmountsOverApplied",
+                                	lp.over_applied_calculation_type AS "overAppliedCalculationType",
+                                	over_applied_number AS "overAppliedNumber",
+                                	lp.days_in_month_enum AS "daysInMonth",
+                                	lp.days_in_year_enum AS "daysInYear",
+                                	lp.interest_recalculation_enabled AS "isInterestRecalculationEnabled",
+                                	lp.can_define_fixed_emi_amount AS "canDefineInstallmentAmount",
+                                	lp.instalment_amount_in_multiples_of AS "installmentAmountInMultiplesOf",
+                                	lp.due_days_for_repayment_event AS "dueDaysForRepaymentEvent",
+                                	lp.overdue_days_for_repayment_event AS "overDueDaysForRepaymentEvent",
+                                	lp.enable_down_payment AS "enableDownPayment",
+                                	lp.disbursed_amount_percentage_for_down_payment AS "disbursedAmountPercentageForDownPayment",
+                                	lp.enable_auto_repayment_for_down_payment AS "enableAutoRepaymentForDownPayment",
+                                	lp.repayment_start_date_type_enum AS "repaymentStartDateType",
+                                	lp.enable_installment_level_delinquency AS "enableInstallmentLevelDelinquency",
+                                	lpr.pre_close_interest_calculation_strategy AS "preCloseInterestCalculationStrategy",
+                                	lpr.id AS "lprId",
+                                	lpr.product_id AS "productId",
+                                	lpr.compound_type_enum AS "compoundType",
+                                	lpr.reschedule_strategy_enum AS "rescheduleStrategy",
+                                	lpr.rest_frequency_type_enum AS "restFrequencyEnum",
+                                	lpr.rest_frequency_interval AS "restFrequencyInterval",
+                                	lpr.rest_frequency_nth_day_enum AS "restFrequencyNthDayEnum",
+                                	lpr.rest_frequency_weekday_enum AS "restFrequencyWeekDayEnum",
+                                	lpr.rest_frequency_on_day AS "restFrequencyOnDay",
+                                	lpr.arrears_based_on_original_schedule AS "isArrearsBasedOnOriginalSchedule",
+                                	lpr.compounding_frequency_type_enum AS "compoundingFrequencyTypeEnum",
+                                	lpr.compounding_frequency_interval AS "compoundingInterval",
+                                	lpr.compounding_frequency_nth_day_enum AS "compoundingFrequencyNthDayEnum",
+                                	lpr.compounding_frequency_weekday_enum AS "compoundingFrequencyWeekDayEnum",
+                                	lpr.compounding_frequency_on_day AS "compoundingFrequencyOnDay",
+                                	lpr.is_compounding_to_be_posted_as_transaction AS "isCompoundingToBePostedAsTransaction",
+                                	lpr.allow_compounding_on_eod AS "allowCompoundingOnEod",
+                                	lp.hold_guarantee_funds AS "holdGuaranteeFunds",
+                                	lp.principal_threshold_for_last_installment AS "principalThresholdForLastInstallment",
+                                	lp.fixed_principal_percentage_per_installment "fixedPrincipalPercentagePerInstallment",
+                                	lp.sync_expected_with_disbursement_date AS "syncExpectedWithDisbursementDate",
+                                	lpg.id AS "lpgId",
+                                	lpg.mandatory_guarantee AS "mandatoryGuarantee",
+                                	lpg.minimum_guarantee_from_own_funds AS "minimumGuaranteeFromOwnFunds",
+                                	lpg.minimum_guarantee_from_guarantor_funds AS "minimumGuaranteeFromGuarantor",
+                                	lp.account_moves_out_of_npa_only_on_arrears_completion AS "accountMovesOutOfNPAOnlyOnArrearsCompletion",
+                                	curr.name AS "currencyName",
+                                	curr.internationalized_name_code AS "currencyNameCode",
+                                	curr.display_symbol AS "currencyDisplaySymbol",
+                                	lp.external_id AS "externalId",
+                                	lca.id AS "lcaId",
+                                	lca.amortization_method_enum AS "amortizationBoolean",
+                                	lca.interest_method_enum AS "interestMethodConfigBoolean",
+                                	lca.loan_transaction_strategy_code AS "transactionProcessingStrategyBoolean",
+                                	lca.interest_calculated_in_period_enum AS "interestCalcPeriodBoolean",
+                                	lca.arrearstolerance_amount AS "arrearsToleranceBoolean",
+                                	lca.repay_every AS "repaymentFrequencyBoolean",
+                                	lca.moratorium AS "graceOnPrincipalAndInterestBoolean",
+                                	lca.grace_on_arrears_ageing AS "graceOnArrearsAgingBoolean",
+                                	lp.is_linked_to_floating_interest_rates AS "isLinkedToFloatingInterestRates",
+                                	lfr.floating_rates_id AS "floatingRateId",
+                                	fr.name AS "floatingRateName",
+                                	lfr.interest_rate_differential AS "interestRateDifferential",
+                                	lfr.min_differential_lending_rate AS "minDifferentialLendingRate",
+                                	lfr.default_differential_lending_rate AS "defaultDifferentialLendingRate",
+                                	lfr.max_differential_lending_rate AS "maxDifferentialLendingRate",
+                                	lfr.is_floating_interest_rate_calculation_allowed AS "isFloatingInterestRateCalculationAllowed",
+                                	lp.allow_variabe_installments AS "isVariableIntallmentsAllowed",
+                                	lvi.minimum_gap AS "minimumGap",
+                                	lvi.maximum_gap AS "maximumGap",
+                                	dbuc.id AS "delinquencyBucketId",
+                                	dbuc.name AS "delinquencyBucketName",
+                                	lp.can_use_for_topup AS "canUseForTopup",
+                                	lp.is_equal_amortization AS "isEqualAmortization",
+                                	lp.loan_schedule_type AS "loanScheduleType",
+                                	lp.loan_schedule_processing_type AS "loanScheduleProcessingType",
+                                	lp.repayment_rescheduling_enum AS "repaymentReschedulingType",
+                                	lp.max_client_inactivity_period AS "maxClientInactivityPeriod",
+                                	lp.overdue_amount_for_arrears "overdueAmountForArrears",
+                                	lp.extend_term_monthly_repayments AS "extendTermForMonthlyRepayments",
+                                	pty.code_value AS "productTypeValue",
+                                	pty.id AS "productTypeId",
+                                	lp.overdue_days_for_npa AS "overdueDaysForNPA",
+                                	lp.custom_allow_create_or_disburse AS "customAllowCreateOrDisburse",
+                                	lp.custom_allow_collections AS "customAllowCollections",
+                                	lp.custom_allow_credit_note AS "customAllowCreditNote",
+                                	lp.custom_allow_debit_note AS "customAllowDebitNote",
+                                	lp.custom_allow_forgiveness AS "customAllowForgiveness",
+                                	lp.custom_allow_reversal_cancellation AS "customAllowReversalCancellation",
+                                	cc.id AS "channelId",
+                                	cc."name" AS "channelName",
+                                	cc.description AS "channelDescription"
+                                FROM m_product_loan lp
+                                JOIN m_currency curr ON curr.code = lp.currency_code
+                                LEFT JOIN m_fund f ON f.id = lp.fund_id
+                                LEFT JOIN m_product_loan_recalculation_details lpr ON lpr.product_id = lp.id
+                                LEFT JOIN m_product_loan_guarantee_details lpg ON lpg.loan_product_id = lp.id
+                                LEFT JOIN m_product_loan_configurable_attributes lca ON lca.loan_product_id = lp.id
+                                LEFT JOIN m_product_loan_floating_rates AS lfr ON lfr.loan_product_id = lp.id
+                                LEFT JOIN m_floating_rates AS fr ON lfr.floating_rates_id = fr.id
+                                LEFT JOIN m_product_loan_variable_installment_config AS lvi ON lvi.loan_product_id = lp.id
+                                LEFT JOIN m_delinquency_bucket AS dbuc ON dbuc.id = lp.delinquency_bucket_id
+                                LEFT JOIN m_code_value AS pty ON pty.id = lp.product_type
+                                LEFT JOIN m_interest_rate mir ON mir.id = lp.interest_rate_id
+                                LEFT JOIN custom.c_channel cc ON cc.id = lp.channel_id
+                    """;
 
         }
 
@@ -615,6 +699,15 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
                     .currentRate(interestCurrentRate).appliedOnDate(interestRateAppliedOnDate).active(InterestRateActive).build();
             loanProductData.setInterestRate(interestRateData);
             loanProductData.setGraceOnChargesPayment(graceOnChargesPayment);
+
+            final Long channelId = JdbcSupport.getLong(rs, "channelId");
+            if (channelId != null && !Objects.equals(channelId, NumberUtils.LONG_ZERO)) {
+                final String channelName = rs.getString("channelName");
+                final String channelDescription = rs.getString("channelDescription");
+                final ChannelData channelData = ChannelData.builder().id(channelId).name(channelName).description(channelDescription)
+                        .build();
+                loanProductData.setChannel(channelData);
+            }
             return loanProductData;
         }
     }

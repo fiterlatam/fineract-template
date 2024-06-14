@@ -399,6 +399,10 @@ public class Charge extends AbstractPersistableCustom {
         return ChargeCalculationType.fromInt(this.chargeCalculation).isPercentageOfDisbursement();
     }
 
+    public boolean isInstallmentFee() {
+        return ChargeTimeType.fromInt(this.chargeTimeType).isInstalmentFee();
+    }
+
     public BigDecimal getMinCap() {
         return this.minCap;
     }
