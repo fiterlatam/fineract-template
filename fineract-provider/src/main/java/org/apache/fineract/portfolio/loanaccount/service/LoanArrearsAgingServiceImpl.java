@@ -52,10 +52,12 @@ import org.apache.fineract.infrastructure.event.business.domain.loan.transaction
 import org.apache.fineract.infrastructure.event.business.domain.loan.transaction.LoanUndoWrittenOffBusinessEvent;
 import org.apache.fineract.infrastructure.event.business.domain.loan.transaction.LoanWaiveInterestBusinessEvent;
 import org.apache.fineract.infrastructure.event.business.service.BusinessEventNotifierService;
+import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.portfolio.client.service.ClientWritePlatformService;
 import org.apache.fineract.portfolio.loanaccount.domain.*;
 import org.apache.fineract.portfolio.loanaccount.exception.LoanBlockingReasonNotFoundException;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.data.LoanSchedulePeriodData;
+import org.apache.fineract.useradministration.domain.AppUser;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.ResultSetExtractor;
@@ -72,6 +74,8 @@ public class LoanArrearsAgingServiceImpl implements LoanArrearsAgingService {
     private final ClientWritePlatformService clientWritePlatformService;
     private final LoanBlockingReasonRepository loanBlockingReasonRepository;
     private final BlockingReasonSettingsRepositoryWrapper blockingReasonSettingsRepositoryWrapper;
+    private final LoanRepository loanRepository;
+    private final PlatformSecurityContext context;
 
     @PostConstruct
     public void registerForNotification() {
@@ -605,6 +609,7 @@ public class LoanArrearsAgingServiceImpl implements LoanArrearsAgingService {
                 blockingReasonSetting.getId());
 
         AppUser currentUser = context.authenticatedUser();
+
         if (existingBlockingReason.isPresent()) {
             LoanBlockingReason blockingReason = this.loanBlockingReasonRepository
                     .findExistingBlockingReason(loan.getId(), blockingReasonSetting.getId())
