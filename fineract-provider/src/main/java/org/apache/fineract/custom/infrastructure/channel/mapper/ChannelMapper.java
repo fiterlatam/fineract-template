@@ -22,8 +22,8 @@ package org.apache.fineract.custom.infrastructure.channel.mapper;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.fineract.custom.infrastructure.channel.data.ChannelData;
-import org.apache.fineract.custom.infrastructure.channel.domain.Channel;
 import org.apache.fineract.custom.infrastructure.channel.domain.ChannelType;
+import org.apache.fineract.custom.insfrastructure.channel.domain.Channel;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 
 public class ChannelMapper {

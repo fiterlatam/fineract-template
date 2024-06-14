@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.custom.infrastructure.channel.domain;
+package org.apache.fineract.custom.insfrastructure.channel.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

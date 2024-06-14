@@ -18,7 +18,6 @@
  */
 package org.apache.fineract.portfolio.loanproduct.exception;
 
-import java.time.LocalDate;
 import org.apache.fineract.infrastructure.core.exception.AbstractPlatformResourceNotFoundException;
 
 /**
@@ -30,7 +29,9 @@ public class MaximumLegalRateExceptions extends AbstractPlatformResourceNotFound
         super("error.msg.maximum.rate.not.found", "Maximum rate table is empty", "");
     }
 
-    public MaximumLegalRateExceptions(final LocalDate appliedOnDate) {
-        super("error.msg.applied.on.date.cannot.be.in.the.future", "Applied on date cannot be in the future date", appliedOnDate);
+    public MaximumLegalRateExceptions(final String globalisationMessageCode, final String defaultUserMessage,
+            final Object... defaultUserMessageArgs) {
+        super(globalisationMessageCode, defaultUserMessage, defaultUserMessageArgs);
     }
+
 }

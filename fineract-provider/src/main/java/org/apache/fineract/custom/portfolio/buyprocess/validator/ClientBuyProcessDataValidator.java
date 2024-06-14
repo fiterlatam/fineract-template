@@ -168,12 +168,12 @@ public class ClientBuyProcessDataValidator {
 
         final Long codigoSeguro = this.fromApiJsonHelper.extractLongNamed(ClientBuyProcessApiConstants.codigoSeguroParamName, element);
         baseDataValidator.reset().parameter(ClientBuyProcessApiConstants.codigoSeguroParamName).value(codigoSeguro).ignoreIfNull()
-                .longGreaterThanZero();
+                .longZeroOrGreater();
 
         final Long cedulaSeguroVoluntario = this.fromApiJsonHelper
                 .extractLongNamed(ClientBuyProcessApiConstants.cedulaSeguroVoluntarioParamName, element);
         baseDataValidator.reset().parameter(ClientBuyProcessApiConstants.cedulaSeguroVoluntarioParamName).value(cedulaSeguroVoluntario)
-                .ignoreIfNull().longGreaterThanZero();
+                .ignoreIfNull().longZeroOrGreater();
 
         final Integer interestRatePoints = this.fromApiJsonHelper.extractIntegerWithLocaleNamed(LoanApiConstants.INTEREST_RATE_POINTS,
                 element);
@@ -265,12 +265,12 @@ public class ClientBuyProcessDataValidator {
 
         final Long codigoSeguro = this.fromApiJsonHelper.extractLongNamed(ClientBuyProcessApiConstants.codigoSeguroParamName, element);
         baseDataValidator.reset().parameter(ClientBuyProcessApiConstants.codigoSeguroParamName).value(codigoSeguro).ignoreIfNull()
-                .longGreaterThanZero();
+                .longZeroOrGreater();
 
         final Long cedulaSeguroVoluntario = this.fromApiJsonHelper
                 .extractLongNamed(ClientBuyProcessApiConstants.cedulaSeguroVoluntarioParamName, element);
         baseDataValidator.reset().parameter(ClientBuyProcessApiConstants.cedulaSeguroVoluntarioParamName).value(cedulaSeguroVoluntario)
-                .ignoreIfNull().longGreaterThanZero();
+                .ignoreIfNull().longZeroOrGreater();
 
         throwExceptionIfValidationWarningsExist(dataValidationErrors);
 

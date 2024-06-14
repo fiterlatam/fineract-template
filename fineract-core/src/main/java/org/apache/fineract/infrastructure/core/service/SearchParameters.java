@@ -18,6 +18,7 @@
  */
 package org.apache.fineract.infrastructure.core.service;
 
+import java.math.BigDecimal;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -55,6 +56,7 @@ public final class SearchParameters {
     private final Long categoryId;
     private final boolean isSelfUser;
     private Integer interestRateTypeId;
+    private BigDecimal currentRate;
 
     public static SearchParameters from(final Long officeId, final String externalId, final String name, final String hierarchy) {
         final Long staffId = null;
