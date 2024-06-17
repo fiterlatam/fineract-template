@@ -18,74 +18,109 @@
  */
 package org.apache.fineract.portfolio.client.domain.search;
 
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.TypedQuery;
-import jakarta.persistence.criteria.CriteriaBuilder;
-import jakarta.persistence.criteria.CriteriaQuery;
-import jakarta.persistence.criteria.Order;
-import jakarta.persistence.criteria.Path;
-import jakarta.persistence.criteria.Predicate;
-import jakarta.persistence.criteria.Root;
-import java.util.ArrayList;
+import java.sql.Date;
+import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Locale;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
-import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSetting;
-import org.apache.fineract.infrastructure.core.jpa.CriteriaQueryFactory;
-import org.apache.fineract.organisation.office.domain.Office;
-import org.apache.fineract.portfolio.client.domain.Client;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.fineract.infrastructure.core.domain.ExternalId;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.domain.Specification;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
 
 @Repository
 @RequiredArgsConstructor
 public class SearchingClientRepositoryImpl implements SearchingClientRepository {
 
-    private final EntityManager entityManager;
-    private final CriteriaQueryFactory criteriaQueryFactory;
+    private final JdbcTemplate jdbcTemplate;
 
     @Override
     public Page<SearchedClient> searchByText(String searchText, Pageable pageable, String officeHierarchy) {
-        /*
-         * this whole thing can be replaced with Spring Data JPA 3+ with a findBy(Specification, Pageable) call but at
-         * this point the upgrade is too costly
-         *
-         * https://github.com/spring-projects/spring-data-jpa/issues/2499
-         */
+        return searchByTextWithJdbcTemplate(searchText, pageable, officeHierarchy);
+    }
+
+    private Page<SearchedClient> searchByTextWithJdbcTemplate(String searchText, Pageable pageable, String officeHierarchy) {
         String hierarchyLikeValue = officeHierarchy + "%";
+        String searchLikeValue = "";
+        if (StringUtils.isNotBlank(searchText)) {
+            searchLikeValue = "%" + searchText.toLowerCase(Locale.UK) + "%";
+        }
 
-        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
-        CriteriaQuery<SearchedClient> query = cb.createQuery(SearchedClient.class);
+        String baseSql = """
+                FROM m_client c
+                JOIN m_office o ON c.office_id = o.id
+                LEFT JOIN m_blocking_reason_setting brs ON c.blocking_reason_id = brs.id
+                LEFT JOIN campos_cliente_empresas cce ON c.id = cce.client_id
+                LEFT JOIN campos_cliente_persona ccp ON c.id = ccp.client_id
+                WHERE o.hierarchy LIKE ?
+                """;
 
-        Root<Client> root = query.from(Client.class);
-        Path<Office> office = root.get("office");
-        Path<BlockingReasonSetting> blockingReasonSetting = root.get("blockingReason");
+        if ((StringUtils.isNotBlank(searchText))) {
+            baseSql += """
+                    AND (LOWER(c.display_name) LIKE ? OR LOWER(c.external_id) LIKE ? OR c.account_no LIKE ?
+                    OR LOWER(o.name) LIKE ? OR c.mobile_no LIKE ? OR LOWER(cce."NIT") LIKE ? OR LOWER(ccp."Cedula") LIKE ?)
+                    """;
+        }
 
-        Specification<Client> spec = (r, q, builder) -> {
-            Path<Office> o = r.get("office");
+        String countSql = "SELECT COUNT(*) " + baseSql;
 
-            List<Predicate> predicates = new ArrayList<>();
-            predicates.add(cb.like(o.get("hierarchy"), hierarchyLikeValue));
+        String sortSql = pageable.getSort().stream().map(order -> "c." + order.getProperty() + " " + order.getDirection().name())
+                .collect(Collectors.joining(", "));
+        if (sortSql.isEmpty()) {
+            sortSql = "c.id DESC";
+        }
 
-            String searchLikeValue = "%" + searchText + "%";
-            predicates.add(cb.or(cb.like(r.get("accountNumber"), searchLikeValue), cb.like(r.get("displayName"), searchLikeValue),
-                    cb.like(r.get("externalId"), searchLikeValue), cb.like(r.get("mobileNo"), searchLikeValue)));
+        String querySql = """
+                SELECT c.id AS id,
+                       c.display_name AS displayName,
+                       c.external_id AS externalId,
+                       c.account_no AS accountNumber,
+                       o.id AS officeId,
+                       o.name AS officeName,
+                       c.mobile_no AS mobileNo,
+                       CASE WHEN c.blocking_reason_id IS NOT NULL THEN 900 ELSE c.status_enum END AS status,
+                       c.activation_date AS activationDate,
+                       c.created_on_utc AS createdDate
+                """ + baseSql + " ORDER BY " + sortSql + " LIMIT ? OFFSET ?";
 
-            return cb.and(predicates.toArray(new Predicate[0]));
+        RowMapper<SearchedClient> rowMapper = (rs, rowNum) -> {
+            Date activationDate = rs.getDate("activationDate");
+            return new SearchedClient(rs.getLong("id"), rs.getString("displayName"), getExternalId(rs.getString("externalId")),
+                    rs.getString("accountNumber"), rs.getLong("officeId"), rs.getString("officeName"), rs.getString("mobileNo"),
+                    rs.getInt("status"), activationDate != null ? activationDate.toLocalDate() : null,
+                    rs.getObject("createdDate", OffsetDateTime.class));
         };
-        criteriaQueryFactory.applySpecificationToCriteria(root, spec, query);
 
-        List<Order> orders = criteriaQueryFactory.ordersFromPageable(pageable, cb, root, () -> cb.desc(root.get("id")));
-        query.orderBy(orders);
+        List<SearchedClient> clients = jdbcTemplate.query(querySql, rowMapper,
+                getQueryParams(hierarchyLikeValue, searchLikeValue, pageable));
 
-        query.select(cb.construct(SearchedClient.class, root.get("id"), root.get("displayName"), root.get("externalId"),
-                root.get("accountNumber"), office.get("id"), office.get("name"), root.get("mobileNo"),
-                cb.selectCase().when(cb.isNotNull(blockingReasonSetting), 900).otherwise(root.get("status")), root.get("activationDate"),
-                root.get("createdDate")));
+        Integer total = jdbcTemplate.queryForObject(countSql, Integer.class, getCountParams(hierarchyLikeValue, searchLikeValue));
 
-        TypedQuery<SearchedClient> queryToExecute = entityManager.createQuery(query);
+        return new PageImpl<>(clients, pageable, total);
+    }
 
-        return criteriaQueryFactory.readPage(queryToExecute, Client.class, pageable, spec);
+    private ExternalId getExternalId(String externalId) {
+        return externalId == null ? ExternalId.empty() : new ExternalId(externalId);
+    }
+
+    private Object[] getQueryParams(String hierarchyLikeValue, String searchLikeValue, Pageable pageable) {
+        if (StringUtils.isBlank(searchLikeValue)) {
+            return new Object[] { hierarchyLikeValue, pageable.getPageSize(), pageable.getOffset() };
+        }
+        return new Object[] { hierarchyLikeValue, searchLikeValue, searchLikeValue, searchLikeValue, searchLikeValue, searchLikeValue,
+                searchLikeValue, searchLikeValue, pageable.getPageSize(), pageable.getOffset() };
+    }
+
+    private Object[] getCountParams(String hierarchyLikeValue, String searchLikeValue) {
+        if ((StringUtils.isBlank(searchLikeValue))) {
+            return new Object[] { hierarchyLikeValue };
+        }
+        return new Object[] { hierarchyLikeValue, searchLikeValue, searchLikeValue, searchLikeValue, searchLikeValue, searchLikeValue,
+                searchLikeValue, searchLikeValue };
     }
 }
