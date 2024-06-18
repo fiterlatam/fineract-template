@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements. See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership. The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License. You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied. See the License for the
+    specific language governing permissions and limitations
+    under the License.
+
+-->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd">
+
+    <changeSet author="fineract" id="1">
+        <insert schemaName="custom" tableName="c_channel">
+            <column name="name" value="Allied stores"/>
+            <column name="hash" value="9000e34ce08a21ad3c103f7b2125a1301a225a1784e922c93fb3fe91ad18dad2"/>
+            <column name="description" value="Allied stores"/>
+            <column name="channel_type" value="1"/>
+            <column name="active" value="true"/>
+        </insert>
+    </changeSet>
+    <changeSet author="fineract" id="2">
+        <insert schemaName="custom" tableName="c_channel">
+            <column name="name" value="Banks"/>
+            <column name="hash" value="0959e9bdd3051a4157de0f2cc72703c78d4bf8b14eb57cc0f684b5b466b2cac3"/>
+            <column name="description" value="Banks"/>
+            <column name="channel_type" value="2"/>
+            <column name="active" value="true"/>
+        </insert>
+    </changeSet>
+    <changeSet author="fineract" id="3">
+        <insert schemaName="custom" tableName="c_channel">
+            <column name="name" value="Digital Wompi"/>
+            <column name="hash" value="cbecaf406d568cfcbc9581981094e1894ff6489f801ecd017102154d749d3fb5"/>
+            <column name="description" value="Digital Wompi"/>
+            <column name="channel_type" value="1"/>
+            <column name="active" value="true"/>
+        </insert>
+    </changeSet>
+    <changeSet author="fineract" id="4">
+        <insert schemaName="custom" tableName="c_channel">
+            <column name="name" value="Valid Digital Pay"/>
+            <column name="hash" value="87ead74f807ec2ec942490f4c329a9f4f3d66932d42b3e152eb87a936417845f"/>
+            <column name="description" value="Valid Digital Pay"/>
+            <column name="channel_type" value="2"/>
+            <column name="active" value="true"/>
+        </insert>
+    </changeSet>
+</databaseChangeLog>
