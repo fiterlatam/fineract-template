@@ -18,11 +18,7 @@
  */
 package org.apache.fineract.portfolio.paymentdetail.domain;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import java.util.Map;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
@@ -57,6 +53,9 @@ public final class PaymentDetail extends AbstractPersistableCustom {
     @Column(name = "bank_number", length = 50)
     private String bankNumber;
 
+    @Column(name = "channel_hash", length = 5000)
+    private String channelHash;
+
     PaymentDetail() {
 
     }
@@ -68,6 +67,7 @@ public final class PaymentDetail extends AbstractPersistableCustom {
         final String routingCode = command.stringValueOfParameterNamed(PaymentDetailConstants.routingCodeParamName);
         final String receiptNumber = command.stringValueOfParameterNamed(PaymentDetailConstants.receiptNumberParamName);
         final String bankNumber = command.stringValueOfParameterNamed(PaymentDetailConstants.bankNumberParamName);
+        final String channelHash = command.stringValueOfParameterNamed(PaymentDetailConstants.channelHashParamName);
 
         if (StringUtils.isNotBlank(accountNumber)) {
             changes.put(PaymentDetailConstants.accountNumberParamName, accountNumber);
@@ -84,9 +84,14 @@ public final class PaymentDetail extends AbstractPersistableCustom {
         if (StringUtils.isNotBlank(bankNumber)) {
             changes.put(PaymentDetailConstants.bankNumberParamName, bankNumber);
         }
+
+        if (StringUtils.isNotBlank(channelHash)) {
+            changes.put(PaymentDetailConstants.channelHashParamName, channelHash);
+        }
+
         changes.put("paymentTypeId", paymentType.getId());
         final PaymentDetail paymentDetail = new PaymentDetail(paymentType, accountNumber, checkNumber, routingCode, receiptNumber,
-                bankNumber);
+                bankNumber, channelHash);
         return paymentDetail;
     }
 
@@ -103,6 +108,22 @@ public final class PaymentDetail extends AbstractPersistableCustom {
         this.routingCode = routingCode;
         this.receiptNumber = receiptNumber;
         this.bankNumber = bankNumber;
+    }
+
+    public static PaymentDetail instance(final PaymentType paymentType, final String accountNumber, final String checkNumber,
+            final String routingCode, final String receiptNumber, final String bankNumber, final String channelHash) {
+        return new PaymentDetail(paymentType, accountNumber, checkNumber, routingCode, receiptNumber, bankNumber, channelHash);
+    }
+
+    private PaymentDetail(final PaymentType paymentType, final String accountNumber, final String checkNumber, final String routingCode,
+            final String receiptNumber, final String bankNumber, final String channelHash) {
+        this.paymentType = paymentType;
+        this.accountNumber = accountNumber;
+        this.checkNumber = checkNumber;
+        this.routingCode = routingCode;
+        this.receiptNumber = receiptNumber;
+        this.bankNumber = bankNumber;
+        this.channelHash = channelHash;
     }
 
     public PaymentDetailData toData() {

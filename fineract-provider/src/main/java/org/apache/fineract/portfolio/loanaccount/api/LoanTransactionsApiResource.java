@@ -82,7 +82,7 @@ public class LoanTransactionsApiResource {
     public static final String UNDO_CHARGE_OFF_COMMAND_VALUE = "undo-charge-off";
     public static final String DOWN_PAYMENT = "downPayment";
     private final Set<String> responseDataParameters = new HashSet<>(Arrays.asList("id", "type", "date", "currency", "amount", "externalId",
-            LoanApiConstants.REVERSAL_EXTERNAL_ID_PARAMNAME, LoanApiConstants.REVERSED_ON_DATE_PARAMNAME));
+            LoanApiConstants.REVERSAL_EXTERNAL_ID_PARAMNAME, LoanApiConstants.REVERSED_ON_DATE_PARAMNAME, LoanApiConstants.CHANNEL_HASH));
 
     private static final String RESOURCE_NAME_FOR_PERMISSIONS = "LOAN";
 
