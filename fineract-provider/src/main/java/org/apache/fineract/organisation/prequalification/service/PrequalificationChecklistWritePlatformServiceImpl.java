@@ -309,7 +309,7 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
         CheckValidationColor checkValidationColor;
         switch (policy) {
             case ONE -> checkValidationColor = this.runCheck1();
-            case TWO -> checkValidationColor = this.runCheck2();
+            case TWO -> checkValidationColor = this.runCheck2(clientData);
             case THREE -> checkValidationColor = this.runCheck3(clientData);
             case FOUR -> checkValidationColor = this.runCheck4(clientData);
             case FIVE -> checkValidationColor = this.runCheck5(clientData);
@@ -360,9 +360,17 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
 
     /**
      * Recurring customer categorization
+     * @param clientData
      */
-    private CheckValidationColor runCheck2() {
-        return CheckValidationColor.GREEN;
+    private CheckValidationColor runCheck2(ClientData clientData) {
+        final String reportName = Policies.TWO.getName() + " Policy Check";
+
+        final Map<String, String> reportParams = new HashMap<>();
+        reportParams.put("${loanCycle}", String.valueOf(clientData.getLoanCycle()));
+        reportParams.put("${productId}", String.valueOf(clientData.getProductId()));
+
+        final GenericResultsetData result = this.readReportingService.retrieveGenericResultset(reportName, "report", reportParams, false);
+        return extractColorFromResultset(result);
     }
 
     /**
@@ -398,52 +406,34 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
      * Mandatory to attach photographs and investment plan
      */
     private CheckValidationColor runCheck4(final ClientData clientData) {
-        final String clientId = String.valueOf(clientData.getClientId());
+        final ClientData clientParams = retrieveClientParams(clientData.getClientId(), clientData.getProductId());
         final String reportName = Policies.FOUR.getName() + " Policy Check";
         final String productId = Long.toString(clientData.getProductId());
         final Long loanId = clientData.getLoanId();
-        final String firstDocumentCountSql = """
+        final String investmentPlanSql = """
                         SELECT COUNT(*)
                         FROM m_document md
                         LEFT JOIN m_code_value mcvd ON md.document_type = mcvd.id
                         WHERE md.parent_entity_type = 'loans' AND md.parent_entity_id = ? AND (md.name = ? OR mcvd.code_value = ?)
                 """;
         Object[] firstDocumentParams = new Object[] { loanId, "Plan de inversión", "Plan de inversión" };
-        final Long firstDocumentCount = ObjectUtils
-                .defaultIfNull(this.jdbcTemplate.queryForObject(firstDocumentCountSql, Long.class, firstDocumentParams), 0L);
-        final String secondDocumentCountSql = """
+        final Long investmentPlanCount = ObjectUtils
+                .defaultIfNull(this.jdbcTemplate.queryForObject(investmentPlanSql, Long.class, firstDocumentParams), 0L);
+        final String photographsSql = """
                         SELECT COUNT(*)
                         FROM m_document md
                         LEFT JOIN m_code_value mcvd ON md.document_type = mcvd.id
                         WHERE md.parent_entity_type = 'loans' AND md.parent_entity_id = ? AND (md.name = ? OR mcvd.code_value = ?)
                 """;
         Object[] secondDocumentParams = new Object[] { loanId, "Fotografias", "Fotografias" };
-        final Long secondDocumentCount = ObjectUtils
-                .defaultIfNull(this.jdbcTemplate.queryForObject(secondDocumentCountSql, Long.class, secondDocumentParams), 0L);
-        final String percentageIncreaseSQL = """
-                SELECT
-                CASE WHEN (mlag.current_credit_value <= 0) THEN 0
-                     ELSE ((mlag.requested_value/mlag.current_credit_value) - 1) * 100
-                END AS percentageIncrease
-                FROM m_loan_additionals_group mlag
-                INNER JOIN m_loan ml ON ml.id = mlag.loan_id
-                WHERE ml.id = ?
-                """;
-        Object[] params = new Object[] { loanId };
+        final Long photographsCount = ObjectUtils
+                .defaultIfNull(this.jdbcTemplate.queryForObject(photographsSql, Long.class, secondDocumentParams), 0L);
 
-        BigDecimal percentageIncrease;
-        try {
-            percentageIncrease = ObjectUtils
-                    .defaultIfNull(this.jdbcTemplate.queryForObject(percentageIncreaseSQL, BigDecimal.class, params), BigDecimal.ZERO);
-        } catch (EmptyResultDataAccessException e) {
-            percentageIncrease = BigDecimal.ZERO;
-        }
         final Map<String, String> reportParams = new HashMap<>();
-        reportParams.put("${clientId}", clientId);
         reportParams.put("${loanProductId}", productId);
-        reportParams.put("${numberOfFirstDocument}", Long.toString(firstDocumentCount));
-        reportParams.put("${numberOfSecondDocument}", Long.toString(secondDocumentCount));
-        reportParams.put("${percentageIncrease}", String.valueOf(percentageIncrease));
+        reportParams.put("${categorization}", clientParams.getCategorization());
+        reportParams.put("${investmentPlan}", Long.toString(investmentPlanCount));
+        reportParams.put("${photographs}", Long.toString(photographsCount));
         reportParams.put("${requestedAmount}", clientData.getRequestedAmount().toPlainString());
         final GenericResultsetData result = this.readReportingService.retrieveGenericResultset(reportName, "report", reportParams, false);
         return extractColorFromResultset(result);
