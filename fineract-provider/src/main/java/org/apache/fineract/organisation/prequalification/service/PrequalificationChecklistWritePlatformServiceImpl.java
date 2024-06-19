@@ -263,7 +263,7 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
                     CASE WHEN (? NOT IN (3,7,4,5)) AND (COALESCE(mc.loan_cycle, 0) >= 3) THEN 'RECURRING'
                     WHEN (? IN (4,5)) AND (COALESCE(mc.loan_cycle, 0) >= 1) THEN 'RECURRING'
                     ELSE 'NEW' END as clientCategorization,
-                    CASE WHEN areacv.code_value = 'Urbana' THEN 'URBANA'
+                    CASE WHEN areacv.code_value = 'Urbana' THEN 'URBAN'
                     WHEN areacv.code_value = 'Rural' THEN 'RURAL'
                     WHEN areacv.code_value = 'PeriUrbana' THEN 'PERI_URBANA'
                     ELSE 'RURAL'
@@ -598,7 +598,7 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
         reportParams.put("${prequalificationId}", prequalificationId);
         reportParams.put("${loanProductId}", productId);
         reportParams.put("${clientArea}", clientArea);
-        reportParams.put("${categorization}", params.getCategorization());
+        reportParams.put("${categorization}", params.getRecreditCategorization());
         reportParams.put("${isTopup}", String.valueOf(clientData.getIsLoanTopup()));
         reportParams.put("${requestedAmount}", String.valueOf(clientData.getRequestedAmount()));
         final GenericResultsetData result = this.readReportingService.retrieveGenericResultset(reportName, "report", reportParams, false);
