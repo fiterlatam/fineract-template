@@ -39,4 +39,32 @@ public class PaymentDetailData implements Serializable {
     private final String routingCode;
     private final String receiptNumber;
     private final String bankNumber;
+    private final String channelName;
+    private final String channelHash;
+
+    public PaymentDetailData(final Long id, PaymentTypeData paymentType, final String accountNumber, final String checkNumber,
+            final String routingCode, final String receiptNumber, final String bankNumber) {
+        this.id = id;
+        this.paymentType = paymentType;
+        this.accountNumber = accountNumber;
+        this.checkNumber = checkNumber;
+        this.routingCode = routingCode;
+        this.receiptNumber = receiptNumber;
+        this.bankNumber = bankNumber;
+        this.channelName = null;
+        this.channelHash = null;
+    }
+
+    public PaymentDetailData(final Long id, PaymentTypeData paymentType, final String accountNumber, final String checkNumber,
+            final String routingCode, final String receiptNumber, final String bankNumber, final String channelName) {
+        this.id = id;
+        this.paymentType = paymentType;
+        this.accountNumber = accountNumber;
+        this.checkNumber = checkNumber;
+        this.routingCode = routingCode;
+        this.receiptNumber = receiptNumber;
+        this.bankNumber = bankNumber;
+        this.channelName = channelName;
+        this.channelHash = null;
+    }
 }

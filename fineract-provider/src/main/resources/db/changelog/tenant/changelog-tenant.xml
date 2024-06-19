@@ -230,5 +230,7 @@
     <include file="parts/202405312224100_SU_69_m_charge_MODIFY.xml" relativeToChangelogFile="true"/>
     <include file="parts/202006101618100_SU_288_c_custom_charge_honorarios_map_MODIFY.xml" relativeToChangelogFile="true"/>
     <include file="parts/202406141026_SU_243_Credit_Mora_Fixing_DisbursmentPassdate.xml" relativeToChangelogFile="true"/>
+    <include file="parts/202406182224100_SU_99_c_channel_insert.xml" relativeToChangelogFile="true"/>
+    <include file="parts/202406182224100_SU_99_m_payement_detail_add_channelHash.xml" relativeToChangelogFile="true"/>
 
 </databaseChangeLog>
