@@ -57,6 +57,7 @@ public final class SearchParameters {
     private final boolean isSelfUser;
     private Integer interestRateTypeId;
     private BigDecimal currentRate;
+    private Integer channelType;
 
     public static SearchParameters from(final Long officeId, final String externalId, final String name, final String hierarchy) {
         final Long staffId = null;
