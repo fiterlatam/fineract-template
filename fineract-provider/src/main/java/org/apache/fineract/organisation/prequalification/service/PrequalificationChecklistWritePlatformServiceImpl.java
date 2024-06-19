@@ -1024,7 +1024,7 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
      * Credits
      */
     private CheckValidationColor runCheck26(final ClientData clientData) {
-        if (!clientData.getIsLoanTopup()){
+        if (!clientData.getIsLoanTopup()) {
             return null;
         }
         final String clientId = String.valueOf(clientData.getClientId());
