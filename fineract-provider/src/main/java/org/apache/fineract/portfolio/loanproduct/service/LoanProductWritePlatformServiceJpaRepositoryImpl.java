@@ -37,9 +37,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.fineract.accounting.producttoaccountmapping.service.ProductToGLAccountMappingWritePlatformService;
+import org.apache.fineract.custom.infrastructure.channel.domain.Channel;
 import org.apache.fineract.custom.infrastructure.channel.domain.ChannelRepository;
+import org.apache.fineract.custom.infrastructure.channel.domain.ChannelType;
 import org.apache.fineract.custom.infrastructure.channel.exception.ChannelNotFoundException;
-import org.apache.fineract.custom.insfrastructure.channel.domain.Channel;
 import org.apache.fineract.custom.portfolio.loanproduct.data.SubChannelLoanProductData;
 import org.apache.fineract.custom.portfolio.loanproduct.domain.SubChannelLoanProduct;
 import org.apache.fineract.custom.portfolio.loanproduct.domain.SubChannelLoanProductRepository;
@@ -192,11 +193,9 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
             populateProductCustomAllowance(command, loanProduct);
             loanProduct.setInterestRate(interestRate);
 
-            if (command.parameterExists("channelId")) {
-                final Long channelId = command.longValueOfParameterNamed("channelId");
-                final Channel channel = this.channelRepository.findById(channelId)
-                        .orElseThrow(() -> new ChannelNotFoundException(channelId));
-                loanProduct.setChannel(channel);
+            if (command.parameterExists("repaymentChannels")) {
+                final List<Channel> repaymentChannels = assembleListOfRepaymentChannels(command);
+                loanProduct.setRepaymentChannels(repaymentChannels);
             }
 
             this.loanProductRepository.save(loanProduct);
@@ -360,11 +359,12 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
                 product.update(fund);
             }
 
-            if (changes.containsKey("channelId")) {
-                final Long channelId = (Long) changes.get("channelId");
-                final Channel channel = this.channelRepository.findById(channelId)
-                        .orElseThrow(() -> new ChannelNotFoundException(channelId));
-                product.setChannel(channel);
+            if (changes.containsKey("repaymentChannels")) {
+                final List<Channel> repaymentChannels = assembleListOfRepaymentChannels(command);
+                final boolean updated = product.updateChannels(repaymentChannels);
+                if (!updated) {
+                    changes.remove("repaymentChannels");
+                }
             }
 
             if (changes.containsKey(LoanProductConstants.PRODUCT_TYPE)) {
@@ -653,6 +653,32 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
         }
 
         return charges;
+    }
+
+    private List<Channel> assembleListOfRepaymentChannels(final JsonCommand command) {
+        final List<Channel> repaymentChannels = new ArrayList<>();
+        if (command.parameterExists("repaymentChannels")) {
+            final JsonArray channelsArray = command.arrayOfParameterNamed("repaymentChannels");
+            if (channelsArray != null) {
+                for (int i = 0; i < channelsArray.size(); i++) {
+                    final JsonObject jsonObject = channelsArray.get(i).getAsJsonObject();
+                    if (jsonObject.has("id")) {
+                        final Long channelId = jsonObject.get("id").getAsLong();
+                        final Channel repaymentChannel = this.channelRepository.findById(channelId)
+                                .orElseThrow(() -> new ChannelNotFoundException(channelId));
+                        if (!repaymentChannel.getActive()) {
+                            throw new GeneralPlatformDomainRuleException("error.msg.channel.inactive", "Channel is inactive.", channelId);
+                        }
+                        if (!ChannelType.REPAYMENT.getValue().equals(repaymentChannel.getChannelType())) {
+                            throw new GeneralPlatformDomainRuleException("error.msg.channel.not.repayment",
+                                    "Channel is not a repayment channel.", channelId);
+                        }
+                        repaymentChannels.add(repaymentChannel);
+                    }
+                }
+            }
+        }
+        return repaymentChannels;
     }
 
     private List<Rate> assembleListOfProductRates(final JsonCommand command) {
