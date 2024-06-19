@@ -37,7 +37,6 @@ public class ChannelData {
     private String hash;
     private String name;
     private String description;
-    private Integer nrOfSubChannels;
     private Boolean active;
     private EnumOptionData channelType;
     private List<EnumOptionData> channelTypeOptions;

@@ -43,6 +43,7 @@ import org.apache.fineract.infrastructure.core.api.ApiRequestParameterHelper;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.serialization.ApiRequestJsonSerializationSettings;
 import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
+import org.apache.fineract.infrastructure.core.service.SearchParameters;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
@@ -77,7 +78,8 @@ public class ChannelApiResource {
     public String get(@Context final UriInfo uriInfo,
             @QueryParam("sqlSearch") @Parameter(description = "sqlSearch") final String sqlSearch) {
         this.context.authenticatedUser().validateHasReadPermission(ChannelApiConstants.RESOURCE_NAME);
-        return this.toApiJsonSerializer.serialize(this.service.findBySearchParam(sqlSearch));
+        final SearchParameters searchParameters = SearchParameters.builder().name(sqlSearch).build();
+        return this.toApiJsonSerializer.serialize(this.service.findBySearchParam(searchParameters));
     }
 
     @GET

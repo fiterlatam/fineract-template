@@ -20,6 +20,7 @@ package org.apache.fineract.portfolio.loanproduct.starter;
 
 import org.apache.fineract.accounting.producttoaccountmapping.service.ProductToGLAccountMappingWritePlatformService;
 import org.apache.fineract.custom.infrastructure.channel.domain.ChannelRepository;
+import org.apache.fineract.custom.infrastructure.channel.service.ChannelReadWritePlatformService;
 import org.apache.fineract.custom.portfolio.loanproduct.domain.SubChannelLoanProductRepository;
 import org.apache.fineract.custom.portfolio.loanproduct.service.SubChannelLoanProductReadWritePlatformService;
 import org.apache.fineract.infrastructure.codes.domain.CodeValueRepositoryWrapper;
@@ -72,9 +73,9 @@ public class LoanProductConfiguration {
     public LoanProductReadPlatformService loanProductReadPlatformService(PlatformSecurityContext context, JdbcTemplate jdbcTemplate,
             ChargeReadPlatformService chargeReadPlatformService, RateReadService rateReadService, DatabaseSpecificSQLGenerator sqlGenerator,
             FineractEntityAccessUtil fineractEntityAccessUtil, DelinquencyReadPlatformService delinquencyReadPlatformService,
-            LoanProductRepository loanProductRepository) {
+            LoanProductRepository loanProductRepository, ChannelReadWritePlatformService channelReadPlatformService) {
         return new LoanProductReadPlatformServiceImpl(context, jdbcTemplate, chargeReadPlatformService, rateReadService, sqlGenerator,
-                fineractEntityAccessUtil, delinquencyReadPlatformService, loanProductRepository);
+                fineractEntityAccessUtil, delinquencyReadPlatformService, loanProductRepository, channelReadPlatformService);
     }
 
     @Bean

@@ -32,7 +32,6 @@ import org.springframework.transaction.annotation.Transactional;
 public class PaymentDetailWritePlatformServiceJpaRepositoryImpl implements PaymentDetailWritePlatformService {
 
     private final PaymentDetailRepository paymentDetailRepository;
-    // private final CodeValueRepositoryWrapper codeValueRepositoryWrapper;
     private final PaymentTypeRepositoryWrapper paymentTyperepositoryWrapper;
 
     @Override
@@ -41,11 +40,8 @@ public class PaymentDetailWritePlatformServiceJpaRepositoryImpl implements Payme
         if (paymentTypeId == null) {
             return null;
         }
-
         final PaymentType paymentType = this.paymentTyperepositoryWrapper.findOneWithNotFoundDetection(paymentTypeId);
-        final PaymentDetail paymentDetail = PaymentDetail.generatePaymentDetail(paymentType, command, changes);
-        return paymentDetail;
-
+        return PaymentDetail.generatePaymentDetail(paymentType, command, changes);
     }
 
     @Override

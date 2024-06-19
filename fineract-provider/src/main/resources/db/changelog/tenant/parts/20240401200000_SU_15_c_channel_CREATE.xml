@@ -154,4 +154,75 @@
                                  validate="true"/>
     </changeSet>
 
+    <changeSet id="65" author="fineract">
+        <dropForeignKeyConstraint baseTableName="m_product_loan" constraintName="FK_m_product_loan_channel_id"/>
+        <dropColumn tableName="m_product_loan">
+            <column name="channel_id"/>
+        </dropColumn>
+    </changeSet>
+
+    <changeSet id="66" author="fineract">
+        <createTable tableName="m_loan_product_channel">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="loan_product_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="channel_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="fineract" id="67">
+        <addForeignKeyConstraint baseColumnNames="loan_product_id"
+                                 baseTableName="m_loan_product_channel"
+                                 constraintName="FK_m_loan_product_channel_loan_product_id"
+                                 deferrable="false"
+                                 initiallyDeferred="false"
+                                 onDelete="RESTRICT"
+                                 onUpdate="RESTRICT"
+                                 referencedColumnNames="id"
+                                 referencedTableName="m_product_loan"
+                                 validate="true"/>
+        <addForeignKeyConstraint baseColumnNames="channel_id"
+                                 baseTableName="m_loan_product_channel"
+                                 constraintName="FK_m_loan_product_channel_channel_id"
+                                 deferrable="false"
+                                 initiallyDeferred="false"
+                                 onDelete="RESTRICT"
+                                 onUpdate="RESTRICT"
+                                 referencedTableSchemaName="custom"
+                                 referencedColumnNames="id"
+                                 referencedTableName="c_channel"
+                                 validate="true"/>
+    </changeSet>
+
+    <changeSet author="fineract" id="68">
+        <addUniqueConstraint columnNames="name" constraintName="name_org" tableName="c_channel" schemaName="custom"/>
+    </changeSet>
+
+    <changeSet author="fineract" id="69">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_payment_detail" columnName="channel_id"/>
+            </not>
+        </preConditions>
+        <addColumn schemaName="public" tableName="m_payment_detail">
+            <column name="channel_id" type="BIGINT">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="70">
+        <insert tableName="m_permission">
+            <column name="grouping" value="transaction_loan"/>
+            <column name="code" value="UNDO_REPAYMENT_LOAN"/>
+            <column name="entity_name" value="LOAN"/>
+            <column name="action_name" value="UNDO_REPAYMENT"/>
+            <column name="can_maker_checker" valueBoolean="false"/>
+        </insert>
+    </changeSet>
+
 </databaseChangeLog>
