@@ -1433,7 +1433,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                     + " left join m_payment_type pt on pd.payment_type_id = pt.id left join m_office office on office.id=tr.office_id"
                     + " left join m_account_transfer_transaction fromtran on fromtran.from_loan_transaction_id = tr.id "
                     + " left join m_account_transfer_transaction totran on totran.to_loan_transaction_id = tr.id "
-                    + " left join custom.c_channel ch on ch.hash = pd.channel_hash";
+                    + " left join custom.c_channel ch on ch.id = pd.channel_id";
         }
 
         @Override

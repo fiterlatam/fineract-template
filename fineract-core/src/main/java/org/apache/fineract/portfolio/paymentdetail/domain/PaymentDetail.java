@@ -32,7 +32,7 @@ import org.apache.fineract.portfolio.paymenttype.domain.PaymentType;
 @Entity
 @Getter
 @Table(name = "m_payment_detail")
-public final class PaymentDetail extends AbstractPersistableCustom {
+public class PaymentDetail extends AbstractPersistableCustom {
 
     @ManyToOne
     @JoinColumn(name = "payment_type_id", nullable = false)
@@ -56,9 +56,10 @@ public final class PaymentDetail extends AbstractPersistableCustom {
     @Column(name = "channel_hash", length = 5000)
     private String channelHash;
 
-    PaymentDetail() {
+    @Column(name = "channel_id")
+    private Long channelId;
 
-    }
+    public PaymentDetail() {}
 
     public static PaymentDetail generatePaymentDetail(final PaymentType paymentType, final JsonCommand command,
             final Map<String, Object> changes) {
@@ -92,6 +93,7 @@ public final class PaymentDetail extends AbstractPersistableCustom {
         changes.put("paymentTypeId", paymentType.getId());
         final PaymentDetail paymentDetail = new PaymentDetail(paymentType, accountNumber, checkNumber, routingCode, receiptNumber,
                 bankNumber, channelHash);
+        paymentDetail.channelId = changes.get("channelId") != null ? Long.valueOf(changes.get("channelId").toString()) : null;
         return paymentDetail;
     }
 
