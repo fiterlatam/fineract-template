@@ -570,7 +570,6 @@ public class LoanAdditionalData {
 
     private String cliente_activo_fiador2;
 
-
     public LoanAdditionProperties toEntity() {
         final LoanAdditionProperties loanAdditionProperties = new LoanAdditionProperties();
         BeanUtils.copyProperties(this, loanAdditionProperties);
