@@ -214,7 +214,7 @@ public final class LoanEventApiJsonValidator {
 
         final Set<String> transactionParameters = new HashSet<>(Arrays.asList("transactionDate", "transactionAmount", "externalId", "note",
                 "locale", "dateFormat", "paymentTypeId", "accountNumber", "checkNumber", "routingCode", "receiptNumber", "bankNumber",
-                LoanApiConstants.REVERSAL_EXTERNAL_ID_PARAMNAME));
+                LoanApiConstants.REVERSAL_EXTERNAL_ID_PARAMNAME, LoanApiConstants.CHANNEL_HASH));
 
         final Type typeOfMap = new TypeToken<Map<String, Object>>() {}.getType();
         this.fromApiJsonHelper.checkForUnsupportedParameters(typeOfMap, json, transactionParameters);
@@ -279,7 +279,7 @@ public final class LoanEventApiJsonValidator {
 
         final Set<String> transactionParameters = new HashSet<>(
                 Arrays.asList("transactionDate", "transactionAmount", "externalId", "note", "locale", "dateFormat", "paymentTypeId",
-                        "accountNumber", "checkNumber", "routingCode", "receiptNumber", "bankNumber", "loanId"));
+                        "accountNumber", "checkNumber", "routingCode", "receiptNumber", "bankNumber", "loanId", "channelHash"));
 
         final Type typeOfMap = new TypeToken<Map<String, Object>>() {}.getType();
         this.fromApiJsonHelper.checkForUnsupportedParameters(typeOfMap, json, transactionParameters);
@@ -330,6 +330,7 @@ public final class LoanEventApiJsonValidator {
         } else {
             baseDataValidator.reset().parameter("paymentTypeId").value(paymentTypeId).ignoreIfNull().integerGreaterThanZero();
         }
+
         final Set<String> paymentDetailParameters = new HashSet<>(
                 Arrays.asList("accountNumber", "checkNumber", "routingCode", "receiptNumber", "bankNumber"));
         for (final String paymentDetailParameterName : paymentDetailParameters) {
@@ -337,6 +338,9 @@ public final class LoanEventApiJsonValidator {
             baseDataValidator.reset().parameter(paymentDetailParameterName).value(paymentDetailParameterValue).ignoreIfNull()
                     .notExceedingLengthOf(50);
         }
+
+        final String channelHash = this.fromApiJsonHelper.extractStringNamed("channelHash", element);
+        baseDataValidator.reset().parameter("channelHash").value(channelHash).notExceedingLengthOf(5000);
     }
 
     public void validateTransactionWithNoAmount(final String json) {

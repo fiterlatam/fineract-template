@@ -1426,13 +1426,14 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                     + " fromtran.transaction_date as fromTransferDate, fromtran.amount as fromTransferAmount,"
                     + " fromtran.description as fromTransferDescription, "
                     + " totran.id as toTransferId, totran.is_reversed as toTransferReversed, "
-                    + " totran.transaction_date as toTransferDate, totran.amount as toTransferAmount,"
+                    + " totran.transaction_date as toTransferDate, totran.amount as toTransferAmount, ch.name as channelName, pd.channel_hash as channelHash,"
                     + " totran.description as toTransferDescription from m_loan l join m_loan_transaction tr on tr.loan_id = l.id "
                     + " join m_currency rc on rc." + sqlGenerator.escape("code") + " = l.currency_code "
                     + " left JOIN m_payment_detail pd ON tr.payment_detail_id = pd.id"
                     + " left join m_payment_type pt on pd.payment_type_id = pt.id left join m_office office on office.id=tr.office_id"
                     + " left join m_account_transfer_transaction fromtran on fromtran.from_loan_transaction_id = tr.id "
-                    + " left join m_account_transfer_transaction totran on totran.to_loan_transaction_id = tr.id ";
+                    + " left join m_account_transfer_transaction totran on totran.to_loan_transaction_id = tr.id "
+                    + " left join custom.c_channel ch on ch.hash = pd.channel_hash";
         }
 
         @Override
@@ -1468,8 +1469,11 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                 final String routingCode = rs.getString("routingCode");
                 final String receiptNumber = rs.getString("receiptNumber");
                 final String bankNumber = rs.getString("bankNumber");
+                final String channelName = rs.getString("channelName");
+                final String channelHash = rs.getString("channelHash");
+
                 paymentDetailData = new PaymentDetailData(id, paymentType, accountNumber, checkNumber, routingCode, receiptNumber,
-                        bankNumber);
+                        bankNumber, channelName, channelHash);
             }
 
             final LocalDate date = JdbcSupport.getLocalDate(rs, "date");
