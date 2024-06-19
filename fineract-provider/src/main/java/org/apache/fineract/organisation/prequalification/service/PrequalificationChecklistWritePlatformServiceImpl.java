@@ -638,6 +638,8 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
         reportParams.put("${prequalificationId}", prequalificationId);
         reportParams.put("${loanProductId}", productId);
         reportParams.put("${clientArea}", clientArea);
+        String categorization = groupData.getTopupMembers().size()>0?"RECREDITO":"NUEVO";
+        reportParams.put("${categorization}", categorization);
         reportParams.put("${disparityRatio}", disparityRatio);
         final GenericResultsetData result = this.readReportingService.retrieveGenericResultset(reportName, "report", reportParams, false);
         return extractColorFromResultset(result);
@@ -650,16 +652,17 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
         final String reportName = Policies.NINE.getName() + " Policy Check";
         final List<ClientData> members = groupData.getMembers();
         final Integer totalMembers = members.size();
+        LocalDate businessLocalDate = DateUtils.getBusinessLocalDate();
+        LocalDate sixMonthsAgo = businessLocalDate.minus(6, ChronoUnit.MONTHS);
         final String numberOfMemberSQL = """
-                SELECT COUNT(DISTINCT mlag.loan_id) totalCount
-                FROM m_loan_additionals_group mlag
+                SELECT COUNT(mlag.loan_id) totalCount
+                FROM m_loan ml 
+                LEFT JOIN m_loan_additionals_group mlag ON mlag.loan_id = ml.id
                 LEFT JOIN m_code_value mcv ON mcv.id = mlag.business_experience
-                WHERE mlag.loan_id IN ( %s ) AND mcv.code_value = '<6m'
+                WHERE mcv.code_value = '<6m' AND ml.prequalification_id = ?
                    """;
-        String stmt = String.format(numberOfMemberSQL, members.stream().map(v -> "?").collect(Collectors.joining(", ")));
-        List<Object> params = new ArrayList<>();
-        members.forEach(m -> params.add(m.getLoanId()));
-        final Long numberOfMembers = this.jdbcTemplate.queryForObject(stmt, Long.class, params.toArray());
+
+        final Long numberOfMembers = this.jdbcTemplate.queryForObject(numberOfMemberSQL, Long.class, groupData.getId());
         final Map<String, String> reportParams = new HashMap<>();
         BigDecimal membersPercentage = BigDecimal.valueOf(100L);
         if (numberOfMembers != null && numberOfMembers < Long.valueOf(totalMembers)) {
@@ -1195,15 +1198,13 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
         final List<ClientData> members = groupData.getMembers();
         final Integer totalMembers = members.size();
         final String numberOfMemberSQL = """
-                SELECT COUNT(DISTINCT mlag.loan_id) AS totalCount
-                FROM m_loan_additionals_group mlag
-                INNER JOIN m_code_value mcv ON mcv.id = mlag.job_type
-                WHERE mlag.loan_id IN ( %s ) AND mcv.code_value = 'microentreprenuer'
+                SELECT COUNT(ml.id) AS totalCount
+                FROM m_loan ml
+                LEFT JOIN m_loan_additionals_group mlag on mlag.loan_id = ml.id
+                LEFT JOIN m_code_value mcv ON mcv.id = mlag.job_type
+                WHERE mcv.code_value = 'microentreprenuer' AND  ml.prequalification_id = ?
                 """;
-        String stmt = String.format(numberOfMemberSQL, members.stream().map(v -> "?").collect(Collectors.joining(", ")));
-        List<Object> params = new ArrayList<>();
-        members.forEach(m -> params.add(m.getLoanId()));
-        final Long numberOfMembers = this.jdbcTemplate.queryForObject(stmt, Long.class, params.toArray());
+        final Long numberOfMembers = this.jdbcTemplate.queryForObject(numberOfMemberSQL, Long.class, groupData.getId());
         final Map<String, String> reportParams = new HashMap<>();
         BigDecimal membersPercentage = BigDecimal.valueOf(100L);
         if (numberOfMembers != null && numberOfMembers < Long.valueOf(totalMembers)) {
