@@ -22,13 +22,14 @@ import java.util.List;
 import org.apache.fineract.custom.infrastructure.channel.data.ChannelData;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
+import org.apache.fineract.infrastructure.core.service.SearchParameters;
 import org.springframework.transaction.annotation.Transactional;
 
 public interface ChannelReadWritePlatformService {
 
     List<ChannelData> findAllActive();
 
-    List<ChannelData> findBySearchParam(String name);
+    List<ChannelData> findBySearchParam(SearchParameters searchParameters);
 
     ChannelData findByName(String name);
 

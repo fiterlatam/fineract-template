@@ -55,6 +55,7 @@ import org.apache.fineract.commands.domain.CommandWrapper;
 import org.apache.fineract.commands.service.CommandWrapperBuilder;
 import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformService;
 import org.apache.fineract.custom.infrastructure.channel.data.ChannelData;
+import org.apache.fineract.custom.infrastructure.channel.domain.ChannelType;
 import org.apache.fineract.custom.infrastructure.channel.service.ChannelReadWritePlatformService;
 import org.apache.fineract.custom.portfolio.loanproduct.service.SubChannelLoanProductReadWritePlatformService;
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
@@ -255,8 +256,9 @@ public class LoanProductsApiResource {
                 .interestRateTypeId(InterestRateType.REGULAR.getValue()).build();
         final List<InterestRateData> interestRateOptions = this.interestRateReadPlatformService.retrieveInterestRates(searchParameters);
         loanProduct.setInterestRateOptions(interestRateOptions);
-
-        final List<ChannelData> channelOptions = channelReadWritePlatformService.findBySearchParam(null);
+        final SearchParameters channelSearchParameters = SearchParameters.builder().channelType(ChannelType.REPAYMENT.getValue())
+                .active(true).build();
+        final List<ChannelData> channelOptions = channelReadWritePlatformService.findBySearchParam(channelSearchParameters);
         loanProduct.setChannelOptions(channelOptions);
         return this.toApiJsonSerializer.serialize(settings, loanProduct, LOAN_PRODUCT_DATA_PARAMETERS);
     }
@@ -526,8 +528,9 @@ public class LoanProductsApiResource {
                 .interestRateTypeId(InterestRateType.REGULAR.getValue()).build();
         final List<InterestRateData> interestRateOptions = this.interestRateReadPlatformService.retrieveInterestRates(searchParameters);
         ret.setInterestRateOptions(interestRateOptions);
-
-        final List<ChannelData> channelOptions = channelReadWritePlatformService.findBySearchParam(null);
+        final SearchParameters channelSearchParameters = SearchParameters.builder().channelType(ChannelType.REPAYMENT.getValue())
+                .active(true).build();
+        final List<ChannelData> channelOptions = channelReadWritePlatformService.findBySearchParam(channelSearchParameters);
         ret.setChannelOptions(channelOptions);
         return ret;
     }

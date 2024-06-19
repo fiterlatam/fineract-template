@@ -48,7 +48,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.accounting.common.AccountingRuleType;
-import org.apache.fineract.custom.insfrastructure.channel.domain.Channel;
+import org.apache.fineract.custom.infrastructure.channel.domain.Channel;
 import org.apache.fineract.infrastructure.codes.domain.CodeValue;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
@@ -295,11 +295,11 @@ public class LoanProduct extends AbstractPersistableCustom {
     @Column(name = "custom_allow_reversal_cancellation")
     private Boolean customAllowReversalCancellation = false;
 
-    @lombok.Setter
-    @lombok.Getter
-    @ManyToOne
-    @JoinColumn(name = "channel_id")
-    private Channel channel;
+    @Getter
+    @Setter
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(name = "m_loan_product_channel", joinColumns = @JoinColumn(name = "loan_product_id"), inverseJoinColumns = @JoinColumn(name = "channel_id"))
+    private List<Channel> repaymentChannels;
 
     public static LoanProduct assembleFromJson(final Fund fund, final String loanTransactionProcessingStrategy,
             final List<Charge> productCharges, final JsonCommand command, FloatingRate floatingRate, final List<Rate> productRates,
@@ -986,6 +986,25 @@ public class LoanProduct extends AbstractPersistableCustom {
         return updated;
     }
 
+    public boolean updateChannels(final List<Channel> repaymentChannels) {
+        if (repaymentChannels == null) {
+            return false;
+        }
+        boolean updated = false;
+        if (this.charges != null) {
+            final Set<Channel> currentSetOfChannels = new HashSet<>(this.repaymentChannels);
+            final Set<Channel> newSetOfChannels = new HashSet<>(repaymentChannels);
+            if (!currentSetOfChannels.equals(newSetOfChannels)) {
+                updated = true;
+                this.repaymentChannels = repaymentChannels;
+            }
+        } else {
+            updated = true;
+            this.repaymentChannels = repaymentChannels;
+        }
+        return updated;
+    }
+
     public boolean updateRates(final List<Rate> newProductRates) {
         if (newProductRates == null) {
             return false;
@@ -1112,16 +1131,6 @@ public class LoanProduct extends AbstractPersistableCustom {
             actualChanges.put(interestRateIdParamName, newValue);
         }
 
-        Long existingChannelId = null;
-        if (this.channel != null) {
-            existingChannelId = this.channel.getId();
-        }
-        final String channelIdParamName = "channelId";
-        if (command.isChangeInLongParameterNamed(channelIdParamName, existingChannelId)) {
-            final Long newValue = command.longValueOfParameterNamed(channelIdParamName);
-            actualChanges.put(channelIdParamName, newValue);
-        }
-
         final String transactionProcessingStrategyCodeParamName = "transactionProcessingStrategyCode";
         if (command.isChangeInStringParameterNamed(transactionProcessingStrategyCodeParamName, this.transactionProcessingStrategyCode)) {
             final String newValue = command.stringValueOfParameterNamed(transactionProcessingStrategyCodeParamName);
@@ -1141,6 +1150,14 @@ public class LoanProduct extends AbstractPersistableCustom {
             final JsonArray jsonArray = command.arrayOfParameterNamed(creditAllocationParamName);
             if (jsonArray != null) {
                 actualChanges.put(creditAllocationParamName, command.jsonFragment(creditAllocationParamName));
+            }
+        }
+
+        final String repaymentChannelParamName = "repaymentChannels";
+        if (command.hasParameter(repaymentChannelParamName)) {
+            final JsonArray jsonArray = command.arrayOfParameterNamed(repaymentChannelParamName);
+            if (jsonArray != null) {
+                actualChanges.put(repaymentChannelParamName, command.jsonFragment(repaymentChannelParamName));
             }
         }
 

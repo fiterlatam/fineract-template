@@ -172,7 +172,7 @@ public interface LoanProductConstants {
     String PRODUCT_TYPE = "productType";
     String ADVANCE_PARAM = "advance";
     String INTEREST_RATE_ID_PARAM_NAME = "interestRateId";
-    String CHANNEL_ID_PARAM_NAME = "channelId";
+    String REPAYMENT_CHANNELS_PARAM_NAME = "repaymentChannels";
     String REQUIRE_POINT_PARAM_NAME = "requirePoints";
 
     String PRODUCT_TYPES_THAT_BLOCK_CREDIT = LoanProductType.SUMAS_PAY.getCode();

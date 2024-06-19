@@ -16,28 +16,46 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.custom.infrastructure.channel.data;
+package org.apache.fineract.custom.infrastructure.channel.domain;
 
-import java.util.List;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 
+@Entity
+@Table(schema = "custom", name = "c_channel")
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
 @Getter
 @Setter
-public class ChannelData {
+public class Channel {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id", nullable = false)
     private Long id;
+
+    @Column(name = "hash", nullable = false, length = 5000)
     private String hash;
+
+    @Column(name = "name", nullable = false, length = 100)
     private String name;
+
+    @Column(name = "channel_type")
+    private Integer channelType;
+
+    @Column(name = "description", nullable = true, length = 1000)
     private String description;
+
+    @Column(name = "active", nullable = false)
     private Boolean active;
-    private EnumOptionData channelType;
-    private List<EnumOptionData> channelTypeOptions;
 }

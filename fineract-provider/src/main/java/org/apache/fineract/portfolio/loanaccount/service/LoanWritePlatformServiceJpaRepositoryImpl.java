@@ -50,6 +50,7 @@ import org.apache.fineract.commands.domain.CommandWrapper;
 import org.apache.fineract.commands.service.CommandWrapperBuilder;
 import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformService;
 import org.apache.fineract.custom.infrastructure.channel.data.ChannelData;
+import org.apache.fineract.custom.infrastructure.channel.domain.Channel;
 import org.apache.fineract.custom.infrastructure.channel.domain.ChannelType;
 import org.apache.fineract.custom.infrastructure.channel.service.ChannelReadWritePlatformService;
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
@@ -308,7 +309,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         return result;
     }
 
-    private void validateChannel(final String channelName) {
+    private void validatedDisbursementChannel(final String channelName) {
         if (StringUtils.isBlank(channelName)) {
             throw new GeneralPlatformDomainRuleException("validation.msg.channel.is.blank", "Channel is blank");
         }
@@ -336,7 +337,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         if (channelName == null) {
             channelName = this.platformSecurityContext.getApiRequestChannel();
         }
-        this.validateChannel(channelName);
+        this.validatedDisbursementChannel(channelName);
 
         if (command.parameterExists("postDatedChecks")) {
             // validate with post dated checks for the disbursement
@@ -1021,10 +1022,12 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     @Override
     public CommandProcessingResult makeLoanRepaymentWithChargeRefundChargeType(final LoanTransactionType repaymentTransactionType,
             final Long loanId, final JsonCommand command, final boolean isRecoveryRepayment, final String chargeRefundChargeType) {
-
         this.loanUtilService.validateRepaymentTransactionType(repaymentTransactionType);
         this.loanEventApiJsonValidator.validateNewRepaymentTransaction(command.json());
-
+        String channelName = command.stringValueOfParameterNamed("channelName");
+        if (StringUtils.isBlank(channelName)) {
+            channelName = this.platformSecurityContext.getApiRequestChannel();
+        }
         final LocalDate transactionDate = command.localDateValueOfParameterNamed("transactionDate");
         final BigDecimal transactionAmount = command.bigDecimalValueOfParameterNamed("transactionAmount");
         final ExternalId txnExternalId = externalIdFactory.createFromCommand(command, LoanApiConstants.externalIdParameterName);
@@ -1036,7 +1039,6 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         changes.put("dateFormat", command.dateFormat());
         changes.put("paymentTypeId", command.longValueOfParameterNamed("paymentTypeId"));
         changes.put("channelHash", command.stringValueOfParameterNamed("channelHash"));
-
         final String noteText = command.stringValueOfParameterNamed("note");
         if (StringUtils.isNotBlank(noteText)) {
             changes.put("note", noteText);
@@ -1045,6 +1047,10 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             changes.put(LoanApiConstants.externalIdParameterName, txnExternalId);
         }
         Loan loan = this.loanAssembler.assembleFrom(loanId);
+        final LoanProduct loanProduct = loan.loanProduct();
+        final ChannelData channelData = this.validateRepaymentChannel(channelName, loanProduct);
+        final Long channelId = channelData.getId();
+        changes.put("channelId", channelId);
         final PaymentDetail paymentDetail = this.paymentDetailWritePlatformService.createAndPersistPaymentDetail(command, changes);
         final Boolean isHolidayValidationDone = false;
         final HolidayDetailDTO holidayDetailDto = null;
@@ -1080,6 +1086,31 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 .withGroupId(loan.getGroupId()) //
                 .with(changes) //
                 .build();
+    }
+
+    private ChannelData validateRepaymentChannel(final String channelName, final LoanProduct loanProduct) {
+        if (StringUtils.isBlank(channelName)) {
+            throw new GeneralPlatformDomainRuleException("validation.msg.channel.is.blank", "Channel is blank");
+        }
+        final ChannelData channelData = this.channelReadWritePlatformService.findByName(channelName);
+        if (channelData == null) {
+            throw new GeneralPlatformDomainRuleException("validation.msg.channel.not.found", "Channel not found", channelName);
+        }
+        if (!channelData.getActive()) {
+            throw new GeneralPlatformDomainRuleException("validation.msg.channel.not.active", "Channel is not active", channelName);
+        }
+        if (ChannelType.REPAYMENT.getValue().longValue() != channelData.getChannelType().getId()) {
+            throw new GeneralPlatformDomainRuleException("validation.msg.channel.not.repayment", "Channel is not disbursement repayment",
+                    channelName);
+        }
+        final List<Channel> repaymentChannels = loanProduct.getRepaymentChannels();
+        if (CollectionUtils.isNotEmpty(repaymentChannels)) {
+            final Long channelId = channelData.getId();
+            if (repaymentChannels.stream().noneMatch(repaymentChannel -> repaymentChannel.getId().equals(channelId))) {
+                throw new GeneralPlatformDomainRuleException("validation.msg.channel.not.allowed", "Channel is not allowed", channelName);
+            }
+        }
+        return channelData;
     }
 
     @Transactional
@@ -1144,7 +1175,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     @Transactional
     @Override
     public CommandProcessingResult adjustLoanTransaction(final Long loanId, final Long transactionId, final JsonCommand command) {
-
+        final AppUser authenticatedUser = context.authenticatedUser();
         this.loanEventApiJsonValidator.validateTransaction(command.json());
         LoanTransaction transactionToAdjust = this.loanTransactionRepository.findByIdAndLoanId(command.entityId(), command.getLoanId())
                 .orElseThrow(() -> new LoanTransactionNotFoundException(command.entityId(), command.getLoanId()));
@@ -1203,6 +1234,27 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         final List<Long> existingReversedTransactionIds = new ArrayList<>();
 
         final Money transactionAmountAsMoney = Money.of(loan.getCurrency(), transactionAmount);
+        String channelName = command.stringValueOfParameterNamed("channelName");
+        if (StringUtils.isBlank(channelName)) {
+            channelName = this.platformSecurityContext.getApiRequestChannel();
+        }
+        final LoanProduct loanProduct = loan.loanProduct();
+        if (isAdjustCommand) {
+            final ChannelData channelData = this.validateRepaymentChannel(channelName, loanProduct);
+            final Long channelId = channelData.getId();
+            changes.put("channelId", channelId);
+        } else {
+            if (!authenticatedUser.hasAnyPermission("ALL_FUNCTIONS", "UNDO_REPAYMENT_LOAN")) {
+                final LoanTransaction loanTransaction = this.loanTransactionRepository.findByIdAndLoanId(transactionId, loanId)
+                        .orElseThrow(() -> new LoanTransactionNotFoundException(transactionId, loanId));
+                final LocalDate loanTransactionDate = loanTransaction.getTransactionDate();
+                if (!DateUtils.isEqual(DateUtils.getBusinessLocalDate(), loanTransactionDate)) {
+                    throw new GeneralPlatformDomainRuleException("validation.msg.undo.repayment.is.permitted.on.the.same.day",
+                            "Undo repayment is permitted on the same day", transactionDate);
+                }
+            }
+        }
+
         final PaymentDetail paymentDetail = this.paymentDetailWritePlatformService.createPaymentDetail(command, changes);
         LoanTransaction newTransactionDetail = LoanTransaction.repayment(loan.getOffice(), transactionAmountAsMoney, paymentDetail,
                 transactionDate, txnExternalId);

@@ -26,18 +26,18 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import lombok.RequiredArgsConstructor;
-import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.fineract.accounting.common.AccountingEnumerations;
 import org.apache.fineract.custom.infrastructure.channel.data.ChannelData;
+import org.apache.fineract.custom.infrastructure.channel.service.ChannelReadWritePlatformService;
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.infrastructure.core.domain.ExternalId;
 import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
+import org.apache.fineract.infrastructure.core.service.SearchParameters;
 import org.apache.fineract.infrastructure.core.service.database.DatabaseSpecificSQLGenerator;
 import org.apache.fineract.infrastructure.entityaccess.domain.FineractEntityType;
 import org.apache.fineract.infrastructure.entityaccess.service.FineractEntityAccessUtil;
@@ -84,13 +84,15 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
     private final FineractEntityAccessUtil fineractEntityAccessUtil;
     private final DelinquencyReadPlatformService delinquencyReadPlatformService;
     private final LoanProductRepository loanProductRepository;
+    private final ChannelReadWritePlatformService channelReadPlatformService;
 
     @Override
     public LoanProductData retrieveLoanProduct(final Long loanProductId) {
-
         try {
             final Collection<ChargeData> charges = this.chargeReadPlatformService.retrieveLoanProductCharges(loanProductId);
             final Collection<RateData> rates = this.rateReadService.retrieveProductLoanRates(loanProductId);
+            final SearchParameters channelSearchParameters = SearchParameters.builder().productId(loanProductId).build();
+            final List<ChannelData> repaymentChannels = this.channelReadPlatformService.findBySearchParam(channelSearchParameters);
             final Collection<LoanProductBorrowerCycleVariationData> borrowerCycleVariationDatas = retrieveLoanProductBorrowerCycleVariations(
                     loanProductId);
             final Collection<AdvancedPaymentData> advancedPaymentData = retrieveAdvancedPaymentData(loanProductId);
@@ -100,9 +102,11 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
             final LoanProductMapper rm = new LoanProductMapper(charges, borrowerCycleVariationDatas, rates, delinquencyBucketOptions,
                     advancedPaymentData, creditAllocationData);
             final String sql = "select " + rm.loanProductSchema() + " where lp.id = ? ";
-
-            return this.jdbcTemplate.queryForObject(sql, rm, loanProductId); // NOSONAR
-
+            LoanProductData loanProductData = this.jdbcTemplate.queryForObject(sql, rm, loanProductId);
+            if (loanProductData != null) {
+                loanProductData.setRepaymentChannels(repaymentChannels);
+            }
+            return loanProductData;
         } catch (final EmptyResultDataAccessException e) {
             throw new LoanProductNotFoundException(loanProductId, e);
         }
@@ -375,10 +379,7 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
                                 	lp.custom_allow_credit_note AS "customAllowCreditNote",
                                 	lp.custom_allow_debit_note AS "customAllowDebitNote",
                                 	lp.custom_allow_forgiveness AS "customAllowForgiveness",
-                                	lp.custom_allow_reversal_cancellation AS "customAllowReversalCancellation",
-                                	cc.id AS "channelId",
-                                	cc."name" AS "channelName",
-                                	cc.description AS "channelDescription"
+                                	lp.custom_allow_reversal_cancellation AS "customAllowReversalCancellation"
                                 FROM m_product_loan lp
                                 JOIN m_currency curr ON curr.code = lp.currency_code
                                 LEFT JOIN m_fund f ON f.id = lp.fund_id
@@ -391,7 +392,6 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
                                 LEFT JOIN m_delinquency_bucket AS dbuc ON dbuc.id = lp.delinquency_bucket_id
                                 LEFT JOIN m_code_value AS pty ON pty.id = lp.product_type
                                 LEFT JOIN m_interest_rate mir ON mir.id = lp.interest_rate_id
-                                LEFT JOIN custom.c_channel cc ON cc.id = lp.channel_id
                     """;
 
         }
@@ -699,15 +699,6 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
                     .currentRate(interestCurrentRate).appliedOnDate(interestRateAppliedOnDate).active(InterestRateActive).build();
             loanProductData.setInterestRate(interestRateData);
             loanProductData.setGraceOnChargesPayment(graceOnChargesPayment);
-
-            final Long channelId = JdbcSupport.getLong(rs, "channelId");
-            if (channelId != null && !Objects.equals(channelId, NumberUtils.LONG_ZERO)) {
-                final String channelName = rs.getString("channelName");
-                final String channelDescription = rs.getString("channelDescription");
-                final ChannelData channelData = ChannelData.builder().id(channelId).name(channelName).description(channelDescription)
-                        .build();
-                loanProductData.setChannel(channelData);
-            }
             return loanProductData;
         }
     }

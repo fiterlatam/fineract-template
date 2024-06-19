@@ -48,6 +48,9 @@ import java.util.Set;
 import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.accounting.common.AccountingRuleType;
+import org.apache.fineract.custom.infrastructure.channel.data.ChannelData;
+import org.apache.fineract.custom.infrastructure.channel.domain.ChannelType;
+import org.apache.fineract.custom.infrastructure.channel.service.ChannelReadWritePlatformService;
 import org.apache.fineract.infrastructure.clientblockingreasons.data.BlockingReasonsData;
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 import org.apache.fineract.infrastructure.codes.service.CodeValueReadPlatformService;
@@ -194,6 +197,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
     private final LoanTransactionRelationRepository loanTransactionRelationRepository;
     private final LoanTransactionRelationMapper loanTransactionRelationMapper;
     private final LoanChargePaidByReadPlatformService loanChargePaidByReadPlatformService;
+    private final ChannelReadWritePlatformService channelReadWritePlatformService;
 
     @Override
     public LoanAccountData retrieveOne(final Long loanId) {
@@ -454,16 +458,19 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
 
     @Override
     public LoanTransactionData retrieveLoanTransactionTemplate(final Long loanId) {
-
         this.context.authenticatedUser();
-
         RepaymentTransactionTemplateMapper mapper = new RepaymentTransactionTemplateMapper(sqlGenerator);
         String sql = "select " + mapper.schema();
         LoanTransactionData loanTransactionData = this.jdbcTemplate.queryForObject(sql, mapper, // NOSONAR
                 LoanTransactionType.REPAYMENT.getValue(), LoanTransactionType.DOWN_PAYMENT.getValue(),
                 LoanTransactionType.REPAYMENT.getValue(), LoanTransactionType.DOWN_PAYMENT.getValue(), loanId, loanId);
         final Collection<PaymentTypeData> paymentOptions = this.paymentTypeReadPlatformService.retrieveAllPaymentTypes();
-        return LoanTransactionData.templateOnTop(loanTransactionData, paymentOptions);
+        final SearchParameters channelSearchParameters = SearchParameters.builder().channelType(ChannelType.REPAYMENT.getValue())
+                .active(true).build();
+        final List<ChannelData> channelOptions = channelReadWritePlatformService.findBySearchParam(channelSearchParameters);
+        final LoanTransactionData loanTransactioTemplate = LoanTransactionData.templateOnTop(loanTransactionData, paymentOptions);
+        loanTransactioTemplate.setChannelOptions(channelOptions);
+        return loanTransactioTemplate;
     }
 
     @Override
@@ -1433,7 +1440,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                     + " left join m_payment_type pt on pd.payment_type_id = pt.id left join m_office office on office.id=tr.office_id"
                     + " left join m_account_transfer_transaction fromtran on fromtran.from_loan_transaction_id = tr.id "
                     + " left join m_account_transfer_transaction totran on totran.to_loan_transaction_id = tr.id "
-                    + " left join custom.c_channel ch on ch.hash = pd.channel_hash";
+                    + " left join custom.c_channel ch on ch.id = pd.channel_id";
         }
 
         @Override

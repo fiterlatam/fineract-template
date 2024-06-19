@@ -283,7 +283,7 @@ public class LoanProductData implements Serializable {
     private List<ChannelData> channelOptions;
 
     @Setter
-    private ChannelData channel;
+    private List<ChannelData> repaymentChannels;
 
     /**
      * Used when returning lookup information about loan product for dropdowns.
@@ -1149,8 +1149,7 @@ public class LoanProductData implements Serializable {
         this.advance = productData.advance;
         this.requirePoints = productData.requirePoints;
         this.interestRate = productData.interestRate;
-        this.channel = productData.getChannel();
-
+        this.repaymentChannels = productData.repaymentChannels;
     }
 
     private Collection<ChargeData> nullIfEmpty(final Collection<ChargeData> charges) {
