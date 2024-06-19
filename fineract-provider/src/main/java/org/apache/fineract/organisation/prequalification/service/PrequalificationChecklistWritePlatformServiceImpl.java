@@ -589,6 +589,8 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
      */
     private CheckValidationColor runCheck7(final ClientData clientData) {
         String clientArea = clientData.getClientArea();
+        final ClientData params = retrieveClientParams(clientData.getClientId(), clientData.getProductId());
+
         final String prequalificationId = String.valueOf(clientData.getPrequalificationId());
         final String reportName = Policies.SEVEN.getName() + " Policy Check";
         final String productId = Long.toString(clientData.getProductId());
@@ -596,7 +598,7 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
         reportParams.put("${prequalificationId}", prequalificationId);
         reportParams.put("${loanProductId}", productId);
         reportParams.put("${clientArea}", clientArea);
-        reportParams.put("${categorization}", String.valueOf(clientData.getCategorization()));
+        reportParams.put("${categorization}", params.getCategorization());
         reportParams.put("${isTopup}", String.valueOf(clientData.getIsLoanTopup()));
         reportParams.put("${requestedAmount}", String.valueOf(clientData.getRequestedAmount()));
         final GenericResultsetData result = this.readReportingService.retrieveGenericResultset(reportName, "report", reportParams, false);
