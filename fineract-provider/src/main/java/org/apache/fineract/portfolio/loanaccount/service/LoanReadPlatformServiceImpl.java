@@ -719,7 +719,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                     + " topup.topup_amount as topupAmount, l.last_closed_business_date as lastClosedBusinessDate,l.overpaidon_date as overpaidOnDate, "
                     + " l.is_charged_off as isChargedOff, l.charge_off_reason_cv_id as chargeOffReasonId, codec.code_value as chargeOffReason, l.charged_off_on_date as chargedOffOnDate, l.enable_down_payment as enableDownPayment, l.disbursed_amount_percentage_for_down_payment as disbursedAmountPercentageForDownPayment, l.enable_auto_repayment_for_down_payment as enableAutoRepaymentForDownPayment,"
                     + " cobu.username as chargedOffByUsername, cobu.firstname as chargedOffByFirstname, cobu.lastname as chargedOffByLastname, l.loan_schedule_type as loanScheduleType, l.loan_schedule_processing_type as loanScheduleProcessingType, "
-                    + " brs.name_of_reason as blockStatusName,brs.id as blockStatusId, brs.priority as blockStatusPriority, brs.level as blockStatusLevel "
+                    + " brs.name_of_reason as blockStatusName,brs.id as blockStatusId, brs.priority as blockStatusPriority, brs.level as blockStatusLevel, cch.name as channel_name, cch.id as channel_id , cch.description as channel_description , pos.name as point_of_sales_name"
                     + " from m_loan l" //
                     + " join m_product_loan lp on lp.id = l.product_id" //
                     + " left join m_loan_recalculation_details lir on lir.loan_id = l.id join m_currency rc on rc."
@@ -740,7 +740,10 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                     + " left join m_product_loan_variable_installment_config lpvi on lpvi.loan_product_id = l.product_id"
                     + " left join m_loan_topup as topup on l.id = topup.loan_id"
                     + " left join m_loan as topuploan on topuploan.id = topup.closure_loan_id "
-                    + "  left join m_blocking_reason_setting brs on brs.id = l.block_status_id ";
+                    + "  left join m_blocking_reason_setting brs on brs.id = l.block_status_id "
+                    + "    left join custom.c_channel cch on cch.id = lp.channel_id   " + "left join\n"
+                    + "(select ps.name , cbp.loan_id from custom.c_client_ally_point_of_sales ps\n"
+                    + "join custom.c_client_buy_process cbp on cbp.point_if_sales_id = ps.id) pos\n" + "on pos.loan_id = l.id\n";
 
         }
 
@@ -1074,6 +1077,10 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
             final LoanScheduleProcessingType loanScheduleProcessingType = LoanScheduleProcessingType.valueOf(loanScheduleProcessingTypeStr);
             final String blockStatusName = rs.getString("blockStatusName");
             BlockingReasonsData blockStatusData = null;
+            final Long channelId = rs.getLong("channel_id");
+            final String channelName = rs.getString("channel_name");
+            final String channelDescription = rs.getString("channel_description");
+            final String pointOfSalesName = rs.getString("point_of_sales_name");
 
             if (!StringUtils.isEmpty(blockStatusName)) {
                 blockStatusData = BlockingReasonsData.builder().id(rs.getLong("blockStatusId")).nameOfReason(blockStatusName)
@@ -1100,6 +1107,10 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                     loanScheduleType.asEnumOptionData(), loanScheduleProcessingType.asEnumOptionData());
             basicLoanDetails.setLoanAssignorId(loanAssignorId);
             basicLoanDetails.setBlockStatus(blockStatusData);
+            basicLoanDetails.setChannelDescription(channelDescription);
+            basicLoanDetails.setChannelId(channelId);
+            basicLoanDetails.setChannelName(channelName);
+            basicLoanDetails.setPointOfSalesName(pointOfSalesName);
             final Long interestRatePoints = JdbcSupport.getLong(rs, "interestRatePoints");
             basicLoanDetails.setInterestRatePoints(interestRatePoints);
 
