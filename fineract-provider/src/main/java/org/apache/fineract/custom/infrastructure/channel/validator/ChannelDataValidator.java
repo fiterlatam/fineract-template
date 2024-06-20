@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.custom.infrastructure.channel.constants.ChannelApiConstants;
-import org.apache.fineract.custom.insfrastructure.channel.domain.Channel;
+import org.apache.fineract.custom.infrastructure.channel.domain.Channel;
 import org.apache.fineract.infrastructure.core.data.ApiParameterError;
 import org.apache.fineract.infrastructure.core.data.DataValidatorBuilder;
 import org.apache.fineract.infrastructure.core.exception.InvalidJsonException;
