@@ -40,6 +40,7 @@ import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.infrastructure.core.exception.PlatformDataIntegrityException;
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
 import org.apache.fineract.infrastructure.core.serialization.JsonParserHelper;
+import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.organisation.prequalification.data.BuroData;
 import org.apache.fineract.organisation.prequalification.data.LoanAdditionalData;
@@ -294,8 +295,6 @@ public class BureauValidationWritePlatformServiceImpl implements BureauValidatio
 
         final LocalDate fechaInicio = this.fromApiJsonHelper.extractLocalDateNamed("fecha_inicio", jsonElement, dateFormat, dateLocale);
         loanAdditionalData.setFechaInicio(fechaInicio);
-
-        loanAdditionalData.setFecha_inicio_negocio(fechaInicio);
 
         final String producto = this.fromApiJsonHelper.extractStringNamed("producto", jsonElement);
         loanAdditionalData.setProducto(producto);
@@ -632,6 +631,9 @@ public class BureauValidationWritePlatformServiceImpl implements BureauValidatio
         final LocalDateTime dateOpened = this.fromApiJsonHelper.extractLocalDateTimeNamed("date_opened", jsonElement, dateTimeFormat,
                 dateLocale);
         loanAdditionalData.setDateOpened(dateOpened);
+
+        LocalDate fechaInicioNegocio = dateOpened!=null?dateOpened.toLocalDate(): DateUtils.getBusinessLocalDate();
+        loanAdditionalData.setFecha_inicio_negocio(fechaInicioNegocio);
 
         final LocalDate fechaFin = this.fromApiJsonHelper.extractLocalDateNamed("fecha_fin", jsonElement, dateFormat, dateLocale);
         loanAdditionalData.setFechaFin(fechaFin);
