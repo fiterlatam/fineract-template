@@ -637,114 +637,246 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         }
 
         public String loanSchema() {
-            return "l.id as id, l.account_no as accountNo, l.interest_rate_points as interestRatePoints, l.external_id as externalId, l.fund_id as fundId, f.name as fundName,"
-                    + " l.loan_type_enum as loanType, l.loanpurpose_cv_id as loanPurposeId, cv.code_value as loanPurposeName,"
-                    + " lp.id as loanProductId, lp.name as loanProductName, lp.description as loanProductDescription,"
-                    + " lp.is_linked_to_floating_interest_rates as isLoanProductLinkedToFloatingRate, "
-                    + " lp.allow_variabe_installments as isvariableInstallmentsAllowed, "
-                    + " lp.allow_multiple_disbursals as multiDisburseLoan, lp.disallow_expected_disbursements as disallowExpectedDisbursements, "
-                    + " lp.can_define_fixed_emi_amount as canDefineInstallmentAmount,"
-                    + " c.id as clientId, c.account_no as clientAccountNo, c.display_name as clientName, c.office_id as clientOfficeId, c.external_id as clientExternalId,"
-                    + " g.id as groupId, g.account_no as groupAccountNo, g.display_name as groupName,"
-                    + " g.office_id as groupOfficeId, g.staff_id As groupStaffId , g.parent_id as groupParentId, (select mg.display_name from m_group mg where mg.id = g.parent_id) as centerName, "
-                    + " g.hierarchy As groupHierarchy , g.level_id as groupLevel, g.external_id As groupExternalId, "
-                    + " g.status_enum as statusEnum, g.activation_date as activationDate, "
-                    + " l.submittedon_date as submittedOnDate, sbu.username as submittedByUsername, sbu.firstname as submittedByFirstname, sbu.lastname as submittedByLastname,"
-                    + " l.rejectedon_date as rejectedOnDate, rbu.username as rejectedByUsername, rbu.firstname as rejectedByFirstname, rbu.lastname as rejectedByLastname,"
-                    + " l.withdrawnon_date as withdrawnOnDate, wbu.username as withdrawnByUsername, wbu.firstname as withdrawnByFirstname, wbu.lastname as withdrawnByLastname,"
-                    + " l.approvedon_date as approvedOnDate, abu.username as approvedByUsername, abu.firstname as approvedByFirstname, abu.lastname as approvedByLastname,"
-                    + " l.expected_disbursedon_date as expectedDisbursementDate, l.disbursedon_date as actualDisbursementDate, dbu.username as disbursedByUsername, dbu.firstname as disbursedByFirstname, dbu.lastname as disbursedByLastname,"
-                    + " l.closedon_date as closedOnDate, cbu.username as closedByUsername, cbu.firstname as closedByFirstname, cbu.lastname as closedByLastname, l.writtenoffon_date as writtenOffOnDate, "
-                    + " l.expected_firstrepaymenton_date as expectedFirstRepaymentOnDate, l.interest_calculated_from_date as interestChargedFromDate, l.maturedon_date as actualMaturityDate, l.expected_maturedon_date as expectedMaturityDate, "
-                    + " l.principal_amount_proposed as proposedPrincipal, l.principal_amount as principal, l.approved_principal as approvedPrincipal, l.net_disbursal_amount as netDisbursalAmount, l.arrearstolerance_amount as inArrearsTolerance, l.number_of_repayments as numberOfRepayments, l.repay_every as repaymentEvery,"
-                    + " l.grace_on_principal_periods as graceOnPrincipalPayment, l.recurring_moratorium_principal_periods as recurringMoratoriumOnPrincipalPeriods, l.grace_on_interest_periods as graceOnInterestPayment, l.grace_interest_free_periods as graceOnInterestCharged,l.grace_on_arrears_ageing as graceOnArrearsAgeing,"
-                    + " l.nominal_interest_rate_per_period as interestRatePerPeriod, l.annual_nominal_interest_rate as annualInterestRate, "
-                    + " l.repayment_period_frequency_enum as repaymentFrequencyType, l.interest_period_frequency_enum as interestRateFrequencyType, "
-                    + " l.term_frequency as termFrequency, l.term_period_frequency_enum as termPeriodFrequencyType, "
-                    + " l.amortization_method_enum as amortizationType, l.interest_method_enum as interestType, l.is_equal_amortization as isEqualAmortization, l.interest_calculated_in_period_enum as interestCalculationPeriodType,"
-                    + " l.fixed_principal_percentage_per_installment fixedPrincipalPercentagePerInstallment, "
-                    + " l.allow_partial_period_interest_calcualtion as allowPartialPeriodInterestCalcualtion,"
-                    + " l.loan_status_id as lifeCycleStatusId, l.loan_transaction_strategy_code as transactionStrategyCode, "
-                    + " l.loan_transaction_strategy_name as transactionStrategyName, l.enable_installment_level_delinquency as enableInstallmentLevelDelinquency, "
-                    + " l.currency_code as currencyCode, l.currency_digits as currencyDigits, l.currency_multiplesof as inMultiplesOf, rc."
-                    + sqlGenerator.escape("name")
-                    + " as currencyName, rc.display_symbol as currencyDisplaySymbol, rc.internationalized_name_code as currencyNameCode, "
-                    + " l.loan_officer_id as loanOfficerId, s.display_name as loanOfficerName, l.loan_assignor_id as loanAssignorId, "
-                    + " l.principal_disbursed_derived as principalDisbursed, l.principal_repaid_derived as principalPaid,"
-                    + " l.principal_adjustments_derived as principalAdjustments, l.principal_writtenoff_derived as principalWrittenOff,"
-                    + " l.principal_outstanding_derived as principalOutstanding, l.interest_charged_derived as interestCharged,"
-                    + " l.interest_repaid_derived as interestPaid, l.interest_waived_derived as interestWaived,"
-                    + " l.interest_writtenoff_derived as interestWrittenOff, l.interest_outstanding_derived as interestOutstanding,"
-                    + " l.fee_charges_charged_derived as feeChargesCharged,"
-                    + " l.total_charges_due_at_disbursement_derived as feeChargesDueAtDisbursementCharged,"
-                    + " l.fee_charges_repaid_derived as feeChargesPaid, l.fee_charges_waived_derived as feeChargesWaived,"
-                    + " l.fee_charges_writtenoff_derived as feeChargesWrittenOff,"
-                    + " l.fee_charges_outstanding_derived as feeChargesOutstanding,"
-                    + " l.penalty_charges_charged_derived as penaltyChargesCharged,"
-                    + " l.penalty_charges_repaid_derived as penaltyChargesPaid,"
-                    + " l.penalty_charges_waived_derived as penaltyChargesWaived,"
-                    + " l.penalty_charges_writtenoff_derived as penaltyChargesWrittenOff,"
-                    + " l.penalty_charges_outstanding_derived as penaltyChargesOutstanding, "
-                    + " l.total_expected_repayment_derived as totalExpectedRepayment, l.total_repayment_derived as totalRepayment,"
-                    + " l.total_expected_costofloan_derived as totalExpectedCostOfLoan, l.total_costofloan_derived as totalCostOfLoan,"
-                    + " l.total_waived_derived as totalWaived, l.total_writtenoff_derived as totalWrittenOff,"
-                    + " l.writeoff_reason_cv_id as writeoffReasonId, codev.code_value as writeoffReason,"
-                    + " l.total_outstanding_derived as totalOutstanding, l.total_overpaid_derived as totalOverpaid,"
-                    + " l.fixed_emi_amount as fixedEmiAmount, l.max_outstanding_loan_balance as outstandingLoanBalance,"
-                    + " l.loan_sub_status_id as loanSubStatusId, la.principal_overdue_derived as principalOverdue, l.is_fraud as isFraud, "
-                    + " la.interest_overdue_derived as interestOverdue, la.fee_charges_overdue_derived as feeChargesOverdue,"
-                    + " la.penalty_charges_overdue_derived as penaltyChargesOverdue, la.total_overdue_derived as totalOverdue,"
-                    + " la.overdue_since_date_derived as overdueSinceDate, "
-                    + " l.sync_disbursement_with_meeting as syncDisbursementWithMeeting,"
-                    + " l.loan_counter as loanCounter, l.loan_product_counter as loanProductCounter,"
-                    + " l.is_npa as isNPA, l.days_in_month_enum as daysInMonth, l.days_in_year_enum as daysInYear, "
-                    + " l.interest_recalculation_enabled as isInterestRecalculationEnabled, "
-                    + " lir.id as lirId, lir.loan_id as loanId, lir.compound_type_enum as compoundType, lir.reschedule_strategy_enum as rescheduleStrategy, "
-                    + " lir.rest_frequency_type_enum as restFrequencyEnum, lir.rest_frequency_interval as restFrequencyInterval, "
-                    + " lir.rest_frequency_nth_day_enum as restFrequencyNthDayEnum, "
-                    + " lir.rest_frequency_weekday_enum as restFrequencyWeekDayEnum, "
-                    + " lir.rest_frequency_on_day as restFrequencyOnDay, "
-                    + " lir.compounding_frequency_type_enum as compoundingFrequencyEnum, lir.compounding_frequency_interval as compoundingInterval, "
-                    + " lir.compounding_frequency_nth_day_enum as compoundingFrequencyNthDayEnum, "
-                    + " lir.compounding_frequency_weekday_enum as compoundingFrequencyWeekDayEnum, "
-                    + " lir.compounding_frequency_on_day as compoundingFrequencyOnDay, "
-                    + " lir.is_compounding_to_be_posted_as_transaction as isCompoundingToBePostedAsTransaction, "
-                    + " lir.allow_compounding_on_eod as allowCompoundingOnEod, "
-                    + " l.is_floating_interest_rate as isFloatingInterestRate, "
-                    + " l.interest_rate_differential as interestRateDifferential, "
-                    + " l.create_standing_instruction_at_disbursement as createStandingInstructionAtDisbursement, "
-                    + " lpvi.minimum_gap as minimuminstallmentgap, lpvi.maximum_gap as maximuminstallmentgap, "
-                    + " lp.can_use_for_topup as canUseForTopup, l.is_topup as isTopup, topup.closure_loan_id as closureLoanId, "
-                    + " l.total_recovered_derived as totalRecovered, topuploan.account_no as closureLoanAccountNo, "
-                    + " topup.topup_amount as topupAmount, l.last_closed_business_date as lastClosedBusinessDate,l.overpaidon_date as overpaidOnDate, "
-                    + " l.is_charged_off as isChargedOff, l.charge_off_reason_cv_id as chargeOffReasonId, codec.code_value as chargeOffReason, l.charged_off_on_date as chargedOffOnDate, l.enable_down_payment as enableDownPayment, l.disbursed_amount_percentage_for_down_payment as disbursedAmountPercentageForDownPayment, l.enable_auto_repayment_for_down_payment as enableAutoRepaymentForDownPayment,"
-                    + " cobu.username as chargedOffByUsername, cobu.firstname as chargedOffByFirstname, cobu.lastname as chargedOffByLastname, l.loan_schedule_type as loanScheduleType, l.loan_schedule_processing_type as loanScheduleProcessingType, "
-                    + " brs.name_of_reason as blockStatusName,brs.id as blockStatusId, brs.priority as blockStatusPriority, brs.level as blockStatusLevel, cch.name as channel_name, cch.id as channel_id , cch.description as channel_description , pos.name as point_of_sales_name"
-                    + " from m_loan l" //
-                    + " join m_product_loan lp on lp.id = l.product_id" //
-                    + " left join m_loan_recalculation_details lir on lir.loan_id = l.id join m_currency rc on rc."
-                    + sqlGenerator.escape("code") + " = l.currency_code" //
-                    + " left join m_client c on c.id = l.client_id" //
-                    + " left join m_group g on g.id = l.group_id" //
-                    + " left join m_loan_arrears_aging la on la.loan_id = l.id" //
-                    + " left join m_fund f on f.id = l.fund_id" //
-                    + " left join m_staff s on s.id = l.loan_officer_id" //
-                    + " left join m_appuser sbu on sbu.id = l.created_by left join m_appuser rbu on rbu.id = l.rejectedon_userid"
-                    + " left join m_appuser wbu on wbu.id = l.withdrawnon_userid"
-                    + " left join m_appuser abu on abu.id = l.approvedon_userid"
-                    + " left join m_appuser dbu on dbu.id = l.disbursedon_userid left join m_appuser cbu on cbu.id = l.closedon_userid"
-                    + " left join m_appuser cobu on cobu.id = l.charged_off_by_userid "
-                    + " left join m_code_value cv on cv.id = l.loanpurpose_cv_id"
-                    + " left join m_code_value codev on codev.id = l.writeoff_reason_cv_id"
-                    + " left join m_code_value codec on codec.id = l.charge_off_reason_cv_id"
-                    + " left join m_product_loan_variable_installment_config lpvi on lpvi.loan_product_id = l.product_id"
-                    + " left join m_loan_topup as topup on l.id = topup.loan_id"
-                    + " left join m_loan as topuploan on topuploan.id = topup.closure_loan_id "
-                    + "  left join m_blocking_reason_setting brs on brs.id = l.block_status_id "
-                    + "    left join custom.c_channel cch on cch.id = lp.channel_id   " + "left join\n"
-                    + "(select ps.name , cbp.loan_id from custom.c_client_ally_point_of_sales ps\n"
-                    + "join custom.c_client_buy_process cbp on cbp.point_if_sales_id = ps.id) pos\n" + "on pos.loan_id = l.id\n";
-
+            return """
+                    l.id AS id,
+                        l.account_no AS accountNo,
+                        l.interest_rate_points AS interestRatePoints,
+                        l.external_id AS externalId,
+                        l.fund_id AS fundId,
+                        f.name AS fundName,
+                        l.loan_type_enum AS loanType,
+                        l.loanpurpose_cv_id AS loanPurposeId,
+                        cv.code_value AS loanPurposeName,
+                        lp.id AS loanProductId,
+                        lp.name AS loanProductName,
+                        lp.description AS loanProductDescription,
+                        lp.is_linked_to_floating_interest_rates AS isLoanProductLinkedToFloatingRate,
+                        lp.allow_variabe_installments AS isVariableInstallmentsAllowed,
+                        lp.allow_multiple_disbursals AS multiDisburseLoan,
+                        lp.disallow_expected_disbursements AS disallowExpectedDisbursements,
+                        lp.can_define_fixed_emi_amount AS canDefineInstallmentAmount,
+                        c.id AS clientId,
+                        c.account_no AS clientAccountNo,
+                        c.display_name AS clientName,
+                        c.office_id AS clientOfficeId,
+                        c.external_id AS clientExternalId,
+                        g.id AS groupId,
+                        g.account_no AS groupAccountNo,
+                        g.display_name AS groupName,
+                        g.office_id AS groupOfficeId,
+                        g.staff_id AS groupStaffId,
+                        g.parent_id AS groupParentId,
+                        (SELECT mg.display_name FROM m_group mg WHERE mg.id = g.parent_id) AS centerName,
+                        g.hierarchy AS groupHierarchy,
+                        g.level_id AS groupLevel,
+                        g.external_id AS groupExternalId,
+                        g.status_enum AS statusEnum,
+                        g.activation_date AS activationDate,
+                        l.submittedon_date AS submittedOnDate,
+                        sbu.username AS submittedByUsername,
+                        sbu.firstname AS submittedByFirstname,
+                        sbu.lastname AS submittedByLastname,
+                        l.rejectedon_date AS rejectedOnDate,
+                        rbu.username AS rejectedByUsername,
+                        rbu.firstname AS rejectedByFirstname,
+                        rbu.lastname AS rejectedByLastname,
+                        l.withdrawnon_date AS withdrawnOnDate,
+                        wbu.username AS withdrawnByUsername,
+                        wbu.firstname AS withdrawnByFirstname,
+                        wbu.lastname AS withdrawnByLastname,
+                        l.approvedon_date AS approvedOnDate,
+                        abu.username AS approvedByUsername,
+                        abu.firstname AS approvedByFirstname,
+                        abu.lastname AS approvedByLastname,
+                        l.expected_disbursedon_date AS expectedDisbursementDate,
+                        l.disbursedon_date AS actualDisbursementDate,
+                        dbu.username AS disbursedByUsername,
+                        dbu.firstname AS disbursedByFirstname,
+                        dbu.lastname AS disbursedByLastname,
+                        l.closedon_date AS closedOnDate,
+                        cbu.username AS closedByUsername,
+                        cbu.firstname AS closedByFirstname,
+                        cbu.lastname AS closedByLastname,
+                        l.writtenoffon_date AS writtenOffOnDate,
+                        l.expected_firstrepaymenton_date AS expectedFirstRepaymentOnDate,
+                        l.interest_calculated_from_date AS interestChargedFromDate,
+                        l.maturedon_date AS actualMaturityDate,
+                        l.expected_maturedon_date AS expectedMaturityDate,
+                        l.principal_amount_proposed AS proposedPrincipal,
+                        l.principal_amount AS principal,
+                        l.approved_principal AS approvedPrincipal,
+                        l.net_disbursal_amount AS netDisbursalAmount,
+                        l.arrearstolerance_amount AS inArrearsTolerance,
+                        l.number_of_repayments AS numberOfRepayments,
+                        l.repay_every AS repaymentEvery,
+                        l.grace_on_principal_periods AS graceOnPrincipalPayment,
+                        l.recurring_moratorium_principal_periods AS recurringMoratoriumOnPrincipalPeriods,
+                        l.grace_on_interest_periods AS graceOnInterestPayment,
+                        l.grace_interest_free_periods AS graceOnInterestCharged,
+                        l.grace_on_arrears_ageing AS graceOnArrearsAgeing,
+                        l.nominal_interest_rate_per_period AS interestRatePerPeriod,
+                        l.annual_nominal_interest_rate AS annualInterestRate,
+                        l.repayment_period_frequency_enum AS repaymentFrequencyType,
+                        l.interest_period_frequency_enum AS interestRateFrequencyType,
+                        l.term_frequency AS termFrequency,
+                        l.term_period_frequency_enum AS termPeriodFrequencyType,
+                        l.amortization_method_enum AS amortizationType,
+                        l.interest_method_enum AS interestType,
+                        l.is_equal_amortization AS isEqualAmortization,
+                        l.interest_calculated_in_period_enum AS interestCalculationPeriodType,
+                        l.fixed_principal_percentage_per_installment AS fixedPrincipalPercentagePerInstallment,
+                        l.allow_partial_period_interest_calcualtion AS allowPartialPeriodInterestCalcualtion,
+                        l.loan_status_id AS lifeCycleStatusId,
+                        l.loan_transaction_strategy_code AS transactionStrategyCode,
+                        l.loan_transaction_strategy_name AS transactionStrategyName,
+                        l.enable_installment_level_delinquency AS enableInstallmentLevelDelinquency,
+                        l.currency_code AS currencyCode,
+                        l.currency_digits AS currencyDigits,
+                        l.currency_multiplesof AS inMultiplesOf,
+                        rc.name AS currencyName,
+                        rc.display_symbol AS currencyDisplaySymbol,
+                        rc.internationalized_name_code AS currencyNameCode,
+                        l.loan_officer_id AS loanOfficerId,
+                        s.display_name AS loanOfficerName,
+                        l.loan_assignor_id AS loanAssignorId,
+                        l.principal_disbursed_derived AS principalDisbursed,
+                        l.principal_repaid_derived AS principalPaid,
+                        l.principal_adjustments_derived AS principalAdjustments,
+                        l.principal_writtenoff_derived AS principalWrittenOff,
+                        l.principal_outstanding_derived AS principalOutstanding,
+                        l.interest_charged_derived AS interestCharged,
+                        l.interest_repaid_derived AS interestPaid,
+                        l.interest_waived_derived AS interestWaived,
+                        l.interest_writtenoff_derived AS interestWrittenOff,
+                        l.interest_outstanding_derived AS interestOutstanding,
+                        l.fee_charges_charged_derived AS feeChargesCharged,
+                        l.total_charges_due_at_disbursement_derived AS feeChargesDueAtDisbursementCharged,
+                        l.fee_charges_repaid_derived AS feeChargesPaid,
+                        l.fee_charges_waived_derived AS feeChargesWaived,
+                        l.fee_charges_writtenoff_derived AS feeChargesWrittenOff,
+                        l.fee_charges_outstanding_derived AS feeChargesOutstanding,
+                        l.penalty_charges_charged_derived AS penaltyChargesCharged,
+                        l.penalty_charges_repaid_derived AS penaltyChargesPaid,
+                        l.penalty_charges_waived_derived AS penaltyChargesWaived,
+                        l.penalty_charges_writtenoff_derived AS penaltyChargesWrittenOff,
+                        l.penalty_charges_outstanding_derived AS penaltyChargesOutstanding,
+                        l.total_expected_repayment_derived AS totalExpectedRepayment,
+                        l.total_repayment_derived AS totalRepayment,
+                        l.total_expected_costofloan_derived AS totalExpectedCostOfLoan,
+                        l.total_costofloan_derived AS totalCostOfLoan,
+                        l.total_waived_derived AS totalWaived,
+                        l.total_writtenoff_derived AS totalWrittenOff,
+                        l.writeoff_reason_cv_id AS writeoffReasonId,
+                        codev.code_value AS writeoffReason,
+                        l.total_outstanding_derived AS totalOutstanding,
+                        l.total_overpaid_derived AS totalOverpaid,
+                        l.fixed_emi_amount AS fixedEmiAmount,
+                        l.max_outstanding_loan_balance AS outstandingLoanBalance,
+                        l.loan_sub_status_id AS loanSubStatusId,
+                        la.principal_overdue_derived AS principalOverdue,
+                        l.is_fraud AS isFraud,
+                        la.interest_overdue_derived AS interestOverdue,
+                        la.fee_charges_overdue_derived AS feeChargesOverdue,
+                        la.penalty_charges_overdue_derived AS penaltyChargesOverdue,
+                        la.total_overdue_derived AS totalOverdue,
+                        la.overdue_since_date_derived AS overdueSinceDate,
+                        l.sync_disbursement_with_meeting AS syncDisbursementWithMeeting,
+                        l.loan_counter AS loanCounter,
+                        l.loan_product_counter AS loanProductCounter,
+                        l.is_npa AS isNPA,
+                        l.days_in_month_enum AS daysInMonth,
+                        l.days_in_year_enum AS daysInYear,
+                        l.interest_recalculation_enabled AS isInterestRecalculationEnabled,
+                        lir.id AS lirId,
+                        lir.loan_id AS loanId,
+                        lir.compound_type_enum AS compoundType,
+                        lir.reschedule_strategy_enum AS rescheduleStrategy,
+                        lir.rest_frequency_type_enum AS restFrequencyEnum,
+                        lir.rest_frequency_interval AS restFrequencyInterval,
+                        lir.rest_frequency_nth_day_enum AS restFrequencyNthDayEnum,
+                        lir.rest_frequency_weekday_enum AS restFrequencyWeekDayEnum,
+                        lir.rest_frequency_on_day AS restFrequencyOnDay,
+                        lir.compounding_frequency_type_enum AS compoundingFrequencyEnum,
+                        lir.compounding_frequency_interval AS compoundingInterval,
+                        lir.compounding_frequency_nth_day_enum AS compoundingFrequencyNthDayEnum,
+                        lir.compounding_frequency_weekday_enum AS compoundingFrequencyWeekDayEnum,
+                        lir.compounding_frequency_on_day AS compoundingFrequencyOnDay,
+                        lir.is_compounding_to_be_posted_as_transaction AS isCompoundingToBePostedAsTransaction,
+                        lir.allow_compounding_on_eod AS allowCompoundingOnEod,
+                        l.is_floating_interest_rate AS isFloatingInterestRate,
+                        l.interest_rate_differential AS interestRateDifferential,
+                        l.create_standing_instruction_at_disbursement AS createStandingInstructionAtDisbursement,
+                        lpvi.minimum_gap AS minimumInstallmentGap,
+                        lpvi.maximum_gap AS maximumInstallmentGap,
+                        lp.can_use_for_topup AS canUseForTopup,
+                        l.is_topup AS isTopup,
+                        topup.closure_loan_id AS closureLoanId,
+                        l.total_recovered_derived AS totalRecovered,
+                        topuploan.account_no AS closureLoanAccountNo,
+                        topup.topup_amount AS topupAmount,
+                        l.last_closed_business_date AS lastClosedBusinessDate,
+                        l.overpaidon_date AS overpaidOnDate,
+                        l.is_charged_off AS isChargedOff,
+                        l.charge_off_reason_cv_id AS chargeOffReasonId,
+                        codec.code_value AS chargeOffReason,
+                        l.charged_off_on_date AS chargedOffOnDate,
+                        l.enable_down_payment AS enableDownPayment,
+                        l.disbursed_amount_percentage_for_down_payment AS disbursedAmountPercentageForDownPayment,
+                        l.enable_auto_repayment_for_down_payment AS enableAutoRepaymentForDownPayment,
+                        cobu.username AS chargedOffByUsername,
+                        cobu.firstname AS chargedOffByFirstname,
+                        cobu.lastname AS chargedOffByLastname,
+                        l.loan_schedule_type AS loanScheduleType,
+                        l.loan_schedule_processing_type AS loanScheduleProcessingType,
+                        brs.name_of_reason AS blockStatusName,
+                        brs.id AS blockStatusId,
+                        brs.priority AS blockStatusPriority,
+                        brs.level AS blockStatusLevel,
+                        cch.name AS channel_name,
+                        cch.id AS channel_id,
+                        cch.description AS channel_description,
+                        pos.name AS point_of_sales_name
+                    FROM
+                        m_loan l
+                        JOIN m_product_loan lp ON lp.id = l.product_id
+                        LEFT JOIN m_loan_recalculation_details lir ON lir.loan_id = l.id
+                        JOIN m_currency rc ON rc.code = l.currency_code
+                        LEFT JOIN m_client c ON c.id = l.client_id
+                        LEFT JOIN m_group g ON g.id = l.group_id
+                        LEFT JOIN m_loan_arrears_aging la ON la.loan_id = l.id
+                        LEFT JOIN m_fund f ON f.id = l.fund_id
+                        LEFT JOIN m_staff s ON s.id = l.loan_officer_id
+                        LEFT JOIN m_appuser sbu ON sbu.id = l.created_by
+                        LEFT JOIN m_appuser rbu ON rbu.id = l.rejectedon_userid
+                        LEFT JOIN m_appuser wbu ON wbu.id = l.withdrawnon_userid
+                        LEFT JOIN m_appuser abu ON abu.id = l.approvedon_userid
+                        LEFT JOIN m_appuser dbu ON dbu.id = l.disbursedon_userid
+                        LEFT JOIN m_appuser cbu ON cbu.id = l.closedon_userid
+                        LEFT JOIN m_appuser cobu ON cobu.id = l.charged_off_by_userid
+                        LEFT JOIN m_code_value cv ON cv.id = l.loanpurpose_cv_id
+                        LEFT JOIN m_code_value codev ON codev.id = l.writeoff_reason_cv_id
+                        LEFT JOIN m_code_value codec ON codec.id = l.charge_off_reason_cv_id
+                        LEFT JOIN m_product_loan_variable_installment_config lpvi ON lpvi.loan_product_id = l.product_id
+                        LEFT JOIN m_loan_topup topup ON l.id = topup.loan_id
+                        LEFT JOIN m_loan topuploan ON topuploan.id = topup.closure_loan_id
+                        LEFT JOIN m_blocking_reason_setting brs ON brs.id = l.block_status_id
+                        LEFT JOIN (WITH cte AS (SELECT c.*,
+                                                      lpc.loan_product_id,
+                                                      ROW_NUMBER() OVER (PARTITION BY lpc.loan_product_id ORDER BY c.id) AS rn
+                                               FROM m_loan_product_channel lpc
+                                                        JOIN custom.c_channel c ON lpc.channel_id = c.id)
+                                  SELECT *
+                                  FROM cte
+                                  WHERE rn = 1)cch ON cch.loan_product_id = lp.id
+                        LEFT JOIN (
+                            SELECT
+                                ps.name,
+                                cbp.loan_id
+                            FROM
+                                custom.c_client_ally_point_of_sales ps
+                            JOIN custom.c_client_buy_process cbp ON cbp.point_if_sales_id = ps.id
+                        ) pos ON pos.loan_id = l.id
+                    """;
         }
 
         @Override
