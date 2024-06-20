@@ -27,10 +27,13 @@ import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.fineract.custom.infrastructure.codes.service.CustomCodeValueReadPlatformService;
+import org.apache.fineract.custom.portfolio.ally.api.ClientAllyPointOfSalesApiConstants;
 import org.apache.fineract.custom.portfolio.ally.data.CityCodeValueData;
 import org.apache.fineract.custom.portfolio.ally.data.ClientAllyCodeValueData;
 import org.apache.fineract.custom.portfolio.ally.data.ClientAllyData;
 import org.apache.fineract.custom.portfolio.ally.domain.ClientAlly;
+import org.apache.fineract.custom.portfolio.ally.domain.ClientAllyPointOfSales;
+import org.apache.fineract.custom.portfolio.ally.domain.ClientAllyPointOfSalesRepository;
 import org.apache.fineract.custom.portfolio.ally.domain.ClientAllyRepository;
 import org.apache.fineract.custom.portfolio.ally.exception.ClientAllyNotFoundException;
 import org.apache.fineract.custom.portfolio.ally.mapper.ClientAllyMapper;
@@ -66,6 +69,8 @@ public class ClientAllyReadWritePlatformServiceImpl implements ClientAllyReadWri
     private final ClientAllyDataValidator validatorClass;
     private final PlatformSecurityContext context;
     private final CustomCodeValueReadPlatformService customCodeValueReadPlatformService;
+    @Autowired
+    private ClientAllyPointOfSalesRepository repositoryPointofSale;
 
     @Autowired
     public ClientAllyReadWritePlatformServiceImpl(final JdbcTemplate jdbcTemplate, final DatabaseSpecificSQLGenerator sqlGenerator,
@@ -171,11 +176,23 @@ public class ClientAllyReadWritePlatformServiceImpl implements ClientAllyReadWri
 
         try {
             this.context.authenticatedUser();
-
             final ClientAlly entity = this.validatorClass.validateForUpdate(command.json());
             Optional<ClientAlly> dbEntity = repository.findById(id);
-
+            final Long stateCodeValueId = command.longValueOfParameterNamed("stateCodeValueId");
             if (dbEntity.isPresent()) {
+                if (stateCodeValueId == ClientAllyPointOfSalesApiConstants.stateCodeValueInavtiveParamName.longValue()) {
+                    final Long parentId = id;
+                    List<ClientAllyPointOfSales> clientAllyPointOfSalesDataList = repositoryPointofSale
+                            .findAllPointOfSalesByAllyId(parentId);
+                    if (!clientAllyPointOfSalesDataList.isEmpty()) {
+                        for (ClientAllyPointOfSales clientofsale : clientAllyPointOfSalesDataList) {
+                            if (clientofsale.getStateCodeValueId() != stateCodeValueId) {
+                                clientofsale.setStateCodeValueId(stateCodeValueId);
+                                repositoryPointofSale.saveAndFlush(clientofsale);
+                            }
+                        }
+                    }
+                }
                 entity.setId(id);
                 repository.save(entity);
             } else {
