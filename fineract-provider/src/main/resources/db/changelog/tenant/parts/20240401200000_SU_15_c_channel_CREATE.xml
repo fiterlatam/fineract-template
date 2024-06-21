@@ -228,7 +228,7 @@
     <changeSet author="fineract" id="71">
         <sql>
             <![CDATA[
-            INSERT INTO c_channel (hash, "name", description, active, channel_type) VALUES('0959e9bdd3051a4157de0f2cc72703c78d4bf8b14eb57cc0f684b5b466b2cac3', 'Bancos', 'Bancos', true, 2) ON CONFLICT DO NOTHING;
+                INSERT INTO custom.c_channel (hash, "name", description, active, channel_type) VALUES('0959e9bdd3051a4157de0f2cc72703c78d4bf8b14eb57cc0f684b5b466b2cac3', 'Bancos', 'Bancos', true, 2) ON CONFLICT DO NOTHING;
             ]]>
         </sql>
     </changeSet>
