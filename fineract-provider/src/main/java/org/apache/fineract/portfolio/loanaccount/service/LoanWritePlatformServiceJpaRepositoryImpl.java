@@ -1060,6 +1060,17 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 transactionAmount, paymentDetail, noteText, txnExternalId, isRecoveryRepayment, chargeRefundChargeType, isAccountTransfer,
                 holidayDetailDto, isHolidayValidationDone);
         loan = loanTransaction.getLoan();
+        final LoanStatus loanStatus = loan.getStatus();
+        final boolean isBankChannel = channelData.getName().equalsIgnoreCase("Bancos")
+                || channelData.getHash().equalsIgnoreCase("1ae8d4db830eed577c6023998337d0hags546f1a3ba08e5df1ef0d1673431a3");
+        if (loanStatus.isOverpaid() && !isBankChannel) {
+            final String totalOverpaid = Money.of(loan.getCurrency(), loan.getTotalOverpaid()).toString();
+            throw new GeneralPlatformDomainRuleException("error.msg.loan.channel.repayment.is.greater.than.outstanding.amount",
+                    String.format("Repayment rejected for this channel! Repayment amount is greater than the outstanding amount by %s",
+                            totalOverpaid),
+                    totalOverpaid);
+        }
+
         // Update loan transaction on repayment.
         if (AccountType.fromInt(loan.getLoanType()).isIndividualAccount()) {
             Set<LoanCollateralManagement> loanCollateralManagements = loan.getLoanCollateralManagements();
@@ -1239,8 +1250,9 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             channelName = this.platformSecurityContext.getApiRequestChannel();
         }
         final LoanProduct loanProduct = loan.loanProduct();
+        ChannelData channelData = null;
         if (isAdjustCommand) {
-            final ChannelData channelData = this.validateRepaymentChannel(channelName, loanProduct);
+            channelData = this.validateRepaymentChannel(channelName, loanProduct);
             final Long channelId = channelData.getId();
             changes.put("channelId", channelId);
         } else {
@@ -1291,6 +1303,19 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 this.paymentDetailWritePlatformService.persistPaymentDetail(paymentDetail);
             }
             this.loanTransactionRepository.saveAndFlush(newTransactionDetail);
+            final LoanStatus loanStatus = loan.getStatus();
+            if (channelData != null) {
+                final boolean isBankChannel = channelData.getName().equalsIgnoreCase("Bancos")
+                        || channelData.getHash().equalsIgnoreCase("1ae8d4db830eed577c6023998337d0hags546f1a3ba08e5df1ef0d1673431a3");
+                if (loanStatus.isOverpaid() && !isBankChannel) {
+                    final String totalOverpaid = Money.of(loan.getCurrency(), loan.getTotalOverpaid()).toString();
+                    throw new GeneralPlatformDomainRuleException("error.msg.loan.channel.repayment.is.greater.than.outstanding.amount",
+                            String.format(
+                                    "Repayment rejected for this channel! Repayment amount is greater than the outstanding amount by %s",
+                                    totalOverpaid),
+                            totalOverpaid);
+                }
+            }
         }
 
         /*
