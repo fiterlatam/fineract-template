@@ -2050,7 +2050,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
         final BigDecimal relacionOtrosIngresos = this.fromJsonHelper.extractBigDecimalNamed("relacionOtrosIngresos", jsonElement, locale);
         loanAdditionalData.setRelacionOtrosIngresos(relacionOtrosIngresos);
 
-        final String programa = this.fromJsonHelper.extractStringNamed("Programa", jsonElement);
+        final String programa = this.fromJsonHelper.extractStringNamed("programa", jsonElement);
         loanAdditionalData.setPrograma(programa);
 
         final String aldeaVivienda = this.fromJsonHelper.extractStringNamed("aldeaVivienda", jsonElement);
@@ -2454,6 +2454,9 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
 
         final String cliente_activo_fiador2 = this.fromJsonHelper.extractStringNamed("cliente_activo_fiador2", jsonElement);
         loanAdditionalData.setCliente_activo_fiador2(cliente_activo_fiador2);
+
+        final LocalDate dateOpened = this.fromJsonHelper.extractLocalDateNamed("dateOpened", jsonElement,dateFormat, dateLocal);
+        loanAdditionalData.setDateOpened(dateOpened.atStartOfDay());
 
         return loanAdditionalData;
     }
