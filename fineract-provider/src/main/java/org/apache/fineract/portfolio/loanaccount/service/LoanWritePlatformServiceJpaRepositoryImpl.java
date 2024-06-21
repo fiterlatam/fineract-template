@@ -50,9 +50,9 @@ import org.apache.fineract.commands.domain.CommandWrapper;
 import org.apache.fineract.commands.service.CommandWrapperBuilder;
 import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformService;
 import org.apache.fineract.custom.infrastructure.channel.data.ChannelData;
+import org.apache.fineract.custom.infrastructure.channel.domain.Channel;
 import org.apache.fineract.custom.infrastructure.channel.domain.ChannelType;
 import org.apache.fineract.custom.infrastructure.channel.service.ChannelReadWritePlatformService;
-import org.apache.fineract.custom.insfrastructure.channel.domain.Channel;
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 import org.apache.fineract.infrastructure.codes.domain.CodeValue;
 import org.apache.fineract.infrastructure.codes.domain.CodeValueRepositoryWrapper;
@@ -1244,24 +1244,13 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             final Long channelId = channelData.getId();
             changes.put("channelId", channelId);
         } else {
-            if (!authenticatedUser.hasAnyPermission("ALL_FUNCTIONS", "UNDO_LOAN_REPAYMENT")) {
+            if (!authenticatedUser.hasAnyPermission("ALL_FUNCTIONS", "UNDO_REPAYMENT_LOAN")) {
                 final LoanTransaction loanTransaction = this.loanTransactionRepository.findByIdAndLoanId(transactionId, loanId)
                         .orElseThrow(() -> new LoanTransactionNotFoundException(transactionId, loanId));
                 final LocalDate loanTransactionDate = loanTransaction.getTransactionDate();
                 if (!DateUtils.isEqual(DateUtils.getBusinessLocalDate(), loanTransactionDate)) {
                     throw new GeneralPlatformDomainRuleException("validation.msg.undo.repayment.is.permitted.on.the.same.day",
                             "Undo repayment is permitted on the same day", transactionDate);
-                } else {
-                    final PaymentDetail paymentDetail = loanTransaction.getPaymentDetail();
-                    final Long channelId = paymentDetail.getChannelId();
-                    final ChannelData channelData = this.channelReadWritePlatformService.findByName(channelName);
-                    if (channelData == null) {
-                        throw new GeneralPlatformDomainRuleException("validation.msg.channel.not.found", "Channel not found", channelName);
-                    }
-                    if (channelId != null && !channelId.equals(channelData.getId())) {
-                        throw new GeneralPlatformDomainRuleException("validation.msg.channel.not.allowed", "Channel is not allowed",
-                                channelName);
-                    }
                 }
             }
         }

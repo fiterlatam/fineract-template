@@ -20,7 +20,6 @@ package org.apache.fineract.custom.infrastructure.channel.domain;
 
 import java.util.List;
 import java.util.Optional;
-import org.apache.fineract.custom.insfrastructure.channel.domain.Channel;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -29,8 +28,10 @@ import org.springframework.data.repository.query.Param;
 public interface ChannelRepository extends JpaRepository<Channel, Long>, JpaSpecificationExecutor<Channel> {
 
     String FIND_NON_CORE_ACTIVE_CHANNELS = "select c from Channel c where c.active = :active and c.id > 1 order by c.name";
+    String FIND_HASH_CHANNEL = "select distinct c from Channel c where c.hash = :hash";
 
-    Optional<Channel> findByHash(String hash);
+    @Query(FIND_HASH_CHANNEL)
+    Optional<Channel> findByHash(@Param("hash") String hash);
 
     Optional<Channel> findByName(String name);
 

@@ -176,6 +176,9 @@ public interface LoanApiConstants {
     String LOAN_FRAUD_DATAVALIDATOR_PREFIX = "loans.fraud";
 
     String CHANNEL_NAME = "channelName";
+    String CHANNEL_ID = "channelId";
+    String CHANNEL_DESCRIPTION = "channelDescription";
+    String POINT_OF_SALES_NAME = "pointOfSalesName";
 
     String CHANNEL_HASH = "channelHash";
 }
