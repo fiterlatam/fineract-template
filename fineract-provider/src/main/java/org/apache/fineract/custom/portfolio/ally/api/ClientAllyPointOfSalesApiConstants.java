@@ -49,6 +49,7 @@ public final class ClientAllyPointOfSalesApiConstants {
     public static final String buyEnabledParamName = "buyEnabled";
     public static final String collectionEnabledParamName = "collectionEnabled";
     public static final String stateCodeValueIdParamName = "stateCodeValueId";
+    public static final Long stateCodeValueInavtiveParamName = 1235L;
 
     // request parameters Set
     public static final Set<String> REQUEST_DATA_PARAMETERS = new HashSet<>(Arrays.asList(localeParamName, dateFormatParamName, idParamName,
