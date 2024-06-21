@@ -225,4 +225,14 @@
         </insert>
     </changeSet>
 
+    <changeSet author="fineract" id="71" >
+        <insert schemaName="custom" tableName="c_channel">
+            <column name="hash" value="1ae8d4db830eed577c6023998337d0hags546f1a3ba08e5df1ef0d1673431a3"/>
+            <column name="name" value="Bancos"/>
+            <column name="description" value="Bancos"/>
+            <column name="active" valueBoolean="true"/>
+            <column name="channel_type" value="2"/>
+        </insert>
+    </changeSet>
+
 </databaseChangeLog>
