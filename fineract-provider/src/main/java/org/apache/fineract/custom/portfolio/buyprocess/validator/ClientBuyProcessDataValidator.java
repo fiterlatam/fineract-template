@@ -35,6 +35,8 @@ import org.apache.fineract.custom.infrastructure.dataqueries.domain.ClientAdditi
 import org.apache.fineract.custom.infrastructure.dataqueries.domain.ClientAdditionalInformationRepository;
 import org.apache.fineract.custom.infrastructure.dataqueries.domain.IndividualAdditionalInformation;
 import org.apache.fineract.custom.infrastructure.dataqueries.domain.IndividualAdditionalInformationRepository;
+import org.apache.fineract.custom.portfolio.ally.api.ClientAllyPointOfSalesApiConstants;
+import org.apache.fineract.custom.portfolio.ally.domain.ClientAllyPointOfSales;
 import org.apache.fineract.custom.portfolio.ally.domain.ClientAllyPointOfSalesRepository;
 import org.apache.fineract.custom.portfolio.buyprocess.constants.ClientBuyProcessApiConstants;
 import org.apache.fineract.custom.portfolio.buyprocess.domain.ClientBuyProcess;
@@ -133,8 +135,14 @@ public class ClientBuyProcessDataValidator {
         String pointOfSalesCode;
         if (this.fromApiJsonHelper.parameterExists(ClientBuyProcessApiConstants.pointOfSalesCodeParamName, element)) {
             pointOfSalesCode = this.fromApiJsonHelper.extractStringNamed(ClientBuyProcessApiConstants.pointOfSalesCodeParamName, element);
-            if (clientAllyPointOfSalesRepository.findByCode(pointOfSalesCode).isPresent()) {
-                pointOfSalesId = clientAllyPointOfSalesRepository.findByCode(pointOfSalesCode).get().getId();
+            Optional<ClientAllyPointOfSales> clientAllyPointOfSales = clientAllyPointOfSalesRepository.findByCode(pointOfSalesCode);
+            if (clientAllyPointOfSales.isPresent()) {
+                if (clientAllyPointOfSales.get().getStateCodeValueId() == ClientAllyPointOfSalesApiConstants.stateCodeValueInavtiveParamName
+                        .longValue()) {
+                    baseDataValidator.reset().parameter(ClientBuyProcessApiConstants.pointOfSalesCodeParamName).value(pointOfSalesCode)
+                            .failWithCode("point.of.sales.inactive");
+                }
+                pointOfSalesId = clientAllyPointOfSales.get().getId();
             } else {
                 pointOfSalesId = 0L;
             }
