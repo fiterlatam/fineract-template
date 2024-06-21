@@ -163,9 +163,11 @@ public class ChannelReadWritePlatformServiceImpl implements ChannelReadWritePlat
     public CommandProcessingResult update(final JsonCommand command, Long channelId) {
         try {
             this.context.authenticatedUser();
-            final Channel entity = this.validatorClass.validateForUpdate(command.json(), channelId);
+
             Optional<Channel> dbEntity = channelRepository.findById(channelId);
+            final Channel entity;
             if (dbEntity.isPresent()) {
+                entity = this.validatorClass.validateForUpdate(command.json(), dbEntity.get());
                 entity.setId(channelId);
                 channelRepository.save(entity);
             } else {
