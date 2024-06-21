@@ -23,6 +23,8 @@ import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
 import lombok.Getter;
+import lombok.Setter;
+import org.apache.fineract.custom.infrastructure.channel.data.ChannelData;
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 import org.apache.fineract.infrastructure.core.domain.ExternalId;
 import org.apache.fineract.organisation.monetary.data.CurrencyData;
@@ -34,6 +36,7 @@ import org.apache.fineract.portfolio.paymenttype.data.PaymentTypeData;
  * Immutable data object representing a loan transaction.
  */
 @Getter
+@Setter
 public class LoanTransactionData {
 
     private final Long id;
@@ -97,6 +100,7 @@ public class LoanTransactionData {
     private List<LoanTransactionRelationData> transactionRelations;
 
     private Collection<CodeValueData> chargeOffReasonOptions = null;
+    private List<ChannelData> channelOptions;
 
     public static LoanTransactionData importInstance(BigDecimal repaymentAmount, LocalDate lastRepaymentDate, Long repaymentTypeId,
             Integer rowIndex, String locale, String dateFormat) {

@@ -24,9 +24,11 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.custom.infrastructure.channel.constants.ChannelApiConstants;
-import org.apache.fineract.custom.insfrastructure.channel.domain.Channel;
+import org.apache.fineract.custom.infrastructure.channel.domain.Channel;
+import org.apache.fineract.custom.infrastructure.channel.domain.ChannelRepository;
 import org.apache.fineract.infrastructure.core.data.ApiParameterError;
 import org.apache.fineract.infrastructure.core.data.DataValidatorBuilder;
 import org.apache.fineract.infrastructure.core.exception.InvalidJsonException;
@@ -41,11 +43,14 @@ public class ChannelDataValidator {
 
     private final FromJsonHelper fromApiJsonHelper;
     private final PlatformSecurityContext platformSecurityContext;
+    private final ChannelRepository channelRepository;
 
     @Autowired
-    public ChannelDataValidator(final FromJsonHelper fromApiJsonHelper, final PlatformSecurityContext platformSecurityContext) {
+    public ChannelDataValidator(final FromJsonHelper fromApiJsonHelper, final PlatformSecurityContext platformSecurityContext,
+            final ChannelRepository channelRepository) {
         this.fromApiJsonHelper = fromApiJsonHelper;
         this.platformSecurityContext = platformSecurityContext;
+        this.channelRepository = channelRepository;
     }
 
     public Channel validateForCreate(final String json) {
@@ -78,6 +83,14 @@ public class ChannelDataValidator {
         final Boolean active = this.fromApiJsonHelper.extractBooleanNamed(ChannelApiConstants.activeParamName, element);
         baseDataValidator.reset().parameter(ChannelApiConstants.activeParamName).value(active).notNull();
 
+        Optional<Channel> curChanel = channelRepository.findByHash(hash);
+        if (curChanel.isPresent()) {
+            baseDataValidator.reset().parameter(ChannelApiConstants.hashParamName).value(hash).failWithCode("duplicate");
+        }
+        if (curChanel.get().getHash().equalsIgnoreCase(hash) == true) {
+            baseDataValidator.reset().parameter(ChannelApiConstants.hashParamName).value(hash).failWithCode("duplicate");
+        }
+
         throwExceptionIfValidationWarningsExist(dataValidationErrors);
 
         return Channel.builder().hash(hash) //
@@ -87,7 +100,7 @@ public class ChannelDataValidator {
                 .build();
     }
 
-    public Channel validateForUpdate(final String json, Long channelId) {
+    public Channel validateForUpdate(final String json, Channel channel) {
 
         if (StringUtils.isBlank(json)) {
             throw new InvalidJsonException();
@@ -117,10 +130,19 @@ public class ChannelDataValidator {
         final Boolean active = this.fromApiJsonHelper.extractBooleanNamed(ChannelApiConstants.activeParamName, element);
         baseDataValidator.reset().parameter(ChannelApiConstants.activeParamName).value(active).notNull();
 
+        Optional<Channel> curChanel = channelRepository.findByHash(hash);
+
+        if (curChanel.isPresent() && channel.getId() != curChanel.get().getId()) {
+            baseDataValidator.reset().parameter(ChannelApiConstants.hashParamName).value(hash).failWithCode("duplicate");
+        }
+        if (channel.getHash().equalsIgnoreCase(hash) == true && channel.getId() != curChanel.get().getId()) {
+            baseDataValidator.reset().parameter(ChannelApiConstants.hashParamName).value(hash).failWithCode("duplicate");
+        }
+
         throwExceptionIfValidationWarningsExist(dataValidationErrors);
 
         return Channel.builder() //
-                .id(channelId) //
+                .id(channel.getId()) //
                 .hash(hash) //
                 .name(name) //
                 .channelType(channelType).description(description) //

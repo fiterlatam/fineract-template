@@ -28,12 +28,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.fineract.custom.infrastructure.channel.data.ChannelData;
+import org.apache.fineract.custom.infrastructure.channel.domain.Channel;
 import org.apache.fineract.custom.infrastructure.channel.domain.ChannelRepository;
 import org.apache.fineract.custom.infrastructure.channel.domain.ChannelType;
 import org.apache.fineract.custom.infrastructure.channel.exception.ChannelNotFoundException;
 import org.apache.fineract.custom.infrastructure.channel.mapper.ChannelMapper;
 import org.apache.fineract.custom.infrastructure.channel.validator.ChannelDataValidator;
-import org.apache.fineract.custom.insfrastructure.channel.domain.Channel;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuilder;
@@ -163,9 +163,11 @@ public class ChannelReadWritePlatformServiceImpl implements ChannelReadWritePlat
     public CommandProcessingResult update(final JsonCommand command, Long channelId) {
         try {
             this.context.authenticatedUser();
-            final Channel entity = this.validatorClass.validateForUpdate(command.json(), channelId);
+
             Optional<Channel> dbEntity = channelRepository.findById(channelId);
+            final Channel entity;
             if (dbEntity.isPresent()) {
+                entity = this.validatorClass.validateForUpdate(command.json(), dbEntity.get());
                 entity.setId(channelId);
                 channelRepository.save(entity);
             } else {

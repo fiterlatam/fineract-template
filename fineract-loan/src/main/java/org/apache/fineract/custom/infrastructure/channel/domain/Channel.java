@@ -18,14 +18,11 @@
  */
 package org.apache.fineract.custom.infrastructure.channel.domain;
 
-import jakarta.persistence.Cacheable;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -34,33 +31,31 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(schema = "custom", name = "c_channel_subchannel")
-@Cacheable(false)
+@Table(schema = "custom", name = "c_channel")
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
 @Getter
 @Setter
-public class SubChannel {
+public class Channel {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
     private Long id;
 
-    @Column(name = "channel_id", nullable = false)
-    private Long channelId;
+    @Column(name = "hash", nullable = false, length = 5000)
+    private String hash;
 
     @Column(name = "name", nullable = false, length = 100)
     private String name;
 
-    @Column(name = "description", nullable = false, length = 1000)
+    @Column(name = "channel_type")
+    private Integer channelType;
+
+    @Column(name = "description", nullable = true, length = 1000)
     private String description;
 
-    @Column(name = "active", nullable = true)
+    @Column(name = "active", nullable = false)
     private Boolean active;
-
-    @ManyToOne
-    @JoinColumn(name = "channel_id", insertable = false, updatable = false)
-    private Channel channel;
 }
