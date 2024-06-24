@@ -218,6 +218,7 @@ import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.DefaultSche
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleModel;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleModelPeriod;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.ScheduledDateGenerator;
+import org.apache.fineract.portfolio.loanaccount.loanschedule.service.LoanScheduleAssembler;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.service.LoanScheduleHistoryWritePlatformService;
 import org.apache.fineract.portfolio.loanaccount.rescheduleloan.domain.LoanRescheduleRequest;
 import org.apache.fineract.portfolio.loanaccount.serialization.LoanApplicationCommandFromApiJsonHelper;
@@ -301,7 +302,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     private final AccountTransferAssembler accountTransferAssembler;
 
     private final SavingsAccountWritePlatformService savingsAccountWritePlatformService;
-
+    private final LoanScheduleAssembler loanScheduleAssembler;
     private final ClientRepositoryWrapper clientRepository;
 
     private LoanLifecycleStateMachine defaultLoanLifecycleStateMachine() {
@@ -401,11 +402,17 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         if (!loan.isMultiDisburmentLoan()) {
             loan.setActualDisbursementDate(actualDisbursementDate);
         }
+        final CalendarInstance calendarInstance = this.calendarInstanceRepository.findCalendarInstaneByEntityId(loan.getId(),
+                CalendarEntityType.LOANS.getValue());
+        Calendar calendar = calendarInstance!=null? calendarInstance.getCalendar():null;
+
+        LocalDate deriveFirstRepaymentDate = loanScheduleAssembler.deriveFirstRepaymentDate(loan, actualDisbursementDate, calendar);
+        loan.setExpectedFirstRepaymentOnDate(deriveFirstRepaymentDate);
+
         ScheduleGeneratorDTO scheduleGeneratorDTO = this.loanUtilService.buildScheduleGeneratorDTO(loan, recalculateFrom);
 
         // validate actual disbursement date against meeting date
-        final CalendarInstance calendarInstance = this.calendarInstanceRepository.findCalendarInstaneByEntityId(loan.getId(),
-                CalendarEntityType.LOANS.getValue());
+
         if (loan.isSyncDisbursementWithMeeting()) {
             this.loanEventApiJsonValidator.validateDisbursementDateWithMeetingDate(actualDisbursementDate, calendarInstance,
                     scheduleGeneratorDTO.isSkipRepaymentOnFirstDayofMonth(), scheduleGeneratorDTO.getNumberOfdays());
