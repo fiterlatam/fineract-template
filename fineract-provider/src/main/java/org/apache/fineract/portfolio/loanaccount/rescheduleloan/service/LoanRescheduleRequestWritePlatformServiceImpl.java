@@ -475,9 +475,9 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
             // update the loan object
             postJournalEntries(loan, existingTransactionIds, existingReversedTransactionIds);
             loanAccrualTransactionBusinessEventService.raiseBusinessEventForAccrualTransactions(loan, existingTransactionIds);
-
             this.loanAccountDomainService.recalculateAccruals(loan, true);
-            businessEventNotifierService.notifyPostBusinessEvent(new LoanRescheduledDueAdjustScheduleBusinessEvent(loan));
+            final Boolean isJobTriggered = jsonCommand.booleanObjectValueOfParameterNamed("isJobTriggered");
+            businessEventNotifierService.notifyPostBusinessEvent(new LoanRescheduledDueAdjustScheduleBusinessEvent(loan, isJobTriggered));
 
             return new CommandProcessingResultBuilder().withCommandId(jsonCommand.commandId()).withEntityId(loanRescheduleRequestId)
                     .withLoanId(loanRescheduleRequest.getLoan().getId()).with(changes).withClientId(loan.getClientId())

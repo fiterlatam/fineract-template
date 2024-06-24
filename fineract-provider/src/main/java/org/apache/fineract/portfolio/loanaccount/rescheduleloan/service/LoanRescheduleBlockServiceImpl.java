@@ -47,8 +47,9 @@ public class LoanRescheduleBlockServiceImpl implements LoanRescheduleBlockServic
         @Override
         public void onBusinessEvent(LoanRescheduledDueAdjustScheduleBusinessEvent event) {
             final Loan loan = event.get();
-            updateLoanAndClientWithRestructureBlockDetail(loan);
-
+            if (!event.getIsJobTriggered()) {
+                updateLoanAndClientWithRestructureBlockDetail(loan);
+            }
         }
     }
 }

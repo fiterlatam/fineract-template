@@ -18,14 +18,19 @@
  */
 package org.apache.fineract.infrastructure.event.business.domain.loan;
 
+import lombok.Getter;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 
 public class LoanRescheduledDueAdjustScheduleBusinessEvent extends LoanBusinessEvent {
 
     private static final String TYPE = "LoanRescheduledDueAdjustScheduleBusinessEvent";
 
-    public LoanRescheduledDueAdjustScheduleBusinessEvent(Loan value) {
+    @Getter
+    private final Boolean isJobTriggered;
+
+    public LoanRescheduledDueAdjustScheduleBusinessEvent(Loan value, final Boolean isJobTriggered) {
         super(value);
+        this.isJobTriggered = isJobTriggered;
     }
 
     @Override

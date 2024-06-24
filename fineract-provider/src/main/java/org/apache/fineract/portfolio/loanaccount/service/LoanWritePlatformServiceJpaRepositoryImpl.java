@@ -3176,8 +3176,10 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                     if (commandProcessingResult.getResourceId() != null) {
                         final Long loanRescheduleId = commandProcessingResult.getResourceId();
                         final JsonObject approvalJsonObject = new JsonObject();
+                        final Boolean isJobTriggered = true;
                         approvalJsonObject.addProperty("dateFormat", dateFormat);
                         approvalJsonObject.addProperty("locale", locale);
+                        approvalJsonObject.addProperty("isJobTriggered", isJobTriggered);
                         approvalJsonObject.addProperty("approvedOnDate", submittedOnDate);
                         final String approvalRequestBodyAsJson = approvalJsonObject.toString();
                         commandWrapper = new CommandWrapperBuilder()
@@ -3221,7 +3223,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                             term_variation.decimal_value AS "rescheduledAnnualRate"
                         FROM m_loan ml
                         INNER JOIN m_loan_repayment_schedule mlrs ON mlrs.loan_id = ml.id
-                        LEFT JOIN (
+                        INNER JOIN (
                             SELECT sch.*
                             FROM m_loan_repayment_schedule sch
                             LEFT JOIN m_loan_arrears_aging mlaa ON mlaa.loan_id = sch.loan_id
@@ -3237,7 +3239,6 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                         ) term_variation ON term_variation.loan_id = ml.id
                         WHERE ml.loan_status_id = 300 AND mlrs.duedate >= ?
                         AND (CASE WHEN term_variation.decimal_value IS NOT NULL THEN term_variation.decimal_value ELSE ml.annual_nominal_interest_rate END) != ?
-                        AND ml.block_status_id IS NULL
                         GROUP BY term_variation.loan_id, ml.annual_nominal_interest_rate, term_variation.decimal_value, ml.id
                         ORDER BY ml.id
                     """;
