@@ -2642,6 +2642,18 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
 
         if (!changes.isEmpty()) {
 
+            if (changes.containsKey(LoanApiConstants.disbursementDateParameterName)) {
+                final CalendarInstance calendarInstance = this.calendarInstanceRepository.findCalendarInstaneByEntityId(loan.getId(),
+                        CalendarEntityType.LOANS.getValue());
+                Calendar calendar = null;
+                if (calendarInstance != null) {
+                    calendar = calendarInstance.getCalendar();
+                }
+
+                LocalDate deriveFirstRepaymentDate = loanScheduleAssembler.deriveFirstRepaymentDate(loan, expectedDisbursementDate, calendar);
+                loan.setExpectedFirstRepaymentOnDate(deriveFirstRepaymentDate);
+            }
+
             // If loan approved amount less than loan demanded amount, then need
             // to recompute the schedule
             if (changes.containsKey(LoanApiConstants.approvedLoanAmountParameterName) || changes.containsKey("recalculateLoanSchedule")
