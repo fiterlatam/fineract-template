@@ -1102,6 +1102,47 @@ public class LoanScheduleAssembler {
         return derivedFirstRepayment;
     }
 
+    public LocalDate deriveFirstRepaymentDate(final Loan loan, final LocalDate expectedDisbursementDate, Calendar calendar) {
+
+        LocalDate derivedFirstRepayment = null;
+
+        LoanProduct loanProduct = loan.getLoanProduct();
+        final LocalDate dateBasedOnMinimumDaysBetweenDisbursalAndFirstRepayment = expectedDisbursementDate
+                .plusDays(loanProduct.getMinimumDaysBetweenDisbursalAndFirstRepayment());
+        LoanProductRelatedDetail loanRepaymentScheduleDetail = loan.getLoanRepaymentScheduleDetail();
+        final LocalDate refernceDateForCalculatingFirstRepaymentDate = expectedDisbursementDate;
+        Integer repayEvery = loanRepaymentScheduleDetail.getRepayEvery();
+        PeriodFrequencyType repaymentPeriodFrequencyType = loanRepaymentScheduleDetail.getRepaymentPeriodFrequencyType();
+        if (calendar != null) {
+            derivedFirstRepayment = deriveFirstRepaymentDateForLoans(repayEvery, expectedDisbursementDate,
+                    refernceDateForCalculatingFirstRepaymentDate, repaymentPeriodFrequencyType,
+                    loanProduct.getMinimumDaysBetweenDisbursalAndFirstRepayment(), calendar);
+
+        } /*** Individual or group account, or JLG not linked to a meeting ***/
+        else {
+            LocalDate dateBasedOnRepaymentFrequency;
+            // Derive the first repayment date as greater date among
+            // (disbursement date + plus frequency) or
+            // (disbursement date + minimum between disbursal and first
+            // repayment )
+            if (repaymentPeriodFrequencyType.isDaily()) {
+                dateBasedOnRepaymentFrequency = expectedDisbursementDate.plusDays(repayEvery);
+            } else if (repaymentPeriodFrequencyType.isWeekly()) {
+                dateBasedOnRepaymentFrequency = expectedDisbursementDate.plusWeeks(repayEvery);
+            } else if (repaymentPeriodFrequencyType.isMonthly()) {
+                dateBasedOnRepaymentFrequency = expectedDisbursementDate.plusMonths(repayEvery);
+            } /** yearly loan **/
+            else {
+                dateBasedOnRepaymentFrequency = expectedDisbursementDate.plusYears(repayEvery);
+            }
+            derivedFirstRepayment = dateBasedOnRepaymentFrequency.isAfter(dateBasedOnMinimumDaysBetweenDisbursalAndFirstRepayment)
+                    ? dateBasedOnRepaymentFrequency
+                    : dateBasedOnMinimumDaysBetweenDisbursalAndFirstRepayment;
+        }
+
+        return derivedFirstRepayment;
+    }
+
     private LocalDate deriveFirstRepaymentDateForLoans(final Integer repaymentEvery, final LocalDate expectedDisbursementDate,
             final LocalDate refernceDateForCalculatingFirstRepaymentDate, final PeriodFrequencyType repaymentPeriodFrequencyType,
             final Integer minimumDaysBetweenDisbursalAndFirstRepayment, final Calendar calendar) {
