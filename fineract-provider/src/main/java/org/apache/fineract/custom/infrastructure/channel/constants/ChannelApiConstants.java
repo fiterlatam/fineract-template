@@ -42,6 +42,8 @@ public final class ChannelApiConstants {
     public static final String descriptionParamName = "description";
     public static final String activeParamName = "active";
 
+    public static final String defaultChannel = "Mifos";
+
     // request parameters Set
     public static final Set<String> REQUEST_DATA_PARAMETERS = new HashSet<>(Arrays.asList(localeParamName, dateFormatParamName, idParamName,
             hashParamName, nameParamName, descriptionParamName, activeParamName, CHANNEL_TYPE));

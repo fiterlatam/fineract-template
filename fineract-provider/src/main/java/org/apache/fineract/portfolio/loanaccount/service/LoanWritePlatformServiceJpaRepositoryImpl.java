@@ -49,6 +49,7 @@ import org.apache.fineract.cob.service.LoanAccountLockService;
 import org.apache.fineract.commands.domain.CommandWrapper;
 import org.apache.fineract.commands.service.CommandWrapperBuilder;
 import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformService;
+import org.apache.fineract.custom.infrastructure.channel.constants.ChannelApiConstants;
 import org.apache.fineract.custom.infrastructure.channel.data.ChannelData;
 import org.apache.fineract.custom.infrastructure.channel.domain.Channel;
 import org.apache.fineract.custom.infrastructure.channel.domain.ChannelType;
@@ -1192,7 +1193,6 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         this.loanEventApiJsonValidator.validateTransaction(command.json());
         LoanTransaction transactionToAdjust = this.loanTransactionRepository.findByIdAndLoanId(command.entityId(), command.getLoanId())
                 .orElseThrow(() -> new LoanTransactionNotFoundException(command.entityId(), command.getLoanId()));
-
         Loan loan = this.loanAssembler.assembleFrom(loanId);
         if (loan.getStatus().isClosed() && loan.getLoanSubStatus() != null
                 && loan.getLoanSubStatus().equals(LoanSubStatus.FORECLOSED.getValue())) {
@@ -1241,7 +1241,6 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         changes.put("locale", command.locale());
         changes.put("dateFormat", command.dateFormat());
         changes.put("paymentTypeId", command.longValueOfParameterNamed("paymentTypeId"));
-        changes.put("channelHash", command.stringValueOfParameterNamed("channelHash"));
 
         final List<Long> existingTransactionIds = new ArrayList<>();
         final List<Long> existingReversedTransactionIds = new ArrayList<>();
@@ -1251,14 +1250,18 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         if (StringUtils.isBlank(channelName)) {
             channelName = this.platformSecurityContext.getApiRequestChannel();
         }
+
         final LoanProduct loanProduct = loan.loanProduct();
         ChannelData channelData = null;
         if (isAdjustCommand) {
             channelData = this.validateRepaymentChannel(channelName, loanProduct);
             final Long channelId = channelData.getId();
             changes.put("channelId", channelId);
+            changes.put("channelHash", channelData.getHash());
         } else {
+            channelData = this.validateUndoRepaymentChannel(channelName, loanProduct);
             if (!authenticatedUser.hasAnyPermission("ALL_FUNCTIONS", "UNDO_REPAYMENT_LOAN")) {
+
                 final LoanTransaction loanTransaction = this.loanTransactionRepository.findByIdAndLoanId(transactionId, loanId)
                         .orElseThrow(() -> new LoanTransactionNotFoundException(transactionId, loanId));
                 final LocalDate loanTransactionDate = loanTransaction.getTransactionDate();
@@ -3262,5 +3265,36 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         }
         loan.updateLoanScheduleAfterCustomChargeApplied();
         saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
+    }
+
+    private ChannelData validateUndoRepaymentChannel(final String channelName, final LoanProduct loanProduct) {
+        if (StringUtils.isBlank(channelName)) {
+            throw new GeneralPlatformDomainRuleException("validation.msg.channel.is.blank", "Channel is blank");
+        }
+        final ChannelData channelData = this.channelReadWritePlatformService.findByName(channelName);
+        if (channelData == null) {
+            throw new GeneralPlatformDomainRuleException("validation.msg.channel.not.found", "Channel not found", channelName);
+        }
+        if (!channelData.getActive()) {
+            throw new GeneralPlatformDomainRuleException("validation.msg.channel.not.active", "Channel is not active", channelName);
+        }
+
+        final List<Channel> repaymentChannels = loanProduct.getRepaymentChannels();
+
+        if (CollectionUtils.isNotEmpty(repaymentChannels)) {
+            final Long channelId = channelData.getId();
+            if (repaymentChannels.stream().noneMatch(repaymentChannel -> repaymentChannel.getId().equals(channelId))) {
+
+                if (!channelName.equalsIgnoreCase(ChannelApiConstants.defaultChannel)) {
+                    throw new GeneralPlatformDomainRuleException("validation.msg.channel.not.allowed", "Channel is not allowed",
+                            channelName);
+                }
+
+            }
+        } else {
+
+            throw new GeneralPlatformDomainRuleException("validation.msg.channel.not.allowed", "Channel is not allowed", channelName);
+        }
+        return channelData;
     }
 }
