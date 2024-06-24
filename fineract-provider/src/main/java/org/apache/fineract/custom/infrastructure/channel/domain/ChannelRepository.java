@@ -29,6 +29,7 @@ public interface ChannelRepository extends JpaRepository<Channel, Long>, JpaSpec
 
     String FIND_NON_CORE_ACTIVE_CHANNELS = "select c from Channel c where c.active = :active and c.id > 1 order by c.name";
     String FIND_HASH_CHANNEL = "select distinct c from Channel c where c.hash = :hash";
+    String FIND_HASH_CHANNELWITHCHANNELTYPE = "select distinct c from Channel c where c.hash = :hash and c.channelType = :channelType";
 
     @Query(FIND_HASH_CHANNEL)
     Optional<Channel> findByHash(@Param("hash") String hash);
@@ -37,4 +38,12 @@ public interface ChannelRepository extends JpaRepository<Channel, Long>, JpaSpec
 
     @Query(FIND_NON_CORE_ACTIVE_CHANNELS)
     List<Channel> findAllActive(@Param("active") Boolean active);
+
+    @Query(FIND_HASH_CHANNELWITHCHANNELTYPE)
+    Optional<Channel> findByHashWithChannelType(@Param("hash") String hash, @Param("channelType") Integer channelType);
+
+    @Query(FIND_HASH_CHANNEL)
+    List<Channel> findListByHash(@Param("hash") String hash);
+
+    List<Channel> findAll();
 }
