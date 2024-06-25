@@ -225,19 +225,8 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
                     if (numberOfRepayments == null) {
                         numberOfRepayments = this.loan.fetchNumberOfInstallmensAfterExceptions();
                     }
-                    if (isVoluntaryInsuranceCharge()) {
-                        if (this.loan != null) {
-                            numberOfRepayments = this.loan.fetchUnpaidNumberOfInstallments(null);
-                            if (this.applicableFromInstallment == null) {
-                                for (LoanRepaymentScheduleInstallment installment : loan.getRepaymentScheduleInstallments()) {
-                                    if (!installment.isObligationsMet()) {
-                                        this.applicableFromInstallment = installment.getInstallmentNumber();
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-                        this.amountOrPercentage = chargeAmount.divide(BigDecimal.valueOf(numberOfRepayments), 2, RoundingMode.CEILING);
+                    if (isCustomFlatDistributedCharge()) {
+                        updateAmountOrPercentageForDistributedCharge(numberOfRepayments, chargeAmount);
                         this.amount = chargeAmount;
                     } else {
                         this.amount = chargeAmount.multiply(BigDecimal.valueOf(numberOfRepayments));
@@ -251,7 +240,8 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
             } else if (chargeCalculationType.isPercentageOfInstallmentPrincipal()
                     || chargeCalculationType.isPercentageOfInstallmentPrincipalAndInterest()
                     || chargeCalculationType.isPercentageOfInstallmentInterest() || chargeCalculationType.isPercentageOfDisbursement()
-                    || chargeCalculationType.isPercentageOfInsurance() || chargeCalculationType.isPercentageOfHonorarios()) {
+                    || chargeCalculationType.isPercentageOfInsurance() || chargeCalculationType.isPercentageOfHonorarios()
+                    || chargeCalculationType.isPercentageOfAnotherCharge()) {
                 this.percentage = chargeAmount;
                 this.amountPercentageAppliedTo = amountPercentageAppliedTo;
                 if (loanCharge.compareTo(BigDecimal.ZERO) == 0) {
@@ -262,17 +252,38 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
                 this.amountOutstanding = calculateOutstanding();
                 this.amountWaived = null;
                 this.amountWrittenOff = null;
+                if (isCustomPercentageBasedDistributedCharge()) {
+                    if (numberOfRepayments == null) {
+                        numberOfRepayments = this.loan.fetchNumberOfInstallmensAfterExceptions();
+                    }
+                    updateAmountOrPercentageForDistributedCharge(numberOfRepayments, this.amount);
+                }
             } else {
                 LOG.error("TODO Implement for other charge calculation types");
             }
         }
 
-        if (!isVoluntaryInsuranceCharge()) {
+        if (!isCustomFlatDistributedCharge() && !isCustomPercentageBasedDistributedCharge()) {
             this.amountOrPercentage = chargeAmount;
         }
         if (this.loan != null && isInstalmentFee()) {
             updateInstallmentCharges();
         }
+    }
+
+    private void updateAmountOrPercentageForDistributedCharge(Integer numberOfRepayments, BigDecimal amount) {
+        if (this.loan != null) {
+            numberOfRepayments = this.loan.fetchUnpaidNumberOfInstallments(null);
+            if (this.applicableFromInstallment == null) {
+                for (LoanRepaymentScheduleInstallment installment : loan.getRepaymentScheduleInstallments()) {
+                    if (!installment.isObligationsMet()) {
+                        this.applicableFromInstallment = installment.getInstallmentNumber();
+                        break;
+                    }
+                }
+            }
+        }
+        this.amountOrPercentage = amount.divide(BigDecimal.valueOf(numberOfRepayments), 2, RoundingMode.CEILING);
     }
 
     public void markAsFullyPaid() {
@@ -357,11 +368,12 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
                 break;
                 case FLAT_AMOUNT:
                 case FLAT_SEGOVOLUNTARIO:
+                case FLAT_SEGO:
                     if (isInstalmentFee()) {
                         if (numberOfRepayments == null) {
                             numberOfRepayments = this.loan.fetchNumberOfInstallmensAfterExceptions();
                         }
-                        if (isVoluntaryInsuranceCharge()) {
+                        if (isCustomFlatDistributedCharge()) {
                             if (this.loan != null) {
                                 numberOfRepayments = this.loan.fetchUnpaidNumberOfInstallments(this.getApplicableFromInstallment());
                             }
@@ -378,20 +390,36 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
                 case PERCENT_OF_AMOUNT_AND_INTEREST:
                 case PERCENT_OF_INTEREST:
                 case PERCENT_OF_DISBURSEMENT_AMOUNT:
+                case DISB_SEGO:
                     this.percentage = amount;
                     this.amountPercentageAppliedTo = loanPrincipal;
                     if (loanCharge.compareTo(BigDecimal.ZERO) == 0) {
                         loanCharge = percentageOf(this.amountPercentageAppliedTo);
                     }
                     this.amount = minimumAndMaximumCap(loanCharge);
+                    if (isInstalmentFee() && isCustomPercentageBasedDistributedCharge()) {
+                        if (numberOfRepayments == null) {
+                            numberOfRepayments = this.loan.fetchNumberOfInstallmensAfterExceptions();
+                        }
+                        if (this.loan != null) {
+                            numberOfRepayments = this.loan.fetchUnpaidNumberOfInstallments(this.getApplicableFromInstallment());
+                        }
+                        this.amountOrPercentage = this.amount.divide(BigDecimal.valueOf(numberOfRepayments), 2, RoundingMode.CEILING);
+                    }
+                break;
+                case OPRIN_SEGO:
+                    this.percentage = amount;
+                    this.amountPercentageAppliedTo = loanPrincipal;
                 break;
                 default:
                     LOG.error("TODO Implement for other charge calculation types");
                 break;
             }
-            if (isVoluntaryInsuranceCharge()) {
+            if (isCustomFlatDistributedCharge()) {
                 this.amountOrPercentage = amount.divide(BigDecimal.valueOf(numberOfRepayments), 2, RoundingMode.CEILING);
-            } else {
+            } else if (isCustomPercentageBasedDistributedCharge()) {
+                this.amountOrPercentage = this.amount.divide(BigDecimal.valueOf(numberOfRepayments), 2, RoundingMode.CEILING);
+            }else {
                 this.amountOrPercentage = amount;
             }
             this.amountOutstanding = calculateOutstanding();
@@ -478,7 +506,7 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
                     loanCharge = BigDecimal.ZERO;
                     if (isInstalmentFee()) {
                         loanCharge = this.loan.calculatePerInstallmentChargeAmount(ChargeCalculationType.fromInt(this.chargeCalculation),
-                                this.percentage);
+                                this.percentage, this.amountOrPercentage, this.getCharge().getParentChargeId());
                     }
                     if (loanCharge.compareTo(BigDecimal.ZERO) == 0) {
                         loanCharge = percentageOf(this.amountPercentageAppliedTo);
@@ -534,7 +562,7 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
 
         Money amount = Money.zero(this.loan.getCurrency());
         // adjust decimal difference in amount that comes due to division of Charge amount with number of repayments
-        if (isVoluntaryInsuranceCharge() && this.charge.isInstallmentFee()) {
+        if ((isCustomPercentageBasedDistributedCharge() || isCustomFlatDistributedCharge()) && this.charge.isInstallmentFee()) {
             int i = 1;
             for (LoanInstallmentCharge charge : this.loanInstallmentCharge) {
                 if (i == this.loanInstallmentCharge.size()) {
@@ -1155,13 +1183,14 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
                     break;
                 }
             }
-        } else if (this.isVoluntaryInsuranceCharge()) {
+        } else if (this.isCustomFlatDistributedCharge() || this.isCustomPercentageBasedDistributedCharge()
+        || this.isCustomPercentageBasedOfAnotherCharge() || isCustomPercentageOfOutstandingPrincipalCharge()) {
             isApplicable = true;
         }
         return isApplicable;
     }
 
-    public BigDecimal calculateCustomFeeChargeToInstallment(Integer installmentNumber) {
+    public BigDecimal calculateCustomFeeChargeToInstallment(Integer installmentNumber, Money principalDisbursed, Integer numberOfInstallments, Money outstandingBalance) {
         BigDecimal customAmout = BigDecimal.ZERO;
         if (this.getChargeCalculation().isFlatHono() && !this.getCustomChargeHonorarioMaps().isEmpty()) {
             for (CustomChargeHonorarioMap customCharge : this.getCustomChargeHonorarioMaps()) {
@@ -1170,19 +1199,53 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
                     break;
                 }
             }
-        } else if (this.isVoluntaryInsuranceCharge()) {
+        } else if (this.isCustomFlatDistributedCharge()) {
             customAmout = customAmout.add(this.installmentCharges().isEmpty() ? this.amountOrPercentage
                     : this.getInstallmentLoanCharge(installmentNumber).getAmount());
+        } else if (this.isCustomPercentageBasedDistributedCharge()) {
+            customAmout = customAmout.add(this.installmentCharges().isEmpty() ? this.amountOrPercentage
+                    : this.getInstallmentLoanCharge(installmentNumber).getAmount());
+        } else if (this.isCustomPercentageBasedOfAnotherCharge()) {
+            customAmout = customAmout.add(this.installmentCharges().isEmpty() ? this.amountOrPercentage
+                    : this.getInstallmentLoanCharge(installmentNumber).getAmount());
+        } else if (this.isCustomPercentageOfOutstandingPrincipalCharge()) {
+            if (this.installmentCharges().isEmpty()) {
+                BigDecimal installmentCount = BigDecimal.valueOf(numberOfInstallments);
+                BigDecimal computedAmount = LoanCharge.percentageOf(outstandingBalance.getAmount(), this.percentage);
+                BigDecimal finalAmount = computedAmount.divide(installmentCount, 0, RoundingMode.HALF_UP);
+                customAmout = customAmout.add(finalAmount);
+            } else {
+                customAmout = customAmout.add(this.getInstallmentLoanCharge(installmentNumber).getAmount());
+            }
         }
         return customAmout;
+    }
+    public BigDecimal calculateCustomFeeChargeToInstallment(Integer installmentNumber) {
+        return calculateCustomFeeChargeToInstallment(installmentNumber, null, null, null);
     }
 
     public void updateCustomFeeCharge() {
         updateInstallmentCharges();
     }
 
-    public boolean isVoluntaryInsuranceCharge() {
-        return getChargeCalculation().isVoluntaryInsurance();
+    public boolean isCustomFlatDistributedCharge() {
+        // Charge is distributed among the installments
+        return getChargeCalculation().isVoluntaryInsurance() || getChargeCalculation().isFlatMandatoryInsurance();
+    }
+
+    public boolean isCustomPercentageBasedDistributedCharge() {
+        // Charge is distributed among the installments
+        return getChargeCalculation().isPercentageBasedMandatoryInsurance();
+    }
+
+    public boolean isCustomPercentageBasedOfAnotherCharge() {
+        // Charge is distributed among the installments
+        return getChargeCalculation().isPercentageOfAnotherCharge();
+    }
+
+    public boolean isCustomPercentageOfOutstandingPrincipalCharge() {
+        // Charge is distributed among the installments
+        return getChargeCalculation().isCustomPercentageOfOutstandingPrincipalCharge();
     }
 
     public BigDecimal getLastInstallmentRoundOffAmountForVoluntaryInsurance(Integer lastInstallmentNumber) {

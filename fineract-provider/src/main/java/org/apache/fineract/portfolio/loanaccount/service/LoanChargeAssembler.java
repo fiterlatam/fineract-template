@@ -23,6 +23,8 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import java.math.BigDecimal;
+import java.math.MathContext;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -35,6 +37,7 @@ import org.apache.fineract.infrastructure.core.domain.ExternalId;
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.core.service.ExternalIdFactory;
+import org.apache.fineract.organisation.monetary.domain.MoneyHelper;
 import org.apache.fineract.portfolio.charge.domain.Charge;
 import org.apache.fineract.portfolio.charge.domain.ChargeCalculationType;
 import org.apache.fineract.portfolio.charge.domain.ChargePaymentMode;
@@ -214,7 +217,7 @@ public class LoanChargeAssembler {
             }
         }
         for (LoanCharge loanCharge : loanCharges) {
-            if (loanCharge.getApplicableFromInstallment() == null) {
+            if (loanCharge.getApplicableFromInstallment() == null || loanCharge.getApplicableFromInstallment() == 1) {
                 loanCharge.setApplicableFromInstallment(1);
             }
         }
@@ -271,7 +274,11 @@ public class LoanChargeAssembler {
         }
 
         if (chargeCalculationType.isPercentageOfDisbursement()) {
-            amountPercentageAppliedTo = amountPercentageAppliedTo.add(loan.getDisbursedAmount());
+            if (chargeCalculationType.isCustomPercentageBasedDistributedCharge()) {
+                amountPercentageAppliedTo = amountPercentageAppliedTo.add(loan.getPrincipal().getAmount());
+            } else {
+                amountPercentageAppliedTo = amountPercentageAppliedTo.add(loan.getDisbursedAmount());
+            }
         }
 
         if (chargeCalculationType.isPercentageOfInstallmentPrincipal()) {
@@ -290,14 +297,27 @@ public class LoanChargeAssembler {
             }
         }
 
+        if (chargeCalculationType.isCustomPercentageOfOutstandingPrincipalCharge()) {
+            if (command.hasParameter("principal")) {
+                amountPercentageAppliedTo = amountPercentageAppliedTo.add(command.bigDecimalValueOfParameterNamed("principal"));
+            } else {
+                amountPercentageAppliedTo = amountPercentageAppliedTo.add(loan.getPrincipal().getAmount());
+            }
+        }
+
+
         BigDecimal loanCharge = BigDecimal.ZERO;
         if (ChargeTimeType.fromInt(chargeDefinition.getChargeTimeType()).equals(ChargeTimeType.INSTALMENT_FEE)) {
             BigDecimal percentage = amount;
             if (percentage == null) {
                 percentage = chargeDefinition.getAmount();
             }
-            loanCharge = loan.calculatePerInstallmentChargeAmount(ChargeCalculationType.fromInt(chargeDefinition.getChargeCalculation()),
-                    percentage);
+            if (chargeCalculationType.isCustomPercentageBasedDistributedCharge()) {
+                loanCharge = percentageOf(loan.getPrincipal().getAmount(), amount);
+            } else {
+                loanCharge = loan.calculatePerInstallmentChargeAmount(ChargeCalculationType.fromInt(chargeDefinition.getChargeCalculation()),
+                        percentage, null, chargeDefinition.getParentChargeId());
+            }
         }
 
         // If charge type is specified due date and loan is multi disburment
@@ -326,5 +346,17 @@ public class LoanChargeAssembler {
             final ChargePaymentMode chargePaymentMode, final Integer numberOfRepayments, final ExternalId externalId) {
         return new LoanCharge(null, chargeDefinition, loanPrincipal, amount, chargeTime, chargeCalculation, dueDate, chargePaymentMode,
                 numberOfRepayments, BigDecimal.ZERO, externalId);
+    }
+
+    private BigDecimal percentageOf(final BigDecimal value, final BigDecimal percentage) {
+
+        BigDecimal percentageOf = BigDecimal.ZERO;
+
+        if (value.compareTo(BigDecimal.ZERO) > 0) {
+            final MathContext mc = MoneyHelper.getMathContext();
+            final BigDecimal multiplicand = percentage.divide(BigDecimal.valueOf(100L), mc);
+            percentageOf = value.multiply(multiplicand, mc);
+        }
+        return percentageOf;
     }
 }

@@ -399,6 +399,10 @@ public class Charge extends AbstractPersistableCustom {
         return ChargeCalculationType.fromInt(this.chargeCalculation).isPercentageOfDisbursement();
     }
 
+    public boolean isPercentageOfAnotherCharge() {
+        return ChargeCalculationType.fromInt(this.chargeCalculation).isPercentageOfAnotherCharge();
+    }
+
     public boolean isInstallmentFee() {
         return ChargeTimeType.fromInt(this.chargeTimeType).isInstalmentFee();
     }
@@ -453,6 +457,10 @@ public class Charge extends AbstractPersistableCustom {
             interestRateId = this.interestRate.getId();
         }
         return interestRateId;
+    }
+
+    public Long getParentChargeId() {
+        return parentChargeId;
     }
 
     public Map<String, Object> update(final JsonCommand command) {

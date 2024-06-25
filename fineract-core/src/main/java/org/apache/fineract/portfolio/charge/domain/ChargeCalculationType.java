@@ -1584,7 +1584,7 @@ public enum ChargeCalculationType {
 
     public boolean isPercentageBased() {
         return isPercentageOfInstallmentPrincipal() || isPercentageOfInstallmentPrincipalAndInterest()
-                || isPercentageOfInstallmentInterest() || isPercentageOfDisbursement();
+                || isPercentageOfInstallmentInterest() || isPercentageOfDisbursement() || isPercentageOfAnotherCharge();
     }
 
     public boolean isAmountFromExternal() {
@@ -1605,5 +1605,25 @@ public enum ChargeCalculationType {
     public boolean isFlatHono() {
         return isFlat() && this.byteRepresentation.charAt(ChargeCalculationTypeBaseItemsEnum.HOORARIOS.getIndex()) == '1';
     }
+
+    public boolean isFlatMandatoryInsurance() {
+        return isPercentageOfInsurance() && isFlat();
+    }
+
+    public boolean isPercentageBasedMandatoryInsurance() {
+        // Any charge which is percentage based and distributed among the installments will be added here
+        return this.equals(DISB_SEGO) && isPercentageOfInsurance() && (isPercentageOfDisbursement());
+    }
+
+    public boolean isCustomPercentageBasedDistributedCharge() {
+        // Charge is distributed among the installments
+        return isPercentageBasedMandatoryInsurance();
+    }
+
+    public boolean isCustomPercentageOfOutstandingPrincipalCharge() {
+        // Charge is distributed among the installments
+        return isPercentageOfOutstandingPrincipal() && this.equals(ChargeCalculationType.OPRIN_SEGO);
+    }
+
 
 }
