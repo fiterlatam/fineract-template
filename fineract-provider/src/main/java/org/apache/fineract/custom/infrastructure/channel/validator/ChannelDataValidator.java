@@ -92,8 +92,10 @@ public class ChannelDataValidator {
             List<Channel> channels = channelRepository.findAll();
             for (Channel channel1 : channels) {
                 if (Boolean.TRUE.equals(channel1.getHash().equalsIgnoreCase(hash)) && channel1.getChannelType() == channelType) {
-
                     baseDataValidator.reset().parameter(ChannelApiConstants.hashParamName).value(hash).failWithCode("duplicate");
+                }
+                if (Boolean.TRUE.equals(channel1.getName().equalsIgnoreCase(name)) && channel1.getChannelType() == channelType) {
+                    baseDataValidator.reset().parameter(ChannelApiConstants.nameParamName).value(name).failWithCode("duplicate");
                 }
             }
 
@@ -149,8 +151,11 @@ public class ChannelDataValidator {
             for (Channel channel1 : channels) {
                 if (Boolean.TRUE.equals(channel1.getHash().equalsIgnoreCase(hash)) && channel1.getChannelType() == channelType
                         && channel.getId() != channel1.getId()) {
-
                     baseDataValidator.reset().parameter(ChannelApiConstants.hashParamName).value(hash).failWithCode("duplicate");
+                }
+                if (Boolean.TRUE.equals(channel1.getName().equalsIgnoreCase(name)) && channel1.getChannelType() == channelType
+                        && channel.getId() != channel1.getId()) {
+                    baseDataValidator.reset().parameter(ChannelApiConstants.nameParamName).value(name).failWithCode("duplicate");
                 }
             }
         }
