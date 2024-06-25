@@ -629,7 +629,7 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
             }
         }
         if (maximumAmount != null) {
-            disparityRatio = String.valueOf(maximumAmount.divide(minimumAmount, MoneyHelper.getRoundingMode()));
+            disparityRatio = String.valueOf(maximumAmount.divide(minimumAmount));
         }
         final String prequalificationId = String.valueOf(groupData.getId());
         final String reportName = Policies.EIGHT.getName() + " Policy Check";
