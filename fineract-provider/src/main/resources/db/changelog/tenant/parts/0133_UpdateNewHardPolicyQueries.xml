@@ -641,6 +641,82 @@
         </sql>
     </changeSet>
 
+    <changeSet id="25" author="fineract">
+        <sql>
+            <![CDATA[
+            UPDATE stretchy_report
+            SET report_sql =
+            "SELECT
+                mc.id,
+                main_loan_details.pending_installments,
+                recredit_loan_details.amount,
+                recredit_loan_details.charge_name,
+                	CASE
+                	WHEN main_loan_details.pending_installments <= 2 AND recredit_loan_details.charge_name = 'Cargo por ampliación 2 cuotas' THEN 'GREEN'
+                	WHEN main_loan_details.pending_installments >= 3 AND recredit_loan_details.charge_name = 'Cargo por ampliación 3 cuotas' THEN 'GREEN'
+                	ELSE 'RED'
+                END as color
+                FROM m_loan mln
+                join m_client mc on mc.id=mln.client_id
+                join m_prequalification_group_members mpgm ON mpgm.dpi = mc.dpi AND mpgm.group_id=mln.prequalification_id
+                join m_loan_topup mlt on mlt.loan_id = mln.id
+                join m_loan originalLoan on originalLoan.id = mlt.closure_loan_id
+                INNER JOIN (
+                    SELECT ml.id AS loan_id, COUNT(mlrs.id) AS pending_installments
+                    FROM m_loan_repayment_schedule mlrs join m_loan ml on ml.id = mlrs.loan_id
+                    AND (ml.is_topup IS NULL OR ml.is_topup = 0)
+                    AND mlrs.obligations_met_on_date IS NULL
+                    GROUP BY ml.id
+                    )main_loan_details ON main_loan_details.loan_id = originalLoan.id
+                LEFT JOIN (
+                		SELECT ml.id AS loan_id, coalesce(mc2.name,'N/A') charge_name, coalesce(mlc.amount,0) as amount
+                		FROM  m_loan_charge mlc
+                		INNER JOIN  m_loan ml on ml.id = mlc.loan_id
+                		INNER JOIN m_charge mc2 on mc2.id = mlc.charge_id
+                		WHERE  mc2.name IN ('Cargo por ampliación 3 cuotas','Cargo por ampliación 2 cuotas')
+                    )recredit_loan_details ON recredit_loan_details.loan_id = mln.id
+                WHERE mln.id = ${loanId}"
+            WHERE report_name = "Early Recapitalization Fee Policy Check";
+            ]]>
+        </sql>
+    </changeSet>
+
+    <changeSet id="26" author="fineract">
+        <sql>
+            <![CDATA[
+            UPDATE stretchy_report
+            SET report_sql = "SELECT main_loans.loan_count main_loan_count, recredit_loans.loan_count recredit_loan_count,
+                CASE
+                WHEN recredit_loans.loan_count = main_loans.loan_count THEN 'GREEN'
+                ELSE 'RED'
+                END as color
+                FROM m_prequalification_group mpg
+                LEFT JOIN (
+                SELECT p.id AS prequalification_id,
+                (SELECT COUNT(ml.id)
+                FROM m_prequalification_group mp
+                JOIN m_prequalification_group_members mpgm ON mpgm.group_id = mp.id
+                JOIN m_client mc ON mc.dpi = mpgm.dpi
+                JOIN m_loan ml ON ml.client_id = mc.id
+                WHERE ml.loan_status_id < 300 AND ml.product_id = ${loanProductId}  AND ml.is_topup = 1
+                AND mp.id = ${prequalificationId}
+                ) AS loan_count
+                FROM m_prequalification_group p where p.id = ${prequalificationId}
+                )recredit_loans ON recredit_loans.prequalification_id = mpg.id
+                LEFT JOIN (
+                select ${prequalificationId} as prequalification_id, COUNT(ml.id) as loan_count
+				    FROM
+				    m_loan ml
+				    INNER JOIN m_client mc on ml.client_id = mc.id
+				    JOIN m_group_client mgc ON mgc.client_id = mc.id AND mgc.group_id = (SELECT group_id from m_loan where 		prequalification_id = ${prequalificationId} limit 1)
+				    where ml.loan_status_id =300 AND ml.product_id = ${loanProductId}  AND (ml.is_topup IS NULL OR ml.is_topup = 0)
+				    )main_loans ON main_loans.prequalification_id = mpg.id
+                WHERE mpg.id = ${prequalificationId}"
+            WHERE report_name = "Percentage Of Clients To Be Recredited In The Group Policy Check";
+            ]]>
+        </sql>
+    </changeSet>
+
 
 
 </databaseChangeLog>
