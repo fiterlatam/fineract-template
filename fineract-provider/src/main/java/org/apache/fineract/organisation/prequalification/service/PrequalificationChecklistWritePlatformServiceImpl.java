@@ -22,6 +22,7 @@ import java.math.BigDecimal;
 import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.DecimalFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
@@ -629,7 +630,7 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
             }
         }
         if (maximumAmount != null) {
-            disparityRatio = String.valueOf(maximumAmount.divide(minimumAmount, MoneyHelper.getRoundingMode()));
+            disparityRatio = String.valueOf(maximumAmount.divide(minimumAmount));
         }
         final String prequalificationId = String.valueOf(groupData.getId());
         final String reportName = Policies.EIGHT.getName() + " Policy Check";
@@ -1006,20 +1007,22 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
         final ClientData params = retrieveClientParams(clientData.getClientId(), clientData.getProductId());
         final List<LoanAdditionProperties> loanAdditionPropertiesList = this.loanAdditionalPropertiesRepository
                 .findByClientIdAndLoanId(clientData.getClientId(), clientData.getLoanId());
-        int yearsInBusiness = 0;
+        String yearsInBusiness = "0";
         if (!CollectionUtils.isEmpty(loanAdditionPropertiesList)) {
             final LoanAdditionProperties loanAdditionProperties = loanAdditionPropertiesList.get(0);
             LocalDate businessStartDate = loanAdditionProperties.getFecha_inicio_negocio();
             LocalDate currentDate = DateUtils.getLocalDateOfTenant();
-            Integer monthsBetween = Math.toIntExact(ChronoUnit.MONTHS.between(currentDate, businessStartDate));
-            yearsInBusiness = monthsBetween / 12;
+            Double monthsBetween = Double.valueOf(ChronoUnit.MONTHS.between(businessStartDate,currentDate));
+            DecimalFormat f = new DecimalFormat("##.0");
+
+            yearsInBusiness = f.format(Double.valueOf(monthsBetween / 12));
         }
         final Map<String, String> reportParams = new HashMap<>();
         reportParams.put("${clientId}", clientId);
         reportParams.put("${loanProductId}", productId);
         reportParams.put("${clientCategorization}", params.getClientCategorization());
         reportParams.put("${recreditCategorization}", params.getRecreditCategorization());
-        reportParams.put("${businessAge}", String.valueOf(yearsInBusiness));
+        reportParams.put("${businessAge}", yearsInBusiness);
         reportParams.put("${requestedAmount}", String.valueOf(clientData.getRequestedAmount()));
         final GenericResultsetData result = this.readReportingService.retrieveGenericResultset(reportName, "report", reportParams, false);
         return extractColorFromResultset(result);
