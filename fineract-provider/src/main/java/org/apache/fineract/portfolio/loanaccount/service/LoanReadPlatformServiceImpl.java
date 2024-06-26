@@ -861,13 +861,13 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                         LEFT JOIN m_loan topuploan ON topuploan.id = topup.closure_loan_id
                         LEFT JOIN m_blocking_reason_setting brs ON brs.id = l.block_status_id
                         LEFT JOIN (WITH cte AS (SELECT c.*,
-                                                      lpc.loan_product_id,
-                                                      ROW_NUMBER() OVER (PARTITION BY lpc.loan_product_id ORDER BY c.id) AS rn
-                                               FROM m_loan_product_channel lpc
+                                                      lpc.loan_id,
+                                                      ROW_NUMBER() OVER (PARTITION BY lpc.loan_id ORDER BY c.id) AS rn
+                                               FROM  custom.c_client_buy_process lpc
                                                         JOIN custom.c_channel c ON lpc.channel_id = c.id)
                                   SELECT *
                                   FROM cte
-                                  WHERE rn = 1)cch ON cch.loan_product_id = lp.id
+                                  WHERE rn = 1)cch ON cch.loan_id = l.id
                         LEFT JOIN (
                             SELECT
                                 ps.name,
