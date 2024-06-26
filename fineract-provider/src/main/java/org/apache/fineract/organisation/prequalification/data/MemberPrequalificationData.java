@@ -58,6 +58,7 @@ public class MemberPrequalificationData {
     private Long clientId;
     private String comments;
     private String agencyBureauStatus;
+    private Long documentCount;
 
     public MemberPrequalificationData(final Long id, final String name, final String dpi, final LocalDate dob, final String workWithPuente,
             final BigDecimal requestedAmount, final EnumOptionData status, Long blacklistCount, BigDecimal totalLoanAmount,
@@ -171,5 +172,9 @@ public class MemberPrequalificationData {
 
     public void setClientId(Long clientId) {
         this.clientId = clientId;
+    }
+
+    public void setDocumentCount(Long documentCount) {
+        this.documentCount = documentCount;
     }
 }

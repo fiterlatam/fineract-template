@@ -155,7 +155,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             final String membersql = "select " + this.prequalificationsMemberMapper.schema() + " WHERE m.group_id = ? ";
 
             List<MemberPrequalificationData> members = this.jdbcTemplate.query(membersql, this.prequalificationsMemberMapper,
-                    new Object[] { groupId });
+                    new Object[] { groupId, groupId });
 
             for (MemberPrequalificationData memberPrequalificationData : members) {
                 Integer status = PrequalificationMemberIndication.NONE.getValue();
@@ -693,6 +693,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                     	m.buro_fecha AS fecha,
                     	m.buro_cuentas AS cuentas,
                     	m.buro_resumen AS resumen,
+                    	(SELECT count(*) from m_document where parent_entity_id=? AND name like CONCAT('%', m.dpi, '%')) as documentCount,
                     	(
                     	SELECT
                     		count(*)
@@ -804,6 +805,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             final Long greenValidationCount = rs.getLong("greenValidationCount");
             final Long yellowValidationCount = rs.getLong("yellowValidationCount");
             final Long clientId = rs.getLong("clientId");
+            final Long documentCount = rs.getLong("documentCount");
             final Boolean groupPresident = rs.getBoolean("groupPresident");
             MemberPrequalificationData memberPrequalificationData = MemberPrequalificationData.instance(id, name, dpi, dob, puente,
                     requestedAmount, status, blacklistCount, totalLoanAmount, totalLoanBalance, totalGuaranteedLoanBalance, noOfCycles,
@@ -812,6 +814,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                     originalAmount, comments, agencyBureauStatus);
             memberPrequalificationData.setBuroData(buroData);
             memberPrequalificationData.setClientId(clientId);
+            memberPrequalificationData.setDocumentCount(documentCount);
             return memberPrequalificationData;
         }
     }
