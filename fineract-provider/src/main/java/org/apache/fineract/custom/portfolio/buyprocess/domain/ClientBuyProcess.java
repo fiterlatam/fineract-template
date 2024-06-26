@@ -58,6 +58,9 @@ public class ClientBuyProcess {
     @Transient
     private String channelName;
 
+    @Transient
+    private String channelHash;
+
     @Column(name = "client_id", nullable = false)
     private Long clientId;
 
@@ -117,7 +120,28 @@ public class ClientBuyProcess {
             Long codigoSeguro, Long cedulaSeguroVoluntario) {
         this.channelId = channelId;
         this.channelName = channelName;
+        this.channelHash = null;
         this.clientId = clientId;
+        this.pointOfSalesId = pointOfSalesId;
+        this.productId = productId;
+        this.creditId = creditId;
+        this.requestedDate = requestedDate;
+        this.amount = amount;
+        this.term = term;
+        this.createdAt = createdAt;
+        this.createdBy = createdBy;
+        this.ipDetails = ipDetails;
+        this.codigoSeguro = codigoSeguro;
+        this.cedulaSeguroVoluntario = cedulaSeguroVoluntario;
+    }
+
+    public ClientBuyProcess(Long channelId, Long clientId, Long pointOfSalesId, Long productId, Long creditId, LocalDate requestedDate,
+            BigDecimal amount, Long term, LocalDateTime createdAt, Long createdBy, String ipDetails, Long codigoSeguro,
+            Long cedulaSeguroVoluntario, String channelHash) {
+        this.channelId = channelId;
+        this.channelName = null;
+        this.clientId = clientId;
+        this.channelHash = channelHash;
         this.pointOfSalesId = pointOfSalesId;
         this.productId = productId;
         this.creditId = creditId;
