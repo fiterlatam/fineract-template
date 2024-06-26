@@ -147,6 +147,7 @@ import org.apache.fineract.portfolio.group.exception.GroupNotActiveException;
 import org.apache.fineract.portfolio.loanaccount.api.LoanApiConstants;
 import org.apache.fineract.portfolio.loanaccount.command.LoanUpdateCommand;
 import org.apache.fineract.portfolio.loanaccount.data.HolidayDetailDTO;
+import org.apache.fineract.portfolio.loanaccount.data.LoanInterestChangeData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanRescheduleData;
 import org.apache.fineract.portfolio.loanaccount.data.ScheduleGeneratorDTO;
 import org.apache.fineract.portfolio.loanaccount.domain.ChangedTransactionDetail;
@@ -3106,6 +3107,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     }
 
     @Override
+    @Transactional
     public void recalculateInterestForMaximumLegalRate() throws JobExecutionException {
         List<Throwable> exceptions = new ArrayList<>();
         final MaximumCreditRateConfigurationData maximumCreditRateConfigurationData = this.loanProductReadPlatformService
@@ -3295,5 +3297,148 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             throw new GeneralPlatformDomainRuleException("validation.msg.channel.not.allowed", "Channel is not allowed", channelName);
         }
         return channelData;
+    }
+
+    @Override
+    @Transactional
+    public void recalculateInterestAfterInterestRateChange() throws JobExecutionException {
+        List<Throwable> exceptions = new ArrayList<>();
+        final MaximumCreditRateConfigurationData maximumCreditRateConfigurationData = this.loanProductReadPlatformService
+                .retrieveMaximumCreditRateConfigurationData();
+        final BigDecimal maximumLegalAnnualNominalRate = maximumCreditRateConfigurationData.getAnnualNominalRate();
+        final LoanInterestChangeMapper rm = new LoanInterestChangeMapper();
+        final String sql = "SELECT " + rm.schema();
+        List<LoanInterestChangeData> loanInterestChangeDataList = this.jdbcTemplate.query(sql, rm);
+        if (CollectionUtils.isNotEmpty(loanInterestChangeDataList)) {
+            final String locale = "en";
+            final String dateFormat = "dd MMMM yyyy";
+            final String submittedOnDate = DateUtils.format(DateUtils.getBusinessLocalDate(), dateFormat, Locale.forLanguageTag(locale));
+            LoanRescheduleRequestData loanRescheduleReasons = this.loanRescheduleRequestReadPlatformService
+                    .retrieveAllRescheduleReasons(RescheduleLoansApiConstants.LOAN_RESCHEDULE_REASON);
+            Long rescheduleReasonId = null;
+            for (CodeValueData codeValueData : loanRescheduleReasons.getRescheduleReasons()) {
+                if (codeValueData.getName().equalsIgnoreCase("Recalcular la tasa de interés al máximo legal")) {
+                    rescheduleReasonId = codeValueData.getId();
+                    break;
+                }
+            }
+            final JsonObject rescheduleJsonObject = new JsonObject();
+            rescheduleJsonObject.addProperty("dateFormat", dateFormat);
+            rescheduleJsonObject.addProperty("locale", locale);
+            rescheduleJsonObject.addProperty("rescheduleReasonId", rescheduleReasonId);
+            rescheduleJsonObject.addProperty("submittedOnDate", submittedOnDate);
+            rescheduleJsonObject.addProperty("rescheduleReasonComment", "Recalcular la tasa de interés al máximo legal");
+            rescheduleJsonObject.addProperty("adjustedDueDate", "");
+            rescheduleJsonObject.addProperty("graceOnPrincipal", "");
+            rescheduleJsonObject.addProperty("extraTerms", "");
+            for (final LoanInterestChangeData loanInterestChangeData : loanInterestChangeDataList) {
+                BigDecimal newInterestRate = loanInterestChangeData.getCurrentInterestRate();
+                if (newInterestRate.compareTo(maximumLegalAnnualNominalRate) > 0) {
+                    continue;
+                }
+                rescheduleJsonObject.addProperty("newInterestRate", newInterestRate);
+                final Long loanId = loanInterestChangeData.getLoanId();
+                final LocalDate rescheduleFromDate = loanInterestChangeData.getNextDueDate();
+                final String rescheduleFromDateString = DateUtils.format(rescheduleFromDate, dateFormat, Locale.forLanguageTag(locale));
+                rescheduleJsonObject.addProperty("rescheduleFromDate", rescheduleFromDateString);
+                rescheduleJsonObject.addProperty("loanId", loanId);
+                final String rescheduleRequestBodyAsJson = rescheduleJsonObject.toString();
+                CommandWrapper commandWrapper = new CommandWrapperBuilder()
+                        .createLoanRescheduleRequest(RescheduleLoansApiConstants.ENTITY_NAME).withJson(rescheduleRequestBodyAsJson).build();
+                try {
+                    CommandProcessingResult commandProcessingResult = commandsSourceWritePlatformService.logCommandSource(commandWrapper);
+                    if (commandProcessingResult.getResourceId() != null) {
+                        final Long loanRescheduleId = commandProcessingResult.getResourceId();
+                        final JsonObject approvalJsonObject = new JsonObject();
+                        final Boolean isJobTriggered = true;
+                        approvalJsonObject.addProperty("dateFormat", dateFormat);
+                        approvalJsonObject.addProperty("locale", locale);
+                        approvalJsonObject.addProperty("isJobTriggered", isJobTriggered);
+                        approvalJsonObject.addProperty("approvedOnDate", submittedOnDate);
+                        final String approvalRequestBodyAsJson = approvalJsonObject.toString();
+                        commandWrapper = new CommandWrapperBuilder()
+                                .approveLoanRescheduleRequest(RescheduleLoansApiConstants.ENTITY_NAME, loanRescheduleId)
+                                .withJson(approvalRequestBodyAsJson).build();
+                        commandProcessingResult = commandsSourceWritePlatformService.logCommandSource(commandWrapper);
+                        if (commandProcessingResult.getResourceId() != null) {
+                            final String successMessage = "Reprogramar la cuenta de préstamo: " + loanId
+                                    + " con la tasa de interés al máximo legal";
+                            log.info(successMessage);
+                        }
+                    }
+                } catch (final PlatformApiDataValidationException e) {
+                    final List<ApiParameterError> errors = e.getErrors();
+                    for (final ApiParameterError error : errors) {
+                        log.error("Reprogramar la cuenta de préstamo {} falló con el mensaje: {}", loanId, error.getDeveloperMessage(), e);
+                    }
+                    exceptions.add(e);
+                } catch (final AbstractPlatformDomainRuleException e) {
+                    log.error("Reprogramar la cuenta de préstamo: {} falló con el mensaje: {}", loanId, e.getDefaultUserMessage(), e);
+                    exceptions.add(e);
+                } catch (Exception e) {
+                    log.error("Reprogramar la cuenta de préstamo: {} falló con el mensaje: {}", loanId, e.getMessage(), e);
+                    exceptions.add(e);
+                }
+            }
+        }
+        if (!exceptions.isEmpty()) {
+            throw new JobExecutionException(exceptions);
+        }
+    }
+
+    private static final class LoanInterestChangeMapper implements RowMapper<LoanInterestChangeData> {
+
+        public String schema() {
+            return """
+                    	ml.id AS "loanId",
+                    	ml.annual_nominal_interest_rate AS "annualNominalInterestRate",
+                    	COALESCE(ml.interest_rate_points, 0) AS "interestRatePoints",
+                    	MIN(next_schedule.duedate) AS "nextDueDate",
+                    	mir.current_rate AS "currentInterestRate",
+                    	mir.appliedon_date AS "appliedOnDate"
+                    FROM m_loan ml
+                    INNER JOIN m_product_loan mpl ON mpl.id = ml.product_id
+                    INNER JOIN m_interest_rate mir ON mir.id = mpl.interest_rate_id
+                    INNER JOIN (
+                    	SELECT sch.*
+                    	FROM m_loan_repayment_schedule sch
+                    	LEFT JOIN m_loan_arrears_aging mlaa ON mlaa.loan_id = sch.loan_id
+                        WHERE sch.completed_derived = FALSE AND (mlaa.overdue_since_date_derived IS NULL OR sch.fromdate > mlaa.overdue_since_date_derived)
+                        AND (COALESCE(sch.penalty_charges_amount, 0) - COALESCE(sch.penalty_charges_completed_derived, 0) - COALESCE(sch.penalty_charges_writtenoff_derived, 0) - COALESCE(sch.penalty_charges_waived_derived, 0)) <= 0
+                        ORDER BY sch.duedate ASC
+                    ) next_schedule ON next_schedule.loan_id = ml.id
+                    LEFT JOIN (
+                                SELECT DISTINCT ON (ltv.loan_id) ltv.loan_id, ltv.applicable_date, ltv.decimal_value
+                                FROM m_loan_term_variations ltv
+                                WHERE ltv.term_type = 10 AND ltv.is_active = TRUE AND ltv.applied_on_loan_status = 300
+                                ORDER BY ltv.loan_id, ltv.id DESC
+                    ) term_variation ON term_variation.loan_id = ml.id
+                    WHERE
+                    	COALESCE(ml.interest_rate_points, 0) + ml.annual_nominal_interest_rate <> mir.current_rate
+                    	AND next_schedule.duedate >= mir.appliedon_date
+                    	AND ml.loan_status_id = 300
+                    	AND (CASE WHEN term_variation.decimal_value = mir.current_rate AND term_variation.applicable_date >= mir.appliedon_date THEN FALSE ELSE TRUE END) = TRUE
+                    GROUP BY
+                    	ml.id,
+                    	mir.current_rate,
+                    	mir.appliedon_date
+                    ORDER BY
+                    	ml.id
+                    """;
+        }
+
+        @Override
+        public LoanInterestChangeData mapRow(@NotNull final ResultSet rs, @SuppressWarnings("unused") final int rowNum)
+                throws SQLException {
+            final Long loanId = JdbcSupport.getLong(rs, "loanId");
+            final BigDecimal annualNominalInterestRate = rs.getBigDecimal("annualNominalInterestRate");
+            final Long interestRatePoints = rs.getLong("annualNominalInterestRate");
+            final LocalDate nextDueDate = JdbcSupport.getLocalDate(rs, "nextDueDate");
+            final BigDecimal currentInterestRate = rs.getBigDecimal("currentInterestRate");
+            final LocalDate appliedOnDate = JdbcSupport.getLocalDate(rs, "appliedOnDate");
+            return LoanInterestChangeData.builder().loanId(loanId).annualNominalInterestRate(annualNominalInterestRate)
+                    .interestRatePoints(interestRatePoints).currentInterestRate(currentInterestRate).nextDueDate(nextDueDate)
+                    .appliedOnDate(appliedOnDate).build();
+        }
     }
 }
