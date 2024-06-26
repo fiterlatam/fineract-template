@@ -233,5 +233,6 @@
     <include file="parts/202406182224100_SU_99_c_channel_insert.xml" relativeToChangelogFile="true"/>
     <include file="parts/202406182224100_SU_99_m_payement_detail_add_channelHash.xml" relativeToChangelogFile="true"/>
     <include file="parts/2024062422241925_SU_99_c_channel_update_drop_uniq_constrains.xml" relativeToChangelogFile="true"/>
+    <include file="parts/202406182224100_SU_251_custom_c_client_ally_point_of_sales_modify_code.xml" relativeToChangelogFile="true"/>
 
 </databaseChangeLog>
