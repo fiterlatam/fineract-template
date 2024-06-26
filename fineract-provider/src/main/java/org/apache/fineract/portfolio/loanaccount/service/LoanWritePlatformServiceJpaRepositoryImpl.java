@@ -516,10 +516,10 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             }
             regenerateScheduleOnDisbursement(command, loan, recalculateSchedule, scheduleGeneratorDTO, nextPossibleRepaymentDate,
                     rescheduledRepaymentDate);
-            boolean downPaymentEnabled = loan.repaymentScheduleDetail().isEnableDownPayment();
-            if (loan.repaymentScheduleDetail().isInterestRecalculationEnabled() || downPaymentEnabled) {
-                createAndSaveLoanScheduleArchive(loan, scheduleGeneratorDTO);
-            }
+            // Farooq 25th June 2024 - Ensured that Loan Schedule Archive is always created
+
+            createAndSaveLoanScheduleArchive(loan, scheduleGeneratorDTO);
+
             if (isPaymentTypeApplicableForDisbursementCharge) {
                 changedTransactionDetail = loan.disburse(currentUser, command, changes, scheduleGeneratorDTO, paymentDetail);
             } else {
