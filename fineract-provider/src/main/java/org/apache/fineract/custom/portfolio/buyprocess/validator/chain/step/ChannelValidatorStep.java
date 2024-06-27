@@ -32,17 +32,19 @@ public class ChannelValidatorStep extends BuyProcessAbstractStepProcessor implem
     public void validateStepChain(ClientBuyProcess clientBuyProcess) {
         setSuperChannelMessageRepository(channelMessageRepository);
 
-        String channelName = clientBuyProcess.getChannelName();
+        String channelHash = clientBuyProcess.getChannelHash();
 
-        Optional<Channel> optionalChannel = channelRepository.findByHash(channelName);
+        Optional<Channel> optionalChannel = channelRepository.findByHashWithChannelType(channelHash, ChannelType.DISBURSEMENT.getValue());
 
         if (optionalChannel.isPresent()) {
 
             Channel curr = optionalChannel.get();
             clientBuyProcess.setChannelId(curr.getId());
+            clientBuyProcess.setChannelName(curr.getName());
 
             // Check if channel is enabled and off type Compra/Avance
             if (Boolean.FALSE.equals(curr.getActive()) || !ChannelType.DISBURSEMENT.getValue().equals(curr.getChannelType())) {
+
                 ammendErrorMessage(clazzEnum, clientBuyProcess, curr.getId());
             }
 

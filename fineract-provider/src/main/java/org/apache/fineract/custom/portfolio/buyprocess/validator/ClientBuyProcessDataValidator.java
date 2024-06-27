@@ -97,10 +97,11 @@ public class ClientBuyProcessDataValidator {
 
         final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors)
                 .resource(ClientBuyProcessApiConstants.RESOURCE_NAME);
-        String channelName = this.fromApiJsonHelper.extractStringNamed(LoanApiConstants.CHANNEL_NAME, element);
-        if (channelName == null) {
-            channelName = this.platformSecurityContext.getApiRequestChannel();
-        }
+        // String channelName = this.fromApiJsonHelper.extractStringNamed(LoanApiConstants.CHANNEL_NAME, element);
+        // if (channelName == null) {
+        // channelName = this.platformSecurityContext.getApiRequestChannel();
+        // }
+
         Long clientId = 0L;
         String clientDocumentId;
         Client client = null;
@@ -186,8 +187,13 @@ public class ClientBuyProcessDataValidator {
         final Integer interestRatePoints = this.fromApiJsonHelper.extractIntegerWithLocaleNamed(LoanApiConstants.INTEREST_RATE_POINTS,
                 element);
 
-        ClientBuyProcess ret = new ClientBuyProcess(null, channelName, clientId, pointOfSalesId, productId, creditId, requestedDate, amount,
-                term, createdAt, createdBy, ipDetails, codigoSeguro, cedulaSeguroVoluntario);
+        String channelHash = this.fromApiJsonHelper.extractStringNamed(LoanApiConstants.CHANNEL_HASH, element);
+        if (channelHash == null) {
+            channelHash = this.platformSecurityContext.getApiRequestChannel();
+        }
+
+        ClientBuyProcess ret = new ClientBuyProcess(null, clientId, pointOfSalesId, productId, creditId, requestedDate, amount, term,
+                createdAt, createdBy, ipDetails, codigoSeguro, cedulaSeguroVoluntario, channelHash);
         ret.setClient(client);
         ret.setInterestRatePoints(interestRatePoints);
 

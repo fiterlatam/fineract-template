@@ -19,6 +19,11 @@
 package org.apache.fineract.custom.portfolio.buyprocess.api;
 
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
@@ -92,7 +97,10 @@ public class ClientBuyProcessApiResource {
     @POST
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
-    public String createNewHoliday(@Parameter(hidden = true) final String apiRequestBodyAsJson) {
+    @RequestBody(required = true, content = @Content(schema = @Schema(implementation = ClientBuyProcessApiResourceSwagger.PostClientBuyProcessRequest.class)))
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = ClientBuyProcessApiResourceSwagger.PostClientBuyProcessRequest.class))) })
+    public String createClientBuyProses(@Parameter(hidden = true) final String apiRequestBodyAsJson) {
 
         final CommandWrapper commandRequest = new CommandWrapperBuilder().createClientBuyProcess().withJson(apiRequestBodyAsJson).build();
 
