@@ -118,4 +118,6 @@ public interface LoanWritePlatformService {
     CommandProcessingResult undoChargeOff(JsonCommand command);
 
     void recalculateInterestForMaximumLegalRate() throws JobExecutionException;
+
+    void recalculateInterestAfterInterestRateChange() throws JobExecutionException;
 }

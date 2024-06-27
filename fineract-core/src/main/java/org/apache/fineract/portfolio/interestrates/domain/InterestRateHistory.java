@@ -56,7 +56,7 @@ public class InterestRateHistory extends AbstractPersistableCustom {
         interestRateHistory.createdBy = interestRate.getCreatedBy()
                 .orElseThrow(() -> new GeneralPlatformDomainRuleException("error.msg.interest.rate.history.createdBy.not.found",
                         "Created by not found", interestRate.getId()));
-        interestRateHistory.createdDate = interestRate.getCreatedDate().orElse(OffsetDateTime.now());
+        interestRateHistory.createdDate = OffsetDateTime.now();
         return interestRateHistory;
     }
 }

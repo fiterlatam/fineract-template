@@ -79,6 +79,9 @@ import org.apache.fineract.portfolio.floatingrates.exception.FloatingRateNotFoun
 import org.apache.fineract.portfolio.floatingrates.service.FloatingRatesReadPlatformService;
 import org.apache.fineract.portfolio.group.domain.Group;
 import org.apache.fineract.portfolio.group.domain.GroupRepositoryWrapper;
+import org.apache.fineract.portfolio.interestrates.data.InterestRateHistoryData;
+import org.apache.fineract.portfolio.interestrates.domain.InterestRate;
+import org.apache.fineract.portfolio.interestrates.service.InterestRateReadPlatformService;
 import org.apache.fineract.portfolio.loanaccount.api.LoanApiConstants;
 import org.apache.fineract.portfolio.loanaccount.data.DisbursementData;
 import org.apache.fineract.portfolio.loanaccount.data.HolidayDetailDTO;
@@ -139,6 +142,7 @@ public class LoanScheduleAssembler {
     private final VariableLoanScheduleFromApiJsonValidator variableLoanScheduleFromApiJsonValidator;
     private final CalendarInstanceRepository calendarInstanceRepository;
     private final LoanUtilService loanUtilService;
+    private final InterestRateReadPlatformService interestRateReadPlatformService;
 
     @Autowired
     public LoanScheduleAssembler(final FromJsonHelper fromApiJsonHelper, final LoanProductRepository loanProductRepository,
@@ -150,7 +154,8 @@ public class LoanScheduleAssembler {
             final WorkingDaysRepositoryWrapper workingDaysRepository,
             final FloatingRatesReadPlatformService floatingRatesReadPlatformService,
             final VariableLoanScheduleFromApiJsonValidator variableLoanScheduleFromApiJsonValidator,
-            final CalendarInstanceRepository calendarInstanceRepository, final LoanUtilService loanUtilService) {
+            final CalendarInstanceRepository calendarInstanceRepository, final LoanUtilService loanUtilService,
+            final InterestRateReadPlatformService interestRateReadPlatformService) {
         this.fromApiJsonHelper = fromApiJsonHelper;
         this.loanProductRepository = loanProductRepository;
         this.applicationCurrencyRepository = applicationCurrencyRepository;
@@ -167,6 +172,7 @@ public class LoanScheduleAssembler {
         this.variableLoanScheduleFromApiJsonValidator = variableLoanScheduleFromApiJsonValidator;
         this.calendarInstanceRepository = calendarInstanceRepository;
         this.loanUtilService = loanUtilService;
+        this.interestRateReadPlatformService = interestRateReadPlatformService;
     }
 
     public LoanApplicationTerms assembleLoanTerms(final JsonElement element) {
@@ -224,7 +230,28 @@ public class LoanScheduleAssembler {
         Long interestRatePoints = null;
         BigDecimal interestRatePerPeriod = BigDecimal.ZERO;
         if (loanProduct.getInterestRate() != null) {
-            interestRatePerPeriod = loanProduct.getInterestRate().getCurrentRate();
+            final InterestRate interestRate = loanProduct.getInterestRate();
+            if (!interestRate.isActive()) {
+                throw new GeneralPlatformDomainRuleException("error.msg.loan.interest.rate.not.active",
+                        "The interest rate associated with this loan product is not active", interestRate.getId());
+            }
+            final Long interestRateId = interestRate.getId();
+            BigDecimal currentInterestRate = interestRate.getCurrentRate();
+            final LocalDate interestRateAppliedOnDate = interestRate.getAppliedOnDate();
+            final LocalDate expectedDisbursementDate = this.fromApiJsonHelper.extractLocalDateNamed("expectedDisbursementDate", element);
+            if (DateUtils.isAfter(interestRateAppliedOnDate, expectedDisbursementDate)) {
+                final InterestRateHistoryData interestRateHistoryData = this.interestRateReadPlatformService
+                        .retrieveHistoryMatchingParams(interestRateId, expectedDisbursementDate);
+                if (interestRateHistoryData != null) {
+                    currentInterestRate = interestRateHistoryData.getCurrentRate();
+                } else {
+                    throw new GeneralPlatformDomainRuleException(
+                            "error.msg.loan.interest.rate.applied.on.date.not.found.that.matches.disbursement.date",
+                            "The provided disbursement date does not match available interest rate applied on date",
+                            expectedDisbursementDate);
+                }
+            }
+            interestRatePerPeriod = currentInterestRate;
             if (requireInterestRatePoint) {
                 interestRatePoints = this.fromApiJsonHelper.extractLongNamed(LoanApiConstants.INTEREST_RATE_POINTS, element);
                 if (interestRatePoints == null) {

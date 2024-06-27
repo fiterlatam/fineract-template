@@ -60,7 +60,9 @@ public enum JobName {
     REACTIVATE_BLOCKED_APP_USERS("Reactivate Blocked App Users"), //
     BLOCK_INACTIVE_CLIENTS("Block Inactive Clients"), //
     LOAN_CUSTOM_CHARGE_HONORARIO_UPDATE("Loans - Custom Charge Honorario Update"), //
-    RECALCULATE_LOAN_INTEREST_AFTER_MAXIMUM_LEGAL_RATE_CHANGE("Recalculate Loan Interest After Maximum Legal Rate Change");
+    RECALCULATE_LOAN_INTEREST_AFTER_MAXIMUM_LEGAL_RATE_CHANGE(
+            "Recalculate Loan Interest After Maximum Legal Rate Change"), RECALCULATE_LOAN_INTEREST_AFTER_INTEREST_RATE_CHANGE(
+                    "Recalculate Loan Interest After Interest Rate Change");
 
     private final String name;
 

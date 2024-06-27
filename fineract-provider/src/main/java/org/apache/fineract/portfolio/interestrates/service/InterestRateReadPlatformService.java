@@ -18,6 +18,7 @@
  */
 package org.apache.fineract.portfolio.interestrates.service;
 
+import java.time.LocalDate;
 import java.util.List;
 import org.apache.fineract.infrastructure.core.service.Page;
 import org.apache.fineract.infrastructure.core.service.SearchParameters;
@@ -35,6 +36,8 @@ public interface InterestRateReadPlatformService {
     InterestRateData retrieveTemplate();
 
     Page<InterestRateHistoryData> retrieveHistory(SearchParameters searchParameters);
+
+    InterestRateHistoryData retrieveHistoryMatchingParams(Long interestRateId, LocalDate fromDates);
 
     List<InterestRateData> retrieveInterestRates(SearchParameters searchParameters);
 }
