@@ -1210,7 +1210,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
             final String blockStatusName = rs.getString("blockStatusName");
             BlockingReasonsData blockStatusData = null;
             final Long channelId = rs.getLong("channel_id");
-            final String channelName = rs.getString("channel_name");
+            final String channelName = Objects.toString(rs.getString("channel_name"), "Mifos");
             final String channelDescription = rs.getString("channel_description");
             final String pointOfSalesName = rs.getString("point_of_sales_name");
 
