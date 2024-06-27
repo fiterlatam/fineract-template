@@ -40,6 +40,7 @@ public class ChannelValidatorStep extends BuyProcessAbstractStepProcessor implem
 
             Channel curr = optionalChannel.get();
             clientBuyProcess.setChannelId(curr.getId());
+            clientBuyProcess.setChannelName(curr.getName());
 
             // Check if channel is enabled and off type Compra/Avance
             if (Boolean.FALSE.equals(curr.getActive()) || !ChannelType.DISBURSEMENT.getValue().equals(curr.getChannelType())) {
