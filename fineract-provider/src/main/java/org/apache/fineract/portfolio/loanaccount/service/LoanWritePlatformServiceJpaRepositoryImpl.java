@@ -29,16 +29,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -213,6 +204,7 @@ import org.apache.fineract.portfolio.loanproduct.service.LoanProductReadPlatform
 import org.apache.fineract.portfolio.note.domain.Note;
 import org.apache.fineract.portfolio.note.domain.NoteRepository;
 import org.apache.fineract.portfolio.paymentdetail.domain.PaymentDetail;
+import org.apache.fineract.portfolio.paymentdetail.domain.PaymentDetailRepository;
 import org.apache.fineract.portfolio.paymentdetail.service.PaymentDetailWritePlatformService;
 import org.apache.fineract.portfolio.repaymentwithpostdatedchecks.domain.PostDatedChecks;
 import org.apache.fineract.portfolio.repaymentwithpostdatedchecks.domain.PostDatedChecksRepository;
@@ -286,6 +278,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     private final ClientReadPlatformService clientReadPlatformService;
     private final ChannelReadWritePlatformService channelReadWritePlatformService;
     private final PlatformSecurityContext platformSecurityContext;
+    private final PaymentDetailRepository paymentDetailRepository;
 
     @Transactional
     @Override
@@ -516,10 +509,10 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             }
             regenerateScheduleOnDisbursement(command, loan, recalculateSchedule, scheduleGeneratorDTO, nextPossibleRepaymentDate,
                     rescheduledRepaymentDate);
-            boolean downPaymentEnabled = loan.repaymentScheduleDetail().isEnableDownPayment();
-            if (loan.repaymentScheduleDetail().isInterestRecalculationEnabled() || downPaymentEnabled) {
-                createAndSaveLoanScheduleArchive(loan, scheduleGeneratorDTO);
-            }
+            // Farooq 25th June 2024 - Ensured that Loan Schedule Archive is always created
+
+            createAndSaveLoanScheduleArchive(loan, scheduleGeneratorDTO);
+
             if (isPaymentTypeApplicableForDisbursementCharge) {
                 changedTransactionDetail = loan.disburse(currentUser, command, changes, scheduleGeneratorDTO, paymentDetail);
             } else {
@@ -1259,9 +1252,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             changes.put("channelId", channelId);
             changes.put("channelHash", channelData.getHash());
         } else {
-            channelData = this.validateUndoRepaymentChannel(channelName, loanProduct);
+            channelData = this.validateUndoRepaymentChannel(channelName, loanProduct, transactionId);
             if (!authenticatedUser.hasAnyPermission("ALL_FUNCTIONS", "UNDO_REPAYMENT_LOAN")) {
-
                 final LoanTransaction loanTransaction = this.loanTransactionRepository.findByIdAndLoanId(transactionId, loanId)
                         .orElseThrow(() -> new LoanTransactionNotFoundException(transactionId, loanId));
                 final LocalDate loanTransactionDate = loanTransaction.getTransactionDate();
@@ -3268,7 +3260,11 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
     }
 
-    private ChannelData validateUndoRepaymentChannel(final String channelName, final LoanProduct loanProduct) {
+    private ChannelData validateUndoRepaymentChannel(final String channelName, final LoanProduct loanProduct, Long transactionId) {
+        final LoanTransaction loanTransaction = this.loanTransactionRepository.findByIdAndLoanId(transactionId, loanProduct.getId())
+                .orElseThrow(() -> new LoanTransactionNotFoundException(transactionId, loanProduct.getId()));
+
+        Optional<PaymentDetail> paymentDetail = paymentDetailRepository.findById(loanTransaction.getPaymentDetail().getId());
         if (StringUtils.isBlank(channelName)) {
             throw new GeneralPlatformDomainRuleException("validation.msg.channel.is.blank", "Channel is blank");
         }
@@ -3281,19 +3277,21 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         }
 
         final List<Channel> repaymentChannels = loanProduct.getRepaymentChannels();
-
         if (CollectionUtils.isNotEmpty(repaymentChannels)) {
             final Long channelId = channelData.getId();
+            if (paymentDetail.isPresent()) {
+                if (paymentDetail.get().getChannelId() != channelId && !channelName.equalsIgnoreCase(ChannelApiConstants.defaultChannel)) {
+                    throw new GeneralPlatformDomainRuleException("validation.msg.channel.not.allowed", "Channel is not allowed",
+                            channelName);
+                }
+            }
             if (repaymentChannels.stream().noneMatch(repaymentChannel -> repaymentChannel.getId().equals(channelId))) {
-
                 if (!channelName.equalsIgnoreCase(ChannelApiConstants.defaultChannel)) {
                     throw new GeneralPlatformDomainRuleException("validation.msg.channel.not.allowed", "Channel is not allowed",
                             channelName);
                 }
-
             }
         } else {
-
             throw new GeneralPlatformDomainRuleException("validation.msg.channel.not.allowed", "Channel is not allowed", channelName);
         }
         return channelData;

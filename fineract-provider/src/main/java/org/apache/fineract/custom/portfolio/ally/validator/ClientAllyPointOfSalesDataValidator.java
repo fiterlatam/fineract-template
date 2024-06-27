@@ -152,7 +152,7 @@ public class ClientAllyPointOfSalesDataValidator {
                 .resource(ClientAllyPointOfSalesApiConstants.RESOURCE_NAME);
 
         final String code = this.fromApiJsonHelper.extractStringNamed(ClientAllyPointOfSalesApiConstants.codeParamName, element);
-        baseDataValidator.reset().parameter(ClientAllyPointOfSalesApiConstants.codeParamName).value(code).notNull().notExceedingLengthOf(4);
+        baseDataValidator.reset().parameter(ClientAllyPointOfSalesApiConstants.codeParamName).value(code).notNull().notExceedingLengthOf(6);
 
         // If curr Code is different from new Code and new Code already exists
         if (Boolean.FALSE.equals(clientAllyPointOfSales.getCode().equalsIgnoreCase(code))) {
