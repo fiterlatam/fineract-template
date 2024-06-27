@@ -1252,7 +1252,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             changes.put("channelId", channelId);
             changes.put("channelHash", channelData.getHash());
         } else {
-            channelData = this.validateUndoRepaymentChannel(channelName, loanProduct, transactionId);
+            channelData = this.validateUndoRepaymentChannel(channelName, loanProduct, transactionId, loanId);
             if (!authenticatedUser.hasAnyPermission("ALL_FUNCTIONS", "UNDO_REPAYMENT_LOAN")) {
                 final LoanTransaction loanTransaction = this.loanTransactionRepository.findByIdAndLoanId(transactionId, loanId)
                         .orElseThrow(() -> new LoanTransactionNotFoundException(transactionId, loanId));
@@ -3260,9 +3260,10 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
     }
 
-    private ChannelData validateUndoRepaymentChannel(final String channelName, final LoanProduct loanProduct, Long transactionId) {
-        final LoanTransaction loanTransaction = this.loanTransactionRepository.findByIdAndLoanId(transactionId, loanProduct.getId())
-                .orElseThrow(() -> new LoanTransactionNotFoundException(transactionId, loanProduct.getId()));
+    private ChannelData validateUndoRepaymentChannel(final String channelName, final LoanProduct loanProduct, Long transactionId,
+            Long loanId) {
+        final LoanTransaction loanTransaction = this.loanTransactionRepository.findByIdAndLoanId(transactionId, loanId)
+                .orElseThrow(() -> new LoanTransactionNotFoundException(transactionId, loanId));
 
         Optional<PaymentDetail> paymentDetail = paymentDetailRepository.findById(loanTransaction.getPaymentDetail().getId());
         if (StringUtils.isBlank(channelName)) {
@@ -3281,12 +3282,14 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             final Long channelId = channelData.getId();
             if (paymentDetail.isPresent()) {
                 if (paymentDetail.get().getChannelId() != channelId && !channelName.equalsIgnoreCase(ChannelApiConstants.defaultChannel)) {
+
                     throw new GeneralPlatformDomainRuleException("validation.msg.channel.not.allowed", "Channel is not allowed",
                             channelName);
                 }
             }
             if (repaymentChannels.stream().noneMatch(repaymentChannel -> repaymentChannel.getId().equals(channelId))) {
                 if (!channelName.equalsIgnoreCase(ChannelApiConstants.defaultChannel)) {
+
                     throw new GeneralPlatformDomainRuleException("validation.msg.channel.not.allowed", "Channel is not allowed",
                             channelName);
                 }
