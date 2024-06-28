@@ -30,8 +30,8 @@
         </preConditions>
         <addColumn tableName="m_charge">
             <column name="is_get_percentage_from_table" type="boolean" defaultValueBoolean="false">
-	    <constraints nullable="false"/>
-		</column>
+        <constraints nullable="false"/>
+        </column>
         </addColumn>
     </changeSet>
     <changeSet author="fineract" id="2">
@@ -42,10 +42,10 @@
         </preConditions>
         <addColumn tableName="m_loan_charge">
             <column name="is_get_percentage_from_table" type="boolean" defaultValueBoolean="false">
-	    <constraints nullable="false"/>
-		</column>	
+        <constraints nullable="false"/>
+        </column>
         </addColumn>
-	
+
     </changeSet>
 
 </databaseChangeLog>
