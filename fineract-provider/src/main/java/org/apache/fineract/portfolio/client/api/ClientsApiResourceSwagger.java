@@ -19,6 +19,7 @@
 package org.apache.fineract.portfolio.client.api;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
@@ -626,5 +627,22 @@ final class ClientsApiResourceSwagger {
 
         public Set<GetClientsLoanAccounts> loanAccounts;
         public Set<GetClientsSavingsAccounts> savingsAccounts;
+    }
+
+    @Schema(description = "GetClientAvailableCupoResponse")
+    public static final class GetClientAvailableCupoResponse {
+
+        @Schema(example = "1")
+        public Long clientId;
+        @Schema(example = "Nit")
+        public String tipo;
+        @Schema(example = "001")
+        public String nit;
+        @Schema(example = "001")
+        public String cedula;
+        @Schema(example = "1000")
+        public BigDecimal availableCupo;
+        @Schema(example = "1000")
+        public BigDecimal totalOutstandingPrincipalAmount;
     }
 }
