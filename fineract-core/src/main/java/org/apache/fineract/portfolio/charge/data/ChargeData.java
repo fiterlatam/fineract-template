@@ -154,7 +154,8 @@ public class ChargeData implements Comparable<ChargeData>, Serializable {
                 charge.minCap, charge.maxCap, charge.feeFrequency, template.feeFrequencyOptions, charge.incomeOrLiabilityAccount,
                 template.incomeOrLiabilityAccountOptions, template.taxGroupOptions, template.shareChargeCalculationTypeOptions,
                 template.shareChargeTimeTypeOptions, template.accountMappingForChargeConfig, template.expenseAccountOptions,
-                template.assetAccountOptions, template.chargeInsuranceTypeOptions, charge.chargeInsuranceDetailData, charge.getPercentageAmountFromTable);
+                template.assetAccountOptions, template.chargeInsuranceTypeOptions, charge.chargeInsuranceDetailData,
+                charge.getPercentageAmountFromTable);
         ret.setGraceOnChargePeriodEnum(charge.getGraceOnChargePeriodEnum());
         ret.setGraceOnChargePeriodAmount(charge.getGraceOnChargePeriodAmount());
         ret.setParentChargeId(charge.getParentChargeId());

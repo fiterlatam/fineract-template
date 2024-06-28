@@ -606,12 +606,12 @@ public final class LoanApplicationTerms {
     public static BigDecimal pmt(BigDecimal periodicInterestRate, Integer numberOfRepayments, BigDecimal principalAmount, boolean t) {
         BigDecimal result = BigDecimal.ZERO;
         if (periodicInterestRate.compareTo(BigDecimal.ZERO) == 0) {
-            result =  new BigDecimal("-1.0").multiply(principalAmount).divide(new BigDecimal(numberOfRepayments), RoundingMode.HALF_UP);
+            result = new BigDecimal("-1.0").multiply(principalAmount).divide(new BigDecimal(numberOfRepayments), RoundingMode.HALF_UP);
         } else {
             BigDecimal r1 = periodicInterestRate.add(BigDecimal.ONE);
             BigDecimal opt = t ? r1 : BigDecimal.ONE;
             result = principalAmount.multiply(r1.pow(numberOfRepayments)).multiply(periodicInterestRate)
-                    .divide( opt.multiply(BigDecimal.ONE.subtract(r1.pow(numberOfRepayments))), RoundingMode.HALF_UP);
+                    .divide(opt.multiply(BigDecimal.ONE.subtract(r1.pow(numberOfRepayments))), RoundingMode.HALF_UP);
         }
         return result.round(new MathContext(0));
     }
@@ -993,9 +993,10 @@ public final class LoanApplicationTerms {
     }
 
     private BigDecimal periodicInterestRate(final PaymentPeriodsInOneYearCalculator calculator, final MathContext mc,
-            final DaysInMonthType daysInMonthType, final DaysInYearType daysInYearType, LocalDate periodStartDate,
-            LocalDate periodEndDate, boolean useDailyInterestCalculation) {
-        return periodicInterestRate(calculator, mc, daysInMonthType, daysInYearType, periodStartDate, periodEndDate, false, useDailyInterestCalculation);
+            final DaysInMonthType daysInMonthType, final DaysInYearType daysInYearType, LocalDate periodStartDate, LocalDate periodEndDate,
+            boolean useDailyInterestCalculation) {
+        return periodicInterestRate(calculator, mc, daysInMonthType, daysInYearType, periodStartDate, periodEndDate, false,
+                useDailyInterestCalculation);
     }
 
     private BigDecimal periodicInterestRate(final PaymentPeriodsInOneYearCalculator calculator, final MathContext mc,
@@ -1031,7 +1032,7 @@ public final class LoanApplicationTerms {
                     case INVALID:
                     break;
                     case DAYS:
-                        //periodicInterestRate = oneDayOfYearInterestRate.multiply(numberOfDaysInPeriod, mc);
+                        // periodicInterestRate = oneDayOfYearInterestRate.multiply(numberOfDaysInPeriod, mc);
                         periodicInterestRate = calculateCustomPeriodicInterestRate(daysInYearType.getValue().doubleValue(), divisor);
                     break;
                     case WEEKS:
@@ -1065,8 +1066,9 @@ public final class LoanApplicationTerms {
                 }
             break;
             case SAME_AS_REPAYMENT_PERIOD:
-//                periodicInterestRate = this.annualNominalInterestRate.divide(loanTermPeriodsInYearBigDecimal, mc).divide(divisor, mc)
-//                        .multiply(loanTermFrequencyBigDecimal);
+                // periodicInterestRate = this.annualNominalInterestRate.divide(loanTermPeriodsInYearBigDecimal,
+                // mc).divide(divisor, mc)
+                // .multiply(loanTermFrequencyBigDecimal);
                 periodicInterestRate = calculateCustomPeriodicInterestRate(loanTermPeriodsInOneYear, divisor);
 
             break;
@@ -1075,11 +1077,11 @@ public final class LoanApplicationTerms {
         return periodicInterestRate;
     }
 
-    private BigDecimal calculateCustomPeriodicInterestRate( double installments, BigDecimal divisor) {
-        BigDecimal annualRate =new BigDecimal(1 + this.annualNominalInterestRate.toPlainString()).divide(divisor);
+    private BigDecimal calculateCustomPeriodicInterestRate(double installments, BigDecimal divisor) {
+        BigDecimal annualRate = new BigDecimal(1 + this.annualNominalInterestRate.toPlainString()).divide(divisor);
         int scale = 5;
-        double exp = 1/installments;
-        double res = (Math.pow((annualRate.doubleValue() ),exp)) - 1;
+        double exp = 1 / installments;
+        double res = (Math.pow((annualRate.doubleValue()), exp)) - 1;
 
         return BigDecimal.valueOf(res).setScale(scale, BigDecimal.ROUND_HALF_UP);
     }
@@ -1261,10 +1263,11 @@ public final class LoanApplicationTerms {
         boolean useDailyInterestCalculation = true;
         final BigDecimal periodicInterestRate = periodicInterestRate(calculator, mc, this.daysInMonthType, this.daysInYearType,
                 periodStartDate, periodEndDate, useDailyInterestCalculation);// 0.021232877 ob:14911.64
-       // interestDue = outstandingBalance.multiplyRetainScale(periodicInterestRate, mc.getRoundingMode());
+        // interestDue = outstandingBalance.multiplyRetainScale(periodicInterestRate, mc.getRoundingMode());
         BigDecimal numberOfDaysInPeriod = BigDecimal.valueOf(ChronoUnit.DAYS.between(periodStartDate, periodEndDate));
         BigDecimal dueInterest = outstandingBalance.getAmount().multiply(periodicInterestRate).multiply(numberOfDaysInPeriod);
-        // interestDue = outstandingBalance.multiplyRetainScale(periodicInterestRate, mc.getRoundingMode()).multipliedBy(numberOfDaysInPeriod);
+        // interestDue = outstandingBalance.multiplyRetainScale(periodicInterestRate,
+        // mc.getRoundingMode()).multipliedBy(numberOfDaysInPeriod);
         interestDue = interestDue.add(dueInterest);
         return interestDue;
     }

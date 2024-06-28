@@ -24,10 +24,8 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import java.math.BigDecimal;
 import java.math.MathContext;
-import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.*;
-
 import lombok.RequiredArgsConstructor;
 import org.apache.fineract.custom.portfolio.customcharge.data.CustomChargeEntityData;
 import org.apache.fineract.custom.portfolio.customcharge.data.CustomChargeTypeData;
@@ -158,7 +156,8 @@ public class LoanChargeAssembler {
                         }
                         if (!isMultiDisbursal) {
                             final LoanCharge loanCharge = createNewWithoutLoan(chargeDefinition, principal, amount, chargeTime,
-                                    chargeCalculation, dueDate, chargePaymentModeEnum, numberOfRepayments, externalId, getPercentageAmountFromTable);
+                                    chargeCalculation, dueDate, chargePaymentModeEnum, numberOfRepayments, externalId,
+                                    getPercentageAmountFromTable);
                             loanCharges.add(loanCharge);
                         } else {
                             if (topLevelJsonElement.has("disbursementData") && topLevelJsonElement.get("disbursementData").isJsonArray()) {
@@ -177,7 +176,8 @@ public class LoanChargeAssembler {
                                     if (chargeDefinition.isPercentageOfApprovedAmount()
                                             && disbursementDetail.expectedDisbursementDateAsLocalDate().equals(expectedDisbursementDate)) {
                                         final LoanCharge loanCharge = createNewWithoutLoan(chargeDefinition, principal, amount, chargeTime,
-                                                chargeCalculation, dueDate, chargePaymentModeEnum, numberOfRepayments, externalId, getPercentageAmountFromTable);
+                                                chargeCalculation, dueDate, chargePaymentModeEnum, numberOfRepayments, externalId,
+                                                getPercentageAmountFromTable);
                                         loanCharges.add(loanCharge);
                                         if (loanCharge.isTrancheDisbursementCharge()) {
                                             loanTrancheDisbursementCharge = new LoanTrancheDisbursementCharge(loanCharge,
@@ -214,7 +214,8 @@ public class LoanChargeAssembler {
                                 }
                             } else {
                                 final LoanCharge loanCharge = createNewWithoutLoan(chargeDefinition, principal, amount, chargeTime,
-                                        chargeCalculation, dueDate, chargePaymentModeEnum, numberOfRepayments, externalId, getPercentageAmountFromTable);
+                                        chargeCalculation, dueDate, chargePaymentModeEnum, numberOfRepayments, externalId,
+                                        getPercentageAmountFromTable);
                                 loanCharges.add(loanCharge);
                             }
                         }
@@ -324,7 +325,6 @@ public class LoanChargeAssembler {
             }
         }
 
-
         BigDecimal loanCharge = BigDecimal.ZERO;
         if (ChargeTimeType.fromInt(chargeDefinition.getChargeTimeType()).equals(ChargeTimeType.INSTALMENT_FEE)) {
             BigDecimal percentage = amount;
@@ -334,8 +334,9 @@ public class LoanChargeAssembler {
             if (chargeCalculationType.isCustomPercentageBasedDistributedCharge()) {
                 loanCharge = percentageOf(loan.getPrincipal().getAmount(), amount);
             } else {
-                loanCharge = loan.calculatePerInstallmentChargeAmount(ChargeCalculationType.fromInt(chargeDefinition.getChargeCalculation()),
-                        percentage, null, chargeDefinition.getParentChargeId());
+                loanCharge = loan.calculatePerInstallmentChargeAmount(
+                        ChargeCalculationType.fromInt(chargeDefinition.getChargeCalculation()), percentage, null,
+                        chargeDefinition.getParentChargeId());
             }
         }
 
@@ -362,7 +363,8 @@ public class LoanChargeAssembler {
      */
     public LoanCharge createNewWithoutLoan(final Charge chargeDefinition, final BigDecimal loanPrincipal, final BigDecimal amount,
             final ChargeTimeType chargeTime, final ChargeCalculationType chargeCalculation, final LocalDate dueDate,
-            final ChargePaymentMode chargePaymentMode, final Integer numberOfRepayments, final ExternalId externalId, boolean getPercentageAmountFromTable) {
+            final ChargePaymentMode chargePaymentMode, final Integer numberOfRepayments, final ExternalId externalId,
+            boolean getPercentageAmountFromTable) {
         return new LoanCharge(null, chargeDefinition, loanPrincipal, amount, chargeTime, chargeCalculation, dueDate, chargePaymentMode,
                 numberOfRepayments, BigDecimal.ZERO, externalId, getPercentageAmountFromTable);
     }
@@ -384,14 +386,17 @@ public class LoanChargeAssembler {
         boolean found = false;
         List<CustomChargeEntityData> customChargeEntityDataList = this.customChargeService.findByIsExternalService(false);
         for (CustomChargeEntityData entity : customChargeEntityDataList) {
-            if ((entity.getName().equalsIgnoreCase("Insurance") && (type.isPercentageBasedMandatoryInsurance() || type.isCustomPercentageOfOutstandingPrincipalCharge()))
-            || (entity.getName().equalsIgnoreCase("Aval") && (type.isPercentageBasedMandatoryInsurance() || type.isCustomPercentageOfOutstandingPrincipalCharge()))) {
+            if ((entity.getName().equalsIgnoreCase("Insurance")
+                    && (type.isPercentageBasedMandatoryInsurance() || type.isCustomPercentageOfOutstandingPrincipalCharge()))
+                    || (entity.getName().equalsIgnoreCase("Aval")
+                            && (type.isPercentageBasedMandatoryInsurance() || type.isCustomPercentageOfOutstandingPrincipalCharge()))) {
                 List<CustomChargeTypeData> customChargeTypeDataList = customChargeTypeService.findAllByEntityId(entity.getId());
                 for (CustomChargeTypeData customChargeTypeData : customChargeTypeDataList) {
-                    List<CustomChargeTypeMapData> customChargeTypeMapDataList = this.customChargeTypeMapService.findAllActive(customChargeTypeData.getId());
+                    List<CustomChargeTypeMapData> customChargeTypeMapDataList = this.customChargeTypeMapService
+                            .findAllActive(customChargeTypeData.getId());
                     if (customChargeTypeMapDataList != null && !customChargeTypeMapDataList.isEmpty()) {
-                        Optional<CustomChargeTypeMapData> data = customChargeTypeMapDataList.stream().filter(map -> map.getTerm().intValue() == numberOfInstallments)
-                                .reduce((a, b) -> {
+                        Optional<CustomChargeTypeMapData> data = customChargeTypeMapDataList.stream()
+                                .filter(map -> map.getTerm().intValue() == numberOfInstallments).reduce((a, b) -> {
                                     throw new CustomChargeTypeMapNotFoundException("error.msg.customchargetypemap.id.multiple.values");
                                 });
 

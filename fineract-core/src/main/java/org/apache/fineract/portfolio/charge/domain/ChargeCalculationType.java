@@ -1625,5 +1625,4 @@ public enum ChargeCalculationType {
         return isPercentageOfOutstandingPrincipal() && this.equals(ChargeCalculationType.OPRIN_SEGO);
     }
 
-
 }

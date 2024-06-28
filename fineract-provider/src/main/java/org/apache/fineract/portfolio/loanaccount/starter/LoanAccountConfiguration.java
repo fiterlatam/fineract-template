@@ -293,10 +293,11 @@ public class LoanAccountConfiguration {
 
             FromJsonHelper fromApiJsonHelper, ChargeRepositoryWrapper chargeRepository, LoanChargeRepository loanChargeRepository,
             LoanProductRepository loanProductRepository, ExternalIdFactory externalIdFactory,
-            CustomChargeEntityReadWritePlatformService customChargeService, CustomChargeTypeReadWritePlatformService customChargeTypeService,
+            CustomChargeEntityReadWritePlatformService customChargeService,
+            CustomChargeTypeReadWritePlatformService customChargeTypeService,
             CustomChargeTypeMapReadWritePlatformService customChargeTypeMapService) {
-        return new LoanChargeAssembler(fromApiJsonHelper, chargeRepository, loanChargeRepository, loanProductRepository,
-                externalIdFactory, customChargeService, customChargeTypeService, customChargeTypeMapService);
+        return new LoanChargeAssembler(fromApiJsonHelper, chargeRepository, loanChargeRepository, loanProductRepository, externalIdFactory,
+                customChargeService, customChargeTypeService, customChargeTypeMapService);
     }
 
     @Bean
