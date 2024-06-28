@@ -25,6 +25,7 @@ import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 import org.apache.fineract.infrastructure.core.domain.ExternalId;
 import org.apache.fineract.infrastructure.core.service.Page;
 import org.apache.fineract.infrastructure.core.service.SearchParameters;
+import org.apache.fineract.portfolio.client.data.ClienAvailableCupoFieldsData;
 import org.apache.fineract.portfolio.client.data.ClientAdditionalFieldsData;
 import org.apache.fineract.portfolio.client.data.ClientData;
 
@@ -68,5 +69,7 @@ public interface ClientReadPlatformService {
     List<ClientAdditionalFieldsData> retrieveAdditionalFieldsData(CodeValueData idType, String idValue);
 
     ClientAdditionalFieldsData retrieveClientAdditionalData(Long clientId);
+
+    List<ClienAvailableCupoFieldsData> retriveClientAvailableCupo(String nitId);
 
 }

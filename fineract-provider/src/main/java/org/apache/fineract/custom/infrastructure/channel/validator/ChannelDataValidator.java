@@ -83,12 +83,22 @@ public class ChannelDataValidator {
         final Boolean active = this.fromApiJsonHelper.extractBooleanNamed(ChannelApiConstants.activeParamName, element);
         baseDataValidator.reset().parameter(ChannelApiConstants.activeParamName).value(active).notNull();
 
-        Optional<Channel> curChanel = channelRepository.findByHash(hash);
+        Optional<Channel> curChanel = channelRepository.findByHashWithChannelType(hash, channelType);
         if (curChanel.isPresent()) {
-            baseDataValidator.reset().parameter(ChannelApiConstants.hashParamName).value(hash).failWithCode("duplicate");
-        }
-        if (curChanel.get().getHash().equalsIgnoreCase(hash) == true) {
-            baseDataValidator.reset().parameter(ChannelApiConstants.hashParamName).value(hash).failWithCode("duplicate");
+            if (Boolean.TRUE.equals(curChanel.get().getHash().equalsIgnoreCase(hash)) && curChanel.get().getChannelType() == channelType) {
+                baseDataValidator.reset().parameter(ChannelApiConstants.hashParamName).value(hash).failWithCode("duplicate");
+            }
+        } else {
+            List<Channel> channels = channelRepository.findAll();
+            for (Channel channel1 : channels) {
+                if (Boolean.TRUE.equals(channel1.getHash().equalsIgnoreCase(hash)) && channel1.getChannelType() == channelType) {
+                    baseDataValidator.reset().parameter(ChannelApiConstants.hashParamName).value(hash).failWithCode("duplicate");
+                }
+                if (Boolean.TRUE.equals(channel1.getName().equalsIgnoreCase(name)) && channel1.getChannelType() == channelType) {
+                    baseDataValidator.reset().parameter(ChannelApiConstants.nameParamName).value(name).failWithCode("duplicate");
+                }
+            }
+
         }
 
         throwExceptionIfValidationWarningsExist(dataValidationErrors);
@@ -130,13 +140,24 @@ public class ChannelDataValidator {
         final Boolean active = this.fromApiJsonHelper.extractBooleanNamed(ChannelApiConstants.activeParamName, element);
         baseDataValidator.reset().parameter(ChannelApiConstants.activeParamName).value(active).notNull();
 
-        Optional<Channel> curChanel = channelRepository.findByHash(hash);
-
-        if (curChanel.isPresent() && channel.getId() != curChanel.get().getId()) {
-            baseDataValidator.reset().parameter(ChannelApiConstants.hashParamName).value(hash).failWithCode("duplicate");
-        }
-        if (channel.getHash().equalsIgnoreCase(hash) == true && channel.getId() != curChanel.get().getId()) {
-            baseDataValidator.reset().parameter(ChannelApiConstants.hashParamName).value(hash).failWithCode("duplicate");
+        Optional<Channel> curChanel = channelRepository.findByHashWithChannelType(hash, channelType);
+        if (curChanel.isPresent()) {
+            if (Boolean.TRUE.equals(curChanel.get().getHash().equalsIgnoreCase(hash)) && curChanel.get().getChannelType() == channelType
+                    && curChanel.get().getId() != channel.getId()) {
+                baseDataValidator.reset().parameter(ChannelApiConstants.hashParamName).value(hash).failWithCode("duplicate", hash);
+            }
+        } else {
+            List<Channel> channels = channelRepository.findAll();
+            for (Channel channel1 : channels) {
+                if (Boolean.TRUE.equals(channel1.getHash().equalsIgnoreCase(hash)) && channel1.getChannelType() == channelType
+                        && channel.getId() != channel1.getId()) {
+                    baseDataValidator.reset().parameter(ChannelApiConstants.hashParamName).value(hash).failWithCode("duplicate");
+                }
+                if (Boolean.TRUE.equals(channel1.getName().equalsIgnoreCase(name)) && channel1.getChannelType() == channelType
+                        && channel.getId() != channel1.getId()) {
+                    baseDataValidator.reset().parameter(ChannelApiConstants.nameParamName).value(name).failWithCode("duplicate");
+                }
+            }
         }
 
         throwExceptionIfValidationWarningsExist(dataValidationErrors);

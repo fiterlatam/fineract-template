@@ -232,6 +232,8 @@
     <include file="parts/202406141026_SU_243_Credit_Mora_Fixing_DisbursmentPassdate.xml" relativeToChangelogFile="true"/>
     <include file="parts/202406182224100_SU_99_c_channel_insert.xml" relativeToChangelogFile="true"/>
     <include file="parts/202406182224100_SU_99_m_payement_detail_add_channelHash.xml" relativeToChangelogFile="true"/>
+    <include file="parts/2024062422241925_SU_99_c_channel_update_drop_uniq_constrains.xml" relativeToChangelogFile="true"/>
+    <include file="parts/202406182224100_SU_251_custom_c_client_ally_point_of_sales_modify_code.xml" relativeToChangelogFile="true"/>
     <include file="parts/202406252224100_SU_245_m_charge_add_percentage_from_table_MODIFY.xml" relativeToChangelogFile="true"/>
 
 </databaseChangeLog>

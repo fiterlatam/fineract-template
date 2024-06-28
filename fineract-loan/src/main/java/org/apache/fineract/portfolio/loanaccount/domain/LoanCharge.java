@@ -423,7 +423,7 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
                 this.amountOrPercentage = amount.divide(BigDecimal.valueOf(numberOfRepayments), 2, RoundingMode.CEILING);
             } else if (isCustomPercentageBasedDistributedCharge()) {
                 this.amountOrPercentage = this.amount.divide(BigDecimal.valueOf(numberOfRepayments), 2, RoundingMode.CEILING);
-            }else {
+            } else {
                 this.amountOrPercentage = amount;
             }
             this.amountOutstanding = calculateOutstanding();
@@ -1188,13 +1188,14 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
                 }
             }
         } else if (this.isCustomFlatDistributedCharge() || this.isCustomPercentageBasedDistributedCharge()
-        || this.isCustomPercentageBasedOfAnotherCharge() || isCustomPercentageOfOutstandingPrincipalCharge()) {
+                || this.isCustomPercentageBasedOfAnotherCharge() || isCustomPercentageOfOutstandingPrincipalCharge()) {
             isApplicable = true;
         }
         return isApplicable;
     }
 
-    public BigDecimal calculateCustomFeeChargeToInstallment(Integer installmentNumber, Money principalDisbursed, Integer numberOfInstallments, Money outstandingBalance) {
+    public BigDecimal calculateCustomFeeChargeToInstallment(Integer installmentNumber, Money principalDisbursed,
+            Integer numberOfInstallments, Money outstandingBalance) {
         BigDecimal customAmout = BigDecimal.ZERO;
         if (this.getChargeCalculation().isFlatHono() && !this.getCustomChargeHonorarioMaps().isEmpty()) {
             for (CustomChargeHonorarioMap customCharge : this.getCustomChargeHonorarioMaps()) {
@@ -1224,6 +1225,7 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
         }
         return customAmout;
     }
+
     public BigDecimal calculateCustomFeeChargeToInstallment(Integer installmentNumber) {
         return calculateCustomFeeChargeToInstallment(installmentNumber, null, null, null);
     }
@@ -1274,13 +1276,16 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
         return installmentAmount;
     }
 
-    public BigDecimal calculateParentChargeAmountForInstallment(Set<LoanCharge> loanCharges, Integer installmentNumber, Money principalDisbursed, Integer numberOfInstallments, Money outstandingBalance) {
-        // First Identify the parent loan charge and then Calculate the installment charge for the parent Charge. This has already been calculated before when the parent charge was processed
+    public BigDecimal calculateParentChargeAmountForInstallment(Set<LoanCharge> loanCharges, Integer installmentNumber,
+            Money principalDisbursed, Integer numberOfInstallments, Money outstandingBalance) {
+        // First Identify the parent loan charge and then Calculate the installment charge for the parent Charge. This
+        // has already been calculated before when the parent charge was processed
         // But we no longer have that value available when the percentage based charge is processed
         BigDecimal parentChargeAmount = BigDecimal.ZERO;
         for (LoanCharge parentCharge : loanCharges) {
             if (parentCharge.getCharge().getId().equals(this.getCharge().getParentChargeId())) {
-                parentChargeAmount = parentCharge.calculateCustomFeeChargeToInstallment(installmentNumber,principalDisbursed, numberOfInstallments, outstandingBalance);
+                parentChargeAmount = parentCharge.calculateCustomFeeChargeToInstallment(installmentNumber, principalDisbursed,
+                        numberOfInstallments, outstandingBalance);
                 break;
             }
         }

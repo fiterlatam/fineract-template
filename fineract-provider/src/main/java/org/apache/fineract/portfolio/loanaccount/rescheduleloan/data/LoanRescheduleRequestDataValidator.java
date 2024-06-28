@@ -68,7 +68,7 @@ public class LoanRescheduleRequestDataValidator {
 
     private static final Set<String> APPROVE_REQUEST_DATA_PARAMETERS = new HashSet<>(
             Arrays.asList(RescheduleLoansApiConstants.localeParamName, RescheduleLoansApiConstants.dateFormatParamName,
-                    RescheduleLoansApiConstants.approvedOnDateParam));
+                    RescheduleLoansApiConstants.approvedOnDateParam, "isJobTriggered"));
 
     /**
      * Validates the request to create a new loan reschedule entry

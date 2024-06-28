@@ -221,7 +221,8 @@ public class Charge extends AbstractPersistableCustom {
             chargeInsuranceDetail = new ChargeInsuranceDetail(insuranceName, insuranceChargeAs, insuranceCompany, insurerName,
                     insuranceCode, insurancePlan, baseValue, vatValue, totalValue, deadline);
         }
-        boolean getPercentageFromTable = command.booleanPrimitiveValueOfParameterNamed(ChargesApiConstants.GET_INTEREST_PERCENTAGE_FROM_TABLE);
+        boolean getPercentageFromTable = command
+                .booleanPrimitiveValueOfParameterNamed(ChargesApiConstants.GET_INTEREST_PERCENTAGE_FROM_TABLE);
         return new Charge(name, amount, currencyCode, chargeAppliesTo, chargeTimeType, chargeCalculationType, penalty, active, paymentMode,
                 feeOnMonthDay, feeInterval, minCap, maxCap, feeFrequency, enableFreeWithdrawalCharge, freeWithdrawalFrequency,
                 restartCountFrequency, countFrequencyType, account, taxGroup, enablePaymentType, paymentType, graceOnChargePeriodAmount,
@@ -236,7 +237,8 @@ public class Charge extends AbstractPersistableCustom {
             final BigDecimal maxCap, final Integer feeFrequency, final boolean enableFreeWithdrawalCharge,
             final Integer freeWithdrawalFrequency, final Integer restartFrequency, final PeriodFrequencyType restartFrequencyEnum,
             final GLAccount account, final TaxGroup taxGroup, final boolean enablePaymentType, final PaymentType paymentType,
-            final Long graceOnChargePeriodAmount, Long parentChargeId, ChargeInsuranceDetail chargeInsuranceDetail, boolean getPercentageFromTable) {
+            final Long graceOnChargePeriodAmount, Long parentChargeId, ChargeInsuranceDetail chargeInsuranceDetail,
+            boolean getPercentageFromTable) {
         this.name = name;
         this.amount = amount;
         this.currencyCode = currencyCode;
@@ -809,7 +811,8 @@ public class Charge extends AbstractPersistableCustom {
         return ChargeData.instance(getId(), this.name, this.amount, currency, chargeTimeType, chargeAppliesTo, chargeCalculationType,
                 chargePaymentMode, getFeeOnMonthDay(), this.feeInterval, this.penalty, this.active, this.enableFreeWithdrawal,
                 this.freeWithdrawalFrequency, this.restartFrequency, this.restartFrequencyEnum, this.enablePaymentType, paymentTypeData,
-                this.minCap, this.maxCap, feeFrequencyType, accountData, taxGroupData, chargeInsuranceDetailData, this.getPercentageFromTable);
+                this.minCap, this.maxCap, feeFrequencyType, accountData, taxGroupData, chargeInsuranceDetailData,
+                this.getPercentageFromTable);
     }
 
     public Integer getChargePaymentMode() {

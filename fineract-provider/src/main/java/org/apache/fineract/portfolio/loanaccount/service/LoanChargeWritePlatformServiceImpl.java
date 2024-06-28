@@ -109,7 +109,6 @@ import org.apache.fineract.portfolio.loanaccount.domain.LoanOverdueInstallmentCh
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleInstallment;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleTransactionProcessorFactory;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanTrancheDisbursementCharge;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanTransaction;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionRelation;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionRelationTypeEnum;
@@ -211,7 +210,7 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
         LoanCharge loanCharge = null;
         LocalDate recalculateFrom = loan.fetchInterestRecalculateFromDate();
         if (chargeDefinition.isPercentageOfDisbursementAmount() && loan.isDisbursed()) {
-            //TODO: Replace with original code here. Removed for testing purposes
+            // TODO: Replace with original code here. Removed for testing purposes
         } else {
             loanCharge = loanChargeAssembler.createNewFromJson(loan, chargeDefinition, command);
             businessEventNotifierService.notifyPreBusinessEvent(new LoanAddChargeBusinessEvent(loanCharge));
