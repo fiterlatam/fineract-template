@@ -60,12 +60,7 @@ import org.apache.fineract.organisation.staff.service.StaffReadPlatformService;
 import org.apache.fineract.portfolio.address.data.AddressData;
 import org.apache.fineract.portfolio.address.service.AddressReadPlatformService;
 import org.apache.fineract.portfolio.client.api.ClientApiConstants;
-import org.apache.fineract.portfolio.client.data.ClientAdditionalFieldsData;
-import org.apache.fineract.portfolio.client.data.ClientCollateralManagementData;
-import org.apache.fineract.portfolio.client.data.ClientData;
-import org.apache.fineract.portfolio.client.data.ClientFamilyMembersData;
-import org.apache.fineract.portfolio.client.data.ClientNonPersonData;
-import org.apache.fineract.portfolio.client.data.ClientTimelineData;
+import org.apache.fineract.portfolio.client.data.*;
 import org.apache.fineract.portfolio.client.domain.Client;
 import org.apache.fineract.portfolio.client.domain.ClientEnumerations;
 import org.apache.fineract.portfolio.client.domain.ClientRepositoryWrapper;
@@ -930,6 +925,16 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
             return resultList.get(0);
         }
         return new ClientAdditionalFieldsData();
+    }
+
+    public List<ClienAvailableCupoFieldsData> retriveClientAvailableCupo(String nitId) {
+        final ClienAvailableCupoFieldsMapper rowMapper = new ClienAvailableCupoFieldsMapper();
+        final String sql = "SELECT " + rowMapper.schema() + " and ( cce.\"NIT\" = ? or ccp.\"Cedula\" = ? )";
+        List<ClienAvailableCupoFieldsData> resultList = this.jdbcTemplate.query(sql, rowMapper, nitId, nitId);
+        if (resultList.isEmpty()) {
+            throw new ClientNotFoundException("Client Not Available Cupo with NIT/Cedula " + nitId, nitId);
+        }
+        return resultList;
     }
 
 }
