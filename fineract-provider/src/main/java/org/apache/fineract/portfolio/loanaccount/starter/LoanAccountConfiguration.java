@@ -22,6 +22,9 @@ import org.apache.fineract.accounting.journalentry.service.JournalEntryWritePlat
 import org.apache.fineract.cob.service.LoanAccountLockService;
 import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformService;
 import org.apache.fineract.custom.infrastructure.channel.service.ChannelReadWritePlatformService;
+import org.apache.fineract.custom.portfolio.customcharge.service.CustomChargeEntityReadWritePlatformService;
+import org.apache.fineract.custom.portfolio.customcharge.service.CustomChargeTypeMapReadWritePlatformService;
+import org.apache.fineract.custom.portfolio.customcharge.service.CustomChargeTypeReadWritePlatformService;
 import org.apache.fineract.infrastructure.accountnumberformat.domain.AccountNumberFormatRepositoryWrapper;
 import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSettingsRepositoryWrapper;
 import org.apache.fineract.infrastructure.codes.domain.CodeValueRepositoryWrapper;
@@ -289,8 +292,11 @@ public class LoanAccountConfiguration {
     public LoanChargeAssembler loanChargeAssembler(
 
             FromJsonHelper fromApiJsonHelper, ChargeRepositoryWrapper chargeRepository, LoanChargeRepository loanChargeRepository,
-            LoanProductRepository loanProductRepository, ExternalIdFactory externalIdFactory) {
-        return new LoanChargeAssembler(fromApiJsonHelper, chargeRepository, loanChargeRepository, loanProductRepository, externalIdFactory);
+            LoanProductRepository loanProductRepository, ExternalIdFactory externalIdFactory,
+            CustomChargeEntityReadWritePlatformService customChargeService, CustomChargeTypeReadWritePlatformService customChargeTypeService,
+            CustomChargeTypeMapReadWritePlatformService customChargeTypeMapService) {
+        return new LoanChargeAssembler(fromApiJsonHelper, chargeRepository, loanChargeRepository, loanProductRepository,
+                externalIdFactory, customChargeService, customChargeTypeService, customChargeTypeMapService);
     }
 
     @Bean

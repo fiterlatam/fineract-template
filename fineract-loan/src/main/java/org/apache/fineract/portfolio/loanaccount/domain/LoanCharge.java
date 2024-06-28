@@ -148,6 +148,9 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
     @Column(name = "applicable_from_installment", nullable = true)
     private Integer applicableFromInstallment;
 
+    @Column(name = "is_get_percentage_from_table", nullable = false)
+    private boolean getPercentageAmountFromTable;
+
     protected LoanCharge() {
         //
     }
@@ -155,13 +158,14 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
     public LoanCharge(final Loan loan, final Charge chargeDefinition, final BigDecimal loanPrincipal, final BigDecimal amount,
             final ChargeTimeType chargeTime, final ChargeCalculationType chargeCalculation, final LocalDate dueDate,
             final ChargePaymentMode chargePaymentMode, final Integer numberOfRepayments, final BigDecimal loanCharge,
-            final ExternalId externalId) {
+            final ExternalId externalId, boolean getPercentageAmountFromTable) {
         this.loan = loan;
         this.charge = chargeDefinition;
         this.submittedOnDate = DateUtils.getBusinessLocalDate();
         this.penaltyCharge = chargeDefinition.isPenalty();
         this.minCap = chargeDefinition.getMinCap();
         this.maxCap = chargeDefinition.getMaxCap();
+        this.getPercentageAmountFromTable = getPercentageAmountFromTable;
 
         this.chargeTime = chargeDefinition.getChargeTimeType();
         if (chargeTime != null) {
@@ -1268,5 +1272,18 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
             installmentAmount = installmentAmount.subtract(difference);
         }
         return installmentAmount;
+    }
+
+    public BigDecimal calculateParentChargeAmountForInstallment(Set<LoanCharge> loanCharges, Integer installmentNumber, Money principalDisbursed, Integer numberOfInstallments, Money outstandingBalance) {
+        // First Identify the parent loan charge and then Calculate the installment charge for the parent Charge. This has already been calculated before when the parent charge was processed
+        // But we no longer have that value available when the percentage based charge is processed
+        BigDecimal parentChargeAmount = BigDecimal.ZERO;
+        for (LoanCharge parentCharge : loanCharges) {
+            if (parentCharge.getCharge().getId().equals(this.getCharge().getParentChargeId())) {
+                parentChargeAmount = parentCharge.calculateCustomFeeChargeToInstallment(installmentNumber,principalDisbursed, numberOfInstallments, outstandingBalance);
+                break;
+            }
+        }
+        return parentChargeAmount;
     }
 }

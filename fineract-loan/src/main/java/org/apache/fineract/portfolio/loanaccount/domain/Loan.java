@@ -45,21 +45,7 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Predicate;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.custom.portfolio.externalcharge.honoratio.domain.CustomChargeHonorarioMap;
@@ -342,7 +328,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     private Integer loanProductCounter;
 
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "loan", orphanRemoval = true, fetch = FetchType.LAZY)
-    private Set<LoanCharge> charges = new HashSet<>();
+    private Set<LoanCharge> charges = new LinkedHashSet<>();
 
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "loan", orphanRemoval = true, fetch = FetchType.LAZY)
     private Set<LoanTrancheCharge> trancheCharges = new HashSet<>();
@@ -2082,7 +2068,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                     externalId = ExternalId.generate();
                 }
                 final LoanCharge loanCharge = new LoanCharge(this, chargeDefinition, principal, null, null, null, expectedDisbursementDate,
-                        null, null, BigDecimal.ZERO, externalId);
+                        null, null, BigDecimal.ZERO, externalId, false);
                 LoanTrancheDisbursementCharge loanTrancheDisbursementCharge = new LoanTrancheDisbursementCharge(loanCharge,
                         disbursementDetails);
                 loanCharge.updateLoanTrancheDisbursementCharge(loanTrancheDisbursementCharge);
@@ -7223,7 +7209,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         // At the time of loan creation, "this.charges" will be null if no charges found in the request.
         // In that case, fetch loan (before commit) will return null for the charges.
         // Return empty set instead of null to avoid NPE
-        return Optional.ofNullable(this.charges).orElse(new HashSet<>());
+        return Optional.ofNullable(this.charges).orElse(new LinkedHashSet<>());
     }
 
     public boolean hasDelinquencyBucket() {

@@ -48,6 +48,7 @@ public class ChargeData implements Comparable<ChargeData>, Serializable {
     private final String name;
     private final boolean active;
     private final boolean penalty;
+    private final boolean getPercentageAmountFromTable;
     private final boolean freeWithdrawal;
     private final Integer freeWithdrawalChargeFrequency;
     private final Integer restartFrequency;
@@ -138,7 +139,7 @@ public class ChargeData implements Comparable<ChargeData>, Serializable {
                 savingsChargeCalculationTypeOptions, savingsChargeTimeTypeOptions, clientChargeCalculationTypeOptions,
                 clientChargeTimeTypeOptions, null, null, null, null, null, feeFrequencyOptions, account, incomeOrLiabilityAccountOptions,
                 taxGroupOptions, shareChargeCalculationTypeOptions, shareChargeTimeTypeOptions, accountMappingForChargeConfig,
-                expenseAccountOptions, assetAccountOptions, chargeInsuranceTypeOptions, null);
+                expenseAccountOptions, assetAccountOptions, chargeInsuranceTypeOptions, null, false);
     }
 
     public static ChargeData withTemplate(final ChargeData charge, final ChargeData template) {
@@ -153,7 +154,7 @@ public class ChargeData implements Comparable<ChargeData>, Serializable {
                 charge.minCap, charge.maxCap, charge.feeFrequency, template.feeFrequencyOptions, charge.incomeOrLiabilityAccount,
                 template.incomeOrLiabilityAccountOptions, template.taxGroupOptions, template.shareChargeCalculationTypeOptions,
                 template.shareChargeTimeTypeOptions, template.accountMappingForChargeConfig, template.expenseAccountOptions,
-                template.assetAccountOptions, template.chargeInsuranceTypeOptions, charge.chargeInsuranceDetailData);
+                template.assetAccountOptions, template.chargeInsuranceTypeOptions, charge.chargeInsuranceDetailData, charge.getPercentageAmountFromTable);
         ret.setGraceOnChargePeriodEnum(charge.getGraceOnChargePeriodEnum());
         ret.setGraceOnChargePeriodAmount(charge.getGraceOnChargePeriodAmount());
         ret.setParentChargeId(charge.getParentChargeId());
@@ -172,11 +173,11 @@ public class ChargeData implements Comparable<ChargeData>, Serializable {
             final Integer restartFrequencyEnum, final boolean isPaymentType, final PaymentTypeData paymentTypeOptions,
             final BigDecimal minCap, final BigDecimal maxCap, final EnumOptionData feeFrequency, final GLAccountData accountData,
             TaxGroupData taxGroupData, Short graceOnChargePeriodEnum, Long graceOnChargePeriodAmount, Long parentChargeId,
-            ChargeInsuranceDetailData chargeInsuranceDetailData) {
+            ChargeInsuranceDetailData chargeInsuranceDetailData, boolean getPercentageAmountFromTable) {
         ChargeData ret = instance(id, name, amount, currency, chargeTimeType, chargeAppliesTo, chargeCalculationType, chargePaymentMode,
                 feeOnMonthDay, feeInterval, penalty, active, freeWithdrawal, freeWithdrawalChargeFrequency, restartFrequency,
                 restartFrequencyEnum, isPaymentType, paymentTypeOptions, minCap, maxCap, feeFrequency, accountData, taxGroupData,
-                chargeInsuranceDetailData);
+                chargeInsuranceDetailData, getPercentageAmountFromTable);
         ret.setGraceOnChargePeriodEnum(graceOnChargePeriodEnum);
         ret.setGraceOnChargePeriodAmount(graceOnChargePeriodAmount);
         ret.setParentChargeId(parentChargeId);
@@ -189,7 +190,7 @@ public class ChargeData implements Comparable<ChargeData>, Serializable {
             final boolean active, final boolean freeWithdrawal, final Integer freeWithdrawalChargeFrequency, final Integer restartFrequency,
             final Integer restartFrequencyEnum, final boolean isPaymentType, final PaymentTypeData paymentTypeOptions,
             final BigDecimal minCap, final BigDecimal maxCap, final EnumOptionData feeFrequency, final GLAccountData accountData,
-            TaxGroupData taxGroupData, ChargeInsuranceDetailData chargeInsuranceDetailData) {
+            TaxGroupData taxGroupData, ChargeInsuranceDetailData chargeInsuranceDetailData, boolean getPercentageAmountFromTable) {
 
         final Collection<CurrencyData> currencyOptions = null;
         final List<EnumOptionData> chargeCalculationTypeOptions = null;
@@ -219,7 +220,7 @@ public class ChargeData implements Comparable<ChargeData>, Serializable {
                 clientChargeTimeTypeOptions, feeOnMonthDay, feeInterval, minCap, maxCap, feeFrequency, feeFrequencyOptions, accountData,
                 incomeOrLiabilityAccountOptions, taxGroupOptions, shareChargeCalculationTypeOptions, shareChargeTimeTypeOptions,
                 accountMappingForChargeConfig, expenseAccountOptions, assetAccountOptions, chargeInsuranceTypeOptions,
-                chargeInsuranceDetailData);
+                chargeInsuranceDetailData, getPercentageAmountFromTable);
     }
 
     public static ChargeData lookup(final Long id, final String name, final boolean isPenalty) {
@@ -274,7 +275,7 @@ public class ChargeData implements Comparable<ChargeData>, Serializable {
                 clientChargeTimeTypeOptions, feeOnMonthDay, feeInterval, minCap, maxCap, feeFrequency, feeFrequencyOptions, account,
                 incomeOrLiabilityAccountOptions, taxGroupOptions, shareChargeCalculationTypeOptions, shareChargeTimeTypeOptions,
                 accountMappingForChargeConfig, expenseAccountOptions, assetAccountOptions, chargeInsuranceTypeOptions,
-                chargeInsuranceDetailData1);
+                chargeInsuranceDetailData1, false);
     }
 
     private ChargeData(final Long id, final String name, final BigDecimal amount, final CurrencyData currency,
@@ -294,7 +295,7 @@ public class ChargeData implements Comparable<ChargeData>, Serializable {
             final List<EnumOptionData> shareChargeCalculationTypeOptions, final List<EnumOptionData> shareChargeTimeTypeOptions,
             final String accountMappingForChargeConfig, final List<GLAccountData> expenseAccountOptions,
             final List<GLAccountData> assetAccountOptions, List<EnumOptionData> chargeInsuranceTypeOptions,
-            ChargeInsuranceDetailData chargeInsuranceDetailData) {
+            ChargeInsuranceDetailData chargeInsuranceDetailData, boolean getPercentageAmountFromTable) {
         this.id = id;
         this.name = name;
         this.amount = amount;
@@ -339,6 +340,7 @@ public class ChargeData implements Comparable<ChargeData>, Serializable {
         this.expenseAccountOptions = expenseAccountOptions;
         this.chargeInsuranceTypeOptions = chargeInsuranceTypeOptions;
         this.chargeInsuranceDetailData = chargeInsuranceDetailData;
+        this.getPercentageAmountFromTable = getPercentageAmountFromTable;
     }
 
     @Override
