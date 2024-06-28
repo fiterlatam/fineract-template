@@ -49,7 +49,6 @@ import org.apache.fineract.portfolio.loanproduct.domain.InterestCalculationPerio
 import org.apache.fineract.portfolio.loanproduct.domain.InterestMethod;
 import org.apache.fineract.portfolio.loanproduct.domain.InterestRecalculationCompoundingMethod;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanPreClosureInterestCalculationStrategy;
-import org.apache.fineract.portfolio.loanproduct.domain.LoanProductOwnerType;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductValueConditionType;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanRescheduleStrategyMethod;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanTransactionProcessingStrategy;
@@ -220,11 +219,5 @@ public class LoanDropdownReadPlatformServiceImpl implements LoanDropdownReadPlat
                 preCloseInterestCalculationStrategy(LoanPreClosureInterestCalculationStrategy.TILL_PRE_CLOSURE_DATE),
                 preCloseInterestCalculationStrategy(LoanPreClosureInterestCalculationStrategy.TILL_REST_FREQUENCY_DATE));
         return preCloseInterestCalculationStrategyOptions;
-    }
-
-    @Override
-    public List<EnumOptionData> retrieveLoanProductOwnerTypes() {
-        return Arrays.asList(LoanEnumerations.loanProductOwnerType(LoanProductOwnerType.GROUP),
-                LoanEnumerations.loanProductOwnerType(LoanProductOwnerType.INDIVIDUAL));
     }
 }

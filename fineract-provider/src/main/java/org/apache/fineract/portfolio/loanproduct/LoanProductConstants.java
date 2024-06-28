@@ -53,9 +53,6 @@ public interface LoanProductConstants {
     String INTEREST_RATE_VALUE_USAGE_CONDITION_PARAM_NAME = "interestRateValueUsageCondition";
     String INTEREST_RATE_CYCLE_NUMBER_PARAM_NAME = "interestRateCycleNumber";
 
-    String LIMIT_OF_DAYS_FOR_ADDON = "daysLimitAddOn";
-    Integer DEFAULT_LIMIT_OF_DAYS_FOR_ADDON = Integer.valueOf(35);
-
     String PRINCIPAL = "principal";
     String MIN_PRINCIPAL = "minPrincipal";
     String MAX_PRINCIPAL = "maxPrincipalValue";
@@ -144,9 +141,5 @@ public interface LoanProductConstants {
     String ALLOW_APPROVED_DISBURSED_AMOUNTS_OVER_APPLIED = "allowApprovedDisbursedAmountsOverApplied";
     String OVER_APPLIED_CALCULATION_TYPE = "overAppliedCalculationType";
     String OVER_APPLIED_NUMBER = "overAppliedNumber";
-
-    String ADD_NEW_CYCLES_ENABLED = "addNewCyclesEnabled";
-    String LOAN_PRODUCT_OWNER_TYPE = "ownerType";
-    String PAYMENT_TOLERANCE_LIMIT = "paymentToleranceLimit";
 
 }

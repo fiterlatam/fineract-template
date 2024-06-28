@@ -18,17 +18,11 @@
  */
 package org.apache.fineract.portfolio.group.service;
 
-import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
-import java.time.LocalTime;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
-import org.apache.fineract.organisation.centerGroup.service.GroupLocationEnumerations;
-import org.apache.fineract.organisation.prequalification.domain.PreQualificationsEnumerations;
 import org.apache.fineract.portfolio.client.domain.ClientEnumerations;
 import org.apache.fineract.portfolio.group.data.GroupGeneralData;
 import org.apache.fineract.portfolio.group.data.GroupTimelineData;
@@ -64,27 +58,7 @@ public final class AllGroupTypesDataMapper implements RowMapper<GroupGeneralData
         sqlBuilder.append("acu.lastname as activatedByLastname, ");
 
         sqlBuilder.append("g.hierarchy as hierarchy, ");
-        sqlBuilder.append("g.level_id as groupLevel, ");
-
-        sqlBuilder.append("g.legacy_number as legacyNumber, ");
-        sqlBuilder.append("g.latitude as latitude, g.longitude as longitude, ");
-        sqlBuilder.append("g.formation_date as formationDate, g.responsible_user_id as responsibleUserId, ");
-        sqlBuilder.append("ru.firstname as userFirstName, ru.lastname as userLastName, ");
-        sqlBuilder.append("g.size as size, g.created_date as createdDate, ");
-        sqlBuilder.append("g.meeting_start_time as meetingStartTime, g.meeting_end_time as meetingEndTime, ");
-
-        sqlBuilder.append("substring(g.display_name, 1, 5) as centerCodeName, g.portfolio_id as portfolioId, ");
-        sqlBuilder.append("g.legacy_number as legacyNumber, g.city_id as cityId, cvCity.code_value as cityValue, ");
-        sqlBuilder.append("g.state_province_id as stateId, cvState.code_value as stateValue, g.group_location as group_location, ");
-        sqlBuilder.append("g.distance_from_agency as distance, ");
-        sqlBuilder.append("g.type_id as typeId, cvType.code_value as typeValue, g.created_date as createdDate, ");
-        sqlBuilder.append("g.meeting_start_date as meetingStart, g.meeting_end_date as meetingEnd, ");
-        sqlBuilder.append(
-                "g.meeting_day as meetingDay,pgMeetingDay.code_value as centerMeetingDay, cvMeetingDay.code_value as meetingDayValue, ");
-        sqlBuilder.append("cvMeetingDay.order_position as meetingDayOrderPosition, g.meeting_start_time as meetingStartTime, ");
-        sqlBuilder.append("g.meeting_end_time as meetingEndTime, g.reference_point as referencePoint, ");
-        sqlBuilder.append("prequalGroup.prequalification_number as prequalificationNumber, "
-                + "prequalGroup.status as prequalificationStatus, g.prequalification_id as prequalificationId ");
+        sqlBuilder.append("g.level_id as groupLevel ");
         sqlBuilder.append("from m_group g ");
         sqlBuilder.append("join m_office o on o.id = g.office_id ");
         sqlBuilder.append("left join m_staff s on s.id = g.staff_id ");
@@ -92,14 +66,6 @@ public final class AllGroupTypesDataMapper implements RowMapper<GroupGeneralData
         sqlBuilder.append("left join m_appuser sbu on sbu.id = g.submittedon_userid ");
         sqlBuilder.append("left join m_appuser acu on acu.id = g.activatedon_userid ");
         sqlBuilder.append("left join m_appuser clu on clu.id = g.closedon_userid ");
-        sqlBuilder.append("left join m_appuser ru on ru.id = g.responsible_user_id ");
-        sqlBuilder.append("left join m_portfolio AS p ON p.id = g.portfolio_id ");
-        sqlBuilder.append("left join m_code_value cvCity on g.city_id = cvCity.id ");
-        sqlBuilder.append("left join m_code_value cvState on g.state_province_id = cvState.id ");
-        sqlBuilder.append("left join m_code_value cvType on g.type_id = cvType.id ");
-        sqlBuilder.append("left join m_code_value cvMeetingDay on g.meeting_day = cvMeetingDay.id ");
-        sqlBuilder.append("left join m_code_value pgMeetingDay on pg.meeting_day = pgMeetingDay.id ");
-        sqlBuilder.append("left join m_prequalification_group prequalGroup on g.prequalification_id = prequalGroup.id ");
 
         this.schemaSql = sqlBuilder.toString();
     }
@@ -143,103 +109,11 @@ public final class AllGroupTypesDataMapper implements RowMapper<GroupGeneralData
         final String activatedByFirstname = rs.getString("activatedByFirstname");
         final String activatedByLastname = rs.getString("activatedByLastname");
 
-        final Long legacyNumber = rs.getLong("legacyNumber");
-        final BigDecimal latitude = rs.getBigDecimal("latitude");
-        final BigDecimal longitude = rs.getBigDecimal("longitude");
-        final LocalDate formationDate = JdbcSupport.getLocalDate(rs, "formationDate");
-        final long responsibleUserId = rs.getLong("responsibleUserId");
-        final Integer size = rs.getInt("size");
-        final LocalDate createdDate = JdbcSupport.getLocalDate(rs, "createdDate");
-        final LocalTime meetingStartTime = JdbcSupport.getLocalTime(rs, "meetingStartTime");
-        final LocalTime meetingEndTime = JdbcSupport.getLocalTime(rs, "meetingEndTime");
-
-        final Long portfolioId = rs.getLong("portfolioId");
-        final long cityId = rs.getLong("cityId");
-        final String cityValue = rs.getString("cityValue");
-        final CodeValueData city = CodeValueData.instance(cityId, cityValue);
-
-        final long stateId = rs.getLong("stateId");
-        final String stateValue = rs.getString("stateValue");
-        final CodeValueData state = CodeValueData.instance(stateId, stateValue);
-
-        Integer distance = rs.getInt("distance");
-        distance = rs.wasNull() ? null : distance;
-
-        final Integer groupLocationId = rs.getInt("group_location");
-
-        EnumOptionData groupLocation = null;
-        if (groupLocationId != null) {
-            groupLocation = GroupLocationEnumerations.groupLocationsOptionData(groupLocationId);
-        }
-
-        final long typeId = rs.getLong("typeId");
-        final String typeValue = rs.getString("typeValue");
-        final CodeValueData type = CodeValueData.instance(typeId, typeValue);
-
-        final int meetingStart = rs.getInt("meetingStart");
-        final int meetingEnd = rs.getInt("meetingEnd");
-        final int meetingDay = rs.getInt("meetingDay");
-        String meetingDayValue = rs.getString("meetingDayValue");
-        if (StringUtils.isBlank(meetingDayValue)) {
-            meetingDayValue = rs.getString("centerMeetingDay");
-        }
-        final String referencePoint = rs.getString("referencePoint");
-        final String prequalificationNumber = rs.getString("prequalificationNumber");
-        final Long prequalificationId = rs.getLong("prequalificationId");
-        final Long prequalificationStatusId = rs.getLong("prequalificationStatus");
-        EnumOptionData prequalificationStatus = null;
-        if (prequalificationStatusId != null) {
-            prequalificationStatus = PreQualificationsEnumerations.status(prequalificationStatusId.intValue());
-        }
-
         final GroupTimelineData timeline = new GroupTimelineData(submittedOnDate, submittedByUsername, submittedByFirstname,
                 submittedByLastname, activationDate, activatedByUsername, activatedByFirstname, activatedByLastname, closedOnDate,
                 closedByUsername, closedByFirstname, closedByLastname);
 
-        GroupGeneralData ret = GroupGeneralData.instance(id, accountNo, name, externalId, status, activationDate, officeId, officeName,
-                centerId, centerName, staffId, staffName, hierarchy, groupLevel, timeline, meetingStartTime, meetingEndTime);
-
-        // set the remaining fields for group general data
-        ret.setLegacyNumber(legacyNumber);
-        ret.setLatitude(latitude);
-        ret.setLongitude(longitude);
-        ret.setFormationDate(formationDate);
-        ret.setResponsibleUserId(responsibleUserId);
-        ret.setSize(size);
-        ret.setCreatedDate(createdDate);
-        ret.setMeetingStartTime(meetingStartTime);
-        ret.setMeetingEndTime(meetingEndTime);
-        ret.setPortfolioCenterId(centerId);
-        ret.setGroupLocation(groupLocation);
-
-        ret.setPortfolioId(portfolioId);
-        ret.setCity(city);
-        ret.setState(state);
-        ret.setType(type);
-        ret.setDistance(distance);
-        ret.setMeetingStart(meetingStart);
-        ret.setMeetingEnd(meetingEnd);
-        ret.setMeetingDay(meetingDay);
-        ret.setMeetingDayName(meetingDayValue);
-        ret.setReferencePoint(referencePoint);
-        ret.setPrequalificationNumber(prequalificationNumber);
-        ret.setPrequalificationId(prequalificationId);
-        ret.setPrequalificationStatus(prequalificationStatus);
-        ret.setMeetingFrequencyRange(resolveMeetingFrequencyRange(meetingStart, meetingEnd));
-        return ret;
-    }
-
-    private Integer resolveMeetingFrequencyRange(int meetingStart, int meetingEnd) {
-        if (meetingEnd >= 1 && meetingEnd <= 7) {
-            return 1;
-        } else if (meetingStart >= 8 && meetingEnd <= 14) {
-            return 2;
-        } else if (meetingStart >= 15 && meetingEnd <= 21) {
-            return 3;
-        } else if (meetingStart >= 22 && meetingEnd <= 28) {
-            return 4;
-        } else {
-            return null;
-        }
+        return GroupGeneralData.instance(id, accountNo, name, externalId, status, activationDate, officeId, officeName, centerId,
+                centerName, staffId, staffName, hierarchy, groupLevel, timeline);
     }
 }

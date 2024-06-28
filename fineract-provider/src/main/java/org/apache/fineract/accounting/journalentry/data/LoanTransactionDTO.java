@@ -56,7 +56,4 @@ public class LoanTransactionDTO {
 
     @Setter
     private boolean isLoanToLoanTransfer;
-
-    @Setter
-    private Long glAccountId;
 }

@@ -195,30 +195,6 @@ public class LoanProduct extends AbstractPersistableCustom {
     @Column(name = "over_applied_number", nullable = true)
     private Integer overAppliedNumber;
 
-    @Column(name = "age_limit_warning", nullable = true)
-    private Integer ageLimitWarning;
-
-    @Column(name = "age_limit_block", nullable = true)
-    private Integer ageLimitBlock;
-
-    @Column(name = "owner_type_enum", nullable = false)
-    private Integer ownerType;
-
-    @Column(name = "add_new_cycles_enabled", nullable = false)
-    private boolean addNewCycledEnabled;
-
-    @Column(name = "limit_of_days_for_addon", nullable = false)
-    private Integer daysLimitAddOn;
-
-    @Column(name = "required_guarantee_percent", nullable = false)
-    private BigDecimal requiredGuaranteePercent;
-
-    @Column(name = "payment_tolerance_limit", nullable = false)
-    private BigDecimal paymentToleranceLimit;
-
-    @Column(name = "required_committee_approval")
-    private Boolean requireCommitteeApproval;
-
     public static LoanProduct assembleFromJson(final Fund fund, final LoanTransactionProcessingStrategy loanTransactionProcessingStrategy,
             final List<Charge> productCharges, final JsonCommand command, final AprCalculator aprCalculator, FloatingRate floatingRate,
             final List<Rate> productRates) {
@@ -234,11 +210,6 @@ public class LoanProduct extends AbstractPersistableCustom {
         final BigDecimal principal = command.bigDecimalValueOfParameterNamed("principal");
         final BigDecimal minPrincipal = command.bigDecimalValueOfParameterNamed("minPrincipal");
         final BigDecimal maxPrincipal = command.bigDecimalValueOfParameterNamed("maxPrincipal");
-        final Integer ageLimitWarning = command.integerValueOfParameterNamed("ageLimitWarning");
-        final Integer ageLimitBlock = command.integerValueOfParameterNamed("ageLimitBlock");
-        final Integer daysLimitAddOn = command.integerValueOfParameterNamed("daysLimitAddOn");
-        final BigDecimal requiredGuaranteePercent = command.bigDecimalValueOfParameterNamed("guaranteePercentage");
-        final Boolean requireCommitteeApproval = command.booleanObjectValueOfParameterNamed("requireCommitteeApproval");
 
         final InterestMethod interestMethod = InterestMethod.fromInt(command.integerValueOfParameterNamed("interestType"));
         final InterestCalculationPeriodMethod interestCalculationPeriodMethod = InterestCalculationPeriodMethod
@@ -399,14 +370,6 @@ public class LoanProduct extends AbstractPersistableCustom {
 
         final Integer overAppliedNumber = command.integerValueOfParameterNamed(LoanProductConstants.OVER_APPLIED_NUMBER);
 
-        boolean addNewCyclesEnabled = true;
-        if (command.parameterExists(LoanProductConstants.ADD_NEW_CYCLES_ENABLED)) {
-            addNewCyclesEnabled = command.booleanPrimitiveValueOfParameterNamed(LoanProductConstants.ADD_NEW_CYCLES_ENABLED);
-        }
-
-        final LoanProductOwnerType loanProductOwnerType = LoanProductOwnerType
-                .fromInt(command.integerValueOfParameterNamed(LoanProductConstants.LOAN_PRODUCT_OWNER_TYPE));
-        final BigDecimal paymentToleranceLimit = command.bigDecimalValueOfParameterNamed(LoanProductConstants.PAYMENT_TOLERANCE_LIMIT);
         return new LoanProduct(fund, loanTransactionProcessingStrategy, name, shortName, description, currency, principal, minPrincipal,
                 maxPrincipal, interestRatePerPeriod, minInterestRatePerPeriod, maxInterestRatePerPeriod, interestFrequencyType,
                 annualInterestRate, interestMethod, interestCalculationPeriodMethod, allowPartialPeriodInterestCalcualtion, repaymentEvery,
@@ -422,9 +385,7 @@ public class LoanProduct extends AbstractPersistableCustom {
                 defaultDifferentialLendingRate, isFloatingInterestRateCalculationAllowed, isVariableInstallmentsAllowed,
                 minimumGapBetweenInstallments, maximumGapBetweenInstallments, syncExpectedWithDisbursementDate, canUseForTopup,
                 isEqualAmortization, productRates, fixedPrincipalPercentagePerInstallment, disallowExpectedDisbursements,
-                allowApprovedDisbursedAmountsOverApplied, overAppliedCalculationType, overAppliedNumber, ageLimitWarning, ageLimitBlock,
-                addNewCyclesEnabled, loanProductOwnerType, daysLimitAddOn, requiredGuaranteePercent, paymentToleranceLimit,
-                requireCommitteeApproval);
+                allowApprovedDisbursedAmountsOverApplied, overAppliedCalculationType, overAppliedNumber);
 
     }
 
@@ -661,9 +622,7 @@ public class LoanProduct extends AbstractPersistableCustom {
             final boolean syncExpectedWithDisbursementDate, final boolean canUseForTopup, final boolean isEqualAmortization,
             final List<Rate> rates, final BigDecimal fixedPrincipalPercentagePerInstallment, final boolean disallowExpectedDisbursements,
             final boolean allowApprovedDisbursedAmountsOverApplied, final String overAppliedCalculationType,
-            final Integer overAppliedNumber, final Integer ageLimitWarning, final Integer ageLimitBlock, final boolean addNewCyclesEnabled,
-            final LoanProductOwnerType loanProductOwnerType, final Integer daysLimitAddOn, BigDecimal requiredGuaranteePercent,
-            final BigDecimal paymentToleranceLimit, Boolean requireCommitteeApproval) {
+            final Integer overAppliedNumber) {
         this.fund = fund;
         this.transactionProcessingStrategy = transactionProcessingStrategy;
         this.name = name.trim();
@@ -741,17 +700,6 @@ public class LoanProduct extends AbstractPersistableCustom {
         this.allowApprovedDisbursedAmountsOverApplied = allowApprovedDisbursedAmountsOverApplied;
         this.overAppliedCalculationType = overAppliedCalculationType;
         this.overAppliedNumber = overAppliedNumber;
-        this.ageLimitBlock = ageLimitBlock;
-        this.ageLimitWarning = ageLimitWarning;
-        this.addNewCycledEnabled = addNewCyclesEnabled;
-        this.daysLimitAddOn = daysLimitAddOn;
-        this.requiredGuaranteePercent = requiredGuaranteePercent;
-        this.paymentToleranceLimit = paymentToleranceLimit;
-        this.requireCommitteeApproval = requireCommitteeApproval;
-
-        if (loanProductOwnerType != null) {
-            this.ownerType = loanProductOwnerType.getValue();
-        }
 
         if (rates != null) {
             this.rates = rates;
@@ -984,13 +932,6 @@ public class LoanProduct extends AbstractPersistableCustom {
             final boolean newValue = command.booleanPrimitiveValueOfParameterNamed(includeInBorrowerCycleParamName);
             actualChanges.put(includeInBorrowerCycleParamName, newValue);
             this.includeInBorrowerCycle = newValue;
-        }
-
-        final String requireCommitteeApproval = "requireCommitteeApproval";
-        if (command.isChangeInBooleanParameterNamed(requireCommitteeApproval, this.requireCommitteeApproval)) {
-            final boolean newValue = command.booleanPrimitiveValueOfParameterNamed(requireCommitteeApproval);
-            actualChanges.put(requireCommitteeApproval, newValue);
-            this.requireCommitteeApproval = newValue;
         }
 
         if (command.isChangeInBooleanParameterNamed(LoanProductConstants.USE_BORROWER_CYCLE_PARAMETER_NAME, this.useBorrowerCycle)) {
@@ -1231,12 +1172,6 @@ public class LoanProduct extends AbstractPersistableCustom {
             this.fixedPrincipalPercentagePerInstallment = newValue;
         }
 
-        if (command.isChangeInBigDecimalParameterNamed(LoanProductConstants.PAYMENT_TOLERANCE_LIMIT, this.paymentToleranceLimit)) {
-            BigDecimal newValue = command.bigDecimalValueOfParameterNamed(LoanProductConstants.PAYMENT_TOLERANCE_LIMIT);
-            actualChanges.put(LoanProductConstants.PAYMENT_TOLERANCE_LIMIT, newValue);
-            this.paymentToleranceLimit = newValue;
-        }
-
         if (command.isChangeInBooleanParameterNamed(LoanProductConstants.DISALLOW_EXPECTED_DISBURSEMENTS,
                 this.disallowExpectedDisbursements)) {
             final boolean newValue = command.booleanPrimitiveValueOfParameterNamed(LoanProductConstants.DISALLOW_EXPECTED_DISBURSEMENTS);
@@ -1263,46 +1198,6 @@ public class LoanProduct extends AbstractPersistableCustom {
             actualChanges.put(LoanProductConstants.OVER_APPLIED_NUMBER, newValue);
             actualChanges.put("locale", localeAsInput);
             this.overAppliedNumber = newValue;
-        }
-
-        final String ageLimitWarning = "ageLimitWarning";
-        if (command.isChangeInIntegerParameterNamed(ageLimitWarning, this.ageLimitWarning)) {
-            final Integer newValue = command.integerValueOfParameterNamed(ageLimitWarning);
-            actualChanges.put(ageLimitWarning, newValue);
-            this.ageLimitWarning = newValue;
-        }
-
-        final String ageLimitBlock = "ageLimitBlock";
-        if (command.isChangeInIntegerParameterNamed(ageLimitBlock, this.ageLimitBlock)) {
-            final Integer newValue = command.integerValueOfParameterNamed(ageLimitBlock);
-            actualChanges.put(ageLimitBlock, newValue);
-            this.ageLimitBlock = newValue;
-        }
-
-        final String daysLimitAddOn = "daysLimitAddOn";
-        if (command.isChangeInIntegerParameterNamed(daysLimitAddOn, this.daysLimitAddOn)) {
-            final Integer newValue = command.integerValueOfParameterNamed(daysLimitAddOn);
-            actualChanges.put(daysLimitAddOn, newValue);
-            this.daysLimitAddOn = newValue;
-        }
-
-        final String guaranteePercentage = "guaranteePercentage";
-        if (command.isChangeInBigDecimalParameterNamed(guaranteePercentage, this.requiredGuaranteePercent)) {
-            final BigDecimal newValue = command.bigDecimalValueOfParameterNamed(guaranteePercentage);
-            actualChanges.put(guaranteePercentage, newValue);
-            this.requiredGuaranteePercent = newValue;
-        }
-
-        if (command.isChangeInIntegerParameterNamed(LoanProductConstants.LOAN_PRODUCT_OWNER_TYPE, this.ownerType)) {
-            final Integer newValue = command.integerValueOfParameterNamed(LoanProductConstants.LOAN_PRODUCT_OWNER_TYPE);
-            actualChanges.put(LoanProductConstants.LOAN_PRODUCT_OWNER_TYPE, newValue);
-            this.ownerType = newValue;
-        }
-
-        if (command.isChangeInBooleanParameterNamed(LoanProductConstants.ADD_NEW_CYCLES_ENABLED, this.addNewCycledEnabled)) {
-            final boolean newValue = command.booleanObjectValueOfParameterNamed(LoanProductConstants.ADD_NEW_CYCLES_ENABLED);
-            actualChanges.put(LoanProductConstants.ADD_NEW_CYCLES_ENABLED, newValue);
-            this.addNewCycledEnabled = newValue;
         }
 
         return actualChanges;
@@ -1571,10 +1466,6 @@ public class LoanProduct extends AbstractPersistableCustom {
         return this.loanProductGuaranteeDetails;
     }
 
-    public String getName() {
-        return name;
-    }
-
     public String getShortName() {
         return this.shortName;
     }
@@ -1687,23 +1578,4 @@ public class LoanProduct extends AbstractPersistableCustom {
         this.loanProducTrancheDetails = loanProducTrancheDetails;
     }
 
-    public Integer getOwnerType() {
-        return ownerType;
-    }
-
-    public BigDecimal getPaymentToleranceLimit() {
-        return this.paymentToleranceLimit;
-    }
-
-    public void setPaymentToleranceLimit(BigDecimal paymentToleranceLimit) {
-        this.paymentToleranceLimit = paymentToleranceLimit;
-    }
-
-    public Boolean getRequireCommitteeApproval() {
-        return requireCommitteeApproval;
-    }
-
-    public void setRequireCommitteeApproval(Boolean requireCommitteeApproval) {
-        this.requireCommitteeApproval = requireCommitteeApproval;
-    }
 }

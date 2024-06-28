@@ -107,7 +107,7 @@ public final class UserDataValidator {
 
         if (this.fromApiJsonHelper.parameterExists("staffId", element)) {
             final Long staffId = this.fromApiJsonHelper.extractLongNamed("staffId", element);
-            baseDataValidator.reset().parameter("staffId").value(staffId).notNull();
+            baseDataValidator.reset().parameter("staffId").value(staffId).notNull().integerGreaterThanZero();
         }
 
         if (this.fromApiJsonHelper.parameterExists(AppUserConstants.PASSWORD_NEVER_EXPIRES, element)) {
@@ -141,11 +141,6 @@ public final class UserDataValidator {
 
         final String[] roles = this.fromApiJsonHelper.extractArrayNamed("roles", element);
         baseDataValidator.reset().parameter("roles").value(roles).arrayNotEmpty();
-
-        if (roles.length > 1) {
-            baseDataValidator.reset().parameter("roles").failWithCode("not.supported.more.than.one.role",
-                    "role parameter only one role is supported");
-        }
 
         throwExceptionIfValidationWarningsExist(dataValidationErrors);
     }
@@ -202,11 +197,6 @@ public final class UserDataValidator {
         if (this.fromApiJsonHelper.parameterExists("roles", element)) {
             final String[] roles = this.fromApiJsonHelper.extractArrayNamed("roles", element);
             baseDataValidator.reset().parameter("roles").value(roles).arrayNotEmpty();
-
-            if (roles.length > 1) {
-                baseDataValidator.reset().parameter("roles").failWithCode("not.supported.more.than.one.role",
-                        "role parameter only one role is supported");
-            }
         }
 
         if (this.fromApiJsonHelper.parameterExists("password", element)) {

@@ -29,7 +29,6 @@ public class LoanApprovalData {
     private final LocalDate approvalDate;
     private final BigDecimal approvalAmount;
     private final BigDecimal netDisbursalAmount;
-    private final BigDecimal approvedLoanAmount;
 
     // import fields
     private LocalDate approvedOnDate;
@@ -38,12 +37,11 @@ public class LoanApprovalData {
     private String locale;
     private transient Integer rowIndex;
 
-    public static LoanApprovalData importInstance(LocalDate approvedOnDate, Integer rowIndex, String locale, String dateFormat,
-            BigDecimal approvedLoanAmount) {
-        return new LoanApprovalData(approvedOnDate, rowIndex, locale, dateFormat, approvedLoanAmount);
+    public static LoanApprovalData importInstance(LocalDate approvedOnDate, Integer rowIndex, String locale, String dateFormat) {
+        return new LoanApprovalData(approvedOnDate, rowIndex, locale, dateFormat);
     }
 
-    private LoanApprovalData(LocalDate approvedOnDate, Integer rowIndex, String locale, String dateFormat, BigDecimal approvedLoanAmount) {
+    private LoanApprovalData(LocalDate approvedOnDate, Integer rowIndex, String locale, String dateFormat) {
         this.approvedOnDate = approvedOnDate;
         this.rowIndex = rowIndex;
         this.dateFormat = dateFormat;
@@ -52,15 +50,12 @@ public class LoanApprovalData {
         this.approvalAmount = null;
         this.approvalDate = null;
         this.netDisbursalAmount = null;
-        this.approvedLoanAmount = approvedLoanAmount;
     }
 
-    public LoanApprovalData(final BigDecimal approvalAmount, final LocalDate approvalDate, final BigDecimal netDisbursalAmount,
-            BigDecimal approvedLoanAmount) {
+    public LoanApprovalData(final BigDecimal approvalAmount, final LocalDate approvalDate, final BigDecimal netDisbursalAmount) {
         this.approvalDate = approvalDate;
         this.approvalAmount = approvalAmount;
         this.netDisbursalAmount = netDisbursalAmount;
-        this.approvedLoanAmount = approvedLoanAmount;
     }
 
     public LocalDate getApprovalDate() {

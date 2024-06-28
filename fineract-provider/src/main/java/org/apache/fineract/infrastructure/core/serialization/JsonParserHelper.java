@@ -786,14 +786,4 @@ public class JsonParserHelper {
         }
         return clientApplicationLocale;
     }
-
-    public String extractLocaleValueAsString(final JsonObject object) {
-        String locale = null;
-        if (object.has("locale") && object.get("locale").isJsonPrimitive()) {
-            final JsonPrimitive primitive = object.get("locale").getAsJsonPrimitive();
-            locale = primitive.getAsString();
-
-        }
-        return locale;
-    }
 }

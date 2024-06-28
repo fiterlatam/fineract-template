@@ -22,6 +22,7 @@ import java.io.ByteArrayOutputStream;
 import java.util.Collection;
 import java.util.Locale;
 import java.util.Map;
+import javax.ws.rs.core.StreamingOutput;
 import org.apache.fineract.infrastructure.dataqueries.data.GenericResultsetData;
 import org.apache.fineract.infrastructure.dataqueries.data.ReportData;
 import org.apache.fineract.infrastructure.dataqueries.data.ReportParameterData;
@@ -41,8 +42,7 @@ public interface ReadReportingService {
 
     String retrieveReportPDF(String name, String type, Map<String, String> extractedQueryParams, boolean isSelfServiceUserReport);
 
-    String retrieveReportCSV(String reportName, String reportType, Map<String, String> extractedQueryParams,
-            boolean isSelfServiceUserReport);
+    StreamingOutput retrieveReportCSV(String name, String type, Map<String, String> extractedQueryParams, boolean isSelfServiceUserReport);
 
     GenericResultsetData retrieveGenericResultset(String name, String type, Map<String, String> extractedQueryParams,
             boolean isSelfServiceUserReport);

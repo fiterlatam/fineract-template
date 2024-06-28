@@ -35,8 +35,6 @@ public interface CenterReadPlatformService {
 
     Collection<CenterData> retrieveAllForDropdown(Long officeId);
 
-    Collection<CenterData> retrieveByOfficeHierarchy(final String hierarchy, final Long agencyId);
-
     Page<CenterData> retrievePagedAll(SearchParameters searchParameters, PaginationParameters parameters);
 
     Collection<CenterData> retrieveAll(SearchParameters searchParameters, PaginationParameters parameters);
@@ -48,6 +46,4 @@ public interface CenterReadPlatformService {
     CenterData retrieveCenterWithClosureReasons();
 
     Collection<StaffCenterData> retriveAllCentersByMeetingDate(Long officeId, LocalDate meetingDate, Long staffId);
-
-    Collection<CenterData> retrieveAllCentersByCurrentUser();
 }

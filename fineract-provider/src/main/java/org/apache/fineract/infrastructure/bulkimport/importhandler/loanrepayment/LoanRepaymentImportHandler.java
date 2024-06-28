@@ -25,8 +25,6 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-import org.apache.fineract.accounting.glaccount.domain.GLAccount;
-import org.apache.fineract.accounting.glaccount.domain.GLAccountRepositoryWrapper;
 import org.apache.fineract.commands.domain.CommandWrapper;
 import org.apache.fineract.commands.service.CommandWrapperBuilder;
 import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformService;
@@ -60,14 +58,11 @@ public class LoanRepaymentImportHandler implements ImportHandler {
 
     private final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService;
 
-    private final GLAccountRepositoryWrapper glAccountRepositoryWrapper;
-
     @Autowired
     public LoanRepaymentImportHandler(final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService,
-            final LoanReadPlatformService loanReadPlatformService, final GLAccountRepositoryWrapper glAccountRepositoryWrapper) {
+            final LoanReadPlatformService loanReadPlatformService) {
         this.commandsSourceWritePlatformService = commandsSourceWritePlatformService;
         this.loanReadPlatformService = loanReadPlatformService;
-        this.glAccountRepositoryWrapper = glAccountRepositoryWrapper;
     }
 
     @Override
@@ -109,13 +104,8 @@ public class LoanRepaymentImportHandler implements ImportHandler {
         Integer routingCode = ImportHandlerUtils.readAsInt(LoanRepaymentConstants.ROUTING_CODE_COL, row);
         Integer receiptNumber = ImportHandlerUtils.readAsInt(LoanRepaymentConstants.RECEIPT_NO_COL, row);
         Integer bankNumber = ImportHandlerUtils.readAsInt(LoanRepaymentConstants.BANK_NO_COL, row);
-        String transactionExternalId = ImportHandlerUtils.readAsString(LoanRepaymentConstants.TRANSACTION_EXTERNAL_ID_COL, row);
-        String note = ImportHandlerUtils.readAsString(LoanRepaymentConstants.TRANSACTION_NOTE_COL, row);
-        LoanTransactionData data = LoanTransactionData.importInstance(repaymentAmount, repaymentDate, repaymentTypeId, accountNumber,
-                checkNumber, routingCode, receiptNumber, bankNumber, loanAccountId, "", row.getRowNum(), locale, dateFormat);
-        data.setNote(note);
-        data.setExternalId(transactionExternalId);
-        return data;
+        return LoanTransactionData.importInstance(repaymentAmount, repaymentDate, repaymentTypeId, accountNumber, checkNumber, routingCode,
+                receiptNumber, bankNumber, loanAccountId, "", row.getRowNum(), locale, dateFormat);
     }
 
     public Count importEntity(String dateFormat) {
@@ -125,15 +115,12 @@ public class LoanRepaymentImportHandler implements ImportHandler {
         String errorMessage = "";
         GsonBuilder gsonBuilder = GoogleGsonSerializerHelper.createGsonBuilder();
         gsonBuilder.registerTypeAdapter(LocalDate.class, new DateSerializer(dateFormat));
-        GLAccount account = this.glAccountRepositoryWrapper.findOneByGlCodeWithNotFoundDetection("1120-1");
 
         for (LoanTransactionData loanRepayment : loanRepayments) {
             try {
 
                 JsonObject loanRepaymentJsonob = gsonBuilder.create().toJsonTree(loanRepayment).getAsJsonObject();
                 loanRepaymentJsonob.remove("manuallyReversed");
-                loanRepaymentJsonob.addProperty("glAccountId", account.getId());
-                loanRepaymentJsonob.addProperty("billNumber", "123456789");
                 String payload = loanRepaymentJsonob.toString();
                 final CommandWrapper commandRequest = new CommandWrapperBuilder() //
                         .loanRepaymentTransaction(loanRepayment.getAccountId()) //

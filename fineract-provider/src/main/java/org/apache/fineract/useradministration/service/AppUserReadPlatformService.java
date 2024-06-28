@@ -32,10 +32,4 @@ public interface AppUserReadPlatformService {
     AppUserData retrieveUser(Long userId);
 
     boolean isUsernameExist(String username);
-
-    Collection<AppUserData> retrieveUsersUnderHierarchy(Long hierarchyLevel);
-
-    Collection<AppUserData> retrieveByOfficeHierarchy(final String hierarchy, final Long centerId);
-
-    Collection<AppUserData> retrieveUsersForCommittees();
 }

@@ -68,8 +68,7 @@ public class LoanChargeReadPlatformServiceImpl implements LoanChargeReadPlatform
                     + "lc.min_cap as minCap, lc.max_cap as maxCap, " + "lc.charge_amount_or_percentage as amountOrPercentage, "
                     + "c.currency_code as currencyCode, oc.name as currencyName, "
                     + "date(coalesce(dd.disbursedon_date,dd.expected_disburse_date)) as disbursementDate, "
-                    + "oc.decimal_places as currencyDecimalPlaces, oc.currency_multiplesof as inMultiplesOf, "
-                    + "oc.int_code as intCode, oc.display_symbol as currencyDisplaySymbol, "
+                    + "oc.decimal_places as currencyDecimalPlaces, oc.currency_multiplesof as inMultiplesOf, oc.display_symbol as currencyDisplaySymbol, "
                     + "oc.internationalized_name_code as currencyNameCode from m_charge c "
                     + "join m_organisation_currency oc on c.currency_code = oc.code " + "join m_loan_charge lc on lc.charge_id = c.id "
                     + "left join m_loan_tranche_disbursement_charge dc on dc.loan_charge_id=lc.id left join m_loan_disbursement_detail dd on dd.id=dc.disbursement_detail_id ";
@@ -142,8 +141,6 @@ public class LoanChargeReadPlatformServiceImpl implements LoanChargeReadPlatform
                 .retrieveSavingsCollectionTimeTypes();
         final List<EnumOptionData> clientChargeCalculationTypeOptions = null;
         final List<EnumOptionData> clientChargeTimeTypeOptions = null;
-        final List<EnumOptionData> chargeDisbursementTypeOptions = null;
-        final List<EnumOptionData> chargeInstallmentFeeTypeOptions = null;
 
         final List<EnumOptionData> feeFrequencyOptions = this.dropdownReadPlatformService.retrievePeriodFrequencyTypeOptions();
         // this field is applicable only for client charges
@@ -160,8 +157,7 @@ public class LoanChargeReadPlatformServiceImpl implements LoanChargeReadPlatform
                 loansChargeCalculationTypeOptions, loansChargeTimeTypeOptions, savingsChargeCalculationTypeOptions,
                 savingsChargeTimeTypeOptions, clientChargeCalculationTypeOptions, clientChargeTimeTypeOptions, feeFrequencyOptions,
                 incomeOrLiabilityAccountOptions, taxGroupOptions, shareChargeCalculationTypeOptions, shareChargeTimeTypeOptions,
-                accountMappingForChargeConfig, expenseAccountOptions, assetAccountOptions, chargeDisbursementTypeOptions,
-                chargeInstallmentFeeTypeOptions);
+                accountMappingForChargeConfig, expenseAccountOptions, assetAccountOptions);
     }
 
     @Override

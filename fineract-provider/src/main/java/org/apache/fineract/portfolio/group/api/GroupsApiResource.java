@@ -73,8 +73,6 @@ import org.apache.fineract.infrastructure.dataqueries.data.EntityTables;
 import org.apache.fineract.infrastructure.dataqueries.data.StatusEnum;
 import org.apache.fineract.infrastructure.dataqueries.service.EntityDatatableChecksReadService;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
-import org.apache.fineract.organisation.prequalification.data.GroupPrequalificationData;
-import org.apache.fineract.organisation.prequalification.service.PrequalificationReadPlatformService;
 import org.apache.fineract.portfolio.accountdetails.data.AccountSummaryCollectionData;
 import org.apache.fineract.portfolio.accountdetails.service.AccountDetailsReadPlatformService;
 import org.apache.fineract.portfolio.calendar.data.CalendarData;
@@ -113,7 +111,6 @@ public class GroupsApiResource {
 
     private final PlatformSecurityContext context;
     private final GroupReadPlatformService groupReadPlatformService;
-    private final PrequalificationReadPlatformService prequalificationReadPlatformService;
     private final CenterReadPlatformService centerReadPlatformService;
     private final ClientReadPlatformService clientReadPlatformService;
     private final ToApiJsonSerializer<Object> toApiJsonSerializer;
@@ -153,7 +150,6 @@ public class GroupsApiResource {
             final BulkImportWorkbookService bulkImportWorkbookService,
             final BulkImportWorkbookPopulatorService bulkImportWorkbookPopulatorService,
             final GLIMAccountInfoReadPlatformService glimAccountInfoReadPlatformService,
-            final PrequalificationReadPlatformService prequalificationReadPlatformService,
             final GSIMReadPlatformService gsimReadPlatformService) {
         this.context = context;
         this.groupReadPlatformService = groupReadPlatformService;
@@ -177,7 +173,6 @@ public class GroupsApiResource {
         this.bulkImportWorkbookService = bulkImportWorkbookService;
         this.glimAccountInfoReadPlatformService = glimAccountInfoReadPlatformService;
         this.gsimReadPlatformService = gsimReadPlatformService;
-        this.prequalificationReadPlatformService = prequalificationReadPlatformService;
 
     }
 
@@ -286,7 +281,6 @@ public class GroupsApiResource {
         Collection<GroupRoleData> groupRoles = null;
         GroupRoleData selectedRole = null;
         Collection<CalendarData> calendars = null;
-        Collection<GroupPrequalificationData> prequalificationData = null;
         CalendarData collectionMeetingCalendar = null;
 
         if (!associationParameters.isEmpty()) {
@@ -361,11 +355,7 @@ public class GroupsApiResource {
                     staffInSelectedOfficeOnly);
             group = GroupGeneralData.withTemplate(templateGroup, group);
         }
-        prequalificationData = this.prequalificationReadPlatformService.retrievePrequalificationGroupsMappings(groupId);
 
-        if (!prequalificationData.isEmpty()) {
-            group.setPrequalificationGroups(prequalificationData);
-        }
         return this.groupGeneralApiJsonSerializer.serialize(settings, group, GroupingTypesApiConstants.GROUP_RESPONSE_DATA_PARAMETERS);
     }
 

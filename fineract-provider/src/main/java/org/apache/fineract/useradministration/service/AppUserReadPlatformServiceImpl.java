@@ -18,23 +18,15 @@
  */
 package org.apache.fineract.useradministration.service;
 
-import static org.apache.fineract.useradministration.service.AppUserConstants.FACILITATOR_ROLE_START_WITH;
-import static org.apache.fineract.useradministration.service.AppUserConstants.GERENTE_ROLE_START_WITH;
-import static org.apache.fineract.useradministration.service.AppUserConstants.LIDER_AGENCIA_ROLE_START_WITH;
-import static org.apache.fineract.useradministration.service.AppUserConstants.REGIONAL_ROLE_START_WITH;
-import static org.apache.fineract.useradministration.service.AppUserConstants.SUPERVISOR_ROLE_START_WITH;
-
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.organisation.office.data.OfficeData;
-import org.apache.fineract.organisation.office.domain.OfficeHierarchyLevel;
 import org.apache.fineract.organisation.office.service.OfficeReadPlatformService;
 import org.apache.fineract.organisation.staff.data.StaffData;
 import org.apache.fineract.organisation.staff.service.StaffReadPlatformService;
@@ -91,7 +83,7 @@ public class AppUserReadPlatformServiceImpl implements AppUserReadPlatformServic
         final String hierarchySearchString = hierarchy + "%";
 
         final AppUserMapper mapper = new AppUserMapper(this.roleReadPlatformService, this.staffReadPlatformService);
-        final String sql = "select " + mapper.schema() + " order by u.username";
+        final String sql = "select " + mapper.schema();
 
         return this.jdbcTemplate.query(sql, mapper, new Object[] { hierarchySearchString }); // NOSONAR
     }
@@ -200,7 +192,7 @@ public class AppUserReadPlatformServiceImpl implements AppUserReadPlatformServic
         public String schema() {
             return " u.id as id, u.username as username, u.firstname as firstname, u.lastname as lastname, u.email as email, u.password_never_expires as passwordNeverExpires, "
                     + " u.office_id as officeId, o.name as officeName, u.staff_id as staffId, u.is_self_service_user as isSelfServiceUser from m_appuser u "
-                    + " join m_office o on o.id = u.office_id where o.hierarchy like ? and u.is_deleted=false";
+                    + " join m_office o on o.id = u.office_id where o.hierarchy like ? and u.is_deleted=false order by u.username";
         }
 
     }
@@ -231,104 +223,5 @@ public class AppUserReadPlatformServiceImpl implements AppUserReadPlatformServic
             return false;
         }
         return true;
-    }
-
-    @Override
-    public Collection<AppUserData> retrieveUsersUnderHierarchy(Long hierarchyLevel) {
-        final AppUser currentUser = this.context.authenticatedUser();
-        final String hierarchy = currentUser.getOffice().getHierarchy();
-        final String hierarchySearchString = hierarchy + "%";
-
-        final AppUserMapper mapper = new AppUserMapper(this.roleReadPlatformService, this.staffReadPlatformService);
-        final String sql = "select " + mapper.schema() + " GROUP BY u.id order by u.username";
-
-        Collection<AppUserData> usersDataList = this.jdbcTemplate.query(sql, mapper, new Object[] { hierarchySearchString });
-
-        Collection<AppUserData> usersforDropdown = new ArrayList<>();
-
-        // TODO: implement a different way to filter by role. One option is to set a type for each role, where types are
-        // value codes from DB
-        if (Long.valueOf(OfficeHierarchyLevel.PRINCIPAL.getValue()).equals(hierarchyLevel)) {
-            findUserWithRoleLike(usersDataList, usersforDropdown, GERENTE_ROLE_START_WITH);
-        }
-
-        if (Long.valueOf(OfficeHierarchyLevel.AGENCIA.getValue()).equals(hierarchyLevel)) {
-            findUserWithRoleLike(usersDataList, usersforDropdown, LIDER_AGENCIA_ROLE_START_WITH);
-            findUserWithRoleLike(usersDataList, usersforDropdown, REGIONAL_ROLE_START_WITH);
-        }
-
-        if (Long.valueOf(OfficeHierarchyLevel.SUPERVISION.getValue()).equals(hierarchyLevel)) {
-            findUserWithRoleLike(usersDataList, usersforDropdown, SUPERVISOR_ROLE_START_WITH);
-            findUserWithRoleLike(usersDataList, usersforDropdown, LIDER_AGENCIA_ROLE_START_WITH);
-        }
-
-        if (Long.valueOf(OfficeHierarchyLevel.CARTERA.getValue()).equals(hierarchyLevel)) {
-            findUserWithRoleLike(usersDataList, usersforDropdown, FACILITATOR_ROLE_START_WITH);
-            findUserWithRoleLike(usersDataList, usersforDropdown, SUPERVISOR_ROLE_START_WITH);
-        }
-
-        if (Long.valueOf(OfficeHierarchyLevel.GRUPO.getValue()).equals(hierarchyLevel)) {
-            findUserWithRoleLike(usersDataList, usersforDropdown, FACILITATOR_ROLE_START_WITH);
-        }
-
-        return usersforDropdown;
-    }
-
-    @Override
-    public Collection<AppUserData> retrieveUsersForCommittees() {
-        final AppUser currentUser = this.context.authenticatedUser();
-        final String hierarchy = currentUser.getOffice().getHierarchy();
-        final String hierarchySearchString = hierarchy + "%";
-        final String filterUsersAssignedToCommittees = " and u.id not in (select user_id from m_committee_user) ";
-
-        final AppUserMapper mapper = new AppUserMapper(this.roleReadPlatformService, this.staffReadPlatformService);
-        final String sql = "select " + mapper.schema() + filterUsersAssignedToCommittees + " order by u.username";
-
-        return this.jdbcTemplate.query(sql, mapper, new Object[] { hierarchySearchString });
-    }
-
-    private void findUserWithRoleLike(Collection<AppUserData> usersDataList, Collection<AppUserData> usersforDropdown,
-            String gerenteRoleStartWith) {
-        for (AppUserData userData : usersDataList) {
-            if (usersforDropdown.stream().noneMatch(u -> u.getId().equals(userData.getId()))) {
-                AppUser user = this.appUserRepository.findById(userData.getId())
-                        .orElseThrow(() -> new UserNotFoundException(userData.getId()));
-                final Set<Role> userRoles = user.getRoles();
-                for (final Role role : userRoles) {
-                    if (role.getName().startsWith(gerenteRoleStartWith)) {
-                        usersforDropdown.add(userData);
-                    }
-                }
-            }
-        }
-    }
-
-    @Override
-    public Collection<AppUserData> retrieveByOfficeHierarchy(String hierarchy, final Long centerId) {
-        String sql = """
-                SELECT
-                    facilitator.id AS id,
-                    facilitator.username AS username,
-                    facilitator.firstname AS firstname,
-                    facilitator.lastname AS lastname,
-                    facilitator.email AS email,
-                    facilitator.office_id AS officeId,
-                    mo.NAME AS officeName,
-                    facilitator.is_self_service_user AS isSelfServiceUser
-                FROM m_office mo
-                INNER JOIN m_office office_under ON office_under.hierarchy LIKE CONCAT( mo.hierarchy, '%' )
-                AND office_under.hierarchy LIKE CONCAT(?, '%')
-                LEFT JOIN m_appuser facilitator ON facilitator.office_id = office_under.id
-                LEFT JOIN m_group center ON center.office_id = office_under.id and center.parent_id is null
-                WHERE facilitator.is_deleted = FALSE
-                """;
-        final List<Object> params = new ArrayList<>(List.of(hierarchy));
-        if (centerId != null) {
-            sql = sql + " AND center.id = ? ";
-            params.add(centerId);
-        }
-        sql = sql + " GROUP BY facilitator.id  ORDER BY facilitator.username";
-        return this.jdbcTemplate.query(sql, (rs, rowNum) -> AppUserData.instance(rs.getLong("id"), rs.getString("username"),
-                rs.getString("firstname"), rs.getString("lastname")), params.toArray());
     }
 }

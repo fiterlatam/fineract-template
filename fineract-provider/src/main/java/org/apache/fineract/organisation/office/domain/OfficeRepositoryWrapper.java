@@ -42,10 +42,6 @@ public class OfficeRepositoryWrapper {
         return this.repository.findById(id).orElseThrow(() -> new OfficeNotFoundException(id));
     }
 
-    public Office findByName(final String officeName) {
-        return this.repository.findByName(officeName);
-    }
-
     @Transactional(readOnly = true)
     public Office findOfficeHierarchy(final Long id) {
         final Office office = this.repository.findById(id).orElseThrow(() -> new OfficeNotFoundException(id));

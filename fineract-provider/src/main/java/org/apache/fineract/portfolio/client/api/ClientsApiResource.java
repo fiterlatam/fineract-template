@@ -54,8 +54,6 @@ import org.apache.fineract.commands.service.CommandWrapperBuilder;
 import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformService;
 import org.apache.fineract.infrastructure.bulkimport.service.BulkImportWorkbookPopulatorService;
 import org.apache.fineract.infrastructure.bulkimport.service.BulkImportWorkbookService;
-import org.apache.fineract.infrastructure.codes.data.CodeValueData;
-import org.apache.fineract.infrastructure.codes.service.CodeValueReadPlatformService;
 import org.apache.fineract.infrastructure.core.api.ApiRequestParameterHelper;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.UploadRequest;
@@ -65,8 +63,6 @@ import org.apache.fineract.infrastructure.core.serialization.ToApiJsonSerializer
 import org.apache.fineract.infrastructure.core.service.Page;
 import org.apache.fineract.infrastructure.core.service.SearchParameters;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
-import org.apache.fineract.organisation.prequalification.data.GroupPrequalificationData;
-import org.apache.fineract.organisation.prequalification.service.PrequalificationReadPlatformService;
 import org.apache.fineract.portfolio.accountdetails.data.AccountSummaryCollectionData;
 import org.apache.fineract.portfolio.accountdetails.service.AccountDetailsReadPlatformService;
 import org.apache.fineract.portfolio.client.data.ClientData;
@@ -99,8 +95,6 @@ public class ClientsApiResource {
     private final BulkImportWorkbookService bulkImportWorkbookService;
     private final BulkImportWorkbookPopulatorService bulkImportWorkbookPopulatorService;
     private final GuarantorReadPlatformService guarantorReadPlatformService;
-    private final CodeValueReadPlatformService codeValueReadPlatformService;
-    private final PrequalificationReadPlatformService prequalificationReadPlatformService;
 
     @GET
     @Path("template")
@@ -129,20 +123,6 @@ public class ClientsApiResource {
             clientData = this.clientReadPlatformService.retrieveAllNarrations(ClientApiConstants.CLIENT_WITHDRAW_REASON);
         } else {
             clientData = this.clientReadPlatformService.retrieveTemplate(officeId, staffInSelectedOfficeOnly);
-            Collection<CodeValueData> clientAreas = this.codeValueReadPlatformService.retrieveCodeValuesByCode("clientAreas");
-            Collection<CodeValueData> clientLocation = this.codeValueReadPlatformService.retrieveCodeValuesByCode("clientLocation");
-            Collection<CodeValueData> publicServices = this.codeValueReadPlatformService.retrieveCodeValuesByCode("publicServices");
-            Collection<CodeValueData> housingTypeOptions = this.codeValueReadPlatformService.retrieveCodeValuesByCode("housingType");
-            Collection<CodeValueData> Ldepartamento = this.codeValueReadPlatformService.retrieveCodeValuesByCode("Ldepartamento");
-            Collection<CodeValueData> Lmunicipio = this.codeValueReadPlatformService.retrieveCodeValuesByCode("Lmunicipio");
-            Collection<CodeValueData> maritalStatusOptions = this.codeValueReadPlatformService
-                    .retrieveCodeValuesByCode("maritalStatusOptions");
-            Collection<CodeValueData> jobTypeOptions = this.codeValueReadPlatformService.retrieveCodeValuesByCode("jobTypeOptions");
-            Collection<CodeValueData> educationLevelOptions = this.codeValueReadPlatformService
-                    .retrieveCodeValuesByCode("educationLevelOptions");
-            clientData.updateClientAddressTemplate(clientAreas, clientLocation, publicServices, housingTypeOptions, Ldepartamento,
-                    Lmunicipio, maritalStatusOptions, jobTypeOptions, educationLevelOptions);
-
         }
 
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
@@ -209,9 +189,6 @@ public class ClientsApiResource {
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
 
         ClientData clientData = this.clientReadPlatformService.retrieveOne(clientId);
-        Collection<GroupPrequalificationData> prequalificationDataList = this.prequalificationReadPlatformService
-                .retrievePrequalificationIndividualMappings(clientId);
-        clientData.setClientPrequalifications(prequalificationDataList);
         if (settings.isTemplate()) {
             final ClientData templateData = this.clientReadPlatformService.retrieveTemplate(clientData.officeId(),
                     staffInSelectedOfficeOnly);
@@ -220,19 +197,6 @@ public class ClientsApiResource {
             if (savingAccountOptions != null && savingAccountOptions.size() > 0) {
                 clientData = ClientData.templateWithSavingAccountOptions(clientData, savingAccountOptions);
             }
-            Collection<CodeValueData> clientAreas = this.codeValueReadPlatformService.retrieveCodeValuesByCode("clientAreas");
-            Collection<CodeValueData> clientLocation = this.codeValueReadPlatformService.retrieveCodeValuesByCode("clientLocation");
-            Collection<CodeValueData> publicServices = this.codeValueReadPlatformService.retrieveCodeValuesByCode("publicServices");
-            Collection<CodeValueData> housingTypeOptions = this.codeValueReadPlatformService.retrieveCodeValuesByCode("housingType");
-            Collection<CodeValueData> Ldepartamento = this.codeValueReadPlatformService.retrieveCodeValuesByCode("Ldepartamento");
-            Collection<CodeValueData> Lmunicipio = this.codeValueReadPlatformService.retrieveCodeValuesByCode("Lmunicipio");
-            Collection<CodeValueData> maritalStatusOptions = this.codeValueReadPlatformService
-                    .retrieveCodeValuesByCode("maritalStatusOptions");
-            Collection<CodeValueData> jobTypeOptions = this.codeValueReadPlatformService.retrieveCodeValuesByCode("jobTypeOptions");
-            Collection<CodeValueData> educationLevelOptions = this.codeValueReadPlatformService
-                    .retrieveCodeValuesByCode("educationLevelOptions");
-            clientData.updateClientAddressTemplate(clientAreas, clientLocation, publicServices, housingTypeOptions, Ldepartamento,
-                    Lmunicipio, maritalStatusOptions, jobTypeOptions, educationLevelOptions);
         }
 
         return this.toApiJsonSerializer.serialize(settings, clientData, ClientApiConstants.CLIENT_RESPONSE_DATA_PARAMETERS);
