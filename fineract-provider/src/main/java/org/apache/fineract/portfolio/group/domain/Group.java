@@ -18,9 +18,7 @@
  */
 package org.apache.fineract.portfolio.group.domain;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -36,23 +34,19 @@ import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
-import javax.persistence.OneToOne;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.infrastructure.codes.domain.CodeValue;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.ApiParameterError;
-import org.apache.fineract.infrastructure.core.domain.AbstractAuditableCustom;
+import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
 import org.apache.fineract.infrastructure.core.exception.GeneralPlatformDomainRuleException;
 import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidationException;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.security.service.RandomPasswordGenerator;
 import org.apache.fineract.organisation.office.domain.Office;
-import org.apache.fineract.organisation.portfolio.domain.Portfolio;
-import org.apache.fineract.organisation.prequalification.domain.PrequalificationGroup;
 import org.apache.fineract.organisation.staff.domain.Staff;
-import org.apache.fineract.portfolio.calendar.CalendarConstants;
 import org.apache.fineract.portfolio.client.domain.Client;
 import org.apache.fineract.portfolio.group.api.GroupingTypesApiConstants;
 import org.apache.fineract.portfolio.group.exception.ClientExistInGroupException;
@@ -61,12 +55,11 @@ import org.apache.fineract.portfolio.group.exception.GroupExistsInCenterExceptio
 import org.apache.fineract.portfolio.group.exception.GroupNotExistsInCenterException;
 import org.apache.fineract.portfolio.group.exception.InvalidGroupStateTransitionException;
 import org.apache.fineract.portfolio.loanaccount.domain.GroupLoanIndividualMonitoringAccount;
-import org.apache.fineract.portfolio.meeting.exception.MeetingDateException;
 import org.apache.fineract.useradministration.domain.AppUser;
 
 @Entity
 @Table(name = "m_group")
-public final class Group extends AbstractAuditableCustom {
+public final class Group extends AbstractPersistableCustom {
 
     @Column(name = "external_id", length = 100, unique = true)
     private String externalId;
@@ -147,71 +140,6 @@ public final class Group extends AbstractAuditableCustom {
     @OneToMany(mappedBy = "group")
     private List<GroupLoanIndividualMonitoringAccount> glimLoan;
 
-    // FB Group fields
-    @Column(name = "legacy_number")
-    private Long legacyNumber;
-
-    @Column(name = "latitude")
-    private BigDecimal latitude;
-
-    @Column(name = "longitude")
-    private BigDecimal longitude;
-
-    @Column(name = "formation_date", nullable = false)
-    private LocalDate formationDate;
-
-    @Column(name = "size", nullable = false)
-    private Integer size;
-
-    @Column(name = "meeting_start_time")
-    private LocalTime meetingStartTime;
-
-    @Column(name = "meeting_end_time")
-    private LocalTime meetingEndTime;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "responsible_user_id")
-    private AppUser responsibleUser;
-
-    // FB Center fields
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "portfolio_id")
-    private Portfolio portfolio;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "city_id")
-    private CodeValue city;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "state_province_id")
-    private CodeValue stateProvince;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "type_id")
-    private CodeValue type;
-
-    @Column(name = "distance_from_agency")
-    private Integer distance;
-
-    @Column(name = "meeting_start_date")
-    private Integer meetingStart;
-
-    @Column(name = "meeting_end_date")
-    private Integer meetingEnd;
-
-    @Column(name = "meeting_day")
-    private Integer meetingDay;
-
-    @Column(name = "reference_point", nullable = false, length = 60)
-    private String referencePoint;
-
-    @Column(name = "group_location", nullable = false)
-    private Integer location;
-
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "prequalification_id")
-    private PrequalificationGroup prequalificationGroup;
-
     // JPA default constructor for entity
     Group() {
         this.name = null;
@@ -221,12 +149,7 @@ public final class Group extends AbstractAuditableCustom {
 
     public static Group newGroup(final Office office, final Staff staff, final Group parent, final GroupLevel groupLevel, final String name,
             final String externalId, final boolean active, final LocalDate activationDate, final Set<Client> clientMembers,
-            final Set<Group> groupMembers, final LocalDate submittedOnDate, final AppUser currentUser, final String accountNo,
-            final Long legacyNumber, final BigDecimal latitude, final BigDecimal longitude, final LocalDate formationDate,
-            final Integer size, final LocalTime meetingStartTime, final LocalTime meetingEndTime, final AppUser responsibleUser,
-            final Portfolio portfolio, final CodeValue city, final CodeValue stateProvince, final CodeValue type, final Integer distance,
-            final Integer meetingStart, final Integer meetingEnd, final Integer meetingDay, final String referencePoint,
-            PrequalificationGroup prequalificationGroup) {
+            final Set<Group> groupMembers, final LocalDate submittedOnDate, final AppUser currentUser, final String accountNo) {
 
         // By default new group is created in PENDING status, unless explicitly
         // status is set to active
@@ -238,39 +161,12 @@ public final class Group extends AbstractAuditableCustom {
         }
 
         return new Group(office, staff, parent, groupLevel, name, externalId, status, groupActivationDate, clientMembers, groupMembers,
-                submittedOnDate, currentUser, accountNo, legacyNumber, latitude, longitude, formationDate, size, meetingStartTime,
-                meetingEndTime, responsibleUser, portfolio, city, stateProvince, type, distance, meetingStart, meetingEnd, meetingDay,
-                referencePoint, prequalificationGroup);
-    }
-
-    public static Group assembleNewCenterFrom(final Office office, final GroupLevel groupLevel, final String name, final boolean active,
-            final LocalDate activationDate, final LocalDate submittedOnDate, final AppUser currentUser, final LocalTime meetingStartTime,
-            final LocalTime meetingEndTime, final Portfolio portfolio, final Integer meetingStart, final Integer meetingEnd,
-            final Integer meetingDay) {
-        // By default new group is created in PENDING status, unless explicitly
-        // status is set to active
-        GroupingTypeStatus status = GroupingTypeStatus.PENDING;
-        LocalDate groupActivationDate = null;
-        if (active) {
-            status = GroupingTypeStatus.ACTIVE;
-            groupActivationDate = activationDate;
-        }
-        final Set<Client> clientMembers = new HashSet<>();
-        final Set<Group> groupMembers = new HashSet<>();
-
-        return new Group(office, null, null, groupLevel, name, null, status, groupActivationDate, clientMembers, groupMembers,
-                submittedOnDate, currentUser, null, null, null, null, null, null, meetingStartTime, meetingEndTime, null, portfolio, null,
-                null, null, null, meetingStart, meetingEnd, meetingDay, null, null);
+                submittedOnDate, currentUser, accountNo);
     }
 
     private Group(final Office office, final Staff staff, final Group parent, final GroupLevel groupLevel, final String name,
             final String externalId, final GroupingTypeStatus status, final LocalDate activationDate, final Set<Client> clientMembers,
-            final Set<Group> groupMembers, final LocalDate submittedOnDate, final AppUser currentUser, final String accountNo,
-            final Long legacyNumber, final BigDecimal latitude, final BigDecimal longitude, final LocalDate formationDate,
-            final Integer size, final LocalTime meetingStartTime, final LocalTime meetingEndTime, final AppUser responsibleUser,
-            final Portfolio portfolio, final CodeValue city, final CodeValue stateProvince, final CodeValue type, final Integer distance,
-            final Integer meetingStart, final Integer meetingEnd, final Integer meetingDay, final String referencePoint,
-            PrequalificationGroup prequalificationGroup) {
+            final Set<Group> groupMembers, final LocalDate submittedOnDate, final AppUser currentUser, final String accountNo) {
 
         final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
 
@@ -308,28 +204,6 @@ public final class Group extends AbstractAuditableCustom {
         this.submittedOnDate = submittedOnDate;
         this.submittedBy = currentUser;
         this.staffHistory = null;
-
-        // custom fields added for FB Group
-        this.legacyNumber = legacyNumber;
-        this.latitude = latitude;
-        this.longitude = longitude;
-        this.formationDate = formationDate;
-        this.size = size;
-        this.meetingStartTime = meetingStartTime;
-        this.meetingEndTime = meetingEndTime;
-        this.responsibleUser = responsibleUser;
-
-        // custom fields added for FB Center
-        this.portfolio = portfolio;
-        this.city = city;
-        this.stateProvince = stateProvince;
-        this.type = type;
-        this.distance = distance;
-        this.meetingStart = meetingStart;
-        this.meetingEnd = meetingEnd;
-        this.meetingDay = meetingDay;
-        this.referencePoint = referencePoint;
-        this.prequalificationGroup = prequalificationGroup;
 
         associateClients(clientMembers);
 
@@ -470,80 +344,6 @@ public final class Group extends AbstractAuditableCustom {
             this.submittedOnDate = command.localDateValueOfParameterNamed(GroupingTypesApiConstants.submittedOnDateParamName);
         }
 
-        // update custom fields
-        if (command.isChangeInIntegerParameterNamed(GroupingTypesApiConstants.size, this.size)) {
-            final Integer newValue = command.integerValueOfParameterNamed(GroupingTypesApiConstants.size);
-            actualChanges.put(GroupingTypesApiConstants.size, newValue);
-            this.size = newValue;
-        }
-
-        if (command.isChangeInLocalDateParameterNamed(GroupingTypesApiConstants.formationDate, this.formationDate)) {
-            final LocalDate newValue = command.localDateValueOfParameterNamed(GroupingTypesApiConstants.formationDate);
-            actualChanges.put(GroupingTypesApiConstants.formationDate, newValue);
-            this.formationDate = newValue;
-        }
-
-        if (command.isChangeInLongParameterNamed(GroupingTypesApiConstants.legacyNumber, this.legacyNumber)) {
-            final Long newValue = command.longValueOfParameterNamed(GroupingTypesApiConstants.legacyNumber);
-            actualChanges.put(GroupingTypesApiConstants.legacyNumber, newValue);
-            this.legacyNumber = newValue;
-        }
-
-        if (command.isChangeInBigDecimalParameterNamed(GroupingTypesApiConstants.latitude, this.latitude)) {
-            final BigDecimal newValue = command.bigDecimalValueOfParameterNamed(GroupingTypesApiConstants.latitude);
-            actualChanges.put(GroupingTypesApiConstants.latitude, newValue);
-            this.latitude = newValue;
-        }
-
-        if (command.isChangeInBigDecimalParameterNamed(GroupingTypesApiConstants.longitude, this.longitude)) {
-            final BigDecimal newValue = command.bigDecimalValueOfParameterNamed(GroupingTypesApiConstants.longitude);
-            actualChanges.put(GroupingTypesApiConstants.longitude, newValue);
-            this.longitude = newValue;
-        }
-
-        final String timeFormat = command.stringValueOfParameterNamed(CalendarConstants.CalendarSupportedParameters.Time_Format.getValue());
-        if (command.isChangeInTimeParameterNamed(GroupingTypesApiConstants.meetingStartTime, this.meetingStartTime, timeFormat)) {
-            final LocalTime newMeetingStarTime = command.localTimeValueOfParameterNamed(GroupingTypesApiConstants.meetingStartTime);
-            actualChanges.put(GroupingTypesApiConstants.meetingStartTime, newMeetingStarTime);
-            if (newMeetingStarTime != null) {
-                this.meetingStartTime = newMeetingStarTime;
-            }
-        }
-        if (command.isChangeInTimeParameterNamed(GroupingTypesApiConstants.meetingEndTime, this.meetingEndTime, timeFormat)) {
-            final LocalTime newMeetingEndTime = command.localTimeValueOfParameterNamed(GroupingTypesApiConstants.meetingEndTime);
-            actualChanges.put(GroupingTypesApiConstants.meetingEndTime, newMeetingEndTime);
-            if (newMeetingEndTime != null) {
-                this.meetingEndTime = newMeetingEndTime;
-            }
-            if (this.meetingEndTime != null && this.meetingStartTime != null) {
-                if (this.meetingEndTime.isBefore(this.meetingStartTime)) {
-                    throw new MeetingDateException("meeting.end.time.earlier.than.start.time", "Meeting start should be before end time");
-                }
-            }
-        }
-        if (command.isChangeInIntegerParameterNamed(GroupingTypesApiConstants.groupLocation, this.location)) {
-            final Integer newValue = command.integerValueOfParameterNamed(GroupingTypesApiConstants.groupLocation);
-            actualChanges.put(GroupingTypesApiConstants.groupLocation, newValue);
-            this.location = newValue;
-        }
-
-        // custom fields for Centers
-        if (command.isChangeInIntegerParameterNamed(GroupingTypesApiConstants.distance, this.distance)) {
-            final Integer newValue = command.integerValueOfParameterNamed(GroupingTypesApiConstants.distance);
-            actualChanges.put(GroupingTypesApiConstants.distance, newValue);
-            this.distance = newValue;
-        }
-
-        if (command.isChangeInStringParameterNamed(GroupingTypesApiConstants.referencePoint, this.referencePoint)) {
-            final String newValue = command.stringValueOfParameterNamed(GroupingTypesApiConstants.referencePoint);
-            actualChanges.put(GroupingTypesApiConstants.referencePoint, newValue);
-            this.referencePoint = StringUtils.defaultIfEmpty(newValue, null);
-        }
-
-        if (command.isChangeInLongParameterNamed(GroupingTypesApiConstants.prequalificationId, prequalificationId())) {
-            final Long newValue = command.longValueOfParameterNamed(GroupingTypesApiConstants.prequalificationId);
-            actualChanges.put(GroupingTypesApiConstants.prequalificationId, newValue);
-        }
         return actualChanges;
     }
 
@@ -622,14 +422,6 @@ public final class Group extends AbstractAuditableCustom {
         return staffId;
     }
 
-    private Long prequalificationId() {
-        Long preqId = null;
-        if (this.prequalificationGroup != null) {
-            preqId = this.prequalificationGroup.getId();
-        }
-        return preqId;
-    }
-
     private void addChild(final Group group) {
         this.groupMembers.add(group);
     }
@@ -694,18 +486,6 @@ public final class Group extends AbstractAuditableCustom {
         return isTransferInProgress() || isTransferOnHold();
     }
 
-    public void setCity(CodeValue city) {
-        this.city = city;
-    }
-
-    public void setStateProvince(CodeValue stateProvince) {
-        this.stateProvince = stateProvince;
-    }
-
-    public void setType(CodeValue type) {
-        this.type = type;
-    }
-
     public boolean isChildClient(final Long clientId) {
         if (clientId != null && this.clientMembers != null && !this.clientMembers.isEmpty()) {
             for (final Client client : this.clientMembers) {
@@ -767,14 +547,6 @@ public final class Group extends AbstractAuditableCustom {
 
     public boolean hasGroupAsMember(final Group group) {
         return this.groupMembers.contains(group);
-    }
-
-    public LocalTime getMeetingStartTime() {
-        return meetingStartTime;
-    }
-
-    public LocalTime getMeetingEndTime() {
-        return meetingEndTime;
     }
 
     public boolean hasStaff() {
@@ -993,35 +765,4 @@ public final class Group extends AbstractAuditableCustom {
         this.groupMembers = groupMembers;
     }
 
-    public String getName() {
-        return this.name;
-    }
-
-    public void updatePrequalification(PrequalificationGroup prequalificationGroup) {
-        this.prequalificationGroup = prequalificationGroup;
-    }
-
-    public void updateMeetingDay(Integer meetingDay) {
-        this.meetingDay = meetingDay;
-    }
-
-    public void updateMeetingStart(Integer meetingStart) {
-        this.meetingStart = meetingStart;
-    }
-
-    public void updateMeetingEnd(Integer meetingEnd) {
-        this.meetingEnd = meetingEnd;
-    }
-
-    public Integer getMeetingDay() {
-        return this.meetingDay;
-    }
-
-    public Integer getMeetingStart() {
-        return meetingStart;
-    }
-
-    public Integer getMeetingEnd() {
-        return meetingEnd;
-    }
 }

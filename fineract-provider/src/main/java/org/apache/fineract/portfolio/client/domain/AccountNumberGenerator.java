@@ -18,8 +18,6 @@
  */
 package org.apache.fineract.portfolio.client.domain;
 
-import static org.apache.fineract.portfolio.savings.SavingsApiConstants.GURANTEE_PRODUCT_NAME;
-
 import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
@@ -55,7 +53,6 @@ public class AccountNumberGenerator {
     private static final String OFFICE_NAME = "officeName";
     private static final String LOAN_PRODUCT_SHORT_NAME = "loanProductShortName";
     private static final String SAVINGS_PRODUCT_SHORT_NAME = "savingsProductShortName";
-    private static final String SAVINGS_CLIENT_ID = "savingsAccountClientId";
     private static final String SHARE_PRODUCT_SHORT_NAME = "sharesProductShortName";
     private static final String PREFIX_SHORT_NAME = "prefixShortName";
     private final AccountNumberFormatRepository accountNumberFormatRepository;
@@ -101,9 +98,6 @@ public class AccountNumberGenerator {
         propertyMap.put(ID, savingsAccount.getId().toString());
         propertyMap.put(OFFICE_NAME, savingsAccount.office().getName());
         propertyMap.put(SAVINGS_PRODUCT_SHORT_NAME, savingsAccount.savingsProduct().getShortName());
-        if (savingsAccount.savingsProduct().getName().equals(GURANTEE_PRODUCT_NAME)) {
-            propertyMap.put(SAVINGS_CLIENT_ID, String.valueOf(savingsAccount.clientId()));
-        }
         propertyMap.put(ENTITY_TYPE, "savingsAccount");
         return generateAccountNumber(propertyMap, accountNumberFormat);
     }
@@ -161,10 +155,6 @@ public class AccountNumberGenerator {
                 case PREFIX_SHORT_NAME:
                     generatePrefix(propertyMap, propertyMap.get(ID), accountMaxLength, accountNumberFormat);
                     prefix = propertyMap.get(PREFIX_SHORT_NAME);
-                break;
-
-                case SAVINGS_CLIENT_ID:
-                    prefix = propertyMap.get(SAVINGS_CLIENT_ID);
                 break;
             }
 

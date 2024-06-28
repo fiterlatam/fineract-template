@@ -32,7 +32,5 @@ public interface GenericDataService {
 
     String wrapSQL(String sql);
 
-    String wrapSQLCount(String sql);
-
     List<ResultsetColumnHeaderData> fillResultsetColumnHeaders(String datatable);
 }

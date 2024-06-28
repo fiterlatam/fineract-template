@@ -23,7 +23,6 @@ import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
-import org.apache.fineract.organisation.bankAccount.data.BankAccountData;
 import org.apache.fineract.organisation.monetary.data.CurrencyData;
 import org.apache.fineract.portfolio.account.data.AccountTransferData;
 import org.apache.fineract.portfolio.paymentdetail.data.PaymentDetailData;
@@ -54,7 +53,7 @@ public class LoanTransactionData {
     private final BigDecimal penaltyChargesPortion;
     private final BigDecimal overpaymentPortion;
     private final BigDecimal unrecognizedIncomePortion;
-    private String externalId;
+    private final String externalId;
     private final AccountTransferData transfer;
     private final BigDecimal fixedEmiAmount;
     private final BigDecimal outstandingLoanBalance;
@@ -70,7 +69,6 @@ public class LoanTransactionData {
     private Collection<CodeValueData> writeOffReasonOptions = null;
 
     private Integer numberOfRepayments = 0;
-    private Integer installmentNumber;
 
     // import fields
     private transient Integer rowIndex;
@@ -87,9 +85,6 @@ public class LoanTransactionData {
     private transient Long accountId;
     private transient String transactionType;
     private List<LoanRepaymentScheduleInstallmentData> loanRepaymentScheduleInstallments;
-    private String note;
-    private List<BankAccountData> bankAccounts;
-    private BigDecimal collateralAmount;
 
     public static LoanTransactionData importInstance(BigDecimal repaymentAmount, LocalDate lastRepaymentDate, Long repaymentTypeId,
             Integer rowIndex, String locale, String dateFormat) {
@@ -177,23 +172,10 @@ public class LoanTransactionData {
         this.possibleNextRepaymentDate = null;
         this.paymentTypeOptions = null;
         this.writeOffReasonOptions = null;
-        this.numberOfRepayments = null;
     }
 
     public void setNumberOfRepayments(Integer numberOfRepayments) {
         this.numberOfRepayments = numberOfRepayments;
-    }
-
-    public void setCollateralAmount(BigDecimal collateralAmount) {
-        this.collateralAmount = collateralAmount;
-    }
-
-    public BigDecimal getCollateralAmount() {
-        return this.collateralAmount;
-    }
-
-    public Integer getNumberOfRepayments() {
-        return numberOfRepayments;
     }
 
     public void setLoanRepaymentScheduleInstallments(final List<LoanRepaymentScheduleInstallmentData> loanRepaymentScheduleInstallments) {
@@ -210,18 +192,13 @@ public class LoanTransactionData {
 
     public static LoanTransactionData templateOnTop(final LoanTransactionData loanTransactionData,
             final Collection<PaymentTypeData> paymentTypeOptions) {
-        final LoanTransactionData loanTransactionTemplate = new LoanTransactionData(loanTransactionData.id, loanTransactionData.officeId,
-                loanTransactionData.officeName, loanTransactionData.type, loanTransactionData.paymentDetailData,
-                loanTransactionData.currency, loanTransactionData.date, loanTransactionData.amount, loanTransactionData.netDisbursalAmount,
-                loanTransactionData.principalPortion, loanTransactionData.interestPortion, loanTransactionData.feeChargesPortion,
-                loanTransactionData.penaltyChargesPortion, loanTransactionData.overpaymentPortion,
-                loanTransactionData.unrecognizedIncomePortion, paymentTypeOptions, loanTransactionData.externalId,
-                loanTransactionData.transfer, loanTransactionData.fixedEmiAmount, loanTransactionData.outstandingLoanBalance,
-                loanTransactionData.manuallyReversed);
-        loanTransactionTemplate.setInstallmentNumber(loanTransactionData.getInstallmentNumber());
-        loanTransactionTemplate.setNumberOfRepayments(loanTransactionData.getNumberOfRepayments());
-        loanTransactionTemplate.setCollateralAmount(loanTransactionData.getCollateralAmount());
-        return loanTransactionTemplate;
+        return new LoanTransactionData(loanTransactionData.id, loanTransactionData.officeId, loanTransactionData.officeName,
+                loanTransactionData.type, loanTransactionData.paymentDetailData, loanTransactionData.currency, loanTransactionData.date,
+                loanTransactionData.amount, loanTransactionData.netDisbursalAmount, loanTransactionData.principalPortion,
+                loanTransactionData.interestPortion, loanTransactionData.feeChargesPortion, loanTransactionData.penaltyChargesPortion,
+                loanTransactionData.overpaymentPortion, loanTransactionData.unrecognizedIncomePortion, paymentTypeOptions,
+                loanTransactionData.externalId, loanTransactionData.transfer, loanTransactionData.fixedEmiAmount,
+                loanTransactionData.outstandingLoanBalance, loanTransactionData.manuallyReversed);
 
     }
 
@@ -393,37 +370,5 @@ public class LoanTransactionData {
 
     public void setLoanChargePaidByList(Collection<LoanChargePaidByData> loanChargePaidByList) {
         this.loanChargePaidByList = loanChargePaidByList;
-    }
-
-    public Integer getInstallmentNumber() {
-        return installmentNumber;
-    }
-
-    public void setInstallmentNumber(Integer installmentNumber) {
-        this.installmentNumber = installmentNumber;
-    }
-
-    public Collection<PaymentTypeData> getPaymentTypeOptions() {
-        return paymentTypeOptions;
-    }
-
-    public BigDecimal getOutstandingLoanBalance() {
-        return outstandingLoanBalance;
-    }
-
-    public void setExternalId(String externalId) {
-        this.externalId = externalId;
-    }
-
-    public void setNote(String note) {
-        this.note = note;
-    }
-
-    public List<BankAccountData> getBankAccounts() {
-        return bankAccounts;
-    }
-
-    public void setBankAccounts(List<BankAccountData> bankAccounts) {
-        this.bankAccounts = bankAccounts;
     }
 }

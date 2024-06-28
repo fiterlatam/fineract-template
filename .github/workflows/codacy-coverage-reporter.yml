@@ -1,0 +1,43 @@
+name: Fiter Latam - Codacy Coverage Reporter
+on:
+  push:
+    branches:
+      - fiter/latam/dev
+  pull_request:
+    branches:
+      - fiter/latam/dev
+jobs:
+  codacy-coverage-reporter:
+    name: Build and upload code coverage report
+    runs-on: ubuntu-latest
+    steps:
+
+        - name: Check out code
+          uses: actions/checkout@v3
+
+        - name: JDK 17 Setup
+          uses: actions/setup-java@v3
+          with:
+            java-version: '17'
+            distribution: 'temurin'
+            cache: gradle
+
+        - name: Run Coverage
+          run: |
+            chmod +x gradlew
+            ./gradlew clean bootJar
+            ./gradlew :fineract-client:test -x spotlessCheck  
+            ./gradlew :fineract-provider:test -x spotlessCheck
+
+        - name: Merge coverage reports
+          run: |
+            chmod +x gradlew
+            ./gradlew generateMergedReport
+
+        - name: Run codacy-coverage-reporter
+          continue-on-error: true
+          uses: codacy/codacy-coverage-reporter-action@master
+          with:
+            api-token: "${{ secrets.CODACY_API_TOKEN }}"
+            coverage-reports: ../fineract-template/build/reports/jacoco/generateMergedReport/generateMergedReport.xml
+

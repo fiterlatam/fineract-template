@@ -293,18 +293,15 @@ public class LoanScheduleAssembler {
                 numberOfDays = configurationDomainService.retreivePeroidInNumberOfDaysForSkipMeetingDate().intValue();
             }
         }
-        final boolean isMeetingMandatoryForJLGLoans = this.configurationDomainService.isMeetingMandatoryForJLGLoans();
-        if (Boolean.TRUE.equals(isMeetingMandatoryForJLGLoans)) {
-            if ((loanType.isJLGAccount() || loanType.isGroupAccount()) && calendar != null) {
-                validateRepaymentsStartDateWithMeetingDates(calculatedRepaymentsStartingFromDate, calendar, isSkipMeetingOnFirstDay,
-                        numberOfDays);
+        if ((loanType.isJLGAccount() || loanType.isGroupAccount()) && calendar != null) {
+            validateRepaymentsStartDateWithMeetingDates(calculatedRepaymentsStartingFromDate, calendar, isSkipMeetingOnFirstDay,
+                    numberOfDays);
 
-                /*
-                 * If disbursement is synced on meeting, make sure disbursement date is on a meeting date
-                 */
-                if (synchDisbursement != null && synchDisbursement.booleanValue()) {
-                    validateDisbursementDateWithMeetingDates(expectedDisbursementDate, calendar, isSkipMeetingOnFirstDay, numberOfDays);
-                }
+            /*
+             * If disbursement is synced on meeting, make sure disbursement date is on a meeting date
+             */
+            if (synchDisbursement != null && synchDisbursement.booleanValue()) {
+                validateDisbursementDateWithMeetingDates(expectedDisbursementDate, calendar, isSkipMeetingOnFirstDay, numberOfDays);
             }
         }
 
@@ -639,7 +636,7 @@ public class LoanScheduleAssembler {
             final List<Holiday> holidays, final WorkingDays workingDays, final JsonElement element,
             List<LoanDisbursementDetails> disbursementDetails) {
 
-        final Set<LoanCharge> loanCharges = this.loanChargeAssembler.fromParsedJson(element, disbursementDetails, loanApplicationTerms);
+        final Set<LoanCharge> loanCharges = this.loanChargeAssembler.fromParsedJson(element, disbursementDetails);
 
         final RoundingMode roundingMode = MoneyHelper.getRoundingMode();
         final MathContext mc = new MathContext(8, roundingMode);
@@ -1093,47 +1090,6 @@ public class LoanScheduleAssembler {
             } /** yearly loan **/
             else {
                 dateBasedOnRepaymentFrequency = expectedDisbursementDate.plusYears(repaymentEvery);
-            }
-            derivedFirstRepayment = dateBasedOnRepaymentFrequency.isAfter(dateBasedOnMinimumDaysBetweenDisbursalAndFirstRepayment)
-                    ? dateBasedOnRepaymentFrequency
-                    : dateBasedOnMinimumDaysBetweenDisbursalAndFirstRepayment;
-        }
-
-        return derivedFirstRepayment;
-    }
-
-    public LocalDate deriveFirstRepaymentDate(final Loan loan, final LocalDate expectedDisbursementDate, Calendar calendar) {
-
-        LocalDate derivedFirstRepayment = null;
-
-        LoanProduct loanProduct = loan.getLoanProduct();
-        final LocalDate dateBasedOnMinimumDaysBetweenDisbursalAndFirstRepayment = expectedDisbursementDate
-                .plusDays(loanProduct.getMinimumDaysBetweenDisbursalAndFirstRepayment());
-        LoanProductRelatedDetail loanRepaymentScheduleDetail = loan.getLoanRepaymentScheduleDetail();
-        final LocalDate refernceDateForCalculatingFirstRepaymentDate = expectedDisbursementDate;
-        Integer repayEvery = loanRepaymentScheduleDetail.getRepayEvery();
-        PeriodFrequencyType repaymentPeriodFrequencyType = loanRepaymentScheduleDetail.getRepaymentPeriodFrequencyType();
-        if (calendar != null) {
-            derivedFirstRepayment = deriveFirstRepaymentDateForLoans(repayEvery, expectedDisbursementDate,
-                    refernceDateForCalculatingFirstRepaymentDate, repaymentPeriodFrequencyType,
-                    loanProduct.getMinimumDaysBetweenDisbursalAndFirstRepayment(), calendar);
-
-        } /*** Individual or group account, or JLG not linked to a meeting ***/
-        else {
-            LocalDate dateBasedOnRepaymentFrequency;
-            // Derive the first repayment date as greater date among
-            // (disbursement date + plus frequency) or
-            // (disbursement date + minimum between disbursal and first
-            // repayment )
-            if (repaymentPeriodFrequencyType.isDaily()) {
-                dateBasedOnRepaymentFrequency = expectedDisbursementDate.plusDays(repayEvery);
-            } else if (repaymentPeriodFrequencyType.isWeekly()) {
-                dateBasedOnRepaymentFrequency = expectedDisbursementDate.plusWeeks(repayEvery);
-            } else if (repaymentPeriodFrequencyType.isMonthly()) {
-                dateBasedOnRepaymentFrequency = expectedDisbursementDate.plusMonths(repayEvery);
-            } /** yearly loan **/
-            else {
-                dateBasedOnRepaymentFrequency = expectedDisbursementDate.plusYears(repayEvery);
             }
             derivedFirstRepayment = dateBasedOnRepaymentFrequency.isAfter(dateBasedOnMinimumDaysBetweenDisbursalAndFirstRepayment)
                     ? dateBasedOnRepaymentFrequency

@@ -18,7 +18,6 @@
  */
 package org.apache.fineract.portfolio.savings.service;
 
-import static org.apache.fineract.portfolio.savings.SavingsApiConstants.GURANTEE_PRODUCT_NAME;
 import static org.apache.fineract.portfolio.savings.SavingsApiConstants.SAVINGS_ACCOUNT_RESOURCE_NAME;
 
 import com.google.gson.JsonArray;
@@ -39,7 +38,6 @@ import org.apache.fineract.commands.domain.CommandWrapper;
 import org.apache.fineract.commands.service.CommandProcessingService;
 import org.apache.fineract.commands.service.CommandWrapperBuilder;
 import org.apache.fineract.infrastructure.accountnumberformat.domain.AccountNumberFormat;
-import org.apache.fineract.infrastructure.accountnumberformat.domain.AccountNumberFormatEnumerations;
 import org.apache.fineract.infrastructure.accountnumberformat.domain.AccountNumberFormatRepositoryWrapper;
 import org.apache.fineract.infrastructure.accountnumberformat.domain.EntityAccountType;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
@@ -64,7 +62,6 @@ import org.apache.fineract.portfolio.businessevent.service.BusinessEventNotifier
 import org.apache.fineract.portfolio.client.domain.AccountNumberGenerator;
 import org.apache.fineract.portfolio.client.domain.Client;
 import org.apache.fineract.portfolio.client.domain.ClientRepositoryWrapper;
-import org.apache.fineract.portfolio.client.exception.ClientHasSavingsAccountException;
 import org.apache.fineract.portfolio.client.exception.ClientNotActiveException;
 import org.apache.fineract.portfolio.group.domain.Group;
 import org.apache.fineract.portfolio.group.domain.GroupRepository;
@@ -176,15 +173,7 @@ public class SavingsApplicationProcessWritePlatformServiceJpaRepositoryImpl impl
             final AppUser submittedBy = this.context.authenticatedUser();
 
             final SavingsAccount account = this.savingAccountAssembler.assembleFrom(command, submittedBy);
-
-            // FBR-47 if client already has a savings account don't create another
-            List<SavingsAccount> savingsAccounts = this.savingAccountRepository.findSavingAccountByClientId(account.clientId());
-
-            if (savingsAccounts.isEmpty()) {
-                this.savingAccountRepository.save(account);
-            } else {
-                throw new ClientHasSavingsAccountException(account.clientId());
-            }
+            this.savingAccountRepository.save(account);
             String accountNumber = "";
             GroupSavingsIndividualMonitoring gsimAccount = null;
             BigDecimal applicationId = BigDecimal.ZERO;
@@ -296,11 +285,7 @@ public class SavingsApplicationProcessWritePlatformServiceJpaRepositoryImpl impl
 
     private void generateAccountNumber(final SavingsAccount account) {
         if (account.isAccountNumberRequiresAutoGeneration()) {
-            AccountNumberFormat accountNumberFormat = this.accountNumberFormatRepository.findByAccountType(EntityAccountType.SAVINGS);
-            if (account != null && account.savingsProduct().getName().equals(GURANTEE_PRODUCT_NAME)) {
-                accountNumberFormat = new AccountNumberFormat(EntityAccountType.SAVINGS,
-                        AccountNumberFormatEnumerations.AccountNumberPrefixType.SAVINGS_CLIENT_ID, String.valueOf(account.clientId()));
-            }
+            final AccountNumberFormat accountNumberFormat = this.accountNumberFormatRepository.findByAccountType(EntityAccountType.SAVINGS);
             account.updateAccountNo(this.accountNumberGenerator.generate(account, accountNumberFormat));
 
             this.savingAccountRepository.saveAndFlush(account);

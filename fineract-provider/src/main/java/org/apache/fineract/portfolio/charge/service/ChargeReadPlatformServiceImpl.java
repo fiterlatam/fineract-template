@@ -38,8 +38,6 @@ import org.apache.fineract.organisation.monetary.data.CurrencyData;
 import org.apache.fineract.organisation.monetary.service.CurrencyReadPlatformService;
 import org.apache.fineract.portfolio.charge.data.ChargeData;
 import org.apache.fineract.portfolio.charge.domain.ChargeAppliesTo;
-import org.apache.fineract.portfolio.charge.domain.ChargeRange;
-import org.apache.fineract.portfolio.charge.domain.ChargeRangeRepository;
 import org.apache.fineract.portfolio.charge.domain.ChargeTimeType;
 import org.apache.fineract.portfolio.charge.exception.ChargeNotFoundException;
 import org.apache.fineract.portfolio.common.service.CommonEnumerations;
@@ -71,7 +69,6 @@ public class ChargeReadPlatformServiceImpl implements ChargeReadPlatformService 
     private final NamedParameterJdbcTemplate namedParameterJdbcTemplate;
     private final TaxReadPlatformService taxReadPlatformService;
     private final ConfigurationDomainServiceJpa configurationDomainServiceJpa;
-    private final ChargeRangeRepository chargeRangeRepository;
 
     @Autowired
     public ChargeReadPlatformServiceImpl(final CurrencyReadPlatformService currencyReadPlatformService,
@@ -79,7 +76,7 @@ public class ChargeReadPlatformServiceImpl implements ChargeReadPlatformService 
             final DropdownReadPlatformService dropdownReadPlatformService, final FineractEntityAccessUtil fineractEntityAccessUtil,
             final AccountingDropdownReadPlatformService accountingDropdownReadPlatformService,
             final TaxReadPlatformService taxReadPlatformService, final ConfigurationDomainServiceJpa configurationDomainServiceJpa,
-            final NamedParameterJdbcTemplate namedParameterJdbcTemplate, final ChargeRangeRepository chargeRangeRepository) {
+            final NamedParameterJdbcTemplate namedParameterJdbcTemplate) {
         this.chargeDropdownReadPlatformService = chargeDropdownReadPlatformService;
         this.jdbcTemplate = jdbcTemplate;
         this.currencyReadPlatformService = currencyReadPlatformService;
@@ -89,7 +86,6 @@ public class ChargeReadPlatformServiceImpl implements ChargeReadPlatformService 
         this.namedParameterJdbcTemplate = namedParameterJdbcTemplate;
         this.taxReadPlatformService = taxReadPlatformService;
         this.configurationDomainServiceJpa = configurationDomainServiceJpa;
-        this.chargeRangeRepository = chargeRangeRepository;
     }
 
     @Override
@@ -128,17 +124,10 @@ public class ChargeReadPlatformServiceImpl implements ChargeReadPlatformService 
             sql += addInClauseToSQL_toLimitChargesMappedToOffice_ifOfficeSpecificProductsEnabled();
 
             sql = sql + " ;";
-            ChargeData charge = this.jdbcTemplate.queryForObject(sql, rm, new Object[] { chargeId }); // NOSONAR
-            appendRangeToCharge(charge);
-            return charge;
+            return this.jdbcTemplate.queryForObject(sql, rm, new Object[] { chargeId }); // NOSONAR
         } catch (final EmptyResultDataAccessException e) {
             throw new ChargeNotFoundException(chargeId, e);
         }
-    }
-
-    private void appendRangeToCharge(ChargeData charge) {
-        List<ChargeRange> chargeRanges = this.chargeRangeRepository.findByChargeId(charge.getId());
-        chargeRanges.forEach(cl -> charge.addRange(cl));
     }
 
     @Override
@@ -169,16 +158,13 @@ public class ChargeReadPlatformServiceImpl implements ChargeReadPlatformService 
         final String accountMappingForChargeConfig = this.configurationDomainServiceJpa.getAccountMappingForCharge();
         final List<GLAccountData> expenseAccountOptions = this.accountingDropdownReadPlatformService.retrieveExpenseAccountOptions();
         final List<GLAccountData> assetAccountOptions = this.accountingDropdownReadPlatformService.retrieveAssetAccountOptions();
-        final List<EnumOptionData> chargeDisbursementTypeOptions = this.chargeDropdownReadPlatformService.retrieveDisbursementTypeOptions();
-        final List<EnumOptionData> chargeInstallmentFeeTypeOptions = this.chargeDropdownReadPlatformService
-                .retrieveInstallmentFeeTypeOptions();
 
         return ChargeData.template(currencyOptions, allowedChargeCalculationTypeOptions, allowedChargeAppliesToOptions,
                 allowedChargeTimeOptions, chargePaymentOptions, loansChargeCalculationTypeOptions, loansChargeTimeTypeOptions,
                 savingsChargeCalculationTypeOptions, savingsChargeTimeTypeOptions, clientChargeCalculationTypeOptions,
                 clientChargeTimeTypeOptions, feeFrequencyOptions, incomeOrLiabilityAccountOptions, taxGroupOptions,
                 shareChargeCalculationTypeOptions, shareChargeTimeTypeOptions, accountMappingForChargeConfig, expenseAccountOptions,
-                assetAccountOptions, chargeDisbursementTypeOptions, chargeInstallmentFeeTypeOptions);
+                assetAccountOptions);
     }
 
     @Override
@@ -234,6 +220,7 @@ public class ChargeReadPlatformServiceImpl implements ChargeReadPlatformService 
     /**
      * @param excludeChargeTimes
      * @param excludeClause
+     * @param params
      * @return
      */
     private void processChargeExclusionsForLoans(ChargeTimeType[] excludeChargeTimes, StringBuilder excludeClause) {
@@ -300,13 +287,10 @@ public class ChargeReadPlatformServiceImpl implements ChargeReadPlatformService 
                     + "c.charge_applies_to_enum as chargeAppliesTo, c.charge_time_enum as chargeTime, "
                     + "c.charge_payment_mode_enum as chargePaymentMode, "
                     + "c.charge_calculation_enum as chargeCalculation, c.is_penalty as penalty, "
-                    + "c.is_active as active, c.is_free_withdrawal as isFreeWithdrawal, c.free_withdrawal_charge_frequency as freeWithdrawalChargeFrequency, "
-                    + "c.restart_frequency as restartFrequency, c.restart_frequency_enum as restartFrequencyEnum, "
-                    + "c.charge_disbursement_type_enum as chargeDisbursementType, "
-                    + "c.charge_installment_fee_type_enum as chargeInstallmentFeeType, "
+                    + "c.is_active as active, c.is_free_withdrawal as isFreeWithdrawal, c.free_withdrawal_charge_frequency as freeWithdrawalChargeFrequency, c.restart_frequency as restartFrequency, c.restart_frequency_enum as restartFrequencyEnum,"
                     + "oc.name as currencyName, oc.decimal_places as currencyDecimalPlaces, "
                     + "oc.currency_multiplesof as inMultiplesOf, oc.display_symbol as currencyDisplaySymbol, "
-                    + "oc.internationalized_name_code as currencyNameCode, oc.int_code as intCode, c.fee_on_day as feeOnDay, c.fee_on_month as feeOnMonth, "
+                    + "oc.internationalized_name_code as currencyNameCode, c.fee_on_day as feeOnDay, c.fee_on_month as feeOnMonth, "
                     + "c.fee_interval as feeInterval, c.fee_frequency as feeFrequency,c.min_cap as minCap,c.max_cap as maxCap, "
                     + "c.income_or_liability_account_id as glAccountId , acc.name as glAccountName, acc.gl_code as glCode, "
                     + "tg.id as taxGroupId, c.is_payment_type as isPaymentType, pt.id as paymentTypeId, pt.value as paymentTypeName, tg.name as taxGroupName "
@@ -349,12 +333,6 @@ public class ChargeReadPlatformServiceImpl implements ChargeReadPlatformService 
 
             final int chargeTime = rs.getInt("chargeTime");
             final EnumOptionData chargeTimeType = ChargeEnumerations.chargeTimeType(chargeTime);
-
-            final int chargeDisbursementTypeId = rs.getInt("chargeDisbursementType");
-            final EnumOptionData chargeDisbursementType = ChargeEnumerations.chargeDisbursementType(chargeDisbursementTypeId);
-
-            final int chargeInstallmentFeeTypeId = rs.getInt("chargeInstallmentFeeType");
-            final EnumOptionData chargeInstallmentFeeType = ChargeEnumerations.chargeInstallmentFeeType(chargeInstallmentFeeTypeId);
 
             final int chargeCalculation = rs.getInt("chargeCalculation");
             final EnumOptionData chargeCalculationType = ChargeEnumerations.chargeCalculationType(chargeCalculation);
@@ -413,7 +391,7 @@ public class ChargeReadPlatformServiceImpl implements ChargeReadPlatformService 
             return ChargeData.instance(id, name, amount, currency, chargeTimeType, chargeAppliesToType, chargeCalculationType,
                     chargePaymentMode, feeOnMonthDay, feeInterval, penalty, active, isFreeWithdrawal, freeWithdrawalChargeFrequency,
                     restartFrequency, restartFrequencyEnum, isPaymentType, paymentTypeData, minCap, maxCap, feeFrequencyType, glAccountData,
-                    taxGroupData, chargeDisbursementType, chargeInstallmentFeeType);
+                    taxGroupData);
         }
     }
 

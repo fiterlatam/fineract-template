@@ -18,7 +18,6 @@
  */
 package org.apache.fineract.portfolio.savings.service;
 
-import static org.apache.fineract.portfolio.savings.SavingsApiConstants.GURANTEE_PRODUCT_NAME;
 import static org.apache.fineract.portfolio.savings.SavingsApiConstants.SAVINGS_ACCOUNT_CHARGE_RESOURCE_NAME;
 import static org.apache.fineract.portfolio.savings.SavingsApiConstants.SAVINGS_ACCOUNT_RESOURCE_NAME;
 import static org.apache.fineract.portfolio.savings.SavingsApiConstants.amountParamName;
@@ -32,7 +31,6 @@ import static org.apache.fineract.portfolio.savings.SavingsApiConstants.withdraw
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.time.LocalDate;
@@ -46,7 +44,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import org.apache.commons.lang3.StringUtils;
@@ -63,15 +60,11 @@ import org.apache.fineract.infrastructure.core.exception.GeneralPlatformDomainRu
 import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidationException;
 import org.apache.fineract.infrastructure.core.exception.PlatformDataIntegrityException;
 import org.apache.fineract.infrastructure.core.exception.PlatformServiceUnavailableException;
-import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
-import org.apache.fineract.infrastructure.core.serialization.JsonParserHelper;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.dataqueries.data.EntityTables;
 import org.apache.fineract.infrastructure.dataqueries.data.StatusEnum;
 import org.apache.fineract.infrastructure.dataqueries.service.EntityDatatableChecksWritePlatformService;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
-import org.apache.fineract.organisation.bankcheque.data.ChequeData;
-import org.apache.fineract.organisation.bankcheque.service.ChequeReadPlatformService;
 import org.apache.fineract.organisation.holiday.domain.HolidayRepositoryWrapper;
 import org.apache.fineract.organisation.monetary.domain.ApplicationCurrency;
 import org.apache.fineract.organisation.monetary.domain.ApplicationCurrencyRepositoryWrapper;
@@ -104,8 +97,6 @@ import org.apache.fineract.portfolio.note.domain.Note;
 import org.apache.fineract.portfolio.note.domain.NoteRepository;
 import org.apache.fineract.portfolio.paymentdetail.domain.PaymentDetail;
 import org.apache.fineract.portfolio.paymentdetail.service.PaymentDetailWritePlatformService;
-import org.apache.fineract.portfolio.paymenttype.data.PaymentTypeData;
-import org.apache.fineract.portfolio.paymenttype.service.PaymentTypeReadPlatformService;
 import org.apache.fineract.portfolio.savings.SavingsAccountTransactionType;
 import org.apache.fineract.portfolio.savings.SavingsApiConstants;
 import org.apache.fineract.portfolio.savings.SavingsTransactionBooleanValues;
@@ -181,9 +172,6 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
     private final LumaAccountingProcessorForSavingsService lumaAccountingProcessorForSavingsService;
     private final BitaCoraMasterRepository bitaCoraMasterRepository;
     private final ExchangeRepository exchangeRepository;
-    private final ChequeReadPlatformService chequeReadPlatformService;
-    private final PaymentTypeReadPlatformService paymentTypeReadPlatformService;
-    private final FromJsonHelper fromApiJsonHelper;
 
     @Autowired
     public SavingsAccountWritePlatformServiceJpaRepositoryImpl(final PlatformSecurityContext context,
@@ -207,10 +195,8 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
             final AppUserRepositoryWrapper appuserRepository, final StandingInstructionRepository standingInstructionRepository,
             final BusinessEventNotifierService businessEventNotifierService, final GSIMRepositoy gsimRepository,
             final JdbcTemplate jdbcTemplate, final SavingsAccountInterestPostingService savingsAccountInterestPostingService,
-            final LumaAccountingProcessorForSavingsService lumaAccountingProcessorForSavingsService, final FromJsonHelper fromApiJsonHelper,
-            final BitaCoraMasterRepository bitaCoraMasterRepository, final ExchangeRepository exchangeRepository,
-            final ChequeReadPlatformService chequeReadPlatformService,
-            final PaymentTypeReadPlatformService paymentTypeReadPlatformService) {
+            final LumaAccountingProcessorForSavingsService lumaAccountingProcessorForSavingsService,
+            final BitaCoraMasterRepository bitaCoraMasterRepository, final ExchangeRepository exchangeRepository) {
         this.context = context;
         this.savingAccountRepositoryWrapper = savingAccountRepositoryWrapper;
         this.savingsAccountTransactionRepository = savingsAccountTransactionRepository;
@@ -242,9 +228,6 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
         this.lumaAccountingProcessorForSavingsService = lumaAccountingProcessorForSavingsService;
         this.bitaCoraMasterRepository = bitaCoraMasterRepository;
         this.exchangeRepository = exchangeRepository;
-        this.chequeReadPlatformService = chequeReadPlatformService;
-        this.paymentTypeReadPlatformService = paymentTypeReadPlatformService;
-        this.fromApiJsonHelper = fromApiJsonHelper;
     }
 
     private static final Logger LOG = LoggerFactory.getLogger(SavingsAccountWritePlatformServiceJpaRepositoryImpl.class);
@@ -1954,7 +1937,7 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
 
     @Transactional
     @Override
-    public CommandProcessingResult releaseAmount(final Long savingsId, final Long savingsTransactionId, LocalDate transactionDate) {
+    public CommandProcessingResult releaseAmount(final Long savingsId, final Long savingsTransactionId) {
 
         final AppUser submittedBy = this.context.authenticatedUser();
         SavingsAccountTransaction holdTransaction = this.savingsAccountTransactionRepository
@@ -1983,14 +1966,11 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
 
         this.savingsAccountTransactionRepository.saveAndFlush(transaction);
         holdTransaction.updateReleaseId(transaction.getId());
-        if (transactionDate != null) {
-            holdTransaction.updateDateOf(transactionDate);
-        }
 
         if (backdatedTxnsAllowedTill) {
             this.savingsAccountTransactionRepository.saveAll(account.getSavingsAccountTransactionsWithPivotConfig());
         }
-        account.addTransaction(transaction);
+
         this.savingAccountRepositoryWrapper.save(account);
 
         return new CommandProcessingResultBuilder().withEntityId(transaction.getId()).withOfficeId(account.officeId())
@@ -2093,159 +2073,4 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
             throw new PlatformDataIntegrityException("Reason For Block is Mandatory", "error.msg.reason.for.block.mandatory");
         }
     }
-
-    @Override
-    public CommandProcessingResult depositAndHoldToClientGuaranteeAccount(BigDecimal depositAmount, BigDecimal requiredGuaranteeAmount,
-            Long clientId, Long loanId, LocalDate transactionDate, Long chequeId, JsonCommand command) {
-        CommandProcessingResult result = null;
-        List<SavingsAccount> savingsAccounts = this.savingAccountRepositoryWrapper.findSavingAccountByClientId(clientId);
-        Optional<SavingsAccount> guaranteeAccount = savingsAccounts.stream()
-                .filter(account -> account.savingsProduct().getName().equals(GURANTEE_PRODUCT_NAME)).findFirst();
-
-        boolean isGsim = false;
-
-        final boolean backdatedTxnsAllowedTill = this.savingAccountAssembler.getPivotConfigStatus();
-
-        if (!guaranteeAccount.isEmpty()) {
-            SavingsAccount savingsAccount = guaranteeAccount.get();
-
-            final SavingsAccount account = this.savingAccountAssembler.assembleFrom(savingsAccount.getId(), backdatedTxnsAllowedTill);
-
-            if (account.getGsim() != null) {
-                isGsim = true;
-                LOG.info("is gsim");
-            }
-            checkClientOrGroupActive(account);
-
-            this.savingsAccountTransactionDataValidator.validateTransactionWithPivotDate(transactionDate, account);
-
-            final Map<String, Object> changes = new LinkedHashMap<>();
-            PaymentDetail paymentDetail = null;
-            boolean isAccountTransfer = false;
-            boolean isRegularTransaction = true;
-            ChequeData chequeData = this.chequeReadPlatformService.retrieveChequeById(chequeId);
-            final Collection<PaymentTypeData> paymentTypeOptions = this.paymentTypeReadPlatformService.retrieveAllPaymentTypes();
-
-            final JsonObject jsonObject = new JsonObject();
-            final String localeAsString = "en";
-            final String dateFormat = "dd MMMM yyyy";
-            final LocalDate localDate = DateUtils.getBusinessLocalDate();
-            Locale locale = JsonParserHelper.localeFromString(localeAsString);
-            final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(dateFormat).withLocale(locale);
-            final String localDateString = localDate.format(dateTimeFormatter);
-            jsonObject.addProperty("locale", localeAsString);
-            jsonObject.addProperty("dateFormat", dateFormat);
-            jsonObject.addProperty("transactionAmount", depositAmount);
-            jsonObject.addProperty("transactionDate", localDateString);
-            if (!CollectionUtils.isEmpty(paymentTypeOptions)) {
-                jsonObject.addProperty("paymentTypeId", new ArrayList<>(paymentTypeOptions).get(0).getId());
-            }
-            jsonObject.addProperty("glAccountId", chequeData.getGlAccountId());
-            jsonObject.addProperty("accountNumber", chequeData.getBankAccNo());
-            jsonObject.addProperty("checkNumber", chequeData.getChequeNo());
-            jsonObject.addProperty("routingCode", "");
-            jsonObject.addProperty("receiptNumber", "");
-            jsonObject.addProperty("note", "Guarantias Deposit " + chequeData.getChequeNo());
-
-            // final JsonCommand commandJson = JsonCommand.from(jsonObject.toString());
-            // commandJson.setJsonCommand(jsonObject.toString());
-
-            final JsonCommand depositJsonCommand = JsonCommand.fromJsonElement(chequeId, jsonObject, this.fromApiJsonHelper);
-            depositJsonCommand.setJsonCommand(jsonObject.toString());
-
-            paymentDetail = this.paymentDetailWritePlatformService.createAndPersistPaymentDetail(depositJsonCommand, changes);
-
-            BigDecimal accountBalance = account.getAccountBalance();
-            BigDecimal amountToDeposit = requiredGuaranteeAmount;
-            if (accountBalance.compareTo(requiredGuaranteeAmount) < 0) {
-                amountToDeposit = requiredGuaranteeAmount.subtract(accountBalance);
-                final SavingsAccountTransaction deposit = this.savingsAccountDomainService.handleDeposit(account,
-                        DateUtils.DEFAULT_DATE_FORMATER, transactionDate, amountToDeposit, paymentDetail, isAccountTransfer,
-                        isRegularTransaction, backdatedTxnsAllowedTill);
-                deposit.setLoanId(loanId);
-                if (isGsim && (deposit.getId() != null)) {
-
-                    LOG.debug("Deposit account has been created: {} ", deposit);
-
-                    GroupSavingsIndividualMonitoring gsim = gsimRepository.findById(account.getGsim().getId()).orElseThrow();
-                    LOG.info("parent deposit : {} ", gsim.getParentDeposit());
-                    LOG.info("child account : {} ", savingsAccount.getId());
-                    BigDecimal currentBalance = gsim.getParentDeposit();
-                    BigDecimal newBalance = currentBalance.add(amountToDeposit);
-                    gsim.setParentDeposit(newBalance);
-                    gsimRepository.save(gsim);
-                    LOG.info("balance after making deposit : {} ",
-                            gsimRepository.findById(account.getGsim().getId()).orElseThrow().getParentDeposit());
-
-                }
-            }
-
-            this.savingAccountRepositoryWrapper.saveAndFlush(account);
-
-            // Hold Amount
-            Money runningBalance = Money.of(account.getCurrency(), accountBalance);
-            if (account.getSavingsHoldAmount() != null) {
-                runningBalance = runningBalance.minus(account.getSavingsHoldAmount()).minus(requiredGuaranteeAmount);
-            } else {
-                runningBalance = runningBalance.minus(requiredGuaranteeAmount);
-            }
-
-            SavingsAccountTransaction transaction = this.savingsAccountDomainService.handleHold(account, getAppUserIfPresent(),
-                    requiredGuaranteeAmount, transactionDate, false);
-            account.holdAmount(requiredGuaranteeAmount);
-            transaction.updateRunningBalance(runningBalance);
-            transaction.setLoanId(loanId);
-
-            final String reasonForBlock = "Hold deposit amount for disbursing loan";
-            transaction.updateReason(reasonForBlock);
-
-            this.savingsAccountTransactionDataValidator.validateTransactionWithPivotDate(transaction.getTransactionLocalDate(), account);
-
-            this.savingsAccountTransactionRepository.saveAndFlush(transaction);
-
-            if (backdatedTxnsAllowedTill) {
-                // Check again whether transactions are modified
-                this.savingsAccountTransactionRepository.saveAll(account.getSavingsAccountTransactionsWithPivotConfig());
-            }
-
-            this.savingAccountRepositoryWrapper.saveAndFlush(account);
-
-            result = new CommandProcessingResultBuilder() //
-                    .withEntityId(loanId) //
-                    .withOfficeId(account.officeId()) //
-                    .withClientId(clientId) //
-                    .withSavingsId(account.getId()) //
-                    .with(changes) //
-                    .build();
-        }
-
-        return result;
-    }
-
-    @Override
-    public CommandProcessingResult releaseLoanGuarantee(Long loanId, JsonCommand command, LocalDate transactionDate,
-            SavingsAccountTransaction holdTransaction) {
-
-        Long savingsId = holdTransaction.getSavingsAccount().getId();
-
-        // release on hold guarantee
-        CommandProcessingResult releaseResult = this.releaseAmount(savingsId, holdTransaction.getId(), transactionDate);
-        SavingsAccountTransaction releaseTransaction = this.savingsAccountTransactionRepository
-                .findOneByIdAndSavingsAccountId(releaseResult.resourceId(), savingsId);
-        releaseTransaction.setLoanId(loanId);
-        this.savingsAccountTransactionRepository.saveAndFlush(releaseTransaction);
-
-        // Withdraw guarantee
-        // update transaction amount in command
-        JsonElement element = command.parsedJson();
-        JsonObject object = element.getAsJsonObject();
-        object.addProperty("transactionAmount", holdTransaction.getAmount());
-        command.setJsonCommand(object.toString());
-
-        return new CommandProcessingResultBuilder().withEntityId(releaseResult.resourceId())
-                .withOfficeId(holdTransaction.getSavingsAccount().officeId()).withClientId(holdTransaction.getSavingsAccount().clientId())
-                .withGroupId(holdTransaction.getSavingsAccount().groupId()).withSavingsId(holdTransaction.getSavingsAccount().getId())
-                .build();
-    }
-
 }

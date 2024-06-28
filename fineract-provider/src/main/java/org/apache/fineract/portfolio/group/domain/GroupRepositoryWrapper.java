@@ -20,7 +20,6 @@ package org.apache.fineract.portfolio.group.domain;
 
 import java.time.LocalDate;
 import org.apache.fineract.organisation.office.domain.Office;
-import org.apache.fineract.organisation.prequalification.domain.PrequalificationGroup;
 import org.apache.fineract.portfolio.group.exception.GroupNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -42,12 +41,6 @@ public class GroupRepositoryWrapper {
 
     public Group findOneWithNotFoundDetection(final Long id) {
         return this.repository.findById(id).orElseThrow(() -> new GroupNotFoundException(id));
-    }
-
-    public Group findOneWithPrequalificationIdNotFoundDetection(final PrequalificationGroup prequalificationGroup) {
-        return this.repository.findByPrequalificationGroup(prequalificationGroup)
-                .orElseThrow(() -> new GroupNotFoundException(prequalificationGroup.getId()));
-
     }
 
     public Group findByOfficeWithNotFoundDetection(final Long id, final Office office) {

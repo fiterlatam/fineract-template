@@ -37,10 +37,6 @@ import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
 import org.apache.fineract.organisation.holiday.domain.Holiday;
 import org.apache.fineract.organisation.holiday.domain.HolidayRepository;
 import org.apache.fineract.organisation.holiday.domain.HolidayStatusType;
-import org.apache.fineract.organisation.prequalification.domain.PrequalificationGroup;
-import org.apache.fineract.organisation.prequalification.domain.PrequalificationGroupRepositoryWrapper;
-import org.apache.fineract.organisation.prequalification.domain.PrequalificationStatus;
-import org.apache.fineract.organisation.prequalification.exception.PrequalificationIncorrectStatusException;
 import org.apache.fineract.organisation.staff.domain.Staff;
 import org.apache.fineract.organisation.staff.domain.StaffRepository;
 import org.apache.fineract.organisation.staff.exception.StaffNotFoundException;
@@ -116,7 +112,6 @@ public class LoanAssembler {
     private final WorkingDaysRepositoryWrapper workingDaysRepository;
     private final LoanUtilService loanUtilService;
     private final RateAssembler rateAssembler;
-    private final PrequalificationGroupRepositoryWrapper prequalificationGroupRepositoryWrapper;
 
     @Autowired
     public LoanAssembler(final FromJsonHelper fromApiJsonHelper, final LoanRepositoryWrapper loanRepository,
@@ -128,8 +123,7 @@ public class LoanAssembler {
             final LoanCollateralAssembler collateralAssembler, final LoanSummaryWrapper loanSummaryWrapper,
             final LoanRepaymentScheduleTransactionProcessorFactory loanRepaymentScheduleTransactionProcessorFactory,
             final HolidayRepository holidayRepository, final ConfigurationDomainService configurationDomainService,
-            final WorkingDaysRepositoryWrapper workingDaysRepository, final LoanUtilService loanUtilService, RateAssembler rateAssembler,
-            PrequalificationGroupRepositoryWrapper prequalificationGroupRepositoryWrapper) {
+            final WorkingDaysRepositoryWrapper workingDaysRepository, final LoanUtilService loanUtilService, RateAssembler rateAssembler) {
         this.fromApiJsonHelper = fromApiJsonHelper;
         this.loanRepository = loanRepository;
         this.loanProductRepository = loanProductRepository;
@@ -149,7 +143,6 @@ public class LoanAssembler {
         this.workingDaysRepository = workingDaysRepository;
         this.loanUtilService = loanUtilService;
         this.rateAssembler = rateAssembler;
-        this.prequalificationGroupRepositoryWrapper = prequalificationGroupRepositoryWrapper;
     }
 
     public Loan assembleFrom(final Long accountId) {
@@ -257,10 +250,7 @@ public class LoanAssembler {
             }
         }
 
-        // TODO: FBR-369 get range rate and generate charge
-        LoanApplicationTerms loanApplicationTerms = this.loanScheduleAssembler.assembleLoanTerms(element);
-
-        final Set<LoanCharge> loanCharges = this.loanChargeAssembler.fromParsedJson(element, disbursementDetails, loanApplicationTerms);
+        final Set<LoanCharge> loanCharges = this.loanChargeAssembler.fromParsedJson(element, disbursementDetails);
         for (final LoanCharge loanCharge : loanCharges) {
             if (!loanProduct.hasCurrencyCodeOf(loanCharge.currencyCode())) {
                 final String errorMessage = "Charge and Loan must have the same currency.";
@@ -348,19 +338,7 @@ public class LoanAssembler {
             }
         }
 
-        PrequalificationGroup prequalificationGroup = null;
-        final Boolean isBulkImport = this.fromApiJsonHelper.extractBooleanNamed("isBulkImport", element);
-        final Boolean isRestructuredLoan = this.fromApiJsonHelper.extractBooleanNamed("isRestructuredLoan", element);
-        if ((isBulkImport == null || !isBulkImport) && (isRestructuredLoan == null || !isRestructuredLoan)) {
-            final Long prequalificationId = this.fromApiJsonHelper.extractLongNamed("prequalificationId", element);
-            prequalificationGroup = this.prequalificationGroupRepositoryWrapper.findOneWithNotFoundDetection(prequalificationId);
-            if (!PrequalificationStatus.BURO_CHECKED.getValue().equals(prequalificationGroup.getStatus())) {
-                throw new PrequalificationIncorrectStatusException(
-                        PrequalificationStatus.fromInt(prequalificationGroup.getStatus()).getCode());
-            }
-        }
-        loanApplicationTerms = this.loanScheduleAssembler.assembleLoanTerms(element);
-        loanApplicationTerms.getCalculatedRepaymentsStartingFromLocalDate();
+        final LoanApplicationTerms loanApplicationTerms = this.loanScheduleAssembler.assembleLoanTerms(element);
         final boolean isHolidayEnabled = this.configurationDomainService.isRescheduleRepaymentsOnHolidaysEnabled();
         final List<Holiday> holidays = this.holidayRepository.findByOfficeIdAndGreaterThanDate(loanApplication.getOfficeId(),
                 loanApplicationTerms.getExpectedDisbursementDate(), HolidayStatusType.ACTIVE.getValue());
@@ -371,7 +349,7 @@ public class LoanAssembler {
                 isHolidayEnabled, holidays, workingDays, element, disbursementDetails);
         loanApplication.loanApplicationSubmittal(loanScheduleModel, loanApplicationTerms, defaultLoanLifecycleStateMachine(),
                 submittedOnDate, externalId, allowTransactionsOnHoliday, holidays, workingDays, allowTransactionsOnNonWorkingDay);
-        loanApplication.setPrequalificationGroup(prequalificationGroup);
+
         return loanApplication;
     }
 
@@ -398,7 +376,7 @@ public class LoanAssembler {
 
     public Staff findLoanOfficerByIdIfProvided(final Long loanOfficerId) {
         Staff staff = null;
-        if (loanOfficerId != null && loanOfficerId > 0) {
+        if (loanOfficerId != null) {
             staff = this.staffRepository.findById(loanOfficerId).orElseThrow(() -> new StaffNotFoundException(loanOfficerId));
             if (staff.isNotLoanOfficer()) {
                 throw new StaffRoleException(loanOfficerId, StaffRoleException.StaffRole.LOAN_OFFICER);

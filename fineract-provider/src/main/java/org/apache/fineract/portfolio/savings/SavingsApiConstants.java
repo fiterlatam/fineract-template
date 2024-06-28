@@ -143,7 +143,6 @@ public class SavingsApiConstants {
     public static final String savingsAmountOnHold = "savingsAmountOnHold";
     public static final String withHoldTaxParamName = "withHoldTax";
     public static final String taxGroupIdParamName = "taxGroupId";
-    public static final String GURANTEE_PRODUCT_NAME = "Garantías";
 
     // transaction parameters
     public static final String transactionDateParamName = "transactionDate";
@@ -200,7 +199,4 @@ public class SavingsApiConstants {
     public static final String ERROR_MSG_SAVINGS_ACCOUNT_NOT_ACTIVE = "not.in.active.state";
 
     public static final String accountMappingForPaymentParamName = "accountMappingForPayment";
-
-    public static final String adjustGuaranteeParamName = "adjustGuarantee";
-    public static final String glAccountIdParamName = "glAccountId";
 }

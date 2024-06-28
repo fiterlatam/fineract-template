@@ -22,21 +22,21 @@ import com.lowagie.text.Document;
 import com.lowagie.text.PageSize;
 import com.lowagie.text.pdf.PdfPTable;
 import com.lowagie.text.pdf.PdfWriter;
-import java.io.BufferedOutputStream;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import javax.ws.rs.core.StreamingOutput;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -55,6 +55,8 @@ import org.apache.fineract.infrastructure.security.service.PlatformSecurityConte
 import org.apache.fineract.infrastructure.security.service.SqlInjectionPreventerService;
 import org.apache.fineract.infrastructure.security.utils.LogParameterEscapeUtil;
 import org.apache.fineract.useradministration.domain.AppUser;
+import org.owasp.esapi.ESAPI;
+import org.owasp.esapi.codecs.UnixCodec;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
@@ -72,28 +74,30 @@ public class ReadReportingServiceImpl implements ReadReportingService {
     private final DatabaseSpecificSQLGenerator sqlGenerator;
 
     @Override
-    public String retrieveReportCSV(final String reportName, final String reportType, final Map<String, String> queryParams,
+    public StreamingOutput retrieveReportCSV(final String name, final String type, final Map<String, String> queryParams,
             final boolean isSelfServiceUserReport) {
-        try {
-            final String fileLocation = FileSystemContentRepository.FINERACT_BASE_DIR;
-            final File fileDirectory = new File(fileLocation);
-            if (!fileDirectory.exists()) {
-                fileDirectory.mkdirs();
+        return out -> {
+            try {
+
+                final GenericResultsetData result = retrieveGenericResultset(name, type, queryParams, isSelfServiceUserReport);
+                final StringBuilder sb = generateCsvFileBuffer(result);
+
+                final InputStream in = new ByteArrayInputStream(sb.toString().getBytes(StandardCharsets.UTF_8));
+
+                final byte[] outputByte = new byte[4096];
+                Integer readLen = in.read(outputByte, 0, 4096);
+
+                while (readLen != -1) {
+                    out.write(outputByte, 0, readLen);
+                    readLen = in.read(outputByte, 0, 4096);
+                }
+                // in.close();
+                // out.flush();
+                // out.close();
+            } catch (final Exception e) {
+                throw new PlatformDataIntegrityException("error.msg.exception.error", e.getMessage(), e);
             }
-            final String csvFilePath = fileLocation + File.separator + reportName.replaceAll("[^a-zA-Z0-9.\\-]", "_") + "_"
-                    + new SimpleDateFormat("yyyyMMddHHmmss").format(new Date()) + ".csv";
-            final FileOutputStream fileOutputStream = new FileOutputStream(csvFilePath);
-            final BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(fileOutputStream);
-            final GenericResultsetData result = retrieveGenericResultset(reportName, reportType, queryParams, isSelfServiceUserReport);
-            final StringBuilder csvFileBuffer = generateCsvFileBuffer(result);
-            final byte[] byteArray = csvFileBuffer.toString().getBytes(StandardCharsets.UTF_8);
-            bufferedOutputStream.write(byteArray);
-            bufferedOutputStream.flush();
-            bufferedOutputStream.close();
-            return csvFilePath;
-        } catch (final Exception e) {
-            throw new PlatformDataIntegrityException("error.msg.exception.error", e.getMessage(), e);
-        }
+        };
     }
 
     private StringBuilder generateCsvFileBuffer(final GenericResultsetData result) {
@@ -237,29 +241,41 @@ public class ReadReportingServiceImpl implements ReadReportingService {
     @Override
     public String retrieveReportPDF(final String reportName, final String type, final Map<String, String> queryParams,
             final boolean isSelfServiceUserReport) {
-        final String fileLocation = FileSystemContentRepository.FINERACT_BASE_DIR;
+
+        final String fileLocation = FileSystemContentRepository.FINERACT_BASE_DIR + File.separator + "";
         if (!new File(fileLocation).isDirectory()) {
             new File(fileLocation).mkdirs();
         }
-        String formattedReportName = reportName.replaceAll("[^a-zA-Z0-9.\\-]", "_");
-        final String generatedPDF = fileLocation + File.separator + formattedReportName + ".pdf";
+
+        final String genaratePdf = fileLocation + File.separator + reportName + ".pdf";
+
         try {
             final GenericResultsetData result = retrieveGenericResultset(reportName, type, queryParams, isSelfServiceUserReport);
+
             final List<ResultsetColumnHeaderData> columnHeaders = result.getColumnHeaders();
             final List<ResultsetRowData> data = result.getData();
             List<String> row;
+
             log.info("NO. of Columns: {}", columnHeaders.size());
-            final int chSize = columnHeaders.size();
+            final Integer chSize = columnHeaders.size();
+
             final Document document = new Document(PageSize.B0.rotate());
-            PdfWriter.getInstance(document, new FileOutputStream(generatedPDF));
+
+            String validatedFileName = ESAPI.encoder().encodeForOS(new UnixCodec(), reportName);
+            PdfWriter.getInstance(document, new FileOutputStream(fileLocation + validatedFileName + ".pdf"));
             document.open();
+
             final PdfPTable table = new PdfPTable(chSize);
             table.setWidthPercentage(100);
+
             for (int i = 0; i < chSize; i++) {
+
                 table.addCell(columnHeaders.get(i).getColumnName());
+
             }
             table.completeRow();
-            int rSize;
+
+            Integer rSize;
             String currColType;
             String currVal;
             log.info("NO. of Rows: {}", data.size());
@@ -283,7 +299,7 @@ public class ReadReportingServiceImpl implements ReadReportingService {
             table.completeRow();
             document.add(table);
             document.close();
-            return generatedPDF;
+            return genaratePdf;
         } catch (final Exception e) {
             log.error("error.msg.reporting.error:", e);
             throw new PlatformDataIntegrityException("error.msg.exception.error", e.getMessage(), e);

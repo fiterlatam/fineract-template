@@ -125,11 +125,6 @@ public class GenericDataServiceImpl implements GenericDataService {
     }
 
     @Override
-    public String wrapSQLCount(String sql) {
-        return "select COUNT(*) from (" + sql + ") x";
-    }
-
-    @Override
     public String generateJsonFromGenericResultsetData(final GenericResultsetData grs) {
 
         final StringBuilder writer = new StringBuilder();

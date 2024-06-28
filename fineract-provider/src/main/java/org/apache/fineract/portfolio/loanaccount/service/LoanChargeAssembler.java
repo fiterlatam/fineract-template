@@ -22,7 +22,6 @@ import com.google.common.base.Splitter;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonPrimitive;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -30,11 +29,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
-import org.apache.commons.lang3.tuple.Pair;
-import org.apache.fineract.infrastructure.configuration.domain.GlobalConfigurationProperty;
-import org.apache.fineract.infrastructure.configuration.domain.GlobalConfigurationRepositoryWrapper;
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
-import org.apache.fineract.infrastructure.core.serialization.JsonParserHelper;
 import org.apache.fineract.portfolio.charge.domain.Charge;
 import org.apache.fineract.portfolio.charge.domain.ChargeCalculationType;
 import org.apache.fineract.portfolio.charge.domain.ChargePaymentMode;
@@ -46,7 +41,6 @@ import org.apache.fineract.portfolio.loanaccount.domain.LoanCharge;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanChargeRepository;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanDisbursementDetails;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanTrancheDisbursementCharge;
-import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanApplicationTerms;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProduct;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductRepository;
 import org.apache.fineract.portfolio.loanproduct.exception.LoanProductNotFoundException;
@@ -60,21 +54,17 @@ public class LoanChargeAssembler {
     private final ChargeRepositoryWrapper chargeRepository;
     private final LoanChargeRepository loanChargeRepository;
     private final LoanProductRepository loanProductRepository;
-    private final GlobalConfigurationRepositoryWrapper globalConfigurationRepositoryWrapper;
 
     @Autowired
     public LoanChargeAssembler(final FromJsonHelper fromApiJsonHelper, final ChargeRepositoryWrapper chargeRepository,
-            final LoanChargeRepository loanChargeRepository, final LoanProductRepository loanProductRepository,
-            final GlobalConfigurationRepositoryWrapper globalConfigurationRepositoryWrapper) {
+            final LoanChargeRepository loanChargeRepository, final LoanProductRepository loanProductRepository) {
         this.fromApiJsonHelper = fromApiJsonHelper;
         this.chargeRepository = chargeRepository;
         this.loanChargeRepository = loanChargeRepository;
         this.loanProductRepository = loanProductRepository;
-        this.globalConfigurationRepositoryWrapper = globalConfigurationRepositoryWrapper;
     }
 
-    public Set<LoanCharge> fromParsedJson(JsonElement element, List<LoanDisbursementDetails> disbursementDetails,
-            final LoanApplicationTerms loanApplicationTermsCharges) {
+    public Set<LoanCharge> fromParsedJson(final JsonElement element, List<LoanDisbursementDetails> disbursementDetails) {
         JsonArray jsonDisbursement = this.fromApiJsonHelper.extractJsonArrayNamed("disbursementData", element);
         List<Long> disbursementChargeIds = new ArrayList<>();
 
@@ -111,13 +101,6 @@ public class LoanChargeAssembler {
             final JsonObject topLevelJsonElement = element.getAsJsonObject();
             final String dateFormat = this.fromApiJsonHelper.extractDateFormatParameter(topLevelJsonElement);
             final Locale locale = this.fromApiJsonHelper.extractLocaleParameter(topLevelJsonElement);
-            Locale localeAmount = this.fromApiJsonHelper.extractLocaleParameter(topLevelJsonElement);
-            GlobalConfigurationProperty maintainAmountFormatToEN = this.globalConfigurationRepositoryWrapper
-                    .findOneByNameWithNotFoundDetection("maintainAmountFormatToEN");
-            if (maintainAmountFormatToEN.isEnabled()) {
-                localeAmount = JsonParserHelper.localeFromString("en");
-            }
-
             if (topLevelJsonElement.has("charges") && topLevelJsonElement.get("charges").isJsonArray()) {
                 final JsonArray array = topLevelJsonElement.get("charges").getAsJsonArray();
                 for (int i = 0; i < array.size(); i++) {
@@ -126,7 +109,7 @@ public class LoanChargeAssembler {
 
                     final Long id = this.fromApiJsonHelper.extractLongNamed("id", loanChargeElement);
                     final Long chargeId = this.fromApiJsonHelper.extractLongNamed("chargeId", loanChargeElement);
-                    BigDecimal amount = this.fromApiJsonHelper.extractBigDecimalNamed("amount", loanChargeElement, localeAmount);
+                    final BigDecimal amount = this.fromApiJsonHelper.extractBigDecimalNamed("amount", loanChargeElement, locale);
                     final Integer chargeTimeType = this.fromApiJsonHelper.extractIntegerNamed("chargeTimeType", loanChargeElement, locale);
                     final Integer chargeCalculationType = this.fromApiJsonHelper.extractIntegerNamed("chargeCalculationType",
                             loanChargeElement, locale);
@@ -136,8 +119,6 @@ public class LoanChargeAssembler {
                             locale);
                     if (id == null) {
                         final Charge chargeDefinition = this.chargeRepository.findOneWithNotFoundDetection(chargeId);
-                        // TODO: FBR-369 Added to generate rate from range for installment fee and add on.
-                        amount = generateInstallmentFeeRate(chargeDefinition, loanChargeElement, loanApplicationTermsCharges, amount);
 
                         if (chargeDefinition.isOverdueInstallment()) {
 
@@ -222,9 +203,6 @@ public class LoanChargeAssembler {
                     } else {
                         final Long loanChargeId = id;
                         final LoanCharge loanCharge = this.loanChargeRepository.findById(loanChargeId).orElse(null);
-                        // TODO: FBR-369 Added to generate rate from range for installment fee and add on.
-                        amount = generateInstallmentFeeRate(loanCharge.getCharge(), loanChargeElement, loanApplicationTermsCharges, amount);
-
                         if (loanCharge != null) {
                             if (!loanCharge.isTrancheDisbursementCharge() || disbursementChargeIds.contains(loanChargeId)) {
                                 loanCharge.update(amount, dueDate, numberOfRepayments);
@@ -237,23 +215,6 @@ public class LoanChargeAssembler {
         }
 
         return loanCharges;
-    }
-
-    private BigDecimal generateInstallmentFeeRate(Charge charge, JsonObject loanChargeElement,
-            LoanApplicationTerms loanApplicationTermsCharges, BigDecimal amount) {
-        BigDecimal rate = amount;
-        // TODO: FBR-369 Added to generate rate from range for installment fee and add on. Necessary to make the check
-        // here before more loan processing happens
-        if (charge.isInstallmentFeeCharge() && charge.isAddOnInstallmentFeeType() && loanApplicationTermsCharges != null) {
-            if (ChargeCalculationType.fromInt(charge.getChargeCalculation()).isPercentageBased()) {
-                // update rate
-                Pair<Integer, BigDecimal> addOnDaysAndRate = charge.getAddOnDisbursementChargeRate(
-                        loanApplicationTermsCharges.getExpectedDisbursementDate(), loanApplicationTermsCharges.getRepaymentStartFromDate());
-                rate = addOnDaysAndRate.getRight();
-                loanChargeElement.add("amount", new JsonPrimitive(rate));
-            }
-        }
-        return rate;
     }
 
     public Set<Charge> getNewLoanTrancheCharges(final JsonElement element) {

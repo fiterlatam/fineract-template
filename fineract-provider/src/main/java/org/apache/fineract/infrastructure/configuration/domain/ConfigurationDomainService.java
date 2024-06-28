@@ -118,12 +118,4 @@ public interface ConfigurationDomainService {
     boolean isCOBDateAdjustmentEnabled();
 
     boolean isReversalTransactionAllowed();
-
-    String getStartTimeForMeetings();
-
-    String getEndTimeForMeetings();
-
-    Long retrieveDefaultDurationForMeetings();
-
-    Long retrieveTimeBetweenMeetings();
 }

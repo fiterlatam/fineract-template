@@ -68,8 +68,7 @@ public class OfficeReadPlatformServiceImpl implements OfficeReadPlatformService 
 
         public String officeSchema() {
             return " o.id as id, o.name as name, " + nameDecoratedBaseOnHierarchy
-                    + " as nameDecorated, o.external_id as externalId, o.opening_date as openingDate, o.office_code as officeCode, "
-                    + " o.hierarchy as hierarchy, parent.id as parentId, parent.name as parentName "
+                    + " as nameDecorated, o.external_id as externalId, o.opening_date as openingDate, o.hierarchy as hierarchy, parent.id as parentId, parent.name as parentName "
                     + "from m_office o LEFT JOIN m_office AS parent ON parent.id = o.parent_id ";
         }
 
@@ -84,9 +83,8 @@ public class OfficeReadPlatformServiceImpl implements OfficeReadPlatformService 
             final String hierarchy = rs.getString("hierarchy");
             final Long parentId = JdbcSupport.getLong(rs, "parentId");
             final String parentName = rs.getString("parentName");
-            final String officeCode = rs.getString("officeCode");
 
-            return new OfficeData(id, name, nameDecorated, externalId, openingDate, hierarchy, parentId, parentName, null, officeCode);
+            return new OfficeData(id, name, nameDecorated, externalId, openingDate, hierarchy, parentId, parentName, null);
         }
     }
 
@@ -267,46 +265,6 @@ public class OfficeReadPlatformServiceImpl implements OfficeReadPlatformService 
         final Collection<CurrencyData> currencyOptions = this.currencyReadPlatformService.retrieveAllowedCurrencies();
 
         return OfficeTransactionData.template(LocalDate.now(DateUtils.getDateTimeZoneOfTenant()), parentLookups, currencyOptions);
-    }
-
-    @Override
-    public Collection<OfficeData> retrieveOfficesByHierarchyLevel(Long hierarchyLevel) {
-        final AppUser currentUser = this.context.authenticatedUser();
-        final String hierarchy = currentUser.getOffice().getHierarchy();
-        String hierarchySearchString = hierarchy + "%";
-        final OfficeDropdownMapper rm = new OfficeDropdownMapper();
-        final String sql = "select " + rm.schema() + "where o.hierarchy like ? order by o.hierarchy";
-        return this.jdbcTemplate.query(sql, rm, new Object[] { hierarchySearchString }); //
-    }
-
-    @Override
-    public Collection<OfficeData> retrieveOfficesByParent(Long parentOfficeId) {
-        this.context.authenticatedUser();
-
-        // return only the immediate children for the parent office provided as parameter
-        final OfficeDropdownMapper rm = new OfficeDropdownMapper();
-        final String sql = "select " + rm.schema() + "where o.parent_id = ?";
-
-        return this.jdbcTemplate.query(sql, rm, new Object[] { parentOfficeId });
-    }
-
-    @Override
-    public Collection<OfficeData> retrieveChildOfficesByUserHierarchyAsParent() {
-        Collection<OfficeData> childOffices = new ArrayList<>();
-        final AppUser currentUser = this.context.authenticatedUser();
-
-        final String hierarchy = currentUser.getOffice().getHierarchy();
-
-        final OfficeMapper rm = new OfficeMapper();
-        final String sql = "select " + rm.officeSchema() + " where o.hierarchy = ?";
-
-        final OfficeData selectedOffice = this.jdbcTemplate.queryForObject(sql, rm, new Object[] { hierarchy });
-
-        if (selectedOffice != null) {
-            childOffices = retrieveOfficesByParent(selectedOffice.getId());
-        }
-
-        return childOffices;
     }
 
     public PlatformSecurityContext getContext() {

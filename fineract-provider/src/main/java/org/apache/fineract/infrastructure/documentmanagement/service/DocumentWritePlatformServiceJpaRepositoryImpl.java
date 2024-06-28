@@ -75,8 +75,7 @@ public class DocumentWritePlatformServiceJpaRepositoryImpl implements DocumentWr
 
             final Document document = Document.createNew(documentCommand.getParentEntityType(), documentCommand.getParentEntityId(),
                     documentCommand.getName(), documentCommand.getFileName(), documentCommand.getSize(), documentCommand.getType(),
-                    documentCommand.getDescription(), fileLocation, contentRepository.getStorageType(), documentCommand.getDocumentType(),
-                    documentCommand.getDocumentPurpose(), documentCommand.getDateCreated());
+                    documentCommand.getDescription(), fileLocation, contentRepository.getStorageType());
 
             this.documentRepository.saveAndFlush(document);
 
@@ -180,7 +179,7 @@ public class DocumentWritePlatformServiceJpaRepositoryImpl implements DocumentWr
     /*** Entities for document Management **/
     public enum DocumentManagementEntity {
 
-        CLIENTS, CLIENT_IDENTIFIERS, STAFF, LOANS, SAVINGS, GROUPS, IMPORT, BLACKLIST, PREQUALIFICATIONS;
+        CLIENTS, CLIENT_IDENTIFIERS, STAFF, LOANS, SAVINGS, GROUPS, IMPORT;
 
         @Override
         public String toString() {

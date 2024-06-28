@@ -82,8 +82,7 @@ public class OAuth2SecurityConfig extends WebSecurityConfigurerAdapter {
     protected void configure(HttpSecurity http) throws Exception {
 
         http //
-                .headers().frameOptions().disable().and().csrf().disable() // NOSONAR only creating a service that is
-                                                                           // used by non-browser clients
+                .csrf().disable() // NOSONAR only creating a service that is used by non-browser clients
                 .antMatcher("/api/**").authorizeRequests() //
                 .antMatchers(HttpMethod.OPTIONS, "/api/**").permitAll() //
                 .antMatchers(HttpMethod.POST, "/api/*/echo").permitAll() //

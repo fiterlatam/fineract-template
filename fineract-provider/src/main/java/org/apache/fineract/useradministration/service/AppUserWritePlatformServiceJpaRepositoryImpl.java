@@ -104,7 +104,7 @@ public class AppUserWritePlatformServiceJpaRepositoryImpl implements AppUserWrit
             final Long staffId = command.longValueOfParameterNamed(staffIdParamName);
 
             Staff linkedStaff;
-            if (staffId != null && staffId != 0) {
+            if (staffId != null) {
                 linkedStaff = this.staffRepositoryWrapper.findByOfficeWithNotFoundDetection(staffId, userOffice.getId());
             } else {
                 linkedStaff = null;

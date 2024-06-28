@@ -49,9 +49,7 @@ public enum JobName {
                                                                                                                                                                                                                     "Update Trial Balance Details"), EXECUTE_DIRTY_JOBS(
                                                                                                                                                                                                                             "Execute All Dirty Jobs"), INCREASE_BUSINESS_DATE_BY_1_DAY(
                                                                                                                                                                                                                                     "Increase Business Date by 1 day"), INCREASE_COB_DATE_BY_1_DAY(
-                                                                                                                                                                                                                                            "Increase COB Date by 1 day"), DISABLE_EXPIRED_PREQUALIFICATIONS(
-                                                                                                                                                                                                                                                    "Disable Expired Prequalifications"), IMPORT_BATCHES_OF_LOAN_REPAYMENTS(
-                                                                                                                                                                                                                                                            "Import Batches of Loan Repayments");
+                                                                                                                                                                                                                                            "Increase COB Date by 1 day");
 
     private final String name;
 

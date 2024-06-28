@@ -741,12 +741,6 @@ public final class LoanApplicationTerms {
             break;
         }
 
-        if (this.installmentAmountInMultiplesOf != null) {
-            final double scaledAmount = Money.roundToMultiplesOf(interestForInstallment.getAmount().doubleValue(),
-                    this.installmentAmountInMultiplesOf);
-            interestForInstallment = Money.of(interestForInstallment.getCurrency(), BigDecimal.valueOf(scaledAmount));
-        }
-
         return new PrincipalInterest(null, interestForInstallment, interestBroughtForwardDueToGrace);
     }
 
@@ -932,11 +926,6 @@ public final class LoanApplicationTerms {
             } else {
                 principalPerPeriod = this.principal.minus(totalPrincipalAccounted)
                         .dividedBy(totalRepaymentsWithCapitalPayment, mc.getRoundingMode()).plus(this.adjustPrincipalForFlatLoans);
-                if (this.installmentAmountInMultiplesOf != null) {
-                    double mon = Money.roundToMultiplesOf(principalPerPeriod.getAmount().doubleValue(),
-                            this.installmentAmountInMultiplesOf);
-                    principalPerPeriod = Money.of(this.getCurrency(), BigDecimal.valueOf(mon));
-                }
             }
             if (isPrincipalGraceApplicableForThisPeriod(periodNumber)) {
                 principalPerPeriod = principalPerPeriod.zero();

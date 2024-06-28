@@ -34,7 +34,6 @@ import org.apache.fineract.portfolio.loanproduct.domain.InterestCalculationPerio
 import org.apache.fineract.portfolio.loanproduct.domain.InterestMethod;
 import org.apache.fineract.portfolio.loanproduct.domain.InterestRecalculationCompoundingMethod;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanPreClosureInterestCalculationStrategy;
-import org.apache.fineract.portfolio.loanproduct.domain.LoanProductOwnerType;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductParamType;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductValueConditionType;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanRescheduleStrategyMethod;
@@ -469,10 +468,6 @@ public final class LoanEnumerations {
                 optionData = new LoanStatusEnumData(LoanStatus.WITHDRAWN_BY_CLIENT.getValue().longValue(),
                         LoanStatus.WITHDRAWN_BY_CLIENT.getCode(), "Withdrawn by applicant");
             break;
-            case DISBURSE_AUTHORIZATION_PENDING:
-                optionData = new LoanStatusEnumData(LoanStatus.DISBURSE_AUTHORIZATION_PENDING.getValue().longValue(),
-                        LoanStatus.DISBURSE_AUTHORIZATION_PENDING.getCode(), "Pending Disbursement Authorization");
-            break;
             case CLOSED_OBLIGATIONS_MET:
                 optionData = new LoanStatusEnumData(LoanStatus.CLOSED_OBLIGATIONS_MET.getValue().longValue(),
                         LoanStatus.CLOSED_OBLIGATIONS_MET.getCode(), "Closed (obligations met)");
@@ -763,16 +758,4 @@ public final class LoanEnumerations {
         return optionData;
     }
 
-    public static EnumOptionData loanProductOwnerType(LoanProductOwnerType loanProductOwnerType) {
-        EnumOptionData enumOptionData;
-        switch (loanProductOwnerType) {
-            case INDIVIDUAL -> enumOptionData = new EnumOptionData(LoanProductOwnerType.INDIVIDUAL.getValue().longValue(),
-                    LoanProductOwnerType.INDIVIDUAL.getCode(), "Individual");
-            case GROUP -> enumOptionData = new EnumOptionData(LoanProductOwnerType.GROUP.getValue().longValue(),
-                    LoanProductOwnerType.GROUP.getCode(), "Group");
-            default -> enumOptionData = new EnumOptionData(LoanProductOwnerType.INVALID.getValue().longValue(),
-                    LoanProductOwnerType.INVALID.getCode(), "Invalid");
-        }
-        return enumOptionData;
-    }
 }

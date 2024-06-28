@@ -35,5 +35,4 @@ public class SavingsDTO {
     private boolean cashBasedAccountingEnabled;
     private boolean accrualBasedAccountingEnabled;
     private List<SavingsTransactionDTO> newSavingsTransactions;
-    private Long glAccountId;
 }

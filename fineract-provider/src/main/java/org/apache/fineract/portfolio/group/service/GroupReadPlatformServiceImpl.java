@@ -18,8 +18,6 @@
  */
 package org.apache.fineract.portfolio.group.service;
 
-import static org.apache.fineract.organisation.centerGroup.service.GroupLocationEnumerations.groupLocationsOptionData;
-
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -30,7 +28,6 @@ import java.util.List;
 import java.util.Set;
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 import org.apache.fineract.infrastructure.codes.service.CodeValueReadPlatformService;
-import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.infrastructure.core.data.PaginationParameters;
 import org.apache.fineract.infrastructure.core.data.PaginationParametersDataValidator;
 import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
@@ -41,12 +38,8 @@ import org.apache.fineract.infrastructure.core.service.database.DatabaseSpecific
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.infrastructure.security.utils.ColumnValidator;
 import org.apache.fineract.infrastructure.security.utils.SQLBuilder;
-import org.apache.fineract.organisation.centerGroup.domain.CenterGroupLocation;
 import org.apache.fineract.organisation.office.data.OfficeData;
-import org.apache.fineract.organisation.office.domain.OfficeHierarchyLevel;
 import org.apache.fineract.organisation.office.service.OfficeReadPlatformService;
-import org.apache.fineract.organisation.portfolioCenter.data.PortfolioCenterData;
-import org.apache.fineract.organisation.portfolioCenter.service.PortfolioCenterReadPlatformService;
 import org.apache.fineract.organisation.staff.data.StaffData;
 import org.apache.fineract.organisation.staff.service.StaffReadPlatformService;
 import org.apache.fineract.portfolio.client.data.ClientData;
@@ -55,9 +48,7 @@ import org.apache.fineract.portfolio.group.data.CenterData;
 import org.apache.fineract.portfolio.group.data.GroupGeneralData;
 import org.apache.fineract.portfolio.group.domain.GroupTypes;
 import org.apache.fineract.portfolio.group.exception.GroupNotFoundException;
-import org.apache.fineract.useradministration.data.AppUserData;
 import org.apache.fineract.useradministration.domain.AppUser;
-import org.apache.fineract.useradministration.service.AppUserReadPlatformService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -74,8 +65,6 @@ public class GroupReadPlatformServiceImpl implements GroupReadPlatformService {
     private final StaffReadPlatformService staffReadPlatformService;
     private final CenterReadPlatformService centerReadPlatformService;
     private final CodeValueReadPlatformService codeValueReadPlatformService;
-    private final AppUserReadPlatformService appUserReadPlatformService;
-    private final PortfolioCenterReadPlatformService portfolioCenterReadPlatformService;
 
     private final AllGroupTypesDataMapper allGroupTypesDataMapper = new AllGroupTypesDataMapper();
     private final PaginationHelper paginationHelper;
@@ -90,10 +79,7 @@ public class GroupReadPlatformServiceImpl implements GroupReadPlatformService {
             final CenterReadPlatformService centerReadPlatformService, final OfficeReadPlatformService officeReadPlatformService,
             final StaffReadPlatformService staffReadPlatformService, final CodeValueReadPlatformService codeValueReadPlatformService,
             final PaginationParametersDataValidator paginationParametersDataValidator, final ColumnValidator columnValidator,
-            DatabaseSpecificSQLGenerator sqlGenerator, PaginationHelper paginationHelper,
-            final AppUserReadPlatformService appUserReadPlatformService,
-            final PortfolioCenterReadPlatformService portfolioCenterReadPlatformService) {
-
+            DatabaseSpecificSQLGenerator sqlGenerator, PaginationHelper paginationHelper) {
         this.context = context;
         this.jdbcTemplate = jdbcTemplate;
         this.centerReadPlatformService = centerReadPlatformService;
@@ -104,8 +90,6 @@ public class GroupReadPlatformServiceImpl implements GroupReadPlatformService {
         this.columnValidator = columnValidator;
         this.paginationHelper = paginationHelper;
         this.sqlGenerator = sqlGenerator;
-        this.appUserReadPlatformService = appUserReadPlatformService;
-        this.portfolioCenterReadPlatformService = portfolioCenterReadPlatformService;
     }
 
     @Override
@@ -113,11 +97,9 @@ public class GroupReadPlatformServiceImpl implements GroupReadPlatformService {
 
         final Long defaultOfficeId = defaultToUsersOfficeIfNull(officeId);
 
-        Collection<CenterData> centerOptions;
+        Collection<CenterData> centerOptions = null;
         if (isCenterGroup) {
             centerOptions = this.centerReadPlatformService.retrieveAllForDropdown(defaultOfficeId);
-        } else {
-            centerOptions = this.centerReadPlatformService.retrieveAllCentersByCurrentUser();
         }
 
         final Collection<OfficeData> officeOptions = this.officeReadPlatformService.retrieveAllOfficesForDropdown();
@@ -138,14 +120,6 @@ public class GroupReadPlatformServiceImpl implements GroupReadPlatformService {
         final Collection<CodeValueData> availableRoles = this.codeValueReadPlatformService
                 .retrieveCodeValuesByCode(GroupingTypesApiConstants.GROUP_ROLE_NAME);
 
-        final Collection<OfficeData> parentOfficesOptions = officeReadPlatformService
-                .retrieveOfficesByHierarchyLevel(Long.valueOf(OfficeHierarchyLevel.CARTERA.getValue()));
-
-        final List<AppUserData> appUsers = new ArrayList<>(this.appUserReadPlatformService.retrieveAllUsers());
-
-        // move this into another method
-        List<EnumOptionData> centerGroupLocations = retrieveGroupLocationOptions();
-
         final Long centerId = null;
         final String accountNo = null;
         final String centerName = null;
@@ -153,10 +127,8 @@ public class GroupReadPlatformServiceImpl implements GroupReadPlatformService {
         final String staffName = null;
         final Collection<ClientData> clientOptions = null;
 
-        Collection<PortfolioCenterData> portfolioCenterOptions = new ArrayList<>();
-
         return GroupGeneralData.template(defaultOfficeId, centerId, accountNo, centerName, staffId, staffName, centerOptions, officeOptions,
-                staffOptions, clientOptions, availableRoles, parentOfficesOptions, appUsers, portfolioCenterOptions, centerGroupLocations);
+                staffOptions, clientOptions, availableRoles);
     }
 
     private Long defaultToUsersOfficeIfNull(final Long officeId) {
@@ -165,12 +137,6 @@ public class GroupReadPlatformServiceImpl implements GroupReadPlatformService {
             defaultOfficeId = this.context.authenticatedUser().getOffice().getId();
         }
         return defaultOfficeId;
-    }
-
-    private List<EnumOptionData> retrieveGroupLocationOptions() {
-        final List<EnumOptionData> statusOptions = Arrays.asList(groupLocationsOptionData(CenterGroupLocation.URBAN),
-                groupLocationsOptionData(CenterGroupLocation.RURAL));
-        return statusOptions;
     }
 
     @Override
@@ -275,11 +241,10 @@ public class GroupReadPlatformServiceImpl implements GroupReadPlatformService {
         try {
             final AppUser currentUser = this.context.authenticatedUser();
             final String hierarchy = currentUser.getOffice().getHierarchy();
-            // disable usage of hierarchy for now because it will fail in many cases
             final String hierarchySearchString = hierarchy + "%";
 
-            final String sql = "select " + this.allGroupTypesDataMapper.schema() + " where g.id = ? ";
-            return this.jdbcTemplate.queryForObject(sql, this.allGroupTypesDataMapper, new Object[] { groupId }); // NOSONAR
+            final String sql = "select " + this.allGroupTypesDataMapper.schema() + " where g.id = ? and o.hierarchy like ?";
+            return this.jdbcTemplate.queryForObject(sql, this.allGroupTypesDataMapper, new Object[] { groupId, hierarchySearchString }); // NOSONAR
         } catch (final EmptyResultDataAccessException e) {
             throw new GroupNotFoundException(groupId, e);
         }
@@ -320,17 +285,6 @@ public class GroupReadPlatformServiceImpl implements GroupReadPlatformService {
         final List<CodeValueData> closureReasons = new ArrayList<>(
                 this.codeValueReadPlatformService.retrieveCodeValuesByCode(GroupingTypesApiConstants.GROUP_CLOSURE_REASON));
         return GroupGeneralData.withClosureReasons(closureReasons);
-    }
-
-    @Override
-    public Collection<GroupGeneralData> retrieveAllByOffice() {
-        final AppUser currentUser = this.context.authenticatedUser();
-        final String hierarchy = currentUser.getOffice().getHierarchy();
-
-        final String sql = "select " + this.allGroupTypesDataMapper.schema()
-                + " where g.parent_id is not null and g.level_Id = ? and (o.hierarchy LIKE CONCAT(?, '%') OR ? like CONCAT(o.hierarchy, '%')) order by g.hierarchy";
-
-        return this.jdbcTemplate.query(sql, this.allGroupTypesDataMapper, new Object[] { GroupTypes.GROUP.getId(), hierarchy, hierarchy });
     }
 
 }

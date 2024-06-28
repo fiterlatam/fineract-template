@@ -39,7 +39,6 @@ import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
 import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
@@ -47,8 +46,6 @@ import org.apache.fineract.organisation.monetary.domain.Money;
 import org.apache.fineract.organisation.monetary.domain.MoneyHelper;
 import org.apache.fineract.portfolio.charge.domain.Charge;
 import org.apache.fineract.portfolio.charge.domain.ChargeCalculationType;
-import org.apache.fineract.portfolio.charge.domain.ChargeDisbursementType;
-import org.apache.fineract.portfolio.charge.domain.ChargeInstallmentFeeType;
 import org.apache.fineract.portfolio.charge.domain.ChargePaymentMode;
 import org.apache.fineract.portfolio.charge.domain.ChargeTimeType;
 import org.apache.fineract.portfolio.charge.exception.LoanChargeWithoutMandatoryFieldException;
@@ -126,12 +123,6 @@ public class LoanCharge extends AbstractPersistableCustom {
 
     @Column(name = "external_id")
     private String externalId;
-
-    @Column(name = "charge_disbursement_type_enum", nullable = false)
-    private Integer chargeDisbursementType;
-
-    @Column(name = "charge_installment_fee_type_enum", nullable = false)
-    private Integer chargeInstallmentFeeType;
 
     @OneToOne(mappedBy = "loancharge", cascade = CascadeType.ALL, optional = true, orphanRemoval = true, fetch = FetchType.EAGER)
     private LoanOverdueInstallmentCharge overdueInstallmentCharge;
@@ -214,8 +205,6 @@ public class LoanCharge extends AbstractPersistableCustom {
                 dueDate, chargePaymentMode, null, loanCharge);
         final String externalId = command.stringValueOfParameterNamedAllowingNull("externalId");
         newLoanCharge.setExternalId(externalId);
-        newLoanCharge.setChargeDisbursementType(chargeDefinition.getChargeDisbursementType());
-        newLoanCharge.setChargeInstallmentFeeType(chargeDefinition.getChargeInstallmentFeeType());
         return newLoanCharge;
     }
 
@@ -240,10 +229,8 @@ public class LoanCharge extends AbstractPersistableCustom {
         this.charge = chargeDefinition;
         this.penaltyCharge = chargeDefinition.isPenalty();
         this.minCap = chargeDefinition.getMinCap();
-        this.minCap = chargeDefinition.getMinCap();
         this.maxCap = chargeDefinition.getMaxCap();
-        this.chargeDisbursementType = chargeDefinition.getChargeDisbursementType();
-        this.chargeInstallmentFeeType = chargeDefinition.getChargeInstallmentFeeType();
+
         this.chargeTime = chargeDefinition.getChargeTimeType();
         if (chargeTime != null) {
             this.chargeTime = chargeTime.getValue();
@@ -409,8 +396,7 @@ public class LoanCharge extends AbstractPersistableCustom {
             this.dueDate = dueDate;
         }
 
-        BigDecimal updatedAmount = amount;
-        if (updatedAmount != null) {
+        if (amount != null) {
             switch (ChargeCalculationType.fromInt(this.chargeCalculation)) {
                 case INVALID:
                 break;
@@ -419,35 +405,24 @@ public class LoanCharge extends AbstractPersistableCustom {
                         if (numberOfRepayments == null) {
                             numberOfRepayments = this.loan.fetchNumberOfInstallmensAfterExceptions();
                         }
-                        this.amount = updatedAmount.multiply(BigDecimal.valueOf(numberOfRepayments));
+                        this.amount = amount.multiply(BigDecimal.valueOf(numberOfRepayments));
                     } else {
-                        this.amount = updatedAmount;
+                        this.amount = amount;
                     }
                 break;
                 case PERCENT_OF_AMOUNT:
                 case PERCENT_OF_AMOUNT_AND_INTEREST:
                 case PERCENT_OF_INTEREST:
                 case PERCENT_OF_DISBURSEMENT_AMOUNT:
-                    if (this.loan != null && isDisbursementCharge() && this.isAddOnDisbursementType()) {
-                        LocalDate disbursementDate = this.loan.getDisbursementDate();
-                        LocalDate firstRepaymentDate = this.loan.fetchRepaymentScheduleInstallment(1).getDueDate();
-                        Pair<Integer, BigDecimal> addOnDaysAndRate = this.charge.getAddOnDisbursementChargeRate(disbursementDate,
-                                firstRepaymentDate);
-                        BigDecimal feeRate = addOnDaysAndRate.getRight();
-                        this.percentage = feeRate;
-                        updatedAmount = feeRate;
-                        loanCharge = percentageOf(this.amountPercentageAppliedTo);
-                    } else {
-                        this.percentage = amount;
-                        if (loanCharge.compareTo(BigDecimal.ZERO) == 0) {
-                            loanCharge = percentageOf(this.amountPercentageAppliedTo);
-                        }
-                    }
+                    this.percentage = amount;
                     this.amountPercentageAppliedTo = loanPrincipal;
+                    if (loanCharge.compareTo(BigDecimal.ZERO) == 0) {
+                        loanCharge = percentageOf(this.amountPercentageAppliedTo);
+                    }
                     this.amount = minimumAndMaximumCap(loanCharge);
                 break;
             }
-            this.amountOrPercentage = updatedAmount;
+            this.amountOrPercentage = amount;
             this.amountOutstanding = calculateOutstanding();
             if (this.loan != null && isInstalmentFee()) {
                 updateInstallmentCharges();
@@ -1098,30 +1073,6 @@ public class LoanCharge extends AbstractPersistableCustom {
 
     public void setExternalId(String externalId) {
         this.externalId = externalId;
-    }
-
-    public Integer getChargeDisbursementType() {
-        return chargeDisbursementType;
-    }
-
-    public void setChargeDisbursementType(Integer chargeDisbursementType) {
-        this.chargeDisbursementType = chargeDisbursementType;
-    }
-
-    public Integer getChargeInstallmentFeeType() {
-        return chargeInstallmentFeeType;
-    }
-
-    public void setChargeInstallmentFeeType(Integer chargeInstallmentFeeType) {
-        this.chargeInstallmentFeeType = chargeInstallmentFeeType;
-    }
-
-    public boolean isAddOnDisbursementType() {
-        return ChargeDisbursementType.fromInt(this.chargeDisbursementType).equals(ChargeDisbursementType.ADD_ON);
-    }
-
-    public boolean isAddOnInstallmentFeeType() {
-        return ChargeInstallmentFeeType.fromInt(this.chargeInstallmentFeeType).equals(ChargeInstallmentFeeType.ADD_ON);
     }
 
 }
