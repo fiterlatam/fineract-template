@@ -271,9 +271,11 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
 
         // Exclude the ones that are not in the new list
         subChannelLoanProductRepository.findByLoanProductId(loanProduct.getId()).forEach(subChannelLoanProduct -> {
-            if (Boolean.FALSE.equals(loanProduct.getCustomAllowCollections())
-                    || dataList.stream().noneMatch(data -> data.getSubChannelId().equals(subChannelLoanProduct.getSubChannelId()))) {
-                subChannelLoanProductRepository.delete(subChannelLoanProduct);
+            if (Objects.nonNull(dataList)) {
+                if (Boolean.FALSE.equals(loanProduct.getCustomAllowCollections())
+                        || dataList.stream().noneMatch(data -> data.getSubChannelId().equals(subChannelLoanProduct.getSubChannelId()))) {
+                    subChannelLoanProductRepository.delete(subChannelLoanProduct);
+                }
             }
         });
 
