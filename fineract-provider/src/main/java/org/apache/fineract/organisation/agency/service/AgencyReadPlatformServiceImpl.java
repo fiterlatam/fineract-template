@@ -94,7 +94,7 @@ public class AgencyReadPlatformServiceImpl implements AgencyReadPlatformService 
         this.context.authenticatedUser();
 
         final Collection<OfficeData> parentOfficesOptions = officeReadPlatformService
-                .retrieveOfficesByHierarchyLevel(Long.valueOf(OfficeHierarchyLevel.GERENCIA.getValue()));
+                .retrieveRegionOffices(Long.valueOf(OfficeHierarchyLevel.REGION.getValue()));
 
         Collection<CurrencyData> currencyOptions = this.currencyReadPlatformService.retrieveAllowedCurrencies();
 
@@ -133,7 +133,7 @@ public class AgencyReadPlatformServiceImpl implements AgencyReadPlatformService 
 
         AgencyMapper agencyMapper = new AgencyMapper();
         String schemaSql = "select " + agencyMapper.schema();
-        schemaSql += "where (mo.hierarchy LIKE CONCAT(?, '%') OR ? like CONCAT(mo.hierarchy, '%'))";
+        schemaSql += "where (mo.hierarchy LIKE CONCAT(?, '%') OR ? like CONCAT(mo.hierarchy, '%')) OR mo.hierarchy is null";
 
         return this.jdbcTemplate.query(schemaSql, agencyMapper, userHierarchy, userHierarchy);
     }
