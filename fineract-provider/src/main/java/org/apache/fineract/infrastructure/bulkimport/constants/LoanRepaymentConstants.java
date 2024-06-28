@@ -48,4 +48,6 @@ public final class LoanRepaymentConstants {
     public static final int LOOKUP_PRINCIPAL_COL = 21;// T
     public static final int LOOKUP_TOTAL_OUTSTANDING_AMOUNT_COL = 22;
     public static final int LOOKUP_LOAN_DISBURSEMENT_DATE_COL = 23;// U
+    public static final int TRANSACTION_EXTERNAL_ID_COL = 24;// U
+    public static final int TRANSACTION_NOTE_COL = 25;// U
 }

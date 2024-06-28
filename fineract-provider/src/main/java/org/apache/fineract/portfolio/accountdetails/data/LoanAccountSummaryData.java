@@ -86,4 +86,16 @@ public class LoanAccountSummaryData {
         this.originalLoan = originalLoan;
         this.amountPaid = amountPaid;
     }
+
+    public Long getId() {
+        return id;
+    }
+
+    public String getAccountNo() {
+        return accountNo;
+    }
+
+    public String getShortProductName() {
+        return shortProductName;
+    }
 }

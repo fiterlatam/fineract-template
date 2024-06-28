@@ -85,7 +85,7 @@ public class CupoReadServiceImpl implements CupoReadService {
         schemaSql += "where c.group_id = ? ";
         params.add(groupId);
         if (status.isValid()) {
-            schemaSql += "and c.status_enum = ?";
+            schemaSql += "and c.status_enum = ? ";
             params.add(status.getValue());
         }
         if (StringUtils.isNotEmpty(currencyCode)) {

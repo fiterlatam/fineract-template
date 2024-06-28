@@ -123,6 +123,13 @@ public interface LoanApiConstants {
     // loan write off
     String WRITEOFFREASONS = "WriteOffReasons";
 
+    // bank agreements for loans
+    String BANKAGREEMENTS = "BancoConvenio";
+
+    // payment type for future payment constants
+    String partialPayment = "partial";
+    String totalPayment = "full";
+
     // fore closure constants
     String transactionDateParamName = "transactionDate";
     String noteParamName = "note";
@@ -143,4 +150,89 @@ public interface LoanApiConstants {
 
     String LOAN_ASSOCIATIONS_ALL = "all";
     String cupoIdParameterName = "cupoId";
+    String LOAN_ID = "loanId";
+    String ACTUAL_GUARANTEE_AMOUNT = "actualGuaranteeAmount";
+    String REQUIRED_GUARANTEE_AMOUNT = "requiredGuaranteeAmount";
+    String DEPOSIT_GUARANTEE_AMOUNT = "depositGuaranteeAmount";
+    String DEPOSIT_GUARANTEE_NUMBER = "depositGuaranteeNo";
+    String CHEQUE_DESCRIPTION = "description";
+    String CHEQUE_ID = "chequeId";
+    String PREQUALIFICATION_ID = "prequalificationId";
+    String CASE_ID = "caseId";
+    String LOAN_ADDITIONAL_DATA = "loanAdditionalData";
+    String LOAN_RESOURCE_NAME = "LOAN";
+    String loanCycleCompletedParamName = "loanCycleCompleted";
+    String rentFeeParamName = "rentFee";
+    String mortgageFeeParamName = "mortgageFee";
+    String monthlyIncomeParamName = "monthlyIncome";
+    String familyExpensesParamName = "familyExpenses";
+    String totalExternalLoanAmountParamName = "totalExternalLoanAmount";
+    String totalInstallmentsParamName = "totalInstallments";
+    String clientTypeParamName = "clientType";
+    String houseHoldGoodsParamName = "houseHoldGoods";
+    String businessActivitiesParamName = "businessActivities";
+    String businessLocationParamName = "businessLocation";
+    String businessExperienceParamName = "businessExperience";
+    String salesValueParamName = "salesValue";
+    String businessPurchasesParamName = "businessPurchases";
+    String businessProfitParamName = "businessProfit";
+    String clientProfitParamName = "clientProfit";
+    String inventoriesParamName = "inventories";
+    String visitBusinessParamName = "visitBusiness";
+    String familySupportParamName = "familySupport";
+    String businessEvolutionParamName = "businessEvolution";
+    String numberOfApprovalsParamName = "numberOfApprovals";
+    String recommenderNameParamName = "recommenderName";
+    String monthlyPaymentCapacityParamName = "monthlyPaymentCapacity";
+    String loanPurposeParamName = "loanPurpose";
+    String currentCreditValueParamName = "currentCreditValue";
+    String requestedValueParamName = "requestedValue";
+    String groupAuthorizedValueParamName = "groupAuthorizedValue";
+    String facilitatorProposedValueParamName = "facilitatorProposedValue";
+    String proposedFeeParamName = "proposedFee";
+    String agencyAuthorizedAmountParamName = "agencyAuthorizedAmount";
+    String authorizedFeeParamName = "authorizedFee";
+    String totalIncomeParamName = "totalIncome";
+    String totalExpendituresParamName = "totalExpenditures";
+    String availableMonthlyParamName = "availableMonthly";
+    String facValueParamName = "facValue";
+    String debtLevelParamName = "debtLevel";
+    String earlyCancellationReasonParamName = "earlyCancellationReason";
+    String sourceOfFundsParamName = "sourceOfFunds";
+    String clientLoanRequestNumberParamName = "clientLoanRequestNumber";
+    String dateRequestedParamName = "dateRequested";
+    String positionParamName = "position";
+    String fullNameParamName = "fullName";
+    String lastNameParamName = "lastName";
+    String maritalStatusParamName = "maritalStatus";
+    String educationLevelParamName = "educationLevel";
+    String schoolingYearsParamName = "schoolingYears";
+    String noOfChildrenParamName = "noOfChildren";
+    String nationalityParamName = "nationality";
+    String languageParamName = "language";
+    String dpiParamName = "dpi";
+    String nitParamName = "nit";
+    String jobTypeParamName = "jobType";
+    String occupancyClassificationParamName = "occupancyClassification";
+    String actsOwnBehalfParamName = "actsOwnBehalf";
+    String onBehalfOfParamName = "onBehalfOf";
+    String politicalPositionParamName = "politicalPosition";
+    String politicalOfficeParamName = "politicalOffice";
+    String housingTypeParamName = "housingType";
+    String addressParamName = "address";
+    String populatedPlaceParamName = "populatedPlace";
+    String referencePointParamName = "referencePoint";
+    String phoneNumberParamName = "phoneNumber";
+    String relativeNumberParamName = "relativeNumber";
+    String yearsInCommunityParamName = "yearsInCommunity";
+    String LOAN_ACTION_UPDATE_FUND = "UPDATEFUND";
+    String paymentCapacityParamName = "paymentCapacity";
+    String externalLoansParamName = "externalLoans";
+    String facilitatorParamName = "facilitator";
+    String maidenNameParamName = "maidenName";
+    String politicallyExposedParamName = "politicallyExposed";
+    String otherIncomeParamName = "otherIncome";
+    String currentLoansParamName = "currentLoans";
+    String businessActivityParamName = "businessActivity";
+    String dateOfBirthParamName = "dateOfBirth";
 }

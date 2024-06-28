@@ -56,6 +56,7 @@ import org.apache.fineract.infrastructure.core.serialization.ApiRequestJsonSeria
 import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
+import org.apache.fineract.portfolio.loanaccount.data.LoanPaymentSimulationData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanRepaymentScheduleInstallmentData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanTransactionData;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionType;
@@ -329,5 +330,38 @@ public class LoanTransactionsApiResource {
         final CommandWrapper commandRequest = new CommandWrapperBuilder().undoWaiveChargeTransaction(loanId, transactionId).build();
         CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
         return this.toApiJsonSerializer.serialize(result);
+    }
+
+    @GET
+    @Path("simulation")
+    @Consumes({ MediaType.APPLICATION_JSON })
+    @Produces({ MediaType.APPLICATION_JSON })
+    @Operation(summary = "Retrieve Loan Future Payment Template", description = "This is a convenience resource. It can be useful when building maintenance user interface screens for client applications. The template data returned consists of any or all of:\n"
+            + "\n" + "Field Defaults\n" + "Allowed Value Lists\n\n" + "Example Requests:\n" + "\n"
+            + "loans/1/transactions/template?command=futurepayment" + "\n")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = LoanTransactionsApiResourceSwagger.GetLoansLoanIdTransactionsTemplateResponse.class))) })
+    public String retrieveLoanFuturePayment(@PathParam("loanId") @Parameter(description = "loanId") final Long loanId,
+            @QueryParam("command") @Parameter(description = "command") final String commandParam, @Context final UriInfo uriInfo,
+            @QueryParam("dateFormat") @Parameter(description = "dateFormat") final String dateFormat,
+            @QueryParam("paymentDate") @Parameter(description = "paymentDate") final DateParam paymentDateParam,
+            @QueryParam("paymentType") @Parameter(description = "paymentType") final String paymentType,
+            @QueryParam("locale") @Parameter(description = "locale") final String locale) {
+
+        this.context.authenticatedUser().validateHasReadPermission(this.resourceNameForPermissions);
+
+        LoanPaymentSimulationData futurePaymentData = null;
+
+        if (is(commandParam, "futurepayment")) {
+            LocalDate paymentDate = null;
+            if (paymentDateParam == null) {
+                paymentDate = DateUtils.getBusinessLocalDate();
+            } else {
+                paymentDate = paymentDateParam.getDate("paymentDate", dateFormat, locale);
+            }
+            futurePaymentData = this.loanReadPlatformService.retrieveLoanFuturePaymentTemplate(loanId, paymentDate, paymentType);
+        }
+
+        return this.toApiJsonSerializer.serialize(futurePaymentData);
     }
 }

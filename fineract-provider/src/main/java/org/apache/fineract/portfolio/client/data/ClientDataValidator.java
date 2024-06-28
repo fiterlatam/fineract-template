@@ -40,6 +40,8 @@ import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidati
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.portfolio.client.api.ClientApiConstants;
+import org.apache.fineract.portfolio.client.domain.ClientRepositoryWrapper;
+import org.apache.fineract.portfolio.client.validation.ClientIdentifierDocumentValidator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -48,12 +50,14 @@ public final class ClientDataValidator {
 
     private final FromJsonHelper fromApiJsonHelper;
     private final ConfigurationReadPlatformService configurationReadPlatformService;
+    private final ClientRepositoryWrapper clientRepositoryWrapper;
 
     @Autowired
-    public ClientDataValidator(final FromJsonHelper fromApiJsonHelper,
+    public ClientDataValidator(final FromJsonHelper fromApiJsonHelper, final ClientRepositoryWrapper clientRepositoryWrapper,
             final ConfigurationReadPlatformService configurationReadPlatformService) {
         this.fromApiJsonHelper = fromApiJsonHelper;
         this.configurationReadPlatformService = configurationReadPlatformService;
+        this.clientRepositoryWrapper = clientRepositoryWrapper;
     }
 
     public void validateForCreate(final String json) {
@@ -83,6 +87,26 @@ public final class ClientDataValidator {
 
         final Long officeId = this.fromApiJsonHelper.extractLongNamed(ClientApiConstants.officeIdParamName, element);
         baseDataValidator.reset().parameter(ClientApiConstants.officeIdParamName).value(officeId).notNull().integerGreaterThanZero();
+
+        final String dpi = this.fromApiJsonHelper.extractStringNamed(ClientApiConstants.dpiParamName, element);
+
+        ClientIdentifierDocumentValidator.checkDPI(dpi, ClientApiConstants.dpiParamName);
+        baseDataValidator.reset().parameter(ClientApiConstants.dpiParamName).value(dpi).notNull();
+
+        final Long clientArea = this.fromApiJsonHelper.extractLongNamed(ClientApiConstants.clientAreaParamName, element);
+        baseDataValidator.reset().parameter(ClientApiConstants.clientAreaParamName).value(clientArea).notNull();
+
+        final Long housingType = this.fromApiJsonHelper.extractLongNamed(ClientApiConstants.housingTypeIdParamName, element);
+        baseDataValidator.reset().parameter(ClientApiConstants.housingTypeIdParamName).value(housingType).notNull();
+
+        final Long residenceYears = this.fromApiJsonHelper.extractLongNamed(ClientApiConstants.residenceYearsParamName, element);
+        baseDataValidator.reset().parameter(ClientApiConstants.residenceYearsParamName).value(residenceYears).notNull();
+
+        final Long department = this.fromApiJsonHelper.extractLongNamed(ClientApiConstants.departmentIdParamName, element);
+        baseDataValidator.reset().parameter(ClientApiConstants.departmentIdParamName).value(department).notNull();
+
+        final Long municipal = this.fromApiJsonHelper.extractLongNamed(ClientApiConstants.municipalIdParamName, element);
+        baseDataValidator.reset().parameter(ClientApiConstants.municipalIdParamName).value(municipal).notNull();
 
         if (this.fromApiJsonHelper.parameterExists(ClientApiConstants.groupIdParamName, element)) {
             final Long groupId = this.fromApiJsonHelper.extractLongNamed(ClientApiConstants.groupIdParamName, element);
@@ -364,6 +388,11 @@ public final class ClientDataValidator {
             }
         }
 
+        if (this.fromApiJsonHelper.parameterExists(ClientApiConstants.dpiParamName, element)) {
+            final String dpi = this.fromApiJsonHelper.extractStringNamed(ClientApiConstants.dpiParamName, element);
+            ClientIdentifierDocumentValidator.checkDPI(dpi, ClientApiConstants.dpiParamName);
+        }
+
         final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
 
         final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors)
@@ -441,6 +470,14 @@ public final class ClientDataValidator {
             final String mobileNo = this.fromApiJsonHelper.extractStringNamed(ClientApiConstants.mobileNoParamName, element);
             baseDataValidator.reset().parameter(ClientApiConstants.mobileNoParamName).value(mobileNo).notExceedingLengthOf(50);
         }
+
+        final String mobileNo = this.fromApiJsonHelper.extractStringNamed(ClientApiConstants.mobileNoParamName, element);
+        baseDataValidator.reset().parameter(ClientApiConstants.mobileNoParamName).value(mobileNo).notBlank().notExceedingLengthOf(50)
+                .validatePhoneNumber();
+
+        final String homeNumber = this.fromApiJsonHelper.extractStringNamed(ClientApiConstants.HOME_NUMBER, element);
+        baseDataValidator.reset().parameter(ClientApiConstants.mobileNoParamName).value(homeNumber).ignoreIfNull().notExceedingLengthOf(50)
+                .validatePhoneNumber();
 
         final Boolean active = this.fromApiJsonHelper.extractBooleanNamed(ClientApiConstants.activeParamName, element);
         if (active != null) {

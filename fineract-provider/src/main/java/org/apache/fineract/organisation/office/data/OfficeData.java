@@ -36,6 +36,7 @@ public class OfficeData implements Serializable {
     private final String hierarchy;
     private final Long parentId;
     private final String parentName;
+    private final String officeCode;
     @SuppressWarnings("unused")
     private final Collection<OfficeData> allowedParents;
 
@@ -44,8 +45,9 @@ public class OfficeData implements Serializable {
     private String locale;
     private String dateFormat;
 
-    public static OfficeData importInstance(final String name, final Long parentId, final LocalDate openingDate, final String externalId) {
-        return new OfficeData(null, name, null, externalId, openingDate, null, parentId, null, null);
+    public static OfficeData importInstance(final String name, final Long parentId, final LocalDate openingDate, final String externalId,
+            final String officeCode) {
+        return new OfficeData(null, name, null, externalId, openingDate, null, parentId, null, null, officeCode);
     }
 
     public void setImportFields(final Integer rowIndex, final String locale, final String dateFormat) {
@@ -55,7 +57,7 @@ public class OfficeData implements Serializable {
     }
 
     public static OfficeData testInstance(final Long id, final String name) {
-        return new OfficeData(id, name, null, null, null, null, null, null, null);
+        return new OfficeData(id, name, null, null, null, null, null, null, null, null);
     }
 
     public LocalDate getOpeningDate() {
@@ -71,20 +73,21 @@ public class OfficeData implements Serializable {
     }
 
     public static OfficeData dropdown(final Long id, final String name, final String nameDecorated) {
-        return new OfficeData(id, name, nameDecorated, null, null, null, null, null, null);
+        return new OfficeData(id, name, nameDecorated, null, null, null, null, null, null, null);
     }
 
     public static OfficeData template(final List<OfficeData> parentLookups, final LocalDate defaultOpeningDate) {
-        return new OfficeData(null, null, null, null, defaultOpeningDate, null, null, null, parentLookups);
+        return new OfficeData(null, null, null, null, defaultOpeningDate, null, null, null, parentLookups, null);
     }
 
     public static OfficeData appendedTemplate(final OfficeData office, final Collection<OfficeData> allowedParents) {
         return new OfficeData(office.id, office.name, office.nameDecorated, office.externalId, office.openingDate, office.hierarchy,
-                office.parentId, office.parentName, allowedParents);
+                office.parentId, office.parentName, allowedParents, office.officeCode);
     }
 
     public OfficeData(final Long id, final String name, final String nameDecorated, final String externalId, final LocalDate openingDate,
-            final String hierarchy, final Long parentId, final String parentName, final Collection<OfficeData> allowedParents) {
+            final String hierarchy, final Long parentId, final String parentName, final Collection<OfficeData> allowedParents,
+            final String officeCode) {
         this.id = id;
         this.name = name;
         this.nameDecorated = nameDecorated;
@@ -94,6 +97,7 @@ public class OfficeData implements Serializable {
         this.parentName = parentName;
         this.parentId = parentId;
         this.allowedParents = allowedParents;
+        this.officeCode = officeCode;
     }
 
     public boolean hasIdentifyOf(final Long officeId) {

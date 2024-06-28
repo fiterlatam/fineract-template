@@ -41,6 +41,7 @@ import org.apache.fineract.portfolio.loanproduct.data.LoanProductData;
 import org.apache.fineract.portfolio.loanproduct.data.LoanProductGuaranteeData;
 import org.apache.fineract.portfolio.loanproduct.data.LoanProductInterestRecalculationData;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductConfigurableAttributes;
+import org.apache.fineract.portfolio.loanproduct.domain.LoanProductOwnerType;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductParamType;
 import org.apache.fineract.portfolio.loanproduct.exception.LoanProductNotFoundException;
 import org.apache.fineract.portfolio.rate.data.RateData;
@@ -191,15 +192,15 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
         }
 
         public String loanProductSchema() {
-            return "lp.id as id, lp.fund_id as fundId, f.name as fundName, lp.loan_transaction_strategy_id as transactionStrategyId, ltps.name as transactionStrategyName, "
-                    + "lp.name as name, lp.short_name as shortName, lp.description as description, "
+            return "lp.id as id, lp.fund_id as fundId, f.name as fundName, lp.loan_transaction_strategy_id as transactionStrategyId, ltps.name as transactionStrategyName, lp.required_guarantee_percent as guaranteePercentage, lp.payment_tolerance_limit as paymentToleranceLimit, "
+                    + "lp.name as name, lp.short_name as shortName, lp.description as description, lp.age_limit_warning as ageLimitWarning, lp.age_limit_block as ageLimitBlock, "
                     + "lp.principal_amount as principal, lp.min_principal_amount as minPrincipal, lp.max_principal_amount as maxPrincipal, lp.currency_code as currencyCode, lp.currency_digits as currencyDigits, lp.currency_multiplesof as inMultiplesOf, "
                     + "lp.nominal_interest_rate_per_period as interestRatePerPeriod, lp.min_nominal_interest_rate_per_period as minInterestRatePerPeriod, lp.max_nominal_interest_rate_per_period as maxInterestRatePerPeriod, lp.interest_period_frequency_enum as interestRatePerPeriodFreq, "
                     + "lp.annual_nominal_interest_rate as annualInterestRate, lp.interest_method_enum as interestMethod, lp.interest_calculated_in_period_enum as interestCalculationInPeriodMethod,lp.allow_partial_period_interest_calcualtion as allowPartialPeriodInterestCalcualtion, "
                     + "lp.repay_every as repaidEvery, lp.repayment_period_frequency_enum as repaymentPeriodFrequency, lp.number_of_repayments as numberOfRepayments, lp.min_number_of_repayments as minNumberOfRepayments, lp.max_number_of_repayments as maxNumberOfRepayments, "
                     + "lp.grace_on_principal_periods as graceOnPrincipalPayment, lp.recurring_moratorium_principal_periods as recurringMoratoriumOnPrincipalPeriods, lp.grace_on_interest_periods as graceOnInterestPayment, lp.grace_interest_free_periods as graceOnInterestCharged,lp.grace_on_arrears_ageing as graceOnArrearsAgeing,lp.overdue_days_for_npa as overdueDaysForNPA, "
                     + "lp.min_days_between_disbursal_and_first_repayment As minimumDaysBetweenDisbursalAndFirstRepayment, "
-                    + "lp.amortization_method_enum as amortizationMethod, lp.arrearstolerance_amount as tolerance, "
+                    + "lp.amortization_method_enum as amortizationMethod, lp.arrearstolerance_amount as tolerance, lp.required_committee_approval as requireCommitteeApproval, "
                     + "lp.accounting_type as accountingType, lp.include_in_borrower_cycle as includeInBorrowerCycle,lp.use_borrower_cycle as useBorrowerCycle, lp.start_date as startDate, lp.close_date as closeDate,  "
                     + "lp.allow_multiple_disbursals as multiDisburseLoan, lp.max_disbursals as maxTrancheCount, lp.max_outstanding_loan_balance as outstandingLoanBalance, "
                     + "lp.disallow_expected_disbursements as disallowExpectedDisbursements, lp.allow_approved_disbursed_amounts_over_applied as allowApprovedDisbursedAmountsOverApplied, lp.over_applied_calculation_type as overAppliedCalculationType, over_applied_number as overAppliedNumber, "
@@ -236,8 +237,10 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
                     + "lfr.is_floating_interest_rate_calculation_allowed as isFloatingInterestRateCalculationAllowed, "
                     + "lp.allow_variabe_installments as isVariableIntallmentsAllowed, " + "lvi.minimum_gap as minimumGap, "
                     + "lvi.maximum_gap as maximumGap, "
-                    + "lp.can_use_for_topup as canUseForTopup, lp.is_equal_amortization as isEqualAmortization "
-                    + " from m_product_loan lp " + " left join m_fund f on f.id = lp.fund_id "
+                    + "lp.can_use_for_topup as canUseForTopup, lp.is_equal_amortization as isEqualAmortization, "
+                    + "lp.owner_type_enum as productOwnerType, lp.add_new_cycles_enabled as addNewCyclesEnabled, "
+                    + " lp.limit_of_days_for_addon as daysLimitAddOn " + " from m_product_loan lp "
+                    + " left join m_fund f on f.id = lp.fund_id "
                     + " left join m_product_loan_recalculation_details lpr on lpr.product_id=lp.id "
                     + " left join m_product_loan_guarantee_details lpg on lpg.loan_product_id=lp.id "
                     + " left join ref_loan_transaction_processing_strategy ltps on ltps.id = lp.loan_transaction_strategy_id"
@@ -322,6 +325,10 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
 
             final Integer interestRateFrequencyTypeId = JdbcSupport.getInteger(rs, "interestRatePerPeriodFreq");
             final EnumOptionData interestRateFrequencyType = LoanEnumerations.interestRateFrequencyType(interestRateFrequencyTypeId);
+
+            final Integer productOwnerType = JdbcSupport.getInteger(rs, "productOwnerType");
+            final EnumOptionData ownerTypeOption = LoanEnumerations.loanProductOwnerType(LoanProductOwnerType.fromInt(productOwnerType));
+            final boolean addNewCyclesEnabled = rs.getBoolean("addNewCyclesEnabled");
 
             final int interestTypeId = JdbcSupport.getInteger(rs, "interestMethod");
             final EnumOptionData interestType = LoanEnumerations.interestType(interestTypeId);
@@ -465,6 +472,12 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
             final boolean canUseForTopup = rs.getBoolean("canUseForTopup");
             final Collection<RateData> rateOptions = null;
             final boolean isRatesEnabled = false;
+            final Integer ageLimitWarning = JdbcSupport.getInteger(rs, "ageLimitWarning");
+            final Integer ageLimitBlock = JdbcSupport.getInteger(rs, "ageLimitBlock");
+            final Integer daysLimitAddOn = JdbcSupport.getInteger(rs, "daysLimitAddOn");
+            final BigDecimal guaranteePercentage = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "guaranteePercentage");
+            final BigDecimal paymentToleranceLimit = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "paymentToleranceLimit");
+            final Boolean requireCommitteeApproval = rs.getBoolean("requireCommitteeApproval");
 
             return new LoanProductData(id, name, shortName, description, currency, principal, minPrincipal, maxPrincipal, tolerance,
                     numberOfRepayments, minNumberOfRepayments, maxNumberOfRepayments, repaymentEvery, interestRatePerPeriod,
@@ -483,7 +496,8 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
                     floatingRateName, interestRateDifferential, minDifferentialLendingRate, defaultDifferentialLendingRate,
                     maxDifferentialLendingRate, isFloatingInterestRateCalculationAllowed, isVariableIntallmentsAllowed, minimumGap,
                     maximumGap, syncExpectedWithDisbursementDate, canUseForTopup, isEqualAmortization, rateOptions, this.rates,
-                    isRatesEnabled, fixedPrincipalPercentagePerInstallment);
+                    isRatesEnabled, fixedPrincipalPercentagePerInstallment, ageLimitWarning, ageLimitBlock, ownerTypeOption,
+                    addNewCyclesEnabled, daysLimitAddOn, guaranteePercentage, paymentToleranceLimit, requireCommitteeApproval);
         }
     }
 
@@ -644,6 +658,25 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
                 + "Select pm.product_id from m_product_mix pm where pm.restricted_product_id=?)";
 
         return this.jdbcTemplate.query(sql, rm, new Object[] { productId, productId }); // NOSONAR
+    }
+
+    @Override
+    public Collection<LoanProductData> retrieveAllLoanProductsForOwner(Integer ownerType) {
+        this.context.authenticatedUser();
+
+        final LoanProductMapper rm = new LoanProductMapper(null, null, null);
+
+        String sql = "select " + rm.loanProductSchema() + " where lp.owner_type_enum= ? ";
+
+        // Check if branch specific products are enabled. If yes, fetch only
+        // products mapped to current user's office
+        String inClause = fineractEntityAccessUtil
+                .getSQLWhereClauseForProductIDsForUserOffice_ifGlobalConfigEnabled(FineractEntityType.LOAN_PRODUCT);
+        if (inClause != null && !inClause.trim().isEmpty()) {
+            sql += " and id in (" + inClause + ") ";
+        }
+
+        return this.jdbcTemplate.query(sql, rm, new Object[] { ownerType }); // NOSONAR
     }
 
     @Override

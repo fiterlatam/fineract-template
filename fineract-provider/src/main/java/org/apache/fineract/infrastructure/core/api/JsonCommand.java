@@ -50,7 +50,7 @@ import org.apache.fineract.infrastructure.security.service.PlatformPasswordEncod
  */
 public final class JsonCommand {
 
-    private final String jsonCommand;
+    private String jsonCommand;
     private final JsonElement parsedCommand;
     private final FromJsonHelper fromApiJsonHelper;
     private final Long commandId;
@@ -680,5 +680,9 @@ public final class JsonCommand {
         }
 
         return differenceExists;
+    }
+
+    public void setJsonCommand(String jsonCommand) {
+        this.jsonCommand = jsonCommand;
     }
 }

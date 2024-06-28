@@ -18,11 +18,13 @@
  */
 package org.apache.fineract.cob;
 
+import java.util.Collection;
 import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
+import org.apache.fineract.portfolio.loanaccount.loanschedule.data.OverdueLoanScheduleData;
 
 public interface COBBusinessStep<T extends AbstractPersistableCustom> {
 
-    T execute(T input);
+    void execute(Long loanId, Collection<OverdueLoanScheduleData> overdueLoanSchedules);
 
     String getEnumStyledName();
 

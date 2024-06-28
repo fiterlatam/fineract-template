@@ -47,4 +47,8 @@ public interface ChargeDropdownReadPlatformService {
 
     List<EnumOptionData> retrieveSharesCollectionTimeTypes();
 
+    List<EnumOptionData> retrieveDisbursementTypeOptions();
+
+    List<EnumOptionData> retrieveInstallmentFeeTypeOptions();
+
 }

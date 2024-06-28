@@ -47,7 +47,7 @@ public final class OfficeCommandFromApiJsonDeserializer {
      * The parameters supported for this command.
      */
     private final Set<String> supportedParameters = new HashSet<>(
-            Arrays.asList("name", "parentId", "openingDate", "externalId", "locale", "dateFormat"));
+            Arrays.asList("name", "parentId", "openingDate", "externalId", "locale", "dateFormat", "officeCode"));
 
     private final FromJsonHelper fromApiJsonHelper;
 
@@ -84,6 +84,9 @@ public final class OfficeCommandFromApiJsonDeserializer {
             final Long parentId = this.fromApiJsonHelper.extractLongNamed("parentId", element);
             baseDataValidator.reset().parameter("parentId").value(parentId).notNull().integerGreaterThanZero();
         }
+
+        final String officeCode = this.fromApiJsonHelper.extractStringNamed("officeCode", element);
+        baseDataValidator.reset().parameter("officeCode").value(officeCode).notBlank().notExceedingLengthOf(10);
 
         throwExceptionIfValidationWarningsExist(dataValidationErrors);
     }
@@ -126,6 +129,11 @@ public final class OfficeCommandFromApiJsonDeserializer {
         if (this.fromApiJsonHelper.parameterExists("parentId", element)) {
             final Long parentId = this.fromApiJsonHelper.extractLongNamed("parentId", element);
             baseDataValidator.reset().parameter("parentId").value(parentId).notNull().integerGreaterThanZero();
+        }
+
+        if (this.fromApiJsonHelper.parameterExists("officeCode", element)) {
+            final String officeCode = this.fromApiJsonHelper.extractStringNamed("officeCode", element);
+            baseDataValidator.reset().parameter("officeCode").value(officeCode).notBlank().notExceedingLengthOf(10);
         }
 
         throwExceptionIfValidationWarningsExist(dataValidationErrors);

@@ -66,6 +66,10 @@ public class LoanRepositoryWrapper {
         return loans;
     }
 
+    public Collection<Loan> findLoanByChequeId(Long chequeId) {
+        return this.repository.findLoanByChequeId(chequeId);
+    }
+
     public Loan saveAndFlush(final Loan loan) {
         return this.repository.saveAndFlush(loan);
     }

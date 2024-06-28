@@ -229,4 +229,20 @@ public class OfficesApiResource {
                 uploadedInputStream, fileDetail, locale, dateFormat);
         return this.toApiJsonSerializer.serialize(importDocumentId);
     }
+
+    @GET
+    @Path("user")
+    @Produces({ MediaType.APPLICATION_JSON })
+    @Operation(summary = "List Offices by parent office", description = "Example Requests:\n" + "\n" + "offices\n" + "\n" + "\n"
+            + "offices?fields=id,name,openingDate")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "OK", content = @Content(array = @ArraySchema(schema = @Schema(implementation = OfficesApiResourceSwagger.GetOfficesResponse.class)))) })
+    public String retrieveChildrenOffices(@Context final UriInfo uriInfo) {
+
+        final Collection<OfficeData> offices = this.readPlatformService
+                .retrieveOfficesByParent(this.context.authenticatedUser().getOffice().getId());
+
+        final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
+        return this.toApiJsonSerializer.serialize(settings, offices, this.responseDataParameters);
+    }
 }

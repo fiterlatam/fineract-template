@@ -18,15 +18,21 @@
  */
 package org.apache.fineract.portfolio.client.service;
 
+import static org.apache.fineract.portfolio.savings.SavingsApiConstants.GURANTEE_PRODUCT_NAME;
+
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import javax.persistence.PersistenceException;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.fineract.commands.domain.CommandWrapper;
 import org.apache.fineract.commands.service.CommandProcessingService;
@@ -53,6 +59,7 @@ import org.apache.fineract.organisation.office.domain.OfficeRepositoryWrapper;
 import org.apache.fineract.organisation.staff.domain.Staff;
 import org.apache.fineract.organisation.staff.domain.StaffRepositoryWrapper;
 import org.apache.fineract.portfolio.address.service.AddressWritePlatformService;
+import org.apache.fineract.portfolio.blacklist.domain.BlacklistStatus;
 import org.apache.fineract.portfolio.businessevent.domain.client.ClientActivateBusinessEvent;
 import org.apache.fineract.portfolio.businessevent.domain.client.ClientCreateBusinessEvent;
 import org.apache.fineract.portfolio.businessevent.domain.client.ClientRejectBusinessEvent;
@@ -61,12 +68,17 @@ import org.apache.fineract.portfolio.client.api.ClientApiConstants;
 import org.apache.fineract.portfolio.client.data.ClientDataValidator;
 import org.apache.fineract.portfolio.client.domain.AccountNumberGenerator;
 import org.apache.fineract.portfolio.client.domain.Client;
+import org.apache.fineract.portfolio.client.domain.ClientContactInformation;
+import org.apache.fineract.portfolio.client.domain.ClientContactInformationRepository;
+import org.apache.fineract.portfolio.client.domain.ClientInfoRelatedDetail;
 import org.apache.fineract.portfolio.client.domain.ClientNonPerson;
 import org.apache.fineract.portfolio.client.domain.ClientNonPersonRepositoryWrapper;
 import org.apache.fineract.portfolio.client.domain.ClientRepositoryWrapper;
 import org.apache.fineract.portfolio.client.domain.ClientStatus;
 import org.apache.fineract.portfolio.client.domain.LegalForm;
 import org.apache.fineract.portfolio.client.exception.ClientActiveForUpdateException;
+import org.apache.fineract.portfolio.client.exception.ClientBlacklistedException;
+import org.apache.fineract.portfolio.client.exception.ClientDpiExistsException;
 import org.apache.fineract.portfolio.client.exception.ClientHasNoStaffException;
 import org.apache.fineract.portfolio.client.exception.ClientMustBePendingToBeDeletedException;
 import org.apache.fineract.portfolio.client.exception.InvalidClientSavingProductException;
@@ -82,12 +94,14 @@ import org.apache.fineract.portfolio.note.domain.NoteRepository;
 import org.apache.fineract.portfolio.savings.data.SavingsAccountDataDTO;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccount;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountRepositoryWrapper;
+import org.apache.fineract.portfolio.savings.domain.SavingsProduct;
 import org.apache.fineract.portfolio.savings.domain.SavingsProductRepository;
 import org.apache.fineract.portfolio.savings.exception.SavingsProductNotFoundException;
 import org.apache.fineract.portfolio.savings.service.SavingsApplicationProcessWritePlatformService;
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -119,6 +133,8 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
     private final ClientFamilyMembersWritePlatformService clientFamilyMembersWritePlatformService;
     private final BusinessEventNotifierService businessEventNotifierService;
     private final EntityDatatableChecksWritePlatformService entityDatatableChecksWritePlatformService;
+    private final JdbcTemplate jdbcTemplate;
+    private final ClientContactInformationRepository clientContactInformationRepository;
 
     @Autowired
     public ClientWritePlatformServiceJpaRepositoryImpl(final PlatformSecurityContext context,
@@ -134,8 +150,9 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
             final ConfigurationReadPlatformService configurationReadPlatformService,
             final AddressWritePlatformService addressWritePlatformService,
             final ClientFamilyMembersWritePlatformService clientFamilyMembersWritePlatformService,
-            final BusinessEventNotifierService businessEventNotifierService,
-            final EntityDatatableChecksWritePlatformService entityDatatableChecksWritePlatformService) {
+            final BusinessEventNotifierService businessEventNotifierService, final JdbcTemplate jdbcTemplate,
+            final EntityDatatableChecksWritePlatformService entityDatatableChecksWritePlatformService,
+            ClientContactInformationRepository clientContactInformationRepository) {
         this.context = context;
         this.clientRepository = clientRepository;
         this.clientNonPersonRepository = clientNonPersonRepository;
@@ -159,6 +176,8 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
         this.clientFamilyMembersWritePlatformService = clientFamilyMembersWritePlatformService;
         this.businessEventNotifierService = businessEventNotifierService;
         this.entityDatatableChecksWritePlatformService = entityDatatableChecksWritePlatformService;
+        this.jdbcTemplate = jdbcTemplate;
+        this.clientContactInformationRepository = clientContactInformationRepository;
     }
 
     @Transactional
@@ -211,6 +230,10 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
             final String mobileNo = command.stringValueOfParameterNamed("mobileNo");
             throw new PlatformDataIntegrityException("error.msg.client.duplicate.mobileNo",
                     "Client with mobileNo `" + mobileNo + "` already exists", "mobileNo", mobileNo);
+        } else if (realCause.getMessage().contains("dpi")) {
+            final String dpi = command.stringValueOfParameterNamed("dpi");
+            throw new PlatformDataIntegrityException("error.msg.client.duplicate.dpi", "Client with dpi `" + dpi + "` already exists",
+                    "dpi", dpi);
         }
 
         logAsErrorUnexpectedDataIntegrityException(dve);
@@ -235,6 +258,25 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
             final Boolean isStaff = command.booleanObjectValueOfParameterNamed(ClientApiConstants.isStaffParamName);
 
             final Long officeId = command.longValueOfParameterNamed(ClientApiConstants.officeIdParamName);
+            final Long dpiNumber = command.longValueOfParameterNamed(ClientApiConstants.dpiParamName);
+
+            // check if client is blacklisted
+            String blacklistString = "select count(*) from m_client_blacklist where dpi=? and status=?";
+            Long blacklisted = jdbcTemplate.queryForObject(blacklistString, Long.class, dpiNumber, BlacklistStatus.ACTIVE.getValue());
+            if (blacklisted > 0) {
+                String blacklistReason = "select type_enum from m_client_blacklist where dpi=? and status=?";
+                Integer typification = jdbcTemplate.queryForObject(blacklistReason, Integer.class, dpiNumber,
+                        BlacklistStatus.ACTIVE.getValue());
+                CodeValue typificationCodeValue = this.codeValueRepository.findOneWithNotFoundDetection(typification.longValue());
+                throw new ClientBlacklistedException(typificationCodeValue.getDescription());
+            }
+
+            // check if client with given dpi exists
+            String sqlString = "select count(*) from m_client where dpi=?";
+            Long count = jdbcTemplate.queryForObject(sqlString, Long.class, dpiNumber);
+            if (count > 0) {
+                throw new ClientDpiExistsException(String.valueOf(dpiNumber));
+            }
 
             final Office clientOffice = this.officeRepositoryWrapper.findOneWithNotFoundDetection(officeId);
 
@@ -287,9 +329,10 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
                     isEntity = legalForm.isEntity();
                 }
             }
+            ClientInfoRelatedDetail clientRelatedDetails = ClientInfoRelatedDetail.createFrom(command);
 
             final Client newClient = Client.createNew(currentUser, clientOffice, clientParentGroup, staff, savingsProductId, gender,
-                    clientType, clientClassification, legalFormValue, command);
+                    clientType, clientClassification, legalFormValue, clientRelatedDetails, command);
             this.clientRepository.saveAndFlush(newClient);
             boolean rollbackTransaction = false;
             if (newClient.isActive()) {
@@ -300,6 +343,28 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
             }
 
             this.clientRepository.saveAndFlush(newClient);
+
+            ClientContactInformation clientContactInformation = ClientContactInformation.fromJson(newClient, command);
+            this.clientContactInformationRepository.saveAndFlush(clientContactInformation);
+            newClient.updateClientInformation(clientContactInformation);
+
+            final Set<CodeValue> publicServiceTypes = new HashSet<>();
+            JsonArray publicServices = command.arrayOfParameterNamed(ClientApiConstants.PUBLIC_SERVICES);
+            if (publicServices != null && !publicServices.isEmpty()) {
+                for (JsonElement publicServiceJson : publicServices) {
+                    CodeValue publicServiceType;
+                    final Long codeValueId = this.fromApiJsonHelper.extractLongNamed("id", publicServiceJson);
+                    final Boolean isChecked = this.fromApiJsonHelper.extractBooleanNamed("checked", publicServiceJson);
+                    if (codeValueId != null && Boolean.TRUE.equals(isChecked)) {
+                        publicServiceType = this.codeValueRepository.findOneWithNotFoundDetection(codeValueId);
+                        publicServiceTypes.add(publicServiceType);
+                    }
+                }
+            }
+            newClient.setPublicServiceTypes(publicServiceTypes);
+
+            this.clientRepository.saveAndFlush(newClient);
+
             if (newClient.isActive()) {
                 businessEventNotifierService.notifyPostBusinessEvent(new ClientActivateBusinessEvent(newClient));
             }
@@ -334,7 +399,6 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
                         EntityTables.CLIENT.getName(), newClient.getId(), null,
                         command.arrayOfParameterNamed(ClientApiConstants.datatables));
             }
-
             businessEventNotifierService.notifyPostBusinessEvent(new ClientCreateBusinessEvent(newClient));
 
             entityDatatableChecksWritePlatformService.runTheCheck(newClient.getId(), EntityTables.CLIENT.getName(),
@@ -462,6 +526,16 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
                 clientForUpdate.updateGender(newCodeVal);
             }
 
+            if (changes.containsKey(ClientApiConstants.dpiParamName)) {
+                final String newValue = command.stringValueOfParameterNamed(ClientApiConstants.dpiParamName);
+                String sqlString = "select count(*) from m_client where dpi=?";
+                Long count = jdbcTemplate.queryForObject(sqlString, Long.class, newValue);
+                if (count > 0) {
+                    throw new ClientDpiExistsException(newValue);
+                }
+                clientForUpdate.updateDpiNumber(newValue);
+            }
+
             if (changes.containsKey(ClientApiConstants.clientTypeIdParamName)) {
                 final Long newValue = command.longValueOfParameterNamed(ClientApiConstants.clientTypeIdParamName);
                 CodeValue newCodeVal = null;
@@ -485,6 +559,31 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
             if (!changes.isEmpty()) {
                 this.clientRepository.saveAndFlush(clientForUpdate);
             }
+            List<ClientContactInformation> contactInformationList = this.clientContactInformationRepository.findByClientId(clientId);
+            ClientContactInformation contactInformation;
+            if (CollectionUtils.isNotEmpty(contactInformationList)) {
+                contactInformation = ClientContactInformation.updateJson(contactInformationList.get(0), command);
+            } else {
+                contactInformation = ClientContactInformation.fromJson(clientForUpdate, command);
+            }
+            this.clientContactInformationRepository.saveAndFlush(contactInformation);
+
+            clientForUpdate.updateClientInformation(contactInformation);
+            final Set<CodeValue> publicServiceTypes = new HashSet<>();
+            JsonArray publicServices = command.arrayOfParameterNamed(ClientApiConstants.PUBLIC_SERVICES);
+            if (publicServices != null && !publicServices.isEmpty()) {
+                for (JsonElement publicServiceJson : publicServices) {
+                    CodeValue publicServiceType;
+                    final Long codeValueId = this.fromApiJsonHelper.extractLongNamed("id", publicServiceJson);
+                    final Boolean isChecked = this.fromApiJsonHelper.extractBooleanNamed("checked", publicServiceJson);
+                    if (codeValueId != null && Boolean.TRUE.equals(isChecked)) {
+                        publicServiceType = this.codeValueRepository.findOneWithNotFoundDetection(codeValueId);
+                        publicServiceTypes.add(publicServiceType);
+                    }
+                }
+            }
+            clientForUpdate.setPublicServiceTypes(publicServiceTypes);
+            this.clientRepository.saveAndFlush(clientForUpdate);
 
             if (changes.containsKey(ClientApiConstants.legalFormIdParamName)) {
                 Integer legalFormValue = clientForUpdate.getLegalForm();
@@ -587,7 +686,19 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
 
             final AppUser currentUser = this.context.authenticatedUser();
             client.activate(currentUser, fmt, activationDate);
+
             CommandProcessingResult result = openSavingsAccount(client, fmt);
+
+            // FBR-402 create savings account for guarantee
+            SavingsProduct product = this.savingsProductRepository.findByName(GURANTEE_PRODUCT_NAME);
+            if (product != null && client.savingsAccountId() == null) {
+                client.updateSavingsProduct(product.getId());
+                CommandProcessingResult accountResult = openSavingsAccount(client, fmt);
+                if (accountResult != null && accountResult.getSavingsId() != null) {
+                    this.clientRepository.saveAndFlush(client);
+                }
+            }
+
             clientRepository.saveAndFlush(client);
             businessEventNotifierService.notifyPostBusinessEvent(new ClientActivateBusinessEvent(client));
             return new CommandProcessingResultBuilder() //

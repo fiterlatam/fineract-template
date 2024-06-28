@@ -41,6 +41,7 @@ public class PaymentDetailData implements Serializable {
     private final String receiptNumber;
     @SuppressWarnings("unused")
     private final String bankNumber;
+    private String billNumber;
 
     public PaymentDetailData(final Long id, final PaymentTypeData paymentType, final String accountNumber, final String checkNumber,
             final String routingCode, final String receiptNumber, final String bankNumber) {
@@ -75,5 +76,13 @@ public class PaymentDetailData implements Serializable {
 
     public PaymentTypeData getPaymentType() {
         return this.paymentType;
+    }
+
+    public String getBillNumber() {
+        return billNumber;
+    }
+
+    public void setBillNumber(String billNumber) {
+        this.billNumber = billNumber;
     }
 }

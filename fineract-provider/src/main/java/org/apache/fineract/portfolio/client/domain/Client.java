@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.Set;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
+import javax.persistence.Embedded;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.JoinColumn;
@@ -107,7 +108,7 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
     @Column(name = "display_name", length = 100, nullable = false)
     private String displayName;
 
-    @Column(name = "mobile_no", length = 50, nullable = true, unique = true)
+    @Column(name = "mobile_no", length = 50, nullable = true, unique = false)
     private String mobileNo;
 
     @Column(name = "email_address", length = 50, unique = true)
@@ -224,9 +225,46 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
     @OneToMany(mappedBy = "client", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private Set<ClientCollateralManagement> clientCollateralManagements = new HashSet<>();
 
+    @Column(name = "dpi", nullable = false)
+    private String dpiNumber;
+
+    @Column(name = "old_customer_number", nullable = false)
+    private String oldCustomerNumber;
+
+    @OneToOne(mappedBy = "client", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private ClientContactInformation contactInformation;
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(name = "m_client_public_service", joinColumns = @JoinColumn(name = "client_id"), inverseJoinColumns = @JoinColumn(name = "service_type_cv_id"))
+    private Set<CodeValue> publicServiceTypes;
+
+    @Embedded
+    private ClientInfoRelatedDetail clientInfoRelatedDetail;
+
+    @Column(name = "municipality_dpi", nullable = false)
+    private Long municipalityDpi;
+
+    @Column(name = "department_dpi", nullable = false)
+    private Long departmentDpi;
+
+    @Column(name = "firstlastname", nullable = false)
+    private String firstlastname;
+
+    @Column(name = "secondlastname", nullable = false)
+    private String secondlastname;
+
+    @Column(name = "marital_status", nullable = false)
+    private Long maritalStatus;
+    @Column(name = "job_type", nullable = false)
+    private Long jobType;
+    @Column(name = "nit", nullable = false)
+    private String nit;
+    @Column(name = "education_level_id", nullable = false)
+    private Long educationLevel;
+
     public static Client createNew(final AppUser currentUser, final Office clientOffice, final Group clientParentGroup, final Staff staff,
             final Long savingsProductId, final CodeValue gender, final CodeValue clientType, final CodeValue clientClassification,
-            final Integer legalForm, final JsonCommand command) {
+            final Integer legalForm, final ClientInfoRelatedDetail clientInfoRelatedDetail, final JsonCommand command) {
 
         final String accountNo = command.stringValueOfParameterNamed(ClientApiConstants.accountNoParamName);
         final String externalId = command.stringValueOfParameterNamed(ClientApiConstants.externalIdParamName);
@@ -237,6 +275,16 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
         final String middlename = command.stringValueOfParameterNamed(ClientApiConstants.middlenameParamName);
         final String lastname = command.stringValueOfParameterNamed(ClientApiConstants.lastnameParamName);
         final String fullname = command.stringValueOfParameterNamed(ClientApiConstants.fullnameParamName);
+        final String dpiNumber = command.stringValueOfParameterNamed(ClientApiConstants.dpiParamName);
+        final String oldCustomerNumber = command.stringValueOfParameterNamed(ClientApiConstants.oldCustomerNumberParamName);
+        final Long municipalityDpi = command.longValueOfParameterNamed(ClientApiConstants.municipalityDpiParamName);
+        final Long departmentDpi = command.longValueOfParameterNamed(ClientApiConstants.departmentDpiParamName);
+        final String firstlastname = command.stringValueOfParameterNamed(ClientApiConstants.firstlastnameParamName);
+        final String secondlastname = command.stringValueOfParameterNamed(ClientApiConstants.secondlastnameParamName);
+        final String nit = command.stringValueOfParameterNamed(ClientApiConstants.nitParamName);
+        final Long jobType = command.longValueOfParameterNamed(ClientApiConstants.jobtypeParamName);
+        final Long educationLevelId = command.longValueOfParameterNamed(ClientApiConstants.educationLevelIdParamName);
+        final Long maritalStatusId = command.longValueOfParameterNamed(ClientApiConstants.maritalStatusIdParamName);
 
         final boolean isStaff = command.booleanPrimitiveValueOfParameterNamed(ClientApiConstants.isStaffParamName);
 
@@ -266,7 +314,9 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
         final Long savingsAccountId = null;
         return new Client(currentUser, status, clientOffice, clientParentGroup, accountNo, firstname, middlename, lastname, fullname,
                 activationDate, officeJoiningDate, externalId, mobileNo, emailAddress, staff, submittedOnDate, savingsProductId,
-                savingsAccountId, dataOfBirth, gender, clientType, clientClassification, legalForm, isStaff);
+                savingsAccountId, dataOfBirth, gender, clientType, clientClassification, legalForm, isStaff, dpiNumber, oldCustomerNumber,
+                clientInfoRelatedDetail, municipalityDpi, departmentDpi, firstlastname, secondlastname, nit, jobType, educationLevelId,
+                maritalStatusId);
     }
 
     protected Client() {}
@@ -276,7 +326,9 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
             final LocalDate activationDate, final LocalDate officeJoiningDate, final String externalId, final String mobileNo,
             final String emailAddress, final Staff staff, final LocalDate submittedOnDate, final Long savingsProductId,
             final Long savingsAccountId, final LocalDate dateOfBirth, final CodeValue gender, final CodeValue clientType,
-            final CodeValue clientClassification, final Integer legalForm, final Boolean isStaff) {
+            final CodeValue clientClassification, final Integer legalForm, final Boolean isStaff, final String dpiNumber,
+            final String oldCustomerNumber, ClientInfoRelatedDetail clientInfoRelatedDetail, Long municipalityDpi, Long departmentDpi,
+            String firstlastname, String secondlastname, String nit, Long jobType, Long educationLevelId, Long maritalStatusId) {
 
         if (StringUtils.isBlank(accountNo)) {
             this.accountNumber = new RandomPasswordGenerator(19).generate();
@@ -342,6 +394,17 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
         this.clientType = clientType;
         this.clientClassification = clientClassification;
         this.setLegalForm(legalForm);
+        this.dpiNumber = dpiNumber;
+        this.oldCustomerNumber = oldCustomerNumber;
+        this.clientInfoRelatedDetail = clientInfoRelatedDetail;
+        this.municipalityDpi = municipalityDpi;
+        this.departmentDpi = departmentDpi;
+        this.firstlastname = firstlastname;
+        this.secondlastname = secondlastname;
+        this.nit = nit;
+        this.jobType = jobType;
+        this.educationLevel = educationLevelId;
+        this.maritalStatus = maritalStatusId;
 
         deriveDisplayName();
         validate();
@@ -606,7 +669,59 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
             this.submittedOnDate = command.localDateValueOfParameterNamed(ClientApiConstants.submittedOnDateParamName);
         }
 
+        if (command.isChangeInStringParameterNamed(ClientApiConstants.dpiParamName, this.dpiNumber)) {
+            final String newValue = command.stringValueOfParameterNamed(ClientApiConstants.dpiParamName);
+            actualChanges.put(ClientApiConstants.dpiParamName, newValue);
+            this.dpiNumber = newValue;
+        }
+
+        if (command.isChangeInLongParameterNamed(ClientApiConstants.departmentDpiParamName, this.departmentDpi)) {
+            final Long newValue = command.longValueOfParameterNamed(ClientApiConstants.departmentDpiParamName);
+            actualChanges.put(ClientApiConstants.departmentDpiParamName, newValue);
+            this.departmentDpi = newValue;
+        }
+        if (command.isChangeInLongParameterNamed(ClientApiConstants.municipalityDpiParamName, this.municipalityDpi)) {
+            final Long newValue = command.longValueOfParameterNamed(ClientApiConstants.municipalityDpiParamName);
+            actualChanges.put(ClientApiConstants.municipalityDpiParamName, newValue);
+            this.municipalityDpi = newValue;
+        }
+        if (command.isChangeInStringParameterNamed(ClientApiConstants.firstlastnameParamName, this.firstlastname)) {
+            final String newValue = command.stringValueOfParameterNamed(ClientApiConstants.firstlastnameParamName);
+            actualChanges.put(ClientApiConstants.firstlastnameParamName, newValue);
+            this.firstlastname = newValue;
+        }
+        if (command.isChangeInStringParameterNamed(ClientApiConstants.secondlastnameParamName, this.secondlastname)) {
+            final String newValue = command.stringValueOfParameterNamed(ClientApiConstants.secondlastnameParamName);
+            actualChanges.put(ClientApiConstants.secondlastnameParamName, newValue);
+            this.secondlastname = newValue;
+        }
+        if (command.isChangeInLongParameterNamed(ClientApiConstants.maritalStatusIdParamName, this.maritalStatus)) {
+            final Long newValue = command.longValueOfParameterNamed(ClientApiConstants.maritalStatusIdParamName);
+            actualChanges.put(ClientApiConstants.maritalStatusIdParamName, newValue);
+            this.maritalStatus = newValue;
+        }
+        if (command.isChangeInStringParameterNamed(ClientApiConstants.nitParamName, this.nit)) {
+            final String newValue = command.stringValueOfParameterNamed(ClientApiConstants.nitParamName);
+            actualChanges.put(ClientApiConstants.nitParamName, newValue);
+            this.nit = newValue;
+        }
+        if (command.isChangeInLongParameterNamed(ClientApiConstants.jobtypeParamName, this.jobType)) {
+            final Long newValue = command.longValueOfParameterNamed(ClientApiConstants.jobtypeParamName);
+            actualChanges.put(ClientApiConstants.jobtypeParamName, newValue);
+            this.jobType = newValue;
+        }
+        if (command.isChangeInLongParameterNamed(ClientApiConstants.educationLevelIdParamName, this.educationLevel)) {
+            final Long newValue = command.longValueOfParameterNamed(ClientApiConstants.educationLevelIdParamName);
+            actualChanges.put(ClientApiConstants.educationLevelIdParamName, newValue);
+            this.educationLevel = newValue;
+        }
+
         validateUpdate();
+        if (this.clientInfoRelatedDetail == null) {
+            clientInfoRelatedDetail = new ClientInfoRelatedDetail();
+        }
+
+        this.clientInfoRelatedDetail.update(command, actualChanges);
 
         deriveDisplayName();
 
@@ -700,11 +815,20 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
             }
 
             if (StringUtils.isNotBlank(this.lastname)) {
-                nameBuilder.append(this.lastname);
+                nameBuilder.append(this.lastname).append(' ');
+            }
+            if (StringUtils.isNotBlank(this.firstlastname)) {
+                nameBuilder.append(this.firstlastname).append(' ');
             }
 
-            if (StringUtils.isNotBlank(this.fullname)) {
-                nameBuilder = new StringBuilder(this.fullname);
+            if (StringUtils.isNotBlank(this.secondlastname)) {
+                nameBuilder.append(this.secondlastname).append(' ');
+            }
+            if (StringUtils.isNotBlank(this.clientInfoRelatedDetail.getOthernames())) {
+                nameBuilder.append(this.clientInfoRelatedDetail.getOthernames()).append(' ');
+            }
+            if (StringUtils.isNotBlank(this.clientInfoRelatedDetail.getMaidenName())) {
+                nameBuilder.append(this.clientInfoRelatedDetail.getMaidenName());
             }
         } else if (LegalForm.fromInt(legalForm).isEntity()) {
             if (StringUtils.isNotBlank(this.fullname)) {
@@ -797,6 +921,10 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
 
     public void updateOfficeJoiningDate(final LocalDate date) {
         this.officeJoiningDate = date;
+    }
+
+    public void updateClientInformation(ClientContactInformation contactInformation) {
+        this.contactInformation = contactInformation;
     }
 
     private Long staffId() {
@@ -1025,4 +1153,73 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
         this.proposedTransferDate = proposedTransferDate;
     }
 
+    public String getDpiNumber() {
+        return this.dpiNumber;
+    }
+
+    public void updateDpiNumber(String dpiNumber) {
+        this.dpiNumber = dpiNumber;
+    }
+
+    public Set<CodeValue> getPublicServiceTypes() {
+        return publicServiceTypes;
+    }
+
+    public void setPublicServiceTypes(Set<CodeValue> publicServiceTypes) {
+        this.publicServiceTypes = publicServiceTypes;
+    }
+
+    public ClientInfoRelatedDetail getClientInfoRelatedDetail() {
+        return clientInfoRelatedDetail;
+    }
+
+    public void setClientInfoRelatedDetail(ClientInfoRelatedDetail clientInfoRelatedDetail) {
+        this.clientInfoRelatedDetail = clientInfoRelatedDetail;
+    }
+
+    public Integer getLoanCycle() {
+        Integer loanCycle = 0;
+        if (this.clientInfoRelatedDetail != null) {
+            loanCycle = this.clientInfoRelatedDetail.getLoanCycle();
+        }
+        return loanCycle;
+    }
+
+    public void updateLoanCycle(final Integer loanCycle) {
+        if (this.clientInfoRelatedDetail != null) {
+            this.clientInfoRelatedDetail.setLoanCycle(loanCycle);
+        }
+    }
+
+    public Long getMaritalStatus() {
+        return maritalStatus;
+    }
+
+    public void setMaritalStatus(Long maritalStatus) {
+        this.maritalStatus = maritalStatus;
+    }
+
+    public Long getJobType() {
+        return jobType;
+    }
+
+    public void setJobType(Long jobType) {
+        this.jobType = jobType;
+    }
+
+    public String getNit() {
+        return nit;
+    }
+
+    public void setNit(String nit) {
+        this.nit = nit;
+    }
+
+    public Long getEducationLevel() {
+        return educationLevel;
+    }
+
+    public void setEducationLevel(Long educationLevel) {
+        this.educationLevel = educationLevel;
+    }
 }

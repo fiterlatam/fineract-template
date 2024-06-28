@@ -52,6 +52,7 @@ public final class DataTableApiConstant {
     public static final String linkedAccountAssociateParamName = "linkedAccount";
     public static final String multiDisburseDetailsAssociateParamName = "multiDisburseDetails";
     public static final String futureScheduleAssociateParamName = "futureSchedule";
+    public static final String additionalDetailsParamName = "additionalDetails";
     public static final String meetingAssociateParamName = "meeting";
     public static final String emiAmountVariationsAssociateParamName = "emiAmountVariations";
     public static final String collectionAssociateParamName = "collection";

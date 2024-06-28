@@ -47,4 +47,6 @@ public interface LoanProductReadPlatformService {
     Collection<LoanProductBorrowerCycleVariationData> retrieveLoanProductBorrowerCycleVariations(Long loanProductId);
 
     LoanProductData retrieveLoanProductFloatingDetails(Long loanProductId);
+
+    Collection<LoanProductData> retrieveAllLoanProductsForOwner(Integer ownerType);
 }

@@ -556,6 +556,14 @@ public class AppUser extends AbstractPersistableCustom implements PlatformUser {
         validateHasPermission("CREATE", resourceType);
     }
 
+    public void validateHasAddPermission(final String resourceType) {
+        validateHasPermission("ADD", resourceType);
+    }
+
+    public void validateHasViewPermission(final String resourceType) {
+        validateHasPermission("VIEW", resourceType);
+    }
+
     public void validateHasUpdatePermission(final String resourceType) {
         validateHasPermission("UPDATE", resourceType);
     }

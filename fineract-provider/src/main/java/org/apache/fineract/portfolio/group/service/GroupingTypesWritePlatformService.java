@@ -20,6 +20,7 @@ package org.apache.fineract.portfolio.group.service;
 
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
+import org.apache.fineract.organisation.portfolio.domain.Portfolio;
 
 public interface GroupingTypesWritePlatformService {
 
@@ -50,4 +51,8 @@ public interface GroupingTypesWritePlatformService {
     CommandProcessingResult associateGroupsToCenter(Long centerId, JsonCommand command);
 
     CommandProcessingResult disassociateGroupsToCenter(Long centerId, JsonCommand command);
+
+    CommandProcessingResult transferGroup(JsonCommand command);
+
+    CommandProcessingResult generateCentersByPortfolio(Portfolio portfolio);
 }

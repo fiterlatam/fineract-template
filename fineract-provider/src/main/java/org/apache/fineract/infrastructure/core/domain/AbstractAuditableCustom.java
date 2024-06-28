@@ -92,4 +92,17 @@ public abstract class AbstractAuditableCustom extends AbstractPersistableCustom 
     public void setLastModifiedDate(final LocalDateTime lastModifiedDate) {
         this.lastModifiedDate = lastModifiedDate;
     }
+
+    public void stampAudit(final Long currentUserId, final LocalDateTime currentDateTime) {
+        if (currentUserId != null && currentDateTime != null) {
+            if (this.createdBy == null) {
+                this.createdBy = currentUserId;
+            }
+            if (this.createdDate == null) {
+                this.createdDate = currentDateTime;
+            }
+            this.lastModifiedBy = currentUserId;
+            this.lastModifiedDate = currentDateTime;
+        }
+    }
 }

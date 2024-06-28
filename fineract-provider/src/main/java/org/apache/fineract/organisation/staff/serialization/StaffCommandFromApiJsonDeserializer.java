@@ -154,6 +154,14 @@ public final class StaffCommandFromApiJsonDeserializer {
             baseDataValidator.reset().parameter(ClientApiConstants.mobileNoParamName).value(mobileNo).notExceedingLengthOf(50);
         }
 
+        final String mobileNo = this.fromApiJsonHelper.extractStringNamed(ClientApiConstants.mobileNoParamName, element);
+        baseDataValidator.reset().parameter(ClientApiConstants.mobileNoParamName).value(mobileNo).notBlank().notExceedingLengthOf(50)
+                .validatePhoneNumber();
+
+        final String homeNumber = this.fromApiJsonHelper.extractStringNamed(ClientApiConstants.HOME_NUMBER, element);
+        baseDataValidator.reset().parameter(ClientApiConstants.mobileNoParamName).value(homeNumber).ignoreIfNull().notExceedingLengthOf(50)
+                .validatePhoneNumber();
+
         if (this.fromApiJsonHelper.parameterExists("isLoanOfficer", element)) {
             final String loanOfficerFlag = this.fromApiJsonHelper.extractStringNamed("isLoanOfficer", element);
             baseDataValidator.reset().parameter("isLoanOfficer").trueOrFalseRequired(loanOfficerFlag);

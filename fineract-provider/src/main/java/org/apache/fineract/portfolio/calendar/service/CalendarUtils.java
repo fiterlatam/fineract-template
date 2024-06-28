@@ -202,8 +202,8 @@ public final class CalendarUtils {
         for (@SuppressWarnings("rawtypes")
         final Iterator iterator = dates.iterator(); iterator.hasNext();) {
             final Date date = (Date) iterator.next();
-            recurringDates.add((LocalDate) adjustDate(LocalDate.ofInstant(date.toInstant(), DateUtils.getDateTimeZoneOfTenant()), seedDate,
-                    frequencyType));
+            recurringDates
+                    .add((LocalDate) adjustDate(LocalDate.ofInstant(date.toInstant(), ZoneId.systemDefault()), seedDate, frequencyType));
         }
 
         if (isSkippMeetingOnFirstDay) {

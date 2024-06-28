@@ -29,8 +29,10 @@ import org.apache.fineract.portfolio.calendar.data.CalendarData;
 import org.apache.fineract.portfolio.floatingrates.data.InterestRatePeriodData;
 import org.apache.fineract.portfolio.loanaccount.data.CollectionData;
 import org.apache.fineract.portfolio.loanaccount.data.DisbursementData;
+import org.apache.fineract.portfolio.loanaccount.data.GroupLoanAdditionalData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanAccountData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanApprovalData;
+import org.apache.fineract.portfolio.loanaccount.data.LoanPaymentSimulationData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanRepaymentScheduleInstallmentData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanScheduleAccrualData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanTermVariationsData;
@@ -69,7 +71,7 @@ public interface LoanReadPlatformService {
 
     LoanAccountData retrieveTemplateWithCompleteGroupAndProductDetails(Long groupId, Long productId);
 
-    LoanAccountData retrieveLoanProductDetailsTemplate(Long productId, Long clientId, Long groupId);
+    LoanAccountData retrieveLoanProductDetailsTemplate(Long productId, Long clientId, Long groupId, String templateType);
 
     LoanAccountData retrieveClientDetailsTemplate(Long clientId);
 
@@ -95,6 +97,8 @@ public interface LoanReadPlatformService {
     Integer retriveLoanCounter(Long groupId, Integer loanType, Long productId);
 
     Integer retriveLoanCounter(Long clientId, Long productId);
+
+    Integer retriveLoanCounterByClient(Long clientId);
 
     Collection<DisbursementData> retrieveLoanDisbursementDetails(Long loanId);
 
@@ -151,4 +155,10 @@ public interface LoanReadPlatformService {
     List<LoanRepaymentScheduleInstallmentData> getRepaymentDataResponse(Long loanId);
 
     CollectionData retrieveLoanCollectionData(Long loanId);
+
+    LoanPaymentSimulationData retrieveLoanFuturePaymentTemplate(Long loanId, LocalDate paymentDate, String paymentType);
+
+    Collection<LoanAccountData> retrieveClientActiveLoans(Long clientId);
+
+    GroupLoanAdditionalData retrieveAdditionalData(Long loanId);
 }

@@ -25,6 +25,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.io.IOException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -73,7 +74,7 @@ public class SelfRunReportApiResource {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = SelfRunReportApiResourceSwagger.GetRunReportResponse.class))) })
     public Response runReport(@PathParam("reportName") @Parameter(description = "reportName") final String reportName,
-            @Context final UriInfo uriInfo) {
+            @Context final UriInfo uriInfo) throws IOException {
         this.context.authenticatedUser();
         final boolean isSelfServiceUserReport = true;
         return this.runreportsApiResource.runReport(reportName, uriInfo, isSelfServiceUserReport);

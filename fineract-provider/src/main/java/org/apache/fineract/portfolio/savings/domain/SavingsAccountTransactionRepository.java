@@ -49,4 +49,7 @@ public interface SavingsAccountTransactionRepository
 
     @Query("select sat from SavingsAccountTransaction sat where sat.refNo = :refNo")
     List<SavingsAccountTransaction> findAllTransactionByRefNo(@Param("refNo") String refNo);
+
+    @Query("select sat from SavingsAccountTransaction sat where sat.loanId = :loanId")
+    List<SavingsAccountTransaction> findAllTransactionByLoanId(@Param("loanId") Long loanId);
 }

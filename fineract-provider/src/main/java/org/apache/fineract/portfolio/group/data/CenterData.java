@@ -21,6 +21,7 @@ package org.apache.fineract.portfolio.group.data;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -66,8 +67,29 @@ public final class CenterData implements Serializable {
     private final BigDecimal totalOverdue;
     private final BigDecimal totaldue;
     private final BigDecimal installmentDue;
+    private final Collection<CodeValueData> cityOptions;
+    private final Collection<CodeValueData> stateOptions;
+    private final Collection<CodeValueData> typeOptions;
+    private final Collection<CodeValueData> meetingDayOptions;
 
     private List<DatatableData> datatables = null;
+
+    // Additional fields for FB centers
+    private Long portfolioId;
+    private String portfolioName;
+    private CodeValueData city;
+    private CodeValueData state;
+    private CodeValueData type;
+    private Integer distance;
+    private Integer meetingStart;
+    private Integer meetingEnd;
+    private Integer meetingDay;
+    private String meetingDayName;
+    private String referencePoint;
+    private LocalDate createdDate;
+    private LocalTime meetingStartTime;
+    private LocalTime meetingEndTime;
+    private Long legacyNumber;
 
     // import fields
     private transient Integer rowIndex;
@@ -111,6 +133,10 @@ public final class CenterData implements Serializable {
         this.totaldue = null;
         this.installmentDue = null;
         this.officeName = null;
+        this.cityOptions = null;
+        this.stateOptions = null;
+        this.typeOptions = null;
+        this.meetingDayOptions = null;
     }
 
     public Integer getRowIndex() {
@@ -124,21 +150,57 @@ public final class CenterData implements Serializable {
     public static CenterData template(final Long officeId, final String accountNo, final LocalDate activationDate,
             final Collection<OfficeData> officeOptions, final Collection<StaffData> staffOptions,
             final Collection<GroupGeneralData> groupMembersOptions, final BigDecimal totalCollected, final BigDecimal totalOverdue,
-            final BigDecimal totaldue, final BigDecimal installmentDue) {
+            final BigDecimal totaldue, final BigDecimal installmentDue, final Collection<CodeValueData> cityOptions,
+            final Collection<CodeValueData> stateOptions, final Collection<CodeValueData> typeOptions,
+            final Collection<CodeValueData> meetingDayOptions) {
+
         final CalendarData collectionMeetingCalendar = null;
         final Collection<CodeValueData> closureReasons = null;
         final GroupTimelineData timeline = null;
         return new CenterData(null, accountNo, null, null, null, activationDate, officeId, null, null, null, null, null, officeOptions,
                 staffOptions, groupMembersOptions, collectionMeetingCalendar, closureReasons, timeline, totalCollected, totalOverdue,
-                totaldue, installmentDue);
+                totaldue, installmentDue, cityOptions, stateOptions, typeOptions, meetingDayOptions);
     }
 
     public static CenterData withTemplate(final CenterData templateCenter, final CenterData center) {
-        return new CenterData(center.id, center.accountNo, center.name, center.externalId, center.status, center.activationDate,
-                center.officeId, center.officeName, center.staffId, center.staffName, center.hierarchy, center.groupMembers,
-                templateCenter.officeOptions, templateCenter.staffOptions, templateCenter.groupMembersOptions,
+        CenterData centerWithTemplate = new CenterData(center.id, center.accountNo, center.name, center.externalId, center.status,
+                center.activationDate, center.officeId, center.officeName, center.staffId, center.staffName, center.hierarchy,
+                center.groupMembers, templateCenter.officeOptions, templateCenter.staffOptions, templateCenter.groupMembersOptions,
                 templateCenter.collectionMeetingCalendar, templateCenter.closureReasons, center.timeline, center.totalCollected,
-                center.totalOverdue, center.totaldue, center.installmentDue);
+                center.totalOverdue, center.totaldue, center.installmentDue, templateCenter.cityOptions, templateCenter.stateOptions,
+                templateCenter.typeOptions, templateCenter.meetingDayOptions);
+
+        return mapDTO(center, centerWithTemplate);
+    }
+
+    public static CenterData instance(final Long id, final String name) {
+        final String accountNo = null;
+        final String externalId = null;
+        final EnumOptionData status = null;
+        final LocalDate activationDate = null;
+        final Long officeId = null;
+        final String officeName = null;
+        final Long staffId = null;
+        final String staffName = null;
+        final String hierarchy = null;
+        final Collection<GroupGeneralData> groupMembers = null;
+        final Collection<OfficeData> officeOptions = null;
+        final Collection<StaffData> staffOptions = null;
+        final Collection<GroupGeneralData> groupMembersOptions = null;
+        final CalendarData collectionMeetingCalendar = null;
+        final GroupTimelineData timeline = null;
+        final BigDecimal totalCollected = null;
+        final BigDecimal totalOverdue = null;
+        final BigDecimal totaldue = null;
+        final BigDecimal installmentDue = null;
+        final Collection<CodeValueData> cityOptions = null;
+        final Collection<CodeValueData> stateOptions = null;
+        final Collection<CodeValueData> typeOptions = null;
+        final Collection<CodeValueData> meetingDayOptions = null;
+        final Collection<CodeValueData> closureReasons = null;
+        return new CenterData(id, accountNo, name, externalId, status, activationDate, officeId, officeName, staffId, staffName, hierarchy,
+                groupMembers, officeOptions, staffOptions, groupMembersOptions, collectionMeetingCalendar, closureReasons, timeline,
+                totalCollected, totalOverdue, totaldue, installmentDue, cityOptions, stateOptions, typeOptions, meetingDayOptions);
     }
 
     public static CenterData instance(final Long id, final String accountNo, final String name, final String externalId,
@@ -151,10 +213,14 @@ public final class CenterData implements Serializable {
         final Collection<StaffData> staffOptions = null;
         final Collection<GroupGeneralData> groupMembersOptions = null;
         final Collection<CodeValueData> closureReasons = null;
+        final Collection<CodeValueData> cityOptions = null;
+        final Collection<CodeValueData> stateOptions = null;
+        final Collection<CodeValueData> typeOptions = null;
+        final Collection<CodeValueData> meetingDayOptions = null;
 
         return new CenterData(id, accountNo, name, externalId, status, activationDate, officeId, officeName, staffId, staffName, hierarchy,
                 groupMembers, officeOptions, staffOptions, groupMembersOptions, collectionMeetingCalendar, closureReasons, timeline,
-                totalCollected, totalOverdue, totaldue, installmentDue);
+                totalCollected, totalOverdue, totaldue, installmentDue, cityOptions, stateOptions, typeOptions, meetingDayOptions);
     }
 
     public static CenterData withAssociations(final CenterData centerData, final Collection<GroupGeneralData> groupMembers,
@@ -163,7 +229,28 @@ public final class CenterData implements Serializable {
                 centerData.activationDate, centerData.officeId, centerData.officeName, centerData.staffId, centerData.staffName,
                 centerData.hierarchy, groupMembers, centerData.officeOptions, centerData.staffOptions, centerData.groupMembersOptions,
                 collectionMeetingCalendar, centerData.closureReasons, centerData.timeline, centerData.totalCollected,
-                centerData.totalOverdue, centerData.totaldue, centerData.installmentDue);
+                centerData.totalOverdue, centerData.totaldue, centerData.installmentDue, centerData.cityOptions, centerData.stateOptions,
+                centerData.typeOptions, centerData.meetingDayOptions);
+    }
+
+    private static CenterData mapDTO(CenterData centerData, CenterData ret) {
+        ret.setPortfolioId(centerData.portfolioId);
+        ret.setPortfolioName(centerData.portfolioName);
+        ret.setCity(centerData.city);
+        ret.setState(centerData.state);
+        ret.setType(centerData.type);
+        ret.setDistance(centerData.distance);
+        ret.setMeetingStart(centerData.meetingStart);
+        ret.setMeetingEnd(centerData.meetingEnd);
+        ret.setMeetingDay(centerData.meetingDay);
+        ret.setMeetingDayName(centerData.meetingDayName);
+        ret.setReferencePoint(centerData.referencePoint);
+        ret.setCreatedDate(centerData.createdDate);
+        ret.setMeetingStartTime(centerData.meetingStartTime);
+        ret.setMeetingEndTime(centerData.meetingEndTime);
+        ret.setLegacyNumber(centerData.legacyNumber);
+
+        return ret;
     }
 
     public static CenterData withClosureReasons(final Collection<CodeValueData> closureReasons) {
@@ -188,9 +275,13 @@ public final class CenterData implements Serializable {
         final BigDecimal totalOverdue = null;
         final BigDecimal totaldue = null;
         final BigDecimal installmentDue = null;
+        final Collection<CodeValueData> cityOptions = null;
+        final Collection<CodeValueData> stateOptions = null;
+        final Collection<CodeValueData> typeOptions = null;
+        final Collection<CodeValueData> meetingDayOptions = null;
         return new CenterData(id, accountNo, name, externalId, status, activationDate, officeId, officeName, staffId, staffName, hierarchy,
                 groupMembers, officeOptions, staffOptions, groupMembersOptions, collectionMeetingCalendar, closureReasons, timeline,
-                totalCollected, totalOverdue, totaldue, installmentDue);
+                totalCollected, totalOverdue, totaldue, installmentDue, cityOptions, stateOptions, typeOptions, meetingDayOptions);
     }
 
     private CenterData(final Long id, final String accountNo, final String name, final String externalId, final EnumOptionData status,
@@ -198,7 +289,9 @@ public final class CenterData implements Serializable {
             final String hierarchy, final Collection<GroupGeneralData> groupMembers, final Collection<OfficeData> officeOptions,
             final Collection<StaffData> staffOptions, final Collection<GroupGeneralData> groupMembersOptions,
             final CalendarData collectionMeetingCalendar, final Collection<CodeValueData> closureReasons, final GroupTimelineData timeline,
-            final BigDecimal totalCollected, final BigDecimal totalOverdue, final BigDecimal totaldue, final BigDecimal installmentDue) {
+            final BigDecimal totalCollected, final BigDecimal totalOverdue, final BigDecimal totaldue, final BigDecimal installmentDue,
+            final Collection<CodeValueData> cityOptions, final Collection<CodeValueData> stateOptions,
+            final Collection<CodeValueData> typeOptions, final Collection<CodeValueData> meetingDayOptions) {
         this.id = id;
         this.accountNo = accountNo;
         this.name = name;
@@ -229,6 +322,11 @@ public final class CenterData implements Serializable {
         this.totaldue = totaldue;
         this.totalOverdue = totalOverdue;
         this.installmentDue = installmentDue;
+
+        this.cityOptions = cityOptions;
+        this.stateOptions = stateOptions;
+        this.typeOptions = typeOptions;
+        this.meetingDayOptions = meetingDayOptions;
     }
 
     public Long officeId() {
@@ -265,6 +363,66 @@ public final class CenterData implements Serializable {
 
     public void setDatatables(final List<DatatableData> datatables) {
         this.datatables = datatables;
+    }
+
+    public void setPortfolioId(Long portfolioId) {
+        this.portfolioId = portfolioId;
+    }
+
+    public void setPortfolioName(String portfolioName) {
+        this.portfolioName = portfolioName;
+    }
+
+    public void setCity(CodeValueData city) {
+        this.city = city;
+    }
+
+    public void setState(CodeValueData state) {
+        this.state = state;
+    }
+
+    public void setType(CodeValueData type) {
+        this.type = type;
+    }
+
+    public void setDistance(Integer distance) {
+        this.distance = distance;
+    }
+
+    public void setMeetingStart(Integer meetingStart) {
+        this.meetingStart = meetingStart;
+    }
+
+    public void setMeetingEnd(Integer meetingEnd) {
+        this.meetingEnd = meetingEnd;
+    }
+
+    public void setMeetingDay(Integer meetingDay) {
+        this.meetingDay = meetingDay;
+    }
+
+    public void setMeetingDayName(String meetingDayName) {
+        this.meetingDayName = meetingDayName;
+    }
+
+    public void setReferencePoint(String referencePoint) {
+        this.referencePoint = referencePoint;
+    }
+
+    public void setCreatedDate(LocalDate createdDate) {
+        this.createdDate = createdDate;
+    }
+
+    public void setMeetingStartTime(LocalTime meetingStartTime) {
+        this.meetingStartTime = meetingStartTime;
+    }
+
+    public void setMeetingEndTime(LocalTime meetingEndTime) {
+        this.meetingEndTime = meetingEndTime;
+    }
+
+    public void setLegacyNumber(Long legacyNumber) {
+        this.legacyNumber = legacyNumber;
     }
 
     @Override

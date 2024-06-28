@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements. See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership. The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License. You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied. See the License for the
+    specific language governing permissions and limitations
+    under the License.
+
+-->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd">
+    <!--Add new parameters into c_configuration table-->
+    <changeSet author="fineract" id="1">
+        <insert tableName="c_configuration">
+            <column name="id" valueNumeric="47"/>
+            <column name="name" value="meeting-start-time"/>
+            <column name="value"/>
+            <column name="date_value"/>
+            <column name="string_value" value="08:00"/>
+            <column name="enabled" valueBoolean="true"/>
+            <column name="is_trap_door" valueBoolean="false"/>
+            <column name="description" value="Indicates the start time to set up meetings for groups"/>
+        </insert>
+        <insert tableName="c_configuration">
+            <column name="id" valueNumeric="48"/>
+            <column name="name" value="meeting-end-time"/>
+            <column name="value"/>
+            <column name="date_value"/>
+            <column name="string_value" value="16:00"/>
+            <column name="enabled" valueBoolean="true"/>
+            <column name="is_trap_door" valueBoolean="false"/>
+            <column name="description" value="Indicates the end time to set up meetings for groups"/>
+        </insert>
+        <insert tableName="c_configuration">
+            <column name="id" valueNumeric="49"/>
+            <column name="name" value="meeting-default-duration"/>
+            <column name="value" valueNumeric="90"/>
+            <column name="date_value"/>
+            <column name="string_value"/>
+            <column name="enabled" valueBoolean="true"/>
+            <column name="is_trap_door" valueBoolean="false"/>
+            <column name="description" value="Indicates the default duration in minutes to set up meetings for groups"/>
+        </insert>
+        <insert tableName="c_configuration">
+            <column name="id" valueNumeric="50"/>
+            <column name="name" value="time-between-meetings"/>
+            <column name="value" valueNumeric="30"/>
+            <column name="date_value"/>
+            <column name="string_value"/>
+            <column name="enabled" valueBoolean="true"/>
+            <column name="is_trap_door" valueBoolean="false"/>
+            <column name="description" value="Indicates the time in minutes to consider between meetings for groups"/>
+        </insert>
+    </changeSet>
+</databaseChangeLog>
