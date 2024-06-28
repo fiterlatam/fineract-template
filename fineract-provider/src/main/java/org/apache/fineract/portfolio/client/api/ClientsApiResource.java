@@ -66,6 +66,7 @@ import org.apache.fineract.infrastructure.core.service.SearchParameters;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.portfolio.accountdetails.data.AccountSummaryCollectionData;
 import org.apache.fineract.portfolio.accountdetails.service.AccountDetailsReadPlatformService;
+import org.apache.fineract.portfolio.client.data.ClienAvailableCupoFieldsData;
 import org.apache.fineract.portfolio.client.data.ClientBlockingReasonData;
 import org.apache.fineract.portfolio.client.data.ClientData;
 import org.apache.fineract.portfolio.client.exception.ClientNotFoundException;
@@ -491,6 +492,18 @@ public class ClientsApiResource {
         return retrieveClientTransferTemplate(null, externalId);
     }
 
+    @GET
+    @Path("availablecupo/{nitId}")
+    @Consumes({ MediaType.APPLICATION_JSON })
+    @Produces({ MediaType.APPLICATION_JSON })
+    @Operation(summary = "Retrieve client with available cupo", description = "Retrieve client with available cupo using the client NIT/Id")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = ClientsApiResourceSwagger.GetClientAvailableCupoResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Bad Request") })
+    public String retriveClientAvailableCupo(@PathParam("nitId") final String nitId, @Context final UriInfo uriInfo) {
+        return retriveClientAvailableCupo(nitId);
+    }
+
     public String retrieveAll(final UriInfo uriInfo, final Long officeId, final String externalId, final String displayName,
             final String firstname, final String lastname, final String status, final String hierarchy, final Integer offset,
             final Integer limit, final String orderBy, final String sortOrder, final Boolean orphansOnly, final boolean isSelfUser) {
@@ -667,5 +680,11 @@ public class ClientsApiResource {
         final Collection<ClientBlockingReasonData> clientBlockingReasonData = clientBlockingReasonReadPlatformService
                 .retrieveAllClientWithBlockingReason(blockingReasonId);
         return toApiJsonSerializer.serialize(clientBlockingReasonData);
+    }
+
+    private String retriveClientAvailableCupo(String nitId) {
+        context.authenticatedUser().validateHasReadPermission(ClientApiConstants.CLIENT_RESOURCE_NAME);
+        final List<ClienAvailableCupoFieldsData> cupoList = clientReadPlatformService.retriveClientAvailableCupo(nitId);
+        return this.toApiJsonSerializer.serialize(cupoList);
     }
 }

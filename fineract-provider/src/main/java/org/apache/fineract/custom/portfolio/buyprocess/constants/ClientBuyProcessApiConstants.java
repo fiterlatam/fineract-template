@@ -58,5 +58,5 @@ public final class ClientBuyProcessApiConstants {
             channelIdParamName, clientIdParamName, pointOfSalesIdParamName, productIdParamName, creditIdParamName, requestedDateParamName,
             amountParamName, termParamName, createdAtParamName, createdByParamName, ipDetailsParamName, pointOfSalesCodeParamName,
             clientDocumentIdParamName, LoanApiConstants.CHANNEL_NAME, codigoSeguroParamName, cedulaSeguroVoluntarioParamName,
-            LoanApiConstants.INTEREST_RATE_POINTS));
+            LoanApiConstants.INTEREST_RATE_POINTS, LoanApiConstants.CHANNEL_HASH));
 }

@@ -144,6 +144,7 @@ import org.apache.fineract.portfolio.loanproduct.serialization.LoanProductDataVa
 import org.apache.fineract.portfolio.loanproduct.service.LoanDropdownReadPlatformService;
 import org.apache.fineract.portfolio.loanproduct.service.LoanProductReadPlatformService;
 import org.apache.fineract.portfolio.note.domain.NoteRepository;
+import org.apache.fineract.portfolio.paymentdetail.domain.PaymentDetailRepository;
 import org.apache.fineract.portfolio.paymentdetail.service.PaymentDetailWritePlatformService;
 import org.apache.fineract.portfolio.paymenttype.service.PaymentTypeReadPlatformService;
 import org.apache.fineract.portfolio.rate.service.RateAssembler;
@@ -424,7 +425,7 @@ public class LoanAccountConfiguration {
             JdbcTemplate jdbcTemplate, PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService,
             LoanRescheduleRequestReadPlatformService loanRescheduleRequestReadPlatformService,
             ClientReadPlatformService clientReadPlatformService, ChannelReadWritePlatformService channelReadWritePlatformService,
-            PlatformSecurityContext platformSecurityContext) {
+            PlatformSecurityContext platformSecurityContext, PaymentDetailRepository paymentDetailRepository) {
         return new LoanWritePlatformServiceJpaRepositoryImpl(context, loanEventApiJsonValidator, loanUpdateCommandFromApiJsonDeserializer,
                 loanRepositoryWrapper, loanAccountDomainService, noteRepository, loanTransactionRepository,
                 loanTransactionRelationRepository, loanAssembler, journalEntryWritePlatformService, calendarInstanceRepository,
@@ -439,7 +440,7 @@ public class LoanAccountConfiguration {
                 defaultLoanLifecycleStateMachine, loanAccountLockService, externalIdFactory, replayedTransactionBusinessEventService,
                 loanAccrualTransactionBusinessEventService, errorHandler, loanDownPaymentHandlerService, loanProductReadPlatformService,
                 jdbcTemplate, commandsSourceWritePlatformService, loanRescheduleRequestReadPlatformService, clientReadPlatformService,
-                channelReadWritePlatformService, platformSecurityContext);
+                channelReadWritePlatformService, platformSecurityContext, paymentDetailRepository);
     }
 
     @Bean

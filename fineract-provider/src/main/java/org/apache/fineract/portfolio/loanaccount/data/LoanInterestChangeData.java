@@ -16,25 +16,25 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.infrastructure.event.business.domain.loan;
+package org.apache.fineract.portfolio.loanaccount.data;
 
-import lombok.Getter;
-import org.apache.fineract.portfolio.loanaccount.domain.Loan;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-public class LoanRescheduledDueAdjustScheduleBusinessEvent extends LoanBusinessEvent {
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
+public class LoanInterestChangeData {
 
-    private static final String TYPE = "LoanRescheduledDueAdjustScheduleBusinessEvent";
-
-    @Getter
-    private final Boolean isJobTriggered;
-
-    public LoanRescheduledDueAdjustScheduleBusinessEvent(Loan value, final Boolean isJobTriggered) {
-        super(value);
-        this.isJobTriggered = isJobTriggered;
-    }
-
-    @Override
-    public String getType() {
-        return TYPE;
-    }
+    private Long loanId;
+    private BigDecimal annualNominalInterestRate;
+    private BigDecimal currentInterestRate;
+    private Long interestRatePoints;
+    private LocalDate nextDueDate;
+    private LocalDate appliedOnDate;
 }

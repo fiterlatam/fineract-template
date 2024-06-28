@@ -149,18 +149,22 @@ public class ClientBuyProcessReadWritePlatformServiceImpl implements ClientBuyPr
 
         DisburseLoanPayloadData payloadData = DisburseLoanPayloadData.builder()
                 .actualDisbursementDate(DateUtils.format(entity.getRequestedDate(), CustomDateUtils.SPANISH_DATE_FORMAT))
-                .transactionAmount(entity.getAmount()).locale("en").dateFormat(CustomDateUtils.SPANISH_DATE_FORMAT)
+                .transactionAmount(entity.getAmount()).locale("es").dateFormat(CustomDateUtils.SPANISH_DATE_FORMAT)
                 .channelName(entity.getChannelName()).build();
 
         // Execute create loan command
+        log.info("CLinet Buy Proses Disburse " + entity.getCreditId());
+
         GsonBuilder gsonBuilder = GoogleGsonSerializerHelper.createGsonBuilder();
         gsonBuilder.registerTypeAdapter(LocalDate.class, new DateSerializer(CustomDateUtils.SPANISH_DATE_FORMAT));
 
         String payload = gsonBuilder.create().toJson(payloadData);
+
         final CommandWrapper commandRequest = new CommandWrapperBuilder() //
                 .disburseLoanApplication(entity.getLoanId()).withJson(payload) //
                 .build(); //
         CommandProcessingResult result = commandsSourceWritePlatformService.logCommandSource(commandRequest);
+
     }
 
     private void approveLoanApplication(ClientBuyProcess entity, LoanProduct prodiuctEntity) {

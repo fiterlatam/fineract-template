@@ -23,10 +23,12 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
 import org.apache.fineract.infrastructure.core.service.Page;
@@ -172,6 +174,16 @@ public class InterestRateReadPlatformServiceImpl implements InterestRateReadPlat
         }
         return this.paginationHelper.fetchPage(this.jdbcTemplate, sqlBuilder.toString(), paramList.toArray(),
                 this.interestRateHistoryRowMapper);
+    }
+
+    @Override
+    public InterestRateHistoryData retrieveHistoryMatchingParams(final Long interestRateId, final LocalDate fromDate) {
+        final List<Object> paramList = Arrays.asList(interestRateId, fromDate);
+        String sqlBuilder = "SELECT " + this.interestRateHistoryRowMapper.schema()
+                + " WHERE mirh.is_active = TRUE AND mirh.interest_rate_id = ? AND mirh.appliedon_date <= ? ORDER BY mirh.appliedon_date DESC, mirh.created_on_utc DESC, mirh.id DESC ";
+        List<InterestRateHistoryData> interestRateHistoryDataList = this.jdbcTemplate.query(sqlBuilder, this.interestRateHistoryRowMapper,
+                paramList.toArray());
+        return CollectionUtils.isNotEmpty(interestRateHistoryDataList) ? interestRateHistoryDataList.get(0) : null;
     }
 
     private static final class InterestRateHistoryRowMapper implements RowMapper<InterestRateHistoryData> {

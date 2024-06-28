@@ -16,25 +16,17 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.infrastructure.event.business.domain.loan;
+package org.apache.fineract.portfolio.loanaccount.exception;
 
-import lombok.Getter;
-import org.apache.fineract.portfolio.loanaccount.domain.Loan;
+import java.math.BigDecimal;
+import org.apache.fineract.infrastructure.core.exception.AbstractPlatformDomainRuleException;
 
-public class LoanRescheduledDueAdjustScheduleBusinessEvent extends LoanBusinessEvent {
+public class InvalidLoanRepaymentAmountException extends AbstractPlatformDomainRuleException {
 
-    private static final String TYPE = "LoanRescheduledDueAdjustScheduleBusinessEvent";
-
-    @Getter
-    private final Boolean isJobTriggered;
-
-    public LoanRescheduledDueAdjustScheduleBusinessEvent(Loan value, final Boolean isJobTriggered) {
-        super(value);
-        this.isJobTriggered = isJobTriggered;
+    public InvalidLoanRepaymentAmountException(final BigDecimal repaymentAmount, final BigDecimal loanOutstandingBalance) {
+        super("repayment.amount.exceeds.outstanding.balance",
+                "The repayment amount: " + repaymentAmount + " is greater than the loan outstanding balance: " + loanOutstandingBalance,
+                repaymentAmount, loanOutstandingBalance);
     }
 
-    @Override
-    public String getType() {
-        return TYPE;
-    }
 }
