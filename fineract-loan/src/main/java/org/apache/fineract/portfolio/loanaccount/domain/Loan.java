@@ -6076,20 +6076,21 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     }
 
     /**
-     * @param dueDate
-     *            the due date of the installment
-     * @return a schedule installment with similar due date to the one provided
+     * @param rescheduleFromDate
+     *            the date from which the rescheduling is to be done
+     * @return a schedule installment which contains the rescheduleFromDate provided
      **/
-    public LoanRepaymentScheduleInstallment getRepaymentScheduleInstallment(LocalDate dueDate) {
+    public LoanRepaymentScheduleInstallment getInstallmentByScheduleFromDate(LocalDate rescheduleFromDate) {
         LoanRepaymentScheduleInstallment installment = null;
-
-        if (dueDate != null) {
+        if (rescheduleFromDate != null) {
             List<LoanRepaymentScheduleInstallment> installments = getRepaymentScheduleInstallments();
             for (LoanRepaymentScheduleInstallment repaymentScheduleInstallment : installments) {
-                if (DateUtils.isEqual(dueDate, repaymentScheduleInstallment.getDueDate())
-                        && !repaymentScheduleInstallment.isObligationsMet()) {
-                    installment = repaymentScheduleInstallment;
-                    break;
+                if (!repaymentScheduleInstallment.isObligationsMet()) {
+                    if (DateUtils.isBefore(rescheduleFromDate, repaymentScheduleInstallment.getDueDate())
+                            || DateUtils.isEqual(rescheduleFromDate, repaymentScheduleInstallment.getDueDate())) {
+                        installment = repaymentScheduleInstallment;
+                        break;
+                    }
                 }
             }
         }

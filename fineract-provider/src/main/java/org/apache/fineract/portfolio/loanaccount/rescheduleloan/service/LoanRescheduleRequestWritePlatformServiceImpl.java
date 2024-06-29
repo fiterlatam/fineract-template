@@ -210,7 +210,7 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
 
                 if (localDate != null) {
                     // get installment by due date
-                    LoanRepaymentScheduleInstallment installment = loan.getRepaymentScheduleInstallment(localDate);
+                    LoanRepaymentScheduleInstallment installment = loan.getInstallmentByScheduleFromDate(localDate);
                     rescheduleFromInstallment = installment.getInstallmentNumber();
 
                     // update the value of the "rescheduleFromDate" variable
