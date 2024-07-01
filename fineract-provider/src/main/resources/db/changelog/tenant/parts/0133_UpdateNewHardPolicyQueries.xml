@@ -798,6 +798,18 @@
             ]]>
         </sql>
     </changeSet>
+    <changeSet id="30" author="fineract">
+        <sql>
+            <![CDATA[
+                UPDATE stretchy_report SET report_sql = "SELECT
+                    CASE
+                    WHEN (${membersPercentage} = 100) THEN 'GREEN'
+                    ELSE 'RED'
+                    END AS color"
+                WHERE report_name = "Percentage of members with their own business Policy Check";
+            ]]>
+        </sql>
+    </changeSet>
 
 
 </databaseChangeLog>

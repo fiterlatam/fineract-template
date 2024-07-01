@@ -1212,7 +1212,7 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
         BigDecimal membersPercentage = BigDecimal.valueOf(100L);
         if (numberOfMembers != null && numberOfMembers < Long.valueOf(totalMembers)) {
             membersPercentage = BigDecimal.valueOf(100L)
-                    .multiply(BigDecimal.valueOf(numberOfMembers).divide(BigDecimal.valueOf(totalMembers), MoneyHelper.getRoundingMode()));
+                    .multiply(BigDecimal.valueOf(numberOfMembers).divide(BigDecimal.valueOf(totalMembers),2, MoneyHelper.getRoundingMode()));
         }
         reportParams.put("${membersPercentage}", String.valueOf(membersPercentage));
         final GenericResultsetData result = this.readReportingService.retrieveGenericResultset(reportName, "report", reportParams, false);
