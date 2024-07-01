@@ -932,7 +932,7 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
         final String sql = "SELECT " + rowMapper.schema() + " and ( cce.\"NIT\" = ? or ccp.\"Cedula\" = ? )";
         List<ClienAvailableCupoFieldsData> resultList = this.jdbcTemplate.query(sql, rowMapper, nitId, nitId);
         if (resultList.isEmpty()) {
-            throw new ClientNotFoundException("Client Not Available Cupo with NIT/Cedula " + nitId, nitId);
+            throw new ClientNotFoundException("No exite cliente con el NIT/Cedula : " + nitId, nitId);
         }
         return resultList;
     }
