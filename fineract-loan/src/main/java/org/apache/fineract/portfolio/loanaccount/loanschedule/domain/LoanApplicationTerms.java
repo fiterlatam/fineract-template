@@ -26,6 +26,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.core.service.MathUtil;
@@ -57,6 +58,7 @@ import org.apache.fineract.portfolio.loanproduct.domain.RecalculationFrequencyTy
 import org.apache.fineract.portfolio.loanproduct.domain.RepaymentStartDateType;
 
 @Slf4j
+@Getter
 public final class LoanApplicationTerms {
 
     private final ApplicationCurrency currency;
@@ -78,7 +80,7 @@ public final class LoanApplicationTerms {
     private final Long interestRatePoints;
     private final PeriodFrequencyType interestRatePeriodFrequencyType;
     private BigDecimal annualNominalInterestRate;
-    private final InterestCalculationPeriodMethod interestCalculationPeriodMethod;
+    private InterestCalculationPeriodMethod interestCalculationPeriodMethod;
     private final boolean allowPartialPeriodInterestCalcualtion;
 
     private Money principal;
@@ -1934,5 +1936,29 @@ public final class LoanApplicationTerms {
 
     public PeriodFrequencyType getInterestRatePeriodFrequencyType() {
         return interestRatePeriodFrequencyType;
+    }
+
+    public boolean isAllowPartialPeriodInterestCalcualtion() {
+        return allowPartialPeriodInterestCalcualtion;
+    }
+
+    public LocalDate getRepaymentsStartingFromDate() {
+        return repaymentsStartingFromDate;
+    }
+
+    public Money getInArrearsTolerance() {
+        return inArrearsTolerance;
+    }
+
+    public Integer getGraceOnArrearsAgeing() {
+        return graceOnArrearsAgeing;
+    }
+
+    public void setAnnualNominalInterestRate(BigDecimal annualNominalInterestRate) {
+        this.annualNominalInterestRate = annualNominalInterestRate;
+    }
+
+    public void setInterestCalculationPeriodMethod(InterestCalculationPeriodMethod interestCalculationPeriodMethod) {
+        this.interestCalculationPeriodMethod = interestCalculationPeriodMethod;
     }
 }

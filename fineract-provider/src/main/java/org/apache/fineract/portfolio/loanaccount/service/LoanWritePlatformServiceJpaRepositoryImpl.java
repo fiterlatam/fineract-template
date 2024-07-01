@@ -3158,8 +3158,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 }
                 rescheduleJsonObject.addProperty("newInterestRate", newInterestRate);
                 final Long loanId = loanRescheduleData.getId();
-                final LocalDate rescheduleFromDate = loanRescheduleData.getNextDueDate();
-                final String rescheduleFromDateString = DateUtils.format(rescheduleFromDate, dateFormat, Locale.forLanguageTag(locale));
+                final String rescheduleFromDateString = DateUtils.format(appliedOnDate, dateFormat, Locale.forLanguageTag(locale));
                 rescheduleJsonObject.addProperty("rescheduleFromDate", rescheduleFromDateString);
                 rescheduleJsonObject.addProperty("loanId", loanId);
                 final String rescheduleRequestBodyAsJson = rescheduleJsonObject.toString();
@@ -3341,7 +3340,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 }
                 rescheduleJsonObject.addProperty("newInterestRate", newInterestRate);
                 final Long loanId = loanInterestChangeData.getLoanId();
-                final LocalDate rescheduleFromDate = loanInterestChangeData.getNextDueDate();
+                final LocalDate rescheduleFromDate = loanInterestChangeData.getAppliedOnDate();
                 final String rescheduleFromDateString = DateUtils.format(rescheduleFromDate, dateFormat, Locale.forLanguageTag(locale));
                 rescheduleJsonObject.addProperty("rescheduleFromDate", rescheduleFromDateString);
                 rescheduleJsonObject.addProperty("loanId", loanId);
