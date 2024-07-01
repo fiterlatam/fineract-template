@@ -22,6 +22,7 @@ import java.sql.Date;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
@@ -78,6 +79,11 @@ public class SearchingClientRepositoryImpl implements SearchingClientRepository 
         String querySql = """
                 SELECT c.id AS id,
                        c.display_name AS displayName,
+                       c.firstname AS firstName,
+                       c.middlename AS middleName,
+                       cce."NIT" AS nit,
+                        ccp."Cedula" AS cedula,
+                       c.lastName AS lastName,
                        c.external_id AS externalId,
                        c.account_no AS accountNumber,
                        o.id AS officeId,
@@ -90,10 +96,19 @@ public class SearchingClientRepositoryImpl implements SearchingClientRepository 
 
         RowMapper<SearchedClient> rowMapper = (rs, rowNum) -> {
             Date activationDate = rs.getDate("activationDate");
-            return new SearchedClient(rs.getLong("id"), rs.getString("displayName"), getExternalId(rs.getString("externalId")),
-                    rs.getString("accountNumber"), rs.getLong("officeId"), rs.getString("officeName"), rs.getString("mobileNo"),
-                    rs.getInt("status"), activationDate != null ? activationDate.toLocalDate() : null,
-                    rs.getObject("createdDate", OffsetDateTime.class));
+            String firstName = rs.getString("firstName");
+            String middleName = rs.getString("middleName");
+            String lastName = rs.getString("lastName");
+            String fullName = Objects.toString(firstName, "") + " " + Objects.toString(middleName, "") + " "
+                    + Objects.toString(lastName, "");
+            String name = StringUtils.isBlank(fullName) ? rs.getString("displayName") : fullName;
+            String nit = rs.getString("nit");
+            String cedula = rs.getString("cedula");
+            String cedulaOrNit = StringUtils.isNotBlank(cedula) ? cedula : nit;
+            return new SearchedClient(rs.getLong("id"), name, getExternalId(rs.getString("externalId")), rs.getString("accountNumber"),
+                    rs.getLong("officeId"), rs.getString("officeName"), rs.getString("mobileNo"), rs.getInt("status"),
+                    activationDate != null ? activationDate.toLocalDate() : null, rs.getObject("createdDate", OffsetDateTime.class),
+                    cedulaOrNit);
         };
 
         List<SearchedClient> clients = jdbcTemplate.query(querySql, rowMapper,
