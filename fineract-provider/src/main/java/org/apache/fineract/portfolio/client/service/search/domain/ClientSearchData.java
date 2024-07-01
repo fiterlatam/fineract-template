@@ -37,4 +37,5 @@ public class ClientSearchData {
     private EnumOptionData status;
     private LocalDate activationDate;
     private OffsetDateTime createdDate;
+    private final String cedularOrNit;
 }
