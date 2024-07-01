@@ -79,9 +79,11 @@ import org.apache.fineract.portfolio.savings.service.SavingsAccountReadPlatformS
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Controller;
 
 @Path("/v1/clients")
 @Component
+@Controller
 @Tag(name = "Client", description = "Clients are people and businesses that have applied (or may apply) to an MFI for loans.\n" + "\n"
         + "Clients can be created in Pending or straight into Active state.")
 @RequiredArgsConstructor
@@ -494,14 +496,19 @@ public class ClientsApiResource {
 
     @GET
     @Path("availablecupo/{nitId}")
-    @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     @Operation(summary = "Retrieve client with available cupo", description = "Retrieve client with available cupo using the client NIT/Id")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = ClientsApiResourceSwagger.GetClientAvailableCupoResponse.class))),
-            @ApiResponse(responseCode = "400", description = "Bad Request") })
+            @ApiResponse(responseCode = "404", description = "Bad Request") })
     public String retriveClientAvailableCupo(@PathParam("nitId") final String nitId, @Context final UriInfo uriInfo) {
         return retriveClientAvailableCupo(nitId);
+    }
+
+    @GET
+    @Path("availablecupo")
+    public String retriveClientAvailableCupo(@Context final UriInfo uriInfo) {
+        throw new ClientNotFoundException("Cedula/NIT necesario para obtener el cupo disponible");
     }
 
     public String retrieveAll(final UriInfo uriInfo, final Long officeId, final String externalId, final String displayName,
