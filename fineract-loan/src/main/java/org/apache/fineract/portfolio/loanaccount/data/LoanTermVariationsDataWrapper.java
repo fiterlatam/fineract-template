@@ -19,30 +19,30 @@
 package org.apache.fineract.portfolio.loanaccount.data;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.concurrent.CopyOnWriteArrayList;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 
 public class LoanTermVariationsDataWrapper {
 
-    private final List<LoanTermVariationsData> exceptionData;
+    private final CopyOnWriteArrayList<LoanTermVariationsData> exceptionData;
     private ListIterator<LoanTermVariationsData> iterator;
-    private final List<LoanTermVariationsData> interestRateChanges;
-    private final List<LoanTermVariationsData> interestRateFromInstallment;
-    private final List<LoanTermVariationsData> dueDateVariation;
+    private final CopyOnWriteArrayList<LoanTermVariationsData> interestRateChanges;
+    private final CopyOnWriteArrayList<LoanTermVariationsData> interestRateFromInstallment;
+    private final CopyOnWriteArrayList<LoanTermVariationsData> dueDateVariation;
     private ListIterator<LoanTermVariationsData> dueDateIterator;
 
     public LoanTermVariationsDataWrapper(final List<LoanTermVariationsData> exceptionData) {
         if (exceptionData == null) {
-            this.exceptionData = new ArrayList<>(1);
+            this.exceptionData = new CopyOnWriteArrayList<>();
         } else {
-            this.exceptionData = exceptionData;
+            this.exceptionData = new CopyOnWriteArrayList<>(exceptionData);
         }
-        this.interestRateChanges = new ArrayList<>();
-        this.dueDateVariation = new ArrayList<>();
-        this.interestRateFromInstallment = new ArrayList<>();
+        this.interestRateChanges = new CopyOnWriteArrayList<>();
+        this.dueDateVariation = new CopyOnWriteArrayList<>();
+        this.interestRateFromInstallment = new CopyOnWriteArrayList<>();
         deriveLoanTermVariations();
     }
 

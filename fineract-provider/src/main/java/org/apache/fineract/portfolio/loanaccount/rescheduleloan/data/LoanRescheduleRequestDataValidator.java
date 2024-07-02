@@ -149,7 +149,7 @@ public class LoanRescheduleRequestDataValidator {
             dataValidatorBuilder.reset().parameter(RescheduleLoansApiConstants.emiParamName).value(emi).notNull().positiveAmount();
 
             if (endDate != null) {
-                LoanRepaymentScheduleInstallment endInstallment = loan.getRepaymentScheduleInstallment(endDate);
+                LoanRepaymentScheduleInstallment endInstallment = loan.getInstallmentByScheduleFromDate(endDate);
 
                 if (endInstallment == null) {
                     dataValidatorBuilder.reset().parameter(RescheduleLoansApiConstants.endDateParamName)
@@ -179,20 +179,16 @@ public class LoanRescheduleRequestDataValidator {
         }
         LoanRepaymentScheduleInstallment installment = null;
         if (rescheduleFromDate != null) {
-            installment = loan.getRepaymentScheduleInstallment(rescheduleFromDate);
-
+            installment = loan.getInstallmentByScheduleFromDate(rescheduleFromDate);
             if (installment == null) {
                 dataValidatorBuilder.reset().parameter(RescheduleLoansApiConstants.rescheduleFromDateParamName)
                         .failWithCode("repayment.schedule.installment.does.not.exist", "Repayment schedule installment does not exist");
             }
-
             if (installment != null && installment.isObligationsMet()) {
                 dataValidatorBuilder.reset().parameter(RescheduleLoansApiConstants.rescheduleFromDateParamName)
                         .failWithCode("repayment.schedule.installment.obligation.met", "Repayment schedule installment obligation met");
             }
-
         }
-
         if (loan.isMultiDisburmentLoan()) {
             if (!loan.loanProduct().isDisallowExpectedDisbursements()) {
                 dataValidatorBuilder.reset().failWithCodeNoParameterAddedToErrorCode(
@@ -273,7 +269,7 @@ public class LoanRescheduleRequestDataValidator {
             }
 
             if (rescheduleFromDate != null) {
-                installment = loan.getRepaymentScheduleInstallment(rescheduleFromDate);
+                installment = loan.getInstallmentByScheduleFromDate(rescheduleFromDate);
 
                 if (installment == null) {
                     dataValidatorBuilder.reset().failWithCodeNoParameterAddedToErrorCode(
