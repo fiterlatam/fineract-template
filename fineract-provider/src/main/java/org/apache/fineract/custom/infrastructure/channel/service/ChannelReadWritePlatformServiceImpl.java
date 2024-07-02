@@ -211,4 +211,16 @@ public class ChannelReadWritePlatformServiceImpl implements ChannelReadWritePlat
         throw new PlatformDataIntegrityException("error.msg.channel.unknown.data.integrity.issue",
                 "Unknown data integrity issue with resource.");
     }
+
+    @Override
+    public ChannelData findByNameType(String name, Integer channelType) {
+        this.context.authenticatedUser();
+        final ChannelRowMapper rm = new ChannelRowMapper();
+        final String sql = "SELECT " + rm.schema() + " WHERE c.name = ? and  c.channel_type = ?";
+        List<ChannelData> channelDataList = this.jdbcTemplate.query(sql, rm, new Object[] { name, channelType });
+        if (channelDataList.isEmpty()) {
+            return null;
+        }
+        return channelDataList.get(0);
+    }
 }

@@ -308,7 +308,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         if (StringUtils.isBlank(channelName)) {
             throw new GeneralPlatformDomainRuleException("validation.msg.channel.is.blank", "Channel is blank");
         }
-        final ChannelData channelData = this.channelReadWritePlatformService.findByName(channelName);
+        final ChannelData channelData = this.channelReadWritePlatformService.findByNameType(channelName,
+                ChannelType.DISBURSEMENT.getValue());
         if (channelData == null) {
             throw new GeneralPlatformDomainRuleException("validation.msg.channel.not.found", "Channel not found", channelName);
         }
@@ -1098,7 +1099,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         if (StringUtils.isBlank(channelName)) {
             throw new GeneralPlatformDomainRuleException("validation.msg.channel.is.blank", "Channel is blank");
         }
-        final ChannelData channelData = this.channelReadWritePlatformService.findByName(channelName);
+        final ChannelData channelData = this.channelReadWritePlatformService.findByNameType(channelName, ChannelType.REPAYMENT.getValue());
         if (channelData == null) {
             throw new GeneralPlatformDomainRuleException("validation.msg.channel.not.found", "Channel not found", channelName);
         }
@@ -3270,7 +3271,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         if (StringUtils.isBlank(channelName)) {
             throw new GeneralPlatformDomainRuleException("validation.msg.channel.is.blank", "Channel is blank");
         }
-        final ChannelData channelData = this.channelReadWritePlatformService.findByName(channelName);
+        final ChannelData channelData = this.channelReadWritePlatformService.findByNameType(channelName, ChannelType.REPAYMENT.getValue());
         if (channelData == null) {
             throw new GeneralPlatformDomainRuleException("validation.msg.channel.not.found", "Channel not found", channelName);
         }
