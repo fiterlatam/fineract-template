@@ -114,6 +114,7 @@ public class ChargeWritePlatformServiceJpaRepositoryImpl implements ChargeWriteP
                     throw new InterestRateException(interestRateId);
                 }
             }
+
             final Charge charge = Charge.fromJson(command, glAccount, taxGroup, paymentType);
             charge.setInterestRate(interestRate);
             this.chargeRepository.saveAndFlush(charge);

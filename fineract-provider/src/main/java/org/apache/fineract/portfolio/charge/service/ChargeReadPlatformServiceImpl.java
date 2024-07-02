@@ -350,7 +350,8 @@ public class ChargeReadPlatformServiceImpl implements ChargeReadPlatformService 
                         mir.id  AS "interestRateId",
                         mir.name AS "interestRateName",
                         mir.current_rate AS "interestRateCurrentRate",
-                        mir.appliedon_date AS "interestRateAppliedOnDate"
+                        mir.appliedon_date AS "interestRateAppliedOnDate",
+                        c.is_get_percentage_from_table AS "getPercentageAmountFromTable"
                     FROM m_charge c
                     JOIN m_organisation_currency oc ON c.currency_code = oc.code
                     LEFT JOIN acc_gl_account acc ON acc.id = c.income_or_liability_account_id
@@ -405,6 +406,7 @@ public class ChargeReadPlatformServiceImpl implements ChargeReadPlatformService 
 
             final boolean penalty = rs.getBoolean("penalty");
             final boolean active = rs.getBoolean("active");
+            final boolean getPercentageAmountFromTable = rs.getBoolean("getPercentageAmountFromTable");
 
             final Integer feeInterval = JdbcSupport.getInteger(rs, "feeInterval");
             EnumOptionData feeFrequencyType = null;
@@ -479,7 +481,7 @@ public class ChargeReadPlatformServiceImpl implements ChargeReadPlatformService 
                     chargeCalculationType, chargePaymentMode, feeOnMonthDay, feeInterval, penalty, active, isFreeWithdrawal,
                     freeWithdrawalChargeFrequency, restartFrequency, restartFrequencyEnum, isPaymentType, paymentTypeData, minCap, maxCap,
                     feeFrequencyType, glAccountData, taxGroupData, Short.valueOf(String.valueOf(graceOnChargePeriodEnum)),
-                    graceOnChargePeriodAmount, parentChargeId, chargeInsuranceDetailData);
+                    graceOnChargePeriodAmount, parentChargeId, chargeInsuranceDetailData, getPercentageAmountFromTable);
             final Long interestRateId = JdbcSupport.getLong(rs, "interestRateId");
             final String interestRateName = rs.getString("interestRateName");
             final BigDecimal interestRateCurrentRate = rs.getBigDecimal("interestRateCurrentRate");

@@ -93,28 +93,7 @@ import org.apache.fineract.portfolio.group.exception.GroupNotActiveException;
 import org.apache.fineract.portfolio.loanaccount.api.LoanApiConstants;
 import org.apache.fineract.portfolio.loanaccount.data.LoanChargePaidByData;
 import org.apache.fineract.portfolio.loanaccount.data.ScheduleGeneratorDTO;
-import org.apache.fineract.portfolio.loanaccount.domain.ChangedTransactionDetail;
-import org.apache.fineract.portfolio.loanaccount.domain.Loan;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanAccountDomainService;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanCharge;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanChargePaidBy;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanChargeRepository;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanCollateralManagement;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanDisbursementDetails;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanEvent;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanInstallmentCharge;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanInterestRecalcualtionAdditionalDetails;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanLifecycleStateMachine;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanOverdueInstallmentCharge;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleInstallment;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleTransactionProcessorFactory;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanTrancheDisbursementCharge;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanTransaction;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionRelation;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionRelationTypeEnum;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionRepository;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionType;
+import org.apache.fineract.portfolio.loanaccount.domain.*;
 import org.apache.fineract.portfolio.loanaccount.domain.transactionprocessor.LoanRepaymentScheduleTransactionProcessor;
 import org.apache.fineract.portfolio.loanaccount.domain.transactionprocessor.LoanRepaymentScheduleTransactionProcessor.TransactionCtx;
 import org.apache.fineract.portfolio.loanaccount.domain.transactionprocessor.MoneyHolder;
@@ -222,7 +201,7 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
                         externalId = externalIdFactory.create();
                     }
                     loanCharge = loanChargeAssembler.createNewWithoutLoan(chargeDefinition, disbursementDetail.principal(), null, null,
-                            null, disbursementDetail.expectedDisbursementDateAsLocalDate(), null, null, externalId);
+                            null, disbursementDetail.expectedDisbursementDateAsLocalDate(), null, null, externalId, false);
                     loanTrancheDisbursementCharge = new LoanTrancheDisbursementCharge(loanCharge, disbursementDetail);
                     loanCharge.updateLoanTrancheDisbursementCharge(loanTrancheDisbursementCharge);
                     businessEventNotifierService.notifyPreBusinessEvent(new LoanAddChargeBusinessEvent(loanCharge));
@@ -247,7 +226,7 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
 
             if (loanCharge.isInstalmentFee()) {
                 Integer applicableFromInstallment = 1;
-                if (loanCharge.isVoluntaryInsuranceCharge()) {
+                if (loanCharge.isCustomFlatDistributedCharge() || loanCharge.isCustomPercentageBasedDistributedCharge()) {
                     for (LoanRepaymentScheduleInstallment installment : loan.getRepaymentScheduleInstallments()) {
                         if (!installment.isObligationsMet()) {
                             applicableFromInstallment = installment.getInstallmentNumber();

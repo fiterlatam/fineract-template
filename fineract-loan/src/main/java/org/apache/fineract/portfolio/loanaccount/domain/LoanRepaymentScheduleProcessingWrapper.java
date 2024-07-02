@@ -220,8 +220,13 @@ public class LoanRepaymentScheduleProcessingWrapper {
     private BigDecimal getInstallmentFee(MonetaryCurrency currency, LoanRepaymentScheduleInstallment period, LoanCharge loanCharge) {
         if (loanCharge.getChargeCalculation().isPercentageBased()) {
             BigDecimal amount = BigDecimal.ZERO;
-            amount = getBaseAmount(currency, period, loanCharge, amount);
-            return amount.multiply(loanCharge.getPercentage()).divide(BigDecimal.valueOf(100));
+            if (loanCharge.getChargeCalculation().isPercentageOfAnotherCharge()) {
+                amount = amount.add(loanCharge.getInstallmentLoanCharge(period.getInstallmentNumber()).getAmount());
+                return amount;
+            } else {
+                amount = getBaseAmount(currency, period, loanCharge, amount);
+                return amount.multiply(loanCharge.getPercentage()).divide(BigDecimal.valueOf(100));
+            }
         } else {
             return loanCharge.amountOrPercentage();
         }

@@ -41,24 +41,11 @@ import jakarta.persistence.Version;
 import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.math.MathContext;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Predicate;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.custom.portfolio.externalcharge.honoratio.domain.CustomChargeHonorarioMap;
@@ -341,7 +328,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     private Integer loanProductCounter;
 
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "loan", orphanRemoval = true, fetch = FetchType.LAZY)
-    private Set<LoanCharge> charges = new HashSet<>();
+    private Set<LoanCharge> charges = new LinkedHashSet<>();
 
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "loan", orphanRemoval = true, fetch = FetchType.LAZY)
     private Set<LoanTrancheCharge> trancheCharges = new HashSet<>();
@@ -695,7 +682,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 totalChargeAmt = loanCharge.amountOutstanding();
             }
         } else {
-            if (loanCharge.isVoluntaryInsuranceCharge()) {
+            if (loanCharge.isCustomFlatDistributedCharge()) {
                 chargeAmt = loanCharge.getAmount(this.getCurrency()).getAmount();
             } else {
                 chargeAmt = loanCharge.amountOrPercentage();
@@ -1002,6 +989,9 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                     amount = getPrincipal().getAmount();
                 }
             break;
+            case OPRIN_SEGO:
+                amount = this.getPrincipal().getAmount();
+            break;
             default:
             break;
         }
@@ -1026,14 +1016,20 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     }
 
     private BigDecimal calculatePerInstallmentChargeAmount(final LoanCharge loanCharge) {
-        return calculatePerInstallmentChargeAmount(loanCharge.getChargeCalculation(), loanCharge.getPercentage());
+        return calculatePerInstallmentChargeAmount(loanCharge.getChargeCalculation(), loanCharge.getPercentage(),
+                loanCharge.amountOrPercentage(), loanCharge.getCharge().getParentChargeId());
     }
 
-    public BigDecimal calculatePerInstallmentChargeAmount(final ChargeCalculationType calculationType, final BigDecimal percentage) {
+    public BigDecimal calculatePerInstallmentChargeAmount(final ChargeCalculationType calculationType, final BigDecimal percentage,
+            BigDecimal chargeAmount, Long parentChargeId) {
         Money amount = Money.zero(getCurrency());
+        this.outstandingBalance = Money.zero(this.getCurrency());
         List<LoanRepaymentScheduleInstallment> installments = getRepaymentScheduleInstallments();
         for (final LoanRepaymentScheduleInstallment installment : installments) {
-            amount = amount.plus(calculateInstallmentChargeAmount(calculationType, percentage, installment));
+            this.outstandingBalance = this.outstandingBalance.plus(installment.getPrincipal(this.getCurrency()));
+        }
+        for (final LoanRepaymentScheduleInstallment installment : installments) {
+            amount = amount.plus(calculateInstallmentChargeAmount(calculationType, percentage, installment, chargeAmount, parentChargeId));
         }
         return amount.getAmount();
     }
@@ -1048,8 +1044,11 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
      * @param installment
      * @return
      */
+    @Transient
+    private Money outstandingBalance = null;
+
     private Money calculateInstallmentChargeAmount(final ChargeCalculationType calculationType, final BigDecimal percentage,
-            final LoanRepaymentScheduleInstallment installment) {
+            final LoanRepaymentScheduleInstallment installment, BigDecimal chargeAmount, Long parentChargeId) {
         Money amount = Money.zero(getCurrency());
         Money percentOf = Money.zero(getCurrency());
         switch (calculationType) {
@@ -1062,10 +1061,35 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             case PERCENT_OF_INTEREST:
                 percentOf = installment.getInterestCharged(getCurrency());
             break;
+            case PERCENT_OF_ANOTHER_CHARGE:
+            case ACHG:
+                for (LoanCharge charge : this.getCharges()) {
+                    if (charge.getCharge().getId().equals(parentChargeId)) {
+                        percentOf = charge.getInstallmentLoanCharge(installment.getInstallmentNumber()).getAmount(getCurrency());
+                        break;
+                    }
+                }
+            break;
+            case PERCENT_OF_OUTSTANDING_PRINCIPAL_AMOUNT:
+            case OPRIN_SEGO:
+                // Get percentage from the parent Charge and calculate on outstanding balance
+                percentOf = outstandingBalance;
             default:
             break;
         }
-        amount = amount.plus(LoanCharge.percentageOf(percentOf.getAmount(), percentage));
+        if (calculationType.isCustomPercentageBasedDistributedCharge()) {
+            amount = amount.plus(chargeAmount);
+        } else if (calculationType.isPercentageOfAnotherCharge() && calculationType.equals(ChargeCalculationType.ACHG)) { // Term/VAT
+                                                                                                                          // on
+                                                                                                                          // insurance
+            amount = amount.plus(LoanCharge.percentageOf(percentOf.getAmount(), percentage));
+        } else if (calculationType.isCustomPercentageOfOutstandingPrincipalCharge()) {
+            BigDecimal numberOfInstallments = new BigDecimal(this.fetchUnpaidNumberOfInstallments(1));
+            BigDecimal computedAmount = LoanCharge.percentageOf(percentOf.getAmount(), percentage);
+            this.outstandingBalance = this.outstandingBalance.minus(installment.getPrincipal(this.getCurrency()));
+            BigDecimal finalAmount = computedAmount.divide(numberOfInstallments, 0, RoundingMode.HALF_UP);
+            amount = amount.plus(finalAmount);
+        }
         return amount;
     }
 
@@ -1262,7 +1286,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                     totalChargeAmt = calculatePerInstallmentChargeAmount(loanCharge);
                 }
             } else {
-                if (loanCharge.isVoluntaryInsuranceCharge()) {
+                if (loanCharge.isCustomFlatDistributedCharge()) {
                     chargeAmt = loanCharge.getAmount(this.getCurrency()).getAmount();
                 } else {
                     chargeAmt = loanCharge.amountOrPercentage();
@@ -1751,7 +1775,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         Set<LoanCharge> charges = this.getActiveCharges();
         int penaltyWaitPeriod = 0;
         for (final LoanCharge loanCharge : charges) {
-            if (loanCharge.isVoluntaryInsuranceCharge()) {
+            if (loanCharge.isCustomFlatDistributedCharge()) {
                 recalculateLoanCharge(loanCharge, penaltyWaitPeriod);
             }
         }
@@ -1805,7 +1829,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 totalChargeAmt = calculatePerInstallmentChargeAmount(loanCharge);
             }
         } else {
-            if (loanCharge.isVoluntaryInsuranceCharge()) {
+            if (loanCharge.isCustomFlatDistributedCharge()) {
                 chargeAmt = loanCharge.getAmount(loanCharge.getLoan().getCurrency()).getAmount();
             } else {
                 chargeAmt = loanCharge.amountOrPercentage();
@@ -2049,7 +2073,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                     externalId = ExternalId.generate();
                 }
                 final LoanCharge loanCharge = new LoanCharge(this, chargeDefinition, principal, null, null, null, expectedDisbursementDate,
-                        null, null, BigDecimal.ZERO, externalId);
+                        null, null, BigDecimal.ZERO, externalId, false);
                 LoanTrancheDisbursementCharge loanTrancheDisbursementCharge = new LoanTrancheDisbursementCharge(loanCharge,
                         disbursementDetails);
                 loanCharge.updateLoanTrancheDisbursementCharge(loanTrancheDisbursementCharge);
@@ -5173,6 +5197,10 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         if (loanCharge.isInstalmentFee()) {
             List<LoanRepaymentScheduleInstallment> installments = getRepaymentScheduleInstallments().stream()
                     .sorted(Comparator.comparingInt(LoanRepaymentScheduleInstallment::getInstallmentNumber)).toList();
+            this.outstandingBalance = Money.zero(getCurrency());
+            for (final LoanRepaymentScheduleInstallment installment : installments) {
+                this.outstandingBalance = this.outstandingBalance.plus(installment.getPrincipal(getCurrency()));
+            }
             for (final LoanRepaymentScheduleInstallment installment : installments) {
                 if (installment.isRecalculatedInterestComponent()) {
                     continue;
@@ -5192,10 +5220,10 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                         }
                     }
                 } else {
-                    amount = calculateInstallmentChargeAmount(loanCharge.getChargeCalculation(), loanCharge.getPercentage(), installment)
-                            .getAmount();
+                    amount = calculateInstallmentChargeAmount(loanCharge.getChargeCalculation(), loanCharge.getPercentage(), installment,
+                            loanCharge.amountOrPercentage(), loanCharge.getCharge().getParentChargeId()).getAmount();
                 }
-                if ((loanCharge.isVoluntaryInsuranceCharge()
+                if (((loanCharge.isCustomFlatDistributedCharge() || loanCharge.isCustomPercentageBasedDistributedCharge())
                         && loanCharge.getApplicableFromInstallment() > installment.getInstallmentNumber())) {
                     amount = BigDecimal.ZERO;
                 }
@@ -7187,7 +7215,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         // At the time of loan creation, "this.charges" will be null if no charges found in the request.
         // In that case, fetch loan (before commit) will return null for the charges.
         // Return empty set instead of null to avoid NPE
-        return Optional.ofNullable(this.charges).orElse(new HashSet<>());
+        return Optional.ofNullable(this.charges).orElse(new LinkedHashSet<>());
     }
 
     public boolean hasDelinquencyBucket() {

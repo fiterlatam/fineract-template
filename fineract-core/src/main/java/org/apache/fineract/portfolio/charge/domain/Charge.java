@@ -148,6 +148,9 @@ public class Charge extends AbstractPersistableCustom {
     @JoinColumn(name = "interest_rate_id")
     private InterestRate interestRate;
 
+    @Column(name = "is_get_percentage_from_table", nullable = false)
+    private boolean getPercentageFromTable;
+
     @Embedded
     private ChargeInsuranceDetail chargeInsuranceDetail;
 
@@ -218,10 +221,12 @@ public class Charge extends AbstractPersistableCustom {
             chargeInsuranceDetail = new ChargeInsuranceDetail(insuranceName, insuranceChargeAs, insuranceCompany, insurerName,
                     insuranceCode, insurancePlan, baseValue, vatValue, totalValue, deadline);
         }
+        boolean getPercentageFromTable = command
+                .booleanPrimitiveValueOfParameterNamed(ChargesApiConstants.GET_INTEREST_PERCENTAGE_FROM_TABLE);
         return new Charge(name, amount, currencyCode, chargeAppliesTo, chargeTimeType, chargeCalculationType, penalty, active, paymentMode,
                 feeOnMonthDay, feeInterval, minCap, maxCap, feeFrequency, enableFreeWithdrawalCharge, freeWithdrawalFrequency,
                 restartCountFrequency, countFrequencyType, account, taxGroup, enablePaymentType, paymentType, graceOnChargePeriodAmount,
-                parentChargeId, chargeInsuranceDetail);
+                parentChargeId, chargeInsuranceDetail, getPercentageFromTable);
     }
 
     protected Charge() {}
@@ -232,7 +237,8 @@ public class Charge extends AbstractPersistableCustom {
             final BigDecimal maxCap, final Integer feeFrequency, final boolean enableFreeWithdrawalCharge,
             final Integer freeWithdrawalFrequency, final Integer restartFrequency, final PeriodFrequencyType restartFrequencyEnum,
             final GLAccount account, final TaxGroup taxGroup, final boolean enablePaymentType, final PaymentType paymentType,
-            final Long graceOnChargePeriodAmount, Long parentChargeId, ChargeInsuranceDetail chargeInsuranceDetail) {
+            final Long graceOnChargePeriodAmount, Long parentChargeId, ChargeInsuranceDetail chargeInsuranceDetail,
+            boolean getPercentageFromTable) {
         this.name = name;
         this.amount = amount;
         this.currencyCode = currencyCode;
@@ -321,7 +327,7 @@ public class Charge extends AbstractPersistableCustom {
             this.minCap = minCap;
             this.maxCap = maxCap;
         }
-
+        this.getPercentageFromTable = getPercentageFromTable;
         if (!dataValidationErrors.isEmpty()) {
             throw new PlatformApiDataValidationException(dataValidationErrors);
         }
@@ -399,6 +405,10 @@ public class Charge extends AbstractPersistableCustom {
         return ChargeCalculationType.fromInt(this.chargeCalculation).isPercentageOfDisbursement();
     }
 
+    public boolean isPercentageOfAnotherCharge() {
+        return ChargeCalculationType.fromInt(this.chargeCalculation).isPercentageOfAnotherCharge();
+    }
+
     public boolean isInstallmentFee() {
         return ChargeTimeType.fromInt(this.chargeTimeType).isInstalmentFee();
     }
@@ -453,6 +463,14 @@ public class Charge extends AbstractPersistableCustom {
             interestRateId = this.interestRate.getId();
         }
         return interestRateId;
+    }
+
+    public Long getParentChargeId() {
+        return parentChargeId;
+    }
+
+    public boolean isGetPercentageFromTable() {
+        return getPercentageFromTable;
     }
 
     public Map<String, Object> update(final JsonCommand command) {
@@ -737,6 +755,12 @@ public class Charge extends AbstractPersistableCustom {
             }
         }
 
+        if (command.isChangeInBooleanParameterNamed(ChargesApiConstants.GET_INTEREST_PERCENTAGE_FROM_TABLE, this.getPercentageFromTable)) {
+            final boolean newValue = command.booleanPrimitiveValueOfParameterNamed(ChargesApiConstants.GET_INTEREST_PERCENTAGE_FROM_TABLE);
+            actualChanges.put(ChargesApiConstants.GET_INTEREST_PERCENTAGE_FROM_TABLE, newValue);
+            this.getPercentageFromTable = newValue;
+        }
+
         if (!dataValidationErrors.isEmpty()) {
             throw new PlatformApiDataValidationException(dataValidationErrors);
         }
@@ -787,7 +811,8 @@ public class Charge extends AbstractPersistableCustom {
         return ChargeData.instance(getId(), this.name, this.amount, currency, chargeTimeType, chargeAppliesTo, chargeCalculationType,
                 chargePaymentMode, getFeeOnMonthDay(), this.feeInterval, this.penalty, this.active, this.enableFreeWithdrawal,
                 this.freeWithdrawalFrequency, this.restartFrequency, this.restartFrequencyEnum, this.enablePaymentType, paymentTypeData,
-                this.minCap, this.maxCap, feeFrequencyType, accountData, taxGroupData, chargeInsuranceDetailData);
+                this.minCap, this.maxCap, feeFrequencyType, accountData, taxGroupData, chargeInsuranceDetailData,
+                this.getPercentageFromTable);
     }
 
     public Integer getChargePaymentMode() {

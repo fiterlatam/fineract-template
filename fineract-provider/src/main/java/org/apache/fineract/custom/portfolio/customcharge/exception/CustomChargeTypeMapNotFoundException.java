@@ -25,4 +25,8 @@ public class CustomChargeTypeMapNotFoundException extends AbstractPlatformResour
     public CustomChargeTypeMapNotFoundException() {
         super("error.msg.customchargetypemap.id.invalid", "CustomChargeTypeMap does not exist");
     }
+
+    public CustomChargeTypeMapNotFoundException(String errorCode) {
+        super(errorCode, "Multiple CustomChargeTypeMap values found");
+    }
 }
