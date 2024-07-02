@@ -598,8 +598,10 @@ public final class LoanApplicationTerms {
         final int periodsElapsed = periodNumber - 1;
         // with periodic interest for default month and year for
         // equal installment
+        boolean useAnnualNominalInterestRate = false;
+        boolean useDailyInterestCalculation = false;
         final BigDecimal periodicInterestRateForRepaymentPeriod = periodicInterestRate(calculator, mc, DaysInMonthType.DAYS_30,
-                DaysInYearType.DAYS_365, periodStartDate, periodEndDate, true, false);
+                DaysInYearType.DAYS_365, periodStartDate, periodEndDate, true, useDailyInterestCalculation, useAnnualNominalInterestRate);
         Money totalPmtForThisInstallment = calculateTotalDueForEqualInstallmentRepaymentPeriod(periodicInterestRateForRepaymentPeriod,
                 outstandingBalance, periodsElapsed);
         return totalPmtForThisInstallment;
@@ -998,12 +1000,12 @@ public final class LoanApplicationTerms {
             final DaysInMonthType daysInMonthType, final DaysInYearType daysInYearType, LocalDate periodStartDate, LocalDate periodEndDate,
             boolean useDailyInterestCalculation) {
         return periodicInterestRate(calculator, mc, daysInMonthType, daysInYearType, periodStartDate, periodEndDate, false,
-                useDailyInterestCalculation);
+                useDailyInterestCalculation, true);
     }
 
     private BigDecimal periodicInterestRate(final PaymentPeriodsInOneYearCalculator calculator, final MathContext mc,
             final DaysInMonthType daysInMonthType, final DaysInYearType daysInYearType, LocalDate periodStartDate, LocalDate periodEndDate,
-            boolean isForPMT, boolean useDailyInterestCalculation) {
+            boolean isForPMT, boolean useDailyInterestCalculation, boolean useAnnualNominalInterestRate) {
 
         long loanTermPeriodsInOneYear = calculatePeriodsInOneYear(calculator);
         if (useDailyInterestCalculation) {
@@ -1027,7 +1029,8 @@ public final class LoanApplicationTerms {
                 // For daily work out number of days in the period
                 BigDecimal numberOfDaysInPeriod = BigDecimal.valueOf(ChronoUnit.DAYS.between(periodStartDate, periodEndDate));
 
-                final BigDecimal oneDayOfYearInterestRate = this.annualNominalInterestRate.divide(loanTermPeriodsInYearBigDecimal, mc)
+                final BigDecimal oneDayOfYearInterestRate = useAnnualNominalInterestRate? this.annualNominalInterestRate.divide(loanTermPeriodsInYearBigDecimal, mc)
+                        .divide(divisor, mc) : this.interestRatePerPeriod.divide(loanTermPeriodsInYearBigDecimal, mc)
                         .divide(divisor, mc);
 
                 switch (this.repaymentPeriodFrequencyType) {
@@ -1035,7 +1038,7 @@ public final class LoanApplicationTerms {
                     break;
                     case DAYS:
                         // periodicInterestRate = oneDayOfYearInterestRate.multiply(numberOfDaysInPeriod, mc);
-                        periodicInterestRate = calculateCustomPeriodicInterestRate(daysInYearType.getValue().doubleValue(), divisor);
+                        periodicInterestRate = calculateCustomPeriodicInterestRate(daysInYearType.getValue().doubleValue(), divisor, useAnnualNominalInterestRate);
                     break;
                     case WEEKS:
                         periodicInterestRate = oneDayOfYearInterestRate.multiply(numberOfDaysInPeriod, mc);
@@ -1071,7 +1074,7 @@ public final class LoanApplicationTerms {
                 // periodicInterestRate = this.annualNominalInterestRate.divide(loanTermPeriodsInYearBigDecimal,
                 // mc).divide(divisor, mc)
                 // .multiply(loanTermFrequencyBigDecimal);
-                periodicInterestRate = calculateCustomPeriodicInterestRate(loanTermPeriodsInOneYear, divisor);
+                periodicInterestRate = calculateCustomPeriodicInterestRate(loanTermPeriodsInOneYear, divisor, useAnnualNominalInterestRate);
 
             break;
         }
@@ -1079,8 +1082,13 @@ public final class LoanApplicationTerms {
         return periodicInterestRate;
     }
 
-    private BigDecimal calculateCustomPeriodicInterestRate(double installments, BigDecimal divisor) {
-        BigDecimal annualRate = new BigDecimal(1 + this.annualNominalInterestRate.toPlainString()).divide(divisor);
+    private BigDecimal calculateCustomPeriodicInterestRate(double installments, BigDecimal divisor, boolean useAnnualNominalInterestRate) {
+        BigDecimal annualRate = BigDecimal.ZERO;
+        if (useAnnualNominalInterestRate) {
+            annualRate = new BigDecimal(1 + this.annualNominalInterestRate.toPlainString()).divide(divisor);
+        } else {
+            annualRate = new BigDecimal(1 + this.interestRatePerPeriod.toPlainString()).divide(divisor);
+        }
         int scale = 5;
         double exp = 1 / installments;
         double res = (Math.pow((annualRate.doubleValue()), exp)) - 1;
