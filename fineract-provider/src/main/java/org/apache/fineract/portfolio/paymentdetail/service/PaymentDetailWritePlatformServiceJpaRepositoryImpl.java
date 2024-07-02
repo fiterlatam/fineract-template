@@ -20,6 +20,7 @@ package org.apache.fineract.portfolio.paymentdetail.service;
 
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
+import org.apache.fineract.infrastructure.codes.service.CodeValueReadPlatformService;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.portfolio.paymentdetail.PaymentDetailConstants;
 import org.apache.fineract.portfolio.paymentdetail.domain.PaymentDetail;
@@ -33,6 +34,7 @@ public class PaymentDetailWritePlatformServiceJpaRepositoryImpl implements Payme
 
     private final PaymentDetailRepository paymentDetailRepository;
     private final PaymentTypeRepositoryWrapper paymentTyperepositoryWrapper;
+    private final CodeValueReadPlatformService codeValueReadPlatformService;
 
     @Override
     public PaymentDetail createPaymentDetail(final JsonCommand command, final Map<String, Object> changes) {
@@ -41,7 +43,13 @@ public class PaymentDetailWritePlatformServiceJpaRepositoryImpl implements Payme
             return null;
         }
         final PaymentType paymentType = this.paymentTyperepositoryWrapper.findOneWithNotFoundDetection(paymentTypeId);
-        return PaymentDetail.generatePaymentDetail(paymentType, command, changes);
+        final Long paymentChannelId = command.longValueOfParameterNamed("paymentChannelId");
+        if(paymentChannelId != null) {
+            this.codeValueReadPlatformService
+        }
+
+        final PaymentDetail paymentDetail = PaymentDetail.generatePaymentDetail(paymentType, command, changes);
+        return paymentDetail;
     }
 
     @Override

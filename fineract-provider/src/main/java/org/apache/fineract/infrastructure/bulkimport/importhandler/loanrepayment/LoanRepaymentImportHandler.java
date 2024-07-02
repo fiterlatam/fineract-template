@@ -106,8 +106,15 @@ public class LoanRepaymentImportHandler implements ImportHandler {
         Integer routingCode = ImportHandlerUtils.readAsInt(LoanRepaymentConstants.ROUTING_CODE_COL, row);
         Integer receiptNumber = ImportHandlerUtils.readAsInt(LoanRepaymentConstants.RECEIPT_NO_COL, row);
         Integer bankNumber = ImportHandlerUtils.readAsInt(LoanRepaymentConstants.BANK_NO_COL, row);
-        return LoanTransactionData.importInstance(repaymentAmount, repaymentDate, repaymentTypeId, accountNumber, checkNumber, routingCode,
+        final LoanTransactionData loanTransactionData = LoanTransactionData.importInstance(repaymentAmount, repaymentDate, repaymentTypeId, accountNumber, checkNumber, routingCode,
                 receiptNumber, bankNumber, loanAccountId, EMPTY_STR, row.getRowNum(), locale, dateFormat);
+        final String repaymentChannel = ImportHandlerUtils.readAsString(LoanRepaymentConstants.REPAYMENT_CHANNEL_COL, row);
+        final Long repaymentChannelId = ImportHandlerUtils.getIdByName(workbook.getSheet(TemplatePopulateImportConstants.EXTRAS_SHEET_NAME), repaymentChannel);
+        final String repaymentBank = ImportHandlerUtils.readAsString(LoanRepaymentConstants.REPAYMENT_BANK_COL, row);
+        final Long repaymentBankId = ImportHandlerUtils.getIdByName(workbook.getSheet(TemplatePopulateImportConstants.EXTRAS_SHEET_NAME), repaymentBank);
+        loanTransactionData.setRepaymentChannelId(repaymentChannelId);
+        loanTransactionData.setRepaymentBankId(repaymentBankId);
+        return loanTransactionData;
     }
 
     private Count importEntity(final Workbook workbook, final List<LoanTransactionData> loanRepayments, final String dateFormat) {
@@ -123,6 +130,7 @@ public class LoanRepaymentImportHandler implements ImportHandler {
 
                 JsonObject loanRepaymentJsonob = gsonBuilder.create().toJsonTree(loanRepayment).getAsJsonObject();
                 loanRepaymentJsonob.remove("manuallyReversed");
+                loanRepaymentJsonob.remove("numberOfRepayments");
                 String payload = loanRepaymentJsonob.toString();
                 final CommandWrapper commandRequest = new CommandWrapperBuilder() //
                         .loanRepaymentTransaction(loanRepayment.getAccountId()) //

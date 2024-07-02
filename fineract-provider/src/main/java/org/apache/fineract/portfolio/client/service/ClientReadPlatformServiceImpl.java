@@ -763,7 +763,7 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
             builder.append("c.activation_date as activationDate, c.image_id as imageId, ");
             builder.append("c.staff_id as staffId, s.display_name as staffName, ");
             builder.append("c.default_savings_product as savingsProductId, sp.name as savingsProductName, ");
-            builder.append("c.block_reason_id as blockReasonId, ");
+            builder.append("c.blocking_reason_id as blockReasonId, ");
             builder.append("c.default_savings_account as savingsAccountId ");
             builder.append("from m_client c ");
             builder.append("join m_office o on o.id = c.office_id ");

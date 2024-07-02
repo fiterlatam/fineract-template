@@ -38,20 +38,15 @@ import org.apache.fineract.portfolio.paymenttype.data.PaymentTypeData;
 @Getter
 @Setter
 public class LoanTransactionData {
-
     private final Long id;
     private final Long loanId;
     private final ExternalId externalLoanId;
     private final Long officeId;
     private final String officeName;
-
     private final LoanTransactionEnumData type;
-
     private final LocalDate date;
-
     private final CurrencyData currency;
     private final PaymentDetailData paymentDetailData;
-
     private final BigDecimal amount;
     private final BigDecimal netDisbursalAmount;
     private final BigDecimal principalPortion;
@@ -67,16 +62,11 @@ public class LoanTransactionData {
     private final LocalDate submittedOnDate;
     private final boolean manuallyReversed;
     private final LocalDate possibleNextRepaymentDate;
-
     private Collection<LoanChargePaidByData> loanChargePaidByList;
-
     // templates
     final Collection<PaymentTypeData> paymentTypeOptions;
-
     private Collection<CodeValueData> writeOffReasonOptions = null;
-
     private Integer numberOfRepayments = 0;
-
     // import fields
     private transient Integer rowIndex;
     private String dateFormat;
@@ -92,15 +82,14 @@ public class LoanTransactionData {
     private transient Long accountId;
     private transient String transactionType;
     private List<LoanRepaymentScheduleInstallmentData> loanRepaymentScheduleInstallments;
-
     // Reverse Data
     private final ExternalId reversalExternalId;
     private LocalDate reversedOnDate;
-
     private List<LoanTransactionRelationData> transactionRelations;
-
     private Collection<CodeValueData> chargeOffReasonOptions = null;
     private List<ChannelData> channelOptions;
+    private Long repaymentChannelId;
+    private Long repaymentBankId;
 
     public static LoanTransactionData importInstance(BigDecimal repaymentAmount, LocalDate lastRepaymentDate, Long repaymentTypeId,
             Integer rowIndex, String locale, String dateFormat) {
