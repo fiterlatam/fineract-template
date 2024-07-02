@@ -6114,10 +6114,12 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             List<LoanRepaymentScheduleInstallment> installments = getRepaymentScheduleInstallments();
             for (LoanRepaymentScheduleInstallment repaymentScheduleInstallment : installments) {
                 if (!repaymentScheduleInstallment.isObligationsMet()) {
-                    if (DateUtils.isBefore(rescheduleFromDate, repaymentScheduleInstallment.getDueDate())
-                            || DateUtils.isEqual(rescheduleFromDate, repaymentScheduleInstallment.getDueDate())) {
-                        installment = repaymentScheduleInstallment;
-                        break;
+                    if (!repaymentScheduleInstallment.hasOverdueCharges()) {
+                        if (DateUtils.isBefore(rescheduleFromDate, repaymentScheduleInstallment.getDueDate())
+                                || DateUtils.isEqual(rescheduleFromDate, repaymentScheduleInstallment.getDueDate())) {
+                            installment = repaymentScheduleInstallment;
+                            break;
+                        }
                     }
                 }
             }

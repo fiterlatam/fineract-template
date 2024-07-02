@@ -425,6 +425,10 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
         this.penaltyCharges = null;
     }
 
+    public boolean hasOverdueCharges() {
+        return getPenaltyChargesOutstanding(getLoan().getCurrency()).isGreaterThanZero();
+    }
+
     public interface PaymentFunction {
 
         Money accept(LocalDate transactionDate, Money transactionAmountRemaining);
