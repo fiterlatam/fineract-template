@@ -298,8 +298,9 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
             final String gender = rs.getString("gender");
             final String clientArea = rs.getString("clientArea");
             final String clientCategorization = rs.getString("clientCategorization");
+            final String recreditCategorization = isTopup?"RECREDITO" : "NUEVO";
             return ClientData.builder().clientId(clientId).prequalificationId(prequalificationId).clientArea(clientArea)
-                    .clientCategorization(clientCategorization).prequalificationMemberId(prequalificationMemberId).name(name)
+                    .clientCategorization(clientCategorization).recreditCategorization(recreditCategorization).prequalificationMemberId(prequalificationMemberId).name(name)
                     .dateOfBirth(dateOfBirth).dpi(dpi).requestedAmount(requestedAmount).gender(gender).workWithPuente(workWithPuente)
                     .president(president).buroCheckStatus(buroCheckStatus).agencyBuroStatus(agencyBuroStatus).isLoanTopup(isTopup)
                     .loanCycle(loanCycle).build();
@@ -590,7 +591,6 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
      */
     private CheckValidationColor runCheck7(final ClientData clientData) {
         String clientArea = clientData.getClientArea();
-        final ClientData params = retrieveClientParams(clientData.getClientId(), clientData.getProductId());
 
         final String prequalificationId = String.valueOf(clientData.getPrequalificationId());
         final String reportName = Policies.SEVEN.getName() + " Policy Check";
@@ -599,7 +599,7 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
         reportParams.put("${prequalificationId}", prequalificationId);
         reportParams.put("${loanProductId}", productId);
         reportParams.put("${clientArea}", clientArea);
-        reportParams.put("${categorization}", params.getRecreditCategorization());
+        reportParams.put("${categorization}", clientData.getRecreditCategorization());
         reportParams.put("${isTopup}", String.valueOf(clientData.getIsLoanTopup()));
         reportParams.put("${requestedAmount}", String.valueOf(clientData.getRequestedAmount()));
         final GenericResultsetData result = this.readReportingService.retrieveGenericResultset(reportName, "report", reportParams, false);
