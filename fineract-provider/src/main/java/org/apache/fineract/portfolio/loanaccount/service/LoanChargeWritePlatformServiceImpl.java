@@ -93,27 +93,7 @@ import org.apache.fineract.portfolio.group.exception.GroupNotActiveException;
 import org.apache.fineract.portfolio.loanaccount.api.LoanApiConstants;
 import org.apache.fineract.portfolio.loanaccount.data.LoanChargePaidByData;
 import org.apache.fineract.portfolio.loanaccount.data.ScheduleGeneratorDTO;
-import org.apache.fineract.portfolio.loanaccount.domain.ChangedTransactionDetail;
-import org.apache.fineract.portfolio.loanaccount.domain.Loan;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanAccountDomainService;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanCharge;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanChargePaidBy;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanChargeRepository;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanCollateralManagement;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanDisbursementDetails;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanEvent;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanInstallmentCharge;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanInterestRecalcualtionAdditionalDetails;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanLifecycleStateMachine;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanOverdueInstallmentCharge;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleInstallment;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleTransactionProcessorFactory;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanTransaction;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionRelation;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionRelationTypeEnum;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionRepository;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionType;
+import org.apache.fineract.portfolio.loanaccount.domain.*;
 import org.apache.fineract.portfolio.loanaccount.domain.transactionprocessor.LoanRepaymentScheduleTransactionProcessor;
 import org.apache.fineract.portfolio.loanaccount.domain.transactionprocessor.LoanRepaymentScheduleTransactionProcessor.TransactionCtx;
 import org.apache.fineract.portfolio.loanaccount.domain.transactionprocessor.MoneyHolder;
@@ -209,8 +189,38 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
         boolean isAppliedOnBackDate = false;
         LoanCharge loanCharge = null;
         LocalDate recalculateFrom = loan.fetchInterestRecalculateFromDate();
-        if (chargeDefinition.isPercentageOfDisbursementAmount() && loan.isDisbursed()) {
-            // TODO: Replace with original code here. Removed for testing purposes
+        if (chargeDefinition.isPercentageOfDisbursementAmount()) {
+            LoanTrancheDisbursementCharge loanTrancheDisbursementCharge;
+            ExternalId externalId = externalIdFactory.createFromCommand(command, "externalId");
+            boolean needToGenerateNewExternalId = false;
+            for (LoanDisbursementDetails disbursementDetail : loanDisburseDetails) {
+                if (disbursementDetail.actualDisbursementDate() == null) {
+                    // If multiple charges to be applied, only the first one will get the provided externalId, for the
+                    // rest we generate new ones (if needed)
+                    if (needToGenerateNewExternalId) {
+                        externalId = externalIdFactory.create();
+                    }
+                    loanCharge = loanChargeAssembler.createNewWithoutLoan(chargeDefinition, disbursementDetail.principal(), null, null,
+                            null, disbursementDetail.expectedDisbursementDateAsLocalDate(), null,
+                            null, externalId, false);
+                    loanTrancheDisbursementCharge = new LoanTrancheDisbursementCharge(loanCharge, disbursementDetail);
+                    loanCharge.updateLoanTrancheDisbursementCharge(loanTrancheDisbursementCharge);
+                    businessEventNotifierService.notifyPreBusinessEvent(new LoanAddChargeBusinessEvent(loanCharge));
+                    validateAddLoanCharge(loan, chargeDefinition, loanCharge);
+                    addCharge(loan, chargeDefinition, loanCharge);
+                    isAppliedOnBackDate = true;
+                    if (DateUtils.isAfter(recalculateFrom, disbursementDetail.expectedDisbursementDateAsLocalDate())) {
+                        recalculateFrom = disbursementDetail.expectedDisbursementDateAsLocalDate();
+                    }
+                    needToGenerateNewExternalId = true;
+                }
+            }
+            if (loanCharge == null) {
+                final String errorMessage = "Charge with identifier " + chargeDefinition.getId()
+                        + " cannot be applied: No valid loan disbursement available";
+                throw new ChargeCannotBeAppliedToException("loan", errorMessage, chargeDefinition.getId());
+            }
+            loan.addTrancheLoanCharge(chargeDefinition);
         } else {
             loanCharge = loanChargeAssembler.createNewFromJson(loan, chargeDefinition, command);
             businessEventNotifierService.notifyPreBusinessEvent(new LoanAddChargeBusinessEvent(loanCharge));
