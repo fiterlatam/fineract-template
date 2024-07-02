@@ -1029,16 +1029,17 @@ public final class LoanApplicationTerms {
                 // For daily work out number of days in the period
                 BigDecimal numberOfDaysInPeriod = BigDecimal.valueOf(ChronoUnit.DAYS.between(periodStartDate, periodEndDate));
 
-                final BigDecimal oneDayOfYearInterestRate = useAnnualNominalInterestRate? this.annualNominalInterestRate.divide(loanTermPeriodsInYearBigDecimal, mc)
-                        .divide(divisor, mc) : this.interestRatePerPeriod.divide(loanTermPeriodsInYearBigDecimal, mc)
-                        .divide(divisor, mc);
+                final BigDecimal oneDayOfYearInterestRate = useAnnualNominalInterestRate
+                        ? this.annualNominalInterestRate.divide(loanTermPeriodsInYearBigDecimal, mc).divide(divisor, mc)
+                        : this.interestRatePerPeriod.divide(loanTermPeriodsInYearBigDecimal, mc).divide(divisor, mc);
 
                 switch (this.repaymentPeriodFrequencyType) {
                     case INVALID:
                     break;
                     case DAYS:
                         // periodicInterestRate = oneDayOfYearInterestRate.multiply(numberOfDaysInPeriod, mc);
-                        periodicInterestRate = calculateCustomPeriodicInterestRate(daysInYearType.getValue().doubleValue(), divisor, useAnnualNominalInterestRate);
+                        periodicInterestRate = calculateCustomPeriodicInterestRate(daysInYearType.getValue().doubleValue(), divisor,
+                                useAnnualNominalInterestRate);
                     break;
                     case WEEKS:
                         periodicInterestRate = oneDayOfYearInterestRate.multiply(numberOfDaysInPeriod, mc);
