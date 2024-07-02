@@ -84,8 +84,8 @@ public final class ChargeDefinitionCommandFromApiJsonDeserializer {
             ChargesApiConstants.insuranceChargedAsParamName, ChargesApiConstants.insuranceCompanyParamName,
             ChargesApiConstants.insurerNameParamName, ChargesApiConstants.insuranceCodeParamName,
             ChargesApiConstants.insurancePlanParamName, ChargesApiConstants.baseValueParamName, ChargesApiConstants.vatValueParamName,
-            ChargesApiConstants.totalValueParamName, ChargesApiConstants.deadlineParamName,
-            ChargesApiConstants.INTEREST_RATE_ID_PARAM_NAME));
+            ChargesApiConstants.totalValueParamName, ChargesApiConstants.deadlineParamName, ChargesApiConstants.INTEREST_RATE_ID_PARAM_NAME,
+            ChargesApiConstants.GET_INTEREST_PERCENTAGE_FROM_TABLE));
     private final FromJsonHelper fromApiJsonHelper;
 
     @Autowired
