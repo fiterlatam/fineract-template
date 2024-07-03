@@ -92,15 +92,15 @@ public class PrequalificationChecklistReadPlatformServiceImpl implements Prequal
                 PrequalificationType.INDIVIDUAL.name());
         final List<String> memberColumnHeaders = new ArrayList<>(
                 List.of("label.heading.clientid", "label.heading.clientname", "label.heading.dpi"));
-        individualPolicies.forEach(policy -> memberColumnHeaders.add(policy.getDescription()));
+//        individualPolicies.forEach(policy -> memberColumnHeaders.add(policy.getDescription()));
         final List<List<String>> memberRows = new ArrayList<>();
         for (PrequalificationGroupMember member : prequalificationGroup.getMembers()) {
             final List<String> memberRow = new ArrayList<>();
             String memberId = null;
             String clientName;
             String dpi;
-            for (PolicyData policy : individualPolicies) {
-                for (ChecklistValidationResult validationResult : validationResults) {
+            for (ChecklistValidationResult validationResult : validationResults) {
+                for (PolicyData policy : individualPolicies) {
                     if (policy.getId().equals(validationResult.getPolicyId())
                             && PrequalificationType.INDIVIDUAL.getValue().equals(validationResult.getPrequalificationTypeEnum())
                             && member.getId().equals(validationResult.getMemberId().longValue())) {
@@ -111,7 +111,11 @@ public class PrequalificationChecklistReadPlatformServiceImpl implements Prequal
                             dpi = validationResult.getDpi();
                             memberRow.addAll(List.of(memberId, clientName, dpi));
                         }
+                        if (!memberColumnHeaders.contains(policy.getDescription())){
+                            memberColumnHeaders.add(policy.getDescription());
+                        }
                         memberRow.add(validationColor);
+
                         break;
 
                     }
