@@ -277,6 +277,7 @@ public class LoanAccountData {
     private String channelName;
     private String channelDescription;
     private String pointOfSalesName;
+    private String pointOfSalesCode;
 
     public static LoanAccountData importInstanceIndividual(EnumOptionData loanTypeEnumOption, Long clientId, Long productId,
             Long loanOfficerId, LocalDate submittedOnDate, Long fundId, BigDecimal principal, Integer numberOfRepayments,
@@ -829,7 +830,7 @@ public class LoanAccountData {
                 .setLoanScheduleProcessingType(acc.loanScheduleProcessingType).setLoanScheduleTypeOptions(loanScheduleTypeOptions)
                 .setChannelName(acc.channelName).setChannelDescription(acc.channelDescription).setChannelId(acc.channelId)
                 .setPointOfSalesName(acc.pointOfSalesName).setLoanScheduleProcessingTypeOptions(loanScheduleProcessingTypeOptions)
-                .setBlockStatus(acc.blockStatus);
+                .setBlockStatus(acc.blockStatus).setPointOfSalesCode(acc.pointOfSalesCode);
     }
 
     public static LoanAccountData associationsAndTemplate(final LoanAccountData acc, final Collection<LoanProductData> productOptions,
@@ -1077,7 +1078,8 @@ public class LoanAccountData {
                 .setEnableInstallmentLevelDelinquency(acc.enableInstallmentLevelDelinquency).setLoanScheduleType(acc.loanScheduleType)
                 .setLoanScheduleProcessingType(acc.loanScheduleProcessingType).setLoanScheduleTypeOptions(acc.loanScheduleTypeOptions)
                 .setChannelId(acc.channelId).setChannelName(acc.channelName).setChannelDescription(acc.channelDescription)
-                .setPointOfSalesName(acc.pointOfSalesName).setLoanScheduleProcessingTypeOptions(acc.loanScheduleProcessingTypeOptions);
+                .setPointOfSalesName(acc.pointOfSalesName).setPointOfSalesCode(acc.pointOfSalesCode)
+                .setLoanScheduleProcessingTypeOptions(acc.loanScheduleProcessingTypeOptions);
     }
 
     public static LoanAccountData withLoanCalendarData(final LoanAccountData acc, final CalendarData calendarData) {
@@ -1139,7 +1141,8 @@ public class LoanAccountData {
                 .setEnableInstallmentLevelDelinquency(acc.enableInstallmentLevelDelinquency).setLoanScheduleType(acc.loanScheduleType)
                 .setLoanScheduleProcessingType(acc.loanScheduleProcessingType).setLoanScheduleTypeOptions(acc.loanScheduleTypeOptions)
                 .setChannelId(acc.channelId).setChannelName(acc.channelName).setChannelDescription(acc.channelDescription)
-                .setPointOfSalesName(acc.pointOfSalesName).setLoanScheduleProcessingTypeOptions(acc.loanScheduleProcessingTypeOptions);
+                .setPointOfSalesName(acc.pointOfSalesName).setPointOfSalesCode(acc.pointOfSalesCode)
+                .setLoanScheduleProcessingTypeOptions(acc.loanScheduleProcessingTypeOptions);
     }
 
     public static LoanAccountData withOriginalSchedule(final LoanAccountData acc, final LoanScheduleData originalSchedule) {
@@ -1204,7 +1207,8 @@ public class LoanAccountData {
                 .setEnableInstallmentLevelDelinquency(acc.enableInstallmentLevelDelinquency).setLoanScheduleType(acc.loanScheduleType)
                 .setLoanScheduleProcessingType(acc.loanScheduleProcessingType).setLoanScheduleTypeOptions(acc.loanScheduleTypeOptions)
                 .setChannelId(acc.channelId).setChannelName(acc.channelName).setChannelDescription(acc.channelDescription)
-                .setPointOfSalesName(acc.pointOfSalesName).setLoanScheduleProcessingTypeOptions(acc.loanScheduleProcessingTypeOptions);
+                .setPointOfSalesName(acc.pointOfSalesName).setPointOfSalesCode(acc.pointOfSalesCode)
+                .setLoanScheduleProcessingTypeOptions(acc.loanScheduleProcessingTypeOptions);
     }
 
     public static final Comparator<LoanAccountData> ClientNameComparator = (loan1, loan2) -> {

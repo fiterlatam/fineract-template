@@ -43,4 +43,6 @@ public interface ChannelReadWritePlatformService {
 
     @Transactional
     CommandProcessingResult update(JsonCommand command, Long id);
+
+    ChannelData findByNameType(String name, Integer channelType);
 }

@@ -24,15 +24,27 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.github.resilience4j.retry.annotation.Retry;
+import jakarta.annotation.PostConstruct;
 import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.accounting.journalentry.service.JournalEntryWritePlatformService;
 import org.apache.fineract.cob.exceptions.LoanAccountLockCannotBeOverruledException;
@@ -68,6 +80,7 @@ import org.apache.fineract.infrastructure.core.service.MathUtil;
 import org.apache.fineract.infrastructure.dataqueries.data.EntityTables;
 import org.apache.fineract.infrastructure.dataqueries.data.StatusEnum;
 import org.apache.fineract.infrastructure.dataqueries.service.EntityDatatableChecksWritePlatformService;
+import org.apache.fineract.infrastructure.event.business.BusinessEventListener;
 import org.apache.fineract.infrastructure.event.business.domain.loan.LoanAcceptTransferBusinessEvent;
 import org.apache.fineract.infrastructure.event.business.domain.loan.LoanAdjustTransactionBusinessEvent;
 import org.apache.fineract.infrastructure.event.business.domain.loan.LoanBalanceChangedBusinessEvent;
@@ -144,10 +157,10 @@ import org.apache.fineract.portfolio.collectionsheet.command.SingleDisbursalComm
 import org.apache.fineract.portfolio.collectionsheet.command.SingleRepaymentCommand;
 import org.apache.fineract.portfolio.group.domain.Group;
 import org.apache.fineract.portfolio.group.exception.GroupNotActiveException;
+import org.apache.fineract.portfolio.interestrates.domain.InterestRate;
 import org.apache.fineract.portfolio.loanaccount.api.LoanApiConstants;
 import org.apache.fineract.portfolio.loanaccount.command.LoanUpdateCommand;
 import org.apache.fineract.portfolio.loanaccount.data.HolidayDetailDTO;
-import org.apache.fineract.portfolio.loanaccount.data.LoanInterestChangeData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanRescheduleData;
 import org.apache.fineract.portfolio.loanaccount.data.ScheduleGeneratorDTO;
 import org.apache.fineract.portfolio.loanaccount.domain.ChangedTransactionDetail;
@@ -281,6 +294,11 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     private final PlatformSecurityContext platformSecurityContext;
     private final PaymentDetailRepository paymentDetailRepository;
 
+    @PostConstruct
+    public void registerForNotification() {
+        businessEventNotifierService.addPostBusinessEventListener(LoanDisbursalBusinessEvent.class, new DisbursementEventListener());
+    }
+
     @Transactional
     @Override
     public CommandProcessingResult disburseGLIMLoan(final Long loanId, final JsonCommand command) {
@@ -308,7 +326,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         if (StringUtils.isBlank(channelName)) {
             throw new GeneralPlatformDomainRuleException("validation.msg.channel.is.blank", "Channel is blank");
         }
-        final ChannelData channelData = this.channelReadWritePlatformService.findByName(channelName);
+        final ChannelData channelData = this.channelReadWritePlatformService.findByNameType(channelName,
+                ChannelType.DISBURSEMENT.getValue());
         if (channelData == null) {
             throw new GeneralPlatformDomainRuleException("validation.msg.channel.not.found", "Channel not found", channelName);
         }
@@ -1033,7 +1052,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         changes.put("locale", command.locale());
         changes.put("dateFormat", command.dateFormat());
         changes.put("paymentTypeId", command.longValueOfParameterNamed("paymentTypeId"));
-        changes.put("channelHash", command.stringValueOfParameterNamed("channelHash"));
+        changes.put("pointOfSalesCode", command.stringValueOfParameterNamed("pointOfSalesCode"));
+
         final String noteText = command.stringValueOfParameterNamed("note");
         if (StringUtils.isNotBlank(noteText)) {
             changes.put("note", noteText);
@@ -1043,19 +1063,11 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         }
         Loan loan = this.loanAssembler.assembleFrom(loanId);
         final LoanProduct loanProduct = loan.loanProduct();
-
-        boolean isLoanRepaymentImport = command.booleanObjectValueOfParameterNamed("isLoanRepaymentImport");
-        ChannelData channelData;
-        if(isLoanRepaymentImport){
-            final Long repaymentChannelId = command.longValueOfParameterNamed("repaymentChannelId");
-            channelData = this.validateRepaymentChannelId(repaymentChannelId, loanProduct);
-        } else {
-            channelData = this.validateRepaymentChannel(channelName, loanProduct);
-        }
+        final ChannelData channelData = this.validateRepaymentChannel(channelName, loanProduct);
         final Long channelId = channelData.getId();
         changes.put("channelId", channelId);
-        final Long repaymentBankId = command.longValueOfParameterNamed("repaymentBankId");
-        changes.put("repaymentBankId", repaymentBankId);
+        changes.put("channelHash", channelData.getHash());
+
         final PaymentDetail paymentDetail = this.paymentDetailWritePlatformService.createAndPersistPaymentDetail(command, changes);
         final Boolean isHolidayValidationDone = false;
         final HolidayDetailDTO holidayDetailDto = null;
@@ -1108,7 +1120,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         if (StringUtils.isBlank(channelName)) {
             throw new GeneralPlatformDomainRuleException("validation.msg.channel.is.blank", "Channel is blank");
         }
-        final ChannelData channelData = this.channelReadWritePlatformService.findByName(channelName);
+        final ChannelData channelData = this.channelReadWritePlatformService.findByNameType(channelName, ChannelType.REPAYMENT.getValue());
         if (channelData == null) {
             throw new GeneralPlatformDomainRuleException("validation.msg.channel.not.found", "Channel not found", channelName);
         }
@@ -1127,33 +1139,6 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             }
         } else {
             throw new GeneralPlatformDomainRuleException("validation.msg.channel.not.allowed", "Channel is not allowed", channelName);
-        }
-        return channelData;
-    }
-
-    private ChannelData validateRepaymentChannelId(final Long repaymentChannelId, final LoanProduct loanProduct) {
-        if (repaymentChannelId == null) {
-            throw new GeneralPlatformDomainRuleException("validation.msg.channel.is.blank", "Channel is blank");
-        }
-        final ChannelData channelData = this.channelReadWritePlatformService.findById(repaymentChannelId);
-        if (channelData == null) {
-            throw new GeneralPlatformDomainRuleException("validation.msg.channel.not.found", "Channel not found", repaymentChannelId);
-        }
-        if (!channelData.getActive()) {
-            throw new GeneralPlatformDomainRuleException("validation.msg.channel.not.active", "Channel is not active", repaymentChannelId);
-        }
-        if (ChannelType.REPAYMENT.getValue().longValue() != channelData.getChannelType().getId()) {
-            throw new GeneralPlatformDomainRuleException("validation.msg.channel.not.repayment", "Channel is not disbursement repayment",
-                    repaymentChannelId);
-        }
-        final List<Channel> repaymentChannels = loanProduct.getRepaymentChannels();
-        if (CollectionUtils.isNotEmpty(repaymentChannels)) {
-            final Long channelId = channelData.getId();
-            if (repaymentChannels.stream().noneMatch(repaymentChannel -> repaymentChannel.getId().equals(channelId))) {
-                throw new GeneralPlatformDomainRuleException("validation.msg.channel.not.allowed", "Channel is not allowed", repaymentChannelId);
-            }
-        } else {
-            throw new GeneralPlatformDomainRuleException("validation.msg.channel.not.allowed", "Channel is not allowed", repaymentChannelId);
         }
         return channelData;
     }
@@ -3307,7 +3292,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         if (StringUtils.isBlank(channelName)) {
             throw new GeneralPlatformDomainRuleException("validation.msg.channel.is.blank", "Channel is blank");
         }
-        final ChannelData channelData = this.channelReadWritePlatformService.findByName(channelName);
+        final ChannelData channelData = this.channelReadWritePlatformService.findByNameType(channelName, ChannelType.REPAYMENT.getValue());
         if (channelData == null) {
             throw new GeneralPlatformDomainRuleException("validation.msg.channel.not.found", "Channel not found", channelName);
         }
@@ -3338,146 +3323,95 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         return channelData;
     }
 
+    private final class DisbursementEventListener implements BusinessEventListener<LoanDisbursalBusinessEvent> {
+
+        @SuppressWarnings("unused")
+        @Override
+        public void onBusinessEvent(LoanDisbursalBusinessEvent event) {
+            final Loan loan = event.get();
+            recalculateInterestRate(loan);
+        }
+    }
+
     @Override
-    @Transactional
-    public void recalculateInterestAfterInterestRateChange() throws JobExecutionException {
-        List<Throwable> exceptions = new ArrayList<>();
-        final MaximumCreditRateConfigurationData maximumCreditRateConfigurationData = this.loanProductReadPlatformService
-                .retrieveMaximumCreditRateConfigurationData();
-        final BigDecimal maximumLegalAnnualNominalRate = maximumCreditRateConfigurationData.getAnnualNominalRate();
-        final LoanInterestChangeMapper rm = new LoanInterestChangeMapper();
-        final String sql = "SELECT " + rm.schema();
-        List<LoanInterestChangeData> loanInterestChangeDataList = this.jdbcTemplate.query(sql, rm);
-        if (CollectionUtils.isNotEmpty(loanInterestChangeDataList)) {
-            final String locale = "en";
-            final String dateFormat = "dd MMMM yyyy";
-            final String submittedOnDate = DateUtils.format(DateUtils.getBusinessLocalDate(), dateFormat, Locale.forLanguageTag(locale));
-            LoanRescheduleRequestData loanRescheduleReasons = this.loanRescheduleRequestReadPlatformService
-                    .retrieveAllRescheduleReasons(RescheduleLoansApiConstants.LOAN_RESCHEDULE_REASON);
-            Long rescheduleReasonId = null;
-            for (CodeValueData codeValueData : loanRescheduleReasons.getRescheduleReasons()) {
-                if (codeValueData.getName().equalsIgnoreCase("Recalcular la tasa de interés al máximo legal")) {
-                    rescheduleReasonId = codeValueData.getId();
-                    break;
-                }
+    public void recalculateInterestRate(final Loan loan) {
+        final Long loanId = loan.getId();
+        final InterestRate interestRate = loan.getLoanProduct().getInterestRate();
+        if (interestRate != null) {
+            BigDecimal annualNominalInterestRate = loan.getLoanProductRelatedDetail().getAnnualNominalInterestRate();
+            if (loan.getLoanProduct().isRequirePoints()) {
+                final Long interestRatePoints = ObjectUtils.defaultIfNull(loan.getLoanProductRelatedDetail().getInterestRatePoints(), 0L);
+                annualNominalInterestRate = annualNominalInterestRate.add(BigDecimal.valueOf(interestRatePoints));
             }
-            final JsonObject rescheduleJsonObject = new JsonObject();
-            rescheduleJsonObject.addProperty("dateFormat", dateFormat);
-            rescheduleJsonObject.addProperty("locale", locale);
-            rescheduleJsonObject.addProperty("rescheduleReasonId", rescheduleReasonId);
-            rescheduleJsonObject.addProperty("submittedOnDate", submittedOnDate);
-            rescheduleJsonObject.addProperty("rescheduleReasonComment", "Recalcular la tasa de interés al máximo legal");
-            rescheduleJsonObject.addProperty("adjustedDueDate", "");
-            rescheduleJsonObject.addProperty("graceOnPrincipal", "");
-            rescheduleJsonObject.addProperty("extraTerms", "");
-            for (final LoanInterestChangeData loanInterestChangeData : loanInterestChangeDataList) {
-                BigDecimal newInterestRate = loanInterestChangeData.getCurrentInterestRate();
-                if (newInterestRate.compareTo(maximumLegalAnnualNominalRate) > 0) {
-                    continue;
+            final BigDecimal currentRate = interestRate.getCurrentRate();
+            final LocalDate appliedOnDate = interestRate.getAppliedOnDate();
+            final LoanRepaymentScheduleInstallment firstInstallment = loan.fetchRepaymentScheduleInstallment(1);
+            final LocalDate firstInstallmentFromDate = firstInstallment.getFromDate();
+            if (!annualNominalInterestRate.equals(currentRate) && DateUtils.isAfter(appliedOnDate, firstInstallmentFromDate)) {
+                final LocalDate actualMaturityDate = loan.getMaturityDate();
+                if (DateUtils.isAfter(appliedOnDate, actualMaturityDate)) {
+                    throw new GeneralPlatformDomainRuleException("error.msg.loan.interest.rate.applied.on.date.is.after.maturity.date",
+                            "Interest rate applied on date is after the loan maturity date", appliedOnDate, actualMaturityDate);
                 }
-                rescheduleJsonObject.addProperty("newInterestRate", newInterestRate);
-                final Long loanId = loanInterestChangeData.getLoanId();
-                final LocalDate rescheduleFromDate = loanInterestChangeData.getAppliedOnDate();
-                final String rescheduleFromDateString = DateUtils.format(rescheduleFromDate, dateFormat, Locale.forLanguageTag(locale));
+                final MaximumCreditRateConfigurationData maximumCreditRateConfigurationData = this.loanProductReadPlatformService
+                        .retrieveMaximumCreditRateConfigurationData();
+                final BigDecimal maximumLegalAnnualNominalRate = maximumCreditRateConfigurationData.getAnnualNominalRate();
+                if (currentRate.compareTo(maximumLegalAnnualNominalRate) > 0) {
+                    throw new GeneralPlatformDomainRuleException("error.msg.loan.interest.rate.exceeds.maximum.legal.rate",
+                            "La tasa de interés del préstamo: " + loan.getId() + " excede la tasa de interés máxima legal");
+                }
+                final String locale = "en";
+                final String dateFormat = "dd MMMM yyyy";
+                final String submittedOnDate = DateUtils.format(DateUtils.getBusinessLocalDate(), dateFormat,
+                        Locale.forLanguageTag(locale));
+                LoanRescheduleRequestData loanRescheduleReasons = this.loanRescheduleRequestReadPlatformService
+                        .retrieveAllRescheduleReasons(RescheduleLoansApiConstants.LOAN_RESCHEDULE_REASON);
+                Long rescheduleReasonId = null;
+                for (CodeValueData codeValueData : loanRescheduleReasons.getRescheduleReasons()) {
+                    if (codeValueData.getName().equalsIgnoreCase("Recalcular la tasa de interés al máximo legal")) {
+                        rescheduleReasonId = codeValueData.getId();
+                        break;
+                    }
+                }
+                final JsonObject rescheduleJsonObject = new JsonObject();
+                rescheduleJsonObject.addProperty("dateFormat", dateFormat);
+                rescheduleJsonObject.addProperty("locale", locale);
+                rescheduleJsonObject.addProperty("rescheduleReasonId", rescheduleReasonId);
+                rescheduleJsonObject.addProperty("submittedOnDate", submittedOnDate);
+                rescheduleJsonObject.addProperty("rescheduleReasonComment", "Recalcular la tasa de interés al máximo legal");
+                rescheduleJsonObject.addProperty("adjustedDueDate", "");
+                rescheduleJsonObject.addProperty("graceOnPrincipal", "");
+                rescheduleJsonObject.addProperty("extraTerms", "");
+                rescheduleJsonObject.addProperty("newInterestRate", currentRate);
+                final String rescheduleFromDateString = DateUtils.format(appliedOnDate, dateFormat, Locale.forLanguageTag(locale));
                 rescheduleJsonObject.addProperty("rescheduleFromDate", rescheduleFromDateString);
                 rescheduleJsonObject.addProperty("loanId", loanId);
                 final String rescheduleRequestBodyAsJson = rescheduleJsonObject.toString();
                 CommandWrapper commandWrapper = new CommandWrapperBuilder()
                         .createLoanRescheduleRequest(RescheduleLoansApiConstants.ENTITY_NAME).withJson(rescheduleRequestBodyAsJson).build();
-                try {
-                    CommandProcessingResult commandProcessingResult = commandsSourceWritePlatformService.logCommandSource(commandWrapper);
+
+                CommandProcessingResult commandProcessingResult = commandsSourceWritePlatformService.logCommandSource(commandWrapper);
+                if (commandProcessingResult.getResourceId() != null) {
+                    final Long loanRescheduleId = commandProcessingResult.getResourceId();
+                    final JsonObject approvalJsonObject = new JsonObject();
+                    final Boolean isJobTriggered = true;
+                    approvalJsonObject.addProperty("dateFormat", dateFormat);
+                    approvalJsonObject.addProperty("locale", locale);
+                    approvalJsonObject.addProperty("isJobTriggered", isJobTriggered);
+                    approvalJsonObject.addProperty("approvedOnDate", submittedOnDate);
+                    final String approvalRequestBodyAsJson = approvalJsonObject.toString();
+                    commandWrapper = new CommandWrapperBuilder()
+                            .approveLoanRescheduleRequest(RescheduleLoansApiConstants.ENTITY_NAME, loanRescheduleId)
+                            .withJson(approvalRequestBodyAsJson).build();
+                    commandProcessingResult = commandsSourceWritePlatformService.logCommandSource(commandWrapper);
                     if (commandProcessingResult.getResourceId() != null) {
-                        final Long loanRescheduleId = commandProcessingResult.getResourceId();
-                        final JsonObject approvalJsonObject = new JsonObject();
-                        final Boolean isJobTriggered = true;
-                        approvalJsonObject.addProperty("dateFormat", dateFormat);
-                        approvalJsonObject.addProperty("locale", locale);
-                        approvalJsonObject.addProperty("isJobTriggered", isJobTriggered);
-                        approvalJsonObject.addProperty("approvedOnDate", submittedOnDate);
-                        final String approvalRequestBodyAsJson = approvalJsonObject.toString();
-                        commandWrapper = new CommandWrapperBuilder()
-                                .approveLoanRescheduleRequest(RescheduleLoansApiConstants.ENTITY_NAME, loanRescheduleId)
-                                .withJson(approvalRequestBodyAsJson).build();
-                        commandProcessingResult = commandsSourceWritePlatformService.logCommandSource(commandWrapper);
-                        if (commandProcessingResult.getResourceId() != null) {
-                            final String successMessage = "Reprogramar la cuenta de préstamo: " + loanId
-                                    + " con la tasa de interés al máximo legal";
-                            log.info(successMessage);
-                        }
+                        final String successMessage = "Reprogramar la cuenta de préstamo: " + loanId
+                                + " con la tasa de interés al máximo legal";
+                        log.info(successMessage);
                     }
-                } catch (final PlatformApiDataValidationException e) {
-                    final List<ApiParameterError> errors = e.getErrors();
-                    for (final ApiParameterError error : errors) {
-                        log.error("Reprogramar la cuenta de préstamo {} falló con el mensaje: {}", loanId, error.getDeveloperMessage(), e);
-                    }
-                    exceptions.add(e);
-                } catch (final AbstractPlatformDomainRuleException e) {
-                    log.error("Reprogramar la cuenta de préstamo: {} falló con el mensaje: {}", loanId, e.getDefaultUserMessage(), e);
-                    exceptions.add(e);
-                } catch (Exception e) {
-                    log.error("Reprogramar la cuenta de préstamo: {} falló con el mensaje: {}", loanId, e.getMessage(), e);
-                    exceptions.add(e);
                 }
             }
         }
-        if (!exceptions.isEmpty()) {
-            throw new JobExecutionException(exceptions);
-        }
     }
 
-    private static final class LoanInterestChangeMapper implements RowMapper<LoanInterestChangeData> {
-
-        public String schema() {
-            return """
-                    	ml.id AS "loanId",
-                    	ml.annual_nominal_interest_rate AS "annualNominalInterestRate",
-                    	COALESCE(ml.interest_rate_points, 0) AS "interestRatePoints",
-                    	MIN(next_schedule.duedate) AS "nextDueDate",
-                    	mir.current_rate AS "currentInterestRate",
-                    	mir.appliedon_date AS "appliedOnDate"
-                    FROM m_loan ml
-                    INNER JOIN m_product_loan mpl ON mpl.id = ml.product_id
-                    INNER JOIN m_interest_rate mir ON mir.id = mpl.interest_rate_id
-                    INNER JOIN (
-                    	SELECT sch.*
-                    	FROM m_loan_repayment_schedule sch
-                    	LEFT JOIN m_loan_arrears_aging mlaa ON mlaa.loan_id = sch.loan_id
-                        WHERE sch.completed_derived = FALSE AND (mlaa.overdue_since_date_derived IS NULL OR sch.fromdate > mlaa.overdue_since_date_derived)
-                        AND (COALESCE(sch.penalty_charges_amount, 0) - COALESCE(sch.penalty_charges_completed_derived, 0) - COALESCE(sch.penalty_charges_writtenoff_derived, 0) - COALESCE(sch.penalty_charges_waived_derived, 0)) <= 0
-                        ORDER BY sch.duedate ASC
-                    ) next_schedule ON next_schedule.loan_id = ml.id
-                    LEFT JOIN (
-                                SELECT DISTINCT ON (ltv.loan_id) ltv.loan_id, ltv.applicable_date, ltv.decimal_value
-                                FROM m_loan_term_variations ltv
-                                WHERE ltv.term_type = 10 AND ltv.is_active = TRUE AND ltv.applied_on_loan_status = 300
-                                ORDER BY ltv.loan_id, ltv.id DESC
-                    ) term_variation ON term_variation.loan_id = ml.id
-                    WHERE
-                    	COALESCE(ml.interest_rate_points, 0) + ml.annual_nominal_interest_rate <> mir.current_rate
-                    	AND next_schedule.duedate >= mir.appliedon_date
-                    	AND ml.loan_status_id = 300
-                    	AND (CASE WHEN term_variation.decimal_value = mir.current_rate AND term_variation.applicable_date >= mir.appliedon_date THEN FALSE ELSE TRUE END) = TRUE
-                    GROUP BY
-                    	ml.id,
-                    	mir.current_rate,
-                    	mir.appliedon_date
-                    ORDER BY
-                    	ml.id
-                    """;
-        }
-
-        @Override
-        public LoanInterestChangeData mapRow(@NotNull final ResultSet rs, @SuppressWarnings("unused") final int rowNum)
-                throws SQLException {
-            final Long loanId = JdbcSupport.getLong(rs, "loanId");
-            final BigDecimal annualNominalInterestRate = rs.getBigDecimal("annualNominalInterestRate");
-            final Long interestRatePoints = rs.getLong("annualNominalInterestRate");
-            final LocalDate nextDueDate = JdbcSupport.getLocalDate(rs, "nextDueDate");
-            final BigDecimal currentInterestRate = rs.getBigDecimal("currentInterestRate");
-            final LocalDate appliedOnDate = JdbcSupport.getLocalDate(rs, "appliedOnDate");
-            return LoanInterestChangeData.builder().loanId(loanId).annualNominalInterestRate(annualNominalInterestRate)
-                    .interestRatePoints(interestRatePoints).currentInterestRate(currentInterestRate).nextDueDate(nextDueDate)
-                    .appliedOnDate(appliedOnDate).build();
-        }
-    }
 }

@@ -279,7 +279,7 @@ public final class LoanEventApiJsonValidator {
 
         final Set<String> transactionParameters = new HashSet<>(Arrays.asList("transactionDate", "transactionAmount", "externalId", "note",
                 "locale", "dateFormat", "paymentTypeId", "accountNumber", "checkNumber", "routingCode", "receiptNumber", "bankNumber",
-                "loanId", "channelHash", "channelName", "repaymentChannelId", "repaymentBankId"));
+                "loanId", "channelHash", "channelName", "pointOfSalesCode"));
 
         final Type typeOfMap = new TypeToken<Map<String, Object>>() {}.getType();
         this.fromApiJsonHelper.checkForUnsupportedParameters(typeOfMap, json, transactionParameters);
@@ -341,6 +341,7 @@ public final class LoanEventApiJsonValidator {
 
         final String channelHash = this.fromApiJsonHelper.extractStringNamed("channelHash", element);
         baseDataValidator.reset().parameter("channelHash").value(channelHash).notExceedingLengthOf(5000);
+
     }
 
     public void validateTransactionWithNoAmount(final String json) {
