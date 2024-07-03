@@ -19,6 +19,7 @@
 package org.apache.fineract.custom.portfolio.buyprocess.service;
 
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
 import jakarta.persistence.PersistenceException;
 import java.time.LocalDate;
 import java.util.Collections;
@@ -26,8 +27,6 @@ import java.util.List;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.apache.fineract.commands.domain.CommandWrapper;
-import org.apache.fineract.commands.service.CommandWrapperBuilder;
 import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformService;
 import org.apache.fineract.custom.infrastructure.core.service.CustomDateUtils;
 import org.apache.fineract.custom.portfolio.buyprocess.data.ApproveLoanPayloadData;
@@ -45,10 +44,13 @@ import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuilder;
 import org.apache.fineract.infrastructure.core.exception.PlatformDataIntegrityException;
+import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
 import org.apache.fineract.infrastructure.core.serialization.GoogleGsonSerializerHelper;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.core.service.database.DatabaseSpecificSQLGenerator;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
+import org.apache.fineract.portfolio.loanaccount.service.LoanApplicationWritePlatformService;
+import org.apache.fineract.portfolio.loanaccount.service.LoanWritePlatformService;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProduct;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -66,16 +68,24 @@ public class ClientBuyProcessReadWritePlatformServiceImpl implements ClientBuyPr
     private final ClientBuyProcessDataValidator validatorClass;
     private final PlatformSecurityContext context;
     private final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService;
+    private final LoanWritePlatformService loanWritePlatformService;
+    private final FromJsonHelper fromApiJsonHelper;
+    private final LoanApplicationWritePlatformService loanApplicationWritePlatformService;
 
     @Autowired
     public ClientBuyProcessReadWritePlatformServiceImpl(final JdbcTemplate jdbcTemplate, final DatabaseSpecificSQLGenerator sqlGenerator,
             final ClientBuyProcessDataValidator validatorClass, final PlatformSecurityContext context,
-            final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService) {
+            final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService,
+            LoanWritePlatformService loanWritePlatformService, FromJsonHelper fromApiJsonHelper,
+            LoanApplicationWritePlatformService loanApplicationWritePlatformService) {
         this.jdbcTemplate = jdbcTemplate;
         this.sqlGenerator = sqlGenerator;
         this.validatorClass = validatorClass;
         this.context = context;
         this.commandsSourceWritePlatformService = commandsSourceWritePlatformService;
+        this.loanWritePlatformService = loanWritePlatformService;
+        this.fromApiJsonHelper = fromApiJsonHelper;
+        this.loanApplicationWritePlatformService = loanApplicationWritePlatformService;
     }
 
     @Autowired
@@ -153,17 +163,16 @@ public class ClientBuyProcessReadWritePlatformServiceImpl implements ClientBuyPr
                 .channelName(entity.getChannelName()).build();
 
         // Execute create loan command
-        log.info("CLinet Buy Proses Disburse " + entity.getCreditId());
+        log.info("Client Buy Process Disburse {} ", entity.getCreditId());
 
         GsonBuilder gsonBuilder = GoogleGsonSerializerHelper.createGsonBuilder();
         gsonBuilder.registerTypeAdapter(LocalDate.class, new DateSerializer(CustomDateUtils.SPANISH_DATE_FORMAT));
 
         String payload = gsonBuilder.create().toJson(payloadData);
-
-        final CommandWrapper commandRequest = new CommandWrapperBuilder() //
-                .disburseLoanApplication(entity.getLoanId()).withJson(payload) //
-                .build(); //
-        CommandProcessingResult result = commandsSourceWritePlatformService.logCommandSource(commandRequest);
+        JsonElement jsonElement = fromApiJsonHelper.parse(payload);
+        JsonCommand jsonCommand = new JsonCommand(null, payload, jsonElement, fromApiJsonHelper, null, null, null, null, null, null, null,
+                null, null, null, null, null, null);
+        loanWritePlatformService.disburseLoan(entity.getLoanId(), jsonCommand, false);
 
     }
 
@@ -179,10 +188,10 @@ public class ClientBuyProcessReadWritePlatformServiceImpl implements ClientBuyPr
         gsonBuilder.registerTypeAdapter(LocalDate.class, new DateSerializer(CustomDateUtils.SPANISH_DATE_FORMAT));
 
         String payload = gsonBuilder.create().toJson(payloadData);
-        final CommandWrapper commandRequest = new CommandWrapperBuilder() //
-                .approveLoanApplication(entity.getLoanId()).withJson(payload) //
-                .build(); //
-        CommandProcessingResult result = commandsSourceWritePlatformService.logCommandSource(commandRequest);
+        JsonElement jsonElement = fromApiJsonHelper.parse(payload);
+        JsonCommand jsonCommand = new JsonCommand(null, payload, jsonElement, fromApiJsonHelper, null, null, null, null, null, null, null,
+                null, null, null, null, null, null);
+        loanApplicationWritePlatformService.approveApplication(entity.getLoanId(), jsonCommand);
     }
 
     private void createLoanApplication(ClientBuyProcess entity, LoanProduct prodiuctEntity) {
@@ -218,10 +227,10 @@ public class ClientBuyProcessReadWritePlatformServiceImpl implements ClientBuyPr
         gsonBuilder.registerTypeAdapter(LocalDate.class, new DateSerializer(CustomDateUtils.SPANISH_DATE_FORMAT));
 
         String payload = gsonBuilder.create().toJson(payloadData);
-        final CommandWrapper commandRequest = new CommandWrapperBuilder() //
-                .createLoanApplication().withJson(payload) //
-                .build(); //
-        CommandProcessingResult result = commandsSourceWritePlatformService.logCommandSource(commandRequest);
+        JsonElement jsonElement = fromApiJsonHelper.parse(payload);
+        JsonCommand jsonCommand = new JsonCommand(null, payload, jsonElement, fromApiJsonHelper, null, null, null, null, null, null, null,
+                null, null, null, null, null, null);
+        CommandProcessingResult result = loanApplicationWritePlatformService.submitApplication(jsonCommand);
 
         // Set Loan ID
         entity.setLoanId(result.getLoanId());
@@ -231,4 +240,5 @@ public class ClientBuyProcessReadWritePlatformServiceImpl implements ClientBuyPr
         throw new PlatformDataIntegrityException("error.msg.clientbuyprocess.unknown.data.integrity.issue",
                 "Unknown data integrity issue with resource." + dve.getMessage());
     }
+
 }
