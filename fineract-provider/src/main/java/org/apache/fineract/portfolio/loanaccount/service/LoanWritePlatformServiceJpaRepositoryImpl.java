@@ -1034,7 +1034,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         changes.put("locale", command.locale());
         changes.put("dateFormat", command.dateFormat());
         changes.put("paymentTypeId", command.longValueOfParameterNamed("paymentTypeId"));
-        changes.put("channelHash", command.stringValueOfParameterNamed("channelHash"));
+        changes.put("pointOfSalesCode", command.stringValueOfParameterNamed("pointOfSalesCode"));
+
         final String noteText = command.stringValueOfParameterNamed("note");
         if (StringUtils.isNotBlank(noteText)) {
             changes.put("note", noteText);
@@ -1047,6 +1048,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         final ChannelData channelData = this.validateRepaymentChannel(channelName, loanProduct);
         final Long channelId = channelData.getId();
         changes.put("channelId", channelId);
+        changes.put("channelHash", channelData.getHash());
+
         final PaymentDetail paymentDetail = this.paymentDetailWritePlatformService.createAndPersistPaymentDetail(command, changes);
         final Boolean isHolidayValidationDone = false;
         final HolidayDetailDTO holidayDetailDto = null;
