@@ -119,5 +119,5 @@ public interface LoanWritePlatformService {
 
     void recalculateInterestForMaximumLegalRate() throws JobExecutionException;
 
-    void recalculateInterestAfterInterestRateChange() throws JobExecutionException;
+    void recalculateInterestRate(Loan loan);
 }

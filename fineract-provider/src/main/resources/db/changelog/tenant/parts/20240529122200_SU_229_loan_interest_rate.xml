@@ -397,4 +397,12 @@
         </insert>
     </changeSet>
 
+    <changeSet author="fineract" id="22">
+        <sql>
+            <![CDATA[
+                DELETE FROM job WHERE name = 'Recalculate Loan Interest After Interest Rate Change';
+            ]]>
+        </sql>
+    </changeSet>
+
 </databaseChangeLog>
