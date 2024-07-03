@@ -87,6 +87,7 @@ import org.apache.fineract.portfolio.charge.domain.ChargeTimeType;
 import org.apache.fineract.portfolio.charge.service.ChargeReadPlatformService;
 import org.apache.fineract.portfolio.client.data.ClientAdditionalFieldsData;
 import org.apache.fineract.portfolio.client.data.ClientData;
+import org.apache.fineract.portfolio.client.data.PointOfSalesData;
 import org.apache.fineract.portfolio.client.domain.Client;
 import org.apache.fineract.portfolio.client.domain.ClientEnumerations;
 import org.apache.fineract.portfolio.client.domain.LegalForm;
@@ -835,7 +836,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                         cch.name AS channel_name,
                         cch.id AS channel_id,
                         cch.description AS channel_description,
-                        pos.name AS point_of_sales_name
+                        pos.name AS point_of_sales_name,
+                        pos.code AS point_of_sales_code
                     FROM
                         m_loan l
                         JOIN m_product_loan lp ON lp.id = l.product_id
@@ -871,6 +873,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                         LEFT JOIN (
                             SELECT
                                 ps.name,
+                                ps.code,
                                 cbp.loan_id
                             FROM
                                 custom.c_client_ally_point_of_sales ps
@@ -1213,6 +1216,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
             final String channelName = Objects.toString(rs.getString("channel_name"), "Mifos");
             final String channelDescription = rs.getString("channel_description");
             final String pointOfSalesName = rs.getString("point_of_sales_name");
+            final String pointOfSalesCode = rs.getString("point_of_sales_code");
 
             if (!StringUtils.isEmpty(blockStatusName)) {
                 blockStatusData = BlockingReasonsData.builder().id(rs.getLong("blockStatusId")).nameOfReason(blockStatusName)
@@ -1243,6 +1247,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
             basicLoanDetails.setChannelId(channelId);
             basicLoanDetails.setChannelName(channelName);
             basicLoanDetails.setPointOfSalesName(pointOfSalesName);
+            basicLoanDetails.setPointOfSalesCode(pointOfSalesCode);
             final Long interestRatePoints = JdbcSupport.getLong(rs, "interestRatePoints");
             basicLoanDetails.setInterestRatePoints(interestRatePoints);
 
@@ -1577,13 +1582,14 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                     + " fromtran.description as fromTransferDescription, "
                     + " totran.id as toTransferId, totran.is_reversed as toTransferReversed, "
                     + " totran.transaction_date as toTransferDate, totran.amount as toTransferAmount, ch.name as channelName, pd.channel_hash as channelHash,"
-                    + " totran.description as toTransferDescription from m_loan l join m_loan_transaction tr on tr.loan_id = l.id "
+                    + " totran.description as toTransferDescription,capos.id as pointOfSalesId,capos.name as pointOfSalesName, capos.code as pointOfSalesCode, capos.client_ally_id as clientAllyId from m_loan l join m_loan_transaction tr on tr.loan_id = l.id "
                     + " join m_currency rc on rc." + sqlGenerator.escape("code") + " = l.currency_code "
                     + " left JOIN m_payment_detail pd ON tr.payment_detail_id = pd.id"
                     + " left join m_payment_type pt on pd.payment_type_id = pt.id left join m_office office on office.id=tr.office_id"
                     + " left join m_account_transfer_transaction fromtran on fromtran.from_loan_transaction_id = tr.id "
                     + " left join m_account_transfer_transaction totran on totran.to_loan_transaction_id = tr.id "
-                    + " left join custom.c_channel ch on ch.id = pd.channel_id";
+                    + " left join custom.c_channel ch on ch.id = pd.channel_id"
+                    + " left join custom.c_client_ally_point_of_sales capos on capos.code = pd.point_of_sales_code";
         }
 
         @Override
@@ -1621,9 +1627,15 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                 final String bankNumber = rs.getString("bankNumber");
                 final String channelName = rs.getString("channelName");
                 final String channelHash = rs.getString("channelHash");
+                final Long pointOfSalesId = rs.getLong("pointOfSalesId");
+                final String pointOfSalesName = rs.getString("pointOfSalesName");
+                final String poinOfSalesCode = rs.getString("pointOfSalesCode");
+                final Long clientAllyId = rs.getLong("clientAllyId");
+                final PointOfSalesData pointOfSalesData = PointOfSalesData.instance(pointOfSalesId, pointOfSalesName, poinOfSalesCode,
+                        clientAllyId);
 
                 paymentDetailData = new PaymentDetailData(id, paymentType, accountNumber, checkNumber, routingCode, receiptNumber,
-                        bankNumber, channelName, channelHash);
+                        bankNumber, channelName, channelHash, pointOfSalesData);
             }
 
             final LocalDate date = JdbcSupport.getLocalDate(rs, "date");

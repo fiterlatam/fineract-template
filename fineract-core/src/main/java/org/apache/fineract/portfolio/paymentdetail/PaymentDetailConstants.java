@@ -28,5 +28,6 @@ public final class PaymentDetailConstants {
     public static final String bankNumberParamName = "bankNumber";
     public static final String channelHashParamName = "channelHash";
     public static final String channelIdParamName = "channelId";
+    public static final String pointOfSalesCodeParameterName = "pointOfSalesCode";
 
 }
