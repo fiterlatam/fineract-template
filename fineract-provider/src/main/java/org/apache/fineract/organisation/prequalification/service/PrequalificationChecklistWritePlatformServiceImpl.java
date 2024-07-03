@@ -542,7 +542,7 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
         reportParams.put("${loanProductId}", productId);
         reportParams.put("${clientCategorization}", clientCategorization);
         reportParams.put("${clientArea}", clientArea);
-        reportParams.put("${categorization}", groupData.getTopupMembers().size() > 0 ? "RECREDITO" : "NUEVO");
+        reportParams.put("${categorization}", recreditPercent.compareTo(BigDecimal.valueOf(50L)) >= 0 ? "RECREDITO" : "NUEVO");
         reportParams.put("${numberOfMembers}", numberOfMembers);
         reportParams.put("${numberOfRecurringMembers}", numberOfRecurringMembers);
         reportParams.put("${recreditPercent}", recreditPercent.toPlainString());
