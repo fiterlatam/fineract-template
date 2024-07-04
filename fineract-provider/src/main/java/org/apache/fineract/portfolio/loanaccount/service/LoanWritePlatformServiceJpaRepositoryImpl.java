@@ -194,6 +194,7 @@ import org.apache.fineract.portfolio.loanaccount.exception.InvalidLoanTransactio
 import org.apache.fineract.portfolio.loanaccount.exception.InvalidPaidInAdvanceAmountException;
 import org.apache.fineract.portfolio.loanaccount.exception.LoanForeclosureException;
 import org.apache.fineract.portfolio.loanaccount.exception.LoanMultiDisbursementException;
+import org.apache.fineract.portfolio.loanaccount.exception.LoanNotFoundException;
 import org.apache.fineract.portfolio.loanaccount.exception.LoanOfficerAssignmentException;
 import org.apache.fineract.portfolio.loanaccount.exception.LoanOfficerUnassignmentException;
 import org.apache.fineract.portfolio.loanaccount.exception.LoanTransactionNotFoundException;
@@ -3165,21 +3166,26 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             rescheduleJsonObject.addProperty("newInterestRate", maximumLegalAnnualNominalRate);
 
             for (final LoanRescheduleData loanRescheduleData : loaLoanRescheduleDataList) {
-                BigDecimal newInterestRate = maximumLegalAnnualNominalRate;
-                if (loanRescheduleData.getRescheduledAnnualRate() != null) {
-                    if (loanRescheduleData.getRescheduledAnnualRate().compareTo(maximumLegalAnnualNominalRate) == 0) {
-                        continue;
-                    } else if (loanRescheduleData.getRescheduledAnnualRate().compareTo(loanRescheduleData.getAnnualNominalRate()) == 0
-                            && loanRescheduleData.getRescheduledAnnualRate().compareTo(maximumLegalAnnualNominalRate) == 0) {
-                        continue;
-                    } else if (loanRescheduleData.getRescheduledAnnualRate().compareTo(maximumLegalAnnualNominalRate) < 0) {
-                        newInterestRate = loanRescheduleData.getAnnualNominalRate();
-                    }
-                } else if (loanRescheduleData.getAnnualNominalRate().compareTo(maximumLegalAnnualNominalRate) <= 0) {
+                final Long loanId = loanRescheduleData.getId();
+                final Loan loan = this.loanRepository.findById(loanId).orElseThrow(() -> new LoanNotFoundException(loanId));
+                final LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment = loan
+                        .getInstallmentByScheduleFromDate(appliedOnDate);
+                if (loanRepaymentScheduleInstallment == null) {
+                    continue;
+                }
+                final BigDecimal rescheduledAnnualRate = ObjectUtils.defaultIfNull(loanRescheduleData.getRescheduledAnnualRate(),
+                        BigDecimal.ZERO);
+                BigDecimal newInterestRate;
+                if (maximumLegalAnnualNominalRate.compareTo(loanRescheduleData.getAnnualNominalRate()) > 0
+                        && !rescheduledAnnualRate.equals(loanRescheduleData.getAnnualNominalRate())) {
+                    newInterestRate = loanRescheduleData.getAnnualNominalRate();
+                } else if (maximumLegalAnnualNominalRate.compareTo(loanRescheduleData.getAnnualNominalRate()) < 0
+                        && !rescheduledAnnualRate.equals(maximumLegalAnnualNominalRate)) {
+                    newInterestRate = maximumLegalAnnualNominalRate;
+                } else {
                     continue;
                 }
                 rescheduleJsonObject.addProperty("newInterestRate", newInterestRate);
-                final Long loanId = loanRescheduleData.getId();
                 final String rescheduleFromDateString = DateUtils.format(appliedOnDate, dateFormat, Locale.forLanguageTag(locale));
                 rescheduleJsonObject.addProperty("rescheduleFromDate", rescheduleFromDateString);
                 rescheduleJsonObject.addProperty("loanId", loanId);
