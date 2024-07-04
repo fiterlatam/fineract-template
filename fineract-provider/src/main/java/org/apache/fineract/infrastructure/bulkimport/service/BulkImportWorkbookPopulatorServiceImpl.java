@@ -20,6 +20,10 @@ package org.apache.fineract.infrastructure.bulkimport.service;
 
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.ResponseBuilder;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import org.apache.fineract.accounting.glaccount.data.GLAccountData;
 import org.apache.fineract.accounting.glaccount.service.GLAccountReadPlatformService;
 import org.apache.fineract.custom.infrastructure.channel.data.ChannelData;
@@ -114,11 +118,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-
 @Service
 @Primary
 public class BulkImportWorkbookPopulatorServiceImpl implements BulkImportWorkbookPopulatorService {
@@ -147,21 +146,20 @@ public class BulkImportWorkbookPopulatorServiceImpl implements BulkImportWorkboo
 
     @Autowired
     public BulkImportWorkbookPopulatorServiceImpl(final PlatformSecurityContext context,
-                                                  final OfficeReadPlatformService officeReadPlatformService, final StaffReadPlatformService staffReadPlatformService,
-                                                  final ClientReadPlatformService clientReadPlatformService, final CenterReadPlatformService centerReadPlatformService,
-                                                  final GroupReadPlatformService groupReadPlatformService, final FundReadPlatformService fundReadPlatformService,
-                                                  final PaymentTypeReadPlatformService paymentTypeReadPlatformService,
-                                                  final LoanProductReadPlatformService loanProductReadPlatformService,
-                                                  final CurrencyReadPlatformService currencyReadPlatformService, final LoanReadPlatformService loanReadPlatformService,
-                                                  final GLAccountReadPlatformService glAccountReadPlatformService,
-                                                  final SavingsAccountReadPlatformService savingsAccountReadPlatformService,
-                                                  final CodeValueReadPlatformService codeValueReadPlatformService,
-                                                  final SavingsProductReadPlatformService savingsProductReadPlatformService,
-                                                  final ShareProductReadPlatformService shareProductReadPlatformService,
-                                                  final ChargeReadPlatformService chargeReadPlatformService,
-                                                  final DepositProductReadPlatformService depositProductReadPlatformService,
-                                                  final RoleReadPlatformService roleReadPlatformService,
-                                                  final ChannelReadWritePlatformService channelReadPlatformService) {
+            final OfficeReadPlatformService officeReadPlatformService, final StaffReadPlatformService staffReadPlatformService,
+            final ClientReadPlatformService clientReadPlatformService, final CenterReadPlatformService centerReadPlatformService,
+            final GroupReadPlatformService groupReadPlatformService, final FundReadPlatformService fundReadPlatformService,
+            final PaymentTypeReadPlatformService paymentTypeReadPlatformService,
+            final LoanProductReadPlatformService loanProductReadPlatformService,
+            final CurrencyReadPlatformService currencyReadPlatformService, final LoanReadPlatformService loanReadPlatformService,
+            final GLAccountReadPlatformService glAccountReadPlatformService,
+            final SavingsAccountReadPlatformService savingsAccountReadPlatformService,
+            final CodeValueReadPlatformService codeValueReadPlatformService,
+            final SavingsProductReadPlatformService savingsProductReadPlatformService,
+            final ShareProductReadPlatformService shareProductReadPlatformService,
+            final ChargeReadPlatformService chargeReadPlatformService,
+            final DepositProductReadPlatformService depositProductReadPlatformService,
+            final RoleReadPlatformService roleReadPlatformService, final ChannelReadWritePlatformService channelReadPlatformService) {
         this.officeReadPlatformService = officeReadPlatformService;
         this.staffReadPlatformService = staffReadPlatformService;
         this.context = context;
@@ -231,10 +229,10 @@ public class BulkImportWorkbookPopulatorServiceImpl implements BulkImportWorkboo
             } else {
                 throw new GeneralPlatformDomainRuleException("error.msg.unable.to.find.resource", "Unable to find requested resource");
             }
-            if(populator != null){
+            if (populator != null) {
                 populator.populate(workbook, dateFormat);
             }
-           return buildResponse(workbook, entityType);
+            return buildResponse(workbook, entityType);
         } else {
             throw new GeneralPlatformDomainRuleException("error.msg.given.entity.type.null", "Given Entity type is null");
         }
@@ -454,13 +452,15 @@ public class BulkImportWorkbookPopulatorServiceImpl implements BulkImportWorkboo
         List<CurrencyData> currencies = fetchCurrencies();
         final SearchParameters channelSearchParameters = SearchParameters.builder().channelType(ChannelType.REPAYMENT.getValue())
                 .active(true).build();
-        final List<ChannelData> channelOptions = this.channelReadPlatformService.findBySearchParam(channelSearchParameters);;
+        final List<ChannelData> channelOptions = this.channelReadPlatformService.findBySearchParam(channelSearchParameters);
+        ;
         final List<CodeValueData> bankOptions = fetchCodeValuesByCodeName("Bancos");
         List<LoanAccountData> loans = fetchLoanAccounts(officeId);
         final ExtrasSheetPopulator extrasSheetPopulator = new ExtrasSheetPopulator(funds, paymentTypes, currencies);
         extrasSheetPopulator.setBankOptions(bankOptions);
         extrasSheetPopulator.setChannelOptions(channelOptions);
-        return new LoanRepaymentWorkbookPopulator(loans, new OfficeSheetPopulator(offices), new ClientSheetPopulator(clients, offices), extrasSheetPopulator);
+        return new LoanRepaymentWorkbookPopulator(loans, new OfficeSheetPopulator(offices), new ClientSheetPopulator(clients, offices),
+                extrasSheetPopulator);
     }
 
     private List<LoanAccountData> fetchLoanAccounts(final Long officeId) {

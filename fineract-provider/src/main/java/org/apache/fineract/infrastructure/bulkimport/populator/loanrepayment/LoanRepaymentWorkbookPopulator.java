@@ -221,15 +221,18 @@ public class LoanRepaymentWorkbookPopulator extends AbstractWorkbookPopulator {
         // Payment Type Name
         Name paymentTypeGroup = loanRepaymentWorkbook.createName();
         paymentTypeGroup.setNameName("PaymentTypes");
-        paymentTypeGroup.setRefersToFormula(TemplatePopulateImportConstants.EXTRAS_SHEET_NAME + "!$D$2:$D$" + (extrasSheetPopulator.getPaymentTypesSize() + 1));
+        paymentTypeGroup.setRefersToFormula(
+                TemplatePopulateImportConstants.EXTRAS_SHEET_NAME + "!$D$2:$D$" + (extrasSheetPopulator.getPaymentTypesSize() + 1));
 
         Name repaymentChannelGroup = loanRepaymentWorkbook.createName();
         repaymentChannelGroup.setNameName("RepaymentChannels");
-        repaymentChannelGroup.setRefersToFormula(TemplatePopulateImportConstants.EXTRAS_SHEET_NAME + "!$H$2:$H$" + (extrasSheetPopulator.getChannelOptions().size() + 1));
+        repaymentChannelGroup.setRefersToFormula(
+                TemplatePopulateImportConstants.EXTRAS_SHEET_NAME + "!$H$2:$H$" + (extrasSheetPopulator.getChannelOptions().size() + 1));
 
         Name repaymentBankGroup = loanRepaymentWorkbook.createName();
         repaymentBankGroup.setNameName("RepaymentBanks");
-        repaymentBankGroup.setRefersToFormula(TemplatePopulateImportConstants.EXTRAS_SHEET_NAME + "!$J$2:$J$" + (extrasSheetPopulator.getBankOptions().size() + 1));
+        repaymentBankGroup.setRefersToFormula(
+                TemplatePopulateImportConstants.EXTRAS_SHEET_NAME + "!$J$2:$J$" + (extrasSheetPopulator.getBankOptions().size() + 1));
     }
 
     private void populateLoansTable(Sheet loanRepaymentSheet, String dateFormat) {
@@ -283,7 +286,8 @@ public class LoanRepaymentWorkbookPopulator extends AbstractWorkbookPopulator {
         worksheet.setColumnWidth(LoanRepaymentConstants.LOOKUP_ACCOUNT_NO_COL, TemplatePopulateImportConstants.SMALL_COL_SIZE);
         worksheet.setColumnWidth(LoanRepaymentConstants.LOOKUP_PRODUCT_COL, TemplatePopulateImportConstants.SMALL_COL_SIZE);
         worksheet.setColumnWidth(LoanRepaymentConstants.LOOKUP_PRINCIPAL_COL, TemplatePopulateImportConstants.SMALL_COL_SIZE);
-        worksheet.setColumnWidth(LoanRepaymentConstants.LOOKUP_TOTAL_OUTSTANDING_AMOUNT_COL, TemplatePopulateImportConstants.LARGE_COL_SIZE);
+        worksheet.setColumnWidth(LoanRepaymentConstants.LOOKUP_TOTAL_OUTSTANDING_AMOUNT_COL,
+                TemplatePopulateImportConstants.LARGE_COL_SIZE);
         worksheet.setColumnWidth(LoanRepaymentConstants.LOOKUP_LOAN_DISBURSEMENT_DATE_COL, TemplatePopulateImportConstants.SMALL_COL_SIZE);
         writeString(LoanRepaymentConstants.OFFICE_NAME_COL, rowHeader, "Office Name*");
         writeString(LoanRepaymentConstants.CLIENT_NAME_COL, rowHeader, "Client Name*");

@@ -19,7 +19,6 @@
 package org.apache.fineract.infrastructure.bulkimport.populator;
 
 import java.util.List;
-
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.fineract.custom.infrastructure.channel.data.ChannelData;
@@ -95,7 +94,8 @@ public class ExtrasSheetPopulator extends AbstractWorkbookPopulator {
         int channelRowIndex = 1;
         for (ChannelData channelData : channelOptions) {
             Row row;
-            if (channelRowIndex < currencyCodeRowIndex || currencyCodeRowIndex < paymentTypeRowIndex || currencyCodeRowIndex < fundRowIndex) {
+            if (channelRowIndex < currencyCodeRowIndex || currencyCodeRowIndex < paymentTypeRowIndex
+                    || currencyCodeRowIndex < fundRowIndex) {
                 row = extrasSheet.getRow(channelRowIndex++);
             } else {
                 row = extrasSheet.createRow(channelRowIndex++);
@@ -106,7 +106,8 @@ public class ExtrasSheetPopulator extends AbstractWorkbookPopulator {
         int bankRowIndex = 1;
         for (CodeValueData bankCodeValueData : bankOptions) {
             Row row;
-            if (bankRowIndex < channelRowIndex || channelRowIndex < currencyCodeRowIndex || currencyCodeRowIndex < paymentTypeRowIndex || currencyCodeRowIndex < fundRowIndex) {
+            if (bankRowIndex < channelRowIndex || channelRowIndex < currencyCodeRowIndex || currencyCodeRowIndex < paymentTypeRowIndex
+                    || currencyCodeRowIndex < fundRowIndex) {
                 row = extrasSheet.getRow(bankRowIndex++);
             } else {
                 row = extrasSheet.createRow(bankRowIndex++);

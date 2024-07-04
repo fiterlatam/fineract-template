@@ -1063,7 +1063,15 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         }
         Loan loan = this.loanAssembler.assembleFrom(loanId);
         final LoanProduct loanProduct = loan.loanProduct();
-        final ChannelData channelData = this.validateRepaymentChannel(channelName, loanProduct);
+        final Long repaymentChannelId = command.longValueOfParameterNamed("repaymentChannelId");
+        final boolean isImportedRepaymentTransaction = command.booleanPrimitiveValueOfParameterNamed("isImportedRepaymentTransaction");
+        ChannelData channelData;
+        if (isImportedRepaymentTransaction) {
+            channelData = this.validateRepaymentChannelById(repaymentChannelId, loanProduct);
+            changes.put("paymentBankId", command.longValueOfParameterNamed("repaymentBankId"));
+        } else {
+            channelData = this.validateRepaymentChannel(channelName, loanProduct);
+        }
         final Long channelId = channelData.getId();
         changes.put("channelId", channelId);
         changes.put("channelHash", channelData.getHash());
@@ -1139,6 +1147,35 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             }
         } else {
             throw new GeneralPlatformDomainRuleException("validation.msg.channel.not.allowed", "Channel is not allowed", channelName);
+        }
+        return channelData;
+    }
+
+    private ChannelData validateRepaymentChannelById(final Long repaymentChannelId, final LoanProduct loanProduct) {
+        if (repaymentChannelId == null) {
+            throw new GeneralPlatformDomainRuleException("validation.msg.channel.is.blank", "Channel is blank");
+        }
+        final ChannelData channelData = this.channelReadWritePlatformService.findById(repaymentChannelId);
+        if (channelData == null) {
+            throw new GeneralPlatformDomainRuleException("validation.msg.channel.not.found", "Channel not found", repaymentChannelId);
+        }
+        if (!channelData.getActive()) {
+            throw new GeneralPlatformDomainRuleException("validation.msg.channel.not.active", "Channel is not active", repaymentChannelId);
+        }
+        if (ChannelType.REPAYMENT.getValue().longValue() != channelData.getChannelType().getId()) {
+            throw new GeneralPlatformDomainRuleException("validation.msg.channel.not.repayment", "Channel is not disbursement repayment",
+                    repaymentChannelId);
+        }
+        final List<Channel> repaymentChannels = loanProduct.getRepaymentChannels();
+        if (CollectionUtils.isNotEmpty(repaymentChannels)) {
+            final Long channelId = channelData.getId();
+            if (repaymentChannels.stream().noneMatch(repaymentChannel -> repaymentChannel.getId().equals(channelId))) {
+                throw new GeneralPlatformDomainRuleException("validation.msg.channel.not.allowed", "Channel is not allowed",
+                        repaymentChannelId);
+            }
+        } else {
+            throw new GeneralPlatformDomainRuleException("validation.msg.channel.not.allowed", "Channel is not allowed",
+                    repaymentChannelId);
         }
         return channelData;
     }

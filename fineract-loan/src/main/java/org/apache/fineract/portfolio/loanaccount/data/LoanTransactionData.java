@@ -38,6 +38,7 @@ import org.apache.fineract.portfolio.paymenttype.data.PaymentTypeData;
 @Getter
 @Setter
 public class LoanTransactionData {
+
     private final Long id;
     private final Long loanId;
     private final ExternalId externalLoanId;
