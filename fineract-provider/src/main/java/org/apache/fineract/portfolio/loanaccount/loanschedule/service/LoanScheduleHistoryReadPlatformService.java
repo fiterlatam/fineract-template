@@ -29,6 +29,8 @@ public interface LoanScheduleHistoryReadPlatformService {
 
     Integer fetchCurrentVersionNumber(Long loanId);
 
+    Integer fetchInitialVersionNumber(Long loanId);
+
     LoanScheduleData retrieveRepaymentArchiveSchedule(Long loanId, RepaymentScheduleRelatedLoanData repaymentScheduleRelatedLoanData,
             Collection<DisbursementData> disbursementData, LoanScheduleType loanScheduleType);
 
