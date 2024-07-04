@@ -1625,4 +1625,8 @@ public enum ChargeCalculationType {
         return isPercentageOfOutstandingPrincipal() && this.equals(ChargeCalculationType.OPRIN_SEGO);
     }
 
+    public boolean isTermCharge() {
+        return this.equals(ChargeCalculationType.ACHG);
+    }
+
 }

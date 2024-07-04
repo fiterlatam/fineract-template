@@ -147,7 +147,11 @@ public class LoanChargeAssembler {
 
                         boolean getPercentageAmountFromTable = chargeDefinition.isGetPercentageFromTable();
                         if (getPercentageAmountFromTable) {
-                            amount = getAmountPerentageFromCustomChargeTable(chargeCalculation, numberOfRepayments);
+                            ChargeCalculationType calculation = chargeCalculation;
+                            if (calculation == null) {
+                                calculation = ChargeCalculationType.fromInt(chargeDefinition.getChargeCalculation());
+                            }
+                            amount = getAmountPerentageFromCustomChargeTable(calculation, numberOfRepayments);
                         }
 
                         ChargePaymentMode chargePaymentModeEnum = null;
@@ -388,8 +392,7 @@ public class LoanChargeAssembler {
         for (CustomChargeEntityData entity : customChargeEntityDataList) {
             if ((entity.getName().equalsIgnoreCase("Insurance")
                     && (type.isPercentageBasedMandatoryInsurance() || type.isCustomPercentageOfOutstandingPrincipalCharge()))
-                    || (entity.getName().equalsIgnoreCase("Aval")
-                            && (type.isPercentageBasedMandatoryInsurance() || type.isCustomPercentageOfOutstandingPrincipalCharge()))) {
+                    || (entity.getName().equalsIgnoreCase("Term") && type.isTermCharge())) {
                 List<CustomChargeTypeData> customChargeTypeDataList = customChargeTypeService.findAllByEntityId(entity.getId());
                 for (CustomChargeTypeData customChargeTypeData : customChargeTypeDataList) {
                     List<CustomChargeTypeMapData> customChargeTypeMapDataList = this.customChargeTypeMapService
