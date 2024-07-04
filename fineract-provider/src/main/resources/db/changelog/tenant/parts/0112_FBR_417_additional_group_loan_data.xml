@@ -264,4 +264,8 @@
         </addColumn>
     </changeSet>
 
+    <changeSet author="fineract" id="10">
+        <modifyDataType tableName="m_loan_additionals_group" columnName="total_installments" newDataType="DECIMAL(19,6)"/>
+    </changeSet>
+
 </databaseChangeLog>

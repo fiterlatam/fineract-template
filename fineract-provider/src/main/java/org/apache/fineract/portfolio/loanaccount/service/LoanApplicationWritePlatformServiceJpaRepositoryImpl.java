@@ -990,7 +990,6 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
     public CommandProcessingResult modifyApplication(final Long loanId, final JsonCommand command) {
 
         try {
-            AppUser currentUser = getAppUserIfPresent();
             final Loan existingLoanApplication = retrieveLoanBy(loanId);
             if (!existingLoanApplication.isSubmittedAndPendingApproval()) {
                 throw new LoanApplicationNotInSubmittedAndPendingApprovalStateCannotBeModified(loanId);
