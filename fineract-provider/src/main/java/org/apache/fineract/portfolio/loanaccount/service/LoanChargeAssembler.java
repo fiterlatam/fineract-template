@@ -392,8 +392,7 @@ public class LoanChargeAssembler {
         for (CustomChargeEntityData entity : customChargeEntityDataList) {
             if ((entity.getName().equalsIgnoreCase("Insurance")
                     && (type.isPercentageBasedMandatoryInsurance() || type.isCustomPercentageOfOutstandingPrincipalCharge()))
-                    || (entity.getName().equalsIgnoreCase("Term")
-                            && type.isTermCharge())) {
+                    || (entity.getName().equalsIgnoreCase("Term") && type.isTermCharge())) {
                 List<CustomChargeTypeData> customChargeTypeDataList = customChargeTypeService.findAllByEntityId(entity.getId());
                 for (CustomChargeTypeData customChargeTypeData : customChargeTypeDataList) {
                     List<CustomChargeTypeMapData> customChargeTypeMapDataList = this.customChargeTypeMapService

@@ -33,12 +33,12 @@
             <column name="name" value="VIP"/>
             <column name="code" value="custom.charge.type.vip"/>
         </insert>
-	<insert schemaName="custom" tableName="c_custom_charge_type">
+    <insert schemaName="custom" tableName="c_custom_charge_type">
             <column name="custom_charge_entity_id" valueComputed="(select id from custom.c_custom_charge_entity where name='Term')"/>
             <column name="name" value="Commerce"/>
             <column name="code" value="custom.charge.type.commerce"/>
         </insert>
-	<insert schemaName="custom" tableName="c_custom_charge_type">
+    <insert schemaName="custom" tableName="c_custom_charge_type">
             <column name="custom_charge_entity_id" valueComputed="(select id from custom.c_custom_charge_entity where name='Term')"/>
             <column name="name" value="Product"/>
             <column name="code" value="custom.charge.type.product"/>
