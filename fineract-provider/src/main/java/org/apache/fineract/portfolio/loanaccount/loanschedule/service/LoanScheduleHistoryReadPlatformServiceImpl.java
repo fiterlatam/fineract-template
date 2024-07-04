@@ -68,13 +68,21 @@ public class LoanScheduleHistoryReadPlatformServiceImpl implements LoanScheduleH
     }
 
     @Override
+    public Integer fetchInitialVersionNumber(Long loanId) {
+        final String sql = "select MIN(lrs.version) from m_loan_repayment_schedule_history lrs where lrs.loan_id = ?";
+        Integer min = this.jdbcTemplate.queryForObject(sql, new Object[] { loanId }, Integer.class);
+        return ObjectUtils.defaultIfNull(min, 0);
+    }
+
+    @Override
     public LoanScheduleData retrieveRepaymentArchiveSchedule(final Long loanId,
             final RepaymentScheduleRelatedLoanData repaymentScheduleRelatedLoanData, Collection<DisbursementData> disbursementData,
             LoanScheduleType loanScheduleType) {
 
         try {
             this.context.authenticatedUser();
-            Integer versionNumber = fetchCurrentVersionNumber(loanId);
+            // Use the initial version number always
+            Integer versionNumber = fetchInitialVersionNumber(loanId);
             if (versionNumber == 0) {
                 return null;
             }
