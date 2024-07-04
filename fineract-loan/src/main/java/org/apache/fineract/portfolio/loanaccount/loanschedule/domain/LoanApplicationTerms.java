@@ -1084,17 +1084,16 @@ public final class LoanApplicationTerms {
     }
 
     private BigDecimal calculateCustomPeriodicInterestRate(double installments, BigDecimal divisor, boolean useAnnualNominalInterestRate) {
-        BigDecimal annualRate = BigDecimal.ZERO;
+        final RoundingMode roundingMode = RoundingMode.HALF_UP;
+        BigDecimal annualRate;
         if (useAnnualNominalInterestRate) {
-            annualRate = new BigDecimal(1 + this.annualNominalInterestRate.toPlainString()).divide(divisor);
+            annualRate = BigDecimal.ONE.add(this.annualNominalInterestRate.divide(divisor, roundingMode));
         } else {
-            annualRate = new BigDecimal(1 + this.interestRatePerPeriod.toPlainString()).divide(divisor);
+            annualRate = BigDecimal.ONE.add(this.interestRatePerPeriod.divide(divisor, roundingMode));
         }
-        int scale = 5;
-        double exp = 1 / installments;
-        double res = (Math.pow((annualRate.doubleValue()), exp)) - 1;
-
-        return BigDecimal.valueOf(res).setScale(scale, BigDecimal.ROUND_HALF_UP);
+        final double exponent = 1 / installments;
+        final double result = (Math.pow((annualRate.doubleValue()), exponent)) - 1;
+        return BigDecimal.valueOf(result).setScale(5, roundingMode);
     }
 
     private BigDecimal calculateLoanTermFrequency(final LocalDate periodStartDate, final LocalDate periodEndDate) {
