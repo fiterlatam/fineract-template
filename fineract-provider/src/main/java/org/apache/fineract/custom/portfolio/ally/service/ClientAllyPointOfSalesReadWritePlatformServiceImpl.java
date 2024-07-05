@@ -31,6 +31,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.fineract.custom.infrastructure.codes.service.CustomCodeValueReadPlatformService;
 import org.apache.fineract.custom.portfolio.ally.data.ClientAllyPoibfOfSaleCodeValueData;
+import org.apache.fineract.custom.portfolio.ally.data.ClientAllyPointOfSalesCollectionData;
 import org.apache.fineract.custom.portfolio.ally.data.ClientAllyPointOfSalesData;
 import org.apache.fineract.custom.portfolio.ally.domain.ClientAllyPointOfSales;
 import org.apache.fineract.custom.portfolio.ally.domain.ClientAllyPointOfSalesRepository;
@@ -224,5 +225,36 @@ public class ClientAllyPointOfSalesReadWritePlatformServiceImpl implements Clien
                     .buyEnabled(rs.getBoolean("buy_enabled")).collectionEnabled(rs.getBoolean("collection_enabled"))
                     .stateCodeValueId(rs.getLong("state_id")).stateCodeValueDescription(rs.getString("stateDescription")).build();
         }
+    }
+
+    private static final class ClientAllyPointOfSalesCollectionRowMapper implements RowMapper<ClientAllyPointOfSalesCollectionData> {
+
+        public String schema() {
+            return " ml.maturedon_date as collectionDate, cca.nit as nit , cca.company_name as allyName,"
+                    + " ccapos.client_ally_id as clientAllyId, ccapos.id as pointofsalesid, ccapos.\"name\"  as pointOfSalesName,"
+                    + " ccapos.code as pointOfSalesCode , ccapos.city_id, ccbp.amount, ccapos.settled_comission as settledComission,"
+                    + " tax_profile_id, ccbp.channel_id , ccbp.loan_id ,ccbp.client_id"
+                    + " FROM custom.c_client_buy_process ccbp  inner join m_loan ml on ml.id =ccbp.loan_id and loan_status_id ='300'"
+                    + " inner join custom.c_client_ally_point_of_sales ccapos on ccapos.id = ccbp.point_if_sales_id "
+                    + " inner join custom.c_client_ally cca on cca.id =ccapos.client_ally_id ";
+        }
+
+        @Override
+        public ClientAllyPointOfSalesCollectionData mapRow(final ResultSet rs, @SuppressWarnings("unused") final int rowNum)
+                throws SQLException {
+            return ClientAllyPointOfSalesCollectionData.builder().collectionDate(rs.getString("collectionDate")).nit(rs.getString("nit"))
+                    .name(rs.getString("allyName")).clientAllyId(rs.getLong("clientAllyId")).pointOfSalesId(rs.getLong("pointofsalesid"))
+                    .pointOfSalesName(rs.getString("pointOfSalesName")).amount(rs.getBigDecimal("amount"))
+                    .settledComission(rs.getInt("settledComission")).cityId(rs.getLong("city_id")).taxId(rs.getInt("tax_profile_id"))
+                    .channelId(rs.getLong("channel_id")).loanId(rs.getLong("loan_id")).clientId(rs.getLong("client_id")).build();
+        }
+    }
+
+    @Override
+    public List<ClientAllyPointOfSalesCollectionData> getCollectionData() {
+        final ClientAllyPointOfSalesCollectionRowMapper rm = new ClientAllyPointOfSalesCollectionRowMapper();
+        final String sql = "SELECT " + rm.schema() + " ";
+        return this.jdbcTemplate.query(sql, rm);
+
     }
 }
