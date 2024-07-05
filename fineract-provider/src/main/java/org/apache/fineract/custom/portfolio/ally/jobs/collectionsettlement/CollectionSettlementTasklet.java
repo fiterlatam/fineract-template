@@ -33,13 +33,14 @@ public class CollectionSettlementTasklet implements Tasklet {
         for (ClientAllyPointOfSalesCollectionData data : collectionData) {
             Optional<AllyCollectionSettlement> collect = allyCollectionSettlementRepository.findByLoanId(data.getLoanId());
             if (!collect.isPresent()) {
-
                 AllyCollectionSettlement allyCollectionSettlement = new AllyCollectionSettlement();
                 LocalDate collectDate = LocalDate.parse(data.getCollectionDate());
                 allyCollectionSettlement.setCollectionDate(collectDate);
                 allyCollectionSettlement.setNit(data.getNit());
+                allyCollectionSettlement.setCompanyName(data.getName());
                 allyCollectionSettlement.setClientAllyId(data.getClientAllyId());
                 allyCollectionSettlement.setPointOfSalesId(data.getPointOfSalesId());
+                allyCollectionSettlement.setPointOfSalesName(data.getPointOfSalesName());
                 allyCollectionSettlement.setCityId(data.getCityId());
                 allyCollectionSettlement.setPrincipalAmount(data.getAmount());
                 allyCollectionSettlement.setSettledComission(data.getSettledComission());
@@ -47,7 +48,7 @@ public class CollectionSettlementTasklet implements Tasklet {
                 allyCollectionSettlement.setLoanId(data.getLoanId());
                 allyCollectionSettlement.setClientId(data.getClientId());
                 allyCollectionSettlement.setChannelId(data.getChannelId());
-
+                allyCollectionSettlement.setCollectionStatus(300);
                 allyCollectionSettlementRepository.saveAndFlush(allyCollectionSettlement);
             }
 
