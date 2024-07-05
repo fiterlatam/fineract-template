@@ -52,6 +52,8 @@ import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformS
 import org.apache.fineract.custom.infrastructure.channel.data.ChannelData;
 import org.apache.fineract.custom.infrastructure.channel.domain.ChannelType;
 import org.apache.fineract.custom.infrastructure.channel.service.ChannelReadWritePlatformService;
+import org.apache.fineract.infrastructure.codes.data.CodeValueData;
+import org.apache.fineract.infrastructure.codes.service.CodeValueReadPlatformService;
 import org.apache.fineract.infrastructure.core.api.ApiRequestParameterHelper;
 import org.apache.fineract.infrastructure.core.api.DateParam;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
@@ -98,6 +100,7 @@ public class LoanTransactionsApiResource {
     private final PaymentTypeReadPlatformService paymentTypeReadPlatformService;
     private final LoanChargePaidByReadPlatformService loanChargePaidByReadPlatformService;
     private final ChannelReadWritePlatformService channelReadWritePlatformService;
+    private final CodeValueReadPlatformService codeValueReadPlatformService;
 
     @GET
     @Path("{loanId}/transactions/template")
@@ -438,7 +441,9 @@ public class LoanTransactionsApiResource {
             final SearchParameters channelSearchParameters = SearchParameters.builder().channelType(ChannelType.REPAYMENT.getValue())
                     .active(true).build();
             final List<ChannelData> channelOptions = channelReadWritePlatformService.findBySearchParam(channelSearchParameters);
+            final Collection<CodeValueData> bankOptions = codeValueReadPlatformService.retrieveCodeValuesByCode("Bancos");
             transactionData.setChannelOptions(channelOptions);
+            transactionData.setBankOptions(bankOptions);
         }
 
         return this.toApiJsonSerializer.serialize(settings, transactionData, this.responseDataParameters);

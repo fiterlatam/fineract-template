@@ -22,11 +22,13 @@ import java.math.BigDecimal;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.Setter;
 import org.apache.commons.lang3.StringUtils;
 
 @Builder
 @AllArgsConstructor
 @Getter
+@Setter
 public final class SearchParameters {
 
     private final Long officeId;
@@ -35,7 +37,7 @@ public final class SearchParameters {
     private final String hierarchy;
     private final String firstname;
     private final String lastname;
-    private final String status;
+    private String status;
     private final Integer offset;
     private final Integer limit;
     private final String orderBy;
@@ -58,6 +60,7 @@ public final class SearchParameters {
     private Integer interestRateTypeId;
     private BigDecimal currentRate;
     private Integer channelType;
+    private boolean clientHasActiveLoans;
 
     public static SearchParameters from(final Long officeId, final String externalId, final String name, final String hierarchy) {
         final Long staffId = null;

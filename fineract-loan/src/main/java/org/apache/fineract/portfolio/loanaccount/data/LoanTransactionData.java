@@ -89,8 +89,10 @@ public class LoanTransactionData {
     private List<LoanTransactionRelationData> transactionRelations;
     private Collection<CodeValueData> chargeOffReasonOptions = null;
     private List<ChannelData> channelOptions;
+    private Collection<CodeValueData> bankOptions;
     private Long repaymentChannelId;
     private Long repaymentBankId;
+    private boolean isImportedRepaymentTransaction;
 
     public static LoanTransactionData importInstance(BigDecimal repaymentAmount, LocalDate lastRepaymentDate, Long repaymentTypeId,
             Integer rowIndex, String locale, String dateFormat) {

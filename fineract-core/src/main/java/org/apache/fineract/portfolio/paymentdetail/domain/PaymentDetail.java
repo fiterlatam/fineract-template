@@ -66,7 +66,7 @@ public class PaymentDetail extends AbstractPersistableCustom {
     private String pointOfSalesCode;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "payment_bank_id")
+    @JoinColumn(name = "payment_bank_cv_id")
     private CodeValue paymentBank;
 
     public PaymentDetail() {}
