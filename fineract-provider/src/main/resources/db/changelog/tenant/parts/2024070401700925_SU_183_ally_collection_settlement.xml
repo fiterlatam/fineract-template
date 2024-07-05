@@ -67,12 +67,15 @@
             <column name="client_ally_id" type="INT8">
                 <constraints nullable="false"/>
             </column>
+            <column name="company_name" type="VARCHAR(100)"/>
             <column name="point_of_sales_id" type="INT8">
                 <constraints nullable="false"/>
             </column>
+            <column name="point_of_sales_name" type="VARCHAR(100)"/>
             <column name="city_id" type="INT8">
                 <constraints nullable="false"/>
             </column>
+            <column name="city_name" type="VARCHAR(100)"/>
             <column name="principal_amount" type="numeric(19, 6)">
                 <constraints nullable="false"/>
             </column>
@@ -91,6 +94,7 @@
             <column name="channel_id" type="INT8">
                 <constraints nullable="false"/>
             </column>
+            <column name="collection_status" type="INT8"/>
         </createTable>
     </changeSet>
     <changeSet id="3" author="fineract">

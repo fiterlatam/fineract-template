@@ -28,8 +28,14 @@ public class AllyCollectionSettlement {
     @Column(name = "client_ally_id", nullable = false)
     private Long clientAllyId;
 
+    @Column(name = "company_name")
+    private String companyName;
+
     @Column(name = "point_of_sales_id", nullable = false)
     private Long pointOfSalesId;
+
+    @Column(name = "point_of_sales_name")
+    private String pointOfSalesName;
 
     @Column(name = "city_id", nullable = false)
     private Long cityId;
@@ -52,4 +58,6 @@ public class AllyCollectionSettlement {
     @Column(name = "channel_id", nullable = false)
     private Long channelId;
 
+    @Column(name = "collection_status")
+    private Integer collectionStatus;
 }
