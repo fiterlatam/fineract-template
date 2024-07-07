@@ -100,7 +100,7 @@ public class LoanScheduleHistoryReadPlatformServiceImpl implements LoanScheduleH
     public Map<String, Object> fetchOldAuditDates(Long id) {
         final String sql = "select lrs.created_date, lrs.lastmodified_date from m_loan_repayment_schedule lrs where lrs.id = ?";
         return this.jdbcTemplate.queryForMap(sql, id);
-    } 
+    }
 
     private static final class LoanScheduleArchiveResultSetExtractor implements ResultSetExtractor<LoanScheduleData> {
 
