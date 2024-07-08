@@ -260,11 +260,7 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
                     SELECT mc.id AS clientId,mc.loan_cycle as loanCycle, mpgm.id AS prequalificationMemberId, IFNULL(mc.display_name,mpgm.name) AS name, mpg.id AS prequalificationId,\s
                     mpgm.requested_amount AS requestedAmount, IFNULL(mc.date_of_birth, mpgm.dob) AS dateOfBirth, IFNULL(mc.dpi, mpgm.dpi) AS dpi,
                     mpgm.work_with_puente AS workWithPuente, mcv.code_value As gender, mpgm.is_president AS president, mpgm.buro_check_status as buroCheckStatus, mpgm.agency_bureau_status as agencyBuroStatus,
-<<<<<<< HEAD
                     ml.is_topup AS isTopup, ml.id AS loanId, mcvl.code_value as loanCycleCompleted,
-=======
-                    ml.is_topup AS isTopup, ml.id AS loanId, mcv.code_value as loanCycleCompleted,
->>>>>>> 42fc9922eb3d1187928d798f1aae2e170743b327
                     CASE WHEN (? NOT IN (3,7,4,5)) AND (COALESCE(mc.loan_cycle, 0) >= 3) THEN 'RECURRING'
                     WHEN (? IN (4,5)) AND (COALESCE(mc.loan_cycle, 0) >= 1) THEN 'RECURRING'
                     ELSE 'NEW' END as clientCategorization,
