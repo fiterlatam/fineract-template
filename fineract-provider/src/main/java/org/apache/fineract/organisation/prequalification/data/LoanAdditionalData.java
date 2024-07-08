@@ -142,6 +142,8 @@ public class LoanAdditionalData {
 
     private String evolucionNegocio;
 
+    private LocalDate fecha_inicio_negocio;
+
     private String fPep;
 
     private Integer familiares;

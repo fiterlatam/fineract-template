@@ -835,6 +835,9 @@ public class LoanAdditionProperties extends AbstractPersistableCustom {
     @Column(name = "cliente_activo_fiador2")
     private String cliente_activo_fiador2;
 
+    @Column(name = "fecha_inicio_negocio")
+    private LocalDate fecha_inicio_negocio;
+
     public LoanAdditionProperties() {}
 
     public LoanAdditionalData toData() {
@@ -1905,5 +1908,9 @@ public class LoanAdditionProperties extends AbstractPersistableCustom {
 
     public void setCliente_activo_fiador2(String cliente_activo_fiador2) {
         this.cliente_activo_fiador2 = cliente_activo_fiador2;
+    }
+
+    public void setFecha_inicio_negocio(LocalDate fecha_inicio_negocio) {
+        this.fecha_inicio_negocio = fecha_inicio_negocio;
     }
 }

@@ -34,7 +34,7 @@ public final class PortfolioCenterGroupUtil {
      * @return
      */
     public static LocalDate getNextMeetingDate(LocalDate startDate, int startDay, int endDay, int dayOfWeekNumber, LocalDate startDateRange,
-                                               LocalDate endDateRange) {
+            LocalDate endDateRange) {
         DayOfWeek dow = DayOfWeek.of(dayOfWeekNumber);
         int weekOfMonth = getWeekOfMonth(startDay, endDay);
 
@@ -57,7 +57,7 @@ public final class PortfolioCenterGroupUtil {
      * @return
      */
     public static LocalDate calculateNextMeetingDate(LocalDate startingDate, int startDay, int endDay, int dayOfWeekNumber,
-                                                     PortfolioCenterFrecuencyMeeting frequencyMeeting) {
+            PortfolioCenterFrecuencyMeeting frequencyMeeting) {
         LocalDate meetingDate = null;
         DayOfWeek dow = DayOfWeek.of(dayOfWeekNumber);
 

@@ -82,7 +82,7 @@ public enum PrequalificationStatus {
             break;
             case 701:
                 enumeration = PrequalificationStatus.CONSENT_ADDED;
-                break;
+            break;
             case 800:
                 enumeration = PrequalificationStatus.TIME_EXPIRED;
             break;
