@@ -202,8 +202,10 @@ public class Charge extends AbstractPersistableCustom {
         }
         // Voluntary Insurance details
         ChargeInsuranceDetail chargeInsuranceDetail = null;
-        if (chargeCalculationType.isVoluntaryInsurance()) {
-            validateVoluntaryInsuranceCondition(chargeCalculationType);
+        if (chargeCalculationType.isInsurance()) {
+            if (chargeCalculationType.isVoluntaryInsurance()) {
+                validateVoluntaryInsuranceCondition(chargeCalculationType);
+            }
             final String insuranceName = command.stringValueOfParameterNamed("insuranceName");
             final ChargeInsuranceType insuranceChargeAs = ChargeInsuranceType
                     .fromInt(command.integerValueOfParameterNamed("insuranceChargedAs"));
@@ -659,8 +661,10 @@ public class Charge extends AbstractPersistableCustom {
 
             final ChargeCalculationType chargeCalculationType = ChargeCalculationType
                     .fromInt(command.integerValueOfParameterNamed(chargeCalculationParamName));
-            if (chargeCalculationType.isVoluntaryInsurance()) {
-                validateVoluntaryInsuranceCondition(chargeCalculationType);
+            if (chargeCalculationType.isInsurance()) {
+                if (chargeCalculationType.isVoluntaryInsurance()) {
+                    validateVoluntaryInsuranceCondition(chargeCalculationType);
+                }
                 this.chargeInsuranceDetail.update(command, actualChanges);
             }
         }

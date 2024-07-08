@@ -80,7 +80,6 @@ public class LoanScheduleHistoryReadPlatformServiceImpl implements LoanScheduleH
             LoanScheduleType loanScheduleType) {
 
         try {
-            this.context.authenticatedUser();
             // Use the initial version number always
             Integer versionNumber = fetchInitialVersionNumber(loanId);
             if (versionNumber == 0) {
