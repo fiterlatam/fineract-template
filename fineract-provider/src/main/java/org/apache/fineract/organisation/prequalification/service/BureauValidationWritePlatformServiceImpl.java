@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Locale;
 import javax.net.ssl.HttpsURLConnection;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.infrastructure.configuration.data.ExternalServicesPropertiesData;
 import org.apache.fineract.infrastructure.configuration.service.ExternalServicesConstants;
 import org.apache.fineract.infrastructure.configuration.service.ExternalServicesPropertiesReadPlatformService;
@@ -39,6 +40,7 @@ import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.infrastructure.core.exception.PlatformDataIntegrityException;
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
 import org.apache.fineract.infrastructure.core.serialization.JsonParserHelper;
+import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.organisation.prequalification.data.BuroData;
 import org.apache.fineract.organisation.prequalification.data.LoanAdditionalData;
@@ -117,6 +119,9 @@ public class BureauValidationWritePlatformServiceImpl implements BureauValidatio
             if (buroData.getClassification() != null) {
                 EnumOptionData enumOptionData = buroData.getClassification();
                 member.updateBuroCheckStatus(enumOptionData.getId().intValue());
+                if (StringUtils.isBlank(member.getAgencyBureauStatus())) {
+                    member.updateAgencyBureauStatus(enumOptionData.getCode());
+                }
             }
             member.setNombre(buroData.getNombre());
             member.setTipo(buroData.getTipo());
@@ -294,7 +299,8 @@ public class BureauValidationWritePlatformServiceImpl implements BureauValidatio
         final String producto = this.fromApiJsonHelper.extractStringNamed("producto", jsonElement);
         loanAdditionalData.setProducto(producto);
 
-        final LocalDate fechaSolicitud = this.fromApiJsonHelper.extractLocalDateNamed("Fecha_Solicitud", jsonElement, dateFormat, dateLocale);
+        final LocalDate fechaSolicitud = this.fromApiJsonHelper.extractLocalDateNamed("Fecha_Solicitud", jsonElement, dateFormat,
+                dateLocale);
         loanAdditionalData.setFechaSolicitud(fechaSolicitud);
 
         final String codigoCliente = this.fromApiJsonHelper.extractStringNamed("codigo_cliente", jsonElement);
@@ -625,6 +631,9 @@ public class BureauValidationWritePlatformServiceImpl implements BureauValidatio
         final LocalDateTime dateOpened = this.fromApiJsonHelper.extractLocalDateTimeNamed("date_opened", jsonElement, dateTimeFormat,
                 dateLocale);
         loanAdditionalData.setDateOpened(dateOpened);
+
+        LocalDate fechaInicioNegocio = dateOpened!=null?dateOpened.toLocalDate(): DateUtils.getBusinessLocalDate();
+        loanAdditionalData.setFecha_inicio_negocio(fechaInicioNegocio);
 
         final LocalDate fechaFin = this.fromApiJsonHelper.extractLocalDateNamed("fecha_fin", jsonElement, dateFormat, dateLocale);
         loanAdditionalData.setFechaFin(fechaFin);

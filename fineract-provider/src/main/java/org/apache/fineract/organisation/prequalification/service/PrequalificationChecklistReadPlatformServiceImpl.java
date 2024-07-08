@@ -71,17 +71,20 @@ public class PrequalificationChecklistReadPlatformServiceImpl implements Prequal
         final List<ChecklistValidationResult> validationResults = this.jdbcTemplate.query(sql, validationChecklistMapper,
                 prequalificationId);
         final List<String> prequalificationRow = new ArrayList<>(List.of(prequalificationGroup.getGroupName()));
-        for (PolicyData policy : groupPolicies) {
-            prequalificationColumnHeaders.add(policy.getDescription());
-            for (ChecklistValidationResult validationResult : validationResults) {
+        for (ChecklistValidationResult validationResult : validationResults) {
+            for (PolicyData policy : groupPolicies) {
                 if (policy.getId().equals(validationResult.getPolicyId())
                         && PrequalificationType.GROUP.getValue().equals(validationResult.getPrequalificationTypeEnum())) {
+                    prequalificationColumnHeaders.add(policy.getDescription());
+
                     final String validationColor = CheckValidationColor.fromInt(validationResult.getColorEnum()).name();
                     prequalificationRow.add(validationColor);
                     break;
                 }
             }
+
         }
+
         prequalificationRows.add(prequalificationRow);
         final GenericValidationResultSet groupValidationResultSet = new GenericValidationResultSet(prequalificationColumnHeaders,
                 prequalificationRows);
@@ -89,7 +92,6 @@ public class PrequalificationChecklistReadPlatformServiceImpl implements Prequal
                 PrequalificationType.INDIVIDUAL.name());
         final List<String> memberColumnHeaders = new ArrayList<>(
                 List.of("label.heading.clientid", "label.heading.clientname", "label.heading.dpi"));
-        individualPolicies.forEach(policy -> memberColumnHeaders.add(policy.getDescription()));
         final List<List<String>> memberRows = new ArrayList<>();
         for (PrequalificationGroupMember member : prequalificationGroup.getMembers()) {
             final List<String> memberRow = new ArrayList<>();
@@ -107,6 +109,9 @@ public class PrequalificationChecklistReadPlatformServiceImpl implements Prequal
                             clientName = validationResult.getClientName();
                             dpi = validationResult.getDpi();
                             memberRow.addAll(List.of(memberId, clientName, dpi));
+                        }
+                        if (!memberColumnHeaders.contains(policy.getDescription())){
+                            memberColumnHeaders.add(policy.getDescription());
                         }
                         memberRow.add(validationColor);
                         break;

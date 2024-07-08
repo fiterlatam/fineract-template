@@ -27,7 +27,8 @@ public enum PrequalificationSubStatus {
 
     PENDING(100, "prequalification.status.pending"), //
     IN_PROGRESS(200, "prequalification.status.inprogress"), //
-    COMPLETED(300, "prequalification.status.completed"), INVALID(999, "prequalification.status.rejected");
+    COMPLETED(300, "prequalification.status.completed"), BURO_EVIDENCE(400, "prequalification.status.buroevidence"), RE_VALIDATE(500,
+            "prequalification.status.revalidate"), INVALID(999, "prequalification.status.rejected");
 
     private final Integer value;
     private final String code;
@@ -44,6 +45,12 @@ public enum PrequalificationSubStatus {
             break;
             case 300:
                 enumeration = PrequalificationSubStatus.COMPLETED;
+            break;
+            case 400:
+                enumeration = PrequalificationSubStatus.BURO_EVIDENCE;
+            break;
+            case 500:
+                enumeration = PrequalificationSubStatus.RE_VALIDATE;
             break;
         }
         return enumeration;
@@ -68,6 +75,10 @@ public enum PrequalificationSubStatus {
             clientStatus = PrequalificationSubStatus.IN_PROGRESS;
         } else if (status.equalsIgnoreCase(PrequalificationSubStatus.COMPLETED.toString())) {
             clientStatus = PrequalificationSubStatus.COMPLETED;
+        } else if (status.equalsIgnoreCase(PrequalificationSubStatus.BURO_EVIDENCE.toString())) {
+            clientStatus = PrequalificationSubStatus.BURO_EVIDENCE;
+        } else if (status.equalsIgnoreCase(PrequalificationSubStatus.RE_VALIDATE.toString())) {
+            clientStatus = PrequalificationSubStatus.RE_VALIDATE;
         } else {
             clientStatus = PrequalificationSubStatus.INVALID;
         }
@@ -94,5 +105,9 @@ public enum PrequalificationSubStatus {
 
     public boolean isCompleted() {
         return this.value.equals(PrequalificationSubStatus.COMPLETED.getValue());
+    }
+
+    public boolean isRevalidate() {
+        return this.value.equals(PrequalificationSubStatus.RE_VALIDATE.getValue());
     }
 }

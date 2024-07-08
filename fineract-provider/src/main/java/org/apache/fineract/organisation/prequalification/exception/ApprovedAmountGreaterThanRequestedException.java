@@ -16,22 +16,18 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.organisation.prequalification.data;
+package org.apache.fineract.organisation.prequalification.exception;
 
 import java.math.BigDecimal;
-import java.util.List;
-import lombok.Builder;
-import lombok.Data;
+import org.apache.fineract.infrastructure.core.exception.AbstractPlatformDomainRuleException;
 
-@Data
-@Builder
-public class GroupData {
+public class ApprovedAmountGreaterThanRequestedException extends AbstractPlatformDomainRuleException {
 
-    private Long id;
-    private Long productId;
-    private Long previousPrequalification;
-    private BigDecimal requestedAmount;
-    private Integer numberOfMembers;
-    private List<ClientData> members;
-    private List<ClientData> topupMembers;
+    public ApprovedAmountGreaterThanRequestedException(final String dpi, final String clientName, final BigDecimal approvedAmount,
+            final BigDecimal requestedAmount) {
+        super("error.msg.approved.amount.greater.than.requested", "Approved Amount " + approvedAmount
+                + " cannot be greater than the requested amount " + requestedAmount + " for member " + clientName + " with dpi " + dpi,
+                approvedAmount, requestedAmount, dpi, clientName);
+    }
+
 }

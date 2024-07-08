@@ -280,6 +280,14 @@ public class OfficeReadPlatformServiceImpl implements OfficeReadPlatformService 
     }
 
     @Override
+    public Collection<OfficeData> retrieveRegionOffices(Long hierarchyLevel) {
+        String hierarchySearchString = hierarchyLevel + "%";
+        final OfficeDropdownMapper rm = new OfficeDropdownMapper();
+        final String sql = "select " + rm.schema() + "where o.parent_id IN(select id from m_office where parent_id = 1)";
+        return this.jdbcTemplate.query(sql, rm); //
+    }
+
+    @Override
     public Collection<OfficeData> retrieveOfficesByParent(Long parentOfficeId) {
         this.context.authenticatedUser();
 

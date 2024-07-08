@@ -990,7 +990,6 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
     public CommandProcessingResult modifyApplication(final Long loanId, final JsonCommand command) {
 
         try {
-            AppUser currentUser = getAppUserIfPresent();
             final Loan existingLoanApplication = retrieveLoanBy(loanId);
             if (!existingLoanApplication.isSubmittedAndPendingApproval()) {
                 throw new LoanApplicationNotInSubmittedAndPendingApprovalStateCannotBeModified(loanId);
@@ -2050,7 +2049,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
         final BigDecimal relacionOtrosIngresos = this.fromJsonHelper.extractBigDecimalNamed("relacionOtrosIngresos", jsonElement, locale);
         loanAdditionalData.setRelacionOtrosIngresos(relacionOtrosIngresos);
 
-        final String programa = this.fromJsonHelper.extractStringNamed("Programa", jsonElement);
+        final String programa = this.fromJsonHelper.extractStringNamed("programa", jsonElement);
         loanAdditionalData.setPrograma(programa);
 
         final String aldeaVivienda = this.fromJsonHelper.extractStringNamed("aldeaVivienda", jsonElement);
@@ -2191,6 +2190,10 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
         final LocalDate fecha_estacionalidad = this.fromJsonHelper.extractLocalDateNamed("fecha_estacionalidad", jsonElement, dateFormat,
                 dateLocal);
         loanAdditionalData.setFecha_estacionalidad(fecha_estacionalidad);
+
+        final LocalDate fecha_inicio_negocio = this.fromJsonHelper.extractLocalDateNamed("fecha_inicio_negocio", jsonElement, dateFormat,
+                dateLocal);
+        loanAdditionalData.setFecha_inicio_negocio(fecha_inicio_negocio);
 
         final LocalDate fecha_inico_operaciones = this.fromJsonHelper.extractLocalDateNamed("fecha_inico_operaciones", jsonElement,
                 dateFormat, dateLocal);
@@ -2451,6 +2454,9 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
         final String cliente_activo_fiador2 = this.fromJsonHelper.extractStringNamed("cliente_activo_fiador2", jsonElement);
         loanAdditionalData.setCliente_activo_fiador2(cliente_activo_fiador2);
 
+        final LocalDate dateOpened = this.fromJsonHelper.extractLocalDateNamed("dateOpened", jsonElement,dateFormat, dateLocal);
+        loanAdditionalData.setDateOpened(dateOpened.atStartOfDay());
+
         return loanAdditionalData;
     }
 
@@ -2634,6 +2640,18 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 StatusEnum.APPROVE.getCode().longValue(), EntityTables.LOAN.getForeignKeyColumnNameOnDatatable(), loan.productId());
 
         if (!changes.isEmpty()) {
+
+            if (changes.containsKey(LoanApiConstants.disbursementDateParameterName)) {
+                final CalendarInstance calendarInstance = this.calendarInstanceRepository.findCalendarInstaneByEntityId(loan.getId(),
+                        CalendarEntityType.LOANS.getValue());
+                Calendar calendar = null;
+                if (calendarInstance != null) {
+                    calendar = calendarInstance.getCalendar();
+                }
+
+                LocalDate deriveFirstRepaymentDate = loanScheduleAssembler.deriveFirstRepaymentDate(loan, expectedDisbursementDate, calendar);
+                loan.setExpectedFirstRepaymentOnDate(deriveFirstRepaymentDate);
+            }
 
             // If loan approved amount less than loan demanded amount, then need
             // to recompute the schedule
