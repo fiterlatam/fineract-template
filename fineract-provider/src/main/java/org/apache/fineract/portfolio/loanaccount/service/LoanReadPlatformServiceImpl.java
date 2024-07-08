@@ -328,7 +328,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         final LoanMapper loanMapper = new LoanMapper(sqlGenerator, delinquencyReadPlatformService);
 
         final StringBuilder sqlBuilder = new StringBuilder(200);
-        sqlBuilder.append("select " + sqlGenerator.calcFoundRows() + " ");
+        sqlBuilder.append("select ").append(sqlGenerator.calcFoundRows()).append(" ");
         sqlBuilder.append(loanMapper.loanSchema());
 
         // TODO - for time being this will data scope list of loans returned to
@@ -469,9 +469,11 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         final SearchParameters channelSearchParameters = SearchParameters.builder().channelType(ChannelType.REPAYMENT.getValue())
                 .active(true).build();
         final List<ChannelData> channelOptions = channelReadWritePlatformService.findBySearchParam(channelSearchParameters);
-        final LoanTransactionData loanTransactioTemplate = LoanTransactionData.templateOnTop(loanTransactionData, paymentOptions);
-        loanTransactioTemplate.setChannelOptions(channelOptions);
-        return loanTransactioTemplate;
+        final LoanTransactionData loanTransactionTemplate = LoanTransactionData.templateOnTop(loanTransactionData, paymentOptions);
+        final Collection<CodeValueData> bankOptions = codeValueReadPlatformService.retrieveCodeValuesByCode("Bancos");
+        loanTransactionTemplate.setChannelOptions(channelOptions);
+        loanTransactionTemplate.setBankOptions(bankOptions);
+        return loanTransactionTemplate;
     }
 
     @Override
@@ -1581,7 +1583,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                     + " fromtran.transaction_date as fromTransferDate, fromtran.amount as fromTransferAmount,"
                     + " fromtran.description as fromTransferDescription, "
                     + " totran.id as toTransferId, totran.is_reversed as toTransferReversed, "
-                    + " totran.transaction_date as toTransferDate, totran.amount as toTransferAmount, ch.name as channelName, pd.channel_hash as channelHash,"
+                    + " totran.transaction_date as toTransferDate, totran.amount as toTransferAmount, ch.name as channelName, pd.channel_hash as channelHash, bank.code_value AS bankName, bank.id AS bankId, "
                     + " totran.description as toTransferDescription,capos.id as pointOfSalesId,capos.name as pointOfSalesName, capos.code as pointOfSalesCode, capos.client_ally_id as clientAllyId from m_loan l join m_loan_transaction tr on tr.loan_id = l.id "
                     + " join m_currency rc on rc." + sqlGenerator.escape("code") + " = l.currency_code "
                     + " left JOIN m_payment_detail pd ON tr.payment_detail_id = pd.id"
@@ -1589,7 +1591,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                     + " left join m_account_transfer_transaction fromtran on fromtran.from_loan_transaction_id = tr.id "
                     + " left join m_account_transfer_transaction totran on totran.to_loan_transaction_id = tr.id "
                     + " left join custom.c_channel ch on ch.id = pd.channel_id"
-                    + " left join custom.c_client_ally_point_of_sales capos on capos.code = pd.point_of_sales_code";
+                    + " left join custom.c_client_ally_point_of_sales capos on capos.code = pd.point_of_sales_code "
+                    + " left join m_code_value bank on bank.id = pd.payment_bank_cv_id ";
         }
 
         @Override
@@ -1629,13 +1632,16 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                 final String channelHash = rs.getString("channelHash");
                 final Long pointOfSalesId = rs.getLong("pointOfSalesId");
                 final String pointOfSalesName = rs.getString("pointOfSalesName");
-                final String poinOfSalesCode = rs.getString("pointOfSalesCode");
+                final String pointOfSalesCode = rs.getString("pointOfSalesCode");
                 final Long clientAllyId = rs.getLong("clientAllyId");
-                final PointOfSalesData pointOfSalesData = PointOfSalesData.instance(pointOfSalesId, pointOfSalesName, poinOfSalesCode,
+                final PointOfSalesData pointOfSalesData = PointOfSalesData.instance(pointOfSalesId, pointOfSalesName, pointOfSalesCode,
                         clientAllyId);
-
                 paymentDetailData = new PaymentDetailData(id, paymentType, accountNumber, checkNumber, routingCode, receiptNumber,
                         bankNumber, channelName, channelHash, pointOfSalesData);
+                final String bankName = rs.getString("BankName");
+                final Long bankId = rs.getLong("BankId");
+                paymentDetailData.setBankId(bankId);
+                paymentDetailData.setBankName(bankName);
             }
 
             final LocalDate date = JdbcSupport.getLocalDate(rs, "date");

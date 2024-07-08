@@ -34,6 +34,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.infrastructure.core.data.ApiParameterError;
 import org.apache.fineract.infrastructure.core.data.DataValidatorBuilder;
@@ -214,7 +215,8 @@ public final class LoanEventApiJsonValidator {
 
         final Set<String> transactionParameters = new HashSet<>(Arrays.asList("transactionDate", "transactionAmount", "externalId", "note",
                 "locale", "dateFormat", "paymentTypeId", "accountNumber", "checkNumber", "routingCode", "receiptNumber", "bankNumber",
-                LoanApiConstants.REVERSAL_EXTERNAL_ID_PARAMNAME, LoanApiConstants.CHANNEL_HASH, LoanApiConstants.CHANNEL_NAME));
+                LoanApiConstants.REVERSAL_EXTERNAL_ID_PARAMNAME, LoanApiConstants.CHANNEL_HASH, LoanApiConstants.CHANNEL_NAME,
+                "repaymentBankId"));
 
         final Type typeOfMap = new TypeToken<Map<String, Object>>() {}.getType();
         this.fromApiJsonHelper.checkForUnsupportedParameters(typeOfMap, json, transactionParameters);
@@ -277,9 +279,10 @@ public final class LoanEventApiJsonValidator {
             throw new InvalidJsonException();
         }
 
-        final Set<String> transactionParameters = new HashSet<>(Arrays.asList("transactionDate", "transactionAmount", "externalId", "note",
-                "locale", "dateFormat", "paymentTypeId", "accountNumber", "checkNumber", "routingCode", "receiptNumber", "bankNumber",
-                "loanId", "channelHash", "channelName", "pointOfSalesCode"));
+        final Set<String> transactionParameters = new HashSet<>(
+                Arrays.asList("transactionDate", "transactionAmount", "externalId", "note", "locale", "dateFormat", "paymentTypeId",
+                        "accountNumber", "checkNumber", "routingCode", "receiptNumber", "bankNumber", "loanId", "channelHash",
+                        "channelName", "pointOfSalesCode", "isImportedRepaymentTransaction", "repaymentChannelId", "repaymentBankId"));
 
         final Type typeOfMap = new TypeToken<Map<String, Object>>() {}.getType();
         this.fromApiJsonHelper.checkForUnsupportedParameters(typeOfMap, json, transactionParameters);
@@ -298,6 +301,16 @@ public final class LoanEventApiJsonValidator {
         baseDataValidator.reset().parameter("note").value(note).notExceedingLengthOf(1000);
 
         validatePaymentDetails(baseDataValidator, element);
+
+        final Boolean isImportedRepaymentTransaction = ObjectUtils
+                .defaultIfNull(this.fromApiJsonHelper.extractBooleanNamed("isImportedRepaymentTransaction", element), Boolean.FALSE);
+        if (isImportedRepaymentTransaction) {
+            final Long repaymentChannelId = this.fromApiJsonHelper.extractLongNamed("repaymentChannelId", element);
+            baseDataValidator.reset().parameter("repaymentChannelId").value(repaymentChannelId).notNull().integerGreaterThanZero();
+            final Long repaymentBankId = this.fromApiJsonHelper.extractLongNamed("repaymentBankId", element);
+            baseDataValidator.reset().parameter("repaymentBankId").value(repaymentBankId).notNull().integerGreaterThanZero();
+        }
+
         throwExceptionIfValidationWarningsExist(dataValidationErrors);
     }
 
