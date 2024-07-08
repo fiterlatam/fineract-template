@@ -22,6 +22,7 @@ import java.io.Serializable;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import org.apache.fineract.portfolio.client.data.PointOfSalesData;
 import org.apache.fineract.portfolio.paymenttype.data.PaymentTypeData;
 
@@ -31,6 +32,7 @@ import org.apache.fineract.portfolio.paymenttype.data.PaymentTypeData;
 @Getter
 @EqualsAndHashCode
 @RequiredArgsConstructor
+@Setter
 public class PaymentDetailData implements Serializable {
 
     private final Long id;
@@ -43,6 +45,8 @@ public class PaymentDetailData implements Serializable {
     private final String channelName;
     private final String channelHash;
     private final PointOfSalesData pointOfSales;
+    private Long bankId;
+    private String bankName;
 
     public PaymentDetailData(final Long id, PaymentTypeData paymentType, final String accountNumber, final String checkNumber,
             final String routingCode, final String receiptNumber, final String bankNumber) {

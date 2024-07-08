@@ -18,6 +18,7 @@
  */
 package org.apache.fineract.portfolio.paymentdetail.starter;
 
+import org.apache.fineract.infrastructure.codes.domain.CodeValueRepositoryWrapper;
 import org.apache.fineract.portfolio.paymentdetail.domain.PaymentDetailRepository;
 import org.apache.fineract.portfolio.paymentdetail.service.PaymentDetailWritePlatformService;
 import org.apache.fineract.portfolio.paymentdetail.service.PaymentDetailWritePlatformServiceJpaRepositoryImpl;
@@ -32,7 +33,8 @@ public class PaymentDetailConfiguration {
     @Bean
     @ConditionalOnMissingBean(PaymentDetailWritePlatformService.class)
     PaymentDetailWritePlatformService paymentDetailWritePlatformService(PaymentDetailRepository paymentDetailRepository,
-            PaymentTypeRepositoryWrapper paymentTyperepositoryWrapper) {
-        return new PaymentDetailWritePlatformServiceJpaRepositoryImpl(paymentDetailRepository, paymentTyperepositoryWrapper);
+            PaymentTypeRepositoryWrapper paymentTyperepositoryWrapper, CodeValueRepositoryWrapper codeValueRepositoryWrapper) {
+        return new PaymentDetailWritePlatformServiceJpaRepositoryImpl(paymentDetailRepository, paymentTyperepositoryWrapper,
+                codeValueRepositoryWrapper);
     }
 }

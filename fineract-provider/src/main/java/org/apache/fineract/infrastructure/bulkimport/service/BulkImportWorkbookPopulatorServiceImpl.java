@@ -26,6 +26,9 @@ import java.util.ArrayList;
 import java.util.List;
 import org.apache.fineract.accounting.glaccount.data.GLAccountData;
 import org.apache.fineract.accounting.glaccount.service.GLAccountReadPlatformService;
+import org.apache.fineract.custom.infrastructure.channel.data.ChannelData;
+import org.apache.fineract.custom.infrastructure.channel.domain.ChannelType;
+import org.apache.fineract.custom.infrastructure.channel.service.ChannelReadWritePlatformService;
 import org.apache.fineract.infrastructure.bulkimport.constants.TemplatePopulateImportConstants;
 import org.apache.fineract.infrastructure.bulkimport.data.GlobalEntityType;
 import org.apache.fineract.infrastructure.bulkimport.populator.CenterSheetPopulator;
@@ -88,6 +91,7 @@ import org.apache.fineract.portfolio.group.data.GroupGeneralData;
 import org.apache.fineract.portfolio.group.service.CenterReadPlatformService;
 import org.apache.fineract.portfolio.group.service.GroupReadPlatformService;
 import org.apache.fineract.portfolio.loanaccount.data.LoanAccountData;
+import org.apache.fineract.portfolio.loanaccount.domain.LoanStatus;
 import org.apache.fineract.portfolio.loanaccount.service.LoanReadPlatformService;
 import org.apache.fineract.portfolio.loanproduct.data.LoanProductData;
 import org.apache.fineract.portfolio.loanproduct.service.LoanProductReadPlatformService;
@@ -139,6 +143,7 @@ public class BulkImportWorkbookPopulatorServiceImpl implements BulkImportWorkboo
     private final ChargeReadPlatformService chargeReadPlatformService;
     private final DepositProductReadPlatformService depositProductReadPlatformService;
     private final RoleReadPlatformService roleReadPlatformService;
+    private final ChannelReadWritePlatformService channelReadPlatformService;
 
     @Autowired
     public BulkImportWorkbookPopulatorServiceImpl(final PlatformSecurityContext context,
@@ -155,7 +160,7 @@ public class BulkImportWorkbookPopulatorServiceImpl implements BulkImportWorkboo
             final ShareProductReadPlatformService shareProductReadPlatformService,
             final ChargeReadPlatformService chargeReadPlatformService,
             final DepositProductReadPlatformService depositProductReadPlatformService,
-            final RoleReadPlatformService roleReadPlatformService) {
+            final RoleReadPlatformService roleReadPlatformService, final ChannelReadWritePlatformService channelReadPlatformService) {
         this.officeReadPlatformService = officeReadPlatformService;
         this.staffReadPlatformService = staffReadPlatformService;
         this.context = context;
@@ -175,11 +180,12 @@ public class BulkImportWorkbookPopulatorServiceImpl implements BulkImportWorkboo
         this.chargeReadPlatformService = chargeReadPlatformService;
         this.depositProductReadPlatformService = depositProductReadPlatformService;
         this.roleReadPlatformService = roleReadPlatformService;
+        this.channelReadPlatformService = channelReadPlatformService;
     }
 
     @Override
     public Response getTemplate(String entityType, Long officeId, Long staffId, final String dateFormat) {
-        WorkbookPopulator populator = null;
+        WorkbookPopulator populator;
         final Workbook workbook = new HSSFWorkbook();
         if (entityType != null) {
             if (entityType.trim().equalsIgnoreCase(GlobalEntityType.CLIENTS_PERSON.toString())
@@ -192,7 +198,7 @@ public class BulkImportWorkbookPopulatorServiceImpl implements BulkImportWorkboo
             } else if (entityType.trim().equalsIgnoreCase(GlobalEntityType.LOANS.toString())) {
                 populator = populateLoanWorkbook(officeId, staffId);
             } else if (entityType.trim().equalsIgnoreCase(GlobalEntityType.LOAN_TRANSACTIONS.toString())) {
-                populator = populateLoanRepaymentWorkbook(officeId);
+                populator = populateLoanRepaymentWorkbook();
             } else if (entityType.trim().equalsIgnoreCase(GlobalEntityType.GL_JOURNAL_ENTRIES.toString())) {
                 populator = populateJournalEntriesWorkbook(officeId);
             } else if (entityType.trim().equalsIgnoreCase(GlobalEntityType.GUARANTORS.toString())) {
@@ -204,7 +210,7 @@ public class BulkImportWorkbookPopulatorServiceImpl implements BulkImportWorkboo
             } else if (entityType.trim().equalsIgnoreCase(GlobalEntityType.STAFF.toString())) {
                 populator = populateStaffWorkbook(officeId);
             } else if (entityType.trim().equalsIgnoreCase(GlobalEntityType.SHARE_ACCOUNTS.toString())) {
-                populator = populateSharedAcountsWorkbook(officeId);
+                populator = populateSharedAccountsWorkbook(officeId);
             } else if (entityType.trim().equalsIgnoreCase(GlobalEntityType.SAVINGS_ACCOUNT.toString())) {
                 populator = populateSavingsAccountWorkbook(officeId, staffId);
             } else if (entityType.trim().equalsIgnoreCase(GlobalEntityType.SAVINGS_TRANSACTIONS.toString())) {
@@ -224,7 +230,9 @@ public class BulkImportWorkbookPopulatorServiceImpl implements BulkImportWorkboo
             } else {
                 throw new GeneralPlatformDomainRuleException("error.msg.unable.to.find.resource", "Unable to find requested resource");
             }
-            populator.populate(workbook, dateFormat);
+            if (populator != null) {
+                populator.populate(workbook, dateFormat);
+            }
             return buildResponse(workbook, entityType);
         } else {
             throw new GeneralPlatformDomainRuleException("error.msg.given.entity.type.null", "Given Entity type is null");
@@ -336,7 +344,7 @@ public class BulkImportWorkbookPopulatorServiceImpl implements BulkImportWorkboo
         List<OfficeData> offices = fetchOffices(officeId);
         List<StaffData> staff = fetchStaff(staffId);
         List<CenterData> centers = fetchCenters(officeId);
-        List<ClientData> clients = fetchClients(officeId);
+        List<ClientData> clients = fetchClients(officeId, false);
         return new GroupsWorkbookPopulator(new OfficeSheetPopulator(offices), new PersonnelSheetPopulator(staff, offices),
                 new CenterSheetPopulator(centers, offices), new ClientSheetPopulator(clients, offices));
     }
@@ -353,24 +361,20 @@ public class BulkImportWorkbookPopulatorServiceImpl implements BulkImportWorkboo
         return centers;
     }
 
-    private List<ClientData> fetchClients(Long officeId) {
+    private List<ClientData> fetchClients(final Long officeId, final boolean hasActiveLoan) {
         List<ClientData> clients = null;
         if (officeId == null) {
-            Page<ClientData> clientDataPage = this.clientReadPlatformService.retrieveAll(null);
+            SearchParameters searchParameters = SearchParameters.builder().clientHasActiveLoans(hasActiveLoan).build();
+            Page<ClientData> clientDataPage = this.clientReadPlatformService.retrieveAll(searchParameters);
             if (clientDataPage != null) {
-                clients = new ArrayList<>();
-                for (ClientData client : clientDataPage.getPageItems()) {
-                    clients.add(client);
-                }
+                clients = new ArrayList<>(clientDataPage.getPageItems());
             }
         } else {
             SearchParameters searchParameters = SearchParameters.from(officeId, null, null, null);
+            searchParameters.setClientHasActiveLoans(hasActiveLoan);
             Page<ClientData> clientDataPage = this.clientReadPlatformService.retrieveAll(searchParameters);
             if (clientDataPage != null) {
-                clients = new ArrayList<>();
-                for (ClientData client : clientDataPage.getPageItems()) {
-                    clients.add(client);
-                }
+                clients = new ArrayList<>(clientDataPage.getPageItems());
             }
         }
         return clients;
@@ -387,7 +391,7 @@ public class BulkImportWorkbookPopulatorServiceImpl implements BulkImportWorkboo
         this.context.authenticatedUser().validateHasReadPermission(TemplatePopulateImportConstants.CURRENCY_ENTITY_TYPE);
         List<OfficeData> offices = fetchOffices(officeId);
         List<StaffData> staff = fetchStaff(staffId);
-        List<ClientData> clients = fetchClients(officeId);
+        List<ClientData> clients = fetchClients(officeId, false);
         List<GroupGeneralData> groups = fetchGroups(officeId);
         List<ChargeData> charges = fetchCharges();
         List<LoanProductData> loanproducts = fetchLoanProducts();
@@ -432,30 +436,38 @@ public class BulkImportWorkbookPopulatorServiceImpl implements BulkImportWorkboo
         return groups;
     }
 
-    private WorkbookPopulator populateLoanRepaymentWorkbook(Long officeId) {
+    private WorkbookPopulator populateLoanRepaymentWorkbook() {
         this.context.authenticatedUser().validateHasReadPermission(TemplatePopulateImportConstants.OFFICE_ENTITY_TYPE);
         this.context.authenticatedUser().validateHasReadPermission(TemplatePopulateImportConstants.CLIENT_ENTITY_TYPE);
         this.context.authenticatedUser().validateHasReadPermission(TemplatePopulateImportConstants.FUNDS_ENTITY_TYPE);
         this.context.authenticatedUser().validateHasReadPermission(TemplatePopulateImportConstants.PAYMENT_TYPE_ENTITY_TYPE);
         this.context.authenticatedUser().validateHasReadPermission(TemplatePopulateImportConstants.CURRENCY_ENTITY_TYPE);
+        final Long officeId = null;
         List<OfficeData> offices = fetchOffices(officeId);
-        List<ClientData> clients = fetchClients(officeId);
+        List<ClientData> clients = fetchClients(officeId, true);
         List<FundData> funds = fetchFunds();
         List<PaymentTypeData> paymentTypes = fetchPaymentTypes();
         List<CurrencyData> currencies = fetchCurrencies();
-        List<LoanAccountData> loans = fetchLoanAccounts(officeId);
+        final SearchParameters channelSearchParameters = SearchParameters.builder().channelType(ChannelType.REPAYMENT.getValue())
+                .active(true).build();
+        final List<ChannelData> channelOptions = this.channelReadPlatformService.findBySearchParam(channelSearchParameters);
+        ;
+        final List<CodeValueData> bankOptions = fetchCodeValuesByCodeName("Bancos");
+        List<LoanAccountData> loans = fetchLoanAccounts(officeId, LoanStatus.ACTIVE);
+        final ExtrasSheetPopulator extrasSheetPopulator = new ExtrasSheetPopulator(funds, paymentTypes, currencies);
+        extrasSheetPopulator.setBankOptions(bankOptions);
+        extrasSheetPopulator.setChannelOptions(channelOptions);
         return new LoanRepaymentWorkbookPopulator(loans, new OfficeSheetPopulator(offices), new ClientSheetPopulator(clients, offices),
-                new ExtrasSheetPopulator(funds, paymentTypes, currencies));
+                extrasSheetPopulator);
     }
 
-    private List<LoanAccountData> fetchLoanAccounts(final Long officeId) {
-        List<LoanAccountData> loanAccounts = null;
-        if (officeId == null) {
-            loanAccounts = loanReadPlatformService.retrieveAll(null).getPageItems();
-        } else {
-            SearchParameters searchParameters = SearchParameters.from(officeId, null, null, null);
-            loanAccounts = loanReadPlatformService.retrieveAll(searchParameters).getPageItems();
+    private List<LoanAccountData> fetchLoanAccounts(final Long officeId, final LoanStatus loanStatus) {
+        List<LoanAccountData> loanAccounts;
+        final SearchParameters searchParameters = SearchParameters.builder().officeId(officeId).build();
+        if (loanStatus != null) {
+            searchParameters.setStatus(loanStatus.getValue().toString());
         }
+        loanAccounts = loanReadPlatformService.retrieveAll(searchParameters).getPageItems();
         return loanAccounts;
     }
 
@@ -483,8 +495,8 @@ public class BulkImportWorkbookPopulatorServiceImpl implements BulkImportWorkboo
         this.context.authenticatedUser().validateHasReadPermission(TemplatePopulateImportConstants.OFFICE_ENTITY_TYPE);
         this.context.authenticatedUser().validateHasReadPermission(TemplatePopulateImportConstants.STAFF_ENTITY_TYPE);
         List<OfficeData> offices = fetchOffices(officeId);
-        List<ClientData> clients = fetchClients(officeId);
-        List<LoanAccountData> loans = fetchLoanAccounts(officeId);
+        List<ClientData> clients = fetchClients(officeId, false);
+        List<LoanAccountData> loans = fetchLoanAccounts(officeId, null);
         List<SavingsAccountData> savingsaccounts = fetchSavingsAccounts(officeId);
         List<CodeValueData> guarantorRelationshipTypes = fetchCodeValuesByCodeName("GuarantorRelationship");
         return new GuarantorWorkbookPopulator(new OfficeSheetPopulator(offices), new ClientSheetPopulator(clients, offices), loans,
@@ -523,12 +535,12 @@ public class BulkImportWorkbookPopulatorServiceImpl implements BulkImportWorkboo
         return new StaffWorkbookPopulator(new OfficeSheetPopulator(offices));
     }
 
-    private WorkbookPopulator populateSharedAcountsWorkbook(Long officeId) {
+    private WorkbookPopulator populateSharedAccountsWorkbook(Long officeId) {
         this.context.authenticatedUser().validateHasReadPermission(TemplatePopulateImportConstants.CLIENT_ENTITY_TYPE);
         this.context.authenticatedUser().validateHasReadPermission(TemplatePopulateImportConstants.SHARED_ACCOUNT_ENTITY_TYPE);
         List<ShareProductData> shareProductDataList = fetchSharedProducts();
         List<ChargeData> chargesForShares = fetchChargesForShares();
-        List<ClientData> clientDataList = fetchClients(officeId);
+        List<ClientData> clientDataList = fetchClients(officeId, false);
         List<OfficeData> officeDataList = fetchOffices(officeId);
         List<SavingsAccountData> savingsAccounts = fetchSavingsAccounts(officeId);
         return new SharedAccountWorkBookPopulator(new SharedProductsSheetPopulator(shareProductDataList, chargesForShares),
@@ -560,7 +572,7 @@ public class BulkImportWorkbookPopulatorServiceImpl implements BulkImportWorkboo
         this.context.authenticatedUser().validateHasReadPermission(TemplatePopulateImportConstants.SAVINGS_PRODUCT_ENTITY_TYPE);
         List<OfficeData> offices = fetchOffices(officeId);
         List<StaffData> staff = fetchStaff(staffId);
-        List<ClientData> clients = fetchClients(officeId);
+        List<ClientData> clients = fetchClients(officeId, false);
         List<GroupGeneralData> groups = fetchGroups(officeId);
         List<SavingsProductData> savingsProducts = fetchSavingsProducts();
         return new SavingsWorkbookPopulator(new OfficeSheetPopulator(offices), new ClientSheetPopulator(clients, offices),
@@ -575,7 +587,7 @@ public class BulkImportWorkbookPopulatorServiceImpl implements BulkImportWorkboo
         this.context.authenticatedUser().validateHasReadPermission(TemplatePopulateImportConstants.PAYMENT_TYPE_ENTITY_TYPE);
         this.context.authenticatedUser().validateHasReadPermission(TemplatePopulateImportConstants.CURRENCY_ENTITY_TYPE);
         List<OfficeData> offices = fetchOffices(officeId);
-        List<ClientData> clients = fetchClients(officeId);
+        List<ClientData> clients = fetchClients(officeId, false);
         List<FundData> funds = fetchFunds();
         List<PaymentTypeData> paymentTypes = fetchPaymentTypes();
         List<CurrencyData> currencies = fetchCurrencies();
@@ -590,7 +602,7 @@ public class BulkImportWorkbookPopulatorServiceImpl implements BulkImportWorkboo
         this.context.authenticatedUser().validateHasReadPermission(TemplatePopulateImportConstants.STAFF_ENTITY_TYPE);
         this.context.authenticatedUser().validateHasReadPermission(TemplatePopulateImportConstants.RECURRING_DEPOSIT_PRODUCT_ENTITY_TYPE);
         List<OfficeData> offices = fetchOffices(officeId);
-        List<ClientData> clients = fetchClients(officeId);
+        List<ClientData> clients = fetchClients(officeId, false);
         List<StaffData> staff = fetchStaff(staffId);
         List<RecurringDepositProductData> recurringDepositProducts = fetchRecurringDepositProducts();
         return new RecurringDepositWorkbookPopulator(new OfficeSheetPopulator(offices), new ClientSheetPopulator(clients, offices),
@@ -615,7 +627,7 @@ public class BulkImportWorkbookPopulatorServiceImpl implements BulkImportWorkboo
         this.context.authenticatedUser().validateHasReadPermission(TemplatePopulateImportConstants.PAYMENT_TYPE_ENTITY_TYPE);
         this.context.authenticatedUser().validateHasReadPermission(TemplatePopulateImportConstants.CURRENCY_ENTITY_TYPE);
         List<OfficeData> offices = fetchOffices(officeId);
-        List<ClientData> clients = fetchClients(officeId);
+        List<ClientData> clients = fetchClients(officeId, false);
         List<FundData> funds = fetchFunds();
         List<PaymentTypeData> paymentTypes = fetchPaymentTypes();
         List<CurrencyData> currencies = fetchCurrencies();
@@ -630,7 +642,7 @@ public class BulkImportWorkbookPopulatorServiceImpl implements BulkImportWorkboo
         this.context.authenticatedUser().validateHasReadPermission(TemplatePopulateImportConstants.STAFF_ENTITY_TYPE);
         this.context.authenticatedUser().validateHasReadPermission(TemplatePopulateImportConstants.FIXED_DEPOSIT_PRODUCT_ENTITY_TYPE);
         List<OfficeData> offices = fetchOffices(officeId);
-        List<ClientData> clients = fetchClients(officeId);
+        List<ClientData> clients = fetchClients(officeId, false);
         List<StaffData> staff = fetchStaff(staffId);
         List<FixedDepositProductData> fixedDepositProducts = fetchFixedDepositProducts();
         return new FixedDepositWorkbookPopulator(new OfficeSheetPopulator(offices), new ClientSheetPopulator(clients, offices),
@@ -671,7 +683,7 @@ public class BulkImportWorkbookPopulatorServiceImpl implements BulkImportWorkboo
         this.context.authenticatedUser().validateHasReadPermission(TemplatePopulateImportConstants.PAYMENT_TYPE_ENTITY_TYPE);
         this.context.authenticatedUser().validateHasReadPermission(TemplatePopulateImportConstants.CURRENCY_ENTITY_TYPE);
         List<OfficeData> offices = fetchOffices(officeId);
-        List<ClientData> clients = fetchClients(officeId);
+        List<ClientData> clients = fetchClients(officeId, false);
         List<FundData> funds = fetchFunds();
         List<PaymentTypeData> paymentTypes = fetchPaymentTypes();
         List<CurrencyData> currencies = fetchCurrencies();

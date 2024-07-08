@@ -58,4 +58,42 @@
             <column name="active" value="true"/>
         </insert>
     </changeSet>
+
+    <changeSet author="fineract" id="5">
+        <insert tableName="m_code">
+            <column name="code_name" value="Bancos"/>
+            <column name="is_system_defined" valueBoolean="false"/>
+        </insert>
+    </changeSet>
+
+    <changeSet author="fineract" id="6" >
+        <insert tableName="m_code_value">
+            <column name="code_id" valueComputed="(SELECT id FROM m_code WHERE code_name='Bancos')"/>
+            <column name="code_value" value="Banco de la República"/>
+            <column name="code_description" value="Banco de la República"/>
+            <column name="order_position" valueNumeric="1"/>
+            <column name="code_score" valueNumeric="1"/>
+            <column name="is_active" valueBoolean="true"/>
+            <column name="is_mandatory" valueBoolean="false"/>
+        </insert>
+        <insert tableName="m_code_value">
+            <column name="code_id" valueComputed="(SELECT id FROM m_code WHERE code_name='Bancos')"/>
+            <column name="code_value" value="Banco de Bogotá"/>
+            <column name="code_description" value="Banco de Bogotá"/>
+            <column name="order_position" valueNumeric="2"/>
+            <column name="code_score" valueNumeric="2"/>
+            <column name="is_active" valueBoolean="true"/>
+            <column name="is_mandatory" valueBoolean="false"/>
+        </insert>
+        <insert tableName="m_code_value">
+            <column name="code_id" valueComputed="(SELECT id FROM m_code WHERE code_name='Bancos')"/>
+            <column name="code_value" value="Banco de Occidente"/>
+            <column name="code_description" value="Banco de Occidente"/>
+            <column name="order_position" valueNumeric="3"/>
+            <column name="code_score" valueNumeric="3"/>
+            <column name="is_active" valueBoolean="true"/>
+            <column name="is_mandatory" valueBoolean="false"/>
+        </insert>
+    </changeSet>
+
 </databaseChangeLog>

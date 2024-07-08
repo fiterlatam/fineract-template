@@ -233,4 +233,17 @@
         </sql>
     </changeSet>
 
+    <changeSet author="fineract" id="73">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_payment_detail" columnName="payment_bank_cv_id"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_payment_detail">
+            <column name="payment_bank_cv_id" type="BIGINT">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
 </databaseChangeLog>

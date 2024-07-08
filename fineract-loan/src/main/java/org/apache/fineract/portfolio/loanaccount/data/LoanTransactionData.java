@@ -44,14 +44,10 @@ public class LoanTransactionData {
     private final ExternalId externalLoanId;
     private final Long officeId;
     private final String officeName;
-
     private final LoanTransactionEnumData type;
-
     private final LocalDate date;
-
     private final CurrencyData currency;
     private final PaymentDetailData paymentDetailData;
-
     private final BigDecimal amount;
     private final BigDecimal netDisbursalAmount;
     private final BigDecimal principalPortion;
@@ -67,16 +63,11 @@ public class LoanTransactionData {
     private final LocalDate submittedOnDate;
     private final boolean manuallyReversed;
     private final LocalDate possibleNextRepaymentDate;
-
     private Collection<LoanChargePaidByData> loanChargePaidByList;
-
     // templates
     final Collection<PaymentTypeData> paymentTypeOptions;
-
     private Collection<CodeValueData> writeOffReasonOptions = null;
-
     private Integer numberOfRepayments = 0;
-
     // import fields
     private transient Integer rowIndex;
     private String dateFormat;
@@ -92,15 +83,16 @@ public class LoanTransactionData {
     private transient Long accountId;
     private transient String transactionType;
     private List<LoanRepaymentScheduleInstallmentData> loanRepaymentScheduleInstallments;
-
     // Reverse Data
     private final ExternalId reversalExternalId;
     private LocalDate reversedOnDate;
-
     private List<LoanTransactionRelationData> transactionRelations;
-
     private Collection<CodeValueData> chargeOffReasonOptions = null;
     private List<ChannelData> channelOptions;
+    private Collection<CodeValueData> bankOptions;
+    private Long repaymentChannelId;
+    private Long repaymentBankId;
+    private boolean isImportedRepaymentTransaction;
 
     public static LoanTransactionData importInstance(BigDecimal repaymentAmount, LocalDate lastRepaymentDate, Long repaymentTypeId,
             Integer rowIndex, String locale, String dateFormat) {
