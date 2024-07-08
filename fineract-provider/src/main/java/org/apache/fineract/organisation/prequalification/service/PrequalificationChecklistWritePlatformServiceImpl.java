@@ -276,6 +276,8 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
                     LEFT JOIN m_code_value areacv ON areacv.id = cinf.area
                     LEFT JOIN m_prequalification_group mpg ON mpg.id = mpgm.group_id
                     LEFT JOIN m_loan ml ON ml.client_id = mc.id AND ml.loan_status_id = 100 AND ml.prequalification_id = mpg.id
+                    LEFT JOIN m_loan_additionals_group mlad ON mlad.loan_id = ml.id
+                    LEFT JOIN m_code_value mcv ON mcv.id = mlad.loan_cycle_completed
                     WHERE mpg.id = ? GROUP BY mc.id
                     """;
         }
@@ -298,7 +300,12 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
             final String gender = rs.getString("gender");
             final String clientArea = rs.getString("clientArea");
             final String clientCategorization = rs.getString("clientCategorization");
-            final String recreditCategorization = isTopup?"RECREDITO" : "NUEVO";
+            String recreditCategorization = isTopup?"RECREDITO" : "NUEVO";
+            final String loanCycleCompleted = rs.getString("loanCycleCompleted");
+            if (!StringUtils.isBlank(loanCycleCompleted)){
+                recreditCategorization = StringUtils.equalsIgnoreCase(loanCycleCompleted, "fromAnotherGroup") ? "RECREDITO" : "NUEVO";
+            }
+
             return ClientData.builder().clientId(clientId).prequalificationId(prequalificationId).clientArea(clientArea)
                     .clientCategorization(clientCategorization).recreditCategorization(recreditCategorization).prequalificationMemberId(prequalificationMemberId).name(name)
                     .dateOfBirth(dateOfBirth).dpi(dpi).requestedAmount(requestedAmount).gender(gender).workWithPuente(workWithPuente)
