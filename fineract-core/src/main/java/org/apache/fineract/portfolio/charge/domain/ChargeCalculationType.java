@@ -1602,6 +1602,11 @@ public enum ChargeCalculationType {
                 && val.charAt(ChargeCalculationTypeBaseItemsEnum.FLAT.getIndex()) == '1';
     }
 
+    // is voluntary or mandatory insurance
+    public boolean isInsurance() {
+        return isPercentageOfInsurance() || isVoluntaryInsurance();
+    }
+
     public boolean isFlatHono() {
         return isFlat() && this.byteRepresentation.charAt(ChargeCalculationTypeBaseItemsEnum.HOORARIOS.getIndex()) == '1';
     }

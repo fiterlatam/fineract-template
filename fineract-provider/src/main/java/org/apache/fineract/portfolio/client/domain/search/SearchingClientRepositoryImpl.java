@@ -84,6 +84,7 @@ public class SearchingClientRepositoryImpl implements SearchingClientRepository 
                        cce."NIT" AS nit,
                         ccp."Cedula" AS cedula,
                        c.lastName AS lastName,
+                       c.second_lastname AS secondLastName,
                        c.external_id AS externalId,
                        c.account_no AS accountNumber,
                        o.id AS officeId,
@@ -99,8 +100,9 @@ public class SearchingClientRepositoryImpl implements SearchingClientRepository 
             String firstName = rs.getString("firstName");
             String middleName = rs.getString("middleName");
             String lastName = rs.getString("lastName");
+            String secondLastName = rs.getString("secondLastName");
             String fullName = Objects.toString(firstName, "") + " " + Objects.toString(middleName, "") + " "
-                    + Objects.toString(lastName, "");
+                    + Objects.toString(lastName, "") + " " + Objects.toString(secondLastName, "");
             String name = StringUtils.isBlank(fullName) ? rs.getString("displayName") : fullName;
             String nit = rs.getString("nit");
             String cedula = rs.getString("cedula");
