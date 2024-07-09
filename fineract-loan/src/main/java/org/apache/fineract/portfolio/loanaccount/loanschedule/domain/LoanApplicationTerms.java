@@ -1272,12 +1272,12 @@ public final class LoanApplicationTerms {
         Money interestDue = Money.zero(outstandingBalance.getCurrency());
         boolean useDailyInterestCalculation = true;
         final BigDecimal periodicInterestRate = periodicInterestRate(calculator, mc, this.daysInMonthType, this.daysInYearType,
-                periodStartDate, periodEndDate, useDailyInterestCalculation);// 0.021232877 ob:14911.64
-        // interestDue = outstandingBalance.multiplyRetainScale(periodicInterestRate, mc.getRoundingMode());
-        BigDecimal numberOfDaysInPeriod = BigDecimal.valueOf(ChronoUnit.DAYS.between(periodStartDate, periodEndDate));
-        BigDecimal dueInterest = outstandingBalance.getAmount().multiply(periodicInterestRate).multiply(numberOfDaysInPeriod);
-        // interestDue = outstandingBalance.multiplyRetainScale(periodicInterestRate,
-        // mc.getRoundingMode()).multipliedBy(numberOfDaysInPeriod);
+                periodStartDate, periodEndDate, useDailyInterestCalculation);
+        BigDecimal dueInterest = outstandingBalance.getAmount().multiply(periodicInterestRate);
+        if (InterestCalculationPeriodMethod.SAME_AS_REPAYMENT_PERIOD.equals(this.interestCalculationPeriodMethod)) {
+            BigDecimal numberOfDaysInPeriod = BigDecimal.valueOf(ChronoUnit.DAYS.between(periodStartDate, periodEndDate));
+            dueInterest = dueInterest.multiply(numberOfDaysInPeriod);
+        }
         interestDue = interestDue.add(dueInterest);
         return interestDue;
     }
