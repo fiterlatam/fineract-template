@@ -1007,7 +1007,8 @@ public final class LoanApplicationTerms {
             final DaysInMonthType daysInMonthType, final DaysInYearType daysInYearType, LocalDate periodStartDate, LocalDate periodEndDate,
             boolean isForPMT, boolean useDailyInterestCalculation, boolean useAnnualNominalInterestRate) {
 
-        // As per client's formula, EMI is calculated based on Monthly interest rate while intallment interest is calculated based on Daily interest rate
+        // As per client's formula, EMI is calculated based on Monthly interest rate while intallment interest is
+        // calculated based on Daily interest rate
         // Variable isForPMT refers to the process flow where EMI is being calculated
         long loanTermPeriodsInOneYear;
         if (isForPMT) {
@@ -1051,8 +1052,9 @@ public final class LoanApplicationTerms {
                         } else {
                             periodicInterestRate = oneDayOfYearInterestRate.multiply(numberOfDaysInPeriod, mc);
                         }
-                        //periodicInterestRate = calculateCustomPeriodicInterestRate(daysInYearType.getValue().doubleValue(), divisor,
-                        //        useAnnualNominalInterestRate);
+                    // periodicInterestRate =
+                    // calculateCustomPeriodicInterestRate(daysInYearType.getValue().doubleValue(), divisor,
+                    // useAnnualNominalInterestRate);
                     break;
                     case WEEKS:
                         if (isForPMT) {
@@ -1105,7 +1107,8 @@ public final class LoanApplicationTerms {
                 } else {
                     periodicInterestRate = oneDayOfYearInterestRate.multiply(numberOfDaysInPeriod, mc);
                 }
-                //periodicInterestRate = calculateCustomPeriodicInterestRate(loanTermPeriodsInOneYear, divisor, useAnnualNominalInterestRate);
+            // periodicInterestRate = calculateCustomPeriodicInterestRate(loanTermPeriodsInOneYear, divisor,
+            // useAnnualNominalInterestRate);
 
             break;
         }
