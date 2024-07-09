@@ -2458,7 +2458,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 if (advanceTotalOutstandingPrincipalAmount.isGreaterThan(maximumAdvanceQuota)) {
                     throw new GeneralPlatformDomainRuleException("error.msg.loan.maximum.advance.cupo.limit.exceeded",
                             String.format("Límite de cupo adelantado excedido. Límite disponible: %s y tu enviaste: %s",
-                                    maximumAdvanceQuota.getAmount(), advanceTotalOutstandingPrincipalAmount.toString()));
+                                    maximumAdvanceQuota, approvedPrincipal));
 
                 }
                 if (purchaseTotalOutstandingPrincipalAmount.isGreaterThan(cupo)) {
