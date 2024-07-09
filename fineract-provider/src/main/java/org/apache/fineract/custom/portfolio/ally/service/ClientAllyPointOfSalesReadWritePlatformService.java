@@ -20,7 +20,6 @@ package org.apache.fineract.custom.portfolio.ally.service;
 
 import java.util.List;
 import org.apache.fineract.custom.portfolio.ally.data.ClientAllyPoibfOfSaleCodeValueData;
-import org.apache.fineract.custom.portfolio.ally.data.ClientAllyPointOfSalesCollectionData;
 import org.apache.fineract.custom.portfolio.ally.data.ClientAllyPointOfSalesData;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
@@ -41,5 +40,4 @@ public interface ClientAllyPointOfSalesReadWritePlatformService {
 
     CommandProcessingResult update(JsonCommand command, Long clientAllyId, Long id);
 
-    List<ClientAllyPointOfSalesCollectionData> getCollectionData();
 }

@@ -1,8 +1,10 @@
 package org.apache.fineract.custom.portfolio.ally.jobs.collectionsettlement;
 
 import org.apache.fineract.custom.portfolio.ally.domain.AllyCollectionSettlementRepository;
-import org.apache.fineract.custom.portfolio.ally.service.ClientAllyPointOfSalesReadWritePlatformService;
+import org.apache.fineract.custom.portfolio.ally.service.AllyCollectionSettlementReadWritePlatformService;
+import org.apache.fineract.infrastructure.codes.service.CodeValueReadPlatformService;
 import org.apache.fineract.infrastructure.jobs.service.JobName;
+import org.apache.fineract.organisation.workingdays.domain.WorkingDaysRepositoryWrapper;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.job.builder.JobBuilder;
@@ -23,10 +25,16 @@ public class CollectionOfSettlementConfig {
     private PlatformTransactionManager transactionManager;
 
     @Autowired
-    private ClientAllyPointOfSalesReadWritePlatformService clientAllyPointOfSalesService;
+    private AllyCollectionSettlementReadWritePlatformService allyCollectionSettlementReadWritePlatformService;
 
     @Autowired
     private AllyCollectionSettlementRepository allyCollectionSettlementRepository;
+
+    @Autowired
+    private CodeValueReadPlatformService codeValueReadPlatformService;
+
+    @Autowired
+    private WorkingDaysRepositoryWrapper daysRepositoryWrapper;
 
     @Bean
     public Step collectionOfSettlementStep() {

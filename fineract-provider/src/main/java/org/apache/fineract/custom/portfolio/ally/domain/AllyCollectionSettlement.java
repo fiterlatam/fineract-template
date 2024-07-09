@@ -40,6 +40,9 @@ public class AllyCollectionSettlement {
     @Column(name = "city_id", nullable = false)
     private Long cityId;
 
+    @Column(name = "city_name")
+    private String cityName;
+
     @Column(name = "principal_amount", nullable = false)
     private BigDecimal principalAmount;
 
