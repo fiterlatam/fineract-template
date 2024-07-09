@@ -14,13 +14,16 @@ public class ClientAllyPointOfSalesCollectionData {
     private String nit;
     private String name;
     private Long clientAllyId;
+    private Long liquidationFrequencyId;
     private Long pointOfSalesId;
     private String pointOfSalesName;
     private Long cityId;
+    private String cityName;
     private BigDecimal amount;
     private Integer settledComission;
     private Integer taxId;
     private Long channelId;
     private Long loanId;
     private Long clientId;
+
 }
