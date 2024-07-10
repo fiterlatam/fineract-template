@@ -47,9 +47,11 @@ public class PaymentDetailWritePlatformServiceJpaRepositoryImpl implements Payme
         final PaymentDetail paymentDetail = PaymentDetail.generatePaymentDetail(paymentType, command, changes);
         if (changes.containsKey("paymentBankId")) {
             final Long paymentBankId = (Long) changes.get("paymentBankId");
-            final CodeValue paymentBank = this.codeValueRepositoryWrapper.findOneByCodeNameAndIdWithNotFoundDetection("Bancos",
-                    paymentBankId);
-            paymentDetail.setPaymentBank(paymentBank);
+            if (paymentBankId != null) {
+                final CodeValue paymentBank = this.codeValueRepositoryWrapper.findOneByCodeNameAndIdWithNotFoundDetection("Bancos",
+                        paymentBankId);
+                paymentDetail.setPaymentBank(paymentBank);
+            }
         }
         return paymentDetail;
     }
