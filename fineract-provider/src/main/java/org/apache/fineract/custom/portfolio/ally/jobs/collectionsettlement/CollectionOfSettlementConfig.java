@@ -50,7 +50,8 @@ public class CollectionOfSettlementConfig {
 
     @Bean
     public CollectionSettlementTasklet collectionOfSettlementTasklet() {
-        return new CollectionSettlementTasklet(clientAllyPointOfSalesService, allyCollectionSettlementRepository);
+        return new CollectionSettlementTasklet(allyCollectionSettlementReadWritePlatformService, allyCollectionSettlementRepository,
+                codeValueReadPlatformService, daysRepositoryWrapper);
     }
 
 }
