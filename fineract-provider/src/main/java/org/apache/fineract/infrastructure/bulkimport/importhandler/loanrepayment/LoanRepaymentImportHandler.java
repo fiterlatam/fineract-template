@@ -101,13 +101,18 @@ public class LoanRepaymentImportHandler implements ImportHandler {
         String repaymentType = ImportHandlerUtils.readAsString(LoanRepaymentConstants.REPAYMENT_TYPE_COL, row);
         Long repaymentTypeId = ImportHandlerUtils.getIdByName(workbook.getSheet(TemplatePopulateImportConstants.EXTRAS_SHEET_NAME),
                 repaymentType);
-        String accountNumber = ImportHandlerUtils.readAsString(LoanRepaymentConstants.ACCOUNT_NO_COL, row);
-        Integer checkNumber = ImportHandlerUtils.readAsInt(LoanRepaymentConstants.CHECK_NO_COL, row);
-        Integer routingCode = ImportHandlerUtils.readAsInt(LoanRepaymentConstants.ROUTING_CODE_COL, row);
-        Integer receiptNumber = ImportHandlerUtils.readAsInt(LoanRepaymentConstants.RECEIPT_NO_COL, row);
-        Integer bankNumber = ImportHandlerUtils.readAsInt(LoanRepaymentConstants.BANK_NO_COL, row);
-        return LoanTransactionData.importInstance(repaymentAmount, repaymentDate, repaymentTypeId, accountNumber, checkNumber, routingCode,
-                receiptNumber, bankNumber, loanAccountId, EMPTY_STR, row.getRowNum(), locale, dateFormat);
+        final LoanTransactionData loanTransactionData = LoanTransactionData.importInstance(repaymentAmount, repaymentDate, repaymentTypeId,
+                null, null, null, null, null, loanAccountId, EMPTY_STR, row.getRowNum(), locale, dateFormat);
+        final String repaymentChannel = ImportHandlerUtils.readAsString(LoanRepaymentConstants.REPAYMENT_CHANNEL_COL, row);
+        final Long repaymentChannelId = ImportHandlerUtils.getIdByName(workbook.getSheet(TemplatePopulateImportConstants.EXTRAS_SHEET_NAME),
+                repaymentChannel);
+        final String repaymentBank = ImportHandlerUtils.readAsString(LoanRepaymentConstants.REPAYMENT_BANK_COL, row);
+        final Long repaymentBankId = ImportHandlerUtils.getIdByName(workbook.getSheet(TemplatePopulateImportConstants.EXTRAS_SHEET_NAME),
+                repaymentBank);
+        loanTransactionData.setRepaymentChannelId(repaymentChannelId);
+        loanTransactionData.setRepaymentBankId(repaymentBankId);
+        loanTransactionData.setImportedRepaymentTransaction(true);
+        return loanTransactionData;
     }
 
     private Count importEntity(final Workbook workbook, final List<LoanTransactionData> loanRepayments, final String dateFormat) {
@@ -121,9 +126,10 @@ public class LoanRepaymentImportHandler implements ImportHandler {
         for (LoanTransactionData loanRepayment : loanRepayments) {
             try {
 
-                JsonObject loanRepaymentJsonob = gsonBuilder.create().toJsonTree(loanRepayment).getAsJsonObject();
-                loanRepaymentJsonob.remove("manuallyReversed");
-                String payload = loanRepaymentJsonob.toString();
+                JsonObject loanRepaymentJsonObj = gsonBuilder.create().toJsonTree(loanRepayment).getAsJsonObject();
+                loanRepaymentJsonObj.remove("manuallyReversed");
+                loanRepaymentJsonObj.remove("numberOfRepayments");
+                String payload = loanRepaymentJsonObj.toString();
                 final CommandWrapper commandRequest = new CommandWrapperBuilder() //
                         .loanRepaymentTransaction(loanRepayment.getAccountId()) //
                         .withJson(payload) //

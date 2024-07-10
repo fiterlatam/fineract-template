@@ -18,9 +18,12 @@
  */
 package org.apache.fineract.portfolio.loanaccount.domain;
 
+import lombok.Getter;
+
 /**
  * Enum representation of loan status states.
  */
+@Getter
 public enum LoanStatus {
 
     INVALID(0, "loanStatusType.invalid"), //
@@ -87,14 +90,6 @@ public enum LoanStatus {
 
     public boolean hasStateOf(final LoanStatus state) {
         return this.value.equals(state.getValue());
-    }
-
-    public Integer getValue() {
-        return this.value;
-    }
-
-    public String getCode() {
-        return this.code;
     }
 
     public boolean isSubmittedAndPendingApproval() {

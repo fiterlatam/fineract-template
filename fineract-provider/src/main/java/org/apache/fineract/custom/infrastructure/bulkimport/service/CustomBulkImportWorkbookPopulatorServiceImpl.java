@@ -7,6 +7,7 @@ import org.apache.fineract.accounting.glaccount.service.GLAccountReadPlatformSer
 import org.apache.fineract.custom.infrastructure.bulkimport.data.CustomGlobalEntityType;
 import org.apache.fineract.custom.infrastructure.bulkimport.populator.clientally.ClientAllyWorkbookPopulator;
 import org.apache.fineract.custom.infrastructure.bulkimport.populator.clientallypointsofsales.ClientAllyPointsOfSalesWorkbookPopulator;
+import org.apache.fineract.custom.infrastructure.channel.service.ChannelReadWritePlatformService;
 import org.apache.fineract.custom.infrastructure.codes.service.CustomCodeValueReadPlatformService;
 import org.apache.fineract.custom.portfolio.ally.data.ClientAllyData;
 import org.apache.fineract.custom.portfolio.ally.service.ClientAllyReadWritePlatformService;
@@ -51,12 +52,13 @@ public class CustomBulkImportWorkbookPopulatorServiceImpl extends BulkImportWork
             CustomCodeValueReadPlatformService codeValueReadPlatformService,
             SavingsProductReadPlatformService savingsProductReadPlatformService,
             ShareProductReadPlatformService shareProductReadPlatformService, ChargeReadPlatformService chargeReadPlatformService,
-            DepositProductReadPlatformService depositProductReadPlatformService, RoleReadPlatformService roleReadPlatformService) {
+            DepositProductReadPlatformService depositProductReadPlatformService, RoleReadPlatformService roleReadPlatformService,
+            ChannelReadWritePlatformService channelReadPlatformService) {
         super(context, officeReadPlatformService, staffReadPlatformService, clientReadPlatformService, centerReadPlatformService,
                 groupReadPlatformService, fundReadPlatformService, paymentTypeReadPlatformService, loanProductReadPlatformService,
                 currencyReadPlatformService, loanReadPlatformService, glAccountReadPlatformService, savingsAccountReadPlatformService,
                 codeValueReadPlatformService, savingsProductReadPlatformService, shareProductReadPlatformService, chargeReadPlatformService,
-                depositProductReadPlatformService, roleReadPlatformService);
+                depositProductReadPlatformService, roleReadPlatformService, channelReadPlatformService);
     }
 
     @Autowired

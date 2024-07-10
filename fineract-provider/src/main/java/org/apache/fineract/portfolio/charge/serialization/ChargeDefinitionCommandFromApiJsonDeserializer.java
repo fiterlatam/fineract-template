@@ -464,7 +464,7 @@ public final class ChargeDefinitionCommandFromApiJsonDeserializer {
             baseDataValidator.reset().parameter(ChargesApiConstants.taxGroupIdParamName).value(taxGroupId).notNull().longGreaterThanZero();
         }
 
-        // Charge Voluntary Insurance validation
+        // Charge Voluntary and mandatory Insurance validation
         // Insurance details validation
         final ChargeAppliesTo appliesTo = ChargeAppliesTo.fromInt(chargeAppliesTo);
         if (appliesTo.isLoanCharge()) {
@@ -488,20 +488,6 @@ public final class ChargeDefinitionCommandFromApiJsonDeserializer {
             baseDataValidator.reset().parameter(ChargesApiConstants.insuranceChargedAsParamName).value(insuranceChargedAs).notNull()
                     .inMinMaxRange(ChargeInsuranceType.COMPRA.getValue(), ChargeInsuranceType.CARGO.getValue());
 
-            final String insuranceCompany = this.fromApiJsonHelper.extractStringNamed(ChargesApiConstants.insuranceCompanyParamName,
-                    element);
-            baseDataValidator.reset().parameter(ChargesApiConstants.insuranceCompanyParamName).value(insuranceCompany).notBlank()
-                    .notExceedingLengthOf(100);
-
-            final String insurerName = this.fromApiJsonHelper.extractStringNamed(ChargesApiConstants.insurerNameParamName, element);
-            baseDataValidator.reset().parameter(ChargesApiConstants.insurerNameParamName).value(insurerName).notBlank()
-                    .notExceedingLengthOf(100);
-
-            final Long insuranceCode = this.fromApiJsonHelper.extractLongNamed(ChargesApiConstants.insuranceCodeParamName,
-                    element.getAsJsonObject());
-            baseDataValidator.reset().parameter(ChargesApiConstants.insuranceCodeParamName).value(insuranceCode).notNull()
-                    .longGreaterThanZero();
-
             final String insurancePlan = this.fromApiJsonHelper.extractStringNamed(ChargesApiConstants.insurancePlanParamName, element);
             baseDataValidator.reset().parameter(ChargesApiConstants.insurancePlanParamName).value(insurancePlan).notBlank()
                     .notExceedingLengthOf(100);
@@ -524,6 +510,23 @@ public final class ChargeDefinitionCommandFromApiJsonDeserializer {
                 baseDataValidator.reset().parameter(ChargesApiConstants.deadlineParamName).value(deadline).notNull()
                         .integerGreaterThanZero();
             }
+        }
+        if (calculationType.isInsurance()) {
+
+            final String insuranceCompany = this.fromApiJsonHelper.extractStringNamed(ChargesApiConstants.insuranceCompanyParamName,
+                    element);
+            baseDataValidator.reset().parameter(ChargesApiConstants.insuranceCompanyParamName).value(insuranceCompany).notBlank()
+                    .notExceedingLengthOf(100);
+
+            final String insurerName = this.fromApiJsonHelper.extractStringNamed(ChargesApiConstants.insurerNameParamName, element);
+            baseDataValidator.reset().parameter(ChargesApiConstants.insurerNameParamName).value(insurerName).notBlank()
+                    .notExceedingLengthOf(100);
+
+            final Long insuranceCode = this.fromApiJsonHelper.extractLongNamed(ChargesApiConstants.insuranceCodeParamName,
+                    element.getAsJsonObject());
+            baseDataValidator.reset().parameter(ChargesApiConstants.insuranceCodeParamName).value(insuranceCode).notNull()
+                    .longGreaterThanZero();
+
         }
     }
 
