@@ -10,6 +10,7 @@ import lombok.*;
 @Setter
 public class ClientAllyPointOfSalesCollectionData {
 
+    private String disburseDate;
     private String collectionDate;
     private String nit;
     private String name;

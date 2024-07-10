@@ -45,8 +45,7 @@ public class CollectionSettlementTasklet implements Tasklet {
         for (ClientAllyPointOfSalesCollectionData data : collectionData) {
             Optional<AllyCollectionSettlement> collect = allyCollectionSettlementRepository.findByLoanId(data.getLoanId());
             String freq = LiquidationFrequency.fromInt(data.getLiquidationFrequencyId().intValue()).toString();
-            LocalDate period = LocalDate.now();
-
+            LocalDate period = LocalDate.parse(data.getDisburseDate());
             switch (freq) {
                 case "WEEKLY":
                     period = period.plusWeeks(1);
@@ -56,39 +55,49 @@ public class CollectionSettlementTasklet implements Tasklet {
                 break;
                 case "MONTHLY":
                     period = period.plusMonths(1);
+                break;
                 case "DAILY":
                     period = period.plusDays(1);
+                break;
             }
+
+            String worksday = workingDays.getRecurrence();
+            String[] arrayworksday = worksday.split(";");
+            String[] arrayweekdays = arrayworksday[2].split("BYDAY=");
+            String[] arrayCount = arrayweekdays[1].split(",");
+            Integer countWokringDay = arrayCount.length - 1;
+
             if (!WorkingDaysUtil.isWorkingDay(workingDays, period)) {
                 do {
                     period = period.plusDays(1);
-                } while (period.getDayOfWeek().getValue() >= 5);
-                System.out.println("working day :" + WorkingDaysUtil.isWorkingDay(workingDays, period) + "-" + period + "-"
-                        + workingDays.getRecurrence());
-            }
+                } while (period.getDayOfWeek().getValue() >= countWokringDay);
 
-            if (!collect.isPresent()) {
-                if (LocalDate.now() == period) {
-                    AllyCollectionSettlement allyCollectionSettlement = new AllyCollectionSettlement();
-                    LocalDate collectDate = LocalDate.parse(data.getCollectionDate());
-                    CodeValueData city = codeValueReadPlatformService.retrieveCodeValue(data.getCityId());
-                    allyCollectionSettlement.setCollectionDate(collectDate);
-                    allyCollectionSettlement.setNit(data.getNit());
-                    allyCollectionSettlement.setCompanyName(data.getName());
-                    allyCollectionSettlement.setClientAllyId(data.getClientAllyId());
-                    allyCollectionSettlement.setPointOfSalesId(data.getPointOfSalesId());
-                    allyCollectionSettlement.setPointOfSalesName(data.getPointOfSalesName());
-                    allyCollectionSettlement.setCityId(data.getCityId());
-                    allyCollectionSettlement.setCityName(city.getName());
-                    allyCollectionSettlement.setPrincipalAmount(data.getAmount());
-                    allyCollectionSettlement.setSettledComission(data.getSettledComission());
-                    allyCollectionSettlement.setTaxProfileId(data.getTaxId());
-                    allyCollectionSettlement.setLoanId(data.getLoanId());
-                    allyCollectionSettlement.setClientId(data.getClientId());
-                    allyCollectionSettlement.setChannelId(data.getChannelId());
-                    allyCollectionSettlement.setCollectionStatus(300);
-                    allyCollectionSettlementReadWritePlatformService.create(allyCollectionSettlement);
-                }
+            }
+            LocalDate now = LocalDate.now();
+            System.out.println("date period " + period);
+            boolean isAfter = now.isAfter(period);
+            if (!collect.isPresent() && isAfter) {
+
+                AllyCollectionSettlement allyCollectionSettlement = new AllyCollectionSettlement();
+                LocalDate collectDate = LocalDate.parse(data.getCollectionDate());
+                CodeValueData city = codeValueReadPlatformService.retrieveCodeValue(data.getCityId());
+                allyCollectionSettlement.setCollectionDate(collectDate);
+                allyCollectionSettlement.setNit(data.getNit());
+                allyCollectionSettlement.setCompanyName(data.getName());
+                allyCollectionSettlement.setClientAllyId(data.getClientAllyId());
+                allyCollectionSettlement.setPointOfSalesId(data.getPointOfSalesId());
+                allyCollectionSettlement.setPointOfSalesName(data.getPointOfSalesName());
+                allyCollectionSettlement.setCityId(data.getCityId());
+                allyCollectionSettlement.setCityName(city.getName());
+                allyCollectionSettlement.setPrincipalAmount(data.getAmount());
+                allyCollectionSettlement.setSettledComission(data.getSettledComission());
+                allyCollectionSettlement.setTaxProfileId(data.getTaxId());
+                allyCollectionSettlement.setLoanId(data.getLoanId());
+                allyCollectionSettlement.setClientId(data.getClientId());
+                allyCollectionSettlement.setChannelId(data.getChannelId());
+                allyCollectionSettlement.setCollectionStatus(300);
+                allyCollectionSettlementReadWritePlatformService.create(allyCollectionSettlement);
+
             }
 
         }
