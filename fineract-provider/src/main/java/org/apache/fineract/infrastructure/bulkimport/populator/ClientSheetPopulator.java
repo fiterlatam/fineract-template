@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import lombok.Getter;
 import org.apache.fineract.infrastructure.bulkimport.constants.TemplatePopulateImportConstants;
 import org.apache.fineract.organisation.office.data.OfficeData;
 import org.apache.fineract.portfolio.client.data.ClientData;
@@ -31,10 +32,11 @@ import org.apache.poi.ss.usermodel.Workbook;
 
 public class ClientSheetPopulator extends AbstractWorkbookPopulator {
 
-    private List<ClientData> allClients;
-    private List<OfficeData> officesDataList;
+    private final List<ClientData> allClients;
+    private final List<OfficeData> officesDataList;
 
     private Map<String, ArrayList<String>> officeToClients;
+    @Getter
     private Map<Integer, Integer[]> officeNameToBeginEndIndexesOfClients;
     private Map<String, Long> clientNameToClientId;
     private Map<String, Long> clientNameToSavingsAccountIds;
@@ -138,11 +140,4 @@ public class ClientSheetPopulator extends AbstractWorkbookPopulator {
         return allClients.size();
     }
 
-    public Map<Integer, Integer[]> getOfficeNameToBeginEndIndexesOfClients() {
-        return officeNameToBeginEndIndexesOfClients;
-    }
-
-    public Map<String, Long> getClientNameToSavingsAccountIds() {
-        return clientNameToSavingsAccountIds;
-    }
 }

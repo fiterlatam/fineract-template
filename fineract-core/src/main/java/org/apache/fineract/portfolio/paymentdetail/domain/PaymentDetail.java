@@ -21,7 +21,9 @@ package org.apache.fineract.portfolio.paymentdetail.domain;
 import jakarta.persistence.*;
 import java.util.Map;
 import lombok.Getter;
+import lombok.Setter;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.fineract.infrastructure.codes.domain.CodeValue;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
 import org.apache.fineract.portfolio.paymentdetail.PaymentDetailConstants;
@@ -31,6 +33,7 @@ import org.apache.fineract.portfolio.paymenttype.domain.PaymentType;
 
 @Entity
 @Getter
+@Setter
 @Table(name = "m_payment_detail")
 public class PaymentDetail extends AbstractPersistableCustom {
 
@@ -61,6 +64,10 @@ public class PaymentDetail extends AbstractPersistableCustom {
 
     @Column(name = "point_of_sales_code")
     private String pointOfSalesCode;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "payment_bank_cv_id")
+    private CodeValue paymentBank;
 
     public PaymentDetail() {}
 

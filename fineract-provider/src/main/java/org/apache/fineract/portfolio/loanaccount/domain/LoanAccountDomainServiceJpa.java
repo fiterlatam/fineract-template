@@ -100,7 +100,6 @@ import org.apache.fineract.portfolio.loanaccount.data.HolidayDetailDTO;
 import org.apache.fineract.portfolio.loanaccount.data.LoanScheduleAccrualData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanScheduleDelinquencyData;
 import org.apache.fineract.portfolio.loanaccount.data.ScheduleGeneratorDTO;
-import org.apache.fineract.portfolio.loanaccount.exception.InvalidLoanRepaymentAmountException;
 import org.apache.fineract.portfolio.loanaccount.service.LoanAccrualPlatformService;
 import org.apache.fineract.portfolio.loanaccount.service.LoanAccrualTransactionBusinessEventService;
 import org.apache.fineract.portfolio.loanaccount.service.LoanAssembler;
@@ -196,13 +195,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
 
         final List<Long> existingTransactionIds = new ArrayList<>();
         final List<Long> existingReversedTransactionIds = new ArrayList<>();
-
         final Money repaymentAmount = Money.of(loan.getCurrency(), transactionAmount);
-        final Money loanOutstandingBalance = Money.of(loan.getCurrency(), loan.getLoanSummary().getTotalOutstanding());
-        // validate that repayment amount is not more than the loan balance
-        if (repaymentAmount.isGreaterThan(loanOutstandingBalance)) {
-            throw new InvalidLoanRepaymentAmountException(repaymentAmount.getAmount(), loanOutstandingBalance.getAmount());
-        }
         LoanTransaction newRepaymentTransaction;
         if (isRecoveryRepayment) {
             newRepaymentTransaction = LoanTransaction.recoveryRepayment(loan.getOffice(), repaymentAmount, paymentDetail, transactionDate,

@@ -183,17 +183,11 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
         final String userOfficeHierarchy = this.context.officeHierarchy();
         final String underHierarchySearchString = userOfficeHierarchy + "%";
         final String appUserID = String.valueOf(context.authenticatedUser().getId());
-
-        // if (searchParameters.isScopedByOfficeHierarchy()) {
-        // this.context.validateAccessRights(searchParameters.getHierarchy());
-        // underHierarchySearchString = searchParameters.getHierarchy() + "%";
-        // }
         List<Object> paramList = new ArrayList<>(Arrays.asList(underHierarchySearchString, underHierarchySearchString));
         final StringBuilder sqlBuilder = new StringBuilder(200);
         sqlBuilder.append("select " + sqlGenerator.calcFoundRows() + " ");
         sqlBuilder.append(this.clientToDataMapper.schema());
         sqlBuilder.append(" where (o.hierarchy like ? or transferToOffice.hierarchy like ?) ");
-
         if (searchParameters != null) {
             if (searchParameters.isSelfUser()) {
                 sqlBuilder.append(
@@ -201,7 +195,7 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
                 paramList.add(appUserID);
             }
 
-            final String extraCriteria = buildSqlStringFromClientCriteria(this.clientToDataMapper.schema(), searchParameters, paramList);
+            final String extraCriteria = buildSqlStringFromClientCriteria(searchParameters, paramList);
 
             if (StringUtils.isNotBlank(extraCriteria)) {
                 sqlBuilder.append(" and (").append(extraCriteria).append(")");
@@ -228,7 +222,7 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
         return this.paginationHelper.fetchPage(this.jdbcTemplate, sqlBuilder.toString(), paramList.toArray(), this.clientToDataMapper);
     }
 
-    private String buildSqlStringFromClientCriteria(String schemaSql, final SearchParameters searchParameters, List<Object> paramList) {
+    private String buildSqlStringFromClientCriteria(final SearchParameters searchParameters, List<Object> paramList) {
 
         final Long officeId = searchParameters.getOfficeId();
         final String externalId = searchParameters.getExternalId();
@@ -249,8 +243,6 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
         }
 
         if (displayName != null) {
-            // extraCriteria += " and concatcoalesce(c.firstname, ''),
-            // if(c.firstname > '',' ', '') , coalesce(c.lastname, '')) like "
             paramList.add("%" + displayName + "%");
             extraCriteria += " and c.display_name like ? ";
         }
@@ -277,6 +269,10 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
 
         if (searchParameters.isOrphansOnly()) {
             extraCriteria += " and c.id NOT IN (select client_id from m_group_client) ";
+        }
+
+        if (searchParameters.isClientHasActiveLoans()) {
+            extraCriteria += " AND ((SELECT COUNT(*) FROM m_loan ml WHERE ml.loan_status_id = 300 AND ml.client_id = c.id) > 0) ";
         }
 
         if (StringUtils.isNotBlank(extraCriteria)) {
@@ -763,7 +759,7 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
             builder.append("c.activation_date as activationDate, c.image_id as imageId, ");
             builder.append("c.staff_id as staffId, s.display_name as staffName, ");
             builder.append("c.default_savings_product as savingsProductId, sp.name as savingsProductName, ");
-            builder.append("c.block_reason_id as blockReasonId, ");
+            builder.append("c.blocking_reason_id as blockReasonId, ");
             builder.append("c.default_savings_account as savingsAccountId ");
             builder.append("from m_client c ");
             builder.append("join m_office o on o.id = c.office_id ");
