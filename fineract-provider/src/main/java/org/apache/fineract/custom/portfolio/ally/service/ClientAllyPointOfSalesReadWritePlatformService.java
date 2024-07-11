@@ -39,4 +39,5 @@ public interface ClientAllyPointOfSalesReadWritePlatformService {
     CommandProcessingResult delete(Long id);
 
     CommandProcessingResult update(JsonCommand command, Long clientAllyId, Long id);
+
 }

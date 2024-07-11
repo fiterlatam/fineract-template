@@ -26,6 +26,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -96,6 +97,9 @@ public class ClientAlly {
 
     @Column(name = "state_id", nullable = false)
     private Long stateCodeValueId;
+
+    @Column(name = "last_job_run")
+    private LocalDate lastJobRun;
 
     // @OneToMany(fetch = FetchType.EAGER)
     // @JoinColumn(name = "client_ally_id", referencedColumnName = "id", insertable=false, updatable=false)
