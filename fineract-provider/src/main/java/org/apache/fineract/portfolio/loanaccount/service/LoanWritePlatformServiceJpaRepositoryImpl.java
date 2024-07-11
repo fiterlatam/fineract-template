@@ -3171,7 +3171,6 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     }
 
     @Override
-    @Transactional
     public void recalculateInterestForMaximumLegalRate() throws JobExecutionException {
         List<Throwable> exceptions = new ArrayList<>();
         final MaximumCreditRateConfigurationData maximumCreditRateConfigurationData = this.loanProductReadPlatformService
@@ -3181,8 +3180,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         final LoanRescheduleMapper rm = new LoanRescheduleMapper();
         final String sql = "SELECT " + rm.schema();
         final Object[] params = new Object[] { appliedOnDate, appliedOnDate, appliedOnDate, maximumLegalAnnualNominalRate };
-        List<LoanRescheduleData> loaLoanRescheduleDataList = this.jdbcTemplate.query(sql, rm, params);
-        if (CollectionUtils.isNotEmpty(loaLoanRescheduleDataList)) {
+        List<LoanRescheduleData> loanLoanRescheduleDataList = this.jdbcTemplate.query(sql, rm, params);
+        if (CollectionUtils.isNotEmpty(loanLoanRescheduleDataList)) {
             final String locale = "en";
             final String dateFormat = "dd MMMM yyyy";
             final String submittedOnDate = DateUtils.format(DateUtils.getBusinessLocalDate(), dateFormat, Locale.forLanguageTag(locale));
@@ -3206,7 +3205,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             rescheduleJsonObject.addProperty("extraTerms", "");
             rescheduleJsonObject.addProperty("newInterestRate", maximumLegalAnnualNominalRate);
 
-            for (final LoanRescheduleData loanRescheduleData : loaLoanRescheduleDataList) {
+            for (final LoanRescheduleData loanRescheduleData : loanLoanRescheduleDataList) {
                 final Long loanId = loanRescheduleData.getId();
                 final Loan loan = this.loanRepository.findById(loanId).orElseThrow(() -> new LoanNotFoundException(loanId));
                 final LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment = loan
@@ -3234,6 +3233,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 CommandWrapper commandWrapper = new CommandWrapperBuilder()
                         .createLoanRescheduleRequest(RescheduleLoansApiConstants.ENTITY_NAME).withJson(rescheduleRequestBodyAsJson).build();
                 try {
+                    log.info("Create Loan Reschedule Request with Loan ID: {}", loanId);
                     CommandProcessingResult commandProcessingResult = commandsSourceWritePlatformService.logCommandSource(commandWrapper);
                     if (commandProcessingResult.getResourceId() != null) {
                         final Long loanRescheduleId = commandProcessingResult.getResourceId();
@@ -3247,6 +3247,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                         commandWrapper = new CommandWrapperBuilder()
                                 .approveLoanRescheduleRequest(RescheduleLoansApiConstants.ENTITY_NAME, loanRescheduleId)
                                 .withJson(approvalRequestBodyAsJson).build();
+                        log.info("Approve Loan Rescheduling with Loan ID: {}", loanId);
                         commandProcessingResult = commandsSourceWritePlatformService.logCommandSource(commandWrapper);
                         if (commandProcessingResult.getResourceId() != null) {
                             final String successMessage = "Reprogramar la cuenta de préstamo: " + loanId
