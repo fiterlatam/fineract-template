@@ -35,7 +35,7 @@ public class AllyCollectionSettlementReadWritePlatformServiceImpl implements All
     private static final class ClientAllyPointOfSalesCollectionRowMapper implements RowMapper<ClientAllyPointOfSalesCollectionData> {
 
         public String schema() {
-            return " ml.disbursedon_date as disburseDate, ml.maturedon_date as collectionDate, cca.nit as nit , cca.company_name as allyName,"
+            return " cca.last_job_run as lastJobsRun, ml.maturedon_date as collectionDate, cca.nit as nit , cca.company_name as allyName,"
                     + " ccapos.client_ally_id as clientAllyId, ccapos.id as pointofsalesid, ccapos.\"name\"  as pointOfSalesName,"
                     + " ccapos.code as pointOfSalesCode , ccapos.city_id, ccbp.amount, ccapos.settled_comission as settledComission,"
                     + " tax_profile_id, ccbp.channel_id , ccbp.loan_id ,ccbp.client_id, cca.liquidation_frequency_id as liquidationFrequencyId"
@@ -47,7 +47,7 @@ public class AllyCollectionSettlementReadWritePlatformServiceImpl implements All
         @Override
         public ClientAllyPointOfSalesCollectionData mapRow(final ResultSet rs, @SuppressWarnings("unused") final int rowNum)
                 throws SQLException {
-            return ClientAllyPointOfSalesCollectionData.builder().disburseDate(rs.getString("disburseDate"))
+            return ClientAllyPointOfSalesCollectionData.builder().lastJobsRun(rs.getString("lastJobsRun"))
                     .collectionDate(rs.getString("collectionDate")).nit(rs.getString("nit")).name(rs.getString("allyName"))
                     .clientAllyId(rs.getLong("clientAllyId")).pointOfSalesId(rs.getLong("pointofsalesid"))
                     .pointOfSalesName(rs.getString("pointOfSalesName")).amount(rs.getBigDecimal("amount"))

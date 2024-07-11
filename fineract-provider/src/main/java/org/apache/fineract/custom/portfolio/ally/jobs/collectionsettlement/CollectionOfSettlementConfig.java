@@ -1,6 +1,7 @@
 package org.apache.fineract.custom.portfolio.ally.jobs.collectionsettlement;
 
 import org.apache.fineract.custom.portfolio.ally.domain.AllyCollectionSettlementRepository;
+import org.apache.fineract.custom.portfolio.ally.domain.ClientAllyRepository;
 import org.apache.fineract.custom.portfolio.ally.service.AllyCollectionSettlementReadWritePlatformService;
 import org.apache.fineract.infrastructure.codes.service.CodeValueReadPlatformService;
 import org.apache.fineract.infrastructure.jobs.service.JobName;
@@ -36,6 +37,9 @@ public class CollectionOfSettlementConfig {
     @Autowired
     private WorkingDaysRepositoryWrapper daysRepositoryWrapper;
 
+    @Autowired
+    private ClientAllyRepository clientAllyRepository;
+
     @Bean
     public Step collectionOfSettlementStep() {
         return new StepBuilder(JobName.ALLY_COLLECTION_SETTLEMENT.name(), jobRepository)
@@ -51,7 +55,7 @@ public class CollectionOfSettlementConfig {
     @Bean
     public CollectionSettlementTasklet collectionOfSettlementTasklet() {
         return new CollectionSettlementTasklet(allyCollectionSettlementReadWritePlatformService, allyCollectionSettlementRepository,
-                codeValueReadPlatformService, daysRepositoryWrapper);
+                codeValueReadPlatformService, daysRepositoryWrapper, clientAllyRepository);
     }
 
 }

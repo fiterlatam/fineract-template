@@ -5,9 +5,7 @@ import java.util.List;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.custom.portfolio.ally.data.ClientAllyPointOfSalesCollectionData;
-import org.apache.fineract.custom.portfolio.ally.domain.AllyCollectionSettlement;
-import org.apache.fineract.custom.portfolio.ally.domain.AllyCollectionSettlementRepository;
-import org.apache.fineract.custom.portfolio.ally.domain.LiquidationFrequency;
+import org.apache.fineract.custom.portfolio.ally.domain.*;
 import org.apache.fineract.custom.portfolio.ally.service.AllyCollectionSettlementReadWritePlatformService;
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 import org.apache.fineract.infrastructure.codes.service.CodeValueReadPlatformService;
@@ -27,14 +25,18 @@ public class CollectionSettlementTasklet implements Tasklet {
     private AllyCollectionSettlementRepository allyCollectionSettlementRepository;
     private CodeValueReadPlatformService codeValueReadPlatformService;
     private final WorkingDaysRepositoryWrapper daysRepositoryWrapper;
+    private final ClientAllyRepository clientAllyRepository;
 
     public CollectionSettlementTasklet(AllyCollectionSettlementReadWritePlatformService allyCollectionSettlementReadWritePlatformService,
             AllyCollectionSettlementRepository allyCollectionSettlementRepository,
-            CodeValueReadPlatformService codeValueReadPlatformService, WorkingDaysRepositoryWrapper daysRepositoryWrapper) {
+            CodeValueReadPlatformService codeValueReadPlatformService, WorkingDaysRepositoryWrapper daysRepositoryWrapper,
+            ClientAllyRepository clientAllyRepository) {
         this.allyCollectionSettlementReadWritePlatformService = allyCollectionSettlementReadWritePlatformService;
         this.allyCollectionSettlementRepository = allyCollectionSettlementRepository;
         this.codeValueReadPlatformService = codeValueReadPlatformService;
         this.daysRepositoryWrapper = daysRepositoryWrapper;
+        this.clientAllyRepository = clientAllyRepository;
+
     }
 
     @Override
@@ -45,7 +47,13 @@ public class CollectionSettlementTasklet implements Tasklet {
         for (ClientAllyPointOfSalesCollectionData data : collectionData) {
             Optional<AllyCollectionSettlement> collect = allyCollectionSettlementRepository.findByLoanId(data.getLoanId());
             String freq = LiquidationFrequency.fromInt(data.getLiquidationFrequencyId().intValue()).toString();
-            LocalDate period = LocalDate.parse(data.getDisburseDate());
+            LocalDate period;
+            if (data.getLastJobsRun() != null) {
+                period = LocalDate.parse(data.getLastJobsRun());
+            } else {
+                period = LocalDate.now();
+            }
+
             switch (freq) {
                 case "WEEKLY":
                     period = period.plusWeeks(1);
@@ -74,10 +82,8 @@ public class CollectionSettlementTasklet implements Tasklet {
 
             }
             LocalDate now = LocalDate.now();
-            System.out.println("date period " + period);
-            boolean isAfter = now.isAfter(period);
+            boolean isAfter = now.isEqual(period);
             if (!collect.isPresent() && isAfter) {
-
                 AllyCollectionSettlement allyCollectionSettlement = new AllyCollectionSettlement();
                 LocalDate collectDate = LocalDate.parse(data.getCollectionDate());
                 CodeValueData city = codeValueReadPlatformService.retrieveCodeValue(data.getCityId());
@@ -97,9 +103,13 @@ public class CollectionSettlementTasklet implements Tasklet {
                 allyCollectionSettlement.setChannelId(data.getChannelId());
                 allyCollectionSettlement.setCollectionStatus(300);
                 allyCollectionSettlementReadWritePlatformService.create(allyCollectionSettlement);
-
+                Optional<ClientAlly> clientAlly = clientAllyRepository.findById(data.getClientAllyId());
+                if (clientAlly.isPresent()) {
+                    ClientAlly clientAllyjobs = clientAlly.get();
+                    clientAllyjobs.setLastJobRun(period);
+                    clientAllyRepository.save(clientAllyjobs);
+                }
             }
-
         }
         return RepeatStatus.FINISHED;
     }

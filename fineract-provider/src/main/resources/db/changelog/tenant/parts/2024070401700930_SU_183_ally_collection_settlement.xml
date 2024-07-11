@@ -149,4 +149,14 @@
             <where>code_value = 'mensual'</where>
         </update>
     </changeSet>
+    <changeSet id="7" author="fineract">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists schemaName="custom" tableName="c_client_ally" columnName="last_job_run"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="c_client_ally" schemaName="custom">
+            <column name="last_job_run" type="DATE"></column>
+        </addColumn>
+    </changeSet>
 </databaseChangeLog>
