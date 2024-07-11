@@ -385,7 +385,7 @@ public final class CalendarUtils {
         final Collection<LocalDate> recurDate = getRecurringDates(recur, seedDate, startDate, date.plusDays(1), 1,
                 isSkipRepaymentonFirstDayOfMonth, numberOfDays);
 
-        return (recurDate == null || recurDate.isEmpty()) ? false : recurDate.contains(date);
+        return recurDate != null && !recurDate.isEmpty() && recurDate.contains(date);
     }
 
     public enum DayNameEnum {
