@@ -45,8 +45,8 @@ public class PurchaseOfSettlementTasklet implements Tasklet {
         LocalDate now = LocalDate.now();
         for (ClientAlly clientAlly : clientAllyList) {
             LocalDate period;
-            if (clientAlly.getLastJobRun() != null) {
-                period = clientAlly.getLastJobRun();
+            if (clientAlly.getLastJobRunPurchase() != null) {
+                period = clientAlly.getLastJobRunPurchase();
             } else {
                 period = now;
             }
@@ -90,12 +90,12 @@ public class PurchaseOfSettlementTasklet implements Tasklet {
                     BigDecimal amountVaCommision = amountComission
                             .multiply(BigDecimal.valueOf(globalConfigurationProperty.getValue()).divide(BigDecimal.valueOf(100)));
                     BigDecimal amountToPay = principal.subtract(amountVaCommision).subtract(amountComission);
-                    System.out.println("Allay : " + amountVaCommision + "-" + globalConfigurationProperty.getValue() + "-" + amountComission
-                            + "- amount " + amountToPay);
                     allyCollectionSettlement.setAmountComission(amountComission.setScale(2, BigDecimal.ROUND_HALF_EVEN));
                     allyCollectionSettlement.setAmountVaCommision(amountVaCommision.setScale(2, BigDecimal.ROUND_HALF_EVEN));
                     allyCollectionSettlement.setAmountToPay(amountToPay.setScale(2, BigDecimal.ROUND_HALF_EVEN));
                     allyCollectionSettlementReadWritePlatformService.update(allyCollectionSettlement);
+                    clientAlly.setLastJobRunPurchase(period);
+                    clientAllyRepository.save(clientAlly);
                 }
             }
 
