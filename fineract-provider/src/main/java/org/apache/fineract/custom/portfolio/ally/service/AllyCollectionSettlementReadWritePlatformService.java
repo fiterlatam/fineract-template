@@ -9,4 +9,6 @@ public interface AllyCollectionSettlementReadWritePlatformService {
     List<ClientAllyPointOfSalesCollectionData> getCollectionData();
 
     void create(AllyCollectionSettlement allyCollectionSettlement);
+
+    void update(AllyCollectionSettlement allyCollectionSettlement);
 }

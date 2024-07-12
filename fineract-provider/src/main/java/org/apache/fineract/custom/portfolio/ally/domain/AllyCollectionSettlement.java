@@ -63,4 +63,14 @@ public class AllyCollectionSettlement {
 
     @Column(name = "collection_status")
     private Integer collectionStatus;
+
+    @Column(name = "amount_comission")
+    private BigDecimal amountComission;
+
+    @Column(name = "amount_va_commision")
+    private BigDecimal amountVaCommision;
+
+    @Column(name = "amount_to_pay")
+    private BigDecimal amountToPay;
+
 }
