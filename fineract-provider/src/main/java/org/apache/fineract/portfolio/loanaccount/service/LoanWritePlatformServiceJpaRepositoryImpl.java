@@ -2457,14 +2457,17 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                         MoneyHelper.getRoundingMode());
                 if (advanceTotalOutstandingPrincipalAmount.isGreaterThan(maximumAdvanceQuota)) {
                     throw new GeneralPlatformDomainRuleException("error.msg.loan.maximum.advance.cupo.limit.exceeded",
-                            String.format("Límite de cupo adelantado excedido. Límite disponible: %s y tu enviaste: %s",
-                                    maximumAdvanceQuota, approvedPrincipal));
+                            String.format("Límite de cupo adelantado excedido. Límite Total: %s y tu enviaste: %s", maximumAdvanceQuota,
+                                    approvedPrincipal));
 
                 }
+
                 if (purchaseTotalOutstandingPrincipalAmount.isGreaterThan(cupo)) {
+                    // Calculate available limit
+                    final Money availablePurchaseQuota = cupo.minus(purchaseTotalOutstandingPrincipalAmount);
                     throw new GeneralPlatformDomainRuleException("error.msg.loan.maximum.purchase.cupo.limit.exceeded",
-                            String.format("Límite de cupo de compra excedido. Límite disponible: %s y tu enviaste: %s", cupo,
-                                    purchaseTotalOutstandingPrincipalAmount));
+                            String.format("Límite de cupo de compra excedido. Límite disponible: %s y tu enviaste: %s",
+                                    availablePurchaseQuota, purchaseTotalOutstandingPrincipalAmount));
                 }
             }
             if (totalOutstandingPrincipalAmount.isGreaterThan(cupo)) {
