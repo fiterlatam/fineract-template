@@ -101,6 +101,9 @@ public class ClientAlly {
     @Column(name = "last_job_run")
     private LocalDate lastJobRun;
 
+    @Column(name = "last_job_run_purchase")
+    private LocalDate lastJobRunPurchase;
+
     // @OneToMany(fetch = FetchType.EAGER)
     // @JoinColumn(name = "client_ally_id", referencedColumnName = "id", insertable=false, updatable=false)
     // private List<ClientAllyPointOfSales> clientAllyPointOfSalesList;
