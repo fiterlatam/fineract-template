@@ -237,4 +237,5 @@
     <include file="parts/202406252224100_SU_245_m_charge_add_percentage_from_table_MODIFY.xml" relativeToChangelogFile="true"/>
     <include file="parts/202406182224100_SU_245_custom_charge_insert.xml" relativeToChangelogFile="true"/>
     <include file="parts/2024070401700930_SU_183_ally_collection_settlement.xml" relativeToChangelogFile="true"/>
+    <include file="parts/2024110401700950_SU_182_ally_purchase_settlement.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
