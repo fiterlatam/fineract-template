@@ -21,16 +21,21 @@ package org.apache.fineract.custom.portfolio.ally.service;
 import jakarta.persistence.PersistenceException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.fineract.custom.infrastructure.codes.service.CustomCodeValueReadPlatformService;
 import org.apache.fineract.custom.portfolio.ally.api.ClientAllyPointOfSalesApiConstants;
 import org.apache.fineract.custom.portfolio.ally.data.CityCodeValueData;
 import org.apache.fineract.custom.portfolio.ally.data.ClientAllyCodeValueData;
 import org.apache.fineract.custom.portfolio.ally.data.ClientAllyData;
+import org.apache.fineract.custom.portfolio.ally.data.ClientAllyPointOfSalesData;
 import org.apache.fineract.custom.portfolio.ally.domain.ClientAlly;
 import org.apache.fineract.custom.portfolio.ally.domain.ClientAllyPointOfSales;
 import org.apache.fineract.custom.portfolio.ally.domain.ClientAllyPointOfSalesRepository;
@@ -102,6 +107,46 @@ public class ClientAllyReadWritePlatformServiceImpl implements ClientAllyReadWri
                 + " ORDER BY company_name, stateDescription";
 
         return this.jdbcTemplate.query(sql, rm, new Object[] { name, name });
+    }
+
+    @Override
+    public List<ClientAllyData> retrieveWithPointOfSales() {
+        final String sql = """
+                    SELECT cca.id AS "clientAllyId",
+                    cca.company_name AS "companyName",
+                    cca.nit AS nit,
+                    ccapos.id AS "pointOfSaleId",
+                    ccapos."name" AS "pointOfSaleName",
+                    ccapos.code AS "pointOfSaleCode"
+                    FROM custom.c_client_ally cca
+                    INNER JOIN custom.c_client_ally_point_of_sales ccapos ON ccapos.client_ally_id = cca.id\s
+                    ORDER BY cca.id
+                """;
+        final List<ClientAllyData> clientAllies = jdbcTemplate.query(sql, resultSet -> {
+            final List<ClientAllyData> clientAllyDataList = new ArrayList<>();
+            final Map<Long, ClientAllyData> clientAllyMap = new HashMap<>();
+            while (resultSet.next()) {
+                Long clientAllyId = resultSet.getLong("clientAllyId");
+                ClientAllyData clientAllyData = clientAllyMap.get(clientAllyId);
+                if (clientAllyData == null) {
+                    clientAllyData = ClientAllyData.builder().id(clientAllyId).companyName(resultSet.getString("companyName"))
+                            .nit(resultSet.getString("nit")).pointOfSales(new ArrayList<>()).build();
+                    clientAllyMap.put(clientAllyId, clientAllyData);
+                    clientAllyDataList.add(clientAllyData);
+                }
+                final long pointOfSaleId = resultSet.getLong("pointOfSaleId");
+                if (pointOfSaleId > 0) {
+                    ClientAllyPointOfSalesData clientAllyPointOfSalesData = ClientAllyPointOfSalesData.builder().id(pointOfSaleId)
+                            .name(resultSet.getString("pointOfSaleName")).code(resultSet.getString("pointOfSaleCode")).build();
+                    clientAllyData.getPointOfSales().add(clientAllyPointOfSalesData);
+                }
+            }
+            return clientAllyDataList;
+        }, new Object[] {});
+        if (CollectionUtils.isNotEmpty(clientAllies)) {
+            clientAllies.sort((c1, c2) -> Integer.compare(c2.getPointOfSales().size(), c1.getPointOfSales().size()));
+        }
+        return clientAllies;
     }
 
     @Override

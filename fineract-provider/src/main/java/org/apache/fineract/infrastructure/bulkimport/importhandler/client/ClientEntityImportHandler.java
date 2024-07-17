@@ -24,6 +24,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import lombok.AllArgsConstructor;
 import org.apache.fineract.commands.domain.CommandWrapper;
@@ -60,7 +61,8 @@ public class ClientEntityImportHandler implements ImportHandler {
     private final ExternalIdFactory externalIdFactory;
 
     @Override
-    public Count process(final Workbook workbook, final String locale, final String dateFormat) {
+    public Count process(final Workbook workbook, final String locale, final String dateFormat,
+            final Map<String, Object> importAttributes) {
 
         List<ClientData> clients = readExcelFile(workbook, locale, dateFormat);
         return importEntity(workbook, clients, dateFormat);
