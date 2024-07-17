@@ -239,4 +239,6 @@
     <include file="parts/2024070401700930_SU_183_ally_collection_settlement.xml" relativeToChangelogFile="true"/>
     <include file="parts/2024110401700950_SU_182_ally_purchase_settlement.xml" relativeToChangelogFile="true"/>
     <include file="parts/2024120401700985_SU_182_ally_purchase_settlement.xml" relativeToChangelogFile="true"/>
+    <include file="parts/2024170401100993_SU_183_update_jobs_name.xml" relativeToChangelogFile="true"/>
+    <include file="parts/2024170401100980_SU_182_update_jobs_name.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

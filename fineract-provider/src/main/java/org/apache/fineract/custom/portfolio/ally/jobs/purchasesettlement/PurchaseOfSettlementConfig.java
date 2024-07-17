@@ -43,14 +43,14 @@ public class PurchaseOfSettlementConfig {
     @Bean
     public Step PurchaseOfSettlementStep() {
 
-        return new StepBuilder(JobName.ALLYPURCHASESETTLEMENT.name(), jobRepository)
+        return new StepBuilder(JobName.LIQUIDACION_DE_COMPRAS.name(), jobRepository)
                 .tasklet(purchaseOfSettlementTasklet(), transactionManager).build();
     }
 
     @Bean
     public Job PurchaseSettlementJob() {
 
-        return new JobBuilder(JobName.ALLYPURCHASESETTLEMENT.name(), jobRepository).start(PurchaseOfSettlementStep())
+        return new JobBuilder(JobName.LIQUIDACION_DE_COMPRAS.name(), jobRepository).start(PurchaseOfSettlementStep())
                 .incrementer(new RunIdIncrementer()).build();
     }
 
