@@ -77,4 +77,14 @@ public class AllyCollectionSettlementReadWritePlatformServiceImpl implements All
         }
     }
 
+    public void update(AllyCollectionSettlement allyCollectionSettlement) {
+        try {
+            this.context.authenticatedUser();
+            repository.save(allyCollectionSettlement);
+        } catch (final PersistenceException e) {
+            throw new PlatformDataIntegrityException("error.msg.allyCollection.unknown.data.integrity.issue",
+                    "Unknown data integrity issue with resource.");
+        }
+    }
+
 }

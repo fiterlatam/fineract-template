@@ -26,6 +26,7 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.fineract.custom.portfolio.customcharge.domain.CustomChargeTypeMap;
 import org.apache.fineract.custom.portfolio.customcharge.domain.CustomChargeTypeMapRepository;
 import org.apache.fineract.infrastructure.bulkimport.constants.ClientVipConstants;
 import org.apache.fineract.infrastructure.bulkimport.constants.TemplatePopulateImportConstants;
@@ -73,16 +74,17 @@ public class ClientVipImportHandler implements ImportHandler {
             Row row;
             row = clientVipBlockSheet.getRow(rowIndex);
             if (ImportHandlerUtils.isNotImported(row, ClientVipConstants.STATUS_COL)) {
-                clients.add(readClient(row));
+                clients.add(readClient(row, rowIndex));
             }
         }
         return clients;
     }
 
-    private ClientData readClient(final Row row) {
+    private ClientData readClient(final Row row, final Integer rowIndex) {
         final String idNumber = readStringSpecial(row);
         final ClientData clientData = new ClientData();
         clientData.setIdNumber(idNumber);
+        clientData.setRowIndex(rowIndex);
         return clientData;
     }
 
@@ -118,11 +120,12 @@ public class ClientVipImportHandler implements ImportHandler {
                 }
             }
         }
-        if (!clientEntityList.isEmpty() && customChargeMapId != null) {
-            customChargeTypeMapRepository.findById(customChargeMapId).ifPresent(customChargeTypeMap -> {
+        if (customChargeMapId != null) {
+            final CustomChargeTypeMap customChargeTypeMap = this.customChargeTypeMapRepository.findById(customChargeMapId).orElse(null);
+            if (customChargeTypeMap != null) {
                 customChargeTypeMap.setClients(clientEntityList);
-                customChargeTypeMapRepository.save(customChargeTypeMap);
-            });
+                this.customChargeTypeMapRepository.save(customChargeTypeMap);
+            }
         }
 
         clientVipSheet.setColumnWidth(ClientVipConstants.STATUS_COL, TemplatePopulateImportConstants.SMALL_COL_SIZE);

@@ -74,30 +74,4 @@
             </column>
         </createTable>
     </changeSet>
-    <changeSet author="fineract" id="4">
-        <addForeignKeyConstraint baseColumnNames="custom_charge_map_id"
-                                 baseTableName="c_custom_charge_map_client"
-                                 baseTableSchemaName="custom"
-                                 constraintName="FK_c_custom_charge_map_client_custom_charge_id"
-                                 deferrable="false"
-                                 initiallyDeferred="false"
-                                 onDelete="RESTRICT"
-                                 onUpdate="RESTRICT"
-                                 referencedColumnNames="id"
-                                 referencedTableName="c_custom_charge_map_client"
-                                 referencedTableSchemaName="custom"
-                                 validate="true"/>
-        <addForeignKeyConstraint baseColumnNames="client_id"
-                                 baseTableName="c_custom_charge_map_client"
-                                 baseTableSchemaName="custom"
-                                 constraintName="FK_c_custom_charge_map_client_client_id"
-                                 deferrable="false"
-                                 initiallyDeferred="false"
-                                 onDelete="RESTRICT"
-                                 onUpdate="RESTRICT"
-                                 referencedTableSchemaName="public"
-                                 referencedColumnNames="id"
-                                 referencedTableName="m_client"
-                                 validate="true"/>
-    </changeSet>
 </databaseChangeLog>

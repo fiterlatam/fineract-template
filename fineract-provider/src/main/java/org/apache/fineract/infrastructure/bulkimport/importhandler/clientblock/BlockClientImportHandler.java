@@ -74,7 +74,8 @@ public class BlockClientImportHandler implements ImportHandler {
     private final ClientBlockListRepository clientBlockListRepository;
 
     @Override
-    public Count process(final Workbook workbook, final String locale, final String dateFormat, final Map<String, Object> importAttributes) {
+    public Count process(final Workbook workbook, final String locale, final String dateFormat,
+            final Map<String, Object> importAttributes) {
         List<ClientBlockingListData> clientBlockingListData = readExcelFile(workbook, locale, dateFormat);
         return importEntity(workbook, clientBlockingListData, dateFormat, locale);
     }

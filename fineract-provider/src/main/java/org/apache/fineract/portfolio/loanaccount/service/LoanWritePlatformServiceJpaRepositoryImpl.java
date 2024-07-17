@@ -2455,22 +2455,37 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             if (isAdvanceQuotaEnabled) {
                 final Money maximumAdvanceQuota = cupo.multipliedBy(advanceQuotaPercentage.getAmount()).dividedBy(BigDecimal.valueOf(100L),
                         MoneyHelper.getRoundingMode());
-                if (advanceTotalOutstandingPrincipalAmount.isGreaterThan(maximumAdvanceQuota)) {
+
+                if (approvedPrincipal.isGreaterThan(maximumAdvanceQuota)) {
                     throw new GeneralPlatformDomainRuleException("error.msg.loan.maximum.advance.cupo.limit.exceeded",
-                            String.format("Límite de cupo adelantado excedido. Límite disponible: %s y tu enviaste: %s",
-                                    maximumAdvanceQuota, approvedPrincipal));
+                            String.format("Límite de cupo adelantado excedido. Límite Total: %s y tu enviaste: %s", maximumAdvanceQuota,
+                                    approvedPrincipal));
+                }
+
+                if (advanceTotalOutstandingPrincipalAmount.isGreaterThan(maximumAdvanceQuota)) {
+                    throw new GeneralPlatformDomainRuleException("error.msg.loan.maximum.advance.cupo.limit.exceeded", String.format(
+                            "Límite de cupo adelantado excedido. Límite Total: %s y Total del monto principal pendiente de adelanto: %s",
+                            maximumAdvanceQuota, advanceTotalOutstandingPrincipalAmount));
 
                 }
+
                 if (purchaseTotalOutstandingPrincipalAmount.isGreaterThan(cupo)) {
-                    throw new GeneralPlatformDomainRuleException("error.msg.loan.maximum.purchase.cupo.limit.exceeded",
-                            String.format("Límite de cupo de compra excedido. Límite disponible: %s y tu enviaste: %s", cupo,
-                                    purchaseTotalOutstandingPrincipalAmount));
+                    // Calculate available limit
+                    final Money availablePurchaseQuota = cupo.minus(purchaseTotalOutstandingPrincipalAmount);
+                    throw new GeneralPlatformDomainRuleException("error.msg.loan.maximum.purchase.cupo.limit.exceeded", String.format(
+                            "Límite de cupo de compra excedido. Límite disponible: %s y Total del monto principal pendiente de compra: %s",
+                            availablePurchaseQuota, purchaseTotalOutstandingPrincipalAmount));
                 }
+
             }
             if (totalOutstandingPrincipalAmount.isGreaterThan(cupo)) {
-                throw new GeneralPlatformDomainRuleException("error.msg.loan.maximum.cupo.limit.exceeded", String.format(
-                        "Límite de cupo total excedido. Límite disponible: %s y tu enviaste: %s", cupo, totalOutstandingPrincipalAmount));
+                // Calculate available limit
+                final Money availableQuota = cupo.minus(totalOutstandingPrincipalAmount);
+                throw new GeneralPlatformDomainRuleException("error.msg.loan.maximum.cupo.limit.exceeded",
+                        String.format("Límite de cupo total excedido. Límite disponible: %s y Total del monto principal pendiente: %s",
+                                availableQuota, totalOutstandingPrincipalAmount));
             }
+
         }
     }
 

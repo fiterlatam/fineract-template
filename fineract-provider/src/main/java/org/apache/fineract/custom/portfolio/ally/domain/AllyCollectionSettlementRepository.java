@@ -1,5 +1,6 @@
 package org.apache.fineract.custom.portfolio.ally.domain;
 
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
@@ -11,4 +12,7 @@ public interface AllyCollectionSettlementRepository
     Optional<AllyCollectionSettlement> findById(Long aLong);
 
     Optional<AllyCollectionSettlement> findByLoanId(Long loanId);
+
+    List<AllyCollectionSettlement> findByClientAllyId(Long clientAllyId);
+
 }

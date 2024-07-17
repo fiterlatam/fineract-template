@@ -1,9 +1,9 @@
-package org.apache.fineract.custom.portfolio.ally.jobs.collectionsettlement;
+package org.apache.fineract.custom.portfolio.ally.jobs.purchasesettlement;
 
 import org.apache.fineract.custom.portfolio.ally.domain.AllyCollectionSettlementRepository;
 import org.apache.fineract.custom.portfolio.ally.domain.ClientAllyRepository;
 import org.apache.fineract.custom.portfolio.ally.service.AllyCollectionSettlementReadWritePlatformService;
-import org.apache.fineract.infrastructure.codes.service.CodeValueReadPlatformService;
+import org.apache.fineract.infrastructure.configuration.domain.GlobalConfigurationRepository;
 import org.apache.fineract.infrastructure.jobs.service.JobName;
 import org.apache.fineract.organisation.workingdays.domain.WorkingDaysRepositoryWrapper;
 import org.springframework.batch.core.Job;
@@ -18,7 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 
 @Service
-public class CollectionOfSettlementConfig {
+public class PurchaseOfSettlementConfig {
 
     @Autowired
     private JobRepository jobRepository;
@@ -26,36 +26,37 @@ public class CollectionOfSettlementConfig {
     private PlatformTransactionManager transactionManager;
 
     @Autowired
-    private AllyCollectionSettlementReadWritePlatformService allyCollectionSettlementReadWritePlatformService;
+    private ClientAllyRepository clientAllyRepository;
+
+    @Autowired
+    private WorkingDaysRepositoryWrapper workingDaysRepositoryWrapper;
 
     @Autowired
     private AllyCollectionSettlementRepository allyCollectionSettlementRepository;
 
     @Autowired
-    private CodeValueReadPlatformService codeValueReadPlatformService;
+    private AllyCollectionSettlementReadWritePlatformService allyCollectionSettlementReadWritePlatformService;
 
     @Autowired
-    private WorkingDaysRepositoryWrapper daysRepositoryWrapper;
-
-    @Autowired
-    private ClientAllyRepository clientAllyRepository;
+    private GlobalConfigurationRepository globalConfigurationRepository;
 
     @Bean
-    public Step collectionOfSettlementStep() {
-        return new StepBuilder(JobName.LIQUIDACION_DE_RECAUDOS.name(), jobRepository)
-                .tasklet(collectionOfSettlementTasklet(), transactionManager).build();
+    public Step PurchaseOfSettlementStep() {
+
+        return new StepBuilder(JobName.LIQUIDACION_DE_COMPRAS.name(), jobRepository)
+                .tasklet(purchaseOfSettlementTasklet(), transactionManager).build();
     }
 
     @Bean
-    public Job collectionOfSettlementStepJob() {
-        return new JobBuilder(JobName.LIQUIDACION_DE_RECAUDOS.name(), jobRepository).start(collectionOfSettlementStep())
+    public Job PurchaseSettlementJob() {
+
+        return new JobBuilder(JobName.LIQUIDACION_DE_COMPRAS.name(), jobRepository).start(PurchaseOfSettlementStep())
                 .incrementer(new RunIdIncrementer()).build();
     }
 
     @Bean
-    public CollectionSettlementTasklet collectionOfSettlementTasklet() {
-        return new CollectionSettlementTasklet(allyCollectionSettlementReadWritePlatformService, allyCollectionSettlementRepository,
-                codeValueReadPlatformService, daysRepositoryWrapper, clientAllyRepository);
+    public PurchaseOfSettlementTasklet purchaseOfSettlementTasklet() {
+        return new PurchaseOfSettlementTasklet(clientAllyRepository, workingDaysRepositoryWrapper, allyCollectionSettlementRepository,
+                allyCollectionSettlementReadWritePlatformService, globalConfigurationRepository);
     }
-
 }

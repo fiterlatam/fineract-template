@@ -955,6 +955,6 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
                 clients.add(clientData);
             }
             return clients;
-        }, idNumber);
+        }, idNumber, idNumber);
     }
 }
