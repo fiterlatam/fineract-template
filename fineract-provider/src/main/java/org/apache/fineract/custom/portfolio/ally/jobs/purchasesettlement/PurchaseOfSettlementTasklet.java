@@ -39,9 +39,10 @@ public class PurchaseOfSettlementTasklet implements Tasklet {
 
     @Override
     public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) throws Exception {
-        log.info("Purchase Of Settlemet Ally execute method called");
+        log.info("Liquidación de compras execute method called");
         List<ClientAlly> clientAllyList = clientAllyRepository.findAll();
         final WorkingDays workingDays = this.workingDaysRepositoryWrapper.findOne();
+        GlobalConfigurationProperty globalConfigurationProperty = globalConfigurationRepository.findOneByName("IVA Por comision");
         LocalDate now = LocalDate.now();
         for (ClientAlly clientAlly : clientAllyList) {
             LocalDate period;
@@ -82,8 +83,6 @@ public class PurchaseOfSettlementTasklet implements Tasklet {
                 Long clientAllyId = clientAlly.getId();
                 List<AllyCollectionSettlement> collectionData = allyCollectionSettlementRepository.findByClientAllyId(clientAllyId);
                 for (AllyCollectionSettlement allyCollectionSettlement : collectionData) {
-                    GlobalConfigurationProperty globalConfigurationProperty = globalConfigurationRepository
-                            .findOneByName("VAT-commission-percentage");
                     BigDecimal principal = allyCollectionSettlement.getPrincipalAmount();
                     BigDecimal amountComission = principal
                             .multiply(BigDecimal.valueOf(allyCollectionSettlement.getSettledComission()).divide(BigDecimal.valueOf(100)));
