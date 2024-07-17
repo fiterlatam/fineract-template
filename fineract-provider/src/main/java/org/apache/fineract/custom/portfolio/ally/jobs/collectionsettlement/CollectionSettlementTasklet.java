@@ -41,7 +41,7 @@ public class CollectionSettlementTasklet implements Tasklet {
 
     @Override
     public RepeatStatus execute(@NotNull StepContribution contribution, @NotNull ChunkContext chunkContext) throws Exception {
-        log.info("Collection Of Settlemet Ally execute method called");
+        log.info("Liquidación de Recaudos Ally execute method called");
         List<ClientAllyPointOfSalesCollectionData> collectionData = allyCollectionSettlementReadWritePlatformService.getCollectionData();
         final WorkingDays workingDays = this.daysRepositoryWrapper.findOne();
         for (ClientAllyPointOfSalesCollectionData data : collectionData) {

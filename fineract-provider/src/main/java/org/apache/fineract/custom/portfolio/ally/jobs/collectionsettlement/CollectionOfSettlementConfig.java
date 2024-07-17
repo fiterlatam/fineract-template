@@ -42,13 +42,13 @@ public class CollectionOfSettlementConfig {
 
     @Bean
     public Step collectionOfSettlementStep() {
-        return new StepBuilder(JobName.ALLY_COLLECTION_SETTLEMENT.name(), jobRepository)
+        return new StepBuilder(JobName.LIQUIDACION_DE_RECAUDOS.name(), jobRepository)
                 .tasklet(collectionOfSettlementTasklet(), transactionManager).build();
     }
 
     @Bean
     public Job collectionOfSettlementStepJob() {
-        return new JobBuilder(JobName.ALLY_COLLECTION_SETTLEMENT.name(), jobRepository).start(collectionOfSettlementStep())
+        return new JobBuilder(JobName.LIQUIDACION_DE_RECAUDOS.name(), jobRepository).start(collectionOfSettlementStep())
                 .incrementer(new RunIdIncrementer()).build();
     }
 
