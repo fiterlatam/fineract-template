@@ -23,6 +23,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import org.apache.fineract.accounting.journalentry.data.CreditDebit;
 import org.apache.fineract.accounting.journalentry.data.JournalEntryData;
 import org.apache.fineract.commands.domain.CommandWrapper;
@@ -60,7 +61,8 @@ public class JournalEntriesImportHandler implements ImportHandler {
     }
 
     @Override
-    public Count process(final Workbook workbook, final String locale, final String dateFormat) {
+    public Count process(final Workbook workbook, final String locale, final String dateFormat,
+            final Map<String, Object> importAttributes) {
 
         List<JournalEntryData> glTransactions = readExcelFile(workbook, locale, dateFormat);
         return importEntity(workbook, glTransactions, dateFormat);

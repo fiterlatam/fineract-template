@@ -18,19 +18,22 @@
  */
 package org.apache.fineract.infrastructure.bulkimport.data;
 
+import java.util.Map;
+import lombok.Getter;
+import lombok.Setter;
 import org.apache.fineract.infrastructure.core.domain.FineractContext;
 import org.apache.fineract.infrastructure.core.domain.FineractEvent;
 import org.apache.poi.ss.usermodel.Workbook;
 
+@Getter
+@Setter
 public final class BulkImportEvent extends FineractEvent {
 
     private final Workbook workbook;
-
     private final Long importId;
-
     private final String locale;
-
     private final String dateFormat;
+    private Map<String, Object> importAttributeMap;
 
     private BulkImportEvent(final Object source, final Workbook workbook, final Long importId, final String locale, final String dateFormat,
             FineractContext context) {

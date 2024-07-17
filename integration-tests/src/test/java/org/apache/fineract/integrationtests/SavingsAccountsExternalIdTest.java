@@ -71,7 +71,7 @@ public class SavingsAccountsExternalIdTest extends IntegrationTest {
         PutSavingsAccountsAccountIdRequest request = new PutSavingsAccountsAccountIdRequest();
         request.setLocale(locale);
         request.setNominalAnnualInterestRate(5.999);
-        Response<PutSavingsAccountsAccountIdResponse> response = okR(fineract().savingsAccounts.update27(EXTERNAL_ID, request, ""));
+        Response<PutSavingsAccountsAccountIdResponse> response = okR(fineract().savingsAccounts.update26(EXTERNAL_ID, request, ""));
 
         assertThat(response.isSuccessful()).isTrue();
         assertThat(response.body()).isNotNull();

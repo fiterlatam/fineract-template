@@ -29,6 +29,8 @@ public interface ClientAllyReadWritePlatformService {
 
     List<ClientAllyData> findAllActive();
 
+    List<ClientAllyData> retrieveWithPointOfSales();
+
     List<ClientAllyData> findByName(String name);
 
     ClientAllyCodeValueData getTemplateForInsertAndUpdate();

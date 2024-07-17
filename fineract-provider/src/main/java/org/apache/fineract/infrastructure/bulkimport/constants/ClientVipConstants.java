@@ -16,22 +16,11 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.custom.portfolio.customcharge.service;
 
-import java.util.List;
-import org.apache.fineract.custom.portfolio.customcharge.data.CustomChargeTypeMapData;
-import org.apache.fineract.infrastructure.core.api.JsonCommand;
-import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
+package org.apache.fineract.infrastructure.bulkimport.constants;
 
-public interface CustomChargeTypeMapReadWritePlatformService {
+public class ClientVipConstants {
 
-    List<CustomChargeTypeMapData> findAllActive(Long customChargeTypeId);
-
-    CustomChargeTypeMapData findById(Long id);
-
-    CommandProcessingResult create(JsonCommand command);
-
-    CommandProcessingResult update(JsonCommand command, Long id);
-
-    CommandProcessingResult delete(Long id);
+    public static final int ID_NUMBER_COL = 0;
+    public static final int STATUS_COL = 1;
 }

@@ -43,6 +43,7 @@ import jakarta.ws.rs.core.UriInfo;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -285,7 +286,7 @@ public class GLAccountsApiResource {
             @FormDataParam("file") FormDataContentDisposition fileDetail, @FormDataParam("locale") final String locale,
             @FormDataParam("dateFormat") final String dateFormat) {
         Long importDocumentId = bulkImportWorkbookService.importWorkbook(GlobalEntityType.CHART_OF_ACCOUNTS.toString(), uploadedInputStream,
-                fileDetail, locale, dateFormat);
+                fileDetail, locale, dateFormat, new HashMap<>());
         return this.apiJsonSerializerService.serialize(importDocumentId);
     }
 }

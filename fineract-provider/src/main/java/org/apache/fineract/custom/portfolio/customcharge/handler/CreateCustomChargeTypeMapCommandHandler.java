@@ -38,6 +38,6 @@ public class CreateCustomChargeTypeMapCommandHandler implements NewCommandSource
     @Override
     public CommandProcessingResult processCommand(final JsonCommand command) {
 
-        return service.create(command, command.entityId());
+        return service.create(command);
     }
 }
