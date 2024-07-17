@@ -21,13 +21,10 @@ package org.apache.fineract.portfolio.loanaccount.loanschedule.domain;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.time.LocalDate;
-import java.time.temporal.ChronoUnit;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
 import lombok.RequiredArgsConstructor;
-import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.organisation.monetary.domain.Money;
 import org.apache.fineract.portfolio.loanaccount.data.LoanTermVariationsData;
 import org.apache.fineract.portfolio.loanproduct.domain.AmortizationMethod;
@@ -85,8 +82,7 @@ public class CumulativeDecliningBalanceInterestLoanScheduleGenerator extends Abs
         PrincipalInterestCalculator principalInterestCalculator = new PrincipalInterestCalculator();
         return principalInterestCalculator.principalInterestComponentsForDecliningBalanceLoan(calculator,
                 interestCalculationGraceOnRepaymentPeriodFraction, totalCumulativePrincipal, totalCumulativeInterest,
-                totalInterestDueForLoan, cumulatingInterestPaymentDueToGrace, outstandingBalance, loanApplicationTerms,
-                periodNumber, mc, principalVariation, compoundingMap, periodStartDate, periodEndDate,
-                termVariations);
+                totalInterestDueForLoan, cumulatingInterestPaymentDueToGrace, outstandingBalance, loanApplicationTerms, periodNumber, mc,
+                principalVariation, compoundingMap, periodStartDate, periodEndDate, termVariations);
     }
 }

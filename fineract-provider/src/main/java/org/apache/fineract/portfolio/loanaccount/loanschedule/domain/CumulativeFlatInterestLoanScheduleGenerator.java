@@ -56,7 +56,8 @@ public class CumulativeFlatInterestLoanScheduleGenerator extends AbstractCumulat
             @SuppressWarnings("unused") Collection<LoanTermVariationsData> termVariations) {
 
         PrincipalInterestCalculator principalInterestCalculator = new PrincipalInterestCalculator();
-        return principalInterestCalculator.principalInterestComponentsForFlatInterestLoans (calculator, interestCalculationGraceOnRepaymentPeriodFraction, totalCumulativePrincipal, totalCumulativeInterest,
+        return principalInterestCalculator.principalInterestComponentsForFlatInterestLoans(calculator,
+                interestCalculationGraceOnRepaymentPeriodFraction, totalCumulativePrincipal, totalCumulativeInterest,
                 totalInterestDueForLoan, cumulatingInterestPaymentDueToGrace, outstandingBalance, loanApplicationTerms, periodNumber, mc,
                 principalVariation, compoundingMap, periodEndDate, periodEndDate, termVariations);
     }

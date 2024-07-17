@@ -146,7 +146,7 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
         addChargeOnlyRepaymentInstallmentIfRequired(charges, installments);
 
         for (final LoanRepaymentScheduleInstallment currentInstallment : installments) {
-           // currentInstallment.resetBalances();
+            // currentInstallment.resetBalances();
             currentInstallment.resetDerivedComponents();
             currentInstallment.updateDerivedFields(currency, disbursementDate);
         }
@@ -159,9 +159,10 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
             chargeOrTransaction.getLoanTransaction().ifPresent(loanTransaction -> processSingleTransaction(loanTransaction, currency,
                     installments, charges, changedTransactionDetail, overpaymentHolder));
 
-            // Commenting below line because charge is already calculated and processed. This adds the charge amount again to the installment
-         //   chargeOrTransaction.getLoanCharge()
-         //           .ifPresent(loanCharge -> processSingleCharge(loanCharge, currency, installments, disbursementDate));
+            // Commenting below line because charge is already calculated and processed. This adds the charge amount
+            // again to the installment
+            // chargeOrTransaction.getLoanCharge()
+            // .ifPresent(loanCharge -> processSingleCharge(loanCharge, currency, installments, disbursementDate));
         }
         List<LoanTransaction> txs = chargeOrTransactions.stream().map(ChargeOrTransaction::getLoanTransaction).filter(Optional::isPresent)
                 .map(Optional::get).toList();
@@ -502,7 +503,7 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
     private void handleDisbursement(LoanTransaction loanTransaction, MonetaryCurrency currency,
             List<LoanRepaymentScheduleInstallment> installments, MoneyHolder overpaymentHolder) {
         // Commenting below line because it recalculates installment principal amount the wrong way which is not needed
-       // updateLoanSchedule(loanTransaction, currency, installments, overpaymentHolder);
+        // updateLoanSchedule(loanTransaction, currency, installments, overpaymentHolder);
     }
 
     private void updateLoanSchedule(LoanTransaction disbursementTransaction, MonetaryCurrency currency,
