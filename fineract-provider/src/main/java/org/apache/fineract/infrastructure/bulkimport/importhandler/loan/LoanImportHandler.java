@@ -27,6 +27,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -73,7 +74,8 @@ public class LoanImportHandler implements ImportHandler {
     private final LoanRepaymentScheduleTransactionProcessorFactory loanRepaymentScheduleTransactionProcessorFactory;
 
     @Override
-    public Count process(final Workbook workbook, final String locale, final String dateFormat) {
+    public Count process(final Workbook workbook, final String locale, final String dateFormat,
+            final Map<String, Object> importAttributes) {
         List<LoanAccountData> loans = new ArrayList<>();
         List<LoanApprovalData> approvalDates = new ArrayList<>();
         List<LoanTransactionData> loanRepayments = new ArrayList<>();

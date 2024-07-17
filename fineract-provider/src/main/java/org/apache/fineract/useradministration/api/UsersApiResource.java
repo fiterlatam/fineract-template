@@ -259,7 +259,7 @@ public class UsersApiResource {
             @FormDataParam("file") FormDataContentDisposition fileDetail, @FormDataParam("locale") final String locale,
             @FormDataParam("dateFormat") final String dateFormat) {
         final Long importDocumentId = this.bulkImportWorkbookService.importWorkbook(GlobalEntityType.USERS.toString(), uploadedInputStream,
-                fileDetail, locale, dateFormat);
+                fileDetail, locale, dateFormat, null);
         return this.toApiJsonSerializer.serialize(importDocumentId);
     }
 

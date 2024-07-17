@@ -155,7 +155,7 @@ public class ManageBlockingReasonsApiResource {
             @FormDataParam("file") FormDataContentDisposition fileDetail, @FormDataParam("locale") final String locale,
             @FormDataParam("dateFormat") final String dateFormat) {
         Long importDocumentId = bulkImportWorkbookService.importWorkbook(CLIENT_BLOCK.toString(), uploadedInputStream, fileDetail, locale,
-                dateFormat);
+                dateFormat, null);
         return this.toApiJsonSerializer.serialize(importDocumentId);
     }
 

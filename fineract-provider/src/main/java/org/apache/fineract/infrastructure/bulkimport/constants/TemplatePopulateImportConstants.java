@@ -58,6 +58,7 @@ public class TemplatePopulateImportConstants {
     public static final String ROLES_SHEET_NAME = "Roles";
     public static final String USER_SHEET_NAME = "Users";
     public static final String BLOCK_CLIENT_SHEET_NAME = "Bloquear clientes";
+    public static final String CLIENT_VIP_SHEET_NAME = "Clientes VIP";
 
     public static final int ROWHEADER_INDEX = 0;
     public static final short ROW_HEADER_HEIGHT = 500;

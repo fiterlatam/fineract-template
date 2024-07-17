@@ -88,8 +88,7 @@ public class ClientAllyApiResource {
     @GET
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
-    public String get(@Context final UriInfo uriInfo,
-            @QueryParam("sqlSearch") @Parameter(description = "sqlSearch") final String sqlSearch) {
+    public String get(@QueryParam("sqlSearch") @Parameter(description = "sqlSearch") final String sqlSearch) {
         this.context.authenticatedUser().validateHasReadPermission(ClientAllyApiConstants.RESOURCE_NAME);
         return this.toApiJsonSerializer.serialize(this.service.findByName(sqlSearch));
     }
@@ -146,7 +145,7 @@ public class ClientAllyApiResource {
             @FormDataParam("file") FormDataContentDisposition fileDetail, @FormDataParam("locale") final String locale,
             @FormDataParam("dateFormat") final String dateFormat) {
         final Long importDocumentId = customBulkImportWorkbookService.importWorkbook(CustomGlobalEntityType.CLIENT_ALLY.getAlias(),
-                uploadedInputStream, fileDetail, locale, dateFormat);
+                uploadedInputStream, fileDetail, locale, dateFormat, null);
         return toApiJsonSerializer.serialize(importDocumentId);
     }
 

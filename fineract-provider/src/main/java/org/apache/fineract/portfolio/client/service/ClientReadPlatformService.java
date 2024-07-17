@@ -72,4 +72,6 @@ public interface ClientReadPlatformService {
 
     List<ClienAvailableCupoFieldsData> retriveClientAvailableCupo(String nitId);
 
+    List<ClientData> retrieveByIdNumber(String idNumber);
+
 }

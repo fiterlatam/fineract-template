@@ -54,6 +54,7 @@ public final class ClientData implements Comparable<ClientData>, Serializable {
     private Long id;
     private String accountNo;
     private ExternalId externalId;
+    private String idNumber;
 
     private EnumOptionData status;
     private CodeValueData subStatus;

@@ -26,41 +26,14 @@ import org.apache.fineract.custom.portfolio.customcharge.domain.CustomChargeType
 
 public class CustomChargeTypeMapMapper {
 
-    public static CustomChargeTypeMap toModel(CustomChargeTypeMapData dto) {
-        CustomChargeTypeMap ret = CustomChargeTypeMap.builder().id(dto.getId()) //
-                .customChargeTypeId(dto.getCustomChargeTypeId()) //
-                .term(dto.getTerm()) //
-                .percentage(dto.getPercentage()) //
-                .validFrom(dto.getValidFrom()) //
-                .validTo(dto.getValidTo()) //
-                .active(dto.getActive()) //
-                .createdBy(dto.getCreatedBy()) //
-                .createdAt(dto.getCreatedAt()) //
-                .updatedBy(dto.getUpdatedBy()) //
-                .updatedAt(dto.getUpdatedAt()) //
-                .build();
-
-        return ret;
-    }
-
     public static CustomChargeTypeMapData toDTO(CustomChargeTypeMap model) {
-        CustomChargeTypeMapData ret = CustomChargeTypeMapData.builder().id(model.getId()) //
-                .customChargeTypeId(model.getCustomChargeTypeId()) //
-                .term(model.getTerm()) //
-                .percentage(model.getPercentage()) //
-                .validFrom(model.getValidFrom()) //
-                .validTo(model.getValidTo()) //
-                .active(model.getActive()) //
-                .createdBy(model.getCreatedBy()) //
-                .createdAt(model.getCreatedAt()) //
-                .updatedBy(model.getUpdatedBy()) //
-                .updatedAt(model.getUpdatedAt()) //
-                .build();
-
-        return ret;
+        return CustomChargeTypeMapData.builder().id(model.getId()).customChargeTypeId(model.getCustomChargeTypeId()).term(model.getTerm())
+                .percentage(model.getPercentage()).validFromDate(model.getValidFrom()).validToDate(model.getValidTo())
+                .active(model.getActive()).createdBy(model.getCreatedBy().toString()).createdAt(model.getCreatedAt())
+                .updatedBy(model.getUpdatedBy()).updatedAt(model.getUpdatedAt()).build();
     }
 
     public static List<CustomChargeTypeMapData> toDTO(List<CustomChargeTypeMap> model) {
-        return model.stream().map(obj -> toDTO(obj)).collect(Collectors.toList());
+        return model.stream().map(CustomChargeTypeMapMapper::toDTO).collect(Collectors.toList());
     }
 }

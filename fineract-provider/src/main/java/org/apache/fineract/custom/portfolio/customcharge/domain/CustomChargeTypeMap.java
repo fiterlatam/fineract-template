@@ -21,18 +21,25 @@ package org.apache.fineract.custom.portfolio.customcharge.domain;
 import jakarta.persistence.Cacheable;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.apache.fineract.custom.portfolio.ally.domain.ClientAllyPointOfSales;
+import org.apache.fineract.portfolio.client.domain.Client;
 
 @Entity
 @Table(schema = "custom", name = "c_custom_charge_type_map")
@@ -78,4 +85,13 @@ public class CustomChargeTypeMap {
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(name = "c_charge_map_point_sale", schema = "custom", joinColumns = @JoinColumn(name = "custom_charge_id"), inverseJoinColumns = @JoinColumn(name = "point_of_sales_id"))
+    private List<ClientAllyPointOfSales> clientAllyPointOfSales;
+
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(name = "c_custom_charge_map_client", schema = "custom", joinColumns = @JoinColumn(name = "custom_charge_map_id"), inverseJoinColumns = @JoinColumn(name = "client_id"))
+    private List<Client> clients;
+
 }

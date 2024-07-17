@@ -23,6 +23,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import org.apache.fineract.commands.domain.CommandWrapper;
 import org.apache.fineract.commands.service.CommandWrapperBuilder;
 import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformService;
@@ -50,7 +51,6 @@ public class SharedAccountImportHandler implements ImportHandler {
 
     public static final String ZERO = "0";
     public static final String SHARE = "share";
-    public static final String EMPTY_STR = "";
     private static final Logger LOG = LoggerFactory.getLogger(SharedAccountImportHandler.class);
     private final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService;
 
@@ -60,7 +60,8 @@ public class SharedAccountImportHandler implements ImportHandler {
     }
 
     @Override
-    public Count process(final Workbook workbook, final String locale, final String dateFormat) {
+    public Count process(final Workbook workbook, final String locale, final String dateFormat,
+            final Map<String, Object> importAttributes) {
         List<ShareAccountData> shareAccountDataList = new ArrayList<>();
         List<String> statuses = new ArrayList<>();
         readExcelFile(workbook, shareAccountDataList, statuses, locale, dateFormat);

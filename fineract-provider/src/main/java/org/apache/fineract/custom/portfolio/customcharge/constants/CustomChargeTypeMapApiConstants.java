@@ -40,7 +40,8 @@ public final class CustomChargeTypeMapApiConstants {
     public static final String customChargeTypeIdParamName = "customChargeTypeId";
     public static final String termParamName = "term";
     public static final String percentageParamName = "percentage";
-    public static final String validFromParamName = "validFrom";
+    public static final String pointOfSalesParamName = "pointOfSales";
+    public static final String validFromParamName = "validFromDate";
     public static final String validToParamName = "validTo";
     public static final String activeParamName = "active";
     public static final String createdByParamName = "createdBy";
@@ -49,7 +50,8 @@ public final class CustomChargeTypeMapApiConstants {
     public static final String updatedAtParamName = "updatedAt";
 
     // request parameters Set
-    public static final Set<String> REQUEST_DATA_PARAMETERS = new HashSet<>(Arrays.asList(localeParamName, dateFormatParamName, idParamName,
-            customChargeTypeIdParamName, termParamName, percentageParamName, validFromParamName, validToParamName, activeParamName,
-            createdByParamName, createdAtParamName, updatedByParamName, updatedAtParamName, customChargeEntityIdParamName));
+    public static final Set<String> REQUEST_DATA_PARAMETERS = new HashSet<>(
+            Arrays.asList(localeParamName, dateFormatParamName, idParamName, customChargeTypeIdParamName, termParamName,
+                    percentageParamName, validFromParamName, validToParamName, activeParamName, createdByParamName, createdAtParamName,
+                    updatedByParamName, updatedAtParamName, customChargeEntityIdParamName, pointOfSalesParamName));
 }

@@ -61,8 +61,8 @@ public enum GlobalEntityType {
     CLIENT(36, "client"), //
     CLIENTS_ALLIES(1000, "clients.allies"), //
     CLIENT_ALLY_POINTS_OF_SALES(1001, "clients.allies.points.of.sales"), //
-    CLIENT_BLOCK(37, "clientblock")//
-    ;
+    CLIENT_BLOCK(37, "clientblock"), //
+    CLIENT_VIP(38, "clientvip");// ;
 
     private final Integer value;
     private final String code;

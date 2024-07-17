@@ -339,11 +339,11 @@ public class LoanTransactionHelper extends IntegrationTest {
     }
 
     public GetLoansLoanIdChargesTemplateResponse getLoanChargeTemplate(final Long loanId) {
-        return ok(fineract().loanCharges.retrieveTemplate10(loanId));
+        return ok(fineract().loanCharges.retrieveTemplate11(loanId));
     }
 
     public GetLoansLoanIdChargesTemplateResponse getLoanChargeTemplate(final String loanExternalId) {
-        return ok(fineract().loanCharges.retrieveTemplate11(loanExternalId));
+        return ok(fineract().loanCharges.retrieveTemplate12(loanExternalId));
     }
 
     public List getRepaymentTemplate(final Integer loanId) {

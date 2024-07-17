@@ -43,6 +43,7 @@ import jakarta.ws.rs.core.UriInfo;
 import java.io.InputStream;
 import java.time.LocalDate;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.apache.fineract.commands.domain.CommandWrapper;
@@ -309,7 +310,7 @@ public class ClientsApiResource {
             @FormDataParam("file") InputStream uploadedInputStream, @FormDataParam("file") FormDataContentDisposition fileDetail,
             @FormDataParam("locale") final String locale, @FormDataParam("dateFormat") final String dateFormat) {
         final Long importDocumentId = bulkImportWorkbookService.importWorkbook(legalFormType, uploadedInputStream, fileDetail, locale,
-                dateFormat);
+                dateFormat, new HashMap<>(0));
         return toApiJsonSerializer.serialize(importDocumentId);
     }
 

@@ -31,6 +31,12 @@ apply plugin: 'se.thinkcode.cucumber-runner'
 check.dependsOn('cucumber')
 
 compileJava.doLast {
+    repositories {
+        mavenCentral()
+        jcenter()
+        google()
+        maven { url 'https://plugins.gradle.org/m2/' }
+    }
     def mainSS = sourceSets.main
     def source = mainSS.java.classesDirectory.get()
     copy {

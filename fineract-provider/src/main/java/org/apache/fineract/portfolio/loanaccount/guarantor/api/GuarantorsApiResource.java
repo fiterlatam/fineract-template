@@ -230,7 +230,7 @@ public class GuarantorsApiResource {
             @FormDataParam("file") FormDataContentDisposition fileDetail, @FormDataParam("locale") final String locale,
             @FormDataParam("dateFormat") final String dateFormat, @PathParam("loanId") final Long loanId) {
         final Long importDocumentId = this.bulkImportWorkbookService.importWorkbook(GlobalEntityType.GUARANTORS.toString(),
-                uploadedInputStream, fileDetail, locale, dateFormat);
+                uploadedInputStream, fileDetail, locale, dateFormat, null);
         return this.apiJsonSerializerService.serialize(importDocumentId);
     }
 }

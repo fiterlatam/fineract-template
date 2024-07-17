@@ -675,7 +675,7 @@ public class LoansApiResource {
             @FormDataParam("file") FormDataContentDisposition fileDetail, @FormDataParam("locale") final String locale,
             @FormDataParam("dateFormat") final String dateFormat) {
         final Long importDocumentId = this.bulkImportWorkbookService.importWorkbook(GlobalEntityType.LOANS.toString(), uploadedInputStream,
-                fileDetail, locale, dateFormat);
+                fileDetail, locale, dateFormat, null);
         return this.toApiJsonSerializer.serialize(importDocumentId);
     }
 
@@ -688,7 +688,7 @@ public class LoansApiResource {
             @FormDataParam("file") FormDataContentDisposition fileDetail, @FormDataParam("locale") final String locale,
             @FormDataParam("dateFormat") final String dateFormat) {
         final Long importDocumentId = this.bulkImportWorkbookService.importWorkbook(GlobalEntityType.LOAN_TRANSACTIONS.toString(),
-                uploadedInputStream, fileDetail, locale, dateFormat);
+                uploadedInputStream, fileDetail, locale, dateFormat, null);
         return this.toApiJsonSerializer.serialize(importDocumentId);
     }
 
@@ -901,8 +901,7 @@ public class LoansApiResource {
     @GET
     @Path("block-guarantee/template")
     @Operation(summary = "Get the template for block guarantee")
-    public String getBlockGuaranteeTemplate(@Context HttpServletResponse response,
-            @PathParam("loanId") @Parameter(description = "loanId") final Long loanId) throws DocumentException, IOException {
+    public String getBlockGuaranteeTemplate() throws DocumentException {
         context.authenticatedUser().validateHasReadPermission(RESOURCE_NAME_FOR_PERMISSIONS);
         final BlockingReasonsData blockingReasonSetting = loanBlockingReasonReadPlatformService.retrieveLoanBlockingSettings(
                 BlockLevel.CREDIT.toString(), BlockingReasonSettingEnum.CREDIT_RECLAMADO_A_AVALADORA.getDatabaseString());

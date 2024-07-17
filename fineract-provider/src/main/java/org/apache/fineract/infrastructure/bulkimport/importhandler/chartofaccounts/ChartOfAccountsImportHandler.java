@@ -23,6 +23,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import org.apache.fineract.accounting.glaccount.data.GLAccountData;
 import org.apache.fineract.accounting.glaccount.domain.GLAccount;
@@ -75,7 +76,8 @@ public class ChartOfAccountsImportHandler implements ImportHandler {
     }
 
     @Override
-    public Count process(final Workbook workbook, final String locale, final String dateFormat) {
+    public Count process(final Workbook workbook, final String locale, final String dateFormat,
+            final Map<String, Object> importAttributes) {
         List<GLAccountData> glAccounts = new ArrayList<>();
         // for opening bal
         List<JournalEntryData> glTransactions = new ArrayList<>();

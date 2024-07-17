@@ -37,7 +37,6 @@ public class UpdateCustomChargeTypeMapCommandHandler implements NewCommandSource
     @Transactional
     @Override
     public CommandProcessingResult processCommand(final JsonCommand command) {
-
-        return service.update(command, command.entityId(), command.subentityId());
+        return service.update(command, command.entityId());
     }
 }

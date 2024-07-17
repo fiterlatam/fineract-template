@@ -57,64 +57,44 @@ public class CustomChargeTypeMapDataValidator {
         this.configurationReadPlatformService = configurationReadPlatformService;
     }
 
-    public CustomChargeTypeMap validateForCreate(final String json, final Long customChargeTypeId) {
-
+    public CustomChargeTypeMap validateForCreate(final String json) {
         if (StringUtils.isBlank(json)) {
             throw new InvalidJsonException();
         }
-
         final Type typeOfMap = new TypeToken<Map<String, Object>>() {}.getType();
         this.fromApiJsonHelper.checkForUnsupportedParameters(typeOfMap, json, CustomChargeTypeMapApiConstants.REQUEST_DATA_PARAMETERS);
         final JsonElement element = this.fromApiJsonHelper.parse(json);
-
         final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
-
         final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors)
                 .resource(CustomChargeTypeMapApiConstants.RESOURCE_NAME);
-
         final GlobalConfigurationPropertyData customTermLength = this.configurationReadPlatformService
                 .retrieveGlobalConfiguration("custom-charge-aval-supay-max-term");
-
         final Long term = this.fromApiJsonHelper.extractLongNamed(CustomChargeTypeMapApiConstants.termParamName, element);
         baseDataValidator.reset().parameter(CustomChargeTypeMapApiConstants.termParamName).value(term).notNull()
                 .notGreaterThanMax(customTermLength.getValue().intValue());
-
+        final Long customChargeTypeId = this.fromApiJsonHelper.extractLongNamed(CustomChargeTypeMapApiConstants.customChargeTypeIdParamName,
+                element);
+        baseDataValidator.reset().parameter(CustomChargeTypeMapApiConstants.customChargeTypeIdParamName).value(term).notNull();
         final BigDecimal percentage = this.fromApiJsonHelper
                 .extractBigDecimalWithLocaleNamed(CustomChargeTypeMapApiConstants.percentageParamName, element);
         baseDataValidator.reset().parameter(CustomChargeTypeMapApiConstants.percentageParamName).value(percentage).notNull();
-
-        final LocalDate validFrom = this.fromApiJsonHelper.extractLocalDateNamed(CustomChargeTypeMapApiConstants.validFromParamName,
+        final LocalDate validFromDate = this.fromApiJsonHelper.extractLocalDateNamed(CustomChargeTypeMapApiConstants.validFromParamName,
                 element);
-        baseDataValidator.reset().parameter(CustomChargeTypeMapApiConstants.validFromParamName).value(validFrom).notNull();
-
+        baseDataValidator.reset().parameter(CustomChargeTypeMapApiConstants.validFromParamName).value(validFromDate).notNull();
         final LocalDate validTo = this.fromApiJsonHelper.extractLocalDateNamed(CustomChargeTypeMapApiConstants.validToParamName, element);
         baseDataValidator.reset().parameter(CustomChargeTypeMapApiConstants.validToParamName).value(validTo);
-
         final Boolean active = true;
-
         final Long createdBy = platformSecurityContext.authenticatedUser().getId();
-
         final LocalDateTime createdAt = DateUtils.getLocalDateTimeOfTenant();
-
         throwExceptionIfValidationWarningsExist(dataValidationErrors);
-
-        return CustomChargeTypeMap.builder().customChargeTypeId(customChargeTypeId) //
-                .term(term) //
-                .percentage(percentage) //
-                .validFrom(validFrom) //
-                .validTo(validTo) //
-                .active(active) //
-                .createdBy(createdBy) //
-                .createdAt(createdAt) //
-                .build();
+        return CustomChargeTypeMap.builder().customChargeTypeId(customChargeTypeId).term(term).percentage(percentage)
+                .validFrom(validFromDate).validTo(validTo).active(active).createdBy(createdBy).createdAt(createdAt).build();
     }
 
-    public CustomChargeTypeMap validateForUpdate(final String json, final Long customChargeTypeId) {
-
+    public CustomChargeTypeMap validateForUpdate(final String json) {
         if (StringUtils.isBlank(json)) {
             throw new InvalidJsonException();
         }
-
         final Type typeOfMap = new TypeToken<Map<String, Object>>() {}.getType();
         this.fromApiJsonHelper.checkForUnsupportedParameters(typeOfMap, json, CustomChargeTypeMapApiConstants.REQUEST_DATA_PARAMETERS);
         final JsonElement element = this.fromApiJsonHelper.parse(json);
@@ -130,7 +110,9 @@ public class CustomChargeTypeMapDataValidator {
         final Long term = this.fromApiJsonHelper.extractLongNamed(CustomChargeTypeMapApiConstants.termParamName, element);
         baseDataValidator.reset().parameter(CustomChargeTypeMapApiConstants.termParamName).value(term).notNull()
                 .notGreaterThanMax(customTermLength.getValue().intValue());
-
+        final Long customChargeTypeId = this.fromApiJsonHelper.extractLongNamed(CustomChargeTypeMapApiConstants.customChargeTypeIdParamName,
+                element);
+        baseDataValidator.reset().parameter(CustomChargeTypeMapApiConstants.customChargeTypeIdParamName).value(term).notNull();
         final BigDecimal percentage = this.fromApiJsonHelper
                 .extractBigDecimalWithLocaleNamed(CustomChargeTypeMapApiConstants.percentageParamName, element);
         baseDataValidator.reset().parameter(CustomChargeTypeMapApiConstants.percentageParamName).value(percentage).notNull();
@@ -151,19 +133,12 @@ public class CustomChargeTypeMapDataValidator {
         throwExceptionIfValidationWarningsExist(dataValidationErrors);
 
         return CustomChargeTypeMap.builder().customChargeTypeId(customChargeTypeId) //
-                .term(term) //
-                .percentage(percentage) //
-                .validFrom(validFrom) //
-                .validTo(validTo) //
-                .active(active) //
-                .updatedBy(updatedBy) //
-                .updatedAt(updatedAt) //
-                .build();
+                .term(term).percentage(percentage).validFrom(validFrom).validTo(validTo).active(active).updatedBy(updatedBy)
+                .updatedAt(updatedAt).build();
     }
 
     private void throwExceptionIfValidationWarningsExist(final List<ApiParameterError> dataValidationErrors) {
         if (!dataValidationErrors.isEmpty()) {
-            //
             throw new PlatformApiDataValidationException(dataValidationErrors);
         }
     }

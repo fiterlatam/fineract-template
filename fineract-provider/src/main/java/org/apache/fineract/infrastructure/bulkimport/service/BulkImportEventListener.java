@@ -131,13 +131,16 @@ public class BulkImportEventListener implements ApplicationListener<BulkImportEv
             case CLIENT_BLOCK:
                 importHandler = this.applicationContext.getBean("blockClientImportHandler", ImportHandler.class);
             break;
+            case CLIENT_VIP:
+                importHandler = this.applicationContext.getBean("clientVipImportHandler", ImportHandler.class);
+            break;
             default:
                 throw new GeneralPlatformDomainRuleException("error.msg.unable.to.find.resource", "Unable to find requested resource");
 
         }
 
         final Workbook workbook = event.getWorkbook();
-        final Count count = importHandler.process(workbook, event.getLocale(), event.getDateFormat());
+        final Count count = importHandler.process(workbook, event.getLocale(), event.getDateFormat(), event.getImportAttributeMap());
         importDocument.update(DateUtils.getLocalDateTimeOfTenant(), count.getSuccessCount(), count.getErrorCount());
         this.importRepository.saveAndFlush(importDocument);
 

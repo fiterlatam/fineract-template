@@ -64,7 +64,7 @@ public class CustomChargeEntityReadWritePlatformServiceImpl implements CustomCha
     @Override
     public CustomChargeEntityData findById(Long id) {
         Optional<CustomChargeEntity> entity = repository.findById(id);
-        if (!entity.isPresent()) {
+        if (entity.isEmpty()) {
             throw new CustomChargeEntityNotFoundException();
         }
         return CustomChargeEntityMapper.toDTO(entity.get());

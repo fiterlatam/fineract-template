@@ -933,4 +933,28 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
         return resultList;
     }
 
+    @Override
+    public List<ClientData> retrieveByIdNumber(String idNumber) {
+        final String sql = """
+                SELECT mc.id AS clientId,
+                cce."NIT" AS nit,
+                tipo.code_value AS tipo,
+                ccp."Cedula" AS cedula
+                FROM m_client mc
+                LEFT JOIN campos_cliente_empresas cce ON cce.client_id = mc.id
+                LEFT JOIN m_code_value tipo ON tipo.id = cce."Tipo ID_cd_Tipo ID"
+                LEFT JOIN campos_cliente_persona ccp ON ccp.client_id = mc.id
+                WHERE cce."NIT" = ? OR ccp."Cedula" = ?
+                """;
+        return jdbcTemplate.query(sql, resultSet -> {
+            List<ClientData> clients = new ArrayList<>();
+            while (resultSet.next()) {
+                final Long clientId = resultSet.getLong("clientId");
+                ClientData clientData = new ClientData();
+                clientData.setId(clientId);
+                clients.add(clientData);
+            }
+            return clients;
+        }, idNumber, idNumber);
+    }
 }

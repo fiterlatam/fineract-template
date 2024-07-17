@@ -3819,20 +3819,18 @@ public class CommandWrapperBuilder {
         return this;
     }
 
-    public CommandWrapperBuilder createCustomChargeTypeMap(Long customChargeTypeId) {
+    public CommandWrapperBuilder createCustomChargeTypeMap() {
         this.actionName = "CREATE";
         this.entityName = "CUSTOMCHARGETYPEMAP";
-        this.entityId = customChargeTypeId;
         this.href = "/customchargetypemap";
         return this;
     }
 
-    public CommandWrapperBuilder updateCustomChargeTypeMap(final Long id, Long customChargeTypeId) {
+    public CommandWrapperBuilder updateCustomChargeTypeMap(final Long id) {
         this.actionName = "UPDATE";
         this.entityName = "CUSTOMCHARGETYPEMAP";
-        this.href = "/customchargetypemap/" + id;
-        this.entityId = customChargeTypeId;
-        this.subentityId = id;
+        this.href = "/v1/customchargeentities/map/" + id;
+        this.entityId = id;
         return this;
     }
 

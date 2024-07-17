@@ -5,6 +5,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.commands.domain.CommandWrapper;
@@ -35,8 +36,6 @@ import org.springframework.stereotype.Service;
 public class ClientAllyPointsOfSalesImportHandler implements ImportHandler {
 
     private final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService;
-    private String dateFormat = "dd MMMM yyyy";
-    private String locale = "en";
 
     @Autowired
     public ClientAllyPointsOfSalesImportHandler(final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService) {
@@ -44,9 +43,7 @@ public class ClientAllyPointsOfSalesImportHandler implements ImportHandler {
     }
 
     @Override
-    public Count process(final Workbook workbook, final String locale, final String dateFormat) {
-        this.dateFormat = dateFormat;
-        this.locale = locale;
+    public Count process(final Workbook workbook, final String locale, final String dateFormat, Map<String, Object> importAttributes) {
         List<ClientAllyPointOfSalesData> staffList = readExcelFile(workbook, locale, dateFormat);
         return importEntity(workbook, staffList, dateFormat);
     }

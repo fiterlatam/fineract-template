@@ -18,10 +18,11 @@
  */
 package org.apache.fineract.infrastructure.bulkimport.importhandler;
 
+import java.util.Map;
 import org.apache.fineract.infrastructure.bulkimport.data.Count;
 import org.apache.poi.ss.usermodel.Workbook;
 
 public interface ImportHandler {
 
-    Count process(Workbook workbook, String locale, String dateFormat);
+    Count process(Workbook workbook, String locale, String dateFormat, Map<String, Object> importAttributes);
 }
