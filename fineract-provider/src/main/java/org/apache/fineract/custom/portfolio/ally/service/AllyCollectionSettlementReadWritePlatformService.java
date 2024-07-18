@@ -8,6 +8,8 @@ public interface AllyCollectionSettlementReadWritePlatformService {
 
     List<ClientAllyPointOfSalesCollectionData> getCollectionData();
 
+    ClientAllyPointOfSalesCollectionData getCollectionDataByLoanId(Long loanId);
+
     void create(AllyCollectionSettlement allyCollectionSettlement);
 
     void update(AllyCollectionSettlement allyCollectionSettlement);
