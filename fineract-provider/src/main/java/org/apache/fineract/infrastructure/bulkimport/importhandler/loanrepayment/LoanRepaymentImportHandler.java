@@ -29,6 +29,8 @@ import java.util.Map;
 import org.apache.fineract.commands.domain.CommandWrapper;
 import org.apache.fineract.commands.service.CommandWrapperBuilder;
 import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformService;
+import org.apache.fineract.custom.infrastructure.channel.data.ChannelData;
+import org.apache.fineract.custom.infrastructure.channel.service.ChannelReadWritePlatformService;
 import org.apache.fineract.infrastructure.bulkimport.constants.LoanRepaymentConstants;
 import org.apache.fineract.infrastructure.bulkimport.constants.TemplatePopulateImportConstants;
 import org.apache.fineract.infrastructure.bulkimport.data.Count;
@@ -55,14 +57,15 @@ public class LoanRepaymentImportHandler implements ImportHandler {
     public static final String EMPTY_STR = "";
     private static final Logger LOG = LoggerFactory.getLogger(LoanRepaymentImportHandler.class);
     private final LoanReadPlatformService loanReadPlatformService;
-
     private final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService;
+    private final ChannelReadWritePlatformService channelReadWritePlatformService;
 
     @Autowired
     public LoanRepaymentImportHandler(final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService,
-            final LoanReadPlatformService loanReadPlatformService) {
+            final LoanReadPlatformService loanReadPlatformService, ChannelReadWritePlatformService channelReadWritePlatformService) {
         this.commandsSourceWritePlatformService = commandsSourceWritePlatformService;
         this.loanReadPlatformService = loanReadPlatformService;
+        this.channelReadWritePlatformService = channelReadWritePlatformService;
     }
 
     @Override
@@ -105,9 +108,11 @@ public class LoanRepaymentImportHandler implements ImportHandler {
                 repaymentType);
         final LoanTransactionData loanTransactionData = LoanTransactionData.importInstance(repaymentAmount, repaymentDate, repaymentTypeId,
                 null, null, null, null, null, loanAccountId, EMPTY_STR, row.getRowNum(), locale, dateFormat);
-        final String repaymentChannel = ImportHandlerUtils.readAsString(LoanRepaymentConstants.REPAYMENT_CHANNEL_COL, row);
-        final Long repaymentChannelId = ImportHandlerUtils.getIdByName(workbook.getSheet(TemplatePopulateImportConstants.EXTRAS_SHEET_NAME),
-                repaymentChannel);
+        final ChannelData channelData = this.channelReadWritePlatformService.findByName("Bancos");
+        Long repaymentChannelId = null;
+        if (channelData != null) {
+            repaymentChannelId = channelData.getId();
+        }
         final String repaymentBank = ImportHandlerUtils.readAsString(LoanRepaymentConstants.REPAYMENT_BANK_COL, row);
         final Long repaymentBankId = ImportHandlerUtils.getIdByName(workbook.getSheet(TemplatePopulateImportConstants.EXTRAS_SHEET_NAME),
                 repaymentBank);

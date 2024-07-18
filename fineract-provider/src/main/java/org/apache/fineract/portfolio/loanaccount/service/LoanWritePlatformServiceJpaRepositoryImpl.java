@@ -1072,10 +1072,15 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         } else {
             channelData = this.validateRepaymentChannel(channelName, loanProduct);
         }
+        final Long repaymentBankId = command.longValueOfParameterNamed("repaymentBankId");
+        if (channelData.getName().equalsIgnoreCase("Bancos") && repaymentBankId == null) {
+            throw new GeneralPlatformDomainRuleException("error.msg.loan.bank.is.required.for.bank.channel",
+                    "Bank is mandatory for bank channel", "Bancos");
+        }
         final Long channelId = channelData.getId();
         changes.put("channelId", channelId);
         changes.put("channelHash", channelData.getHash());
-        changes.put("paymentBankId", command.longValueOfParameterNamed("repaymentBankId"));
+        changes.put("paymentBankId", repaymentBankId);
 
         final PaymentDetail paymentDetail = this.paymentDetailWritePlatformService.createAndPersistPaymentDetail(command, changes);
         final Boolean isHolidayValidationDone = false;
