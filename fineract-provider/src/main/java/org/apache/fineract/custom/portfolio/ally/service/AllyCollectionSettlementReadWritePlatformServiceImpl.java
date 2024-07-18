@@ -35,11 +35,11 @@ public class AllyCollectionSettlementReadWritePlatformServiceImpl implements All
     private static final class ClientAllyPointOfSalesCollectionRowMapper implements RowMapper<ClientAllyPointOfSalesCollectionData> {
 
         public String schema() {
-            return " cca.last_job_run as lastJobsRun, ml.maturedon_date as collectionDate, cca.nit as nit , cca.company_name as allyName,"
+            return " cca.last_job_run as lastJobsRun, ccbp.requested_date as collectionDate, cca.nit as nit , cca.company_name as allyName,"
                     + " ccapos.client_ally_id as clientAllyId, ccapos.id as pointofsalesid, ccapos.\"name\"  as pointOfSalesName,"
                     + " ccapos.code as pointOfSalesCode , ccapos.city_id, ccbp.amount, ccapos.settled_comission as settledComission,"
-                    + " tax_profile_id, ccbp.channel_id , ccbp.loan_id ,ccbp.client_id, cca.liquidation_frequency_id as liquidationFrequencyId"
-                    + " FROM custom.c_client_buy_process ccbp  inner join m_loan ml on ml.id =ccbp.loan_id and loan_status_id ='300'"
+                    + " tax_profile_id, ccbp.channel_id , ccbp.loan_id ,ccbp.client_id, cca.liquidation_frequency_id as liquidationFrequencyId, ml.loan_status_id as loanStatusId "
+                    + " FROM custom.c_client_buy_process ccbp  inner join m_loan ml on ml.id =ccbp.loan_id "
                     + " inner join custom.c_client_ally_point_of_sales ccapos on ccapos.id = ccbp.point_if_sales_id "
                     + " inner join custom.c_client_ally cca on cca.id =ccapos.client_ally_id ";
         }
@@ -53,7 +53,7 @@ public class AllyCollectionSettlementReadWritePlatformServiceImpl implements All
                     .pointOfSalesName(rs.getString("pointOfSalesName")).amount(rs.getBigDecimal("amount"))
                     .settledComission(rs.getInt("settledComission")).cityId(rs.getLong("city_id")).taxId(rs.getInt("tax_profile_id"))
                     .channelId(rs.getLong("channel_id")).loanId(rs.getLong("loan_id")).clientId(rs.getLong("client_id"))
-                    .liquidationFrequencyId(rs.getLong("liquidationFrequencyId")).build();
+                    .liquidationFrequencyId(rs.getLong("liquidationFrequencyId")).loanStatusId(rs.getInt("loanStatusId")).build();
         }
     }
 
@@ -61,7 +61,15 @@ public class AllyCollectionSettlementReadWritePlatformServiceImpl implements All
     public List<ClientAllyPointOfSalesCollectionData> getCollectionData() {
         final AllyCollectionSettlementReadWritePlatformServiceImpl.ClientAllyPointOfSalesCollectionRowMapper rm = new AllyCollectionSettlementReadWritePlatformServiceImpl.ClientAllyPointOfSalesCollectionRowMapper();
         final String sql = "SELECT " + rm.schema() + " ";
+
         return this.jdbcTemplate.query(sql, rm);
+    }
+
+    @Override
+    public ClientAllyPointOfSalesCollectionData getCollectionDataByLoanId(Long loanId) {
+        final AllyCollectionSettlementReadWritePlatformServiceImpl.ClientAllyPointOfSalesCollectionRowMapper rm = new AllyCollectionSettlementReadWritePlatformServiceImpl.ClientAllyPointOfSalesCollectionRowMapper();
+        final String sql = "SELECT " + rm.schema() + " Where loan_id = ?";
+        return this.jdbcTemplate.queryForObject(sql, rm, loanId);
     }
 
     @Autowired

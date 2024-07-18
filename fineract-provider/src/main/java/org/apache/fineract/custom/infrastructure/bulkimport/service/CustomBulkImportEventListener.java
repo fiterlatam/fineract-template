@@ -82,7 +82,7 @@ public class CustomBulkImportEventListener implements ApplicationListener<BulkIm
         }
 
         final Workbook workbook = event.getWorkbook();
-        final Count count = importHandler.process(workbook, event.getLocale(), event.getDateFormat());
+        final Count count = importHandler.process(workbook, event.getLocale(), event.getDateFormat(), event.getImportAttributeMap());
         importDocument.update(DateUtils.getLocalDateTimeOfTenant(), count.getSuccessCount(), count.getErrorCount());
         this.importRepository.saveAndFlush(importDocument);
 

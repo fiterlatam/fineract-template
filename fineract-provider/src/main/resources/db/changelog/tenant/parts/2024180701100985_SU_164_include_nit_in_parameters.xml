@@ -1,0 +1,16 @@
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd">
+    <changeSet id="1" author="fineract">
+        <sql>
+            INSERT INTO stretchy_parameter
+            (parameter_name, parameter_variable, parameter_label, "parameter_displayType", "parameter_FormatType", parameter_default, special, "selectOne", "selectAll", parameter_sql, parent_id)
+            VALUES('insurerNit', 'insurerNit', 'Nit aseguradora', 'select', 'text', '', NULL, NULL, 'Y', 'select distinct mc.insurance_company, mc.insurance_code from m_charge mc', NULL);
+
+            INSERT INTO stretchy_parameter
+            (parameter_name, parameter_variable, parameter_label, "parameter_displayType", "parameter_FormatType", parameter_default, special, "selectOne", "selectAll", parameter_sql, parent_id)
+            VALUES('mandatoryInsuranceCode', 'mandatoryInsuranceCode', 'Código del seguro obligatorio', 'select', 'text', '', NULL, NULL, 'Y', 'select distinct mc.insurance_code from m_charge mc', NULL);
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>

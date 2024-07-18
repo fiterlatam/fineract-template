@@ -237,7 +237,7 @@ public class AccountsApiResource {
             @FormDataParam("dateFormat") final String dateFormat,
             @PathParam("type") @Parameter(description = "type") final String accountType) {
         final Long importDocumentId = this.bulkImportWorkbookService.importWorkbook(GlobalEntityType.SHARE_ACCOUNTS.toString(),
-                uploadedInputStream, fileDetail, locale, dateFormat);
+                uploadedInputStream, fileDetail, locale, dateFormat, null);
         return this.toApiJsonSerializer.serialize(importDocumentId);
     }
 }

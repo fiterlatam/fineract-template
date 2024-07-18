@@ -70,7 +70,7 @@ public class SearchingClientRepositoryImpl implements SearchingClientRepository 
 
         String countSql = "SELECT COUNT(*) " + baseSql;
 
-        String sortSql = pageable.getSort().stream().map(order -> "c." + order.getProperty() + " " + order.getDirection().name())
+        String sortSql = pageable.getSort().stream().map(order -> " " + order.getProperty() + " " + order.getDirection().name())
                 .collect(Collectors.joining(", "));
         if (sortSql.isEmpty()) {
             sortSql = "c.id DESC";
@@ -82,7 +82,7 @@ public class SearchingClientRepositoryImpl implements SearchingClientRepository 
                        c.firstname AS firstName,
                        c.middlename AS middleName,
                        cce."NIT" AS nit,
-                        ccp."Cedula" AS cedula,
+                       ccp."Cedula" AS cedula,
                        c.lastName AS lastName,
                        c.second_lastname AS secondLastName,
                        c.external_id AS externalId,
@@ -92,7 +92,9 @@ public class SearchingClientRepositoryImpl implements SearchingClientRepository 
                        c.mobile_no AS mobileNo,
                        CASE WHEN c.blocking_reason_id IS NOT NULL THEN 900 ELSE c.status_enum END AS status,
                        c.activation_date AS activationDate,
-                       c.created_on_utc AS createdDate
+                       c.created_on_utc AS createdDate,
+                       CASE WHEN cce.client_id IS NOT NULL THEN 'Empresa' ELSE 'Persona' END AS clientType,
+                       CASE WHEN cce."NIT" IS NOT NULL THEN cce."NIT" ELSE ccp."Cedula" END AS cedularornit
                 """ + baseSql + " ORDER BY " + sortSql + " LIMIT ? OFFSET ?";
 
         RowMapper<SearchedClient> rowMapper = (rs, rowNum) -> {
@@ -106,11 +108,12 @@ public class SearchingClientRepositoryImpl implements SearchingClientRepository 
             String name = StringUtils.isBlank(fullName) ? rs.getString("displayName") : fullName;
             String nit = rs.getString("nit");
             String cedula = rs.getString("cedula");
-            String cedulaOrNit = StringUtils.isNotBlank(cedula) ? cedula : nit;
+            String cedulaOrNit = rs.getString("cedularornit");
+            String clientType = rs.getString("clientType");
             return new SearchedClient(rs.getLong("id"), name, getExternalId(rs.getString("externalId")), rs.getString("accountNumber"),
                     rs.getLong("officeId"), rs.getString("officeName"), rs.getString("mobileNo"), rs.getInt("status"),
                     activationDate != null ? activationDate.toLocalDate() : null, rs.getObject("createdDate", OffsetDateTime.class),
-                    cedulaOrNit);
+                    cedulaOrNit, clientType);
         };
 
         List<SearchedClient> clients = jdbcTemplate.query(querySql, rowMapper,

@@ -31,6 +31,7 @@ import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Collection;
+import java.util.Map;
 import org.apache.commons.io.IOUtils;
 import org.apache.fineract.infrastructure.bulkimport.data.BulkImportEvent;
 import org.apache.fineract.infrastructure.bulkimport.data.GlobalEntityType;
@@ -88,7 +89,7 @@ public class BulkImportWorkbookServiceImpl implements BulkImportWorkbookService 
 
     @Override
     public Long importWorkbook(String entity, InputStream inputStream, FormDataContentDisposition fileDetail, final String locale,
-            final String dateFormat) {
+            final String dateFormat, Map<String, Object> importAttributes) {
         try {
             if (entity != null && inputStream != null && fileDetail != null && locale != null && dateFormat != null) {
                 final ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -170,12 +171,15 @@ public class BulkImportWorkbookServiceImpl implements BulkImportWorkbookService 
                 } else if (entity.trim().equalsIgnoreCase(GlobalEntityType.CLIENT_BLOCK.toString())) {
                     entityType = GlobalEntityType.CLIENT_BLOCK;
                     primaryColumn = 0;
+                } else if (entity.trim().equalsIgnoreCase(GlobalEntityType.CLIENT_VIP.toString())) {
+                    entityType = GlobalEntityType.CLIENT_VIP;
+                    primaryColumn = 0;
                 } else {
                     workbook.close();
                     throw new GeneralPlatformDomainRuleException("error.msg.unable.to.find.resource", "Unable to find requested resource");
 
                 }
-                return publishEvent(primaryColumn, fileDetail, bis, entityType, workbook, locale, dateFormat);
+                return publishEvent(primaryColumn, fileDetail, bis, entityType, workbook, locale, dateFormat, importAttributes);
             }
             throw new GeneralPlatformDomainRuleException("error.msg.null", "One or more of the given parameters not found");
         } catch (IOException e) {
@@ -188,10 +192,8 @@ public class BulkImportWorkbookServiceImpl implements BulkImportWorkbookService 
 
     private Long publishEvent(final Integer primaryColumn, final FormDataContentDisposition fileDetail,
             final InputStream clonedInputStreamWorkbook, final GlobalEntityType entityType, final Workbook workbook, final String locale,
-            final String dateFormat) {
-
+            final String dateFormat, Map<String, Object> importAttributes) {
         final String fileName = fileDetail.getFileName();
-
         final Long documentId = this.documentWritePlatformService.createInternalDocument(
                 DocumentWritePlatformServiceJpaRepositoryImpl.DocumentManagementEntity.IMPORT.name(),
                 this.securityContext.authenticatedUser().getId(), null, clonedInputStreamWorkbook,
@@ -203,6 +205,7 @@ public class BulkImportWorkbookServiceImpl implements BulkImportWorkbookService 
         this.importDocumentRepository.saveAndFlush(importDocument);
         BulkImportEvent event = BulkImportEvent.instance(this, workbook, importDocument.getId(), locale, dateFormat,
                 ThreadLocalContextUtil.getContext());
+        event.setImportAttributeMap(importAttributes);
         applicationContext.publishEvent(event);
         return importDocument.getId();
     }

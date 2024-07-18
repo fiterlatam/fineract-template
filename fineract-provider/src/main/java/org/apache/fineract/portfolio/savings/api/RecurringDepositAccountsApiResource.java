@@ -422,7 +422,7 @@ public class RecurringDepositAccountsApiResource {
             @FormDataParam("file") FormDataContentDisposition fileDetail, @FormDataParam("locale") final String locale,
             @FormDataParam("dateFormat") final String dateFormat) {
         final Long importDocumentId = this.bulkImportWorkbookService.importWorkbook(GlobalEntityType.RECURRING_DEPOSIT_ACCOUNTS.toString(),
-                uploadedInputStream, fileDetail, locale, dateFormat);
+                uploadedInputStream, fileDetail, locale, dateFormat, null);
         return this.toApiJsonSerializer.serialize(importDocumentId);
     }
 
@@ -444,7 +444,8 @@ public class RecurringDepositAccountsApiResource {
             @FormDataParam("file") FormDataContentDisposition fileDetail, @FormDataParam("locale") final String locale,
             @FormDataParam("dateFormat") final String dateFormat) {
         final Long importDocumentId = this.bulkImportWorkbookService.importWorkbook(
-                GlobalEntityType.RECURRING_DEPOSIT_ACCOUNTS_TRANSACTIONS.toString(), uploadedInputStream, fileDetail, locale, dateFormat);
+                GlobalEntityType.RECURRING_DEPOSIT_ACCOUNTS_TRANSACTIONS.toString(), uploadedInputStream, fileDetail, locale, dateFormat,
+                null);
         return this.toApiJsonSerializer.serialize(importDocumentId);
     }
 }

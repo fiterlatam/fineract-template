@@ -26,5 +26,6 @@ public class ClientAllyPointOfSalesCollectionData {
     private Long loanId;
     private Long clientId;
     private String lastJobsRun;
+    private Integer loanStatusId;
 
 }

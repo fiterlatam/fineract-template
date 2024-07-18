@@ -30,6 +30,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.Collection;
+import java.util.Map;
 import org.apache.commons.io.IOUtils;
 import org.apache.fineract.custom.infrastructure.bulkimport.data.CustomGlobalEntityType;
 import org.apache.fineract.infrastructure.bulkimport.data.BulkImportEvent;
@@ -87,7 +88,7 @@ public class CustomBulkImportWorkbookServiceImpl implements BulkImportWorkbookSe
 
     @Override
     public Long importWorkbook(String entity, InputStream inputStream, FormDataContentDisposition fileDetail, final String locale,
-            final String dateFormat) {
+            final String dateFormat, final Map<String, Object> importAttributes) {
         try {
             if (entity != null && inputStream != null && fileDetail != null && locale != null && dateFormat != null) {
                 final ByteArrayOutputStream baos = new ByteArrayOutputStream();
