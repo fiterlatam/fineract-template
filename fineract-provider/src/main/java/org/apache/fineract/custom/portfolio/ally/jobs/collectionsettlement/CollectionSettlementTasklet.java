@@ -50,23 +50,24 @@ public class CollectionSettlementTasklet implements Tasklet {
             LocalDate period;
             if (data.getLastJobsRun() != null) {
                 period = LocalDate.parse(data.getLastJobsRun());
-            } else {
-                period = LocalDate.now();
-            }
 
-            switch (freq) {
-                case "WEEKLY":
-                    period = period.plusWeeks(1);
-                break;
-                case "BIWEEKLY":
-                    period = period.plusWeeks(2);
-                break;
-                case "MONTHLY":
-                    period = period.plusMonths(1);
-                break;
-                case "DAILY":
-                    period = period.plusDays(1);
-                break;
+                switch (freq) {
+                    case "WEEKLY":
+                        period = period.plusWeeks(1);
+                    break;
+                    case "BIWEEKLY":
+                        period = period.plusWeeks(2);
+                    break;
+                    case "MONTHLY":
+                        period = period.plusMonths(1);
+                    break;
+                    case "DAILY":
+                        period = period.plusDays(1);
+                    break;
+                }
+
+            } else {
+                period = LocalDate.parse(data.getCollectionDate());
             }
 
             String worksday = workingDays.getRecurrence();
@@ -82,7 +83,8 @@ public class CollectionSettlementTasklet implements Tasklet {
 
             }
             LocalDate now = LocalDate.now();
-            boolean isAfter = now.isEqual(period);
+            boolean isAfter = now.isAfter(period);
+
             if (!collect.isPresent() && isAfter) {
                 AllyCollectionSettlement allyCollectionSettlement = new AllyCollectionSettlement();
                 LocalDate collectDate = LocalDate.parse(data.getCollectionDate());
@@ -101,7 +103,7 @@ public class CollectionSettlementTasklet implements Tasklet {
                 allyCollectionSettlement.setLoanId(data.getLoanId());
                 allyCollectionSettlement.setClientId(data.getClientId());
                 allyCollectionSettlement.setChannelId(data.getChannelId());
-                allyCollectionSettlement.setCollectionStatus(300);
+                allyCollectionSettlement.setCollectionStatus(data.getLoanStatusId());
                 allyCollectionSettlementReadWritePlatformService.create(allyCollectionSettlement);
                 Optional<ClientAlly> clientAlly = clientAllyRepository.findById(data.getClientAllyId());
                 if (clientAlly.isPresent()) {
