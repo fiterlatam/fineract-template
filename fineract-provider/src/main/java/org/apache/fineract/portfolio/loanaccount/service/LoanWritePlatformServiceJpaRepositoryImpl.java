@@ -3196,10 +3196,10 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         final MaximumCreditRateConfigurationData maximumCreditRateConfigurationData = this.loanProductReadPlatformService
                 .retrieveMaximumCreditRateConfigurationData();
         final LocalDate appliedOnDate = maximumCreditRateConfigurationData.getAppliedOnDate();
-        final BigDecimal maximumLegalAnnualNominalRate = maximumCreditRateConfigurationData.getAnnualNominalRate();
+        final BigDecimal maximumLegalAnnualNominalRateValue = maximumCreditRateConfigurationData.getAnnualNominalRate();
         final LoanRescheduleMapper rm = new LoanRescheduleMapper();
         final String sql = "SELECT " + rm.schema();
-        final Object[] params = new Object[] { appliedOnDate, appliedOnDate, appliedOnDate, maximumLegalAnnualNominalRate };
+        final Object[] params = new Object[] { appliedOnDate, appliedOnDate, appliedOnDate, maximumLegalAnnualNominalRateValue };
         List<LoanRescheduleData> loanLoanRescheduleDataList = this.jdbcTemplate.query(sql, rm, params);
         if (CollectionUtils.isNotEmpty(loanLoanRescheduleDataList)) {
             final String locale = "en";
@@ -3223,29 +3223,31 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             rescheduleJsonObject.addProperty("adjustedDueDate", "");
             rescheduleJsonObject.addProperty("graceOnPrincipal", "");
             rescheduleJsonObject.addProperty("extraTerms", "");
-            rescheduleJsonObject.addProperty("newInterestRate", maximumLegalAnnualNominalRate);
 
             for (final LoanRescheduleData loanRescheduleData : loanLoanRescheduleDataList) {
                 final Long loanId = loanRescheduleData.getId();
                 final Loan loan = this.loanRepository.findById(loanId).orElseThrow(() -> new LoanNotFoundException(loanId));
+                final MonetaryCurrency currency = loan.getCurrency();
+                final Money maximumLegalAnnualNominalRate = Money.of(currency, maximumLegalAnnualNominalRateValue);
                 final LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment = loan
                         .getInstallmentByScheduleFromDate(appliedOnDate);
                 if (loanRepaymentScheduleInstallment == null) {
                     continue;
                 }
-                final BigDecimal rescheduledAnnualRate = ObjectUtils.defaultIfNull(loanRescheduleData.getRescheduledAnnualRate(),
-                        BigDecimal.ZERO);
-                BigDecimal newInterestRate;
-                if (maximumLegalAnnualNominalRate.compareTo(loanRescheduleData.getAnnualNominalRate()) > 0
-                        && !rescheduledAnnualRate.equals(loanRescheduleData.getAnnualNominalRate())) {
-                    newInterestRate = loanRescheduleData.getAnnualNominalRate();
-                } else if (maximumLegalAnnualNominalRate.compareTo(loanRescheduleData.getAnnualNominalRate()) < 0
-                        && !rescheduledAnnualRate.equals(maximumLegalAnnualNominalRate)) {
+                final Money rescheduledAnnualRate = Money.of(currency,
+                        ObjectUtils.defaultIfNull(loanRescheduleData.getRescheduledAnnualRate(), BigDecimal.ZERO));
+                Money newInterestRate;
+                final Money annualNominalRate = Money.of(currency, loanRescheduleData.getAnnualNominalRate());
+                if (maximumLegalAnnualNominalRate.isGreaterThan(annualNominalRate)
+                        && !rescheduledAnnualRate.isEqualTo(rescheduledAnnualRate)) {
+                    newInterestRate = annualNominalRate;
+                } else if (maximumLegalAnnualNominalRate.isLessThan(annualNominalRate)
+                        && !rescheduledAnnualRate.isEqualTo(maximumLegalAnnualNominalRate)) {
                     newInterestRate = maximumLegalAnnualNominalRate;
                 } else {
                     continue;
                 }
-                rescheduleJsonObject.addProperty("newInterestRate", newInterestRate);
+                rescheduleJsonObject.addProperty("newInterestRate", newInterestRate.getAmount());
                 final String rescheduleFromDateString = DateUtils.format(appliedOnDate, dateFormat, Locale.forLanguageTag(locale));
                 rescheduleJsonObject.addProperty("rescheduleFromDate", rescheduleFromDateString);
                 rescheduleJsonObject.addProperty("loanId", loanId);

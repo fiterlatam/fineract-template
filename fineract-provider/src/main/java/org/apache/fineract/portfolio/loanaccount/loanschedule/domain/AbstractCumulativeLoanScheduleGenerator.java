@@ -329,16 +329,17 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
             final Map<LocalDate, Money> compoundingMap = scheduleParams.getCompoundingMap();
             final LocalDate periodEndDate = scheduledDueDate;
             PrincipalInterest principalInterestForThisPeriod;
-            if (!isMidTermRescheduling) {
+            final Money annualNominalInterestRate = Money.of(currency, loanApplicationTerms.getAnnualNominalInterestRate());
+            final Money interestRatePerPeriod = Money.of(currency, loanApplicationTerms.getInterestRatePerPeriod());
+            boolean isSameInterestRates = annualNominalInterestRate.isEqualTo(interestRatePerPeriod);
+            if (!isMidTermRescheduling || isSameInterestRates) {
                 principalInterestForThisPeriod = calculatePrincipalInterestComponentsForPeriod(calculator,
                         interestCalculationGraceOnRepaymentPeriodFractionParam, totalCumulativePrincipal, totalCumulativeInterest,
                         totalInterestDueForLoan, cumulatingInterestPaymentDueToGrace, outstandingBalance, loanApplicationTerms,
                         periodNumber, mc, principalVariation, compoundingMap, periodStartDateApplicableForInterest, periodEndDate,
                         interestRates);
             } else {
-                final BigDecimal annualNominalInterestRate = loanApplicationTerms.getAnnualNominalInterestRate();
-                final BigDecimal interestRatePerPeriod = loanApplicationTerms.getInterestRatePerPeriod();
-                loanApplicationTerms.setAnnualNominalInterestRate(interestRatePerPeriod);
+                loanApplicationTerms.setAnnualNominalInterestRate(interestRatePerPeriod.getAmount());
                 final PrincipalInterest midPrincipalInterestForThisPeriod = calculatePrincipalInterestComponentsForPeriod(calculator,
                         interestCalculationGraceOnRepaymentPeriodFractionParam, totalCumulativePrincipal, totalCumulativeInterest,
                         totalInterestDueForLoan, cumulatingInterestPaymentDueToGrace, outstandingBalance, loanApplicationTerms,
@@ -347,7 +348,7 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                 final Money midPeriodInterestRate = midPrincipalInterestForThisPeriod.interest();
                 final Money interestPrincipal = midPrincipalInterestForThisPeriod.interest()
                         .add(midPrincipalInterestForThisPeriod.principal());
-                loanApplicationTerms.setAnnualNominalInterestRate(annualNominalInterestRate);
+                loanApplicationTerms.setAnnualNominalInterestRate(annualNominalInterestRate.getAmount());
                 PrincipalInterest endPrincipalInterestForThisPeriod = calculatePrincipalInterestComponentsForPeriod(calculator,
                         interestCalculationGraceOnRepaymentPeriodFractionParam, totalCumulativePrincipal, totalCumulativeInterest,
                         totalInterestDueForLoan, cumulatingInterestPaymentDueToGrace, outstandingBalance, loanApplicationTerms,
