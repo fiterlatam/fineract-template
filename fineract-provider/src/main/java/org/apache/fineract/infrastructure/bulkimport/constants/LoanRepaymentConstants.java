@@ -31,8 +31,7 @@ public final class LoanRepaymentConstants {
     public static final int AMOUNT_COL = 8;// I
     public static final int REPAID_ON_DATE_COL = 9;// J
     public static final int REPAYMENT_TYPE_COL = 10;// K
-    public static final int REPAYMENT_CHANNEL_COL = 11; // L
-    public static final int REPAYMENT_BANK_COL = 12; // M
+    public static final int REPAYMENT_BANK_COL = 11; // L
     public static final int STATUS_COL = 16;// O
     public static final int LOOKUP_CLIENT_NAME_COL = 17;// R
     public static final int LOOKUP_CLIENT_EXTERNAL_ID = 18;// S
