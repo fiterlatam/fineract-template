@@ -101,8 +101,12 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
         } else {
             scheduleParams = loanScheduleParams;
         }
-
-        final Collection<RecalculationDetail> transactions = scheduleParams.getRecalculationDetails();
+        final Collection<RecalculationDetail> transactions;
+        if (loanApplicationTerms.getLoanScheduleType().equals(LoanScheduleType.CUMULATIVE)) {
+            transactions = scheduleParams.getRecalculationDetails();
+        } else {
+            transactions = new ArrayList<>();
+        }
         final LoanRepaymentScheduleTransactionProcessor loanRepaymentScheduleTransactionProcessor = scheduleParams
                 .getLoanRepaymentScheduleTransactionProcessor();
 
