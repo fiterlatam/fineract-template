@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.fineract.custom.portfolio.ally.data.ClientAllyPointOfSalesCollectionData;
 import org.apache.fineract.custom.portfolio.ally.domain.*;
 import org.apache.fineract.custom.portfolio.ally.service.AllyCollectionSettlementReadWritePlatformService;
 import org.apache.fineract.infrastructure.configuration.domain.GlobalConfigurationProperty;
@@ -45,27 +46,27 @@ public class PurchaseOfSettlementTasklet implements Tasklet {
         GlobalConfigurationProperty globalConfigurationProperty = globalConfigurationRepository.findOneByName("IVA Por comision");
         LocalDate now = LocalDate.now();
         for (ClientAlly clientAlly : clientAllyList) {
+            String freq = LiquidationFrequency.fromInt(clientAlly.getLiquidationFrequencyCodeValueId().intValue()).toString();
             LocalDate period;
             if (clientAlly.getLastJobRunPurchase() != null) {
                 period = clientAlly.getLastJobRunPurchase();
+
+                switch (freq) {
+                    case "WEEKLY":
+                        period = period.plusWeeks(1);
+                    break;
+                    case "BIWEEKLY":
+                        period = period.plusWeeks(2);
+                    break;
+                    case "MONTHLY":
+                        period = period.plusMonths(1);
+                    break;
+                    case "DAILY":
+                        period = period.plusDays(1);
+                    break;
+                }
             } else {
                 period = now;
-            }
-            String freq = LiquidationFrequency.fromInt(clientAlly.getLiquidationFrequencyCodeValueId().intValue()).toString();
-
-            switch (freq) {
-                case "WEEKLY":
-                    period = period.plusWeeks(1);
-                break;
-                case "BIWEEKLY":
-                    period = period.plusWeeks(2);
-                break;
-                case "MONTHLY":
-                    period = period.plusMonths(1);
-                break;
-                case "DAILY":
-                    period = period.plusDays(1);
-                break;
             }
             String worksday = workingDays.getRecurrence();
             String[] arrayworksday = worksday.split(";");
@@ -83,6 +84,9 @@ public class PurchaseOfSettlementTasklet implements Tasklet {
                 Long clientAllyId = clientAlly.getId();
                 List<AllyCollectionSettlement> collectionData = allyCollectionSettlementRepository.findByClientAllyId(clientAllyId);
                 for (AllyCollectionSettlement allyCollectionSettlement : collectionData) {
+                    ClientAllyPointOfSalesCollectionData clientcollectionData = allyCollectionSettlementReadWritePlatformService
+                            .getCollectionDataByLoanId(allyCollectionSettlement.getLoanId());
+                    System.out.println("status : " + clientcollectionData.getLoanStatusId());
                     BigDecimal principal = allyCollectionSettlement.getPrincipalAmount();
                     BigDecimal amountComission = principal
                             .multiply(BigDecimal.valueOf(allyCollectionSettlement.getSettledComission()).divide(BigDecimal.valueOf(100)));
@@ -92,6 +96,7 @@ public class PurchaseOfSettlementTasklet implements Tasklet {
                     allyCollectionSettlement.setAmountComission(amountComission.setScale(2, BigDecimal.ROUND_HALF_EVEN));
                     allyCollectionSettlement.setAmountVaCommision(amountVaCommision.setScale(2, BigDecimal.ROUND_HALF_EVEN));
                     allyCollectionSettlement.setAmountToPay(amountToPay.setScale(2, BigDecimal.ROUND_HALF_EVEN));
+                    allyCollectionSettlement.setCollectionStatus(clientcollectionData.getLoanStatusId());
                     allyCollectionSettlementReadWritePlatformService.update(allyCollectionSettlement);
                     clientAlly.setLastJobRunPurchase(period);
                     clientAllyRepository.save(clientAlly);
