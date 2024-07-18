@@ -39,4 +39,5 @@ public class SearchedClient {
     private final LocalDate activationDate;
     private final OffsetDateTime createdDate;
     private final String cedularOrNit;
+    private final String clientType;
 }
