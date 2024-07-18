@@ -111,6 +111,7 @@ public class LoanRepaymentWorkbookPopulator extends AbstractWorkbookPopulator {
             short df = workbook.createDataFormat().getFormat(dateFormat);
             dateCellStyle.setDataFormat(df);
             row.getCell(LoanRepaymentConstants.LOAN_DISBURSEMENT_DATE_COL).setCellStyle(dateCellStyle);
+            row.createCell(LoanRepaymentConstants.REPAID_ON_DATE_COL).setCellStyle(dateCellStyle);
         }
     }
 
@@ -123,8 +124,6 @@ public class LoanRepaymentWorkbookPopulator extends AbstractWorkbookPopulator {
                 LoanRepaymentConstants.LOAN_ACCOUNT_NO_COL, LoanRepaymentConstants.LOAN_ACCOUNT_NO_COL);
         CellRangeAddressList repaymentTypeRange = new CellRangeAddressList(1, SpreadsheetVersion.EXCEL97.getLastRowIndex(),
                 LoanRepaymentConstants.REPAYMENT_TYPE_COL, LoanRepaymentConstants.REPAYMENT_TYPE_COL);
-        CellRangeAddressList repaymentChannelRange = new CellRangeAddressList(1, SpreadsheetVersion.EXCEL97.getLastRowIndex(),
-                LoanRepaymentConstants.REPAYMENT_CHANNEL_COL, LoanRepaymentConstants.REPAYMENT_CHANNEL_COL);
         CellRangeAddressList repaymentBankRange = new CellRangeAddressList(1, SpreadsheetVersion.EXCEL97.getLastRowIndex(),
                 LoanRepaymentConstants.REPAYMENT_BANK_COL, LoanRepaymentConstants.REPAYMENT_BANK_COL);
         CellRangeAddressList repaymentDateRange = new CellRangeAddressList(1, SpreadsheetVersion.EXCEL97.getLastRowIndex(),
@@ -137,7 +136,6 @@ public class LoanRepaymentWorkbookPopulator extends AbstractWorkbookPopulator {
         DataValidationConstraint accountNumberConstraint = validationHelper.createFormulaListConstraint(
                 "INDIRECT(CONCATENATE(\"Account_\",SUBSTITUTE(SUBSTITUTE(SUBSTITUTE($B1,\" \",\"_\"),\"(\",\"_\"),\")\",\"_\")))");
         DataValidationConstraint paymentTypeConstraint = validationHelper.createFormulaListConstraint("PaymentTypes");
-        DataValidationConstraint repaymentChannelConstraint = validationHelper.createFormulaListConstraint("RepaymentChannels");
         DataValidationConstraint repaymentBankConstraint = validationHelper.createFormulaListConstraint("RepaymentBanks");
         DataValidationConstraint repaymentDateConstraint = validationHelper
                 .createDateConstraint(DataValidationConstraint.OperatorType.LESS_OR_EQUAL, "=TODAY()", null, dateFormat);
@@ -146,7 +144,6 @@ public class LoanRepaymentWorkbookPopulator extends AbstractWorkbookPopulator {
         DataValidation clientValidation = validationHelper.createValidation(clientNameConstraint, clientNameRange);
         DataValidation accountNumberValidation = validationHelper.createValidation(accountNumberConstraint, accountNumberRange);
         DataValidation repaymentTypeValidation = validationHelper.createValidation(paymentTypeConstraint, repaymentTypeRange);
-        DataValidation repaymentChannelValidation = validationHelper.createValidation(repaymentChannelConstraint, repaymentChannelRange);
         DataValidation repaymentBankValidation = validationHelper.createValidation(repaymentBankConstraint, repaymentBankRange);
         DataValidation repaymentDateValidation = validationHelper.createValidation(repaymentDateConstraint, repaymentDateRange);
 
@@ -154,7 +151,6 @@ public class LoanRepaymentWorkbookPopulator extends AbstractWorkbookPopulator {
         worksheet.addValidationData(clientValidation);
         worksheet.addValidationData(accountNumberValidation);
         worksheet.addValidationData(repaymentTypeValidation);
-        worksheet.addValidationData(repaymentChannelValidation);
         worksheet.addValidationData(repaymentBankValidation);
         worksheet.addValidationData(repaymentDateValidation);
 
@@ -274,7 +270,6 @@ public class LoanRepaymentWorkbookPopulator extends AbstractWorkbookPopulator {
         worksheet.setColumnWidth(LoanRepaymentConstants.AMOUNT_COL, TemplatePopulateImportConstants.SMALL_COL_SIZE);
         worksheet.setColumnWidth(LoanRepaymentConstants.REPAID_ON_DATE_COL, TemplatePopulateImportConstants.SMALL_COL_SIZE);
         worksheet.setColumnWidth(LoanRepaymentConstants.REPAYMENT_TYPE_COL, TemplatePopulateImportConstants.SMALL_COL_SIZE);
-        worksheet.setColumnWidth(LoanRepaymentConstants.REPAYMENT_CHANNEL_COL, TemplatePopulateImportConstants.SMALL_COL_SIZE);
         worksheet.setColumnWidth(LoanRepaymentConstants.LOOKUP_CLIENT_NAME_COL, TemplatePopulateImportConstants.MEDIUM_COL_SIZE);
         worksheet.setColumnWidth(LoanRepaymentConstants.LOOKUP_CLIENT_EXTERNAL_ID, TemplatePopulateImportConstants.SMALL_COL_SIZE);
         worksheet.setColumnWidth(LoanRepaymentConstants.LOOKUP_ACCOUNT_NO_COL, TemplatePopulateImportConstants.SMALL_COL_SIZE);
@@ -301,7 +296,6 @@ public class LoanRepaymentWorkbookPopulator extends AbstractWorkbookPopulator {
         writeString(LoanRepaymentConstants.LOOKUP_PRINCIPAL_COL, rowHeader, "Lookup Principal");
         writeString(LoanRepaymentConstants.LOOKUP_TOTAL_OUTSTANDING_AMOUNT_COL, rowHeader, "Lookup Total Outstanding amount");
         writeString(LoanRepaymentConstants.LOOKUP_LOAN_DISBURSEMENT_DATE_COL, rowHeader, "Lookup Loan Disbursement Date");
-        writeString(LoanRepaymentConstants.REPAYMENT_CHANNEL_COL, rowHeader, "Channel*");
-        writeString(LoanRepaymentConstants.REPAYMENT_BANK_COL, rowHeader, "Bank");
+        writeString(LoanRepaymentConstants.REPAYMENT_BANK_COL, rowHeader, "Banco*");
     }
 }
