@@ -29,7 +29,7 @@ public interface ClientAllyReadWritePlatformService {
 
     List<ClientAllyData> findAllActive();
 
-    List<ClientAllyData> retrieveWithPointOfSales();
+    List<ClientAllyData> retrieveAlliesWithPointOfSales();
 
     List<ClientAllyData> findByName(String name);
 

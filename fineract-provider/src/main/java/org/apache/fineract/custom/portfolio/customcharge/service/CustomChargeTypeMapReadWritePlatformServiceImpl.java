@@ -31,7 +31,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.fineract.custom.portfolio.ally.domain.ClientAllyPointOfSales;
 import org.apache.fineract.custom.portfolio.ally.domain.ClientAllyPointOfSalesRepository;
@@ -92,23 +91,15 @@ public class CustomChargeTypeMapReadWritePlatformServiceImpl implements CustomCh
     public CustomChargeTypeMapData findById(Long id) {
         final ChargeTypeMapRowMapper rm = new ChargeTypeMapRowMapper();
         final String sql = "SELECT " + rm.schema() + " WHERE ctm.id = ? ";
-        final CustomChargeTypeMapData customChargeTypeMapData = this.jdbcTemplate.queryForObject(sql, rm, new Object[] { id });
-        final List<PointOfSalesData> pointOfSales = retrievePointOfSales(id);
-        List<ClientData> clients = retrieveClients(id);
-        if (customChargeTypeMapData != null) {
-            customChargeTypeMapData.setPointOfSales(pointOfSales);
-            customChargeTypeMapData.setClients(clients);
-        }
-        return customChargeTypeMapData;
+        return this.jdbcTemplate.queryForObject(sql, rm, new Object[] { id });
     }
 
-    public List<PointOfSalesData> retrievePointOfSales(Long chargeMapId) {
+    @Override
+    public List<PointOfSalesData> retrievePointOfSales() {
         final String pointOfSaleSQL = """
                   SELECT ccapos.id, ccapos.name, ccapos.code
-                  FROM custom.c_custom_charge_type_map ccctm
-                  INNER JOIN custom.c_charge_map_point_sale ccmps ON ccmps.custom_charge_id = ccctm.id
-                  INNER JOIN custom.c_client_ally_point_of_sales ccapos ON ccapos.id = ccmps.point_of_sales_id\s
-                  WHERE ccctm.id = ?
+                  FROM custom.c_commerce_point_sale ccps
+                  INNER JOIN custom.c_client_ally_point_of_sales ccapos ON ccapos.id = ccps.point_of_sales_id
                 """;
         return jdbcTemplate.query(pointOfSaleSQL, resultSet -> {
             List<PointOfSalesData> pointOfSalesDataList = new ArrayList<>();
@@ -120,35 +111,32 @@ public class CustomChargeTypeMapReadWritePlatformServiceImpl implements CustomCh
                 pointOfSalesDataList.add(pointOfSalesData);
             }
             return pointOfSalesDataList;
-        }, chargeMapId);
+        });
     }
 
-    public List<ClientData> retrieveClients(Long chargeMapId) {
+    @Override
+    public List<ClientData> retrieveClients() {
         final String pointOfSaleSQL = """
-                  SELECT mc.id AS clientId,
-                  mc.display_name AS name,
-                  COALESCE(cce."NIT", ccp."Cedula") AS idNumber
-                  FROM custom.c_custom_charge_type_map ccctm
-                  INNER JOIN custom.c_custom_charge_map_client cccmc ON cccmc.custom_charge_map_id = ccctm.id
-                  INNER JOIN m_client mc ON mc.id = cccmc.client_id
-                  LEFT JOIN campos_cliente_empresas cce ON cce.client_id = mc.id
-                  LEFT JOIN campos_cliente_persona ccp ON ccp.client_id = mc.id
-                  WHERE ccctm.id = ?
+                  SELECT cvc.client_id AS clientId,
+                    COALESCE(mce.display_name, mcp.display_name) AS displayName
+                  FROM custom.c_vip_client cvc
+                  LEFT JOIN campos_cliente_empresas cce ON cce."NIT" = cvc.client_id
+                  LEFT JOIN campos_cliente_persona ccp ON ccp."Cedula" = cvc.client_id
+                  LEFT JOIN m_client mce ON mce.id = cce.client_id
+                  LEFT JOIN m_client mcp ON mcp.id = cce.client_id
                 """;
         return jdbcTemplate.query(pointOfSaleSQL, resultSet -> {
             List<ClientData> clientDataList = new ArrayList<>();
             while (resultSet.next()) {
-                final Long clientId = resultSet.getLong("clientId");
-                final String name = resultSet.getString("name");
-                final String idNumber = resultSet.getString("idNumber");
+                final String clientIdNumber = resultSet.getString("clientId");
+                final String displayName = resultSet.getString("displayName");
                 final ClientData clientData = new ClientData();
-                clientData.setId(clientId);
-                clientData.setDisplayName(name);
-                clientData.setIdNumber(idNumber);
+                clientData.setDisplayName(displayName);
+                clientData.setIdNumber(clientIdNumber);
                 clientDataList.add(clientData);
             }
             return clientDataList;
-        }, chargeMapId);
+        });
     }
 
     @Transactional
@@ -157,30 +145,32 @@ public class CustomChargeTypeMapReadWritePlatformServiceImpl implements CustomCh
 
         try {
             this.context.authenticatedUser();
-            final CustomChargeTypeMap entity = this.validatorClass.validateForCreate(command.json());
-            final Long customChargeTypeId = entity.getCustomChargeTypeId();
-            List<CustomChargeTypeMap> customChargeTypeMapList = this.customChargeTypeMapRepository
-                    .findByCustomChargeTypeIdAndTermAndActive(customChargeTypeId, entity.getTerm(), true);
-            // From Date must be bigger than on last active from date
-            // Consider the case of not having a previous record
-            Optional<CustomChargeTypeMap> lastActive = customChargeTypeMapList.stream().filter(CustomChargeTypeMap::getActive).findFirst();
-            if (lastActive.isPresent()) {
-                CustomChargeTypeMap existent = lastActive.get();
-                // If date is before the last active date
-                if (entity.getValidFrom().isBefore(existent.getValidFrom())) {
-                    throw new PlatformDataIntegrityException("error.msg.from.date.must.be.after.last.active.from.date",
-                            "From Date must be after last active From Date", "fromDate", entity.getValidFrom());
+            final String commandParam = command.stringValueOfParameterNamed("command");
+            if ("commerceMapping".equals(commandParam)) {
+                return this.createCommerceMapping(command);
+            } else {
+                final CustomChargeTypeMap entity = this.validatorClass.validateForCreate(command.json());
+                final Long customChargeTypeId = entity.getCustomChargeTypeId();
+                List<CustomChargeTypeMap> customChargeTypeMapList = this.customChargeTypeMapRepository
+                        .findByCustomChargeTypeIdAndTermAndActive(customChargeTypeId, entity.getTerm(), true);
+                // From Date must be bigger than on last active from date
+                // Consider the case of not having a previous record
+                Optional<CustomChargeTypeMap> lastActive = customChargeTypeMapList.stream().filter(CustomChargeTypeMap::getActive)
+                        .findFirst();
+                if (lastActive.isPresent()) {
+                    CustomChargeTypeMap existent = lastActive.get();
+                    // If date is before the last active date
+                    if (entity.getValidFrom().isBefore(existent.getValidFrom())) {
+                        throw new PlatformDataIntegrityException("error.msg.from.date.must.be.after.last.active.from.date",
+                                "From Date must be after last active From Date", "fromDate", entity.getValidFrom());
+                    }
                 }
+                // Not updating! ETF!!!
+                this.customChargeTypeMapRepository.deactivatePreviousTermData(customChargeTypeId, entity.getTerm(),
+                        entity.getValidFrom().minusDays(1), DateUtils.getLocalDateTimeOfTenant(), this.context.authenticatedUser().getId());
+                this.customChargeTypeMapRepository.saveAndFlush(entity);
+                return new CommandProcessingResultBuilder().withEntityId(entity.getId()).build();
             }
-            final List<ClientAllyPointOfSales> clientAllyPointOfSaleList = assembleListOfPointOfSales(command);
-            if (CollectionUtils.isNotEmpty(clientAllyPointOfSaleList)) {
-                entity.setClientAllyPointOfSales(clientAllyPointOfSaleList);
-            }
-            // Not updating! ETF!!!
-            this.customChargeTypeMapRepository.deactivatePreviousTermData(customChargeTypeId, entity.getTerm(),
-                    entity.getValidFrom().minusDays(1), DateUtils.getLocalDateTimeOfTenant(), this.context.authenticatedUser().getId());
-            this.customChargeTypeMapRepository.saveAndFlush(entity);
-            return new CommandProcessingResultBuilder().withEntityId(entity.getId()).build();
         } catch (final JpaSystemException | DataIntegrityViolationException dve) {
             handleDataIntegrityIssues(dve.getMostSpecificCause());
             return CommandProcessingResult.empty();
@@ -189,6 +179,17 @@ public class CustomChargeTypeMapReadWritePlatformServiceImpl implements CustomCh
             handleDataIntegrityIssues(throwable);
             return CommandProcessingResult.empty();
         }
+    }
+
+    private CommandProcessingResult createCommerceMapping(final JsonCommand command) {
+        final List<ClientAllyPointOfSales> clientAllyPointOfSaleList = assembleListOfPointOfSales(command);
+        this.jdbcTemplate.execute("TRUNCATE TABLE custom.c_commerce_point_sale");
+        String sql = "INSERT INTO custom.c_commerce_point_sale (point_of_sales_id) VALUES (?)";
+        for (final ClientAllyPointOfSales clientAllyPointOfSale : clientAllyPointOfSaleList) {
+            this.jdbcTemplate.update(sql, clientAllyPointOfSale.getId());
+        }
+        return new CommandProcessingResultBuilder().withEntityId(command.commandId()).build();
+
     }
 
     private List<ClientAllyPointOfSales> assembleListOfPointOfSales(final JsonCommand command) {
@@ -223,12 +224,6 @@ public class CustomChargeTypeMapReadWritePlatformServiceImpl implements CustomCh
                 throw new PlatformDataIntegrityException("error.msg.cannot.delete.not.last.active.record",
                         "Cannot delete a record that is not the last active record", "id", id);
             }
-            // Only allowed to delete validFrom date in the future
-            if (currEntity.getValidFrom().isBefore(DateUtils.getLocalDateOfTenant())) {
-                throw new PlatformDataIntegrityException("error.msg.cannot.delete.record.with.from.date.in.the.past",
-                        "Cannot delete a record with From Date in the past", "id", id);
-            }
-
             // Revert last record, if any, to active status
             Optional<CustomChargeTypeMap> customChargeTypeMapList = this.customChargeTypeMapRepository
                     .findByCustomChargeTypeIdAndTermAndActive(currEntity.getCustomChargeTypeId(), currEntity.getTerm(), false).stream()
@@ -265,15 +260,6 @@ public class CustomChargeTypeMapReadWritePlatformServiceImpl implements CustomCh
                 if (Boolean.FALSE.equals(dbEntityOptional.get().getActive())) {
                     throw new PlatformDataIntegrityException("error.msg.cannot.update.not.last.active.record",
                             "Cannot update a record that is not the last active record", "id", id);
-                }
-                // Only allowed to delete validFrom date in the future
-                if (dbEntityOptional.get().getValidFrom().isBefore(DateUtils.getLocalDateOfTenant())) {
-                    throw new PlatformDataIntegrityException("error.msg.cannot.update.record.with.from.date.in.the.past",
-                            "Cannot update a record with From Date in the past", "id", id);
-                }
-                final List<ClientAllyPointOfSales> clientAllyPointOfSaleList = assembleListOfPointOfSales(command);
-                if (CollectionUtils.isNotEmpty(clientAllyPointOfSaleList)) {
-                    entity.setClientAllyPointOfSales(clientAllyPointOfSaleList);
                 }
                 entity.setCustomChargeTypeId(dbEntity.getCustomChargeTypeId());
                 entity.setId(id);
