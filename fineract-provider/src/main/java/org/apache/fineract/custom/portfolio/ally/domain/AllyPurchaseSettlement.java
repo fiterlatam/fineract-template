@@ -6,21 +6,21 @@ import java.time.LocalDate;
 import lombok.*;
 
 @Entity
-@Table(name = "m_ally_collection_settlement")
+@Table(name = "m_ally_purchase_settlement")
 @Cacheable(false)
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
 @Getter
 @Setter
-public class AllyCollectionSettlement {
+public class AllyPurchaseSettlement {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "collection_date")
-    private LocalDate collectionDate;
+    @Column(name = "purchase_date")
+    private LocalDate purchaseDate;
 
     @Column(name = "nit", nullable = false, length = 20)
     private String nit;
@@ -43,8 +43,8 @@ public class AllyCollectionSettlement {
     @Column(name = "city_name")
     private String cityName;
 
-    @Column(name = "collection_amount", nullable = false)
-    private BigDecimal collectionAmount;
+    @Column(name = "buy_amount", nullable = false)
+    private BigDecimal buyAmount;
 
     @Column(name = "settled_comission", nullable = false)
     private Integer settledComission;
@@ -61,4 +61,15 @@ public class AllyCollectionSettlement {
     @Column(name = "channel_id", nullable = false)
     private Long channelId;
 
+    @Column(name = "settlement_status")
+    private Boolean settlementStatus;
+
+    @Column(name = "amount_comission")
+    private BigDecimal amountComission;
+
+    @Column(name = "amount_va_commision")
+    private BigDecimal amountVaCommision;
+
+    @Column(name = "amount_to_pay")
+    private BigDecimal amountToPay;
 }

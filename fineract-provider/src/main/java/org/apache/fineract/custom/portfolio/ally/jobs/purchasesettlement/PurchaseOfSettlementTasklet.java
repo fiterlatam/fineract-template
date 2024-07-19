@@ -6,7 +6,9 @@ import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.custom.portfolio.ally.data.ClientAllyPointOfSalesCollectionData;
 import org.apache.fineract.custom.portfolio.ally.domain.*;
-import org.apache.fineract.custom.portfolio.ally.service.AllyCollectionSettlementReadWritePlatformService;
+import org.apache.fineract.custom.portfolio.ally.service.AllyPurchaseSettlementReadWritePlatformService;
+import org.apache.fineract.infrastructure.codes.data.CodeValueData;
+import org.apache.fineract.infrastructure.codes.service.CodeValueReadPlatformService;
 import org.apache.fineract.infrastructure.configuration.domain.GlobalConfigurationProperty;
 import org.apache.fineract.infrastructure.configuration.domain.GlobalConfigurationRepository;
 import org.apache.fineract.organisation.workingdays.domain.WorkingDays;
@@ -22,19 +24,21 @@ public class PurchaseOfSettlementTasklet implements Tasklet {
 
     private final ClientAllyRepository clientAllyRepository;
     private final WorkingDaysRepositoryWrapper workingDaysRepositoryWrapper;
-    private final AllyCollectionSettlementRepository allyCollectionSettlementRepository;
-    private final AllyCollectionSettlementReadWritePlatformService allyCollectionSettlementReadWritePlatformService;
+    private final AllyPurchaseSettlementRepository allyPurchaseSettlementRepository;
+    private final AllyPurchaseSettlementReadWritePlatformService allyPurchaseSettlementReadWritePlatformService;
     private final GlobalConfigurationRepository globalConfigurationRepository;
+    private CodeValueReadPlatformService codeValueReadPlatformService;
 
     public PurchaseOfSettlementTasklet(ClientAllyRepository clientAllyRepository, WorkingDaysRepositoryWrapper workingDaysRepositoryWrapper,
-            AllyCollectionSettlementRepository allyCollectionSettlementRepository,
-            AllyCollectionSettlementReadWritePlatformService allyCollectionSettlementReadWritePlatformService,
-            GlobalConfigurationRepository globalConfigurationRepository) {
+            AllyPurchaseSettlementRepository allyPurchaseSettlementRepository,
+            AllyPurchaseSettlementReadWritePlatformService allyPurchaseSettlementReadWritePlatformService,
+            GlobalConfigurationRepository globalConfigurationRepository, CodeValueReadPlatformService codeValueReadPlatformService) {
         this.clientAllyRepository = clientAllyRepository;
         this.workingDaysRepositoryWrapper = workingDaysRepositoryWrapper;
-        this.allyCollectionSettlementRepository = allyCollectionSettlementRepository;
-        this.allyCollectionSettlementReadWritePlatformService = allyCollectionSettlementReadWritePlatformService;
+        this.allyPurchaseSettlementRepository = allyPurchaseSettlementRepository;
+        this.allyPurchaseSettlementReadWritePlatformService = allyPurchaseSettlementReadWritePlatformService;
         this.globalConfigurationRepository = globalConfigurationRepository;
+        this.codeValueReadPlatformService = codeValueReadPlatformService;
 
     }
 
@@ -45,9 +49,11 @@ public class PurchaseOfSettlementTasklet implements Tasklet {
         final WorkingDays workingDays = this.workingDaysRepositoryWrapper.findOne();
         GlobalConfigurationProperty globalConfigurationProperty = globalConfigurationRepository.findOneByName("IVA Por comision");
         LocalDate now = LocalDate.now();
+
         for (ClientAlly clientAlly : clientAllyList) {
             String freq = LiquidationFrequency.fromInt(clientAlly.getLiquidationFrequencyCodeValueId().intValue()).toString();
             LocalDate period;
+            boolean isEqual = true;
             if (clientAlly.getLastJobRunPurchase() != null) {
                 period = clientAlly.getLastJobRunPurchase();
 
@@ -65,8 +71,10 @@ public class PurchaseOfSettlementTasklet implements Tasklet {
                         period = period.plusDays(1);
                     break;
                 }
+                isEqual = now.isEqual(period);
             } else {
                 period = now;
+
             }
             String worksday = workingDays.getRecurrence();
             String[] arrayworksday = worksday.split(";");
@@ -79,28 +87,49 @@ public class PurchaseOfSettlementTasklet implements Tasklet {
                 } while (period.getDayOfWeek().getValue() >= countWokringDay);
             }
 
-            boolean isEqual = now.isEqual(period);
             if (isEqual) {
                 Long clientAllyId = clientAlly.getId();
-                List<AllyCollectionSettlement> collectionData = allyCollectionSettlementRepository.findByClientAllyId(clientAllyId);
-                for (AllyCollectionSettlement allyCollectionSettlement : collectionData) {
-                    ClientAllyPointOfSalesCollectionData clientcollectionData = allyCollectionSettlementReadWritePlatformService
-                            .getCollectionDataByLoanId(allyCollectionSettlement.getLoanId());
-                    System.out.println("status : " + clientcollectionData.getLoanStatusId());
-                    BigDecimal principal = allyCollectionSettlement.getPrincipalAmount();
+                List<ClientAllyPointOfSalesCollectionData> collectionDatas = allyPurchaseSettlementReadWritePlatformService
+                        .getPurchaseDataByClientAllyId(clientAllyId);
+                for (ClientAllyPointOfSalesCollectionData collectionData : collectionDatas) {
+                    AllyPurchaseSettlement allyPurchaseSettlement = new AllyPurchaseSettlement();
+
+                    LocalDate collectDate = LocalDate.parse(collectionData.getCollectionDate());
+                    CodeValueData city = codeValueReadPlatformService.retrieveCodeValue(collectionData.getCityId());
+                    allyPurchaseSettlement.setPurchaseDate(collectDate);
+                    allyPurchaseSettlement.setNit(collectionData.getNit());
+                    allyPurchaseSettlement.setCompanyName(collectionData.getName());
+                    allyPurchaseSettlement.setClientAllyId(collectionData.getClientAllyId());
+                    allyPurchaseSettlement.setPointOfSalesId(collectionData.getPointOfSalesId());
+                    allyPurchaseSettlement.setPointOfSalesName(collectionData.getPointOfSalesName());
+                    allyPurchaseSettlement.setCityId(collectionData.getCityId());
+                    allyPurchaseSettlement.setCityName(city.getName());
+                    allyPurchaseSettlement.setBuyAmount(collectionData.getAmount());
+                    allyPurchaseSettlement.setSettledComission(collectionData.getSettledComission());
+                    allyPurchaseSettlement.setTaxProfileId(collectionData.getTaxId());
+                    allyPurchaseSettlement.setLoanId(collectionData.getLoanId());
+                    allyPurchaseSettlement.setClientId(collectionData.getClientId());
+                    allyPurchaseSettlement.setChannelId(collectionData.getChannelId());
+
+                    BigDecimal principal = collectionData.getAmount();
                     BigDecimal amountComission = principal
-                            .multiply(BigDecimal.valueOf(allyCollectionSettlement.getSettledComission()).divide(BigDecimal.valueOf(100)));
+                            .multiply(BigDecimal.valueOf(collectionData.getSettledComission()).divide(BigDecimal.valueOf(100)));
                     BigDecimal amountVaCommision = amountComission
                             .multiply(BigDecimal.valueOf(globalConfigurationProperty.getValue()).divide(BigDecimal.valueOf(100)));
                     BigDecimal amountToPay = principal.subtract(amountVaCommision).subtract(amountComission);
-                    allyCollectionSettlement.setAmountComission(amountComission.setScale(2, BigDecimal.ROUND_HALF_EVEN));
-                    allyCollectionSettlement.setAmountVaCommision(amountVaCommision.setScale(2, BigDecimal.ROUND_HALF_EVEN));
-                    allyCollectionSettlement.setAmountToPay(amountToPay.setScale(2, BigDecimal.ROUND_HALF_EVEN));
-                    allyCollectionSettlement.setCollectionStatus(clientcollectionData.getLoanStatusId());
-                    allyCollectionSettlementReadWritePlatformService.update(allyCollectionSettlement);
-                    clientAlly.setLastJobRunPurchase(period);
-                    clientAllyRepository.save(clientAlly);
+
+                    allyPurchaseSettlement.setAmountComission(amountComission.setScale(2, BigDecimal.ROUND_HALF_EVEN));
+                    allyPurchaseSettlement.setAmountVaCommision(amountVaCommision.setScale(2, BigDecimal.ROUND_HALF_EVEN));
+                    allyPurchaseSettlement.setAmountToPay(amountToPay.setScale(2, BigDecimal.ROUND_HALF_EVEN));
+                    boolean status = false;
+                    if (collectionData.getLoanStatusId() == 600) {
+                        status = true;
+                    }
+                    allyPurchaseSettlement.setSettlementStatus(status);
+                    allyPurchaseSettlementReadWritePlatformService.update(allyPurchaseSettlement);
                 }
+                clientAlly.setLastJobRunPurchase(period);
+                clientAllyRepository.save(clientAlly);
             }
 
         }

@@ -44,10 +44,13 @@ public class CollectionSettlementTasklet implements Tasklet {
         log.info("Liquidación de Recaudos Ally execute method called");
         List<ClientAllyPointOfSalesCollectionData> collectionData = allyCollectionSettlementReadWritePlatformService.getCollectionData();
         final WorkingDays workingDays = this.daysRepositoryWrapper.findOne();
+        LocalDate now = LocalDate.now();
+
         for (ClientAllyPointOfSalesCollectionData data : collectionData) {
             Optional<AllyCollectionSettlement> collect = allyCollectionSettlementRepository.findByLoanId(data.getLoanId());
             String freq = LiquidationFrequency.fromInt(data.getLiquidationFrequencyId().intValue()).toString();
             LocalDate period;
+            boolean isEqual = true;
             if (data.getLastJobsRun() != null) {
                 period = LocalDate.parse(data.getLastJobsRun());
 
@@ -65,9 +68,9 @@ public class CollectionSettlementTasklet implements Tasklet {
                         period = period.plusDays(1);
                     break;
                 }
-
+                isEqual = now.isEqual(period);
             } else {
-                period = LocalDate.parse(data.getCollectionDate());
+                period = now;
             }
 
             String worksday = workingDays.getRecurrence();
@@ -82,10 +85,8 @@ public class CollectionSettlementTasklet implements Tasklet {
                 } while (period.getDayOfWeek().getValue() >= countWokringDay);
 
             }
-            LocalDate now = LocalDate.now();
-            boolean isAfter = now.isAfter(period);
 
-            if (!collect.isPresent() && isAfter) {
+            if (!collect.isPresent() && isEqual) {
                 AllyCollectionSettlement allyCollectionSettlement = new AllyCollectionSettlement();
                 LocalDate collectDate = LocalDate.parse(data.getCollectionDate());
                 CodeValueData city = codeValueReadPlatformService.retrieveCodeValue(data.getCityId());
@@ -97,13 +98,12 @@ public class CollectionSettlementTasklet implements Tasklet {
                 allyCollectionSettlement.setPointOfSalesName(data.getPointOfSalesName());
                 allyCollectionSettlement.setCityId(data.getCityId());
                 allyCollectionSettlement.setCityName(city.getName());
-                allyCollectionSettlement.setPrincipalAmount(data.getAmount());
+                allyCollectionSettlement.setCollectionAmount(data.getAmount());
                 allyCollectionSettlement.setSettledComission(data.getSettledComission());
                 allyCollectionSettlement.setTaxProfileId(data.getTaxId());
                 allyCollectionSettlement.setLoanId(data.getLoanId());
                 allyCollectionSettlement.setClientId(data.getClientId());
                 allyCollectionSettlement.setChannelId(data.getChannelId());
-                allyCollectionSettlement.setCollectionStatus(data.getLoanStatusId());
                 allyCollectionSettlementReadWritePlatformService.create(allyCollectionSettlement);
                 Optional<ClientAlly> clientAlly = clientAllyRepository.findById(data.getClientAllyId());
                 if (clientAlly.isPresent()) {
