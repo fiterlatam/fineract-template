@@ -21,15 +21,12 @@ package org.apache.fineract.custom.portfolio.customcharge.data;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
-import org.apache.fineract.portfolio.client.data.ClientData;
-import org.apache.fineract.portfolio.client.data.PointOfSalesData;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -51,6 +48,4 @@ public class CustomChargeTypeMapData {
     private LocalDateTime updatedAt;
     private EnumOptionData charge;
     private EnumOptionData chargeType;
-    private List<PointOfSalesData> pointOfSales;
-    private List<ClientData> clients;
 }

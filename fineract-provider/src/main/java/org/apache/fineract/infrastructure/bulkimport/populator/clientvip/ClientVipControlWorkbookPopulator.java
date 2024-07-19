@@ -27,6 +27,8 @@ import org.apache.fineract.infrastructure.bulkimport.populator.AbstractWorkbookP
 import org.apache.poi.hssf.usermodel.HSSFDataValidationHelper;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
 import org.apache.poi.ss.SpreadsheetVersion;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.DataFormat;
 import org.apache.poi.ss.usermodel.DataValidation;
 import org.apache.poi.ss.usermodel.DataValidationConstraint;
 import org.apache.poi.ss.usermodel.DataValidationHelper;
@@ -44,6 +46,7 @@ public class ClientVipControlWorkbookPopulator extends AbstractWorkbookPopulator
         Sheet blockVipSheet = workbook.createSheet(TemplatePopulateImportConstants.CLIENT_VIP_SHEET_NAME);
         setRules(blockVipSheet);
         setLayout(blockVipSheet);
+        setDefaults(blockVipSheet);
     }
 
     private void setRules(Sheet worksheet) {
@@ -62,6 +65,20 @@ public class ClientVipControlWorkbookPopulator extends AbstractWorkbookPopulator
         rowHeader.setHeight(TemplatePopulateImportConstants.ROW_HEADER_HEIGHT);
         worksheet.setColumnWidth(ClientVipConstants.ID_NUMBER_COL, TemplatePopulateImportConstants.EXTRALARGE_COL_SIZE);
         writeString(ClientVipConstants.ID_NUMBER_COL, rowHeader, "Numero de Identificación*");
+    }
+
+    private void setDefaults(Sheet worksheet) {
+        for (int rowNo = 1; rowNo < 3000; rowNo++) {
+            Row row = worksheet.getRow(rowNo);
+            if (row == null) {
+                row = worksheet.createRow(rowNo);
+            }
+            Workbook workbook = worksheet.getWorkbook();
+            CellStyle textCellStyle = workbook.createCellStyle();
+            DataFormat fmt = workbook.createDataFormat();
+            textCellStyle.setDataFormat(fmt.getFormat("@"));
+            row.createCell(ClientVipConstants.ID_NUMBER_COL).setCellStyle(textCellStyle);
+        }
     }
 
 }

@@ -110,7 +110,7 @@ public class ClientAllyReadWritePlatformServiceImpl implements ClientAllyReadWri
     }
 
     @Override
-    public List<ClientAllyData> retrieveWithPointOfSales() {
+    public List<ClientAllyData> retrieveAlliesWithPointOfSales() {
         final String sql = """
                     SELECT cca.id AS "clientAllyId",
                     cca.company_name AS "companyName",

@@ -74,4 +74,32 @@
             </column>
         </createTable>
     </changeSet>
+
+    <changeSet author="fineract" id="4">
+        <dropTable schemaName= "custom" tableName="c_charge_map_point_sale"/>
+        <dropTable schemaName= "custom" tableName="c_custom_charge_map_client"/>
+    </changeSet>
+
+    <changeSet id="5" author="fineract">
+        <createTable tableName="c_commerce_point_sale" schemaName="custom">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="point_of_sales_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="6" author="fineract">
+        <createTable tableName="c_vip_client" schemaName="custom">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="client_id" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
 </databaseChangeLog>

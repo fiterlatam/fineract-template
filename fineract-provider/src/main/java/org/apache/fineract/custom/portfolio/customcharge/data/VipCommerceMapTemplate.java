@@ -16,28 +16,28 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.custom.portfolio.customcharge.service;
+package org.apache.fineract.custom.portfolio.customcharge.data;
 
 import java.util.List;
-import org.apache.fineract.custom.portfolio.customcharge.data.CustomChargeTypeMapData;
-import org.apache.fineract.infrastructure.core.api.JsonCommand;
-import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.apache.fineract.custom.portfolio.ally.data.ClientAllyData;
+import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.portfolio.client.data.ClientData;
 import org.apache.fineract.portfolio.client.data.PointOfSalesData;
 
-public interface CustomChargeTypeMapReadWritePlatformService {
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
+@Getter
+@Setter
+public class VipCommerceMapTemplate {
 
-    List<CustomChargeTypeMapData> findAllActive(Long customChargeTypeId);
-
-    CustomChargeTypeMapData findById(Long id);
-
-    CommandProcessingResult create(JsonCommand command);
-
-    CommandProcessingResult update(JsonCommand command, Long id);
-
-    CommandProcessingResult delete(Long id);
-
-    List<ClientData> retrieveClients();
-
-    List<PointOfSalesData> retrievePointOfSales();
+    private List<PointOfSalesData> pointOfSales;
+    private List<ClientData> clients;
+    private List<EnumOptionData> customChargeTypeOptions;
+    private List<ClientAllyData> clientAllyOptions;
 }
