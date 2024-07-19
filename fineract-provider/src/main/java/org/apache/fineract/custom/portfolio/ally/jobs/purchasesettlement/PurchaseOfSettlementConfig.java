@@ -60,7 +60,7 @@ public class PurchaseOfSettlementConfig {
 
     @Bean
     public PurchaseOfSettlementTasklet purchaseOfSettlementTasklet() {
-        return new PurchaseOfSettlementTasklet(clientAllyRepository, workingDaysRepositoryWrapper, allyCollectionSettlementRepository,
-                allyCollectionSettlementReadWritePlatformService, globalConfigurationRepository);
+        return new PurchaseOfSettlementTasklet(clientAllyRepository, workingDaysRepositoryWrapper, allyPurchaseSettlementRepository,
+                allyPurchaseSettlementReadWritePlatformService, globalConfigurationRepository, codeValueReadPlatformService);
     }
 }
