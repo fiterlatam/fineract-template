@@ -34,22 +34,31 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
 import java.io.InputStream;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.commands.domain.CommandWrapper;
 import org.apache.fineract.commands.service.CommandWrapperBuilder;
 import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformService;
+import org.apache.fineract.custom.portfolio.ally.data.ClientAllyData;
+import org.apache.fineract.custom.portfolio.ally.service.ClientAllyReadWritePlatformServiceImpl;
+import org.apache.fineract.custom.portfolio.customcharge.constants.CustomChargeEntityApiConstants;
 import org.apache.fineract.custom.portfolio.customcharge.constants.CustomChargeTypeMapApiConstants;
 import org.apache.fineract.custom.portfolio.customcharge.data.CustomChargeTypeMapData;
+import org.apache.fineract.custom.portfolio.customcharge.data.VipCommerceMapTemplate;
+import org.apache.fineract.custom.portfolio.customcharge.domain.CustomChargeValueType;
 import org.apache.fineract.custom.portfolio.customcharge.service.CustomChargeTypeMapReadWritePlatformService;
 import org.apache.fineract.infrastructure.bulkimport.data.GlobalEntityType;
 import org.apache.fineract.infrastructure.bulkimport.service.BulkImportWorkbookPopulatorService;
 import org.apache.fineract.infrastructure.bulkimport.service.BulkImportWorkbookService;
 import org.apache.fineract.infrastructure.core.api.ApiRequestParameterHelper;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
+import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.infrastructure.core.serialization.ApiRequestJsonSerializationSettings;
 import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
+import org.apache.fineract.portfolio.client.data.ClientData;
+import org.apache.fineract.portfolio.client.data.PointOfSalesData;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -68,13 +77,15 @@ public class CustomChargeTypeMapApiResource {
     private final CustomChargeTypeMapReadWritePlatformService customChargeTypeMapReadWritePlatformService;
     private final BulkImportWorkbookPopulatorService bulkImportWorkbookPopulatorService;
     private final BulkImportWorkbookService bulkImportWorkbookService;
+    private final ClientAllyReadWritePlatformServiceImpl clientAllyReadWritePlatformService;
 
     @Autowired
     public CustomChargeTypeMapApiResource(final DefaultToApiJsonSerializer<CustomChargeTypeMapData> toApiJsonSerializer,
             final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService, final PlatformSecurityContext context,
             final ApiRequestParameterHelper apiRequestParameterHelper,
             CustomChargeTypeMapReadWritePlatformService customChargeTypeMapReadWritePlatformService,
-            BulkImportWorkbookPopulatorService bulkImportWorkbookPopulatorService, BulkImportWorkbookService bulkImportWorkbookService) {
+            BulkImportWorkbookPopulatorService bulkImportWorkbookPopulatorService, BulkImportWorkbookService bulkImportWorkbookService,
+            ClientAllyReadWritePlatformServiceImpl clientAllyReadWritePlatformService) {
         this.toApiJsonSerializer = toApiJsonSerializer;
         this.commandsSourceWritePlatformService = commandsSourceWritePlatformService;
         this.context = context;
@@ -82,6 +93,7 @@ public class CustomChargeTypeMapApiResource {
         this.customChargeTypeMapReadWritePlatformService = customChargeTypeMapReadWritePlatformService;
         this.bulkImportWorkbookPopulatorService = bulkImportWorkbookPopulatorService;
         this.bulkImportWorkbookService = bulkImportWorkbookService;
+        this.clientAllyReadWritePlatformService = clientAllyReadWritePlatformService;
     }
 
     @GET
@@ -146,39 +158,30 @@ public class CustomChargeTypeMapApiResource {
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     public String createClientTemplate(@FormDataParam("file") InputStream uploadedInputStream,
             @FormDataParam("file") FormDataContentDisposition fileDetail, @FormDataParam("locale") final String locale,
-            @FormDataParam("dateFormat") final String dateFormat,
-            @FormDataParam("apiRequestBodyAsJson") final String apiRequestBodyAsJson) {
-        final CommandWrapper commandRequest = new CommandWrapperBuilder().createCustomChargeTypeMap().withJson(apiRequestBodyAsJson)
-                .build();
-        final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
-        final Long customChargeMapId = result.getResourceId();
+            @FormDataParam("dateFormat") final String dateFormat) {
         if (StringUtils.isNotBlank(fileDetail.getFileName())) {
             final Map<String, Object> importAttributes = new HashMap<>();
-            importAttributes.put("customChargeMapId", customChargeMapId);
             final Long importDocumentId = bulkImportWorkbookService.importWorkbook(GlobalEntityType.CLIENT_VIP.name(), uploadedInputStream,
                     fileDetail, locale, dateFormat, importAttributes);
             return this.toApiJsonSerializer.serialize(importDocumentId);
         }
-        return this.toApiJsonSerializer.serialize(result);
+        return "";
     }
 
-    @PUT
-    @Path("uploadtemplate")
-    @Consumes(MediaType.MULTIPART_FORM_DATA)
-    public String editClientTemplate(@FormDataParam("file") InputStream uploadedInputStream,
-            @FormDataParam("file") FormDataContentDisposition fileDetail, @FormDataParam("locale") final String locale,
-            @FormDataParam("dateFormat") final String dateFormat, @FormDataParam("id") final Long id,
-            @FormDataParam("apiRequestBodyAsJson") final String apiRequestBodyAsJson) {
-        final CommandWrapper commandRequest = new CommandWrapperBuilder().updateCustomChargeTypeMap(id).withJson(apiRequestBodyAsJson)
-                .build();
-        final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
-        if (StringUtils.isNotBlank(fileDetail.getFileName())) {
-            final Map<String, Object> importAttributes = new HashMap<>();
-            importAttributes.put("customChargeMapId", id);
-            final Long importDocumentId = bulkImportWorkbookService.importWorkbook(GlobalEntityType.CLIENT_VIP.name(), uploadedInputStream,
-                    fileDetail, locale, dateFormat, importAttributes);
-            return this.toApiJsonSerializer.serialize(importDocumentId);
-        }
-        return this.toApiJsonSerializer.serialize(result);
+    @GET
+    @Path("template")
+    @Consumes({ MediaType.APPLICATION_JSON })
+    @Produces({ MediaType.APPLICATION_JSON })
+    public String retrieveTemplate() {
+        this.context.authenticatedUser().validateHasReadPermission(CustomChargeEntityApiConstants.RESOURCE_NAME);
+        final List<ClientAllyData> clientAllyOptions = this.clientAllyReadWritePlatformService.retrieveAlliesWithPointOfSales();
+        final List<EnumOptionData> CustomChargeValueTypeOptions = List.of(CustomChargeValueType.VIP.asEnumOptionData(),
+                CustomChargeValueType.COMMERCE.asEnumOptionData());
+        final List<ClientData> clientDataList = this.customChargeTypeMapReadWritePlatformService.retrieveClients();
+        final List<PointOfSalesData> pointOfSalesDataList = this.customChargeTypeMapReadWritePlatformService.retrievePointOfSales();
+        final VipCommerceMapTemplate vipCommerceMapTemplate = VipCommerceMapTemplate.builder()
+                .customChargeTypeOptions(CustomChargeValueTypeOptions).clientAllyOptions(clientAllyOptions).clients(clientDataList)
+                .pointOfSales(pointOfSalesDataList).build();
+        return this.toApiJsonSerializer.serialize(vipCommerceMapTemplate);
     }
 }

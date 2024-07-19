@@ -27,7 +27,6 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.UriInfo;
-import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformService;
 import org.apache.fineract.custom.portfolio.customcharge.constants.CustomChargeTypeApiConstants;
 import org.apache.fineract.custom.portfolio.customcharge.data.CustomChargeTypeData;
 import org.apache.fineract.custom.portfolio.customcharge.service.CustomChargeTypeReadWritePlatformService;
@@ -45,30 +44,26 @@ import org.springframework.stereotype.Component;
 public class CustomChargeTypeApiResource {
 
     private final DefaultToApiJsonSerializer<CustomChargeTypeData> toApiJsonSerializer;
-    private final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService;
     private final PlatformSecurityContext context;
     private final ApiRequestParameterHelper apiRequestParameterHelper;
+    private final CustomChargeTypeReadWritePlatformService customChargeTypeReadWritePlatformService;
 
     @Autowired
     public CustomChargeTypeApiResource(final DefaultToApiJsonSerializer<CustomChargeTypeData> toApiJsonSerializer,
-            final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService, final PlatformSecurityContext context,
-            final ApiRequestParameterHelper apiRequestParameterHelper) {
+            final PlatformSecurityContext context, final ApiRequestParameterHelper apiRequestParameterHelper,
+            CustomChargeTypeReadWritePlatformService customChargeTypeReadWritePlatformService) {
         this.toApiJsonSerializer = toApiJsonSerializer;
-        this.commandsSourceWritePlatformService = commandsSourceWritePlatformService;
         this.context = context;
         this.apiRequestParameterHelper = apiRequestParameterHelper;
+        this.customChargeTypeReadWritePlatformService = customChargeTypeReadWritePlatformService;
     }
-
-    @Autowired
-    private CustomChargeTypeReadWritePlatformService service;
 
     @GET
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
-    public String get(@Context final UriInfo uriInfo,
-            @PathParam("chargeEntityid") @Parameter(description = "chargeEntityid") final Long chargeEntityid) {
+    public String get(@PathParam("chargeEntityid") @Parameter(description = "chargeEntityid") final Long chargeEntityid) {
         this.context.authenticatedUser().validateHasReadPermission(CustomChargeTypeApiConstants.RESOURCE_NAME);
-        return this.toApiJsonSerializer.serialize(this.service.findAllByEntityId(chargeEntityid));
+        return this.toApiJsonSerializer.serialize(this.customChargeTypeReadWritePlatformService.findAllByEntityId(chargeEntityid));
     }
 
     @GET
@@ -76,13 +71,9 @@ public class CustomChargeTypeApiResource {
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     public String retrieveOne(@PathParam("id") @Parameter(description = "id") final Long id, @Context final UriInfo uriInfo) {
-
         this.context.authenticatedUser().validateHasReadPermission(CustomChargeTypeApiConstants.RESOURCE_NAME);
-
-        final CustomChargeTypeData data = this.service.findById(id);
-
+        final CustomChargeTypeData data = this.customChargeTypeReadWritePlatformService.findById(id);
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
-
         return this.toApiJsonSerializer.serialize(settings, data, CustomChargeTypeApiConstants.REQUEST_DATA_PARAMETERS);
     }
 }

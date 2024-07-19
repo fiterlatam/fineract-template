@@ -92,7 +92,7 @@ public class CustomChargeEntityApiResource {
         this.context.authenticatedUser().validateHasReadPermission(CustomChargeEntityApiConstants.RESOURCE_NAME);
         final List<CustomChargeEntityData> customChargeOptions = this.customChargeEntityReadWritePlatformService
                 .findByIsExternalService(false);
-        final List<ClientAllyData> clientAllyOptions = this.clientAllyReadWritePlatformService.retrieveWithPointOfSales();
+        final List<ClientAllyData> clientAllyOptions = this.clientAllyReadWritePlatformService.retrieveAlliesWithPointOfSales();
         final CustomChargeMapTemplate customChargeMapTemplate = CustomChargeMapTemplate.builder().customChargeOptions(customChargeOptions)
                 .clientAllyOptions(clientAllyOptions).build();
         return this.toApiJsonSerializer.serialize(customChargeMapTemplate);

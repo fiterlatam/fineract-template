@@ -24,27 +24,21 @@ import java.util.List;
 import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.fineract.custom.portfolio.customcharge.domain.CustomChargeTypeMap;
-import org.apache.fineract.custom.portfolio.customcharge.domain.CustomChargeTypeMapRepository;
 import org.apache.fineract.infrastructure.bulkimport.constants.ClientVipConstants;
 import org.apache.fineract.infrastructure.bulkimport.constants.TemplatePopulateImportConstants;
 import org.apache.fineract.infrastructure.bulkimport.data.Count;
 import org.apache.fineract.infrastructure.bulkimport.importhandler.ImportHandler;
 import org.apache.fineract.infrastructure.bulkimport.importhandler.ImportHandlerUtils;
 import org.apache.fineract.portfolio.client.data.ClientData;
-import org.apache.fineract.portfolio.client.domain.Client;
-import org.apache.fineract.portfolio.client.domain.ClientRepositoryWrapper;
-import org.apache.fineract.portfolio.client.service.ClientReadPlatformService;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.CellValue;
 import org.apache.poi.ss.usermodel.FormulaEvaluator;
-import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -52,18 +46,12 @@ import org.springframework.stereotype.Service;
 @Slf4j
 public class ClientVipImportHandler implements ImportHandler {
 
-    private final ClientReadPlatformService clientReadPlatformService;
-    private final ClientRepositoryWrapper clientRepositoryWrapper;
-    private final CustomChargeTypeMapRepository customChargeTypeMapRepository;
+    private final JdbcTemplate jdbcTemplate;
 
     @Override
     public Count process(final Workbook workbook, final String locale, final String dateFormat, Map<String, Object> importAttribute) {
         List<ClientData> clients = readExcelFile(workbook);
-        Long customChargeMapId = null;
-        if (importAttribute != null && importAttribute.containsKey("customChargeMapId")) {
-            customChargeMapId = (Long) importAttribute.get("customChargeMapId");
-        }
-        return importEntity(workbook, clients, customChargeMapId);
+        return importEntity(workbook, clients);
     }
 
     public List<ClientData> readExcelFile(final Workbook workbook) {
@@ -88,46 +76,20 @@ public class ClientVipImportHandler implements ImportHandler {
         return clientData;
     }
 
-    public Count importEntity(final Workbook workbook, final List<ClientData> clients, final Long customChargeMapId) {
+    public Count importEntity(final Workbook workbook, final List<ClientData> clients) {
         final Sheet clientVipSheet = workbook.getSheet(TemplatePopulateImportConstants.CLIENT_VIP_SHEET_NAME);
         int successCount = 0;
         int errorCount = 0;
-        String errorMessage;
-
-        final List<Client> clientEntityList = new ArrayList<>();
-        if (CollectionUtils.isNotEmpty(clients)) {
-            for (ClientData client : clients) {
-                try {
-                    final List<ClientData> clientList = this.clientReadPlatformService.retrieveByIdNumber(client.getIdNumber());
-                    if (CollectionUtils.isNotEmpty(clientList)) {
-                        final Client clientEntity = clientRepositoryWrapper.findOneWithNotFoundDetection(clientList.get(0).getId());
-                        clientEntityList.add(clientEntity);
-                    } else {
-                        errorCount++;
-                        errorMessage = "Client with ID Number " + client.getIdNumber() + " does not exist";
-                        ImportHandlerUtils.writeErrorMessage(clientVipSheet, client.getRowIndex(), errorMessage,
-                                ClientVipConstants.STATUS_COL);
-                    }
-                    successCount++;
-                    Cell statusCell = clientVipSheet.getRow(client.getRowIndex()).createCell(ClientVipConstants.STATUS_COL);
-                    statusCell.setCellValue(TemplatePopulateImportConstants.STATUS_CELL_IMPORTED);
-                    statusCell.setCellStyle(ImportHandlerUtils.getCellStyle(workbook, IndexedColors.LIGHT_GREEN));
-                } catch (RuntimeException ex) {
-                    errorCount++;
-                    log.error("Problem occurred in importEntity function", ex);
-                    errorMessage = ImportHandlerUtils.getErrorMessage(ex);
-                    ImportHandlerUtils.writeErrorMessage(clientVipSheet, client.getRowIndex(), errorMessage, ClientVipConstants.STATUS_COL);
+        if (clients != null) {
+            successCount = clients.size();
+            this.jdbcTemplate.execute("TRUNCATE TABLE custom.c_vip_client");
+            String sql = "INSERT INTO custom.c_vip_client (client_id) VALUES (?)";
+            for (final ClientData clientData : clients) {
+                if (clientData.getIdNumber() != null) {
+                    this.jdbcTemplate.update(sql, clientData.getIdNumber());
                 }
             }
         }
-        if (customChargeMapId != null) {
-            final CustomChargeTypeMap customChargeTypeMap = this.customChargeTypeMapRepository.findById(customChargeMapId).orElse(null);
-            if (customChargeTypeMap != null) {
-                customChargeTypeMap.setClients(clientEntityList);
-                this.customChargeTypeMapRepository.save(customChargeTypeMap);
-            }
-        }
-
         clientVipSheet.setColumnWidth(ClientVipConstants.STATUS_COL, TemplatePopulateImportConstants.SMALL_COL_SIZE);
         ImportHandlerUtils.writeString(ClientVipConstants.STATUS_COL,
                 clientVipSheet.getRow(TemplatePopulateImportConstants.ROWHEADER_INDEX),
