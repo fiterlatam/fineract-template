@@ -6,8 +6,8 @@ import java.sql.SQLException;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.custom.portfolio.ally.data.ClientAllyPointOfSalesCollectionData;
-import org.apache.fineract.custom.portfolio.ally.domain.AllyCollectionSettlement;
-import org.apache.fineract.custom.portfolio.ally.domain.AllyCollectionSettlementRepository;
+import org.apache.fineract.custom.portfolio.ally.domain.AllyPurchaseSettlement;
+import org.apache.fineract.custom.portfolio.ally.domain.AllyPurchaseSettlementRepository;
 import org.apache.fineract.infrastructure.core.exception.PlatformDataIntegrityException;
 import org.apache.fineract.infrastructure.core.service.database.DatabaseSpecificSQLGenerator;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
@@ -18,31 +18,30 @@ import org.springframework.stereotype.Service;
 
 @Slf4j
 @Service
-public class AllyCollectionSettlementReadWritePlatformServiceImpl implements AllyCollectionSettlementReadWritePlatformService {
+public class AllyPurchaseSettlmentReadWritePlatformServiceImpl implements AllyPurchaseSettlementReadWritePlatformService {
 
     private final JdbcTemplate jdbcTemplate;
     private final DatabaseSpecificSQLGenerator sqlGenerator;
     private final PlatformSecurityContext context;
 
     @Autowired
-    public AllyCollectionSettlementReadWritePlatformServiceImpl(final JdbcTemplate jdbcTemplate,
+    public AllyPurchaseSettlmentReadWritePlatformServiceImpl(final JdbcTemplate jdbcTemplate,
             final DatabaseSpecificSQLGenerator sqlGenerator, final PlatformSecurityContext context) {
         this.jdbcTemplate = jdbcTemplate;
         this.sqlGenerator = sqlGenerator;
         this.context = context;
     }
 
-    private static final class ClientAllyPointOfSalesCollectionRowMapper implements RowMapper<ClientAllyPointOfSalesCollectionData> {
+    private static final class ClientAllyPointOfSalesPurchaseRowMapper implements RowMapper<ClientAllyPointOfSalesCollectionData> {
 
         public String schema() {
-            return " cca.last_job_run as lastJobsRun, mlt.transaction_date as collectionDate,cca.nit as nit , cca.company_name as allyName,"
+            return " cca.last_job_run as lastJobsRun, ccbp.requested_date as collectionDate, cca.nit as nit , cca.company_name as allyName,"
                     + " ccapos.client_ally_id as clientAllyId, ccapos.id as pointofsalesid, ccapos.\"name\"  as pointOfSalesName,"
-                    + " ccapos.code as pointOfSalesCode , ccapos.city_id, mlt.amount , ccapos.settled_comission as settledComission,"
-                    + " tax_profile_id, mpd.channel_id , mlt.loan_id ,ml.client_id, cca.liquidation_frequency_id as liquidationFrequencyId, ml.loan_status_id as loanStatusId"
-                    + " FROM m_loan_transaction mlt  inner join m_loan ml ON ml.id = mlt.loan_id "
-                    + " inner join m_payment_detail mpd on mpd.id = mlt.payment_detail_id "
-                    + " inner join custom.c_client_ally_point_of_sales ccapos on ccapos.code = mpd.point_of_sales_code "
-                    + " inner join custom.c_client_ally cca on cca.id =ccapos.client_ally_id Where is_reversed = false ";
+                    + " ccapos.code as pointOfSalesCode , ccapos.city_id, ccbp.amount, ccapos.settled_comission as settledComission,"
+                    + " tax_profile_id, ccbp.channel_id , ccbp.loan_id ,ccbp.client_id, cca.liquidation_frequency_id as liquidationFrequencyId, ml.loan_status_id as loanStatusId "
+                    + " FROM custom.c_client_buy_process ccbp  inner join m_loan ml on ml.id =ccbp.loan_id "
+                    + " inner join custom.c_client_ally_point_of_sales ccapos on ccapos.id = ccbp.point_if_sales_id "
+                    + " inner join custom.c_client_ally cca on cca.id =ccapos.client_ally_id ";
         }
 
         @Override
@@ -59,41 +58,47 @@ public class AllyCollectionSettlementReadWritePlatformServiceImpl implements All
     }
 
     @Override
-    public List<ClientAllyPointOfSalesCollectionData> getCollectionData() {
-        final AllyCollectionSettlementReadWritePlatformServiceImpl.ClientAllyPointOfSalesCollectionRowMapper rm = new AllyCollectionSettlementReadWritePlatformServiceImpl.ClientAllyPointOfSalesCollectionRowMapper();
+    public List<ClientAllyPointOfSalesCollectionData> getPurchaseData() {
+        final AllyPurchaseSettlmentReadWritePlatformServiceImpl.ClientAllyPointOfSalesPurchaseRowMapper rm = new AllyPurchaseSettlmentReadWritePlatformServiceImpl.ClientAllyPointOfSalesPurchaseRowMapper();
         final String sql = "SELECT " + rm.schema() + " ";
 
         return this.jdbcTemplate.query(sql, rm);
     }
 
     @Override
-    public ClientAllyPointOfSalesCollectionData getCollectionDataByLoanId(Long loanId) {
-        final AllyCollectionSettlementReadWritePlatformServiceImpl.ClientAllyPointOfSalesCollectionRowMapper rm = new AllyCollectionSettlementReadWritePlatformServiceImpl.ClientAllyPointOfSalesCollectionRowMapper();
-        final String sql = "SELECT " + rm.schema() + " And ml.id = ?";
+    public ClientAllyPointOfSalesCollectionData getPurchaseDataByLoanId(Long loanId) {
+        final AllyPurchaseSettlmentReadWritePlatformServiceImpl.ClientAllyPointOfSalesPurchaseRowMapper rm = new AllyPurchaseSettlmentReadWritePlatformServiceImpl.ClientAllyPointOfSalesPurchaseRowMapper();
+        final String sql = "SELECT " + rm.schema() + " Where loan_id = ?";
         return this.jdbcTemplate.queryForObject(sql, rm, loanId);
     }
 
+    @Override
+    public List<ClientAllyPointOfSalesCollectionData> getPurchaseDataByClientAllyId(Long clientAllyId) {
+        final AllyPurchaseSettlmentReadWritePlatformServiceImpl.ClientAllyPointOfSalesPurchaseRowMapper rm = new AllyPurchaseSettlmentReadWritePlatformServiceImpl.ClientAllyPointOfSalesPurchaseRowMapper();
+        final String sql = "SELECT " + rm.schema() + " Where cca.id = ?";
+        return this.jdbcTemplate.query(sql, rm, clientAllyId);
+    }
+
     @Autowired
-    private AllyCollectionSettlementRepository repository;
+    private AllyPurchaseSettlementRepository repository;
 
-    public void create(AllyCollectionSettlement allyCollectionSettlement) {
+    public void create(AllyPurchaseSettlement allyPurchaseSettlement) {
         try {
             this.context.authenticatedUser();
-            repository.saveAndFlush(allyCollectionSettlement);
+            repository.saveAndFlush(allyPurchaseSettlement);
         } catch (final PersistenceException e) {
             throw new PlatformDataIntegrityException("error.msg.allyCollection.unknown.data.integrity.issue",
                     "Unknown data integrity issue with resource.");
         }
     }
 
-    public void update(AllyCollectionSettlement allyCollectionSettlement) {
+    public void update(AllyPurchaseSettlement allyPurchaseSettlement) {
         try {
             this.context.authenticatedUser();
-            repository.save(allyCollectionSettlement);
+            repository.save(allyPurchaseSettlement);
         } catch (final PersistenceException e) {
             throw new PlatformDataIntegrityException("error.msg.allyCollection.unknown.data.integrity.issue",
                     "Unknown data integrity issue with resource.");
         }
     }
-
 }
