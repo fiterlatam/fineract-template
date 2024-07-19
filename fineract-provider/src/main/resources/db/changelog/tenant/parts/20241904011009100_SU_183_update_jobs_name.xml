@@ -1,0 +1,81 @@
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd">
+    <changeSet id="1" author="fineract">
+        <update tableName="c_client_ally" schemaName="custom">
+            <column name="last_job_run" value="NULL"/>
+            <column name="last_job_run_purchase" value="NULL"/>
+        </update>
+    </changeSet>
+    <changeSet id="2" author="fineract">
+        <preConditions onFail="MARK_RAN">
+            <columnExists tableName="m_ally_collection_settlement" columnName="collection_status"/>
+            <columnExists tableName="m_ally_collection_settlement" columnName="amount_comission"/>
+            <columnExists tableName="m_ally_collection_settlement" columnName="amount_va_commision"/>
+            <columnExists tableName="m_ally_collection_settlement" columnName="amount_to_pay"/>
+        </preConditions>
+        <dropColumn tableName="m_ally_collection_settlement" columnName="collection_status"/>
+        <dropColumn tableName="m_ally_collection_settlement" columnName="amount_comission"/>
+        <dropColumn tableName="m_ally_collection_settlement" columnName="amount_va_commision"/>
+        <dropColumn tableName="m_ally_collection_settlement" columnName="amount_to_pay"/>
+    </changeSet>
+    <changeSet author="fineract" id="3">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                SELECT count(*) FROM information_schema.tables where table_name = 'm_ally_purchase_settlement';
+            </sqlCheck>
+        </preConditions>
+        <createTable tableName="m_ally_purchase_settlement">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="purchase_date" type="DATE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="nit" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="client_ally_id" type="INT8">
+                <constraints nullable="false"/>
+            </column>
+            <column name="company_name" type="VARCHAR(100)"/>
+            <column name="point_of_sales_id" type="INT8">
+                <constraints nullable="false"/>
+            </column>
+            <column name="point_of_sales_name" type="VARCHAR(100)"/>
+            <column name="city_id" type="INT8">
+                <constraints nullable="false"/>
+            </column>
+            <column name="city_name" type="VARCHAR(100)"/>
+            <column name="buy_amount" type="numeric(19, 6)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="settled_comission" type="numeric(4, 2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="tax_profile_id" type="INT4">
+                <constraints nullable="false"/>
+            </column>
+            <column name="loan_id" type="INT8">
+                <constraints nullable="false"/>
+            </column>
+            <column name="client_id" type="INT8">
+                <constraints nullable="false"/>
+            </column>
+            <column name="channel_id" type="INT8">
+                <constraints nullable="false"/>
+            </column>
+            <column name="settlement_status" type="boolean" valueBoolean="true"/>
+            <column name="amount_comission" type="numeric(19, 6)"/>
+            <column name="amount_va_commision" type="numeric(19,6)"/>
+            <column name="amount_to_pay" type="numeric(19,6)"/>
+        </createTable>
+    </changeSet>
+    <changeSet id="4" author="fineract">
+        <preConditions onFail="MARK_RAN">
+            <columnExists tableName="m_ally_collection_settlement" columnName="principal_amount"/>
+        </preConditions>
+        <renameColumn tableName="m_ally_collection_settlement" oldColumnName="principal_amount" newColumnName="collection_amount"/>
+    </changeSet>
+
+</databaseChangeLog>
