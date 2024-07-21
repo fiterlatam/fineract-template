@@ -74,7 +74,6 @@ import org.apache.fineract.portfolio.account.service.AccountTransfersWritePlatfo
 import org.apache.fineract.portfolio.accountdetails.domain.AccountType;
 import org.apache.fineract.portfolio.charge.domain.Charge;
 import org.apache.fineract.portfolio.charge.domain.ChargeRepositoryWrapper;
-import org.apache.fineract.portfolio.charge.domain.ChargeTimeType;
 import org.apache.fineract.portfolio.charge.exception.ChargeCannotBeAppliedToException;
 import org.apache.fineract.portfolio.charge.exception.ChargeCannotBeUpdatedException;
 import org.apache.fineract.portfolio.charge.exception.LoanChargeCannotBeAddedException;
@@ -165,7 +164,6 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
         List<LoanDisbursementDetails> loanDisburseDetails = loan.getDisbursementDetails();
         final Long chargeDefinitionId = command.longValueOfParameterNamed("chargeId");
         final Charge chargeDefinition = this.chargeRepository.findOneWithNotFoundDetection(chargeDefinitionId);
-
 
         if (loan.isDisbursed() && chargeDefinition.isDisbursementCharge()) {
             // validates whether any pending disbursements are available to

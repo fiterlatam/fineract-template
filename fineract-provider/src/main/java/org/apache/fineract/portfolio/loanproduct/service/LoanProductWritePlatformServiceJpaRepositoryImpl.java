@@ -395,7 +395,7 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
                 String transactionProcessingStrategyCode = product.getTransactionProcessingStrategyCode();
                 if (LoanScheduleProcessingType.HORIZONTAL.name().equals(loanScheduleProcessingType)
                         && AdvancedPaymentScheduleTransactionProcessor.ADVANCED_PAYMENT_ALLOCATION_STRATEGY
-                        .equals(transactionProcessingStrategyCode)) {
+                                .equals(transactionProcessingStrategyCode)) {
                     this.fromApiJsonDeserializer.checkGroupingOfAllocationRules(loanProductPaymentAllocationRules);
                 }
                 loanProductPaymentAllocationRules.forEach(lppar -> lppar.setLoanProduct(product));

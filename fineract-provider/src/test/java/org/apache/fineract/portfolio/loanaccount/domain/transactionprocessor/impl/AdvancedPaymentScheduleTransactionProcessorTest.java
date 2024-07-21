@@ -431,24 +431,24 @@ class AdvancedPaymentScheduleTransactionProcessorTest {
         Map<AllocationType, Money> result;
         MonetaryCurrency currency = mock(MonetaryCurrency.class);
 
-        result = underTest.calculateChargebackAllocationMap(allocationMap(50.0, 100.0, 200.0, 12.0, 200.0, 200, 40.0, 30.0), BigDecimal.valueOf(50.0),
-                List.of(PRINCIPAL, INTEREST, FEE, PENALTY), currency);
+        result = underTest.calculateChargebackAllocationMap(allocationMap(50.0, 100.0, 200.0, 12.0, 200.0, 200, 40.0, 30.0),
+                BigDecimal.valueOf(50.0), List.of(PRINCIPAL, INTEREST, FEE, PENALTY), currency);
         verify(allocationMap(50.0, 0, 0, 0, 0, 0, 0, 0), result);
 
-        result = underTest.calculateChargebackAllocationMap(allocationMap(40.0, 100.0, 200.0, 12.0, 200.0, 200, 40.0, 30.0), BigDecimal.valueOf(50.0),
-                List.of(PRINCIPAL, INTEREST, FEE, PENALTY), currency);
+        result = underTest.calculateChargebackAllocationMap(allocationMap(40.0, 100.0, 200.0, 12.0, 200.0, 200, 40.0, 30.0),
+                BigDecimal.valueOf(50.0), List.of(PRINCIPAL, INTEREST, FEE, PENALTY), currency);
         verify(allocationMap(40.0, 10, 0, 0, 0, 0, 0, 0), result);
 
-        result = underTest.calculateChargebackAllocationMap(allocationMap(40.0, 100.0, 200.0, 12.0, 200.0, 200, 40.0, 30.0), BigDecimal.valueOf(50.0),
-                List.of(PRINCIPAL, FEE, PENALTY, INTEREST), currency);
+        result = underTest.calculateChargebackAllocationMap(allocationMap(40.0, 100.0, 200.0, 12.0, 200.0, 200, 40.0, 30.0),
+                BigDecimal.valueOf(50.0), List.of(PRINCIPAL, FEE, PENALTY, INTEREST), currency);
         verify(allocationMap(40.0, 0, 10, 0, 0, 0, 0, 0), result);
 
-        result = underTest.calculateChargebackAllocationMap(allocationMap(40.0, 100.0, 200.0, 12.0, 200.0, 200, 40.0, 30.0), BigDecimal.valueOf(340.0),
-                List.of(PRINCIPAL, FEE, PENALTY, INTEREST), currency);
+        result = underTest.calculateChargebackAllocationMap(allocationMap(40.0, 100.0, 200.0, 12.0, 200.0, 200, 40.0, 30.0),
+                BigDecimal.valueOf(340.0), List.of(PRINCIPAL, FEE, PENALTY, INTEREST), currency);
         verify(allocationMap(40.0, 88.0, 200.0, 12.0, 0, 0, 0, 0), result);
 
-        result = underTest.calculateChargebackAllocationMap(allocationMap(40.0, 100.0, 200.0, 12.0, 200.0, 200, 40.0, 30.0), BigDecimal.valueOf(352.0),
-                List.of(PRINCIPAL, FEE, PENALTY, INTEREST), currency);
+        result = underTest.calculateChargebackAllocationMap(allocationMap(40.0, 100.0, 200.0, 12.0, 200.0, 200, 40.0, 30.0),
+                BigDecimal.valueOf(352.0), List.of(PRINCIPAL, FEE, PENALTY, INTEREST), currency);
         verify(allocationMap(40.0, 100.0, 200.0, 12.0, 0, 0, 0, 0), result);
     }
 
@@ -459,7 +459,8 @@ class AdvancedPaymentScheduleTransactionProcessorTest {
         });
     }
 
-    private Map<AllocationType, BigDecimal> allocationMap(double principal, double interest, double fee, double penalty, double fees, double aval, double mandatoryInsurance, double voluntaryInsurance) {
+    private Map<AllocationType, BigDecimal> allocationMap(double principal, double interest, double fee, double penalty, double fees,
+            double aval, double mandatoryInsurance, double voluntaryInsurance) {
         Map<AllocationType, BigDecimal> allocationMap = new HashMap<>();
         allocationMap.put(AllocationType.PRINCIPAL, BigDecimal.valueOf(principal));
         allocationMap.put(AllocationType.INTEREST, BigDecimal.valueOf(interest));

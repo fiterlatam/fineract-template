@@ -1760,21 +1760,22 @@ public final class LoanProductDataValidator {
                     .isOneOfEnumValues(LoanScheduleProcessingType.class);
         }
 
-       /* This check has been removed and moved to LoanProductWritePlatformService.update() method because assembleLoanProductPaymentAllocationRules method was executed twice.
-       Once for validation and then again when updating the product causing the list to grow to 63 instead of 21 items
-
-       List<LoanProductPaymentAllocationRule> allocationRules = loanProduct.getPaymentAllocationRules();
-        if (this.fromApiJsonHelper.parameterExists(ADVANCED_PAYMENT_ALLOCATIONS, element)
-                && LoanScheduleProcessingType.HORIZONTAL.name().equals(loanScheduleProcessingType)) {
-            allocationRules = advancedPaymentAllocationsJsonParser.assembleLoanProductPaymentAllocationRules(command,
-                    transactionProcessingStrategyCode);
-        }
-
-        if (LoanScheduleProcessingType.HORIZONTAL.name().equals(loanScheduleProcessingType)
-                && AdvancedPaymentScheduleTransactionProcessor.ADVANCED_PAYMENT_ALLOCATION_STRATEGY
-                        .equals(transactionProcessingStrategyCode)) {
-            advancedPaymentAllocationsValidator.checkGroupingOfAllocationRules(allocationRules);
-        }*/
+        /*
+         * This check has been removed and moved to LoanProductWritePlatformService.update() method because
+         * assembleLoanProductPaymentAllocationRules method was executed twice. Once for validation and then again when
+         * updating the product causing the list to grow to 63 instead of 21 items
+         *
+         * List<LoanProductPaymentAllocationRule> allocationRules = loanProduct.getPaymentAllocationRules(); if
+         * (this.fromApiJsonHelper.parameterExists(ADVANCED_PAYMENT_ALLOCATIONS, element) &&
+         * LoanScheduleProcessingType.HORIZONTAL.name().equals(loanScheduleProcessingType)) { allocationRules =
+         * advancedPaymentAllocationsJsonParser.assembleLoanProductPaymentAllocationRules(command,
+         * transactionProcessingStrategyCode); }
+         *
+         * if (LoanScheduleProcessingType.HORIZONTAL.name().equals(loanScheduleProcessingType) &&
+         * AdvancedPaymentScheduleTransactionProcessor.ADVANCED_PAYMENT_ALLOCATION_STRATEGY
+         * .equals(transactionProcessingStrategyCode)) {
+         * advancedPaymentAllocationsValidator.checkGroupingOfAllocationRules(allocationRules); }
+         */
         if (LoanScheduleProcessingType.VERTICAL.equals(LoanScheduleProcessingType.valueOf(loanScheduleProcessingType))
                 && !AdvancedPaymentScheduleTransactionProcessor.ADVANCED_PAYMENT_ALLOCATION_STRATEGY
                         .equals(transactionProcessingStrategyCode)) {
