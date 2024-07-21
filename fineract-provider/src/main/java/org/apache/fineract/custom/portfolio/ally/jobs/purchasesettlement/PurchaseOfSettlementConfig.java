@@ -1,8 +1,9 @@
 package org.apache.fineract.custom.portfolio.ally.jobs.purchasesettlement;
 
-import org.apache.fineract.custom.portfolio.ally.domain.AllyCollectionSettlementRepository;
+import org.apache.fineract.custom.portfolio.ally.domain.AllyPurchaseSettlementRepository;
 import org.apache.fineract.custom.portfolio.ally.domain.ClientAllyRepository;
-import org.apache.fineract.custom.portfolio.ally.service.AllyCollectionSettlementReadWritePlatformService;
+import org.apache.fineract.custom.portfolio.ally.service.AllyPurchaseSettlementReadWritePlatformService;
+import org.apache.fineract.infrastructure.codes.service.CodeValueReadPlatformService;
 import org.apache.fineract.infrastructure.configuration.domain.GlobalConfigurationRepository;
 import org.apache.fineract.infrastructure.jobs.service.JobName;
 import org.apache.fineract.organisation.workingdays.domain.WorkingDaysRepositoryWrapper;
@@ -32,13 +33,16 @@ public class PurchaseOfSettlementConfig {
     private WorkingDaysRepositoryWrapper workingDaysRepositoryWrapper;
 
     @Autowired
-    private AllyCollectionSettlementRepository allyCollectionSettlementRepository;
+    private AllyPurchaseSettlementRepository allyPurchaseSettlementRepository;
 
     @Autowired
-    private AllyCollectionSettlementReadWritePlatformService allyCollectionSettlementReadWritePlatformService;
+    private AllyPurchaseSettlementReadWritePlatformService allyPurchaseSettlementReadWritePlatformService;
 
     @Autowired
     private GlobalConfigurationRepository globalConfigurationRepository;
+
+    @Autowired
+    private CodeValueReadPlatformService codeValueReadPlatformService;
 
     @Bean
     public Step PurchaseOfSettlementStep() {
@@ -56,7 +60,7 @@ public class PurchaseOfSettlementConfig {
 
     @Bean
     public PurchaseOfSettlementTasklet purchaseOfSettlementTasklet() {
-        return new PurchaseOfSettlementTasklet(clientAllyRepository, workingDaysRepositoryWrapper, allyCollectionSettlementRepository,
-                allyCollectionSettlementReadWritePlatformService, globalConfigurationRepository);
+        return new PurchaseOfSettlementTasklet(clientAllyRepository, workingDaysRepositoryWrapper, allyPurchaseSettlementRepository,
+                allyPurchaseSettlementReadWritePlatformService, globalConfigurationRepository, codeValueReadPlatformService);
     }
 }
