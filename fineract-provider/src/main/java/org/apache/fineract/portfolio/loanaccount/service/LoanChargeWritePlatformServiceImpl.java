@@ -166,17 +166,6 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
         final Long chargeDefinitionId = command.longValueOfParameterNamed("chargeId");
         final Charge chargeDefinition = this.chargeRepository.findOneWithNotFoundDetection(chargeDefinitionId);
 
-        /*
-         * TODO: remove this check once handling for Installment fee charges is implemented for Advanced Payment
-         * strategy
-         */
-        if (ChargeTimeType.fromInt(chargeDefinition.getChargeTimeType()).isInstalmentFee()
-                && AdvancedPaymentScheduleTransactionProcessor.ADVANCED_PAYMENT_ALLOCATION_STRATEGY
-                        .equals(loan.transactionProcessingStrategy())) {
-            final String errorMessageInstallmentChargeNotSupported = "Charge with identifier " + chargeDefinition.getId()
-                    + " cannot be applied: Installment fee charges are not supported for Advanced payment allocation strategy";
-            throw new ChargeCannotBeAppliedToException("loan", errorMessageInstallmentChargeNotSupported, chargeDefinition.getId());
-        }
 
         if (loan.isDisbursed() && chargeDefinition.isDisbursementCharge()) {
             // validates whether any pending disbursements are available to

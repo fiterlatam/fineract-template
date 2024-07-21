@@ -91,7 +91,7 @@ class AdvancedPaymentAllocationsJsonParserTest {
         Map<String, Object> map = new HashMap<>();
         List<Map<String, Object>> paymentAllocations = new ArrayList<>();
         map.put("paymentAllocation", paymentAllocations);
-        List<String> allocationRule = EnumSet.allOf(PaymentAllocationType.class).stream().map(Enum::name).toList();
+        List<String> allocationRule = EnumSet.allOf(AllocationType.class).stream().map(Enum::name).toList();
         paymentAllocations.add(createPaymentAllocationEntry("DEFAULT", "NEXT_INSTALLMENT", allocationRule));
         JsonCommand command = createJsonCommand(map);
 
@@ -103,7 +103,7 @@ class AdvancedPaymentAllocationsJsonParserTest {
         Assertions.assertEquals(1, loanProductPaymentAllocationRules.size());
         Assertions.assertEquals(NEXT_INSTALLMENT, loanProductPaymentAllocationRules.get(0).getFutureInstallmentAllocationRule());
         Assertions.assertEquals(DEFAULT, loanProductPaymentAllocationRules.get(0).getTransactionType());
-        Assertions.assertEquals(12, loanProductPaymentAllocationRules.get(0).getAllocationTypes().size());
+        Assertions.assertEquals(21, loanProductPaymentAllocationRules.get(0).getAllocationTypes().size());
         Assertions.assertEquals(EnumSet.allOf(PaymentAllocationType.class).stream().toList(),
                 loanProductPaymentAllocationRules.get(0).getAllocationTypes());
 
@@ -120,7 +120,7 @@ class AdvancedPaymentAllocationsJsonParserTest {
         Map<String, Object> map = new HashMap<>();
         List<Map<String, Object>> paymentAllocations = new ArrayList<>();
         map.put("paymentAllocation", paymentAllocations);
-        List<String> allocationRule = EnumSet.allOf(PaymentAllocationType.class).stream().map(Enum::name).toList();
+        List<String> allocationRule = EnumSet.allOf(AllocationType.class).stream().map(Enum::name).toList();
         paymentAllocations.add(createPaymentAllocationEntry("INVALID", "INVALID", allocationRule));
         JsonCommand command = createJsonCommand(map);
 
@@ -132,7 +132,7 @@ class AdvancedPaymentAllocationsJsonParserTest {
         Assertions.assertEquals(1, loanProductPaymentAllocationRules.size());
         Assertions.assertNull(loanProductPaymentAllocationRules.get(0).getFutureInstallmentAllocationRule());
         Assertions.assertNull(loanProductPaymentAllocationRules.get(0).getTransactionType());
-        Assertions.assertEquals(12, loanProductPaymentAllocationRules.get(0).getAllocationTypes().size());
+        Assertions.assertEquals(21, loanProductPaymentAllocationRules.get(0).getAllocationTypes().size());
         Assertions.assertEquals(EnumSet.allOf(PaymentAllocationType.class).stream().toList(),
                 loanProductPaymentAllocationRules.get(0).getAllocationTypes());
 
@@ -161,7 +161,7 @@ class AdvancedPaymentAllocationsJsonParserTest {
         Assertions.assertEquals(1, loanProductPaymentAllocationRules.size());
         Assertions.assertEquals(NEXT_INSTALLMENT, loanProductPaymentAllocationRules.get(0).getFutureInstallmentAllocationRule());
         Assertions.assertEquals(DEFAULT, loanProductPaymentAllocationRules.get(0).getTransactionType());
-        Assertions.assertEquals(3, loanProductPaymentAllocationRules.get(0).getAllocationTypes().size());
+        Assertions.assertEquals(9, loanProductPaymentAllocationRules.get(0).getAllocationTypes().size());
         Assertions.assertNull(loanProductPaymentAllocationRules.get(0).getAllocationTypes().get(0));
         Assertions.assertNull(loanProductPaymentAllocationRules.get(0).getAllocationTypes().get(1));
         Assertions.assertEquals(IN_ADVANCE_PENALTY, loanProductPaymentAllocationRules.get(0).getAllocationTypes().get(2));
@@ -179,7 +179,7 @@ class AdvancedPaymentAllocationsJsonParserTest {
         Map<String, Object> map = new HashMap<>();
         List<Map<String, Object>> paymentAllocations = new ArrayList<>();
         map.put("paymentAllocation", paymentAllocations);
-        List<String> allocationRule = EnumSet.allOf(PaymentAllocationType.class).stream().map(Enum::name).toList();
+        List<String> allocationRule = EnumSet.allOf(AllocationType.class).stream().map(Enum::name).toList();
         paymentAllocations.add(createPaymentAllocationEntry(null, null, allocationRule));
         JsonCommand command = createJsonCommand(map);
 
@@ -191,7 +191,7 @@ class AdvancedPaymentAllocationsJsonParserTest {
         Assertions.assertEquals(1, loanProductPaymentAllocationRules.size());
         Assertions.assertNull(loanProductPaymentAllocationRules.get(0).getFutureInstallmentAllocationRule());
         Assertions.assertNull(loanProductPaymentAllocationRules.get(0).getTransactionType());
-        Assertions.assertEquals(12, loanProductPaymentAllocationRules.get(0).getAllocationTypes().size());
+        Assertions.assertEquals(21, loanProductPaymentAllocationRules.get(0).getAllocationTypes().size());
         Assertions.assertEquals(EnumSet.allOf(PaymentAllocationType.class).stream().toList(),
                 loanProductPaymentAllocationRules.get(0).getAllocationTypes());
 
@@ -218,9 +218,9 @@ class AdvancedPaymentAllocationsJsonParserTest {
         return map;
     }
 
-    private static List<Pair<Integer, PaymentAllocationType>> createPaymentAllocationTypeList() {
+    private static List<Pair<Integer, AllocationType>> createPaymentAllocationTypeList() {
         AtomicInteger i = new AtomicInteger(1);
-        List<Pair<Integer, PaymentAllocationType>> list = EnumSet.allOf(PaymentAllocationType.class).stream()
+        List<Pair<Integer, AllocationType>> list = EnumSet.allOf(AllocationType.class).stream()
                 .map(p -> Pair.of(i.getAndIncrement(), p)).toList();
         return list;
     }

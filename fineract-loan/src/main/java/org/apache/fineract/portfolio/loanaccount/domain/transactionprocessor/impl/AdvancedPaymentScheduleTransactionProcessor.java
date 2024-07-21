@@ -21,10 +21,7 @@ package org.apache.fineract.portfolio.loanaccount.domain.transactionprocessor.im
 import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toList;
 import static org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionRelationTypeEnum.CHARGEBACK;
-import static org.apache.fineract.portfolio.loanproduct.domain.AllocationType.FEE;
-import static org.apache.fineract.portfolio.loanproduct.domain.AllocationType.INTEREST;
-import static org.apache.fineract.portfolio.loanproduct.domain.AllocationType.PENALTY;
-import static org.apache.fineract.portfolio.loanproduct.domain.AllocationType.PRINCIPAL;
+import static org.apache.fineract.portfolio.loanproduct.domain.AllocationType.*;
 
 import java.math.BigDecimal;
 import java.math.MathContext;
@@ -626,6 +623,30 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                 Set<LoanCharge> fees = chargesOfInstallment.stream().filter(LoanCharge::isFeeCharge).collect(Collectors.toSet());
                 chargesPaidByFunction.accept(loanTransaction, portion, fees, currentInstallment.getInstallmentNumber());
             }
+            case FEES -> {
+                balances.setAggregatedFeeChargesPortion(balances.getAggregatedFeeChargesPortion().add(portion));
+                addToTransactionMapping(loanTransactionToRepaymentScheduleMapping, zero, zero, portion, zero);
+                Set<LoanCharge> fees = chargesOfInstallment.stream().filter(LoanCharge::isFlatHono).collect(Collectors.toSet());
+                chargesPaidByFunction.accept(loanTransaction, portion, fees, currentInstallment.getInstallmentNumber());
+            }
+            case AVAL -> {
+                balances.setAggregatedFeeChargesPortion(balances.getAggregatedFeeChargesPortion().add(portion));
+                addToTransactionMapping(loanTransactionToRepaymentScheduleMapping, zero, zero, portion, zero);
+                Set<LoanCharge> fees = chargesOfInstallment.stream().filter(LoanCharge::isAvalCharge).collect(Collectors.toSet());
+                chargesPaidByFunction.accept(loanTransaction, portion, fees, currentInstallment.getInstallmentNumber());
+            }
+            case MANDATORY_INSURANCE -> {
+                balances.setAggregatedFeeChargesPortion(balances.getAggregatedFeeChargesPortion().add(portion));
+                addToTransactionMapping(loanTransactionToRepaymentScheduleMapping, zero, zero, portion, zero);
+                Set<LoanCharge> fees = chargesOfInstallment.stream().filter(LoanCharge::isMandatoryInsurance).collect(Collectors.toSet());
+                chargesPaidByFunction.accept(loanTransaction, portion, fees, currentInstallment.getInstallmentNumber());
+            }
+            case VOLUNTARY_INSURANCE -> {
+                balances.setAggregatedFeeChargesPortion(balances.getAggregatedFeeChargesPortion().add(portion));
+                addToTransactionMapping(loanTransactionToRepaymentScheduleMapping, zero, zero, portion, zero);
+                Set<LoanCharge> fees = chargesOfInstallment.stream().filter(LoanCharge::isVoluntaryInsurance).collect(Collectors.toSet());
+                chargesPaidByFunction.accept(loanTransaction, portion, fees, currentInstallment.getInstallmentNumber());
+            }
             case INTEREST -> {
                 balances.setAggregatedInterestPortion(balances.getAggregatedInterestPortion().add(portion));
                 addToTransactionMapping(loanTransactionToRepaymentScheduleMapping, zero, portion, zero, zero);
@@ -1172,6 +1193,10 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
         return switch (paymentAllocationType.getAllocationType()) {
             case PENALTY -> (p) -> p.getPenaltyChargesOutstanding(currency).isGreaterThanZero();
             case FEE -> (p) -> p.getFeeChargesOutstanding(currency).isGreaterThanZero();
+            case FEES -> (p) -> p.getFeeChargesOutstandingByType(currency, "Honorarios").isGreaterThanZero();
+            case AVAL -> (p) -> p.getFeeChargesOutstandingByType(currency, "Aval").isGreaterThanZero();
+            case MANDATORY_INSURANCE -> (p) -> p.getFeeChargesOutstandingByType(currency, "MandatoryInsurance").isGreaterThanZero();
+            case VOLUNTARY_INSURANCE -> (p) -> p.getFeeChargesOutstandingByType(currency, "VoluntaryInsurance").isGreaterThanZero();
             case INTEREST -> (p) -> p.getInterestOutstanding(currency).isGreaterThanZero();
             case PRINCIPAL -> (p) -> p.getPrincipalOutstanding(currency).isGreaterThanZero();
         };

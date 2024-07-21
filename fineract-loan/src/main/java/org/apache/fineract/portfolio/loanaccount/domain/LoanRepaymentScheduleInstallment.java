@@ -27,8 +27,10 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 import org.apache.fineract.infrastructure.core.domain.AbstractAuditableWithUTCDateTimeCustom;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
@@ -319,6 +321,50 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
         return getFeeChargesCharged(currency).minus(feeChargesAccountedFor);
     }
 
+    public Money getFeeChargesOutstandingByType(final MonetaryCurrency currency, String chargeType) {
+        Money amount = Money.zero(currency);
+        if (chargeType == null) {
+            return amount;
+        }
+        for (LoanInstallmentCharge installmentCharge : getInstallmentCharges()) {
+            if (chargeType.equals("Honorarios")) {
+                if (installmentCharge.getLoanCharge().getChargeCalculation().isFlatHono()) {
+                    amount = amount.plus(getInstallmentChargeOutstandingAmount(currency, installmentCharge));
+                }
+            } else if (chargeType.equals("Aval")) {
+                if (installmentCharge.getLoanCharge().getChargeCalculation().isPercentageOfAval()) {
+                    amount = amount.plus(getInstallmentChargeOutstandingAmount(currency, installmentCharge));
+                }
+            } else if (chargeType.equals("MandatoryInsurance")) {
+                if (installmentCharge.getLoanCharge().getChargeCalculation().isMandatoryInsuranceCharge()) {
+                    amount = amount.plus(getInstallmentChargeOutstandingAmount(currency, installmentCharge));
+                }
+                for (LoanInstallmentCharge vatCharge : getInstallmentCharges()) {
+                    if (Objects.equals(installmentCharge.getLoanCharge().getCharge().getId(), vatCharge.getLoanCharge().getCharge().getParentChargeId())) {
+                        amount = amount.plus(getInstallmentChargeOutstandingAmount(currency, installmentCharge));
+                    }
+                }
+            } else if (chargeType.equals("VoluntaryInsurance")) {
+                if (installmentCharge.getLoanCharge().getChargeCalculation().isVoluntaryInsurance()) {
+                    amount = amount.plus(getInstallmentChargeOutstandingAmount(currency, installmentCharge));
+                }
+                for (LoanInstallmentCharge vatCharge : getInstallmentCharges()) {
+                    if (Objects.equals(installmentCharge.getLoanCharge().getCharge().getId(), vatCharge.getLoanCharge().getCharge().getParentChargeId())) {
+                        amount = amount.plus(getInstallmentChargeOutstandingAmount(currency, installmentCharge));
+                    }
+                }
+            }
+        }
+        return amount;
+    }
+
+    public Money getInstallmentChargeOutstandingAmount(final MonetaryCurrency currency, LoanInstallmentCharge installmentCharge) {
+        final Money feeChargesAccountedFor = installmentCharge.getAmountPaid(currency).plus(installmentCharge.getAmountWaived(currency))
+                .plus(installmentCharge.getAmountWrittenOff(currency));
+
+        return installmentCharge.getAmount(currency).minus(feeChargesAccountedFor);
+    }
+
     public Money getFeeAccrued(final MonetaryCurrency currency) {
         return Money.of(currency, this.feeAccrued);
     }
@@ -440,6 +486,14 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
                     : PaymentAction.UNPAY.equals(action) ? this::unpayPenaltyChargesComponent : null;
             case FEE -> PaymentAction.PAY.equals(action) ? this::payFeeChargesComponent
                     : PaymentAction.UNPAY.equals(action) ? this::unpayFeeChargesComponent : null;
+            case FEES -> PaymentAction.PAY.equals(action) ? this::payHonorariosChargesComponent
+                    : PaymentAction.UNPAY.equals(action) ? this::unpayFeeChargesComponent : null;
+            case AVAL -> PaymentAction.PAY.equals(action) ? this::payAvalChargesComponent
+                    : PaymentAction.UNPAY.equals(action) ? this::unpayFeeChargesComponent : null;
+            case MANDATORY_INSURANCE -> PaymentAction.PAY.equals(action) ? this::payMandatoryInsuranceChargesComponent
+                    : PaymentAction.UNPAY.equals(action) ? this::unpayFeeChargesComponent : null;
+            case VOLUNTARY_INSURANCE -> PaymentAction.PAY.equals(action) ? this::payVoluntaryInsuranceChargesComponent
+                    : PaymentAction.UNPAY.equals(action) ? this::unpayFeeChargesComponent : null;
             case INTEREST -> PaymentAction.PAY.equals(action) ? this::payInterestComponent
                     : PaymentAction.UNPAY.equals(action) ? this::unpayInterestComponent : null;
             case PRINCIPAL -> PaymentAction.PAY.equals(action) ? this::payPrincipalComponent
@@ -495,6 +549,114 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
         checkIfRepaymentPeriodObligationsAreMet(transactionDate, currency);
 
         trackAdvanceAndLateTotalsForRepaymentPeriod(transactionDate, currency, feePortionOfTransaction);
+
+        return feePortionOfTransaction;
+    }
+
+    public Money payHonorariosChargesComponent(final LocalDate transactionDate, final Money transactionAmountRemaining) {
+
+        final MonetaryCurrency currency = transactionAmountRemaining.getCurrency();
+        Money feePortionOfTransaction = Money.zero(currency);
+        if (transactionAmountRemaining.isZero()) {
+            return feePortionOfTransaction;
+        }
+        for (LoanInstallmentCharge installmentCharge : getInstallmentCharges()) {
+            if (installmentCharge.getLoanCharge().getChargeCalculation().isFlatHono()) {
+                feePortionOfTransaction = payLoanCharge(installmentCharge, transactionDate, transactionAmountRemaining, currency, feePortionOfTransaction);
+            }
+        }
+        return feePortionOfTransaction;
+
+    }
+    public Money payAvalChargesComponent(final LocalDate transactionDate, final Money transactionAmountRemaining) {
+
+        final MonetaryCurrency currency = transactionAmountRemaining.getCurrency();
+        Money feePortionOfTransaction = Money.zero(currency);
+        if (transactionAmountRemaining.isZero()) {
+            return feePortionOfTransaction;
+        }
+        for (LoanInstallmentCharge installmentCharge : getInstallmentCharges()) {
+            if (installmentCharge.getLoanCharge().getChargeCalculation().isPercentageOfAval()) {
+                feePortionOfTransaction = payLoanCharge(installmentCharge, transactionDate, transactionAmountRemaining, currency, feePortionOfTransaction);
+            }
+        }
+        return feePortionOfTransaction;
+
+    }
+
+    public Money payMandatoryInsuranceChargesComponent(final LocalDate transactionDate, Money transactionAmountRemaining) {
+
+        final MonetaryCurrency currency = transactionAmountRemaining.getCurrency();
+        Money feePortionOfTransaction = Money.zero(currency);
+        if (transactionAmountRemaining.isZero()) {
+            return feePortionOfTransaction;
+        }
+        for (LoanInstallmentCharge installmentCharge : getInstallmentCharges()) {
+            if (installmentCharge.getLoanCharge().getChargeCalculation().isMandatoryInsuranceCharge()) {
+                for (LoanInstallmentCharge vatCharge : getInstallmentCharges()) {
+                    if (Objects.equals(installmentCharge.getLoanCharge().getCharge().getId(), vatCharge.getLoanCharge().getCharge().getParentChargeId())) {
+                        feePortionOfTransaction = payLoanCharge(vatCharge, transactionDate, transactionAmountRemaining, currency, feePortionOfTransaction);
+                        transactionAmountRemaining = transactionAmountRemaining.minus(feePortionOfTransaction);
+                        break;
+                    }
+                }
+                feePortionOfTransaction = payLoanCharge(installmentCharge, transactionDate, transactionAmountRemaining, currency, feePortionOfTransaction);
+            }
+        }
+        return feePortionOfTransaction;
+
+    }
+
+    public Money payVoluntaryInsuranceChargesComponent(final LocalDate transactionDate, final Money transactionAmountRemaining) {
+
+        final MonetaryCurrency currency = transactionAmountRemaining.getCurrency();
+        Money feePortionOfTransaction = Money.zero(currency);
+        if (transactionAmountRemaining.isZero()) {
+            return feePortionOfTransaction;
+        }
+        for (LoanInstallmentCharge installmentCharge : getInstallmentCharges()) {
+            if (installmentCharge.getLoanCharge().getChargeCalculation().isVoluntaryInsurance()) {
+                for (LoanInstallmentCharge vatCharge : getInstallmentCharges()) {
+                    if (Objects.equals(installmentCharge.getLoanCharge().getCharge().getId(), vatCharge.getLoanCharge().getCharge().getParentChargeId())) {
+                        feePortionOfTransaction = payLoanCharge(vatCharge, transactionDate, transactionAmountRemaining, currency, feePortionOfTransaction);
+                    }
+                }
+                feePortionOfTransaction = payLoanCharge(installmentCharge, transactionDate, transactionAmountRemaining, currency, feePortionOfTransaction);
+            }
+        }
+        return feePortionOfTransaction;
+
+    }
+
+    public Money payLoanCharge(LoanInstallmentCharge installmentCharge, final LocalDate transactionDate, final Money transactionAmountRemaining,
+                               final MonetaryCurrency currency, Money feePortionOfTransaction) {
+        if (transactionAmountRemaining.isZero()) {
+            return feePortionOfTransaction;
+        }
+        Money feeChargePaid = Money.zero(currency);
+        Money feeChargesDue = getInstallmentChargeOutstandingAmount(currency, installmentCharge);
+        if (installmentCharge.getLoanCharge().isCustomPercentageBasedOfAnotherCharge()) {
+            Money percentageAmountToBePaid = transactionAmountRemaining.percentageOf(installmentCharge.getLoanCharge().amountOrPercentage(), RoundingMode.HALF_UP);
+            if (percentageAmountToBePaid.isLessThan(feeChargesDue)) {
+                feeChargesDue = Money.of(percentageAmountToBePaid.getCurrency(), percentageAmountToBePaid.getAmount());
+            }
+        }
+        if (transactionAmountRemaining.isGreaterThanOrEqualTo(feeChargesDue)) {
+            this.feeChargesPaid = getFeeChargesPaid(currency).plus(feeChargesDue).getAmount();
+            feePortionOfTransaction = feePortionOfTransaction.plus(feeChargesDue);
+            feeChargePaid = feeChargePaid.plus(feeChargesDue);
+        } else {
+            this.feeChargesPaid = getFeeChargesPaid(currency).plus(transactionAmountRemaining).getAmount();
+            feePortionOfTransaction = feePortionOfTransaction.plus(transactionAmountRemaining);
+            feeChargePaid = feeChargePaid.plus(transactionAmountRemaining);
+        }
+        //installmentCharge.updatePaidAmountBy(feePortionOfTransaction, Money.zero(currency));
+        installmentCharge.getLoanCharge().updatePaidAmountBy(feeChargePaid,this.installmentNumber, Money.zero(currency));
+        this.feeChargesPaid = defaultToNullIfZero(this.feeChargesPaid);
+
+        checkIfRepaymentPeriodObligationsAreMet(transactionDate, currency);
+
+        trackAdvanceAndLateTotalsForRepaymentPeriod(transactionDate, currency, feeChargePaid);
 
         return feePortionOfTransaction;
     }

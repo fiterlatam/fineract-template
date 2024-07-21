@@ -1634,4 +1634,8 @@ public enum ChargeCalculationType {
         return this.equals(ChargeCalculationType.ACHG);
     }
 
+    public boolean isMandatoryInsuranceCharge() {
+        return isFlatMandatoryInsurance() || isPercentageBasedMandatoryInsurance() || isCustomPercentageOfOutstandingPrincipalCharge();
+    }
+
 }

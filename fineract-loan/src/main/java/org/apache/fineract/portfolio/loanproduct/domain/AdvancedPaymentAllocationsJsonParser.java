@@ -24,9 +24,14 @@ import com.google.gson.JsonElement;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+
+import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
+import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleProcessingType;
+import org.apache.fineract.portfolio.loanproduct.LoanProductConstants;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Service;
 
@@ -38,7 +43,9 @@ public class AdvancedPaymentAllocationsJsonParser {
 
     public List<LoanProductPaymentAllocationRule> assembleLoanProductPaymentAllocationRules(final JsonCommand command,
             String loanTransactionProcessingStrategyCode) {
-        JsonArray paymentAllocations = command.arrayOfParameterNamed("paymentAllocation");
+        //JsonArray paymentAllocations = command.arrayOfParameterNamed("paymentAllocation");
+        JsonArray paymentAllocations = updatePaymentAllocationTypesArray(command, command.arrayOfParameterNamed("paymentAllocation"));
+
         List<LoanProductPaymentAllocationRule> productPaymentAllocationRules = null;
         if (paymentAllocations != null) {
             productPaymentAllocationRules = paymentAllocations.asList().stream().map(json -> {
@@ -52,6 +59,64 @@ public class AdvancedPaymentAllocationsJsonParser {
         }
         advancedPaymentAllocationsValidator.validate(productPaymentAllocationRules, loanTransactionProcessingStrategyCode);
         return productPaymentAllocationRules;
+    }
+
+    public JsonArray updatePaymentAllocationTypesArray(JsonCommand command, JsonArray array) {
+        JsonArray updatedOrderList = new JsonArray();
+        int index = 1;
+        JsonArray orderList = array.get(0).getAsJsonObject().getAsJsonArray("paymentAllocationOrder");
+
+        String loanScheduleProcessingType = command.stringValueOfParameterNamed(LoanProductConstants.LOAN_SCHEDULE_PROCESSING_TYPE);
+        if (loanScheduleProcessingType == null) {
+            loanScheduleProcessingType = "";
+        }
+        if (loanScheduleProcessingType.equals(LoanScheduleProcessingType.HORIZONTAL.name())) {
+            for (int i = 1; i <= 3; i++) {
+                for (Object obj : orderList) {
+                    JsonObject object = (JsonObject) obj;
+                    JsonObject newObj = new JsonObject();
+                    String val = object.get("paymentAllocationRule").getAsString();
+                    newObj.add("order", new JsonPrimitive(index));
+                    if (i == 1) {
+                        newObj.add("paymentAllocationRule", new JsonPrimitive("PAST_DUE_" + val));
+                    } else if (i == 2) {
+                        newObj.add("paymentAllocationRule", new JsonPrimitive("DUE_" + val));
+                    } else if (i == 3) {
+                        newObj.add("paymentAllocationRule", new JsonPrimitive("IN_ADVANCE_" + val));
+                    }
+                    if (!updatedOrderList.contains(newObj)) {
+                        updatedOrderList.add(newObj);
+                    }
+                    index++;
+                }
+            }
+
+        } else if (loanScheduleProcessingType.equals(LoanScheduleProcessingType.VERTICAL.name())) {
+
+            for (Object obj : orderList) {
+                JsonObject object = (JsonObject) obj;
+                String val = object.get("paymentAllocationRule").getAsString();
+                for (int i = 1; i <= 3; i++) {
+                    JsonObject newObj = new JsonObject();
+                    newObj.add("order", new JsonPrimitive(index));
+                    if (i == 1) {
+                        newObj.add("paymentAllocationRule", new JsonPrimitive("PAST_DUE_" + val));
+                    } else if (i == 2) {
+                        newObj.add("paymentAllocationRule", new JsonPrimitive("DUE_" + val));
+                    } else if (i == 3) {
+                        newObj.add("paymentAllocationRule", new JsonPrimitive("IN_ADVANCE_" + val));
+                    }
+                    updatedOrderList.add(newObj);
+                    index++;
+                }
+            }
+        }
+        array.get(0).getAsJsonObject().remove("paymentAllocationOrder");
+        array.get(0).getAsJsonObject().add("paymentAllocationOrder", updatedOrderList);
+
+        return array;
+
+
     }
 
     private void populatePaymentAllocationRules(Map<String, JsonElement> map,
