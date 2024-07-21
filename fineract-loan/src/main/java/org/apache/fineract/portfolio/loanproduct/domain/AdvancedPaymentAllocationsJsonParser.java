@@ -21,12 +21,11 @@ package org.apache.fineract.portfolio.loanproduct.domain;
 import com.google.common.base.Enums;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-
-import com.google.gson.JsonObject;
-import com.google.gson.JsonPrimitive;
 import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
@@ -43,7 +42,7 @@ public class AdvancedPaymentAllocationsJsonParser {
 
     public List<LoanProductPaymentAllocationRule> assembleLoanProductPaymentAllocationRules(final JsonCommand command,
             String loanTransactionProcessingStrategyCode) {
-        //JsonArray paymentAllocations = command.arrayOfParameterNamed("paymentAllocation");
+        // JsonArray paymentAllocations = command.arrayOfParameterNamed("paymentAllocation");
         JsonArray paymentAllocations = updatePaymentAllocationTypesArray(command, command.arrayOfParameterNamed("paymentAllocation"));
 
         List<LoanProductPaymentAllocationRule> productPaymentAllocationRules = null;
@@ -115,7 +114,6 @@ public class AdvancedPaymentAllocationsJsonParser {
         array.get(0).getAsJsonObject().add("paymentAllocationOrder", updatedOrderList);
 
         return array;
-
 
     }
 

@@ -23,7 +23,6 @@ import static org.apache.fineract.portfolio.loanproduct.domain.DueType.DUE;
 import static org.apache.fineract.portfolio.loanproduct.domain.DueType.IN_ADVANCE;
 import static org.apache.fineract.portfolio.loanproduct.domain.DueType.PAST_DUE;
 
-import java.util.Arrays;
 import java.util.List;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -64,7 +63,8 @@ public enum PaymentAllocationType {
 
     public static List<EnumOptionData> getValuesAsEnumOptionDataList() {
         return AllocationType.getValuesAsEnumOptionDataList();
-        // return Arrays.stream(values()).map(v -> new EnumOptionData((long) (v.ordinal() + 1), v.name(), v.getHumanReadableName())).toList();
+        // return Arrays.stream(values()).map(v -> new EnumOptionData((long) (v.ordinal() + 1), v.name(),
+        // v.getHumanReadableName())).toList();
     }
 
 }

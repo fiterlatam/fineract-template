@@ -47,7 +47,6 @@ import org.apache.fineract.portfolio.charge.domain.Charge;
 import org.apache.fineract.portfolio.charge.domain.ChargeCalculationType;
 import org.apache.fineract.portfolio.charge.domain.ChargePaymentMode;
 import org.apache.fineract.portfolio.charge.domain.ChargeTimeType;
-import org.apache.fineract.portfolio.charge.enumerator.ChargeCalculationTypeBaseItemsEnum;
 import org.apache.fineract.portfolio.charge.exception.LoanChargeWithoutMandatoryFieldException;
 import org.apache.fineract.portfolio.loanaccount.command.LoanChargeCommand;
 import org.apache.fineract.portfolio.loanaccount.data.LoanChargeData;
@@ -1238,6 +1237,7 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
     public boolean isFlatHono() {
         return getChargeCalculation().isFlatHono();
     }
+
     public boolean isCustomFlatDistributedCharge() {
         // Charge is distributed among the installments
         return getChargeCalculation().isVoluntaryInsurance() || getChargeCalculation().isFlatMandatoryInsurance();

@@ -220,8 +220,8 @@ class AdvancedPaymentAllocationsJsonParserTest {
 
     private static List<Pair<Integer, AllocationType>> createPaymentAllocationTypeList() {
         AtomicInteger i = new AtomicInteger(1);
-        List<Pair<Integer, AllocationType>> list = EnumSet.allOf(AllocationType.class).stream()
-                .map(p -> Pair.of(i.getAndIncrement(), p)).toList();
+        List<Pair<Integer, AllocationType>> list = EnumSet.allOf(AllocationType.class).stream().map(p -> Pair.of(i.getAndIncrement(), p))
+                .toList();
         return list;
     }
 
