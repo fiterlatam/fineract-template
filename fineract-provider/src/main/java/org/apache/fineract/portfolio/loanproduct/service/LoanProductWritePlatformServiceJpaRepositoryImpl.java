@@ -80,20 +80,13 @@ import org.apache.fineract.portfolio.interestrates.exception.InterestRateExcepti
 import org.apache.fineract.portfolio.interestrates.service.InterestRateReadPlatformService;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleTransactionProcessorFactory;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
+import org.apache.fineract.portfolio.loanaccount.domain.transactionprocessor.impl.AdvancedPaymentScheduleTransactionProcessor;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.AprCalculator;
+import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleProcessingType;
 import org.apache.fineract.portfolio.loanproduct.LoanProductConstants;
 import org.apache.fineract.portfolio.loanproduct.data.ClientCupoData;
 import org.apache.fineract.portfolio.loanproduct.data.MaximumCreditRateConfigurationData;
-import org.apache.fineract.portfolio.loanproduct.domain.AdvanceQuotaConfiguration;
-import org.apache.fineract.portfolio.loanproduct.domain.AdvanceQuotaRepository;
-import org.apache.fineract.portfolio.loanproduct.domain.AdvancedPaymentAllocationsJsonParser;
-import org.apache.fineract.portfolio.loanproduct.domain.CreditAllocationsJsonParser;
-import org.apache.fineract.portfolio.loanproduct.domain.LoanProduct;
-import org.apache.fineract.portfolio.loanproduct.domain.LoanProductCreditAllocationRule;
-import org.apache.fineract.portfolio.loanproduct.domain.LoanProductPaymentAllocationRule;
-import org.apache.fineract.portfolio.loanproduct.domain.LoanProductRepository;
-import org.apache.fineract.portfolio.loanproduct.domain.MaximumCreditRateConfiguration;
-import org.apache.fineract.portfolio.loanproduct.domain.MaximumRateRepository;
+import org.apache.fineract.portfolio.loanproduct.domain.*;
 import org.apache.fineract.portfolio.loanproduct.exception.AdvanceQuotaExceptions;
 import org.apache.fineract.portfolio.loanproduct.exception.LoanProductCannotBeModifiedDueToNonClosedLoansException;
 import org.apache.fineract.portfolio.loanproduct.exception.LoanProductDateException;
@@ -398,6 +391,13 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
             if (changes.containsKey("paymentAllocation")) {
                 final List<LoanProductPaymentAllocationRule> loanProductPaymentAllocationRules = advancedPaymentJsonParser
                         .assembleLoanProductPaymentAllocationRules(command, product.getTransactionProcessingStrategyCode());
+                String loanScheduleProcessingType = command.stringValueOfParameterNamed(LoanProductConstants.LOAN_SCHEDULE_PROCESSING_TYPE);
+                String transactionProcessingStrategyCode = product.getTransactionProcessingStrategyCode();
+                if (LoanScheduleProcessingType.HORIZONTAL.name().equals(loanScheduleProcessingType)
+                        && AdvancedPaymentScheduleTransactionProcessor.ADVANCED_PAYMENT_ALLOCATION_STRATEGY
+                                .equals(transactionProcessingStrategyCode)) {
+                    this.fromApiJsonDeserializer.checkGroupingOfAllocationRules(loanProductPaymentAllocationRules);
+                }
                 loanProductPaymentAllocationRules.forEach(lppar -> lppar.setLoanProduct(product));
                 final boolean updated = loanProductPaymentAllocationRuleMerger.updateProductPaymentAllocationRules(product,
                         loanProductPaymentAllocationRules);

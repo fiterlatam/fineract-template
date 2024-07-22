@@ -746,7 +746,8 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
     private static final class AdvancedPaymentDataMapper implements RowMapper<AdvancedPaymentData> {
 
         public String schema() {
-            return "transaction_type, allocation_types, future_installment_allocation_rule from m_loan_product_payment_allocation_rule";
+            return "mpl.id, mpl.loan_schedule_type loanScheduleType, mpl.loan_schedule_processing_type loanScheduleProcessingType, transaction_type, allocation_types, future_installment_allocation_rule "
+                    + "from m_loan_product_payment_allocation_rule mlpar " + "join m_product_loan mpl on mpl.id = mlpar.loan_product_id ";
         }
 
         @Override
@@ -754,13 +755,42 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
             final String transactionType = rs.getString("transaction_type");
             final String allocationTypes = rs.getString("allocation_types");
             final String futureInstallmentAllocationRule = rs.getString("future_installment_allocation_rule");
-            return new AdvancedPaymentData(transactionType, futureInstallmentAllocationRule, convert(allocationTypes));
+            final String loanScheduleTypeStr = rs.getString("loanScheduleType");
+            final LoanScheduleType loanScheduleType = LoanScheduleType.valueOf(loanScheduleTypeStr);
+            final String loanScheduleProcessingTypeStr = rs.getString("loanScheduleProcessingType");
+            final LoanScheduleProcessingType loanScheduleProcessingType = LoanScheduleProcessingType.valueOf(loanScheduleProcessingTypeStr);
+            return new AdvancedPaymentData(transactionType, futureInstallmentAllocationRule,
+                    convert(allocationTypes, loanScheduleType, loanScheduleProcessingType));
         }
 
-        private List<PaymentAllocationOrder> convert(String allocationOrders) {
+        private List<PaymentAllocationOrder> convert(String allocationOrders, final LoanScheduleType loanScheduleType,
+                final LoanScheduleProcessingType loanScheduleProcessingType) {
             String[] allocationRule = allocationOrders.split(",");
+            String[] convertedAllocationRule = new String[7];
+            int index = 0;
+            if (loanScheduleType.equals(LoanScheduleType.PROGRESSIVE)
+                    && loanScheduleProcessingType.equals(LoanScheduleProcessingType.VERTICAL)) {
+                for (int i = 0; i < allocationRule.length; i += 3) {
+                    String rule = allocationRule[i];
+                    // PAST_DUE will always be the one captured here. Strip PAST_DUE from the string to get the
+                    // Allocation Type
+                    String allocationType = rule.substring(9);
+                    convertedAllocationRule[index] = allocationType;
+                    index++;
+                }
+            } else if (loanScheduleType.equals(LoanScheduleType.PROGRESSIVE)
+                    && loanScheduleProcessingType.equals(LoanScheduleProcessingType.HORIZONTAL)) {
+                for (int i = 0; i < 7; i++) {
+                    String rule = allocationRule[i];
+                    // PAST_DUE will always be the one captured here. Strip PAST_DUE from the string to get the
+                    // Allocation Type
+                    String allocationType = rule.substring(9);
+                    convertedAllocationRule[index] = allocationType;
+                    index++;
+                }
+            }
             AtomicInteger order = new AtomicInteger(1);
-            return Arrays.stream(allocationRule) //
+            return Arrays.stream(convertedAllocationRule) //
                     .map(s -> new PaymentAllocationOrder(s, order.getAndIncrement())) //
                     .toList();
         }

@@ -1234,6 +1234,10 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
         updateInstallmentCharges();
     }
 
+    public boolean isFlatHono() {
+        return getChargeCalculation().isFlatHono();
+    }
+
     public boolean isCustomFlatDistributedCharge() {
         // Charge is distributed among the installments
         return getChargeCalculation().isVoluntaryInsurance() || getChargeCalculation().isFlatMandatoryInsurance();
@@ -1242,6 +1246,21 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
     public boolean isCustomPercentageBasedDistributedCharge() {
         // Charge is distributed among the installments
         return getChargeCalculation().isPercentageBasedMandatoryInsurance();
+    }
+
+    public boolean isAvalCharge() {
+        // Charge is distributed among the installments
+        return getChargeCalculation().isPercentageOfAval();
+    }
+
+    public boolean isMandatoryInsurance() {
+        // Charge is distributed among the installments
+        return getChargeCalculation().isMandatoryInsuranceCharge();
+    }
+
+    public boolean isVoluntaryInsurance() {
+        // Charge is distributed among the installments
+        return getChargeCalculation().isVoluntaryInsurance();
     }
 
     public boolean isCustomPercentageBasedOfAnotherCharge() {
