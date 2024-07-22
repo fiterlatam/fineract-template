@@ -61,58 +61,59 @@ public class AdvancedPaymentAllocationsJsonParser {
     }
 
     public JsonArray updatePaymentAllocationTypesArray(JsonCommand command, JsonArray array) {
-        JsonArray updatedOrderList = new JsonArray();
-        int index = 1;
-        JsonArray orderList = array.get(0).getAsJsonObject().getAsJsonArray("paymentAllocationOrder");
+        if (array != null && !array.isEmpty()) {
+            JsonArray updatedOrderList = new JsonArray();
+            int index = 1;
+            JsonArray orderList = array.get(0).getAsJsonObject().getAsJsonArray("paymentAllocationOrder");
 
-        String loanScheduleProcessingType = command.stringValueOfParameterNamed(LoanProductConstants.LOAN_SCHEDULE_PROCESSING_TYPE);
-        if (loanScheduleProcessingType == null) {
-            loanScheduleProcessingType = "";
-        }
-        if (loanScheduleProcessingType.equals(LoanScheduleProcessingType.HORIZONTAL.name())) {
-            for (int i = 1; i <= 3; i++) {
+            String loanScheduleProcessingType = command.stringValueOfParameterNamed(LoanProductConstants.LOAN_SCHEDULE_PROCESSING_TYPE);
+            if (loanScheduleProcessingType == null) {
+                loanScheduleProcessingType = "";
+            }
+            if (loanScheduleProcessingType.equals(LoanScheduleProcessingType.HORIZONTAL.name())) {
+                for (int i = 1; i <= 3; i++) {
+                    for (Object obj : orderList) {
+                        JsonObject object = (JsonObject) obj;
+                        JsonObject newObj = new JsonObject();
+                        String val = object.get("paymentAllocationRule").getAsString();
+                        newObj.add("order", new JsonPrimitive(index));
+                        if (i == 1) {
+                            newObj.add("paymentAllocationRule", new JsonPrimitive("PAST_DUE_" + val));
+                        } else if (i == 2) {
+                            newObj.add("paymentAllocationRule", new JsonPrimitive("DUE_" + val));
+                        } else if (i == 3) {
+                            newObj.add("paymentAllocationRule", new JsonPrimitive("IN_ADVANCE_" + val));
+                        }
+                        if (!updatedOrderList.contains(newObj)) {
+                            updatedOrderList.add(newObj);
+                        }
+                        index++;
+                    }
+                }
+
+            } else if (loanScheduleProcessingType.equals(LoanScheduleProcessingType.VERTICAL.name())) {
+
                 for (Object obj : orderList) {
                     JsonObject object = (JsonObject) obj;
-                    JsonObject newObj = new JsonObject();
                     String val = object.get("paymentAllocationRule").getAsString();
-                    newObj.add("order", new JsonPrimitive(index));
-                    if (i == 1) {
-                        newObj.add("paymentAllocationRule", new JsonPrimitive("PAST_DUE_" + val));
-                    } else if (i == 2) {
-                        newObj.add("paymentAllocationRule", new JsonPrimitive("DUE_" + val));
-                    } else if (i == 3) {
-                        newObj.add("paymentAllocationRule", new JsonPrimitive("IN_ADVANCE_" + val));
-                    }
-                    if (!updatedOrderList.contains(newObj)) {
+                    for (int i = 1; i <= 3; i++) {
+                        JsonObject newObj = new JsonObject();
+                        newObj.add("order", new JsonPrimitive(index));
+                        if (i == 1) {
+                            newObj.add("paymentAllocationRule", new JsonPrimitive("PAST_DUE_" + val));
+                        } else if (i == 2) {
+                            newObj.add("paymentAllocationRule", new JsonPrimitive("DUE_" + val));
+                        } else if (i == 3) {
+                            newObj.add("paymentAllocationRule", new JsonPrimitive("IN_ADVANCE_" + val));
+                        }
                         updatedOrderList.add(newObj);
+                        index++;
                     }
-                    index++;
                 }
             }
-
-        } else if (loanScheduleProcessingType.equals(LoanScheduleProcessingType.VERTICAL.name())) {
-
-            for (Object obj : orderList) {
-                JsonObject object = (JsonObject) obj;
-                String val = object.get("paymentAllocationRule").getAsString();
-                for (int i = 1; i <= 3; i++) {
-                    JsonObject newObj = new JsonObject();
-                    newObj.add("order", new JsonPrimitive(index));
-                    if (i == 1) {
-                        newObj.add("paymentAllocationRule", new JsonPrimitive("PAST_DUE_" + val));
-                    } else if (i == 2) {
-                        newObj.add("paymentAllocationRule", new JsonPrimitive("DUE_" + val));
-                    } else if (i == 3) {
-                        newObj.add("paymentAllocationRule", new JsonPrimitive("IN_ADVANCE_" + val));
-                    }
-                    updatedOrderList.add(newObj);
-                    index++;
-                }
-            }
+            array.get(0).getAsJsonObject().remove("paymentAllocationOrder");
+            array.get(0).getAsJsonObject().add("paymentAllocationOrder", updatedOrderList);
         }
-        array.get(0).getAsJsonObject().remove("paymentAllocationOrder");
-        array.get(0).getAsJsonObject().add("paymentAllocationOrder", updatedOrderList);
-
         return array;
 
     }

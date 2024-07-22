@@ -53,6 +53,7 @@ import org.apache.fineract.infrastructure.bulkimport.populator.client.ClientEnti
 import org.apache.fineract.infrastructure.bulkimport.populator.client.ClientPersonWorkbookPopulator;
 import org.apache.fineract.infrastructure.bulkimport.populator.clientblock.ClientBlockControlWorkbookPopulator;
 import org.apache.fineract.infrastructure.bulkimport.populator.clientvip.ClientVipControlWorkbookPopulator;
+import org.apache.fineract.infrastructure.bulkimport.populator.commercepointofsale.clientvip.CommercePointOfSaleControlWorkbookPopulator;
 import org.apache.fineract.infrastructure.bulkimport.populator.fixeddeposits.FixedDepositTransactionWorkbookPopulator;
 import org.apache.fineract.infrastructure.bulkimport.populator.fixeddeposits.FixedDepositWorkbookPopulator;
 import org.apache.fineract.infrastructure.bulkimport.populator.group.GroupsWorkbookPopulator;
@@ -230,6 +231,8 @@ public class BulkImportWorkbookPopulatorServiceImpl implements BulkImportWorkboo
                 populator = populateClientBlockWorkbook();
             } else if (entityType.trim().equalsIgnoreCase(GlobalEntityType.CLIENT_VIP.toString())) {
                 populator = populateClientVipWorkbook();
+            } else if (entityType.trim().equalsIgnoreCase(GlobalEntityType.COMMERCE_POINT_OF_SALE.toString())) {
+                populator = populateCommercePointOfSaleWorkbook();
             } else {
                 throw new GeneralPlatformDomainRuleException("error.msg.unable.to.find.resource", "Unable to find requested resource");
             }
@@ -701,6 +704,10 @@ public class BulkImportWorkbookPopulatorServiceImpl implements BulkImportWorkboo
 
     private WorkbookPopulator populateClientVipWorkbook() {
         return new ClientVipControlWorkbookPopulator();
+    }
+
+    private WorkbookPopulator populateCommercePointOfSaleWorkbook() {
+        return new CommercePointOfSaleControlWorkbookPopulator();
     }
 
 }

@@ -58,6 +58,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.apache.fineract.commands.domain.CommandWrapper;
@@ -106,6 +107,7 @@ import org.apache.fineract.portfolio.calendar.data.CalendarData;
 import org.apache.fineract.portfolio.calendar.domain.CalendarEntityType;
 import org.apache.fineract.portfolio.calendar.service.CalendarReadPlatformService;
 import org.apache.fineract.portfolio.charge.data.ChargeData;
+import org.apache.fineract.portfolio.charge.domain.ChargeCalculationType;
 import org.apache.fineract.portfolio.charge.domain.ChargeTimeType;
 import org.apache.fineract.portfolio.charge.service.ChargeReadPlatformService;
 import org.apache.fineract.portfolio.client.data.ClientData;
@@ -1230,7 +1232,7 @@ public class LoansApiResource {
         }
 
         final LoanAccountData loanAccount = LoanAccountData.associationsAndTemplate(loanBasicDetails, repaymentSchedule, loanRepayments,
-                charges, loanCollateralManagementData, guarantors, meeting, productOptions, loanTermFrequencyTypeOptions,
+                charges, loanCollateralManagementData, guarantors, productOptions, loanTermFrequencyTypeOptions,
                 repaymentFrequencyTypeOptions, repaymentFrequencyNthDayTypeOptions, repaymentFrequencyDayOfWeekTypeOptions,
                 repaymentStrategyOptions, interestRateFrequencyTypeOptions, amortizationTypeOptions, interestTypeOptions,
                 interestCalculationPeriodTypeOptions, fundOptions, chargeOptions, chargeTemplate, allowedLoanOfficers, loanPurposeOptions,
@@ -1246,6 +1248,20 @@ public class LoansApiResource {
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters(),
                 mandatoryResponseParameters);
         loanAccount.setInterestRatePoints(InterestRatePoints);
+
+        if (org.apache.commons.collections4.CollectionUtils.isNotEmpty(charges)) {
+            final Optional<LoanChargeData> voluntaryInsuranceOptional = charges.stream().filter(c -> {
+                final EnumOptionData chargeCalculationTypeEnumOption = c.getChargeCalculationType();
+                return ChargeCalculationType.fromInt(chargeCalculationTypeEnumOption.getId().intValue()).isVoluntaryInsurance();
+            }).findFirst();
+            if (voluntaryInsuranceOptional.isPresent()) {
+                final LoanChargeData voluntaryInsurance = voluntaryInsuranceOptional.get();
+                voluntaryInsurance.setCodigoSeguro(loanAccount.getCodigoSeguro());
+                voluntaryInsurance.setCedulaSeguroVoluntario(loanAccount.getCedulaSeguroVoluntario());
+                loanAccount.setVoluntaryInsurance(voluntaryInsurance);
+            }
+        }
+
         return this.toApiJsonSerializer.serialize(settings, loanAccount, LOAN_DATA_PARAMETERS);
     }
 
