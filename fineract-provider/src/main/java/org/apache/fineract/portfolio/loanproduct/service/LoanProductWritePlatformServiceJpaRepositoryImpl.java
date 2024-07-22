@@ -64,6 +64,7 @@ import org.apache.fineract.infrastructure.security.service.PlatformSecurityConte
 import org.apache.fineract.organisation.monetary.domain.MoneyHelper;
 import org.apache.fineract.organisation.monetary.exception.InvalidCurrencyException;
 import org.apache.fineract.portfolio.charge.domain.Charge;
+import org.apache.fineract.portfolio.charge.domain.ChargeCalculationType;
 import org.apache.fineract.portfolio.charge.domain.ChargeRepositoryWrapper;
 import org.apache.fineract.portfolio.common.domain.PeriodFrequencyType;
 import org.apache.fineract.portfolio.delinquency.domain.DelinquencyBucket;
@@ -189,6 +190,23 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
             if (command.parameterExists("repaymentChannels")) {
                 final List<Channel> repaymentChannels = assembleListOfRepaymentChannels(command);
                 loanProduct.setRepaymentChannels(repaymentChannels);
+            }
+
+            if (command.parameterExists(LoanProductConstants.IS_PURCHASE_CHARGE_PARAM_NAME)) {
+                final boolean isPurchaseCharge = command
+                        .booleanPrimitiveValueOfParameterNamed(LoanProductConstants.IS_PURCHASE_CHARGE_PARAM_NAME);
+                if (isPurchaseCharge) {
+                    final Long voluntaryInsuranceId = command
+                            .longValueOfParameterNamed(LoanProductConstants.VOLUNTARY_INSURANCE_ID_PARAM_NAME);
+                    final Charge voluntaryInsuranceCharge = this.chargeRepository.findOneWithNotFoundDetection(voluntaryInsuranceId);
+                    ChargeCalculationType chargeCalculationType = ChargeCalculationType
+                            .fromInt(voluntaryInsuranceCharge.getChargeCalculation());
+                    if (!chargeCalculationType.isVoluntaryInsurance()) {
+                        throw new GeneralPlatformDomainRuleException("error.msg.loanproduct.voluntary.insurance.charge.invalid",
+                                "Loan charge must be of type Voluntary Insurance", voluntaryInsuranceId);
+                    }
+                    loanProduct.setVoluntaryInsuranceCharge(voluntaryInsuranceCharge);
+                }
             }
 
             this.loanProductRepository.save(loanProduct);
@@ -433,6 +451,26 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
             this.validateMaximumInterestRate(product);
 
             populateProductCustomAllowance(command, product);
+
+            if (command.parameterExists(LoanProductConstants.IS_PURCHASE_CHARGE_PARAM_NAME)) {
+                final boolean isPurchaseCharge = command
+                        .booleanPrimitiveValueOfParameterNamed(LoanProductConstants.IS_PURCHASE_CHARGE_PARAM_NAME);
+                if (isPurchaseCharge) {
+                    final Long voluntaryInsuranceId = command
+                            .longValueOfParameterNamed(LoanProductConstants.VOLUNTARY_INSURANCE_ID_PARAM_NAME);
+                    final Charge voluntaryInsuranceCharge = this.chargeRepository.findOneWithNotFoundDetection(voluntaryInsuranceId);
+                    ChargeCalculationType chargeCalculationType = ChargeCalculationType
+                            .fromInt(voluntaryInsuranceCharge.getChargeCalculation());
+                    if (!chargeCalculationType.isVoluntaryInsurance()) {
+                        throw new GeneralPlatformDomainRuleException("error.msg.loanproduct.voluntary.insurance.charge.invalid",
+                                "Loan charge must be of type Voluntary Insurance", voluntaryInsuranceId);
+                    }
+                    product.setVoluntaryInsuranceCharge(voluntaryInsuranceCharge);
+                } else {
+                    product.setVoluntaryInsuranceCharge(null);
+                }
+                changes.put(LoanProductConstants.IS_PURCHASE_CHARGE_PARAM_NAME, isPurchaseCharge);
+            }
 
             if (!changes.isEmpty()) {
                 product.validateLoanProductPreSave();

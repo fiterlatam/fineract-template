@@ -22,7 +22,6 @@ import jakarta.persistence.PersistenceException;
 import java.util.List;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.fineract.custom.portfolio.customcharge.data.CustomChargeTypeData;
 import org.apache.fineract.custom.portfolio.customcharge.domain.CustomChargeType;
 import org.apache.fineract.custom.portfolio.customcharge.domain.CustomChargeTypeRepository;
@@ -33,11 +32,9 @@ import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuilder;
 import org.apache.fineract.infrastructure.core.exception.PlatformDataIntegrityException;
-import org.apache.fineract.infrastructure.core.service.database.DatabaseSpecificSQLGenerator;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -46,37 +43,32 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class CustomChargeTypeReadWritePlatformServiceImpl implements CustomChargeTypeReadWritePlatformService {
 
-    private final JdbcTemplate jdbcTemplate;
-    private final DatabaseSpecificSQLGenerator sqlGenerator;
     private final CustomChargeTypeDataValidator validatorClass;
     private final PlatformSecurityContext context;
+    private final CustomChargeTypeRepository customChargeTypeRepository;
 
     @Autowired
-    public CustomChargeTypeReadWritePlatformServiceImpl(final JdbcTemplate jdbcTemplate, final DatabaseSpecificSQLGenerator sqlGenerator,
-            final CustomChargeTypeDataValidator validatorClass, final PlatformSecurityContext context) {
-        this.jdbcTemplate = jdbcTemplate;
-        this.sqlGenerator = sqlGenerator;
+    public CustomChargeTypeReadWritePlatformServiceImpl(final CustomChargeTypeDataValidator validatorClass,
+            final PlatformSecurityContext context, CustomChargeTypeRepository customChargeTypeRepository) {
         this.validatorClass = validatorClass;
         this.context = context;
+        this.customChargeTypeRepository = customChargeTypeRepository;
     }
-
-    @Autowired
-    private CustomChargeTypeRepository repository;
 
     @Override
     public List<CustomChargeTypeData> findAllActive() {
-        return CustomChargeTypeMapper.toDTO(repository.findAll());
+        return CustomChargeTypeMapper.toDTO(customChargeTypeRepository.findAll());
     }
 
     @Override
     public List<CustomChargeTypeData> findAllByEntityId(Long chargeEntityId) {
-        return CustomChargeTypeMapper.toDTO(repository.findByCustomChargeEntityId(chargeEntityId));
+        return CustomChargeTypeMapper.toDTO(this.customChargeTypeRepository.findByCustomChargeEntityId(chargeEntityId));
     }
 
     @Override
     public CustomChargeTypeData findById(Long id) {
-        Optional<CustomChargeType> entity = repository.findById(id);
-        if (!entity.isPresent()) {
+        Optional<CustomChargeType> entity = this.customChargeTypeRepository.findById(id);
+        if (entity.isEmpty()) {
             throw new CustomChargeTypeNotFoundException();
         }
         return CustomChargeTypeMapper.toDTO(entity.get());
@@ -85,20 +77,13 @@ public class CustomChargeTypeReadWritePlatformServiceImpl implements CustomCharg
     @Transactional
     @Override
     public CommandProcessingResult create(final JsonCommand command, final Long customChargeTypeId) {
-
         try {
             this.context.authenticatedUser();
-
             final CustomChargeType entity = this.validatorClass.validateForCreate(command.json(), customChargeTypeId);
-            repository.saveAndFlush(entity);
-
+            this.customChargeTypeRepository.saveAndFlush(entity);
             return new CommandProcessingResultBuilder().withEntityId(entity.getId()).build();
-        } catch (final JpaSystemException | DataIntegrityViolationException dve) {
-            handleDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
-            return CommandProcessingResult.empty();
-        } catch (final PersistenceException dve) {
-            Throwable throwable = ExceptionUtils.getRootCause(dve.getCause());
-            handleDataIntegrityIssues(command, throwable, dve);
+        } catch (final JpaSystemException | DataIntegrityViolationException | PersistenceException dve) {
+            handleDataIntegrityIssues();
             return CommandProcessingResult.empty();
         }
     }
@@ -107,47 +92,37 @@ public class CustomChargeTypeReadWritePlatformServiceImpl implements CustomCharg
     @Override
     public CommandProcessingResult delete(final Long id) {
         this.context.authenticatedUser();
-
-        Optional<CustomChargeType> entity = repository.findById(id);
+        final Optional<CustomChargeType> entity = this.customChargeTypeRepository.findById(id);
         if (entity.isPresent()) {
-            repository.delete(entity.get());
-            repository.flush();
+            this.customChargeTypeRepository.delete(entity.get());
+            this.customChargeTypeRepository.flush();
         } else {
             throw new CustomChargeTypeNotFoundException();
         }
-
         return new CommandProcessingResultBuilder().withEntityId(id).build();
     }
 
     @Transactional
     @Override
     public CommandProcessingResult update(final JsonCommand command, Long id) {
-
         try {
             this.context.authenticatedUser();
-
             final CustomChargeType entity = this.validatorClass.validateForUpdate(command.json());
-            Optional<CustomChargeType> dbEntity = repository.findById(id);
-
+            final Optional<CustomChargeType> dbEntity = this.customChargeTypeRepository.findById(id);
             if (dbEntity.isPresent()) {
                 entity.setId(id);
-                repository.save(entity);
+                this.customChargeTypeRepository.save(entity);
             } else {
                 throw new CustomChargeTypeNotFoundException();
             }
-
             return new CommandProcessingResultBuilder().withEntityId(entity.getId()).build();
-        } catch (final JpaSystemException | DataIntegrityViolationException dve) {
-            handleDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
-            return CommandProcessingResult.empty();
-        } catch (final PersistenceException dve) {
-            Throwable throwable = ExceptionUtils.getRootCause(dve.getCause());
-            handleDataIntegrityIssues(command, throwable, dve);
+        } catch (final JpaSystemException | DataIntegrityViolationException | PersistenceException dve) {
+            handleDataIntegrityIssues();
             return CommandProcessingResult.empty();
         }
     }
 
-    private void handleDataIntegrityIssues(final JsonCommand command, final Throwable realCause, final Exception dve) {
+    private void handleDataIntegrityIssues() {
         throw new PlatformDataIntegrityException("error.msg.customchargetype.unknown.data.integrity.issue",
                 "Unknown data integrity issue with resource.");
     }

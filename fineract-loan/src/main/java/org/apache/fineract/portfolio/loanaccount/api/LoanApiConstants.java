@@ -179,6 +179,7 @@ public interface LoanApiConstants {
     String CHANNEL_ID = "channelId";
     String CHANNEL_DESCRIPTION = "channelDescription";
     String POINT_OF_SALES_NAME = "pointOfSalesName";
-
     String CHANNEL_HASH = "channelHash";
+    String POINT_OF_SALE_CODE = "pointOfSaleCode";
+    String CLIENT_ID_NUMBER = "clientIdNumber";
 }
