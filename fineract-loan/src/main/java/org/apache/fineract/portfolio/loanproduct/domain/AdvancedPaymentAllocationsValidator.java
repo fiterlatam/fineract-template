@@ -57,19 +57,19 @@ public class AdvancedPaymentAllocationsValidator {
     }
 
     public void validatePairOfOrderAndPaymentAllocationType(List<Pair<Integer, PaymentAllocationType>> rules) {
-        if (rules.size() != 12) {
+        if (rules.size() != 21) {
             raiseValidationError("advanced-payment-strategy.each_payment_allocation_order.must.contain.12.entries",
-                    "Each provided payment allocation must contain exactly 12 allocation rules, but " + rules.size() + " were provided");
+                    "Each provided payment allocation must contain exactly 21 allocation rules, but " + rules.size() + " were provided");
         }
 
         List<PaymentAllocationType> deduped = rules.stream().map(Pair::getRight).distinct().toList();
-        if (deduped.size() != 12) {
+        if (deduped.size() != 21) {
             raiseValidationError("advanced-payment-strategy.must.not.have.duplicate.payment.allocation.rule",
                     "The list of provided payment allocation rules must not contain any duplicates");
         }
 
-        if (!Arrays.equals(IntStream.rangeClosed(1, 12).boxed().toArray(), rules.stream().map(Pair::getLeft).toArray())) {
-            raiseValidationError("advanced-payment-strategy.invalid.order", "The provided orders must be between 1 and 12");
+        if (!Arrays.equals(IntStream.rangeClosed(1, 21).boxed().toArray(), rules.stream().map(Pair::getLeft).toArray())) {
+            raiseValidationError("advanced-payment-strategy.invalid.order", "The provided orders must be between 1 and 21");
         }
     }
 

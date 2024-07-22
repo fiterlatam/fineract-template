@@ -213,9 +213,9 @@ class AdvancedPaymentAllocationsValidatorTest {
     }
 
     @NotNull
-    private static List<Pair<Integer, PaymentAllocationType>> createPaymentAllocationTypeList() {
+    private static List<Pair<Integer, AllocationType>> createPaymentAllocationTypeList() {
         AtomicInteger i = new AtomicInteger(1);
-        return EnumSet.allOf(PaymentAllocationType.class).stream().map(p -> Pair.of(i.getAndIncrement(), p)).toList();
+        return EnumSet.allOf(AllocationType.class).stream().map(p -> Pair.of(i.getAndIncrement(), p)).toList();
     }
 
     private void assertPlatformException(String expectedMessage, String expectedCode,

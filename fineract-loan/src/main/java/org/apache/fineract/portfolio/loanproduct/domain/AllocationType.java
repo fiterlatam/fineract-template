@@ -18,6 +18,7 @@
  */
 package org.apache.fineract.portfolio.loanproduct.domain;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import lombok.Getter;
@@ -31,11 +32,18 @@ public enum AllocationType {
     PENALTY("Penalty"), //
     FEE("Fee"), //
     PRINCIPAL("Principal"), //
-    INTEREST("Interest"); //
+    INTEREST("Interest"), //
+    FEES("Honorarios"), //
+    AVAL("Aval"), //
+    MANDATORY_INSURANCE("Mandatory Insurance"), VOLUNTARY_INSURANCE("Voluntary Insurance");
 
     private final String humanReadableName;
 
     public static List<EnumOptionData> getValuesAsEnumOptionDataList() {
-        return Arrays.stream(values()).map(v -> new EnumOptionData((long) (v.ordinal() + 1), v.name(), v.getHumanReadableName())).toList();
+        List<EnumOptionData> list = new ArrayList<>(Arrays.stream(values())
+                .map(v -> new EnumOptionData((long) (v.ordinal() + 1), v.name(), v.getHumanReadableName())).toList());
+        // Remove FEE enum from the list as it is split into FEES, AVAL, MANDATORY_INSURANCE and VOLUNTARY_INSURANCE.
+        list.removeIf(x -> x.getValue().equals("Fee"));
+        return list;
     }
 }
