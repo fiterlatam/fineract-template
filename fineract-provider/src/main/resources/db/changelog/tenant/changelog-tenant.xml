@@ -246,4 +246,5 @@
     <include file="parts/2024180701100985_SU_164_include_nit_in_parameters.xml" relativeToChangelogFile="true"/>
     <include file="parts/20241904011009100_SU_183_update_jobs_name.xml" relativeToChangelogFile="true"/>
     <include file="parts/20241904011009100_SU_164_create_report.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20241904011009100_SU_172_create_report.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
