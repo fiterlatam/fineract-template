@@ -26,14 +26,6 @@ import org.apache.fineract.custom.portfolio.buyprocess.domain.ClientBuyProcess;
 
 public class ClientBuyProcessMapper {
 
-    public static ClientBuyProcess toModel(ClientBuyProcessData dto) {
-        return ClientBuyProcess.builder().id(dto.getId()).channelId(dto.getChannelId()).clientId(dto.getClientId())
-                .pointOfSalesId(dto.getPointOfSalesId()).productId(dto.getProductId()).creditId(dto.getCreditId())
-                .requestedDate(dto.getRequestedDate()).amount(dto.getAmount()).term(dto.getTerm()).createdAt(dto.getCreatedAt())
-                .createdBy(dto.getCreatedBy()).ipDetails(dto.getIpDetails()).status(dto.getStatus()).errorMessage(dto.getErrorMessage())
-                .build();
-    }
-
     public static ClientBuyProcessData toDTO(ClientBuyProcess model) {
         return ClientBuyProcessData.builder().id(model.getId()).channelId(model.getChannelId()).clientId(model.getClientId())
                 .pointOfSalesId(model.getPointOfSalesId()).productId(model.getProductId()).creditId(model.getCreditId())
@@ -44,6 +36,6 @@ public class ClientBuyProcessMapper {
     }
 
     public static List<ClientBuyProcessData> toDTO(List<ClientBuyProcess> model) {
-        return model.stream().map(obj -> toDTO(obj)).collect(Collectors.toList());
+        return model.stream().map(ClientBuyProcessMapper::toDTO).collect(Collectors.toList());
     }
 }

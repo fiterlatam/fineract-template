@@ -49,4 +49,6 @@ public class CreateLoanPayloadData {
     private Integer graceOnInterestPayment;
     private Integer graceOnInterestCharged;
     private Integer interestRatePoints;
+    private String clientIdNumber;
+    private String pointOfSaleCode;
 }

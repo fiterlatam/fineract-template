@@ -407,9 +407,7 @@ public class LoanChargeAssembler {
         BigDecimal percentage = BigDecimal.ZERO;
         final List<CustomChargeEntityData> customChargeEntityDataList = this.customChargeService.findByIsExternalService(false);
         for (CustomChargeEntityData entity : customChargeEntityDataList) {
-            if ((entity.getName().equalsIgnoreCase("Insurance")
-                    && (type.isPercentageBasedMandatoryInsurance() || type.isCustomPercentageOfOutstandingPrincipalCharge()))
-                    || (entity.getName().equalsIgnoreCase("Term") && type.isTermCharge())) {
+            if (isAllowedChargeCalculationType(type, entity)) {
                 boolean useVipClientMapping = isVipClient(clientIdNumber);
                 boolean useCommercePointOfSaleMapping = isCommercePointOfSale(pointOfSaleCode);
                 final List<CustomChargeTypeData> customChargeTypeDataList = customChargeTypeService.findAllByEntityId(entity.getId());
@@ -451,6 +449,16 @@ public class LoanChargeAssembler {
             throw new CustomChargeTypeMapNotFoundException(type);
         }
         return percentage;
+    }
+
+    private boolean isAllowedChargeCalculationType(final ChargeCalculationType chargeCalculationType,
+            final CustomChargeEntityData customChargeEntityData) {
+        return (customChargeEntityData.getName().equalsIgnoreCase("Insurance")
+                && chargeCalculationType.isPercentageBasedMandatoryInsurance())
+                || (customChargeEntityData.getName().equalsIgnoreCase("Insurance")
+                        && chargeCalculationType.isCustomPercentageOfOutstandingPrincipalCharge())
+                || (customChargeEntityData.getName().equalsIgnoreCase("Insurance") && chargeCalculationType.isVoluntaryInsurance())
+                || (customChargeEntityData.getName().equalsIgnoreCase("Term") && chargeCalculationType.isTermCharge());
     }
 
     private BigDecimal calculateChargePercentageAmount(final List<CustomChargeTypeData> customChargeTypeDataList,
