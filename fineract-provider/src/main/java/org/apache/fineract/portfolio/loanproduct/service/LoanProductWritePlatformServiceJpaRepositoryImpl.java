@@ -207,6 +207,7 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
                     }
                     loanProduct.setVoluntaryInsuranceCharge(voluntaryInsuranceCharge);
                 }
+                loanProduct.setIsPurChaseCharge(isPurchaseCharge);
             }
 
             this.loanProductRepository.save(loanProduct);
@@ -469,6 +470,7 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
                 } else {
                     product.setVoluntaryInsuranceCharge(null);
                 }
+                product.setIsPurChaseCharge(isPurchaseCharge);
                 changes.put(LoanProductConstants.IS_PURCHASE_CHARGE_PARAM_NAME, isPurchaseCharge);
             }
 

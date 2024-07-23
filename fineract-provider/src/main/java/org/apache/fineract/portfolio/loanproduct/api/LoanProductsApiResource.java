@@ -415,7 +415,7 @@ public class LoanProductsApiResource {
             feeToGLAccountMappings = this.accountMappingReadPlatformService.fetchFeeToGLAccountMappingsForLoanProduct(productId);
             penaltyToGLAccountMappings = this.accountMappingReadPlatformService
                     .fetchPenaltyToIncomeAccountMappingsForLoanProduct(productId);
-            loanProduct = LoanProductData.withAccountingDetails(loanProduct, accountingMappings, paymentChannelToFundSourceMappings,
+            LoanProductData.withAccountingDetails(loanProduct, accountingMappings, paymentChannelToFundSourceMappings,
                     feeToGLAccountMappings, penaltyToGLAccountMappings);
         }
 
@@ -539,6 +539,8 @@ public class LoanProductsApiResource {
         final List<ChannelData> channelOptions = channelReadWritePlatformService.findBySearchParam(channelSearchParameters);
         ret.setChannelOptions(channelOptions);
         ret.setVoluntaryInsuranceOptions(voluntaryInsuranceOptions);
+        ret.setPurchaseCharge(productData.isPurchaseCharge());
+        ret.setVoluntaryInsuranceId(productData.getVoluntaryInsuranceId());
         return ret;
     }
 }

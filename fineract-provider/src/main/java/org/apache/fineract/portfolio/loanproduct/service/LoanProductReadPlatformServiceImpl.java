@@ -379,7 +379,9 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
                                 	lp.custom_allow_credit_note AS "customAllowCreditNote",
                                 	lp.custom_allow_debit_note AS "customAllowDebitNote",
                                 	lp.custom_allow_forgiveness AS "customAllowForgiveness",
-                                	lp.custom_allow_reversal_cancellation AS "customAllowReversalCancellation"
+                                	lp.custom_allow_reversal_cancellation AS "customAllowReversalCancellation",
+                                	lp.is_purchase_charge AS "isPurchaseCharge",
+                                	lp.voluntary_insurance_id AS "voluntaryInsuranceId"
                                 FROM m_product_loan lp
                                 JOIN m_currency curr ON curr.code = lp.currency_code
                                 LEFT JOIN m_fund f ON f.id = lp.fund_id
@@ -699,6 +701,11 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
                     .currentRate(interestCurrentRate).appliedOnDate(interestRateAppliedOnDate).active(InterestRateActive).build();
             loanProductData.setInterestRate(interestRateData);
             loanProductData.setGraceOnChargesPayment(graceOnChargesPayment);
+
+            final Long voluntaryInsuranceId = rs.getLong("voluntaryInsuranceId");
+            final boolean isPurchaseCharge = rs.getBoolean("isPurchaseCharge");
+            loanProductData.setVoluntaryInsuranceId(voluntaryInsuranceId);
+            loanProductData.setPurchaseCharge(isPurchaseCharge);
             return loanProductData;
         }
     }
