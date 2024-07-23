@@ -189,7 +189,8 @@ public final class LoanProductDataValidator {
             LoanProductConstants.CUSTOM_ALLOW_CREDIT_NOTE_PARAM_NAME, LoanProductConstants.CUSTOM_ALLOW_DEBIT_NOTE_PARAM_NAME,
             LoanProductConstants.CUSTOM_ALLOW_FORGIVENESS_PARAM_NAME, LoanProductConstants.CUSTOM_ALLOW_REVERSAL_OR_CANCELATION_PARAM_NAME,
             LoanProductConstants.CUSTOM_COLLECTION_SUBCHANNEL_LOAN_PRODUC_MAPPER_PARAM_NAME, LoanProductConstants.REQUIRE_POINT_PARAM_NAME,
-            LoanProductConstants.INTEREST_RATE_ID_PARAM_NAME, LoanProductConstants.REPAYMENT_CHANNELS_PARAM_NAME));
+            LoanProductConstants.INTEREST_RATE_ID_PARAM_NAME, LoanProductConstants.REPAYMENT_CHANNELS_PARAM_NAME,
+            LoanProductConstants.VOLUNTARY_INSURANCE_ID_PARAM_NAME, LoanProductConstants.IS_PURCHASE_CHARGE_PARAM_NAME));
 
     private static final Set<String> MAXIMUM_RATE_SUPPORTED_PARAMETERS = new HashSet<>(
             Arrays.asList("locale", "dateFormat", "eaRate", "annualNominalRate", "appliedBy", "appliedOnDate", "dailyNominalRate",
@@ -817,6 +818,17 @@ public final class LoanProductDataValidator {
                     .extractIntegerWithLocaleNamed(LoanProductConstants.MAX_CLIENT_INACTIVITY_PERIOD, element);
             baseDataValidator.reset().parameter(LoanProductConstants.MAX_CLIENT_INACTIVITY_PERIOD).value(maxClientInactivityPeriod)
                     .ignoreIfNull().integerGreaterThanZero();
+        }
+
+        if (this.fromApiJsonHelper.parameterExists(LoanProductConstants.IS_PURCHASE_CHARGE_PARAM_NAME, element)) {
+            final boolean isPurchaseCharge = this.fromApiJsonHelper.extractBooleanNamed(LoanProductConstants.IS_PURCHASE_CHARGE_PARAM_NAME,
+                    element);
+            if (isPurchaseCharge) {
+                final Long voluntaryInsuranceId = this.fromApiJsonHelper
+                        .extractLongNamed(LoanProductConstants.VOLUNTARY_INSURANCE_ID_PARAM_NAME, element);
+                baseDataValidator.reset().parameter(LoanProductConstants.VOLUNTARY_INSURANCE_ID_PARAM_NAME).value(voluntaryInsuranceId)
+                        .notNull();
+            }
         }
 
         throwExceptionIfValidationWarningsExist(dataValidationErrors);
@@ -1787,6 +1799,18 @@ public final class LoanProductDataValidator {
         baseDataValidator.reset().parameter(LoanProductConstants.PRODUCT_TYPE)
                 .value(this.fromApiJsonHelper.extractIntegerSansLocaleNamed(LoanProductConstants.PRODUCT_TYPE, element)).notNull()
                 .integerGreaterThanZero();
+
+        if (this.fromApiJsonHelper.parameterExists(LoanProductConstants.IS_PURCHASE_CHARGE_PARAM_NAME, element)) {
+            final boolean isPurchaseCharge = this.fromApiJsonHelper.extractBooleanNamed(LoanProductConstants.IS_PURCHASE_CHARGE_PARAM_NAME,
+                    element);
+            if (isPurchaseCharge) {
+                final Long voluntaryInsuranceId = this.fromApiJsonHelper
+                        .extractLongNamed(LoanProductConstants.VOLUNTARY_INSURANCE_ID_PARAM_NAME, element);
+                baseDataValidator.reset().parameter(LoanProductConstants.VOLUNTARY_INSURANCE_ID_PARAM_NAME).value(voluntaryInsuranceId)
+                        .notNull();
+            }
+        }
+
         throwExceptionIfValidationWarningsExist(dataValidationErrors);
     }
 

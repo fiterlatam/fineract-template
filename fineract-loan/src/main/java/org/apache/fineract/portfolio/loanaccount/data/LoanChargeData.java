@@ -97,6 +97,9 @@ public class LoanChargeData {
 
     private final ExternalId externalLoanId;
 
+    private Long codigoSeguro;
+    private Long cedulaSeguroVoluntario;
+
     public static LoanChargeData template(final Collection<ChargeData> chargeOptions) {
         return new LoanChargeData(null, null, null, null, null, null, null, null, chargeOptions, false, null, false, false, null,
                 ExternalId.empty(), null, null, null, null, ExternalId.empty());

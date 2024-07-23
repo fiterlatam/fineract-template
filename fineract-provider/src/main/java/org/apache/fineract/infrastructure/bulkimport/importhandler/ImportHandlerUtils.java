@@ -51,14 +51,25 @@ public final class ImportHandlerUtils {
     }
 
     public static Integer getNumberOfRows(Sheet sheet, int primaryColumn) {
-        Integer noOfEntries = 0;
-        // getLastRowNum and getPhysicalNumberOfRows showing false values
-        // sometimes
-        while (sheet.getRow(noOfEntries + 1) != null && sheet.getRow(noOfEntries + 1).getCell(primaryColumn) != null) {
+        int noOfEntries = 0;
+        while (sheet.getRow(noOfEntries + 1) != null && isCellNotEmpty(sheet.getRow(noOfEntries + 1).getCell(primaryColumn))) {
             noOfEntries++;
         }
-
         return noOfEntries;
+    }
+
+    public static boolean isCellNotEmpty(Cell cell) {
+        if (cell == null) {
+            return false;
+        }
+        final CellType cellType = cell.getCellType();
+        if (CellType.BLANK.equals(cellType)) {
+            return false;
+        } else if (CellType.STRING.equals(cellType)) {
+            return !cell.getStringCellValue().trim().isEmpty();
+        } else {
+            return true;
+        }
     }
 
     public static boolean isNotImported(Row row, int statusColumn) {
