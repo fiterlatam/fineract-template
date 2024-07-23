@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.infrastructure.bulkimport.importhandler.clientvip;
+package org.apache.fineract.infrastructure.bulkimport.importhandler.commercepointofsale;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
@@ -25,12 +25,12 @@ import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.fineract.infrastructure.bulkimport.constants.ClientVipConstants;
+import org.apache.fineract.infrastructure.bulkimport.constants.CommercePointOfSaleConstants;
 import org.apache.fineract.infrastructure.bulkimport.constants.TemplatePopulateImportConstants;
 import org.apache.fineract.infrastructure.bulkimport.data.Count;
 import org.apache.fineract.infrastructure.bulkimport.importhandler.ImportHandler;
 import org.apache.fineract.infrastructure.bulkimport.importhandler.ImportHandlerUtils;
-import org.apache.fineract.portfolio.client.data.ClientData;
+import org.apache.fineract.portfolio.client.data.PointOfSalesData;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.CellValue;
@@ -41,80 +41,87 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 @Service
 @AllArgsConstructor
 @Slf4j
-public class ClientVipImportHandler implements ImportHandler {
+public class CommercePointOfSaleImportHandler implements ImportHandler {
 
-    private static final Logger LOG = LoggerFactory.getLogger(ClientVipImportHandler.class);
     private final JdbcTemplate jdbcTemplate;
+    private static final Logger LOG = LoggerFactory.getLogger(CommercePointOfSaleImportHandler.class);
 
     @Override
     public Count process(final Workbook workbook, final String locale, final String dateFormat, Map<String, Object> importAttribute) {
-        List<ClientData> clients = readExcelFile(workbook);
-        return importEntity(workbook, clients);
+        final List<PointOfSalesData> pointOfSalesDataList = readExcelFile(workbook);
+        return importEntity(workbook, pointOfSalesDataList);
     }
 
-    public List<ClientData> readExcelFile(final Workbook workbook) {
-        List<ClientData> clients = new ArrayList<>();
-        Sheet clientVipSheet = workbook.getSheet(TemplatePopulateImportConstants.CLIENT_VIP_SHEET_NAME);
-        Integer noOfEntries = ImportHandlerUtils.getNumberOfRows(clientVipSheet, 0);
+    public List<PointOfSalesData> readExcelFile(final Workbook workbook) {
+        final List<PointOfSalesData> pointOfSalesDataList = new ArrayList<>();
+        final Sheet commercePointOfSaleSheet = workbook.getSheet(TemplatePopulateImportConstants.COMMERCE_POINT_OF_SALE_SHEET_NAME);
+        final Integer noOfEntries = ImportHandlerUtils.getNumberOfRows(commercePointOfSaleSheet, 0);
         for (int rowIndex = 1; rowIndex <= noOfEntries; rowIndex++) {
-            Row row;
-            row = clientVipSheet.getRow(rowIndex);
-            if (ImportHandlerUtils.isNotImported(row, ClientVipConstants.STATUS_COL)) {
-                clients.add(readClient(row, rowIndex));
+            final Row row = commercePointOfSaleSheet.getRow(rowIndex);
+            if (ImportHandlerUtils.isNotImported(row, CommercePointOfSaleConstants.STATUS_COL)) {
+                pointOfSalesDataList.add(readPointOfSale(row, rowIndex));
             }
         }
-        return clients;
+        return pointOfSalesDataList;
     }
 
-    private ClientData readClient(final Row row, final Integer rowIndex) {
-        final String idNumber = readStringSpecial(row);
-        final ClientData clientData = new ClientData();
-        clientData.setIdNumber(idNumber);
-        clientData.setRowIndex(rowIndex);
-        return clientData;
+    private PointOfSalesData readPointOfSale(final Row row, final Integer rowIndex) {
+        final String code = readStringSpecial(row);
+        return PointOfSalesData.instance(code, rowIndex);
     }
 
-    public Count importEntity(final Workbook workbook, List<ClientData> clients) {
-        final Sheet clientVipSheet = workbook.getSheet(TemplatePopulateImportConstants.CLIENT_VIP_SHEET_NAME);
+    public Count importEntity(final Workbook workbook, List<PointOfSalesData> pointOfSalesDataList) {
+        final Sheet commercePointOfSaleSheet = workbook.getSheet(TemplatePopulateImportConstants.COMMERCE_POINT_OF_SALE_SHEET_NAME);
         int successCount = 0;
         int errorCount = 0;
-        if (clients != null) {
-            clients = clients.stream().filter(client -> client.getIdNumber() != null).toList();
-            successCount = clients.size();
-            this.jdbcTemplate.execute("TRUNCATE TABLE custom.c_vip_client RESTART IDENTITY CASCADE ");
-            String sql = "INSERT INTO custom.c_vip_client (client_id) VALUES (?) ON CONFLICT (client_id) DO NOTHING ";
-            for (final ClientData clientData : clients) {
+        if (pointOfSalesDataList != null) {
+            pointOfSalesDataList = pointOfSalesDataList.stream().filter(pos -> pos.getCode() != null).toList();
+            this.jdbcTemplate.execute("TRUNCATE TABLE custom.c_commerce_point_of_sale RESTART IDENTITY CASCADE ");
+            final String sql = "INSERT INTO custom.c_commerce_point_of_sale (point_of_sale_code) VALUES (?) ON CONFLICT (point_of_sale_code) DO NOTHING ";
+            for (final PointOfSalesData pointOfSalesData : pointOfSalesDataList) {
                 String errorMessage;
                 try {
-                    this.jdbcTemplate.update(sql, clientData.getIdNumber());
+                    this.jdbcTemplate.update(sql, pointOfSalesData.getCode());
                     successCount++;
-                    Cell statusCell = clientVipSheet.getRow(clientData.getRowIndex()).createCell(ClientVipConstants.STATUS_COL);
+                    Cell statusCell = commercePointOfSaleSheet.getRow(pointOfSalesData.getRowIndex())
+                            .createCell(CommercePointOfSaleConstants.STATUS_COL);
                     statusCell.setCellValue(TemplatePopulateImportConstants.STATUS_CELL_IMPORTED);
                     statusCell.setCellStyle(ImportHandlerUtils.getCellStyle(workbook, IndexedColors.LIGHT_GREEN));
+                } catch (DataIntegrityViolationException ex) {
+                    errorCount++;
+                    LOG.error("Problem occurred in importEntity function", ex);
+                    if (ex.getMessage().contains("ERROR: value too long for type character varying(6)")) {
+                        errorMessage = "El código del punto de venta es demasiado largo (6)";
+                    } else {
+                        errorMessage = ImportHandlerUtils.getErrorMessage(ex);
+                    }
+                    ImportHandlerUtils.writeErrorMessage(commercePointOfSaleSheet, pointOfSalesData.getRowIndex(), errorMessage,
+                            CommercePointOfSaleConstants.STATUS_COL);
                 } catch (RuntimeException ex) {
                     errorCount++;
                     LOG.error("Problem occurred in importEntity function", ex);
                     errorMessage = ImportHandlerUtils.getErrorMessage(ex);
-                    ImportHandlerUtils.writeErrorMessage(clientVipSheet, clientData.getRowIndex(), errorMessage,
-                            ClientVipConstants.STATUS_COL);
+                    ImportHandlerUtils.writeErrorMessage(commercePointOfSaleSheet, pointOfSalesData.getRowIndex(), errorMessage,
+                            CommercePointOfSaleConstants.STATUS_COL);
                 }
             }
         }
-        clientVipSheet.setColumnWidth(ClientVipConstants.STATUS_COL, TemplatePopulateImportConstants.SMALL_COL_SIZE);
-        ImportHandlerUtils.writeString(ClientVipConstants.STATUS_COL,
-                clientVipSheet.getRow(TemplatePopulateImportConstants.ROWHEADER_INDEX),
+        commercePointOfSaleSheet.setColumnWidth(CommercePointOfSaleConstants.STATUS_COL, TemplatePopulateImportConstants.SMALL_COL_SIZE);
+        ImportHandlerUtils.writeString(CommercePointOfSaleConstants.STATUS_COL,
+                commercePointOfSaleSheet.getRow(TemplatePopulateImportConstants.ROWHEADER_INDEX),
                 TemplatePopulateImportConstants.STATUS_COLUMN_HEADER);
         return Count.instance(successCount, errorCount);
     }
 
     private String readStringSpecial(final Row row) {
-        Cell c = row.getCell(ClientVipConstants.ID_NUMBER_COL);
+        Cell c = row.getCell(CommercePointOfSaleConstants.POINT_OF_SALE_CODE);
         if (c == null || c.getCellType() == CellType.BLANK) {
             return null;
         }

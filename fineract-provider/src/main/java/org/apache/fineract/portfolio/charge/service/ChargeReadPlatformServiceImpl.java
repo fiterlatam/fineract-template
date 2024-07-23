@@ -108,6 +108,15 @@ public class ChargeReadPlatformServiceImpl implements ChargeReadPlatformService 
     }
 
     @Override
+    public Collection<ChargeData> retrieveChargesByInsuranceCode(Long insuranceCode) {
+        final ChargeMapper rm = new ChargeMapper();
+        String sql = "select " + rm.chargeSchema()
+                + " where c.is_deleted = false and c.insurance_code = ? and c.charge_applies_to_enum = 1 ";
+        sql += " order by c.name ";
+        return this.jdbcTemplate.query(sql, rm, new Object[] { insuranceCode });
+    }
+
+    @Override
     public ChargeData retrieveCharge(final Long chargeId) {
         try {
             final ChargeMapper rm = new ChargeMapper();

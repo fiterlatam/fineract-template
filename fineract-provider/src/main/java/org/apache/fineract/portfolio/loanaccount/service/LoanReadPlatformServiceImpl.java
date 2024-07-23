@@ -838,6 +838,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                         cch.name AS channel_name,
                         cch.id AS channel_id,
                         cch.description AS channel_description,
+                        cch.cedula_seguro_voluntario AS cedulaSeguroVoluntario,
+                        cch.codigo_seguro AS codigoSeguro,
                         pos.name AS point_of_sales_name,
                         pos.code AS point_of_sales_code
                     FROM
@@ -866,6 +868,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                         LEFT JOIN m_blocking_reason_setting brs ON brs.id = l.block_status_id
                         LEFT JOIN (WITH cte AS (SELECT c.*,
                                                       lpc.loan_id,
+                                                      lpc.cedula_seguro_voluntario,
+                                                      lpc.codigo_seguro
                                                       ROW_NUMBER() OVER (PARTITION BY lpc.loan_id ORDER BY c.id) AS rn
                                                FROM  custom.c_client_buy_process lpc
                                                         JOIN custom.c_channel c ON lpc.channel_id = c.id)
@@ -1253,6 +1257,10 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
             final Long interestRatePoints = JdbcSupport.getLong(rs, "interestRatePoints");
             basicLoanDetails.setInterestRatePoints(interestRatePoints);
 
+            final Long codigoSeguro = JdbcSupport.getLong(rs, "codigoSeguro");
+            final Long cedulaSeguroVoluntario = JdbcSupport.getLong(rs, "cedulaSeguroVoluntario");
+            basicLoanDetails.setCodigoSeguro(codigoSeguro);
+            basicLoanDetails.setCedulaSeguroVoluntario(cedulaSeguroVoluntario);
             return basicLoanDetails;
 
         }
@@ -1756,14 +1764,14 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
 
     @Override
     public LoanAccountData retrieveClientDetailsTemplate(final Long clientId) {
-
         this.context.authenticatedUser();
-
         final ClientData clientAccount = this.clientReadPlatformService.retrieveOne(clientId);
         final LocalDate expectedDisbursementDate = DateUtils.getBusinessLocalDate();
+        final LoanAccountData loanAccountData = LoanAccountData.clientDefaults(clientAccount.getId(), clientAccount.getAccountNo(),
+                clientAccount.getDisplayName(), clientAccount.getOfficeId(), clientAccount.getExternalId(), expectedDisbursementDate);
+        loanAccountData.setClientIdNumber(clientAccount.getIdNumber());
+        return loanAccountData;
 
-        return LoanAccountData.clientDefaults(clientAccount.getId(), clientAccount.getAccountNo(), clientAccount.getDisplayName(),
-                clientAccount.getOfficeId(), clientAccount.getExternalId(), expectedDisbursementDate);
     }
 
     @Override

@@ -174,6 +174,8 @@ public interface LoanProductConstants {
     String INTEREST_RATE_ID_PARAM_NAME = "interestRateId";
     String REPAYMENT_CHANNELS_PARAM_NAME = "repaymentChannels";
     String REQUIRE_POINT_PARAM_NAME = "requirePoints";
+    String VOLUNTARY_INSURANCE_ID_PARAM_NAME = "voluntaryInsuranceId";
+    String IS_PURCHASE_CHARGE_PARAM_NAME = "isPurchaseCharge";
 
     String PRODUCT_TYPES_THAT_BLOCK_CREDIT = LoanProductType.SUMAS_PAY.getCode();
 

@@ -333,6 +333,7 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
                 advanceCupoBalance = advanceCupo.subtract(advanceOutstandingPrincipalAmount);
             }
             clientData.setAdvanceCupoBalance(advanceCupoBalance);
+            clientData.setIdNumber(ObjectUtils.defaultIfNull(loanAdditionalFieldsData.getNit(), loanAdditionalFieldsData.getCedula()));
             return clientData;
 
         } catch (final EmptyResultDataAccessException e) {
