@@ -19,11 +19,16 @@
 package org.apache.fineract.custom.portfolio.customcharge.exception;
 
 import org.apache.fineract.infrastructure.core.exception.AbstractPlatformResourceNotFoundException;
+import org.apache.fineract.portfolio.charge.domain.ChargeCalculationType;
 
 public class CustomChargeTypeMapNotFoundException extends AbstractPlatformResourceNotFoundException {
 
     public CustomChargeTypeMapNotFoundException() {
         super("error.msg.customchargetypemap.id.invalid", "CustomChargeTypeMap does not exist");
+    }
+
+    public CustomChargeTypeMapNotFoundException(final ChargeCalculationType chargeCalculationType) {
+        super("error.msg.customchargetypemap.id.invalid", "CustomChargeTypeMap does not exist", chargeCalculationType.getCode());
     }
 
     public CustomChargeTypeMapNotFoundException(String errorCode) {

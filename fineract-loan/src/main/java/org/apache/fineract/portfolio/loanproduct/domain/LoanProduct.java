@@ -301,6 +301,17 @@ public class LoanProduct extends AbstractPersistableCustom {
     @JoinTable(name = "m_loan_product_channel", joinColumns = @JoinColumn(name = "loan_product_id"), inverseJoinColumns = @JoinColumn(name = "channel_id"))
     private List<Channel> repaymentChannels;
 
+    @Getter
+    @Setter
+    @Column(name = "is_purchase_charge")
+    private Boolean isPurChaseCharge;
+
+    @Getter
+    @Setter
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "voluntary_insurance_id")
+    private Charge voluntaryInsuranceCharge;
+
     public static LoanProduct assembleFromJson(final Fund fund, final String loanTransactionProcessingStrategy,
             final List<Charge> productCharges, final JsonCommand command, FloatingRate floatingRate, final List<Rate> productRates,
             List<LoanProductPaymentAllocationRule> loanProductPaymentAllocationRules,

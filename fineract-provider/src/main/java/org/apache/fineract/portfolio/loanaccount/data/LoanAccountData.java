@@ -78,6 +78,8 @@ public class LoanAccountData {
     // related to
     private Long clientId;
     private String clientAccountNo;
+    private String clientIdNumber;
+    private String pointOfSaleCode;
     private String clientName;
     private ExternalId clientExternalId;
     private Long clientOfficeId;
@@ -279,6 +281,10 @@ public class LoanAccountData {
     private String pointOfSalesName;
     private String pointOfSalesCode;
 
+    private Long codigoSeguro;
+    private Long cedulaSeguroVoluntario;
+    private LoanChargeData voluntaryInsurance;
+
     public static LoanAccountData importInstanceIndividual(EnumOptionData loanTypeEnumOption, Long clientId, Long productId,
             Long loanOfficerId, LocalDate submittedOnDate, Long fundId, BigDecimal principal, Integer numberOfRepayments,
             Integer repaymentEvery, EnumOptionData repaidEveryFrequencyEnums, Integer loanTermFrequency,
@@ -409,7 +415,7 @@ public class LoanAccountData {
                 .setFraud(acc.fraud).setOverpaidOnDate(acc.overpaidOnDate).setChargedOff(acc.chargedOff)
                 .setLoanScheduleType(acc.loanScheduleType).setLoanScheduleProcessingType(acc.loanScheduleProcessingType)
                 .setLoanScheduleTypeOptions(acc.loanScheduleTypeOptions)
-                .setLoanScheduleProcessingTypeOptions(acc.loanScheduleProcessingTypeOptions);
+                .setLoanScheduleProcessingTypeOptions(acc.loanScheduleProcessingTypeOptions).setClientIdNumber(clientAcc.clientIdNumber);
     }
 
     /**
@@ -746,8 +752,8 @@ public class LoanAccountData {
     public static LoanAccountData associationsAndTemplate(final LoanAccountData acc, final LoanScheduleData repaymentSchedule,
             final Collection<LoanTransactionData> transactions, final Collection<LoanChargeData> charges,
             final Collection<LoanCollateralManagementData> collateral, final Collection<GuarantorData> guarantors,
-            final CalendarData calendarData, final Collection<LoanProductData> productOptions,
-            final Collection<EnumOptionData> termFrequencyTypeOptions, final Collection<EnumOptionData> repaymentFrequencyTypeOptions,
+            final Collection<LoanProductData> productOptions, final Collection<EnumOptionData> termFrequencyTypeOptions,
+            final Collection<EnumOptionData> repaymentFrequencyTypeOptions,
             final Collection<EnumOptionData> repaymentFrequencyNthDayTypeOptions,
             final Collection<EnumOptionData> repaymentFrequencyDayOfWeekTypeOptions,
             final Collection<TransactionProcessingStrategyData> transactionProcessingStrategyOptions,
@@ -830,15 +836,15 @@ public class LoanAccountData {
                 .setLoanScheduleProcessingType(acc.loanScheduleProcessingType).setLoanScheduleTypeOptions(loanScheduleTypeOptions)
                 .setChannelName(acc.channelName).setChannelDescription(acc.channelDescription).setChannelId(acc.channelId)
                 .setPointOfSalesName(acc.pointOfSalesName).setLoanScheduleProcessingTypeOptions(loanScheduleProcessingTypeOptions)
-                .setBlockStatus(acc.blockStatus).setPointOfSalesCode(acc.pointOfSalesCode);
+                .setBlockStatus(acc.blockStatus).setPointOfSalesCode(acc.pointOfSalesCode).setCodigoSeguro(acc.codigoSeguro)
+                .setCedulaSeguroVoluntario(acc.cedulaSeguroVoluntario);
     }
 
     public static LoanAccountData associationsAndTemplate(final LoanAccountData acc, final Collection<LoanProductData> productOptions,
             final Collection<StaffData> allowedLoanOfficers, final Collection<CalendarData> calendarOptions,
             final Collection<PortfolioAccountData> accountLinkingOptions, final Boolean isRatesEnabled) {
-
-        return associationsAndTemplate(acc, acc.repaymentSchedule, acc.transactions, acc.charges, acc.collateral, acc.guarantors,
-                acc.meeting, productOptions, acc.termFrequencyTypeOptions, acc.repaymentFrequencyTypeOptions,
+        final LoanAccountData loanAccountData = associationsAndTemplate(acc, acc.repaymentSchedule, acc.transactions, acc.charges,
+                acc.collateral, acc.guarantors, productOptions, acc.termFrequencyTypeOptions, acc.repaymentFrequencyTypeOptions,
                 acc.repaymentFrequencyNthDayTypeOptions, acc.repaymentFrequencyDaysOfWeekTypeOptions,
                 acc.transactionProcessingStrategyOptions, acc.interestRateFrequencyTypeOptions, acc.amortizationTypeOptions,
                 acc.interestTypeOptions, acc.interestCalculationPeriodTypeOptions, acc.fundOptions, acc.chargeOptions, null,
@@ -846,6 +852,8 @@ public class LoanAccountData {
                 acc.linkedAccount, acc.disbursementDetails, acc.emiAmountVariations, acc.overdueCharges, acc.paidInAdvance,
                 acc.interestRatesPeriods, acc.clientActiveLoanOptions, acc.rates, isRatesEnabled, acc.delinquent,
                 acc.loanScheduleTypeOptions, acc.loanScheduleProcessingTypeOptions);
+        loanAccountData.setClientIdNumber(acc.getClientIdNumber());
+        return loanAccountData;
     }
 
     public static LoanAccountData associateGroup(final LoanAccountData acc, final GroupGeneralData group) {

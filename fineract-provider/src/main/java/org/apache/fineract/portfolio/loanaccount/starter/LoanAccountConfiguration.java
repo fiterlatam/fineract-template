@@ -296,9 +296,9 @@ public class LoanAccountConfiguration {
             LoanProductRepository loanProductRepository, ExternalIdFactory externalIdFactory,
             CustomChargeEntityReadWritePlatformService customChargeService,
             CustomChargeTypeReadWritePlatformService customChargeTypeService,
-            CustomChargeTypeMapReadWritePlatformService customChargeTypeMapService) {
+            CustomChargeTypeMapReadWritePlatformService customChargeTypeMapService, JdbcTemplate jdbcTemplate) {
         return new LoanChargeAssembler(fromApiJsonHelper, chargeRepository, loanChargeRepository, loanProductRepository, externalIdFactory,
-                customChargeService, customChargeTypeService, customChargeTypeMapService);
+                customChargeService, customChargeTypeService, customChargeTypeMapService, jdbcTemplate);
     }
 
     @Bean
