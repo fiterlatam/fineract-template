@@ -97,9 +97,11 @@ public class CustomChargeTypeMapReadWritePlatformServiceImpl implements CustomCh
     @Override
     public List<PointOfSalesData> retrievePointOfSales() {
         final String pointOfSaleSQL = """
-                  SELECT ccapos.id, ccapos.name, ccapos.code
-                  FROM custom.c_commerce_point_sale ccps
-                  INNER JOIN custom.c_client_ally_point_of_sales ccapos ON ccapos.id = ccps.point_of_sales_id
+                    SELECT ccpos.id AS id,
+                    ccpos.point_of_sale_code AS code,
+                    ccapos.name AS name
+                    FROM custom.c_commerce_point_of_sale ccpos
+                    LEFT JOIN custom.c_client_ally_point_of_sales ccapos ON ccapos.code = ccpos.point_of_sale_code
                 """;
         return jdbcTemplate.query(pointOfSaleSQL, resultSet -> {
             List<PointOfSalesData> pointOfSalesDataList = new ArrayList<>();
@@ -117,13 +119,15 @@ public class CustomChargeTypeMapReadWritePlatformServiceImpl implements CustomCh
     @Override
     public List<ClientData> retrieveClients() {
         final String pointOfSaleSQL = """
-                  SELECT cvc.client_id AS clientId,
-                    COALESCE(mce.display_name, mcp.display_name) AS displayName
+                 SELECT
+                    cvc.client_id AS "clientId",
+                    cce."NIT",
+                    ccp."Cedula",
+                    mc.display_name AS "displayName"
                   FROM custom.c_vip_client cvc
                   LEFT JOIN campos_cliente_empresas cce ON cce."NIT" = cvc.client_id
                   LEFT JOIN campos_cliente_persona ccp ON ccp."Cedula" = cvc.client_id
-                  LEFT JOIN m_client mce ON mce.id = cce.client_id
-                  LEFT JOIN m_client mcp ON mcp.id = cce.client_id
+                  LEFT JOIN m_client mc ON (mc.id = cce.client_id OR mc.id = ccp.client_id)
                 """;
         return jdbcTemplate.query(pointOfSaleSQL, resultSet -> {
             List<ClientData> clientDataList = new ArrayList<>();

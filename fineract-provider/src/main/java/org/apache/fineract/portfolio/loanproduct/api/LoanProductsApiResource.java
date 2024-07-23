@@ -78,6 +78,7 @@ import org.apache.fineract.organisation.workingdays.domain.WorkingDays;
 import org.apache.fineract.organisation.workingdays.domain.WorkingDaysRepositoryWrapper;
 import org.apache.fineract.organisation.workingdays.service.WorkingDaysReadPlatformService;
 import org.apache.fineract.portfolio.charge.data.ChargeData;
+import org.apache.fineract.portfolio.charge.domain.ChargeCalculationType;
 import org.apache.fineract.portfolio.charge.service.ChargeReadPlatformService;
 import org.apache.fineract.portfolio.common.service.DropdownReadPlatformService;
 import org.apache.fineract.portfolio.delinquency.data.DelinquencyBucketData;
@@ -429,8 +430,13 @@ public class LoanProductsApiResource {
     }
 
     private LoanProductData handleTemplate(final LoanProductData productData) {
-
         Collection<ChargeData> chargeOptions = this.chargeReadPlatformService.retrieveLoanApplicableFees();
+        final List<ChargeData> voluntaryInsuranceOptions = chargeOptions.stream().filter(chargeData -> {
+            final EnumOptionData chargeCalculationTypeEnumOption = chargeData.getChargeCalculationType();
+            final ChargeCalculationType chargeCalculationType = ChargeCalculationType
+                    .fromInt(chargeCalculationTypeEnumOption.getId().intValue());
+            return chargeCalculationType.isVoluntaryInsurance();
+        }).toList();
         if (chargeOptions.isEmpty()) {
             chargeOptions = null;
         }
@@ -532,6 +538,7 @@ public class LoanProductsApiResource {
                 .active(true).build();
         final List<ChannelData> channelOptions = channelReadWritePlatformService.findBySearchParam(channelSearchParameters);
         ret.setChannelOptions(channelOptions);
+        ret.setVoluntaryInsuranceOptions(voluntaryInsuranceOptions);
         return ret;
     }
 }

@@ -102,4 +102,38 @@
         </createTable>
     </changeSet>
 
+    <changeSet id="7" author="fineract">
+        <addUniqueConstraint schemaName="custom" columnNames="client_id" constraintName="client_id_org" tableName="c_vip_client"/>
+    </changeSet>
+
+    <changeSet id="8" author="fineract">
+        <dropTable schemaName= "custom" tableName="c_commerce_point_sale"/>
+        <createTable tableName="c_commerce_point_of_sale" schemaName="custom">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="point_of_sale_code" type="VARCHAR(6)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addUniqueConstraint schemaName="custom" columnNames="point_of_sale_code" constraintName="point_of_sale_code_org" tableName="c_commerce_point_of_sale"/>
+    </changeSet>
+
+    <changeSet author="fineract" id="9">
+        <addColumn tableName="m_product_loan">
+            <column name="is_purchase_charge" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+
+    <changeSet author="fineract" id="10">
+        <addColumn tableName="m_product_loan">
+            <column name="voluntary_insurance_id" type="BIGINT">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
 </databaseChangeLog>

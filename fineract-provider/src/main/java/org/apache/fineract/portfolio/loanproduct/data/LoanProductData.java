@@ -285,6 +285,8 @@ public class LoanProductData implements Serializable {
     @Setter
     private List<ChannelData> repaymentChannels;
 
+    private List<ChargeData> voluntaryInsuranceOptions;
+
     /**
      * Used when returning lookup information about loan product for dropdowns.
      */
