@@ -315,7 +315,7 @@ public class CashBasedAccountingProcessorForLoan implements AccountingProcessorF
         if (totalDebitAmount.compareTo(BigDecimal.ZERO) > 0) {
             Long chargeId = loanTransactionDTO.getLoanChargeData().getChargeId();
             Integer accountMappingTypeId;
-            if (loanTransactionDTO.getLoanChargeData().isPenalty()) {
+            if (loanTransactionDTO.getLoanChargeData().getPenalty()) {
                 accountMappingTypeId = CashAccountsForLoan.INCOME_FROM_PENALTIES.getValue();
             } else {
                 accountMappingTypeId = CashAccountsForLoan.INCOME_FROM_FEES.getValue();
@@ -414,7 +414,7 @@ public class CashBasedAccountingProcessorForLoan implements AccountingProcessorF
         if (totalDebitAmount.compareTo(BigDecimal.ZERO) > 0) {
             Long chargeId = loanTransactionDTO.getLoanChargeData().getChargeId();
             Integer accountMappingTypeId;
-            if (loanTransactionDTO.getLoanChargeData().isPenalty()) {
+            if (loanTransactionDTO.getLoanChargeData().getPenalty()) {
                 accountMappingTypeId = CashAccountsForLoan.INCOME_FROM_PENALTIES.getValue();
             } else {
                 accountMappingTypeId = CashAccountsForLoan.INCOME_FROM_FEES.getValue();
