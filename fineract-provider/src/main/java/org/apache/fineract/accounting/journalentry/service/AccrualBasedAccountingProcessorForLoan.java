@@ -299,7 +299,7 @@ public class AccrualBasedAccountingProcessorForLoan implements AccountingProcess
         if (totalDebitAmount.compareTo(BigDecimal.ZERO) > 0) {
             Long chargeId = loanTransactionDTO.getLoanChargeData().getChargeId();
             Integer accountMappingTypeId;
-            if (loanTransactionDTO.getLoanChargeData().isPenalty()) {
+            if (loanTransactionDTO.getLoanChargeData().getPenalty()) {
                 accountMappingTypeId = AccrualAccountsForLoan.INCOME_FROM_PENALTIES.getValue();
             } else {
                 accountMappingTypeId = AccrualAccountsForLoan.INCOME_FROM_FEES.getValue();
@@ -398,7 +398,7 @@ public class AccrualBasedAccountingProcessorForLoan implements AccountingProcess
         if (totalDebitAmount.compareTo(BigDecimal.ZERO) > 0) {
             Long chargeId = loanTransactionDTO.getLoanChargeData().getChargeId();
             Integer accountMappingTypeId;
-            if (loanTransactionDTO.getLoanChargeData().isPenalty()) {
+            if (loanTransactionDTO.getLoanChargeData().getPenalty()) {
                 accountMappingTypeId = AccrualAccountsForLoan.INCOME_FROM_PENALTIES.getValue();
             } else {
                 accountMappingTypeId = AccrualAccountsForLoan.INCOME_FROM_FEES.getValue();

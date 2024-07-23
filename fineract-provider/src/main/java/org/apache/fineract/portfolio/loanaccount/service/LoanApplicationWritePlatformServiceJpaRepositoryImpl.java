@@ -149,11 +149,13 @@ import org.apache.fineract.portfolio.savings.service.GSIMReadPlatformService;
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.orm.jpa.JpaSystemException;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
 @Slf4j
 @RequiredArgsConstructor
+@Service
 public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements LoanApplicationWritePlatformService {
 
     private final PlatformSecurityContext context;
