@@ -869,7 +869,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                         LEFT JOIN (WITH cte AS (SELECT c.*,
                                                       lpc.loan_id,
                                                       lpc.cedula_seguro_voluntario,
-                                                      lpc.codigo_seguro
+                                                      lpc.codigo_seguro,
                                                       ROW_NUMBER() OVER (PARTITION BY lpc.loan_id ORDER BY c.id) AS rn
                                                FROM  custom.c_client_buy_process lpc
                                                         JOIN custom.c_channel c ON lpc.channel_id = c.id)
