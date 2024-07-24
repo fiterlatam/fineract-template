@@ -35,7 +35,7 @@ public class AllyPurchaseSettlmentReadWritePlatformServiceImpl implements AllyPu
     private static final class ClientAllyPointOfSalesPurchaseRowMapper implements RowMapper<ClientAllyPointOfSalesCollectionData> {
 
         public String schema() {
-            return " cca.last_job_run as lastJobsRun, ccbp.requested_date as collectionDate, cca.nit as nit , cca.company_name as allyName,"
+            return " ccbp.id as transId,cca.last_job_run as lastJobsRun, ccbp.requested_date as collectionDate, cca.nit as nit , cca.company_name as allyName,"
                     + " ccapos.client_ally_id as clientAllyId, ccapos.id as pointofsalesid, ccapos.\"name\"  as pointOfSalesName,"
                     + " ccapos.code as pointOfSalesCode , ccapos.city_id, ccbp.amount, ccapos.settled_comission as settledComission,"
                     + " tax_profile_id, ccbp.channel_id , ccbp.loan_id ,ccbp.client_id, cca.liquidation_frequency_id as liquidationFrequencyId, ml.loan_status_id as loanStatusId "
@@ -53,7 +53,8 @@ public class AllyPurchaseSettlmentReadWritePlatformServiceImpl implements AllyPu
                     .pointOfSalesName(rs.getString("pointOfSalesName")).amount(rs.getBigDecimal("amount"))
                     .settledComission(rs.getInt("settledComission")).cityId(rs.getLong("city_id")).taxId(rs.getInt("tax_profile_id"))
                     .channelId(rs.getLong("channel_id")).loanId(rs.getLong("loan_id")).clientId(rs.getLong("client_id"))
-                    .liquidationFrequencyId(rs.getLong("liquidationFrequencyId")).loanStatusId(rs.getInt("loanStatusId")).build();
+                    .liquidationFrequencyId(rs.getLong("liquidationFrequencyId")).loanStatusId(rs.getInt("loanStatusId"))
+                    .transId(rs.getLong("transId")).build();
         }
     }
 

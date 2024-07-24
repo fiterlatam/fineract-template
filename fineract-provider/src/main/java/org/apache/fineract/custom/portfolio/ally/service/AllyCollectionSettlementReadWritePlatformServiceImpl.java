@@ -3,7 +3,9 @@ package org.apache.fineract.custom.portfolio.ally.service;
 import jakarta.persistence.PersistenceException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.custom.portfolio.ally.data.ClientAllyPointOfSalesCollectionData;
 import org.apache.fineract.custom.portfolio.ally.domain.AllyCollectionSettlement;
@@ -35,7 +37,7 @@ public class AllyCollectionSettlementReadWritePlatformServiceImpl implements All
     private static final class ClientAllyPointOfSalesCollectionRowMapper implements RowMapper<ClientAllyPointOfSalesCollectionData> {
 
         public String schema() {
-            return " cca.last_job_run as lastJobsRun, mlt.transaction_date as collectionDate,cca.nit as nit , cca.company_name as allyName,"
+            return " mlt.id as transId,cca.last_job_run as lastJobsRun, mlt.transaction_date as collectionDate,cca.nit as nit , cca.company_name as allyName,"
                     + " ccapos.client_ally_id as clientAllyId, ccapos.id as pointofsalesid, ccapos.\"name\"  as pointOfSalesName,"
                     + " ccapos.code as pointOfSalesCode , ccapos.city_id, mlt.amount , ccapos.settled_comission as settledComission,"
                     + " tax_profile_id, mpd.channel_id , mlt.loan_id ,ml.client_id, cca.liquidation_frequency_id as liquidationFrequencyId, ml.loan_status_id as loanStatusId"
@@ -54,7 +56,8 @@ public class AllyCollectionSettlementReadWritePlatformServiceImpl implements All
                     .pointOfSalesName(rs.getString("pointOfSalesName")).amount(rs.getBigDecimal("amount"))
                     .settledComission(rs.getInt("settledComission")).cityId(rs.getLong("city_id")).taxId(rs.getInt("tax_profile_id"))
                     .channelId(rs.getLong("channel_id")).loanId(rs.getLong("loan_id")).clientId(rs.getLong("client_id"))
-                    .liquidationFrequencyId(rs.getLong("liquidationFrequencyId")).loanStatusId(rs.getInt("loanStatusId")).build();
+                    .liquidationFrequencyId(rs.getLong("liquidationFrequencyId")).loanStatusId(rs.getInt("loanStatusId"))
+                    .transId(rs.getLong("transId")).build();
         }
     }
 
@@ -62,7 +65,6 @@ public class AllyCollectionSettlementReadWritePlatformServiceImpl implements All
     public List<ClientAllyPointOfSalesCollectionData> getCollectionData() {
         final AllyCollectionSettlementReadWritePlatformServiceImpl.ClientAllyPointOfSalesCollectionRowMapper rm = new AllyCollectionSettlementReadWritePlatformServiceImpl.ClientAllyPointOfSalesCollectionRowMapper();
         final String sql = "SELECT " + rm.schema() + " ";
-
         return this.jdbcTemplate.query(sql, rm);
     }
 
@@ -71,6 +73,14 @@ public class AllyCollectionSettlementReadWritePlatformServiceImpl implements All
         final AllyCollectionSettlementReadWritePlatformServiceImpl.ClientAllyPointOfSalesCollectionRowMapper rm = new AllyCollectionSettlementReadWritePlatformServiceImpl.ClientAllyPointOfSalesCollectionRowMapper();
         final String sql = "SELECT " + rm.schema() + " And ml.id = ?";
         return this.jdbcTemplate.queryForObject(sql, rm, loanId);
+    }
+
+    @Override
+    public Optional<ClientAllyPointOfSalesCollectionData> getCollectionDataByLoanIdCollectionDate(Long loandId, LocalDate collectionDate) {
+        final AllyCollectionSettlementReadWritePlatformServiceImpl.ClientAllyPointOfSalesCollectionRowMapper rm = new AllyCollectionSettlementReadWritePlatformServiceImpl.ClientAllyPointOfSalesCollectionRowMapper();
+        final String sql = "SELECT " + rm.schema()
+                + " And ml.id = ? And mlt.transaction_date = ? order by mlt.transaction_date desc limit 1";
+        return Optional.ofNullable(this.jdbcTemplate.queryForObject(sql, rm, new Object[] { loandId, collectionDate }));
     }
 
     @Autowired
