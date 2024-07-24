@@ -47,7 +47,9 @@ public class CollectionSettlementTasklet implements Tasklet {
         LocalDate now = LocalDate.now();
 
         for (ClientAllyPointOfSalesCollectionData data : collectionData) {
-            Optional<AllyCollectionSettlement> collect = allyCollectionSettlementRepository.findByLoanId(data.getLoanId());
+            LocalDate collectDate = LocalDate.parse(data.getCollectionDate());
+            List<AllyCollectionSettlement> collect = allyCollectionSettlementRepository.findByLoanIdAndCollectionDate(data.getLoanId(),
+                    collectDate);
             String freq = LiquidationFrequency.fromInt(data.getLiquidationFrequencyId().intValue()).toString();
             LocalDate period;
             boolean isEqual = true;
@@ -86,31 +88,46 @@ public class CollectionSettlementTasklet implements Tasklet {
 
             }
 
-            if (!collect.isPresent() && isEqual) {
-                AllyCollectionSettlement allyCollectionSettlement = new AllyCollectionSettlement();
-                LocalDate collectDate = LocalDate.parse(data.getCollectionDate());
-                CodeValueData city = codeValueReadPlatformService.retrieveCodeValue(data.getCityId());
-                allyCollectionSettlement.setCollectionDate(collectDate);
-                allyCollectionSettlement.setNit(data.getNit());
-                allyCollectionSettlement.setCompanyName(data.getName());
-                allyCollectionSettlement.setClientAllyId(data.getClientAllyId());
-                allyCollectionSettlement.setPointOfSalesId(data.getPointOfSalesId());
-                allyCollectionSettlement.setPointOfSalesName(data.getPointOfSalesName());
-                allyCollectionSettlement.setCityId(data.getCityId());
-                allyCollectionSettlement.setCityName(city.getName());
-                allyCollectionSettlement.setCollectionAmount(data.getAmount());
-                allyCollectionSettlement.setSettledComission(data.getSettledComission());
-                allyCollectionSettlement.setTaxProfileId(data.getTaxId());
-                allyCollectionSettlement.setLoanId(data.getLoanId());
-                allyCollectionSettlement.setClientId(data.getClientId());
-                allyCollectionSettlement.setChannelId(data.getChannelId());
-                allyCollectionSettlementReadWritePlatformService.create(allyCollectionSettlement);
+            if (isEqual) {
+                boolean isNewCollection = false;
+                if (!collect.isEmpty()) {
+                    for (AllyCollectionSettlement allyCollectionSettlementdata : collect) {
+                        if (collectDate != allyCollectionSettlementdata.getCollectionDate()
+                                && data.getLoanId() != allyCollectionSettlementdata.getLoanId()
+                                && data.getAmount() != allyCollectionSettlementdata.getCollectionAmount()) {
+                            isNewCollection = true;
+                        }
+                    }
+                } else {
+                    isNewCollection = true;
+                }
+
+                if (isNewCollection) {
+                    AllyCollectionSettlement allyCollectionSettlement = new AllyCollectionSettlement();
+                    CodeValueData city = codeValueReadPlatformService.retrieveCodeValue(data.getCityId());
+                    allyCollectionSettlement.setCollectionDate(collectDate);
+                    allyCollectionSettlement.setNit(data.getNit());
+                    allyCollectionSettlement.setCompanyName(data.getName());
+                    allyCollectionSettlement.setClientAllyId(data.getClientAllyId());
+                    allyCollectionSettlement.setPointOfSalesId(data.getPointOfSalesId());
+                    allyCollectionSettlement.setPointOfSalesName(data.getPointOfSalesName());
+                    allyCollectionSettlement.setCityId(data.getCityId());
+                    allyCollectionSettlement.setCityName(city.getName());
+                    allyCollectionSettlement.setCollectionAmount(data.getAmount());
+                    allyCollectionSettlement.setSettledComission(data.getSettledComission());
+                    allyCollectionSettlement.setTaxProfileId(data.getTaxId());
+                    allyCollectionSettlement.setLoanId(data.getLoanId());
+                    allyCollectionSettlement.setClientId(data.getClientId());
+                    allyCollectionSettlement.setChannelId(data.getChannelId());
+                    allyCollectionSettlementReadWritePlatformService.create(allyCollectionSettlement);
+                }
                 Optional<ClientAlly> clientAlly = clientAllyRepository.findById(data.getClientAllyId());
                 if (clientAlly.isPresent()) {
                     ClientAlly clientAllyjobs = clientAlly.get();
                     clientAllyjobs.setLastJobRun(period);
                     clientAllyRepository.save(clientAllyjobs);
                 }
+
             }
         }
         return RepeatStatus.FINISHED;
