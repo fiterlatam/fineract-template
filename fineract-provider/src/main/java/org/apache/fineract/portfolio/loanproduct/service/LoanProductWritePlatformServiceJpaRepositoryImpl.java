@@ -136,6 +136,7 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
     private final InterestRateRepository interestRateRepository;
     private final InterestRateReadPlatformService interestRateReadPlatformService;
     private final ChannelRepository channelRepository;
+    private final MaximumLegalRateHistoryRepository maximumLegalRateHistoryRepository;
 
     @Transactional
     @Override
@@ -555,6 +556,7 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
                 throw new MaximumLegalRateExceptions();
             }
             final MaximumCreditRateConfiguration maximumCreditRateConfiguration = maximumCreditRateConfigurations.get(0);
+            final MaximumLegalRateHistory maximumLegalRateHistory = MaximumLegalRateHistory.createNew(maximumCreditRateConfiguration);
             final Long id = maximumCreditRateConfiguration.getId();
             this.fromApiJsonDeserializer.validateMaximumRateForUpdate(command);
             final BigDecimal eaRate = command.bigDecimalValueOfParameterNamed("eaRate");
@@ -569,6 +571,7 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
             }
             maximumCreditRateConfiguration.setAppliedBy(appliedBy);
             this.maximumRateRepository.saveAndFlush(maximumCreditRateConfiguration);
+            maximumLegalRateHistoryRepository.saveAndFlush(maximumLegalRateHistory);
             return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withEntityId(id).withEaRate(eaRate).with(changes)
                     .build();
         } catch (final DataIntegrityViolationException | JpaSystemException dve) {

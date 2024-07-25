@@ -43,6 +43,7 @@ import org.apache.fineract.portfolio.loanproduct.domain.AdvanceQuotaRepository;
 import org.apache.fineract.portfolio.loanproduct.domain.AdvancedPaymentAllocationsJsonParser;
 import org.apache.fineract.portfolio.loanproduct.domain.CreditAllocationsJsonParser;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductRepository;
+import org.apache.fineract.portfolio.loanproduct.domain.MaximumLegalRateHistoryRepository;
 import org.apache.fineract.portfolio.loanproduct.domain.MaximumRateRepository;
 import org.apache.fineract.portfolio.loanproduct.serialization.LoanProductDataValidator;
 import org.apache.fineract.portfolio.loanproduct.service.LoanDropdownReadPlatformService;
@@ -94,13 +95,13 @@ public class LoanProductConfiguration {
             SubChannelLoanProductReadWritePlatformService subChannelLoanProductReadWritePlatformService,
             SubChannelLoanProductRepository subChannelLoanProductRepository, JdbcTemplate jdbcTemplate,
             InterestRateRepository interestRateRepository, InterestRateReadPlatformService interestRateReadPlatformService,
-            ChannelRepository channelRepository) {
+            ChannelRepository channelRepository, MaximumLegalRateHistoryRepository maximumLegalRateHistoryRepository) {
         return new LoanProductWritePlatformServiceJpaRepositoryImpl(context, fromApiJsonDeserializer, loanProductRepository,
                 maximumRateRepository, advanceQuotaRepository, aprCalculator, fundRepository, chargeRepository, rateRepository,
                 accountMappingWritePlatformService, fineractEntityAccessUtil, floatingRateRepository, loanRepositoryWrapper,
                 businessEventNotifierService, delinquencyBucketRepository, loanRepaymentScheduleTransactionProcessorFactory,
                 advancedPaymentJsonParser, creditAllocationsJsonParser, loanProductReadPlatformService, codeValueRepositoryWrapper,
                 subChannelLoanProductReadWritePlatformService, subChannelLoanProductRepository, jdbcTemplate, interestRateRepository,
-                interestRateReadPlatformService, channelRepository);
+                interestRateReadPlatformService, channelRepository, maximumLegalRateHistoryRepository);
     }
 }
