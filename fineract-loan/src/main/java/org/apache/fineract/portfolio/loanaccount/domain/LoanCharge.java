@@ -1189,7 +1189,6 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
             }
         } else if (this.isCustomFlatDistributedCharge() || this.isCustomPercentageBasedDistributedCharge()
                 || this.isCustomPercentageBasedOfAnotherCharge() || isCustomPercentageOfOutstandingPrincipalCharge()) {
-            System.out.println("here " + this.getChargeCalculation().getValue() + "-" + !isCustomFlatVoluntaryInsurenceCharge());
             isApplicable = true;
         }
         return isApplicable;
@@ -1245,7 +1244,7 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
 
     public boolean isCustomFlatDistributedCharge() {
         // Charge is distributed among the installments
-        return getChargeCalculation().isFlatMandatoryInsurance();
+        return isCustomFlatVoluntaryInsurenceCharge() && getChargeCalculation().isFlatMandatoryInsurance();
     }
 
     public boolean isCustomPercentageBasedDistributedCharge() {
