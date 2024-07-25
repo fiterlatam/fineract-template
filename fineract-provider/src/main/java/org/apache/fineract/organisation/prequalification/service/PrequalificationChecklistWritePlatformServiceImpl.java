@@ -394,7 +394,7 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
         final String percentageIncreaseSQL = """
                 SELECT
                 CASE WHEN (mlag.current_credit_value <= 0) THEN 0
-                     ELSE ((mlag.requested_value/mlag.current_credit_value) - 1) * 100
+                     ELSE ((mlag.agency_authorized_amount/mlag.current_credit_value) - 1) * 100
                 END AS percentageIncrease
                 FROM m_loan_additionals_group mlag
                 INNER JOIN m_loan ml ON ml.id = mlag.loan_id
