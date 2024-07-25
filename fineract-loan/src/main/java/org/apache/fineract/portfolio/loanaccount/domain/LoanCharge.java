@@ -1194,6 +1194,10 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
         return isApplicable;
     }
 
+    public boolean isCustomFlatVoluntaryInsurenceCharge() {
+        return this.getChargeCalculation().getCode().equals(ChargeCalculationType.FLAT_SEGOVOLUNTARIO.getCode());
+    }
+
     public BigDecimal calculateCustomFeeChargeToInstallment(Integer installmentNumber, Money principalDisbursed,
             Integer numberOfInstallments, Money outstandingBalance) {
         BigDecimal customAmout = BigDecimal.ZERO;
@@ -1240,7 +1244,7 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
 
     public boolean isCustomFlatDistributedCharge() {
         // Charge is distributed among the installments
-        return getChargeCalculation().isVoluntaryInsurance() || getChargeCalculation().isFlatMandatoryInsurance();
+        return isCustomFlatVoluntaryInsurenceCharge() && getChargeCalculation().isFlatMandatoryInsurance();
     }
 
     public boolean isCustomPercentageBasedDistributedCharge() {
