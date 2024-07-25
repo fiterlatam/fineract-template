@@ -146,7 +146,7 @@ public class ClientBuyProcessReadWritePlatformServiceImpl implements ClientBuyPr
             approveLoanApplication(entity);
 
             // disburse loan
-            disburseLoanApplication(entity, productEntity);
+            disburseLoanApplication(entity);
 
             log.info("Loan created and disbursed");
         } else {
@@ -154,7 +154,7 @@ public class ClientBuyProcessReadWritePlatformServiceImpl implements ClientBuyPr
         }
     }
 
-    private void disburseLoanApplication(ClientBuyProcess entity, LoanProduct prodiuctEntity) {
+    private void disburseLoanApplication(ClientBuyProcess entity) {
 
         DisburseLoanPayloadData payloadData = DisburseLoanPayloadData.builder()
                 .actualDisbursementDate(DateUtils.format(entity.getRequestedDate(), CustomDateUtils.SPANISH_DATE_FORMAT))

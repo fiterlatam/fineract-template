@@ -28,6 +28,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import lombok.Getter;
 import lombok.Setter;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
@@ -39,6 +40,7 @@ import org.apache.fineract.useradministration.domain.AppUser;
  */
 
 @Setter
+@Getter
 @Entity
 @Table(name = "m_maximum_credit_rate_configuration")
 public class MaximumCreditRateConfiguration extends AbstractPersistableCustom {
@@ -46,6 +48,7 @@ public class MaximumCreditRateConfiguration extends AbstractPersistableCustom {
     @Column(name = "ea_rate")
     private BigDecimal eaRate;
 
+    @Getter
     @Column(name = "annual_nominal_rate")
     private BigDecimal annualNominalRate;
 
@@ -115,7 +118,4 @@ public class MaximumCreditRateConfiguration extends AbstractPersistableCustom {
         return actualChanges;
     }
 
-    public BigDecimal getAnnualNominalRate() {
-        return annualNominalRate;
-    }
 }

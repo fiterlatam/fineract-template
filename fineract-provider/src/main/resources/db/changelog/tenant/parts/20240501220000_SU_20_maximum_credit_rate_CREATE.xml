@@ -166,4 +166,33 @@
         </addColumn>
     </changeSet>
 
+    <changeSet author="fineract" id="12">
+        <createTable tableName="m_maximum_legal_rate_history">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="ea_rate" type="DECIMAL(10, 4)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="annual_nominal_rate" type="DECIMAL(10, 4)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="monthly_nominal_rate" type="DECIMAL(10, 4)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="daily_nominal_rate" type="DECIMAL(10, 4)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="appliedon_date" type="date">
+                <constraints nullable="false"/>
+            </column>
+            <column name="appliedon_userid" type="BIGINT">
+                <constraints nullable="false" />
+            </column>
+            <column name="created_on_utc" type="DATETIME">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
 </databaseChangeLog>
