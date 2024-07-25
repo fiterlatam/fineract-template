@@ -1189,9 +1189,14 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
             }
         } else if (this.isCustomFlatDistributedCharge() || this.isCustomPercentageBasedDistributedCharge()
                 || this.isCustomPercentageBasedOfAnotherCharge() || isCustomPercentageOfOutstandingPrincipalCharge()) {
+            System.out.println("here " + this.getChargeCalculation().getValue() + "-" + !isCustomFlatVoluntaryInsurenceCharge());
             isApplicable = true;
         }
         return isApplicable;
+    }
+
+    public boolean isCustomFlatVoluntaryInsurenceCharge() {
+        return this.getChargeCalculation().getCode().equals(ChargeCalculationType.FLAT_SEGOVOLUNTARIO.getCode());
     }
 
     public BigDecimal calculateCustomFeeChargeToInstallment(Integer installmentNumber, Money principalDisbursed,
@@ -1240,7 +1245,7 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
 
     public boolean isCustomFlatDistributedCharge() {
         // Charge is distributed among the installments
-        return getChargeCalculation().isVoluntaryInsurance() || getChargeCalculation().isFlatMandatoryInsurance();
+        return getChargeCalculation().isFlatMandatoryInsurance();
     }
 
     public boolean isCustomPercentageBasedDistributedCharge() {
