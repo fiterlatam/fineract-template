@@ -183,6 +183,7 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
             case CHARGE_PAYMENT -> handleChargePayment(loanTransaction, ctx.getCurrency(), ctx.getInstallments(), ctx.getCharges(),
                     ctx.getOverpaymentHolder());
             case WAIVE_CHARGES -> log.debug("WAIVE_CHARGES transaction will not be processed.");
+            case ACCRUAL -> log.debug("ACCRUAL transaction will not be processed.");
             // TODO: Cover rest of the transaction types
             default -> {
                 log.warn("Unhandled transaction processing for transaction type: {}", loanTransaction.getTypeOf());
@@ -951,12 +952,16 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                 .orElse(defaultPaymentAllocationRule);
         Balances balances = new Balances(zero, zero, zero, zero);
 
-        if (LoanScheduleProcessingType.HORIZONTAL
-                .equals(loanTransaction.getLoan().getLoanProductRelatedDetail().getLoanScheduleProcessingType())) {
+        LoanScheduleProcessingType loanScheduleProcessingType = loanTransaction.getLoan().getLoanProductRelatedDetail()
+                .getLoanScheduleProcessingType();
+        LoanScheduleProcessingType transactionScheduleProcessingType = loanTransaction.getLoanScheduleProcessingType();
+        if (loanTransaction.getLoanScheduleProcessingType() != null) {
+            loanScheduleProcessingType = loanTransaction.getLoanScheduleProcessingType();
+        }
+        if (LoanScheduleProcessingType.HORIZONTAL.equals(loanScheduleProcessingType)) {
             transactionAmountUnprocessed = processPeriodsHorizontally(loanTransaction, currency, installments, transactionAmountUnprocessed,
                     paymentAllocationRule, transactionMappings, charges, balances);
-        } else if (LoanScheduleProcessingType.VERTICAL
-                .equals(loanTransaction.getLoan().getLoanProductRelatedDetail().getLoanScheduleProcessingType())) {
+        } else if (LoanScheduleProcessingType.VERTICAL.equals(loanScheduleProcessingType)) {
             transactionAmountUnprocessed = processPeriodsVertically(loanTransaction, currency, installments, transactionAmountUnprocessed,
                     paymentAllocationRule, transactionMappings, charges, balances);
         }
