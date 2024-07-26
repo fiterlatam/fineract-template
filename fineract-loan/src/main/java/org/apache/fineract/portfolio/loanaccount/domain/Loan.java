@@ -116,11 +116,7 @@ import org.apache.fineract.portfolio.loanaccount.exception.MultiDisbursementData
 import org.apache.fineract.portfolio.loanaccount.exception.MultiDisbursementDataRequiredException;
 import org.apache.fineract.portfolio.loanaccount.exception.UndoLastTrancheDisbursementException;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.data.LoanScheduleDTO;
-import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.AprCalculator;
-import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanApplicationTerms;
-import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleGenerator;
-import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleModel;
-import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleModelPeriod;
+import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.*;
 import org.apache.fineract.portfolio.loanproduct.domain.AmortizationMethod;
 import org.apache.fineract.portfolio.loanproduct.domain.InterestCalculationPeriodMethod;
 import org.apache.fineract.portfolio.loanproduct.domain.InterestMethod;
@@ -465,6 +461,10 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
     @Embedded
     private LoanCustomizationDetail loanCustomizationDetail;
+
+    // This attribute is used only to capture the repayment strategy (VERTICAL/HORIZONTAL). Updating all the related methods to add this attribute as a parameter was creating a mess
+    @Transient
+    LoanScheduleProcessingType repaymentTransactionProcessingType;
 
     public static Loan newIndividualLoanApplication(final String accountNo, final Client client, final Integer loanType,
             final LoanProduct loanProduct, final Fund fund, final Staff officer, final CodeValue loanPurpose,
@@ -7373,5 +7373,13 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         wrapper.reprocess(getCurrency(), getDisbursementDate(), getRepaymentScheduleInstallments(), getActiveCharges());
 
         updateLoanSummaryDerivedFields();
+    }
+
+    public LoanScheduleProcessingType getRepaymentTransactionProcessingType() {
+        return repaymentTransactionProcessingType;
+    }
+
+    public void setRepaymentTransactionProcessingType(LoanScheduleProcessingType repaymentTransactionProcessingType) {
+        this.repaymentTransactionProcessingType = repaymentTransactionProcessingType;
     }
 }

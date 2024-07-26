@@ -18,15 +18,8 @@
  */
 package org.apache.fineract.portfolio.loanaccount.domain;
 
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.*;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -46,6 +39,7 @@ import org.apache.fineract.organisation.office.domain.Office;
 import org.apache.fineract.portfolio.account.data.AccountTransferData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanTransactionData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanTransactionEnumData;
+import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleProcessingType;
 import org.apache.fineract.portfolio.loanproduct.service.LoanEnumerations;
 import org.apache.fineract.portfolio.paymentdetail.data.PaymentDetailData;
 import org.apache.fineract.portfolio.paymentdetail.domain.PaymentDetail;
@@ -133,6 +127,10 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY, mappedBy = "fromTransaction")
     private Set<LoanTransactionRelation> loanTransactionRelations = new HashSet<>();
 
+    @Column(name = "loan_schedule_processing_type", nullable = false)
+    @Enumerated(EnumType.STRING)
+    private LoanScheduleProcessingType loanScheduleProcessingType;
+
     protected LoanTransaction() {}
 
     public static LoanTransaction incomePosting(final Loan loan, final Office office, final LocalDate dateOf, final BigDecimal amount,
@@ -168,9 +166,9 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
 
     public static LoanTransaction repaymentType(final LoanTransactionType repaymentType, final Office office, final Money amount,
             final PaymentDetail paymentDetail, final LocalDate paymentDate, final ExternalId externalId,
-            final String chargeRefundChargeType) {
+            final String chargeRefundChargeType, LoanScheduleProcessingType loanScheduleProcessingType) {
         return new LoanTransaction(null, office, repaymentType, paymentDetail, amount.getAmount(), paymentDate, externalId,
-                chargeRefundChargeType);
+                chargeRefundChargeType, loanScheduleProcessingType);
     }
 
     public static LoanTransaction chargeAdjustment(final Loan loan, final BigDecimal amount, final LocalDate transactionDate,
@@ -283,6 +281,7 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
         if (LoanTransactionType.CHARGE_PAYMENT.equals(loanTransaction.getTypeOf())) {
             newTransaction.getLoanChargesPaid().addAll(loanTransaction.getLoanChargesPaid());
         }
+        newTransaction.loanScheduleProcessingType = loanTransaction.getLoanScheduleProcessingType();
         return newTransaction;
     }
 
@@ -394,7 +393,7 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
     }
 
     private LoanTransaction(final Loan loan, final Office office, final LoanTransactionType type, final PaymentDetail paymentDetail,
-            final BigDecimal amount, final LocalDate date, final ExternalId externalId, final String chargeRefundChargeType) {
+            final BigDecimal amount, final LocalDate date, final ExternalId externalId, final String chargeRefundChargeType, LoanScheduleProcessingType loanScheduleProcessingType) {
         this.loan = loan;
         this.typeOf = type.getValue();
         this.paymentDetail = paymentDetail;
@@ -404,6 +403,7 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
         this.office = office;
         this.submittedOnDate = DateUtils.getBusinessLocalDate();
         this.chargeRefundChargeType = chargeRefundChargeType;
+        this.loanScheduleProcessingType = loanScheduleProcessingType;
     }
 
     public void reverse() {
@@ -949,6 +949,10 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
 
     public boolean isOn(final LocalDate date) {
         return DateUtils.isEqual(getTransactionDate(), date);
+    }
+
+    public LoanScheduleProcessingType getLoanScheduleProcessingType() {
+        return loanScheduleProcessingType;
     }
 
     // TODO missing hashCode(), equals(Object obj), but probably OK as long as

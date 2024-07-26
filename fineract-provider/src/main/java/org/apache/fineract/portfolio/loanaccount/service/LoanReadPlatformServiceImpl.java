@@ -473,6 +473,12 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         final Collection<CodeValueData> bankOptions = codeValueReadPlatformService.retrieveCodeValuesByCode("Bancos");
         loanTransactionTemplate.setChannelOptions(channelOptions);
         loanTransactionTemplate.setBankOptions(bankOptions);
+
+        loanTransactionTemplate.setTransactionProcessingStrategyTypes(LoanScheduleProcessingType.getValuesAsEnumOptionDataList());
+        loanTransactionTemplate.setTransactionProcessingStrategy(loanTransactionData.getTransactionProcessingStrategy());
+        loanTransactionTemplate.setLoanScheduleType(loanTransactionData.getLoanScheduleType());
+        loanTransactionTemplate.setLoanProductType(loanTransactionData.getLoanProductType());
+
         return loanTransactionTemplate;
     }
 
@@ -2714,8 +2720,11 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
             sqlBuilder.append(
                     "l.currency_code as currencyCode, l.currency_digits as currencyDigits, l.currency_multiplesof as inMultiplesOf, l.net_disbursal_amount as netDisbursalAmount, ");
             sqlBuilder.append("rc." + sqlGenerator.escape("name")
-                    + " as currencyName, rc.display_symbol as currencyDisplaySymbol, rc.internationalized_name_code as currencyNameCode ");
+                    + " as currencyName, rc.display_symbol as currencyDisplaySymbol, rc.internationalized_name_code as currencyNameCode, ");
+            sqlBuilder.append(" l.loan_schedule_type, l.loan_schedule_processing_type, mcv.code_value as loanProductType ");
             sqlBuilder.append("FROM m_loan l ");
+            sqlBuilder.append("JOIN m_product_loan mpl on mpl.id = l.product_id ");
+            sqlBuilder.append("JOIN m_code_value mcv on mcv.id = mpl.product_type ");
             sqlBuilder.append("JOIN m_currency rc on rc." + sqlGenerator.escape("code") + " = l.currency_code ");
             sqlBuilder.append("JOIN m_loan_repayment_schedule ls ON ls.loan_id = l.id AND ls.completed_derived = false ");
             sqlBuilder.append(
@@ -2747,9 +2756,16 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
             final PaymentDetailData paymentDetailData = null;
             final AccountTransferData transfer = null;
             final BigDecimal fixedEmiAmount = null;
-            return new LoanTransactionData(id, officeId, officeName, transactionType, paymentDetailData, currencyData, date, totalDue,
+            String loanScheduleType = rs.getString("loan_schedule_type");
+            String loanScheduleProcessingType = rs.getString("loan_schedule_processing_type");
+            String loanProductType = rs.getString("loanProductType");
+            LoanTransactionData transactionData = new LoanTransactionData(id, officeId, officeName, transactionType, paymentDetailData, currencyData, date, totalDue,
                     netDisbursalAmount, principalPortion, interestDue, feeDue, penaltyDue, overPaymentPortion, ExternalId.empty(), transfer,
                     fixedEmiAmount, outstandingLoanBalance, unrecognizedIncomePortion, manuallyReversed, loanId, ExternalId.empty());
+            transactionData.setTransactionProcessingStrategy(loanScheduleProcessingType);
+            transactionData.setLoanScheduleType(loanScheduleType);
+            transactionData.setLoanProductType(loanProductType);
+            return transactionData;
         }
 
     }

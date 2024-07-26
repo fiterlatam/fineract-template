@@ -42,8 +42,13 @@ public class AdvancedPaymentAllocationsJsonParser {
 
     public List<LoanProductPaymentAllocationRule> assembleLoanProductPaymentAllocationRules(final JsonCommand command,
             String loanTransactionProcessingStrategyCode) {
-        // JsonArray paymentAllocations = command.arrayOfParameterNamed("paymentAllocation");
-        JsonArray paymentAllocations = updatePaymentAllocationTypesArray(command, command.arrayOfParameterNamed("paymentAllocation"));
+        JsonArray paymentAllocations = null;
+         JsonArray paymentAllocationsFromCommand = command.arrayOfParameterNamed("paymentAllocation");
+         if (paymentAllocationsFromCommand != null && !paymentAllocationsFromCommand.isEmpty()) {
+             paymentAllocations = updatePaymentAllocationTypesArray(command, command.arrayOfParameterNamed("paymentAllocation"));
+         } else {
+             paymentAllocations = paymentAllocationsFromCommand;
+         }
 
         List<LoanProductPaymentAllocationRule> productPaymentAllocationRules = null;
         if (paymentAllocations != null) {
@@ -61,6 +66,9 @@ public class AdvancedPaymentAllocationsJsonParser {
     }
 
     public JsonArray updatePaymentAllocationTypesArray(JsonCommand command, JsonArray array) {
+        if (array.isEmpty()) {
+            return array;
+        }
         JsonArray updatedOrderList = new JsonArray();
         int index = 1;
         JsonArray orderList = array.get(0).getAsJsonObject().getAsJsonArray("paymentAllocationOrder");
