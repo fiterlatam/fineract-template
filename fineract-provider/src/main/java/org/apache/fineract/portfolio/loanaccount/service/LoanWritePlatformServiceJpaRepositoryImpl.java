@@ -1090,13 +1090,11 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         boolean isAccountTransfer = false;
 
         String loanScheduleProcessingType = command.stringValueOfParameterNamedAllowingNull("transactionProcessingStrategy");
-        if (loan.getLoanProductRelatedDetail().getLoanScheduleType().equals(LoanScheduleType.PROGRESSIVE) &&
-                !StringUtils.isEmpty(loanScheduleProcessingType) && StringUtils.isNotBlank(loanScheduleProcessingType)) {
-           if (!loan.getLoanProduct().getProductType().getLabel().equals("SU+ Empresas")) {
+        if (loan.getLoanProductRelatedDetail().getLoanScheduleType().equals(LoanScheduleType.PROGRESSIVE)
+                && !StringUtils.isEmpty(loanScheduleProcessingType) && StringUtils.isNotBlank(loanScheduleProcessingType)) {
+            if (!loan.getLoanProduct().getProductType().getLabel().equals("SU+ Empresas")) {
                 throw new GeneralPlatformDomainRuleException("error.msg.loan.transaction.repayment.incorrect.processing.type",
-                        String.format("Invalid transaction processing type %s",
-                                loanScheduleProcessingType),
-                        loanScheduleProcessingType);
+                        String.format("Invalid transaction processing type %s", loanScheduleProcessingType), loanScheduleProcessingType);
             }
             LoanScheduleProcessingType type = null;
             if (loanScheduleProcessingType.equals(LoanScheduleProcessingType.HORIZONTAL.name())) {
@@ -1105,9 +1103,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 type = LoanScheduleProcessingType.VERTICAL;
             } else {
                 throw new GeneralPlatformDomainRuleException("error.msg.loan.transaction.repayment.incorrect.processing.type",
-                        String.format("Invalid transaction processing type %s",
-                                loanScheduleProcessingType),
-                        loanScheduleProcessingType);
+                        String.format("Invalid transaction processing type %s", loanScheduleProcessingType), loanScheduleProcessingType);
             }
             loan.setRepaymentTransactionProcessingType(type);
         }

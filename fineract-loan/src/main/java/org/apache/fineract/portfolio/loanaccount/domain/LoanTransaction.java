@@ -19,7 +19,6 @@
 package org.apache.fineract.portfolio.loanaccount.domain;
 
 import jakarta.persistence.*;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -393,7 +392,8 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
     }
 
     private LoanTransaction(final Loan loan, final Office office, final LoanTransactionType type, final PaymentDetail paymentDetail,
-            final BigDecimal amount, final LocalDate date, final ExternalId externalId, final String chargeRefundChargeType, LoanScheduleProcessingType loanScheduleProcessingType) {
+            final BigDecimal amount, final LocalDate date, final ExternalId externalId, final String chargeRefundChargeType,
+            LoanScheduleProcessingType loanScheduleProcessingType) {
         this.loan = loan;
         this.typeOf = type.getValue();
         this.paymentDetail = paymentDetail;

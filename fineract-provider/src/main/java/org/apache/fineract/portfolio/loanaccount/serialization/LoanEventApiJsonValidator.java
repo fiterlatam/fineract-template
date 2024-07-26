@@ -280,10 +280,10 @@ public final class LoanEventApiJsonValidator {
             throw new InvalidJsonException();
         }
 
-        final Set<String> transactionParameters = new HashSet<>(
-                Arrays.asList("transactionDate", "transactionAmount", "externalId", "note", "locale", "dateFormat", "paymentTypeId",
-                        "accountNumber", "checkNumber", "routingCode", "receiptNumber", "bankNumber", "loanId", "channelHash",
-                        "channelName", "pointOfSalesCode", "isImportedRepaymentTransaction", "repaymentChannelId", "repaymentBankId", "transactionProcessingStrategy"));
+        final Set<String> transactionParameters = new HashSet<>(Arrays.asList("transactionDate", "transactionAmount", "externalId", "note",
+                "locale", "dateFormat", "paymentTypeId", "accountNumber", "checkNumber", "routingCode", "receiptNumber", "bankNumber",
+                "loanId", "channelHash", "channelName", "pointOfSalesCode", "isImportedRepaymentTransaction", "repaymentChannelId",
+                "repaymentBankId", "transactionProcessingStrategy"));
 
         final Type typeOfMap = new TypeToken<Map<String, Object>>() {}.getType();
         this.fromApiJsonHelper.checkForUnsupportedParameters(typeOfMap, json, transactionParameters);
@@ -303,10 +303,10 @@ public final class LoanEventApiJsonValidator {
 
         final String transactionProcessingStrategy = this.fromApiJsonHelper.extractStringNamed("transactionProcessingStrategy", element);
         if (transactionProcessingStrategy != null) {
-            baseDataValidator.reset().parameter("transactionProcessingStrategy").value(transactionProcessingStrategy).ignoreIfNull().notExceedingLengthOf(10)
-                    .isOneOfTheseStringValues(LoanScheduleProcessingType.HORIZONTAL.name().toLowerCase(), LoanScheduleProcessingType.VERTICAL.name().toLowerCase());
+            baseDataValidator.reset().parameter("transactionProcessingStrategy").value(transactionProcessingStrategy).ignoreIfNull()
+                    .notExceedingLengthOf(10).isOneOfTheseStringValues(LoanScheduleProcessingType.HORIZONTAL.name().toLowerCase(),
+                            LoanScheduleProcessingType.VERTICAL.name().toLowerCase());
         }
-
 
         validatePaymentDetails(baseDataValidator, element);
 

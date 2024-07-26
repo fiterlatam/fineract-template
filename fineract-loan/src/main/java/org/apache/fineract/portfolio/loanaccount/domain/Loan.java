@@ -462,7 +462,8 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     @Embedded
     private LoanCustomizationDetail loanCustomizationDetail;
 
-    // This attribute is used only to capture the repayment strategy (VERTICAL/HORIZONTAL). Updating all the related methods to add this attribute as a parameter was creating a mess
+    // This attribute is used only to capture the repayment strategy (VERTICAL/HORIZONTAL). Updating all the related
+    // methods to add this attribute as a parameter was creating a mess
     @Transient
     LoanScheduleProcessingType repaymentTransactionProcessingType;
 

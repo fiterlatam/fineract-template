@@ -952,7 +952,8 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                 .orElse(defaultPaymentAllocationRule);
         Balances balances = new Balances(zero, zero, zero, zero);
 
-        LoanScheduleProcessingType loanScheduleProcessingType = loanTransaction.getLoan().getLoanProductRelatedDetail().getLoanScheduleProcessingType();
+        LoanScheduleProcessingType loanScheduleProcessingType = loanTransaction.getLoan().getLoanProductRelatedDetail()
+                .getLoanScheduleProcessingType();
         LoanScheduleProcessingType transactionScheduleProcessingType = loanTransaction.getLoanScheduleProcessingType();
         if (loanTransaction.getLoanScheduleProcessingType() != null) {
             loanScheduleProcessingType = loanTransaction.getLoanScheduleProcessingType();

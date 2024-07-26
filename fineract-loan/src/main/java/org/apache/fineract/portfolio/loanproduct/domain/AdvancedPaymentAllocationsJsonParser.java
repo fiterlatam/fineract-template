@@ -43,12 +43,12 @@ public class AdvancedPaymentAllocationsJsonParser {
     public List<LoanProductPaymentAllocationRule> assembleLoanProductPaymentAllocationRules(final JsonCommand command,
             String loanTransactionProcessingStrategyCode) {
         JsonArray paymentAllocations = null;
-         JsonArray paymentAllocationsFromCommand = command.arrayOfParameterNamed("paymentAllocation");
-         if (paymentAllocationsFromCommand != null && !paymentAllocationsFromCommand.isEmpty()) {
-             paymentAllocations = updatePaymentAllocationTypesArray(command, command.arrayOfParameterNamed("paymentAllocation"));
-         } else {
-             paymentAllocations = paymentAllocationsFromCommand;
-         }
+        JsonArray paymentAllocationsFromCommand = command.arrayOfParameterNamed("paymentAllocation");
+        if (paymentAllocationsFromCommand != null && !paymentAllocationsFromCommand.isEmpty()) {
+            paymentAllocations = updatePaymentAllocationTypesArray(command, command.arrayOfParameterNamed("paymentAllocation"));
+        } else {
+            paymentAllocations = paymentAllocationsFromCommand;
+        }
 
         List<LoanProductPaymentAllocationRule> productPaymentAllocationRules = null;
         if (paymentAllocations != null) {

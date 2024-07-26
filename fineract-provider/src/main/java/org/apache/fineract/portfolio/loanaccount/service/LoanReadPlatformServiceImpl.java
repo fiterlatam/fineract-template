@@ -2759,9 +2759,10 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
             String loanScheduleType = rs.getString("loan_schedule_type");
             String loanScheduleProcessingType = rs.getString("loan_schedule_processing_type");
             String loanProductType = rs.getString("loanProductType");
-            LoanTransactionData transactionData = new LoanTransactionData(id, officeId, officeName, transactionType, paymentDetailData, currencyData, date, totalDue,
-                    netDisbursalAmount, principalPortion, interestDue, feeDue, penaltyDue, overPaymentPortion, ExternalId.empty(), transfer,
-                    fixedEmiAmount, outstandingLoanBalance, unrecognizedIncomePortion, manuallyReversed, loanId, ExternalId.empty());
+            LoanTransactionData transactionData = new LoanTransactionData(id, officeId, officeName, transactionType, paymentDetailData,
+                    currencyData, date, totalDue, netDisbursalAmount, principalPortion, interestDue, feeDue, penaltyDue, overPaymentPortion,
+                    ExternalId.empty(), transfer, fixedEmiAmount, outstandingLoanBalance, unrecognizedIncomePortion, manuallyReversed,
+                    loanId, ExternalId.empty());
             transactionData.setTransactionProcessingStrategy(loanScheduleProcessingType);
             transactionData.setLoanScheduleType(loanScheduleType);
             transactionData.setLoanProductType(loanProductType);

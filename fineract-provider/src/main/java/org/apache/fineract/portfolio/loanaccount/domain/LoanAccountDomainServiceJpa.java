@@ -100,7 +100,6 @@ import org.apache.fineract.portfolio.loanaccount.data.HolidayDetailDTO;
 import org.apache.fineract.portfolio.loanaccount.data.LoanScheduleAccrualData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanScheduleDelinquencyData;
 import org.apache.fineract.portfolio.loanaccount.data.ScheduleGeneratorDTO;
-import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleProcessingType;
 import org.apache.fineract.portfolio.loanaccount.service.LoanAccrualPlatformService;
 import org.apache.fineract.portfolio.loanaccount.service.LoanAccrualTransactionBusinessEventService;
 import org.apache.fineract.portfolio.loanaccount.service.LoanAssembler;
