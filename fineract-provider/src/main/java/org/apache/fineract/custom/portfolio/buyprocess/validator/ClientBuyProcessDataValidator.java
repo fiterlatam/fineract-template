@@ -97,10 +97,6 @@ public class ClientBuyProcessDataValidator {
 
         final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors)
                 .resource(ClientBuyProcessApiConstants.RESOURCE_NAME);
-        // String channelName = this.fromApiJsonHelper.extractStringNamed(LoanApiConstants.CHANNEL_NAME, element);
-        // if (channelName == null) {
-        // channelName = this.platformSecurityContext.getApiRequestChannel();
-        // }
 
         Long clientId = 0L;
         String clientDocumentId;
@@ -140,8 +136,8 @@ public class ClientBuyProcessDataValidator {
             if (clientAllyPointOfSales.isPresent()) {
                 if (clientAllyPointOfSales.get().getStateCodeValueId() == ClientAllyPointOfSalesApiConstants.stateCodeValueInavtiveParamName
                         .longValue()) {
-                    baseDataValidator.reset().parameter(ClientBuyProcessApiConstants.pointOfSalesCodeParamName).value(pointOfSalesCode)
-                            .failWithCode("point.of.sales.inactive");
+                    throw new ClientBuyProsessPoinOfSalesInactive("No se ha podido proceder debido a que el Punto de venta esta inactivo",
+                            "");
                 }
                 pointOfSalesId = clientAllyPointOfSales.get().getId();
             } else {
