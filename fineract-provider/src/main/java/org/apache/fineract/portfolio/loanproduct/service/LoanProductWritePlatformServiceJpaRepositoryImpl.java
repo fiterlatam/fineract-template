@@ -64,6 +64,7 @@ import org.apache.fineract.infrastructure.security.service.PlatformSecurityConte
 import org.apache.fineract.organisation.monetary.domain.MoneyHelper;
 import org.apache.fineract.organisation.monetary.exception.InvalidCurrencyException;
 import org.apache.fineract.portfolio.charge.domain.Charge;
+import org.apache.fineract.portfolio.charge.domain.ChargeCalculationType;
 import org.apache.fineract.portfolio.charge.domain.ChargeRepositoryWrapper;
 import org.apache.fineract.portfolio.common.domain.PeriodFrequencyType;
 import org.apache.fineract.portfolio.delinquency.domain.DelinquencyBucket;
@@ -135,6 +136,7 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
     private final InterestRateRepository interestRateRepository;
     private final InterestRateReadPlatformService interestRateReadPlatformService;
     private final ChannelRepository channelRepository;
+    private final MaximumLegalRateHistoryRepository maximumLegalRateHistoryRepository;
 
     @Transactional
     @Override
@@ -189,6 +191,24 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
             if (command.parameterExists("repaymentChannels")) {
                 final List<Channel> repaymentChannels = assembleListOfRepaymentChannels(command);
                 loanProduct.setRepaymentChannels(repaymentChannels);
+            }
+
+            if (command.parameterExists(LoanProductConstants.IS_PURCHASE_CHARGE_PARAM_NAME)) {
+                final boolean isPurchaseCharge = command
+                        .booleanPrimitiveValueOfParameterNamed(LoanProductConstants.IS_PURCHASE_CHARGE_PARAM_NAME);
+                if (isPurchaseCharge) {
+                    final Long voluntaryInsuranceId = command
+                            .longValueOfParameterNamed(LoanProductConstants.VOLUNTARY_INSURANCE_ID_PARAM_NAME);
+                    final Charge voluntaryInsuranceCharge = this.chargeRepository.findOneWithNotFoundDetection(voluntaryInsuranceId);
+                    ChargeCalculationType chargeCalculationType = ChargeCalculationType
+                            .fromInt(voluntaryInsuranceCharge.getChargeCalculation());
+                    if (!chargeCalculationType.isVoluntaryInsurance()) {
+                        throw new GeneralPlatformDomainRuleException("error.msg.loanproduct.voluntary.insurance.charge.invalid",
+                                "Loan charge must be of type Voluntary Insurance", voluntaryInsuranceId);
+                    }
+                    loanProduct.setVoluntaryInsuranceCharge(voluntaryInsuranceCharge);
+                }
+                loanProduct.setIsPurChaseCharge(isPurchaseCharge);
             }
 
             this.loanProductRepository.save(loanProduct);
@@ -434,6 +454,27 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
 
             populateProductCustomAllowance(command, product);
 
+            if (command.parameterExists(LoanProductConstants.IS_PURCHASE_CHARGE_PARAM_NAME)) {
+                final boolean isPurchaseCharge = command
+                        .booleanPrimitiveValueOfParameterNamed(LoanProductConstants.IS_PURCHASE_CHARGE_PARAM_NAME);
+                if (isPurchaseCharge) {
+                    final Long voluntaryInsuranceId = command
+                            .longValueOfParameterNamed(LoanProductConstants.VOLUNTARY_INSURANCE_ID_PARAM_NAME);
+                    final Charge voluntaryInsuranceCharge = this.chargeRepository.findOneWithNotFoundDetection(voluntaryInsuranceId);
+                    ChargeCalculationType chargeCalculationType = ChargeCalculationType
+                            .fromInt(voluntaryInsuranceCharge.getChargeCalculation());
+                    if (!chargeCalculationType.isVoluntaryInsurance()) {
+                        throw new GeneralPlatformDomainRuleException("error.msg.loanproduct.voluntary.insurance.charge.invalid",
+                                "Loan charge must be of type Voluntary Insurance", voluntaryInsuranceId);
+                    }
+                    product.setVoluntaryInsuranceCharge(voluntaryInsuranceCharge);
+                } else {
+                    product.setVoluntaryInsuranceCharge(null);
+                }
+                product.setIsPurChaseCharge(isPurchaseCharge);
+                changes.put(LoanProductConstants.IS_PURCHASE_CHARGE_PARAM_NAME, isPurchaseCharge);
+            }
+
             if (!changes.isEmpty()) {
                 product.validateLoanProductPreSave();
                 this.loanProductRepository.saveAndFlush(product);
@@ -515,6 +556,7 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
                 throw new MaximumLegalRateExceptions();
             }
             final MaximumCreditRateConfiguration maximumCreditRateConfiguration = maximumCreditRateConfigurations.get(0);
+            final MaximumLegalRateHistory maximumLegalRateHistory = MaximumLegalRateHistory.createNew(maximumCreditRateConfiguration);
             final Long id = maximumCreditRateConfiguration.getId();
             this.fromApiJsonDeserializer.validateMaximumRateForUpdate(command);
             final BigDecimal eaRate = command.bigDecimalValueOfParameterNamed("eaRate");
@@ -529,6 +571,7 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
             }
             maximumCreditRateConfiguration.setAppliedBy(appliedBy);
             this.maximumRateRepository.saveAndFlush(maximumCreditRateConfiguration);
+            maximumLegalRateHistoryRepository.saveAndFlush(maximumLegalRateHistory);
             return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withEntityId(id).withEaRate(eaRate).with(changes)
                     .build();
         } catch (final DataIntegrityViolationException | JpaSystemException dve) {
@@ -709,12 +752,13 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
      * Guaranteed to throw an exception no matter what the data integrity issue is.
      */
     private void handleDataIntegrityIssues(final JsonCommand command, final Throwable realCause, final Exception dve) {
+
         if (realCause.getMessage().contains("'external_id'")) {
 
             final String externalId = command.stringValueOfParameterNamed("externalId");
             throw new PlatformDataIntegrityException("error.msg.product.loan.duplicate.externalId",
                     "Loan Product with externalId `" + externalId + "` already exists", "externalId", externalId, realCause);
-        } else if (realCause.getMessage().contains("'unq_name'")) {
+        } else if (realCause.getMessage().contains("'unq_name'") || realCause.getMessage().contains("m_product_loan_name_key")) {
 
             final String name = command.stringValueOfParameterNamed("name");
             throw new PlatformDataIntegrityException("error.msg.product.loan.duplicate.name",

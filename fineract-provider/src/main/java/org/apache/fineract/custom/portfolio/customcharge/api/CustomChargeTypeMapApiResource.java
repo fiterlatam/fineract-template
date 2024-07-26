@@ -54,6 +54,7 @@ import org.apache.fineract.infrastructure.bulkimport.service.BulkImportWorkbookS
 import org.apache.fineract.infrastructure.core.api.ApiRequestParameterHelper;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
+import org.apache.fineract.infrastructure.core.exception.GeneralPlatformDomainRuleException;
 import org.apache.fineract.infrastructure.core.serialization.ApiRequestJsonSerializationSettings;
 import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
@@ -149,8 +150,10 @@ public class CustomChargeTypeMapApiResource {
     @GET
     @Path("downloadtemplate")
     @Produces("application/vnd.ms-excel")
-    public Response clientTemplate(@QueryParam("dateFormat") final String dateFormat) {
-        return bulkImportWorkbookPopulatorService.getTemplate(GlobalEntityType.CLIENT_VIP.name(), null, null, dateFormat);
+    public Response clientTemplate(@QueryParam("dateFormat") final String dateFormat,
+            @QueryParam("customChargeTypeId") final Integer customChargeTypeId) {
+        String entityType = getEntityType(customChargeTypeId);
+        return bulkImportWorkbookPopulatorService.getTemplate(entityType, null, null, dateFormat);
     }
 
     @POST
@@ -158,14 +161,28 @@ public class CustomChargeTypeMapApiResource {
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     public String createClientTemplate(@FormDataParam("file") InputStream uploadedInputStream,
             @FormDataParam("file") FormDataContentDisposition fileDetail, @FormDataParam("locale") final String locale,
-            @FormDataParam("dateFormat") final String dateFormat) {
+            @FormDataParam("dateFormat") final String dateFormat, @FormDataParam("customChargeTypeId") final Integer customChargeTypeId) {
         if (StringUtils.isNotBlank(fileDetail.getFileName())) {
+            String entityType = getEntityType(customChargeTypeId);
             final Map<String, Object> importAttributes = new HashMap<>();
-            final Long importDocumentId = bulkImportWorkbookService.importWorkbook(GlobalEntityType.CLIENT_VIP.name(), uploadedInputStream,
-                    fileDetail, locale, dateFormat, importAttributes);
+            final Long importDocumentId = bulkImportWorkbookService.importWorkbook(entityType, uploadedInputStream, fileDetail, locale,
+                    dateFormat, importAttributes);
             return this.toApiJsonSerializer.serialize(importDocumentId);
         }
         return "";
+    }
+
+    private static String getEntityType(Integer customChargeTypeId) {
+        CustomChargeValueType customChargeValueType = CustomChargeValueType.fromInt(customChargeTypeId);
+        String entityType;
+        if (CustomChargeValueType.VIP.equals(customChargeValueType)) {
+            entityType = GlobalEntityType.CLIENT_VIP.name();
+        } else if (CustomChargeValueType.COMMERCE.equals(customChargeValueType)) {
+            entityType = GlobalEntityType.COMMERCE_POINT_OF_SALE.name();
+        } else {
+            throw new GeneralPlatformDomainRuleException("error.msg.invalid.custom.charge.type", "Invalid custom charge type");
+        }
+        return entityType;
     }
 
     @GET

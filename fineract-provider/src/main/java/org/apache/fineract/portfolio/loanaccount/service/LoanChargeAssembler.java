@@ -27,6 +27,9 @@ import java.math.MathContext;
 import java.time.LocalDate;
 import java.util.*;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.custom.portfolio.customcharge.data.CustomChargeEntityData;
 import org.apache.fineract.custom.portfolio.customcharge.data.CustomChargeTypeData;
 import org.apache.fineract.custom.portfolio.customcharge.data.CustomChargeTypeMapData;
@@ -48,6 +51,7 @@ import org.apache.fineract.portfolio.charge.domain.ChargeTimeType;
 import org.apache.fineract.portfolio.charge.exception.LoanChargeCannotBeAddedException;
 import org.apache.fineract.portfolio.charge.exception.LoanChargeWithoutMandatoryFieldException;
 import org.apache.fineract.portfolio.loanaccount.api.LoanApiConstants;
+import org.apache.fineract.portfolio.loanaccount.data.LoanAccountData;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanCharge;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanChargeRepository;
@@ -56,6 +60,7 @@ import org.apache.fineract.portfolio.loanaccount.domain.LoanTrancheDisbursementC
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProduct;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductRepository;
 import org.apache.fineract.portfolio.loanproduct.exception.LoanProductNotFoundException;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 @RequiredArgsConstructor
 public class LoanChargeAssembler {
@@ -68,12 +73,13 @@ public class LoanChargeAssembler {
     private final CustomChargeEntityReadWritePlatformService customChargeService;
     private final CustomChargeTypeReadWritePlatformService customChargeTypeService;
     private final CustomChargeTypeMapReadWritePlatformService customChargeTypeMapService;
+    private final JdbcTemplate jdbcTemplate;
 
     public Set<LoanCharge> fromParsedJson(final JsonElement element, List<LoanDisbursementDetails> disbursementDetails) {
         JsonArray jsonDisbursement = this.fromApiJsonHelper.extractJsonArrayNamed("disbursementData", element);
         List<Long> disbursementChargeIds = new ArrayList<>();
 
-        if (jsonDisbursement != null && jsonDisbursement.size() > 0) {
+        if (jsonDisbursement != null && !jsonDisbursement.isEmpty()) {
             for (int i = 0; i < jsonDisbursement.size(); i++) {
                 final JsonObject jsonObject = jsonDisbursement.get(i).getAsJsonObject();
                 if (jsonObject != null && jsonObject.getAsJsonPrimitive(LoanApiConstants.loanChargeIdParameterName) != null) {
@@ -151,7 +157,10 @@ public class LoanChargeAssembler {
                             if (calculation == null) {
                                 calculation = ChargeCalculationType.fromInt(chargeDefinition.getChargeCalculation());
                             }
-                            amount = getAmountPerentageFromCustomChargeTable(calculation, numberOfRepayments);
+                            final String pointOfSaleCode = this.fromApiJsonHelper.extractStringNamed("pointOfSaleCode", element);
+                            final String clientIdNumber = this.fromApiJsonHelper.extractStringNamed("clientIdNumber", element);
+                            amount = getAmountPerentageFromCustomChargeTable(calculation, numberOfRepayments, pointOfSaleCode,
+                                    clientIdNumber);
                         }
 
                         ChargePaymentMode chargePaymentModeEnum = null;
@@ -166,7 +175,7 @@ public class LoanChargeAssembler {
                         } else {
                             if (topLevelJsonElement.has("disbursementData") && topLevelJsonElement.get("disbursementData").isJsonArray()) {
                                 final JsonArray disbursementArray = topLevelJsonElement.get("disbursementData").getAsJsonArray();
-                                if (disbursementArray.size() > 0) {
+                                if (!disbursementArray.isEmpty()) {
                                     JsonObject disbursementDataElement = disbursementArray.get(0).getAsJsonObject();
                                     expectedDisbursementDate = this.fromApiJsonHelper.extractLocalDateNamed(
                                             LoanApiConstants.expectedDisbursementDateParameterName, disbursementDataElement, dateFormat,
@@ -289,7 +298,15 @@ public class LoanChargeAssembler {
         ChargeCalculationType chargeCalculationType = ChargeCalculationType.fromInt(chargeDefinition.getChargeCalculation());
         boolean getPercentageAmountFromTable = chargeDefinition.isGetPercentageFromTable();
         if (getPercentageAmountFromTable) {
-            amount = getAmountPerentageFromCustomChargeTable(chargeCalculationType, loan.getNumberOfRepayments());
+            final LoanAccountData loanAccountExtras = getLoanExtras(loan.getId());
+            String pointOfSaleCode = null;
+            String clientIdNumber = null;
+            if (loanAccountExtras != null) {
+                pointOfSaleCode = loanAccountExtras.getPointOfSalesName();
+                clientIdNumber = loanAccountExtras.getClientIdNumber();
+            }
+            amount = getAmountPerentageFromCustomChargeTable(chargeCalculationType, loan.getNumberOfRepayments(), pointOfSaleCode,
+                    clientIdNumber);
         }
 
         // Ammend amount components as configred
@@ -385,40 +402,138 @@ public class LoanChargeAssembler {
         return percentageOf;
     }
 
-    private BigDecimal getAmountPerentageFromCustomChargeTable(ChargeCalculationType type, Integer numberOfInstallments) {
+    private BigDecimal getAmountPerentageFromCustomChargeTable(final ChargeCalculationType type, final Integer numberOfInstallments,
+            final String pointOfSaleCode, final String clientIdNumber) {
         BigDecimal percentage = BigDecimal.ZERO;
-        boolean found = false;
-        List<CustomChargeEntityData> customChargeEntityDataList = this.customChargeService.findByIsExternalService(false);
+        final List<CustomChargeEntityData> customChargeEntityDataList = this.customChargeService.findByIsExternalService(false);
         for (CustomChargeEntityData entity : customChargeEntityDataList) {
-            if ((entity.getName().equalsIgnoreCase("Insurance")
-                    && (type.isPercentageBasedMandatoryInsurance() || type.isCustomPercentageOfOutstandingPrincipalCharge()))
-                    || (entity.getName().equalsIgnoreCase("Term") && type.isTermCharge())) {
-                List<CustomChargeTypeData> customChargeTypeDataList = customChargeTypeService.findAllByEntityId(entity.getId());
-                for (CustomChargeTypeData customChargeTypeData : customChargeTypeDataList) {
-                    List<CustomChargeTypeMapData> customChargeTypeMapDataList = this.customChargeTypeMapService
-                            .findAllActive(customChargeTypeData.getId());
-                    if (customChargeTypeMapDataList != null && !customChargeTypeMapDataList.isEmpty()) {
-                        Optional<CustomChargeTypeMapData> data = customChargeTypeMapDataList.stream()
-                                .filter(map -> map.getTerm().intValue() == numberOfInstallments).reduce((a, b) -> {
-                                    throw new CustomChargeTypeMapNotFoundException("error.msg.customchargetypemap.id.multiple.values");
-                                });
+            if (isAllowedChargeCalculationType(type, entity)) {
+                boolean useVipClientMapping = isVipClient(clientIdNumber);
+                boolean useCommercePointOfSaleMapping = isCommercePointOfSale(pointOfSaleCode);
+                final List<CustomChargeTypeData> customChargeTypeDataList = customChargeTypeService.findAllByEntityId(entity.getId());
+                final List<CustomChargeTypeData> vipCustomChargeTypeDataList = customChargeTypeDataList.stream()
+                        .filter(data -> data.getName().equalsIgnoreCase("VIP")).toList();
+                final List<CustomChargeTypeData> commerceCustomChargeTypeDataList = customChargeTypeDataList.stream()
+                        .filter(data -> data.getName().equalsIgnoreCase("Commerce")).toList();
+                final List<CustomChargeTypeData> productCustomChargeTypeDataList = customChargeTypeDataList.stream()
+                        .filter(data -> data.getName().equalsIgnoreCase("Product")).toList();
 
-                        if (data.isPresent()) {
-                            CustomChargeTypeMapData map = data.get();
-                            percentage = map.getPercentage();
-                            found = true;
-                            break;
-                        }
+                final BigDecimal vipPercentage = calculateChargePercentageAmount(vipCustomChargeTypeDataList, numberOfInstallments);
+                final BigDecimal commercePointOfSalePercentage = calculateChargePercentageAmount(commerceCustomChargeTypeDataList,
+                        numberOfInstallments);
+                final BigDecimal productDefaultPercentage = calculateChargePercentageAmount(productCustomChargeTypeDataList,
+                        numberOfInstallments);
+
+                if (useCommercePointOfSaleMapping && useVipClientMapping) {
+                    if (vipPercentage.compareTo(BigDecimal.ZERO) > 0 && commercePointOfSalePercentage.compareTo(BigDecimal.ZERO) > 0) {
+                        percentage = vipPercentage.compareTo(commercePointOfSalePercentage) > 0 ? commercePointOfSalePercentage
+                                : vipPercentage;
+                    } else if (vipPercentage.compareTo(BigDecimal.ZERO) > 0) {
+                        percentage = vipPercentage;
+                    } else {
+                        percentage = commercePointOfSalePercentage;
                     }
+                } else if (useCommercePointOfSaleMapping) {
+                    percentage = commercePointOfSalePercentage;
+                } else if (useVipClientMapping) {
+                    percentage = vipPercentage;
+                } else {
+                    percentage = productDefaultPercentage;
                 }
             }
-            if (found) {
+            if (percentage.compareTo(BigDecimal.ZERO) > 0) {
                 break;
             }
         }
-        if (percentage.equals(BigDecimal.ZERO)) {
-            throw new CustomChargeTypeMapNotFoundException();
+        if (percentage.compareTo(BigDecimal.ZERO) == 0) {
+            throw new CustomChargeTypeMapNotFoundException(type);
         }
         return percentage;
     }
+
+    private boolean isAllowedChargeCalculationType(final ChargeCalculationType chargeCalculationType,
+            final CustomChargeEntityData customChargeEntityData) {
+        return (customChargeEntityData.getName().equalsIgnoreCase("Insurance")
+                && chargeCalculationType.isPercentageBasedMandatoryInsurance())
+                || (customChargeEntityData.getName().equalsIgnoreCase("Insurance")
+                        && chargeCalculationType.isCustomPercentageOfOutstandingPrincipalCharge())
+                || (customChargeEntityData.getName().equalsIgnoreCase("Insurance") && chargeCalculationType.isVoluntaryInsurance())
+                || (customChargeEntityData.getName().equalsIgnoreCase("Term") && chargeCalculationType.isTermCharge());
+    }
+
+    private BigDecimal calculateChargePercentageAmount(final List<CustomChargeTypeData> customChargeTypeDataList,
+            final Integer installmentNumber) {
+        BigDecimal percentageAmount = BigDecimal.ZERO;
+        if (CollectionUtils.isNotEmpty(customChargeTypeDataList)) {
+            for (final CustomChargeTypeData customChargeTypeData : customChargeTypeDataList) {
+                final List<CustomChargeTypeMapData> customChargeTypeMapDataList = this.customChargeTypeMapService
+                        .findAllActive(customChargeTypeData.getId());
+                if (CollectionUtils.isNotEmpty(customChargeTypeMapDataList)) {
+                    final Optional<CustomChargeTypeMapData> customChargeTypeMapDataOptional = customChargeTypeMapDataList.stream()
+                            .filter(map -> map.getTerm().intValue() == installmentNumber).reduce((a, b) -> {
+                                throw new CustomChargeTypeMapNotFoundException("error.msg.customchargetypemap.id.multiple.values");
+                            });
+                    if (customChargeTypeMapDataOptional.isPresent()) {
+                        final CustomChargeTypeMapData customChargeTypeMapData = customChargeTypeMapDataOptional.get();
+                        percentageAmount = customChargeTypeMapData.getPercentage();
+                        break;
+                    }
+                }
+            }
+        }
+        return percentageAmount;
+    }
+
+    private boolean isCommercePointOfSale(final String pointOfSaleCode) {
+        if (StringUtils.isNotBlank(pointOfSaleCode)) {
+            final String sql = "SELECT COUNT(*) FROM custom.c_commerce_point_of_sale WHERE point_of_sale_code = ? ";
+            int pointOfSaleCount = ObjectUtils.defaultIfNull(jdbcTemplate.queryForObject(sql, Integer.class, pointOfSaleCode), 0);
+            return pointOfSaleCount > 0;
+        }
+        return false;
+    }
+
+    private boolean isVipClient(final String clientIdNumber) {
+        if (StringUtils.isNotBlank(clientIdNumber)) {
+            final String sql = "SELECT COUNT(*) FROM custom.c_vip_client WHERE client_id = ? ";
+            final int clientCount = ObjectUtils.defaultIfNull(jdbcTemplate.queryForObject(sql, Integer.class, clientIdNumber), 0);
+            return clientCount > 0;
+        }
+        return false;
+    }
+
+    private LoanAccountData getLoanExtras(final Long loanId) {
+        final String loanSQL = """
+                    SELECT
+                    	ccbp.client_id AS "clientId",
+                    	ccbp.loan_id AS "loanId",
+                    	ccapos.code AS "pointOfSaleCode",
+                    	COALESCE(cce."NIT",
+                    	ccp."Cedula") AS "clientIdNumber"
+                    FROM m_loan ml
+                    INNER JOIN m_client mc ON mc.id = ml.client_id
+                    LEFT JOIN custom.c_client_buy_process ccbp ON ccbp.loan_id = ml.id
+                    LEFT JOIN custom.c_client_ally_point_of_sales ccapos ON ccapos.id = ccbp.point_if_sales_id
+                    LEFT JOIN campos_cliente_empresas cce ON cce.client_id = mc.id
+                    LEFT JOIN campos_cliente_persona ccp ON ccp.client_id = mc.id
+                    WHERE ml.id = ?
+                """;
+        final List<LoanAccountData> loanAccounts = jdbcTemplate.query(loanSQL, resultSet -> {
+            final List<LoanAccountData> LoanAccountDataList = new ArrayList<>();
+            while (resultSet.next()) {
+                final Long loanAccountId = resultSet.getLong("loanId");
+                final Long clientId = resultSet.getLong("clientId");
+                final String pointOfSaleCode = resultSet.getString("pointOfSaleCode");
+                final String clientIdNumber = resultSet.getString("clientIdNumber");
+                final LoanAccountData loanAccountData = new LoanAccountData();
+                loanAccountData.setId(loanAccountId);
+                loanAccountData.setPointOfSalesName(pointOfSaleCode);
+                loanAccountData.setClientIdNumber(clientIdNumber);
+                loanAccountData.setClientId(clientId);
+            }
+            return LoanAccountDataList;
+        }, loanId);
+        return CollectionUtils.isNotEmpty(loanAccounts) ? loanAccounts.get(0) : null;
+    }
+
 }

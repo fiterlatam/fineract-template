@@ -3248,27 +3248,25 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             for (final LoanRescheduleData loanRescheduleData : loanLoanRescheduleDataList) {
                 final Long loanId = loanRescheduleData.getId();
                 final Loan loan = this.loanRepository.findById(loanId).orElseThrow(() -> new LoanNotFoundException(loanId));
-                final MonetaryCurrency currency = loan.getCurrency();
-                final Money maximumLegalAnnualNominalRate = Money.of(currency, maximumLegalAnnualNominalRateValue);
                 final LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment = loan
                         .getInstallmentByScheduleFromDate(appliedOnDate);
                 if (loanRepaymentScheduleInstallment == null) {
                     continue;
                 }
-                final Money rescheduledAnnualRate = Money.of(currency,
-                        ObjectUtils.defaultIfNull(loanRescheduleData.getRescheduledAnnualRate(), BigDecimal.ZERO));
-                Money newInterestRate;
-                final Money annualNominalRate = Money.of(currency, loanRescheduleData.getAnnualNominalRate());
-                if (maximumLegalAnnualNominalRate.isGreaterThan(annualNominalRate)
-                        && !rescheduledAnnualRate.isEqualTo(rescheduledAnnualRate)) {
-                    newInterestRate = annualNominalRate;
-                } else if (maximumLegalAnnualNominalRate.isLessThan(annualNominalRate)
-                        && !rescheduledAnnualRate.isEqualTo(maximumLegalAnnualNominalRate)) {
-                    newInterestRate = maximumLegalAnnualNominalRate;
+                final BigDecimal rescheduledAnnualRate = ObjectUtils.defaultIfNull(loanRescheduleData.getRescheduledAnnualRate(),
+                        BigDecimal.ZERO);
+                BigDecimal newInterestRate;
+
+                if (maximumLegalAnnualNominalRateValue.compareTo(loanRescheduleData.getAnnualNominalRate()) > 0
+                        && rescheduledAnnualRate.compareTo(loanRescheduleData.getAnnualNominalRate()) != 0) {
+                    newInterestRate = loanRescheduleData.getAnnualNominalRate();
+                } else if (maximumLegalAnnualNominalRateValue.compareTo(loanRescheduleData.getAnnualNominalRate()) < 0
+                        && rescheduledAnnualRate.compareTo(maximumLegalAnnualNominalRateValue) != 0) {
+                    newInterestRate = maximumLegalAnnualNominalRateValue;
                 } else {
                     continue;
                 }
-                rescheduleJsonObject.addProperty("newInterestRate", newInterestRate.getAmount());
+                rescheduleJsonObject.addProperty("newInterestRate", newInterestRate);
                 final String rescheduleFromDateString = DateUtils.format(appliedOnDate, dateFormat, Locale.forLanguageTag(locale));
                 rescheduleJsonObject.addProperty("rescheduleFromDate", rescheduleFromDateString);
                 rescheduleJsonObject.addProperty("loanId", loanId);

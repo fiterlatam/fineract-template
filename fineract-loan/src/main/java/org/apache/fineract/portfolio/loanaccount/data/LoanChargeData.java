@@ -71,15 +71,15 @@ public class LoanChargeData {
 
     private final Collection<ChargeData> chargeOptions;
 
-    private final boolean penalty;
+    private final Boolean penalty;
 
     private final EnumOptionData chargePaymentMode;
 
-    private final boolean paid;
+    private final Boolean paid;
 
-    private final boolean waived;
+    private final Boolean waived;
 
-    private final boolean chargePayable;
+    private final Boolean chargePayable;
 
     private final Long loanId;
 
@@ -96,6 +96,9 @@ public class LoanChargeData {
     private final ExternalId externalId;
 
     private final ExternalId externalLoanId;
+
+    private Long codigoSeguro;
+    private Long cedulaSeguroVoluntario;
 
     public static LoanChargeData template(final Collection<ChargeData> chargeOptions) {
         return new LoanChargeData(null, null, null, null, null, null, null, null, chargeOptions, false, null, false, false, null,

@@ -32,6 +32,8 @@ public interface ChargeReadPlatformService {
 
     ChargeData retrieveNewChargeDetails();
 
+    Collection<ChargeData> retrieveChargesByInsuranceCode(Long insuranceCode);
+
     /**
      * Returns all charges that can be applied to Cients
      *

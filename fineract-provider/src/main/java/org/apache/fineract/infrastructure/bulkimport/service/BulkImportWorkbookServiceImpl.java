@@ -113,67 +113,48 @@ public class BulkImportWorkbookServiceImpl implements BulkImportWorkbookService 
                 int primaryColumn = 0;
                 if (entity.trim().equalsIgnoreCase(GlobalEntityType.CLIENTS_PERSON.toString())) {
                     entityType = GlobalEntityType.CLIENTS_PERSON;
-                    primaryColumn = 0;
                 } else if (entity.trim().equalsIgnoreCase(GlobalEntityType.CLIENTS_ENTITY.toString())) {
                     entityType = GlobalEntityType.CLIENTS_ENTITY;
-                    primaryColumn = 0;
                 } else if (entity.trim().equalsIgnoreCase(GlobalEntityType.CENTERS.toString())) {
                     entityType = GlobalEntityType.CENTERS;
-                    primaryColumn = 0;
                 } else if (entity.trim().equalsIgnoreCase(GlobalEntityType.GROUPS.toString())) {
                     entityType = GlobalEntityType.GROUPS;
-                    primaryColumn = 0;
                 } else if (entity.trim().equalsIgnoreCase(GlobalEntityType.LOANS.toString())) {
                     entityType = GlobalEntityType.LOANS;
-                    primaryColumn = 0;
                 } else if (entity.trim().equalsIgnoreCase(GlobalEntityType.LOAN_TRANSACTIONS.toString())) {
                     entityType = GlobalEntityType.LOAN_TRANSACTIONS;
-                    primaryColumn = 0;
                 } else if (entity.trim().equalsIgnoreCase(GlobalEntityType.GUARANTORS.toString())) {
                     entityType = GlobalEntityType.GUARANTORS;
-                    primaryColumn = 0;
                 } else if (entity.trim().equalsIgnoreCase(GlobalEntityType.OFFICES.toString())) {
                     entityType = GlobalEntityType.OFFICES;
-                    primaryColumn = 0;
                 } else if (entity.trim().equalsIgnoreCase(GlobalEntityType.CHART_OF_ACCOUNTS.toString())) {
                     entityType = GlobalEntityType.CHART_OF_ACCOUNTS;
-                    primaryColumn = 0;
                 } else if (entity.trim().equalsIgnoreCase(GlobalEntityType.GL_JOURNAL_ENTRIES.toString())) {
                     entityType = GlobalEntityType.GL_JOURNAL_ENTRIES;
-                    primaryColumn = 0;
                 } else if (entity.trim().equalsIgnoreCase(GlobalEntityType.STAFF.toString())) {
                     entityType = GlobalEntityType.STAFF;
-                    primaryColumn = 0;
                 } else if (entity.trim().equalsIgnoreCase(GlobalEntityType.SHARE_ACCOUNTS.toString())) {
                     entityType = GlobalEntityType.SHARE_ACCOUNTS;
-                    primaryColumn = 0;
                 } else if (entity.trim().equalsIgnoreCase(GlobalEntityType.SAVINGS_ACCOUNT.toString())) {
                     entityType = GlobalEntityType.SAVINGS_ACCOUNT;
-                    primaryColumn = 0;
                 } else if (entity.trim().equalsIgnoreCase(GlobalEntityType.SAVINGS_TRANSACTIONS.toString())) {
                     entityType = GlobalEntityType.SAVINGS_TRANSACTIONS;
-                    primaryColumn = 0;
                 } else if (entity.trim().equalsIgnoreCase(GlobalEntityType.RECURRING_DEPOSIT_ACCOUNTS.toString())) {
                     entityType = GlobalEntityType.RECURRING_DEPOSIT_ACCOUNTS;
-                    primaryColumn = 0;
                 } else if (entity.trim().equalsIgnoreCase(GlobalEntityType.RECURRING_DEPOSIT_ACCOUNTS_TRANSACTIONS.toString())) {
                     entityType = GlobalEntityType.RECURRING_DEPOSIT_ACCOUNTS_TRANSACTIONS;
-                    primaryColumn = 0;
                 } else if (entity.trim().equalsIgnoreCase(GlobalEntityType.FIXED_DEPOSIT_ACCOUNTS.toString())) {
                     entityType = GlobalEntityType.FIXED_DEPOSIT_ACCOUNTS;
-                    primaryColumn = 0;
                 } else if (entity.trim().equalsIgnoreCase(GlobalEntityType.FIXED_DEPOSIT_TRANSACTIONS.toString())) {
                     entityType = GlobalEntityType.FIXED_DEPOSIT_TRANSACTIONS;
-                    primaryColumn = 0;
                 } else if (entity.trim().equalsIgnoreCase(GlobalEntityType.USERS.toString())) {
                     entityType = GlobalEntityType.USERS;
-                    primaryColumn = 0;
                 } else if (entity.trim().equalsIgnoreCase(GlobalEntityType.CLIENT_BLOCK.toString())) {
                     entityType = GlobalEntityType.CLIENT_BLOCK;
-                    primaryColumn = 0;
                 } else if (entity.trim().equalsIgnoreCase(GlobalEntityType.CLIENT_VIP.toString())) {
                     entityType = GlobalEntityType.CLIENT_VIP;
-                    primaryColumn = 0;
+                } else if (entity.trim().equalsIgnoreCase(GlobalEntityType.COMMERCE_POINT_OF_SALE.toString())) {
+                    entityType = GlobalEntityType.COMMERCE_POINT_OF_SALE;
                 } else {
                     workbook.close();
                     throw new GeneralPlatformDomainRuleException("error.msg.unable.to.find.resource", "Unable to find requested resource");

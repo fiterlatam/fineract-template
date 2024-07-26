@@ -5,6 +5,7 @@ import java.util.List;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
+import org.apache.fineract.portfolio.loanaccount.data.LoanChargeData;
 
 @Builder
 @Getter
@@ -37,7 +38,7 @@ public class CreateLoanPayloadData {
     private String loanIdToClose;
     private String isTopup;
     private String transactionProcessingStrategyCode;
-    private List<String> charges;
+    private List<LoanChargeData> charges;
     private List<String> collateral;
     private String dateFormat;
     private String locale;
@@ -48,4 +49,6 @@ public class CreateLoanPayloadData {
     private Integer graceOnInterestPayment;
     private Integer graceOnInterestCharged;
     private Integer interestRatePoints;
+    private String clientIdNumber;
+    private String pointOfSaleCode;
 }

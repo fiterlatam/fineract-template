@@ -285,6 +285,11 @@ public class LoanProductData implements Serializable {
     @Setter
     private List<ChannelData> repaymentChannels;
 
+    private List<ChargeData> voluntaryInsuranceOptions;
+
+    private Long voluntaryInsuranceId;
+    private boolean isPurchaseCharge;
+
     /**
      * Used when returning lookup information about loan product for dropdowns.
      */
@@ -776,7 +781,7 @@ public class LoanProductData implements Serializable {
                 loanScheduleProcessingType, repaymentReschedulingType);
     }
 
-    public static LoanProductData withAccountingDetails(final LoanProductData productData, final Map<String, Object> accountingMappings,
+    public static void withAccountingDetails(final LoanProductData productData, final Map<String, Object> accountingMappings,
             final Collection<PaymentTypeToGLAccountMapper> paymentChannelToFundSourceMappings,
             final Collection<ChargeToGLAccountMapper> feeToGLAccountMappings,
             final Collection<ChargeToGLAccountMapper> penaltyToGLAccountMappings) {
@@ -784,7 +789,6 @@ public class LoanProductData implements Serializable {
         productData.paymentChannelToFundSourceMappings = paymentChannelToFundSourceMappings;
         productData.feeToIncomeAccountMappings = feeToGLAccountMappings;
         productData.penaltyToIncomeAccountMappings = penaltyToGLAccountMappings;
-        return productData;
     }
 
     public LoanProductData(final Long id, final String name, final String shortName, final String description, final CurrencyData currency,
