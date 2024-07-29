@@ -22,6 +22,8 @@ import org.apache.fineract.accounting.journalentry.service.JournalEntryWritePlat
 import org.apache.fineract.cob.service.LoanAccountLockService;
 import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformService;
 import org.apache.fineract.custom.infrastructure.channel.service.ChannelReadWritePlatformService;
+import org.apache.fineract.custom.infrastructure.dataqueries.domain.ClientAdditionalInformationRepository;
+import org.apache.fineract.custom.infrastructure.dataqueries.domain.IndividualAdditionalInformationRepository;
 import org.apache.fineract.custom.portfolio.customcharge.service.CustomChargeEntityReadWritePlatformService;
 import org.apache.fineract.custom.portfolio.customcharge.service.CustomChargeTypeMapReadWritePlatformService;
 import org.apache.fineract.custom.portfolio.customcharge.service.CustomChargeTypeReadWritePlatformService;
@@ -296,9 +298,12 @@ public class LoanAccountConfiguration {
             LoanProductRepository loanProductRepository, ExternalIdFactory externalIdFactory,
             CustomChargeEntityReadWritePlatformService customChargeService,
             CustomChargeTypeReadWritePlatformService customChargeTypeService,
-            CustomChargeTypeMapReadWritePlatformService customChargeTypeMapService, JdbcTemplate jdbcTemplate) {
+            CustomChargeTypeMapReadWritePlatformService customChargeTypeMapService, JdbcTemplate jdbcTemplate,
+            ClientRepositoryWrapper clientRepositoryWrapper, ClientAdditionalInformationRepository clientAdditionalInformationRepository,
+            IndividualAdditionalInformationRepository individualAdditionalInformationRepository) {
         return new LoanChargeAssembler(fromApiJsonHelper, chargeRepository, loanChargeRepository, loanProductRepository, externalIdFactory,
-                customChargeService, customChargeTypeService, customChargeTypeMapService, jdbcTemplate);
+                customChargeService, customChargeTypeService, customChargeTypeMapService, jdbcTemplate, clientRepositoryWrapper, clientAdditionalInformationRepository,
+                individualAdditionalInformationRepository);
     }
 
     @Bean
