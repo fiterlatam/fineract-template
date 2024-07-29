@@ -302,8 +302,8 @@ public class LoanAccountConfiguration {
             ClientRepositoryWrapper clientRepositoryWrapper, ClientAdditionalInformationRepository clientAdditionalInformationRepository,
             IndividualAdditionalInformationRepository individualAdditionalInformationRepository) {
         return new LoanChargeAssembler(fromApiJsonHelper, chargeRepository, loanChargeRepository, loanProductRepository, externalIdFactory,
-                customChargeService, customChargeTypeService, customChargeTypeMapService, jdbcTemplate, clientRepositoryWrapper, clientAdditionalInformationRepository,
-                individualAdditionalInformationRepository);
+                customChargeService, customChargeTypeService, customChargeTypeMapService, jdbcTemplate, clientRepositoryWrapper,
+                clientAdditionalInformationRepository, individualAdditionalInformationRepository);
     }
 
     @Bean

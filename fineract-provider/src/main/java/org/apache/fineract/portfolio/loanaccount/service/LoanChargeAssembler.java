@@ -173,7 +173,6 @@ public class LoanChargeAssembler {
                                 Long clientId = this.fromApiJsonHelper.extractLongNamed("clientId", element);
                                 clientIdNumber = getClientIdentifier(clientId);
 
-
                             }
                             amount = getAmountPerentageFromCustomChargeTable(calculation, numberOfRepayments, pointOfSaleCode,
                                     clientIdNumber);
@@ -558,13 +557,15 @@ public class LoanChargeAssembler {
         if (clientOptional.isPresent()) {
             Client client = clientOptional.get();
             if (client.isPerson()) {
-                Optional<IndividualAdditionalInformation> individualAdditionalInformationOptional = individualAdditionalInformationRepository.findByClientId(clientId);
+                Optional<IndividualAdditionalInformation> individualAdditionalInformationOptional = individualAdditionalInformationRepository
+                        .findByClientId(clientId);
                 if (individualAdditionalInformationOptional.isPresent()) {
                     IndividualAdditionalInformation individualAdditionalInformation = individualAdditionalInformationOptional.get();
                     clientIdNumber = individualAdditionalInformation.getCedula();
                 }
             } else {
-                Optional<ClientAdditionalInformation> clientAdditionalInformationOptional = clientAdditionalInformationRepository.findByClientId(clientId);
+                Optional<ClientAdditionalInformation> clientAdditionalInformationOptional = clientAdditionalInformationRepository
+                        .findByClientId(clientId);
                 if (clientAdditionalInformationOptional.isPresent()) {
                     ClientAdditionalInformation clientAdditionalInformation = clientAdditionalInformationOptional.get();
                     clientIdNumber = clientAdditionalInformation.getNit();
