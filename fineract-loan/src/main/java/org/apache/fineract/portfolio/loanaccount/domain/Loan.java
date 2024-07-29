@@ -4273,6 +4273,10 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         return disbursementDate;
     }
 
+    public LocalDate getDisburseDonDate() {
+        return this.actualDisbursementDate;
+    }
+
     public void setActualDisbursementDate(LocalDate actualDisbursementDate) {
         this.actualDisbursementDate = actualDisbursementDate;
     }
