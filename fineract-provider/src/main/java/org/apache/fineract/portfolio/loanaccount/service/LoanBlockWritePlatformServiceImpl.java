@@ -196,7 +196,9 @@ public class LoanBlockWritePlatformServiceImpl implements LoanBlockWritePlatform
         }
 
         final Loan loan = this.loanRepositoryWrapper.findOneWithNotFoundDetection(loanId);
-
+        if (loan.getDisburseDonDate() == null) {
+            throw new GeneralPlatformDomainRuleException("error.msg.loan.not.disburse", "Loan not disburse");
+        }
         // check if current blocking reason on loan has higher priority, if so, replace it with this blocking reason
         if (loan.getLoanCustomizationDetail().getBlockStatus() == null
                 || loan.getLoanCustomizationDetail().getBlockStatus().getPriority() > blockingReasonSetting.getPriority()) {
