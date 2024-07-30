@@ -162,11 +162,13 @@ public final class LoanApplicationCommandFromApiJsonHelper {
         if ("SU+ Empresas".equalsIgnoreCase(loanProduct.getProductType().getLabel())) {
             final BigDecimal discountValue = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed(LoanApiConstants.DISCOUNT_VALUE,
                     element);
-            //validate that discount is not above principal
-            final BigDecimal principal = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed(LoanApiConstants.principalParamName, element);
-           final BigDecimal discountTransferValue = principal.subtract(discountValue);
+            // validate that discount is not above principal
+            final BigDecimal principal = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed(LoanApiConstants.principalParamName,
+                    element);
+            final BigDecimal discountTransferValue = principal.subtract(discountValue);
             baseDataValidator.reset().parameter(LoanApiConstants.DISCOUNT_VALUE).value(discountValue).notNull().zeroOrPositiveAmount();
-            baseDataValidator.reset().parameter(LoanApiConstants.DISCOUNT_TRANSFER_VALUE).value(discountTransferValue).notNull().zeroOrPositiveAmount();
+            baseDataValidator.reset().parameter(LoanApiConstants.DISCOUNT_TRANSFER_VALUE).value(discountTransferValue).notNull()
+                    .zeroOrPositiveAmount();
         }
 
         if (!StringUtils.isBlank(loanTypeStr)) {
@@ -654,10 +656,12 @@ public final class LoanApplicationCommandFromApiJsonHelper {
         if ("SU+ Empresas".equalsIgnoreCase(loanProduct.getProductType().getLabel())) {
             final BigDecimal discountValue = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed(LoanApiConstants.DISCOUNT_VALUE,
                     element);
-            final BigDecimal principal = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed(LoanApiConstants.principalParamName, element);
+            final BigDecimal principal = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed(LoanApiConstants.principalParamName,
+                    element);
             final BigDecimal discountTransferValue = principal.subtract(discountValue);
             baseDataValidator.reset().parameter(LoanApiConstants.DISCOUNT_VALUE).value(discountValue).notNull().zeroOrPositiveAmount();
-            baseDataValidator.reset().parameter(LoanApiConstants.DISCOUNT_TRANSFER_VALUE).value(discountTransferValue).notNull().zeroOrPositiveAmount();
+            baseDataValidator.reset().parameter(LoanApiConstants.DISCOUNT_TRANSFER_VALUE).value(discountTransferValue).notNull()
+                    .zeroOrPositiveAmount();
 
         }
         if (this.fromApiJsonHelper.parameterExists(LoanApiConstants.groupIdParameterName, element)) {
