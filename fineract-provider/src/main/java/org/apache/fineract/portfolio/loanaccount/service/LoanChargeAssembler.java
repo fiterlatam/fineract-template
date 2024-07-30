@@ -30,6 +30,10 @@ import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.fineract.custom.infrastructure.dataqueries.domain.ClientAdditionalInformation;
+import org.apache.fineract.custom.infrastructure.dataqueries.domain.ClientAdditionalInformationRepository;
+import org.apache.fineract.custom.infrastructure.dataqueries.domain.IndividualAdditionalInformation;
+import org.apache.fineract.custom.infrastructure.dataqueries.domain.IndividualAdditionalInformationRepository;
 import org.apache.fineract.custom.portfolio.customcharge.data.CustomChargeEntityData;
 import org.apache.fineract.custom.portfolio.customcharge.data.CustomChargeTypeData;
 import org.apache.fineract.custom.portfolio.customcharge.data.CustomChargeTypeMapData;
@@ -50,6 +54,8 @@ import org.apache.fineract.portfolio.charge.domain.ChargeRepositoryWrapper;
 import org.apache.fineract.portfolio.charge.domain.ChargeTimeType;
 import org.apache.fineract.portfolio.charge.exception.LoanChargeCannotBeAddedException;
 import org.apache.fineract.portfolio.charge.exception.LoanChargeWithoutMandatoryFieldException;
+import org.apache.fineract.portfolio.client.domain.Client;
+import org.apache.fineract.portfolio.client.domain.ClientRepositoryWrapper;
 import org.apache.fineract.portfolio.loanaccount.api.LoanApiConstants;
 import org.apache.fineract.portfolio.loanaccount.data.LoanAccountData;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
@@ -74,6 +80,9 @@ public class LoanChargeAssembler {
     private final CustomChargeTypeReadWritePlatformService customChargeTypeService;
     private final CustomChargeTypeMapReadWritePlatformService customChargeTypeMapService;
     private final JdbcTemplate jdbcTemplate;
+    private final ClientRepositoryWrapper clientRepositoryWrapper;
+    private final ClientAdditionalInformationRepository clientAdditionalInformationRepository;
+    private final IndividualAdditionalInformationRepository individualAdditionalInformationRepository;
 
     public Set<LoanCharge> fromParsedJson(final JsonElement element, List<LoanDisbursementDetails> disbursementDetails) {
         JsonArray jsonDisbursement = this.fromApiJsonHelper.extractJsonArrayNamed("disbursementData", element);
@@ -158,7 +167,13 @@ public class LoanChargeAssembler {
                                 calculation = ChargeCalculationType.fromInt(chargeDefinition.getChargeCalculation());
                             }
                             final String pointOfSaleCode = this.fromApiJsonHelper.extractStringNamed("pointOfSaleCode", element);
-                            final String clientIdNumber = this.fromApiJsonHelper.extractStringNamed("clientIdNumber", element);
+
+                            String clientIdNumber = this.fromApiJsonHelper.extractStringNamed("clientIdNumber", element);
+                            if (clientIdNumber == null || clientIdNumber.isEmpty()) {
+                                Long clientId = this.fromApiJsonHelper.extractLongNamed("clientId", element);
+                                clientIdNumber = getClientIdentifier(clientId);
+
+                            }
                             amount = getAmountPerentageFromCustomChargeTable(calculation, numberOfRepayments, pointOfSaleCode,
                                     clientIdNumber);
                         }
@@ -534,6 +549,30 @@ public class LoanChargeAssembler {
             return LoanAccountDataList;
         }, loanId);
         return CollectionUtils.isNotEmpty(loanAccounts) ? loanAccounts.get(0) : null;
+    }
+
+    private String getClientIdentifier(Long clientId) {
+        String clientIdNumber = null;
+        Optional<Client> clientOptional = clientRepositoryWrapper.findById(clientId);
+        if (clientOptional.isPresent()) {
+            Client client = clientOptional.get();
+            if (client.isPerson()) {
+                Optional<IndividualAdditionalInformation> individualAdditionalInformationOptional = individualAdditionalInformationRepository
+                        .findByClientId(clientId);
+                if (individualAdditionalInformationOptional.isPresent()) {
+                    IndividualAdditionalInformation individualAdditionalInformation = individualAdditionalInformationOptional.get();
+                    clientIdNumber = individualAdditionalInformation.getCedula();
+                }
+            } else {
+                Optional<ClientAdditionalInformation> clientAdditionalInformationOptional = clientAdditionalInformationRepository
+                        .findByClientId(clientId);
+                if (clientAdditionalInformationOptional.isPresent()) {
+                    ClientAdditionalInformation clientAdditionalInformation = clientAdditionalInformationOptional.get();
+                    clientIdNumber = clientAdditionalInformation.getNit();
+                }
+            }
+        }
+        return clientIdNumber;
     }
 
 }
