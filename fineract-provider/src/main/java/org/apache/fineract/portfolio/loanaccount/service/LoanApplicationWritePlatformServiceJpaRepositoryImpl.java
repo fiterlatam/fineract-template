@@ -1221,6 +1221,12 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             }
             existingLoanApplication.getLoanCustomizationDetail().recordActivity();
 
+            final BigDecimal discountValue = command.bigDecimalValueOfParameterNamed(LoanApiConstants.DISCOUNT_VALUE);
+            existingLoanApplication.updateValorDescuento(discountValue);
+            if (discountValue != null) {
+                changes.put(LoanApiConstants.DISCOUNT_VALUE, discountValue);
+            }
+
             this.validMaximumLegalInterestRate(existingLoanApplication);
 
             // updating loan interest recalculation details throwing null

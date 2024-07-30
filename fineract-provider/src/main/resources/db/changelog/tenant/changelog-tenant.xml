@@ -247,6 +247,7 @@
     <include file="parts/20241904011009100_SU_183_update_jobs_name.xml" relativeToChangelogFile="true"/>
     <include file="parts/20241904011009100_SU_164_create_report.xml" relativeToChangelogFile="true"/>
     <include file="parts/20241904011009100_SU_172_create_report.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20241904011009100_SU_295_add_discount_columns_to_m_loan.xml" relativeToChangelogFile="true"/>
     <include file="parts/2024070225441925_SU_110_add_column_loan_transaction_processing_type.xml" relativeToChangelogFile="true"/>
     <include file="parts/20242604011009100_SU_136_add_reestructuraciones.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

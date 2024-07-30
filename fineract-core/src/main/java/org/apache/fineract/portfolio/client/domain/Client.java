@@ -759,4 +759,8 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
         }
     }
 
+    public boolean isPerson() {
+        return LegalForm.fromInt(this.legalForm).isPerson();
+    }
+
 }
