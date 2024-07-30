@@ -111,7 +111,7 @@ public final class LoanApplicationCommandFromApiJsonHelper {
             LoanApiConstants.daysInYearTypeParameterName, LoanApiConstants.fixedPrincipalPercentagePerInstallmentParamName,
             LoanApiConstants.DISALLOW_EXPECTED_DISBURSEMENTS, LoanApiConstants.FRAUD_ATTRIBUTE_NAME,
             LoanProductConstants.LOAN_SCHEDULE_PROCESSING_TYPE, LoanApiConstants.INTEREST_RATE_POINTS, LoanApiConstants.POINT_OF_SALE_CODE,
-            LoanApiConstants.CLIENT_ID_NUMBER));
+            LoanApiConstants.CLIENT_ID_NUMBER, LoanApiConstants.DISCOUNT_VALUE, LoanApiConstants.DISCOUNT_TRANSFER_VALUE));
     public static final String LOANAPPLICATION_UNDO = "loanapplication.undo";
 
     private final FromJsonHelper fromApiJsonHelper;
@@ -157,6 +157,13 @@ public final class LoanApplicationCommandFromApiJsonHelper {
 
         final String loanTypeStr = this.fromApiJsonHelper.extractStringNamed(LoanApiConstants.loanTypeParameterName, element);
         baseDataValidator.reset().parameter(LoanApiConstants.loanTypeParameterName).value(loanTypeStr).notNull();
+
+        // validate valorDescuento when product type is SU+ Empresas
+        if ("SU+ Empresas".equalsIgnoreCase(loanProduct.getProductType().getLabel())) {
+            final BigDecimal discountValue = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed(LoanApiConstants.DISCOUNT_VALUE,
+                    element);
+            baseDataValidator.reset().parameter(LoanApiConstants.DISCOUNT_VALUE).value(discountValue).notNull().zeroOrPositiveAmount();
+        }
 
         if (!StringUtils.isBlank(loanTypeStr)) {
             final AccountType loanType = AccountType.fromName(loanTypeStr);
@@ -640,6 +647,12 @@ public final class LoanApplicationCommandFromApiJsonHelper {
             baseDataValidator.reset().parameter(LoanApiConstants.clientIdParameterName).value(clientId).notNull().integerGreaterThanZero();
         }
 
+        // validate valorDescuento when product type is SU+ Empresas
+        if ("SU+ Empresas".equalsIgnoreCase(loanProduct.getProductType().getLabel())) {
+            final BigDecimal discountValue = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed(LoanApiConstants.DISCOUNT_VALUE,
+                    element);
+            baseDataValidator.reset().parameter(LoanApiConstants.DISCOUNT_VALUE).value(discountValue).notNull().zeroOrPositiveAmount();
+        }
         if (this.fromApiJsonHelper.parameterExists(LoanApiConstants.groupIdParameterName, element)) {
             atLeastOneParameterPassedForUpdate = true;
             final Long groupId = this.fromApiJsonHelper.extractLongNamed(LoanApiConstants.groupIdParameterName, element);
