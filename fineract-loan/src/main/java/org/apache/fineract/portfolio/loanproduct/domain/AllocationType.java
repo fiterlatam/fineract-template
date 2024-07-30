@@ -35,15 +35,15 @@ public enum AllocationType {
     INTEREST("Interest", "labels.allocations.types.interest"), //
     FEES("Honorarios", "labels.allocations.types.fees"), //
     AVAL("Aval", "labels.allocations.types.aval"), //
-    MANDATORY_INSURANCE("Mandatory Insurance", "labels.allocations.types.mandatory.insurance"),
-    VOLUNTARY_INSURANCE("Voluntary Insurance", "labels.allocations.types.voluntary.insurance");
+    MANDATORY_INSURANCE("Mandatory Insurance", "labels.allocations.types.mandatory.insurance"), VOLUNTARY_INSURANCE("Voluntary Insurance",
+            "labels.allocations.types.voluntary.insurance");
 
     private final String humanReadableName;
     private final String code;
 
     public static List<EnumOptionData> getValuesAsEnumOptionDataList() {
-        List<EnumOptionData> list = new ArrayList<>(Arrays.stream(values())
-                .map(v -> new EnumOptionData((long) (v.ordinal() + 1), v.name(), v.getCode())).toList());
+        List<EnumOptionData> list = new ArrayList<>(
+                Arrays.stream(values()).map(v -> new EnumOptionData((long) (v.ordinal() + 1), v.name(), v.getCode())).toList());
         // Remove FEE enum from the list as it is split into FEES, AVAL, MANDATORY_INSURANCE and VOLUNTARY_INSURANCE.
         list.removeIf(x -> x.getValue().equals("Fee"));
         return list;
