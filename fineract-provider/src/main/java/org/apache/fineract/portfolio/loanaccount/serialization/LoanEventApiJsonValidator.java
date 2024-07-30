@@ -53,6 +53,7 @@ import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleIns
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepository;
 import org.apache.fineract.portfolio.loanaccount.exception.LoanNotFoundException;
 import org.apache.fineract.portfolio.loanaccount.exception.LoanRepaymentScheduleNotFoundException;
+import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleProcessingType;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -279,10 +280,10 @@ public final class LoanEventApiJsonValidator {
             throw new InvalidJsonException();
         }
 
-        final Set<String> transactionParameters = new HashSet<>(
-                Arrays.asList("transactionDate", "transactionAmount", "externalId", "note", "locale", "dateFormat", "paymentTypeId",
-                        "accountNumber", "checkNumber", "routingCode", "receiptNumber", "bankNumber", "loanId", "channelHash",
-                        "channelName", "pointOfSalesCode", "isImportedRepaymentTransaction", "repaymentChannelId", "repaymentBankId"));
+        final Set<String> transactionParameters = new HashSet<>(Arrays.asList("transactionDate", "transactionAmount", "externalId", "note",
+                "locale", "dateFormat", "paymentTypeId", "accountNumber", "checkNumber", "routingCode", "receiptNumber", "bankNumber",
+                "loanId", "channelHash", "channelName", "pointOfSalesCode", "isImportedRepaymentTransaction", "repaymentChannelId",
+                "repaymentBankId", "transactionProcessingStrategy"));
 
         final Type typeOfMap = new TypeToken<Map<String, Object>>() {}.getType();
         this.fromApiJsonHelper.checkForUnsupportedParameters(typeOfMap, json, transactionParameters);
@@ -299,6 +300,13 @@ public final class LoanEventApiJsonValidator {
 
         final String note = this.fromApiJsonHelper.extractStringNamed("note", element);
         baseDataValidator.reset().parameter("note").value(note).notExceedingLengthOf(1000);
+
+        final String transactionProcessingStrategy = this.fromApiJsonHelper.extractStringNamed("transactionProcessingStrategy", element);
+        if (transactionProcessingStrategy != null) {
+            baseDataValidator.reset().parameter("transactionProcessingStrategy").value(transactionProcessingStrategy).ignoreIfNull()
+                    .notExceedingLengthOf(10).isOneOfTheseStringValues(LoanScheduleProcessingType.HORIZONTAL.name().toLowerCase(),
+                            LoanScheduleProcessingType.VERTICAL.name().toLowerCase());
+        }
 
         validatePaymentDetails(baseDataValidator, element);
 

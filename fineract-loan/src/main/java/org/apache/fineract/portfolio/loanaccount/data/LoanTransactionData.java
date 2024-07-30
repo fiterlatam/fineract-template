@@ -26,6 +26,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.apache.fineract.custom.infrastructure.channel.data.ChannelData;
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
+import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.infrastructure.core.domain.ExternalId;
 import org.apache.fineract.organisation.monetary.data.CurrencyData;
 import org.apache.fineract.portfolio.account.data.AccountTransferData;
@@ -93,6 +94,10 @@ public class LoanTransactionData {
     private Long repaymentChannelId;
     private Long repaymentBankId;
     private boolean isImportedRepaymentTransaction;
+    private List<EnumOptionData> transactionProcessingStrategyTypes;
+    private String transactionProcessingStrategy;
+    private String loanScheduleType;
+    private String loanProductType;
 
     public static LoanTransactionData importInstance(BigDecimal repaymentAmount, LocalDate lastRepaymentDate, Long repaymentTypeId,
             Integer rowIndex, String locale, String dateFormat) {
