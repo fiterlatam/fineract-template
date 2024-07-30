@@ -42,6 +42,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -226,6 +227,7 @@ import org.apache.fineract.portfolio.loanaccount.serialization.LoanEventApiJsonV
 import org.apache.fineract.portfolio.loanaccount.serialization.LoanUpdateCommandFromApiJsonDeserializer;
 import org.apache.fineract.portfolio.loanproduct.data.LoanOverdueDTO;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProduct;
+import org.apache.fineract.portfolio.loanproduct.domain.LoanProductOwnerType;
 import org.apache.fineract.portfolio.loanproduct.exception.InvalidCurrencyException;
 import org.apache.fineract.portfolio.loanproduct.exception.LinkedAccountRequiredException;
 import org.apache.fineract.portfolio.note.domain.Note;
@@ -406,7 +408,12 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 CalendarEntityType.LOANS.getValue());
         Calendar calendar = calendarInstance!=null? calendarInstance.getCalendar():null;
 
-        LocalDate deriveFirstRepaymentDate = loanScheduleAssembler.deriveFirstRepaymentDate(loan, actualDisbursementDate, calendar);
+        LocalDate deriveFirstRepaymentDate;
+        if (loan.getExpectedFirstRepaymentOnDate() != null && Objects.equals(loan.getLoanProduct().getOwnerType(), LoanProductOwnerType.INDIVIDUAL.getValue())) {
+            deriveFirstRepaymentDate = loan.getExpectedFirstRepaymentOnDate();
+        } else {
+            deriveFirstRepaymentDate = loanScheduleAssembler.deriveFirstRepaymentDate(loan, actualDisbursementDate, calendar);
+        }
         loan.setExpectedFirstRepaymentOnDate(deriveFirstRepaymentDate);
 
         ScheduleGeneratorDTO scheduleGeneratorDTO = this.loanUtilService.buildScheduleGeneratorDTO(loan, recalculateFrom);
