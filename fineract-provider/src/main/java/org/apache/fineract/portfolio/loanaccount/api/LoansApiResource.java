@@ -255,7 +255,8 @@ public class LoansApiResource {
             LoanApiConstants.clientActiveLoanOptions, LoanApiConstants.datatables, LoanProductConstants.RATES_PARAM_NAME,
             LoanApiConstants.MULTIDISBURSE_DETAILS_PARAMNAME, LoanApiConstants.EMI_AMOUNT_VARIATIONS_PARAMNAME,
             LoanApiConstants.COLLECTION_PARAMNAME, LoanApiConstants.CHANNEL_NAME, LoanApiConstants.CHANNEL_ID,
-            LoanApiConstants.CHANNEL_DESCRIPTION, LoanApiConstants.POINT_OF_SALES_NAME));
+            LoanApiConstants.CHANNEL_DESCRIPTION, LoanApiConstants.POINT_OF_SALES_NAME, LoanApiConstants.DISCOUNT_TRANSFER_VALUE,
+            LoanApiConstants.DISCOUNT_VALUE));
 
     private static final Set<String> LOAN_APPROVAL_DATA_PARAMETERS = new HashSet<>(Arrays.asList("approvalDate", "approvalAmount"));
     private static final Set<String> GLIM_ACCOUNTS_DATA_PARAMETERS = new HashSet<>(Arrays.asList("glimId", "groupId", "clientId",

@@ -152,6 +152,8 @@ import org.apache.fineract.portfolio.paymenttype.data.PaymentTypeData;
 import org.apache.fineract.portfolio.paymenttype.service.PaymentTypeReadPlatformService;
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -161,6 +163,7 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import org.thymeleaf.TemplateEngine;
+import org.thymeleaf.spring6.SpringTemplateEngine;
 import org.thymeleaf.templatemode.TemplateMode;
 import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
 import org.xhtmlrenderer.pdf.ITextRenderer;
@@ -170,6 +173,7 @@ import org.xhtmlrenderer.pdf.ITextRenderer;
 public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, LoanReadPlatformServiceCommon {
 
     private static final String ACCRUAL_ON_CHARGE_SUBMITTED_ON_DATE = "submitted-date";
+    private static final Logger log = LoggerFactory.getLogger(LoanReadPlatformServiceImpl.class);
     private final JdbcTemplate jdbcTemplate;
     private final PlatformSecurityContext context;
     private final LoanRepositoryWrapper loanRepositoryWrapper;
@@ -841,7 +845,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                         cch.cedula_seguro_voluntario AS cedulaSeguroVoluntario,
                         cch.codigo_seguro AS codigoSeguro,
                         pos.name AS point_of_sales_name,
-                        pos.code AS point_of_sales_code
+                        pos.code AS point_of_sales_code,
+                        l.valor_descuento,l.valor_giro
                     FROM
                         m_loan l
                         JOIN m_product_loan lp ON lp.id = l.product_id
@@ -1228,6 +1233,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                 blockStatusData = BlockingReasonsData.builder().id(rs.getLong("blockStatusId")).nameOfReason(blockStatusName)
                         .level(rs.getString("blockStatusLevel")).priority(JdbcSupport.getInteger(rs, "blockStatusPriority")).build();
             }
+            BigDecimal valorDescuento = rs.getBigDecimal("valor_descuento");
+            BigDecimal valorGiro = rs.getBigDecimal("valor_giro");
 
             final LoanAccountData basicLoanDetails = LoanAccountData.basicLoanDetails(id, accountNo, status, externalId, clientId,
                     clientAccountNo, clientName, clientOfficeId, clientExternalId, groupData, loanType, loanProductId, loanProductName,
@@ -1246,7 +1253,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                     closureLoanAccountNo, topupAmount, isEqualAmortization, fixedPrincipalPercentagePerInstallment, delinquencyRange,
                     disallowExpectedDisbursements, isFraud, lastClosedBusinessDate, overpaidOnDate, isChargedOff, enableDownPayment,
                     disbursedAmountPercentageForDownPayment, enableAutoRepaymentForDownPayment, enableInstallmentLevelDelinquency,
-                    loanScheduleType.asEnumOptionData(), loanScheduleProcessingType.asEnumOptionData());
+                    loanScheduleType.asEnumOptionData(), loanScheduleProcessingType.asEnumOptionData(), valorDescuento, valorGiro);
             basicLoanDetails.setLoanAssignorId(loanAssignorId);
             basicLoanDetails.setBlockStatus(blockStatusData);
             basicLoanDetails.setChannelDescription(channelDescription);
@@ -1254,6 +1261,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
             basicLoanDetails.setChannelName(channelName);
             basicLoanDetails.setPointOfSalesName(pointOfSalesName);
             basicLoanDetails.setPointOfSalesCode(pointOfSalesCode);
+            basicLoanDetails.setValorDescuento(valorDescuento);
+            basicLoanDetails.setValorGiro(valorGiro);
             final Long interestRatePoints = JdbcSupport.getLong(rs, "interestRatePoints");
             basicLoanDetails.setInterestRatePoints(interestRatePoints);
 
@@ -2868,6 +2877,17 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
     @Override
     public void exportLoanDisbursementPDF(Long loanId, HttpServletResponse httpServletResponse) throws DocumentException, IOException {
         final Loan loan = this.loanRepositoryWrapper.findOneWithNotFoundDetection(loanId);
+        final BigDecimal valorDescuento = loan.getValorDescuento();
+        final BigDecimal valorGiro = loan.getValorGiro();
+        String valorDescuentoAmountString = "";
+        String valorGiroAmountString = "";
+        boolean showDiscountFields = false;
+        if (valorDescuento != null && valorDescuento.compareTo(BigDecimal.ZERO) > 0) {
+            valorDescuentoAmountString = Money.of(loan.getCurrency(), valorDescuento).toString();
+            valorGiroAmountString = Money.of(loan.getCurrency(), valorGiro).toString();
+            showDiscountFields = true;
+        }
+
         final Client loanClient = loan.getClient();
         final Integer legalFormId = loanClient.getLegalForm();
         final ClientAdditionalFieldsData loanAdditionalFieldsData = this.clientReadPlatformService
@@ -2918,6 +2938,9 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         variables.put("loanAssignorNit", loanAssignorNit);
         variables.put("generatedOnDateTime", generatedOnDateTime);
         variables.put("generatedByUsername", this.context.authenticatedUser().getDisplayName());
+        variables.put("valorDescuento", valorDescuentoAmountString);
+        variables.put("valorGiro", valorGiroAmountString);
+        variables.put("showDiscountFields", showDiscountFields);
         final org.thymeleaf.context.Context thymeleafContext = new org.thymeleaf.context.Context(Locale.forLanguageTag("es-ES"), variables);
         ClassLoaderTemplateResolver templateResolver = new ClassLoaderTemplateResolver();
         templateResolver.setPrefix("templates/");
@@ -2927,7 +2950,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         templateResolver.setTemplateMode(TemplateMode.HTML);
         templateResolver.setOrder(0);
         templateResolver.setCheckExistence(true);
-        final TemplateEngine thymeleafTemplateEngine = new TemplateEngine();
+        final TemplateEngine thymeleafTemplateEngine = new SpringTemplateEngine();
         thymeleafTemplateEngine.setTemplateResolver(templateResolver);
         final String html = thymeleafTemplateEngine.process("LoanDisbursementReport", thymeleafContext);
         final ITextRenderer renderer = new ITextRenderer();
