@@ -43,6 +43,8 @@
         <p>Cedente: <span th:text="${loanAssignorDisplayName}"></span></p>
         <p>nit cedente: <span th:text="${loanAssignorNit}"></span></p>
         <p>Monto de crédito: <span th:text="${disbursementAmount}"></span></p>
+        <p th:if="${showDiscountFields}">Valor de descuento: <span th:text="${valorDescuento}"></span></p>
+        <p th:if="${showDiscountFields}">Valor de giro: <span th:text="${valorGiro}"></span></p>
         <p>Fecha de desembolso: <span th:text="${disbursementDate}"></span></p>
         <p>Usuario que hizo el desembolso: <span th:text="${disbursedByUsername}"></span></p>
         <br/>

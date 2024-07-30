@@ -361,6 +361,8 @@ public class LoanAssembler {
         loanApplication.loanApplicationSubmittal(loanScheduleModel, loanApplicationTerms, defaultLoanLifecycleStateMachine, submittedOnDate,
                 externalId, allowTransactionsOnHoliday, holidays, workingDays, allowTransactionsOnNonWorkingDay);
 
+        BigDecimal valorDescuento = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed("valorDescuento", element);
+        loanApplication.updateValorDescuento(valorDescuento);
         return loanApplication;
     }
 

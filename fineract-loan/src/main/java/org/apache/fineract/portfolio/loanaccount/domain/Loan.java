@@ -463,6 +463,12 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     @JoinColumn(name = "loan_assignor_id")
     private Client loanAssignor;
 
+    @Column(name = "valor_descuento")
+    private BigDecimal valorDescuento;
+
+    @Column(name = "valor_giro")
+    private BigDecimal valorGiro;
+
     @Embedded
     private LoanCustomizationDetail loanCustomizationDetail;
 
@@ -7373,5 +7379,23 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         wrapper.reprocess(getCurrency(), getDisbursementDate(), getRepaymentScheduleInstallments(), getActiveCharges());
 
         updateLoanSummaryDerivedFields();
+    }
+
+    public BigDecimal getValorGiro() {
+        return valorGiro;
+    }
+
+    public BigDecimal getValorDescuento() {
+        return valorDescuento;
+    }
+
+    public void updateValorDescuento(BigDecimal valorDescuento) {
+        if (valorDescuento == null && this.approvedPrincipal != null) {
+            this.valorDescuento = BigDecimal.ZERO;
+            this.valorGiro = this.getApprovedPrincipal();
+            return;
+        }
+        this.valorDescuento = valorDescuento;
+        this.valorGiro = this.getApprovedPrincipal().subtract(valorDescuento);
     }
 }
