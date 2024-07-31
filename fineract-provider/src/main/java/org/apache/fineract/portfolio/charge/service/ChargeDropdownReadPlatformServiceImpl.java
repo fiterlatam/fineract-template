@@ -551,7 +551,6 @@ public class ChargeDropdownReadPlatformServiceImpl implements ChargeDropdownRead
                 chargeCalculationType(ChargeCalculationType.FLAT), //
                 chargeCalculationType(ChargeCalculationType.FLAT_ACHG), //
                 chargeCalculationType(ChargeCalculationType.FLAT_HONO), //
-                chargeCalculationType(ChargeCalculationType.FLAT_HONO_ACHG), //
                 chargeCalculationType(ChargeCalculationType.FLAT_AVAL), //
                 chargeCalculationType(ChargeCalculationType.FLAT_AVAL_ACHG), //
                 chargeCalculationType(ChargeCalculationType.FLAT_AVAL_HONO), //
@@ -1619,7 +1618,6 @@ public class ChargeDropdownReadPlatformServiceImpl implements ChargeDropdownRead
                 loanChargeCalculationType(ChargeCalculationType.FLAT), //
                 loanChargeCalculationType(ChargeCalculationType.FLAT_ACHG), //
                 loanChargeCalculationType(ChargeCalculationType.FLAT_HONO), //
-                loanChargeCalculationType(ChargeCalculationType.FLAT_HONO_ACHG), //
                 loanChargeCalculationType(ChargeCalculationType.FLAT_AVAL), //
                 loanChargeCalculationType(ChargeCalculationType.FLAT_AVAL_ACHG), //
                 loanChargeCalculationType(ChargeCalculationType.FLAT_AVAL_HONO), //
