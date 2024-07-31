@@ -55,6 +55,8 @@ import org.apache.fineract.infrastructure.clientblockingreasons.data.BlockingRea
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 import org.apache.fineract.infrastructure.codes.service.CodeValueReadPlatformService;
 import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
+import org.apache.fineract.infrastructure.configuration.domain.GlobalConfigurationProperty;
+import org.apache.fineract.infrastructure.configuration.domain.GlobalConfigurationRepository;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.infrastructure.core.domain.ExternalId;
 import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
@@ -203,6 +205,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
     private final LoanTransactionRelationMapper loanTransactionRelationMapper;
     private final LoanChargePaidByReadPlatformService loanChargePaidByReadPlatformService;
     private final ChannelReadWritePlatformService channelReadWritePlatformService;
+    private final GlobalConfigurationRepository globalConfigurationRepository;
 
     @Override
     public LoanAccountData retrieveOne(final Long loanId) {
@@ -1765,7 +1768,20 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
 
         Collection<LoanAccountSummaryData> activeLoanOptions = null;
         if (loanProduct.isCanUseForTopup() && clientId != null) {
-            activeLoanOptions = this.accountDetailsReadPlatformService.retrieveClientActiveLoanAccountSummary(clientId);
+            Optional<GlobalConfigurationProperty> maxReestructurar = this.globalConfigurationRepository
+                    .findByName(LoanApiConstants.GLOBAL_CONFIG_MAX_RESTRUCTURE);
+            Optional<GlobalConfigurationProperty> Rediferir = this.globalConfigurationRepository
+                    .findByName(LoanApiConstants.GLOBAL_CONFIG_MAX_ARREARS_REDEFER);
+            String maxReestructura = "0";
+            String maxRediferir = "0";
+            if (maxReestructurar.isPresent()) {
+                maxReestructura = Long.toString(maxReestructurar.get().getValue());
+            }
+            if (Rediferir.isPresent()) {
+                maxRediferir = Long.toString(Rediferir.get().getValue());
+            }
+            activeLoanOptions = this.accountDetailsReadPlatformService.retrieveClientActiveLoanAccountSummaryByConfig(clientId,
+                    maxReestructura, maxRediferir);
         } else if (loanProduct.isCanUseForTopup() && groupId != null) {
             activeLoanOptions = this.accountDetailsReadPlatformService.retrieveGroupActiveLoanAccountSummary(groupId);
         }
