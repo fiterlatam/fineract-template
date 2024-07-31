@@ -237,6 +237,20 @@ public class LoanTransactionData {
                 paymentTypeOptions, externalId, transfer, fixedEmiAmount, outstandingLoanBalance, null, manuallyReversed,
                 ExternalId.empty(), null, loanId);
     }
+    //
+
+    public LoanTransactionData(final Long id, final Long officeId, final String officeName, final LoanTransactionEnumData transactionType,
+            final PaymentDetailData paymentDetailData, final CurrencyData currency, final LocalDate date, final BigDecimal amount,
+            final BigDecimal netDisbursalAmount, final BigDecimal principalPortion, final BigDecimal interestPortion,
+            final BigDecimal feeChargesPortion, final BigDecimal penaltyChargesPortion, final BigDecimal overpaymentPortion,
+            BigDecimal unrecognizedIncomePortion, final Collection<PaymentTypeData> paymentTypeOptions, final ExternalId externalId,
+            final AccountTransferData transfer, final BigDecimal fixedEmiAmount, BigDecimal outstandingLoanBalance,
+            boolean manuallyReversed, Long loanId, ExternalId externalLoanId, Collection<CodeValueData> bankOptions) {
+        this(id, externalLoanId, officeId, officeName, transactionType, paymentDetailData, currency, date, amount, netDisbursalAmount,
+                principalPortion, interestPortion, feeChargesPortion, penaltyChargesPortion, overpaymentPortion, unrecognizedIncomePortion,
+                paymentTypeOptions, externalId, transfer, fixedEmiAmount, outstandingLoanBalance, null, manuallyReversed,
+                ExternalId.empty(), null, loanId, bankOptions);
+    }
 
     public LoanTransactionData(final Long id, final Long officeId, final String officeName, final LoanTransactionEnumData transactionType,
             final PaymentDetailData paymentDetailData, final CurrencyData currency, final LocalDate date, final BigDecimal amount,
@@ -362,6 +376,45 @@ public class LoanTransactionData {
         this.manuallyReversed = manuallyReversed;
         this.possibleNextRepaymentDate = possibleNextRepaymentDate;
         this.reversalExternalId = ExternalId.empty();
+    }
+
+    public LoanTransactionData(final Long id, final ExternalId externalLoanId, final Long officeId, final String officeName,
+            final LoanTransactionEnumData transactionType, final PaymentDetailData paymentDetailData, final CurrencyData currency,
+            final LocalDate date, final BigDecimal amount, final BigDecimal netDisbursalAmount, final BigDecimal principalPortion,
+            final BigDecimal interestPortion, final BigDecimal feeChargesPortion, final BigDecimal penaltyChargesPortion,
+            final BigDecimal overpaymentPortion, final BigDecimal unrecognizedIncomePortion,
+            final Collection<PaymentTypeData> paymentTypeOptions, final ExternalId externalId, final AccountTransferData transfer,
+            final BigDecimal fixedEmiAmount, BigDecimal outstandingLoanBalance, final LocalDate submittedOnDate,
+            final boolean manuallyReversed, final ExternalId reversalExternalId, final LocalDate reversedOnDate, Long loanId,
+            final Collection<CodeValueData> bankOptions) {
+        this.id = id;
+        this.loanId = loanId;
+        this.externalLoanId = externalLoanId;
+        this.officeId = officeId;
+        this.officeName = officeName;
+        this.type = transactionType;
+        this.paymentDetailData = paymentDetailData;
+        this.currency = currency;
+        this.date = date;
+        this.amount = amount;
+        this.netDisbursalAmount = netDisbursalAmount;
+        this.principalPortion = principalPortion;
+        this.interestPortion = interestPortion;
+        this.feeChargesPortion = feeChargesPortion;
+        this.penaltyChargesPortion = penaltyChargesPortion;
+        this.unrecognizedIncomePortion = unrecognizedIncomePortion;
+        this.paymentTypeOptions = paymentTypeOptions;
+        this.externalId = externalId;
+        this.transfer = transfer;
+        this.overpaymentPortion = overpaymentPortion;
+        this.fixedEmiAmount = fixedEmiAmount;
+        this.outstandingLoanBalance = outstandingLoanBalance;
+        this.submittedOnDate = submittedOnDate;
+        this.manuallyReversed = manuallyReversed;
+        this.possibleNextRepaymentDate = null;
+        this.reversalExternalId = reversalExternalId;
+        this.reversedOnDate = reversedOnDate;
+        this.bankOptions = bankOptions;
     }
 
     public boolean isNotDisbursement() {
