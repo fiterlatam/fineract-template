@@ -18,28 +18,21 @@
  */
 package org.apache.fineract.infrastructure.bulkimport.populator.loanrepayment;
 
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeFormatterBuilder;
 import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import org.apache.fineract.infrastructure.bulkimport.constants.LoanRepaymentConstants;
 import org.apache.fineract.infrastructure.bulkimport.constants.TemplatePopulateImportConstants;
 import org.apache.fineract.infrastructure.bulkimport.populator.AbstractWorkbookPopulator;
-import org.apache.fineract.infrastructure.bulkimport.populator.ClientSheetPopulator;
 import org.apache.fineract.infrastructure.bulkimport.populator.ExtrasSheetPopulator;
 import org.apache.fineract.infrastructure.bulkimport.populator.OfficeSheetPopulator;
-import org.apache.fineract.portfolio.client.data.ClientData;
-import org.apache.fineract.portfolio.loanaccount.data.LoanAccountData;
 import org.apache.poi.hssf.usermodel.HSSFDataValidationHelper;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
 import org.apache.poi.ss.SpreadsheetVersion;
 import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.DataFormat;
 import org.apache.poi.ss.usermodel.DataValidation;
 import org.apache.poi.ss.usermodel.DataValidationConstraint;
 import org.apache.poi.ss.usermodel.DataValidationHelper;
+import org.apache.poi.ss.usermodel.Font;
 import org.apache.poi.ss.usermodel.Name;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -49,79 +42,44 @@ import org.apache.poi.ss.util.CellRangeAddressList;
 public class LoanRepaymentWorkbookPopulator extends AbstractWorkbookPopulator {
 
     private final OfficeSheetPopulator officeSheetPopulator;
-    private final ClientSheetPopulator clientSheetPopulator;
     private final ExtrasSheetPopulator extrasSheetPopulator;
-    private final List<LoanAccountData> alLoans;
-    private Map<Long, String> clientIdToClientExternalId;
 
-    public LoanRepaymentWorkbookPopulator(List<LoanAccountData> loans, OfficeSheetPopulator officeSheetPopulator,
-            ClientSheetPopulator clientSheetPopulator, ExtrasSheetPopulator extrasSheetPopulator) {
-        this.alLoans = loans;
+    public LoanRepaymentWorkbookPopulator(OfficeSheetPopulator officeSheetPopulator, ExtrasSheetPopulator extrasSheetPopulator) {
         this.officeSheetPopulator = officeSheetPopulator;
-        this.clientSheetPopulator = clientSheetPopulator;
         this.extrasSheetPopulator = extrasSheetPopulator;
     }
 
     @Override
     public void populate(Workbook workbook, String dateFormat) {
-        Sheet loanRepaymentSheet = workbook.createSheet(TemplatePopulateImportConstants.LOAN_REPAYMENT_SHEET_NAME);
-        setLayout(loanRepaymentSheet);
-        officeSheetPopulator.populate(workbook, dateFormat);
-        clientSheetPopulator.populate(workbook, dateFormat);
-        extrasSheetPopulator.populate(workbook, dateFormat);
-        setClientIdToClientExternalId();
-        populateLoansTable(loanRepaymentSheet, dateFormat);
+        final Sheet loanRepaymentSheet = workbook.createSheet(TemplatePopulateImportConstants.LOAN_REPAYMENT_SHEET_NAME);
+        setLayout(loanRepaymentSheet, workbook);
+        this.officeSheetPopulator.populate(workbook, dateFormat);
+        this.extrasSheetPopulator.populate(workbook, dateFormat);
         setRules(loanRepaymentSheet, dateFormat);
         setDefaults(loanRepaymentSheet, dateFormat);
     }
 
-    private void setClientIdToClientExternalId() {
-        clientIdToClientExternalId = new HashMap<>();
-        List<ClientData> allClients = clientSheetPopulator.getClients();
-        for (ClientData client : allClients) {
-            if (!client.getExternalId().isEmpty()) {
-                clientIdToClientExternalId.put(client.getId(), client.getExternalId().getValue());
-            }
-        }
-    }
-
     private void setDefaults(Sheet worksheet, String dateFormat) {
+        final Workbook workbook = worksheet.getWorkbook();
+        final CellStyle textCellStyle = workbook.createCellStyle();
+        final DataFormat fmt = workbook.createDataFormat();
+        textCellStyle.setDataFormat(fmt.getFormat("@"));
         for (int rowNo = 1; rowNo < 3000; rowNo++) {
             Row row = worksheet.getRow(rowNo);
             if (row == null) {
                 row = worksheet.createRow(rowNo);
             }
-            writeFormula(LoanRepaymentConstants.CLIENT_EXTERNAL_ID, row,
-                    "IF(ISERROR(VLOOKUP($B" + (rowNo + 1) + ",$R$2:$S$" + (alLoans.size() + 1) + ",2,FALSE))," + "\"\",(VLOOKUP($B"
-                            + (rowNo + 1) + ",$R$2:$S$" + (alLoans.size() + 1) + ",2,FALSE)))");
-            writeFormula(LoanRepaymentConstants.PRODUCT_COL, row, "IF(ISERROR(VLOOKUP($D" + (rowNo + 1) + ",$T$2:$X$" + (alLoans.size() + 1)
-                    + ",2,FALSE)),\"\",VLOOKUP($D" + (rowNo + 1) + ",$T$2:$X$" + (alLoans.size() + 1) + ",2,FALSE))");
-            writeFormula(LoanRepaymentConstants.PRINCIPAL_COL, row,
-                    "IF(ISERROR(VLOOKUP($D" + (rowNo + 1) + ",$T$2:$X$" + (alLoans.size() + 1) + ",3,FALSE)),\"\",VLOOKUP($D" + (rowNo + 1)
-                            + ",$T$2:$X$" + (alLoans.size() + 1) + ",3,FALSE))");
-            writeFormula(LoanRepaymentConstants.TOTAL_OUTSTANDING_AMOUNT_COL, row,
-                    "IF(ISERROR(VLOOKUP($D" + (rowNo + 1) + ",$T$2:$X$" + (alLoans.size() + 1) + ",4,FALSE)),\"\",VLOOKUP($D" + (rowNo + 1)
-                            + ",$T$2:$X$" + (alLoans.size() + 1) + ",4,FALSE))");
-
-            writeFormula(LoanRepaymentConstants.LOAN_DISBURSEMENT_DATE_COL, row,
-                    "IF(ISERROR(VLOOKUP($D" + (rowNo + 1) + ",$T$2:$X$" + (alLoans.size() + 1) + ",5,FALSE)),\"\",VLOOKUP($D" + (rowNo + 1)
-                            + ",$T$2:$X$" + (alLoans.size() + 1) + ",5,FALSE))");
-            Workbook workbook = worksheet.getWorkbook();
-            CellStyle dateCellStyle = workbook.createCellStyle();
-            short df = workbook.createDataFormat().getFormat(dateFormat);
+            final CellStyle dateCellStyle = workbook.createCellStyle();
+            final short df = workbook.createDataFormat().getFormat(dateFormat);
             dateCellStyle.setDataFormat(df);
-            row.getCell(LoanRepaymentConstants.LOAN_DISBURSEMENT_DATE_COL).setCellStyle(dateCellStyle);
             row.createCell(LoanRepaymentConstants.REPAID_ON_DATE_COL).setCellStyle(dateCellStyle);
+            row.createCell(LoanRepaymentConstants.CLIENT_ID_COL).setCellStyle(textCellStyle);
         }
     }
 
     private void setRules(Sheet worksheet, String dateFormat) {
         CellRangeAddressList officeNameRange = new CellRangeAddressList(1, SpreadsheetVersion.EXCEL97.getLastRowIndex(),
                 LoanRepaymentConstants.OFFICE_NAME_COL, LoanRepaymentConstants.OFFICE_NAME_COL);
-        CellRangeAddressList clientNameRange = new CellRangeAddressList(1, SpreadsheetVersion.EXCEL97.getLastRowIndex(),
-                LoanRepaymentConstants.CLIENT_NAME_COL, LoanRepaymentConstants.CLIENT_NAME_COL);
-        CellRangeAddressList accountNumberRange = new CellRangeAddressList(1, SpreadsheetVersion.EXCEL97.getLastRowIndex(),
-                LoanRepaymentConstants.LOAN_ACCOUNT_NO_COL, LoanRepaymentConstants.LOAN_ACCOUNT_NO_COL);
         CellRangeAddressList repaymentTypeRange = new CellRangeAddressList(1, SpreadsheetVersion.EXCEL97.getLastRowIndex(),
                 LoanRepaymentConstants.REPAYMENT_TYPE_COL, LoanRepaymentConstants.REPAYMENT_TYPE_COL);
         CellRangeAddressList repaymentBankRange = new CellRangeAddressList(1, SpreadsheetVersion.EXCEL97.getLastRowIndex(),
@@ -131,25 +89,18 @@ public class LoanRepaymentWorkbookPopulator extends AbstractWorkbookPopulator {
         DataValidationHelper validationHelper = new HSSFDataValidationHelper((HSSFSheet) worksheet);
         setNames(worksheet);
         DataValidationConstraint officeNameConstraint = validationHelper.createFormulaListConstraint("Office");
-        DataValidationConstraint clientNameConstraint = validationHelper
-                .createFormulaListConstraint("INDIRECT(CONCATENATE(\"Client_\",$A1))");
-        DataValidationConstraint accountNumberConstraint = validationHelper.createFormulaListConstraint(
-                "INDIRECT(CONCATENATE(\"Account_\",SUBSTITUTE(SUBSTITUTE(SUBSTITUTE($B1,\" \",\"_\"),\"(\",\"_\"),\")\",\"_\")))");
+        validationHelper.createFormulaListConstraint("INDIRECT(CONCATENATE(\"Client_\",$A1))");
         DataValidationConstraint paymentTypeConstraint = validationHelper.createFormulaListConstraint("PaymentTypes");
         DataValidationConstraint repaymentBankConstraint = validationHelper.createFormulaListConstraint("RepaymentBanks");
         DataValidationConstraint repaymentDateConstraint = validationHelper
                 .createDateConstraint(DataValidationConstraint.OperatorType.LESS_OR_EQUAL, "=TODAY()", null, dateFormat);
 
         DataValidation officeValidation = validationHelper.createValidation(officeNameConstraint, officeNameRange);
-        DataValidation clientValidation = validationHelper.createValidation(clientNameConstraint, clientNameRange);
-        DataValidation accountNumberValidation = validationHelper.createValidation(accountNumberConstraint, accountNumberRange);
         DataValidation repaymentTypeValidation = validationHelper.createValidation(paymentTypeConstraint, repaymentTypeRange);
         DataValidation repaymentBankValidation = validationHelper.createValidation(repaymentBankConstraint, repaymentBankRange);
         DataValidation repaymentDateValidation = validationHelper.createValidation(repaymentDateConstraint, repaymentDateRange);
 
         worksheet.addValidationData(officeValidation);
-        worksheet.addValidationData(clientValidation);
-        worksheet.addValidationData(accountNumberValidation);
         worksheet.addValidationData(repaymentTypeValidation);
         worksheet.addValidationData(repaymentBankValidation);
         worksheet.addValidationData(repaymentDateValidation);
@@ -157,145 +108,65 @@ public class LoanRepaymentWorkbookPopulator extends AbstractWorkbookPopulator {
     }
 
     private void setNames(Sheet worksheet) {
-        ArrayList<String> officeNames = new ArrayList<>(officeSheetPopulator.getOfficeNames());
-        Workbook loanRepaymentWorkbook = worksheet.getWorkbook();
-        // Office Names
-        Name officeGroup = loanRepaymentWorkbook.createName();
+        final ArrayList<String> officeNames = new ArrayList<>(officeSheetPopulator.getOfficeNames());
+        final Workbook loanRepaymentWorkbook = worksheet.getWorkbook();
+        final Name officeGroup = loanRepaymentWorkbook.createName();
         officeGroup.setNameName("Office");
         officeGroup.setRefersToFormula(TemplatePopulateImportConstants.OFFICE_SHEET_NAME + "!$B$2:$B$" + (officeNames.size() + 1));
 
-        // Clients Named after Offices
-        for (int i = 0; i < officeNames.size(); i++) {
-            Integer[] officeNameToBeginEndIndexesOfClients = clientSheetPopulator.getOfficeNameToBeginEndIndexesOfClients().get(i);
-            Name name = loanRepaymentWorkbook.createName();
-            if (officeNameToBeginEndIndexesOfClients != null) {
-                setSanitized(name, "Client_" + officeNames.get(i));
-                name.setRefersToFormula(TemplatePopulateImportConstants.CLIENT_SHEET_NAME + "!$B$" + officeNameToBeginEndIndexesOfClients[0]
-                        + ":$B$" + officeNameToBeginEndIndexesOfClients[1]);
-            }
-        }
-
-        // Counting clients with active loans and starting and end addresses of
-        // cells
-        HashMap<String, Integer[]> clientNameToBeginEndIndexes = new HashMap<>();
-        ArrayList<String> clientsWithActiveLoans = new ArrayList<>();
-        ArrayList<String> clientIdsWithActiveLoans = new ArrayList<>();
-        int startIndex = 1;
-        int endIndex;
-        String clientName = "";
-        String clientId = "";
-        for (int i = 0; i < alLoans.size(); i++) {
-            if (!clientName.equals(alLoans.get(i).getClientName())) {
-                endIndex = i + 1;
-                clientNameToBeginEndIndexes.put(clientName, new Integer[] { startIndex, endIndex });
-                startIndex = i + 2;
-                clientName = alLoans.get(i).getClientName();
-                clientId = alLoans.get(i).getClientId().toString();
-                if (!clientsWithActiveLoans.contains(clientName)) {
-                    clientsWithActiveLoans.add(clientName);
-                    clientIdsWithActiveLoans.add(clientId);
-                }
-            }
-            if (i == alLoans.size() - 1) {
-                endIndex = i + 2;
-                clientNameToBeginEndIndexes.put(clientName, new Integer[] { startIndex, endIndex });
-            }
-        }
-
-        // Account Number Named after Clients
-        for (int j = 0; j < clientsWithActiveLoans.size(); j++) {
-            Name name = loanRepaymentWorkbook.createName();
-            setSanitized(name, "Account_" + clientsWithActiveLoans.get(j) + "_" + clientIdsWithActiveLoans.get(j) + "_");
-            final String refersToFormula = TemplatePopulateImportConstants.LOAN_REPAYMENT_SHEET_NAME + "!$T$"
-                    + clientNameToBeginEndIndexes.get(clientsWithActiveLoans.get(j))[0] + ":$T$"
-                    + clientNameToBeginEndIndexes.get(clientsWithActiveLoans.get(j))[1];
-            name.setRefersToFormula(refersToFormula);
-        }
-
-        // Payment Type Name
-        Name paymentTypeGroup = loanRepaymentWorkbook.createName();
+        final Name paymentTypeGroup = loanRepaymentWorkbook.createName();
         paymentTypeGroup.setNameName("PaymentTypes");
-        String paymentTypesRefersToFormula = TemplatePopulateImportConstants.EXTRAS_SHEET_NAME + "!$D$2:$D$"
+        final String paymentTypesRefersToFormula = TemplatePopulateImportConstants.EXTRAS_SHEET_NAME + "!$D$2:$D$"
                 + (extrasSheetPopulator.getPaymentTypesSize() + 1);
         paymentTypeGroup.setRefersToFormula(paymentTypesRefersToFormula);
 
-        Name repaymentChannelGroup = loanRepaymentWorkbook.createName();
+        final Name repaymentChannelGroup = loanRepaymentWorkbook.createName();
         repaymentChannelGroup.setNameName("RepaymentChannels");
         repaymentChannelGroup.setRefersToFormula(
                 TemplatePopulateImportConstants.EXTRAS_SHEET_NAME + "!$H$2:$H$" + (extrasSheetPopulator.getChannelOptions().size() + 1));
 
-        Name repaymentBankGroup = loanRepaymentWorkbook.createName();
+        final Name repaymentBankGroup = loanRepaymentWorkbook.createName();
         repaymentBankGroup.setNameName("RepaymentBanks");
         repaymentBankGroup.setRefersToFormula(
                 TemplatePopulateImportConstants.EXTRAS_SHEET_NAME + "!$J$2:$J$" + (extrasSheetPopulator.getBankOptions().size() + 1));
     }
 
-    private void populateLoansTable(Sheet loanRepaymentSheet, String dateFormat) {
-        int rowIndex = 1;
-        Row row;
-        Workbook workbook = loanRepaymentSheet.getWorkbook();
-        CellStyle dateCellStyle = workbook.createCellStyle();
-        short df = workbook.createDataFormat().getFormat(dateFormat);
-        dateCellStyle.setDataFormat(df);
-        DateTimeFormatter outputFormat = new DateTimeFormatterBuilder().appendPattern(dateFormat).toFormatter();
-        this.alLoans.sort(Comparator.comparingLong(LoanAccountData::getClientId));
-        for (LoanAccountData loan : alLoans) {
-            row = loanRepaymentSheet.createRow(rowIndex++);
-            writeString(LoanRepaymentConstants.LOOKUP_CLIENT_NAME_COL, row, loan.getClientName() + "(" + loan.getClientId() + ")");
-            writeString(LoanRepaymentConstants.LOOKUP_CLIENT_EXTERNAL_ID, row, clientIdToClientExternalId.get(loan.getClientId()));
-            writeString(LoanRepaymentConstants.LOOKUP_ACCOUNT_NO_COL, row, loan.getAccountNo() + "-" + loan.getStatus().getValue());
-            writeString(LoanRepaymentConstants.LOOKUP_PRODUCT_COL, row, loan.getLoanProductName());
-            writeDouble(LoanRepaymentConstants.LOOKUP_PRINCIPAL_COL, row, loan.getPrincipal().doubleValue());
-            if (loan.getSummary() != null && loan.getSummary().getTotalOutstanding() != null) {
-                writeBigDecimal(LoanRepaymentConstants.LOOKUP_TOTAL_OUTSTANDING_AMOUNT_COL, row, loan.getSummary().getTotalOutstanding());
-            }
-            if (loan.getTimeline() != null && loan.getTimeline().getDisbursementDate() != null) {
-                writeDate(LoanRepaymentConstants.LOOKUP_LOAN_DISBURSEMENT_DATE_COL, row,
-                        outputFormat.format(loan.getTimeline().getDisbursementDate()), dateCellStyle, dateFormat);
-            }
-        }
-    }
-
-    private void setLayout(Sheet worksheet) {
+    private void setLayout(final Sheet worksheet, final Workbook workbook) {
         Row rowHeader = worksheet.createRow(TemplatePopulateImportConstants.ROWHEADER_INDEX);
         rowHeader.setHeight(TemplatePopulateImportConstants.ROW_HEADER_HEIGHT);
-        worksheet.setColumnWidth(LoanRepaymentConstants.OFFICE_NAME_COL, TemplatePopulateImportConstants.SMALL_COL_SIZE);
-        worksheet.setColumnWidth(LoanRepaymentConstants.CLIENT_NAME_COL, TemplatePopulateImportConstants.MEDIUM_COL_SIZE);
-        worksheet.setColumnWidth(LoanRepaymentConstants.CLIENT_EXTERNAL_ID, TemplatePopulateImportConstants.SMALL_COL_SIZE);
-        worksheet.setColumnWidth(LoanRepaymentConstants.LOAN_ACCOUNT_NO_COL, TemplatePopulateImportConstants.SMALL_COL_SIZE);
-        worksheet.setColumnWidth(LoanRepaymentConstants.PRODUCT_COL, TemplatePopulateImportConstants.SMALL_COL_SIZE);
-        worksheet.setColumnWidth(LoanRepaymentConstants.PRINCIPAL_COL, TemplatePopulateImportConstants.SMALL_COL_SIZE);
-        worksheet.setColumnWidth(LoanRepaymentConstants.TOTAL_OUTSTANDING_AMOUNT_COL, TemplatePopulateImportConstants.MEDIUM_COL_SIZE);
-        worksheet.setColumnWidth(LoanRepaymentConstants.LOAN_DISBURSEMENT_DATE_COL, TemplatePopulateImportConstants.MEDIUM_COL_SIZE);
-        worksheet.setColumnWidth(LoanRepaymentConstants.AMOUNT_COL, TemplatePopulateImportConstants.SMALL_COL_SIZE);
-        worksheet.setColumnWidth(LoanRepaymentConstants.REPAID_ON_DATE_COL, TemplatePopulateImportConstants.SMALL_COL_SIZE);
-        worksheet.setColumnWidth(LoanRepaymentConstants.REPAYMENT_TYPE_COL, TemplatePopulateImportConstants.SMALL_COL_SIZE);
-        worksheet.setColumnWidth(LoanRepaymentConstants.LOOKUP_CLIENT_NAME_COL, TemplatePopulateImportConstants.MEDIUM_COL_SIZE);
-        worksheet.setColumnWidth(LoanRepaymentConstants.LOOKUP_CLIENT_EXTERNAL_ID, TemplatePopulateImportConstants.SMALL_COL_SIZE);
-        worksheet.setColumnWidth(LoanRepaymentConstants.LOOKUP_ACCOUNT_NO_COL, TemplatePopulateImportConstants.SMALL_COL_SIZE);
-        worksheet.setColumnWidth(LoanRepaymentConstants.LOOKUP_PRODUCT_COL, TemplatePopulateImportConstants.SMALL_COL_SIZE);
-        worksheet.setColumnWidth(LoanRepaymentConstants.LOOKUP_PRINCIPAL_COL, TemplatePopulateImportConstants.SMALL_COL_SIZE);
-        worksheet.setColumnWidth(LoanRepaymentConstants.LOOKUP_TOTAL_OUTSTANDING_AMOUNT_COL,
-                TemplatePopulateImportConstants.LARGE_COL_SIZE);
-        worksheet.setColumnWidth(LoanRepaymentConstants.LOOKUP_LOAN_DISBURSEMENT_DATE_COL, TemplatePopulateImportConstants.SMALL_COL_SIZE);
-        writeString(LoanRepaymentConstants.OFFICE_NAME_COL, rowHeader, "Office Name*");
-        writeString(LoanRepaymentConstants.CLIENT_NAME_COL, rowHeader, "Client Name*");
-        writeString(LoanRepaymentConstants.CLIENT_EXTERNAL_ID, rowHeader, "Client Ext.Id");
-        writeString(LoanRepaymentConstants.LOAN_ACCOUNT_NO_COL, rowHeader, "Loan Account No.*");
-        writeString(LoanRepaymentConstants.PRODUCT_COL, rowHeader, "Product Name");
-        writeString(LoanRepaymentConstants.PRINCIPAL_COL, rowHeader, "Principal");
-        writeString(LoanRepaymentConstants.TOTAL_OUTSTANDING_AMOUNT_COL, rowHeader, "Total Outstanding Amount");
-        writeString(LoanRepaymentConstants.LOAN_DISBURSEMENT_DATE_COL, rowHeader, "Loan Disbursement Date");
-        writeString(LoanRepaymentConstants.AMOUNT_COL, rowHeader, "Amount Repaid*");
-        writeString(LoanRepaymentConstants.REPAID_ON_DATE_COL, rowHeader, "Date*");
-        writeString(LoanRepaymentConstants.REPAYMENT_TYPE_COL, rowHeader, "Type*");
-        writeString(LoanRepaymentConstants.LOOKUP_CLIENT_NAME_COL, rowHeader, "Lookup Client");
-        writeString(LoanRepaymentConstants.LOOKUP_CLIENT_EXTERNAL_ID, rowHeader, "Lookup ClientExtId");
-        writeString(LoanRepaymentConstants.LOOKUP_ACCOUNT_NO_COL, rowHeader, "Lookup Account");
-        writeString(LoanRepaymentConstants.LOOKUP_PRODUCT_COL, rowHeader, "Lookup Product");
-        writeString(LoanRepaymentConstants.LOOKUP_PRINCIPAL_COL, rowHeader, "Lookup Principal");
-        writeString(LoanRepaymentConstants.LOOKUP_TOTAL_OUTSTANDING_AMOUNT_COL, rowHeader, "Lookup Total Outstanding amount");
-        writeString(LoanRepaymentConstants.LOOKUP_LOAN_DISBURSEMENT_DATE_COL, rowHeader, "Lookup Loan Disbursement Date");
-        writeString(LoanRepaymentConstants.REPAYMENT_BANK_COL, rowHeader, "Banco*");
+        worksheet.setColumnWidth(LoanRepaymentConstants.OFFICE_NAME_COL, TemplatePopulateImportConstants.MEDIUM_COL_SIZE);
+        worksheet.setColumnWidth(LoanRepaymentConstants.CLIENT_ID_COL, TemplatePopulateImportConstants.MEDIUM_COL_SIZE);
+        worksheet.setColumnWidth(LoanRepaymentConstants.LOAN_ACCOUNT_NO_COL, TemplatePopulateImportConstants.MEDIUM_COL_SIZE);
+        worksheet.setColumnWidth(LoanRepaymentConstants.PAYMENT_AMOUNT_COL, TemplatePopulateImportConstants.MEDIUM_COL_SIZE);
+        worksheet.setColumnWidth(LoanRepaymentConstants.REPAID_ON_DATE_COL, TemplatePopulateImportConstants.MEDIUM_COL_SIZE);
+        worksheet.setColumnWidth(LoanRepaymentConstants.REPAYMENT_TYPE_COL, TemplatePopulateImportConstants.MEDIUM_COL_SIZE);
+        worksheet.setColumnWidth(LoanRepaymentConstants.REPAYMENT_BANK_COL, TemplatePopulateImportConstants.MEDIUM_COL_SIZE);
+        worksheet.setColumnWidth(LoanRepaymentConstants.STATUS_COL, TemplatePopulateImportConstants.MEDIUM_COL_SIZE);
+
+        writeString(LoanRepaymentConstants.OFFICE_NAME_COL, rowHeader, "nombre oficina");
+        writeString(LoanRepaymentConstants.CLIENT_ID_COL, rowHeader, "cédula del cliente");
+        writeString(LoanRepaymentConstants.LOAN_ACCOUNT_NO_COL, rowHeader, "No de crédito");
+        writeString(LoanRepaymentConstants.PAYMENT_AMOUNT_COL, rowHeader, "Valor del pago");
+        writeString(LoanRepaymentConstants.REPAID_ON_DATE_COL, rowHeader, "fecha");
+        writeString(LoanRepaymentConstants.REPAYMENT_TYPE_COL, rowHeader, "tipo");
+        writeString(LoanRepaymentConstants.REPAYMENT_BANK_COL, rowHeader, "banco");
+
+        final CellStyle headerStyle = headerStyle(workbook);
+        rowHeader.getCell(LoanRepaymentConstants.OFFICE_NAME_COL).setCellStyle(headerStyle);
+        rowHeader.getCell(LoanRepaymentConstants.CLIENT_ID_COL).setCellStyle(headerStyle);
+        rowHeader.getCell(LoanRepaymentConstants.LOAN_ACCOUNT_NO_COL).setCellStyle(headerStyle);
+        rowHeader.getCell(LoanRepaymentConstants.PAYMENT_AMOUNT_COL).setCellStyle(headerStyle);
+        rowHeader.getCell(LoanRepaymentConstants.REPAID_ON_DATE_COL).setCellStyle(headerStyle);
+        rowHeader.getCell(LoanRepaymentConstants.REPAYMENT_TYPE_COL).setCellStyle(headerStyle);
+        rowHeader.getCell(LoanRepaymentConstants.REPAYMENT_BANK_COL).setCellStyle(headerStyle);
+    }
+
+    private CellStyle headerStyle(final Workbook workbook) {
+        final Font headerFont = workbook.createFont();
+        headerFont.setBold(true);
+        headerFont.setFontHeightInPoints((short) 11);
+        final CellStyle headerStyle = workbook.createCellStyle();
+        headerStyle.setFont(headerFont);
+        return headerStyle;
     }
 }

@@ -448,23 +448,18 @@ public class BulkImportWorkbookPopulatorServiceImpl implements BulkImportWorkboo
         this.context.authenticatedUser().validateHasReadPermission(TemplatePopulateImportConstants.FUNDS_ENTITY_TYPE);
         this.context.authenticatedUser().validateHasReadPermission(TemplatePopulateImportConstants.PAYMENT_TYPE_ENTITY_TYPE);
         this.context.authenticatedUser().validateHasReadPermission(TemplatePopulateImportConstants.CURRENCY_ENTITY_TYPE);
-        final Long officeId = null;
-        List<OfficeData> offices = fetchOffices(officeId);
-        List<ClientData> clients = fetchClients(officeId, true);
-        List<FundData> funds = fetchFunds();
-        List<PaymentTypeData> paymentTypes = fetchPaymentTypes();
-        List<CurrencyData> currencies = fetchCurrencies();
+        final List<OfficeData> offices = fetchOffices(null);
+        final List<FundData> funds = fetchFunds();
+        final List<PaymentTypeData> paymentTypes = fetchPaymentTypes();
+        final List<CurrencyData> currencies = fetchCurrencies();
         final SearchParameters channelSearchParameters = SearchParameters.builder().channelType(ChannelType.REPAYMENT.getValue())
                 .active(true).build();
         final List<ChannelData> channelOptions = this.channelReadPlatformService.findBySearchParam(channelSearchParameters);
-        ;
         final List<CodeValueData> bankOptions = fetchCodeValuesByCodeName("Bancos");
-        List<LoanAccountData> loans = fetchLoanAccounts(officeId, LoanStatus.ACTIVE);
         final ExtrasSheetPopulator extrasSheetPopulator = new ExtrasSheetPopulator(funds, paymentTypes, currencies);
         extrasSheetPopulator.setBankOptions(bankOptions);
         extrasSheetPopulator.setChannelOptions(channelOptions);
-        return new LoanRepaymentWorkbookPopulator(loans, new OfficeSheetPopulator(offices), new ClientSheetPopulator(clients, offices),
-                extrasSheetPopulator);
+        return new LoanRepaymentWorkbookPopulator(new OfficeSheetPopulator(offices), extrasSheetPopulator);
     }
 
     private List<LoanAccountData> fetchLoanAccounts(final Long officeId, final LoanStatus loanStatus) {

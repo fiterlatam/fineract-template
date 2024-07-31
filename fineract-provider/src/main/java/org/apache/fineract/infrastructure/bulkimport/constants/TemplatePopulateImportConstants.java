@@ -31,7 +31,7 @@ public class TemplatePopulateImportConstants {
     public static final int EXTRALARGE_COL_SIZE = 10000;
 
     // Sheet names
-    public static final String OFFICE_SHEET_NAME = "Offices";
+    public static final String OFFICE_SHEET_NAME = "oficinas";
     public static final String CENTER_SHEET_NAME = "Centers";
     public static final String STAFF_SHEET_NAME = "Staff";
     public static final String GROUP_SHEET_NAME = "Groups";
@@ -50,7 +50,7 @@ public class TemplatePopulateImportConstants {
     public static final String SHARED_PRODUCTS_SHEET_NAME = "SharedProducts";
     public static final String JOURNAL_ENTRY_SHEET_NAME = "AddJournalEntries";
     public static final String LOANS_SHEET_NAME = "Loans";
-    public static final String LOAN_REPAYMENT_SHEET_NAME = "LoanRepayment";
+    public static final String LOAN_REPAYMENT_SHEET_NAME = "Consignaciones Bancarias";
     public static final String RECURRING_DEPOSIT_SHEET_NAME = "RecurringDeposit";
     public static final String SAVINGS_TRANSACTION_SHEET_NAME = "SavingsTransaction";
     public static final String SHARED_ACCOUNTS_SHEET_NAME = "SharedAccounts";
@@ -135,7 +135,7 @@ public class TemplatePopulateImportConstants {
     public static final String FIXED_DEPOSIT_PRODUCT_ENTITY_TYPE = "FIXEDDEPOSITPRODUCT";
 
     // ReportHeader Values
-    public static final String STATUS_COL_REPORT_HEADER = "Status";
+    public static final String STATUS_COL_REPORT_HEADER = "Estado";
     public static final String CENTERID_COL_REPORT_HEADER = "Center Id";
     public static final String SAVINGS_ID_COL_REPORT_HEADER = "Savings ID";
     public static final String GROUP_ID_COL_REPORT_HEADER = "Group ID";

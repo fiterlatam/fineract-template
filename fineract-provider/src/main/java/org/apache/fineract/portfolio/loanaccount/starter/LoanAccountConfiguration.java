@@ -445,7 +445,7 @@ public class LoanAccountConfiguration {
                 defaultLoanLifecycleStateMachine, loanAccountLockService, externalIdFactory, replayedTransactionBusinessEventService,
                 loanAccrualTransactionBusinessEventService, errorHandler, loanDownPaymentHandlerService, loanProductReadPlatformService,
                 jdbcTemplate, commandsSourceWritePlatformService, loanRescheduleRequestReadPlatformService, clientReadPlatformService,
-                channelReadWritePlatformService, platformSecurityContext, paymentDetailRepository);
+                channelReadWritePlatformService, platformSecurityContext);
     }
 
     @Bean

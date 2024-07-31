@@ -145,8 +145,10 @@ import org.apache.fineract.portfolio.calendar.domain.CalendarRepository;
 import org.apache.fineract.portfolio.calendar.domain.CalendarType;
 import org.apache.fineract.portfolio.calendar.exception.CalendarParameterUpdateNotSupportedException;
 import org.apache.fineract.portfolio.client.data.ClientAdditionalFieldsData;
+import org.apache.fineract.portfolio.client.data.ClientData;
 import org.apache.fineract.portfolio.client.domain.Client;
 import org.apache.fineract.portfolio.client.exception.ClientNotActiveException;
+import org.apache.fineract.portfolio.client.exception.ClientNotFoundException;
 import org.apache.fineract.portfolio.client.service.ClientReadPlatformService;
 import org.apache.fineract.portfolio.collateralmanagement.domain.ClientCollateralManagement;
 import org.apache.fineract.portfolio.collateralmanagement.exception.LoanCollateralAmountNotSufficientException;
@@ -220,7 +222,6 @@ import org.apache.fineract.portfolio.loanproduct.service.LoanProductReadPlatform
 import org.apache.fineract.portfolio.note.domain.Note;
 import org.apache.fineract.portfolio.note.domain.NoteRepository;
 import org.apache.fineract.portfolio.paymentdetail.domain.PaymentDetail;
-import org.apache.fineract.portfolio.paymentdetail.domain.PaymentDetailRepository;
 import org.apache.fineract.portfolio.paymentdetail.service.PaymentDetailWritePlatformService;
 import org.apache.fineract.portfolio.repaymentwithpostdatedchecks.domain.PostDatedChecks;
 import org.apache.fineract.portfolio.repaymentwithpostdatedchecks.domain.PostDatedChecksRepository;
@@ -294,7 +295,6 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     private final ClientReadPlatformService clientReadPlatformService;
     private final ChannelReadWritePlatformService channelReadWritePlatformService;
     private final PlatformSecurityContext platformSecurityContext;
-    private final PaymentDetailRepository paymentDetailRepository;
 
     @PostConstruct
     public void registerForNotification() {
@@ -1069,6 +1069,16 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         final boolean isImportedRepaymentTransaction = command.booleanPrimitiveValueOfParameterNamed("isImportedRepaymentTransaction");
         ChannelData channelData;
         if (isImportedRepaymentTransaction) {
+            final String clientIdNumber = command.stringValueOfParameterNamed("clientIdNumber");
+            final Long clientId = loan.getClientId();
+            List<ClientData> clients = this.clientReadPlatformService.retrieveByIdNumber(clientIdNumber);
+            if (clients.isEmpty()) {
+                throw new ClientNotFoundException("No exite cliente con el NIT/Cedula : " + clientIdNumber, clientIdNumber);
+            }
+            if (clients.stream().noneMatch(client -> client.getId().equals(clientId))) {
+                throw new ClientNotFoundException("El cliente con el NIT/Cedula : " + clientIdNumber + " no pertenece al prestamo",
+                        loan.getAccountNumber());
+            }
             channelData = this.validateRepaymentChannelById(repaymentChannelId, loanProduct);
         } else {
             channelData = this.validateRepaymentChannel(channelName, loanProduct);
