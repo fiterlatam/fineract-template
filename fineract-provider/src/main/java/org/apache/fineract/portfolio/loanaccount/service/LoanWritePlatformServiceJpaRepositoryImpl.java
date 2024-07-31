@@ -39,7 +39,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -3376,8 +3375,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             Long loanId) {
         final LoanTransaction loanTransaction = this.loanTransactionRepository.findByIdAndLoanId(transactionId, loanId)
                 .orElseThrow(() -> new LoanTransactionNotFoundException(transactionId, loanId));
-
-        Optional<PaymentDetail> paymentDetail = paymentDetailRepository.findById(loanTransaction.getPaymentDetail().getId());
+        final PaymentDetail paymentDetail = loanTransaction.getPaymentDetail();
         if (StringUtils.isBlank(channelName)) {
             throw new GeneralPlatformDomainRuleException("validation.msg.channel.is.blank", "Channel is blank");
         }
@@ -3392,9 +3390,9 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         final List<Channel> repaymentChannels = loanProduct.getRepaymentChannels();
         if (CollectionUtils.isNotEmpty(repaymentChannels)) {
             final Long channelId = channelData.getId();
-            if (paymentDetail.isPresent()) {
-                if (paymentDetail.get().getChannelId() != channelId && !channelName.equalsIgnoreCase(ChannelApiConstants.defaultChannel)) {
-
+            if (paymentDetail != null) {
+                if (!Objects.equals(paymentDetail.getChannelId(), channelId)
+                        && !channelName.equalsIgnoreCase(ChannelApiConstants.defaultChannel)) {
                     throw new GeneralPlatformDomainRuleException("validation.msg.channel.not.allowed", "Channel is not allowed",
                             channelName);
                 }
