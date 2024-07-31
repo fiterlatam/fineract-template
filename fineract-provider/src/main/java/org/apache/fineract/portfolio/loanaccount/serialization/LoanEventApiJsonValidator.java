@@ -283,7 +283,7 @@ public final class LoanEventApiJsonValidator {
         final Set<String> transactionParameters = new HashSet<>(Arrays.asList("transactionDate", "transactionAmount", "externalId", "note",
                 "locale", "dateFormat", "paymentTypeId", "accountNumber", "checkNumber", "routingCode", "receiptNumber", "bankNumber",
                 "loanId", "channelHash", "channelName", "pointOfSalesCode", "isImportedRepaymentTransaction", "repaymentChannelId",
-                "repaymentBankId", "transactionProcessingStrategy"));
+                "repaymentBankId", "transactionProcessingStrategy", "clientIdNumber"));
 
         final Type typeOfMap = new TypeToken<Map<String, Object>>() {}.getType();
         this.fromApiJsonHelper.checkForUnsupportedParameters(typeOfMap, json, transactionParameters);
@@ -309,14 +309,15 @@ public final class LoanEventApiJsonValidator {
         }
 
         validatePaymentDetails(baseDataValidator, element);
-
         final Boolean isImportedRepaymentTransaction = ObjectUtils
                 .defaultIfNull(this.fromApiJsonHelper.extractBooleanNamed("isImportedRepaymentTransaction", element), Boolean.FALSE);
         if (isImportedRepaymentTransaction) {
             final Long repaymentChannelId = this.fromApiJsonHelper.extractLongNamed("repaymentChannelId", element);
-            baseDataValidator.reset().parameter("repaymentChannelId").value(repaymentChannelId).notNull().integerGreaterThanZero();
             final Long repaymentBankId = this.fromApiJsonHelper.extractLongNamed("repaymentBankId", element);
+            final String clientIdNumber = this.fromApiJsonHelper.extractStringNamed("clientIdNumber", element);
+            baseDataValidator.reset().parameter("repaymentChannelId").value(repaymentChannelId).notNull().integerGreaterThanZero();
             baseDataValidator.reset().parameter("repaymentBankId").value(repaymentBankId).notNull().integerGreaterThanZero();
+            baseDataValidator.reset().parameter("clientIdNumber").value(clientIdNumber).notNull();
         }
 
         throwExceptionIfValidationWarningsExist(dataValidationErrors);

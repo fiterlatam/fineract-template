@@ -98,6 +98,7 @@ public class LoanTransactionData {
     private String transactionProcessingStrategy;
     private String loanScheduleType;
     private String loanProductType;
+    private String clientIdNumber;
 
     public static LoanTransactionData importInstance(BigDecimal repaymentAmount, LocalDate lastRepaymentDate, Long repaymentTypeId,
             Integer rowIndex, String locale, String dateFormat) {

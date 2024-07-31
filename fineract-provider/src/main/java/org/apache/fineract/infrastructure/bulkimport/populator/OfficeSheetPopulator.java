@@ -42,7 +42,6 @@ public class OfficeSheetPopulator extends AbstractWorkbookPopulator {
         int rowIndex = 1;
         Sheet officeSheet = workbook.createSheet(TemplatePopulateImportConstants.OFFICE_SHEET_NAME);
         setLayout(officeSheet);
-
         populateOffices(officeSheet, rowIndex);
         officeSheet.protectSheet("");
     }
@@ -61,8 +60,8 @@ public class OfficeSheetPopulator extends AbstractWorkbookPopulator {
         worksheet.setColumnWidth(OFFICE_NAME_COL, TemplatePopulateImportConstants.MEDIUM_COL_SIZE);
         Row rowHeader = worksheet.createRow(TemplatePopulateImportConstants.ROWHEADER_INDEX);
         rowHeader.setHeight(TemplatePopulateImportConstants.ROW_HEADER_HEIGHT);
-        writeString(ID_COL, rowHeader, "ID");
-        writeString(OFFICE_NAME_COL, rowHeader, "Name");
+        writeString(ID_COL, rowHeader, "número de oficina");
+        writeString(OFFICE_NAME_COL, rowHeader, "nombre oficina");
     }
 
     public List<OfficeData> getOffices() {
