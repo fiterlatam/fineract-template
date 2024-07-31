@@ -131,6 +131,20 @@
         </sql>
     </changeSet>
 
+    <changeSet id="5" author="fineract">
+        <sql>
+            <![CDATA[
+            UPDATE stretchy_report SET report_sql = " SELECT CASE
+                       WHEN (${loanProductId} IN (2,8)) AND ${requestedAmount} <= 6000 THEN 'GREEN'
+                       WHEN (${loanProductId} IN (2,9,8,4,5,7)) AND (${photographs} <= 0  OR ${investmentPlan} <= 0) THEN 'RED'
+                       ELSE 'GREEN'
+                    END AS color"
+            WHERE report_name = "Mandatory to attach photographs and investment plan Policy Check";
+            ]]>
+        </sql>
+    </changeSet>
+
+
 
 
 </databaseChangeLog>
