@@ -823,6 +823,25 @@
         </sql>
     </changeSet>
 
+    <changeSet id="32" author="fineract">
+        <sql>
+            <![CDATA[
+                     UPDATE stretchy_report SET report_sql = "SELECT
+                     CASE
+                            WHEN ${productId} NOT IN (7,3,6) THEN 'GREEN'
+                            WHEN ${productId} IN (4,5) AND ${loanCycle}>1 THEN 'GREEN'
+                            WHEN ${productId} = 7 AND ${loanCycle}>=3 THEN 'GREEN'
+                            WHEN ${productId} = 7 AND ${loanCycle}>=2 AND  ${loanCycle}<3 THEN 'ORANGE'
+                            WHEN ${productId} = 7 AND ${loanCycle}<2 THEN 'RED'
+                            WHEN ${productId} = 3 AND ${loanCycle}>1 THEN 'GREEN'
+                    ELSE 'RED'
+                    END AS color"
+                WHERE report_name = "Recurring customer categorization Policy Check";
+            ]]>
+        </sql>
+    </changeSet>
+
+
 
 
 </databaseChangeLog>

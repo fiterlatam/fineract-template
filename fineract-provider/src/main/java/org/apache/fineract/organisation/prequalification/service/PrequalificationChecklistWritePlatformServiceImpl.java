@@ -260,7 +260,8 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
                     SELECT mc.id AS clientId,mc.loan_cycle as loanCycle, mpgm.id AS prequalificationMemberId, IFNULL(mc.display_name,mpgm.name) AS name, mpg.id AS prequalificationId,\s
                     mpgm.requested_amount AS requestedAmount, IFNULL(mc.date_of_birth, mpgm.dob) AS dateOfBirth, IFNULL(mc.dpi, mpgm.dpi) AS dpi,
                     mpgm.work_with_puente AS workWithPuente, mcv.code_value As gender, mpgm.is_president AS president, mpgm.buro_check_status as buroCheckStatus, mpgm.agency_bureau_status as agencyBuroStatus,
-                    ml.is_topup AS isTopup, ml.id AS loanId,
+                    ml.is_topup AS isTopup, ml.id AS loanId, mcvl.code_value as loanCycleCompleted,
+                    ml.is_topup AS isTopup, ml.id AS loanId, mcvl.code_value as loanCycleCompleted,
                     CASE WHEN (? NOT IN (3,7,4,5)) AND (COALESCE(mc.loan_cycle, 0) >= 3) THEN 'RECURRING'
                     WHEN (? IN (4,5)) AND (COALESCE(mc.loan_cycle, 0) >= 1) THEN 'RECURRING'
                     ELSE 'NEW' END as clientCategorization,
@@ -276,6 +277,8 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
                     LEFT JOIN m_code_value areacv ON areacv.id = cinf.area
                     LEFT JOIN m_prequalification_group mpg ON mpg.id = mpgm.group_id
                     LEFT JOIN m_loan ml ON ml.client_id = mc.id AND ml.loan_status_id = 100 AND ml.prequalification_id = mpg.id
+                    LEFT JOIN m_loan_additionals_group mlad ON mlad.loan_id = ml.id
+                    LEFT JOIN m_code_value mcvl ON mcv.id = mlad.loan_cycle_completed
                     WHERE mpg.id = ? GROUP BY mc.id
                     """;
         }
@@ -298,7 +301,12 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
             final String gender = rs.getString("gender");
             final String clientArea = rs.getString("clientArea");
             final String clientCategorization = rs.getString("clientCategorization");
-            final String recreditCategorization = isTopup?"RECREDITO" : "NUEVO";
+            String recreditCategorization = isTopup?"RECREDITO" : "NUEVO";
+            final String loanCycleCompleted = rs.getString("loanCycleCompleted");
+            if (!StringUtils.isBlank(loanCycleCompleted)){
+                recreditCategorization = StringUtils.equalsIgnoreCase(loanCycleCompleted, "fromAnotherGroup") ? "RECREDITO" : "NUEVO";
+            }
+
             return ClientData.builder().clientId(clientId).prequalificationId(prequalificationId).clientArea(clientArea)
                     .clientCategorization(clientCategorization).recreditCategorization(recreditCategorization).prequalificationMemberId(prequalificationMemberId).name(name)
                     .dateOfBirth(dateOfBirth).dpi(dpi).requestedAmount(requestedAmount).gender(gender).workWithPuente(workWithPuente)
@@ -386,7 +394,7 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
         final String percentageIncreaseSQL = """
                 SELECT
                 CASE WHEN (mlag.current_credit_value <= 0) THEN 0
-                     ELSE ((mlag.requested_value/mlag.current_credit_value) - 1) * 100
+                     ELSE ((mlag.agency_authorized_amount/mlag.current_credit_value) - 1) * 100
                 END AS percentageIncrease
                 FROM m_loan_additionals_group mlag
                 INNER JOIN m_loan ml ON ml.id = mlag.loan_id
@@ -599,7 +607,7 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
         reportParams.put("${prequalificationId}", prequalificationId);
         reportParams.put("${loanProductId}", productId);
         reportParams.put("${clientArea}", clientArea);
-        reportParams.put("${categorization}", clientData.getRecreditCategorization());
+        reportParams.put("${categorization}", clientData.getCategorization());
         reportParams.put("${isTopup}", String.valueOf(clientData.getIsLoanTopup()));
         reportParams.put("${requestedAmount}", String.valueOf(clientData.getRequestedAmount()));
         final GenericResultsetData result = this.readReportingService.retrieveGenericResultset(reportName, "report", reportParams, false);
@@ -639,7 +647,7 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
         reportParams.put("${prequalificationId}", prequalificationId);
         reportParams.put("${loanProductId}", productId);
         reportParams.put("${clientArea}", clientArea);
-        String categorization = groupData.getTopupMembers().size()>0?"RECREDITO":"NUEVO";
+        String categorization = groupData.getPreviousPrequalification()!=null?"RECREDITO":"NUEVO";
         reportParams.put("${categorization}", categorization);
         reportParams.put("${disparityRatio}", disparityRatio);
         final GenericResultsetData result = this.readReportingService.retrieveGenericResultset(reportName, "report", reportParams, false);
