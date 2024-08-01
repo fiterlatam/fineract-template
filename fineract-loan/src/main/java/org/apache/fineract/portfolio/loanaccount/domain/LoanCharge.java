@@ -395,6 +395,7 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
                 case PERCENT_OF_INTEREST:
                 case PERCENT_OF_DISBURSEMENT_AMOUNT:
                 case DISB_SEGO:
+                case DISB_AVAL:
                     this.percentage = amount;
                     this.amountPercentageAppliedTo = loanPrincipal;
                     if (loanCharge.compareTo(BigDecimal.ZERO) == 0) {
@@ -1249,7 +1250,7 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
 
     public boolean isCustomPercentageBasedDistributedCharge() {
         // Charge is distributed among the installments
-        return getChargeCalculation().isPercentageBasedMandatoryInsurance();
+        return getChargeCalculation().isCustomPercentageBasedDistributedCharge();
     }
 
     public boolean isAvalCharge() {

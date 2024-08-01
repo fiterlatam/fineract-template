@@ -332,7 +332,7 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
                     amount = amount.plus(getInstallmentChargeOutstandingAmount(currency, installmentCharge));
                 }
             } else if (chargeType.equals("Aval")) {
-                if (installmentCharge.getLoanCharge().getChargeCalculation().isPercentageOfAval()) {
+                if (installmentCharge.getLoanCharge().isAvalCharge()) {
                     amount = amount.plus(getInstallmentChargeOutstandingAmount(currency, installmentCharge));
                 }
             } else if (chargeType.equals("MandatoryInsurance")) {
@@ -580,7 +580,7 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
             return feePortionOfTransaction;
         }
         for (LoanInstallmentCharge installmentCharge : getInstallmentCharges()) {
-            if (installmentCharge.getLoanCharge().getChargeCalculation().isPercentageOfAval()) {
+            if (installmentCharge.getLoanCharge().isAvalCharge()) {
                 feePortionOfTransaction = payLoanCharge(installmentCharge, transactionDate, transactionAmountRemaining, currency,
                         feePortionOfTransaction);
             }

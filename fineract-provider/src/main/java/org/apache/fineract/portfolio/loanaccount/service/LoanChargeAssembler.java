@@ -161,7 +161,8 @@ public class LoanChargeAssembler {
                         }
 
                         boolean getPercentageAmountFromTable = chargeDefinition.isGetPercentageFromTable();
-                        if (getPercentageAmountFromTable) {
+                        if (getPercentageAmountFromTable ||
+                                ChargeCalculationType.fromInt(chargeDefinition.getChargeCalculation()).equals(ChargeCalculationType.DISB_AVAL)) {
                             ChargeCalculationType calculation = chargeCalculation;
                             if (calculation == null) {
                                 calculation = ChargeCalculationType.fromInt(chargeDefinition.getChargeCalculation());
@@ -311,7 +312,7 @@ public class LoanChargeAssembler {
         BigDecimal amountPercentageAppliedTo = BigDecimal.ZERO;
 
         ChargeCalculationType chargeCalculationType = ChargeCalculationType.fromInt(chargeDefinition.getChargeCalculation());
-        boolean getPercentageAmountFromTable = chargeDefinition.isGetPercentageFromTable();
+        boolean getPercentageAmountFromTable = chargeDefinition.isGetPercentageFromTable() || ChargeCalculationType.fromInt(chargeDefinition.getChargeCalculation()).equals(ChargeCalculationType.DISB_AVAL);
         if (getPercentageAmountFromTable) {
             final LoanAccountData loanAccountExtras = getLoanExtras(loan.getId());
             String pointOfSaleCode = null;
@@ -473,7 +474,8 @@ public class LoanChargeAssembler {
                 || (customChargeEntityData.getName().equalsIgnoreCase("Insurance")
                         && chargeCalculationType.isCustomPercentageOfOutstandingPrincipalCharge())
                 || (customChargeEntityData.getName().equalsIgnoreCase("Insurance") && chargeCalculationType.isVoluntaryInsurance())
-                || (customChargeEntityData.getName().equalsIgnoreCase("Term") && chargeCalculationType.isTermCharge());
+                || (customChargeEntityData.getName().equalsIgnoreCase("Term") && chargeCalculationType.isTermCharge())
+                || (customChargeEntityData.getName().equalsIgnoreCase("Aval") && chargeCalculationType.isPercentageOfAval());
     }
 
     private BigDecimal calculateChargePercentageAmount(final List<CustomChargeTypeData> customChargeTypeDataList,

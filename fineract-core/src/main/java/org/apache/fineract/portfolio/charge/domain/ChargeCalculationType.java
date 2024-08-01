@@ -1562,7 +1562,8 @@ public enum ChargeCalculationType {
     }
 
     public boolean isPercentageOfAval() {
-        return this.byteRepresentation.charAt(ChargeCalculationTypeBaseItemsEnum.AVAL.getIndex()) == '1';
+        return this.byteRepresentation.charAt(ChargeCalculationTypeBaseItemsEnum.AVAL.getIndex()) == '1' &&
+        this.equals(DISB_AVAL) && isPercentageOfDisbursement();
     }
 
     public boolean isPercentageOfHonorarios() {
@@ -1622,7 +1623,7 @@ public enum ChargeCalculationType {
 
     public boolean isCustomPercentageBasedDistributedCharge() {
         // Charge is distributed among the installments
-        return isPercentageBasedMandatoryInsurance();
+        return isPercentageBasedMandatoryInsurance() || isPercentageOfAval();
     }
 
     public boolean isCustomPercentageOfOutstandingPrincipalCharge() {

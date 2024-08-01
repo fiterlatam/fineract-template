@@ -5182,7 +5182,9 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     }
 
     public Set<LoanCharge> getActiveCharges() {
-        Set<LoanCharge> loanCharges = new HashSet<>();
+	// LinkedHashset is required here to maintain the charge order. 
+	// In case of charge calculation as percentage of another charge, parent charge must be processed first
+        LinkedHashSet<LoanCharge> loanCharges = new LinkedHashSet<>();
         if (this.charges != null) {
             for (LoanCharge charge : this.charges) {
                 if (charge.isActive()) {
