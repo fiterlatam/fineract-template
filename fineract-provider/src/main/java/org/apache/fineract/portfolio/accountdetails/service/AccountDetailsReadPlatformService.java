@@ -40,4 +40,7 @@ public interface AccountDetailsReadPlatformService {
     Collection<LoanAccountSummaryData> retrieveGroupActiveLoanAccountSummary(Long groupId);
 
     AccountSummaryCollectionData retrieveGroupAccountDetails(Long groupId, Long gsimId);
+
+    Collection<LoanAccountSummaryData> retrieveClientActiveLoanAccountSummaryByConfig(Long clientId, String maxReestructurar,
+            String maxRediferir);
 }
