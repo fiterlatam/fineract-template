@@ -184,4 +184,7 @@ public interface LoanApiConstants {
     String CLIENT_ID_NUMBER = "clientIdNumber";
     String DISCOUNT_VALUE = "valorDescuento";
     String DISCOUNT_TRANSFER_VALUE = "valorGiro";
+
+    String GLOBAL_CONFIG_MAX_RESTRUCTURE = "Dias de mora maximo para reestructurar";
+    String GLOBAL_CONFIG_MAX_ARREARS_REDEFER = "Dias de mora maximo para rediferir";
 }
