@@ -154,4 +154,5 @@
     <include file="parts/0132_AddConfigurationForAmountFormats.xml" relativeToChangelogFile="true"/>
     <include file="parts/0133_UpdateNewHardPolicyQueries.xml" relativeToChangelogFile="true"/>
     <include file="parts/0134_HardPolicyFixes.xml" relativeToChangelogFile="true"/>
+    <include file="parts/FS_001_FIX_GROUP_MEETING_DATES.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
