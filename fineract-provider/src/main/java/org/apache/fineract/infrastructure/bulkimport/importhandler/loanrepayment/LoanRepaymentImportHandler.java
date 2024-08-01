@@ -71,7 +71,7 @@ public class LoanRepaymentImportHandler implements ImportHandler {
     public Count process(final Workbook workbook, final String locale, final String dateFormat,
             final Map<String, Object> importAttributes) {
         final List<LoanTransactionData> loanRepayments = readExcelFile(workbook, locale, dateFormat);
-        return importEntity(workbook, loanRepayments, dateFormat);
+        return importEntity(workbook, loanRepayments, dateFormat, locale);
     }
 
     private List<LoanTransactionData> readExcelFile(final Workbook workbook, final String locale, final String dateFormat) {
@@ -114,24 +114,26 @@ public class LoanRepaymentImportHandler implements ImportHandler {
         return loanTransactionData;
     }
 
-    private Count importEntity(final Workbook workbook, final List<LoanTransactionData> loanRepayments, final String dateFormat) {
+    private Count importEntity(final Workbook workbook, final List<LoanTransactionData> loanRepayments, final String dateFormat,
+            final String locale) {
         final Sheet loanRepaymentSheet = workbook.getSheet(TemplatePopulateImportConstants.LOAN_REPAYMENT_SHEET_NAME);
         int successCount = 0;
         int errorCount = 0;
         String errorMessage;
-        GsonBuilder gsonBuilder = GoogleGsonSerializerHelper.createGsonBuilder();
-        gsonBuilder.registerTypeAdapter(LocalDate.class, new DateSerializer(dateFormat));
+        final GsonBuilder gsonBuilder = GoogleGsonSerializerHelper.createGsonBuilder();
+        gsonBuilder.registerTypeAdapter(LocalDate.class, new DateSerializer(dateFormat, locale));
         for (LoanTransactionData loanRepayment : loanRepayments) {
             try {
-                JsonObject loanRepaymentJsonObj = gsonBuilder.create().toJsonTree(loanRepayment).getAsJsonObject();
+                final JsonObject loanRepaymentJsonObj = gsonBuilder.create().toJsonTree(loanRepayment).getAsJsonObject();
                 loanRepaymentJsonObj.remove("manuallyReversed");
                 loanRepaymentJsonObj.remove("numberOfRepayments");
-                String payload = loanRepaymentJsonObj.toString();
+                final String payload = loanRepaymentJsonObj.toString();
                 final CommandWrapper commandRequest = new CommandWrapperBuilder().loanRepaymentTransaction(loanRepayment.getAccountId())
                         .withJson(payload).build();
                 this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
                 successCount++;
-                Cell statusCell = loanRepaymentSheet.getRow(loanRepayment.getRowIndex()).createCell(LoanRepaymentConstants.STATUS_COL);
+                final Cell statusCell = loanRepaymentSheet.getRow(loanRepayment.getRowIndex())
+                        .createCell(LoanRepaymentConstants.STATUS_COL);
                 statusCell.setCellValue(TemplatePopulateImportConstants.STATUS_CELL_IMPORTED);
                 statusCell.setCellStyle(ImportHandlerUtils.getCellStyle(workbook, IndexedColors.LIGHT_GREEN));
             } catch (RuntimeException ex) {
