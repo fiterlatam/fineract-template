@@ -101,6 +101,7 @@ import org.apache.fineract.portfolio.group.exception.GroupMemberCountNotInPermis
 import org.apache.fineract.portfolio.group.exception.GroupMustBePendingToBeDeletedException;
 import org.apache.fineract.portfolio.group.exception.InvalidGroupLevelException;
 import org.apache.fineract.portfolio.group.exception.InvalidGroupStateTransitionException;
+import org.apache.fineract.portfolio.group.exception.PortfolioOfficeNotFoundException;
 import org.apache.fineract.portfolio.group.exception.PrequalificationMappedException;
 import org.apache.fineract.portfolio.group.serialization.GroupingTypesDataValidator;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
@@ -293,11 +294,20 @@ public class GroupingTypesWritePlatformServiceJpaRepositoryImpl implements Group
 
             final Integer distance = command.integerValueOfParameterNamed(GroupingTypesApiConstants.distance);
 
-            final Integer meetingStart = command.integerValueOfParameterNamed(GroupingTypesApiConstants.meetingStart);
+            Integer meetingStart = command.integerValueOfParameterNamed(GroupingTypesApiConstants.meetingStart);
+            if (meetingStart == null && parentGroup != null) {
+                meetingStart = parentGroup.getMeetingStart();
+            }
 
-            final Integer meetingEnd = command.integerValueOfParameterNamed(GroupingTypesApiConstants.meetingEnd);
+            Integer meetingEnd = command.integerValueOfParameterNamed(GroupingTypesApiConstants.meetingEnd);
+            if (meetingEnd == null && parentGroup != null) {
+                meetingEnd = parentGroup.getMeetingEnd();
+            }
 
-            final Integer meetingDay = command.integerValueOfParameterNamed(GroupingTypesApiConstants.meetingDay);
+            Integer meetingDay = command.integerValueOfParameterNamed(GroupingTypesApiConstants.meetingDay);
+            if (meetingDay == null && parentGroup != null) {
+                meetingDay = parentGroup.getMeetingDay();
+            }
 
             final String referencePoint = command.stringValueOfParameterNamed(GroupingTypesApiConstants.referencePoint);
 
@@ -551,6 +561,18 @@ public class GroupingTypesWritePlatformServiceJpaRepositoryImpl implements Group
             Group parent = groupForUpdate.getParent();
 
             final GroupLevel groupLevel = this.groupLevelRepository.findById(groupForUpdate.getGroupLevel().getId()).orElse(null);
+
+            if (groupingType == GroupTypes.GROUP){
+                if (groupForUpdate.getMeetingDay()==null){
+                    groupForUpdate.updateMeetingDay(parent.getMeetingDay());
+                }
+                if (groupForUpdate.getMeetingStart()==null){
+                    groupForUpdate.updateMeetingStart(parent.getMeetingStart());
+                }
+                if (groupForUpdate.getMeetingEnd()==null){
+                    groupForUpdate.updateMeetingEnd(parent.getMeetingEnd());
+                }
+            }
 
             if (groupingType == GroupTypes.CENTER) {
                 if (command.longValueOfParameterNamed(GroupingTypesApiConstants.cityId) != 0) {
@@ -1121,6 +1143,14 @@ public class GroupingTypesWritePlatformServiceJpaRepositoryImpl implements Group
 
             // set values to generate the centers
             final Office office = portfolio.getParentOffice();
+
+            String portfolioOfficeQuery = "SELECT id from m_office where name=?";
+            List<Long> portfolioIds = jdbcTemplate.queryForList(portfolioOfficeQuery, Long.class, portfolio.getName());
+            if (portfolioIds.size()<=0) {
+                throw new PortfolioOfficeNotFoundException(portfolio.getName());
+            }
+            Office portfolioOffice = this.officeRepositoryWrapper.findOneWithNotFoundDetection(portfolioIds.get(0));
+//            Office portfolioOffice = office.getParent();
             final boolean active = true;
             final LocalDate activationDate = DateUtils.getLocalDateOfTenant();
             final LocalDate submittedOnDate = DateUtils.getLocalDateOfTenant();
@@ -1136,7 +1166,7 @@ public class GroupingTypesWritePlatformServiceJpaRepositoryImpl implements Group
                     final Integer meetingStart = rangeTemplateData.getStartDay();
                     final Integer meetingEnd = rangeTemplateData.getEndDay();
 
-                    Group newCenter = Group.assembleNewCenterFrom(office, groupLevel, centerName, active, activationDate, submittedOnDate,
+                    Group newCenter = Group.assembleNewCenterFrom(portfolioOffice, groupLevel, centerName, active, activationDate, submittedOnDate,
                             currentUser, meetingStartTime, meetingEndTime, portfolio, meetingStart, meetingEnd, meetingDayValue);
 
                     this.groupRepository.saveAndFlush(newCenter);
