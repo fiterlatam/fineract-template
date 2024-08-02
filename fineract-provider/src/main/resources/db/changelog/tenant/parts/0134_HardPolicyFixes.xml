@@ -143,6 +143,85 @@
             ]]>
         </sql>
     </changeSet>
+    <changeSet id="6" author="fineract">
+        <sql>
+            <![CDATA[
+            UPDATE stretchy_report SET report_sql = " SELECT
+           CASE
+               WHEN (${loanProductId} = 2) AND ('${categorization}' = 'NUEVO') AND ('${clientArea}' = 'URBANA') AND (${disparityRatio} BETWEEN 1 AND 3) THEN 'GREEN'
+               WHEN (${loanProductId} = 2) AND ('${categorization}' = 'NUEVO') AND ('${clientArea}' = 'URBANA') AND (${disparityRatio} > 3) THEN 'YELLOW'
+               WHEN (${loanProductId} = 2) AND ('${categorization}' = 'RECREDITO') AND ('${clientArea}' = 'URBANA') AND (${disparityRatio} BETWEEN 1 AND 4) THEN 'GREEN'
+               WHEN (${loanProductId} = 2) AND ('${categorization}' = 'RECREDITO') AND ('${clientArea}' = 'URBANA') AND (${disparityRatio} > 4) THEN 'YELLOW'
+               WHEN (${loanProductId} = 2) AND ('${categorization}' = 'NUEVO') AND ('${clientArea}' = 'RURAL') AND (${disparityRatio} BETWEEN 1 AND 3) THEN 'GREEN'
+               WHEN (${loanProductId} = 2) AND ('${categorization}' = 'NUEVO') AND ('${clientArea}' = 'RURAL') AND (${disparityRatio} > 3) THEN 'YELLOW'
+               WHEN (${loanProductId} = 2) AND ('${categorization}' = 'RECREDITO') AND ('${clientArea}' = 'RURAL') AND (${disparityRatio} BETWEEN 1 AND 4) THEN 'GREEN'
+               WHEN (${loanProductId} = 2) AND ('${categorization}' = 'RECREDITO') AND ('${clientArea}' = 'RURAL') AND (${disparityRatio} > 4) THEN 'YELLOW'
+
+               WHEN (${loanProductId} = 9) AND ('${categorization}' = 'RECREDITO') AND ('${clientArea}' = 'URBANA') AND (${disparityRatio} BETWEEN 1 AND 4) THEN 'GREEN'
+               WHEN (${loanProductId} = 9) AND ('${categorization}' = 'RECREDITO') AND ('${clientArea}' = 'URBANA') AND (${disparityRatio} > 4) THEN 'YELLOW'
+               WHEN (${loanProductId} = 9) AND ('${categorization}' = 'RECREDITO') AND ('${clientArea}' = 'RURAL') AND (${disparityRatio} BETWEEN 1 AND 4) THEN 'GREEN'
+               WHEN (${loanProductId} = 9) AND ('${categorization}' = 'RECREDITO') AND ('${clientArea}' = 'RURAL') AND (${disparityRatio} > 4) THEN 'YELLOW'
+
+               WHEN (${loanProductId} = 9) AND ('${categorization}' = 'NUEVO') AND ('${clientArea}' = 'URBANA') AND (${disparityRatio} BETWEEN 1 AND 3) THEN 'GREEN'
+               WHEN (${loanProductId} = 9) AND ('${categorization}' = 'NUEVO') AND ('${clientArea}' = 'URBANA') AND (${disparityRatio} > 3) THEN 'YELLOW'
+               WHEN (${loanProductId} = 9) AND ('${categorization}' = 'NUEVO') AND ('${clientArea}' = 'RURAL') AND (${disparityRatio} BETWEEN 1 AND 3) THEN 'GREEN'
+               WHEN (${loanProductId} = 9) AND ('${categorization}' = 'NUEVO') AND ('${clientArea}' = 'RURAL') AND (${disparityRatio} > 3) THEN 'YELLOW'
+
+               WHEN (${loanProductId} = 8) AND ('${categorization}' = 'NUEVO') AND ('${clientArea}' = 'URBANA') AND (${disparityRatio} BETWEEN 1 AND 3) THEN 'GREEN'
+               WHEN (${loanProductId} = 8) AND ('${categorization}' = 'NUEVO') AND ('${clientArea}' = 'URBANA') AND (${disparityRatio} > 3) THEN 'YELLOW'
+               WHEN (${loanProductId} = 8) AND ('${categorization}' = 'RECREDITO') AND ('${clientArea}' = 'URBANA') AND (${disparityRatio} BETWEEN 1 AND 4) THEN 'GREEN'
+               WHEN (${loanProductId} = 8) AND ('${categorization}' = 'RECREDITO') AND ('${clientArea}' = 'URBANA') AND (${disparityRatio} > 4) THEN 'YELLOW'
+               WHEN (${loanProductId} = 8) AND ('${categorization}' = 'NUEVO') AND ('${clientArea}' = 'RURAL') AND (${disparityRatio} BETWEEN 1 AND 3) THEN 'GREEN'
+               WHEN (${loanProductId} = 8) AND ('${categorization}' = 'NUEVO') AND ('${clientArea}' = 'RURAL') AND (${disparityRatio} > 3) THEN 'YELLOW'
+               WHEN (${loanProductId} = 8) AND ('${categorization}' = 'RECREDITO') AND ('${clientArea}' = 'RURAL') AND (${disparityRatio} BETWEEN 1 AND 4) THEN 'GREEN'
+               WHEN (${loanProductId} = 8) AND ('${categorization}' = 'RECREDITO') AND ('${clientArea}' = 'RURAL') AND (${disparityRatio} > 4) THEN 'YELLOW'
+
+               WHEN (${loanProductId} = 2) AND ('${categorization}' = 'RECREDITO') AND ('${clientArea}' = 'URBANA')
+               AND recredit_loan.recredit_count > 0 AND (${disparityRatio} BETWEEN 1 AND 4) THEN 'GREEN'
+               WHEN (${loanProductId} = 2) AND ('${categorization}' = 'RECREDITO') AND ('${clientArea}' = 'URBANA')
+               AND recredit_loan.recredit_count > 0 AND (${disparityRatio} > 4) THEN 'YELLOW'
+               WHEN (${loanProductId} = 2) AND ('${categorization}' = 'RECREDITO') AND ('${clientArea}' = 'RURAL')
+               AND recredit_loan.recredit_count > 0 AND (${disparityRatio} BETWEEN 1 AND 4) THEN 'GREEN'
+               WHEN (${loanProductId} = 2) AND ('${categorization}' = 'RECREDITO') AND ('${clientArea}' = 'RURAL')
+               AND recredit_loan.recredit_count > 0 AND (${disparityRatio} > 4) THEN 'YELLOW'
+
+               WHEN (${loanProductId} = 8) AND ('${categorization}' = 'RECREDITO') AND ('${clientArea}' = 'URBANA')
+               AND recredit_loan.recredit_count > 0 AND (${disparityRatio} BETWEEN 1 AND 4) THEN 'GREEN'
+               WHEN (${loanProductId} = 8) AND ('${categorization}' = 'RECREDITO') AND ('${clientArea}' = 'URBANA')
+               AND recredit_loan.recredit_count > 0 AND (${disparityRatio} > 4) THEN 'YELLOW'
+               WHEN (${loanProductId} = 8) AND ('${categorization}' = 'RECREDITO') AND ('${clientArea}' = 'RURAL')
+               AND recredit_loan.recredit_count > 0 AND (${disparityRatio} BETWEEN 1 AND 4) THEN 'GREEN'
+               WHEN (${loanProductId} = 8) AND ('${categorization}' = 'RECREDITO') AND ('${clientArea}' = 'RURAL')
+               AND recredit_loan.recredit_count > 0 AND (${disparityRatio} > 4) THEN 'YELLOW'
+
+               WHEN (${loanProductId} = 9) AND ('${categorization}' = 'RECREDITO') AND ('${clientArea}' = 'URBANA')
+               AND recredit_loan.recredit_count > 0 AND (${disparityRatio} BETWEEN 1 AND 4) THEN 'GREEN'
+               WHEN (${loanProductId} = 9) AND ('${categorization}' = 'RECREDITO') AND ('${clientArea}' = 'URBANA')
+               AND recredit_loan.recredit_count > 0 AND (${disparityRatio} > 4) THEN 'YELLOW'
+               WHEN (${loanProductId} = 9) AND ('${categorization}' = 'RECREDITO') AND ('${clientArea}' = 'RURAL')
+               AND recredit_loan.recredit_count > 0 AND (${disparityRatio} BETWEEN 1 AND 4) THEN 'GREEN'
+               WHEN (${loanProductId} = 9) AND ('${categorization}' = 'RECREDITO') AND ('${clientArea}' = 'RURAL')
+               AND recredit_loan.recredit_count > 0 AND (${disparityRatio} > 4) THEN 'YELLOW'
+
+           END AS color
+           FROM m_prequalification_group mpg
+           LEFT JOIN (
+              SELECT p.id AS prequalification_id,
+              (select count(ml.id) FROM m_prequalification_group mp
+             LEFT JOIN m_prequalification_group_members mpgm ON mpgm.group_id = mp.id
+             LEFT JOIN m_client mc ON mc.dpi = mpgm.dpi
+             LEFT JOIN m_loan ml ON ml.client_id = mc.id
+             WHERE
+             ml.loan_status_id < 300 AND ml.product_id = ${loanProductId} AND ml.is_topup = 1
+             AND mp.id = ${prequalificationId}
+             ) recredit_count
+              FROM m_prequalification_group p
+          ) recredit_loan ON recredit_loan.prequalification_id = mpg.id
+           WHERE mpg.id = ${prequalificationId}"
+            WHERE report_name = "Value disparity Policy Check";
+            ]]>
+        </sql>
+    </changeSet>
 
 
 
