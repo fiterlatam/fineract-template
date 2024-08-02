@@ -153,7 +153,7 @@ public interface LoanProductConstants {
     String DISBURSED_AMOUNT_PERCENTAGE_DOWN_PAYMENT = "disbursedAmountPercentageForDownPayment";
     String ENABLE_AUTO_REPAYMENT_DOWN_PAYMENT = "enableAutoRepaymentForDownPayment";
     String REPAYMENT_START_DATE_TYPE = "repaymentStartDateType";
-
+    String INTEREST_STARTS_AFTER_GRACE_PERIOD = "isInterestStartsAfterGracePeriod";
     String ENABLE_INSTALLMENT_LEVEL_DELINQUENCY = "enableInstallmentLevelDelinquency";
 
     // loan schedule type
