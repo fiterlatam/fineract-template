@@ -29,6 +29,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.math.BigDecimal;
+
 @Entity
 @Table(schema = "public", name = "campos_cliente_empresas")
 @Cacheable(false)
@@ -44,7 +46,7 @@ public class ClientAdditionalInformation {
     private Long clientId;
 
     @Column(name = "Cupo", nullable = false)
-    private Long cupoLimit;
+    private BigDecimal cupoLimit;
 
     @Column(name = "NIT", insertable = false, updatable = false)
     private String nit;
