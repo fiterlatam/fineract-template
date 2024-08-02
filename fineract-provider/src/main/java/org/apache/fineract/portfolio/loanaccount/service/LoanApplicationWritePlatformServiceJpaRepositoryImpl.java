@@ -25,12 +25,8 @@ import jakarta.persistence.PersistenceException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.temporal.ChronoField;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -87,6 +83,7 @@ import org.apache.fineract.portfolio.calendar.domain.CalendarType;
 import org.apache.fineract.portfolio.calendar.exception.CalendarNotFoundException;
 import org.apache.fineract.portfolio.calendar.service.CalendarReadPlatformService;
 import org.apache.fineract.portfolio.charge.domain.Charge;
+import org.apache.fineract.portfolio.charge.enumerator.ChargeCalculationTypeBaseItemsEnum;
 import org.apache.fineract.portfolio.client.domain.AccountNumberGenerator;
 import org.apache.fineract.portfolio.client.domain.Client;
 import org.apache.fineract.portfolio.client.domain.ClientRepositoryWrapper;
@@ -199,6 +196,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
     private final LoanRepository loanRepository;
     private final GSIMReadPlatformService gsimReadPlatformService;
     private final LoanLifecycleStateMachine defaultLoanLifecycleStateMachine;
+
 
     @Transactional
     @Override
@@ -333,7 +331,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                     newLoanApplication.setTopupLoanDetails(topupDetails);
                 }
             }
-
+            validateChargesAreSetupCorrectly(newLoanApplication);
             this.loanRepositoryWrapper.saveAndFlush(newLoanApplication);
 
             if (loanProduct.isInterestRecalculationEnabled()) {
@@ -1807,6 +1805,91 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                         "error.msg.loan.repayment.strategy.can.not.be.equal.to.advanced.payment.allocation",
                         "Loan repayment strategy can not be equal to Advanced Payment Allocation");
             }
+        }
+    }
+
+    private void validateChargesAreSetupCorrectly(Loan loan) {
+        if (loan.getLoanCharges() != null) {
+            for (LoanCharge loanCharge : loan.getLoanCharges()) {
+                String code = loanCharge.getChargeCalculation().getByteRepresentation();
+                if (loanCharge.isPenaltyCharge()) {
+                    if (!loanCharge.getChargeTimeType().isOverdueInstallment()) {
+                        throw new GeneralPlatformDomainRuleException(
+                                "error.msg.charge.not.setup.correctly",
+                                "Charge not setup correctly", loanCharge.getCharge().getName());
+                    } else {
+                        /*code = code.replace(code.charAt(ChargeCalculationTypeBaseItemsEnum.SEGURO_OBRIGATORIO.getIndex()), '0');
+                        code = code.replace(code.charAt(ChargeCalculationTypeBaseItemsEnum.SEGURO_VOLUNTARIO.getIndex()), '0');
+                        code = code.replace(code.charAt(ChargeCalculationTypeBaseItemsEnum.AVAL.getIndex()), '0');
+                        code = code.replace(code.charAt(ChargeCalculationTypeBaseItemsEnum.PRINCIPAL_INSTALLMENT.getIndex()), '0');*/
+
+                        verifyChargeConfiguration(loanCharge, code, ChargeCalculationTypeBaseItemsEnum.SEGURO_OBRIGATORIO.getIndex(),
+                                ChargeCalculationTypeBaseItemsEnum.SEGURO_VOLUNTARIO.getIndex(), ChargeCalculationTypeBaseItemsEnum.AVAL.getIndex(),
+                                        ChargeCalculationTypeBaseItemsEnum.HOORARIOS.getIndex());
+
+                    }
+
+                } else if (loanCharge.isMandatoryInsurance()) {
+                    if (loanCharge.getChargeCalculation().isFlatMandatoryInsurance()) { //Flat and Mandatory Insurance
+                        verifyChargeConfiguration(loanCharge, code, ChargeCalculationTypeBaseItemsEnum.SEGURO_OBRIGATORIO.getIndex(),
+                                ChargeCalculationTypeBaseItemsEnum.FLAT.getIndex(), null, null);
+                    } else if (loanCharge.getChargeCalculation().isPercentageBasedMandatoryInsurance()) { // Disbursement and Mandatory Insurance
+                        verifyChargeConfiguration(loanCharge, code, ChargeCalculationTypeBaseItemsEnum.SEGURO_OBRIGATORIO.getIndex(),
+                                ChargeCalculationTypeBaseItemsEnum.DISBURSED_AMOUNT.getIndex(), null, null);
+                    } else if (loanCharge.getChargeCalculation().isCustomPercentageOfOutstandingPrincipalCharge()) { // Disbursement and Mandatory Insurance
+                        verifyChargeConfiguration(loanCharge, code, ChargeCalculationTypeBaseItemsEnum.SEGURO_OBRIGATORIO.getIndex(),
+                                ChargeCalculationTypeBaseItemsEnum.OUTSTANDING_PRINCIPAL.getIndex(), null, null);
+                    }
+                } else if (loanCharge.isCustomFlatVoluntaryInsurenceCharge()) {
+                    verifyChargeConfiguration(loanCharge, code, ChargeCalculationTypeBaseItemsEnum.SEGURO_VOLUNTARIO.getIndex(),
+                            ChargeCalculationTypeBaseItemsEnum.FLAT.getIndex(), null, null);
+                } else if (loanCharge.isAvalCharge()) {
+                    verifyChargeConfiguration(loanCharge, code, ChargeCalculationTypeBaseItemsEnum.AVAL.getIndex(),
+                            ChargeCalculationTypeBaseItemsEnum.DISBURSED_AMOUNT.getIndex(), null, null);
+                } else if (loanCharge.isCustomPercentageBasedOfAnotherCharge()) {
+                    verifyChargeConfiguration(loanCharge, code, ChargeCalculationTypeBaseItemsEnum.PERCENT_OF_ANOTHER_CHARGE.getIndex(), null, null, null);
+                } else if (loanCharge.isFlatHono()) {
+                    verifyChargeConfiguration(loanCharge, code, ChargeCalculationTypeBaseItemsEnum.FLAT.getIndex(),
+                            ChargeCalculationTypeBaseItemsEnum.HOORARIOS.getIndex(), null, null);
+                } else {
+                    throw new GeneralPlatformDomainRuleException(
+                            "error.msg.charge.not.setup.correctly",
+                            "Charge not setup correctly", loanCharge.getCharge().getName());
+                }
+            }
+        }
+    }
+
+    private void verifyChargeConfiguration(LoanCharge loanCharge, String code, Integer index1, Integer index2, Integer index3, Integer index4) {
+        if (loanCharge.isAvalCharge()) {
+            if (!loanCharge.getCharge().isGetPercentageFromTable()) {
+                throw new GeneralPlatformDomainRuleException(
+                        "error.msg.charge.not.setup.correctly",
+                        "Charge not setup correctly", loanCharge.getCharge().getName());
+            }
+        }
+        if (!loanCharge.isPenaltyCharge() && !loanCharge.isInstalmentFee()) {
+            throw new GeneralPlatformDomainRuleException(
+                    "error.msg.charge.not.setup.correctly",
+                    "Charge not setup correctly", loanCharge.getCharge().getName());
+        }
+        char[] codeArray = code.toCharArray();
+        codeArray[index1] = '0';
+
+        if (index2 != null) {
+            codeArray[index2] = '0';
+        }
+        if (index3 != null) {
+            codeArray[index3] = '0';
+        }
+        if (index4 != null) {
+            codeArray[index4] = '0';
+        }
+        code = String.valueOf(codeArray);
+        if (code.indexOf('1') != -1) {
+            throw new GeneralPlatformDomainRuleException(
+                    "error.msg.charge.not.setup.correctly",
+                    "Charge not setup correctly", loanCharge.getCharge().getName());
         }
     }
 
