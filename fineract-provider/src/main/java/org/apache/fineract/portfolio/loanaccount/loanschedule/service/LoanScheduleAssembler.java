@@ -366,7 +366,12 @@ public class LoanScheduleAssembler {
         Integer graceOnInterestCharged = this.fromApiJsonHelper.extractIntegerWithLocaleNamed("graceOnInterestCharged", element);
         // if graceOnInterestCharged is null then default it to graceOnInterestPayment where loan product is configured
         // to have interest start after grace period
+        // also , if graceOnInterestPayment is greater than graceOnInterestCharged and interest starts after grace
+        // period then set graceOnInterestCharged to graceOnInterestPayment
         if (graceOnInterestCharged == null && isInterestStartsAfterGracePeriod) {
+            graceOnInterestCharged = graceOnInterestPayment;
+        }
+        if (isInterestStartsAfterGracePeriod && graceOnInterestPayment > graceOnInterestCharged) {
             graceOnInterestCharged = graceOnInterestPayment;
         }
         final LocalDate interestChargedFromDate = this.fromApiJsonHelper.extractLocalDateNamed("interestChargedFromDate", element);
