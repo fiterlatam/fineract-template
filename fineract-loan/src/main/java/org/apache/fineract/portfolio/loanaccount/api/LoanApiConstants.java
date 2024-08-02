@@ -186,5 +186,5 @@ public interface LoanApiConstants {
     String DISCOUNT_TRANSFER_VALUE = "valorGiro";
 
     String GLOBAL_CONFIG_MAX_RESTRUCTURE = "Dias de mora maximo para reestructurar";
-    String GLOBAL_CONFIG_MAX_ARREARS_REDEFER = "Dias de mora maximo para rediferir";
+    String GLOBAL_CONFIG_MAX_ARREARS_REDEFER = "Días de mora máximo para rediferi";
 }
