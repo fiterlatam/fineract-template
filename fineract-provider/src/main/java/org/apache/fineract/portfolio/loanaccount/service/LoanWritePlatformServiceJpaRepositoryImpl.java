@@ -1477,11 +1477,10 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
         SavingsAccountTransaction holdTransaction = savingsAccountTransactions.stream().filter(sa -> sa.isAmountOnHoldNotReleased())
                 .findFirst().orElse(null);
-        SavingsAccount fromSavingsAccount = holdTransaction.getSavingsAccount();
-
-        this.savingsAccountWritePlatformService.releaseLoanGuarantee(loanId, command,
-                command.localDateValueOfParameterNamed("transactionDate"), holdTransaction);
-
+        if (holdTransaction!=null) {
+            this.savingsAccountWritePlatformService.releaseLoanGuarantee(loanId, command,
+                    command.localDateValueOfParameterNamed("transactionDate"), holdTransaction);
+        }
         businessEventNotifierService.notifyPostBusinessEvent(new LoanWrittenOffPostBusinessEvent(writeOff));
         return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withEntityId(writeOff.getId())
                 .withOfficeId(loan.getOfficeId()).withClientId(loan.getClientId()).withGroupId(loan.getGroupId()).withLoanId(loanId)
