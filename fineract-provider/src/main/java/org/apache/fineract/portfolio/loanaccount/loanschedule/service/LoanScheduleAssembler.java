@@ -120,12 +120,15 @@ import org.apache.fineract.portfolio.loanproduct.domain.RecalculationFrequencyTy
 import org.apache.fineract.portfolio.loanproduct.domain.RepaymentStartDateType;
 import org.apache.fineract.portfolio.loanproduct.exception.LoanProductNotFoundException;
 import org.apache.fineract.portfolio.loanproduct.service.LoanEnumerations;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service
 public class LoanScheduleAssembler {
 
+    private static final Logger log = LoggerFactory.getLogger(LoanScheduleAssembler.class);
     private final FromJsonHelper fromApiJsonHelper;
     private final LoanProductRepository loanProductRepository;
     private final ApplicationCurrencyRepositoryWrapper applicationCurrencyRepository;
@@ -352,13 +355,20 @@ public class LoanScheduleAssembler {
                     loanProduct.getMinimumDaysBetweenDisbursalAndFirstRepayment());
         }
 
+        boolean isInterestStartsAfterGracePeriod = loanProduct.isInterestStartsAfterGracePeriod();
+
         // grace details
         final Integer graceOnPrincipalPayment = this.fromApiJsonHelper.extractIntegerWithLocaleNamed("graceOnPrincipalPayment", element);
         final Integer recurringMoratoriumOnPrincipalPeriods = this.fromApiJsonHelper
                 .extractIntegerWithLocaleNamed("recurringMoratoriumOnPrincipalPeriods", element);
         final Integer graceOnInterestPayment = this.fromApiJsonHelper.extractIntegerWithLocaleNamed("graceOnInterestPayment", element);
         final Integer graceOnChargesPayment = this.fromApiJsonHelper.extractIntegerWithLocaleNamed("graceOnChargesPayment", element);
-        final Integer graceOnInterestCharged = this.fromApiJsonHelper.extractIntegerWithLocaleNamed("graceOnInterestCharged", element);
+        Integer graceOnInterestCharged = this.fromApiJsonHelper.extractIntegerWithLocaleNamed("graceOnInterestCharged", element);
+        // if graceOnInterestCharged is null then default it to graceOnInterestPayment where loan product is configured
+        // to have interest start after grace period
+        if (graceOnInterestCharged == null && isInterestStartsAfterGracePeriod) {
+            graceOnInterestCharged = graceOnInterestPayment;
+        }
         final LocalDate interestChargedFromDate = this.fromApiJsonHelper.extractLocalDateNamed("interestChargedFromDate", element);
         final Boolean isInterestChargedFromDateSameAsDisbursalDateEnabled = this.configurationDomainService
                 .isInterestChargedFromDateSameAsDisbursementDate();

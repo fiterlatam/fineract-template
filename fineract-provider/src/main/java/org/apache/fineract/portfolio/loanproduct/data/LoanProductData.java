@@ -285,6 +285,9 @@ public class LoanProductData implements Serializable {
     @Setter
     private List<ChannelData> repaymentChannels;
 
+    @Setter
+    private boolean isInterestStartsAfterGracePeriod;
+
     private List<ChargeData> voluntaryInsuranceOptions;
 
     private Long voluntaryInsuranceId;
