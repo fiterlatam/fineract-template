@@ -530,7 +530,8 @@ public class LoanProduct extends AbstractPersistableCustom {
                 .booleanPrimitiveValueOfParameterNamed(LoanProductConstants.EXTEND_TERM_FOR_MONTHLY_REPAYMENTS);
         final boolean advance = command.booleanPrimitiveValueOfParameterNamed(LoanProductConstants.ADVANCE_PARAM);
         final boolean requirePoints = command.booleanPrimitiveValueOfParameterNamed(LoanProductConstants.REQUIRE_POINT_PARAM_NAME);
-        final boolean shouldInterestStartAfterGracePeriod = command.booleanPrimitiveValueOfParameterNamed(LoanProductConstants.INTEREST_STARTS_AFTER_GRACE_PERIOD);
+        final boolean shouldInterestStartAfterGracePeriod = command
+                .booleanPrimitiveValueOfParameterNamed(LoanProductConstants.INTEREST_STARTS_AFTER_GRACE_PERIOD);
 
         LoanProduct product = new LoanProduct(fund, loanTransactionProcessingStrategy, loanProductPaymentAllocationRules,
                 loanProductCreditAllocationRules, name, shortName, description, currency, principal, minPrincipal, maxPrincipal,
@@ -1077,7 +1078,6 @@ public class LoanProduct extends AbstractPersistableCustom {
             actualChanges.put(interestStartsAfterGracePeriodParamName, newValue);
             this.interestStartsAfterGracePeriod = newValue;
         }
-
 
         final String isLinkedToFloatingInterestRates = "isLinkedToFloatingInterestRates";
         if (command.isChangeInBooleanParameterNamed(isLinkedToFloatingInterestRates, this.isLinkedToFloatingInterestRate)) {
