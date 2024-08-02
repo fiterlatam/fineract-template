@@ -26,7 +26,6 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.temporal.ChronoField;
 import java.util.*;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -196,7 +195,6 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
     private final LoanRepository loanRepository;
     private final GSIMReadPlatformService gsimReadPlatformService;
     private final LoanLifecycleStateMachine defaultLoanLifecycleStateMachine;
-
 
     @Transactional
     @Override
@@ -1814,29 +1812,41 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 String code = loanCharge.getChargeCalculation().getByteRepresentation();
                 if (loanCharge.isPenaltyCharge()) {
                     if (!loanCharge.getChargeTimeType().isOverdueInstallment()) {
-                        throw new GeneralPlatformDomainRuleException(
-                                "error.msg.charge.not.setup.correctly",
-                                "Charge not setup correctly", loanCharge.getCharge().getName());
+                        throw new GeneralPlatformDomainRuleException("error.msg.charge.not.setup.correctly", "Charge not setup correctly",
+                                loanCharge.getCharge().getName());
                     } else {
-                        /*code = code.replace(code.charAt(ChargeCalculationTypeBaseItemsEnum.SEGURO_OBRIGATORIO.getIndex()), '0');
-                        code = code.replace(code.charAt(ChargeCalculationTypeBaseItemsEnum.SEGURO_VOLUNTARIO.getIndex()), '0');
-                        code = code.replace(code.charAt(ChargeCalculationTypeBaseItemsEnum.AVAL.getIndex()), '0');
-                        code = code.replace(code.charAt(ChargeCalculationTypeBaseItemsEnum.PRINCIPAL_INSTALLMENT.getIndex()), '0');*/
+                        /*
+                         * code =
+                         * code.replace(code.charAt(ChargeCalculationTypeBaseItemsEnum.SEGURO_OBRIGATORIO.getIndex()),
+                         * '0'); code =
+                         * code.replace(code.charAt(ChargeCalculationTypeBaseItemsEnum.SEGURO_VOLUNTARIO.getIndex()),
+                         * '0'); code = code.replace(code.charAt(ChargeCalculationTypeBaseItemsEnum.AVAL.getIndex()),
+                         * '0'); code =
+                         * code.replace(code.charAt(ChargeCalculationTypeBaseItemsEnum.PRINCIPAL_INSTALLMENT.getIndex())
+                         * , '0');
+                         */
 
                         verifyChargeConfiguration(loanCharge, code, ChargeCalculationTypeBaseItemsEnum.SEGURO_OBRIGATORIO.getIndex(),
-                                ChargeCalculationTypeBaseItemsEnum.SEGURO_VOLUNTARIO.getIndex(), ChargeCalculationTypeBaseItemsEnum.AVAL.getIndex(),
-                                        ChargeCalculationTypeBaseItemsEnum.HOORARIOS.getIndex());
+                                ChargeCalculationTypeBaseItemsEnum.SEGURO_VOLUNTARIO.getIndex(),
+                                ChargeCalculationTypeBaseItemsEnum.AVAL.getIndex(),
+                                ChargeCalculationTypeBaseItemsEnum.HOORARIOS.getIndex());
 
                     }
 
                 } else if (loanCharge.isMandatoryInsurance()) {
-                    if (loanCharge.getChargeCalculation().isFlatMandatoryInsurance()) { //Flat and Mandatory Insurance
+                    if (loanCharge.getChargeCalculation().isFlatMandatoryInsurance()) { // Flat and Mandatory Insurance
                         verifyChargeConfiguration(loanCharge, code, ChargeCalculationTypeBaseItemsEnum.SEGURO_OBRIGATORIO.getIndex(),
                                 ChargeCalculationTypeBaseItemsEnum.FLAT.getIndex(), null, null);
-                    } else if (loanCharge.getChargeCalculation().isPercentageBasedMandatoryInsurance()) { // Disbursement and Mandatory Insurance
+                    } else if (loanCharge.getChargeCalculation().isPercentageBasedMandatoryInsurance()) { // Disbursement
+                                                                                                          // and
+                                                                                                          // Mandatory
+                                                                                                          // Insurance
                         verifyChargeConfiguration(loanCharge, code, ChargeCalculationTypeBaseItemsEnum.SEGURO_OBRIGATORIO.getIndex(),
                                 ChargeCalculationTypeBaseItemsEnum.DISBURSED_AMOUNT.getIndex(), null, null);
-                    } else if (loanCharge.getChargeCalculation().isCustomPercentageOfOutstandingPrincipalCharge()) { // Disbursement and Mandatory Insurance
+                    } else if (loanCharge.getChargeCalculation().isCustomPercentageOfOutstandingPrincipalCharge()) { // Disbursement
+                                                                                                                     // and
+                                                                                                                     // Mandatory
+                                                                                                                     // Insurance
                         verifyChargeConfiguration(loanCharge, code, ChargeCalculationTypeBaseItemsEnum.SEGURO_OBRIGATORIO.getIndex(),
                                 ChargeCalculationTypeBaseItemsEnum.OUTSTANDING_PRINCIPAL.getIndex(), null, null);
                     }
@@ -1847,31 +1857,30 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                     verifyChargeConfiguration(loanCharge, code, ChargeCalculationTypeBaseItemsEnum.AVAL.getIndex(),
                             ChargeCalculationTypeBaseItemsEnum.DISBURSED_AMOUNT.getIndex(), null, null);
                 } else if (loanCharge.isCustomPercentageBasedOfAnotherCharge()) {
-                    verifyChargeConfiguration(loanCharge, code, ChargeCalculationTypeBaseItemsEnum.PERCENT_OF_ANOTHER_CHARGE.getIndex(), null, null, null);
+                    verifyChargeConfiguration(loanCharge, code, ChargeCalculationTypeBaseItemsEnum.PERCENT_OF_ANOTHER_CHARGE.getIndex(),
+                            null, null, null);
                 } else if (loanCharge.isFlatHono()) {
                     verifyChargeConfiguration(loanCharge, code, ChargeCalculationTypeBaseItemsEnum.FLAT.getIndex(),
                             ChargeCalculationTypeBaseItemsEnum.HOORARIOS.getIndex(), null, null);
                 } else {
-                    throw new GeneralPlatformDomainRuleException(
-                            "error.msg.charge.not.setup.correctly",
-                            "Charge not setup correctly", loanCharge.getCharge().getName());
+                    throw new GeneralPlatformDomainRuleException("error.msg.charge.not.setup.correctly", "Charge not setup correctly",
+                            loanCharge.getCharge().getName());
                 }
             }
         }
     }
 
-    private void verifyChargeConfiguration(LoanCharge loanCharge, String code, Integer index1, Integer index2, Integer index3, Integer index4) {
+    private void verifyChargeConfiguration(LoanCharge loanCharge, String code, Integer index1, Integer index2, Integer index3,
+            Integer index4) {
         if (loanCharge.isAvalCharge()) {
             if (!loanCharge.getCharge().isGetPercentageFromTable()) {
-                throw new GeneralPlatformDomainRuleException(
-                        "error.msg.charge.not.setup.correctly",
-                        "Charge not setup correctly", loanCharge.getCharge().getName());
+                throw new GeneralPlatformDomainRuleException("error.msg.charge.not.setup.correctly", "Charge not setup correctly",
+                        loanCharge.getCharge().getName());
             }
         }
         if (!loanCharge.isPenaltyCharge() && !loanCharge.isInstalmentFee()) {
-            throw new GeneralPlatformDomainRuleException(
-                    "error.msg.charge.not.setup.correctly",
-                    "Charge not setup correctly", loanCharge.getCharge().getName());
+            throw new GeneralPlatformDomainRuleException("error.msg.charge.not.setup.correctly", "Charge not setup correctly",
+                    loanCharge.getCharge().getName());
         }
         char[] codeArray = code.toCharArray();
         codeArray[index1] = '0';
@@ -1887,9 +1896,8 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
         }
         code = String.valueOf(codeArray);
         if (code.indexOf('1') != -1) {
-            throw new GeneralPlatformDomainRuleException(
-                    "error.msg.charge.not.setup.correctly",
-                    "Charge not setup correctly", loanCharge.getCharge().getName());
+            throw new GeneralPlatformDomainRuleException("error.msg.charge.not.setup.correctly", "Charge not setup correctly",
+                    loanCharge.getCharge().getName());
         }
     }
 
