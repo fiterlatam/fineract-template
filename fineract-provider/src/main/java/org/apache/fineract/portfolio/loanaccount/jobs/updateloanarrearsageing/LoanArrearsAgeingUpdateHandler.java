@@ -368,7 +368,7 @@ public class LoanArrearsAgeingUpdateHandler {
                     loan.getLoanCustomizationDetail().setBlockStatus(blockingReasonSetting);
                 }
                 final LoanBlockingReason loanBlockingReason = LoanBlockingReason.instance(loan, blockingReasonSetting,
-                        "Cliente desbloqueado por defecto", DateUtils.getLocalDateOfTenant());
+                        "Cliente bloqueado por defecto", DateUtils.getLocalDateOfTenant());
                 loanBlockingReasonRepository.saveAndFlush(loanBlockingReason);
             }
 
