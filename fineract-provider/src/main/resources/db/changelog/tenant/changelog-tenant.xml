@@ -255,4 +255,5 @@
     <include file="parts/20241904011009100_SU_193_create_report.xml" relativeToChangelogFile="true"/>
     <include file="parts/20242604011009110_SU_304_update-default-block-reason.xml" relativeToChangelogFile="true"/>
     <include file="parts/2024070322441925_SU_305_modify_campos_cliente_empresas.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20242604011009110_SU_288_add-grace-period-option-to-product.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
