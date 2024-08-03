@@ -19,7 +19,7 @@ public enum ClientAllyPointOfSalesTemplatePopulateImportEnum {
 
     COMPANY_NAME_ID(0, "Razón social", null, EXTRALARGE_COL_SIZE, true, Long.class), //
     NAME(1, "Nombre del Punto de Venta", null, LARGE_COL_SIZE, true, String.class, 100L), //
-    CODE(2, "Codigo", null, SMALL_COL_SIZE, true, String.class, 4l), //
+    CODE(2, "Codigo", null, SMALL_COL_SIZE, true, String.class, 6l), //
     BRAND_ID(3, "Marca", "Marca", MEDIUM_COL_SIZE, true, Long.class), //
     DEPARTMENT_ID(4, "Departamento", "Departamento", SMALL_COL_SIZE, true, Long.class), //
     CITY_ID(5, "Ciudad", "Ciudad", LARGE_COL_SIZE, true, Long.class), //
