@@ -190,8 +190,8 @@ public class AccountDetailsReadPlatformServiceJpaRepositoryImpl implements Accou
             String maxRediferir) {
         final LoanAccountSummaryDataMapper rm = new LoanAccountSummaryDataMapper();
         final String sql = "select " + rm.loanAccountSummarySchema()
-                + " where l.client_id = ? and l.loan_status_id = 300 and (la.overdue_since_date_derived + interval '" + maxReestructurar
-                + " day' >= CURRENT_DATE or la.overdue_since_date_derived + interval '" + maxRediferir + " day' >= CURRENT_DATE)";
+                + " where l.client_id = ? and l.loan_status_id = 300 and (l.maturedon_date + interval '" + maxReestructurar
+                + " day' >= CURRENT_DATE or l.maturedon_date + interval '" + maxRediferir + " day' >= CURRENT_DATE)";
         return this.jdbcTemplate.query(sql, rm, new Object[] { clientId });
     }
 
