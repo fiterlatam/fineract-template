@@ -1996,4 +1996,12 @@ public class LoanProduct extends AbstractPersistableCustom {
     public void setExtendTermForMonthlyRepayments(boolean extendTermForMonthlyRepayments) {
         this.extendTermForMonthlyRepayments = extendTermForMonthlyRepayments;
     }
+
+    public boolean enableHoliday(boolean isHolidayEnabled) {
+        // if loan product's repaymentReschedulingType is set to greater than 1 , then holiday should be enabled
+        if (this.repaymentReschedulingType != null && !isHolidayEnabled) {
+            return this.repaymentReschedulingType > 1;
+        }
+        return isHolidayEnabled;
+    }
 }
