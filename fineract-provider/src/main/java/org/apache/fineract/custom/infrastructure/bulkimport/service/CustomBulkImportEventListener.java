@@ -33,7 +33,6 @@ import org.apache.fineract.infrastructure.bulkimport.importhandler.ImportHandler
 import org.apache.fineract.infrastructure.core.exception.GeneralPlatformDomainRuleException;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
-import org.apache.fineract.infrastructure.core.service.tenant.TenantDetailsService;
 import org.apache.fineract.infrastructure.documentmanagement.command.DocumentCommand;
 import org.apache.fineract.infrastructure.documentmanagement.domain.Document;
 import org.apache.fineract.infrastructure.documentmanagement.service.DocumentWritePlatformService;
@@ -49,15 +48,13 @@ import org.springframework.stereotype.Service;
 public class CustomBulkImportEventListener implements ApplicationListener<BulkImportEvent> {
 
     private static final Logger LOG = LoggerFactory.getLogger(CustomBulkImportEventListener.class);
-    private final TenantDetailsService tenantDetailsService;
     private final ApplicationContext applicationContext;
     private final ImportDocumentRepository importRepository;
     private final DocumentWritePlatformService documentService;
 
     @Autowired
-    public CustomBulkImportEventListener(final TenantDetailsService tenantDetailsService, final ApplicationContext context,
-            final ImportDocumentRepository importRepository, final DocumentWritePlatformService documentService) {
-        this.tenantDetailsService = tenantDetailsService;
+    public CustomBulkImportEventListener(final ApplicationContext context, final ImportDocumentRepository importRepository,
+            final DocumentWritePlatformService documentService) {
         this.applicationContext = context;
         this.importRepository = importRepository;
         this.documentService = documentService;
@@ -67,47 +64,47 @@ public class CustomBulkImportEventListener implements ApplicationListener<BulkIm
     public void onApplicationEvent(final BulkImportEvent event) {
         ThreadLocalContextUtil.init(event.getContext());
         ImportHandler importHandler = null;
-        final ImportDocument importDocument = this.importRepository.findById(event.getImportId()).orElse(null);
+        final ImportDocument importDocument = this.importRepository.findById(event.getImportId())
+                .orElseThrow(() -> new GeneralPlatformDomainRuleException("error.msg.import.document.id.invalid",
+                        "Import document with id " + event.getImportId() + " does not exist"));
         final CustomGlobalEntityType entityType = CustomGlobalEntityType.fromInt(importDocument.getEntityType());
-
-        switch (entityType) {
-            case CLIENT_ALLY:
-                importHandler = this.applicationContext.getBean("clientAllyImportHandler", ImportHandler.class);
-            break;
-            case CLIENT_ALLY_POINTS_OF_SALES:
-                importHandler = this.applicationContext.getBean("clientAllyPointsOfSalesImportHandler", ImportHandler.class);
-            break;
-            default:
-                throw new GeneralPlatformDomainRuleException("error.msg.unable.to.find.resource", "Unable to find requested resource");
+        if (entityType != null) {
+            importHandler = switch (entityType) {
+                case CLIENT_ALLY -> this.applicationContext.getBean("clientAllyImportHandler", ImportHandler.class);
+                case CLIENT_ALLY_POINTS_OF_SALES ->
+                    this.applicationContext.getBean("clientAllyPointsOfSalesImportHandler", ImportHandler.class);
+            };
         }
+        if (importHandler != null) {
+            final Workbook workbook = event.getWorkbook();
+            final Count count = importHandler.process(workbook, event.getLocale(), event.getDateFormat(), event.getImportAttributeMap());
+            importDocument.update(DateUtils.getLocalDateTimeOfTenant(), count.getSuccessCount(), count.getErrorCount());
+            this.importRepository.saveAndFlush(importDocument);
 
-        final Workbook workbook = event.getWorkbook();
-        final Count count = importHandler.process(workbook, event.getLocale(), event.getDateFormat(), event.getImportAttributeMap());
-        importDocument.update(DateUtils.getLocalDateTimeOfTenant(), count.getSuccessCount(), count.getErrorCount());
-        this.importRepository.saveAndFlush(importDocument);
+            final Set<String> modifiedParams = new HashSet<>();
+            modifiedParams.add("fileName");
+            modifiedParams.add("size");
+            modifiedParams.add("type");
+            modifiedParams.add("location");
+            Document document = importDocument.getDocument();
 
-        final Set<String> modifiedParams = new HashSet<>();
-        modifiedParams.add("fileName");
-        modifiedParams.add("size");
-        modifiedParams.add("type");
-        modifiedParams.add("location");
-        Document document = importDocument.getDocument();
+            DocumentCommand documentCommand = new DocumentCommand(modifiedParams, document.getId(), entityType.name(), null,
+                    document.getName(), document.getFileName(), document.getSize(),
+                    URLConnection.guessContentTypeFromName(document.getFileName()), null, null);
 
-        DocumentCommand documentCommand = new DocumentCommand(modifiedParams, document.getId(), entityType.name(), null, document.getName(),
-                document.getFileName(), document.getSize(), URLConnection.guessContentTypeFromName(document.getFileName()), null, null);
-
-        final ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        try {
+            final ByteArrayOutputStream bos = new ByteArrayOutputStream();
             try {
-                workbook.write(bos);
-            } finally {
-                bos.close();
+                try {
+                    workbook.write(bos);
+                } finally {
+                    bos.close();
+                }
+            } catch (IOException io) {
+                LOG.error("Problem occurred in onApplicationEvent function", io);
             }
-        } catch (IOException io) {
-            LOG.error("Problem occurred in onApplicationEvent function", io);
+            byte[] bytes = bos.toByteArray();
+            ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
+            this.documentService.updateDocument(documentCommand, bis);
         }
-        byte[] bytes = bos.toByteArray();
-        ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
-        this.documentService.updateDocument(documentCommand, bis);
     }
 }
