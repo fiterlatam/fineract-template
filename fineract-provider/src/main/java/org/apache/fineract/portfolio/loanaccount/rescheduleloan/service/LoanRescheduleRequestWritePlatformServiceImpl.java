@@ -477,8 +477,10 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
             loanAccrualTransactionBusinessEventService.raiseBusinessEventForAccrualTransactions(loan, existingTransactionIds);
             this.loanAccountDomainService.recalculateAccruals(loan, true);
             final Boolean isJobTriggered = jsonCommand.booleanPrimitiveValueOfParameterNamed("isJobTriggered");
-            businessEventNotifierService.notifyPostBusinessEvent(new LoanRescheduledDueAdjustScheduleBusinessEvent(loan, isJobTriggered));
-
+            if (loan.isTopup()) {
+                businessEventNotifierService
+                        .notifyPostBusinessEvent(new LoanRescheduledDueAdjustScheduleBusinessEvent(loan, isJobTriggered));
+            }
             return new CommandProcessingResultBuilder().withCommandId(jsonCommand.commandId()).withEntityId(loanRescheduleRequestId)
                     .withLoanId(loanRescheduleRequest.getLoan().getId()).with(changes).withClientId(loan.getClientId())
                     .withOfficeId(loan.getOfficeId()).withGroupId(loan.getGroupId()).build();

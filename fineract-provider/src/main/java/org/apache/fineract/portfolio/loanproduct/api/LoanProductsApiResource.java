@@ -137,7 +137,8 @@ public class LoanProductsApiResource {
             LoanApiConstants.fixedPrincipalPercentagePerInstallmentParamName, LoanProductConstants.DUE_DAYS_FOR_REPAYMENT_EVENT,
             LoanProductConstants.OVER_DUE_DAYS_FOR_REPAYMENT_EVENT, LoanProductConstants.ENABLE_DOWN_PAYMENT,
             LoanProductConstants.DISBURSED_AMOUNT_PERCENTAGE_DOWN_PAYMENT, LoanProductConstants.ENABLE_AUTO_REPAYMENT_DOWN_PAYMENT,
-            LoanProductConstants.REPAYMENT_START_DATE_TYPE, LoanProductConstants.MAX_CLIENT_INACTIVITY_PERIOD));
+            LoanProductConstants.REPAYMENT_START_DATE_TYPE, LoanProductConstants.MAX_CLIENT_INACTIVITY_PERIOD,
+            LoanProductConstants.INTEREST_STARTS_AFTER_GRACE_PERIOD));
 
     private static final Set<String> PRODUCT_MIX_DATA_PARAMETERS = new HashSet<>(
             Arrays.asList("productId", "productName", "restrictedProducts", "allowedProducts", "productOptions"));
@@ -529,6 +530,7 @@ public class LoanProductsApiResource {
         ret.setCustomAllowDebitNote(productData.getCustomAllowDebitNote());
         ret.setCustomAllowForgiveness(productData.getCustomAllowForgiveness());
         ret.setCustomAllowReversalCancellation(productData.getCustomAllowReversalCancellation());
+        ret.setInterestStartsAfterGracePeriod(productData.isInterestStartsAfterGracePeriod());
 
         final SearchParameters searchParameters = SearchParameters.builder().active(true)
                 .interestRateTypeId(InterestRateType.REGULAR.getValue()).build();
