@@ -431,7 +431,8 @@ public class LoanAccountConfiguration {
             JdbcTemplate jdbcTemplate, PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService,
             LoanRescheduleRequestReadPlatformService loanRescheduleRequestReadPlatformService,
             ClientReadPlatformService clientReadPlatformService, ChannelReadWritePlatformService channelReadWritePlatformService,
-            PlatformSecurityContext platformSecurityContext, PaymentDetailRepository paymentDetailRepository) {
+            PlatformSecurityContext platformSecurityContext, PaymentDetailRepository paymentDetailRepository,
+            GlobalConfigurationRepository globalConfigurationRepository) {
         return new LoanWritePlatformServiceJpaRepositoryImpl(context, loanEventApiJsonValidator, loanUpdateCommandFromApiJsonDeserializer,
                 loanRepositoryWrapper, loanAccountDomainService, noteRepository, loanTransactionRepository,
                 loanTransactionRelationRepository, loanAssembler, journalEntryWritePlatformService, calendarInstanceRepository,
@@ -446,7 +447,7 @@ public class LoanAccountConfiguration {
                 defaultLoanLifecycleStateMachine, loanAccountLockService, externalIdFactory, replayedTransactionBusinessEventService,
                 loanAccrualTransactionBusinessEventService, errorHandler, loanDownPaymentHandlerService, loanProductReadPlatformService,
                 jdbcTemplate, commandsSourceWritePlatformService, loanRescheduleRequestReadPlatformService, clientReadPlatformService,
-                channelReadWritePlatformService, platformSecurityContext);
+                channelReadWritePlatformService, platformSecurityContext, globalConfigurationRepository);
     }
 
     @Bean
