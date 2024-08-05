@@ -257,7 +257,7 @@
         <sql>
             <![CDATA[
             UPDATE stretchy_report SET report_sql = " SELECT CASE
-                       WHEN (${loanProductId} IN (9)) AND ${categorization} = 'RECREDITO' AND ${requestedAmount} <= 6000  THEN 'GREEN'
+                       WHEN (${loanProductId} IN (9)) AND '${categorization}' = 'RECREDITO' AND ${requestedAmount} <= 6000  THEN 'GREEN'
                        WHEN (${loanProductId} IN (2,8)) AND ${requestedAmount} <= 6000 THEN 'GREEN'
                        WHEN (${loanProductId} IN (2,9,8,4,5,7)) AND (${photographs} <= 0  OR ${investmentPlan} <= 0) THEN 'RED'
                        ELSE 'GREEN'
