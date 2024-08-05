@@ -441,7 +441,7 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
 
         final Map<String, String> reportParams = new HashMap<>();
         reportParams.put("${loanProductId}", productId);
-        reportParams.put("${categorization}", clientParams.getCategorization());
+        reportParams.put("${categorization}", clientData.getCategorization());
         reportParams.put("${investmentPlan}", Long.toString(investmentPlanCount));
         reportParams.put("${photographs}", Long.toString(photographsCount));
         reportParams.put("${requestedAmount}", clientData.getRequestedAmount().toPlainString());
