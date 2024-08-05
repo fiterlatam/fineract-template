@@ -381,7 +381,8 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
                                 	lp.custom_allow_forgiveness AS "customAllowForgiveness",
                                 	lp.custom_allow_reversal_cancellation AS "customAllowReversalCancellation",
                                 	lp.is_purchase_charge AS "isPurchaseCharge",
-                                	lp.voluntary_insurance_id AS "voluntaryInsuranceId"
+                                	lp.voluntary_insurance_id AS "voluntaryInsuranceId",
+                                	lp.is_interest_starts_after_grace_period AS "isInterestStartsAfterGracePeriod"
                                 FROM m_product_loan lp
                                 JOIN m_currency curr ON curr.code = lp.currency_code
                                 LEFT JOIN m_fund f ON f.id = lp.fund_id
@@ -699,6 +700,7 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
             final Boolean InterestRateActive = rs.getBoolean("InterestRateActive");
             final InterestRateData interestRateData = InterestRateData.builder().id(interestRateId).name(interestRateName)
                     .currentRate(interestCurrentRate).appliedOnDate(interestRateAppliedOnDate).active(InterestRateActive).build();
+            final boolean isInterestStartsAfterGracePeriod = rs.getBoolean("isInterestStartsAfterGracePeriod");
             loanProductData.setInterestRate(interestRateData);
             loanProductData.setGraceOnChargesPayment(graceOnChargesPayment);
 
@@ -706,6 +708,7 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
             final boolean isPurchaseCharge = rs.getBoolean("isPurchaseCharge");
             loanProductData.setVoluntaryInsuranceId(voluntaryInsuranceId);
             loanProductData.setPurchaseCharge(isPurchaseCharge);
+            loanProductData.setInterestStartsAfterGracePeriod(isInterestStartsAfterGracePeriod);
             return loanProductData;
         }
     }
