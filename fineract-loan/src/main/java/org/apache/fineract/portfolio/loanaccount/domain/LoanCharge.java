@@ -1247,7 +1247,7 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
 
     public boolean isCustomFlatDistributedCharge() {
         // Charge is distributed among the installments
-        return isCustomFlatVoluntaryInsurenceCharge() && getChargeCalculation().isFlatMandatoryInsurance();
+        return getChargeCalculation().isFlatMandatoryInsurance();
     }
 
     public boolean isCustomPercentageBasedDistributedCharge() {
