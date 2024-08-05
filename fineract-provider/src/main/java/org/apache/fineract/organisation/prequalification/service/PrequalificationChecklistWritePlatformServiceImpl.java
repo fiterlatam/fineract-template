@@ -416,7 +416,6 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
      * Mandatory to attach photographs and investment plan
      */
     private CheckValidationColor runCheck4(final ClientData clientData) {
-        final ClientData clientParams = retrieveClientParams(clientData.getClientId(), clientData.getProductId());
         final String reportName = Policies.FOUR.getName() + " Policy Check";
         final String productId = Long.toString(clientData.getProductId());
         final Long loanId = clientData.getLoanId();
