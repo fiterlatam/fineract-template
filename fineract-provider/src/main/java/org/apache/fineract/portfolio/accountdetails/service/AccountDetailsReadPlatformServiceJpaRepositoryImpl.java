@@ -185,6 +185,16 @@ public class AccountDetailsReadPlatformServiceJpaRepositoryImpl implements Accou
         return this.jdbcTemplate.query(sql, rm, inputs); // NOSONAR
     }
 
+    @Override
+    public Collection<LoanAccountSummaryData> retrieveClientActiveLoanAccountSummaryByConfig(Long clientId, String maxReestructurar,
+            String maxRediferir) {
+        final LoanAccountSummaryDataMapper rm = new LoanAccountSummaryDataMapper();
+        final String sql = "select " + rm.loanAccountSummarySchema()
+                + " where l.client_id = ? and l.loan_status_id = 300 and (l.maturedon_date + interval '" + maxReestructurar
+                + " day' >= CURRENT_DATE or l.maturedon_date + interval '" + maxRediferir + " day' >= CURRENT_DATE)";
+        return this.jdbcTemplate.query(sql, rm, new Object[] { clientId });
+    }
+
     /**
      * @param entityId
      * @return

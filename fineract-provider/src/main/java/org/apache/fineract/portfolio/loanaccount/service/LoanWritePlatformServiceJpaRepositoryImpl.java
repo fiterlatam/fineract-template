@@ -30,16 +30,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -60,6 +51,8 @@ import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 import org.apache.fineract.infrastructure.codes.domain.CodeValue;
 import org.apache.fineract.infrastructure.codes.domain.CodeValueRepositoryWrapper;
 import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
+import org.apache.fineract.infrastructure.configuration.domain.GlobalConfigurationProperty;
+import org.apache.fineract.infrastructure.configuration.domain.GlobalConfigurationRepository;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.ApiParameterError;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
@@ -145,8 +138,10 @@ import org.apache.fineract.portfolio.calendar.domain.CalendarRepository;
 import org.apache.fineract.portfolio.calendar.domain.CalendarType;
 import org.apache.fineract.portfolio.calendar.exception.CalendarParameterUpdateNotSupportedException;
 import org.apache.fineract.portfolio.client.data.ClientAdditionalFieldsData;
+import org.apache.fineract.portfolio.client.data.ClientData;
 import org.apache.fineract.portfolio.client.domain.Client;
 import org.apache.fineract.portfolio.client.exception.ClientNotActiveException;
+import org.apache.fineract.portfolio.client.exception.ClientNotFoundException;
 import org.apache.fineract.portfolio.client.service.ClientReadPlatformService;
 import org.apache.fineract.portfolio.collateralmanagement.domain.ClientCollateralManagement;
 import org.apache.fineract.portfolio.collateralmanagement.exception.LoanCollateralAmountNotSufficientException;
@@ -220,7 +215,6 @@ import org.apache.fineract.portfolio.loanproduct.service.LoanProductReadPlatform
 import org.apache.fineract.portfolio.note.domain.Note;
 import org.apache.fineract.portfolio.note.domain.NoteRepository;
 import org.apache.fineract.portfolio.paymentdetail.domain.PaymentDetail;
-import org.apache.fineract.portfolio.paymentdetail.domain.PaymentDetailRepository;
 import org.apache.fineract.portfolio.paymentdetail.service.PaymentDetailWritePlatformService;
 import org.apache.fineract.portfolio.repaymentwithpostdatedchecks.domain.PostDatedChecks;
 import org.apache.fineract.portfolio.repaymentwithpostdatedchecks.domain.PostDatedChecksRepository;
@@ -294,7 +288,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     private final ClientReadPlatformService clientReadPlatformService;
     private final ChannelReadWritePlatformService channelReadWritePlatformService;
     private final PlatformSecurityContext platformSecurityContext;
-    private final PaymentDetailRepository paymentDetailRepository;
+    private final GlobalConfigurationRepository globalConfigurationRepository;
 
     @PostConstruct
     public void registerForNotification() {
@@ -486,6 +480,18 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             if (loan.isTopup() && loan.getClientId() != null) {
                 final Long loanIdToClose = loan.getTopupLoanDetails().getLoanIdToClose();
                 final Loan loanToClose = this.loanRepositoryWrapper.findNonClosedLoanThatBelongsToClient(loanIdToClose, loan.getClientId());
+                Optional<GlobalConfigurationProperty> getmaxReestructurar = this.globalConfigurationRepository
+                        .findByName(LoanApiConstants.GLOBAL_CONFIG_MAX_RESTRUCTURE);
+                Long maxReestructurar = 60L;
+
+                if (getmaxReestructurar.isPresent()) {
+                    maxReestructurar = getmaxReestructurar.get().getValue();
+                }
+                LocalDate maturedate = loanToClose.getMaturityDate().plusDays(maxReestructurar);
+                if (actualDisbursementDate.isAfter(maturedate)) {
+                    throw new GeneralPlatformDomainRuleException("error.msg.loan.outside.the.off.restriction.period",
+                            "Loan outside the restriction period");
+                }
                 if (loanToClose == null) {
                     throw new GeneralPlatformDomainRuleException("error.msg.loan.to.be.closed.with.topup.is.not.active",
                             "Loan to be closed with this topup is not active.");
@@ -1069,6 +1075,16 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         final boolean isImportedRepaymentTransaction = command.booleanPrimitiveValueOfParameterNamed("isImportedRepaymentTransaction");
         ChannelData channelData;
         if (isImportedRepaymentTransaction) {
+            final String clientIdNumber = command.stringValueOfParameterNamed("clientIdNumber");
+            final Long clientId = loan.getClientId();
+            List<ClientData> clients = this.clientReadPlatformService.retrieveByIdNumber(clientIdNumber);
+            if (clients.isEmpty()) {
+                throw new ClientNotFoundException("No exite cliente con el NIT/Cedula : " + clientIdNumber, clientIdNumber);
+            }
+            if (clients.stream().noneMatch(client -> client.getId().equals(clientId))) {
+                throw new ClientNotFoundException("El cliente con el NIT/Cedula : " + clientIdNumber + " no pertenece al prestamo",
+                        loan.getAccountNumber());
+            }
             channelData = this.validateRepaymentChannelById(repaymentChannelId, loanProduct);
         } else {
             channelData = this.validateRepaymentChannel(channelName, loanProduct);

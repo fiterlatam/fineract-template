@@ -23,6 +23,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.math.BigDecimal;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -44,7 +45,7 @@ public class ClientAdditionalInformation {
     private Long clientId;
 
     @Column(name = "Cupo", nullable = false)
-    private Long cupoLimit;
+    private BigDecimal cupoLimit;
 
     @Column(name = "NIT", insertable = false, updatable = false)
     private String nit;
