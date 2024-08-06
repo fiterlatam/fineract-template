@@ -32,13 +32,17 @@ import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuilder;
 import org.apache.fineract.infrastructure.core.exception.ErrorHandler;
+import org.apache.fineract.infrastructure.core.exception.GeneralPlatformDomainRuleException;
 import org.apache.fineract.infrastructure.core.exception.PlatformDataIntegrityException;
 import org.apache.fineract.infrastructure.entityaccess.domain.FineractEntityAccessType;
 import org.apache.fineract.infrastructure.entityaccess.service.FineractEntityAccessUtil;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.portfolio.charge.api.ChargesApiConstants;
 import org.apache.fineract.portfolio.charge.domain.Charge;
+import org.apache.fineract.portfolio.charge.domain.ChargeCalculationType;
 import org.apache.fineract.portfolio.charge.domain.ChargeRepository;
+import org.apache.fineract.portfolio.charge.domain.ChargeTimeType;
+import org.apache.fineract.portfolio.charge.enumerator.ChargeCalculationTypeBaseItemsEnum;
 import org.apache.fineract.portfolio.charge.exception.ChargeCannotBeDeletedException;
 import org.apache.fineract.portfolio.charge.exception.ChargeCannotBeUpdatedException;
 import org.apache.fineract.portfolio.charge.exception.ChargeNotFoundException;
@@ -47,6 +51,7 @@ import org.apache.fineract.portfolio.floatingrates.domain.InterestRateType;
 import org.apache.fineract.portfolio.interestrates.domain.InterestRate;
 import org.apache.fineract.portfolio.interestrates.domain.InterestRateRepository;
 import org.apache.fineract.portfolio.interestrates.exception.InterestRateException;
+import org.apache.fineract.portfolio.loanaccount.domain.LoanCharge;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProduct;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductRepository;
 import org.apache.fineract.portfolio.paymentdetail.PaymentDetailConstants;
@@ -117,6 +122,7 @@ public class ChargeWritePlatformServiceJpaRepositoryImpl implements ChargeWriteP
 
             final Charge charge = Charge.fromJson(command, glAccount, taxGroup, paymentType);
             charge.setInterestRate(interestRate);
+            charge.validateChargeIsSetupCorrectly();
             this.chargeRepository.saveAndFlush(charge);
 
             // check if the office specific products are enabled. If yes, then
@@ -217,7 +223,7 @@ public class ChargeWritePlatformServiceJpaRepositoryImpl implements ChargeWriteP
                 }
                 chargeForUpdate.setTaxGroup(taxGroup);
             }
-
+            chargeForUpdate.validateChargeIsSetupCorrectly();
             if (!changes.isEmpty()) {
                 this.chargeRepository.save(chargeForUpdate);
             }
