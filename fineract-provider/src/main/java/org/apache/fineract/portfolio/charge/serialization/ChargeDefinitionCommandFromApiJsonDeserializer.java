@@ -506,8 +506,8 @@ public final class ChargeDefinitionCommandFromApiJsonDeserializer {
                         element.getAsJsonObject());
                 baseDataValidator.reset().parameter(ChargesApiConstants.vatValueParamName).value(vatValue).notNull().positiveAmount();
 
-                final BigDecimal totalValue = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed(ChargesApiConstants.totalValueParamName,
-                        element.getAsJsonObject());
+                final BigDecimal totalValue = this.fromApiJsonHelper
+                        .extractBigDecimalWithLocaleNamed(ChargesApiConstants.totalValueParamName, element.getAsJsonObject());
                 baseDataValidator.reset().parameter(ChargesApiConstants.totalValueParamName).value(totalValue).notNull().positiveAmount();
 
                 if (insuranceChargedAs.intValue() == ChargeInsuranceType.COMPRA.getValue()) {

@@ -414,12 +414,12 @@ public class Charge extends AbstractPersistableCustom {
     }
 
     public boolean isFlatHono() {
-        return  ChargeCalculationType.fromInt(this.chargeCalculation).isFlatHono();
+        return ChargeCalculationType.fromInt(this.chargeCalculation).isFlatHono();
     }
 
     public boolean isCustomFlatDistributedCharge() {
         // Charge is distributed among the installments
-        return isCustomFlatVoluntaryInsurenceCharge() ||  ChargeCalculationType.fromInt(this.chargeCalculation).isFlatMandatoryInsurance();
+        return isCustomFlatVoluntaryInsurenceCharge() || ChargeCalculationType.fromInt(this.chargeCalculation).isFlatMandatoryInsurance();
     }
 
     public boolean isFlatMandatoryInsurance() {
@@ -429,32 +429,32 @@ public class Charge extends AbstractPersistableCustom {
 
     public boolean isCustomPercentageBasedDistributedCharge() {
         // Charge is distributed among the installments
-        return  ChargeCalculationType.fromInt(this.chargeCalculation).isPercentageBasedMandatoryInsurance();
+        return ChargeCalculationType.fromInt(this.chargeCalculation).isPercentageBasedMandatoryInsurance();
     }
 
     public boolean isAvalCharge() {
         // Charge is distributed among the installments
-        return  ChargeCalculationType.fromInt(this.chargeCalculation).isPercentageOfAval();
+        return ChargeCalculationType.fromInt(this.chargeCalculation).isPercentageOfAval();
     }
 
     public boolean isMandatoryInsurance() {
         // Charge is distributed among the installments
-        return  ChargeCalculationType.fromInt(this.chargeCalculation).isMandatoryInsuranceCharge();
+        return ChargeCalculationType.fromInt(this.chargeCalculation).isMandatoryInsuranceCharge();
     }
 
     public boolean isVoluntaryInsurance() {
         // Charge is distributed among the installments
-        return  ChargeCalculationType.fromInt(this.chargeCalculation).isVoluntaryInsurance();
+        return ChargeCalculationType.fromInt(this.chargeCalculation).isVoluntaryInsurance();
     }
 
     public boolean isCustomPercentageBasedOfAnotherCharge() {
         // Charge is distributed among the installments
-        return  ChargeCalculationType.fromInt(this.chargeCalculation).isPercentageOfAnotherCharge();
+        return ChargeCalculationType.fromInt(this.chargeCalculation).isPercentageOfAnotherCharge();
     }
 
     public boolean isCustomPercentageOfOutstandingPrincipalCharge() {
         // Charge is distributed among the installments
-        return  ChargeCalculationType.fromInt(this.chargeCalculation).isCustomPercentageOfOutstandingPrincipalCharge();
+        return ChargeCalculationType.fromInt(this.chargeCalculation).isCustomPercentageOfOutstandingPrincipalCharge();
     }
 
     public boolean isCustomFlatVoluntaryInsurenceCharge() {
@@ -1003,47 +1003,53 @@ public class Charge extends AbstractPersistableCustom {
             }
             if (this.isPenalty()) {
                 if (!ChargeTimeType.fromInt(this.getChargeTimeType()).isOverdueInstallment()) {
-                    throw new GeneralPlatformDomainRuleException(
-                            "error.msg.charge.not.setup.correctly",
-                            "Charge not setup correctly", this.getName());
+                    throw new GeneralPlatformDomainRuleException("error.msg.charge.not.setup.correctly", "Charge not setup correctly",
+                            this.getName());
                 } else {
-                        /*code = code.replace(code.charAt(ChargeCalculationTypeBaseItemsEnum.SEGURO_OBRIGATORIO.getIndex()), '0');
-                        code = code.replace(code.charAt(ChargeCalculationTypeBaseItemsEnum.SEGURO_VOLUNTARIO.getIndex()), '0');
-                        code = code.replace(code.charAt(ChargeCalculationTypeBaseItemsEnum.AVAL.getIndex()), '0');
-                        code = code.replace(code.charAt(ChargeCalculationTypeBaseItemsEnum.PRINCIPAL_INSTALLMENT.getIndex()), '0');*/
+                    /*
+                     * code =
+                     * code.replace(code.charAt(ChargeCalculationTypeBaseItemsEnum.SEGURO_OBRIGATORIO.getIndex()), '0');
+                     * code = code.replace(code.charAt(ChargeCalculationTypeBaseItemsEnum.SEGURO_VOLUNTARIO.getIndex()),
+                     * '0'); code = code.replace(code.charAt(ChargeCalculationTypeBaseItemsEnum.AVAL.getIndex()), '0');
+                     * code =
+                     * code.replace(code.charAt(ChargeCalculationTypeBaseItemsEnum.PRINCIPAL_INSTALLMENT.getIndex()),
+                     * '0');
+                     */
 
                     verifyChargeConfiguration(code, ChargeCalculationTypeBaseItemsEnum.SEGURO_OBRIGATORIO.getIndex(),
-                            ChargeCalculationTypeBaseItemsEnum.SEGURO_VOLUNTARIO.getIndex(), ChargeCalculationTypeBaseItemsEnum.AVAL.getIndex(),
-                            ChargeCalculationTypeBaseItemsEnum.HOORARIOS.getIndex(), ChargeCalculationTypeBaseItemsEnum.PRINCIPAL_INSTALLMENT.getIndex());
+                            ChargeCalculationTypeBaseItemsEnum.SEGURO_VOLUNTARIO.getIndex(),
+                            ChargeCalculationTypeBaseItemsEnum.AVAL.getIndex(), ChargeCalculationTypeBaseItemsEnum.HOORARIOS.getIndex(),
+                            ChargeCalculationTypeBaseItemsEnum.PRINCIPAL_INSTALLMENT.getIndex());
 
                 }
 
             } else if (this.isMandatoryInsurance()) {
-                if (this.isFlatMandatoryInsurance()) { //Flat and Mandatory Insurance
+                if (this.isFlatMandatoryInsurance()) { // Flat and Mandatory Insurance
                     verifyChargeConfiguration(code, ChargeCalculationTypeBaseItemsEnum.SEGURO_OBRIGATORIO.getIndex(),
                             ChargeCalculationTypeBaseItemsEnum.FLAT.getIndex(), null, null, null);
                 } else if (this.isPercentageBasedMandatoryInsurance()) { // Disbursement and Mandatory Insurance
                     verifyChargeConfiguration(code, ChargeCalculationTypeBaseItemsEnum.SEGURO_OBRIGATORIO.getIndex(),
                             ChargeCalculationTypeBaseItemsEnum.DISBURSED_AMOUNT.getIndex(), null, null, null);
-                } else if (this.isCustomPercentageOfOutstandingPrincipalCharge()) { // Disbursement and Mandatory Insurance
+                } else if (this.isCustomPercentageOfOutstandingPrincipalCharge()) { // Disbursement and Mandatory
+                                                                                    // Insurance
                     verifyChargeConfiguration(code, ChargeCalculationTypeBaseItemsEnum.SEGURO_OBRIGATORIO.getIndex(),
                             ChargeCalculationTypeBaseItemsEnum.OUTSTANDING_PRINCIPAL.getIndex(), null, null, null);
                 }
             } else if (this.isCustomFlatVoluntaryInsurenceCharge()) {
-                verifyChargeConfiguration( code, ChargeCalculationTypeBaseItemsEnum.SEGURO_VOLUNTARIO.getIndex(),
+                verifyChargeConfiguration(code, ChargeCalculationTypeBaseItemsEnum.SEGURO_VOLUNTARIO.getIndex(),
                         ChargeCalculationTypeBaseItemsEnum.FLAT.getIndex(), null, null, null);
             } else if (this.isAvalCharge()) {
                 verifyChargeConfiguration(code, ChargeCalculationTypeBaseItemsEnum.AVAL.getIndex(),
                         ChargeCalculationTypeBaseItemsEnum.DISBURSED_AMOUNT.getIndex(), null, null, null);
             } else if (this.isCustomPercentageBasedOfAnotherCharge()) {
-                verifyChargeConfiguration(code, ChargeCalculationTypeBaseItemsEnum.PERCENT_OF_ANOTHER_CHARGE.getIndex(), null, null, null, null);
+                verifyChargeConfiguration(code, ChargeCalculationTypeBaseItemsEnum.PERCENT_OF_ANOTHER_CHARGE.getIndex(), null, null, null,
+                        null);
             } else if (this.isFlatHono()) {
                 verifyChargeConfiguration(code, ChargeCalculationTypeBaseItemsEnum.FLAT.getIndex(),
                         ChargeCalculationTypeBaseItemsEnum.HOORARIOS.getIndex(), null, null, null);
             } else {
-                throw new GeneralPlatformDomainRuleException(
-                        "error.msg.charge.not.setup.correctly",
-                        "Charge not setup correctly", this.getName());
+                throw new GeneralPlatformDomainRuleException("error.msg.charge.not.setup.correctly", "Charge not setup correctly",
+                        this.getName());
             }
         }
     }
@@ -1051,15 +1057,13 @@ public class Charge extends AbstractPersistableCustom {
     private void verifyChargeConfiguration(String code, Integer index1, Integer index2, Integer index3, Integer index4, Integer index5) {
         if (this.isAvalCharge() && !this.isPenalty()) {
             if (!this.isGetPercentageFromTable()) {
-                throw new GeneralPlatformDomainRuleException(
-                        "error.msg.charge.not.setup.correctly",
-                        "Charge not setup correctly", this.getName());
+                throw new GeneralPlatformDomainRuleException("error.msg.charge.not.setup.correctly", "Charge not setup correctly",
+                        this.getName());
             }
         }
         if (!this.isPenalty() && !this.isInstallmentFee()) {
-            throw new GeneralPlatformDomainRuleException(
-                    "error.msg.charge.not.setup.correctly",
-                    "Charge not setup correctly", this.getName());
+            throw new GeneralPlatformDomainRuleException("error.msg.charge.not.setup.correctly", "Charge not setup correctly",
+                    this.getName());
         }
         char[] codeArray = code.toCharArray();
         codeArray[index1] = '0';
@@ -1078,9 +1082,8 @@ public class Charge extends AbstractPersistableCustom {
         }
         code = String.valueOf(codeArray);
         if (code.indexOf('1') != -1) {
-            throw new GeneralPlatformDomainRuleException(
-                    "error.msg.charge.not.setup.correctly",
-                    "Charge not setup correctly", this.getName());
+            throw new GeneralPlatformDomainRuleException("error.msg.charge.not.setup.correctly", "Charge not setup correctly",
+                    this.getName());
         }
     }
 
