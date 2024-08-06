@@ -2247,7 +2247,9 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                 loanChargeAmt = loanCharge.calculateCustomFeeChargeToInstallment(installmentNumber, principalDisbursed, numberOfRepayments,
                         outstandingBalance);
             } else {
-                if (loanCharge.getChargeCalculation().isPercentageOfAnotherCharge()) {
+                if (loanCharge.getPercentage() == null) {
+                    loanChargeAmt = BigDecimal.ZERO;
+                } else if (loanCharge.getChargeCalculation().isPercentageOfAnotherCharge()) {
 
                     loanChargeAmt = amount.multiply(loanCharge.getPercentage()).divide(BigDecimal.valueOf(100), 0, RoundingMode.HALF_UP);
                 } else {

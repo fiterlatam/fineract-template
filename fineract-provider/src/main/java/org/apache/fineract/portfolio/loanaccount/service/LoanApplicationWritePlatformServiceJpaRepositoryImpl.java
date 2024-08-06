@@ -25,12 +25,7 @@ import jakarta.persistence.PersistenceException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.temporal.ChronoField;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -333,7 +328,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                     newLoanApplication.setTopupLoanDetails(topupDetails);
                 }
             }
-
+            validateAllChargesAreSetupCorrectly(newLoanApplication);
             this.loanRepositoryWrapper.saveAndFlush(newLoanApplication);
 
             if (loanProduct.isInterestRecalculationEnabled()) {
@@ -1049,7 +1044,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                     existingLoanApplication.getTermPeriodFrequencyType(), productRelatedDetail.getNumberOfRepayments(),
                     productRelatedDetail.getRepayEvery(), productRelatedDetail.getRepaymentPeriodFrequencyType().getValue(),
                     existingLoanApplication);
-
+            validateAllChargesAreSetupCorrectly(existingLoanApplication);
             saveAndFlushLoanWithDataIntegrityViolationChecks(existingLoanApplication);
 
             final String submittedOnNote = command.stringValueOfParameterNamed("submittedOnNote");
@@ -1810,4 +1805,12 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
         }
     }
 
+    private void validateAllChargesAreSetupCorrectly(Loan loan) {
+        if (loan.getLoanCharges() != null) {
+            for (LoanCharge loanCharge : loan.getLoanCharges()) {
+                Charge charge = loanCharge.getCharge();
+                charge.validateChargeIsSetupCorrectly();
+            }
+        }
+    }
 }
