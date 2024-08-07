@@ -551,7 +551,6 @@ public class ChargeDropdownReadPlatformServiceImpl implements ChargeDropdownRead
                 chargeCalculationType(ChargeCalculationType.FLAT), //
                 chargeCalculationType(ChargeCalculationType.FLAT_ACHG), //
                 chargeCalculationType(ChargeCalculationType.FLAT_HONO), //
-                chargeCalculationType(ChargeCalculationType.FLAT_HONO_ACHG), //
                 chargeCalculationType(ChargeCalculationType.FLAT_AVAL), //
                 chargeCalculationType(ChargeCalculationType.FLAT_AVAL_ACHG), //
                 chargeCalculationType(ChargeCalculationType.FLAT_AVAL_HONO), //
@@ -1096,6 +1095,7 @@ public class ChargeDropdownReadPlatformServiceImpl implements ChargeDropdownRead
     @Override
     public List<EnumOptionData> retrieveLoanCalculationTypes() {
         return Arrays.asList(chargeCalculationType(ChargeCalculationType.FLAT_AMOUNT), //
+                loanChargeCalculationType(ChargeCalculationType.FLAT_HONO), //
                 loanChargeCalculationType(ChargeCalculationType.PERCENT_OF_AMOUNT), //
                 // loanChargeCalculationType(ChargeCalculationType.PERCENT_OF_AMOUNT_AND_INTEREST), //
                 loanChargeCalculationType(ChargeCalculationType.PERCENT_OF_INTEREST), //
@@ -1618,8 +1618,6 @@ public class ChargeDropdownReadPlatformServiceImpl implements ChargeDropdownRead
                 loanChargeCalculationType(ChargeCalculationType.DISB_IPRIN_IINT_OPRIN_OINT_SEGO_AVAL_HONO_ACHG), //
                 loanChargeCalculationType(ChargeCalculationType.FLAT), //
                 loanChargeCalculationType(ChargeCalculationType.FLAT_ACHG), //
-                loanChargeCalculationType(ChargeCalculationType.FLAT_HONO), //
-                loanChargeCalculationType(ChargeCalculationType.FLAT_HONO_ACHG), //
                 loanChargeCalculationType(ChargeCalculationType.FLAT_AVAL), //
                 loanChargeCalculationType(ChargeCalculationType.FLAT_AVAL_ACHG), //
                 loanChargeCalculationType(ChargeCalculationType.FLAT_AVAL_HONO), //
@@ -2128,7 +2126,23 @@ public class ChargeDropdownReadPlatformServiceImpl implements ChargeDropdownRead
                 loanChargeCalculationType(ChargeCalculationType.FLAT_DISB_IPRIN_IINT_OPRIN_OINT_SEGO_AVAL_ACHG), //
                 loanChargeCalculationType(ChargeCalculationType.FLAT_DISB_IPRIN_IINT_OPRIN_OINT_SEGO_AVAL_HONO), //
                 loanChargeCalculationType(ChargeCalculationType.FLAT_DISB_IPRIN_IINT_OPRIN_OINT_SEGO_AVAL_HONO_ACHG), //
-                loanChargeCalculationType(ChargeCalculationType.FLAT_SEGOVOLUNTARIO) //
+                loanChargeCalculationType(ChargeCalculationType.FLAT_SEGOVOLUNTARIO),
+                loanChargeCalculationType(ChargeCalculationType.IPRIN_SEGOVOLUNTARIO),
+                loanChargeCalculationType(ChargeCalculationType.SEGO_SEGOVOLUNTARIO),
+                loanChargeCalculationType(ChargeCalculationType.IPRIN_SEGO_SEGOVOLUNTARIO),
+                loanChargeCalculationType(ChargeCalculationType.AVAL_SEGOVOLUNTARIO),
+                loanChargeCalculationType(ChargeCalculationType.IPRIN_AVAL_SEGOVOLUNTARIO),
+                loanChargeCalculationType(ChargeCalculationType.SEGO_AVAL_SEGOVOLUNTARIO),
+                loanChargeCalculationType(ChargeCalculationType.IPRIN_SEGO_AVAL_SEGOVOLUNTARIO),
+                loanChargeCalculationType(ChargeCalculationType.HONO_SEGOVOLUNTARIO),
+                loanChargeCalculationType(ChargeCalculationType.IPRIN_HONO_SEGOVOLUNTARIO),
+                loanChargeCalculationType(ChargeCalculationType.SEGO_HONO_SEGOVOLUNTARIO),
+                loanChargeCalculationType(ChargeCalculationType.IPRIN_SEGO_HONO_SEGOVOLUNTARIO),
+                loanChargeCalculationType(ChargeCalculationType.AVAL_HONO_SEGOVOLUNTARIO),
+                loanChargeCalculationType(ChargeCalculationType.IPRIN_AVAL_HONO_SEGOVOLUNTARIO),
+                loanChargeCalculationType(ChargeCalculationType.SEGO_AVAL_HONO_SEGOVOLUNTARIO),
+                loanChargeCalculationType(ChargeCalculationType.IPRIN_SEGO_AVAL_HONO_SEGOVOLUNTARIO),
+                loanChargeCalculationType(ChargeCalculationType.SEGOVOLUNTARIO)//
 
         );
     }

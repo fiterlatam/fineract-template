@@ -312,11 +312,15 @@ public class LoanProduct extends AbstractPersistableCustom {
     @JoinColumn(name = "voluntary_insurance_id")
     private Charge voluntaryInsuranceCharge;
 
+    @Getter
+    @Setter
+    @Column(name = "is_interest_starts_after_grace_period")
+    private boolean interestStartsAfterGracePeriod;
+
     public static LoanProduct assembleFromJson(final Fund fund, final String loanTransactionProcessingStrategy,
             final List<Charge> productCharges, final JsonCommand command, FloatingRate floatingRate, final List<Rate> productRates,
             List<LoanProductPaymentAllocationRule> loanProductPaymentAllocationRules,
             List<LoanProductCreditAllocationRule> loanProductCreditAllocationRules, final InterestRate interestRate) {
-
         final String name = command.stringValueOfParameterNamed("name");
         final String shortName = command.stringValueOfParameterNamed(LoanProductConstants.SHORT_NAME);
         final String description = command.stringValueOfParameterNamed("description");
@@ -328,7 +332,6 @@ public class LoanProduct extends AbstractPersistableCustom {
         final BigDecimal principal = command.bigDecimalValueOfParameterNamed("principal");
         final BigDecimal minPrincipal = command.bigDecimalValueOfParameterNamed("minPrincipal");
         final BigDecimal maxPrincipal = command.bigDecimalValueOfParameterNamed("maxPrincipal");
-
         final InterestMethod interestMethod = InterestMethod.fromInt(command.integerValueOfParameterNamed("interestType"));
         final InterestCalculationPeriodMethod interestCalculationPeriodMethod = InterestCalculationPeriodMethod
                 .fromInt(command.integerValueOfParameterNamed("interestCalculationPeriodType"));
@@ -527,6 +530,8 @@ public class LoanProduct extends AbstractPersistableCustom {
                 .booleanPrimitiveValueOfParameterNamed(LoanProductConstants.EXTEND_TERM_FOR_MONTHLY_REPAYMENTS);
         final boolean advance = command.booleanPrimitiveValueOfParameterNamed(LoanProductConstants.ADVANCE_PARAM);
         final boolean requirePoints = command.booleanPrimitiveValueOfParameterNamed(LoanProductConstants.REQUIRE_POINT_PARAM_NAME);
+        final boolean shouldInterestStartAfterGracePeriod = command
+                .booleanPrimitiveValueOfParameterNamed(LoanProductConstants.INTEREST_STARTS_AFTER_GRACE_PERIOD);
 
         LoanProduct product = new LoanProduct(fund, loanTransactionProcessingStrategy, loanProductPaymentAllocationRules,
                 loanProductCreditAllocationRules, name, shortName, description, currency, principal, minPrincipal, maxPrincipal,
@@ -554,6 +559,7 @@ public class LoanProduct extends AbstractPersistableCustom {
         product.setExtendTermForMonthlyRepayments(extendTermForMonthlyRepayments);
         product.setAdvance(advance);
         product.setRequirePoints(requirePoints);
+        product.setInterestStartsAfterGracePeriod(shouldInterestStartAfterGracePeriod);
         return product;
 
     }
@@ -1065,6 +1071,13 @@ public class LoanProduct extends AbstractPersistableCustom {
 
         final Map<String, Object> actualChanges = this.loanProductRelatedDetail.update(command, aprCalculator);
         actualChanges.putAll(loanProductMinMaxConstraints().update(command));
+
+        final String interestStartsAfterGracePeriodParamName = LoanProductConstants.INTEREST_STARTS_AFTER_GRACE_PERIOD;
+        if (command.isChangeInBooleanParameterNamed(interestStartsAfterGracePeriodParamName, this.interestStartsAfterGracePeriod)) {
+            final boolean newValue = command.booleanPrimitiveValueOfParameterNamed(interestStartsAfterGracePeriodParamName);
+            actualChanges.put(interestStartsAfterGracePeriodParamName, newValue);
+            this.interestStartsAfterGracePeriod = newValue;
+        }
 
         final String isLinkedToFloatingInterestRates = "isLinkedToFloatingInterestRates";
         if (command.isChangeInBooleanParameterNamed(isLinkedToFloatingInterestRates, this.isLinkedToFloatingInterestRate)) {
@@ -1982,5 +1995,13 @@ public class LoanProduct extends AbstractPersistableCustom {
 
     public void setExtendTermForMonthlyRepayments(boolean extendTermForMonthlyRepayments) {
         this.extendTermForMonthlyRepayments = extendTermForMonthlyRepayments;
+    }
+
+    public boolean enableHoliday(boolean isHolidayEnabled) {
+        // if loan product's repaymentReschedulingType is set to greater than 1 , then holiday should be enabled
+        if (this.repaymentReschedulingType != null && !isHolidayEnabled) {
+            return this.repaymentReschedulingType > 1;
+        }
+        return isHolidayEnabled;
     }
 }

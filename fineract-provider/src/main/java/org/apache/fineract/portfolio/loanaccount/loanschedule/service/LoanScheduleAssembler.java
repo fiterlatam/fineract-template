@@ -120,12 +120,15 @@ import org.apache.fineract.portfolio.loanproduct.domain.RecalculationFrequencyTy
 import org.apache.fineract.portfolio.loanproduct.domain.RepaymentStartDateType;
 import org.apache.fineract.portfolio.loanproduct.exception.LoanProductNotFoundException;
 import org.apache.fineract.portfolio.loanproduct.service.LoanEnumerations;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service
 public class LoanScheduleAssembler {
 
+    private static final Logger log = LoggerFactory.getLogger(LoanScheduleAssembler.class);
     private final FromJsonHelper fromApiJsonHelper;
     private final LoanProductRepository loanProductRepository;
     private final ApplicationCurrencyRepositoryWrapper applicationCurrencyRepository;
@@ -352,13 +355,20 @@ public class LoanScheduleAssembler {
                     loanProduct.getMinimumDaysBetweenDisbursalAndFirstRepayment());
         }
 
+        boolean isInterestStartsAfterGracePeriod = loanProduct.isInterestStartsAfterGracePeriod();
+
         // grace details
         final Integer graceOnPrincipalPayment = this.fromApiJsonHelper.extractIntegerWithLocaleNamed("graceOnPrincipalPayment", element);
         final Integer recurringMoratoriumOnPrincipalPeriods = this.fromApiJsonHelper
                 .extractIntegerWithLocaleNamed("recurringMoratoriumOnPrincipalPeriods", element);
         final Integer graceOnInterestPayment = this.fromApiJsonHelper.extractIntegerWithLocaleNamed("graceOnInterestPayment", element);
         final Integer graceOnChargesPayment = this.fromApiJsonHelper.extractIntegerWithLocaleNamed("graceOnChargesPayment", element);
-        final Integer graceOnInterestCharged = this.fromApiJsonHelper.extractIntegerWithLocaleNamed("graceOnInterestCharged", element);
+        Integer graceOnInterestCharged = this.fromApiJsonHelper.extractIntegerWithLocaleNamed("graceOnInterestCharged", element);
+        // if isInterestStartsAfterGracePeriod is true then graceOnInterestCharged should be equal to
+        // graceOnInterestPayment
+        if (isInterestStartsAfterGracePeriod) {
+            graceOnInterestCharged = graceOnInterestPayment;
+        }
         final LocalDate interestChargedFromDate = this.fromApiJsonHelper.extractLocalDateNamed("interestChargedFromDate", element);
         final Boolean isInterestChargedFromDateSameAsDisbursalDateEnabled = this.configurationDomainService
                 .isInterestChargedFromDateSameAsDisbursementDate();
@@ -485,7 +495,9 @@ public class LoanScheduleAssembler {
             group = this.groupRepository.findOneWithNotFoundDetection(groupId);
             officeId = group.getOffice().getId();
         }
-        final boolean isHolidayEnabled = this.configurationDomainService.isRescheduleRepaymentsOnHolidaysEnabled();
+        boolean isHolidayEnabled = this.configurationDomainService.isRescheduleRepaymentsOnHolidaysEnabled();
+        isHolidayEnabled = loanProduct.enableHoliday(isHolidayEnabled);
+
         final List<Holiday> holidays = this.holidayRepository.findByOfficeIdAndGreaterThanDate(officeId, expectedDisbursementDate,
                 HolidayStatusType.ACTIVE.getValue());
         final WorkingDays workingDays = this.workingDaysRepository.findOne();
@@ -674,6 +686,8 @@ public class LoanScheduleAssembler {
         loanApplicationTerms.setExtendTermForMonthlyRepayment(loanProduct.getExtendTermForMonthlyRepayments());
         // Get holiday details
         boolean isHolidayEnabled = this.configurationDomainService.isRescheduleRepaymentsOnHolidaysEnabled();
+        isHolidayEnabled = loanProduct.enableHoliday(isHolidayEnabled);
+        final Integer loanProductRepaymentReschedulingType = loanProduct.getRepaymentReschedulingType();
 
         final Long clientId = this.fromApiJsonHelper.extractLongNamed("clientId", element);
         final Long groupId = this.fromApiJsonHelper.extractLongNamed("groupId", element);
@@ -694,7 +708,6 @@ public class LoanScheduleAssembler {
                 HolidayStatusType.ACTIVE.getValue());
         final WorkingDays workingDays = this.workingDaysRepository.findOne();
 
-        final Integer loanProductRepaymentReschedulingType = loanProduct.getRepaymentReschedulingType();
         if (loanProductRepaymentReschedulingType != null && loanProductRepaymentReschedulingType.equals(1)) {
             this.workingDaysRepository.detach(workingDays);
             workingDays.update(WorkingDaysApiConstants.RECURRENCE_WEEKLY_ALL_DAYS, 1);
@@ -753,7 +766,8 @@ public class LoanScheduleAssembler {
             final LocalDate rescheduleFrom) {
 
         final MathContext mc = MoneyHelper.getMathContext();
-        final boolean isHolidayEnabled = this.configurationDomainService.isRescheduleRepaymentsOnHolidaysEnabled();
+        boolean isHolidayEnabled = this.configurationDomainService.isRescheduleRepaymentsOnHolidaysEnabled();
+        isHolidayEnabled = loan.loanProduct().enableHoliday(isHolidayEnabled);
 
         final List<Holiday> holidays = this.holidayRepository.findByOfficeIdAndGreaterThanDate(officeId,
                 loanApplicationTerms.getExpectedDisbursementDate(), HolidayStatusType.ACTIVE.getValue());
@@ -774,7 +788,8 @@ public class LoanScheduleAssembler {
 
         final MathContext mc = MoneyHelper.getMathContext();
 
-        final boolean isHolidayEnabled = this.configurationDomainService.isRescheduleRepaymentsOnHolidaysEnabled();
+        boolean isHolidayEnabled = this.configurationDomainService.isRescheduleRepaymentsOnHolidaysEnabled();
+        isHolidayEnabled = loan.loanProduct().enableHoliday(isHolidayEnabled);
         final List<Holiday> holidays = this.holidayRepository.findByOfficeIdAndGreaterThanDate(officeId,
                 loanApplicationTerms.getExpectedDisbursementDate(), HolidayStatusType.ACTIVE.getValue());
         final WorkingDays workingDays = this.workingDaysRepository.findOne();

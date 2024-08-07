@@ -1225,7 +1225,10 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
                 BigDecimal finalAmount = computedAmount.divide(installmentCount, 0, RoundingMode.HALF_UP);
                 customAmout = customAmout.add(finalAmount);
             } else {
-                customAmout = customAmout.add(this.getInstallmentLoanCharge(installmentNumber).getAmount());
+                final LoanInstallmentCharge installmentLoanCharge = this.getInstallmentLoanCharge(installmentNumber);
+                if (installmentLoanCharge != null) {
+                    customAmout = customAmout.add(installmentLoanCharge.getAmount());
+                }
             }
         }
         return customAmout;
@@ -1245,7 +1248,7 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
 
     public boolean isCustomFlatDistributedCharge() {
         // Charge is distributed among the installments
-        return isCustomFlatVoluntaryInsurenceCharge() && getChargeCalculation().isFlatMandatoryInsurance();
+        return getChargeCalculation().isFlatMandatoryInsurance();
     }
 
     public boolean isCustomPercentageBasedDistributedCharge() {
