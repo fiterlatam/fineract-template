@@ -1005,14 +1005,15 @@ public class Charge extends AbstractPersistableCustom {
                 if (!ChargeTimeType.fromInt(this.getChargeTimeType()).isOverdueInstallment()) {
                     throw new GeneralPlatformDomainRuleException("error.msg.charge.not.setup.correctly", "Charge not setup correctly",
                             this.getName());
-                } if (this.interestRate == null) {
+                }
+                if (this.interestRate == null) {
                     throw new GeneralPlatformDomainRuleException("error.msg.charge.not.setup.correctly", "Charge not setup correctly",
                             this.getName());
                 }
 
                 verifyChargeConfiguration(code, ChargeCalculationTypeBaseItemsEnum.SEGURO_OBRIGATORIO.getIndex(),
-                        ChargeCalculationTypeBaseItemsEnum.SEGURO_VOLUNTARIO.getIndex(),
-                        ChargeCalculationTypeBaseItemsEnum.AVAL.getIndex(), ChargeCalculationTypeBaseItemsEnum.INTEREST_INSTALLMENT.getIndex(),
+                        ChargeCalculationTypeBaseItemsEnum.SEGURO_VOLUNTARIO.getIndex(), ChargeCalculationTypeBaseItemsEnum.AVAL.getIndex(),
+                        ChargeCalculationTypeBaseItemsEnum.INTEREST_INSTALLMENT.getIndex(),
                         ChargeCalculationTypeBaseItemsEnum.PRINCIPAL_INSTALLMENT.getIndex());
             } else if (this.isMandatoryInsurance()) {
                 if (this.isFlatMandatoryInsurance()) { // Flat and Mandatory Insurance

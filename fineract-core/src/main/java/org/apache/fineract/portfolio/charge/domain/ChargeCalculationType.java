@@ -1479,17 +1479,19 @@ public enum ChargeCalculationType {
     IPRIN_SEGO_SEGOVOLUNTARIO(1037, "00100010001", "installmentprincipal.seguroobrigatorio.segurovoluntarioasistencia"), //
     AVAL_SEGOVOLUNTARIO(1038, "00000001001", "aval.segurovoluntarioasistencia"), //
     IPRIN_AVAL_SEGOVOLUNTARIO(1039, "00100001001", "installmentprincipal.aval.segurovoluntarioasistencia"), //
-    SEGO_AVAL_SEGOVOLUNTARIO(1040, "00000011001", "seguroobrigatorio.aval.segurovoluntarioasistencia"),  //
+    SEGO_AVAL_SEGOVOLUNTARIO(1040, "00000011001", "seguroobrigatorio.aval.segurovoluntarioasistencia"), //
     IPRIN_SEGO_AVAL_SEGOVOLUNTARIO(1041, "00100011001", "installmentprincipal.seguroobrigatorio.aval.segurovoluntarioasistencia"), //
-    IINT_SEGOVOLUNTARIO(1042, "00010000001", "installmentinterest.segurovoluntarioasistencia"),  //
+    IINT_SEGOVOLUNTARIO(1042, "00010000001", "installmentinterest.segurovoluntarioasistencia"), //
     IPRIN_IINT_SEGOVOLUNTARIO(1043, "00110000001", "installmentprincipal.installmentinterest.segurovoluntarioasistencia"), //
-    IINT_SEGO_SEGOVOLUNTARIO(1044, "00010010001", "installmentinterest.seguroobrigatorio.segurovoluntarioasistencia"),  //
-    IPRIN_IINT_SEGO_SEGOVOLUNTARIO(1045, "00110010001", "installmentprincipal.installmentinterest.seguroobrigatorio.segurovoluntarioasistencia"), //
-    IINT_AVAL_SEGOVOLUNTARIO(1046, "00010001001", "installmentinterest.aval.segurovoluntarioasistencia"),  //
+    IINT_SEGO_SEGOVOLUNTARIO(1044, "00010010001", "installmentinterest.seguroobrigatorio.segurovoluntarioasistencia"), //
+    IPRIN_IINT_SEGO_SEGOVOLUNTARIO(1045, "00110010001",
+            "installmentprincipal.installmentinterest.seguroobrigatorio.segurovoluntarioasistencia"), //
+    IINT_AVAL_SEGOVOLUNTARIO(1046, "00010001001", "installmentinterest.aval.segurovoluntarioasistencia"), //
     IPRIN_IINT_AVAL_SEGOVOLUNTARIO(1047, "00110001001", "installmentprincipal.installmentinterest.aval.segurovoluntarioasistencia"), //
-    IINT_SEGO_AVAL_SEGOVOLUNTARIO(1048, "00010011001", "installmentinterest.seguroobrigatorio.aval.segurovoluntarioasistencia"),  //
-    IPRIN_IINT_SEGO_AVAL_SEGOVOLUNTARIO(1049, "00110011001", "installmentprincipal.installmentinterest.seguroobrigatorio.aval.segurovoluntarioasistencia"), //
-    SEGOVOLUNTARIO(1050,"00000000001", "segurovoluntarioasistencia"), //
+    IINT_SEGO_AVAL_SEGOVOLUNTARIO(1048, "00010011001", "installmentinterest.seguroobrigatorio.aval.segurovoluntarioasistencia"), //
+    IPRIN_IINT_SEGO_AVAL_SEGOVOLUNTARIO(1049, "00110011001",
+            "installmentprincipal.installmentinterest.seguroobrigatorio.aval.segurovoluntarioasistencia"), //
+    SEGOVOLUNTARIO(1050, "00000000001", "segurovoluntarioasistencia"), //
 
     ;
 
@@ -1579,8 +1581,8 @@ public enum ChargeCalculationType {
     }
 
     public boolean isPercentageOfAval() {
-        return this.byteRepresentation.charAt(ChargeCalculationTypeBaseItemsEnum.AVAL.getIndex()) == '1' &&
-        this.equals(DISB_AVAL) && isPercentageOfDisbursement();
+        return this.byteRepresentation.charAt(ChargeCalculationTypeBaseItemsEnum.AVAL.getIndex()) == '1' && this.equals(DISB_AVAL)
+                && isPercentageOfDisbursement();
     }
 
     public boolean isPercentageOfHonorarios() {

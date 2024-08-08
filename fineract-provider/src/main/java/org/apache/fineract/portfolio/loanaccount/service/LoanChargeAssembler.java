@@ -157,8 +157,8 @@ public class LoanChargeAssembler {
                         }
 
                         boolean getPercentageAmountFromTable = chargeDefinition.isGetPercentageFromTable();
-                        if (getPercentageAmountFromTable ||
-                                ChargeCalculationType.fromInt(chargeDefinition.getChargeCalculation()).equals(ChargeCalculationType.DISB_AVAL)) {
+                        if (getPercentageAmountFromTable || ChargeCalculationType.fromInt(chargeDefinition.getChargeCalculation())
+                                .equals(ChargeCalculationType.DISB_AVAL)) {
                             ChargeCalculationType calculation = chargeCalculation;
                             if (calculation == null) {
                                 calculation = ChargeCalculationType.fromInt(chargeDefinition.getChargeCalculation());
@@ -297,8 +297,8 @@ public class LoanChargeAssembler {
         return createNewFromJson(loan, chargeDefinition, command, dueDate, null, null);
     }
 
-    public LoanCharge createNewFromJson(final Loan loan, final Charge chargeDefinition, final JsonCommand command,
-                                        final LocalDate dueDate, LoanRepaymentScheduleInstallment installment, Long numberOfPenaltyDays) {
+    public LoanCharge createNewFromJson(final Loan loan, final Charge chargeDefinition, final JsonCommand command, final LocalDate dueDate,
+            LoanRepaymentScheduleInstallment installment, Long numberOfPenaltyDays) {
         final Locale locale = command.extractLocale();
         BigDecimal amount = command.bigDecimalValueOfParameterNamed("amount", locale);
 
@@ -308,7 +308,8 @@ public class LoanChargeAssembler {
         BigDecimal amountPercentageAppliedTo = BigDecimal.ZERO;
 
         ChargeCalculationType chargeCalculationType = ChargeCalculationType.fromInt(chargeDefinition.getChargeCalculation());
-        boolean getPercentageAmountFromTable = chargeDefinition.isGetPercentageFromTable() || ChargeCalculationType.fromInt(chargeDefinition.getChargeCalculation()).equals(ChargeCalculationType.DISB_AVAL);
+        boolean getPercentageAmountFromTable = chargeDefinition.isGetPercentageFromTable()
+                || ChargeCalculationType.fromInt(chargeDefinition.getChargeCalculation()).equals(ChargeCalculationType.DISB_AVAL);
         if (getPercentageAmountFromTable) {
             final LoanAccountData loanAccountExtras = getLoanExtras(loan.getId());
             String pointOfSaleCode = null;
@@ -366,12 +367,14 @@ public class LoanChargeAssembler {
                 amountPercentageAppliedTo = BigDecimal.ZERO;
                 String chargeCalculationName = chargeCalculationType.name();
                 if (chargeCalculationName.contains("IPRIN")) {
-                    amountPercentageAppliedTo = amountPercentageAppliedTo.add(installment.getPrincipalOutstanding(loan.getCurrency()).getAmount());
+                    amountPercentageAppliedTo = amountPercentageAppliedTo
+                            .add(installment.getPrincipalOutstanding(loan.getCurrency()).getAmount());
                 }
                 if (chargeCalculationName.contains("SEGO")) {
                     for (LoanCharge loanCharge : loan.getLoanCharges()) {
                         if (loanCharge.isMandatoryInsurance()) {
-                            LoanInstallmentCharge loanInstallmentCharge = loanCharge.getInstallmentLoanCharge(installment.getInstallmentNumber());
+                            LoanInstallmentCharge loanInstallmentCharge = loanCharge
+                                    .getInstallmentLoanCharge(installment.getInstallmentNumber());
                             amountPercentageAppliedTo = amountPercentageAppliedTo.add(loanInstallmentCharge.getAmountOutstanding());
                         }
                     }
@@ -379,18 +382,21 @@ public class LoanChargeAssembler {
                 if (chargeCalculationName.contains("AVAL")) {
                     for (LoanCharge loanCharge : loan.getLoanCharges()) {
                         if (loanCharge.isAvalCharge()) {
-                            LoanInstallmentCharge loanInstallmentCharge = loanCharge.getInstallmentLoanCharge(installment.getInstallmentNumber());
+                            LoanInstallmentCharge loanInstallmentCharge = loanCharge
+                                    .getInstallmentLoanCharge(installment.getInstallmentNumber());
                             amountPercentageAppliedTo = amountPercentageAppliedTo.add(loanInstallmentCharge.getAmountOutstanding());
                         }
                     }
                 }
                 if (chargeCalculationName.contains("IINT")) {
-                    amountPercentageAppliedTo = amountPercentageAppliedTo.add(installment.getInterestOutstanding(loan.getCurrency()).getAmount());
+                    amountPercentageAppliedTo = amountPercentageAppliedTo
+                            .add(installment.getInterestOutstanding(loan.getCurrency()).getAmount());
                 }
                 if (chargeCalculationName.contains("SEGOVOLUNTARIO")) {
                     for (LoanCharge loanCharge : loan.getLoanCharges()) {
                         if (loanCharge.isVoluntaryInsurance()) {
-                            LoanInstallmentCharge loanInstallmentCharge = loanCharge.getInstallmentLoanCharge(installment.getInstallmentNumber());
+                            LoanInstallmentCharge loanInstallmentCharge = loanCharge
+                                    .getInstallmentLoanCharge(installment.getInstallmentNumber());
                             amountPercentageAppliedTo = amountPercentageAppliedTo.add(loanInstallmentCharge.getAmountOutstanding());
                         }
                     }
