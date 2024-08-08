@@ -224,8 +224,7 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
                 final RoundingMode roundingMode = RoundingMode.HALF_UP;
                 final MathContext mc = MoneyHelper.getMathContext();
                 // Get one day of interest
-                this.percentage = chargeAmount.divide(BigDecimal.valueOf(360), mc).multiply(BigDecimal.valueOf(100L));
-                this.percentage = this.percentage.setScale(5, roundingMode);
+                this.percentage = chargeAmount.divide(BigDecimal.valueOf(365), mc).setScale(5, roundingMode).multiply(BigDecimal.valueOf(100L));
 
                 this.amountPercentageAppliedTo = amountPercentageAppliedTo;
                 if (loanCharge.compareTo(BigDecimal.ZERO) == 0) {
