@@ -2134,14 +2134,14 @@ public class ChargeDropdownReadPlatformServiceImpl implements ChargeDropdownRead
                 loanChargeCalculationType(ChargeCalculationType.IPRIN_AVAL_SEGOVOLUNTARIO),
                 loanChargeCalculationType(ChargeCalculationType.SEGO_AVAL_SEGOVOLUNTARIO),
                 loanChargeCalculationType(ChargeCalculationType.IPRIN_SEGO_AVAL_SEGOVOLUNTARIO),
-                loanChargeCalculationType(ChargeCalculationType.HONO_SEGOVOLUNTARIO),
-                loanChargeCalculationType(ChargeCalculationType.IPRIN_HONO_SEGOVOLUNTARIO),
-                loanChargeCalculationType(ChargeCalculationType.SEGO_HONO_SEGOVOLUNTARIO),
-                loanChargeCalculationType(ChargeCalculationType.IPRIN_SEGO_HONO_SEGOVOLUNTARIO),
-                loanChargeCalculationType(ChargeCalculationType.AVAL_HONO_SEGOVOLUNTARIO),
-                loanChargeCalculationType(ChargeCalculationType.IPRIN_AVAL_HONO_SEGOVOLUNTARIO),
-                loanChargeCalculationType(ChargeCalculationType.SEGO_AVAL_HONO_SEGOVOLUNTARIO),
-                loanChargeCalculationType(ChargeCalculationType.IPRIN_SEGO_AVAL_HONO_SEGOVOLUNTARIO),
+                loanChargeCalculationType(ChargeCalculationType.IINT_SEGOVOLUNTARIO),
+                loanChargeCalculationType(ChargeCalculationType.IPRIN_IINT_SEGOVOLUNTARIO),
+                loanChargeCalculationType(ChargeCalculationType.IINT_SEGO_SEGOVOLUNTARIO),
+                loanChargeCalculationType(ChargeCalculationType.IPRIN_IINT_SEGO_SEGOVOLUNTARIO),
+                loanChargeCalculationType(ChargeCalculationType.IINT_AVAL_SEGOVOLUNTARIO),
+                loanChargeCalculationType(ChargeCalculationType.IPRIN_IINT_AVAL_SEGOVOLUNTARIO),
+                loanChargeCalculationType(ChargeCalculationType.IINT_SEGO_AVAL_SEGOVOLUNTARIO),
+                loanChargeCalculationType(ChargeCalculationType.IPRIN_IINT_SEGO_AVAL_SEGOVOLUNTARIO),
                 loanChargeCalculationType(ChargeCalculationType.SEGOVOLUNTARIO)//
 
         );
