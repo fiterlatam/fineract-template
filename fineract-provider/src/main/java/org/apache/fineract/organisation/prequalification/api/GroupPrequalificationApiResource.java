@@ -145,6 +145,7 @@ public class GroupPrequalificationApiResource {
             @QueryParam("limit") @Parameter(description = "limit") final Integer limit,
             @QueryParam("orderBy") @Parameter(description = "orderBy") final String orderBy,
             @QueryParam("status") @Parameter(description = "status") final String status,
+            @QueryParam("agencyId") @Parameter(description = "agencyId") final Long agencyId,
             @QueryParam("type") @Parameter(description = "type") final String type,
             @QueryParam("portfolioCenterId") @Parameter(description = "type") final Long portfolioCenterId,
             @QueryParam("searchText") @Parameter(description = "searchText") final String searchText,
@@ -157,7 +158,7 @@ public class GroupPrequalificationApiResource {
 
         String clientName = queryParameters.getFirst("clientName");
         SearchParameters searchParameters = SearchParameters.forPrequalification(clientName, status, offset, limit, orderBy, sortOrder,
-                type, searchText, groupingType, portfolioCenterId);
+                type, searchText, groupingType, portfolioCenterId, agencyId);
         final Page<GroupPrequalificationData> clientData = this.prequalificationReadPlatformService.retrieveAll(searchParameters);
 
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(queryParameters);
@@ -174,6 +175,7 @@ public class GroupPrequalificationApiResource {
     public String newClientIdentifierDetails(@Context final UriInfo uriInfo) {
 
         this.context.authenticatedUser().validateHasViewPermission(this.resourceNameForPermissions);
+        final String hierarchy = this.context.authenticatedUser().getOffice().getHierarchy();
 
         MultivaluedMap<String, String> queryParameters = uriInfo.getQueryParameters();
 
@@ -183,7 +185,7 @@ public class GroupPrequalificationApiResource {
         Long agencyId = null;
         Long centerId = null;
         Collection<CenterData> centerData = null;
-        Collection<AgencyData> agencies = null;
+        Collection<AgencyData> agencies = this.agencyReadPlatformService.retrieveByOfficeHierarchy(hierarchy);
         Collection<AppUserData> appUsers = null;
         Collection<LoanProductData> loanProducts = null;
         GlobalConfigurationPropertyData timespan = null;
@@ -226,7 +228,6 @@ public class GroupPrequalificationApiResource {
             }
         }
 
-        final String hierarchy = this.context.authenticatedUser().getOffice().getHierarchy();
         centerData = this.centerReadPlatformService.retrieveByOfficeHierarchy(hierarchy, agencyId);
         agencies = this.agencyReadPlatformService.retrieveAllByAgencyLeader();
         if (agencies.isEmpty()) {

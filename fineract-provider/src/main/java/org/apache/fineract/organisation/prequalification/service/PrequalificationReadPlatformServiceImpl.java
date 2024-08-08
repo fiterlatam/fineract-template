@@ -277,6 +277,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
         String sqlSearch = searchParameters.getSqlSearch();
         final Long officeId = searchParameters.getOfficeId();
         final Long centerId = searchParameters.getCenterId();
+        final Long agencyId = searchParameters.getAgencyId();
         final String dpiNumber = searchParameters.getName();
         final String status = searchParameters.getStatus();
         final String type = searchParameters.getType();
@@ -298,12 +299,6 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                         paramList.add(appUser.getId());
                     }
                 }
-
-                // add hierrachy filter here.
-                extraCriteria += " and (mo.hierarchy LIKE CONCAT(?, '%') OR ? like CONCAT(mo.hierarchy, '%'))";
-                paramList.add(appUser.getOffice().getHierarchy());
-                paramList.add(appUser.getOffice().getHierarchy());
-
             }
 
             if (StringUtils.equals(groupingType, "individual")) {
@@ -313,6 +308,14 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                     extraCriteria += " and g.dpi = ? ";
                     paramList.add(dpiNumber);
                 }
+            }
+            extraCriteria += " and (moind.hierarchy LIKE CONCAT(?, '%') OR ? like CONCAT(moind.hierarchy, '%'))";
+            paramList.add(appUser.getOffice().getHierarchy());
+            paramList.add(appUser.getOffice().getHierarchy());
+
+            if (agencyId != null) {
+                extraCriteria += " and individualOffice.agency_id = ? ";
+                paramList.add(agencyId);
             }
         }
 
@@ -457,12 +460,25 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                         FROM m_prequalification_group_members mpgm
                         GROUP BY mpgm.group_id
                     ) prequalification_numbers ON prequalification_numbers.prequalification_id = g.id
+                                        
+                    LEFT JOIN(
+                        select DISTINCT mc.office_id, ms.agency_id, mpgm.group_id, ms.linked_office_id as supervision_office
+                        from m_prequalification_group_members mpgm 
+                        INNER JOIN m_client mc on mc.dpi = mpgm.dpi 
+                        INNER JOIN m_group_client mgc on mgc.client_id = mc.id 
+                        INNER JOIN m_group mg on mg.id = mgc.group_id 
+                        INNER JOIN m_group center on center.id = mg.parent_id 
+                        INNER JOIN m_portfolio mp on mp.id = center.portfolio_id 
+                        INNER JOIN m_supervision ms on ms.id = mp.supervision_id 
+                    ) individualOffice ON individualOffice.group_id = g.id
+                                        
                     LEFT JOIN m_agency ma ON
                     	g.agency_id = ma.id
                     LEFT JOIN(
                     select agency_id, linked_office_id from m_supervision GROUP BY agency_id
                     ) supv ON supv.agency_id = ma.id
                     LEFT JOIN m_office mo on mo.id = supv.linked_office_id
+                    LEFT JOIN m_office moind on moind.id = individualOffice.supervision_office
                     LEFT JOIN
                     (
                       SELECT p.id AS groupid,
