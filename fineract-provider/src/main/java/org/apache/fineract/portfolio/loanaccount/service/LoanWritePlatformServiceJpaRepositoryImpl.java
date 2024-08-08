@@ -47,6 +47,10 @@ import org.apache.fineract.custom.infrastructure.channel.data.ChannelData;
 import org.apache.fineract.custom.infrastructure.channel.domain.Channel;
 import org.apache.fineract.custom.infrastructure.channel.domain.ChannelType;
 import org.apache.fineract.custom.infrastructure.channel.service.ChannelReadWritePlatformService;
+import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockLevel;
+import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSetting;
+import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSettingEnum;
+import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSettingsRepositoryWrapper;
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 import org.apache.fineract.infrastructure.codes.domain.CodeValue;
 import org.apache.fineract.infrastructure.codes.domain.CodeValueRepositoryWrapper;
@@ -289,6 +293,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     private final ChannelReadWritePlatformService channelReadWritePlatformService;
     private final PlatformSecurityContext platformSecurityContext;
     private final GlobalConfigurationRepository globalConfigurationRepository;
+    private final LoanBlockWritePlatformService loanBlockWritePlatformService;
+    private final BlockingReasonSettingsRepositoryWrapper loanBlockingReasonRepository;
 
     @PostConstruct
     public void registerForNotification() {
@@ -1975,6 +1981,9 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         AccountTransferDetails accountTransferDetails = this.accountTransfersWritePlatformService.repayLoanWithTopup(accountTransferDTO);
         loan.getTopupLoanDetails().setAccountTransferDetails(accountTransferDetails.getId());
         loan.getTopupLoanDetails().setTopupAmount(amount);
+        BlockingReasonSetting setting = loanBlockingReasonRepository.getSingleBlockingReasonSettingByReason(
+                BlockingReasonSettingEnum.CREDIT_RESTRUCTURE.getDatabaseString(), BlockLevel.CREDIT.toString());
+        loanBlockWritePlatformService.blockLoan(loan.getId(), setting, "Reestructurada", DateUtils.getLocalDateOfTenant());
     }
 
     private void disburseLoanToSavings(final Loan loan, final JsonCommand command, final Money amount, final PaymentDetail paymentDetail) {

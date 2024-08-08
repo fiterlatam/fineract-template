@@ -633,12 +633,6 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
                 businessEventNotifierService
                         .notifyPostBusinessEvent(new LoanRescheduledDueAdjustScheduleBusinessEvent(loan, isJobTriggered));
             }
-
-            // if(loanRescheduleRequestId != 0L){
-            // throw new GeneralPlatformDomainRuleException("error.msg.loan.reschedule.request.not.found", "Loan
-            // reschedule request not found", loanRescheduleRequestId);
-            // }
-
             return new CommandProcessingResultBuilder().withCommandId(jsonCommand.commandId()).withEntityId(loanRescheduleRequestId)
                     .withLoanId(loanRescheduleRequest.getLoan().getId()).with(changes).withClientId(loan.getClientId())
                     .withOfficeId(loan.getOfficeId()).withGroupId(loan.getGroupId()).build();
