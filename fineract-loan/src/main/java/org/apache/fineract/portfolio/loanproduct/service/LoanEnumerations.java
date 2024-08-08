@@ -412,6 +412,8 @@ public final class LoanEnumerations {
                     LoanTermVariationType.GRACE_ON_PRINCIPAL.getCode(), "graceOnPrincipal");
             case EXTEND_REPAYMENT_PERIOD -> new EnumOptionData(LoanTermVariationType.EXTEND_REPAYMENT_PERIOD.getValue().longValue(),
                     LoanTermVariationType.EXTEND_REPAYMENT_PERIOD.getCode(), "extendRepaymentPeriod");
+            case REDIFERIR -> new EnumOptionData(LoanTermVariationType.REDIFERIR.getValue().longValue(),
+                    LoanTermVariationType.EXTEND_REPAYMENT_PERIOD.getCode(), "rediferir");
             case INTEREST_RATE_FROM_INSTALLMENT ->
                 new EnumOptionData(LoanTermVariationType.INTEREST_RATE_FROM_INSTALLMENT.getValue().longValue(),
                         LoanTermVariationType.INTEREST_RATE_FROM_INSTALLMENT.getCode(), "interestRateForInstallment");

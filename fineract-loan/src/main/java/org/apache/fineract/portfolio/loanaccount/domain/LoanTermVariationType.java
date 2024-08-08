@@ -28,7 +28,8 @@ public enum LoanTermVariationType {
     INSERT_INSTALLMENT(5, "loanTermType.insertInstallment"), //
     DELETE_INSTALLMENT(6, "loanTermType.deleteInstallment"), GRACE_ON_INTEREST(7, "loanTermType.graceOnInterest"), GRACE_ON_PRINCIPAL(8,
             "loanTermType.graceOnPrincipal"), EXTEND_REPAYMENT_PERIOD(9,
-                    "loanTermType.extendRepaymentPeriod"), INTEREST_RATE_FROM_INSTALLMENT(10, "loanTermType.interestRateFromInstallment");
+                    "loanTermType.extendRepaymentPeriod"), INTEREST_RATE_FROM_INSTALLMENT(10,
+                            "loanTermType.interestRateFromInstallment"), REDIFERIR(11, "loanTermType.rediferir");
 
     private final Integer value;
     private final String code;
@@ -80,6 +81,9 @@ public enum LoanTermVariationType {
             case 10:
                 enumeration = LoanTermVariationType.INTEREST_RATE_FROM_INSTALLMENT;
             break;
+            case 11:
+                enumeration = LoanTermVariationType.REDIFERIR;
+            break;
         }
         return enumeration;
     }
@@ -118,6 +122,10 @@ public enum LoanTermVariationType {
 
     public boolean isExtendRepaymentPeriod() {
         return this.value.equals(LoanTermVariationType.EXTEND_REPAYMENT_PERIOD.getValue());
+    }
+
+    public boolean isRediferir() {
+        return this.value.equals(LoanTermVariationType.REDIFERIR.getValue());
     }
 
     public boolean isInterestRateFromInstallment() {

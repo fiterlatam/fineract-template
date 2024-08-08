@@ -1248,6 +1248,11 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                     loanApplicationTerms.updateTotalInterestAccounted(scheduleParams.getTotalCumulativeInterest());
                     loanTermVariationsData.setProcessed(true);
                 break;
+                case REDIFERIR:
+                    final Integer rediferirPeriods = loanTermVariationsData.getDecimalValue().intValue();
+                    loanApplicationTerms.updateRediferirPeriods(rediferirPeriods);
+                    loanTermVariationsData.setProcessed(true);
+                break;
                 default:
                 break;
 
@@ -1333,6 +1338,12 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                     loanTermVariationsData.setProcessed(true);
                     loanApplicationTerms.updateAccountedTillPeriod(instalmentNumber - 1, totalCumulativePrincipal, totalCumulativeInterest,
                             loanTermVariationsData.getDecimalValue().intValue());
+                break;
+
+                case REDIFERIR:
+                    final Integer rediferirPeriods = loanTermVariationsData.getDecimalValue().intValue();
+                    loanApplicationTerms.updateRediferirPeriods(rediferirPeriods);
+                    loanTermVariationsData.setProcessed(true);
                 break;
                 default:
                 break;
