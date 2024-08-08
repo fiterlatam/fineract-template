@@ -997,7 +997,8 @@ public class Charge extends AbstractPersistableCustom {
 
     public void validateChargeIsSetupCorrectly() {
         if (this.isLoanCharge()) {
-            String code = ChargeCalculationType.fromInt(this.getChargeCalculation()).getByteRepresentation();
+            final ChargeCalculationType chargeCalculationType = ChargeCalculationType.fromInt(this.getChargeCalculation());
+            String code = chargeCalculationType.getByteRepresentation();
             if (code.length() == 10) {
                 code = code + "0"; // Voluntary Insurance code is 11 digit
             }

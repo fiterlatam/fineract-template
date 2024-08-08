@@ -1072,7 +1072,10 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             case ACHG:
                 for (LoanCharge charge : this.getCharges()) {
                     if (charge.getCharge().getId() != null && charge.getCharge().getId().equals(parentChargeId)) {
-                        percentOf = charge.getInstallmentLoanCharge(installment.getInstallmentNumber()).getAmount(getCurrency());
+                        final LoanInstallmentCharge installmentCharge = charge.getInstallmentLoanCharge(installment.getInstallmentNumber());
+                        if (installmentCharge != null) {
+                            percentOf = installmentCharge.getAmount(getCurrency());
+                        }
                         break;
                     }
                 }
@@ -6937,7 +6940,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         return balances;
     }
 
-    private double calculateInterestForDays(int daysInPeriod, BigDecimal interest, int days) {
+    public double calculateInterestForDays(int daysInPeriod, BigDecimal interest, int days) {
         if (interest.doubleValue() == 0) {
             return 0;
         }

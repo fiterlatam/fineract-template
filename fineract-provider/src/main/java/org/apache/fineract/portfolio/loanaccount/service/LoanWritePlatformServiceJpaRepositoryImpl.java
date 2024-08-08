@@ -3251,7 +3251,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             final String dateFormat = "dd MMMM yyyy";
             final String submittedOnDate = DateUtils.format(DateUtils.getBusinessLocalDate(), dateFormat, Locale.forLanguageTag(locale));
             LoanRescheduleRequestData loanRescheduleReasons = this.loanRescheduleRequestReadPlatformService
-                    .retrieveAllRescheduleReasons(RescheduleLoansApiConstants.LOAN_RESCHEDULE_REASON);
+                    .retrieveAllRescheduleReasons(RescheduleLoansApiConstants.LOAN_RESCHEDULE_REASON, null);
             Long rescheduleReasonId = null;
             for (CodeValueData codeValueData : loanRescheduleReasons.getRescheduleReasons()) {
                 if (codeValueData.getName().equalsIgnoreCase("Recalcular la tasa de interés al máximo legal")) {
@@ -3477,7 +3477,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 final String submittedOnDate = DateUtils.format(DateUtils.getBusinessLocalDate(), dateFormat,
                         Locale.forLanguageTag(locale));
                 LoanRescheduleRequestData loanRescheduleReasons = this.loanRescheduleRequestReadPlatformService
-                        .retrieveAllRescheduleReasons(RescheduleLoansApiConstants.LOAN_RESCHEDULE_REASON);
+                        .retrieveAllRescheduleReasons(RescheduleLoansApiConstants.LOAN_RESCHEDULE_REASON, null);
                 Long rescheduleReasonId = null;
                 for (CodeValueData codeValueData : loanRescheduleReasons.getRescheduleReasons()) {
                     if (codeValueData.getName().equalsIgnoreCase("Recalcular la tasa de interés al máximo legal")) {
