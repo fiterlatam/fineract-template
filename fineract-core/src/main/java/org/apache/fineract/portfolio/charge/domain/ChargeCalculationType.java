@@ -1481,14 +1481,14 @@ public enum ChargeCalculationType {
     IPRIN_AVAL_SEGOVOLUNTARIO(1039, "00100001001", "installmentprincipal.aval.segurovoluntarioasistencia"), //
     SEGO_AVAL_SEGOVOLUNTARIO(1040, "00000011001", "seguroobrigatorio.aval.segurovoluntarioasistencia"),  //
     IPRIN_SEGO_AVAL_SEGOVOLUNTARIO(1041, "00100011001", "installmentprincipal.seguroobrigatorio.aval.segurovoluntarioasistencia"), //
-    HONO_SEGOVOLUNTARIO(1042, "00000000101", "honorarios.segurovoluntarioasistencia"),  //
-    IPRIN_HONO_SEGOVOLUNTARIO(1043, "00100000101", "installmentprincipal.honorarios.segurovoluntarioasistencia"), //
-    SEGO_HONO_SEGOVOLUNTARIO(1044, "00000010101", "seguroobrigatorio.honorarios.segurovoluntarioasistencia"),  //
-    IPRIN_SEGO_HONO_SEGOVOLUNTARIO(1045, "00100010101", "installmentprincipal.seguroobrigatorio.honorarios.segurovoluntarioasistencia"), //
-    AVAL_HONO_SEGOVOLUNTARIO(1046, "00000001101", "aval.honorarios.segurovoluntarioasistencia"),  //
-    IPRIN_AVAL_HONO_SEGOVOLUNTARIO(1047, "00100001101", "installmentprincipal.aval.honorarios.segurovoluntarioasistencia"), //
-    SEGO_AVAL_HONO_SEGOVOLUNTARIO(1048, "00000011101", "seguroobrigatorio.aval.honorarios.segurovoluntarioasistencia"),  //
-    IPRIN_SEGO_AVAL_HONO_SEGOVOLUNTARIO(1049, "00100011101", "installmentprincipal.seguroobrigatorio.aval.honorarios.segurovoluntarioasistencia"), //
+    IINT_SEGOVOLUNTARIO(1042, "00010000001", "installmentinterest.segurovoluntarioasistencia"),  //
+    IPRIN_IINT_SEGOVOLUNTARIO(1043, "00110000001", "installmentprincipal.installmentinterest.segurovoluntarioasistencia"), //
+    IINT_SEGO_SEGOVOLUNTARIO(1044, "00010010001", "installmentinterest.seguroobrigatorio.segurovoluntarioasistencia"),  //
+    IPRIN_IINT_SEGO_SEGOVOLUNTARIO(1045, "00110010001", "installmentprincipal.installmentinterest.seguroobrigatorio.segurovoluntarioasistencia"), //
+    IINT_AVAL_SEGOVOLUNTARIO(1046, "00010001001", "installmentinterest.aval.segurovoluntarioasistencia"),  //
+    IPRIN_IINT_AVAL_SEGOVOLUNTARIO(1047, "00110001001", "installmentprincipal.installmentinterest.aval.segurovoluntarioasistencia"), //
+    IINT_SEGO_AVAL_SEGOVOLUNTARIO(1048, "00010011001", "installmentinterest.seguroobrigatorio.aval.segurovoluntarioasistencia"),  //
+    IPRIN_IINT_SEGO_AVAL_SEGOVOLUNTARIO(1049, "00110011001", "installmentprincipal.installmentinterest.seguroobrigatorio.aval.segurovoluntarioasistencia"), //
     SEGOVOLUNTARIO(1050,"00000000001", "segurovoluntarioasistencia"), //
 
     ;

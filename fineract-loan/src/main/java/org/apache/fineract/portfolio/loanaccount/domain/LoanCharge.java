@@ -158,7 +158,7 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
     public LoanCharge(final Loan loan, final Charge chargeDefinition, final BigDecimal loanPrincipal, final BigDecimal amount,
             final ChargeTimeType chargeTime, final ChargeCalculationType chargeCalculation, final LocalDate dueDate,
             final ChargePaymentMode chargePaymentMode, final Integer numberOfRepayments, final BigDecimal loanCharge,
-            final ExternalId externalId, boolean getPercentageAmountFromTable) {
+            final ExternalId externalId, boolean getPercentageAmountFromTable, Long numberOfPenaltyDays) {
         this.loan = loan;
         this.charge = chargeDefinition;
         this.submittedOnDate = DateUtils.getBusinessLocalDate();
@@ -201,13 +201,13 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
             this.chargePaymentMode = chargePaymentMode.getValue();
         }
 
-        populateDerivedFields(loanPrincipal, chargeAmount, numberOfRepayments, loanCharge);
+        populateDerivedFields(loanPrincipal, chargeAmount, numberOfRepayments, loanCharge, numberOfPenaltyDays);
         this.paid = determineIfFullyPaid();
         this.externalId = externalId;
     }
 
     private void populateDerivedFields(final BigDecimal amountPercentageAppliedTo, final BigDecimal chargeAmount,
-            Integer numberOfRepayments, BigDecimal loanCharge) {
+            Integer numberOfRepayments, BigDecimal loanCharge, Long numberOfPenaltyDays) {
 
         ChargeCalculationType chargeCalculationType = ChargeCalculationType.fromInt(this.chargeCalculation);
 
@@ -220,8 +220,26 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
             this.amountWaived = null;
             this.amountWrittenOff = null;
         } else {
+            if (this.isPenaltyCharge()) {
+                final RoundingMode roundingMode = RoundingMode.HALF_UP;
+                final MathContext mc = MoneyHelper.getMathContext();
+                //Get one day of interest
+                this.percentage = chargeAmount.divide(BigDecimal.valueOf(360), mc).multiply(BigDecimal.valueOf(100L));
+                this.percentage = this.percentage.setScale(5, roundingMode);
 
-            if (chargeCalculationType.isFlat()) {
+                this.amountPercentageAppliedTo = amountPercentageAppliedTo;
+                if (loanCharge.compareTo(BigDecimal.ZERO) == 0) {
+                    loanCharge = percentageOf(this.amountPercentageAppliedTo);
+                    if (numberOfPenaltyDays != null) {
+                        loanCharge = loanCharge.multiply(BigDecimal.valueOf(numberOfPenaltyDays));
+                    }
+                }
+                this.amount = minimumAndMaximumCap(loanCharge);
+                this.amountPaid = null;
+                this.amountOutstanding = calculateOutstanding();
+                this.amountWaived = null;
+                this.amountWrittenOff = null;
+            } else if (chargeCalculationType.isFlat()) {
                 this.percentage = null;
                 this.amountPercentageAppliedTo = null;
                 this.amountPaid = null;

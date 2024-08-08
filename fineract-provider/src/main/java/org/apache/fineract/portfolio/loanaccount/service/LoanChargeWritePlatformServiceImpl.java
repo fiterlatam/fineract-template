@@ -1070,7 +1070,7 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
         for (Integer frequency : frequencyNumbers) {
             scheduleDates.remove(frequency);
         }
-
+        Long numberOfPenaltyDays = java.time.temporal.ChronoUnit.DAYS.between(dueDate, DateUtils.getBusinessLocalDate());
         LoanRepaymentScheduleInstallment installment = null;
         LocalDate lastChargeAppliedDate = dueDate;
         LocalDate recalculateFrom = DateUtils.getBusinessLocalDate();
@@ -1081,7 +1081,7 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
 
             for (Map.Entry<Integer, LocalDate> entry : scheduleDates.entrySet()) {
 
-                final LoanCharge loanCharge = loanChargeAssembler.createNewFromJson(loan, chargeDefinition, command, entry.getValue());
+                final LoanCharge loanCharge = loanChargeAssembler.createNewFromJson(loan, chargeDefinition, command, entry.getValue(), installment, numberOfPenaltyDays);
 
                 if (Objects.isNull(loanCharge.amount()) || BigDecimal.ZERO.compareTo(loanCharge.amount()) == 0) {
                     continue;

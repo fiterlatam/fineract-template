@@ -2080,7 +2080,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                     externalId = ExternalId.generate();
                 }
                 final LoanCharge loanCharge = new LoanCharge(this, chargeDefinition, principal, null, null, null, expectedDisbursementDate,
-                        null, null, BigDecimal.ZERO, externalId, false);
+                        null, null, BigDecimal.ZERO, externalId, false, null);
                 LoanTrancheDisbursementCharge loanTrancheDisbursementCharge = new LoanTrancheDisbursementCharge(loanCharge,
                         disbursementDetails);
                 loanCharge.updateLoanTrancheDisbursementCharge(loanTrancheDisbursementCharge);

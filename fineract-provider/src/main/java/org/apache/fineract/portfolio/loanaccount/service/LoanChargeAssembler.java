@@ -58,11 +58,7 @@ import org.apache.fineract.portfolio.client.domain.Client;
 import org.apache.fineract.portfolio.client.domain.ClientRepositoryWrapper;
 import org.apache.fineract.portfolio.loanaccount.api.LoanApiConstants;
 import org.apache.fineract.portfolio.loanaccount.data.LoanAccountData;
-import org.apache.fineract.portfolio.loanaccount.domain.Loan;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanCharge;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanChargeRepository;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanDisbursementDetails;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanTrancheDisbursementCharge;
+import org.apache.fineract.portfolio.loanaccount.domain.*;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProduct;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductRepository;
 import org.apache.fineract.portfolio.loanproduct.exception.LoanProductNotFoundException;
@@ -298,11 +294,11 @@ public class LoanChargeAssembler {
             throw new LoanChargeWithoutMandatoryFieldException("loanCharge", "dueDate", defaultUserMessage, chargeDefinition.getId(),
                     chargeDefinition.getName());
         }
-        return createNewFromJson(loan, chargeDefinition, command, dueDate);
+        return createNewFromJson(loan, chargeDefinition, command, dueDate, null, null);
     }
 
     public LoanCharge createNewFromJson(final Loan loan, final Charge chargeDefinition, final JsonCommand command,
-            final LocalDate dueDate) {
+                                        final LocalDate dueDate, LoanRepaymentScheduleInstallment installment, Long numberOfPenaltyDays) {
         final Locale locale = command.extractLocale();
         BigDecimal amount = command.bigDecimalValueOfParameterNamed("amount", locale);
 
@@ -362,6 +358,46 @@ public class LoanChargeAssembler {
             }
         }
 
+        if (chargeDefinition.isPenalty()) {
+            amount = chargeDefinition.getInterestRate().getCurrentRate();
+            if (installment == null) {
+                amountPercentageAppliedTo = amountPercentageAppliedTo.add(loan.getPrincipal().getAmount());
+            } else {
+                amountPercentageAppliedTo = BigDecimal.ZERO;
+                String chargeCalculationName = chargeCalculationType.name();
+                if (chargeCalculationName.contains("IPRIN")) {
+                    amountPercentageAppliedTo = amountPercentageAppliedTo.add(installment.getPrincipalOutstanding(loan.getCurrency()).getAmount());
+                }
+                if (chargeCalculationName.contains("SEGO")) {
+                    for (LoanCharge loanCharge : loan.getLoanCharges()) {
+                        if (loanCharge.isMandatoryInsurance()) {
+                            LoanInstallmentCharge loanInstallmentCharge = loanCharge.getInstallmentLoanCharge(installment.getInstallmentNumber());
+                            amountPercentageAppliedTo = amountPercentageAppliedTo.add(loanInstallmentCharge.getAmountOutstanding());
+                        }
+                    }
+                }
+                if (chargeCalculationName.contains("AVAL")) {
+                    for (LoanCharge loanCharge : loan.getLoanCharges()) {
+                        if (loanCharge.isAvalCharge()) {
+                            LoanInstallmentCharge loanInstallmentCharge = loanCharge.getInstallmentLoanCharge(installment.getInstallmentNumber());
+                            amountPercentageAppliedTo = amountPercentageAppliedTo.add(loanInstallmentCharge.getAmountOutstanding());
+                        }
+                    }
+                }
+                if (chargeCalculationName.contains("IINT")) {
+                    amountPercentageAppliedTo = amountPercentageAppliedTo.add(installment.getInterestOutstanding(loan.getCurrency()).getAmount());
+                }
+                if (chargeCalculationName.contains("SEGOVOLUNTARIO")) {
+                    for (LoanCharge loanCharge : loan.getLoanCharges()) {
+                        if (loanCharge.isVoluntaryInsurance()) {
+                            LoanInstallmentCharge loanInstallmentCharge = loanCharge.getInstallmentLoanCharge(installment.getInstallmentNumber());
+                            amountPercentageAppliedTo = amountPercentageAppliedTo.add(loanInstallmentCharge.getAmountOutstanding());
+                        }
+                    }
+                }
+            }
+        }
+
         BigDecimal loanCharge = BigDecimal.ZERO;
         if (ChargeTimeType.fromInt(chargeDefinition.getChargeTimeType()).equals(ChargeTimeType.INSTALMENT_FEE)) {
             BigDecimal percentage = amount;
@@ -392,7 +428,7 @@ public class LoanChargeAssembler {
 
         ExternalId externalId = externalIdFactory.createFromCommand(command, "externalId");
         return new LoanCharge(loan, chargeDefinition, amountPercentageAppliedTo, amount, chargeTime, chargeCalculation, dueDate,
-                chargePaymentMode, null, loanCharge, externalId, getPercentageAmountFromTable);
+                chargePaymentMode, null, loanCharge, externalId, getPercentageAmountFromTable, numberOfPenaltyDays);
     }
 
     /*
@@ -403,7 +439,7 @@ public class LoanChargeAssembler {
             final ChargePaymentMode chargePaymentMode, final Integer numberOfRepayments, final ExternalId externalId,
             boolean getPercentageAmountFromTable) {
         return new LoanCharge(null, chargeDefinition, loanPrincipal, amount, chargeTime, chargeCalculation, dueDate, chargePaymentMode,
-                numberOfRepayments, BigDecimal.ZERO, externalId, getPercentageAmountFromTable);
+                numberOfRepayments, BigDecimal.ZERO, externalId, getPercentageAmountFromTable, null);
     }
 
     private BigDecimal percentageOf(final BigDecimal value, final BigDecimal percentage) {

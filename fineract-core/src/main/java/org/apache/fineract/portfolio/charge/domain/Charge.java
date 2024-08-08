@@ -1005,24 +1005,15 @@ public class Charge extends AbstractPersistableCustom {
                 if (!ChargeTimeType.fromInt(this.getChargeTimeType()).isOverdueInstallment()) {
                     throw new GeneralPlatformDomainRuleException("error.msg.charge.not.setup.correctly", "Charge not setup correctly",
                             this.getName());
-                } else {
-                    /*
-                     * code =
-                     * code.replace(code.charAt(ChargeCalculationTypeBaseItemsEnum.SEGURO_OBRIGATORIO.getIndex()), '0');
-                     * code = code.replace(code.charAt(ChargeCalculationTypeBaseItemsEnum.SEGURO_VOLUNTARIO.getIndex()),
-                     * '0'); code = code.replace(code.charAt(ChargeCalculationTypeBaseItemsEnum.AVAL.getIndex()), '0');
-                     * code =
-                     * code.replace(code.charAt(ChargeCalculationTypeBaseItemsEnum.PRINCIPAL_INSTALLMENT.getIndex()),
-                     * '0');
-                     */
-
-                    verifyChargeConfiguration(code, ChargeCalculationTypeBaseItemsEnum.SEGURO_OBRIGATORIO.getIndex(),
-                            ChargeCalculationTypeBaseItemsEnum.SEGURO_VOLUNTARIO.getIndex(),
-                            ChargeCalculationTypeBaseItemsEnum.AVAL.getIndex(), ChargeCalculationTypeBaseItemsEnum.HOORARIOS.getIndex(),
-                            ChargeCalculationTypeBaseItemsEnum.PRINCIPAL_INSTALLMENT.getIndex());
-
+                } if (this.interestRate == null) {
+                    throw new GeneralPlatformDomainRuleException("error.msg.charge.not.setup.correctly", "Charge not setup correctly",
+                            this.getName());
                 }
 
+                verifyChargeConfiguration(code, ChargeCalculationTypeBaseItemsEnum.SEGURO_OBRIGATORIO.getIndex(),
+                        ChargeCalculationTypeBaseItemsEnum.SEGURO_VOLUNTARIO.getIndex(),
+                        ChargeCalculationTypeBaseItemsEnum.AVAL.getIndex(), ChargeCalculationTypeBaseItemsEnum.INTEREST_INSTALLMENT.getIndex(),
+                        ChargeCalculationTypeBaseItemsEnum.PRINCIPAL_INSTALLMENT.getIndex());
             } else if (this.isMandatoryInsurance()) {
                 if (this.isFlatMandatoryInsurance()) { // Flat and Mandatory Insurance
                     verifyChargeConfiguration(code, ChargeCalculationTypeBaseItemsEnum.SEGURO_OBRIGATORIO.getIndex(),
