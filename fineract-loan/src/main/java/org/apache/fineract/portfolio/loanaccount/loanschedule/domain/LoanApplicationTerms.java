@@ -85,9 +85,9 @@ public final class LoanApplicationTerms {
     private final boolean allowPartialPeriodInterestCalcualtion;
 
     private Money principal;
-    private final LocalDate expectedDisbursementDate;
-    private final LocalDate repaymentsStartingFromDate;
-    private final LocalDate calculatedRepaymentsStartingFromDate;
+    private LocalDate expectedDisbursementDate;
+    private LocalDate repaymentsStartingFromDate;
+    private LocalDate calculatedRepaymentsStartingFromDate;
     /**
      * Integer representing the number of 'repayment frequencies' or installments where 'grace' should apply to the
      * principal component of a loans repayment period (installment).
@@ -177,7 +177,7 @@ public final class LoanApplicationTerms {
 
     private Money approvedPrincipal = null;
 
-    private final LoanTermVariationsDataWrapper variationsDataWrapper;
+    private LoanTermVariationsDataWrapper variationsDataWrapper;
 
     private Money adjustPrincipalForFlatLoans;
 
@@ -212,6 +212,7 @@ public final class LoanApplicationTerms {
     private Money totalInterestAccounted;
     private int periodsCompleted = 0;
     private int extraPeriods = 0;
+    private Integer rediferirPeriods = 0;
     private boolean isEqualAmortization;
     private Money interestTobeApproppriated;
     private final BigDecimal fixedPrincipalPercentagePerInstallment;
@@ -1845,6 +1846,10 @@ public final class LoanApplicationTerms {
         this.extraPeriods = this.extraPeriods + extendPeriods;
     }
 
+    public void updateRediferirPeriods(final Integer rediferirPeriods) {
+        this.rediferirPeriods = this.rediferirPeriods + rediferirPeriods;
+    }
+
     public void updateTotalInterestAccounted(Money totalInterestAccounted) {
         this.totalInterestAccounted = totalInterestAccounted;
     }
@@ -1968,4 +1973,25 @@ public final class LoanApplicationTerms {
     public void setInterestCalculationPeriodMethod(InterestCalculationPeriodMethod interestCalculationPeriodMethod) {
         this.interestCalculationPeriodMethod = interestCalculationPeriodMethod;
     }
+
+    public void updateLoanTermVariations(final List<LoanTermVariationsData> loanTermVariations) {
+        this.variationsDataWrapper = new LoanTermVariationsDataWrapper(loanTermVariations);
+    }
+
+    public void updateApprovedPrincipal(final Money approvedPrincipal) {
+        this.approvedPrincipal = approvedPrincipal;
+    }
+
+    public void updateExpectedDisbursementDate(final LocalDate expectedDisbursementDate) {
+        this.expectedDisbursementDate = expectedDisbursementDate;
+    }
+
+    public void updateCalculatedRepaymentsStartingFromDate(final LocalDate calculatedRepaymentsStartingFromDate) {
+        this.calculatedRepaymentsStartingFromDate = calculatedRepaymentsStartingFromDate;
+    }
+
+    public void updateRepaymentsStartingFromDate(final LocalDate repaymentsStartingFromDate) {
+        this.repaymentsStartingFromDate = repaymentsStartingFromDate;
+    }
+
 }
