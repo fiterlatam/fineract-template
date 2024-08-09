@@ -34,6 +34,8 @@ import lombok.RequiredArgsConstructor;
 import org.apache.fineract.accounting.journalentry.service.JournalEntryWritePlatformService;
 import org.apache.fineract.infrastructure.codes.domain.CodeValue;
 import org.apache.fineract.infrastructure.codes.domain.CodeValueRepositoryWrapper;
+import org.apache.fineract.infrastructure.configuration.domain.GlobalConfigurationProperty;
+import org.apache.fineract.infrastructure.configuration.domain.GlobalConfigurationRepositoryWrapper;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.ApiParameterError;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
@@ -90,6 +92,7 @@ import org.apache.fineract.portfolio.loanaccount.rescheduleloan.domain.LoanResch
 import org.apache.fineract.portfolio.loanaccount.rescheduleloan.exception.LoanRescheduleRequestNotFoundException;
 import org.apache.fineract.portfolio.loanaccount.service.LoanAccrualTransactionBusinessEventService;
 import org.apache.fineract.portfolio.loanaccount.service.LoanAssembler;
+import org.apache.fineract.portfolio.loanaccount.service.LoanReadPlatformService;
 import org.apache.fineract.portfolio.loanaccount.service.LoanUtilService;
 import org.apache.fineract.portfolio.loanaccount.service.ReplayedTransactionBusinessEventService;
 import org.apache.fineract.portfolio.paymentdetail.domain.PaymentDetail;
@@ -130,6 +133,8 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
     private final LoanAccrualTransactionBusinessEventService loanAccrualTransactionBusinessEventService;
     private final BusinessEventNotifierService businessEventNotifierService;
     private final ExternalIdFactory externalIdFactory;
+    private final GlobalConfigurationRepositoryWrapper globalConfigurationRepository;
+    private final LoanReadPlatformService loanReadPlatformService;
 
     /**
      * create a new instance of the LoanRescheduleRequest object from the JsonCommand object and persist
@@ -340,6 +345,14 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
         }
 
         if (rediferirTerms != null) {
+            final GlobalConfigurationProperty globalConfigurationProperty = this.globalConfigurationRepository
+                    .findOneByNameWithNotFoundDetection(RescheduleLoansApiConstants.ALLOWED_REDEFERRALS_WITHIN_SIX_MONTHS);
+            final Long maximumValue = globalConfigurationProperty.getValue();
+            final Integer rediferidoNumber = this.loanReadPlatformService.retrieveRediferidoNumberLast6Months(loan.getId());
+            if (globalConfigurationProperty.isEnabled() && rediferidoNumber > maximumValue) {
+                throw new GeneralPlatformDomainRuleException("error.msg.loan.reschedule.rediferir.exceed.max.allowed.in.6.months",
+                        "Rediferir exceed max allowed in 6 months", rediferidoNumber);
+            }
             final LocalDate transactionDate = DateUtils.getBusinessLocalDate();
             if (!loanRescheduleRequestToTermVariationMappings.isEmpty()) {
                 throw new GeneralPlatformDomainRuleException("error.msg.loan.reschedule.rediferir.other.variations.already.exists",

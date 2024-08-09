@@ -286,6 +286,7 @@ public class LoanAccountData {
     private LoanChargeData voluntaryInsurance;
     private BigDecimal valorDescuento;
     private BigDecimal valorGiro;
+    private Boolean rediferir;
 
     public static LoanAccountData importInstanceIndividual(EnumOptionData loanTypeEnumOption, Long clientId, Long productId,
             Long loanOfficerId, LocalDate submittedOnDate, Long fundId, BigDecimal principal, Integer numberOfRepayments,

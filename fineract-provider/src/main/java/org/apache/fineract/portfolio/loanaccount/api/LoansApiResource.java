@@ -1262,7 +1262,8 @@ public class LoansApiResource {
                 loanAccount.setVoluntaryInsurance(voluntaryInsurance);
             }
         }
-
+        final boolean isRediferir = this.loanReadPlatformService.retrieveRediferidoNumber(loanId) > 0;
+        loanAccount.setRediferir(isRediferir);
         return this.toApiJsonSerializer.serialize(settings, loanAccount, LOAN_DATA_PARAMETERS);
     }
 
