@@ -226,8 +226,7 @@ public class ClientBuyProcessReadWritePlatformServiceImpl implements ClientBuyPr
 
         for (Charge charge : productEntity.getLoanProductCharges()) {
             if (!charge.isOverdueInstallment()) {
-                final LoanChargeData loanChargeData = LoanChargeData.builder().chargeId(charge.getId()).amount(charge.getAmount())
-                        .build();
+                final LoanChargeData loanChargeData = LoanChargeData.builder().chargeId(charge.getId()).amount(charge.getAmount()).build();
                 loanCharges.add(loanChargeData);
             }
         }
