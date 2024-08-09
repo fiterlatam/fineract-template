@@ -30,7 +30,7 @@ public final class RescheduleLoansApiConstants {
     }
 
     public static final String ENTITY_NAME = "RESCHEDULELOAN";
-
+    public static final String ALLOWED_REDEFERRALS_WITHIN_SIX_MONTHS = "Rediferidos permitidos dentro de 6 meses";
     public static final String LOAN_RESCHEDULE_REASON = "LoanRescheduleReason";
 
     // general
