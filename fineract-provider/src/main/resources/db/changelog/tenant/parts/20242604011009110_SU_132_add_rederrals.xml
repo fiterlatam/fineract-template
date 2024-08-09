@@ -38,4 +38,20 @@
             <column name="description" value="Días de mora máximo para rediferi / Maximum days in arrears for redeferrals"/>
         </insert>
     </changeSet>
+    <changeSet author="fineract" id="1">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                SELECT COUNT(*) FROM c_configuration WHERE name = 'Rediferidos permitidos dentro de 6 meses'
+            </sqlCheck>
+        </preConditions>
+        <insert tableName="c_configuration">
+            <column name="name" value="Rediferidos permitidos dentro de 6 meses"/>
+            <column name="value" valueNumeric="1"/>
+            <column name="date_value"/>
+            <column name="string_value"/>
+            <column name="enabled" valueBoolean="true"/>
+            <column name="is_trap_door" valueBoolean="false"/>
+            <column name="description" value="Rediferidos permitidos dentro de 6 meses / Redeferrals allowed within 6 months"/>
+        </insert>
+    </changeSet>
 </databaseChangeLog>

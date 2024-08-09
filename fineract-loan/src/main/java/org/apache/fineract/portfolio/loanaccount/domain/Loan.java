@@ -1072,7 +1072,10 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             case ACHG:
                 for (LoanCharge charge : this.getCharges()) {
                     if (charge.getCharge().getId() != null && charge.getCharge().getId().equals(parentChargeId)) {
-                        percentOf = charge.getInstallmentLoanCharge(installment.getInstallmentNumber()).getAmount(getCurrency());
+                        final LoanInstallmentCharge installmentCharge = charge.getInstallmentLoanCharge(installment.getInstallmentNumber());
+                        if (installmentCharge != null) {
+                            percentOf = installmentCharge.getAmount(getCurrency());
+                        }
                         break;
                     }
                 }
@@ -2080,7 +2083,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                     externalId = ExternalId.generate();
                 }
                 final LoanCharge loanCharge = new LoanCharge(this, chargeDefinition, principal, null, null, null, expectedDisbursementDate,
-                        null, null, BigDecimal.ZERO, externalId, false);
+                        null, null, BigDecimal.ZERO, externalId, false, null);
                 LoanTrancheDisbursementCharge loanTrancheDisbursementCharge = new LoanTrancheDisbursementCharge(loanCharge,
                         disbursementDetails);
                 loanCharge.updateLoanTrancheDisbursementCharge(loanTrancheDisbursementCharge);
@@ -5182,7 +5185,9 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     }
 
     public Set<LoanCharge> getActiveCharges() {
-        Set<LoanCharge> loanCharges = new HashSet<>();
+        // LinkedHashset is required here to maintain the charge order.
+        // In case of charge calculation as percentage of another charge, parent charge must be processed first
+        LinkedHashSet<LoanCharge> loanCharges = new LinkedHashSet<>();
         if (this.charges != null) {
             for (LoanCharge charge : this.charges) {
                 if (charge.isActive()) {
@@ -6937,7 +6942,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         return balances;
     }
 
-    private double calculateInterestForDays(int daysInPeriod, BigDecimal interest, int days) {
+    public double calculateInterestForDays(int daysInPeriod, BigDecimal interest, int days) {
         if (interest.doubleValue() == 0) {
             return 0;
         }

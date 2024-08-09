@@ -47,6 +47,11 @@ import org.apache.fineract.custom.infrastructure.channel.data.ChannelData;
 import org.apache.fineract.custom.infrastructure.channel.domain.Channel;
 import org.apache.fineract.custom.infrastructure.channel.domain.ChannelType;
 import org.apache.fineract.custom.infrastructure.channel.service.ChannelReadWritePlatformService;
+import org.apache.fineract.infrastructure.businessdate.domain.BusinessDateType;
+import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockLevel;
+import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSetting;
+import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSettingEnum;
+import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSettingsRepositoryWrapper;
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 import org.apache.fineract.infrastructure.codes.domain.CodeValue;
 import org.apache.fineract.infrastructure.codes.domain.CodeValueRepositoryWrapper;
@@ -69,6 +74,7 @@ import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.core.service.ExternalIdFactory;
 import org.apache.fineract.infrastructure.core.service.MathUtil;
+import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.infrastructure.dataqueries.data.EntityTables;
 import org.apache.fineract.infrastructure.dataqueries.data.StatusEnum;
 import org.apache.fineract.infrastructure.dataqueries.service.EntityDatatableChecksWritePlatformService;
@@ -289,6 +295,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     private final ChannelReadWritePlatformService channelReadWritePlatformService;
     private final PlatformSecurityContext platformSecurityContext;
     private final GlobalConfigurationRepository globalConfigurationRepository;
+    private final LoanBlockWritePlatformService loanBlockWritePlatformService;
+    private final BlockingReasonSettingsRepositoryWrapper loanBlockingReasonRepository;
 
     @PostConstruct
     public void registerForNotification() {
@@ -481,17 +489,20 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 final Long loanIdToClose = loan.getTopupLoanDetails().getLoanIdToClose();
                 final Loan loanToClose = this.loanRepositoryWrapper.findNonClosedLoanThatBelongsToClient(loanIdToClose, loan.getClientId());
                 Optional<GlobalConfigurationProperty> getmaxReestructurar = this.globalConfigurationRepository
-                        .findByName(LoanApiConstants.GLOBAL_CONFIG_MAX_RESTRUCTURE);
-                Long maxReestructurar = 60L;
+                        .findByName(LoanApiConstants.GLOBAL_CONFIG_MAX_RESTRUCTURE_WITHIN_6_MONTHS);
+                Long maxReestructurar = getmaxReestructurar.orElse(new GlobalConfigurationProperty().setValue(2L)).getValue();
 
-                if (getmaxReestructurar.isPresent()) {
-                    maxReestructurar = getmaxReestructurar.get().getValue();
+                LocalDate businessDate = ThreadLocalContextUtil.getBusinessDateByType(BusinessDateType.BUSINESS_DATE);
+                if (businessDate == null) {
+                    businessDate = LocalDate.now();
                 }
-                LocalDate maturedate = loanToClose.getMaturityDate().plusDays(maxReestructurar);
-                if (actualDisbursementDate.isAfter(maturedate)) {
-                    throw new GeneralPlatformDomainRuleException("error.msg.loan.outside.the.off.restriction.period",
-                            "Loan outside the restriction period");
+                Long topupCount = countRecentTopups(loan.getClientId(), businessDate);
+
+                if (topupCount > maxReestructurar) {
+                    throw new GeneralPlatformDomainRuleException("error.msg.loan.max.restructures.exceeded",
+                            "Maximum number of restructures within 6 months exceeded");
                 }
+
                 if (loanToClose == null) {
                     throw new GeneralPlatformDomainRuleException("error.msg.loan.to.be.closed.with.topup.is.not.active",
                             "Loan to be closed with this topup is not active.");
@@ -1975,6 +1986,9 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         AccountTransferDetails accountTransferDetails = this.accountTransfersWritePlatformService.repayLoanWithTopup(accountTransferDTO);
         loan.getTopupLoanDetails().setAccountTransferDetails(accountTransferDetails.getId());
         loan.getTopupLoanDetails().setTopupAmount(amount);
+        BlockingReasonSetting setting = loanBlockingReasonRepository.getSingleBlockingReasonSettingByReason(
+                BlockingReasonSettingEnum.CREDIT_RESTRUCTURE.getDatabaseString(), BlockLevel.CREDIT.toString());
+        loanBlockWritePlatformService.blockLoan(loan.getId(), setting, "Reestructurada", DateUtils.getLocalDateOfTenant());
     }
 
     private void disburseLoanToSavings(final Loan loan, final JsonCommand command, final Money amount, final PaymentDetail paymentDetail) {
@@ -2528,6 +2542,14 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             }
 
         }
+    }
+
+    private Long countRecentTopups(Long clientId, LocalDate businessDate) {
+        String sql = "SELECT COUNT(ml.disbursedon_date) " + "FROM m_loan ml " + "INNER JOIN m_loan_topup mlt ON mlt.loan_id = ml.id "
+                + "WHERE ml.client_id = ? " + "AND ml.disbursedon_date BETWEEN to_date(?, 'YYYY-MM-DD') - INTERVAL '6' MONTH "
+                + "AND to_date(?, 'YYYY-MM-DD')";
+
+        return jdbcTemplate.queryForObject(sql, Long.class, clientId, businessDate.toString(), businessDate.toString());
     }
 
     @Override
@@ -3242,7 +3264,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             final String dateFormat = "dd MMMM yyyy";
             final String submittedOnDate = DateUtils.format(DateUtils.getBusinessLocalDate(), dateFormat, Locale.forLanguageTag(locale));
             LoanRescheduleRequestData loanRescheduleReasons = this.loanRescheduleRequestReadPlatformService
-                    .retrieveAllRescheduleReasons(RescheduleLoansApiConstants.LOAN_RESCHEDULE_REASON);
+                    .retrieveAllRescheduleReasons(RescheduleLoansApiConstants.LOAN_RESCHEDULE_REASON, null);
             Long rescheduleReasonId = null;
             for (CodeValueData codeValueData : loanRescheduleReasons.getRescheduleReasons()) {
                 if (codeValueData.getName().equalsIgnoreCase("Recalcular la tasa de interés al máximo legal")) {
@@ -3468,7 +3490,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 final String submittedOnDate = DateUtils.format(DateUtils.getBusinessLocalDate(), dateFormat,
                         Locale.forLanguageTag(locale));
                 LoanRescheduleRequestData loanRescheduleReasons = this.loanRescheduleRequestReadPlatformService
-                        .retrieveAllRescheduleReasons(RescheduleLoansApiConstants.LOAN_RESCHEDULE_REASON);
+                        .retrieveAllRescheduleReasons(RescheduleLoansApiConstants.LOAN_RESCHEDULE_REASON, null);
                 Long rescheduleReasonId = null;
                 for (CodeValueData codeValueData : loanRescheduleReasons.getRescheduleReasons()) {
                     if (codeValueData.getName().equalsIgnoreCase("Recalcular la tasa de interés al máximo legal")) {

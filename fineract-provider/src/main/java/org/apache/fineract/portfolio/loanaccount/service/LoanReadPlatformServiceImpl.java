@@ -46,6 +46,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.accounting.common.AccountingRuleType;
 import org.apache.fineract.custom.infrastructure.channel.data.ChannelData;
@@ -2421,6 +2422,31 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
     public boolean isGuaranteeRequired(final Long loanId) {
         final String sql = "select pl.hold_guarantee_funds from m_loan ml inner join m_product_loan pl on pl.id = ml.product_id where ml.id=?";
         return TRUE.equals(this.jdbcTemplate.queryForObject(sql, Boolean.class, loanId));
+    }
+
+    @Override
+    public Integer retrieveRediferidoNumber(final Long loanId) {
+        final String sql = """
+                SELECT COUNT(*)
+                FROM m_loan_reschedule_request mlrr
+                INNER JOIN m_loan_reschedule_request_term_variations_mapping mlrrtvm ON mlrrtvm.loan_reschedule_request_id = mlrr.id
+                INNER JOIN m_loan_term_variations mltv ON mltv.id = mlrrtvm.loan_term_variations_id
+                WHERE mlrr.loan_id = ? AND mlrr.status_enum = 200 AND mltv.term_type = 11 AND mltv.is_active = TRUE AND mltv.decimal_value > 0
+                """;
+        return ObjectUtils.defaultIfNull(this.jdbcTemplate.queryForObject(sql, Integer.class, loanId), 0);
+    }
+
+    @Override
+    public Integer retrieveRediferidoNumberLast6Months(Long loanId) {
+        final String sql = """
+                SELECT COUNT(*)
+                FROM m_loan_reschedule_request mlrr
+                INNER JOIN m_loan_reschedule_request_term_variations_mapping mlrrtvm ON mlrrtvm.loan_reschedule_request_id = mlrr.id
+                INNER JOIN m_loan_term_variations mltv ON mltv.id = mlrrtvm.loan_term_variations_id
+                WHERE mlrr.loan_id = ? AND mlrr.status_enum = 200 AND mltv.term_type = 11 AND mltv.is_active = TRUE AND mltv.decimal_value > 0
+                AND mlrr.approved_on_date >= CURRENT_DATE - INTERVAL '6 months'
+                """;
+        return ObjectUtils.defaultIfNull(this.jdbcTemplate.queryForObject(sql, Integer.class, loanId), 0);
     }
 
     private static final class LoanTransactionDerivedComponentMapper implements RowMapper<LoanTransactionData> {

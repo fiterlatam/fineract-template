@@ -20,6 +20,7 @@ package org.apache.fineract.infrastructure.bulkimport.importhandler;
 
 import com.google.common.base.Splitter;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -29,7 +30,6 @@ import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.infrastructure.core.exception.AbstractPlatformException;
 import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidationException;
 import org.apache.fineract.infrastructure.core.exception.UnsupportedParameterException;
-import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.CellType;
@@ -157,8 +157,7 @@ public final class ImportHandlerUtils {
         if (c == null || c.getCellType() == CellType.BLANK) {
             return null;
         }
-
-        return LocalDate.ofInstant(c.getDateCellValue().toInstant(), DateUtils.getDateTimeZoneOfTenant());
+        return LocalDate.ofInstant(c.getDateCellValue().toInstant(), ZoneId.systemDefault());
     }
 
     public static Boolean readAsBoolean(int colIndex, Row row) {

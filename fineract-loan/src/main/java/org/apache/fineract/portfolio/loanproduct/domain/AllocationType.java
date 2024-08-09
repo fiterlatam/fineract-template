@@ -45,7 +45,7 @@ public enum AllocationType {
         List<EnumOptionData> list = new ArrayList<>(
                 Arrays.stream(values()).map(v -> new EnumOptionData((long) (v.ordinal() + 1), v.name(), v.getCode())).toList());
         // Remove FEE enum from the list as it is split into FEES, AVAL, MANDATORY_INSURANCE and VOLUNTARY_INSURANCE.
-        list.removeIf(x -> x.getValue().equals("Fee"));
+        list.removeIf(x -> x.getCode().equals("FEE"));
         return list;
     }
 }
