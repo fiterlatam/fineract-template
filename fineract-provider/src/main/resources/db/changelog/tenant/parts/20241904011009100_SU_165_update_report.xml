@@ -69,7 +69,7 @@ WHERE mc.charge_calculation_enum IN (468, 575, 231)
   AND (mc.insurance_code = '${mandatoryInsuranceCode}' OR '${mandatoryInsuranceCode}' = '-1')
                       ]]>
             </column>
-
+<where>report_name = 'Recaudos de Seguros Obligatorios'</where>
         </update>
     </changeSet>
 
