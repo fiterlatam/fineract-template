@@ -499,7 +499,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 Long topupCount = countRecentTopups(loan.getClientId(), businessDate);
 
                 if (topupCount > maxReestructurar) {
-                    throw new GeneralPlatformDomainRuleException("error.msg.loan.max.restructures.exceeded",
+                    throw new GeneralPlatformDomainRuleException("error.msg.loan.outside.the.off.restriction.period",
                             "Maximum number of restructures within 6 months exceeded");
                 }
 
