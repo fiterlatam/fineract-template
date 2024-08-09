@@ -487,17 +487,18 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 final Long loanIdToClose = loan.getTopupLoanDetails().getLoanIdToClose();
                 final Loan loanToClose = this.loanRepositoryWrapper.findNonClosedLoanThatBelongsToClient(loanIdToClose, loan.getClientId());
                 Optional<GlobalConfigurationProperty> getmaxReestructurar = this.globalConfigurationRepository
-                        .findByName(LoanApiConstants.GLOBAL_CONFIG_MAX_RESTRUCTURE);
-                Long maxReestructurar = 60L;
+                        .findByName(LoanApiConstants.GLOBAL_CONFIG_MAX_RESTRUCTURE_WITHIN_6_MONTHS);
+                Long maxReestructurar = getmaxReestructurar.orElse(new GlobalConfigurationProperty().setValue(2L)).getValue();
 
-                if (getmaxReestructurar.isPresent()) {
-                    maxReestructurar = getmaxReestructurar.get().getValue();
+                LocalDate currentDate = LocalDate.now();
+                LocalDate businessDate = ThreadLocalContextUtil.getBusinessDateByType(BusinessDateType.BUSINESS_DATE);
+                Long topupCount = countRecentTopups(loan.getClientId(), currentDate);
+
+                if (topupCount > maxReestructurar) {
+                    throw new GeneralPlatformDomainRuleException("error.msg.loan.max.restructures.exceeded",
+                            "Maximum number of restructures within 6 months exceeded");
                 }
-                LocalDate maturedate = loanToClose.getMaturityDate().plusDays(maxReestructurar);
-                if (actualDisbursementDate.isAfter(maturedate)) {
-                    throw new GeneralPlatformDomainRuleException("error.msg.loan.outside.the.off.restriction.period",
-                            "Loan outside the restriction period");
-                }
+
                 if (loanToClose == null) {
                     throw new GeneralPlatformDomainRuleException("error.msg.loan.to.be.closed.with.topup.is.not.active",
                             "Loan to be closed with this topup is not active.");
@@ -2537,6 +2538,17 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             }
 
         }
+    }
+
+    private Long countRecentTopups(Long clientId, LocalDate businessDate) {
+        String sql = "SELECT COUNT(ml.disbursedon_date) "
+                + "FROM m_loan ml "
+                + "INNER JOIN m_loan_topup mlt ON mlt.loan_id = ml.id "
+                + "WHERE ml.client_id = ? "
+                + "AND ml.disbursedon_date BETWEEN to_date(?, 'YYYY-MM-DD') - INTERVAL '6' MONTH "
+                + "AND to_date(?, 'YYYY-MM-DD')";
+
+        return jdbcTemplate.queryForObject(sql, Long.class, clientId, businessDate.toString(), businessDate.toString());
     }
 
     @Override
