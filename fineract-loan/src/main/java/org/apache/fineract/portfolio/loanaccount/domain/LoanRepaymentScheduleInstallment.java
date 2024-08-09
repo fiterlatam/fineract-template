@@ -332,7 +332,7 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
                     amount = amount.plus(getInstallmentChargeOutstandingAmount(currency, installmentCharge));
                 }
             } else if (chargeType.equals("Aval")) {
-                if (installmentCharge.getLoanCharge().getChargeCalculation().isPercentageOfAval()) {
+                if (installmentCharge.getLoanCharge().isAvalCharge()) {
                     amount = amount.plus(getInstallmentChargeOutstandingAmount(currency, installmentCharge));
                 }
             } else if (chargeType.equals("MandatoryInsurance")) {
@@ -410,6 +410,10 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
                 .plus(getPenaltyChargesOutstanding(currency));
     }
 
+    public Money getRediferirAmount(final MonetaryCurrency currency) {
+        return getInterestOutstanding(currency).plus(getFeeChargesOutstanding(currency)).plus(getPenaltyChargesOutstanding(currency));
+    }
+
     public void updateLoan(final Loan loan) {
         this.loan = loan;
     }
@@ -460,6 +464,12 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
             this.principal = this.principal.subtract(this.credits);
             this.credits = null;
         }
+    }
+
+    public void resetPrincipalComponents() {
+        this.principal = BigDecimal.ZERO;
+        this.principalCompleted = BigDecimal.ZERO;
+        this.principalWrittenOff = BigDecimal.ZERO;
     }
 
     public void resetAccrualComponents() {
@@ -580,7 +590,7 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
             return feePortionOfTransaction;
         }
         for (LoanInstallmentCharge installmentCharge : getInstallmentCharges()) {
-            if (installmentCharge.getLoanCharge().getChargeCalculation().isPercentageOfAval()) {
+            if (installmentCharge.getLoanCharge().isAvalCharge()) {
                 feePortionOfTransaction = payLoanCharge(installmentCharge, transactionDate, transactionAmountRemaining, currency,
                         feePortionOfTransaction);
             }

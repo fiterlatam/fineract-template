@@ -57,7 +57,7 @@ public interface LoanRescheduleRequestReadPlatformService {
      *            the loan reschedule reason
      * @return list of LoanRescheduleRequestData objects
      **/
-    LoanRescheduleRequestData retrieveAllRescheduleReasons(String loanRescheduleReason);
+    LoanRescheduleRequestData retrieveAllRescheduleReasons(String loanRescheduleReason, Long loanId);
 
     /**
      * get all loan reschedule request

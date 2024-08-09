@@ -18,14 +18,17 @@
  */
 package org.apache.fineract.portfolio.loanaccount.rescheduleloan.data;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Collection;
+import lombok.Data;
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanTermVariationsData;
 
 /**
  * Immutable data object representing loan reschedule request data.
  **/
+@Data
 public final class LoanRescheduleRequestData {
 
     private final Long id;
@@ -44,6 +47,7 @@ public final class LoanRescheduleRequestData {
     private final Collection<CodeValueData> rescheduleReasons;
     @SuppressWarnings("unused")
     private final Collection<LoanTermVariationsData> loanTermVariationsData;
+    private BigDecimal rediferirAmount;
 
     /**
      * LoanRescheduleRequestData constructor
@@ -89,12 +93,6 @@ public final class LoanRescheduleRequestData {
                 rescheduleReasons, loanTermVariationsData);
     }
 
-    /**
-     * LoanRescheduleRequestData constructor
-     *
-     * @param loanTermVariationsData
-     *            TODO
-     **/
     private LoanRescheduleRequestData(Long id, Long loanId, LoanRescheduleRequestStatusEnumData statusEnum, final String clientName,
             final String loanAccountNumber, final Long clientId, final LocalDate rescheduleFromDate,
             final CodeValueData rescheduleReasonCodeValue) {

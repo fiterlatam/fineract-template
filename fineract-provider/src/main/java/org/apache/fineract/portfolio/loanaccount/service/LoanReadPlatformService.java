@@ -176,4 +176,8 @@ public interface LoanReadPlatformService {
     void exportLoanDisbursementPDF(Long loanId, HttpServletResponse httpServletResponse) throws IOException;
 
     Collection<Long> retrieveClientsWithLoansInActive(Long loanProductId, Integer inactivityPeriod);
+
+    Integer retrieveRediferidoNumber(Long loanId);
+
+    Integer retrieveRediferidoNumberLast6Months(Long loanId);
 }

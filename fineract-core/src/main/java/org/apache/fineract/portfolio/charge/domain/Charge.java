@@ -36,12 +36,14 @@ import org.apache.fineract.infrastructure.core.data.ApiParameterError;
 import org.apache.fineract.infrastructure.core.data.DataValidatorBuilder;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
+import org.apache.fineract.infrastructure.core.exception.GeneralPlatformDomainRuleException;
 import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidationException;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.organisation.monetary.data.CurrencyData;
 import org.apache.fineract.portfolio.charge.api.ChargesApiConstants;
 import org.apache.fineract.portfolio.charge.data.ChargeData;
 import org.apache.fineract.portfolio.charge.data.ChargeInsuranceDetailData;
+import org.apache.fineract.portfolio.charge.enumerator.ChargeCalculationTypeBaseItemsEnum;
 import org.apache.fineract.portfolio.charge.exception.ChargeCannotBeCreatedException;
 import org.apache.fineract.portfolio.charge.exception.ChargeDueAtDisbursementCannotBePenaltyException;
 import org.apache.fineract.portfolio.charge.exception.ChargeMustBePenaltyException;
@@ -409,6 +411,58 @@ public class Charge extends AbstractPersistableCustom {
 
     public boolean isPercentageOfAnotherCharge() {
         return ChargeCalculationType.fromInt(this.chargeCalculation).isPercentageOfAnotherCharge();
+    }
+
+    public boolean isFlatHono() {
+        return ChargeCalculationType.fromInt(this.chargeCalculation).isFlatHono();
+    }
+
+    public boolean isCustomFlatDistributedCharge() {
+        // Charge is distributed among the installments
+        return isCustomFlatVoluntaryInsurenceCharge() || ChargeCalculationType.fromInt(this.chargeCalculation).isFlatMandatoryInsurance();
+    }
+
+    public boolean isFlatMandatoryInsurance() {
+        // Charge is distributed among the installments
+        return ChargeCalculationType.fromInt(this.chargeCalculation).isFlatMandatoryInsurance();
+    }
+
+    public boolean isCustomPercentageBasedDistributedCharge() {
+        // Charge is distributed among the installments
+        return ChargeCalculationType.fromInt(this.chargeCalculation).isPercentageBasedMandatoryInsurance();
+    }
+
+    public boolean isAvalCharge() {
+        // Charge is distributed among the installments
+        return ChargeCalculationType.fromInt(this.chargeCalculation).isPercentageOfAval();
+    }
+
+    public boolean isMandatoryInsurance() {
+        // Charge is distributed among the installments
+        return ChargeCalculationType.fromInt(this.chargeCalculation).isMandatoryInsuranceCharge();
+    }
+
+    public boolean isVoluntaryInsurance() {
+        // Charge is distributed among the installments
+        return ChargeCalculationType.fromInt(this.chargeCalculation).isVoluntaryInsurance();
+    }
+
+    public boolean isCustomPercentageBasedOfAnotherCharge() {
+        // Charge is distributed among the installments
+        return ChargeCalculationType.fromInt(this.chargeCalculation).isPercentageOfAnotherCharge();
+    }
+
+    public boolean isCustomPercentageOfOutstandingPrincipalCharge() {
+        // Charge is distributed among the installments
+        return ChargeCalculationType.fromInt(this.chargeCalculation).isCustomPercentageOfOutstandingPrincipalCharge();
+    }
+
+    public boolean isCustomFlatVoluntaryInsurenceCharge() {
+        return ChargeCalculationType.fromInt(this.chargeCalculation).getCode().equals(ChargeCalculationType.FLAT_SEGOVOLUNTARIO.getCode());
+    }
+
+    public boolean isPercentageBasedMandatoryInsurance() {
+        return ChargeCalculationType.fromInt(this.chargeCalculation).isPercentageBasedMandatoryInsurance();
     }
 
     public boolean isInstallmentFee() {
@@ -938,6 +992,91 @@ public class Charge extends AbstractPersistableCustom {
             throw new ChargeCannotBeCreatedException("error.msg.charge.calculation.type.invalid.forVoluntaryInsurance",
                     "Only Flat Charge Calculation Type can be selected for Voluntary Insurance",
                     chargeCalculationType.isVoluntaryInsurance());
+        }
+    }
+
+    public void validateChargeIsSetupCorrectly() {
+        if (this.isLoanCharge()) {
+            final ChargeCalculationType chargeCalculationType = ChargeCalculationType.fromInt(this.getChargeCalculation());
+            String code = chargeCalculationType.getByteRepresentation();
+            if (code.length() == 10) {
+                code = code + "0"; // Voluntary Insurance code is 11 digit
+            }
+            if (this.isPenalty()) {
+                if (!ChargeTimeType.fromInt(this.getChargeTimeType()).isOverdueInstallment()) {
+                    throw new GeneralPlatformDomainRuleException("error.msg.charge.not.setup.correctly", "Charge not setup correctly",
+                            this.getName());
+                }
+                if (this.interestRate == null) {
+                    throw new GeneralPlatformDomainRuleException("error.msg.charge.not.setup.correctly", "Charge not setup correctly",
+                            this.getName());
+                }
+
+                verifyChargeConfiguration(code, ChargeCalculationTypeBaseItemsEnum.SEGURO_OBRIGATORIO.getIndex(),
+                        ChargeCalculationTypeBaseItemsEnum.SEGURO_VOLUNTARIO.getIndex(), ChargeCalculationTypeBaseItemsEnum.AVAL.getIndex(),
+                        ChargeCalculationTypeBaseItemsEnum.INTEREST_INSTALLMENT.getIndex(),
+                        ChargeCalculationTypeBaseItemsEnum.PRINCIPAL_INSTALLMENT.getIndex());
+            } else if (this.isMandatoryInsurance()) {
+                if (this.isFlatMandatoryInsurance()) { // Flat and Mandatory Insurance
+                    verifyChargeConfiguration(code, ChargeCalculationTypeBaseItemsEnum.SEGURO_OBRIGATORIO.getIndex(),
+                            ChargeCalculationTypeBaseItemsEnum.FLAT.getIndex(), null, null, null);
+                } else if (this.isPercentageBasedMandatoryInsurance()) { // Disbursement and Mandatory Insurance
+                    verifyChargeConfiguration(code, ChargeCalculationTypeBaseItemsEnum.SEGURO_OBRIGATORIO.getIndex(),
+                            ChargeCalculationTypeBaseItemsEnum.DISBURSED_AMOUNT.getIndex(), null, null, null);
+                } else if (this.isCustomPercentageOfOutstandingPrincipalCharge()) { // Disbursement and Mandatory
+                                                                                    // Insurance
+                    verifyChargeConfiguration(code, ChargeCalculationTypeBaseItemsEnum.SEGURO_OBRIGATORIO.getIndex(),
+                            ChargeCalculationTypeBaseItemsEnum.OUTSTANDING_PRINCIPAL.getIndex(), null, null, null);
+                }
+            } else if (this.isCustomFlatVoluntaryInsurenceCharge()) {
+                verifyChargeConfiguration(code, ChargeCalculationTypeBaseItemsEnum.SEGURO_VOLUNTARIO.getIndex(),
+                        ChargeCalculationTypeBaseItemsEnum.FLAT.getIndex(), null, null, null);
+            } else if (this.isAvalCharge()) {
+                verifyChargeConfiguration(code, ChargeCalculationTypeBaseItemsEnum.AVAL.getIndex(),
+                        ChargeCalculationTypeBaseItemsEnum.DISBURSED_AMOUNT.getIndex(), null, null, null);
+            } else if (this.isCustomPercentageBasedOfAnotherCharge()) {
+                verifyChargeConfiguration(code, ChargeCalculationTypeBaseItemsEnum.PERCENT_OF_ANOTHER_CHARGE.getIndex(), null, null, null,
+                        null);
+            } else if (this.isFlatHono()) {
+                verifyChargeConfiguration(code, ChargeCalculationTypeBaseItemsEnum.FLAT.getIndex(),
+                        ChargeCalculationTypeBaseItemsEnum.HOORARIOS.getIndex(), null, null, null);
+            } else {
+                throw new GeneralPlatformDomainRuleException("error.msg.charge.not.setup.correctly", "Charge not setup correctly",
+                        this.getName());
+            }
+        }
+    }
+
+    private void verifyChargeConfiguration(String code, Integer index1, Integer index2, Integer index3, Integer index4, Integer index5) {
+        if (this.isAvalCharge() && !this.isPenalty()) {
+            if (!this.isGetPercentageFromTable()) {
+                throw new GeneralPlatformDomainRuleException("error.msg.charge.not.setup.correctly", "Charge not setup correctly",
+                        this.getName());
+            }
+        }
+        if (!this.isPenalty() && !this.isInstallmentFee()) {
+            throw new GeneralPlatformDomainRuleException("error.msg.charge.not.setup.correctly", "Charge not setup correctly",
+                    this.getName());
+        }
+        char[] codeArray = code.toCharArray();
+        codeArray[index1] = '0';
+
+        if (index2 != null) {
+            codeArray[index2] = '0';
+        }
+        if (index3 != null) {
+            codeArray[index3] = '0';
+        }
+        if (index4 != null) {
+            codeArray[index4] = '0';
+        }
+        if (index5 != null) {
+            codeArray[index5] = '0';
+        }
+        code = String.valueOf(codeArray);
+        if (code.indexOf('1') != -1) {
+            throw new GeneralPlatformDomainRuleException("error.msg.charge.not.setup.correctly", "Charge not setup correctly",
+                    this.getName());
         }
     }
 

@@ -495,7 +495,9 @@ public class LoanScheduleAssembler {
             group = this.groupRepository.findOneWithNotFoundDetection(groupId);
             officeId = group.getOffice().getId();
         }
-        final boolean isHolidayEnabled = this.configurationDomainService.isRescheduleRepaymentsOnHolidaysEnabled();
+        boolean isHolidayEnabled = this.configurationDomainService.isRescheduleRepaymentsOnHolidaysEnabled();
+        isHolidayEnabled = loanProduct.enableHoliday(isHolidayEnabled);
+
         final List<Holiday> holidays = this.holidayRepository.findByOfficeIdAndGreaterThanDate(officeId, expectedDisbursementDate,
                 HolidayStatusType.ACTIVE.getValue());
         final WorkingDays workingDays = this.workingDaysRepository.findOne();
@@ -684,6 +686,8 @@ public class LoanScheduleAssembler {
         loanApplicationTerms.setExtendTermForMonthlyRepayment(loanProduct.getExtendTermForMonthlyRepayments());
         // Get holiday details
         boolean isHolidayEnabled = this.configurationDomainService.isRescheduleRepaymentsOnHolidaysEnabled();
+        isHolidayEnabled = loanProduct.enableHoliday(isHolidayEnabled);
+        final Integer loanProductRepaymentReschedulingType = loanProduct.getRepaymentReschedulingType();
 
         final Long clientId = this.fromApiJsonHelper.extractLongNamed("clientId", element);
         final Long groupId = this.fromApiJsonHelper.extractLongNamed("groupId", element);
@@ -704,7 +708,6 @@ public class LoanScheduleAssembler {
                 HolidayStatusType.ACTIVE.getValue());
         final WorkingDays workingDays = this.workingDaysRepository.findOne();
 
-        final Integer loanProductRepaymentReschedulingType = loanProduct.getRepaymentReschedulingType();
         if (loanProductRepaymentReschedulingType != null && loanProductRepaymentReschedulingType.equals(1)) {
             this.workingDaysRepository.detach(workingDays);
             workingDays.update(WorkingDaysApiConstants.RECURRENCE_WEEKLY_ALL_DAYS, 1);
@@ -763,7 +766,8 @@ public class LoanScheduleAssembler {
             final LocalDate rescheduleFrom) {
 
         final MathContext mc = MoneyHelper.getMathContext();
-        final boolean isHolidayEnabled = this.configurationDomainService.isRescheduleRepaymentsOnHolidaysEnabled();
+        boolean isHolidayEnabled = this.configurationDomainService.isRescheduleRepaymentsOnHolidaysEnabled();
+        isHolidayEnabled = loan.loanProduct().enableHoliday(isHolidayEnabled);
 
         final List<Holiday> holidays = this.holidayRepository.findByOfficeIdAndGreaterThanDate(officeId,
                 loanApplicationTerms.getExpectedDisbursementDate(), HolidayStatusType.ACTIVE.getValue());
@@ -784,7 +788,8 @@ public class LoanScheduleAssembler {
 
         final MathContext mc = MoneyHelper.getMathContext();
 
-        final boolean isHolidayEnabled = this.configurationDomainService.isRescheduleRepaymentsOnHolidaysEnabled();
+        boolean isHolidayEnabled = this.configurationDomainService.isRescheduleRepaymentsOnHolidaysEnabled();
+        isHolidayEnabled = loan.loanProduct().enableHoliday(isHolidayEnabled);
         final List<Holiday> holidays = this.holidayRepository.findByOfficeIdAndGreaterThanDate(officeId,
                 loanApplicationTerms.getExpectedDisbursementDate(), HolidayStatusType.ACTIVE.getValue());
         final WorkingDays workingDays = this.workingDaysRepository.findOne();

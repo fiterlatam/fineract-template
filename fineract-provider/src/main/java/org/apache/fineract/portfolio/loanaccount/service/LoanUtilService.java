@@ -178,6 +178,7 @@ public class LoanUtilService {
 
     private HolidayDetailDTO constructHolidayDTO(final Loan loan) {
         boolean isHolidayEnabled = this.configurationDomainService.isRescheduleRepaymentsOnHolidaysEnabled();
+        isHolidayEnabled = loan.getLoanProduct().enableHoliday(isHolidayEnabled);
         final List<Holiday> holidays = this.holidayRepository.findByOfficeIdAndGreaterThanDate(loan.getOfficeId(),
                 loan.getDisbursementDate(), HolidayStatusType.ACTIVE.getValue());
         final WorkingDays workingDays = this.workingDaysRepository.findOne();

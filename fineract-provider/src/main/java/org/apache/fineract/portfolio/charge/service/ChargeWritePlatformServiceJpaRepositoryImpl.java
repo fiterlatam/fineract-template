@@ -117,6 +117,7 @@ public class ChargeWritePlatformServiceJpaRepositoryImpl implements ChargeWriteP
 
             final Charge charge = Charge.fromJson(command, glAccount, taxGroup, paymentType);
             charge.setInterestRate(interestRate);
+            charge.validateChargeIsSetupCorrectly();
             this.chargeRepository.saveAndFlush(charge);
 
             // check if the office specific products are enabled. If yes, then
@@ -217,7 +218,7 @@ public class ChargeWritePlatformServiceJpaRepositoryImpl implements ChargeWriteP
                 }
                 chargeForUpdate.setTaxGroup(taxGroup);
             }
-
+            chargeForUpdate.validateChargeIsSetupCorrectly();
             if (!changes.isEmpty()) {
                 this.chargeRepository.save(chargeForUpdate);
             }
