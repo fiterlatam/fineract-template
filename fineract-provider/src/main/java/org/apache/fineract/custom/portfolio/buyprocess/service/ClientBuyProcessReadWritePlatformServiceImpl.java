@@ -54,6 +54,7 @@ import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.portfolio.charge.data.ChargeData;
 import org.apache.fineract.portfolio.charge.data.ChargeInsuranceDetailData;
+import org.apache.fineract.portfolio.charge.domain.Charge;
 import org.apache.fineract.portfolio.charge.domain.ChargeInsuranceType;
 import org.apache.fineract.portfolio.charge.service.ChargeReadPlatformService;
 import org.apache.fineract.portfolio.client.data.ClientData;
@@ -223,6 +224,12 @@ public class ClientBuyProcessReadWritePlatformServiceImpl implements ClientBuyPr
             }
         }
 
+        for (Charge charge : productEntity.getLoanProductCharges()) {
+            if (!charge.isOverdueInstallment()) {
+                final LoanChargeData loanChargeData = LoanChargeData.builder().chargeId(charge.getId()).amount(charge.getAmount()).build();
+                loanCharges.add(loanChargeData);
+            }
+        }
         final ClientData clientData = getClientExtras(entity.getClientId());
         final ClientAllyPointOfSales clientAllyPointOfSales = this.clientAllyPointOfSalesRepository.findById(entity.getPointOfSalesId())
                 .orElse(null);
