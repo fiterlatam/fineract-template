@@ -258,4 +258,5 @@
     <include file="parts/20242604011009110_SU_288_add-grace-period-option-to-product.xml" relativeToChangelogFile="true"/>
     <include file="parts/20242604011009110_SU_137_update_rederrals.xml" relativeToChangelogFile="true"/>
     <include file="parts/20240808011009220_SU_140_add-restructure-within-6-months.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20241904011009100_SU_165_update_report.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
