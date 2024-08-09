@@ -192,7 +192,7 @@ public class AccountDetailsReadPlatformServiceJpaRepositoryImpl implements Accou
         final String sql = "select " + rm.loanAccountSummarySchema()
                 + " where l.client_id = ? and l.loan_status_id = 300 and (COALESCE(la.overdue_since_date_derived,l.maturedon_date) + interval '"
                 + maxReestructurar + " day' >= CURRENT_DATE and COALESCE(la.overdue_since_date_derived,l.maturedon_date) + interval '"
-                + maxRediferir + " day' >= CURRENT_DATE)";
+                + maxRediferir + " day' <= CURRENT_DATE)";
         return this.jdbcTemplate.query(sql, rm, new Object[] { clientId });
     }
 
