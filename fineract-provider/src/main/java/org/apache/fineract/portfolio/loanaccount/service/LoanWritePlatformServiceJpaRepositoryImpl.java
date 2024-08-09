@@ -47,6 +47,7 @@ import org.apache.fineract.custom.infrastructure.channel.data.ChannelData;
 import org.apache.fineract.custom.infrastructure.channel.domain.Channel;
 import org.apache.fineract.custom.infrastructure.channel.domain.ChannelType;
 import org.apache.fineract.custom.infrastructure.channel.service.ChannelReadWritePlatformService;
+import org.apache.fineract.infrastructure.businessdate.domain.BusinessDateType;
 import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockLevel;
 import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSetting;
 import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSettingEnum;
@@ -73,6 +74,7 @@ import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.core.service.ExternalIdFactory;
 import org.apache.fineract.infrastructure.core.service.MathUtil;
+import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.infrastructure.dataqueries.data.EntityTables;
 import org.apache.fineract.infrastructure.dataqueries.data.StatusEnum;
 import org.apache.fineract.infrastructure.dataqueries.service.EntityDatatableChecksWritePlatformService;
@@ -490,9 +492,11 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                         .findByName(LoanApiConstants.GLOBAL_CONFIG_MAX_RESTRUCTURE_WITHIN_6_MONTHS);
                 Long maxReestructurar = getmaxReestructurar.orElse(new GlobalConfigurationProperty().setValue(2L)).getValue();
 
-                LocalDate currentDate = LocalDate.now();
                 LocalDate businessDate = ThreadLocalContextUtil.getBusinessDateByType(BusinessDateType.BUSINESS_DATE);
-                Long topupCount = countRecentTopups(loan.getClientId(), currentDate);
+                if (businessDate == null) {
+                    businessDate = LocalDate.now();
+                }
+                Long topupCount = countRecentTopups(loan.getClientId(), businessDate);
 
                 if (topupCount > maxReestructurar) {
                     throw new GeneralPlatformDomainRuleException("error.msg.loan.max.restructures.exceeded",
@@ -2541,11 +2545,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     }
 
     private Long countRecentTopups(Long clientId, LocalDate businessDate) {
-        String sql = "SELECT COUNT(ml.disbursedon_date) "
-                + "FROM m_loan ml "
-                + "INNER JOIN m_loan_topup mlt ON mlt.loan_id = ml.id "
-                + "WHERE ml.client_id = ? "
-                + "AND ml.disbursedon_date BETWEEN to_date(?, 'YYYY-MM-DD') - INTERVAL '6' MONTH "
+        String sql = "SELECT COUNT(ml.disbursedon_date) " + "FROM m_loan ml " + "INNER JOIN m_loan_topup mlt ON mlt.loan_id = ml.id "
+                + "WHERE ml.client_id = ? " + "AND ml.disbursedon_date BETWEEN to_date(?, 'YYYY-MM-DD') - INTERVAL '6' MONTH "
                 + "AND to_date(?, 'YYYY-MM-DD')";
 
         return jdbcTemplate.queryForObject(sql, Long.class, clientId, businessDate.toString(), businessDate.toString());
