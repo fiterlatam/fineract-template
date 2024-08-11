@@ -2195,9 +2195,9 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                                 cumulative = cumulative.plus(Money.of(monetaryCurrency,
                                         loanCharge.getLastInstallmentRoundOffAmountForVoluntaryInsurance(installmentNumber)));
                             } else {
-                                cumulative = cumulative.plus(calculateInstallmentCharge(principalInterestForThisPeriod, cumulative,
+                                cumulative = calculateInstallmentCharge(principalInterestForThisPeriod, cumulative,
                                         loanCharge, mc, installmentNumber, principalDisbursed, numberOfRepayments, outstandingBalance,
-                                        loanCharges));
+                                        loanCharges);
                             }
                         }
                     } else {
