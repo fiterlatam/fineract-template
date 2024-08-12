@@ -1570,8 +1570,10 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 } else {
                     additionals.update(command);
                 }
+                String deleteExtraLoans = "delete from m_loan_external_existing_loans where loan_id=?";
+                this.jdbcTemplate.update(deleteExtraLoans, existingLoanApplication.getId());
                 updateExternalLoans(command, additionals);
-                this.groupLoanAdditionalsRepository.save(additionals);
+                this.groupLoanAdditionalsRepository.saveAndFlush(additionals);
             }
 
             if (productRelatedDetail.isInterestRecalculationEnabled()) {
