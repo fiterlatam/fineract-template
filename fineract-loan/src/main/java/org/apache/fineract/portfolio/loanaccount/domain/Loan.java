@@ -1092,7 +1092,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         } else if (calculationType.isPercentageOfAnotherCharge() && calculationType.equals(ChargeCalculationType.ACHG)) { // Term/VAT
                                                                                                                           // on
                                                                                                                           // insurance
-            amount = amount.plus(LoanCharge.percentageOf(percentOf.getAmount(), percentage));
+            amount = amount.plus(percentOf.getAmount().multiply(percentage).divide(BigDecimal.valueOf(100), 0, RoundingMode.HALF_UP));
         } else if (calculationType.isCustomPercentageOfOutstandingPrincipalCharge()) {
             BigDecimal numberOfInstallments = new BigDecimal(this.fetchUnpaidNumberOfInstallments(1));
             BigDecimal computedAmount = LoanCharge.percentageOf(percentOf.getAmount(), percentage);
