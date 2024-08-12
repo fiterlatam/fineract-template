@@ -57,7 +57,6 @@ buildscript {
     }
     repositories {
         mavenCentral()
-        jcenter()
         google()
         maven { url 'https://plugins.gradle.org/m2/' }
     }
@@ -135,7 +134,6 @@ allprojects  {
     group = 'org.apache.fineract'
 
     repositories {
-        jcenter()
         mavenCentral()
         google()
         maven { url 'https://plugins.gradle.org/m2/' }
