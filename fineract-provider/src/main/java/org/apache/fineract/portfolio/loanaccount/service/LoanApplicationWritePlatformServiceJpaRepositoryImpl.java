@@ -204,8 +204,10 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             final Long groupId = this.fromJsonHelper.extractLongNamed("groupId", command.parsedJson());
 
             final Long entityId = clientId != null ? clientId : groupId;
-            this.fromApiJsonDeserializer.validateClientBlockingList(entityId);
-
+            boolean isTopUp = this.fromJsonHelper.extractBooleanNamed("isTopup", command.parsedJson());
+            if (!isTopUp) {
+                this.fromApiJsonDeserializer.validateClientBlockingList(entityId);
+            }
             boolean isMeetingMandatoryForJLGLoans = configurationDomainService.isMeetingMandatoryForJLGLoans();
             final Long productId = this.fromJsonHelper.extractLongNamed("productId", command.parsedJson());
             final LoanProduct loanProduct = this.loanProductRepository.findById(productId)
