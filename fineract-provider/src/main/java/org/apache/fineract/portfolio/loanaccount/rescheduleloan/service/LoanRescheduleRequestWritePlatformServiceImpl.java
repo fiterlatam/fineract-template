@@ -54,6 +54,8 @@ import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
 import org.apache.fineract.organisation.monetary.domain.Money;
 import org.apache.fineract.organisation.monetary.domain.MoneyHelper;
 import org.apache.fineract.portfolio.account.service.AccountTransfersWritePlatformService;
+import org.apache.fineract.portfolio.delinquency.service.DelinquencyReadPlatformService;
+import org.apache.fineract.portfolio.loanaccount.data.CollectionData;
 import org.apache.fineract.portfolio.loanaccount.data.HolidayDetailDTO;
 import org.apache.fineract.portfolio.loanaccount.data.LoanTermVariationsData;
 import org.apache.fineract.portfolio.loanaccount.data.ScheduleGeneratorDTO;
@@ -135,6 +137,7 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
     private final ExternalIdFactory externalIdFactory;
     private final GlobalConfigurationRepositoryWrapper globalConfigurationRepository;
     private final LoanReadPlatformService loanReadPlatformService;
+    private final DelinquencyReadPlatformService delinquencyReadPlatformService;
 
     /**
      * create a new instance of the LoanRescheduleRequest object from the JsonCommand object and persist
@@ -347,9 +350,9 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
         if (rediferirTerms != null) {
             final GlobalConfigurationProperty globalConfigurationProperty = this.globalConfigurationRepository
                     .findOneByNameWithNotFoundDetection(RescheduleLoansApiConstants.ALLOWED_REDEFERRALS_WITHIN_SIX_MONTHS);
-            final Long maximumValue = globalConfigurationProperty.getValue();
+            final Long maximumRediferralValue = globalConfigurationProperty.getValue();
             final Integer rediferidoNumber = this.loanReadPlatformService.retrieveRediferidoNumberLast6Months(loan.getId());
-            if (globalConfigurationProperty.isEnabled() && rediferidoNumber > maximumValue) {
+            if (globalConfigurationProperty.isEnabled() && rediferidoNumber > maximumRediferralValue) {
                 throw new GeneralPlatformDomainRuleException("error.msg.loan.reschedule.rediferir.exceed.max.allowed.in.6.months",
                         "Rediferir exceed max allowed in 6 months", rediferidoNumber);
             }
@@ -357,6 +360,16 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
             if (!loanRescheduleRequestToTermVariationMappings.isEmpty()) {
                 throw new GeneralPlatformDomainRuleException("error.msg.loan.reschedule.rediferir.other.variations.already.exists",
                         "Rediferir other variations already exists", rediferirTerms);
+            }
+
+            final GlobalConfigurationProperty maximumDaysInArrearsConfiguration = this.globalConfigurationRepository
+                    .findOneByNameWithNotFoundDetection(RescheduleLoansApiConstants.MAXIMUM_DAYS_IN_ARREARS_FOR_REDIFERRALS);
+            Long maximumArrearsValue = maximumDaysInArrearsConfiguration.getValue();
+            final CollectionData collectionData = this.delinquencyReadPlatformService.calculateLoanCollectionData(loan.getId());
+            final Long daysInArrears = collectionData.getPastDueDays();
+            if (maximumDaysInArrearsConfiguration.isEnabled() && daysInArrears > maximumArrearsValue) {
+                throw new GeneralPlatformDomainRuleException("error.msg.loan.reschedule.rediferir.exceed.max.allowed.days.in.arrears",
+                        "Rediferir exceeds maximum days in arrears", rediferidoNumber);
             }
             final List<LoanRepaymentScheduleInstallment> rediferirUnpaidInstallments = findRediferirUnpaidInstallments(
                     loan.getRepaymentScheduleInstallments(), transactionDate);
@@ -603,12 +616,11 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
                     ExternalId txnExternalId = externalIdFactory.create();
                     final PaymentDetail paymentDetail = null;
                     final String chargeRefundChargeType = null;
-                    final Money transactionAmount = Money.of(currency, rediferirAmount);
-                    final LoanTransaction newRepaymentTransaction = LoanTransaction.repaymentType(LoanTransactionType.REPAYMENT,
-                            loan.getOffice(), transactionAmount, paymentDetail, transactionDate, txnExternalId, chargeRefundChargeType,
-                            loan.getRepaymentTransactionProcessingType());
-                    newRepaymentTransaction.updateLoan(loan);
-                    loan.addLoanTransaction(newRepaymentTransaction);
+                    final String noteText = null;
+                    final boolean isAccountTransfer = false;
+                    final LoanTransaction newRepaymentTransaction = this.loanAccountDomainService.makeRepayment(
+                            LoanTransactionType.REPAYMENT, loan, transactionDate, rediferirAmount, paymentDetail, noteText, txnExternalId,
+                            false, chargeRefundChargeType, isAccountTransfer, null, false, true);
                     loan.recalculateAllCharges();
                     changedTransactionDetail = loan.processTransactions();
                     loanAccountDomainService.saveLoanTransactionWithDataIntegrityViolationChecks(newRepaymentTransaction);
@@ -641,6 +653,7 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
             postJournalEntries(loan, existingTransactionIds, existingReversedTransactionIds);
             loanAccrualTransactionBusinessEventService.raiseBusinessEventForAccrualTransactions(loan, existingTransactionIds);
             this.loanAccountDomainService.recalculateAccruals(loan, true);
+
             final Boolean isJobTriggered = jsonCommand.booleanPrimitiveValueOfParameterNamed("isJobTriggered");
             if (loan.isTopup()) {
                 businessEventNotifierService
