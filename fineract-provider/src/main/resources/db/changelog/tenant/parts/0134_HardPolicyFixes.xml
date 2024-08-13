@@ -223,7 +223,49 @@
         </sql>
     </changeSet>
 
+    <changeSet id="7" author="fineract">
+        <sql>
+            <![CDATA[
+                UPDATE stretchy_report SET report_sql = "SELECT
+                prequalification_details.recreditCategorization,
+                COALESCE(prequalification_details.number_of_completed_loans, 0) AS  number_of_completed_loans,
+                CASE
+                  WHEN (${loanProductId} = 9) AND (prequalification_details.recreditCategorization = 'RECREDITO') AND ('${clientArea}' = 'URBANA') AND (COALESCE(prequalification_details.number_of_completed_loans, 0) >= 0) THEN 'GREEN'
+                  WHEN (${loanProductId} = 9) AND (prequalification_details.recreditCategorization = 'RECREDITO') AND ('${clientArea}' = 'RURAL') AND (COALESCE(prequalification_details.number_of_completed_loans, 0) >= 0) THEN 'GREEN'
+                  WHEN (${loanProductId} = 9) AND (prequalification_details.recreditCategorization = 'NUEVO') AND ('${clientArea}' = 'URBANA') AND (COALESCE(prequalification_details.number_of_completed_loans, 0) >= 0) THEN 'GREEN'
+                  WHEN (${loanProductId} = 9) AND (prequalification_details.recreditCategorization = 'NUEVO') AND ('${clientArea}' = 'RURAL') AND (COALESCE(prequalification_details.number_of_completed_loans, 0) >= 0) THEN 'GREEN'
+                END AS color
+                FROM m_prequalification_group mpg
+                LEFT JOIN (
+                 SELECT p.id AS prequalification_id,
+                 (CASE WHEN p.previous_prequalification IS NOT NULL THEN 'RECREDITO' ELSE 'NUEVO' END) AS recreditCategorization,
+                 (SELECT COUNT(*)
+                 FROM m_prequalification_group mp
+                 LEFT JOIN m_group_prequalification_relationship mgpr ON mgpr.prequalification_id = mp.id
+                 LEFT JOIN m_group mg ON (mg.prequalification_id = mp.id OR mg.id = mgpr.group_id)
+                 LEFT JOIN m_loan ml ON ml.group_id = mg.id
+                 WHERE ml.loan_status_id >= 600 AND mg.status_enum =  300 AND mp.id = ${prequalificationId}
+                 GROUP BY mp.id) AS number_of_completed_loans
+                 FROM m_prequalification_group p
+               )prequalification_details ON prequalification_details.prequalification_id = mpg.id
+               WHERE mpg.id = ${prequalificationId}" WHERE report_name = "Cancelled Cycles Count Policy Check";
+           ]]>
+        </sql>
+    </changeSet>
 
+    <changeSet id="8" author="fineract">
+        <sql>
+            <![CDATA[
+            UPDATE stretchy_report SET report_sql = " SELECT CASE
+                       WHEN (${loanProductId} IN (9)) AND '${categorization}' = 'RECREDITO' AND ${requestedAmount} <= 6000  THEN 'GREEN'
+                       WHEN (${loanProductId} IN (2,8)) AND ${requestedAmount} <= 6000 THEN 'GREEN'
+                       WHEN (${loanProductId} IN (2,9,8,4,5,7)) AND (${photographs} <= 0  OR ${investmentPlan} <= 0) THEN 'RED'
+                       ELSE 'GREEN'
+                    END AS color"
+            WHERE report_name = "Mandatory to attach photographs and investment plan Policy Check";
+            ]]>
+        </sql>
+    </changeSet>
 
 
 </databaseChangeLog>
