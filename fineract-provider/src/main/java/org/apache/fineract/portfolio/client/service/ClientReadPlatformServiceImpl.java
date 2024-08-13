@@ -1,20 +1,16 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements. See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership. The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License. You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied. See the License for the
- * specific language governing permissions and limitations
- * under the License.
+ * <p>Unless required by applicable law or agreed to in writing, software distributed under the
+ * License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ * express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.apache.fineract.portfolio.client.service;
 
@@ -76,6 +72,8 @@ import org.apache.fineract.portfolio.loanproduct.service.LoanProductReadPlatform
 import org.apache.fineract.portfolio.savings.data.SavingsProductData;
 import org.apache.fineract.portfolio.savings.service.SavingsProductReadPlatformService;
 import org.apache.fineract.useradministration.domain.AppUser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.PreparedStatementCreator;
@@ -87,6 +85,7 @@ import org.springframework.util.CollectionUtils;
 @RequiredArgsConstructor
 public class ClientReadPlatformServiceImpl implements ClientReadPlatformService {
 
+    private static final Logger log = LoggerFactory.getLogger(ClientReadPlatformServiceImpl.class);
     private final JdbcTemplate jdbcTemplate;
     private final PlatformSecurityContext context;
     private final OfficeReadPlatformService officeReadPlatformService;
@@ -558,7 +557,6 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
                     firstname, middlename, lastname, fullname, displayName, externalId, mobileNo, emailAddress, dateOfBirth, gender,
                     activationDate, imageId, staffId, staffName, timeline, savingsProductId, savingsProductName, savingsAccountId,
                     clienttype, classification, legalForm, clientNonPerson, isStaff);
-
         }
     }
 
@@ -883,7 +881,6 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
                     firstname, middlename, lastname, fullname, displayName, externalId, mobileNo, emailAddress, dateOfBirth, gender,
                     activationDate, imageId, staffId, staffName, timeline, savingsProductId, savingsProductName, savingsAccountId,
                     clienttype, classification, legalForm, clientNonPerson, isStaff);
-
         }
     }
 
@@ -957,5 +954,51 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
             }
             return clients;
         }, idNumber, idNumber);
+    }
+
+    @Override
+    public ClientMaximumLoanArrearsData retrieveClientMaximumLoanArrearsData(String clientId) {
+        final ClientMaximumLoanArrearsMapper rowMapper = new ClientMaximumLoanArrearsMapper();
+        final String whereClause = """
+                WHERE ccp."Cedula" = ?
+                   OR cce."NIT" = ?
+                """;
+        final String sql = "SELECT " + rowMapper.schema() + whereClause + "GROUP BY mc.id LIMIT 1";
+        try {
+            return this.jdbcTemplate.queryForObject(sql, rowMapper, clientId, clientId);
+        } catch (final EmptyResultDataAccessException e) {
+            // return message in spanish if client not found
+            throw new ClientNotFoundException("No exite cliente con el NIT/Cedula : " + clientId);
+        }
+    }
+
+    private static final class ClientMaximumLoanArrearsMapper implements RowMapper<ClientMaximumLoanArrearsData> {
+
+        public String schema() {
+            return """
+                    COUNT(mlaa.loan_id) number_of_loans ,
+                    mc.id AS  client_id,
+                           MAX(mlaa.overdue_since_date_derived) maximum_overdue_since_date
+                    FROM m_loan_arrears_aging mlaa
+                             INNER JOIN m_loan ml
+                                        ON mlaa.loan_id = ml.id
+                             INNER JOIN m_client mc
+                                        ON mc.id = ml.client_id
+                             LEFT JOIN campos_cliente_persona ccp
+                                       ON ccp.client_id = mc.id
+                             LEFT JOIN campos_cliente_empresas cce
+                                       ON cce.client_id = mc.id
+                     """;
+        }
+
+        @Override
+        public ClientMaximumLoanArrearsData mapRow(ResultSet rs, int rowNum) throws SQLException {
+            final Long numberOfLoans = rs.getLong("number_of_loans");
+            final LocalDate maximumOverdueSinceDate = JdbcSupport.getLocalDate(rs, "maximum_overdue_since_date");
+            log.info("maximumOverdueSinceDate: {}", maximumOverdueSinceDate);
+            final Long numberOfDays = DateUtils.getDifferenceInDays(maximumOverdueSinceDate, DateUtils.getLocalDateOfTenant());
+            final Long clientId = rs.getLong("client_id");
+            return ClientMaximumLoanArrearsData.instance(clientId, numberOfDays, numberOfLoans);
+        }
     }
 }
