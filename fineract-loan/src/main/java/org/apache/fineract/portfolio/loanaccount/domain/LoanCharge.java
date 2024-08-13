@@ -1231,8 +1231,16 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
             customAmout = customAmout.add(this.installmentCharges().isEmpty() ? this.amountOrPercentage
                     : this.getInstallmentLoanCharge(installmentNumber).getAmount());
         } else if (this.isCustomPercentageBasedDistributedCharge()) {
-            customAmout = customAmout.add(this.installmentCharges().isEmpty() ? this.amountOrPercentage
-                    : this.getInstallmentLoanCharge(installmentNumber).getAmount());
+            BigDecimal chargeAmount = BigDecimal.ZERO;
+            if (this.installmentCharges().isEmpty()) {
+                chargeAmount = this.amountOrPercentage;
+            } else {
+                final LoanInstallmentCharge installmentCharge = this.getInstallmentLoanCharge(installmentNumber);
+                if (installmentCharge != null) {
+                    chargeAmount = installmentCharge.getAmount();
+                }
+            }
+            customAmout = customAmout.add(chargeAmount);
         } else if (this.isCustomPercentageBasedOfAnotherCharge()) {
             customAmout = customAmout.add(this.installmentCharges().isEmpty() ? this.amountOrPercentage
                     : this.getInstallmentLoanCharge(installmentNumber).getAmount());
