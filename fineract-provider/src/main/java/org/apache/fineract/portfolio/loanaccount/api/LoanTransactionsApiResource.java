@@ -562,6 +562,8 @@ public class LoanTransactionsApiResource {
                 transactionDate = transactionDateParam.getDate("transactionDate", dateFormat, locale);
             }
             transactionData = this.loanReadPlatformService.retrieveLoanForeclosureTemplate(resolvedLoanId, transactionDate);
+        } else if (CommandParameterUtil.is(commandParam, "special-write-off")) {
+            transactionData = this.loanReadPlatformService.retrieveLoanSpecialWriteOffTemplate(resolvedLoanId);
         } else if (CommandParameterUtil.is(commandParam, "creditBalanceRefund")) {
             transactionData = this.loanReadPlatformService.retrieveCreditBalanceRefundTemplate(resolvedLoanId);
         } else if (CommandParameterUtil.is(commandParam, CHARGE_OFF_COMMAND_VALUE)) {

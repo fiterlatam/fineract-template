@@ -26,16 +26,19 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import org.apache.fineract.infrastructure.core.domain.AbstractAuditableWithUTCDateTimeCustom;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
 import org.apache.fineract.organisation.monetary.domain.Money;
+import org.apache.fineract.portfolio.loanaccount.data.LoanChargeData;
 import org.apache.fineract.portfolio.loanproduct.domain.AllocationType;
 import org.apache.fineract.portfolio.repaymentwithpostdatedchecks.domain.PostDatedChecks;
 
@@ -149,6 +152,9 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY, mappedBy = "installment")
     private Set<LoanTransactionToRepaymentScheduleMapping> loanTransactionToRepaymentScheduleMappings = new HashSet<>();
+
+    @Transient
+    private List<LoanChargeData> currentOutstandingLoanCharges;
 
     public LoanRepaymentScheduleInstallment() {
         this.installmentNumber = null;
@@ -1168,5 +1174,13 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
 
     public enum PaymentAction {
         PAY, UNPAY
+    }
+
+    public void setCurrentOutstandingLoanCharges(List<LoanChargeData> currentOutstandingLoanCharges) {
+        this.currentOutstandingLoanCharges = currentOutstandingLoanCharges;
+    }
+
+    public List<LoanChargeData> getCurrentOutstandingLoanCharges() {
+        return currentOutstandingLoanCharges;
     }
 }
