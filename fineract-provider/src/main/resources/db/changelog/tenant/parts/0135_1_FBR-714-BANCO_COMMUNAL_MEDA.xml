@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements. See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership. The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License. You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied. See the License for the
+    specific language governing permissions and limitations
+    under the License.
+
+-->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd">
+
+
+    <changeSet id="1" author="fineract">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <sqlCheck expectedResult="1">
+                    select count(*) from m_product_loan where short_name = 'BCOMMEDA';
+                </sqlCheck>
+            </not>
+        </preConditions>
+        <sql>
+            <![CDATA[
+            INSERT INTO `m_product_loan` (`short_name`,`currency_code`,`currency_digits`,`currency_multiplesof`,`principal_amount`,`min_principal_amount`,`max_principal_amount`,`arrearstolerance_amount`,`name`,`description`,`fund_id`,`is_linked_to_floating_interest_rates`,`allow_variabe_installments`,`nominal_interest_rate_per_period`,`min_nominal_interest_rate_per_period`,`max_nominal_interest_rate_per_period`,`interest_period_frequency_enum`,`annual_nominal_interest_rate`,`interest_method_enum`,`interest_calculated_in_period_enum`,`allow_partial_period_interest_calcualtion`,`repay_every`,`repayment_period_frequency_enum`,`number_of_repayments`,`min_number_of_repayments`,`max_number_of_repayments`,`grace_on_principal_periods`,`recurring_moratorium_principal_periods`,`grace_on_interest_periods`,`grace_interest_free_periods`,`amortization_method_enum`,`accounting_type`,`loan_transaction_strategy_id`,`external_id`,`include_in_borrower_cycle`,`use_borrower_cycle`,`start_date`,`close_date`,`allow_multiple_disbursals`,`max_disbursals`,`max_outstanding_loan_balance`,`grace_on_arrears_ageing`,`overdue_days_for_npa`,`days_in_month_enum`,`days_in_year_enum`,`interest_recalculation_enabled`,`min_days_between_disbursal_and_first_repayment`,`hold_guarantee_funds`,`principal_threshold_for_last_installment`,`account_moves_out_of_npa_only_on_arrears_completion`,`can_define_fixed_emi_amount`,`instalment_amount_in_multiples_of`,`can_use_for_topup`,`sync_expected_with_disbursement_date`,`is_equal_amortization`,`fixed_principal_percentage_per_installment`,`disallow_expected_disbursements`,`allow_approved_disbursed_amounts_over_applied`,`over_applied_calculation_type`,`over_applied_number`)
+            VALUES ('BCOMMEDA','GTQ',2,1,1000.000000,1000.000000,3000.000000,NULL,'Banco Comunal Meda','Banco Comunal Meda',NULL,0,0,3.000000,3.000000,3.500000,2,NULL,0,1,0,1,2,12,1,60,NULL,NULL,NULL,NULL,1,1,1,NULL,1,1,NULL,NULL,0,NULL,NULL,NULL,NULL,1,1,0,NULL,0,0.00,0,0,1.000000,0,0,0,NULL,0,0,NULL,NULL);
+            ]]>
+        </sql>
+    </changeSet>
+</databaseChangeLog>
