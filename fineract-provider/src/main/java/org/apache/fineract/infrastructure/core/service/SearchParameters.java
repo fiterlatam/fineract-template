@@ -129,7 +129,7 @@ public final class SearchParameters {
 
     public static SearchParameters forPrequalification(final String displayName, final String status, final Integer offset,
             final Integer limit, final String orderBy, final String sortOrder, final String type, String searchText,
-            final String groupingType, Long portfolioCenterId) {
+            final String groupingType, Long portfolioCenterId, Long agencyId) {
 
         final Integer maxLimitAllowed = getCheckedLimit(limit);
         final Long staffId = null;
@@ -139,7 +139,7 @@ public final class SearchParameters {
 
         return new SearchParameters(searchText, null, null, displayName, null, null, null, status, offset, maxLimitAllowed, orderBy,
                 sortOrder, staffId, accountNo, loanId, savingsId, null, false, null, type, null, null, null, groupingType,
-                portfolioCenterId);
+                portfolioCenterId,agencyId);
     }
 
     public static SearchParameters forBankCheques(final Long agencyId, final String chequeNo, final String bankAccNo, final Long batchId,
@@ -622,7 +622,7 @@ public final class SearchParameters {
             final Integer limit, final String orderBy, final String sortOrder, final Long staffId, final String accountNo,
             final Long loanId, final Long savingsId, final Boolean orphansOnly, boolean isSelfUser, final String dpiNumber,
             final String type, final String groupName, final String groupNumber, final String centerName, final String groupingType,
-            Long portfolioCenterId) {
+            Long portfolioCenterId, Long agencyId) {
         this.sqlSearch = sqlSearch;
         this.officeId = officeId;
         this.externalId = externalId;
@@ -659,7 +659,7 @@ public final class SearchParameters {
         this.disbursementStartDate = null;
         this.approvalEndDate = null;
         this.approvalStartDate = null;
-        this.agencyId = null;
+        this.agencyId = agencyId;
         this.clientNo = null;
         this.groupId = null;
         this.centerId = portfolioCenterId;
