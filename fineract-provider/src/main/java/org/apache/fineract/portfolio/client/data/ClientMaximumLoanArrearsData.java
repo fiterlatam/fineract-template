@@ -18,7 +18,6 @@
  */
 package org.apache.fineract.portfolio.client.data;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -31,8 +30,8 @@ import lombok.Setter;
 public class ClientMaximumLoanArrearsData {
 
     private Long clientId;
-    @JsonProperty("MaximoDeDiasDeMora")
-    private Long maximumNumberOfDaysInArrears;
-    @JsonProperty("PrestamosEnMora")
-    private Long numberOfLoanInArrears;
+    // maximumNumberOfDaysInArrears
+    private Long maximoDeDiasDeMora;
+    // numberOfLoanInArrears
+    private Long prestamosEnMora;
 }
