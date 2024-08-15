@@ -995,7 +995,6 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
         public ClientMaximumLoanArrearsData mapRow(ResultSet rs, int rowNum) throws SQLException {
             final Long numberOfLoans = rs.getLong("number_of_loans");
             final LocalDate maximumOverdueSinceDate = JdbcSupport.getLocalDate(rs, "maximum_overdue_since_date");
-            log.info("maximumOverdueSinceDate: {}", maximumOverdueSinceDate);
             final Long numberOfDays = DateUtils.getDifferenceInDays(maximumOverdueSinceDate, DateUtils.getLocalDateOfTenant());
             final Long clientId = rs.getLong("client_id");
             return ClientMaximumLoanArrearsData.instance(clientId, numberOfDays, numberOfLoans);
