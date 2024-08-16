@@ -978,7 +978,7 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
             return """
                     COUNT(mlaa.loan_id) number_of_loans ,
                     mc.id AS  client_id,
-                           MAX(mlaa.overdue_since_date_derived) maximum_overdue_since_date
+                           MIN(mlaa.overdue_since_date_derived) maximum_overdue_since_date
                     FROM m_loan_arrears_aging mlaa
                              INNER JOIN m_loan ml
                                         ON mlaa.loan_id = ml.id
@@ -995,7 +995,6 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
         public ClientMaximumLoanArrearsData mapRow(ResultSet rs, int rowNum) throws SQLException {
             final Long numberOfLoans = rs.getLong("number_of_loans");
             final LocalDate maximumOverdueSinceDate = JdbcSupport.getLocalDate(rs, "maximum_overdue_since_date");
-            log.info("maximumOverdueSinceDate: {}", maximumOverdueSinceDate);
             final Long numberOfDays = DateUtils.getDifferenceInDays(maximumOverdueSinceDate, DateUtils.getLocalDateOfTenant());
             final Long clientId = rs.getLong("client_id");
             return ClientMaximumLoanArrearsData.instance(clientId, numberOfDays, numberOfLoans);
