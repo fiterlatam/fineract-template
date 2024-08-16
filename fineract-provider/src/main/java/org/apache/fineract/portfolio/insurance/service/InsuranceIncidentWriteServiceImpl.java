@@ -23,6 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
+import org.apache.fineract.infrastructure.core.exception.GeneralPlatformDomainRuleException;
 import org.apache.fineract.portfolio.insurance.domain.InsuranceIncident;
 import org.apache.fineract.portfolio.insurance.domain.InsuranceIncidentRepository;
 import org.springframework.stereotype.Service;
@@ -34,15 +35,23 @@ public class InsuranceIncidentWriteServiceImpl implements InsuranceIncidentWrite
 
     private final InsuranceIncidentRepository insuranceIncidentRepository;
     private final InsuranceIncidentReadService insuranceIncidentReadService;
+    private static final String MANDATORY_FIELD = "isMandatory";
+    private static final String VOLUNTARY_FIELD = "isVoluntary";
 
     @Override
     public CommandProcessingResult createInsuranceIncident(JsonCommand command) {
         // get the name of the insurance incident
         String name = command.stringValueOfParameterNamed("name");
         // get value of is mandatory
-        boolean isMandatory = command.booleanPrimitiveValueOfParameterNamed("isMandatory");
+        boolean isMandatory = command.booleanPrimitiveValueOfParameterNamed(MANDATORY_FIELD);
         // get value of is voluntary
-        boolean isVoluntary = command.booleanPrimitiveValueOfParameterNamed("isVoluntary");
+        boolean isVoluntary = command.booleanPrimitiveValueOfParameterNamed(VOLUNTARY_FIELD);
+
+        // validate that at least one of isMandatory or isVoluntary is true
+        if (!isMandatory && !isVoluntary) {
+            throw new GeneralPlatformDomainRuleException("error.msg.insurance.incident.mandatory.or.voluntary.required",
+                    "At least one of isMandatory or isVoluntary must be true", MANDATORY_FIELD, VOLUNTARY_FIELD);
+        }
 
         InsuranceIncident insuranceIncident = InsuranceIncident.instance(name, isMandatory, isVoluntary);
         InsuranceIncident savedInsuranceIncident = insuranceIncidentRepository.save(insuranceIncident);
@@ -69,6 +78,12 @@ public class InsuranceIncidentWriteServiceImpl implements InsuranceIncidentWrite
         }
         if (isVoluntary != null) {
             insuranceIncident.setVoluntary(isVoluntary);
+        }
+
+        // validate that at least one of isMandatory or isVoluntary is true
+        if (!insuranceIncident.isMandatory() && !insuranceIncident.isVoluntary()) {
+            throw new GeneralPlatformDomainRuleException("error.msg.insurance.incident.mandatory.or.voluntary.required",
+                    "At least one of isMandatory or isVoluntary must be true", MANDATORY_FIELD, VOLUNTARY_FIELD);
         }
 
         InsuranceIncident savedInsuranceIncident = insuranceIncidentRepository.save(insuranceIncident);

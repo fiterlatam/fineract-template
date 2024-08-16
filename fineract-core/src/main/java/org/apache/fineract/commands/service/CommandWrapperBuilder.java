@@ -3790,14 +3790,14 @@ public class CommandWrapperBuilder {
 
     public CommandWrapperBuilder createInsuranceIncident() {
         this.actionName = "CREATE";
-        this.entityName = "INSURANCEINCIDENT";
+        this.entityName = "INSURANCE_INCIDENT";
         this.href = "/insurance-incidents";
         return this;
     }
 
     public CommandWrapperBuilder updateInsuranceIncident(final Long id) {
         this.actionName = "UPDATE";
-        this.entityName = "INSURANCEINCIDENT";
+        this.entityName = "INSURANCE_INCIDENT";
         this.entityId = id;
         this.href = "/insurance-incidents/" + id;
         return this;
@@ -3805,7 +3805,7 @@ public class CommandWrapperBuilder {
 
     public CommandWrapperBuilder deleteInsuranceIncident(final Long id) {
         this.actionName = "DELETE";
-        this.entityName = "INSURANCEINCIDENT";
+        this.entityName = "INSURANCE_INCIDENT";
         this.entityId = id;
         this.href = "/insurance-incidents/" + id;
         return this;
