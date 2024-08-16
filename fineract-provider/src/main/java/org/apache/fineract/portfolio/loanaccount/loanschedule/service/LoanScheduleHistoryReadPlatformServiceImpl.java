@@ -127,7 +127,8 @@ public class LoanScheduleHistoryReadPlatformServiceImpl implements LoanScheduleH
             StringBuilder stringBuilder = new StringBuilder(200);
             stringBuilder.append(" ls.installment as period, ls.fromdate as fromDate, ls.duedate as dueDate, ");
             stringBuilder.append(
-                    "ls.principal_amount as principalDue, ls.interest_amount as interestDue, ls.fee_charges_amount as feeChargesDue, ls.penalty_charges_amount as penaltyChargesDue ");
+                    "ls.principal_amount as principalDue, ls.interest_amount as interestDue, ls.fee_charges_amount as feeChargesDue, ls.penalty_charges_amount as penaltyChargesDue, ");
+            stringBuilder.append(" ls.mandatory_insurance_amount mandatoryInsuranceDue, ls.voluntary_insurance_amount voluntaryInsuranceDue, ls.aval_amount avalDue, ls.honorarios_amount honorariosDue");
             stringBuilder.append(" from m_loan_repayment_schedule_history ls ");
             return stringBuilder.toString();
         }
@@ -155,6 +156,11 @@ public class LoanScheduleHistoryReadPlatformServiceImpl implements LoanScheduleH
             Money totalFeeChargesCharged = Money.zero(monCurrency);
             Money totalPenaltyChargesCharged = Money.zero(monCurrency);
             Money totalRepaymentExpected = Money.zero(monCurrency);
+
+            Money totalMandatoryInsuranceCharged = Money.zero(monCurrency);
+            Money totalVoluntaryInsuranceCharged = Money.zero(monCurrency);
+            Money totalAvalCharged = Money.zero(monCurrency);
+            Money totalHonorariosCharged = Money.zero(monCurrency);
 
             // update totals with details of fees charged during disbursement
             totalFeeChargesCharged = totalFeeChargesCharged.plus(disbursementPeriod.getFeeChargesDue());
@@ -211,6 +217,14 @@ public class LoanScheduleHistoryReadPlatformServiceImpl implements LoanScheduleH
                         .add(penaltyChargesExpectedDue);
 
                 final BigDecimal totalDueForPeriod = principalDue.add(totalExpectedCostOfLoanForPeriod);
+                final BigDecimal  mandatoryInsuranceDue = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "mandatoryInsuranceDue");
+                totalMandatoryInsuranceCharged = totalMandatoryInsuranceCharged.plus(mandatoryInsuranceDue);
+                final BigDecimal  voluntaryInsuranceDue = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "voluntaryInsuranceDue");
+                totalVoluntaryInsuranceCharged = totalVoluntaryInsuranceCharged.plus(voluntaryInsuranceDue);
+                final BigDecimal  avalDue = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "avalDue");
+                totalAvalCharged = totalAvalCharged.plus(avalDue);
+                final BigDecimal  honorariosDue = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "honorariosDue");
+                totalHonorariosCharged = totalHonorariosCharged.plus(honorariosDue);
 
                 totalRepaymentExpected = totalRepaymentExpected.plus(totalDueForPeriod);
 
@@ -226,13 +240,21 @@ public class LoanScheduleHistoryReadPlatformServiceImpl implements LoanScheduleH
                 final LoanSchedulePeriodData periodData = LoanSchedulePeriodData.repaymentOnlyPeriod(period, fromDate, dueDate,
                         principalDue, outstandingPrincipalBalanceOfLoan, interestExpectedDue, feeChargesExpectedDue,
                         penaltyChargesExpectedDue, totalDueForPeriod, totalInstallmentAmount);
-
+                periodData.setAvalDue(avalDue);
+                periodData.setHonorariosDue(honorariosDue);
+                periodData.setMandatoryInsuranceDue(mandatoryInsuranceDue);
+                periodData.setVoluntaryInsuranceDue(voluntaryInsuranceDue);
                 periods.add(periodData);
             }
 
-            return new LoanScheduleData(this.currency, periods, loanTermInDays, totalPrincipalDisbursed, totalPrincipalExpected.getAmount(),
+            LoanScheduleData data = new LoanScheduleData(this.currency, periods, loanTermInDays, totalPrincipalDisbursed, totalPrincipalExpected.getAmount(),
                     totalInterestCharged.getAmount(), totalFeeChargesCharged.getAmount(), totalPenaltyChargesCharged.getAmount(),
                     totalRepaymentExpected.getAmount());
+            data.setTotalMandatoryInsuranceCharged(totalMandatoryInsuranceCharged.getAmount());
+            data.setTotalVoluntaryInsuranceCharged(totalVoluntaryInsuranceCharged.getAmount());
+            data.setTotalAvalCharged(totalAvalCharged.getAmount());
+            data.setTotalHonorariosCharged(totalHonorariosCharged.getAmount());
+            return data;
         }
 
     }

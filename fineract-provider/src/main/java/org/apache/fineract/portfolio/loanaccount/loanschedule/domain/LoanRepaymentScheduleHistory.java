@@ -89,6 +89,20 @@ public class LoanRepaymentScheduleHistory extends AbstractPersistableCustom {
     @Column(name = "version")
     private Integer version;
 
+    @Column(name = "mandatory_insurance_amount", scale = 6, precision = 19, nullable = true)
+    private BigDecimal mandatoryInsuranceAmount;
+
+    @Column(name = "voluntary_insurance_amount", scale = 6, precision = 19, nullable = true)
+    private BigDecimal voluntaryInsuranceAmount;
+
+    @Column(name = "aval_amount", scale = 6, precision = 19, nullable = true)
+    private BigDecimal avalAmount;
+
+    @Column(name = "honorarios_amount", scale = 6, precision = 19, nullable = true)
+    private BigDecimal honorariosAmount;
+
+
+
     /**
      * LoanRepaymentScheduleHistory constructor
      **/
@@ -102,7 +116,8 @@ public class LoanRepaymentScheduleHistory extends AbstractPersistableCustom {
             final BigDecimal interestCharged, final BigDecimal feeChargesCharged, final BigDecimal penaltyCharges,
             final LocalDateTime oldCreatedOnDate, final Long createdByUser, final Long lastModifiedByUser,
             final LocalDateTime oldLastModifiedOnDate, final Integer version, final OffsetDateTime createdDate,
-            final OffsetDateTime lastModifiedDate) {
+            final OffsetDateTime lastModifiedDate, final BigDecimal mandatoryInsuranceAmount, final BigDecimal voluntaryInsuranceAmount,
+            final BigDecimal avalAmount, final BigDecimal honorariosAmount) {
 
         this.loan = loan;
         this.loanRescheduleRequest = loanRescheduleRequest;
@@ -120,6 +135,10 @@ public class LoanRepaymentScheduleHistory extends AbstractPersistableCustom {
         this.version = version;
         this.createdDate = createdDate;
         this.lastModifiedDate = lastModifiedDate;
+        this.avalAmount = avalAmount;
+        this.mandatoryInsuranceAmount = mandatoryInsuranceAmount;
+        this.voluntaryInsuranceAmount = voluntaryInsuranceAmount;
+        this.honorariosAmount = honorariosAmount;
     }
 
     /**
@@ -130,11 +149,13 @@ public class LoanRepaymentScheduleHistory extends AbstractPersistableCustom {
             final BigDecimal interestCharged, final BigDecimal feeChargesCharged, final BigDecimal penaltyCharges,
             final LocalDateTime oldCreatedOnDate, final Long createdByUser, final Long lastModifiedByUser,
             final LocalDateTime oldLastModifiedOnDate, final Integer version, final OffsetDateTime createdDate,
-            final OffsetDateTime lastModifiedDate) {
+            final OffsetDateTime lastModifiedDate, final BigDecimal mandatoryInsuranceAmount,
+            final BigDecimal voluntaryInsuranceAmount, final BigDecimal avalAmount, final BigDecimal honorariosAmount) {
 
         return new LoanRepaymentScheduleHistory(loan, loanRescheduleRequest, installmentNumber, fromDate, dueDate, principal,
                 interestCharged, feeChargesCharged, penaltyCharges, oldCreatedOnDate, createdByUser, lastModifiedByUser,
-                oldLastModifiedOnDate, version, createdDate, lastModifiedDate);
+                oldLastModifiedOnDate, version, createdDate, lastModifiedDate, mandatoryInsuranceAmount, voluntaryInsuranceAmount,
+                avalAmount, honorariosAmount);
 
     }
 
