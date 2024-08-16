@@ -28,7 +28,7 @@
                 <constraints nullable="false" primaryKey="true"/>
             </column>
             <column name="name" type="VARCHAR(100)">
-                <constraints nullable="false"/>
+                <constraints nullable="false" unique="true"/>
             </column>
 
             <column defaultValueBoolean="false" name="is_mandatory" type="boolean">
