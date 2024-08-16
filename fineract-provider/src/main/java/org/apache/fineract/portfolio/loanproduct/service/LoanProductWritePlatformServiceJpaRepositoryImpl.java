@@ -167,7 +167,7 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
                     .assembleLoanProductPaymentAllocationRules(command, loanTransactionProcessingStrategyCode);
             if (LoanScheduleProcessingType.HORIZONTAL.name().equals(loanScheduleProcessingType)
                     && AdvancedPaymentScheduleTransactionProcessor.ADVANCED_PAYMENT_ALLOCATION_STRATEGY
-                    .equals(loanTransactionProcessingStrategyCode)) {
+                            .equals(loanTransactionProcessingStrategyCode)) {
                 this.fromApiJsonDeserializer.checkGroupingOfAllocationRules(loanProductPaymentAllocationRules);
             }
             final List<LoanProductCreditAllocationRule> loanProductCreditAllocationRules = creditAllocationsJsonParser
