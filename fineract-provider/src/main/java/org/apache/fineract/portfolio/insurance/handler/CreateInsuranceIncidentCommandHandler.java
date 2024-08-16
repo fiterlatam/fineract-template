@@ -28,7 +28,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@CommandType(entity = "INSURANCEINCIDENT", action = "CREATE")
+@CommandType(entity = "INSURANCE_INCIDENT", action = "CREATE")
 @RequiredArgsConstructor
 public class CreateInsuranceIncidentCommandHandler implements NewCommandSourceHandler {
 
