@@ -32,7 +32,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class CreateInsuranceIncidentCommandHandler implements NewCommandSourceHandler {
 
-    private InsuranceIncidentWriteService service;
+    private final InsuranceIncidentWriteService service;
 
     @Transactional
     @Override

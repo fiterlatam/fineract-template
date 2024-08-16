@@ -23,4 +23,5 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
 public interface InsuranceIncidentRepository extends JpaRepository<InsuranceIncident, Long>, JpaSpecificationExecutor<InsuranceIncident> {
 
+    boolean existsByNameIgnoreCase(String name);
 }

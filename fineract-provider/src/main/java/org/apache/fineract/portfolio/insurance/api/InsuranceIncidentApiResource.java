@@ -56,10 +56,9 @@ public class InsuranceIncidentApiResource {
     private final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService;
 
     @GET
-    @Path("")
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
-    public String retrieveInsuranceNovelties(@Context final UriInfo uriInfo) {
+    public String retrieveInsuranceIncidents(@Context final UriInfo uriInfo) {
 
         this.context.authenticatedUser().validateHasReadPermission(RESOURCE_NAME_FOR_PERMISSIONS);
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
@@ -83,7 +82,6 @@ public class InsuranceIncidentApiResource {
 
     // create a new insurance incident
     @POST
-    @Path("")
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     public String createInsuranceIncident(final String apiRequestBodyAsJson) {
