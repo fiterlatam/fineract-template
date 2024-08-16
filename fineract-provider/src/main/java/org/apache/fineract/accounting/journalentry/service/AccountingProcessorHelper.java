@@ -25,6 +25,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.accounting.closure.domain.GLClosure;
 import org.apache.fineract.accounting.closure.domain.GLClosureRepository;
@@ -52,6 +53,7 @@ import org.apache.fineract.accounting.journalentry.domain.JournalEntryRepository
 import org.apache.fineract.accounting.journalentry.domain.JournalEntryType;
 import org.apache.fineract.accounting.journalentry.exception.JournalEntryInvalidException;
 import org.apache.fineract.accounting.journalentry.exception.JournalEntryInvalidException.GlJournalEntryInvalidReason;
+import org.apache.fineract.accounting.journalentry.exception.JournalEntryRuntimeException;
 import org.apache.fineract.accounting.producttoaccountmapping.domain.PortfolioProductType;
 import org.apache.fineract.accounting.producttoaccountmapping.domain.ProductToGLAccountMapping;
 import org.apache.fineract.accounting.producttoaccountmapping.domain.ProductToGLAccountMappingRepository;
@@ -79,6 +81,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AccountingProcessorHelper {
 
     public static final String LOAN_TRANSACTION_IDENTIFIER = "L";
@@ -583,6 +586,39 @@ public class AccountingProcessorHelper {
         if (savingsReferenceGlAccountId != null && CashAccountsForSavings.SAVINGS_REFERENCE.getValue().equals(accountTypeToCreditId)) {
             creditAccount = this.getGLAccountById(savingsReferenceGlAccountId);
         }
+
+        // Check for duplicate debit and credit account
+        if (debitAccount.getId().equals(creditAccount.getId())) {
+
+            StringBuffer sb = new StringBuffer();
+            sb.append("Incorrect Gl Account detected \n");
+            sb.append("Savings Product Id: " + savingsProductId).append("\n");
+            sb.append("Debit Account Id: " + debitAccount.getId()).append("\n");
+            sb.append("Debit Account Name: " + debitAccount.getName()).append("\n");
+            sb.append("Credit Account Id: " + creditAccount.getId()).append("\n");
+            sb.append("Credit Account Name: " + creditAccount.getName()).append("\n");
+            sb.append("accountTypeToDebitId: " + accountTypeToDebitId).append("\n");
+            sb.append("accountTypeToCreditId: " + accountTypeToCreditId).append("\n");
+            sb.append("paymentTypeId: " + paymentTypeId).append("\n");
+            sb.append("savingsReferenceGlAccountId: " + savingsReferenceGlAccountId).append("\n");
+            sb.append("transactionId: " + transactionId).append("\n");
+            sb.append("transactionDate: " + transactionDate).append("\n");
+            sb.append("amount: " + amount).append("\n");
+            sb.append("transactionDate: " + transactionDate).append("\n");
+            sb.append("isDebitAccountOrganziationAccount?: " + isOrganizationAccount(accountTypeToDebitId)).append("\n");
+            sb.append("isCreditAccountOrganziationAccount?: " + isOrganizationAccount(accountTypeToCreditId)).append("\n");
+            sb.append("transactionDate: " + transactionDate).append("\n");
+            sb.append("Execute below query to validate the Debit gl account \n");
+            sb.append("select * from acc_product_mapping mapping where mapping.product_id ="+savingsProductId +" and mapping.product_type =2 " +
+                    "and mapping.financial_account_type="+accountTypeToDebitId+" and mapping.payment_Type is NULL and mapping.charge_id is NULL \n");
+            sb.append("Execute below query to validate the Credit gl account \n");
+            sb.append("select * from acc_product_mapping mapping where mapping.product_id ="+savingsProductId +" and mapping.product_type =2 " +
+                    "and mapping.financial_account_type="+accountTypeToCreditId+" and mapping.payment_Type is NULL and mapping.charge_id is NULL \n");
+
+            log.error(sb.toString());
+            throw new JournalEntryRuntimeException("error.msg.journal.entry.save.operation.failed", "Invalid GL Account detected for debit entry");
+        }
+        //
         createDebitJournalEntryForSavings(office, currencyCode, debitAccount, savingsId, transactionId, transactionDate, amount);
         createCreditJournalEntryForSavings(office, currencyCode, creditAccount, savingsId, transactionId, transactionDate, amount);
     }
@@ -595,6 +631,39 @@ public class AccountingProcessorHelper {
             debitAccount = this.getGLAccountById(glAccountId);
         }
         final GLAccount creditAccount = getLinkedGLAccountForSavingsProduct(savingsProductId, accountTypeToCreditId, paymentTypeId);
+
+        // Check for duplicate debit and credit account
+        if (debitAccount.getId().equals(creditAccount.getId())) {
+
+            StringBuffer sb = new StringBuffer();
+            sb.append("Incorrect Gl Account detected \n");
+            sb.append("Savings Product Id: " + savingsProductId).append("\n");
+            sb.append("Debit Account Id: " + debitAccount.getId()).append("\n");
+            sb.append("Debit Account Name: " + debitAccount.getName()).append("\n");
+            sb.append("Credit Account Id: " + creditAccount.getId()).append("\n");
+            sb.append("Credit Account Name: " + creditAccount.getName()).append("\n");
+            sb.append("glAccountId of Bank Account: " + glAccountId).append("\n");
+            sb.append("accountTypeToDebitId: " + accountTypeToDebitId).append("\n");
+            sb.append("accountTypeToCreditId: " + accountTypeToCreditId).append("\n");
+            sb.append("paymentTypeId: " + paymentTypeId).append("\n");
+            sb.append("transactionId: " + transactionId).append("\n");
+            sb.append("transactionDate: " + transactionDate).append("\n");
+            sb.append("amount: " + amount).append("\n");
+            sb.append("transactionDate: " + transactionDate).append("\n");
+            sb.append("isDebitAccountOrganziationAccount?: " + isOrganizationAccount(accountTypeToDebitId)).append("\n");
+            sb.append("isCreditAccountOrganziationAccount?: " + isOrganizationAccount(accountTypeToCreditId)).append("\n");
+            sb.append("transactionDate: " + transactionDate).append("\n");
+            sb.append("Execute below query to validate the Debit gl account only if glAccountId param is null \n");
+            sb.append("select * from acc_product_mapping mapping where mapping.product_id ="+savingsProductId +" and mapping.product_type =2 " +
+                    "and mapping.financial_account_type="+accountTypeToDebitId+" and mapping.payment_Type is NULL and mapping.charge_id is NULL \n");
+            sb.append("Execute below query to validate the Credit gl account \n");
+            sb.append("select * from acc_product_mapping mapping where mapping.product_id ="+savingsProductId +" and mapping.product_type =2 " +
+                    "and mapping.financial_account_type="+accountTypeToCreditId+" and mapping.payment_Type is NULL and mapping.charge_id is NULL \n");
+
+            log.error(sb.toString());
+            throw new JournalEntryRuntimeException("error.msg.journal.entry.save.operation.failed", "Invalid GL Account detected for debit entry");
+        }
+
         createDebitJournalEntryForSavings(office, currencyCode, debitAccount, savingsId, transactionId, transactionDate, amount);
         createCreditJournalEntryForSavings(office, currencyCode, creditAccount, savingsId, transactionId, transactionDate, amount);
     }

@@ -1117,6 +1117,7 @@ public class GroupingTypesWritePlatformServiceJpaRepositoryImpl implements Group
         group.updateMeetingDay(newCenter.getMeetingDay());
         group.updateMeetingStart(newCenter.getMeetingStart());
         group.updateMeetingEnd(newCenter.getMeetingEnd());
+        group.updateOffice(newCenter.getOffice());
         this.groupRepository.saveAndFlush(group);
         return new CommandProcessingResultBuilder() //
                 .withCommandId(command.commandId()) //
