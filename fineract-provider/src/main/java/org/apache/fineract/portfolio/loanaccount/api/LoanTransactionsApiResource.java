@@ -471,6 +471,8 @@ public class LoanTransactionsApiResource {
             commandRequest = builder.waiveInterestPortionTransaction(resolvedLoanId).build();
         } else if (CommandParameterUtil.is(commandParam, "writeoff")) {
             commandRequest = builder.writeOffLoanTransaction(resolvedLoanId).build();
+        } else if (CommandParameterUtil.is(commandParam, "special-write-off")) {
+            commandRequest = builder.specialWriteOffLoanTransaction(resolvedLoanId).build();
         } else if (CommandParameterUtil.is(commandParam, "close-rescheduled")) {
             commandRequest = builder.closeLoanAsRescheduledTransaction(resolvedLoanId).build();
         } else if (CommandParameterUtil.is(commandParam, "close")) {

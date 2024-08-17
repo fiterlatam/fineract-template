@@ -161,8 +161,15 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
             final String currencyCode = command.stringValueOfParameterNamed("currencyCode");
             final List<Charge> charges = assembleListOfProductCharges(command, currencyCode);
             final List<Rate> rates = assembleListOfProductRates(command);
+
+            String loanScheduleProcessingType = command.stringValueOfParameterNamed(LoanProductConstants.LOAN_SCHEDULE_PROCESSING_TYPE);
             final List<LoanProductPaymentAllocationRule> loanProductPaymentAllocationRules = advancedPaymentJsonParser
                     .assembleLoanProductPaymentAllocationRules(command, loanTransactionProcessingStrategyCode);
+            if (LoanScheduleProcessingType.HORIZONTAL.name().equals(loanScheduleProcessingType)
+                    && AdvancedPaymentScheduleTransactionProcessor.ADVANCED_PAYMENT_ALLOCATION_STRATEGY
+                            .equals(loanTransactionProcessingStrategyCode)) {
+                this.fromApiJsonDeserializer.checkGroupingOfAllocationRules(loanProductPaymentAllocationRules);
+            }
             final List<LoanProductCreditAllocationRule> loanProductCreditAllocationRules = creditAllocationsJsonParser
                     .assembleLoanProductCreditAllocationRules(command, loanTransactionProcessingStrategyCode);
             FloatingRate floatingRate = null;

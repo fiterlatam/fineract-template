@@ -30,6 +30,8 @@ import lombok.Setter;
 public class ClientMaximumLoanArrearsData {
 
     private Long clientId;
-    private Long maximumNumberOfDaysInArrears;
-    private Long numberOfLoanInArrears;
+    // maximumNumberOfDaysInArrears
+    private Long maximoDeDiasDeMora;
+    // numberOfLoanInArrears
+    private Long prestamosEnMora;
 }

@@ -132,7 +132,7 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
     @Column(name = "external_id")
     private ExternalId externalId;
 
-    @OneToOne(mappedBy = "loancharge", cascade = CascadeType.ALL, optional = true, orphanRemoval = true, fetch = FetchType.EAGER)
+    @OneToOne(mappedBy = "loanCharge", cascade = CascadeType.ALL, optional = true, orphanRemoval = true, fetch = FetchType.EAGER)
     private LoanOverdueInstallmentCharge overdueInstallmentCharge;
 
     @OneToOne(mappedBy = "loancharge", cascade = CascadeType.ALL, optional = true, orphanRemoval = true, fetch = FetchType.EAGER)
@@ -1343,5 +1343,9 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
             }
         }
         return parentChargeAmount;
+    }
+
+    public void setAmountWrittenOff(BigDecimal amountWrittenOff) {
+        this.amountWrittenOff = amountWrittenOff;
     }
 }

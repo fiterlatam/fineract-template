@@ -61,6 +61,8 @@ public interface LoanWritePlatformService {
 
     CommandProcessingResult writeOff(Long loanId, JsonCommand command);
 
+    CommandProcessingResult specialWriteOff(Long loanId, JsonCommand command);
+
     CommandProcessingResult closeLoan(Long loanId, JsonCommand command);
 
     CommandProcessingResult closeAsRescheduled(Long loanId, JsonCommand command);

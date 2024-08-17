@@ -25,6 +25,8 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
+import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
+import org.apache.fineract.organisation.monetary.domain.Money;
 
 @Entity
 @Getter
@@ -33,7 +35,7 @@ public class LoanOverdueInstallmentCharge extends AbstractPersistableCustom {
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "loan_charge_id", referencedColumnName = "id", nullable = false)
-    private LoanCharge loancharge;
+    private LoanCharge loanCharge;
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "loan_schedule_id", referencedColumnName = "id", nullable = false)
@@ -46,14 +48,24 @@ public class LoanOverdueInstallmentCharge extends AbstractPersistableCustom {
 
     }
 
-    public LoanOverdueInstallmentCharge(final LoanCharge loancharge, final LoanRepaymentScheduleInstallment installment,
+    public LoanOverdueInstallmentCharge(final LoanCharge loanCharge, final LoanRepaymentScheduleInstallment installment,
             final Integer frequencyNumber) {
-        this.loancharge = loancharge;
+        this.loanCharge = loanCharge;
         this.installment = installment;
         this.frequencyNumber = frequencyNumber;
     }
 
     public void updateLoanRepaymentScheduleInstallment(LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment) {
         this.installment = loanRepaymentScheduleInstallment;
+    }
+
+    public Money getPenaltyAmountOutstanding(final MonetaryCurrency currency) {
+        final LoanCharge loanCharge = this.loanCharge;
+        Money penaltyAmountOutstanding = Money.zero(currency);
+        if (loanCharge != null) {
+            penaltyAmountOutstanding = loanCharge.getAmount(currency).minus(loanCharge.getAmountPaid(currency))
+                    .minus(loanCharge.getAmountWaived(currency)).minus(loanCharge.getAmountWrittenOff(currency));
+        }
+        return penaltyAmountOutstanding;
     }
 }
