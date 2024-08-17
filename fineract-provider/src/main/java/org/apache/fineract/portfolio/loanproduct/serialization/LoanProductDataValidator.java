@@ -801,12 +801,6 @@ public final class LoanProductDataValidator {
             }
         }
 
-        if (AdvancedPaymentScheduleTransactionProcessor.ADVANCED_PAYMENT_ALLOCATION_STRATEGY.equals(transactionProcessingStrategyCode)
-                && LoanScheduleProcessingType.HORIZONTAL.name().equals(loanScheduleProcessingType)) {
-            advancedPaymentAllocationsValidator.checkGroupingOfAllocationRules(advancedPaymentAllocationsJsonParser
-                    .assembleLoanProductPaymentAllocationRules(command, transactionProcessingStrategyCode));
-        }
-
         if (this.fromApiJsonHelper.parameterExists(LoanProductConstants.OVERDUE_AMOUNT_FOR_ARREARS, element)) {
             final BigDecimal overdueAmountForNPA = this.fromApiJsonHelper
                     .extractBigDecimalWithLocaleNamed(LoanProductConstants.OVERDUE_AMOUNT_FOR_ARREARS, element);
