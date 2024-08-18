@@ -145,4 +145,40 @@ public final class LoanScheduleModelDownPaymentPeriod implements LoanScheduleMod
     public void setRescheduleInterestPortion(BigDecimal rescheduleInterestPortion) {
 
     }
+
+    @Override
+    public BigDecimal getTotalHonorariosCharged() {
+        return BigDecimal.ZERO;
+    }
+
+    @Override
+    public void setTotalHonorariosCharged(BigDecimal totalHonorariosCharged) {
+    }
+
+    @Override
+    public BigDecimal getTotalAvalCharged() {
+        return BigDecimal.ZERO;
+    }
+
+    @Override
+    public void setTotalAvalCharged(BigDecimal totalAvalCharged) {
+    }
+
+    @Override
+    public BigDecimal getTotalVoluntaryInsuranceCharged() {
+        return BigDecimal.ZERO;
+    }
+
+    @Override
+    public void setTotalVoluntaryInsuranceCharged(BigDecimal totalVoluntaryInsuranceCharged) {
+    }
+
+    @Override
+    public BigDecimal getTotalMandatoryInsuranceCharged() {
+        return BigDecimal.ZERO;
+    }
+
+    @Override
+    public void setTotalMandatoryInsuranceCharged(BigDecimal totalMandatoryInsuranceCharged) {
+    }
 }

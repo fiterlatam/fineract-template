@@ -217,6 +217,7 @@ public class LoanScheduleHistoryReadPlatformServiceImpl implements LoanScheduleH
                         .add(penaltyChargesExpectedDue);
 
                 final BigDecimal totalDueForPeriod = principalDue.add(totalExpectedCostOfLoanForPeriod);
+
                 final BigDecimal  mandatoryInsuranceDue = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "mandatoryInsuranceDue");
                 totalMandatoryInsuranceCharged = totalMandatoryInsuranceCharged.plus(mandatoryInsuranceDue);
                 final BigDecimal  voluntaryInsuranceDue = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "voluntaryInsuranceDue");
