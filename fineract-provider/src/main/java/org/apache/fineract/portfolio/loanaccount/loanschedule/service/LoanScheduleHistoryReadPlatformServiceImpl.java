@@ -128,7 +128,8 @@ public class LoanScheduleHistoryReadPlatformServiceImpl implements LoanScheduleH
             stringBuilder.append(" ls.installment as period, ls.fromdate as fromDate, ls.duedate as dueDate, ");
             stringBuilder.append(
                     "ls.principal_amount as principalDue, ls.interest_amount as interestDue, ls.fee_charges_amount as feeChargesDue, ls.penalty_charges_amount as penaltyChargesDue, ");
-            stringBuilder.append(" ls.mandatory_insurance_amount mandatoryInsuranceDue, ls.voluntary_insurance_amount voluntaryInsuranceDue, ls.aval_amount avalDue, ls.honorarios_amount honorariosDue");
+            stringBuilder.append(
+                    " ls.mandatory_insurance_amount mandatoryInsuranceDue, ls.voluntary_insurance_amount voluntaryInsuranceDue, ls.aval_amount avalDue, ls.honorarios_amount honorariosDue");
             stringBuilder.append(" from m_loan_repayment_schedule_history ls ");
             return stringBuilder.toString();
         }
@@ -218,13 +219,13 @@ public class LoanScheduleHistoryReadPlatformServiceImpl implements LoanScheduleH
 
                 final BigDecimal totalDueForPeriod = principalDue.add(totalExpectedCostOfLoanForPeriod);
 
-                final BigDecimal  mandatoryInsuranceDue = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "mandatoryInsuranceDue");
+                final BigDecimal mandatoryInsuranceDue = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "mandatoryInsuranceDue");
                 totalMandatoryInsuranceCharged = totalMandatoryInsuranceCharged.plus(mandatoryInsuranceDue);
-                final BigDecimal  voluntaryInsuranceDue = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "voluntaryInsuranceDue");
+                final BigDecimal voluntaryInsuranceDue = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "voluntaryInsuranceDue");
                 totalVoluntaryInsuranceCharged = totalVoluntaryInsuranceCharged.plus(voluntaryInsuranceDue);
-                final BigDecimal  avalDue = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "avalDue");
+                final BigDecimal avalDue = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "avalDue");
                 totalAvalCharged = totalAvalCharged.plus(avalDue);
-                final BigDecimal  honorariosDue = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "honorariosDue");
+                final BigDecimal honorariosDue = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "honorariosDue");
                 totalHonorariosCharged = totalHonorariosCharged.plus(honorariosDue);
 
                 totalRepaymentExpected = totalRepaymentExpected.plus(totalDueForPeriod);
@@ -248,9 +249,9 @@ public class LoanScheduleHistoryReadPlatformServiceImpl implements LoanScheduleH
                 periods.add(periodData);
             }
 
-            LoanScheduleData data = new LoanScheduleData(this.currency, periods, loanTermInDays, totalPrincipalDisbursed, totalPrincipalExpected.getAmount(),
-                    totalInterestCharged.getAmount(), totalFeeChargesCharged.getAmount(), totalPenaltyChargesCharged.getAmount(),
-                    totalRepaymentExpected.getAmount());
+            LoanScheduleData data = new LoanScheduleData(this.currency, periods, loanTermInDays, totalPrincipalDisbursed,
+                    totalPrincipalExpected.getAmount(), totalInterestCharged.getAmount(), totalFeeChargesCharged.getAmount(),
+                    totalPenaltyChargesCharged.getAmount(), totalRepaymentExpected.getAmount());
             data.setTotalMandatoryInsuranceCharged(totalMandatoryInsuranceCharged.getAmount());
             data.setTotalVoluntaryInsuranceCharged(totalVoluntaryInsuranceCharged.getAmount());
             data.setTotalAvalCharged(totalAvalCharged.getAmount());

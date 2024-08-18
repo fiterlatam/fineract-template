@@ -23,7 +23,6 @@ import java.util.Collection;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.fineract.organisation.monetary.data.CurrencyData;
-import org.apache.fineract.organisation.monetary.domain.Money;
 
 /**
  * Immutable data object to represent aspects of a loan schedule such as:

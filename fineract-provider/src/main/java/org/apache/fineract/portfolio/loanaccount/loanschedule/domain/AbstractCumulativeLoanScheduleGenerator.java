@@ -495,16 +495,29 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
         Collection<LoanCharge> honorariosCharges = loanCharges.stream().filter(LoanCharge::isFlatHono).toList();
         Collection<LoanCharge> ivaCharges = loanCharges.stream().filter(LoanCharge::isCustomPercentageBasedOfAnotherCharge).toList();
 
-        BigDecimal mandatoryInsuranceAmount = mandatoryInsuranceCharges.stream().map(LoanCharge::getInstallmentChargeAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
-        BigDecimal voluntaryInsuranceAmount = voluntaryInsuranceCharges.stream().map(LoanCharge::getInstallmentChargeAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal mandatoryInsuranceAmount = mandatoryInsuranceCharges.stream().map(LoanCharge::getInstallmentChargeAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal voluntaryInsuranceAmount = voluntaryInsuranceCharges.stream().map(LoanCharge::getInstallmentChargeAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
         BigDecimal avalAmount = avalCharges.stream().map(LoanCharge::getInstallmentChargeAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
-        BigDecimal honorariosAmount = honorariosCharges.stream().map(LoanCharge::getInstallmentChargeAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal honorariosAmount = honorariosCharges.stream().map(LoanCharge::getInstallmentChargeAmount).reduce(BigDecimal.ZERO,
+                BigDecimal::add);
 
         // Calculate term Charge
-        BigDecimal mandatoryInsuranceTermChargeAmount = ivaCharges.stream().filter(lc -> mandatoryInsuranceCharges.stream().anyMatch(mic -> mic.getCharge().getId().equals(lc.getCharge().getParentChargeId()))).map(LoanCharge::getInstallmentChargeAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
-        BigDecimal voluntaryInsuranceTermChargeAmount = ivaCharges.stream().filter(lc -> voluntaryInsuranceCharges.stream().anyMatch(mic -> mic.getCharge().getId().equals(lc.getCharge().getParentChargeId()))).map(LoanCharge::getInstallmentChargeAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
-        BigDecimal avalTermChargeAmount = ivaCharges.stream().filter(lc -> avalCharges.stream().anyMatch(mic -> mic.getCharge().getId().equals(lc.getCharge().getParentChargeId()))).map(LoanCharge::getInstallmentChargeAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
-        BigDecimal honorariosTermChargeAmount = ivaCharges.stream().filter(lc -> honorariosCharges.stream().anyMatch(mic -> mic.getCharge().getId().equals(lc.getCharge().getParentChargeId()))).map(LoanCharge::getInstallmentChargeAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal mandatoryInsuranceTermChargeAmount = ivaCharges.stream()
+                .filter(lc -> mandatoryInsuranceCharges.stream()
+                        .anyMatch(mic -> mic.getCharge().getId().equals(lc.getCharge().getParentChargeId())))
+                .map(LoanCharge::getInstallmentChargeAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal voluntaryInsuranceTermChargeAmount = ivaCharges.stream()
+                .filter(lc -> voluntaryInsuranceCharges.stream()
+                        .anyMatch(mic -> mic.getCharge().getId().equals(lc.getCharge().getParentChargeId())))
+                .map(LoanCharge::getInstallmentChargeAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal avalTermChargeAmount = ivaCharges.stream()
+                .filter(lc -> avalCharges.stream().anyMatch(mic -> mic.getCharge().getId().equals(lc.getCharge().getParentChargeId())))
+                .map(LoanCharge::getInstallmentChargeAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal honorariosTermChargeAmount = ivaCharges.stream().filter(
+                lc -> honorariosCharges.stream().anyMatch(mic -> mic.getCharge().getId().equals(lc.getCharge().getParentChargeId())))
+                .map(LoanCharge::getInstallmentChargeAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
 
         mandatoryInsuranceAmount = mandatoryInsuranceAmount.add(mandatoryInsuranceTermChargeAmount);
         voluntaryInsuranceAmount = voluntaryInsuranceAmount.add(voluntaryInsuranceTermChargeAmount);
@@ -2222,7 +2235,8 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                                     calculatedAmount = Money.of(monetaryCurrency, loanCharge.getAmountPercentageAppliedTo());
                                     cumulative = cumulative.plus(calculatedAmount);
                                 } else {
-                                    calculatedAmount = Money.of(monetaryCurrency, loanCharge.getInstallmentLoanCharge(installmentNumber).getAmount());
+                                    calculatedAmount = Money.of(monetaryCurrency,
+                                            loanCharge.getInstallmentLoanCharge(installmentNumber).getAmount());
                                     cumulative = cumulative.plus(calculatedAmount);
                                 }
                             }
@@ -2251,7 +2265,8 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                     cumulative = cumulative.plus(loanCharge.amount());
                 }
             }
-            loanCharge.setInstallmentChargeAmount(Money.of(monetaryCurrency, (loanCharge.getInstallmentChargeAmount().add(calculatedAmount.getAmount()))).getAmount());
+            loanCharge.setInstallmentChargeAmount(
+                    Money.of(monetaryCurrency, (loanCharge.getInstallmentChargeAmount().add(calculatedAmount.getAmount()))).getAmount());
         }
 
         return cumulative;

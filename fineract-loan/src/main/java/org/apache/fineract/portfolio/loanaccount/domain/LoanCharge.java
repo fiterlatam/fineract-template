@@ -19,7 +19,6 @@
 package org.apache.fineract.portfolio.loanaccount.domain;
 
 import jakarta.persistence.*;
-
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
@@ -144,7 +143,8 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
     private boolean getPercentageAmountFromTable;
 
     // This attribute is used only to hold the current installment charge amount calculated and used
-    // when repayment schedule is generated during loan creation. This amount is needed to show individual charge amounts on the loan schedule screen.
+    // when repayment schedule is generated during loan creation. This amount is needed to show individual charge
+    // amounts on the loan schedule screen.
     // Try not to use this variable anywhere else in the code
     @Transient
     private BigDecimal installmentChargeAmount = BigDecimal.ZERO;

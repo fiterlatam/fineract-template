@@ -125,10 +125,10 @@ public final class LoanScheduleModel {
         final BigDecimal totalPaidInAdvance = null;
         final BigDecimal totalPaidLate = null;
 
-        LoanScheduleData loanScheduleData = new LoanScheduleData(currency, periodsData, this.loanTermInDays, this.totalPrincipalDisbursed.getAmount(),
-                this.totalPrincipalExpected, this.totalPrincipalPaid, this.totalInterestCharged, this.totalFeeChargesCharged,
-                this.totalPenaltyChargesCharged, totalWaived, totalWrittenOff, this.totalRepaymentExpected, totalRepayment,
-                totalPaidInAdvance, totalPaidLate, this.totalOutstanding, totalCredits);
+        LoanScheduleData loanScheduleData = new LoanScheduleData(currency, periodsData, this.loanTermInDays,
+                this.totalPrincipalDisbursed.getAmount(), this.totalPrincipalExpected, this.totalPrincipalPaid, this.totalInterestCharged,
+                this.totalFeeChargesCharged, this.totalPenaltyChargesCharged, totalWaived, totalWrittenOff, this.totalRepaymentExpected,
+                totalRepayment, totalPaidInAdvance, totalPaidLate, this.totalOutstanding, totalCredits);
 
         loanScheduleData.setTotalMandatoryInsuranceCharged(totalMandatoryInsuranceCharged);
         loanScheduleData.setTotalVoluntaryInsuranceCharged(totalVoluntaryInsuranceCharged);

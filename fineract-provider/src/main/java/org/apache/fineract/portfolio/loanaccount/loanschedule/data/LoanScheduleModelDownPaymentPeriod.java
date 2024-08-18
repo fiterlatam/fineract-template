@@ -152,8 +152,7 @@ public final class LoanScheduleModelDownPaymentPeriod implements LoanScheduleMod
     }
 
     @Override
-    public void setTotalHonorariosCharged(BigDecimal totalHonorariosCharged) {
-    }
+    public void setTotalHonorariosCharged(BigDecimal totalHonorariosCharged) {}
 
     @Override
     public BigDecimal getTotalAvalCharged() {
@@ -161,8 +160,7 @@ public final class LoanScheduleModelDownPaymentPeriod implements LoanScheduleMod
     }
 
     @Override
-    public void setTotalAvalCharged(BigDecimal totalAvalCharged) {
-    }
+    public void setTotalAvalCharged(BigDecimal totalAvalCharged) {}
 
     @Override
     public BigDecimal getTotalVoluntaryInsuranceCharged() {
@@ -170,8 +168,7 @@ public final class LoanScheduleModelDownPaymentPeriod implements LoanScheduleMod
     }
 
     @Override
-    public void setTotalVoluntaryInsuranceCharged(BigDecimal totalVoluntaryInsuranceCharged) {
-    }
+    public void setTotalVoluntaryInsuranceCharged(BigDecimal totalVoluntaryInsuranceCharged) {}
 
     @Override
     public BigDecimal getTotalMandatoryInsuranceCharged() {
@@ -179,6 +176,5 @@ public final class LoanScheduleModelDownPaymentPeriod implements LoanScheduleMod
     }
 
     @Override
-    public void setTotalMandatoryInsuranceCharged(BigDecimal totalMandatoryInsuranceCharged) {
-    }
+    public void setTotalMandatoryInsuranceCharged(BigDecimal totalMandatoryInsuranceCharged) {}
 }

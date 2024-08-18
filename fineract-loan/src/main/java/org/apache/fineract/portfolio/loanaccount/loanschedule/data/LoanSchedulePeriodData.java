@@ -518,6 +518,7 @@ public final class LoanSchedulePeriodData {
     public void setHonorariosDue(BigDecimal honorariosDue) {
         this.honorariosDue = honorariosDue;
     }
+
     public Integer getPeriod() {
         return this.period;
     }

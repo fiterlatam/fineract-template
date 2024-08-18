@@ -101,8 +101,6 @@ public class LoanRepaymentScheduleHistory extends AbstractPersistableCustom {
     @Column(name = "honorarios_amount", scale = 6, precision = 19, nullable = true)
     private BigDecimal honorariosAmount;
 
-
-
     /**
      * LoanRepaymentScheduleHistory constructor
      **/
@@ -149,8 +147,8 @@ public class LoanRepaymentScheduleHistory extends AbstractPersistableCustom {
             final BigDecimal interestCharged, final BigDecimal feeChargesCharged, final BigDecimal penaltyCharges,
             final LocalDateTime oldCreatedOnDate, final Long createdByUser, final Long lastModifiedByUser,
             final LocalDateTime oldLastModifiedOnDate, final Integer version, final OffsetDateTime createdDate,
-            final OffsetDateTime lastModifiedDate, final BigDecimal mandatoryInsuranceAmount,
-            final BigDecimal voluntaryInsuranceAmount, final BigDecimal avalAmount, final BigDecimal honorariosAmount) {
+            final OffsetDateTime lastModifiedDate, final BigDecimal mandatoryInsuranceAmount, final BigDecimal voluntaryInsuranceAmount,
+            final BigDecimal avalAmount, final BigDecimal honorariosAmount) {
 
         return new LoanRepaymentScheduleHistory(loan, loanRescheduleRequest, installmentNumber, fromDate, dueDate, principal,
                 interestCharged, feeChargesCharged, penaltyCharges, oldCreatedOnDate, createdByUser, lastModifiedByUser,

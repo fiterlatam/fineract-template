@@ -2,11 +2,11 @@
                    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd">
     <changeSet id="1" author="fineract">
-	<addColumn tableName="m_loan_repayment_schedule_history">
-    		<column name="mandatory_insurance_amount" type="DECIMAL(19, 6)"/>
-	        <column name="voluntary_insurance_amount" type="DECIMAL(19, 6)"/>
-        	<column name="aval_amount" type="DECIMAL(19, 6)"/>
-	        <column name="honorarios_amount" type="DECIMAL(19, 6)"/>
-	</addColumn>
+    <addColumn tableName="m_loan_repayment_schedule_history">
+            <column name="mandatory_insurance_amount" type="DECIMAL(19, 6)"/>
+            <column name="voluntary_insurance_amount" type="DECIMAL(19, 6)"/>
+            <column name="aval_amount" type="DECIMAL(19, 6)"/>
+            <column name="honorarios_amount" type="DECIMAL(19, 6)"/>
+    </addColumn>
     </changeSet>
 </databaseChangeLog>
