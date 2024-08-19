@@ -154,4 +154,6 @@
     <include file="parts/0132_AddConfigurationForAmountFormats.xml" relativeToChangelogFile="true"/>
     <include file="parts/0133_UpdateNewHardPolicyQueries.xml" relativeToChangelogFile="true"/>
     <include file="parts/0134_HardPolicyFixes.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0135_1_FBR-714-BANCO_COMMUNAL_MEDA.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0135_FBR-714-BANCO_COMMUNAL_MEDA.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

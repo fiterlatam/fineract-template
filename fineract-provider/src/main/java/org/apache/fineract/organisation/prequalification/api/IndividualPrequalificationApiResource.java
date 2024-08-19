@@ -124,7 +124,7 @@ public class IndividualPrequalificationApiResource {
 
         String clientName = queryParameters.getFirst("clientName");
         SearchParameters searchParameters = SearchParameters.forPrequalification(clientName, status, offset, limit, orderBy, sortOrder,
-                type, searchText, groupingType, portfolioCenterId);
+                type, searchText, groupingType, portfolioCenterId,null);
         final Page<MemberPrequalificationData> memberData = this.prequalificationReadPlatformService.retrieveAllMembers(searchParameters);
 
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(queryParameters);
