@@ -1,0 +1,123 @@
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd">
+
+    <changeSet id="1" author="fineract">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                SELECT COUNT(*) FROM stretchy_parameter WHERE parameter_name = 'voluntaryInsurerNit'
+            </sqlCheck>
+        </preConditions>
+        <sql>
+            INSERT INTO stretchy_parameter
+            (parameter_name, parameter_variable, parameter_label, "parameter_displayType", "parameter_FormatType", parameter_default, special, "selectOne", "selectAll", parameter_sql, parent_id)
+            VALUES('voluntaryInsurerNit', 'voluntaryInsurerNit', 'Nit aseguradora', 'select', 'text', '', NULL, NULL, 'Y', 'select distinct insurance_company as id, insurance_company as name from m_charge where insurance_company is not null and charge_calculation_enum IN (1034, 468)', NULL);
+        </sql>
+    </changeSet>
+
+    <changeSet id="2" author="fineract">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                SELECT COUNT(*) FROM stretchy_parameter WHERE parameter_name = 'voluntaryInsuranceCode'
+            </sqlCheck>
+        </preConditions>
+        <sql>
+            INSERT INTO stretchy_parameter
+            (parameter_name, parameter_variable, parameter_label, "parameter_displayType", "parameter_FormatType", parameter_default, special, "selectOne", "selectAll", parameter_sql, parent_id)
+            VALUES('voluntaryInsuranceCode', 'voluntaryInsuranceCode', 'código del seguro voluntario', 'select', 'text', '', NULL, NULL, 'Y', 'select distinct insurance_code as id, insurance_code as name from m_charge where insurance_company is not null and charge_calculation_enum IN (1034, 468)', NULL);
+        </sql>
+    </changeSet>
+
+    <changeSet id="3" author="fineract">
+        <delete tableName="stretchy_report_parameter">
+            <where>report_id = (select id from stretchy_report where report_name = 'Recaudos de Seguros o Asistencias Voluntarias')</where>
+        </delete>
+        <delete tableName="STRETCHY_REPORT">
+            <where>REPORT_NAME='Recaudos de Seguros o Asistencias Voluntarias'</where>
+        </delete>
+
+        <insert tableName="STRETCHY_REPORT">
+            <column name="REPORT_NAME" value="Recaudos de Seguros o Asistencias Voluntarias"/>
+            <column name="REPORT_SQL">
+                <![CDATA[
+        SELECT
+            TO_CHAR(mlt.transaction_date, 'Month YYYY') AS "Mes de cobertura",
+            TO_CHAR(mlt.transaction_date, 'DD/MM/YYYY') AS "Fecha de recaudo",
+            coalesce(cce."NIT",'800139398-6') AS "Nit de empresa",
+            CASE
+                WHEN c.legal_form_enum = 2 THEN 'NIT'
+                ELSE 'Cédula'
+            END AS "Tipo de documento del cliente",
+            COALESCE(cce."NIT", ccp."Cedula") AS "Número de documento de identidad del cliente",
+            CASE
+                WHEN c.legal_form_enum = 2 THEN c.fullname
+                ELSE c.firstname
+            END AS "Nombre del cliente",
+            c.lastname AS "Apellidos del cliente",
+            ml.account_no AS "Número del crédito",
+            TO_CHAR(ml.disbursedon_date, 'DD/MM/YYYY') AS "Fecha de venta del seguro o asistencia",
+            mc.insurance_code AS "Código del seguro o asistencia",
+            mc.insurance_plan AS "Plan escogido por el cliente",
+            mlc.amount_outstanding_derived AS "Número de seguros/asistencias pagadas",
+            (COALESCE(insurance_chg.amount, 0) + COALESCE(vat_chg.amount, 0)) AS "Valor total pagado del seguro",
+            COALESCE(insurance_chg.amount, 0) AS "Valor total de la base del seguro pagado",
+            COALESCE(vat_chg.amount, 0) AS "Valor total del iva del seguro pagado",
+            mc.insurance_company AS "Nit aseguradora"
+        FROM m_client c
+        JOIN m_loan ml ON ml.client_id = c.id
+        JOIN m_loan_charge mlc ON mlc.loan_id = ml.id
+        JOIN m_charge mc ON mc.id = mlc.charge_id
+        JOIN m_loan_transaction mlt ON mlt.loan_id = ml.id
+        LEFT JOIN campos_cliente_empresas cce ON cce.client_id = c.id
+        LEFT JOIN campos_cliente_persona ccp ON ccp.client_id = c.id
+        LEFT JOIN (SELECT mlc2.id AS loan_charge_id, mlc2.loan_id, mlic.amount
+                   FROM m_loan_installment_charge mlic
+                   JOIN m_loan_charge mlc2 ON mlc2.id = mlic.loan_charge_id
+                   WHERE mlc2.charge_calculation_enum IN (1034, 468)) insurance_chg
+        ON insurance_chg.loan_charge_id = mlc.id AND insurance_chg.loan_id = ml.id
+        LEFT JOIN (SELECT mlc2.id AS loan_charge_id, mlc2.loan_id, mlic.amount
+                   FROM m_loan_installment_charge mlic
+                   JOIN m_loan_charge mlc2 ON mlc2.id = mlic.loan_charge_id
+                   JOIN m_charge mc2 ON mc2.id = mlc2.charge_id AND mc2.charge_calculation_enum = 342) vat_chg
+        ON vat_chg.loan_charge_id = mlc.id AND vat_chg.loan_id = ml.id
+        WHERE mc.charge_calculation_enum IN (1034, 468)
+        AND (mc.insurance_company = '${voluntaryInsurerNit}' OR '${voluntaryInsurerNit}' = '-1')
+        AND (mc.insurance_code = '${voluntaryInsuranceCode}' OR '${voluntaryInsuranceCode}' = '-1')
+        AND mlt.transaction_date BETWEEN '${startDate}' AND '${endDate}'
+        AND mlt.is_reversed = false
+        AND mlt.transaction_type_enum = 2
+        ORDER BY mlt.transaction_date, ml.account_no
+        ]]>
+            </column>
+            <column name="report_type" value="Table"/>
+            <column name="report_category" value="Loan"/>
+            <column name="description" value="Reporte de Recaudos de Seguros o Asistencias Voluntarias"/>
+            <column name="core_report" value="false"/>
+            <column name="use_report" value="true"/>
+        </insert>
+
+        <insert tableName="stretchy_report_parameter">
+            <column name="report_id" valueComputed="(select id from stretchy_report where report_name = 'Recaudos de Seguros o Asistencias Voluntarias')"/>
+            <column name="parameter_id" valueComputed="(select id from stretchy_parameter where parameter_variable = 'startDate')"/>
+            <column name="report_parameter_name" value="startDate"/>
+            <column name="mandatory_parameter" value="true"/>
+        </insert>
+        <insert tableName="stretchy_report_parameter">
+            <column name="report_id" valueComputed="(select id from stretchy_report where report_name = 'Recaudos de Seguros o Asistencias Voluntarias')"/>
+            <column name="parameter_id" valueComputed="(select id from stretchy_parameter where parameter_variable = 'endDate')"/>
+            <column name="report_parameter_name" value="endDate"/>
+            <column name="mandatory_parameter" value="true"/>
+        </insert>
+        <insert tableName="stretchy_report_parameter">
+            <column name="report_id" valueComputed="(select id from stretchy_report where report_name = 'Recaudos de Seguros o Asistencias Voluntarias')"/>
+            <column name="parameter_id" valueComputed="(select id from stretchy_parameter where parameter_variable = 'voluntaryInsurerNit')"/>
+            <column name="report_parameter_name" value="voluntaryInsurerNit"/>
+        </insert>
+        <insert tableName="stretchy_report_parameter">
+            <column name="report_id" valueComputed="(select id from stretchy_report where report_name = 'Recaudos de Seguros o Asistencias Voluntarias')"/>
+            <column name="parameter_id" valueComputed="(select id from stretchy_parameter where parameter_variable = 'voluntaryInsuranceCode')"/>
+            <column name="report_parameter_name" value="voluntaryInsuranceCode"/>
+        </insert>
+    </changeSet>
+
+</databaseChangeLog>

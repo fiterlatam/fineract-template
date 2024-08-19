@@ -92,6 +92,11 @@ public final class LoanScheduleModel {
 
     public LoanScheduleData toData() {
 
+        BigDecimal totalMandatoryInsuranceCharged = BigDecimal.ZERO;
+        BigDecimal totalVoluntaryInsuranceCharged = BigDecimal.ZERO;
+        BigDecimal totalAvalCharged = BigDecimal.ZERO;
+        BigDecimal totalHonorariosCharged = BigDecimal.ZERO;
+
         final int decimalPlaces = this.totalPrincipalDisbursed.getCurrencyDigitsAfterDecimal();
         final Integer inMultiplesOf = this.totalPrincipalDisbursed.getCurrencyInMultiplesOf();
         final CurrencyData currency = this.applicationCurrency.toData(decimalPlaces, inMultiplesOf);
@@ -100,7 +105,18 @@ public final class LoanScheduleModel {
 
         final List<LoanSchedulePeriodData> periodsData = new ArrayList<>();
         for (final LoanScheduleModelPeriod modelPeriod : this.periods) {
-            periodsData.add(modelPeriod.toData());
+            LoanSchedulePeriodData periodData = modelPeriod.toData();
+            periodData.setAvalDue(modelPeriod.getTotalAvalCharged());
+            periodData.setHonorariosDue(modelPeriod.getTotalHonorariosCharged());
+            periodData.setMandatoryInsuranceDue(modelPeriod.getTotalMandatoryInsuranceCharged());
+            periodData.setVoluntaryInsuranceDue(modelPeriod.getTotalVoluntaryInsuranceCharged());
+
+            totalMandatoryInsuranceCharged = totalMandatoryInsuranceCharged.add(modelPeriod.getTotalMandatoryInsuranceCharged());
+            totalVoluntaryInsuranceCharged = totalVoluntaryInsuranceCharged.add(modelPeriod.getTotalVoluntaryInsuranceCharged());
+            totalAvalCharged = totalAvalCharged.add(modelPeriod.getTotalAvalCharged());
+            totalHonorariosCharged = totalHonorariosCharged.add(modelPeriod.getTotalHonorariosCharged());
+
+            periodsData.add(periodData);
         }
 
         final BigDecimal totalWaived = null;
@@ -109,10 +125,17 @@ public final class LoanScheduleModel {
         final BigDecimal totalPaidInAdvance = null;
         final BigDecimal totalPaidLate = null;
 
-        return new LoanScheduleData(currency, periodsData, this.loanTermInDays, this.totalPrincipalDisbursed.getAmount(),
-                this.totalPrincipalExpected, this.totalPrincipalPaid, this.totalInterestCharged, this.totalFeeChargesCharged,
-                this.totalPenaltyChargesCharged, totalWaived, totalWrittenOff, this.totalRepaymentExpected, totalRepayment,
-                totalPaidInAdvance, totalPaidLate, this.totalOutstanding, totalCredits);
+        LoanScheduleData loanScheduleData = new LoanScheduleData(currency, periodsData, this.loanTermInDays,
+                this.totalPrincipalDisbursed.getAmount(), this.totalPrincipalExpected, this.totalPrincipalPaid, this.totalInterestCharged,
+                this.totalFeeChargesCharged, this.totalPenaltyChargesCharged, totalWaived, totalWrittenOff, this.totalRepaymentExpected,
+                totalRepayment, totalPaidInAdvance, totalPaidLate, this.totalOutstanding, totalCredits);
+
+        loanScheduleData.setTotalMandatoryInsuranceCharged(totalMandatoryInsuranceCharged);
+        loanScheduleData.setTotalVoluntaryInsuranceCharged(totalVoluntaryInsuranceCharged);
+        loanScheduleData.setTotalAvalCharged(totalAvalCharged);
+        loanScheduleData.setTotalHonorariosCharged(totalHonorariosCharged);
+
+        return loanScheduleData;
     }
 
     public List<LoanScheduleModelPeriod> getPeriods() {
