@@ -1024,4 +1024,8 @@ public final class Group extends AbstractAuditableCustom {
     public Integer getMeetingEnd() {
         return meetingEnd;
     }
+
+    public void updateOffice(Office office) {
+        this.office = office;
+    }
 }
