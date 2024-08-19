@@ -393,6 +393,24 @@ public final class LoanEventApiJsonValidator {
         throwExceptionIfValidationWarningsExist(dataValidationErrors);
     }
 
+    public void validateSpecialWriteOff(final String json) {
+        if (StringUtils.isBlank(json)) {
+            throw new InvalidJsonException();
+        }
+        final Set<String> disbursementParameters = new HashSet<>(Arrays.asList("principalPortion", "interestPortion", "locale",
+                "dateFormat", "charges", "writeoffReasonId", "loanId", "totalWriteOffAmount"));
+        final Type typeOfMap = new TypeToken<Map<String, Object>>() {}.getType();
+        this.fromApiJsonHelper.checkForUnsupportedParameters(typeOfMap, json, disbursementParameters);
+        final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
+        final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors).resource("loan.special.write.off");
+        final JsonElement element = this.fromApiJsonHelper.parse(json);
+        final BigDecimal principalPortion = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed("principalPortion", element);
+        baseDataValidator.reset().parameter("principalPortion").value(principalPortion).notNull().zeroOrPositiveAmount();
+        final BigDecimal interestPortion = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed("interestPortion", element);
+        baseDataValidator.reset().parameter("interestPortion").value(interestPortion).notNull().zeroOrPositiveAmount();
+        throwExceptionIfValidationWarningsExist(dataValidationErrors);
+    }
+
     public void validateChargeOffTransaction(final String json) {
         if (StringUtils.isBlank(json)) {
             throw new InvalidJsonException();

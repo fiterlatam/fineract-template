@@ -340,7 +340,7 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
         }
 
         if (rescheduleFromDate != null && extraTerms != null) {
-            LoanTermVariations parent = null;
+            final LoanTermVariations parent = null;
             final Integer termType = LoanTermVariationType.EXTEND_REPAYMENT_PERIOD.getValue();
             createLoanTermVariations(loanRescheduleRequest, termType, loan, rescheduleFromDate, dueDate,
                     loanRescheduleRequestToTermVariationMappings, isActive, isSpecificToInstallment, BigDecimal.valueOf(extraTerms),
@@ -354,7 +354,7 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
             final Integer rediferidoNumber = this.loanReadPlatformService.retrieveRediferidoNumberLast6Months(loan.getId());
             if (globalConfigurationProperty.isEnabled() && rediferidoNumber > maximumRediferralValue) {
                 throw new GeneralPlatformDomainRuleException("error.msg.loan.reschedule.rediferir.exceed.max.allowed.in.6.months",
-                        "Rediferir exceed max allowed in 6 months", rediferidoNumber);
+                        "Rediferir exceed max allowed in 6 months", maximumRediferralValue);
             }
             final LocalDate transactionDate = DateUtils.getBusinessLocalDate();
             if (!loanRescheduleRequestToTermVariationMappings.isEmpty()) {
