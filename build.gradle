@@ -132,13 +132,13 @@ ext['swaggerFile'] = "$rootDir/fineract-provider/build/classes/java/main/static/
 def pentahoReportDir = System.properties['user.home'] + System.properties['file.separator'] + '.mifosx' + System.properties['file.separator'] + 'pentahoReports'
 def pentahoReportPostgrestDir = System.properties['user.home'] + System.properties['file.separator'] + '.mifosx' + System.properties['file.separator'] + 'pentahoReportsPostgres'
 copy {
-        from "fineract-provider/pentahoReports"
-        into pentahoReportDir
-    }
+    from "fineract-provider/pentahoReports"
+    into pentahoReportDir
+}
 copy {
-        from "fineract-provider/pentahoReportsPostgres"
-        into pentahoReportPostgrestDir
-    }
+    from "fineract-provider/pentahoReportsPostgres"
+    into pentahoReportPostgrestDir
+}
 
 allprojects  {
     group = 'org.apache.fineract'

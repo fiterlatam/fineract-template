@@ -37,7 +37,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import javax.sql.DataSource;
-
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.infrastructure.core.api.ApiParameterHelper;
@@ -49,7 +48,6 @@ import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.infrastructure.core.service.database.DatabasePasswordEncryptor;
 import org.apache.fineract.infrastructure.dataqueries.data.ReportExportType;
 import org.apache.fineract.infrastructure.report.annotation.ReportService;
-import org.apache.fineract.infrastructure.report.service.ReportingProcessService;
 import org.apache.fineract.infrastructure.security.constants.TenantConstants;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.pentaho.reporting.engine.classic.core.ClassicEngineBoot;
@@ -81,7 +79,7 @@ import org.springframework.stereotype.Service;
 public class PentahoReportingProcessServiceImpl implements ReportingProcessService {
 
     private static final Logger logger = LoggerFactory.getLogger(PentahoReportingProcessServiceImpl.class);
-   private final String mifosBaseDir = System.getProperty("user.home") + File.separator + ".mifosx";
+    private final String mifosBaseDir = System.getProperty("user.home") + File.separator + ".mifosx";
     private final DatabasePasswordEncryptor databasePasswordEncryptor;
 
     @Value("${FINERACT_PENTAHO_REPORTS_PATH:non}")
@@ -277,7 +275,7 @@ public class PentahoReportingProcessServiceImpl implements ReportingProcessServi
 
         } catch (Throwable t) {
             logger.error("error.msg.reporting.error:", t);
-            throw new PlatformDataIntegrityException( "error.msg.reporting.error", t.getMessage());
+            throw new PlatformDataIntegrityException("error.msg.reporting.error", t.getMessage());
         }
     }
 
@@ -296,7 +294,7 @@ public class PentahoReportingProcessServiceImpl implements ReportingProcessServi
     }
 
     private String getReportPath() {
-        if(! Objects.toString(fineractPentahoBaseDir, "non").equalsIgnoreCase("non")) {
+        if (!Objects.toString(fineractPentahoBaseDir, "non").equalsIgnoreCase("non")) {
             return this.fineractPentahoBaseDir + File.separator;
         }
         return this.mifosBaseDir + File.separator + "pentahoReportsPostgres" + File.separator;
