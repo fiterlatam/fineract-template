@@ -37,7 +37,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import javax.sql.DataSource;
-import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.infrastructure.core.api.ApiParameterHelper;
 import org.apache.fineract.infrastructure.core.config.FineractProperties;
@@ -75,7 +74,6 @@ import org.springframework.stereotype.Service;
 
 @Service
 @ReportService(type = "Pentaho")
-@RequiredArgsConstructor
 public class PentahoReportingProcessServiceImpl implements ReportingProcessService {
 
     private static final Logger logger = LoggerFactory.getLogger(PentahoReportingProcessServiceImpl.class);
@@ -88,18 +86,19 @@ public class PentahoReportingProcessServiceImpl implements ReportingProcessServi
     private final PlatformSecurityContext context;
     private final DataSource tenantDataSource;
 
-    @Autowired
-    FineractProperties fineractProperties;
+    private final FineractProperties fineractProperties;
 
-    @Autowired
-    ApplicationContext applicationContext;
+    private final ApplicationContext applicationContext;
 
-    @Autowired
-    ApplicationContext contextVar;
+    private final ApplicationContext contextVar;
 
     @Autowired
     public PentahoReportingProcessServiceImpl(final PlatformSecurityContext context,
-            final @Qualifier("hikariTenantDataSource") DataSource tenantDataSource, DatabasePasswordEncryptor databasePasswordEncryptor) {
+            final @Qualifier("hikariTenantDataSource") DataSource tenantDataSource, DatabasePasswordEncryptor databasePasswordEncryptor,
+            FineractProperties fineractProperties, ApplicationContext applicationContext, ApplicationContext contextVar) {
+        this.fineractProperties = fineractProperties;
+        this.applicationContext = applicationContext;
+        this.contextVar = contextVar;
         ClassicEngineBoot.getInstance().start();
         this.tenantDataSource = tenantDataSource;
         this.context = context;
