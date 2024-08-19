@@ -291,14 +291,6 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             if (groupingType.equals("group")) {
                 extraCriteria += " and g.prequalification_type_enum = ? ";
                 paramList.add(PrequalificationType.GROUP.getValue());
-
-                Set<Role> roles = appUser.getRoles();
-                for (Role userRole : roles) {
-                    if (StringUtils.containsIgnoreCase(userRole.getName(), "Líder de agencia")) {
-                        extraCriteria += " and ma.responsible_user_id = ? ";
-                        paramList.add(appUser.getId());
-                    }
-                }
             }
 
             if (StringUtils.equals(groupingType, "individual")) {
@@ -309,14 +301,23 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                     paramList.add(dpiNumber);
                 }
             }
-            extraCriteria += " and (moind.hierarchy LIKE CONCAT(?, '%') OR ? like CONCAT(moind.hierarchy, '%'))";
-            paramList.add(appUser.getOffice().getHierarchy());
-            paramList.add(appUser.getOffice().getHierarchy());
+        }
 
-            if (agencyId != null) {
-                extraCriteria += " and individualOffice.agency_id = ? ";
-                paramList.add(agencyId);
+        Set<Role> roles = appUser.getRoles();
+        for (Role userRole : roles) {
+            if (StringUtils.containsIgnoreCase(userRole.getName(), "Líder de agencia")) {
+                extraCriteria += " and ma.responsible_user_id = ? ";
+                paramList.add(appUser.getId());
             }
+        }
+
+        extraCriteria += " and (moind.hierarchy LIKE CONCAT(?, '%') OR ? like CONCAT(moind.hierarchy, '%'))";
+        paramList.add(appUser.getOffice().getHierarchy());
+        paramList.add(appUser.getOffice().getHierarchy());
+
+        if (agencyId != null) {
+            extraCriteria += " and individualOffice.agency_id = ? ";
+            paramList.add(agencyId);
         }
 
         if (sqlSearch != null && !isGroup) {
