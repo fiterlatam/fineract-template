@@ -37,6 +37,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import javax.sql.DataSource;
+
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.infrastructure.core.api.ApiParameterHelper;
 import org.apache.fineract.infrastructure.core.config.FineractProperties;
@@ -74,13 +76,14 @@ import org.springframework.stereotype.Service;
 
 @Service
 @ReportService(type = "Pentaho")
+@Slf4j
 public class PentahoReportingProcessServiceImpl implements ReportingProcessService {
 
     private static final Logger logger = LoggerFactory.getLogger(PentahoReportingProcessServiceImpl.class);
     private final String mifosBaseDir = System.getProperty("user.home") + File.separator + ".mifosx";
     private final DatabasePasswordEncryptor databasePasswordEncryptor;
 
-    @Value("${FINERACT_PENTAHO_REPORTS_PATH:non}")
+    @Value("${FINERACT_PENTAHO_REPORTS_PATH:}")
     private String fineractPentahoBaseDir;
 
     private final PlatformSecurityContext context;
@@ -122,10 +125,9 @@ public class PentahoReportingProcessServiceImpl implements ReportingProcessServi
             throw new PlatformDataIntegrityException("error.msg.invalid.outputType", "No matching Output Type: " + outputType);
         }
 
-        // final var reportPath = mifosBaseDir + File.separator + "pentahoReports" + File.separator + reportName +
-        // ".prpt";
+        log.info("Processing report: {} with output type: {} and locale: {}", reportName, outputType, locale);
         String reportPath;
-        if (!"en".equals(locale.toString().toLowerCase()) && locale != null) {
+        if (!"en".equalsIgnoreCase(Objects.toString(locale, "en"))) {
             reportPath = getReportPath() + reportName + "_" + locale.toString().toLowerCase() + ".prpt";
         } else {
             reportPath = getReportPath() + reportName + ".prpt";
@@ -220,10 +222,10 @@ public class PentahoReportingProcessServiceImpl implements ReportingProcessServi
                     } else if (clazz.getCanonicalName().equalsIgnoreCase("java.lang.Long")) {
                         rptParamValues.put(paramName, Long.parseLong(pValue));
                     } else if (clazz.getCanonicalName().equalsIgnoreCase("java.sql.Date")) {
-                        logger.debug("ParamName: {}", paramName);
-                        logger.debug("ParamValue: {}", pValue.toString());
+                        logger.info("ParamName: {}", paramName);
+                        logger.info("ParamValue: {}", pValue.toString());
                         String myDate = pValue.toString();
-                        SimpleDateFormat sdf = new SimpleDateFormat("dd MMMM yyyy", Locale.ENGLISH);
+                        SimpleDateFormat sdf = new SimpleDateFormat("dd MMMM yyyy",new Locale("es", "ES"));
                         Date date = sdf.parse(myDate);
                         long millis = date.getTime();
                         java.sql.Date mySQLDate = new java.sql.Date(millis);
@@ -293,7 +295,7 @@ public class PentahoReportingProcessServiceImpl implements ReportingProcessServi
     }
 
     private String getReportPath() {
-        if (!Objects.toString(fineractPentahoBaseDir, "non").equalsIgnoreCase("non")) {
+        if (StringUtils.isNotBlank(fineractPentahoBaseDir)) {
             return this.fineractPentahoBaseDir + File.separator;
         }
         return this.mifosBaseDir + File.separator + "pentahoReportsPostgres" + File.separator;

@@ -45,7 +45,7 @@ COPY --from=builder /fineract/fineract-provider/pentahoReports/*.prpt /root/.mif
 #Pentaho to run on postgresDB
 COPY --from=builder /fineract/fineract-provider/pentahoReportsPostgres/*.properties /root/.mifosx/pentahoReportsPostgres/
 COPY --from=builder /fineract/fineract-provider/pentahoReportsPostgres/*.prpt /root/.mifosx/pentahoReportsPostgres/
-
+COPY --from=builder /fineract/fineract-provider/pentahoReports/fonts/*.ttf /usr/local/share/fonts/
 COPY --from=builder /fineract/fineract-provider/build/libs/ /app
 COPY --from=builder /app/libs /app/libs
 
