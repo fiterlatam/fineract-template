@@ -73,6 +73,10 @@ public final class LoanSchedulePeriodData {
     private final BigDecimal totalInstallmentAmountForPeriod;
     private final BigDecimal totalCredits;
     private final Boolean downPaymentPeriod;
+    private BigDecimal mandatoryInsuranceDue = BigDecimal.ZERO;
+    private BigDecimal voluntaryInsuranceDue = BigDecimal.ZERO;
+    private BigDecimal avalDue = BigDecimal.ZERO;
+    private BigDecimal honorariosDue = BigDecimal.ZERO;
 
     public static LoanSchedulePeriodData disbursementOnlyPeriod(final LocalDate disbursementDate, final BigDecimal principalDisbursed,
             final BigDecimal feeChargesDueAtTimeOfDisbursement, final boolean isDisbursed) {
@@ -482,4 +486,41 @@ public final class LoanSchedulePeriodData {
     public BigDecimal totalOutstandingForPeriod() {
         return defaultToZeroIfNull(this.totalOutstandingForPeriod);
     }
+
+    public BigDecimal getMandatoryInsuranceDue() {
+        return mandatoryInsuranceDue;
+    }
+
+    public void setMandatoryInsuranceDue(BigDecimal mandatoryInsuranceDue) {
+        this.mandatoryInsuranceDue = mandatoryInsuranceDue;
+    }
+
+    public BigDecimal getVoluntaryInsuranceDue() {
+        return voluntaryInsuranceDue;
+    }
+
+    public void setVoluntaryInsuranceDue(BigDecimal voluntaryInsuranceDue) {
+        this.voluntaryInsuranceDue = voluntaryInsuranceDue;
+    }
+
+    public BigDecimal getAvalDue() {
+        return avalDue;
+    }
+
+    public void setAvalDue(BigDecimal avalDue) {
+        this.avalDue = avalDue;
+    }
+
+    public BigDecimal getHonorariosDue() {
+        return honorariosDue;
+    }
+
+    public void setHonorariosDue(BigDecimal honorariosDue) {
+        this.honorariosDue = honorariosDue;
+    }
+
+    public Integer getPeriod() {
+        return this.period;
+    }
+
 }
