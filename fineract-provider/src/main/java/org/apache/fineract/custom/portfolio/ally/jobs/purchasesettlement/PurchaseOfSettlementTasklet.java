@@ -69,7 +69,12 @@ public class PurchaseOfSettlementTasklet implements Tasklet {
                         period = period.plusMonths(1);
                     break;
                     case "DAILY":
-                        period = period.plusDays(1);
+                        if (period.isBefore(now.minusDays(1)) && !period.isEqual(now.minusDays(1))) {
+                            period = now;
+                        } else {
+                            period = period.plusDays(1);
+                        }
+
                     break;
                 }
                 isEqual = now.isEqual(period);
@@ -132,7 +137,6 @@ public class PurchaseOfSettlementTasklet implements Tasklet {
                         allyPurchaseSettlementReadWritePlatformService.create(allyPurchaseSettlement);
                     } else {
                         if (purchase.get().getSettlementStatus() == false && collectionData.getLoanStatusId() == 600) {
-                            System.out.println("hre");
                             AllyPurchaseSettlement allypurchase = purchase.get();
                             allypurchase.setSettlementStatus(true);
                             allyPurchaseSettlementReadWritePlatformService.update(allypurchase);
