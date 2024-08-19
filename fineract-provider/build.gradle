@@ -230,7 +230,7 @@ bootRun {
     dependencies {
         implementation 'org.mariadb.jdbc:mariadb-java-client'
         implementation 'org.postgresql:postgresql'
-        implementation 'org.codehaus.groovy:groovy-jsr223:3.0.10'
+        implementation 'org.codehaus.groovy:groovy-jsr223:4.0.18'
     }
 }
 
