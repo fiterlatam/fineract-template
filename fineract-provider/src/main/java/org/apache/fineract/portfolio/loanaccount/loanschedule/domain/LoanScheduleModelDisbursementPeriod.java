@@ -152,4 +152,44 @@ public final class LoanScheduleModelDisbursementPeriod implements LoanScheduleMo
     public void setRescheduleInterestPortion(BigDecimal rescheduleInterestPortion) {
         return;
     }
+
+    @Override
+    public BigDecimal getTotalHonorariosCharged() {
+        return BigDecimal.ZERO;
+    }
+
+    @Override
+    public void setTotalHonorariosCharged(BigDecimal totalHonorariosCharged) {
+        totalHonorariosCharged = BigDecimal.ZERO;
+    }
+
+    @Override
+    public BigDecimal getTotalAvalCharged() {
+        return BigDecimal.ZERO;
+    }
+
+    @Override
+    public void setTotalAvalCharged(BigDecimal totalAvalCharged) {
+        totalAvalCharged = BigDecimal.ZERO;
+    }
+
+    @Override
+    public BigDecimal getTotalVoluntaryInsuranceCharged() {
+        return BigDecimal.ZERO;
+    }
+
+    @Override
+    public void setTotalVoluntaryInsuranceCharged(BigDecimal totalVoluntaryInsuranceCharged) {
+        totalVoluntaryInsuranceCharged = BigDecimal.ZERO;
+    }
+
+    @Override
+    public BigDecimal getTotalMandatoryInsuranceCharged() {
+        return BigDecimal.ZERO;
+    }
+
+    @Override
+    public void setTotalMandatoryInsuranceCharged(BigDecimal totalMandatoryInsuranceCharged) {
+        totalMandatoryInsuranceCharged = BigDecimal.ZERO;
+    }
 }

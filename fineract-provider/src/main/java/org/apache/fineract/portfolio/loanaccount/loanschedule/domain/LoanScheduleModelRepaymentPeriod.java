@@ -44,6 +44,10 @@ public final class LoanScheduleModelRepaymentPeriod implements LoanScheduleModel
     private final Set<LoanInterestRecalcualtionAdditionalDetails> loanCompoundingDetails = new HashSet<>();
     private boolean isEMIFixedSpecificToInstallment = false;
     BigDecimal rescheduleInterestPortion;
+    BigDecimal totalMandatoryInsuranceCharged = BigDecimal.ZERO;
+    BigDecimal totalVoluntaryInsuranceCharged = BigDecimal.ZERO;
+    BigDecimal totalAvalCharged = BigDecimal.ZERO;
+    BigDecimal totalHonorariosCharged = BigDecimal.ZERO;
 
     public static LoanScheduleModelRepaymentPeriod repayment(final int periodNumber, final LocalDate startDate,
             final LocalDate scheduledDueDate, final Money principalDue, final Money outstandingLoanBalance, final Money interestDue,
@@ -187,5 +191,45 @@ public final class LoanScheduleModelRepaymentPeriod implements LoanScheduleModel
     @Override
     public BigDecimal rescheduleInterestPortion() {
         return this.rescheduleInterestPortion;
+    }
+
+    @Override
+    public BigDecimal getTotalHonorariosCharged() {
+        return totalHonorariosCharged;
+    }
+
+    @Override
+    public void setTotalHonorariosCharged(BigDecimal totalHonorariosCharged) {
+        this.totalHonorariosCharged = totalHonorariosCharged;
+    }
+
+    @Override
+    public BigDecimal getTotalAvalCharged() {
+        return totalAvalCharged;
+    }
+
+    @Override
+    public void setTotalAvalCharged(BigDecimal totalAvalCharged) {
+        this.totalAvalCharged = totalAvalCharged;
+    }
+
+    @Override
+    public BigDecimal getTotalVoluntaryInsuranceCharged() {
+        return totalVoluntaryInsuranceCharged;
+    }
+
+    @Override
+    public void setTotalVoluntaryInsuranceCharged(BigDecimal totalVoluntaryInsuranceCharged) {
+        this.totalVoluntaryInsuranceCharged = totalVoluntaryInsuranceCharged;
+    }
+
+    @Override
+    public BigDecimal getTotalMandatoryInsuranceCharged() {
+        return totalMandatoryInsuranceCharged;
+    }
+
+    @Override
+    public void setTotalMandatoryInsuranceCharged(BigDecimal totalMandatoryInsuranceCharged) {
+        this.totalMandatoryInsuranceCharged = totalMandatoryInsuranceCharged;
     }
 }

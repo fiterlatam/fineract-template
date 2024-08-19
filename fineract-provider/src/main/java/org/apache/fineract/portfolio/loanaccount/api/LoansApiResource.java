@@ -1074,6 +1074,7 @@ public class LoansApiResource {
                 repaymentSchedule = this.loanReadPlatformService.retrieveRepaymentSchedule(resolvedLoanId, repaymentScheduleRelatedData,
                         disbursementData, loanBasicDetails.isInterestRecalculationEnabled(),
                         LoanScheduleType.fromEnumOptionData(loanBasicDetails.getLoanScheduleType()));
+                this.calculationPlatformService.getFeeChargesDetail(repaymentSchedule, resolvedLoanId);
 
                 if (associationParameters.contains(DataTableApiConstant.futureScheduleAssociateParamName)
                         && loanBasicDetails.isInterestRecalculationEnabled()) {

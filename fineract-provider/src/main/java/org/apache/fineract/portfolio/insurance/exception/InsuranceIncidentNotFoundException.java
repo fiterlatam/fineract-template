@@ -16,19 +16,14 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.portfolio.loanaccount.loanschedule.service;
+package org.apache.fineract.portfolio.insurance.exception;
 
-import org.apache.fineract.infrastructure.core.api.JsonQuery;
-import org.apache.fineract.portfolio.loanaccount.loanschedule.data.LoanScheduleData;
-import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleModel;
+import org.apache.fineract.infrastructure.core.exception.AbstractPlatformResourceNotFoundException;
 
-public interface LoanScheduleCalculationPlatformService {
+public class InsuranceIncidentNotFoundException extends AbstractPlatformResourceNotFoundException {
 
-    LoanScheduleModel calculateLoanSchedule(JsonQuery query, Boolean validateParams);
+    public InsuranceIncidentNotFoundException(final Long id) {
+        super("error.msg.insurance.incident.id.invalid", "Insurance Incident with identifier " + id + " does not exist", id);
+    }
 
-    void updateFutureSchedule(LoanScheduleData loanScheduleData, Long loanId);
-
-    LoanScheduleData generateLoanScheduleForVariableInstallmentRequest(Long loanId, String json);
-
-    void getFeeChargesDetail(LoanScheduleData loanScheduleData, Long loanId);
 }

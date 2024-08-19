@@ -16,19 +16,12 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.portfolio.loanaccount.loanschedule.service;
+package org.apache.fineract.portfolio.insurance.domain;
 
-import org.apache.fineract.infrastructure.core.api.JsonQuery;
-import org.apache.fineract.portfolio.loanaccount.loanschedule.data.LoanScheduleData;
-import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleModel;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
-public interface LoanScheduleCalculationPlatformService {
+public interface InsuranceIncidentRepository extends JpaRepository<InsuranceIncident, Long>, JpaSpecificationExecutor<InsuranceIncident> {
 
-    LoanScheduleModel calculateLoanSchedule(JsonQuery query, Boolean validateParams);
-
-    void updateFutureSchedule(LoanScheduleData loanScheduleData, Long loanId);
-
-    LoanScheduleData generateLoanScheduleForVariableInstallmentRequest(Long loanId, String json);
-
-    void getFeeChargesDetail(LoanScheduleData loanScheduleData, Long loanId);
+    boolean existsByNameIgnoreCase(String name);
 }
