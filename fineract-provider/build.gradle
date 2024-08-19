@@ -230,6 +230,7 @@ bootRun {
     dependencies {
         implementation 'org.mariadb.jdbc:mariadb-java-client'
         implementation 'org.postgresql:postgresql'
+        implementation 'org.codehaus.groovy:groovy-jsr223:4.0.18'
     }
 }
 
@@ -253,6 +254,22 @@ jib {
             platform {
                 architecture = System.getProperty("os.arch").equals("aarch64")?"arm64":"amd64"
                 os = 'linux'
+            }
+        }
+    }
+    extraDirectories {
+        paths {
+            path {
+                from = 'ff4j'
+                into = '/.fineract/ff4j'
+            }
+            path {
+                from = 'pentahoReports'
+                into = '/root/.mifosx/pentahoReports'
+            }
+            path {
+                from = 'pentahoReportsPostgres'
+                into = '/root/.mifosx/pentahoReportsPostgres'
             }
         }
     }
