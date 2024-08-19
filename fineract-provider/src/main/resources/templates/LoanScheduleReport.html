@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head>
+    <title>Reporte de Prestamo Desembolso</title>
+    <style>
+        .report-box {
+            max-width: 1000px;
+            margin: auto;
+            padding: 30px;
+            border: 1px solid #eee;
+            box-shadow: 0 0 10px rgba(0, 0, 0, .15);
+            font-size: 18px;
+            line-height: 36px;
+            font-family: 'Helvetica Neue', 'Helvetica', Helvetica, Arial, sans-serif;
+            color: #555;
+        }
+
+        .logo {
+            width: 150px;
+            height: auto;
+            margin: 20px 20px 20px 450px;
+        }
+
+        .generation {
+            padding-top: 20px;
+            padding-left: 20px;
+            margin-left: 20px;
+            text-align: right;
+            font-size: 12px;
+        }
+
+    </style>
+</head>
+<body>
+<div class="report-box">
+    <h1>INTERCRÉDITO DE COLOMBIA</h1>
+    <h2 th:text="'NIT ' + ${nit}"></h2>
+    <h3 th:text="${title}"></h3>
+
+    <p>Cliente: <span th:text="${clientName}"></span></p>
+    <p>Numero de Identificación: <span th:text="${clientId}"></span></p>
+    <p>Fecha de Financiación: <span th:text="${financingDate}"></span></p>
+    <p>Monto financiado: <span th:text="${financedAmount}"></span></p>
+    <p>Tasa pactada: <span th:text="${interestRate}"></span></p>
+    <p>Sistema de Liquidación: <span th:text="${settlementSystem}"></span></p>
+    <p>Periodicidad: <span th:text="${frequency}"></span></p>
+
+    <h4>Detalle del plan de pagos:</h4>
+    <!-- Render the payment schedule details here -->
+    <table>
+        <tr>
+            <th>Fecha</th>
+            <th>Monto</th>
+            <th>Interés</th>
+            <!-- Add other columns as needed -->
+        </tr>
+        <tr th:each="payment : ${payments}">
+            <td th:text="${payment.date}"></td>
+            <td th:text="${payment.amount}"></td>
+            <td th:text="${payment.interest}"></td>
+            <!-- Add other columns as needed -->
+        </tr>
+    </table>
+</div>
+</body>
+</html>
