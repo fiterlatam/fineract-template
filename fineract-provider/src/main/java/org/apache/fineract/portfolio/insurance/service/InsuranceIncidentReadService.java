@@ -16,19 +16,17 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.portfolio.loanaccount.loanschedule.service;
+package org.apache.fineract.portfolio.insurance.service;
 
-import org.apache.fineract.infrastructure.core.api.JsonQuery;
-import org.apache.fineract.portfolio.loanaccount.loanschedule.data.LoanScheduleData;
-import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleModel;
+import java.util.Collection;
+import org.apache.fineract.portfolio.insurance.data.InsuranceIncidentData;
+import org.apache.fineract.portfolio.insurance.domain.InsuranceIncident;
 
-public interface LoanScheduleCalculationPlatformService {
+public interface InsuranceIncidentReadService {
 
-    LoanScheduleModel calculateLoanSchedule(JsonQuery query, Boolean validateParams);
+    Collection<InsuranceIncidentData> retrieveAllInsuranceIncidents();
 
-    void updateFutureSchedule(LoanScheduleData loanScheduleData, Long loanId);
+    InsuranceIncidentData retrieveInsuranceIncident(Long incidentId);
 
-    LoanScheduleData generateLoanScheduleForVariableInstallmentRequest(Long loanId, String json);
-
-    void getFeeChargesDetail(LoanScheduleData loanScheduleData, Long loanId);
+    InsuranceIncident retrieveInsuranceIncidentById(Long incidentId);
 }

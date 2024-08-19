@@ -16,19 +16,22 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.portfolio.loanaccount.loanschedule.service;
+package org.apache.fineract.portfolio.client.data;
 
-import org.apache.fineract.infrastructure.core.api.JsonQuery;
-import org.apache.fineract.portfolio.loanaccount.loanschedule.data.LoanScheduleData;
-import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleModel;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
-public interface LoanScheduleCalculationPlatformService {
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor(staticName = "instance")
+public class ClientMaximumLoanArrearsData {
 
-    LoanScheduleModel calculateLoanSchedule(JsonQuery query, Boolean validateParams);
-
-    void updateFutureSchedule(LoanScheduleData loanScheduleData, Long loanId);
-
-    LoanScheduleData generateLoanScheduleForVariableInstallmentRequest(Long loanId, String json);
-
-    void getFeeChargesDetail(LoanScheduleData loanScheduleData, Long loanId);
+    private Long clientId;
+    // maximumNumberOfDaysInArrears
+    private Long maximoDeDiasDeMora;
+    // numberOfLoanInArrears
+    private Long prestamosEnMora;
 }

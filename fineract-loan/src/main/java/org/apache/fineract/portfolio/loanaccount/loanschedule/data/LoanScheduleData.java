@@ -21,6 +21,7 @@ package org.apache.fineract.portfolio.loanaccount.loanschedule.data;
 import java.math.BigDecimal;
 import java.util.Collection;
 import lombok.Getter;
+import lombok.Setter;
 import org.apache.fineract.organisation.monetary.data.CurrencyData;
 
 /**
@@ -33,6 +34,7 @@ import org.apache.fineract.organisation.monetary.data.CurrencyData;
  * </ul>
  */
 @Getter
+@Setter
 public class LoanScheduleData {
 
     /**
@@ -54,6 +56,10 @@ public class LoanScheduleData {
     private final BigDecimal totalPaidLate;
     private final BigDecimal totalOutstanding;
     private final BigDecimal totalCredits;
+    BigDecimal totalMandatoryInsuranceCharged = BigDecimal.ZERO;
+    BigDecimal totalVoluntaryInsuranceCharged = BigDecimal.ZERO;
+    BigDecimal totalAvalCharged = BigDecimal.ZERO;
+    BigDecimal totalHonorariosCharged = BigDecimal.ZERO;
 
     /**
      * <code>periods</code> is collection of data objects containing specific information to each period of the loan

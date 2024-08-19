@@ -70,6 +70,7 @@ import org.apache.fineract.portfolio.accountdetails.service.AccountDetailsReadPl
 import org.apache.fineract.portfolio.client.data.ClienAvailableCupoFieldsData;
 import org.apache.fineract.portfolio.client.data.ClientBlockingReasonData;
 import org.apache.fineract.portfolio.client.data.ClientData;
+import org.apache.fineract.portfolio.client.data.ClientMaximumLoanArrearsData;
 import org.apache.fineract.portfolio.client.exception.ClientNotFoundException;
 import org.apache.fineract.portfolio.client.service.ClientBlockingReasonReadPlatformService;
 import org.apache.fineract.portfolio.client.service.ClientReadPlatformService;
@@ -596,6 +597,18 @@ public class ClientsApiResource {
         }
 
         return commandRequest;
+    }
+
+    // create new GET method to retrieve maximum loan arrears days for a client
+    @GET
+    @Path("{clientId}/max-arrears-days")
+    @Produces({ MediaType.APPLICATION_JSON })
+    @Operation(summary = "Retrieve client maximum loan arrears days", description = "Retrieve client maximum loan arrears days")
+    public String retrieveClientMaxArrearsDays(@PathParam("clientId") final String clientId) {
+        context.authenticatedUser().validateHasReadPermission(ClientApiConstants.CLIENT_RESOURCE_NAME);
+        final ClientMaximumLoanArrearsData clientMaximumLoanArrearsData = clientReadPlatformService
+                .retrieveClientMaximumLoanArrearsData(clientId);
+        return toApiJsonSerializer.serialize(clientMaximumLoanArrearsData);
     }
 
     private String retrieveClient(Long clientId, final String externalId, final boolean staffInSelectedOfficeOnly, final UriInfo uriInfo) {

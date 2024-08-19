@@ -18,16 +18,7 @@
  */
 package org.apache.fineract.portfolio.loanaccount.domain;
 
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.OneToOne;
-import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
@@ -150,6 +141,13 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
 
     @Column(name = "is_get_percentage_from_table", nullable = false)
     private boolean getPercentageAmountFromTable;
+
+    // This attribute is used only to hold the current installment charge amount calculated and used
+    // when repayment schedule is generated during loan creation. This amount is needed to show individual charge
+    // amounts on the loan schedule screen.
+    // Try not to use this variable anywhere else in the code
+    @Transient
+    private BigDecimal installmentChargeAmount = BigDecimal.ZERO;
 
     protected LoanCharge() {
         //
@@ -828,6 +826,14 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
         return Money.of(currency, this.amountWrittenOff);
     }
 
+    public BigDecimal getInstallmentChargeAmount() {
+        return installmentChargeAmount;
+    }
+
+    public void setInstallmentChargeAmount(BigDecimal installmentChargeAmount) {
+        this.installmentChargeAmount = installmentChargeAmount;
+    }
+
     public Integer getApplicableFromInstallment() {
         if (applicableFromInstallment == null) {
             return 1;
@@ -1231,8 +1237,16 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
             customAmout = customAmout.add(this.installmentCharges().isEmpty() ? this.amountOrPercentage
                     : this.getInstallmentLoanCharge(installmentNumber).getAmount());
         } else if (this.isCustomPercentageBasedDistributedCharge()) {
-            customAmout = customAmout.add(this.installmentCharges().isEmpty() ? this.amountOrPercentage
-                    : this.getInstallmentLoanCharge(installmentNumber).getAmount());
+            BigDecimal chargeAmount = BigDecimal.ZERO;
+            if (this.installmentCharges().isEmpty()) {
+                chargeAmount = this.amountOrPercentage;
+            } else {
+                final LoanInstallmentCharge installmentCharge = this.getInstallmentLoanCharge(installmentNumber);
+                if (installmentCharge != null) {
+                    chargeAmount = installmentCharge.getAmount();
+                }
+            }
+            customAmout = customAmout.add(chargeAmount);
         } else if (this.isCustomPercentageBasedOfAnotherCharge()) {
             customAmout = customAmout.add(this.installmentCharges().isEmpty() ? this.amountOrPercentage
                     : this.getInstallmentLoanCharge(installmentNumber).getAmount());
