@@ -337,4 +337,8 @@ public class LoanInstallmentCharge extends AbstractPersistableCustom implements 
         return LoanInstallmentChargeData.builder().installmentNumber(installment.getInstallmentNumber()).dueDate(installment.getDueDate())
                 .amount(amount).amountOutstanding(amountOutstanding).amountWaived(amountWaived).paid(paid).waived(waived).build();
     }
+
+    public void setAmountWrittenOff(BigDecimal amountWrittenOff) {
+        this.amountWrittenOff = amountWrittenOff;
+    }
 }
