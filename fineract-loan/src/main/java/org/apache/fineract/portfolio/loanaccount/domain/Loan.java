@@ -4076,12 +4076,12 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         final List<LoanChargeData> currentOutstandingLoanCharges = specialWriteOffInstallment.getCurrentOutstandingLoanCharges();
         final Money principalPortion = Money.of(currency, command.bigDecimalValueOfParameterNamed("principalPortion"));
         final Money interestPortion = Money.of(currency, command.bigDecimalValueOfParameterNamed("interestPortion"));
-        if (maximumPrincipalPortion.isGreaterThan(principalPortion)) {
+        if (principalPortion.isGreaterThan(maximumPrincipalPortion)) {
             throw new GeneralPlatformDomainRuleException("principal.portion.must.be.less.than.outstanding.principal",
                     "The principal portion of the special write off transaction must be less than or equal to the outstanding principal amount of the loan.",
-                    maximumInterestPortion.getAmount());
+                    maximumPrincipalPortion.getAmount());
         }
-        if (specialWriteOffInstallment.getInterestOutstanding(currency).isGreaterThan(interestPortion)) {
+        if (interestPortion.isGreaterThan(specialWriteOffInstallment.getInterestOutstanding(currency))) {
             throw new GeneralPlatformDomainRuleException("interest.portion.must.be.less.than.outstanding.interest",
                     "The interest portion of the special write off transaction must be less than or equal to the outstanding interest amount of the loan.",
                     maximumInterestPortion.getAmount());
@@ -4101,7 +4101,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                     final LoanChargeData loanCharge = optionLoanCharge.get();
                     final String chargeName = loanCharge.getName();
                     final BigDecimal maximumChargeAmount = loanCharge.getAmountOutstanding();
-                    if (maximumChargeAmount.compareTo(loanChargeData.getAmountOutstanding()) > 0) {
+                    if (loanChargeData.getAmountOutstanding().compareTo(maximumChargeAmount) > 0) {
                         throw new GeneralPlatformDomainRuleException("charge.amount.must.be.less.than.outstanding.charge.amount",
                                 "The charge amount of the special write off transaction must be less than or equal to the outstanding charge amount of the loan.",
                                 maximumChargeAmount, chargeName);
