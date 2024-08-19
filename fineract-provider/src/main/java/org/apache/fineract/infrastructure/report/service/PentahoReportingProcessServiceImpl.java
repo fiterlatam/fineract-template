@@ -37,7 +37,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import javax.sql.DataSource;
-
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.infrastructure.core.api.ApiParameterHelper;
@@ -225,7 +224,7 @@ public class PentahoReportingProcessServiceImpl implements ReportingProcessServi
                         logger.info("ParamName: {}", paramName);
                         logger.info("ParamValue: {}", pValue.toString());
                         String myDate = pValue.toString();
-                        SimpleDateFormat sdf = new SimpleDateFormat("dd MMMM yyyy",new Locale("es", "ES"));
+                        SimpleDateFormat sdf = new SimpleDateFormat("dd MMMM yyyy", new Locale("es", "ES"));
                         Date date = sdf.parse(myDate);
                         long millis = date.getTime();
                         java.sql.Date mySQLDate = new java.sql.Date(millis);
