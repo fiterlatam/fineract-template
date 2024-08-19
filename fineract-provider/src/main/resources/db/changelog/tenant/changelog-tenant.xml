@@ -261,4 +261,6 @@
     <include file="parts/20241904011009100_SU_165_update_report.xml" relativeToChangelogFile="true"/>
     <include file="parts/20240529122200_SU_276_insurance-incident.xml" relativeToChangelogFile="true"/>
     <include file="parts/20241408011009100_SU_302_add_individual_charge_amounts_to_repayment_history.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20241408011009260_SU_174_create_report.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20241408011009260_SU_175_create_report.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
