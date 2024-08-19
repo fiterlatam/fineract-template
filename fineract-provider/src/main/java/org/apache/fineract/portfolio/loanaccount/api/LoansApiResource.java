@@ -669,6 +669,14 @@ public class LoansApiResource {
         return bulkImportWorkbookPopulatorService.getTemplate(GlobalEntityType.LOAN_TRANSACTIONS.toString(), officeId, null, dateFormat);
     }
 
+    @GET
+    @Path("loanwriteoffs/downloadtemplate")
+    @Produces("application/vnd.ms-excel")
+    public Response getLoanWriteOffTemplate(@QueryParam("officeId") final Long officeId,
+            @QueryParam("dateFormat") final String dateFormat) {
+        return bulkImportWorkbookPopulatorService.getTemplate(GlobalEntityType.LOAN_WRITE_OFFS.toString(), officeId, null, dateFormat);
+    }
+
     @POST
     @Path("uploadtemplate")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
@@ -692,6 +700,19 @@ public class LoansApiResource {
             @FormDataParam("dateFormat") final String dateFormat) {
         final Long importDocumentId = this.bulkImportWorkbookService.importWorkbook(GlobalEntityType.LOAN_TRANSACTIONS.toString(),
                 uploadedInputStream, fileDetail, locale, dateFormat, null);
+        return this.toApiJsonSerializer.serialize(importDocumentId);
+    }
+
+    @POST
+    @Path("loanwriteoffs/uploadtemplate")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @RequestBody(description = "Upload Loan Write Off template", content = {
+            @Content(mediaType = MediaType.MULTIPART_FORM_DATA, schema = @Schema(implementation = UploadRequest.class)) })
+    public String postLoanWriteOffTemplate(@FormDataParam("file") InputStream uploadedInputStream,
+            @FormDataParam("file") FormDataContentDisposition fileDetail, @FormDataParam("locale") final String locale,
+            @FormDataParam("dateFormat") final String dateFormat) {
+        final Long importDocumentId = this.bulkImportWorkbookService.importWorkbook(GlobalEntityType.LOAN_WRITE_OFFS.toString(),
+                uploadedInputStream, fileDetail, locale, dateFormat, new HashMap<>());
         return this.toApiJsonSerializer.serialize(importDocumentId);
     }
 

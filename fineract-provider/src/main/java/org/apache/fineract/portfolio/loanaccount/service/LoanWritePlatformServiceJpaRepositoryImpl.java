@@ -58,6 +58,7 @@ import org.apache.fineract.infrastructure.codes.domain.CodeValueRepositoryWrappe
 import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
 import org.apache.fineract.infrastructure.configuration.domain.GlobalConfigurationProperty;
 import org.apache.fineract.infrastructure.configuration.domain.GlobalConfigurationRepository;
+import org.apache.fineract.infrastructure.configuration.service.TemporaryConfigurationServiceContainer;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.ApiParameterError;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
@@ -228,7 +229,6 @@ import org.apache.fineract.portfolio.repaymentwithpostdatedchecks.service.Repaym
 import org.apache.fineract.portfolio.savings.domain.SavingsAccount;
 import org.apache.fineract.portfolio.transfer.api.TransferApiConstants;
 import org.apache.fineract.useradministration.domain.AppUser;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -1083,9 +1083,9 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         Loan loan = this.loanAssembler.assembleFrom(loanId);
         final LoanProduct loanProduct = loan.loanProduct();
         final Long repaymentChannelId = command.longValueOfParameterNamed("repaymentChannelId");
-        final boolean isImportedRepaymentTransaction = command.booleanPrimitiveValueOfParameterNamed("isImportedRepaymentTransaction");
+        final boolean isImportedTransaction = command.booleanPrimitiveValueOfParameterNamed("isImportedTransaction");
         ChannelData channelData;
-        if (isImportedRepaymentTransaction) {
+        if (isImportedTransaction) {
             final String clientIdNumber = command.stringValueOfParameterNamed("clientIdNumber");
             final Long clientId = loan.getClientId();
             List<ClientData> clients = this.clientReadPlatformService.retrieveByIdNumber(clientIdNumber);
@@ -1824,16 +1824,38 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         final List<Long> existingReversedTransactionIds = new ArrayList<>();
         final LocalDate recalculateFrom = null;
         ScheduleGeneratorDTO scheduleGeneratorDTO = this.loanUtilService.buildScheduleGeneratorDTO(loan, recalculateFrom);
-        final ChangedTransactionDetail changedTransactionDetail = loan.specialWrittenOff(command, changes, existingTransactionIds,
+        final LocalDate transactionDate = DateUtils.getBusinessLocalDate();
+        final String txnExternalId = command.stringValueOfParameterNamedAllowingNull("externalId");
+        ExternalId externalId = ExternalIdFactory.produce(txnExternalId);
+        if (externalId.isEmpty() && TemporaryConfigurationServiceContainer.isExternalIdAutoGenerationEnabled()) {
+            externalId = ExternalId.generate();
+        }
+        changes.put("externalId", externalId);
+        final ChangedTransactionDetail changedTransactionDetail = loan.validateSpecialWrittenOff(command, changes, existingTransactionIds,
                 existingReversedTransactionIds, scheduleGeneratorDTO);
-        final LoanTransaction writeOffTransaction = changedTransactionDetail.getNewTransactionMappings().remove(0L);
+        final String noteText = command.stringValueOfParameterNamed("note");
+        final boolean isImportedTransaction = command.booleanPrimitiveValueOfParameterNamed("isImportedTransaction");
+        LoanTransaction writeOffTransaction;
+        if (isImportedTransaction) {
+            final BigDecimal totalWriteOffAmount = command.bigDecimalValueOfParameterNamed("totalWriteOffAmount");
+            final PaymentDetail paymentDetail = null;
+            final boolean isRecoveryRepayment = false;
+            final String chargeRefundChargeType = null;
+            final boolean isAccountTransfer = false;
+            final HolidayDetailDTO holidayDetailDto = null;
+            boolean isHolidayValidationDone = false;
+            writeOffTransaction = this.loanAccountDomainService.makeRepayment(LoanTransactionType.WRITEOFF, loan, transactionDate,
+                    totalWriteOffAmount, paymentDetail, noteText, externalId, isRecoveryRepayment, chargeRefundChargeType,
+                    isAccountTransfer, holidayDetailDto, isHolidayValidationDone);
+        } else {
+            writeOffTransaction = loan.doLoanSpecialWriteOff(command, transactionDate, externalId);
+        }
         this.loanTransactionRepository.saveAndFlush(writeOffTransaction);
         for (final Map.Entry<Long, LoanTransaction> mapEntry : changedTransactionDetail.getNewTransactionMappings().entrySet()) {
             this.loanTransactionRepository.save(mapEntry.getValue());
             this.accountTransfersWritePlatformService.updateLoanTransaction(mapEntry.getKey(), mapEntry.getValue());
         }
         saveLoanWithDataIntegrityViolationChecks(loan);
-        final String noteText = command.stringValueOfParameterNamed("note");
         if (StringUtils.isNotBlank(noteText)) {
             changes.put("note", noteText);
             final Note note = Note.loanTransactionNote(loan, writeOffTransaction, noteText);
@@ -3435,7 +3457,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         }
 
         @Override
-        public LoanRescheduleData mapRow(@NotNull final ResultSet rs, @SuppressWarnings("unused") final int rowNum) throws SQLException {
+        public LoanRescheduleData mapRow(final ResultSet rs, @SuppressWarnings("unused") final int rowNum) throws SQLException {
             final Long id = JdbcSupport.getLong(rs, "id");
             final BigDecimal annualNominalRate = rs.getBigDecimal("annualNominalRate");
             final BigDecimal rescheduledAnnualRate = rs.getBigDecimal("rescheduledAnnualRate");

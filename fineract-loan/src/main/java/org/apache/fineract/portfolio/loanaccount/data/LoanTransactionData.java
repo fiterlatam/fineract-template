@@ -74,6 +74,7 @@ public class LoanTransactionData {
     private String dateFormat;
     private String locale;
     private BigDecimal transactionAmount;
+    private BigDecimal totalWriteOffAmount;
     private LocalDate transactionDate;
     private Long paymentTypeId;
     private String accountNumber;
@@ -93,7 +94,7 @@ public class LoanTransactionData {
     private Collection<CodeValueData> bankOptions;
     private Long repaymentChannelId;
     private Long repaymentBankId;
-    private boolean isImportedRepaymentTransaction;
+    private boolean isImportedTransaction;
     private List<EnumOptionData> transactionProcessingStrategyTypes;
     private String transactionProcessingStrategy;
     private String loanScheduleType;
@@ -104,6 +105,12 @@ public class LoanTransactionData {
     public static LoanTransactionData importInstance(BigDecimal repaymentAmount, LocalDate lastRepaymentDate, Long repaymentTypeId,
             Integer rowIndex, String locale, String dateFormat) {
         return new LoanTransactionData(repaymentAmount, lastRepaymentDate, repaymentTypeId, rowIndex, locale, dateFormat);
+    }
+
+    public static LoanTransactionData writeOffInstance(final Long accountId, final BigDecimal totalWriteOffAmount,
+            final boolean isImportedTransaction, final Integer rowIndex, final String locale, final String dateFormat) {
+        return new LoanTransactionData(null, null, null, null, null, null, null, null, accountId, "", rowIndex, locale, dateFormat,
+                totalWriteOffAmount, isImportedTransaction);
     }
 
     private LoanTransactionData(BigDecimal transactionAmount, LocalDate transactionDate, Long paymentTypeId, Integer rowIndex,
@@ -145,14 +152,16 @@ public class LoanTransactionData {
 
     public static LoanTransactionData importInstance(BigDecimal repaymentAmount, LocalDate repaymentDate, Long repaymentTypeId,
             String accountNumber, Integer checkNumber, Integer routingCode, Integer receiptNumber, Integer bankNumber, Long loanAccountId,
-            String transactionType, Integer rowIndex, String locale, String dateFormat) {
+            Integer rowIndex, String locale, String dateFormat) {
+        final BigDecimal totalWriteOffAmount = null;
+        final boolean isImportedTransaction = false;
         return new LoanTransactionData(repaymentAmount, repaymentDate, repaymentTypeId, accountNumber, checkNumber, routingCode,
-                receiptNumber, bankNumber, loanAccountId, "", rowIndex, locale, dateFormat);
+                receiptNumber, bankNumber, loanAccountId, "", rowIndex, locale, dateFormat, totalWriteOffAmount, isImportedTransaction);
     }
 
     private LoanTransactionData(BigDecimal transactionAmount, LocalDate transactionDate, Long paymentTypeId, String accountNumber,
             Integer checkNumber, Integer routingCode, Integer receiptNumber, Integer bankNumber, Long accountId, String transactionType,
-            Integer rowIndex, String locale, String dateFormat) {
+            Integer rowIndex, String locale, String dateFormat, BigDecimal totalWriteOffAmount, boolean isImportedTransaction) {
         this.transactionAmount = transactionAmount;
         this.transactionDate = transactionDate;
         this.paymentTypeId = paymentTypeId;
@@ -193,6 +202,8 @@ public class LoanTransactionData {
         this.paymentTypeOptions = null;
         this.writeOffReasonOptions = null;
         this.reversalExternalId = ExternalId.empty();
+        this.totalWriteOffAmount = totalWriteOffAmount;
+        this.isImportedTransaction = isImportedTransaction;
     }
 
     public void setNumberOfRepayments(Integer numberOfRepayments) {
