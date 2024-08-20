@@ -247,12 +247,12 @@ public class LoanChargeAssembler {
         if (charge.isInstallmentFeeCharge() && charge.isAddOnInstallmentFeeType() && loanApplicationTermsCharges != null) {
             if (ChargeCalculationType.fromInt(charge.getChargeCalculation()).isPercentageBased()) {
                 // update rate
-                LocalDate repaymentStartFromDate = loanApplicationTermsCharges.getRepaymentStartFromDate()!=null?
-                        loanApplicationTermsCharges.getRepaymentStartFromDate():
-                        loanApplicationTermsCharges.getCalculatedRepaymentsStartingFromLocalDate();
+                LocalDate repaymentStartFromDate = loanApplicationTermsCharges.getRepaymentStartFromDate() != null
+                        ? loanApplicationTermsCharges.getRepaymentStartFromDate()
+                        : loanApplicationTermsCharges.getCalculatedRepaymentsStartingFromLocalDate();
 
-                Pair<Integer, BigDecimal> addOnDaysAndRate = charge.getAddOnDisbursementChargeRate(
-                        loanApplicationTermsCharges.getExpectedDisbursementDate(), repaymentStartFromDate);
+                Pair<Integer, BigDecimal> addOnDaysAndRate = charge
+                        .getAddOnDisbursementChargeRate(loanApplicationTermsCharges.getExpectedDisbursementDate(), repaymentStartFromDate);
                 rate = addOnDaysAndRate.getRight();
                 loanChargeElement.add("amount", new JsonPrimitive(rate));
             }

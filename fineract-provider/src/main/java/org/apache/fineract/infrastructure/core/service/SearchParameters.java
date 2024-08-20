@@ -139,7 +139,7 @@ public final class SearchParameters {
 
         return new SearchParameters(searchText, null, null, displayName, null, null, null, status, offset, maxLimitAllowed, orderBy,
                 sortOrder, staffId, accountNo, loanId, savingsId, null, false, null, type, null, null, null, groupingType,
-                portfolioCenterId,agencyId);
+                portfolioCenterId, agencyId);
     }
 
     public static SearchParameters forBankCheques(final Long agencyId, final String chequeNo, final String bankAccNo, final Long batchId,

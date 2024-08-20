@@ -110,7 +110,7 @@ public class PrequalificationChecklistReadPlatformServiceImpl implements Prequal
                             dpi = validationResult.getDpi();
                             memberRow.addAll(List.of(memberId, clientName, dpi));
                         }
-                        if (!memberColumnHeaders.contains(policy.getDescription())){
+                        if (!memberColumnHeaders.contains(policy.getDescription())) {
                             memberColumnHeaders.add(policy.getDescription());
                         }
                         memberRow.add(validationColor);
