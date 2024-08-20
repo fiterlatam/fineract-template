@@ -535,9 +535,10 @@ public final class ChargeDefinitionCommandFromApiJsonDeserializer {
 
             }
 
-            final Integer daysInArrears = this.fromApiJsonHelper
-                    .extractIntegerWithLocaleNamed(ChargesApiConstants.DAYS_IN_ARREARS, element.getAsJsonObject());
-            baseDataValidator.reset().parameter(ChargesApiConstants.DAYS_IN_ARREARS).value(daysInArrears).notNull().integerEqualToOrGreaterThanNumber(1);
+            final Integer daysInArrears = this.fromApiJsonHelper.extractIntegerWithLocaleNamed(ChargesApiConstants.DAYS_IN_ARREARS,
+                    element.getAsJsonObject());
+            baseDataValidator.reset().parameter(ChargesApiConstants.DAYS_IN_ARREARS).value(daysInArrears).notNull()
+                    .integerEqualToOrGreaterThanNumber(1);
         }
     }
 

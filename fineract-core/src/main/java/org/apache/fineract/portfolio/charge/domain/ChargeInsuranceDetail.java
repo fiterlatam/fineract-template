@@ -51,7 +51,8 @@ public class ChargeInsuranceDetail {
     }
 
     public ChargeInsuranceDetail(String insuranceName, ChargeInsuranceType insuranceChargedAs, String insuranceCompany, String insurerName,
-            Long insuranceCode, String insurancePlan, BigDecimal baseValue, BigDecimal vatValue, BigDecimal totalValue, Long deadline, Integer daysInArrears) {
+            Long insuranceCode, String insurancePlan, BigDecimal baseValue, BigDecimal vatValue, BigDecimal totalValue, Long deadline,
+            Integer daysInArrears) {
         this.insuranceName = insuranceName;
         this.insuranceChargedAs = insuranceChargedAs;
         this.insuranceCompany = insuranceCompany;
@@ -126,7 +127,8 @@ public class ChargeInsuranceDetail {
         }
 
         final String insuranceChargedAsParamName = ChargesApiConstants.insuranceChargedAsParamName;
-        if (command.isChangeInIntegerParameterNamed(insuranceChargedAsParamName, this.insuranceChargedAs == null? ChargeInsuranceType.INVALID.getValue() : this.insuranceChargedAs.getValue())) {
+        if (command.isChangeInIntegerParameterNamed(insuranceChargedAsParamName,
+                this.insuranceChargedAs == null ? ChargeInsuranceType.INVALID.getValue() : this.insuranceChargedAs.getValue())) {
             final Integer newValue = command.integerValueOfParameterNamed(insuranceChargedAsParamName);
             actualChanges.put(insuranceChargedAsParamName, newValue);
             this.insuranceChargedAs = ChargeInsuranceType.fromInt(newValue);
