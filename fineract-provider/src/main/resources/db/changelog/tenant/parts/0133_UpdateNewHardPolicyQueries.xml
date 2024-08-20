@@ -450,8 +450,8 @@
        WHEN (${loanProductId} in (3,7)) AND client_details.loan_cycle >= 4 AND (client_loan_details.outstanding_installments <= 4) THEN 'GREEN'
        WHEN (${loanProductId} in (3,7)) AND client_details.loan_cycle >= 4 AND (client_loan_details.outstanding_installments > 4) THEN 'ORANGE'
        WHEN (${loanProductId} in (3,7)) AND client_details.loan_cycle < 4 AND (client_loan_details.indv_maturity_date < client_details.main_loan_maturity_date) THEN 'ORANGE'
-			 WHEN (${loanProductId} in (3,7)) AND (client_loan_details.indv_maturity_date < client_details.main_loan_maturity_date) THEN 'GREEN'
-			 ELSE 'RED'
+             WHEN (${loanProductId} in (3,7)) AND (client_loan_details.indv_maturity_date < client_details.main_loan_maturity_date) THEN 'GREEN'
+             ELSE 'RED'
        END AS color
        FROM m_client mc
        INNER JOIN (
@@ -463,11 +463,11 @@
            GROUP BY mc.id
        ) client_details ON client_details.client_id = mc.id
        INNER JOIN (
-					SELECT mc.id AS client_id,COUNT(DISTINCT RS.id) AS outstanding_installments, ml.expected_maturedon_date as indv_maturity_date
-					FROM m_client mc
-					LEFT JOIN m_loan ml ON ml.client_id = mc.id
-					LEFT JOIN m_loan_repayment_schedule RS ON RS.loan_id = ml.id
-					WHERE   ml.product_id = ${loanProductId} AND (ml.loan_status_id < 300) AND RS.duedate > (select main.expected_maturedon_date from m_loan main WHERE main.product_id IN (2, 4, 5, 6, 8, 9) AND (main.loan_status_id = 300) order by ml.expected_maturedon_date desc limit 1)
+                    SELECT mc.id AS client_id,COUNT(DISTINCT RS.id) AS outstanding_installments, ml.expected_maturedon_date as indv_maturity_date
+                    FROM m_client mc
+                    LEFT JOIN m_loan ml ON ml.client_id = mc.id
+                    LEFT JOIN m_loan_repayment_schedule RS ON RS.loan_id = ml.id
+                    WHERE   ml.product_id = ${loanProductId} AND (ml.loan_status_id < 300) AND RS.duedate > (select main.expected_maturedon_date from m_loan main WHERE main.product_id IN (2, 4, 5, 6, 8, 9) AND (main.loan_status_id = 300) order by ml.expected_maturedon_date desc limit 1)
              GROUP BY mc.id
          ) client_loan_details ON client_loan_details.client_id = mc.id
       WHERE mc.id = ${clientId}" WHERE report_name = "Payments outside the current term of the main product Policy Check";
@@ -651,10 +651,10 @@
                 main_loan_details.pending_installments,
                 recredit_loan_details.amount,
                 recredit_loan_details.charge_name,
-                	CASE
-                	WHEN main_loan_details.pending_installments <= 2 AND recredit_loan_details.charge_name = 'Cargo por ampliación 2 cuotas' THEN 'GREEN'
-                	WHEN main_loan_details.pending_installments >= 3 AND recredit_loan_details.charge_name = 'Cargo por ampliación 3 cuotas' THEN 'GREEN'
-                	ELSE 'RED'
+                    CASE
+                    WHEN main_loan_details.pending_installments <= 2 AND recredit_loan_details.charge_name = 'Cargo por ampliación 2 cuotas' THEN 'GREEN'
+                    WHEN main_loan_details.pending_installments >= 3 AND recredit_loan_details.charge_name = 'Cargo por ampliación 3 cuotas' THEN 'GREEN'
+                    ELSE 'RED'
                 END as color
                 FROM m_loan mln
                 join m_client mc on mc.id=mln.client_id
@@ -669,11 +669,11 @@
                     GROUP BY ml.id
                     )main_loan_details ON main_loan_details.loan_id = originalLoan.id
                 LEFT JOIN (
-                		SELECT ml.id AS loan_id, coalesce(mc2.name,'N/A') charge_name, coalesce(mlc.amount,0) as amount
-                		FROM  m_loan_charge mlc
-                		INNER JOIN  m_loan ml on ml.id = mlc.loan_id
-                		INNER JOIN m_charge mc2 on mc2.id = mlc.charge_id
-                		WHERE  mc2.name IN ('Cargo por ampliación 3 cuotas','Cargo por ampliación 2 cuotas')
+                        SELECT ml.id AS loan_id, coalesce(mc2.name,'N/A') charge_name, coalesce(mlc.amount,0) as amount
+                        FROM  m_loan_charge mlc
+                        INNER JOIN  m_loan ml on ml.id = mlc.loan_id
+                        INNER JOIN m_charge mc2 on mc2.id = mlc.charge_id
+                        WHERE  mc2.name IN ('Cargo por ampliación 3 cuotas','Cargo por ampliación 2 cuotas')
                     )recredit_loan_details ON recredit_loan_details.loan_id = mln.id
                 WHERE mln.id = ${loanId}"
             WHERE report_name = "Early Recapitalization Fee Policy Check";
@@ -705,12 +705,12 @@
                 )recredit_loans ON recredit_loans.prequalification_id = mpg.id
                 LEFT JOIN (
                 select ${prequalificationId} as prequalification_id, COUNT(ml.id) as loan_count
-				    FROM
-				    m_loan ml
-				    INNER JOIN m_client mc on ml.client_id = mc.id
-				    JOIN m_group_client mgc ON mgc.client_id = mc.id AND mgc.group_id = (SELECT group_id from m_loan where 		prequalification_id = ${prequalificationId} limit 1)
-				    where ml.loan_status_id =300 AND ml.product_id = ${loanProductId}  AND (ml.is_topup IS NULL OR ml.is_topup = 0)
-				    )main_loans ON main_loans.prequalification_id = mpg.id
+                    FROM
+                    m_loan ml
+                    INNER JOIN m_client mc on ml.client_id = mc.id
+                    JOIN m_group_client mgc ON mgc.client_id = mc.id AND mgc.group_id = (SELECT group_id from m_loan where 		prequalification_id = ${prequalificationId} limit 1)
+                    where ml.loan_status_id =300 AND ml.product_id = ${loanProductId}  AND (ml.is_topup IS NULL OR ml.is_topup = 0)
+                    )main_loans ON main_loans.prequalification_id = mpg.id
                 WHERE mpg.id = ${prequalificationId}"
             WHERE report_name = "Percentage Of Clients To Be Recredited In The Group Policy Check";
             ]]>
@@ -726,8 +726,8 @@
                 WHEN (${loanProductId} in (3,7)) AND client_details.loan_cycle >= 4 AND (client_loan_details.outstanding_installments <= 4) THEN 'GREEN'
                 WHEN (${loanProductId} in (3,7)) AND client_details.loan_cycle >= 4 AND (client_loan_details.outstanding_installments > 4) THEN 'ORANGE'
                 WHEN (${loanProductId} in (3,7)) AND client_details.loan_cycle < 4 AND (client_loan_details.indv_maturity_date > client_details.main_loan_maturity_date) THEN 'ORANGE'
-			    WHEN (${loanProductId} in (3,7)) AND (client_loan_details.indv_maturity_date < client_details.main_loan_maturity_date) THEN 'GREEN'
-			ELSE 'RED'
+                WHEN (${loanProductId} in (3,7)) AND (client_loan_details.indv_maturity_date < client_details.main_loan_maturity_date) THEN 'GREEN'
+            ELSE 'RED'
             END AS color
             FROM m_client mc
             INNER JOIN (
@@ -739,13 +739,13 @@
                 GROUP BY mc.id
             ) client_details ON client_details.client_id = mc.id
             INNER JOIN (
-			    SELECT mc.id AS client_id,COUNT(DISTINCT RS.id) AS outstanding_installments, ml.expected_maturedon_date as indv_maturity_date
-			    FROM m_client mc
-			    LEFT JOIN m_loan ml ON ml.client_id = mc.id
-			    LEFT JOIN m_loan_repayment_schedule RS ON RS.loan_id = ml.id
-			    WHERE   ml.product_id = ${loanProductId} AND (ml.loan_status_id < 300) AND RS.duedate >
-			        (select main.expected_maturedon_date from m_loan main WHERE main.product_id IN (2, 4, 5, 6, 8, 9)
-			        AND (main.loan_status_id = 300) AND main.client_id=${clientId} order by ml.expected_maturedon_date desc limit 1)
+                SELECT mc.id AS client_id,COUNT(DISTINCT RS.id) AS outstanding_installments, ml.expected_maturedon_date as indv_maturity_date
+                FROM m_client mc
+                LEFT JOIN m_loan ml ON ml.client_id = mc.id
+                LEFT JOIN m_loan_repayment_schedule RS ON RS.loan_id = ml.id
+                WHERE   ml.product_id = ${loanProductId} AND (ml.loan_status_id < 300) AND RS.duedate >
+                    (select main.expected_maturedon_date from m_loan main WHERE main.product_id IN (2, 4, 5, 6, 8, 9)
+                    AND (main.loan_status_id = 300) AND main.client_id=${clientId} order by ml.expected_maturedon_date desc limit 1)
                 GROUP BY mc.id
             ) client_loan_details ON client_loan_details.client_id = mc.id
             WHERE mc.id = ${clientId}" WHERE report_name = "Payments outside the current term of the main product Policy Check";
