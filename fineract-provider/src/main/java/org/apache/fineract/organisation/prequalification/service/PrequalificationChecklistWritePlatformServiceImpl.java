@@ -605,7 +605,7 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
         reportParams.put("${prequalificationId}", prequalificationId);
         reportParams.put("${loanProductId}", productId);
         reportParams.put("${clientArea}", clientArea);
-        reportParams.put("${categorization}", clientData.getCategorization());
+        reportParams.put("${categorization}", clientData.getRecreditCategorization());
         reportParams.put("${isTopup}", String.valueOf(clientData.getIsLoanTopup()));
         reportParams.put("${requestedAmount}", String.valueOf(clientData.getRequestedAmount()));
         final GenericResultsetData result = this.readReportingService.retrieveGenericResultset(reportName, "report", reportParams, false);
