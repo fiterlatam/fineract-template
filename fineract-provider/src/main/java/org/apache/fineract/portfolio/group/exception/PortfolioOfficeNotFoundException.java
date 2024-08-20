@@ -24,7 +24,8 @@ public class PortfolioOfficeNotFoundException extends AbstractPlatformDomainRule
 
     public PortfolioOfficeNotFoundException(final String potfolioOffice) {
         super("error.msg.portfolio.office.not.found",
-                "The Portfolio with name `" + potfolioOffice + "` Does not have a matching office created. First created the office", potfolioOffice);
+                "The Portfolio with name `" + potfolioOffice + "` Does not have a matching office created. First created the office",
+                potfolioOffice);
     }
 
 }

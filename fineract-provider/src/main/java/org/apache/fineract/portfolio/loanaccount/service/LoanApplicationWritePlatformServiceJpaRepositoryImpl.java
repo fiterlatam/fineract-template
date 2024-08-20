@@ -2458,7 +2458,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
         final String cliente_activo_fiador2 = this.fromJsonHelper.extractStringNamed("cliente_activo_fiador2", jsonElement);
         loanAdditionalData.setCliente_activo_fiador2(cliente_activo_fiador2);
 
-        final LocalDate dateOpened = this.fromJsonHelper.extractLocalDateNamed("dateOpened", jsonElement,dateFormat, dateLocal);
+        final LocalDate dateOpened = this.fromJsonHelper.extractLocalDateNamed("dateOpened", jsonElement, dateFormat, dateLocal);
         loanAdditionalData.setDateOpened(dateOpened.atStartOfDay());
 
         return loanAdditionalData;
@@ -2654,7 +2654,8 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 }
 
                 LocalDate deriveFirstRepaymentDate;
-                if (loan.getExpectedFirstRepaymentOnDate() != null && Objects.equals(loan.getLoanProduct().getOwnerType(), LoanProductOwnerType.INDIVIDUAL.getValue())) {
+                if (loan.getExpectedFirstRepaymentOnDate() != null
+                        && Objects.equals(loan.getLoanProduct().getOwnerType(), LoanProductOwnerType.INDIVIDUAL.getValue())) {
                     deriveFirstRepaymentDate = loan.getExpectedFirstRepaymentOnDate();
                 } else {
                     deriveFirstRepaymentDate = loanScheduleAssembler.deriveFirstRepaymentDate(loan, expectedDisbursementDate, calendar);

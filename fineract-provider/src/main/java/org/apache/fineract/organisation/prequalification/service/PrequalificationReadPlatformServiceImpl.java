@@ -460,18 +460,18 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                         FROM m_prequalification_group_members mpgm
                         GROUP BY mpgm.group_id
                     ) prequalification_numbers ON prequalification_numbers.prequalification_id = g.id
-                                        
+
                     LEFT JOIN(
                         select DISTINCT mc.office_id, ms.agency_id, mpgm.group_id, ms.linked_office_id as supervision_office
-                        from m_prequalification_group_members mpgm 
-                        INNER JOIN m_client mc on mc.dpi = mpgm.dpi 
-                        INNER JOIN m_group_client mgc on mgc.client_id = mc.id 
-                        INNER JOIN m_group mg on mg.id = mgc.group_id 
-                        INNER JOIN m_group center on center.id = mg.parent_id 
-                        INNER JOIN m_portfolio mp on mp.id = center.portfolio_id 
-                        INNER JOIN m_supervision ms on ms.id = mp.supervision_id 
+                        from m_prequalification_group_members mpgm
+                        INNER JOIN m_client mc on mc.dpi = mpgm.dpi
+                        INNER JOIN m_group_client mgc on mgc.client_id = mc.id
+                        INNER JOIN m_group mg on mg.id = mgc.group_id
+                        INNER JOIN m_group center on center.id = mg.parent_id
+                        INNER JOIN m_portfolio mp on mp.id = center.portfolio_id
+                        INNER JOIN m_supervision ms on ms.id = mp.supervision_id
                     ) individualOffice ON individualOffice.group_id = g.id
-                                        
+
                     LEFT JOIN m_agency ma ON
                     	g.agency_id = ma.id
                     LEFT JOIN(
