@@ -218,12 +218,13 @@ public class Charge extends AbstractPersistableCustom {
             final BigDecimal baseValue = command.bigDecimalValueOfParameterNamed("baseValue");
             final BigDecimal vatValue = command.bigDecimalValueOfParameterNamed("vatValue");
             final BigDecimal totalValue = command.bigDecimalValueOfParameterNamed("totalValue");
+            final Integer daysInArrears = command.integerValueOfParameterNamedDefaultToNullIfZero("daysInArrears");
             Long deadline = null;
             if (insuranceChargeAs.isCompra()) {
                 deadline = command.longValueOfParameterNamed("deadline");
             }
             chargeInsuranceDetail = new ChargeInsuranceDetail(insuranceName, insuranceChargeAs, insuranceCompany, insurerName,
-                    insuranceCode, insurancePlan, baseValue, vatValue, totalValue, deadline);
+                    insuranceCode, insurancePlan, baseValue, vatValue, totalValue, deadline, daysInArrears);
         }
         boolean getPercentageFromTable = command
                 .booleanPrimitiveValueOfParameterNamed(ChargesApiConstants.GET_INTEREST_PERCENTAGE_FROM_TABLE);
@@ -719,6 +720,9 @@ public class Charge extends AbstractPersistableCustom {
                 if (chargeCalculationType.isVoluntaryInsurance()) {
                     validateVoluntaryInsuranceCondition(chargeCalculationType);
                 }
+                if (this.chargeInsuranceDetail == null) {
+                    this.chargeInsuranceDetail = new ChargeInsuranceDetail();
+                }
                 this.chargeInsuranceDetail.update(command, actualChanges);
             }
         }
@@ -864,7 +868,8 @@ public class Charge extends AbstractPersistableCustom {
                 this.chargeInsuranceDetail.getInsuranceCompany(), this.chargeInsuranceDetail.getInsurerName(),
                 this.chargeInsuranceDetail.getInsuranceCode(), this.chargeInsuranceDetail.getInsurancePlan(),
                 this.chargeInsuranceDetail.getBaseValue(), this.chargeInsuranceDetail.getVatValue(),
-                this.chargeInsuranceDetail.getTotalValue(), this.chargeInsuranceDetail.getDeadline(), null);
+                this.chargeInsuranceDetail.getTotalValue(), this.chargeInsuranceDetail.getDeadline(), null,
+                this.chargeInsuranceDetail.getDaysInArrears());
         final CurrencyData currency = new CurrencyData(this.currencyCode, null, 0, 0, null, null);
         return ChargeData.instance(getId(), this.name, this.amount, currency, chargeTimeType, chargeAppliesTo, chargeCalculationType,
                 chargePaymentMode, getFeeOnMonthDay(), this.feeInterval, this.penalty, this.active, this.enableFreeWithdrawal,

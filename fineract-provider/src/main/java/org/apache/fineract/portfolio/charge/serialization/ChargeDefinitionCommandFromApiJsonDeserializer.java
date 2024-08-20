@@ -85,7 +85,7 @@ public final class ChargeDefinitionCommandFromApiJsonDeserializer {
             ChargesApiConstants.insurerNameParamName, ChargesApiConstants.insuranceCodeParamName,
             ChargesApiConstants.insurancePlanParamName, ChargesApiConstants.baseValueParamName, ChargesApiConstants.vatValueParamName,
             ChargesApiConstants.totalValueParamName, ChargesApiConstants.deadlineParamName, ChargesApiConstants.INTEREST_RATE_ID_PARAM_NAME,
-            ChargesApiConstants.GET_INTEREST_PERCENTAGE_FROM_TABLE));
+            ChargesApiConstants.GET_INTEREST_PERCENTAGE_FROM_TABLE, ChargesApiConstants.DAYS_IN_ARREARS));
     private final FromJsonHelper fromApiJsonHelper;
 
     @Autowired
@@ -534,6 +534,11 @@ public final class ChargeDefinitionCommandFromApiJsonDeserializer {
                         .longGreaterThanZero();
 
             }
+
+            final Integer daysInArrears = this.fromApiJsonHelper.extractIntegerWithLocaleNamed(ChargesApiConstants.DAYS_IN_ARREARS,
+                    element.getAsJsonObject());
+            baseDataValidator.reset().parameter(ChargesApiConstants.DAYS_IN_ARREARS).value(daysInArrears).notNull()
+                    .integerEqualToOrGreaterThanNumber(1);
         }
     }
 
