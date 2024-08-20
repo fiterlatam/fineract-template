@@ -588,7 +588,7 @@ public class AccountingProcessorHelper {
         }
 
         // Check for duplicate debit and credit account
-        if (debitAccount.getId().equals(creditAccount.getId())) {
+        /*if (debitAccount.getId().equals(creditAccount.getId())) {
 
             StringBuffer sb = new StringBuffer();
             sb.append("Incorrect Gl Account detected \n");
@@ -617,7 +617,7 @@ public class AccountingProcessorHelper {
 
             log.error(sb.toString());
             throw new JournalEntryRuntimeException("error.msg.journal.entry.save.operation.failed", "Invalid GL Account detected for debit entry");
-        }
+        }*/
         //
         createDebitJournalEntryForSavings(office, currencyCode, debitAccount, savingsId, transactionId, transactionDate, amount);
         createCreditJournalEntryForSavings(office, currencyCode, creditAccount, savingsId, transactionId, transactionDate, amount);
@@ -633,7 +633,7 @@ public class AccountingProcessorHelper {
         final GLAccount creditAccount = getLinkedGLAccountForSavingsProduct(savingsProductId, accountTypeToCreditId, paymentTypeId);
 
         // Check for duplicate debit and credit account
-        if (debitAccount.getId().equals(creditAccount.getId())) {
+        /*if (debitAccount.getId().equals(creditAccount.getId())) {
 
             StringBuffer sb = new StringBuffer();
             sb.append("Incorrect Gl Account detected \n");
@@ -662,7 +662,7 @@ public class AccountingProcessorHelper {
 
             log.error(sb.toString());
             throw new JournalEntryRuntimeException("error.msg.journal.entry.save.operation.failed", "Invalid GL Account detected for debit entry");
-        }
+        }*/
 
         createDebitJournalEntryForSavings(office, currencyCode, debitAccount, savingsId, transactionId, transactionDate, amount);
         createCreditJournalEntryForSavings(office, currencyCode, creditAccount, savingsId, transactionId, transactionDate, amount);
