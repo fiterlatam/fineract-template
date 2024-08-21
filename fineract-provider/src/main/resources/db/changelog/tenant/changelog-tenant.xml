@@ -261,5 +261,6 @@
     <include file="parts/20241904011009100_SU_165_update_report.xml" relativeToChangelogFile="true"/>
     <include file="parts/20240529122200_SU_276_insurance-incident.xml" relativeToChangelogFile="true"/>
     <include file="parts/20241408011009100_SU_302_add_individual_charge_amounts_to_repayment_history.xml" relativeToChangelogFile="true"/>
-    <include file="parts/202413080100760110_SU-190_add_table_compensasion.xml" relativeToChangelogFile="true"/>
+    <include file="parts/202413080100760111_SU-190_add_table_compensasion.xml" relativeToChangelogFile="true"/>
+    <include file="parts/202419080100760111_SU-190_add_permission_compensation.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

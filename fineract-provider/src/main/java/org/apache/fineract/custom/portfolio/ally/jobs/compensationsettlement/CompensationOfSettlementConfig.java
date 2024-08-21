@@ -1,5 +1,7 @@
 package org.apache.fineract.custom.portfolio.ally.jobs.compensationsettlement;
 
+import org.apache.fineract.custom.portfolio.ally.domain.AllyCollectionSettlementRepository;
+import org.apache.fineract.custom.portfolio.ally.domain.AllyPurchaseSettlementRepository;
 import org.apache.fineract.infrastructure.jobs.service.JobName;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
@@ -21,6 +23,12 @@ public class CompensationOfSettlementConfig {
     @Autowired
     private PlatformTransactionManager transactionManager;
 
+    @Autowired
+    private AllyPurchaseSettlementRepository allyPurchaseSettlementRepository;
+
+    @Autowired
+    private AllyCollectionSettlementRepository allyCollectionSettlementRepository;
+
     @Bean
     public Step CompensationOfSettlementStep() {
 
@@ -37,6 +45,6 @@ public class CompensationOfSettlementConfig {
 
     @Bean
     public CompensationOfSettlementTasklet compensationOfSettlementTasklet() {
-        return new CompensationOfSettlementTasklet();
+        return new CompensationOfSettlementTasklet(allyPurchaseSettlementRepository, allyCollectionSettlementRepository);
     }
 }
