@@ -114,7 +114,6 @@ public class CollectionSettlementTasklet implements Tasklet {
                     allyCollectionSettlement.setCityId(data.getCityId());
                     allyCollectionSettlement.setCityName(city.getName());
                     allyCollectionSettlement.setCollectionAmount(data.getAmount());
-                    allyCollectionSettlement.setSettledComission(data.getSettledComission());
                     allyCollectionSettlement.setTaxProfileId(data.getTaxId());
                     allyCollectionSettlement.setLoanId(data.getLoanId());
                     allyCollectionSettlement.setClientId(data.getClientId());
