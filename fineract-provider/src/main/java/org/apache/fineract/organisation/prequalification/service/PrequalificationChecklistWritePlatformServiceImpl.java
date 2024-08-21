@@ -300,17 +300,17 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
             final String gender = rs.getString("gender");
             final String clientArea = rs.getString("clientArea");
             final String clientCategorization = rs.getString("clientCategorization");
-            String recreditCategorization = isTopup?"RECREDITO" : "NUEVO";
+            String recreditCategorization = isTopup ? "RECREDITO" : "NUEVO";
             final String loanCycleCompleted = rs.getString("loanCycleCompleted");
-            if (!StringUtils.isBlank(loanCycleCompleted)){
+            if (!StringUtils.isBlank(loanCycleCompleted)) {
                 recreditCategorization = StringUtils.equalsIgnoreCase(loanCycleCompleted, "fromAnotherGroup") ? "RECREDITO" : "NUEVO";
             }
 
             return ClientData.builder().clientId(clientId).prequalificationId(prequalificationId).clientArea(clientArea)
-                    .clientCategorization(clientCategorization).recreditCategorization(recreditCategorization).prequalificationMemberId(prequalificationMemberId).name(name)
-                    .dateOfBirth(dateOfBirth).dpi(dpi).requestedAmount(requestedAmount).gender(gender).workWithPuente(workWithPuente)
-                    .president(president).buroCheckStatus(buroCheckStatus).agencyBuroStatus(agencyBuroStatus).isLoanTopup(isTopup)
-                    .loanCycle(loanCycle).build();
+                    .clientCategorization(clientCategorization).recreditCategorization(recreditCategorization)
+                    .prequalificationMemberId(prequalificationMemberId).name(name).dateOfBirth(dateOfBirth).dpi(dpi)
+                    .requestedAmount(requestedAmount).gender(gender).workWithPuente(workWithPuente).president(president)
+                    .buroCheckStatus(buroCheckStatus).agencyBuroStatus(agencyBuroStatus).isLoanTopup(isTopup).loanCycle(loanCycle).build();
         }
     }
 
@@ -369,6 +369,7 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
 
     /**
      * Recurring customer categorization
+     *
      * @param clientData
      */
     private CheckValidationColor runCheck2(ClientData clientData) {
@@ -645,7 +646,7 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
         reportParams.put("${prequalificationId}", prequalificationId);
         reportParams.put("${loanProductId}", productId);
         reportParams.put("${clientArea}", clientArea);
-        String categorization = groupData.getPreviousPrequalification()!=null?"RECREDITO":"NUEVO";
+        String categorization = groupData.getPreviousPrequalification() != null ? "RECREDITO" : "NUEVO";
         reportParams.put("${categorization}", categorization);
         reportParams.put("${disparityRatio}", disparityRatio);
         final GenericResultsetData result = this.readReportingService.retrieveGenericResultset(reportName, "report", reportParams, false);
@@ -663,7 +664,7 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
         LocalDate sixMonthsAgo = businessLocalDate.minus(6, ChronoUnit.MONTHS);
         final String numberOfMemberSQL = """
                 SELECT COUNT(mlag.loan_id) totalCount
-                FROM m_loan ml 
+                FROM m_loan ml
                 LEFT JOIN m_loan_additionals_group mlag ON mlag.loan_id = ml.id
                 LEFT JOIN m_code_value mcv ON mcv.id = mlag.business_experience
                 WHERE mcv.code_value = '<6m' AND ml.prequalification_id = ?
@@ -1018,7 +1019,7 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
             final LoanAdditionProperties loanAdditionProperties = loanAdditionPropertiesList.get(0);
             LocalDate businessStartDate = loanAdditionProperties.getFecha_inicio_negocio();
             LocalDate currentDate = DateUtils.getLocalDateOfTenant();
-            Double monthsBetween = Double.valueOf(ChronoUnit.MONTHS.between(businessStartDate,currentDate));
+            Double monthsBetween = Double.valueOf(ChronoUnit.MONTHS.between(businessStartDate, currentDate));
             DecimalFormat f = new DecimalFormat("##.0");
 
             yearsInBusiness = f.format(Double.valueOf(monthsBetween / 12));
@@ -1217,8 +1218,8 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
         final Map<String, String> reportParams = new HashMap<>();
         BigDecimal membersPercentage = BigDecimal.valueOf(100L);
         if (numberOfMembers != null && numberOfMembers < Long.valueOf(totalMembers)) {
-            membersPercentage = BigDecimal.valueOf(100L)
-                    .multiply(BigDecimal.valueOf(numberOfMembers).divide(BigDecimal.valueOf(totalMembers),2, MoneyHelper.getRoundingMode()));
+            membersPercentage = BigDecimal.valueOf(100L).multiply(
+                    BigDecimal.valueOf(numberOfMembers).divide(BigDecimal.valueOf(totalMembers), 2, MoneyHelper.getRoundingMode()));
         }
         reportParams.put("${membersPercentage}", String.valueOf(membersPercentage));
         final GenericResultsetData result = this.readReportingService.retrieveGenericResultset(reportName, "report", reportParams, false);
