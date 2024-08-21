@@ -263,5 +263,6 @@
     <include file="parts/20241408011009100_SU_302_add_individual_charge_amounts_to_repayment_history.xml" relativeToChangelogFile="true"/>
     <include file="parts/20241408011009260_SU_174_create_report.xml" relativeToChangelogFile="true"/>
     <include file="parts/20241408011009260_SU_175_create_report.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20242604011009111_SU_311_update_report.xml" relativeToChangelogFile="true"/>
     <include file="parts/20242008011009110_SU_309_add-days-in-arrears-to-charge.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
