@@ -868,7 +868,8 @@ public class Charge extends AbstractPersistableCustom {
                 this.chargeInsuranceDetail.getInsuranceCompany(), this.chargeInsuranceDetail.getInsurerName(),
                 this.chargeInsuranceDetail.getInsuranceCode(), this.chargeInsuranceDetail.getInsurancePlan(),
                 this.chargeInsuranceDetail.getBaseValue(), this.chargeInsuranceDetail.getVatValue(),
-                this.chargeInsuranceDetail.getTotalValue(), this.chargeInsuranceDetail.getDeadline(), null, this.chargeInsuranceDetail.getDaysInArrears());
+                this.chargeInsuranceDetail.getTotalValue(), this.chargeInsuranceDetail.getDeadline(), null,
+                this.chargeInsuranceDetail.getDaysInArrears());
         final CurrencyData currency = new CurrencyData(this.currencyCode, null, 0, 0, null, null);
         return ChargeData.instance(getId(), this.name, this.amount, currency, chargeTimeType, chargeAppliesTo, chargeCalculationType,
                 chargePaymentMode, getFeeOnMonthDay(), this.feeInterval, this.penalty, this.active, this.enableFreeWithdrawal,
