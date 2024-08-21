@@ -29,6 +29,7 @@ import java.io.File;
 import java.sql.Driver;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
@@ -223,12 +224,26 @@ public class PentahoReportingProcessServiceImpl implements ReportingProcessServi
                     } else if (clazz.getCanonicalName().equalsIgnoreCase("java.sql.Date")) {
                         logger.info("ParamName: {}", paramName);
                         logger.info("ParamValue: {}", pValue.toString());
-                        String myDate = pValue.toString();
-                        SimpleDateFormat sdf = new SimpleDateFormat("dd MMMM yyyy", new Locale("es", "ES"));
-                        Date date = sdf.parse(myDate);
-                        long millis = date.getTime();
-                        java.sql.Date mySQLDate = new java.sql.Date(millis);
-                        rptParamValues.put(paramName, mySQLDate);
+                        String dateString = pValue.toString();
+                        if (StringUtils.isNotBlank(dateString) && !"null".equalsIgnoreCase(dateString)) {
+                            // locale mostly is en or es , so we can use it to parse the date
+                            // Create SimpleDateFormat objects for both Spanish and English
+                            SimpleDateFormat spanishFormat = new SimpleDateFormat("dd MMMM yyyy", new Locale("es", "ES"));
+                            SimpleDateFormat englishFormat = new SimpleDateFormat("dd MMMM yyyy", Locale.ENGLISH);
+
+                            Date date;
+                            try {
+                                date = spanishFormat.parse(dateString);
+                            } catch (ParseException e) {
+                                // If parsing fails, try parsing the date in English
+                                date = englishFormat.parse(dateString);
+                            }
+
+                            long millis = date.getTime();
+                            java.sql.Date mySQLDate = new java.sql.Date(millis);
+                            rptParamValues.put(paramName, mySQLDate);
+                        }
+
                     } else {
                         logger.debug("ParamName Unknown: {}", paramName);
                         logger.debug("ParamValue Unknown: {}", pValue.toString());
