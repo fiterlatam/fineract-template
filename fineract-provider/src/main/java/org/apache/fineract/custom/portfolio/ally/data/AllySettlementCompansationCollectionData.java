@@ -10,7 +10,6 @@ import lombok.*;
 @Setter
 public class AllySettlementCompansationCollectionData {
 
-    private String purchaseDate;
     private String nit;
     private String companyName;
     private Long clientAllyId;

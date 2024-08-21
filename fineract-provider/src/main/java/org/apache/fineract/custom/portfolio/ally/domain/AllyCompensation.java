@@ -28,9 +28,6 @@ public class AllyCompensation {
     @Column(name = "date_end")
     private LocalDate dateEnd;
 
-    @Column(name = "date_end")
-    private LocalDate dateEnd;
-
     @Column(name = "nit")
     private String nit;
 
