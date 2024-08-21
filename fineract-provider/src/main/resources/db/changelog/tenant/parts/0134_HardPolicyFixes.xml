@@ -100,11 +100,11 @@
             UPDATE stretchy_report SET report_sql = "SELECT
             client_details.number_of_pending_installments,
             CASE
-			    WHEN (${loanProductId} in (3,7)) AND (individualLoan.expected_maturedon_date < client_details.main_loan_maturity_date) THEN 'GREEN'
+                WHEN (${loanProductId} in (3,7)) AND (individualLoan.expected_maturedon_date < client_details.main_loan_maturity_date) THEN 'GREEN'
                 WHEN (${loanProductId} in (3,7)) AND client_details.loan_cycle >= 4 AND (client_loan_details.outstanding_installments <= 4) THEN 'GREEN'
                 WHEN (${loanProductId} in (3,7)) AND client_details.loan_cycle >= 4 AND (client_loan_details.outstanding_installments > 4) THEN 'ORANGE'
                 WHEN (${loanProductId} in (3,7)) AND client_details.loan_cycle < 4 AND (client_loan_details.indv_maturity_date > client_details.main_loan_maturity_date) THEN 'ORANGE'
-			ELSE 'RED'
+            ELSE 'RED'
             END AS color
             FROM m_client mc
             LEFT JOIN m_loan individualLoan on individualLoan.client_id = mc.id AND individualLoan.product_id = ${loanProductId} AND (individualLoan.loan_status_id < 300)
@@ -117,13 +117,13 @@
                 GROUP BY mc.id
             ) client_details ON client_details.client_id = mc.id
             LEFT JOIN (
-			    SELECT mc.id AS client_id,COUNT(DISTINCT RS.id) AS outstanding_installments, ml.expected_maturedon_date as indv_maturity_date
-			    FROM m_client mc
-			    LEFT JOIN m_loan ml ON ml.client_id = mc.id
-			    LEFT JOIN m_loan_repayment_schedule RS ON RS.loan_id = ml.id
-			    WHERE   ml.product_id = ${loanProductId} AND (ml.loan_status_id < 300) AND RS.duedate >
-			        (select main.expected_maturedon_date from m_loan main WHERE main.product_id IN (2, 4, 5, 6, 8, 9)
-			        AND (main.loan_status_id = 300) AND main.client_id=${clientId} order by ml.expected_maturedon_date desc limit 1)
+                SELECT mc.id AS client_id,COUNT(DISTINCT RS.id) AS outstanding_installments, ml.expected_maturedon_date as indv_maturity_date
+                FROM m_client mc
+                LEFT JOIN m_loan ml ON ml.client_id = mc.id
+                LEFT JOIN m_loan_repayment_schedule RS ON RS.loan_id = ml.id
+                WHERE   ml.product_id = ${loanProductId} AND (ml.loan_status_id < 300) AND RS.duedate >
+                    (select main.expected_maturedon_date from m_loan main WHERE main.product_id IN (2, 4, 5, 6, 8, 9)
+                    AND (main.loan_status_id = 300) AND main.client_id=${clientId} order by ml.expected_maturedon_date desc limit 1)
                 GROUP BY mc.id
             ) client_loan_details ON client_loan_details.client_id = mc.id
             WHERE mc.id = ${clientId}" WHERE report_name = "Payments outside the current term of the main product Policy Check";

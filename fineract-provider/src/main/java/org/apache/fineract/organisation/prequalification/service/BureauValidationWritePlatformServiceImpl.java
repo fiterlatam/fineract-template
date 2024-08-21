@@ -632,7 +632,7 @@ public class BureauValidationWritePlatformServiceImpl implements BureauValidatio
                 dateLocale);
         loanAdditionalData.setDateOpened(dateOpened);
 
-        LocalDate fechaInicioNegocio = dateOpened!=null?dateOpened.toLocalDate(): DateUtils.getBusinessLocalDate();
+        LocalDate fechaInicioNegocio = dateOpened != null ? dateOpened.toLocalDate() : DateUtils.getBusinessLocalDate();
         loanAdditionalData.setFecha_inicio_negocio(fechaInicioNegocio);
 
         final LocalDate fechaFin = this.fromApiJsonHelper.extractLocalDateNamed("fecha_fin", jsonElement, dateFormat, dateLocale);
