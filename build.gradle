@@ -129,6 +129,16 @@ gitVersioning.apply {
 
 ext['groovy.version'] = '4.0.17'
 ext['swaggerFile'] = "$rootDir/fineract-provider/build/classes/java/main/static/fineract.json".toString()
+def pentahoReportDir = System.properties['user.home'] + System.properties['file.separator'] + '.mifosx' + System.properties['file.separator'] + 'pentahoReports'
+def pentahoReportPostgrestDir = System.properties['user.home'] + System.properties['file.separator'] + '.mifosx' + System.properties['file.separator'] + 'pentahoReportsPostgres'
+copy {
+    from "fineract-provider/pentahoReports"
+    into pentahoReportDir
+}
+copy {
+    from "fineract-provider/pentahoReportsPostgres"
+    into pentahoReportPostgrestDir
+}
 
 allprojects  {
     group = 'org.apache.fineract'
@@ -153,7 +163,7 @@ allprojects  {
     spotless {
         format 'misc', {
             target '**/*.md', '**/*.properties', '**/.gitignore', '**/.openapi-generator-ignore', '**/*.yml', '**/*.xml', '**/**.json', '**/*.sql'
-            targetExclude '**/build/**', '**/bin/**', '**/.settings/**', '**/.idea/**', '**/.gradle/**', '**/gradlew.bat', '**/licenses/**', '**/banner.txt', '.vscode/**', '.profileconfig.json'
+            targetExclude '**/build/**', '**/bin/**', '**/.settings/**', '**/.idea/**', '**/.gradle/**', '**/gradlew.bat', '**/licenses/**', '**/banner.txt', '.vscode/**', '.profileconfig.json','**/**.properties'
             indentWithSpaces(4)
             endWithNewline()
             trimTrailingWhitespace()
