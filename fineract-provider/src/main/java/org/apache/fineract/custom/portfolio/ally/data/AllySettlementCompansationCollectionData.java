@@ -14,12 +14,16 @@ public class AllySettlementCompansationCollectionData {
     private String companyName;
     private Long clientAllyId;
     private Long bankId;
+    private String startDate;
+    private String endDate;
     private String accountType;
     private String accountNumber;
     private BigDecimal purchaseAmount;
     private BigDecimal collectionAmount;
-    private BigDecimal vaCommissionAmount;
+    private BigDecimal vaComissionAmount;
     private BigDecimal purchaceSettlementAmount;
     private BigDecimal netOutstandingAmount;
+    private String lastCollectionDate;
+    private String lastPurchaseDate;
 
 }

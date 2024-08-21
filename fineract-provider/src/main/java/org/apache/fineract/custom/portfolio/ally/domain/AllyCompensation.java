@@ -59,7 +59,7 @@ public class AllyCompensation {
     private BigDecimal comissionAmount;
 
     @Column(name = "va_commision_amount", nullable = false)
-    private BigDecimal vaCommisionAmount;
+    private BigDecimal vaComissionAmount;
 
     @Column(name = "net_purchase_amount", nullable = false)
     private BigDecimal netPurchaseAmount;
