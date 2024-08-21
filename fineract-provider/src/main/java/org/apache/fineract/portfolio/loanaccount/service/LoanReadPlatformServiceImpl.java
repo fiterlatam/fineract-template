@@ -3026,6 +3026,99 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
     }
 
     @Override
+    public void exportLoanSchedulePDF(Long loanId, HttpServletResponse httpServletResponse) throws DocumentException, IOException {
+        final Loan loan = this.loanRepositoryWrapper.findOneWithNotFoundDetection(loanId);
+        final BigDecimal valorDescuento = loan.getValorDescuento();
+        final BigDecimal valorGiro = loan.getValorGiro();
+        String valorDescuentoAmountString = "";
+        String valorGiroAmountString = "";
+        boolean showDiscountFields = false;
+        if (valorDescuento != null && valorDescuento.compareTo(BigDecimal.ZERO) > 0) {
+            valorDescuentoAmountString = Money.of(loan.getCurrency(), valorDescuento).toString();
+            valorGiroAmountString = Money.of(loan.getCurrency(), valorGiro).toString();
+            showDiscountFields = true;
+        }
+
+        final Client loanClient = loan.getClient();
+        final Integer legalFormId = loanClient.getLegalForm();
+        final ClientAdditionalFieldsData loanAdditionalFieldsData = this.clientReadPlatformService
+                .retrieveClientAdditionalData(loanClient.getId());
+        final String nit = loanAdditionalFieldsData.getNit();
+        final String cedula = loanAdditionalFieldsData.getCedula();
+        String clientFullName;
+        String clientNit;
+        if (LegalForm.PERSON.getValue().equals(legalFormId)) {
+            clientNit = cedula;
+            final String lastName = loan.getClient().getLastname();
+            final String firstName = loan.getClient().getFirstname();
+            clientFullName = firstName + " " + lastName;
+        } else {
+            clientFullName = loanClient.getFullname();
+            clientNit = nit;
+        }
+        final LocalDate disbursementDate = loan.getDisbursementDate();
+        final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd MMMM yyyy").withLocale(Locale.forLanguageTag("es-ES"));
+        final String disbursementDateString = disbursementDate.format(dateFormatter);
+        final BigDecimal disbursementAmount = loan.getNetDisbursalAmount();
+        final String disbursementAmountString = Money.of(loan.getCurrency(), disbursementAmount).toString();
+        final Client loanAssignor = loan.getLoanAssignor();
+        String loanAssignorDisplayName = "N/A";
+        String loanAssignorNit = "N/A";
+        if (loanAssignor != null) {
+            final Long loanAssignorId = loanAssignor.getId();
+            final LoanAssignorData loanAssignorData = this.retrieveLoanAssignorDataById(loanAssignorId);
+            loanAssignorNit = loanAssignorData.getNit();
+            loanAssignorDisplayName = loanAssignor.getDisplayName();
+        }
+        final AppUser disbursedByUser = loan.getDisbursedBy();
+        String disbursedByUsername = this.context.authenticatedUser().getDisplayName();
+        if (disbursedByUser != null) {
+            disbursedByUsername = disbursedByUser.getDisplayName();
+        }
+        final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy MMMM dd HH:mm:ss")
+                .withLocale(Locale.forLanguageTag("es-ES"));
+        final String generatedOnDateTime = DateUtils.getLocalDateTimeOfTenant().format(dateTimeFormatter);
+        final Map<String, Object> variables = new HashMap<>();
+        variables.put("clientFullName", clientFullName);
+        variables.put("clientNit", clientNit);
+        variables.put("disbursementDate", disbursementDateString);
+        variables.put("loanId", loanId);
+        variables.put("reportTitle", "Calendario de Pagos");
+
+        variables.put("disbursementAmount", disbursementAmountString);
+        variables.put("disbursedByUsername", disbursedByUsername);
+        variables.put("loanAssignorDisplayName", loanAssignorDisplayName);
+        variables.put("loanAssignorNit", loanAssignorNit);
+        variables.put("generatedOnDateTime", generatedOnDateTime);
+        variables.put("generatedByUsername", this.context.authenticatedUser().getDisplayName());
+        variables.put("valorDescuento", valorDescuentoAmountString);
+        variables.put("valorGiro", valorGiroAmountString);
+        variables.put("showDiscountFields", showDiscountFields);
+        final org.thymeleaf.context.Context thymeleafContext = new org.thymeleaf.context.Context(Locale.forLanguageTag("es-ES"), variables);
+        ClassLoaderTemplateResolver templateResolver = new ClassLoaderTemplateResolver();
+        templateResolver.setPrefix("templates/");
+        templateResolver.setSuffix(".html");
+        templateResolver.setCharacterEncoding("UTF-8");
+        templateResolver.setCacheable(false);
+        templateResolver.setTemplateMode(TemplateMode.HTML);
+        templateResolver.setOrder(0);
+        templateResolver.setCheckExistence(true);
+        final TemplateEngine thymeleafTemplateEngine = new SpringTemplateEngine();
+        thymeleafTemplateEngine.setTemplateResolver(templateResolver);
+        final String html = thymeleafTemplateEngine.process("LoanDisbursementReport", thymeleafContext);
+        final ITextRenderer renderer = new ITextRenderer();
+        renderer.setDocumentFromString(html);
+        renderer.layout();
+        final String filename = "Reporte_de_desembolso_" + new SimpleDateFormat("yyyyMMddHHmmss").format(new Date()) + ".pdf";
+        httpServletResponse.setContentType("application/pdf");
+        httpServletResponse.setHeader("Content-Disposition", "inline; filename=" + filename);
+        httpServletResponse.setStatus(HttpServletResponse.SC_OK);
+        final OutputStream outputStream = httpServletResponse.getOutputStream();
+        renderer.createPDF(outputStream);
+        outputStream.close();
+    }
+
+    @Override
     public Collection<Long> retrieveClientsWithLoansInActive(Long loanProductId, Integer inactivityPeriod) {
 
         final String query = """

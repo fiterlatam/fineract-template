@@ -34,10 +34,10 @@
 <body>
 <div class="report-box">
     <h1>INTERCRÉDITO DE COLOMBIA</h1>
-    <h2 th:text="'NIT ' + ${nit}"></h2>
+    <h2 th:text="'NIT ' + ${clientNit}"></h2>
     <h3 th:text="${title}"></h3>
 
-    <p>Cliente: <span th:text="${clientName}"></span></p>
+    <p>Cliente: <span th:text="${clientFullName}"></span></p>
     <p>Numero de Identificación: <span th:text="${clientId}"></span></p>
     <p>Fecha de Financiación: <span th:text="${financingDate}"></span></p>
     <p>Monto financiado: <span th:text="${financedAmount}"></span></p>
