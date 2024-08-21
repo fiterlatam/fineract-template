@@ -360,8 +360,7 @@ public class ChargeReadPlatformServiceImpl implements ChargeReadPlatformService 
                         mir.name AS "interestRateName",
                         mir.current_rate AS "interestRateCurrentRate",
                         mir.appliedon_date AS "interestRateAppliedOnDate",
-                        c.is_get_percentage_from_table AS "getPercentageAmountFromTable",
-                        c.days_in_arrears AS "daysInArrears"
+                        c.is_get_percentage_from_table AS "getPercentageAmountFromTable"
                     FROM m_charge c
                     JOIN m_organisation_currency oc ON c.currency_code = oc.code
                     LEFT JOIN acc_gl_account acc ON acc.id = c.income_or_liability_account_id
