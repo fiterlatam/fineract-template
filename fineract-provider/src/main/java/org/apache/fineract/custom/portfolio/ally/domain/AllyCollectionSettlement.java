@@ -46,9 +46,6 @@ public class AllyCollectionSettlement {
     @Column(name = "collection_amount", nullable = false)
     private BigDecimal collectionAmount;
 
-    @Column(name = "settled_comission", nullable = false)
-    private Integer settledComission;
-
     @Column(name = "tax_profile_id", nullable = false)
     private Integer taxProfileId;
 
