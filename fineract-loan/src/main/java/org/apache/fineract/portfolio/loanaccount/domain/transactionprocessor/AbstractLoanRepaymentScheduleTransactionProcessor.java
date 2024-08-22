@@ -720,36 +720,12 @@ public abstract class AbstractLoanRepaymentScheduleTransactionProcessor implemen
 
     protected void handleWriteOff(final LoanTransaction loanTransaction, final MonetaryCurrency currency,
             final List<LoanRepaymentScheduleInstallment> installments, final Set<LoanCharge> charges) {
-        Money transactionAmountUnprocessed = handleTransactionAndCharges(loanTransaction, currency, installments, charges, null, false);
+        final Money transactionAmountUnprocessed = handleTransactionAndCharges(loanTransaction, currency, installments, charges, null,
+                false);
         if (transactionAmountUnprocessed.isGreaterThanZero()) {
             onLoanOverpayment(loanTransaction, transactionAmountUnprocessed);
             loanTransaction.setOverPayments(transactionAmountUnprocessed);
         }
-
-        // final LocalDate transactionDate = loanTransaction.getTransactionDate();
-        // Money principalPortion = Money.zero(currency);
-        // Money interestPortion = Money.zero(currency);
-        // Money feeChargesPortion = Money.zero(currency);
-        // Money penaltychargesPortion = Money.zero(currency);
-        //
-        // // determine how much is written off in total and breakdown for
-        // // principal, interest and charges
-        // for (final LoanRepaymentScheduleInstallment currentInstallment : installments) {
-        //
-        // if (currentInstallment.isNotFullyPaidOff()) {
-        // principalPortion = principalPortion.plus(currentInstallment.writeOffOutstandingPrincipal(transactionDate,
-        // currency));
-        // interestPortion = interestPortion.plus(currentInstallment.writeOffOutstandingInterest(transactionDate,
-        // currency));
-        // feeChargesPortion = feeChargesPortion.plus(currentInstallment.writeOffOutstandingFeeCharges(transactionDate,
-        // currency));
-        // penaltychargesPortion = penaltychargesPortion
-        // .plus(currentInstallment.writeOffOutstandingPenaltyCharges(transactionDate, currency));
-        // }
-        // }
-        //
-        // loanTransaction.updateComponentsAndTotal(principalPortion, interestPortion, feeChargesPortion,
-        // penaltychargesPortion);
     }
 
     protected void handleChargeback(LoanTransaction loanTransaction, TransactionCtx ctx) {
