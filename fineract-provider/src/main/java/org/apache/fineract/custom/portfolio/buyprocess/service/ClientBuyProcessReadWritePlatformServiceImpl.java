@@ -196,6 +196,7 @@ public class ClientBuyProcessReadWritePlatformServiceImpl implements ClientBuyPr
 
     private void createLoanApplication(final ClientBuyProcess entity, final LoanProduct productEntity) {
         BigDecimal loanPrincipalAmount = entity.getAmount();
+        BigDecimal interestRatePerPeriod = productEntity.getLoanProductRelatedDetail().getNominalInterestRatePerPeriod();
         Long numberOfRepayments = entity.getTerm();
         final Long codigoSeguro = entity.getCodigoSeguro();
         final Long cedulaSeguroVoluntario = entity.getCedulaSeguroVoluntario();
@@ -210,15 +211,16 @@ public class ClientBuyProcessReadWritePlatformServiceImpl implements ClientBuyPr
                             .fromInt(chargeInsuranceDetailData.getInsuranceChargedAs() != null
                                     ? chargeInsuranceDetailData.getInsuranceChargedAs().intValue()
                                     : 0);
-                    if (chargeInsuranceType.isCargo()) {
+                    if (chargeInsuranceType.isCargo() || !productEntity.isPurChaseCharge()) {
                         final Long loanChargeId = chargeData.getId();
                         final BigDecimal loanChargeAmount = chargeData.getAmount();
                         final LoanChargeData loanChargeData = LoanChargeData.builder().chargeId(loanChargeId).amount(loanChargeAmount)
                                 .build();
                         loanCharges.add(loanChargeData);
-                    } else if (chargeInsuranceType.isCompra()) {
+                    } else if (chargeInsuranceType.isCompra() && productEntity.isPurChaseCharge()) {
                         loanPrincipalAmount = chargeInsuranceDetailData.getTotalValue();
                         numberOfRepayments = chargeInsuranceDetailData.getDeadline();
+                        interestRatePerPeriod = BigDecimal.ZERO;
                     }
                 }
             }
@@ -250,7 +252,7 @@ public class ClientBuyProcessReadWritePlatformServiceImpl implements ClientBuyPr
                 .loanTermFrequencyType(productEntity.getLoanProductRelatedDetail().getRepaymentPeriodFrequencyType().getValue())
                 .numberOfRepayments(numberOfRepayments).repaymentEvery(productEntity.getLoanProductRelatedDetail().getRepayEvery())
                 .repaymentFrequencyType(productEntity.getLoanProductRelatedDetail().getRepaymentPeriodFrequencyType().getValue())
-                .interestRatePerPeriod(productEntity.getLoanProductRelatedDetail().getNominalInterestRatePerPeriod())
+                .interestRatePerPeriod(interestRatePerPeriod)
                 .interestType(productEntity.getLoanProductRelatedDetail().getInterestMethod().getValue())
                 .amortizationType(productEntity.getLoanProductRelatedDetail().getAmortizationMethod().getValue())
                 .interestCalculationPeriodType(productEntity.getLoanProductRelatedDetail().getInterestCalculationPeriodMethod().getValue())
