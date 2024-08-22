@@ -2000,7 +2000,8 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
         installment.addPrincipalAmount(unprocessed);
         LoanRepaymentScheduleInstallment lastInstallment = installments.get(installments.size() - 1);
         lastInstallment.updatePrincipal(lastInstallment.getPrincipal(unprocessed.getCurrency()).plus(unprocessed).getAmount());
-        lastInstallment.payPrincipalComponent(detail.getTransactionDate(), unprocessed);
+        final boolean isWriteOffTransaction = detail.getTransaction() != null && detail.getTransaction().isWriteOff();
+        lastInstallment.payPrincipalComponent(detail.getTransactionDate(), unprocessed, isWriteOffTransaction);
     }
 
     /**

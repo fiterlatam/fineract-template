@@ -61,6 +61,7 @@ import org.apache.fineract.infrastructure.bulkimport.populator.guarantor.Guarant
 import org.apache.fineract.infrastructure.bulkimport.populator.journalentry.JournalEntriesWorkbookPopulator;
 import org.apache.fineract.infrastructure.bulkimport.populator.loan.LoanWorkbookPopulator;
 import org.apache.fineract.infrastructure.bulkimport.populator.loanrepayment.LoanRepaymentWorkbookPopulator;
+import org.apache.fineract.infrastructure.bulkimport.populator.loanwriteoff.LoanWriteOffWorkbookPopulator;
 import org.apache.fineract.infrastructure.bulkimport.populator.office.OfficeWorkbookPopulator;
 import org.apache.fineract.infrastructure.bulkimport.populator.recurringdeposit.RecurringDepositTransactionWorkbookPopulator;
 import org.apache.fineract.infrastructure.bulkimport.populator.recurringdeposit.RecurringDepositWorkbookPopulator;
@@ -201,6 +202,8 @@ public class BulkImportWorkbookPopulatorServiceImpl implements BulkImportWorkboo
                 populator = populateLoanWorkbook(officeId, staffId);
             } else if (entityType.trim().equalsIgnoreCase(GlobalEntityType.LOAN_TRANSACTIONS.toString())) {
                 populator = populateLoanRepaymentWorkbook();
+            } else if (entityType.trim().equalsIgnoreCase(GlobalEntityType.LOAN_WRITE_OFFS.toString())) {
+                populator = populateLoanWriteOffWorkbook();
             } else if (entityType.trim().equalsIgnoreCase(GlobalEntityType.GL_JOURNAL_ENTRIES.toString())) {
                 populator = populateJournalEntriesWorkbook(officeId);
             } else if (entityType.trim().equalsIgnoreCase(GlobalEntityType.GUARANTORS.toString())) {
@@ -460,6 +463,10 @@ public class BulkImportWorkbookPopulatorServiceImpl implements BulkImportWorkboo
         extrasSheetPopulator.setBankOptions(bankOptions);
         extrasSheetPopulator.setChannelOptions(channelOptions);
         return new LoanRepaymentWorkbookPopulator(new OfficeSheetPopulator(offices), extrasSheetPopulator);
+    }
+
+    private WorkbookPopulator populateLoanWriteOffWorkbook() {
+        return new LoanWriteOffWorkbookPopulator();
     }
 
     private List<LoanAccountData> fetchLoanAccounts(final Long officeId, final LoanStatus loanStatus) {

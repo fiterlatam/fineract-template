@@ -123,6 +123,8 @@ public class BulkImportWorkbookServiceImpl implements BulkImportWorkbookService 
                     entityType = GlobalEntityType.LOANS;
                 } else if (entity.trim().equalsIgnoreCase(GlobalEntityType.LOAN_TRANSACTIONS.toString())) {
                     entityType = GlobalEntityType.LOAN_TRANSACTIONS;
+                } else if (entity.trim().equalsIgnoreCase(GlobalEntityType.LOAN_WRITE_OFFS.toString())) {
+                    entityType = GlobalEntityType.LOAN_WRITE_OFFS;
                 } else if (entity.trim().equalsIgnoreCase(GlobalEntityType.GUARANTORS.toString())) {
                     entityType = GlobalEntityType.GUARANTORS;
                 } else if (entity.trim().equalsIgnoreCase(GlobalEntityType.OFFICES.toString())) {

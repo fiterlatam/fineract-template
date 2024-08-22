@@ -369,7 +369,8 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
     }
 
     private BigDecimal calculateAmountOutstanding(final MonetaryCurrency currency) {
-        return getAmount(currency).minus(getAmountWaived(currency)).minus(getAmountPaid(currency)).getAmount();
+        return getAmount(currency).minus(getAmountWaived(currency)).minus(getAmountPaid(currency)).minus(getAmountWrittenOff(currency))
+                .getAmount();
     }
 
     public void update(final Loan loan) {
@@ -856,25 +857,35 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
      *
      * @return Actual amount paid on this charge
      */
-    public Money updatePaidAmountBy(final Money incrementBy, final Integer installmentNumber, final Money feeAmount) {
+    public Money updatePaidAmountBy(final Money incrementBy, final Integer installmentNumber, final Money feeAmount,
+            final boolean isWriteOffTransaction) {
         Money processAmount;
         if (isInstalmentFee()) {
             if (installmentNumber == null) {
-                processAmount = getUnpaidInstallmentLoanCharge().updatePaidAmountBy(incrementBy, feeAmount);
+                processAmount = getUnpaidInstallmentLoanCharge().updatePaidAmountBy(incrementBy, feeAmount, isWriteOffTransaction);
             } else {
-                processAmount = getInstallmentLoanCharge(installmentNumber).updatePaidAmountBy(incrementBy, feeAmount);
+                processAmount = getInstallmentLoanCharge(installmentNumber).updatePaidAmountBy(incrementBy, feeAmount,
+                        isWriteOffTransaction);
             }
         } else {
             processAmount = incrementBy;
         }
+
         Money amountPaidToDate = Money.of(processAmount.getCurrency(), this.amountPaid);
+        if (isWriteOffTransaction) {
+            amountPaidToDate = Money.of(processAmount.getCurrency(), this.amountWrittenOff);
+        }
         final Money amountOutstanding = Money.of(processAmount.getCurrency(), this.amountOutstanding);
 
         Money amountPaidOnThisCharge;
         if (processAmount.isGreaterThanOrEqualTo(amountOutstanding)) {
             amountPaidOnThisCharge = amountOutstanding;
             amountPaidToDate = amountPaidToDate.plus(amountOutstanding);
-            this.amountPaid = amountPaidToDate.getAmount();
+            if (isWriteOffTransaction) {
+                this.amountWrittenOff = amountPaidToDate.getAmount();
+            } else {
+                this.amountPaid = amountPaidToDate.getAmount();
+            }
             this.amountOutstanding = BigDecimal.ZERO;
             Money waivedAmount = getAmountWaived(processAmount.getCurrency());
             if (waivedAmount.isGreaterThanZero()) {
@@ -886,7 +897,11 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
         } else {
             amountPaidOnThisCharge = processAmount;
             amountPaidToDate = amountPaidToDate.plus(processAmount);
-            this.amountPaid = amountPaidToDate.getAmount();
+            if (isWriteOffTransaction) {
+                this.amountWrittenOff = amountPaidToDate.getAmount();
+            } else {
+                this.amountPaid = amountPaidToDate.getAmount();
+            }
             this.amountOutstanding = calculateAmountOutstanding(incrementBy.getCurrency());
         }
         return amountPaidOnThisCharge;
@@ -1351,7 +1366,25 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
         return parentChargeAmount;
     }
 
-    public void setAmountWrittenOff(BigDecimal amountWrittenOff) {
-        this.amountWrittenOff = amountWrittenOff;
+    public void adjustAmountWrittenOff(final Money amountToBeWrittenOff) {
+        final Money amountOutstanding = Money.of(amountToBeWrittenOff.getCurrency(), this.calculateOutstanding());
+        if (amountOutstanding.isGreaterThanOrEqualTo(amountToBeWrittenOff)) {
+            this.amountWrittenOff = this.getAmountWrittenOff(amountToBeWrittenOff.getCurrency()).plus(amountToBeWrittenOff).getAmount();
+            this.amountOutstanding = calculateOutstanding();
+            this.paid = this.determineIfFullyPaid();
+        }
+    }
+
+    public void adjustChargeAmount(final Money adjustedAmount) {
+        final Money currentAmount = this.getAmount(adjustedAmount.getCurrency());
+        if (currentAmount.isGreaterThanOrEqualTo(adjustedAmount)) {
+            this.amount = currentAmount.minus(adjustedAmount).getAmount();
+            this.amountOutstanding = calculateOutstanding();
+            this.paid = this.determineIfFullyPaid();
+        }
+    }
+
+    public void updateAmountOutstanding() {
+        this.amountOutstanding = calculateOutstanding();
     }
 }

@@ -89,6 +89,7 @@ public class RBILoanRepaymentScheduleTransactionProcessor extends AbstractLoanRe
         Money interestWaivedPortion = Money.zero(currency);
         Money feeChargesPortion = Money.zero(currency);
         Money penaltyChargesPortion = Money.zero(currency);
+        final boolean isWriteOffTransaction = loanTransaction.isWriteOff();
 
         if (loanTransaction.isInterestWaiver()) {
             interestWaivedPortion = currentInstallment.waiveInterestComponent(transactionDate, transactionAmountRemaining);
@@ -104,10 +105,12 @@ public class RBILoanRepaymentScheduleTransactionProcessor extends AbstractLoanRe
             final Money principalPortion = Money.zero(currency);
             final Money interestPortion = Money.zero(currency);
             if (loanTransaction.isPenaltyPayment()) {
-                penaltyChargesPortion = currentInstallment.payPenaltyChargesComponent(transactionDate, transactionAmountRemaining);
+                penaltyChargesPortion = currentInstallment.payPenaltyChargesComponent(transactionDate, transactionAmountRemaining,
+                        isWriteOffTransaction);
                 transactionAmountRemaining = transactionAmountRemaining.minus(penaltyChargesPortion);
             } else {
-                feeChargesPortion = currentInstallment.payFeeChargesComponent(transactionDate, transactionAmountRemaining);
+                feeChargesPortion = currentInstallment.payFeeChargesComponent(transactionDate, transactionAmountRemaining,
+                        isWriteOffTransaction);
                 transactionAmountRemaining = transactionAmountRemaining.minus(feeChargesPortion);
             }
             loanTransaction.updateComponents(principalPortion, interestPortion, feeChargesPortion, penaltyChargesPortion);
@@ -125,13 +128,16 @@ public class RBILoanRepaymentScheduleTransactionProcessor extends AbstractLoanRe
                         || installment.getPenaltyChargesOutstanding(currency).isGreaterThanZero())
                         && (installment.isOverdueOn(loanTransaction.getTransactionDate()) || installment.getInstallmentNumber()
                                 .equals(currentInstallmentBasedOnTransactionDate.getInstallmentNumber()))) {
-                    penaltyChargesPortion = installment.payPenaltyChargesComponent(transactionDate, transactionAmountRemaining);
+                    penaltyChargesPortion = installment.payPenaltyChargesComponent(transactionDate, transactionAmountRemaining,
+                            isWriteOffTransaction);
                     transactionAmountRemaining = transactionAmountRemaining.minus(penaltyChargesPortion);
 
-                    feeChargesPortion = installment.payFeeChargesComponent(transactionDate, transactionAmountRemaining);
+                    feeChargesPortion = installment.payFeeChargesComponent(transactionDate, transactionAmountRemaining,
+                            isWriteOffTransaction);
                     transactionAmountRemaining = transactionAmountRemaining.minus(feeChargesPortion);
 
-                    final Money interestPortion = installment.payInterestComponent(transactionDate, transactionAmountRemaining);
+                    final Money interestPortion = installment.payInterestComponent(transactionDate, transactionAmountRemaining,
+                            isWriteOffTransaction);
                     transactionAmountRemaining = transactionAmountRemaining.minus(interestPortion);
 
                     final Money principalPortion = Money.zero(currency);
@@ -147,7 +153,8 @@ public class RBILoanRepaymentScheduleTransactionProcessor extends AbstractLoanRe
             // installments
             for (final LoanRepaymentScheduleInstallment installment : installments) {
                 if (installment.isPrincipalNotCompleted(currency) && transactionAmountRemaining.isGreaterThanZero()) {
-                    final Money principalPortion = installment.payPrincipalComponent(transactionDate, transactionAmountRemaining);
+                    final Money principalPortion = installment.payPrincipalComponent(transactionDate, transactionAmountRemaining,
+                            isWriteOffTransaction);
                     transactionAmountRemaining = transactionAmountRemaining.minus(principalPortion);
 
                     final Money interestPortion = Money.zero(currency);
@@ -200,6 +207,7 @@ public class RBILoanRepaymentScheduleTransactionProcessor extends AbstractLoanRe
         Money interestPortion = Money.zero(transactionAmountRemaining.getCurrency());
         Money feeChargesPortion = Money.zero(transactionAmountRemaining.getCurrency());
         Money penaltyChargesPortion = Money.zero(transactionAmountRemaining.getCurrency());
+        final boolean isWriteOffTransaction = loanTransaction.isWriteOff();
 
         if (loanTransaction.isChargesWaiver()) {
 
@@ -216,24 +224,28 @@ public class RBILoanRepaymentScheduleTransactionProcessor extends AbstractLoanRe
             transactionAmountRemaining = transactionAmountRemaining.minus(interestPortion);
         } else if (loanTransaction.isChargePayment()) {
             if (loanTransaction.isPenaltyPayment()) {
-                penaltyChargesPortion = currentInstallment.payPenaltyChargesComponent(transactionDate, transactionAmountRemaining);
+                penaltyChargesPortion = currentInstallment.payPenaltyChargesComponent(transactionDate, transactionAmountRemaining,
+                        isWriteOffTransaction);
                 transactionAmountRemaining = transactionAmountRemaining.minus(penaltyChargesPortion);
             } else {
-                feeChargesPortion = currentInstallment.payFeeChargesComponent(transactionDate, transactionAmountRemaining);
+                feeChargesPortion = currentInstallment.payFeeChargesComponent(transactionDate, transactionAmountRemaining,
+                        isWriteOffTransaction);
                 transactionAmountRemaining = transactionAmountRemaining.minus(feeChargesPortion);
             }
         } else {
 
-            penaltyChargesPortion = currentInstallment.payPenaltyChargesComponent(transactionDate, transactionAmountRemaining);
+            penaltyChargesPortion = currentInstallment.payPenaltyChargesComponent(transactionDate, transactionAmountRemaining,
+                    isWriteOffTransaction);
             transactionAmountRemaining = transactionAmountRemaining.minus(penaltyChargesPortion);
 
-            feeChargesPortion = currentInstallment.payFeeChargesComponent(transactionDate, transactionAmountRemaining);
+            feeChargesPortion = currentInstallment.payFeeChargesComponent(transactionDate, transactionAmountRemaining,
+                    isWriteOffTransaction);
             transactionAmountRemaining = transactionAmountRemaining.minus(feeChargesPortion);
 
-            interestPortion = currentInstallment.payInterestComponent(transactionDate, transactionAmountRemaining);
+            interestPortion = currentInstallment.payInterestComponent(transactionDate, transactionAmountRemaining, isWriteOffTransaction);
             transactionAmountRemaining = transactionAmountRemaining.minus(interestPortion);
 
-            principalPortion = currentInstallment.payPrincipalComponent(transactionDate, transactionAmountRemaining);
+            principalPortion = currentInstallment.payPrincipalComponent(transactionDate, transactionAmountRemaining, isWriteOffTransaction);
             transactionAmountRemaining = transactionAmountRemaining.minus(principalPortion);
         }
 
@@ -263,24 +275,28 @@ public class RBILoanRepaymentScheduleTransactionProcessor extends AbstractLoanRe
         Money interestPortion = Money.zero(transactionAmountRemaining.getCurrency());
         Money feeChargesPortion = Money.zero(transactionAmountRemaining.getCurrency());
         Money penaltyChargesPortion = Money.zero(transactionAmountRemaining.getCurrency());
+        final boolean isWriteOffTransaction = loanTransaction.isWriteOff();
 
         if (transactionAmountRemaining.isGreaterThanZero()) {
-            principalPortion = currentInstallment.unpayPrincipalComponent(transactionDate, transactionAmountRemaining);
+            principalPortion = currentInstallment.unpayPrincipalComponent(transactionDate, transactionAmountRemaining,
+                    isWriteOffTransaction);
             transactionAmountRemaining = transactionAmountRemaining.minus(principalPortion);
         }
 
         if (transactionAmountRemaining.isGreaterThanZero()) {
-            interestPortion = currentInstallment.unpayInterestComponent(transactionDate, transactionAmountRemaining);
+            interestPortion = currentInstallment.unpayInterestComponent(transactionDate, transactionAmountRemaining, isWriteOffTransaction);
             transactionAmountRemaining = transactionAmountRemaining.minus(interestPortion);
         }
 
         if (transactionAmountRemaining.isGreaterThanZero()) {
-            feeChargesPortion = currentInstallment.unpayFeeChargesComponent(transactionDate, transactionAmountRemaining);
+            feeChargesPortion = currentInstallment.unpayFeeChargesComponent(transactionDate, transactionAmountRemaining,
+                    isWriteOffTransaction);
             transactionAmountRemaining = transactionAmountRemaining.minus(feeChargesPortion);
         }
 
         if (transactionAmountRemaining.isGreaterThanZero()) {
-            penaltyChargesPortion = currentInstallment.unpayPenaltyChargesComponent(transactionDate, transactionAmountRemaining);
+            penaltyChargesPortion = currentInstallment.unpayPenaltyChargesComponent(transactionDate, transactionAmountRemaining,
+                    isWriteOffTransaction);
             transactionAmountRemaining = transactionAmountRemaining.minus(penaltyChargesPortion);
         }
 

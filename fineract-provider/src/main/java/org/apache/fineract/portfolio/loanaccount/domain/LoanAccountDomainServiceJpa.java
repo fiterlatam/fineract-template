@@ -182,7 +182,9 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         checkClientOrGroupActive(loan);
 
         LoanBusinessEvent repaymentEvent = getLoanRepaymentTypeBusinessEvent(repaymentTransactionType, isRecoveryRepayment, loan);
-        businessEventNotifierService.notifyPreBusinessEvent(repaymentEvent);
+        if (repaymentEvent != null) {
+            businessEventNotifierService.notifyPreBusinessEvent(repaymentEvent);
+        }
 
         // TODO: Is it required to validate transaction date with meeting dates
         // if repayments is synced with meeting?

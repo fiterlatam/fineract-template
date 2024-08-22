@@ -124,21 +124,21 @@ public class DuePenFeeIntPriInAdvancePriPenFeeIntLoanRepaymentScheduleTransactio
                 transactionMappings, charges);
 
         // Calculated zero
-        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(transactionDate), refEq(zero));
+        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(transactionDate), refEq(zero), eq(false));
         // Calculated zero
-        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(transactionDate), refEq(zero));
+        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(transactionDate), refEq(zero), eq(false));
         // Full amount as this is the last of due and first of in advance, but only 5 is outstanding for this
         // installment, so 5 is unprocessed
-        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(transactionDate), refEq(ten));
+        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(transactionDate), refEq(ten), eq(false));
         // In advance with value of 5, but no outstanding of penalty
-        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(transactionDate), refEq(five));
+        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(transactionDate), refEq(five), eq(false));
         // In advance with value of 5, but no outstanding of fee
-        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(transactionDate), refEq(five));
+        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(transactionDate), refEq(five), eq(false));
         // In advance with value of 5, but no outstanding of interest
-        Mockito.verify(installment, Mockito.times(1)).payInterestComponent(eq(transactionDate), refEq(five));
+        Mockito.verify(installment, Mockito.times(1)).payInterestComponent(eq(transactionDate), refEq(five), eq(false));
         // Full amount as this is the last of due and first of in advance, but 0 is outstanding for this installment, so
         // 5 is unprocessed
-        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(transactionDate), refEq(five));
+        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(transactionDate), refEq(five), eq(false));
         // Principal 5, interest 0, fee 0, penalty 0
         Mockito.verify(loanTransaction, Mockito.times(1)).updateComponents(refEq(five), refEq(zero), refEq(zero), refEq(zero));
     }
@@ -156,21 +156,21 @@ public class DuePenFeeIntPriInAdvancePriPenFeeIntLoanRepaymentScheduleTransactio
                 transactionMappings, charges);
 
         // Calculated zero
-        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(transactionDate), refEq(zero));
+        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(transactionDate), refEq(zero), eq(false));
         // Calculated zero
-        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(transactionDate), refEq(zero));
+        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(transactionDate), refEq(zero), eq(false));
         // Full amount as this is the last of due and first of in advance, but 0 is outstanding for this installment, so
         // 10 is unprocessed
-        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(transactionDate), refEq(ten));
+        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(transactionDate), refEq(ten), eq(false));
         // In advance with value of 10, but no outstanding of penalty
-        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(transactionDate), refEq(ten));
+        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(transactionDate), refEq(ten), eq(false));
         // In advance with value of 5, but no outstanding of fee
-        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(transactionDate), refEq(ten));
+        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(transactionDate), refEq(ten), eq(false));
         // In advance with value of 5, but only 5 is outstanding of interest
-        Mockito.verify(installment, Mockito.times(1)).payInterestComponent(eq(transactionDate), refEq(ten));
+        Mockito.verify(installment, Mockito.times(1)).payInterestComponent(eq(transactionDate), refEq(ten), eq(false));
         // Full amount as this is the last of due and first of in advance, but 0 is outstanding for this installment, so
         // 5 is unprocessed
-        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(transactionDate), refEq(five));
+        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(transactionDate), refEq(five), eq(false));
         // Principal 0, interest 5, fee 0, penalty 0
         Mockito.verify(loanTransaction, Mockito.times(1)).updateComponents(refEq(zero), refEq(five), refEq(zero), refEq(zero));
     }
@@ -188,20 +188,20 @@ public class DuePenFeeIntPriInAdvancePriPenFeeIntLoanRepaymentScheduleTransactio
                 transactionMappings, charges);
 
         // Calculated zero
-        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(transactionDate), refEq(zero));
+        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(transactionDate), refEq(zero), eq(false));
         // Calculated zero
-        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(transactionDate), refEq(zero));
+        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(transactionDate), refEq(zero), eq(false));
         // Full amount as this is the last of due and first of in advance, but no outstanding
-        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(transactionDate), refEq(ten));
+        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(transactionDate), refEq(ten), eq(false));
         // In advance with value of 10, but no outstanding of penalty
-        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(transactionDate), refEq(ten));
+        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(transactionDate), refEq(ten), eq(false));
         // In advance with value of 10, but no only 5 is outstanding of fee
-        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(transactionDate), refEq(ten));
+        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(transactionDate), refEq(ten), eq(false));
         // In advance with value of 5, but no outstanding of interest
-        Mockito.verify(installment, Mockito.times(1)).payInterestComponent(eq(transactionDate), refEq(five));
+        Mockito.verify(installment, Mockito.times(1)).payInterestComponent(eq(transactionDate), refEq(five), eq(false));
         // Full amount as this is the last of due and first of in advance, but 0 is outstanding for this installment, so
         // 5 is unprocessed
-        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(transactionDate), refEq(five));
+        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(transactionDate), refEq(five), eq(false));
         // Principal 0, interest 0, fee 5, penalty 0
         Mockito.verify(loanTransaction, Mockito.times(1)).updateComponents(refEq(zero), refEq(zero), refEq(five), refEq(zero));
     }
@@ -219,20 +219,20 @@ public class DuePenFeeIntPriInAdvancePriPenFeeIntLoanRepaymentScheduleTransactio
                 transactionMappings, charges);
 
         // Calculated zero
-        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(transactionDate), refEq(zero));
+        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(transactionDate), refEq(zero), eq(false));
         // Calculated zero
-        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(transactionDate), refEq(zero));
+        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(transactionDate), refEq(zero), eq(false));
         // Full amount as this is the last of due and first of in advance, but no outstanding
-        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(transactionDate), refEq(ten));
+        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(transactionDate), refEq(ten), eq(false));
         // In advance with value of 10, but only 5 is outstanding of penalty
-        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(transactionDate), refEq(ten));
+        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(transactionDate), refEq(ten), eq(false));
         // In advance with value of 5, but no outstanding of fee
-        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(transactionDate), refEq(five));
+        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(transactionDate), refEq(five), eq(false));
         // In advance with value of 5, but no outstanding of interest
-        Mockito.verify(installment, Mockito.times(1)).payInterestComponent(eq(transactionDate), refEq(five));
+        Mockito.verify(installment, Mockito.times(1)).payInterestComponent(eq(transactionDate), refEq(five), eq(false));
         // Full amount as this is the last of due and first of in advance, but 0 is outstanding for this installment, so
         // 5 is unprocessed
-        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(transactionDate), refEq(five));
+        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(transactionDate), refEq(five), eq(false));
         // Principal 0, interest 0, fee 0, penalty 5
         Mockito.verify(loanTransaction, Mockito.times(1)).updateComponents(refEq(zero), refEq(zero), refEq(zero), refEq(five));
     }
@@ -250,19 +250,19 @@ public class DuePenFeeIntPriInAdvancePriPenFeeIntLoanRepaymentScheduleTransactio
                 transactionMappings, charges);
 
         // Calculated zero
-        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(transactionDate), refEq(zero));
+        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(transactionDate), refEq(zero), eq(false));
         // Calculated zero
-        Mockito.verify(installment, Mockito.times(2)).payFeeChargesComponent(eq(transactionDate), refEq(zero));
+        Mockito.verify(installment, Mockito.times(2)).payFeeChargesComponent(eq(transactionDate), refEq(zero), eq(false));
         // Full amount as this is the last of due and first of in advance, but only 5 is outstanding for this
         // installment, so 5 is unprocessed
-        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(transactionDate), refEq(ten));
+        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(transactionDate), refEq(ten), eq(false));
         // In advance with value of 5, but no outstanding of penalty
-        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(transactionDate), refEq(five));
+        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(transactionDate), refEq(five), eq(false));
         // In advance with value of 0
-        Mockito.verify(installment, Mockito.times(1)).payInterestComponent(eq(transactionDate), refEq(zero));
+        Mockito.verify(installment, Mockito.times(1)).payInterestComponent(eq(transactionDate), refEq(zero), eq(false));
         // Full amount as this is the last of due and first of in advance, but 0 is outstanding for this installment, so
         // 0 is unprocessed
-        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(transactionDate), refEq(zero));
+        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(transactionDate), refEq(zero), eq(false));
         // Principal 5, interest 0, fee 0, penalty 5
         Mockito.verify(loanTransaction, Mockito.times(1)).updateComponents(refEq(five), refEq(zero), refEq(zero), refEq(five));
     }
@@ -280,21 +280,21 @@ public class DuePenFeeIntPriInAdvancePriPenFeeIntLoanRepaymentScheduleTransactio
                 transactionMappings, charges);
 
         // Calculated zero
-        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(transactionDate), refEq(zero));
+        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(transactionDate), refEq(zero), eq(false));
         // Calculated zero
-        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(transactionDate), refEq(zero));
+        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(transactionDate), refEq(zero), eq(false));
         // Full amount as this is the last of due and first of in advance, but only 3 is outstanding for this
         // installment, so 7 is unprocessed
-        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(transactionDate), refEq(ten));
+        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(transactionDate), refEq(ten), eq(false));
         // In advance with value of 7, but only 6 is outstanding of penalty
-        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(transactionDate), refEq(seven));
+        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(transactionDate), refEq(seven), eq(false));
         // In advance with value of 1, and 2 is outstanding of fee
-        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(transactionDate), refEq(one));
+        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(transactionDate), refEq(one), eq(false));
         // In advance with value of 0
-        Mockito.verify(installment, Mockito.times(1)).payInterestComponent(eq(transactionDate), refEq(zero));
+        Mockito.verify(installment, Mockito.times(1)).payInterestComponent(eq(transactionDate), refEq(zero), eq(false));
         // Full amount as this is the last of due and first of in advance, but 0 is outstanding for this installment, so
         // 0 is unprocessed
-        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(transactionDate), refEq(zero));
+        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(transactionDate), refEq(zero), eq(false));
         // Principal 3, interest 0, fee 1, penalty 6
         Mockito.verify(loanTransaction, Mockito.times(1)).updateComponents(refEq(three), refEq(zero), refEq(one), refEq(six));
     }
@@ -312,21 +312,21 @@ public class DuePenFeeIntPriInAdvancePriPenFeeIntLoanRepaymentScheduleTransactio
                 transactionMappings, charges);
 
         // Calculated zero
-        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(transactionDate), refEq(zero));
+        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(transactionDate), refEq(zero), eq(false));
         // Calculated zero
-        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(transactionDate), refEq(zero));
+        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(transactionDate), refEq(zero), eq(false));
         // Full amount as this is the last of due and first of in advance, but only 3 is outstanding for this
         // installment, so 7 is unprocessed
-        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(transactionDate), refEq(ten));
+        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(transactionDate), refEq(ten), eq(false));
         // In advance with value of 7, but only 4 is outstanding of penalty
-        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(transactionDate), refEq(seven));
+        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(transactionDate), refEq(seven), eq(false));
         // In advance with value of 3, but only 2 is outstanding of fee
-        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(transactionDate), refEq(three));
+        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(transactionDate), refEq(three), eq(false));
         // In advance with value of 1, and 2 is outstanding of interest
-        Mockito.verify(installment, Mockito.times(1)).payInterestComponent(eq(transactionDate), refEq(one));
+        Mockito.verify(installment, Mockito.times(1)).payInterestComponent(eq(transactionDate), refEq(one), eq(false));
         // Full amount as this is the last of due and first of in advance, but 0 is outstanding for this installment, so
         // 0 is unprocessed
-        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(transactionDate), refEq(zero));
+        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(transactionDate), refEq(zero), eq(false));
         // Principal 3, interest 1, fee 2, penalty 4
         Mockito.verify(loanTransaction, Mockito.times(1)).updateComponents(refEq(three), refEq(one), refEq(two), refEq(four));
     }
@@ -344,11 +344,11 @@ public class DuePenFeeIntPriInAdvancePriPenFeeIntLoanRepaymentScheduleTransactio
                 transactionMappings, charges);
 
         // Calculated zero
-        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(transactionDate), refEq(zero));
+        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(transactionDate), refEq(zero), eq(false));
         // Calculated zero
-        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(transactionDate), refEq(zero));
+        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(transactionDate), refEq(zero), eq(false));
         // Full amount as this is the last of due and first of in advance, but 3 is outstanding for this installment
-        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(transactionDate), refEq(two));
+        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(transactionDate), refEq(two), eq(false));
         // Principal 2, interest 0, fee 0, penalty 0
         Mockito.verify(loanTransaction, Mockito.times(1)).updateComponents(refEq(two), refEq(zero), refEq(zero), refEq(zero));
     }
@@ -366,16 +366,16 @@ public class DuePenFeeIntPriInAdvancePriPenFeeIntLoanRepaymentScheduleTransactio
                 transactionMappings, charges);
 
         // Calculated zero
-        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(transactionDate), refEq(zero));
+        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(transactionDate), refEq(zero), eq(false));
         // Calculated zero
-        Mockito.verify(installment, Mockito.times(2)).payFeeChargesComponent(eq(transactionDate), refEq(zero));
+        Mockito.verify(installment, Mockito.times(2)).payFeeChargesComponent(eq(transactionDate), refEq(zero), eq(false));
         // Full amount as this is the last of due and first of in advance, but only 3 is outstanding for this
         // installment, so 1 is unprocessed
-        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(transactionDate), refEq(four));
+        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(transactionDate), refEq(four), eq(false));
         // In advance with value of 1, and 4 is outstanding of penalty
-        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(transactionDate), refEq(one));
+        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(transactionDate), refEq(one), eq(false));
         // In advance with value of 0, and 2 is outstanding of interest
-        Mockito.verify(installment, Mockito.times(1)).payInterestComponent(eq(transactionDate), refEq(zero));
+        Mockito.verify(installment, Mockito.times(1)).payInterestComponent(eq(transactionDate), refEq(zero), eq(false));
         // Principal 3, interest 0, fee 0, penalty 1
         Mockito.verify(loanTransaction, Mockito.times(1)).updateComponents(refEq(three), refEq(zero), refEq(zero), refEq(one));
     }
@@ -393,18 +393,18 @@ public class DuePenFeeIntPriInAdvancePriPenFeeIntLoanRepaymentScheduleTransactio
                 transactionMappings, charges);
 
         // Calculated zero
-        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(transactionDate), refEq(zero));
+        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(transactionDate), refEq(zero), eq(false));
         // Calculated zero
-        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(transactionDate), refEq(zero));
+        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(transactionDate), refEq(zero), eq(false));
         // Full amount as this is the last of due and first of in advance, but only 3 is outstanding for this
         // installment, so 5 is unprocessed
-        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(transactionDate), refEq(eight));
+        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(transactionDate), refEq(eight), eq(false));
         // In advance with value of 5, but only 4 is outstanding of penalty
-        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(transactionDate), refEq(five));
+        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(transactionDate), refEq(five), eq(false));
         // In advance with value of 1, and 2 is outstanding of fee
-        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(transactionDate), refEq(one));
+        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(transactionDate), refEq(one), eq(false));
         // In advance with value of 0, and 2 is outstanding of interest
-        Mockito.verify(installment, Mockito.times(1)).payInterestComponent(eq(transactionDate), refEq(zero));
+        Mockito.verify(installment, Mockito.times(1)).payInterestComponent(eq(transactionDate), refEq(zero), eq(false));
         // Principal 3, interest 0, fee 1, penalty 4
         Mockito.verify(loanTransaction, Mockito.times(1)).updateComponents(refEq(three), refEq(zero), refEq(one), refEq(four));
     }
@@ -422,18 +422,18 @@ public class DuePenFeeIntPriInAdvancePriPenFeeIntLoanRepaymentScheduleTransactio
                 transactionMappings, charges);
 
         // Calculated zero
-        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(transactionDate), refEq(zero));
+        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(transactionDate), refEq(zero), eq(false));
         // Calculated zero
-        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(transactionDate), refEq(zero));
+        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(transactionDate), refEq(zero), eq(false));
         // Full amount as this is the last of due and first of in advance, but only 3 is outstanding for this
         // installment, so 5 is unprocessed
-        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(transactionDate), refEq(ten));
+        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(transactionDate), refEq(ten), eq(false));
         // In advance with value of 7, but only 4 is outstanding of penalty
-        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(transactionDate), refEq(seven));
+        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(transactionDate), refEq(seven), eq(false));
         // In advance with value of 3, but only 2 is outstanding of fee
-        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(transactionDate), refEq(three));
+        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(transactionDate), refEq(three), eq(false));
         // In advance with value of 1, and 2 is outstanding of interest
-        Mockito.verify(installment, Mockito.times(1)).payInterestComponent(eq(transactionDate), refEq(one));
+        Mockito.verify(installment, Mockito.times(1)).payInterestComponent(eq(transactionDate), refEq(one), eq(false));
         // Principal 3, interest 1, fee 2, penalty 4
         Mockito.verify(loanTransaction, Mockito.times(1)).updateComponents(refEq(three), refEq(one), refEq(two), refEq(four));
     }
@@ -463,18 +463,18 @@ public class DuePenFeeIntPriInAdvancePriPenFeeIntLoanRepaymentScheduleTransactio
                 transactionMappings, charges);
 
         // Calculated two
-        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(transactionDate), refEq(two));
+        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(transactionDate), refEq(two), eq(false));
         // Calculated zero
-        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(transactionDate), refEq(zero));
+        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(transactionDate), refEq(zero), eq(false));
         // With value of 8 as this is the last of due and first of in advance, but only 3 is outstanding for this
         // installment, so 5 is unprocessed
-        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(transactionDate), refEq(eight));
+        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(transactionDate), refEq(eight), eq(false));
         // In advance with value of 5, and 2 is outstanding of penalty
-        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(transactionDate), refEq(five));
+        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(transactionDate), refEq(five), eq(false));
         // In advance with value of 3, but only 2 is outstanding of fee
-        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(transactionDate), refEq(three));
+        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(transactionDate), refEq(three), eq(false));
         // In advance with value of 1, and 2 is outstanding of interest
-        Mockito.verify(installment, Mockito.times(1)).payInterestComponent(eq(transactionDate), refEq(one));
+        Mockito.verify(installment, Mockito.times(1)).payInterestComponent(eq(transactionDate), refEq(one), eq(false));
         // Principal 3, interest 1, fee 2, penalty 4
         Mockito.verify(loanTransaction, Mockito.times(1)).updateComponents(refEq(three), refEq(one), refEq(two), refEq(four));
     }
@@ -506,18 +506,18 @@ public class DuePenFeeIntPriInAdvancePriPenFeeIntLoanRepaymentScheduleTransactio
                 transactionMappings, charges);
 
         // Calculated two
-        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(transactionDate), refEq(two));
+        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(transactionDate), refEq(two), eq(false));
         // Calculated one
-        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(transactionDate), refEq(one));
+        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(transactionDate), refEq(one), eq(false));
         // With value of 7 as this is the last of due and first of in advance, but only 3 is outstanding for this
         // installment, so 4 is unprocessed
-        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(transactionDate), refEq(seven));
+        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(transactionDate), refEq(seven), eq(false));
         // In advance with value of 4, and 2 is outstanding of penalty
-        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(transactionDate), refEq(four));
+        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(transactionDate), refEq(four), eq(false));
         // In advance with value of 2, but only 1 is outstanding of fee
-        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(transactionDate), refEq(two));
+        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(transactionDate), refEq(two), eq(false));
         // In advance with value of 1, and 2 is outstanding of interest
-        Mockito.verify(installment, Mockito.times(1)).payInterestComponent(eq(transactionDate), refEq(one));
+        Mockito.verify(installment, Mockito.times(1)).payInterestComponent(eq(transactionDate), refEq(one), eq(false));
         // Principal 3, interest 1, fee 2, penalty 4
         Mockito.verify(loanTransaction, Mockito.times(1)).updateComponents(refEq(three), refEq(one), refEq(two), refEq(four));
     }
@@ -549,13 +549,13 @@ public class DuePenFeeIntPriInAdvancePriPenFeeIntLoanRepaymentScheduleTransactio
                 transactionMappings, charges);
 
         // Calculated eleven, overridden by Unprocessed (ten)
-        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(transactionDate), refEq(ten));
+        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(transactionDate), refEq(ten), eq(false));
         // Calculated eleven, overridden by Unprocessed (six)
-        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(transactionDate), refEq(six));
+        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(transactionDate), refEq(six), eq(false));
         // In advance with value of 4, and 2 is outstanding of principal
-        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(transactionDate), refEq(four));
+        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(transactionDate), refEq(four), eq(false));
         // In advance with value of 2, and 2 is outstanding of interest
-        Mockito.verify(installment, Mockito.times(1)).payInterestComponent(eq(transactionDate), refEq(two));
+        Mockito.verify(installment, Mockito.times(1)).payInterestComponent(eq(transactionDate), refEq(two), eq(false));
 
         // Principal 2, interest 2, fee 2, penalty 4
         Mockito.verify(loanTransaction, Mockito.times(1)).updateComponents(refEq(two), refEq(two), refEq(two), refEq(four));
@@ -574,13 +574,13 @@ public class DuePenFeeIntPriInAdvancePriPenFeeIntLoanRepaymentScheduleTransactio
                 charges);
 
         // Unprocessed: 10, outstanding: 0
-        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(firstInstallmentDueDate), refEq(ten));
+        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(firstInstallmentDueDate), refEq(ten), eq(false));
         // Unprocessed: 10, outstanding: 0
-        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(firstInstallmentDueDate), refEq(ten));
+        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(firstInstallmentDueDate), refEq(ten), eq(false));
         // Unprocessed: 10, outstanding: 0
-        Mockito.verify(installment, Mockito.times(1)).payInterestComponent(eq(firstInstallmentDueDate), refEq(ten));
+        Mockito.verify(installment, Mockito.times(1)).payInterestComponent(eq(firstInstallmentDueDate), refEq(ten), eq(false));
         // Unprocessed: 10, outstanding: 5
-        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(firstInstallmentDueDate), refEq(ten));
+        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(firstInstallmentDueDate), refEq(ten), eq(false));
         // Principal 5, interest 0, fee 0, penalty 0
         Mockito.verify(loanTransaction, Mockito.times(1)).updateComponents(refEq(five), refEq(zero), refEq(zero), refEq(zero));
     }
@@ -597,13 +597,13 @@ public class DuePenFeeIntPriInAdvancePriPenFeeIntLoanRepaymentScheduleTransactio
                 charges);
 
         // Unprocessed: 10, outstanding: 0
-        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(firstInstallmentDueDate), refEq(ten));
+        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(firstInstallmentDueDate), refEq(ten), eq(false));
         // Unprocessed: 10, outstanding: 0
-        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(firstInstallmentDueDate), refEq(ten));
+        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(firstInstallmentDueDate), refEq(ten), eq(false));
         // Unprocessed: 10, outstanding: 5
-        Mockito.verify(installment, Mockito.times(1)).payInterestComponent(eq(firstInstallmentDueDate), refEq(ten));
+        Mockito.verify(installment, Mockito.times(1)).payInterestComponent(eq(firstInstallmentDueDate), refEq(ten), eq(false));
         // Unprocessed: 5, outstanding: 0
-        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(firstInstallmentDueDate), refEq(five));
+        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(firstInstallmentDueDate), refEq(five), eq(false));
         // Principal 0, interest 5, fee 0, penalty 0
         Mockito.verify(loanTransaction, Mockito.times(1)).updateComponents(refEq(zero), refEq(five), refEq(zero), refEq(zero));
     }
@@ -620,13 +620,13 @@ public class DuePenFeeIntPriInAdvancePriPenFeeIntLoanRepaymentScheduleTransactio
                 charges);
 
         // Unprocessed: 10, outstanding: 0
-        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(firstInstallmentDueDate), refEq(ten));
+        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(firstInstallmentDueDate), refEq(ten), eq(false));
         // Unprocessed: 10, outstanding: 5
-        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(firstInstallmentDueDate), refEq(ten));
+        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(firstInstallmentDueDate), refEq(ten), eq(false));
         // Unprocessed: 5, outstanding: 0
-        Mockito.verify(installment, Mockito.times(1)).payInterestComponent(eq(firstInstallmentDueDate), refEq(five));
+        Mockito.verify(installment, Mockito.times(1)).payInterestComponent(eq(firstInstallmentDueDate), refEq(five), eq(false));
         // Unprocessed: 5, outstanding: 0
-        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(firstInstallmentDueDate), refEq(five));
+        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(firstInstallmentDueDate), refEq(five), eq(false));
         // Principal 0, interest 0, fee 5, penalty 0
         Mockito.verify(loanTransaction, Mockito.times(1)).updateComponents(refEq(zero), refEq(zero), refEq(five), refEq(zero));
     }
@@ -643,13 +643,13 @@ public class DuePenFeeIntPriInAdvancePriPenFeeIntLoanRepaymentScheduleTransactio
                 charges);
 
         // Unprocessed: 10, outstanding: 5
-        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(firstInstallmentDueDate), refEq(ten));
+        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(firstInstallmentDueDate), refEq(ten), eq(false));
         // Unprocessed: 5, outstanding: 0
-        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(firstInstallmentDueDate), refEq(five));
+        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(firstInstallmentDueDate), refEq(five), eq(false));
         // Unprocessed: 5, outstanding: 0
-        Mockito.verify(installment, Mockito.times(1)).payInterestComponent(eq(firstInstallmentDueDate), refEq(five));
+        Mockito.verify(installment, Mockito.times(1)).payInterestComponent(eq(firstInstallmentDueDate), refEq(five), eq(false));
         // Unprocessed: 5, outstanding: 0
-        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(firstInstallmentDueDate), refEq(five));
+        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(firstInstallmentDueDate), refEq(five), eq(false));
         // Principal 0, interest 0, fee 0, penalty 5
         Mockito.verify(loanTransaction, Mockito.times(1)).updateComponents(refEq(zero), refEq(zero), refEq(zero), refEq(five));
     }
@@ -666,13 +666,13 @@ public class DuePenFeeIntPriInAdvancePriPenFeeIntLoanRepaymentScheduleTransactio
                 charges);
 
         // Unprocessed: 10, outstanding: 5
-        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(firstInstallmentDueDate), refEq(ten));
+        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(firstInstallmentDueDate), refEq(ten), eq(false));
         // Unprocessed: 5, outstanding: 0
-        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(firstInstallmentDueDate), refEq(five));
+        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(firstInstallmentDueDate), refEq(five), eq(false));
         // Unprocessed: 5, outstanding: 0
-        Mockito.verify(installment, Mockito.times(1)).payInterestComponent(eq(firstInstallmentDueDate), refEq(five));
+        Mockito.verify(installment, Mockito.times(1)).payInterestComponent(eq(firstInstallmentDueDate), refEq(five), eq(false));
         // Unprocessed: 5, outstanding: 5
-        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(firstInstallmentDueDate), refEq(five));
+        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(firstInstallmentDueDate), refEq(five), eq(false));
         // Principal 5, interest 0, fee 0, penalty 5
         Mockito.verify(loanTransaction, Mockito.times(1)).updateComponents(refEq(five), refEq(zero), refEq(zero), refEq(five));
     }
@@ -689,13 +689,13 @@ public class DuePenFeeIntPriInAdvancePriPenFeeIntLoanRepaymentScheduleTransactio
                 charges);
 
         // Unprocessed: 10, outstanding: 6
-        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(firstInstallmentDueDate), refEq(ten));
+        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(firstInstallmentDueDate), refEq(ten), eq(false));
         // Unprocessed: 4, outstanding: 2
-        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(firstInstallmentDueDate), refEq(four));
+        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(firstInstallmentDueDate), refEq(four), eq(false));
         // Unprocessed: 2, outstanding: 0
-        Mockito.verify(installment, Mockito.times(1)).payInterestComponent(eq(firstInstallmentDueDate), refEq(two));
+        Mockito.verify(installment, Mockito.times(1)).payInterestComponent(eq(firstInstallmentDueDate), refEq(two), eq(false));
         // Unprocessed: 2, outstanding: 3
-        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(firstInstallmentDueDate), refEq(two));
+        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(firstInstallmentDueDate), refEq(two), eq(false));
         // Principal 2, interest 0, fee 2, penalty 6
         Mockito.verify(loanTransaction, Mockito.times(1)).updateComponents(refEq(two), refEq(zero), refEq(two), refEq(six));
     }
@@ -712,13 +712,13 @@ public class DuePenFeeIntPriInAdvancePriPenFeeIntLoanRepaymentScheduleTransactio
                 charges);
 
         // Unprocessed: 10, outstanding: 4
-        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(firstInstallmentDueDate), refEq(ten));
+        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(firstInstallmentDueDate), refEq(ten), eq(false));
         // Unprocessed: 6, outstanding: 2
-        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(firstInstallmentDueDate), refEq(six));
+        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(firstInstallmentDueDate), refEq(six), eq(false));
         // Unprocessed: 4, outstanding: 2
-        Mockito.verify(installment, Mockito.times(1)).payInterestComponent(eq(firstInstallmentDueDate), refEq(four));
+        Mockito.verify(installment, Mockito.times(1)).payInterestComponent(eq(firstInstallmentDueDate), refEq(four), eq(false));
         // Unprocessed: 2, outstanding: 3
-        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(firstInstallmentDueDate), refEq(two));
+        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(firstInstallmentDueDate), refEq(two), eq(false));
         // Principal 2, interest 2, fee 2, penalty 4
         Mockito.verify(loanTransaction, Mockito.times(1)).updateComponents(refEq(two), refEq(two), refEq(two), refEq(four));
     }
@@ -735,13 +735,13 @@ public class DuePenFeeIntPriInAdvancePriPenFeeIntLoanRepaymentScheduleTransactio
                 charges);
 
         // Unprocessed: 1, outstanding: 4
-        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(firstInstallmentDueDate), refEq(one));
+        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(firstInstallmentDueDate), refEq(one), eq(false));
         // Unprocessed: 0, outstanding: 2
-        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(firstInstallmentDueDate), refEq(zero));
+        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(firstInstallmentDueDate), refEq(zero), eq(false));
         // Unprocessed: 0, outstanding: 2
-        Mockito.verify(installment, Mockito.times(1)).payInterestComponent(eq(firstInstallmentDueDate), refEq(zero));
+        Mockito.verify(installment, Mockito.times(1)).payInterestComponent(eq(firstInstallmentDueDate), refEq(zero), eq(false));
         // Unprocessed: 0, outstanding: 3
-        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(firstInstallmentDueDate), refEq(zero));
+        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(firstInstallmentDueDate), refEq(zero), eq(false));
         // Principal 0, interest 0, fee 0, penalty 1
         Mockito.verify(loanTransaction, Mockito.times(1)).updateComponents(refEq(zero), refEq(zero), refEq(zero), refEq(one));
     }
@@ -758,13 +758,13 @@ public class DuePenFeeIntPriInAdvancePriPenFeeIntLoanRepaymentScheduleTransactio
                 charges);
 
         // Unprocessed: 5, outstanding: 4
-        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(firstInstallmentDueDate), refEq(five));
+        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(firstInstallmentDueDate), refEq(five), eq(false));
         // Unprocessed: 1, outstanding: 2
-        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(firstInstallmentDueDate), refEq(one));
+        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(firstInstallmentDueDate), refEq(one), eq(false));
         // Unprocessed: 0, outstanding: 2
-        Mockito.verify(installment, Mockito.times(1)).payInterestComponent(eq(firstInstallmentDueDate), refEq(zero));
+        Mockito.verify(installment, Mockito.times(1)).payInterestComponent(eq(firstInstallmentDueDate), refEq(zero), eq(false));
         // Unprocessed: 0, outstanding: 3
-        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(firstInstallmentDueDate), refEq(zero));
+        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(firstInstallmentDueDate), refEq(zero), eq(false));
         // Principal 0, interest 0, fee 1, penalty 4
         Mockito.verify(loanTransaction, Mockito.times(1)).updateComponents(refEq(zero), refEq(zero), refEq(one), refEq(four));
     }
@@ -781,13 +781,13 @@ public class DuePenFeeIntPriInAdvancePriPenFeeIntLoanRepaymentScheduleTransactio
                 charges);
 
         // Unprocessed: 7, outstanding: 4
-        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(firstInstallmentDueDate), refEq(seven));
+        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(firstInstallmentDueDate), refEq(seven), eq(false));
         // Unprocessed: 3, outstanding: 2
-        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(firstInstallmentDueDate), refEq(three));
+        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(firstInstallmentDueDate), refEq(three), eq(false));
         // Unprocessed: 1, outstanding: 2
-        Mockito.verify(installment, Mockito.times(1)).payInterestComponent(eq(firstInstallmentDueDate), refEq(one));
+        Mockito.verify(installment, Mockito.times(1)).payInterestComponent(eq(firstInstallmentDueDate), refEq(one), eq(false));
         // Unprocessed: 0, outstanding: 3
-        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(firstInstallmentDueDate), refEq(zero));
+        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(firstInstallmentDueDate), refEq(zero), eq(false));
         // Principal 0, interest 1, fee 2, penalty 4
         Mockito.verify(loanTransaction, Mockito.times(1)).updateComponents(refEq(zero), refEq(one), refEq(two), refEq(four));
     }
@@ -804,13 +804,13 @@ public class DuePenFeeIntPriInAdvancePriPenFeeIntLoanRepaymentScheduleTransactio
                 charges);
 
         // Unprocessed: 10, outstanding: 4
-        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(firstInstallmentDueDate), refEq(ten));
+        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(firstInstallmentDueDate), refEq(ten), eq(false));
         // Unprocessed: 6, outstanding: 2
-        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(firstInstallmentDueDate), refEq(six));
+        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(firstInstallmentDueDate), refEq(six), eq(false));
         // Unprocessed: 4, outstanding: 2
-        Mockito.verify(installment, Mockito.times(1)).payInterestComponent(eq(firstInstallmentDueDate), refEq(four));
+        Mockito.verify(installment, Mockito.times(1)).payInterestComponent(eq(firstInstallmentDueDate), refEq(four), eq(false));
         // Unprocessed: 2, outstanding: 3
-        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(firstInstallmentDueDate), refEq(two));
+        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(firstInstallmentDueDate), refEq(two), eq(false));
         // Principal 2, interest 2, fee 2, penalty 4
         Mockito.verify(loanTransaction, Mockito.times(1)).updateComponents(refEq(two), refEq(two), refEq(two), refEq(four));
     }
@@ -828,13 +828,13 @@ public class DuePenFeeIntPriInAdvancePriPenFeeIntLoanRepaymentScheduleTransactio
                 transactionMappings, charges);
 
         // Unprocessed: 10, outstanding: 0
-        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(lateDate), refEq(ten));
+        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(lateDate), refEq(ten), eq(false));
         // Unprocessed: 10, outstanding: 0
-        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(lateDate), refEq(ten));
+        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(lateDate), refEq(ten), eq(false));
         // Unprocessed: 10, outstanding: 0
-        Mockito.verify(installment, Mockito.times(1)).payInterestComponent(eq(lateDate), refEq(ten));
+        Mockito.verify(installment, Mockito.times(1)).payInterestComponent(eq(lateDate), refEq(ten), eq(false));
         // Unprocessed: 10, outstanding: 5
-        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(lateDate), refEq(ten));
+        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(lateDate), refEq(ten), eq(false));
         // Principal 5, interest 0, fee 0, penalty 0
         Mockito.verify(loanTransaction, Mockito.times(1)).updateComponents(refEq(five), refEq(zero), refEq(zero), refEq(zero));
     }
@@ -851,13 +851,13 @@ public class DuePenFeeIntPriInAdvancePriPenFeeIntLoanRepaymentScheduleTransactio
                 transactionMappings, charges);
 
         // Unprocessed: 10, outstanding: 0
-        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(lateDate), refEq(ten));
+        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(lateDate), refEq(ten), eq(false));
         // Unprocessed: 10, outstanding: 0
-        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(lateDate), refEq(ten));
+        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(lateDate), refEq(ten), eq(false));
         // Unprocessed: 10, outstanding: 5
-        Mockito.verify(installment, Mockito.times(1)).payInterestComponent(eq(lateDate), refEq(ten));
+        Mockito.verify(installment, Mockito.times(1)).payInterestComponent(eq(lateDate), refEq(ten), eq(false));
         // Unprocessed: 5, outstanding: 0
-        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(lateDate), refEq(five));
+        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(lateDate), refEq(five), eq(false));
         // Principal 0, interest 5, fee 0, penalty 0
         Mockito.verify(loanTransaction, Mockito.times(1)).updateComponents(refEq(zero), refEq(five), refEq(zero), refEq(zero));
     }
@@ -874,13 +874,13 @@ public class DuePenFeeIntPriInAdvancePriPenFeeIntLoanRepaymentScheduleTransactio
                 transactionMappings, charges);
 
         // Unprocessed: 10, outstanding: 0
-        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(lateDate), refEq(ten));
+        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(lateDate), refEq(ten), eq(false));
         // Unprocessed: 10, outstanding: 5
-        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(lateDate), refEq(ten));
+        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(lateDate), refEq(ten), eq(false));
         // Unprocessed: 5, outstanding: 0
-        Mockito.verify(installment, Mockito.times(1)).payInterestComponent(eq(lateDate), refEq(five));
+        Mockito.verify(installment, Mockito.times(1)).payInterestComponent(eq(lateDate), refEq(five), eq(false));
         // Unprocessed: 5, outstanding: 0
-        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(lateDate), refEq(five));
+        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(lateDate), refEq(five), eq(false));
         // Principal 0, interest 0, fee 5, penalty 0
         Mockito.verify(loanTransaction, Mockito.times(1)).updateComponents(refEq(zero), refEq(zero), refEq(five), refEq(zero));
     }
@@ -897,13 +897,13 @@ public class DuePenFeeIntPriInAdvancePriPenFeeIntLoanRepaymentScheduleTransactio
                 transactionMappings, charges);
 
         // Unprocessed: 10, outstanding: 5
-        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(lateDate), refEq(ten));
+        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(lateDate), refEq(ten), eq(false));
         // Unprocessed: 5, outstanding: 0
-        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(lateDate), refEq(five));
+        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(lateDate), refEq(five), eq(false));
         // Unprocessed: 5, outstanding: 0
-        Mockito.verify(installment, Mockito.times(1)).payInterestComponent(eq(lateDate), refEq(five));
+        Mockito.verify(installment, Mockito.times(1)).payInterestComponent(eq(lateDate), refEq(five), eq(false));
         // Unprocessed: 5, outstanding: 0
-        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(lateDate), refEq(five));
+        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(lateDate), refEq(five), eq(false));
         // Principal 0, interest 0, fee 0, penalty 5
         Mockito.verify(loanTransaction, Mockito.times(1)).updateComponents(refEq(zero), refEq(zero), refEq(zero), refEq(five));
     }
@@ -920,13 +920,13 @@ public class DuePenFeeIntPriInAdvancePriPenFeeIntLoanRepaymentScheduleTransactio
                 transactionMappings, charges);
 
         // Unprocessed: 10, outstanding: 5
-        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(lateDate), refEq(ten));
+        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(lateDate), refEq(ten), eq(false));
         // Unprocessed: 5, outstanding: 0
-        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(lateDate), refEq(five));
+        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(lateDate), refEq(five), eq(false));
         // Unprocessed: 5, outstanding: 0
-        Mockito.verify(installment, Mockito.times(1)).payInterestComponent(eq(lateDate), refEq(five));
+        Mockito.verify(installment, Mockito.times(1)).payInterestComponent(eq(lateDate), refEq(five), eq(false));
         // Unprocessed: 5, outstanding: 5
-        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(lateDate), refEq(five));
+        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(lateDate), refEq(five), eq(false));
         // Principal 5, interest 0, fee 0, penalty 5
         Mockito.verify(loanTransaction, Mockito.times(1)).updateComponents(refEq(five), refEq(zero), refEq(zero), refEq(five));
     }
@@ -943,13 +943,13 @@ public class DuePenFeeIntPriInAdvancePriPenFeeIntLoanRepaymentScheduleTransactio
                 transactionMappings, charges);
 
         // Unprocessed: 10, outstanding: 6
-        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(lateDate), refEq(ten));
+        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(lateDate), refEq(ten), eq(false));
         // Unprocessed: 4, outstanding: 2
-        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(lateDate), refEq(four));
+        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(lateDate), refEq(four), eq(false));
         // Unprocessed: 2, outstanding: 0
-        Mockito.verify(installment, Mockito.times(1)).payInterestComponent(eq(lateDate), refEq(two));
+        Mockito.verify(installment, Mockito.times(1)).payInterestComponent(eq(lateDate), refEq(two), eq(false));
         // Unprocessed: 2, outstanding: 3
-        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(lateDate), refEq(two));
+        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(lateDate), refEq(two), eq(false));
         // Principal 2, interest 0, fee 2, penalty 6
         Mockito.verify(loanTransaction, Mockito.times(1)).updateComponents(refEq(two), refEq(zero), refEq(two), refEq(six));
     }
@@ -966,13 +966,13 @@ public class DuePenFeeIntPriInAdvancePriPenFeeIntLoanRepaymentScheduleTransactio
                 transactionMappings, charges);
 
         // Unprocessed: 10, outstanding: 4
-        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(lateDate), refEq(ten));
+        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(lateDate), refEq(ten), eq(false));
         // Unprocessed: 6, outstanding: 2
-        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(lateDate), refEq(six));
+        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(lateDate), refEq(six), eq(false));
         // Unprocessed: 4, outstanding: 2
-        Mockito.verify(installment, Mockito.times(1)).payInterestComponent(eq(lateDate), refEq(four));
+        Mockito.verify(installment, Mockito.times(1)).payInterestComponent(eq(lateDate), refEq(four), eq(false));
         // Unprocessed: 2, outstanding: 3
-        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(lateDate), refEq(two));
+        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(lateDate), refEq(two), eq(false));
         // Principal 2, interest 2, fee 2, penalty 4
         Mockito.verify(loanTransaction, Mockito.times(1)).updateComponents(refEq(two), refEq(two), refEq(two), refEq(four));
     }
@@ -989,13 +989,13 @@ public class DuePenFeeIntPriInAdvancePriPenFeeIntLoanRepaymentScheduleTransactio
                 transactionMappings, charges);
 
         // Unprocessed: 1, outstanding: 4
-        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(lateDate), refEq(one));
+        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(lateDate), refEq(one), eq(false));
         // Unprocessed: 0, outstanding: 2
-        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(lateDate), refEq(zero));
+        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(lateDate), refEq(zero), eq(false));
         // Unprocessed: 0, outstanding: 2
-        Mockito.verify(installment, Mockito.times(1)).payInterestComponent(eq(lateDate), refEq(zero));
+        Mockito.verify(installment, Mockito.times(1)).payInterestComponent(eq(lateDate), refEq(zero), eq(false));
         // Unprocessed: 0, outstanding: 3
-        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(lateDate), refEq(zero));
+        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(lateDate), refEq(zero), eq(false));
         // Principal 0, interest 0, fee 0, penalty 1
         Mockito.verify(loanTransaction, Mockito.times(1)).updateComponents(refEq(zero), refEq(zero), refEq(zero), refEq(one));
     }
@@ -1012,13 +1012,13 @@ public class DuePenFeeIntPriInAdvancePriPenFeeIntLoanRepaymentScheduleTransactio
                 transactionMappings, charges);
 
         // Unprocessed: 5, outstanding: 4
-        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(lateDate), refEq(five));
+        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(lateDate), refEq(five), eq(false));
         // Unprocessed: 1, outstanding: 2
-        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(lateDate), refEq(one));
+        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(lateDate), refEq(one), eq(false));
         // Unprocessed: 0, outstanding: 2
-        Mockito.verify(installment, Mockito.times(1)).payInterestComponent(eq(lateDate), refEq(zero));
+        Mockito.verify(installment, Mockito.times(1)).payInterestComponent(eq(lateDate), refEq(zero), eq(false));
         // Unprocessed: 0, outstanding: 3
-        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(lateDate), refEq(zero));
+        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(lateDate), refEq(zero), eq(false));
         // Principal 0, interest 0, fee 1, penalty 4
         Mockito.verify(loanTransaction, Mockito.times(1)).updateComponents(refEq(zero), refEq(zero), refEq(one), refEq(four));
     }
@@ -1035,13 +1035,13 @@ public class DuePenFeeIntPriInAdvancePriPenFeeIntLoanRepaymentScheduleTransactio
                 transactionMappings, charges);
 
         // Unprocessed: 7, outstanding: 4
-        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(lateDate), refEq(seven));
+        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(lateDate), refEq(seven), eq(false));
         // Unprocessed: 3, outstanding: 2
-        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(lateDate), refEq(three));
+        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(lateDate), refEq(three), eq(false));
         // Unprocessed: 1, outstanding: 2
-        Mockito.verify(installment, Mockito.times(1)).payInterestComponent(eq(lateDate), refEq(one));
+        Mockito.verify(installment, Mockito.times(1)).payInterestComponent(eq(lateDate), refEq(one), eq(false));
         // Unprocessed: 0, outstanding: 3
-        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(lateDate), refEq(zero));
+        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(lateDate), refEq(zero), eq(false));
         // Principal 0, interest 1, fee 2, penalty 4
         Mockito.verify(loanTransaction, Mockito.times(1)).updateComponents(refEq(zero), refEq(one), refEq(two), refEq(four));
     }
@@ -1058,13 +1058,13 @@ public class DuePenFeeIntPriInAdvancePriPenFeeIntLoanRepaymentScheduleTransactio
                 transactionMappings, charges);
 
         // Unprocessed: 10, outstanding: 4
-        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(lateDate), refEq(ten));
+        Mockito.verify(installment, Mockito.times(1)).payPenaltyChargesComponent(eq(lateDate), refEq(ten), eq(false));
         // Unprocessed: 6, outstanding: 2
-        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(lateDate), refEq(six));
+        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(lateDate), refEq(six), eq(false));
         // Unprocessed: 4, outstanding: 2
-        Mockito.verify(installment, Mockito.times(1)).payInterestComponent(eq(lateDate), refEq(four));
+        Mockito.verify(installment, Mockito.times(1)).payInterestComponent(eq(lateDate), refEq(four), eq(false));
         // Unprocessed: 2, outstanding: 3
-        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(lateDate), refEq(two));
+        Mockito.verify(installment, Mockito.times(1)).payPrincipalComponent(eq(lateDate), refEq(two), eq(false));
         // Principal 2, interest 2, fee 2, penalty 4
         Mockito.verify(loanTransaction, Mockito.times(1)).updateComponents(refEq(two), refEq(two), refEq(two), refEq(four));
     }
