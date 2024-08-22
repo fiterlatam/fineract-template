@@ -360,7 +360,8 @@ public class ChargeReadPlatformServiceImpl implements ChargeReadPlatformService 
                         mir.name AS "interestRateName",
                         mir.current_rate AS "interestRateCurrentRate",
                         mir.appliedon_date AS "interestRateAppliedOnDate",
-                        c.is_get_percentage_from_table AS "getPercentageAmountFromTable"
+                        c.is_get_percentage_from_table AS "getPercentageAmountFromTable",
+                        c.days_in_arrears AS "daysInArrears"
                     FROM m_charge c
                     JOIN m_organisation_currency oc ON c.currency_code = oc.code
                     LEFT JOIN acc_gl_account acc ON acc.id = c.income_or_liability_account_id
@@ -481,9 +482,10 @@ public class ChargeReadPlatformServiceImpl implements ChargeReadPlatformService 
                 final BigDecimal vatValue = rs.getBigDecimal("vatValue");
                 final BigDecimal totalValue = rs.getBigDecimal("totalValue");
                 final Long deadline = JdbcSupport.getLong(rs, "deadLine");
+                final Integer daysInArrears = JdbcSupport.getInteger(rs, "daysInArrears");
 
                 chargeInsuranceDetailData = new ChargeInsuranceDetailData(null, insuranceName, insuranceChargedAs, insuranceCompany,
-                        insurerName, insuranceCode, insurancePlan, baseValue, vatValue, totalValue, deadline, null);
+                        insurerName, insuranceCode, insurancePlan, baseValue, vatValue, totalValue, deadline, null, daysInArrears);
 
             }
             final ChargeData chargeData = ChargeData.instance(id, name, amount, currency, chargeTimeType, chargeAppliesToType,

@@ -37,4 +37,5 @@ public final class ChargesApiConstants {
     public static final String deadlineParamName = "deadline";
     public static final String INTEREST_RATE_ID_PARAM_NAME = "interestRateId";
     public static final String GET_INTEREST_PERCENTAGE_FROM_TABLE = "getPercentageAmountFromTable";
+    public static final String DAYS_IN_ARREARS = "daysInArrears";
 }

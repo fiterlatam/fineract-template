@@ -38,7 +38,6 @@ import org.apache.fineract.infrastructure.bulkimport.importhandler.ImportHandler
 import org.apache.fineract.infrastructure.bulkimport.importhandler.helper.DateSerializer;
 import org.apache.fineract.infrastructure.core.serialization.GoogleGsonSerializerHelper;
 import org.apache.fineract.portfolio.loanaccount.data.LoanTransactionData;
-import org.apache.fineract.portfolio.loanaccount.service.LoanReadPlatformService;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Row;
@@ -52,18 +51,15 @@ import org.springframework.stereotype.Service;
 @Service
 public class LoanRepaymentImportHandler implements ImportHandler {
 
-    public static final String SEPARATOR = "-";
     public static final String EMPTY_STR = "";
     private static final Logger LOG = LoggerFactory.getLogger(LoanRepaymentImportHandler.class);
-    private final LoanReadPlatformService loanReadPlatformService;
     private final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService;
     private final ChannelReadWritePlatformService channelReadWritePlatformService;
 
     @Autowired
     public LoanRepaymentImportHandler(final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService,
-            final LoanReadPlatformService loanReadPlatformService, ChannelReadWritePlatformService channelReadWritePlatformService) {
+            ChannelReadWritePlatformService channelReadWritePlatformService) {
         this.commandsSourceWritePlatformService = commandsSourceWritePlatformService;
-        this.loanReadPlatformService = loanReadPlatformService;
         this.channelReadWritePlatformService = channelReadWritePlatformService;
     }
 
@@ -98,7 +94,7 @@ public class LoanRepaymentImportHandler implements ImportHandler {
         final Long repaymentTypeId = ImportHandlerUtils.getIdByName(workbook.getSheet(TemplatePopulateImportConstants.EXTRAS_SHEET_NAME),
                 repaymentType);
         final LoanTransactionData loanTransactionData = LoanTransactionData.importInstance(repaymentAmount, repaymentDate, repaymentTypeId,
-                null, null, null, null, null, loanAccountId, EMPTY_STR, row.getRowNum(), locale, dateFormat);
+                null, null, null, null, null, loanAccountId, row.getRowNum(), locale, dateFormat);
         final ChannelData channelData = this.channelReadWritePlatformService.findByName("Bancos");
         Long repaymentChannelId = null;
         if (channelData != null) {
@@ -109,7 +105,7 @@ public class LoanRepaymentImportHandler implements ImportHandler {
                 repaymentBank);
         loanTransactionData.setRepaymentChannelId(repaymentChannelId);
         loanTransactionData.setRepaymentBankId(repaymentBankId);
-        loanTransactionData.setImportedRepaymentTransaction(true);
+        loanTransactionData.setImportedTransaction(true);
         loanTransactionData.setClientIdNumber(clientIdNumber);
         return loanTransactionData;
     }

@@ -171,7 +171,7 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
     public void processLatestTransaction(LoanTransaction loanTransaction, TransactionCtx ctx) {
         switch (loanTransaction.getTypeOf()) {
             case DISBURSEMENT -> handleDisbursement(loanTransaction, ctx.getCurrency(), ctx.getInstallments(), ctx.getOverpaymentHolder());
-            case WRITEOFF -> handleWriteOff(loanTransaction, ctx.getCurrency(), ctx.getInstallments());
+            case WRITEOFF -> handleWriteOff(loanTransaction, ctx.getCurrency(), ctx.getInstallments(), ctx.getCharges());
             case REFUND_FOR_ACTIVE_LOAN -> handleRefund(loanTransaction, ctx.getCurrency(), ctx.getInstallments(), ctx.getCharges());
             case CHARGEBACK -> handleChargeback(loanTransaction, ctx);
             case CREDIT_BALANCE_REFUND ->
@@ -265,6 +265,7 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                     final LocalDate transactionDate = loanTransaction.getTransactionDate();
                     boolean loanTransactionMapped = false;
                     LocalDate pastDueDate = null;
+                    final boolean isWriteOffTransaction = loanTransaction.isWriteOff();
                     for (final LoanRepaymentScheduleInstallment currentInstallment : ctx.getInstallments()) {
                         pastDueDate = currentInstallment.getDueDate();
                         if (!currentInstallment.isAdditional() && DateUtils.isAfter(currentInstallment.getDueDate(), transactionDate)) {
@@ -276,7 +277,8 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                                     originalInterest.plus(chargebackAllocation.get(INTEREST)).getAmountDefaultedToNullIfZero());
 
                             if (repaidAmount.isGreaterThanZero()) {
-                                currentInstallment.payPrincipalComponent(loanTransaction.getTransactionDate(), repaidAmount);
+                                currentInstallment.payPrincipalComponent(loanTransaction.getTransactionDate(), repaidAmount,
+                                        isWriteOffTransaction);
                                 transactionMappings.add(LoanTransactionToRepaymentScheduleMapping.createFrom(loanTransaction,
                                         currentInstallment, repaidAmount, zeroMoney, zeroMoney, zeroMoney));
                             }
@@ -295,7 +297,8 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                             currentInstallment.updateInterestCharged(
                                     originalInterest.plus(chargebackAllocation.get(INTEREST)).getAmountDefaultedToNullIfZero());
                             if (repaidAmount.isGreaterThanZero()) {
-                                currentInstallment.payPrincipalComponent(loanTransaction.getTransactionDate(), repaidAmount);
+                                currentInstallment.payPrincipalComponent(loanTransaction.getTransactionDate(), repaidAmount,
+                                        isWriteOffTransaction);
                                 transactionMappings.add(LoanTransactionToRepaymentScheduleMapping.createFrom(loanTransaction,
                                         currentInstallment, repaidAmount, zeroMoney, zeroMoney, zeroMoney));
                             }
@@ -315,7 +318,8 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                             currentInstallment.updateInterestCharged(
                                     originalInterest.plus(chargebackAllocation.get(INTEREST)).getAmountDefaultedToNullIfZero());
                             if (repaidAmount.isGreaterThanZero()) {
-                                currentInstallment.payPrincipalComponent(loanTransaction.getTransactionDate(), repaidAmount);
+                                currentInstallment.payPrincipalComponent(loanTransaction.getTransactionDate(), repaidAmount,
+                                        isWriteOffTransaction);
                                 transactionMappings.add(LoanTransactionToRepaymentScheduleMapping.createFrom(loanTransaction,
                                         currentInstallment, repaidAmount, zeroMoney, zeroMoney, zeroMoney));
                             }
@@ -332,7 +336,8 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                                     originalInterest.plus(chargebackAllocation.get(INTEREST)).getAmountDefaultedToNullIfZero());
                             loan.addLoanRepaymentScheduleInstallment(installment);
                             if (repaidAmount.isGreaterThanZero()) {
-                                installment.payPrincipalComponent(loanTransaction.getTransactionDate(), repaidAmount);
+                                installment.payPrincipalComponent(loanTransaction.getTransactionDate(), repaidAmount,
+                                        isWriteOffTransaction);
                                 transactionMappings.add(LoanTransactionToRepaymentScheduleMapping.createFrom(loanTransaction, installment,
                                         repaidAmount, zeroMoney, zeroMoney, zeroMoney));
                             }
@@ -605,11 +610,12 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
             Balances balances, LoanRepaymentScheduleInstallment.PaymentAction action) {
         LocalDate transactionDate = loanTransaction.getTransactionDate();
         Money zero = transactionAmountUnprocessed.zero();
+        final boolean isWriteOffTransaction = loanTransaction.isWriteOff();
 
         LoanRepaymentScheduleInstallment.PaymentFunction paymentFunction = currentInstallment
                 .getPaymentFunction(paymentAllocationType.getAllocationType(), action);
         ChargesPaidByFunction chargesPaidByFunction = getChargesPaymentFunction(action);
-        Money portion = paymentFunction.accept(transactionDate, transactionAmountUnprocessed);
+        Money portion = paymentFunction.accept(transactionDate, transactionAmountUnprocessed, isWriteOffTransaction);
 
         switch (paymentAllocationType.getAllocationType()) {
             case PENALTY -> {
@@ -722,6 +728,8 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
 
         LocalDate startDate = loanTransaction.getLoan().getDisbursementDate();
 
+        final boolean isWriteOffTransaction = loanTransaction.isWriteOff();
+
         Money unprocessed = loanTransaction.getAmount(currency);
         int firstNormalInstallmentNumber = LoanRepaymentScheduleProcessingWrapper.fetchFirstNormalInstallmentNumber(installments);
         for (final LoanRepaymentScheduleInstallment installment : installments) {
@@ -730,18 +738,20 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                     : loanCharge.isDueForCollectionFromAndUpToAndIncluding(startDate, installment.getDueDate());
             if (isDue) {
                 Integer installmentNumber = installment.getInstallmentNumber();
-                Money paidAmount = loanCharge.updatePaidAmountBy(amountToBePaid, installmentNumber, zero);
+                Money paidAmount = loanCharge.updatePaidAmountBy(amountToBePaid, installmentNumber, zero, isWriteOffTransaction);
 
                 LoanTransactionToRepaymentScheduleMapping loanTransactionToRepaymentScheduleMapping = getTransactionMapping(
                         transactionMappings, loanTransaction, installment, currency);
 
                 if (loanTransaction.isPenaltyPayment()) {
-                    penaltyChargesPortion = installment.payPenaltyChargesComponent(loanTransaction.getTransactionDate(), paidAmount);
+                    penaltyChargesPortion = installment.payPenaltyChargesComponent(loanTransaction.getTransactionDate(), paidAmount,
+                            isWriteOffTransaction);
                     loanTransaction.setLoanChargesPaid(Collections
                             .singleton(new LoanChargePaidBy(loanTransaction, loanCharge, paidAmount.getAmount(), installmentNumber)));
                     addToTransactionMapping(loanTransactionToRepaymentScheduleMapping, zero, zero, zero, penaltyChargesPortion);
                 } else {
-                    feeChargesPortion = installment.payFeeChargesComponent(loanTransaction.getTransactionDate(), paidAmount);
+                    feeChargesPortion = installment.payFeeChargesComponent(loanTransaction.getTransactionDate(), paidAmount,
+                            isWriteOffTransaction);
                     loanTransaction.setLoanChargesPaid(Collections
                             .singleton(new LoanChargePaidBy(loanTransaction, loanCharge, paidAmount.getAmount(), installmentNumber)));
                     addToTransactionMapping(loanTransactionToRepaymentScheduleMapping, zero, zero, feeChargesPortion, zero);

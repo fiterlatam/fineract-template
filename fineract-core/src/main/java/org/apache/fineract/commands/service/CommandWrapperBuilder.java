@@ -930,6 +930,15 @@ public class CommandWrapperBuilder {
         return this;
     }
 
+    public CommandWrapperBuilder specialWriteOffLoanTransaction(final Long loanId) {
+        this.actionName = "SPECIAL_WRITEOFF";
+        this.entityName = "LOAN";
+        this.entityId = null;
+        this.loanId = loanId;
+        this.href = "/loans/" + loanId + "/transactions/template?command=special-write-off";
+        return this;
+    }
+
     public CommandWrapperBuilder undoWriteOffLoanTransaction(final Long loanId) {
         this.actionName = "UNDOWRITEOFF";
         this.entityName = "LOAN";

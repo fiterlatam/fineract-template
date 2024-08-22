@@ -22,5 +22,6 @@ public class ChargeInsuranceDetailData {
     private final BigDecimal totalValue;
     private final Long deadline;
     private final List<EnumOptionData> insurancesChargedAsOptions;
+    private final Integer daysInArrears;
 
 }

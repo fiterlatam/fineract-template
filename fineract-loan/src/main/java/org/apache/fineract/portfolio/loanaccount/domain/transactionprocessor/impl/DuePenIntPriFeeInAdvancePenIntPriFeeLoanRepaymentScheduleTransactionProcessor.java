@@ -72,6 +72,7 @@ public class DuePenIntPriFeeInAdvancePenIntPriFeeLoanRepaymentScheduleTransactio
         Money interestPortion = Money.zero(currency);
         Money feeChargesPortion = Money.zero(currency);
         Money penaltyChargesPortion = Money.zero(currency);
+        final boolean isWriteOffTransaction = loanTransaction.isWriteOff();
 
         if (loanTransaction.isChargesWaiver()) {
             penaltyChargesPortion = currentInstallment.waivePenaltyChargesComponent(transactionDate,
@@ -89,10 +90,12 @@ public class DuePenIntPriFeeInAdvancePenIntPriFeeLoanRepaymentScheduleTransactio
             loanTransaction.updateComponents(principalPortion, interestPortion, feeChargesPortion, penaltyChargesPortion);
         } else if (loanTransaction.isChargePayment()) {
             if (loanTransaction.isPenaltyPayment()) {
-                penaltyChargesPortion = currentInstallment.payPenaltyChargesComponent(transactionDate, transactionAmountRemaining);
+                penaltyChargesPortion = currentInstallment.payPenaltyChargesComponent(transactionDate, transactionAmountRemaining,
+                        isWriteOffTransaction);
                 transactionAmountRemaining = transactionAmountRemaining.minus(penaltyChargesPortion);
             } else {
-                feeChargesPortion = currentInstallment.payFeeChargesComponent(transactionDate, transactionAmountRemaining);
+                feeChargesPortion = currentInstallment.payFeeChargesComponent(transactionDate, transactionAmountRemaining,
+                        isWriteOffTransaction);
                 transactionAmountRemaining = transactionAmountRemaining.minus(feeChargesPortion);
             }
             loanTransaction.updateComponents(principalPortion, interestPortion, feeChargesPortion, penaltyChargesPortion);
@@ -125,17 +128,20 @@ public class DuePenIntPriFeeInAdvancePenIntPriFeeLoanRepaymentScheduleTransactio
                 } else {
                     calculatedPenaltyCharge = transactionAmountRemaining;
                 }
-                subPenaltyPortion = currentInstallment.payPenaltyChargesComponent(transactionDate, calculatedPenaltyCharge);
+                subPenaltyPortion = currentInstallment.payPenaltyChargesComponent(transactionDate, calculatedPenaltyCharge,
+                        isWriteOffTransaction);
                 transactionAmountRemaining = transactionAmountRemaining.minus(subPenaltyPortion);
                 penaltyChargesPortion = penaltyChargesPortion.add(subPenaltyPortion);
 
                 Money subInterestPortion;
                 if (ignoreDueDateCheck || !DateUtils.isBefore(transactionDate, currentInstallment.getDueDate())) {
-                    subInterestPortion = currentInstallment.payInterestComponent(transactionDate, transactionAmountRemaining);
+                    subInterestPortion = currentInstallment.payInterestComponent(transactionDate, transactionAmountRemaining,
+                            isWriteOffTransaction);
                     transactionAmountRemaining = transactionAmountRemaining.minus(subInterestPortion);
                     interestPortion = interestPortion.add(subInterestPortion);
 
-                    Money subPrincipalPortion = currentInstallment.payPrincipalComponent(transactionDate, transactionAmountRemaining);
+                    Money subPrincipalPortion = currentInstallment.payPrincipalComponent(transactionDate, transactionAmountRemaining,
+                            isWriteOffTransaction);
                     transactionAmountRemaining = transactionAmountRemaining.minus(subPrincipalPortion);
                     principalPortion = principalPortion.add(subPrincipalPortion);
                 }
@@ -148,7 +154,7 @@ public class DuePenIntPriFeeInAdvancePenIntPriFeeLoanRepaymentScheduleTransactio
                 } else {
                     calculatedFeeCharge = transactionAmountRemaining;
                 }
-                subFeePortion = currentInstallment.payFeeChargesComponent(transactionDate, calculatedFeeCharge);
+                subFeePortion = currentInstallment.payFeeChargesComponent(transactionDate, calculatedFeeCharge, isWriteOffTransaction);
                 transactionAmountRemaining = transactionAmountRemaining.minus(subFeePortion);
                 feeChargesPortion = feeChargesPortion.add(subFeePortion);
 
@@ -196,6 +202,7 @@ public class DuePenIntPriFeeInAdvancePenIntPriFeeLoanRepaymentScheduleTransactio
         Money interestPortion = Money.zero(currency);
         Money feeChargesPortion = Money.zero(currency);
         Money penaltyChargesPortion = Money.zero(currency);
+        final boolean isWriteOffTransaction = loanTransaction.isWriteOff();
 
         if (loanTransaction.isChargesWaiver()) {
             penaltyChargesPortion = currentInstallment.waivePenaltyChargesComponent(transactionDate,
@@ -213,27 +220,33 @@ public class DuePenIntPriFeeInAdvancePenIntPriFeeLoanRepaymentScheduleTransactio
             loanTransaction.updateComponents(principalPortion, interestPortion, feeChargesPortion, penaltyChargesPortion);
         } else if (loanTransaction.isChargePayment()) {
             if (loanTransaction.isPenaltyPayment()) {
-                penaltyChargesPortion = currentInstallment.payPenaltyChargesComponent(transactionDate, transactionAmountRemaining);
+                penaltyChargesPortion = currentInstallment.payPenaltyChargesComponent(transactionDate, transactionAmountRemaining,
+                        isWriteOffTransaction);
                 transactionAmountRemaining = transactionAmountRemaining.minus(penaltyChargesPortion);
             } else {
-                feeChargesPortion = currentInstallment.payFeeChargesComponent(transactionDate, transactionAmountRemaining);
+                feeChargesPortion = currentInstallment.payFeeChargesComponent(transactionDate, transactionAmountRemaining,
+                        isWriteOffTransaction);
                 transactionAmountRemaining = transactionAmountRemaining.minus(feeChargesPortion);
             }
             loanTransaction.updateComponents(principalPortion, interestPortion, feeChargesPortion, penaltyChargesPortion);
         } else {
-            Money subPenaltyPortion = currentInstallment.payPenaltyChargesComponent(transactionDate, transactionAmountRemaining);
+            Money subPenaltyPortion = currentInstallment.payPenaltyChargesComponent(transactionDate, transactionAmountRemaining,
+                    isWriteOffTransaction);
             transactionAmountRemaining = transactionAmountRemaining.minus(subPenaltyPortion);
             penaltyChargesPortion = penaltyChargesPortion.add(subPenaltyPortion);
 
-            Money subInterestPortion = currentInstallment.payInterestComponent(transactionDate, transactionAmountRemaining);
+            Money subInterestPortion = currentInstallment.payInterestComponent(transactionDate, transactionAmountRemaining,
+                    isWriteOffTransaction);
             transactionAmountRemaining = transactionAmountRemaining.minus(subInterestPortion);
             interestPortion = interestPortion.add(subInterestPortion);
 
-            Money subPrincipalPortion = currentInstallment.payPrincipalComponent(transactionDate, transactionAmountRemaining);
+            Money subPrincipalPortion = currentInstallment.payPrincipalComponent(transactionDate, transactionAmountRemaining,
+                    isWriteOffTransaction);
             transactionAmountRemaining = transactionAmountRemaining.minus(subPrincipalPortion);
             principalPortion = principalPortion.add(subPrincipalPortion);
 
-            Money subFeePortion = currentInstallment.payFeeChargesComponent(transactionDate, transactionAmountRemaining);
+            Money subFeePortion = currentInstallment.payFeeChargesComponent(transactionDate, transactionAmountRemaining,
+                    isWriteOffTransaction);
             transactionAmountRemaining = transactionAmountRemaining.minus(subFeePortion);
             feeChargesPortion = feeChargesPortion.add(subFeePortion);
 
@@ -258,22 +271,25 @@ public class DuePenIntPriFeeInAdvancePenIntPriFeeLoanRepaymentScheduleTransactio
         Money interestPortion = Money.zero(currency);
         Money feeChargesPortion = Money.zero(currency);
         Money penaltyChargesPortion = Money.zero(currency);
+        final boolean isWriteOffTransaction = loanTransaction.isWriteOff();
 
-        principalPortion = currentInstallment.unpayPrincipalComponent(transactionDate, transactionAmountRemaining);
+        principalPortion = currentInstallment.unpayPrincipalComponent(transactionDate, transactionAmountRemaining, isWriteOffTransaction);
         transactionAmountRemaining = transactionAmountRemaining.minus(principalPortion);
 
         if (transactionAmountRemaining.isGreaterThanZero()) {
-            interestPortion = currentInstallment.unpayInterestComponent(transactionDate, transactionAmountRemaining);
+            interestPortion = currentInstallment.unpayInterestComponent(transactionDate, transactionAmountRemaining, isWriteOffTransaction);
             transactionAmountRemaining = transactionAmountRemaining.minus(interestPortion);
         }
 
         if (transactionAmountRemaining.isGreaterThanZero()) {
-            feeChargesPortion = currentInstallment.unpayFeeChargesComponent(transactionDate, transactionAmountRemaining);
+            feeChargesPortion = currentInstallment.unpayFeeChargesComponent(transactionDate, transactionAmountRemaining,
+                    isWriteOffTransaction);
             transactionAmountRemaining = transactionAmountRemaining.minus(feeChargesPortion);
         }
 
         if (transactionAmountRemaining.isGreaterThanZero()) {
-            penaltyChargesPortion = currentInstallment.unpayPenaltyChargesComponent(transactionDate, transactionAmountRemaining);
+            penaltyChargesPortion = currentInstallment.unpayPenaltyChargesComponent(transactionDate, transactionAmountRemaining,
+                    isWriteOffTransaction);
             transactionAmountRemaining = transactionAmountRemaining.minus(penaltyChargesPortion);
         }
         loanTransaction.updateComponents(principalPortion, interestPortion, feeChargesPortion, penaltyChargesPortion);

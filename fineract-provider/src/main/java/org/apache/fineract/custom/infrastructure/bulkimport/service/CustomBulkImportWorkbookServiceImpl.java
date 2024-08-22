@@ -108,14 +108,12 @@ public class CustomBulkImportWorkbookServiceImpl implements BulkImportWorkbookSe
 
                 }
                 Workbook workbook = new HSSFWorkbook(clonedInputStream);
-                CustomGlobalEntityType entityType = null;
+                CustomGlobalEntityType entityType;
                 int primaryColumn = 0;
                 if (entity.trim().equalsIgnoreCase(CustomGlobalEntityType.CLIENT_ALLY.getAlias())) {
                     entityType = CustomGlobalEntityType.CLIENT_ALLY;
-                    primaryColumn = 0;
                 } else if (entity.trim().equalsIgnoreCase(CustomGlobalEntityType.CLIENT_ALLY_POINTS_OF_SALES.getAlias())) {
                     entityType = CustomGlobalEntityType.CLIENT_ALLY_POINTS_OF_SALES;
-                    primaryColumn = 0;
                 } else {
                     workbook.close();
                     throw new GeneralPlatformDomainRuleException("error.msg.unable.to.find.resource", "Unable to find requested resource");

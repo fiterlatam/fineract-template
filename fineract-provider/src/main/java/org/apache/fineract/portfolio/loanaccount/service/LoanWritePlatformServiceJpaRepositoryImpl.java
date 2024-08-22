@@ -58,6 +58,7 @@ import org.apache.fineract.infrastructure.codes.domain.CodeValueRepositoryWrappe
 import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
 import org.apache.fineract.infrastructure.configuration.domain.GlobalConfigurationProperty;
 import org.apache.fineract.infrastructure.configuration.domain.GlobalConfigurationRepository;
+import org.apache.fineract.infrastructure.configuration.service.TemporaryConfigurationServiceContainer;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.ApiParameterError;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
@@ -1083,9 +1084,9 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         Loan loan = this.loanAssembler.assembleFrom(loanId);
         final LoanProduct loanProduct = loan.loanProduct();
         final Long repaymentChannelId = command.longValueOfParameterNamed("repaymentChannelId");
-        final boolean isImportedRepaymentTransaction = command.booleanPrimitiveValueOfParameterNamed("isImportedRepaymentTransaction");
+        final boolean isImportedTransaction = command.booleanPrimitiveValueOfParameterNamed("isImportedTransaction");
         ChannelData channelData;
-        if (isImportedRepaymentTransaction) {
+        if (isImportedTransaction) {
             final String clientIdNumber = command.stringValueOfParameterNamed("clientIdNumber");
             final Long clientId = loan.getClientId();
             List<ClientData> clients = this.clientReadPlatformService.retrieveByIdNumber(clientIdNumber);
@@ -1799,6 +1800,77 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 .withGroupId(loan.getGroupId()) //
                 .withLoanId(loanId) //
                 .with(changes).build();
+    }
+
+    @Transactional
+    @Override
+    public CommandProcessingResult specialWriteOff(final Long loanId, final JsonCommand command) {
+        this.loanEventApiJsonValidator.validateSpecialWriteOff(command.json());
+        final Map<String, Object> changes = new LinkedHashMap<>();
+        changes.put("locale", command.locale());
+        changes.put("dateFormat", command.dateFormat());
+        final Loan loan = this.loanAssembler.assembleFrom(loanId);
+        if (command.hasParameter("writeoffReasonId")) {
+            Long writeoffReasonId = command.longValueOfParameterNamed("writeoffReasonId");
+            CodeValue writeoffReason = this.codeValueRepository
+                    .findOneByCodeNameAndIdWithNotFoundDetection(LoanApiConstants.WRITEOFFREASONS, writeoffReasonId);
+            changes.put("writeoffReasonId", writeoffReasonId);
+            loan.updateWriteOffReason(writeoffReason);
+        }
+        checkClientOrGroupActive(loan);
+        businessEventNotifierService.notifyPreBusinessEvent(new LoanWrittenOffPreBusinessEvent(loan));
+        entityDatatableChecksWritePlatformService.runTheCheckForProduct(loanId, EntityTables.LOAN.getName(),
+                StatusEnum.WRITE_OFF.getCode().longValue(), EntityTables.LOAN.getForeignKeyColumnNameOnDatatable(), loan.productId());
+        final List<Long> existingTransactionIds = new ArrayList<>();
+        final List<Long> existingReversedTransactionIds = new ArrayList<>();
+        final LocalDate recalculateFrom = null;
+        ScheduleGeneratorDTO scheduleGeneratorDTO = this.loanUtilService.buildScheduleGeneratorDTO(loan, recalculateFrom);
+        final LocalDate transactionDate = DateUtils.getBusinessLocalDate();
+        final String txnExternalId = command.stringValueOfParameterNamedAllowingNull("externalId");
+        ExternalId externalId = ExternalIdFactory.produce(txnExternalId);
+        if (externalId.isEmpty() && TemporaryConfigurationServiceContainer.isExternalIdAutoGenerationEnabled()) {
+            externalId = ExternalId.generate();
+        }
+        changes.put("externalId", externalId);
+        final ChangedTransactionDetail changedTransactionDetail = loan.validateSpecialWrittenOff(command, changes, existingTransactionIds,
+                existingReversedTransactionIds, scheduleGeneratorDTO);
+        final String noteText = command.stringValueOfParameterNamed("note");
+        final boolean isImportedTransaction = command.booleanPrimitiveValueOfParameterNamed("isImportedTransaction");
+        LoanTransaction writeOffTransaction;
+        if (isImportedTransaction) {
+            final BigDecimal totalWriteOffAmount = command.bigDecimalValueOfParameterNamed("totalWriteOffAmount");
+            final PaymentDetail paymentDetail = null;
+            final boolean isRecoveryRepayment = false;
+            final String chargeRefundChargeType = null;
+            final boolean isAccountTransfer = false;
+            final HolidayDetailDTO holidayDetailDto = null;
+            boolean isHolidayValidationDone = false;
+            writeOffTransaction = this.loanAccountDomainService.makeRepayment(LoanTransactionType.WRITEOFF, loan, transactionDate,
+                    totalWriteOffAmount, paymentDetail, noteText, externalId, isRecoveryRepayment, chargeRefundChargeType,
+                    isAccountTransfer, holidayDetailDto, isHolidayValidationDone);
+        } else {
+            writeOffTransaction = loan.doLoanSpecialWriteOff(command, transactionDate, externalId);
+        }
+        this.loanTransactionRepository.saveAndFlush(writeOffTransaction);
+        for (final Map.Entry<Long, LoanTransaction> mapEntry : changedTransactionDetail.getNewTransactionMappings().entrySet()) {
+            this.loanTransactionRepository.save(mapEntry.getValue());
+            this.accountTransfersWritePlatformService.updateLoanTransaction(mapEntry.getKey(), mapEntry.getValue());
+        }
+        saveLoanWithDataIntegrityViolationChecks(loan);
+        if (StringUtils.isNotBlank(noteText)) {
+            changes.put("note", noteText);
+            final Note note = Note.loanTransactionNote(loan, writeOffTransaction, noteText);
+            this.noteRepository.save(note);
+        }
+        postJournalEntries(loan, existingTransactionIds, existingReversedTransactionIds);
+        loanAccrualTransactionBusinessEventService.raiseBusinessEventForAccrualTransactions(loan, existingTransactionIds);
+        loanAccountDomainService.recalculateAccruals(loan);
+        loanAccountDomainService.setLoanDelinquencyTag(loan, DateUtils.getBusinessLocalDate());
+        businessEventNotifierService.notifyPostBusinessEvent(new LoanBalanceChangedBusinessEvent(loan));
+        businessEventNotifierService.notifyPostBusinessEvent(new LoanWrittenOffPostBusinessEvent(writeOffTransaction));
+        return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withEntityId(writeOffTransaction.getId())
+                .withEntityExternalId(writeOffTransaction.getExternalId()).withOfficeId(loan.getOfficeId()).withClientId(loan.getClientId())
+                .withGroupId(loan.getGroupId()).withLoanId(loanId).with(changes).build();
     }
 
     @Transactional
