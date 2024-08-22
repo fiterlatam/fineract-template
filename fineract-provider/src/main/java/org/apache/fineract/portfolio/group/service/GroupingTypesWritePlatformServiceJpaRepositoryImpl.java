@@ -562,14 +562,14 @@ public class GroupingTypesWritePlatformServiceJpaRepositoryImpl implements Group
 
             final GroupLevel groupLevel = this.groupLevelRepository.findById(groupForUpdate.getGroupLevel().getId()).orElse(null);
 
-            if (groupingType == GroupTypes.GROUP){
-                if (groupForUpdate.getMeetingDay()==null){
+            if (groupingType == GroupTypes.GROUP) {
+                if (groupForUpdate.getMeetingDay() == null) {
                     groupForUpdate.updateMeetingDay(parent.getMeetingDay());
                 }
-                if (groupForUpdate.getMeetingStart()==null){
+                if (groupForUpdate.getMeetingStart() == null) {
                     groupForUpdate.updateMeetingStart(parent.getMeetingStart());
                 }
-                if (groupForUpdate.getMeetingEnd()==null){
+                if (groupForUpdate.getMeetingEnd() == null) {
                     groupForUpdate.updateMeetingEnd(parent.getMeetingEnd());
                 }
             }
@@ -1147,11 +1147,11 @@ public class GroupingTypesWritePlatformServiceJpaRepositoryImpl implements Group
 
             String portfolioOfficeQuery = "SELECT id from m_office where name=?";
             List<Long> portfolioIds = jdbcTemplate.queryForList(portfolioOfficeQuery, Long.class, portfolio.getName());
-            if (portfolioIds.size()<=0) {
+            if (portfolioIds.size() <= 0) {
                 throw new PortfolioOfficeNotFoundException(portfolio.getName());
             }
             Office portfolioOffice = this.officeRepositoryWrapper.findOneWithNotFoundDetection(portfolioIds.get(0));
-//            Office portfolioOffice = office.getParent();
+            // Office portfolioOffice = office.getParent();
             final boolean active = true;
             final LocalDate activationDate = DateUtils.getLocalDateOfTenant();
             final LocalDate submittedOnDate = DateUtils.getLocalDateOfTenant();
@@ -1167,8 +1167,9 @@ public class GroupingTypesWritePlatformServiceJpaRepositoryImpl implements Group
                     final Integer meetingStart = rangeTemplateData.getStartDay();
                     final Integer meetingEnd = rangeTemplateData.getEndDay();
 
-                    Group newCenter = Group.assembleNewCenterFrom(portfolioOffice, groupLevel, centerName, active, activationDate, submittedOnDate,
-                            currentUser, meetingStartTime, meetingEndTime, portfolio, meetingStart, meetingEnd, meetingDayValue);
+                    Group newCenter = Group.assembleNewCenterFrom(portfolioOffice, groupLevel, centerName, active, activationDate,
+                            submittedOnDate, currentUser, meetingStartTime, meetingEndTime, portfolio, meetingStart, meetingEnd,
+                            meetingDayValue);
 
                     this.groupRepository.saveAndFlush(newCenter);
                 }

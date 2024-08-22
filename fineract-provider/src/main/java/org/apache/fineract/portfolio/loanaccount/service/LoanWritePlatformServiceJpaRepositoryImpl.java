@@ -406,10 +406,11 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         }
         final CalendarInstance calendarInstance = this.calendarInstanceRepository.findCalendarInstaneByEntityId(loan.getId(),
                 CalendarEntityType.LOANS.getValue());
-        Calendar calendar = calendarInstance!=null? calendarInstance.getCalendar():null;
+        Calendar calendar = calendarInstance != null ? calendarInstance.getCalendar() : null;
 
         LocalDate deriveFirstRepaymentDate;
-        if (loan.getExpectedFirstRepaymentOnDate() != null && Objects.equals(loan.getLoanProduct().getOwnerType(), LoanProductOwnerType.INDIVIDUAL.getValue())) {
+        if (loan.getExpectedFirstRepaymentOnDate() != null
+                && Objects.equals(loan.getLoanProduct().getOwnerType(), LoanProductOwnerType.INDIVIDUAL.getValue())) {
             deriveFirstRepaymentDate = loan.getExpectedFirstRepaymentOnDate();
         } else {
             deriveFirstRepaymentDate = loanScheduleAssembler.deriveFirstRepaymentDate(loan, actualDisbursementDate, calendar);
@@ -1477,7 +1478,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
         SavingsAccountTransaction holdTransaction = savingsAccountTransactions.stream().filter(sa -> sa.isAmountOnHoldNotReleased())
                 .findFirst().orElse(null);
-        if (holdTransaction!=null) {
+        if (holdTransaction != null) {
             this.savingsAccountWritePlatformService.releaseLoanGuarantee(loanId, command,
                     command.localDateValueOfParameterNamed("transactionDate"), holdTransaction);
         }
