@@ -67,6 +67,7 @@ public class EarlyPaymentLoanRepaymentScheduleTransactionProcessor extends Abstr
         Money interestPortion = Money.zero(transactionAmountRemaining.getCurrency());
         Money feeChargesPortion = Money.zero(transactionAmountRemaining.getCurrency());
         Money penaltyChargesPortion = Money.zero(transactionAmountRemaining.getCurrency());
+        final boolean isWriteOffTransaction = loanTransaction.isWriteOff();
 
         if (loanTransaction.isChargesWaiver()) {
             penaltyChargesPortion = currentInstallment.waivePenaltyChargesComponent(transactionDate,
@@ -84,17 +85,19 @@ public class EarlyPaymentLoanRepaymentScheduleTransactionProcessor extends Abstr
             loanTransaction.updateComponents(principalPortion, interestPortion, feeChargesPortion, penaltyChargesPortion);
         } else if (loanTransaction.isChargePayment()) {
             if (loanTransaction.isPenaltyPayment()) {
-                penaltyChargesPortion = currentInstallment.payPenaltyChargesComponent(transactionDate, transactionAmountRemaining);
+                penaltyChargesPortion = currentInstallment.payPenaltyChargesComponent(transactionDate, transactionAmountRemaining,
+                        isWriteOffTransaction);
                 transactionAmountRemaining = transactionAmountRemaining.minus(penaltyChargesPortion);
             } else {
-                feeChargesPortion = currentInstallment.payFeeChargesComponent(transactionDate, transactionAmountRemaining);
+                feeChargesPortion = currentInstallment.payFeeChargesComponent(transactionDate, transactionAmountRemaining,
+                        isWriteOffTransaction);
                 transactionAmountRemaining = transactionAmountRemaining.minus(feeChargesPortion);
             }
             loanTransaction.updateComponents(principalPortion, interestPortion, feeChargesPortion, penaltyChargesPortion);
         } else {
 
             // Only allocate to principal:
-            principalPortion = currentInstallment.payPrincipalComponent(transactionDate, transactionAmountRemaining);
+            principalPortion = currentInstallment.payPrincipalComponent(transactionDate, transactionAmountRemaining, isWriteOffTransaction);
             transactionAmountRemaining = transactionAmountRemaining.minus(principalPortion);
 
             loanTransaction.updateComponents(principalPortion, interestPortion, feeChargesPortion, penaltyChargesPortion);
@@ -136,6 +139,7 @@ public class EarlyPaymentLoanRepaymentScheduleTransactionProcessor extends Abstr
         Money interestPortion = Money.zero(transactionAmountRemaining.getCurrency());
         Money feeChargesPortion = Money.zero(transactionAmountRemaining.getCurrency());
         Money penaltyChargesPortion = Money.zero(transactionAmountRemaining.getCurrency());
+        final boolean isWriteOffTransaction = loanTransaction.isWriteOff();
 
         if (loanTransaction.isChargesWaiver()) {
             // zero this type of transaction and ignore it for now.
@@ -147,24 +151,28 @@ public class EarlyPaymentLoanRepaymentScheduleTransactionProcessor extends Abstr
             loanTransaction.updateComponents(principalPortion, interestPortion, feeChargesPortion, penaltyChargesPortion);
         } else if (loanTransaction.isChargePayment()) {
             if (loanTransaction.isPenaltyPayment()) {
-                penaltyChargesPortion = currentInstallment.payPenaltyChargesComponent(transactionDate, transactionAmountRemaining);
+                penaltyChargesPortion = currentInstallment.payPenaltyChargesComponent(transactionDate, transactionAmountRemaining,
+                        isWriteOffTransaction);
                 transactionAmountRemaining = transactionAmountRemaining.minus(penaltyChargesPortion);
             } else {
-                feeChargesPortion = currentInstallment.payFeeChargesComponent(transactionDate, transactionAmountRemaining);
+                feeChargesPortion = currentInstallment.payFeeChargesComponent(transactionDate, transactionAmountRemaining,
+                        isWriteOffTransaction);
                 transactionAmountRemaining = transactionAmountRemaining.minus(feeChargesPortion);
             }
             loanTransaction.updateComponents(principalPortion, interestPortion, feeChargesPortion, penaltyChargesPortion);
         } else {
-            interestPortion = currentInstallment.payInterestComponent(transactionDate, transactionAmountRemaining);
+            interestPortion = currentInstallment.payInterestComponent(transactionDate, transactionAmountRemaining, isWriteOffTransaction);
             transactionAmountRemaining = transactionAmountRemaining.minus(interestPortion);
 
-            principalPortion = currentInstallment.payPrincipalComponent(transactionDate, transactionAmountRemaining);
+            principalPortion = currentInstallment.payPrincipalComponent(transactionDate, transactionAmountRemaining, isWriteOffTransaction);
             transactionAmountRemaining = transactionAmountRemaining.minus(principalPortion);
 
-            penaltyChargesPortion = currentInstallment.payPenaltyChargesComponent(transactionDate, transactionAmountRemaining);
+            penaltyChargesPortion = currentInstallment.payPenaltyChargesComponent(transactionDate, transactionAmountRemaining,
+                    isWriteOffTransaction);
             transactionAmountRemaining = transactionAmountRemaining.minus(penaltyChargesPortion);
 
-            feeChargesPortion = currentInstallment.payFeeChargesComponent(transactionDate, transactionAmountRemaining);
+            feeChargesPortion = currentInstallment.payFeeChargesComponent(transactionDate, transactionAmountRemaining,
+                    isWriteOffTransaction);
             transactionAmountRemaining = transactionAmountRemaining.minus(feeChargesPortion);
 
             loanTransaction.updateComponents(principalPortion, interestPortion, feeChargesPortion, penaltyChargesPortion);
@@ -189,24 +197,28 @@ public class EarlyPaymentLoanRepaymentScheduleTransactionProcessor extends Abstr
         Money interestPortion = Money.zero(transactionAmountRemaining.getCurrency());
         Money feeChargesPortion = Money.zero(transactionAmountRemaining.getCurrency());
         Money penaltyChargesPortion = Money.zero(transactionAmountRemaining.getCurrency());
+        final boolean isWriteOffTransaction = loanTransaction.isWriteOff();
 
         if (transactionAmountRemaining.isGreaterThanZero()) {
-            feeChargesPortion = currentInstallment.unpayFeeChargesComponent(transactionDate, transactionAmountRemaining);
+            feeChargesPortion = currentInstallment.unpayFeeChargesComponent(transactionDate, transactionAmountRemaining,
+                    isWriteOffTransaction);
             transactionAmountRemaining = transactionAmountRemaining.minus(feeChargesPortion);
         }
 
         if (transactionAmountRemaining.isGreaterThanZero()) {
-            penaltyChargesPortion = currentInstallment.unpayPenaltyChargesComponent(transactionDate, transactionAmountRemaining);
+            penaltyChargesPortion = currentInstallment.unpayPenaltyChargesComponent(transactionDate, transactionAmountRemaining,
+                    isWriteOffTransaction);
             transactionAmountRemaining = transactionAmountRemaining.minus(penaltyChargesPortion);
         }
 
         if (transactionAmountRemaining.isGreaterThanZero()) {
-            principalPortion = currentInstallment.unpayPrincipalComponent(transactionDate, transactionAmountRemaining);
+            principalPortion = currentInstallment.unpayPrincipalComponent(transactionDate, transactionAmountRemaining,
+                    isWriteOffTransaction);
             transactionAmountRemaining = transactionAmountRemaining.minus(principalPortion);
         }
 
         if (transactionAmountRemaining.isGreaterThanZero()) {
-            interestPortion = currentInstallment.unpayInterestComponent(transactionDate, transactionAmountRemaining);
+            interestPortion = currentInstallment.unpayInterestComponent(transactionDate, transactionAmountRemaining, isWriteOffTransaction);
             transactionAmountRemaining = transactionAmountRemaining.minus(interestPortion);
         }
 

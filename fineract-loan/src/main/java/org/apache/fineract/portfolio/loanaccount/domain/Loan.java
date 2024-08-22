@@ -3460,6 +3460,10 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             }
         }
 
+        // if(this.getId() != 1L){
+        // throw new GeneralPlatformDomainRuleException("error.msg.loan.id.not.1", "Loan id should be 1");
+        // }
+
         return changedTransactionDetail;
     }
 
@@ -3907,10 +3911,13 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         Money cumulativeTotalWaivedOnInstallments = Money.zero(currency);
         List<LoanRepaymentScheduleInstallment> installments = getRepaymentScheduleInstallments();
         for (final LoanRepaymentScheduleInstallment scheduledRepayment : installments) {
-
+            final Money scheduleWrittenOffValue = scheduledRepayment.getPrincipalWrittenOff(currency)
+                    .plus(scheduledRepayment.getInterestWrittenOff(currency)).plus(scheduledRepayment.getFeeChargesWrittenOff(currency))
+                    .plus(scheduledRepayment.getPenaltyChargesWrittenOff(currency));
             cumulativeTotalPaidOnInstallments = cumulativeTotalPaidOnInstallments
                     .plus(scheduledRepayment.getPrincipalCompleted(currency).plus(scheduledRepayment.getInterestPaid(currency)))
-                    .plus(scheduledRepayment.getFeeChargesPaid(currency)).plus(scheduledRepayment.getPenaltyChargesPaid(currency));
+                    .plus(scheduledRepayment.getFeeChargesPaid(currency)).plus(scheduledRepayment.getPenaltyChargesPaid(currency))
+                    .plus(scheduleWrittenOffValue);
 
             cumulativeTotalWaivedOnInstallments = cumulativeTotalWaivedOnInstallments.plus(scheduledRepayment.getInterestWaived(currency));
         }
@@ -4013,7 +4020,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         return changedTransactionDetail;
     }
 
-    public ChangedTransactionDetail specialWrittenOff(final JsonCommand command, final Map<String, Object> changes,
+    public ChangedTransactionDetail validateSpecialWrittenOff(final JsonCommand command, final Map<String, Object> changes,
             final List<Long> existingTransactionIds, final List<Long> existingReversedTransactionIds,
             final ScheduleGeneratorDTO scheduleGeneratorDTO) {
         final LoanRepaymentScheduleTransactionProcessor loanRepaymentScheduleTransactionProcessor = this.transactionProcessorFactory
@@ -4024,48 +4031,48 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         final LocalDate writtenOffOnLocalDate = DateUtils.getBusinessLocalDate();
         existingTransactionIds.addAll(findExistingTransactionIds());
         existingReversedTransactionIds.addAll(findExistingReversedTransactionIds());
-        final String txnExternalId = command.stringValueOfParameterNamedAllowingNull(EXTERNAL_ID);
-        ExternalId externalId = ExternalIdFactory.produce(txnExternalId);
-        if (externalId.isEmpty() && TemporaryConfigurationServiceContainer.isExternalIdAutoGenerationEnabled()) {
-            externalId = ExternalId.generate();
-        }
-        changes.put("externalId", externalId);
         if (DateUtils.isBefore(writtenOffOnLocalDate, getDisbursementDate())) {
-            final String errorMessage = "The date on which a loan is written off cannot be before the loan disbursement date: "
-                    + getDisbursementDate().toString();
-            throw new InvalidLoanStateTransitionException("writeoff", "cannot.be.before.submittal.date", errorMessage,
-                    writtenOffOnLocalDate, getDisbursementDate());
+            final LocalDate disbursementDate = getDisbursementDate();
+            final String disburseDateString = DateUtils.format(disbursementDate, command.dateFormat(),
+                    Locale.forLanguageTag(command.locale()));
+            throw new GeneralPlatformDomainRuleException("error.msg.loan.written.off.date.cannot.before.disbursement.date",
+                    "The date on which a loan is written off cannot be before the loan disbursement date: "
+                            + getDisbursementDate().toString(),
+                    disburseDateString);
         }
         validateActivityNotBeforeClientOrGroupTransferDate(LoanEvent.WRITE_OFF_OUTSTANDING, writtenOffOnLocalDate);
         if (DateUtils.isDateInTheFuture(writtenOffOnLocalDate)) {
-            final String errorMessage = "The date on which a loan is written off cannot be in the future.";
-            throw new InvalidLoanStateTransitionException("writeoff", "cannot.be.a.future.date", errorMessage, writtenOffOnLocalDate);
+            throw new GeneralPlatformDomainRuleException("error.msg.loan.written.off.date.cannot.be.in.the.future",
+                    "The date on which a loan is written off cannot be in the future.", writtenOffOnLocalDate);
         }
+        LocalDate lastTransactionDate = getLastUserTransactionDate();
+        if (DateUtils.isAfter(lastTransactionDate, writtenOffOnLocalDate)) {
+            final String lastTransactionDateString = DateUtils.format(lastTransactionDate, command.dateFormat(),
+                    Locale.forLanguageTag(command.locale()));
+            throw new GeneralPlatformDomainRuleException("error.msg.loan.written.off.date.must.occur.on.or.before.other.transaction.dates",
+                    "The date of the writeoff transaction must occur on or before previous transactions.", lastTransactionDateString);
+        }
+        if (changedTransactionDetail == null) {
+            changedTransactionDetail = new ChangedTransactionDetail();
+        }
+        return changedTransactionDetail;
+    }
+
+    public LoanTransaction doLoanSpecialWriteOff(final JsonCommand command, final LocalDate writtenOffOnLocalDate,
+            final ExternalId externalId) {
         final LoanRepaymentScheduleInstallment specialWriteOffInstallment = fetchLoanSpecialWriteOffDetail(writtenOffOnLocalDate);
         final Money outstandingAmount = specialWriteOffInstallment.getTotalOutstanding(loanCurrency());
         final LoanRepaymentScheduleInstallmentData loanRepaymentScheduleInstallmentData = validateSpecialWriteOffConcepts(command,
                 specialWriteOffInstallment);
         final BigDecimal totalInstallmentAmount = loanRepaymentScheduleInstallmentData.getTotalInstallmentAmount();
-
         final LoanStatus loanStatus = totalInstallmentAmount.compareTo(outstandingAmount.getAmount()) == 0 ? LoanStatus.CLOSED_WRITTEN_OFF
                 : LoanStatus.ACTIVE;
         this.loanStatus = loanStatus.getValue();
-
-        final LoanTransaction loanTransaction = handleSpecialWriteOff(loanRepaymentScheduleInstallmentData, writtenOffOnLocalDate,
+        final LoanTransaction writeOffTransaction = handleSpecialWriteOff(loanRepaymentScheduleInstallmentData, writtenOffOnLocalDate,
                 externalId);
-        LocalDate lastTransactionDate = getLastUserTransactionDate();
-        if (DateUtils.isAfter(lastTransactionDate, writtenOffOnLocalDate)) {
-            final String errorMessage = "The date of the writeoff transaction must occur on or before previous transactions.";
-            throw new InvalidLoanStateTransitionException("writeoff", "must.occur.on.or.after.other.transaction.dates", errorMessage,
-                    writtenOffOnLocalDate);
-        }
-        addLoanTransaction(loanTransaction);
+        addLoanTransaction(writeOffTransaction);
         updateLoanSummaryDerivedFields();
-        if (changedTransactionDetail == null) {
-            changedTransactionDetail = new ChangedTransactionDetail();
-        }
-        changedTransactionDetail.getNewTransactionMappings().put(0L, loanTransaction);
-        return changedTransactionDetail;
+        return writeOffTransaction;
     }
 
     private LoanRepaymentScheduleInstallmentData validateSpecialWriteOffConcepts(final JsonCommand command,
@@ -4079,12 +4086,12 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         if (principalPortion.isGreaterThan(maximumPrincipalPortion)) {
             throw new GeneralPlatformDomainRuleException("principal.portion.must.be.less.than.outstanding.principal",
                     "The principal portion of the special write off transaction must be less than or equal to the outstanding principal amount of the loan.",
-                    maximumPrincipalPortion.getAmount());
+                    maximumPrincipalPortion.toString());
         }
         if (interestPortion.isGreaterThan(specialWriteOffInstallment.getInterestOutstanding(currency))) {
             throw new GeneralPlatformDomainRuleException("interest.portion.must.be.less.than.outstanding.interest",
                     "The interest portion of the special write off transaction must be less than or equal to the outstanding interest amount of the loan.",
-                    maximumInterestPortion.getAmount());
+                    maximumInterestPortion.toString());
         }
         final Set<LoanChargeData> penaltyCharges = new HashSet<>();
         final Set<LoanChargeData> feeCharges = new HashSet<>();
@@ -4167,7 +4174,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                     currentInstallment.speciallyWriteOffOutstandingPenaltyCharges(writtenOffOnLocalDate, currency,
                             penaltyChargesToBeWrittenOff, getLoanCharges());
                 }
-                currentInstallment.reconcileInterestAndFeesCharges(currency, remainingInterestPortion, totalFeeChargesToBeWrittenOff,
+                currentInstallment.reconcileInterestAndFeesCharges(currency, remainingInterestPortion, feeChargesToBeWrittenOff,
                         writtenOffOnLocalDate);
             }
         }
@@ -7155,8 +7162,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 penalty = penalty.plus(installment.getPenaltyChargesOutstanding(currency));
                 fee = fee.plus(installment.getFeeChargesOutstanding(currency));
             } else if (DateUtils.isAfter(paymentDate, installment.getFromDate())) {
-                Money[] balancesForCurrentPeroid = fetchInterestFeeAndPenaltyTillDate(paymentDate, currency, installment,
-                        isFirstNormalInstallment);
+                Money[] balancesForCurrentPeroid = fetchInterestFeeAndPenaltyTillDate(paymentDate, installment, isFirstNormalInstallment);
                 if (balancesForCurrentPeroid[0].isGreaterThan(balancesForCurrentPeroid[5])) {
                     interest = interest.plus(balancesForCurrentPeroid[0]).minus(balancesForCurrentPeroid[5]);
                 } else {
@@ -7188,8 +7194,8 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         return balances;
     }
 
-    private Money[] fetchInterestFeeAndPenaltyTillDate(final LocalDate paymentDate, final MonetaryCurrency currency,
-            final LoanRepaymentScheduleInstallment installment, boolean isFirstNormalInstallment) {
+    private Money[] fetchInterestFeeAndPenaltyTillDate(final LocalDate paymentDate, final LoanRepaymentScheduleInstallment installment,
+            boolean isFirstNormalInstallment) {
         Money penaltyForCurrentPeriod = Money.zero(getCurrency());
         Money penaltyAccoutedForCurrentPeriod = Money.zero(getCurrency());
         int totalPeriodDays = Math.toIntExact(ChronoUnit.DAYS.between(installment.getFromDate(), installment.getDueDate()));
@@ -7197,10 +7203,10 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         Money interestForCurrentPeriod = Money.of(getCurrency(), BigDecimal
                 .valueOf(calculateInterestForDays(totalPeriodDays, installment.getInterestCharged(getCurrency()).getAmount(), tillDays)));
         Money interestAccountedForCurrentPeriod = installment.getInterestWaived(getCurrency())
-                .plus(installment.getInterestPaid(getCurrency()));
+                .plus(installment.getInterestPaid(getCurrency())).plus(installment.getInterestWrittenOff(getCurrency()));
         Money feeForCurrentPeriod = installment.getFeeChargesCharged(getCurrency());
         Money feeAccountedForCurrentPeriod = installment.getFeeChargesWaived(getCurrency())
-                .plus(installment.getFeeChargesPaid(getCurrency()));
+                .plus(installment.getFeeChargesPaid(getCurrency())).plus(installment.getFeeChargesWrittenOff(getCurrency()));
         for (LoanCharge loanCharge : this.charges) {
             if (loanCharge.isActive() && !loanCharge.isDueAtDisbursement()) {
                 boolean isDue = isFirstNormalInstallment
@@ -7209,8 +7215,8 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 if (isDue) {
                     if (loanCharge.isPenaltyCharge()) {
                         penaltyForCurrentPeriod = penaltyForCurrentPeriod.plus(loanCharge.getAmount(getCurrency()));
-                        penaltyAccoutedForCurrentPeriod = penaltyAccoutedForCurrentPeriod
-                                .plus(loanCharge.getAmountWaived(getCurrency()).plus(loanCharge.getAmountPaid(getCurrency())));
+                        penaltyAccoutedForCurrentPeriod = penaltyAccoutedForCurrentPeriod.plus(loanCharge.getAmountWaived(getCurrency())
+                                .plus(loanCharge.getAmountPaid(getCurrency())).plus(loanCharge.getAmountWrittenOff(getCurrency())));
                     }
                 }
             }
@@ -7244,7 +7250,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 break;
             } else if (DateUtils.isAfter(paymentDate, installment.getFromDate())
                     && DateUtils.isBefore(paymentDate, installment.getDueDate())) {
-                balances = fetchInterestFeeAndPenaltyTillDate(paymentDate, currency, installment, isFirstNormalInstallment);
+                balances = fetchInterestFeeAndPenaltyTillDate(paymentDate, installment, isFirstNormalInstallment);
                 break;
             }
         }
