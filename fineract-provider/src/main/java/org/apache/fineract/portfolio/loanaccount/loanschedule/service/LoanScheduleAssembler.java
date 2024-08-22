@@ -362,12 +362,16 @@ public class LoanScheduleAssembler {
         final Integer recurringMoratoriumOnPrincipalPeriods = this.fromApiJsonHelper
                 .extractIntegerWithLocaleNamed("recurringMoratoriumOnPrincipalPeriods", element);
         final Integer graceOnInterestPayment = this.fromApiJsonHelper.extractIntegerWithLocaleNamed("graceOnInterestPayment", element);
-        final Integer graceOnChargesPayment = this.fromApiJsonHelper.extractIntegerWithLocaleNamed("graceOnChargesPayment", element);
+        Integer graceOnChargesPayment = this.fromApiJsonHelper.extractIntegerWithLocaleNamed("graceOnChargesPayment", element);
         Integer graceOnInterestCharged = this.fromApiJsonHelper.extractIntegerWithLocaleNamed("graceOnInterestCharged", element);
         // if isInterestStartsAfterGracePeriod is true then graceOnInterestCharged should be equal to
         // graceOnInterestPayment
         if (isInterestStartsAfterGracePeriod) {
             graceOnInterestCharged = graceOnInterestPayment;
+        }
+        // ensure that if graceOnChargesPayment is null , then set to product default
+        if (graceOnChargesPayment == null) {
+            graceOnChargesPayment = loanProduct.getLoanProductRelatedDetail().getGraceOnChargesPayment();
         }
         final LocalDate interestChargedFromDate = this.fromApiJsonHelper.extractLocalDateNamed("interestChargedFromDate", element);
         final Boolean isInterestChargedFromDateSameAsDisbursalDateEnabled = this.configurationDomainService
