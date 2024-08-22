@@ -51,6 +51,7 @@ public class TemplatePopulateImportConstants {
     public static final String JOURNAL_ENTRY_SHEET_NAME = "AddJournalEntries";
     public static final String LOANS_SHEET_NAME = "Loans";
     public static final String LOAN_REPAYMENT_SHEET_NAME = "Consignaciones Bancarias";
+    public static final String LOAN_WRITE_OFF_SHEET_NAME = "Condonar créditos";
     public static final String RECURRING_DEPOSIT_SHEET_NAME = "RecurringDeposit";
     public static final String SAVINGS_TRANSACTION_SHEET_NAME = "SavingsTransaction";
     public static final String SHARED_ACCOUNTS_SHEET_NAME = "SharedAccounts";

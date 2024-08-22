@@ -53,7 +53,9 @@ dependencies {
             'org.springframework.integration:spring-integration-jms',
             'org.springframework.integration:spring-integration-kafka',
             'org.springframework.kafka:spring-kafka',
-
+            fileTree('thirdparty') {
+                include '*.jar'
+            },
             'io.micrometer:micrometer-registry-prometheus',
             'io.micrometer:micrometer-registry-otlp',
             'io.micrometer:micrometer-registry-cloudwatch2',

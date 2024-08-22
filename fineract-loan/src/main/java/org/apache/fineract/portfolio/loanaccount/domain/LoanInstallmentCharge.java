@@ -157,7 +157,8 @@ public class LoanInstallmentCharge extends AbstractPersistableCustom implements 
     }
 
     private BigDecimal calculateAmountOutstanding(final MonetaryCurrency currency) {
-        return getAmount(currency).minus(getAmountWaived(currency)).minus(getAmountPaid(currency)).getAmount();
+        return getAmount(currency).minus(getAmountWaived(currency)).minus(getAmountPaid(currency)).minus(getAmountWrittenOff(currency))
+                .getAmount();
     }
 
     public boolean isPaid() {
@@ -182,21 +183,32 @@ public class LoanInstallmentCharge extends AbstractPersistableCustom implements 
         return this.installment;
     }
 
-    public Money updatePaidAmountBy(final Money incrementBy, final Money feeAmount) {
+    public Money updatePaidAmountBy(final Money incrementBy, final Money feeAmount, final boolean isWriteOffTransaction) {
 
         Money amountPaidToDate = Money.of(incrementBy.getCurrency(), this.amountPaid);
+        if (isWriteOffTransaction) {
+            amountPaidToDate = Money.of(incrementBy.getCurrency(), this.amountWrittenOff);
+        }
         final Money amountOutstanding = Money.of(incrementBy.getCurrency(), this.amountOutstanding);
         Money amountPaidPreviously = amountPaidToDate;
         Money amountPaidOnThisCharge;
         if (incrementBy.isGreaterThanOrEqualTo(amountOutstanding)) {
             amountPaidOnThisCharge = amountOutstanding;
             amountPaidToDate = amountPaidToDate.plus(amountOutstanding);
-            this.amountPaid = amountPaidToDate.getAmount();
+            if (isWriteOffTransaction) {
+                this.amountWrittenOff = amountPaidToDate.getAmount();
+            } else {
+                this.amountPaid = amountPaidToDate.getAmount();
+            }
             this.amountOutstanding = BigDecimal.ZERO;
         } else {
             amountPaidOnThisCharge = incrementBy;
             amountPaidToDate = amountPaidToDate.plus(incrementBy);
-            this.amountPaid = amountPaidToDate.getAmount();
+            if (isWriteOffTransaction) {
+                this.amountWrittenOff = amountPaidToDate.getAmount();
+            } else {
+                this.amountPaid = amountPaidToDate.getAmount();
+            }
             this.amountOutstanding = calculateAmountOutstanding(incrementBy.getCurrency());
         }
         Money amountFromChargePayment = Money.of(incrementBy.getCurrency(), this.amountThroughChargePayment);
@@ -336,5 +348,29 @@ public class LoanInstallmentCharge extends AbstractPersistableCustom implements 
     public LoanInstallmentChargeData toData() {
         return LoanInstallmentChargeData.builder().installmentNumber(installment.getInstallmentNumber()).dueDate(installment.getDueDate())
                 .amount(amount).amountOutstanding(amountOutstanding).amountWaived(amountWaived).paid(paid).waived(waived).build();
+    }
+
+    public void setAmountWrittenOff(BigDecimal amountWrittenOff) {
+        this.amountWrittenOff = amountWrittenOff;
+    }
+
+    public void adjustAmountWrittenOff(final Money amountToBeWrittenOff) {
+        final Money amountOutstanding = Money.of(amountToBeWrittenOff.getCurrency(), this.calculateOutstanding());
+        if (amountOutstanding.isGreaterThanOrEqualTo(amountToBeWrittenOff)) {
+            this.amountWrittenOff = this.getAmountWrittenOff(amountToBeWrittenOff.getCurrency()).plus(amountToBeWrittenOff).getAmount();
+            this.loancharge.adjustAmountWrittenOff(amountToBeWrittenOff);
+            this.amountOutstanding = calculateOutstanding();
+            this.paid = this.determineIfFullyPaid();
+        }
+    }
+
+    public void adjustChargeAmount(final Money adjustedAmount) {
+        final Money currentAmount = this.getAmount(adjustedAmount.getCurrency());
+        if (currentAmount.isGreaterThanOrEqualTo(adjustedAmount)) {
+            this.amount = currentAmount.minus(adjustedAmount).getAmount();
+            this.amountOutstanding = calculateOutstanding();
+            this.paid = this.determineIfFullyPaid();
+            this.loancharge.adjustChargeAmount(adjustedAmount);
+        }
     }
 }

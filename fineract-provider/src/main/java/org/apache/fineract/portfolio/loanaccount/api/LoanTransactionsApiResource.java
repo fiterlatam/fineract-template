@@ -471,6 +471,8 @@ public class LoanTransactionsApiResource {
             commandRequest = builder.waiveInterestPortionTransaction(resolvedLoanId).build();
         } else if (CommandParameterUtil.is(commandParam, "writeoff")) {
             commandRequest = builder.writeOffLoanTransaction(resolvedLoanId).build();
+        } else if (CommandParameterUtil.is(commandParam, "special-write-off")) {
+            commandRequest = builder.specialWriteOffLoanTransaction(resolvedLoanId).build();
         } else if (CommandParameterUtil.is(commandParam, "close-rescheduled")) {
             commandRequest = builder.closeLoanAsRescheduledTransaction(resolvedLoanId).build();
         } else if (CommandParameterUtil.is(commandParam, "close")) {
@@ -562,6 +564,8 @@ public class LoanTransactionsApiResource {
                 transactionDate = transactionDateParam.getDate("transactionDate", dateFormat, locale);
             }
             transactionData = this.loanReadPlatformService.retrieveLoanForeclosureTemplate(resolvedLoanId, transactionDate);
+        } else if (CommandParameterUtil.is(commandParam, "special-write-off")) {
+            transactionData = this.loanReadPlatformService.retrieveLoanSpecialWriteOffTemplate(resolvedLoanId);
         } else if (CommandParameterUtil.is(commandParam, "creditBalanceRefund")) {
             transactionData = this.loanReadPlatformService.retrieveCreditBalanceRefundTemplate(resolvedLoanId);
         } else if (CommandParameterUtil.is(commandParam, CHARGE_OFF_COMMAND_VALUE)) {

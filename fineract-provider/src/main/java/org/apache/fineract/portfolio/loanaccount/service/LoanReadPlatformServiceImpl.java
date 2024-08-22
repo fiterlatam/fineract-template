@@ -2708,7 +2708,6 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
     @Override
     public LoanTransactionData retrieveLoanForeclosureTemplate(final Long loanId, final LocalDate transactionDate) {
         this.context.authenticatedUser();
-
         final Loan loan = this.loanRepositoryWrapper.findOneWithNotFoundDetection(loanId, true);
         loan.validateForForeclosure(transactionDate);
         final MonetaryCurrency currency = loan.getCurrency();
@@ -2734,6 +2733,36 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                 loanRepaymentScheduleInstallment.getFeeChargesOutstanding(currency).getAmount(),
                 loanRepaymentScheduleInstallment.getPenaltyChargesOutstanding(currency).getAmount(), null, unrecognizedIncomePortion,
                 paymentTypeOptions, ExternalId.empty(), null, null, outstandingLoanBalance, isReversed, loanId, loan.getExternalId());
+    }
+
+    @Override
+    public LoanTransactionData retrieveLoanSpecialWriteOffTemplate(final Long loanId) {
+        final List<CodeValueData> writeOffReasonOptions = new ArrayList<>(
+                this.codeValueReadPlatformService.retrieveCodeValuesByCode(LoanApiConstants.WRITEOFFREASONS));
+        this.context.authenticatedUser();
+        final LocalDate transactionDate = DateUtils.getBusinessLocalDate();
+        final Loan loan = this.loanRepositoryWrapper.findOneWithNotFoundDetection(loanId, true);
+        final MonetaryCurrency currency = loan.getCurrency();
+        final ApplicationCurrency applicationCurrency = this.applicationCurrencyRepository.findOneWithNotFoundDetection(currency);
+        final CurrencyData currencyData = applicationCurrency.toData();
+        final LocalDate earliestUnpaidInstallmentDate = DateUtils.getBusinessLocalDate();
+        final LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment = loan.fetchLoanSpecialWriteOffDetail(transactionDate);
+        BigDecimal unrecognizedIncomePortion = null;
+        final LoanTransactionEnumData transactionType = LoanEnumerations.transactionType(LoanTransactionType.WRITEOFF);
+        final Collection<PaymentTypeData> paymentTypeOptions = this.paymentTypeReadPlatformService.retrieveAllPaymentTypes();
+        final BigDecimal outstandingLoanBalance = loanRepaymentScheduleInstallment.getPrincipalOutstanding(currency).getAmount();
+        final boolean isReversed = false;
+        final Money outStandingAmount = loanRepaymentScheduleInstallment.getTotalOutstanding(currency);
+        final LoanTransactionData loanTransactionData = new LoanTransactionData(null, null, null, transactionType, null, currencyData,
+                earliestUnpaidInstallmentDate, outStandingAmount.getAmount(), loan.getNetDisbursalAmount(),
+                loanRepaymentScheduleInstallment.getPrincipalOutstanding(currency).getAmount(),
+                loanRepaymentScheduleInstallment.getInterestOutstanding(currency).getAmount(),
+                loanRepaymentScheduleInstallment.getFeeChargesOutstanding(currency).getAmount(),
+                loanRepaymentScheduleInstallment.getPenaltyChargesOutstanding(currency).getAmount(), null, unrecognizedIncomePortion,
+                paymentTypeOptions, ExternalId.empty(), null, null, outstandingLoanBalance, isReversed, loanId, loan.getExternalId());
+        loanTransactionData.setWriteOffReasonOptions(writeOffReasonOptions);
+        loanTransactionData.setCurrentOutstandingLoanCharges(loanRepaymentScheduleInstallment.getCurrentOutstandingLoanCharges());
+        return loanTransactionData;
     }
 
     private static final class CurrencyMapper implements RowMapper<CurrencyData> {

@@ -84,19 +84,21 @@ public class BusinessEventNotifierServiceImpl implements BusinessEventNotifierSe
     public void notifyPostBusinessEvent(BusinessEvent<?> businessEvent) {
         throwExceptionIfBulkEvent(businessEvent);
         boolean isExternalEvent = !(businessEvent instanceof NoExternalEvent);
-        List<BusinessEventListener> businessEventListeners = postListeners.get(businessEvent.getClass());
-        if (businessEventListeners != null) {
-            for (BusinessEventListener eventListener : businessEventListeners) {
-                eventListener.onBusinessEvent(businessEvent);
+        if (businessEvent != null) {
+            List<BusinessEventListener> businessEventListeners = postListeners.get(businessEvent.getClass());
+            if (businessEventListeners != null) {
+                for (BusinessEventListener eventListener : businessEventListeners) {
+                    eventListener.onBusinessEvent(businessEvent);
+                }
             }
-        }
-        if (isExternalEvent && isExternalEventPostingEnabled()) {
-            // we only want to create external events for operations that were successful, hence the post listener
-            if (isExternalEventConfiguredForPosting(businessEvent.getType())) {
-                if (isExternalEventRecordingEnabled()) {
-                    recordedEvents.get().add(businessEvent);
-                } else {
-                    externalEventService.postEvent(businessEvent);
+            if (isExternalEvent && isExternalEventPostingEnabled()) {
+                // we only want to create external events for operations that were successful, hence the post listener
+                if (isExternalEventConfiguredForPosting(businessEvent.getType())) {
+                    if (isExternalEventRecordingEnabled()) {
+                        recordedEvents.get().add(businessEvent);
+                    } else {
+                        externalEventService.postEvent(businessEvent);
+                    }
                 }
             }
         }
