@@ -2004,4 +2004,8 @@ public class LoanProduct extends AbstractPersistableCustom {
         }
         return isHolidayEnabled;
     }
+
+    public Boolean isPurChaseCharge() {
+        return isPurChaseCharge == null ? Boolean.FALSE : isPurChaseCharge;
+    }
 }
