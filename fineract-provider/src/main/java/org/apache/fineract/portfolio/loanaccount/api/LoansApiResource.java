@@ -899,10 +899,10 @@ public class LoansApiResource {
     @Path("{loanId}/schedule-report")
     @Operation(summary = "Download loan Schedule report in PDF format", description = "Download loan Schedule report in PDF format")
     public void getScheduleReportPDF(@Context HttpServletResponse response,
-            @PathParam("loanId") @Parameter(description = "loanId") final Long loanId, @QueryParam("type") String type)
+            @PathParam("loanId") @Parameter(description = "loanId") final Long loanId, @QueryParam("scheduleType") String scheduleType)
             throws DocumentException, IOException {
         context.authenticatedUser().validateHasReadPermission(RESOURCE_NAME_FOR_PERMISSIONS);
-        this.loanReadPlatformService.exportLoanSchedulePDF(loanId, response);
+        this.loanReadPlatformService.exportLoanSchedulePDF(loanId, scheduleType, response);
     }
 
     @GET

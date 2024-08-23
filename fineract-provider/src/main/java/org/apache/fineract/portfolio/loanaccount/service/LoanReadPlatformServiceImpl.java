@@ -3055,7 +3055,17 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
     }
 
     @Override
-    public void exportLoanSchedulePDF(Long loanId, HttpServletResponse httpServletResponse) throws DocumentException, IOException {
+    public void exportLoanSchedulePDF(Long loanId, String scheduleType, HttpServletResponse httpServletResponse)
+            throws DocumentException, IOException {
+
+        if (scheduleType.equals("repayment")) {
+            this.exportLoanDisbursementPDF(loanId, httpServletResponse);
+            return;
+        } else if (scheduleType.equals("original")) {
+            this.exportLoanDisbursementPDF(loanId, httpServletResponse);
+            return;
+        }
+
         final Loan loan = this.loanRepositoryWrapper.findOneWithNotFoundDetection(loanId);
         final BigDecimal valorDescuento = loan.getValorDescuento();
         final BigDecimal valorGiro = loan.getValorGiro();
