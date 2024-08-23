@@ -291,14 +291,6 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             if (groupingType.equals("group")) {
                 extraCriteria += " and g.prequalification_type_enum = ? ";
                 paramList.add(PrequalificationType.GROUP.getValue());
-
-                Set<Role> roles = appUser.getRoles();
-                for (Role userRole : roles) {
-                    if (StringUtils.containsIgnoreCase(userRole.getName(), "Líder de agencia")) {
-                        extraCriteria += " and ma.responsible_user_id = ? ";
-                        paramList.add(appUser.getId());
-                    }
-                }
             }
 
             if (StringUtils.equals(groupingType, "individual")) {
@@ -309,14 +301,25 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                     paramList.add(dpiNumber);
                 }
             }
-            extraCriteria += " and (moind.hierarchy LIKE CONCAT(?, '%') OR ? like CONCAT(moind.hierarchy, '%'))";
-            paramList.add(appUser.getOffice().getHierarchy());
-            paramList.add(appUser.getOffice().getHierarchy());
+        }
 
-            if (agencyId != null) {
-                extraCriteria += " and individualOffice.agency_id = ? ";
-                paramList.add(agencyId);
+        Set<Role> roles = appUser.getRoles();
+        for (Role userRole : roles) {
+            if (StringUtils.containsIgnoreCase(userRole.getName(), "Líder de agencia")) {
+                extraCriteria += " and ma.responsible_user_id = ? ";
+                paramList.add(appUser.getId());
             }
+        }
+
+        extraCriteria += " and (moind.hierarchy LIKE CONCAT(?, '%') OR mogrp.hierarchy LIKE CONCAT(?, '%') OR ? like CONCAT(moind.hierarchy, '%') OR ? like CONCAT(mogrp.hierarchy, '%'))";
+        paramList.add(appUser.getOffice().getHierarchy());
+        paramList.add(appUser.getOffice().getHierarchy());
+        paramList.add(appUser.getOffice().getHierarchy());
+        paramList.add(appUser.getOffice().getHierarchy());
+
+        if (agencyId != null) {
+            extraCriteria += " and individualOffice.agency_id = ? ";
+            paramList.add(agencyId);
         }
 
         if (sqlSearch != null && !isGroup) {
@@ -411,7 +414,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
 
         PrequalificationsGroupMapper() {
             this.schema = """
-                    	g.id AS id,
+                    	DISTINCT g.id AS id,
                     	g.prequalification_number AS prequalificationNumber,
                     	g.status,linkedGroup.id as linkedGroupId,
                     	g.prequalification_duration as prequalilficationTimespan,
@@ -461,6 +464,12 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                         GROUP BY mpgm.group_id
                     ) prequalification_numbers ON prequalification_numbers.prequalification_id = g.id
 
+                    LEFT JOIN (
+                        select mpg.id as group_id, mag.linked_office_id, moff.id as agency_office
+                        from m_prequalification_group mpg
+                        INNER JOIN m_agency mag on mag.id = mpg.agency_id
+                        INNER JOIN m_office moff on moff.parent_id = mag.linked_office_id
+                    ) groupOffice on groupOffice.group_id = g.id
                     LEFT JOIN(
                         select DISTINCT mc.office_id, ms.agency_id, mpgm.group_id, ms.linked_office_id as supervision_office
                         from m_prequalification_group_members mpgm
@@ -479,6 +488,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                     ) supv ON supv.agency_id = ma.id
                     LEFT JOIN m_office mo on mo.id = supv.linked_office_id
                     LEFT JOIN m_office moind on moind.id = individualOffice.supervision_office
+                    LEFT JOIN m_office mogrp on mogrp.id = groupOffice.agency_office
                     LEFT JOIN
                     (
                       SELECT p.id AS groupid,
