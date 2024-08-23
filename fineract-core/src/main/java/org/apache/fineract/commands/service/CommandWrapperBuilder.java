@@ -3991,4 +3991,12 @@ public class CommandWrapperBuilder {
         this.entityId = id;
         return this;
     }
+
+    public CommandWrapperBuilder updateClientAllyCompensation(final Long id) {
+        this.actionName = "UPDATE";
+        this.entityName = "CLIENTALLYCOMPENSATION";
+        this.href = "/clientsallies/compensation/" + id;
+        this.entityId = id;
+        return this;
+    }
 }
