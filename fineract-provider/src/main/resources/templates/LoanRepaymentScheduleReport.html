@@ -50,12 +50,15 @@
         <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
             <thead>
             <tr>
-                <th colspan="2" style="border-bottom: 2px solid #000; text-align: left; padding: 8px;">Monto y saldo del Crédito</th>
+                <th colspan="4" style="border-bottom: 2px solid #000; text-align: left; padding: 8px;">Monto y saldo del Crédito</th>
                 <th style="border-bottom: 2px solid #000; text-align: left; padding: 8px;">Costo total del Crédito</th>
-                <th colspan="7" style="border-bottom: 2px solid #000; text-align: left; padding: 8px;">Totales de cuotas</th>
+                <th colspan="11" style="border-bottom: 2px solid #000; text-align: left; padding: 8px;">Totales de cuotas</th>
             </tr>
             <tr>
+                <th style="border-bottom: 1px solid #000; text-align: left; padding: 8px;">#</th>
+                <th style="border-bottom: 1px solid #000; text-align: left; padding: 8px;">Días</th>
                 <th style="border-bottom: 1px solid #000; text-align: left; padding: 8px;">Fecha</th>
+                <th style="border-bottom: 1px solid #000; text-align: left; padding: 8px;">Fecha de pago</th>
                 <th style="border-bottom: 1px solid #000; text-align: left; padding: 8px;">Saldo del Crédito</th>
                 <th style="border-bottom: 1px solid #000; text-align: left; padding: 8px;">Principal vencido</th>
                 <th style="border-bottom: 1px solid #000; text-align: left; padding: 8px;">Interés</th>
@@ -65,12 +68,19 @@
                 <th style="border-bottom: 1px solid #000; text-align: left; padding: 8px;">Honorarios</th>
                 <th style="border-bottom: 1px solid #000; text-align: left; padding: 8px;">Penalizaciones</th>
                 <th style="border-bottom: 1px solid #000; text-align: left; padding: 8px;">Pendiente</th>
+                <th style="border-bottom: 1px solid #000; text-align: left; padding: 8px;">Pagado</th>
+                <th style="border-bottom: 1px solid #000; text-align: left; padding: 8px;">Por adelantado</th>
+                <th style="border-bottom: 1px solid #000; text-align: left; padding: 8px;">Tarde</th>
+                <th style="border-bottom: 1px solid #000; text-align: left; padding: 8px;">Pendiente</th>
             </tr>
             </thead>
             <tbody>
             <tr th:each="installment, iterStat : ${installments}"
                 th:class="${iterStat.index % 2 == 0} ? 'even' : 'odd'">
+                <td style="padding: 8px;" th:text="${iterStat.index + 1}"></td>
+                <td style="padding: 8px;" th:text="${installment.dias}"></td>
                 <td style="padding: 8px;" th:text="${installment.fecha}"></td>
+                <td style="padding: 8px;" th:text="${installment.fechaDePago}"></td>
                 <td style="padding: 8px;" th:text="${#numbers.formatDecimal(installment.saldoCredito, 1, 'COMMA', 2, 'POINT')}"></td>
                 <td style="padding: 8px;" th:text="${#numbers.formatDecimal(installment.principalVencido, 1, 'COMMA', 2, 'POINT')}"></td>
                 <td style="padding: 8px;" th:text="${#numbers.formatDecimal(installment.interes, 1, 'COMMA', 2, 'POINT')}"></td>
@@ -80,19 +90,28 @@
                 <td style="padding: 8px;" th:text="${installment.honorarios}"></td>
                 <td style="padding: 8px;" th:text="${installment.penalizaciones}"></td>
                 <td style="padding: 8px;" th:text="${#numbers.formatDecimal(installment.pendiente, 1, 'COMMA', 2, 'POINT')}"></td>
+                <td style="padding: 8px;" th:text="${#numbers.formatDecimal(installment.pagado, 1, 'COMMA', 2, 'POINT')}"></td>
+                <td style="padding: 8px;" th:text="${#numbers.formatDecimal(installment.porAdelantado, 1, 'COMMA', 2, 'POINT')}"></td>
+                <td style="padding: 8px;" th:text="${#numbers.formatDecimal(installment.tarde, 1, 'COMMA', 2, 'POINT')}"></td>
+                <td style="padding: 8px;" th:text="${#numbers.formatDecimal(installment.pendienteFinal, 1, 'COMMA', 2, 'POINT')}"></td>
             </tr>
             </tbody>
             <tfoot>
             <tr>
-                <td colspan="1" style="padding: 8px; text-align: left;"><strong>Total</strong></td>
+                <td colspan="4" style="padding: 8px; text-align: left;"><strong>Total</strong></td>
                 <td style="padding: 8px;" th:text="${#numbers.formatDecimal(total.saldoCredito, 1, 'COMMA', 2, 'POINT')}"></td>
                 <td style="padding: 8px;" th:text="${#numbers.formatDecimal(total.principalVencido, 1, 'COMMA', 2, 'POINT')}"></td>
                 <td style="padding: 8px;" th:text="${#numbers.formatDecimal(total.interes, 1, 'COMMA', 2, 'POINT')}"></td>
-                <td colspan="6" style="padding: 8px;" th:text="${#numbers.formatDecimal(total.pendiente, 1, 'COMMA', 2, 'POINT')}"></td>
+                <td colspan="8" style="padding: 8px;"></td>
+                <td style="padding: 8px;" th:text="${#numbers.formatDecimal(total.pagado, 1, 'COMMA', 2, 'POINT')}"></td>
+                <td style="padding: 8px;" th:text="${#numbers.formatDecimal(total.porAdelantado, 1, 'COMMA', 2, 'POINT')}"></td>
+                <td style="padding: 8px;" th:text="${#numbers.formatDecimal(total.tarde, 1, 'COMMA', 2, 'POINT')}"></td>
+                <td style="padding: 8px;" th:text="${#numbers.formatDecimal(total.pendienteFinal, 1, 'COMMA', 2, 'POINT')}"></td>
             </tr>
             </tfoot>
         </table>
     </div>
+
 
 </body>
 </html>
