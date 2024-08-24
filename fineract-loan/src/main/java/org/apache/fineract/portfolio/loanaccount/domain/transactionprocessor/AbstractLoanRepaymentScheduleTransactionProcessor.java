@@ -191,7 +191,7 @@ public abstract class AbstractLoanRepaymentScheduleTransactionProcessor implemen
 
             } else if (loanTransaction.isWriteOff()) {
                 loanTransaction.resetDerivedComponents();
-                handleWriteOff(loanTransaction, currency, installments, charges);
+                handleWriteOff(loanTransaction, currency, installments, charges, overpaymentHolder);
             } else if (loanTransaction.isRefundForActiveLoan()) {
                 loanTransaction.resetDerivedComponents();
                 handleRefund(loanTransaction, currency, installments, charges);
@@ -213,7 +213,8 @@ public abstract class AbstractLoanRepaymentScheduleTransactionProcessor implemen
     @Override
     public void processLatestTransaction(final LoanTransaction loanTransaction, final TransactionCtx ctx) {
         switch (loanTransaction.getTypeOf()) {
-            case WRITEOFF -> handleWriteOff(loanTransaction, ctx.getCurrency(), ctx.getInstallments(), ctx.getCharges());
+            case WRITEOFF ->
+                handleWriteOff(loanTransaction, ctx.getCurrency(), ctx.getInstallments(), ctx.getCharges(), ctx.getOverpaymentHolder());
             case REFUND_FOR_ACTIVE_LOAN -> handleRefund(loanTransaction, ctx.getCurrency(), ctx.getInstallments(), ctx.getCharges());
             case CHARGEBACK -> handleChargeback(loanTransaction, ctx);
             default -> {
@@ -719,12 +720,15 @@ public abstract class AbstractLoanRepaymentScheduleTransactionProcessor implemen
     }
 
     protected void handleWriteOff(final LoanTransaction loanTransaction, final MonetaryCurrency currency,
-            final List<LoanRepaymentScheduleInstallment> installments, final Set<LoanCharge> charges) {
+            final List<LoanRepaymentScheduleInstallment> installments, final Set<LoanCharge> charges, final MoneyHolder overpaymentHolder) {
         final Money transactionAmountUnprocessed = handleTransactionAndCharges(loanTransaction, currency, installments, charges, null,
                 false);
         if (transactionAmountUnprocessed.isGreaterThanZero()) {
             onLoanOverpayment(loanTransaction, transactionAmountUnprocessed);
             loanTransaction.setOverPayments(transactionAmountUnprocessed);
+            overpaymentHolder.setMoneyObject(transactionAmountUnprocessed);
+        } else {
+            overpaymentHolder.setMoneyObject(transactionAmountUnprocessed.zero());
         }
     }
 
