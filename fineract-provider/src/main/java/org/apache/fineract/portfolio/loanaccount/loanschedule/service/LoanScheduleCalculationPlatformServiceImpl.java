@@ -21,6 +21,7 @@ package org.apache.fineract.portfolio.loanaccount.loanschedule.service;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.*;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
 import org.apache.fineract.infrastructure.core.api.JsonQuery;
 import org.apache.fineract.infrastructure.core.data.ApiParameterError;
@@ -53,6 +54,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @Transactional
 public class LoanScheduleCalculationPlatformServiceImpl implements LoanScheduleCalculationPlatformService {
@@ -346,8 +348,14 @@ public class LoanScheduleCalculationPlatformServiceImpl implements LoanScheduleC
             totalAvalCharged = totalAvalCharged.add(avalAmount);
             totalHonorariosCharged = totalHonorariosCharged.add(honorariosAmount);
 
+            Integer graceOnChargesPayment = loan.getLoanProductRelatedDetail().getGraceOnChargesPayment();
+            Integer chargeApplicableFromInstallment = graceOnChargesPayment == null ? 1 : graceOnChargesPayment + 1;
+
             for (LoanSchedulePeriodData periodData : loanScheduleData.getPeriods()) {
-                if (periodData.getPeriod() != null && periodData.getPeriod().equals(repaymentScheduleInstallment.getInstallmentNumber())) {
+                boolean isChargeApplicable = (periodData.getPeriod() != null)
+                        && (periodData.getPeriod() >= chargeApplicableFromInstallment);
+                if (periodData.getPeriod() != null && periodData.getPeriod().equals(repaymentScheduleInstallment.getInstallmentNumber())
+                        && isChargeApplicable) {
                     periodData.setAvalDue(avalAmount);
                     periodData.setHonorariosDue(honorariosAmount);
                     periodData.setMandatoryInsuranceDue(mandatoryInsuranceAmount);
