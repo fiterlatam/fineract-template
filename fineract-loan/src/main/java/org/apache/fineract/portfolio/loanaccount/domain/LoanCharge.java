@@ -156,6 +156,18 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
     public LoanCharge(final Loan loan, final Charge chargeDefinition, final BigDecimal loanPrincipal, final BigDecimal amount,
             final ChargeTimeType chargeTime, final ChargeCalculationType chargeCalculation, final LocalDate dueDate,
             final ChargePaymentMode chargePaymentMode, final Integer numberOfRepayments, final BigDecimal loanCharge,
+            final ExternalId externalId, boolean getPercentageAmountFromTable, Long numberOfPenaltyDays,
+            Integer applicableFromInstallment) {
+
+        this(loan, chargeDefinition, loanPrincipal, amount, chargeTime, chargeCalculation, dueDate, chargePaymentMode, numberOfRepayments,
+                loanCharge, externalId, getPercentageAmountFromTable, numberOfPenaltyDays);
+
+        this.setApplicableFromInstallment(applicableFromInstallment);
+    }
+
+    public LoanCharge(final Loan loan, final Charge chargeDefinition, final BigDecimal loanPrincipal, final BigDecimal amount,
+            final ChargeTimeType chargeTime, final ChargeCalculationType chargeCalculation, final LocalDate dueDate,
+            final ChargePaymentMode chargePaymentMode, final Integer numberOfRepayments, final BigDecimal loanCharge,
             final ExternalId externalId, boolean getPercentageAmountFromTable, Long numberOfPenaltyDays) {
         this.loan = loan;
         this.charge = chargeDefinition;
