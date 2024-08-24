@@ -1809,7 +1809,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         final Map<String, Object> changes = new LinkedHashMap<>();
         changes.put("locale", command.locale());
         changes.put("dateFormat", command.dateFormat());
-        final Loan loan = this.loanAssembler.assembleFrom(loanId);
+        Loan loan = this.loanAssembler.assembleFrom(loanId);
         if (command.hasParameter("writeoffReasonId")) {
             Long writeoffReasonId = command.longValueOfParameterNamed("writeoffReasonId");
             CodeValue writeoffReason = this.codeValueRepository
@@ -1850,6 +1850,13 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                     isAccountTransfer, holidayDetailDto, isHolidayValidationDone);
         } else {
             writeOffTransaction = loan.doLoanSpecialWriteOff(command, transactionDate, externalId);
+        }
+        loan = writeOffTransaction.getLoan();
+        final LoanStatus loanStatus = loan.getStatus();
+        if (loanStatus.isOverpaid()) {
+            final String totalOverpaid = Money.of(loan.getCurrency(), loan.getTotalOverpaid()).toString();
+            throw new GeneralPlatformDomainRuleException("error.msg.loan.write.off.amount.is.greater.than.outstanding.loan.amount",
+                    String.format("El monto condonado es mayor que el monto pendiente en %s", totalOverpaid), totalOverpaid);
         }
         this.loanTransactionRepository.saveAndFlush(writeOffTransaction);
         for (final Map.Entry<Long, LoanTransaction> mapEntry : changedTransactionDetail.getNewTransactionMappings().entrySet()) {
