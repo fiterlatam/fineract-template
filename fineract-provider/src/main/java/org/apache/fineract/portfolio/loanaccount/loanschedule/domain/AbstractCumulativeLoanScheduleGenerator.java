@@ -2217,6 +2217,11 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
 
         for (final LoanCharge loanCharge : loanCharges) {
             loanCharge.setInstallmentChargeAmount(BigDecimal.ZERO);
+            if (loanCharge.getApplicableFromInstallment() != null && loanCharge.getApplicableFromInstallment() > installmentNumber) {
+                // skip the charges which are not applicable for this installment
+                continue;
+            }
+
             Money calculatedAmount = Money.zero(monetaryCurrency);
             if (!loanCharge.isDueAtDisbursement() && loanCharge.isFeeCharge()) {
                 boolean isDue = isFirstPeriod ? loanCharge.isDueForCollectionFromIncludingAndUpToAndIncluding(periodStart, periodEnd)
