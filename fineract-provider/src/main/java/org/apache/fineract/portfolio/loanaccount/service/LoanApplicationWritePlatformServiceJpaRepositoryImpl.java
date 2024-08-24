@@ -321,13 +321,6 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                                         + " should be after last transaction date of loan to be closed "
                                         + lastUserTransactionOnLoanToClose);
                     }
-                    BigDecimal loanOutstanding = this.loanReadPlatformService.retrieveLoanPrePaymentTemplate(LoanTransactionType.REPAYMENT,
-                            loanIdToClose, newLoanApplication.getDisbursementDate()).getAmount();
-                    final BigDecimal firstDisbursalAmount = newLoanApplication.getFirstDisbursalAmount();
-                    if (loanOutstanding.compareTo(firstDisbursalAmount) > 0) {
-                        throw new GeneralPlatformDomainRuleException("error.msg.loan.amount.less.than.outstanding.of.loan.to.be.closed",
-                                "Topup loan amount should be greater than outstanding amount of loan to be closed.");
-                    }
 
                     final LoanTopupDetails topupDetails = new LoanTopupDetails(newLoanApplication, loanIdToClose);
                     newLoanApplication.setTopupLoanDetails(topupDetails);
