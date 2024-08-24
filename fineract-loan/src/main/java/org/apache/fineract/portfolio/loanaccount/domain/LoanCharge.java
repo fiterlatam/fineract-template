@@ -159,11 +159,9 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
             final ExternalId externalId, boolean getPercentageAmountFromTable, Long numberOfPenaltyDays,
             Integer applicableFromInstallment) {
 
-        // Call to another constructor, initializing the object with the provided parameters
         this(loan, chargeDefinition, loanPrincipal, amount, chargeTime, chargeCalculation, dueDate, chargePaymentMode, numberOfRepayments,
                 loanCharge, externalId, getPercentageAmountFromTable, numberOfPenaltyDays);
 
-        // Set the applicable installment, ensuring that the object is fully initialized
         this.setApplicableFromInstallment(applicableFromInstallment);
     }
 
