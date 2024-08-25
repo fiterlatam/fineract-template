@@ -5394,6 +5394,11 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 if (installment.isRecalculatedInterestComponent()) {
                     continue;
                 }
+                // Skip installments that fall within the grace period
+                if (loanCharge.getApplicableFromInstallment() != null
+                        && loanCharge.getApplicableFromInstallment() > installment.getInstallmentNumber()) {
+                    continue;
+                }
                 BigDecimal amount;
                 if (loanCharge.getChargeCalculation().isFlat()) {
                     amount = loanCharge.amountOrPercentage();
