@@ -55,7 +55,6 @@ public class CollectionSettlementTasklet implements Tasklet {
             boolean isEqual = true;
             if (data.getLastJobsRun() != null) {
                 period = LocalDate.parse(data.getLastJobsRun());
-
                 switch (freq) {
                     case "WEEKLY":
                         period = period.plusWeeks(1);
@@ -70,7 +69,6 @@ public class CollectionSettlementTasklet implements Tasklet {
                         period = period.plusDays(1);
                     break;
                 }
-                isEqual = now.isEqual(period);
             } else {
                 period = now;
             }
@@ -87,7 +85,7 @@ public class CollectionSettlementTasklet implements Tasklet {
                 } while (period.getDayOfWeek().getValue() >= countWokringDay);
 
             }
-
+            isEqual = now.isEqual(period);
             if (isEqual) {
                 boolean isNewCollection = false;
                 if (!collect.isEmpty()) {
