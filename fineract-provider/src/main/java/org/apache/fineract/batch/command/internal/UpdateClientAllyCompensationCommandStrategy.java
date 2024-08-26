@@ -10,9 +10,7 @@ import org.apache.fineract.custom.portfolio.ally.api.ClientAllyApiResource;
 import org.apache.fineract.portfolio.loanaccount.rescheduleloan.api.RescheduleLoansApiResource;
 import org.apache.http.HttpStatus;
 import org.springframework.stereotype.Component;
-
 import java.util.List;
-
 import static org.apache.fineract.batch.command.CommandStrategyUtils.relativeUrlWithoutVersion;
 
 /**
@@ -46,9 +44,7 @@ public class UpdateClientAllyCompensationCommandStrategy implements CommandStrat
         responseBody = clientAllyApiResource.updateCompensation(compensationId,request.getBody());
 
         response.setStatusCode(HttpStatus.SC_OK);
-
         response.setBody(responseBody);
-
         return response;
     }
 }
