@@ -209,7 +209,6 @@ public class ClientAllyApiResource {
                          @Parameter(hidden = true) final String jsonRequestBody) {
 
         final CommandWrapper commandRequest = new CommandWrapperBuilder().updateClientAllyCompensation(id).withJson(jsonRequestBody).build();
-
         final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
 
         return this.toApiJsonSerializer.serialize(result);

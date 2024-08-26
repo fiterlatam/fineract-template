@@ -1,7 +1,6 @@
 package org.apache.fineract.custom.portfolio.ally.data;
 
 import lombok.*;
-
 import java.math.BigDecimal;
 
 @AllArgsConstructor

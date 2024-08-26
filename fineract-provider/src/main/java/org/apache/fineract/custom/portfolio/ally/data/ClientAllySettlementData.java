@@ -1,5 +1,6 @@
 package org.apache.fineract.custom.portfolio.ally.data;
 
+
 import lombok.*;
 
 @AllArgsConstructor
@@ -14,4 +15,5 @@ public class ClientAllySettlementData {
     private String purchaseDate;
     private String lastClientCollectionJobRun;
     private String lastClientPurchaseJobRun;
+
 }
