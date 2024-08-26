@@ -1,9 +1,9 @@
 package org.apache.fineract.custom.portfolio.ally.domain;
 
 import jakarta.persistence.*;
-import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import lombok.*;
 
 @Entity
 @Table(name = "m_ally_compensation")
@@ -14,6 +14,7 @@ import java.time.LocalDate;
 @Getter
 @Setter
 public class AllyCompensation {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
