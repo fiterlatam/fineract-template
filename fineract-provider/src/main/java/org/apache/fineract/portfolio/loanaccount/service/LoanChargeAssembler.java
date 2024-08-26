@@ -448,8 +448,15 @@ public class LoanChargeAssembler {
             final ChargeTimeType chargeTime, final ChargeCalculationType chargeCalculation, final LocalDate dueDate,
             final ChargePaymentMode chargePaymentMode, final Integer numberOfRepayments, final ExternalId externalId,
             boolean getPercentageAmountFromTable, Integer applicableFromInstallment) {
+        // if applicableFromInstallment is not null and applicableFromInstallment is greater than one . it means number
+        // of repayments should be reduced for the charge calculation
+        Integer applicableNumberOfRepayments = numberOfRepayments;
+        if (applicableFromInstallment != null && applicableFromInstallment > 1) {
+            applicableNumberOfRepayments = numberOfRepayments - applicableFromInstallment + 1;
+        }
+
         return new LoanCharge(null, chargeDefinition, loanPrincipal, amount, chargeTime, chargeCalculation, dueDate, chargePaymentMode,
-                numberOfRepayments, BigDecimal.ZERO, externalId, getPercentageAmountFromTable, null, applicableFromInstallment);
+                applicableNumberOfRepayments, BigDecimal.ZERO, externalId, getPercentageAmountFromTable, null, applicableFromInstallment);
     }
 
     private BigDecimal percentageOf(final BigDecimal value, final BigDecimal percentage) {
