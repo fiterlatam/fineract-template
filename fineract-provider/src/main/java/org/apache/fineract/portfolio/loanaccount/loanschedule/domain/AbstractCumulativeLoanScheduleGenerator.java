@@ -2212,7 +2212,6 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
             final Money totalInterestChargedForFullLoanTerm, boolean isInstallmentChargeApplicable, final boolean isFirstPeriod,
             final MathContext mc, final Integer installmentNumber, boolean isLastInstallmentPeriod, Integer numberOfRepayments,
             Money outstandingBalance) {
-
         Money cumulative = Money.zero(monetaryCurrency);
 
         for (final LoanCharge loanCharge : loanCharges) {
@@ -2220,6 +2219,21 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
             if (loanCharge.getApplicableFromInstallment() != null && loanCharge.getApplicableFromInstallment() > installmentNumber) {
                 // skip the charges which are not applicable for this installment
                 continue;
+            }
+            if (loanCharge.getApplicableFromInstallment() != null) {
+                // Calculate the grace period as the number of installments before the charge is applied
+                int chargeGrace = loanCharge.getApplicableFromInstallment() - 1;
+
+                // Ensure the number of repayments is reduced only if the grace period is less than the total number of
+                // repayments
+                if (chargeGrace < numberOfRepayments && chargeGrace > 0) {
+                    numberOfRepayments -= chargeGrace;
+                } else {
+                    // Handle the edge case where the grace period is greater than or equal to the number of repayments
+                    // Set numberOfRepayments to 1 to ensure at least one repayment remains (adjust as needed based on
+                    // business logic)
+                    numberOfRepayments = 1;
+                }
             }
 
             Money calculatedAmount = Money.zero(monetaryCurrency);
