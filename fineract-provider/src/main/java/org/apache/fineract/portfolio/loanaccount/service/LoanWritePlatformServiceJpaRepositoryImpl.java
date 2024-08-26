@@ -1854,9 +1854,11 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         loan = writeOffTransaction.getLoan();
         final LoanStatus loanStatus = loan.getStatus();
         if (loanStatus.isOverpaid()) {
-            final String totalOverpaid = Money.of(loan.getCurrency(), loan.getTotalOverpaid()).toString();
+            final Money writeOffAmount = writeOffTransaction.getAmount(loan.getCurrency());
+            final Money totalOverpaidBy = Money.of(loan.getCurrency(), loan.getTotalOverpaid());
+            final Money totalOutstanding = writeOffAmount.minus(totalOverpaidBy);
             throw new GeneralPlatformDomainRuleException("error.msg.loan.write.off.amount.is.greater.than.outstanding.loan.amount",
-                    String.format("El monto condonado es mayor que el monto pendiente en %s", totalOverpaid), totalOverpaid);
+                    "Condonación supera deuda", writeOffAmount.getAmount(), totalOverpaidBy.getAmount(), totalOutstanding.getAmount());
         }
         this.loanTransactionRepository.saveAndFlush(writeOffTransaction);
         for (final Map.Entry<Long, LoanTransaction> mapEntry : changedTransactionDetail.getNewTransactionMappings().entrySet()) {

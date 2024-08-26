@@ -23,4 +23,6 @@ public final class LoanWriteOffConstants {
     public static final int LOAN_ACCOUNT_NO_COL = 0;
     public static final int WRITE_OFF_AMOUNT_COL = 1;
     public static final int STATUS_COL = 2;
+    public static final int WRITE_OFF_DATE_COL = 3;
+    public static final int OUTSTANDING_AMOUNT_COL = 4;
 }
