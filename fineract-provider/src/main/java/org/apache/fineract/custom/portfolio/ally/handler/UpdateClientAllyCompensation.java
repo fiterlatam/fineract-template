@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @CommandType(entity = "CLIENTALLYCOMPENSATION", action = "UPDATE")
 public class UpdateClientAllyCompensation implements NewCommandSourceHandler {
+
     @Autowired
     private AllyCompensationReadWritePlatformService service;
 

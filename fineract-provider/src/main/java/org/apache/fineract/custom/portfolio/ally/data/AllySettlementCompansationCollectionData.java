@@ -1,7 +1,7 @@
 package org.apache.fineract.custom.portfolio.ally.data;
 
-import lombok.*;
 import java.math.BigDecimal;
+import lombok.*;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -9,6 +9,7 @@ import java.math.BigDecimal;
 @Getter
 @Setter
 public class AllySettlementCompansationCollectionData {
+
     private String startDate;
     private String endDate;
     private Long clientAllyId;

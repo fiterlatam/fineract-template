@@ -206,13 +206,13 @@ public class ClientAllyApiResource {
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     public String updateCompensation(@PathParam("id") @Parameter(description = "id") final Long id,
-                         @Parameter(hidden = true) final String jsonRequestBody) {
+            @Parameter(hidden = true) final String jsonRequestBody) {
 
-        final CommandWrapper commandRequest = new CommandWrapperBuilder().updateClientAllyCompensation(id).withJson(jsonRequestBody).build();
+        final CommandWrapper commandRequest = new CommandWrapperBuilder().updateClientAllyCompensation(id).withJson(jsonRequestBody)
+                .build();
         final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
 
         return this.toApiJsonSerializer.serialize(result);
     }
-
 
 }

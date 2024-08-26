@@ -1,7 +1,10 @@
 package org.apache.fineract.batch.command.internal;
 
+import static org.apache.fineract.batch.command.CommandStrategyUtils.relativeUrlWithoutVersion;
+
 import com.google.common.base.Splitter;
 import jakarta.ws.rs.core.UriInfo;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.apache.fineract.batch.command.CommandStrategy;
 import org.apache.fineract.batch.domain.BatchRequest;
@@ -10,8 +13,6 @@ import org.apache.fineract.custom.portfolio.ally.api.ClientAllyApiResource;
 import org.apache.fineract.portfolio.loanaccount.rescheduleloan.api.RescheduleLoansApiResource;
 import org.apache.http.HttpStatus;
 import org.springframework.stereotype.Component;
-import java.util.List;
-import static org.apache.fineract.batch.command.CommandStrategyUtils.relativeUrlWithoutVersion;
 
 /**
  * Implements {@link CommandStrategy} and applies a new reschedule loan request on an existing loan. It passes the
@@ -39,9 +40,9 @@ public class UpdateClientAllyCompensationCommandStrategy implements CommandStrat
         response.setHeaders(request.getHeaders());
 
         final List<String> pathParameters = Splitter.on('/').splitToList(relativeUrlWithoutVersion(request));
-        System.out.println("path Id :"+pathParameters.get(2));
+        System.out.println("path Id :" + pathParameters.get(2));
         final Long compensationId = Long.parseLong(pathParameters.get(2));
-        responseBody = clientAllyApiResource.updateCompensation(compensationId,request.getBody());
+        responseBody = clientAllyApiResource.updateCompensation(compensationId, request.getBody());
 
         response.setStatusCode(HttpStatus.SC_OK);
         response.setBody(responseBody);
