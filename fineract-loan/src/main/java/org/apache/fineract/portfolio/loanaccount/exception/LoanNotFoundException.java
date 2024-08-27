@@ -18,6 +18,7 @@
  */
 package org.apache.fineract.portfolio.loanaccount.exception;
 
+import java.nio.charset.StandardCharsets;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.fineract.infrastructure.core.domain.ExternalId;
 import org.apache.fineract.infrastructure.core.exception.AbstractPlatformResourceNotFoundException;
@@ -28,11 +29,13 @@ import org.apache.fineract.infrastructure.core.exception.AbstractPlatformResourc
 public class LoanNotFoundException extends AbstractPlatformResourceNotFoundException {
 
     public LoanNotFoundException(final Long id) {
-        super("error.msg.loan.id.invalid", "Loan with identifier " + id + " does not exist", id);
+        super("error.msg.loan.id.invalid",
+                new String(("El préstamo " + id + " no existe").getBytes(StandardCharsets.ISO_8859_1), StandardCharsets.UTF_8), id);
     }
 
     public LoanNotFoundException(Long id, Exception e) {
-        super("error.msg.loan.id.invalid", "Loan with identifier " + id + " does not exist", id, e);
+        super("error.msg.loan.id.invalid",
+                new String(("El préstamo " + id + " no existe").getBytes(StandardCharsets.ISO_8859_1), StandardCharsets.UTF_8), id, e);
     }
 
     public LoanNotFoundException(String accountId) {

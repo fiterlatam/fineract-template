@@ -42,6 +42,7 @@ import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
@@ -5499,7 +5500,10 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             break;
             case WRITE_OFF_OUTSTANDING:
                 if (!isOpen()) {
-                    final String defaultUserMessage = "Loan Written off is not allowed. Loan Account is not active.";
+                    final String defaultUserMessage = new String(
+                            "No se permite la condonación del préstamo. La cuenta del préstamo no está activa"
+                                    .getBytes(StandardCharsets.ISO_8859_1),
+                            StandardCharsets.UTF_8);
                     final ApiParameterError error = ApiParameterError.generalError("error.msg.loan.writtenoff.account.is.not.active",
                             defaultUserMessage);
                     dataValidationErrors.add(error);
