@@ -12,7 +12,7 @@ public interface AllyCompensationRepository extends JpaRepository<AllyCompensati
 
     Optional<AllyCompensation> findById(Long id);
 
-    Optional<AllyCompensation> findByNit(String nit);
+    Optional<AllyCompensation> findFirst1ByNit(String nit);
 
     @Query("select allyCompensation from AllyCompensation allyCompensation where allyCompensation.settlementStatus=false")
     List<AllyCompensation> findBySettlementStatus();
