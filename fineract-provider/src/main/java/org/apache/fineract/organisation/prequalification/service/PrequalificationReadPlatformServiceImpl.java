@@ -312,7 +312,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
 
 
         if (agencyId != null) {
-            extraCriteria += " and individualOffice.agency_id = ? ";
+            extraCriteria += " and ma.id = ? ";
             paramList.add(agencyId);
         }
 
