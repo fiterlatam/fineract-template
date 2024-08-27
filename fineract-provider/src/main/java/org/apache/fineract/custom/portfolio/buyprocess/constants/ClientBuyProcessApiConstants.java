@@ -52,11 +52,12 @@ public final class ClientBuyProcessApiConstants {
     public static final String ipDetailsParamName = "ipDetails";
     public static final String codigoSeguroParamName = "codigoSeguro";
     public static final String cedulaSeguroVoluntarioParamName = "cedulaSeguroVoluntario";
+    public static final String isSaleOfInsruanceOrAssistanceParamName = "isSaleOfInsuranceOrAssistance";
 
     // request parameters Set
     public static final Set<String> REQUEST_DATA_PARAMETERS = new HashSet<>(Arrays.asList(localeParamName, dateFormatParamName, idParamName,
             channelIdParamName, clientIdParamName, pointOfSalesIdParamName, productIdParamName, creditIdParamName, requestedDateParamName,
             amountParamName, termParamName, createdAtParamName, createdByParamName, ipDetailsParamName, pointOfSalesCodeParamName,
             clientDocumentIdParamName, LoanApiConstants.CHANNEL_NAME, codigoSeguroParamName, cedulaSeguroVoluntarioParamName,
-            LoanApiConstants.INTEREST_RATE_POINTS, LoanApiConstants.CHANNEL_HASH));
+            LoanApiConstants.INTEREST_RATE_POINTS, LoanApiConstants.CHANNEL_HASH, isSaleOfInsruanceOrAssistanceParamName));
 }

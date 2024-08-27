@@ -33,17 +33,19 @@ public class PointOfSalesValidatorStep extends BuyProcessAbstractStepProcessor i
         setSuperChannelMessageRepository(channelMessageRepository);
 
         // Custom validation comes here
-        Optional<ClientAllyPointOfSales> pointOfSalesOpt = clientAllyPointOfSalesRepository.findById(clientBuyProcess.getPointOfSalesId());
-        if (pointOfSalesOpt.isPresent()) {
+        if (!clientBuyProcess.isSaleOfInsuranceOrAssistance()) {
+            Optional<ClientAllyPointOfSales> pointOfSalesOpt = clientAllyPointOfSalesRepository.findById(clientBuyProcess.getPointOfSalesId());
+            if (pointOfSalesOpt.isPresent()) {
 
-            ClientAllyPointOfSales pointOfSales = pointOfSalesOpt.get();
-            if (Boolean.FALSE.equals(pointOfSales.getBuyEnabled())) {
+                ClientAllyPointOfSales pointOfSales = pointOfSalesOpt.get();
+                if (Boolean.FALSE.equals(pointOfSales.getBuyEnabled())) {
+                    ammendErrorMessage(stepProcessorEnum, clientBuyProcess);
+                }
+
+            } else {
+
                 ammendErrorMessage(stepProcessorEnum, clientBuyProcess);
             }
-
-        } else {
-
-            ammendErrorMessage(stepProcessorEnum, clientBuyProcess);
         }
     }
 }

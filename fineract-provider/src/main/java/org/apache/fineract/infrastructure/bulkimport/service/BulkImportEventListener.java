@@ -93,6 +93,7 @@ public class BulkImportEventListener implements ApplicationListener<BulkImportEv
             case CLIENT_BLOCK -> this.applicationContext.getBean("blockClientImportHandler", ImportHandler.class);
             case CLIENT_VIP -> this.applicationContext.getBean("clientVipImportHandler", ImportHandler.class);
             case COMMERCE_POINT_OF_SALE -> this.applicationContext.getBean("commercePointOfSaleImportHandler", ImportHandler.class);
+            case SALES_OF_INSURANCE_OR_ASSISTANCE -> this.applicationContext.getBean("saleOfInsuranceOrAssistanceImportHandler", ImportHandler.class);
             default ->
                 throw new GeneralPlatformDomainRuleException("error.msg.unable.to.find.resource", "Unable to find requested resource");
         };

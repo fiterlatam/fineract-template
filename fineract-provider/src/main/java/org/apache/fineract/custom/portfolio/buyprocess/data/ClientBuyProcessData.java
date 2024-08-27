@@ -52,4 +52,9 @@ public class ClientBuyProcessData {
     private String errorMessage;
     public Long codigoSeguro;
     public Long cedulaSeguroVoluntario;
+    private String channelHash;
+    public boolean isSaleOfInsuranceOrAssistance;
+    private transient Integer rowIndex;
+    private String dateFormat;
+    private String locale;
 }
