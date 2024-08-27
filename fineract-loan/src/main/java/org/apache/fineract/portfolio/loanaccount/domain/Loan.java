@@ -5394,6 +5394,11 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 if (installment.isRecalculatedInterestComponent()) {
                     continue;
                 }
+                // Skip installments that fall within the grace period
+                if (loanCharge.getApplicableFromInstallment() != null
+                        && loanCharge.getApplicableFromInstallment() > installment.getInstallmentNumber()) {
+                    continue;
+                }
                 BigDecimal amount;
                 if (loanCharge.getChargeCalculation().isFlat()) {
                     amount = loanCharge.amountOrPercentage();
@@ -5494,7 +5499,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             break;
             case WRITE_OFF_OUTSTANDING:
                 if (!isOpen()) {
-                    final String defaultUserMessage = "Loan Written off is not allowed. Loan Account is not active.";
+                    final String defaultUserMessage = "No se permite la condonación del préstamo. La cuenta del préstamo no está activa";
                     final ApiParameterError error = ApiParameterError.generalError("error.msg.loan.writtenoff.account.is.not.active",
                             defaultUserMessage);
                     dataValidationErrors.add(error);

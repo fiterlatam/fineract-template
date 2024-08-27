@@ -57,7 +57,6 @@ public class PurchaseOfSettlementTasklet implements Tasklet {
             boolean isEqual = true;
             if (clientAlly.getLastJobRunPurchase() != null) {
                 period = clientAlly.getLastJobRunPurchase();
-
                 switch (freq) {
                     case "WEEKLY":
                         period = period.plusWeeks(1);
@@ -72,11 +71,10 @@ public class PurchaseOfSettlementTasklet implements Tasklet {
                         period = period.plusDays(1);
                     break;
                 }
-                isEqual = now.isEqual(period);
             } else {
                 period = now;
-
             }
+
             String worksday = workingDays.getRecurrence();
             String[] arrayworksday = worksday.split(";");
             String[] arrayweekdays = arrayworksday[2].split("BYDAY=");
@@ -87,6 +85,7 @@ public class PurchaseOfSettlementTasklet implements Tasklet {
                     period = period.plusDays(1);
                 } while (period.getDayOfWeek().getValue() >= countWokringDay);
             }
+            isEqual = now.isEqual(period);
 
             if (isEqual) {
                 Long clientAllyId = clientAlly.getId();
@@ -132,11 +131,9 @@ public class PurchaseOfSettlementTasklet implements Tasklet {
                         allyPurchaseSettlementReadWritePlatformService.create(allyPurchaseSettlement);
                     } else {
                         if (purchase.get().getSettlementStatus() == false && collectionData.getLoanStatusId() == 600) {
-                            System.out.println("hre");
                             AllyPurchaseSettlement allypurchase = purchase.get();
                             allypurchase.setSettlementStatus(true);
                             allyPurchaseSettlementReadWritePlatformService.update(allypurchase);
-
                         }
 
                     }

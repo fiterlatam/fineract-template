@@ -25,6 +25,8 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.fineract.commands.domain.CommandWrapper;
 import org.apache.fineract.commands.service.CommandWrapperBuilder;
 import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformService;
@@ -34,9 +36,15 @@ import org.apache.fineract.infrastructure.bulkimport.data.Count;
 import org.apache.fineract.infrastructure.bulkimport.importhandler.ImportHandler;
 import org.apache.fineract.infrastructure.bulkimport.importhandler.ImportHandlerUtils;
 import org.apache.fineract.infrastructure.bulkimport.importhandler.helper.DateSerializer;
+import org.apache.fineract.infrastructure.core.data.ApiParameterError;
+import org.apache.fineract.infrastructure.core.exception.GeneralPlatformDomainRuleException;
+import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidationException;
 import org.apache.fineract.infrastructure.core.serialization.GoogleGsonSerializerHelper;
+import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.portfolio.loanaccount.data.LoanTransactionData;
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.Font;
 import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -96,7 +104,35 @@ public class LoanWriteOffImportHandler implements ImportHandler {
         String errorMessage;
         final GsonBuilder gsonBuilder = GoogleGsonSerializerHelper.createGsonBuilder();
         gsonBuilder.registerTypeAdapter(LocalDate.class, new DateSerializer(dateFormat, locale));
+        ImportHandlerUtils.writeString(LoanWriteOffConstants.STATUS_COL,
+                loanWriteOffSheet.getRow(TemplatePopulateImportConstants.ROWHEADER_INDEX),
+                TemplatePopulateImportConstants.STATUS_COL_REPORT_HEADER);
+        ImportHandlerUtils.writeString(LoanWriteOffConstants.WRITE_OFF_DATE_COL,
+                loanWriteOffSheet.getRow(TemplatePopulateImportConstants.ROWHEADER_INDEX), "Fecha de la operación");
+        ImportHandlerUtils.writeString(LoanWriteOffConstants.OUTSTANDING_AMOUNT_COL,
+                loanWriteOffSheet.getRow(TemplatePopulateImportConstants.ROWHEADER_INDEX), "Monto de deuda");
+
+        loanWriteOffSheet.setColumnWidth(LoanWriteOffConstants.WRITE_OFF_DATE_COL, TemplatePopulateImportConstants.MEDIUM_COL_SIZE);
+        loanWriteOffSheet.setColumnWidth(LoanWriteOffConstants.OUTSTANDING_AMOUNT_COL, TemplatePopulateImportConstants.MEDIUM_COL_SIZE);
+
+        final CellStyle headerStyle = headerStyle(workbook);
+        loanWriteOffSheet.getRow(TemplatePopulateImportConstants.ROWHEADER_INDEX).getCell(LoanWriteOffConstants.STATUS_COL)
+                .setCellStyle(headerStyle);
+        loanWriteOffSheet.getRow(TemplatePopulateImportConstants.ROWHEADER_INDEX).getCell(LoanWriteOffConstants.WRITE_OFF_DATE_COL)
+                .setCellStyle(headerStyle);
+        loanWriteOffSheet.getRow(TemplatePopulateImportConstants.ROWHEADER_INDEX).getCell(LoanWriteOffConstants.OUTSTANDING_AMOUNT_COL)
+                .setCellStyle(headerStyle);
+
+        final LocalDate transactionDate = DateUtils.getBusinessLocalDate();
+        final CellStyle dateCellStyle = workbook.createCellStyle();
+        final short dataFormat = workbook.createDataFormat().getFormat(dateFormat);
+        dateCellStyle.setDataFormat(dataFormat);
+
         for (final LoanTransactionData loanWriteOffData : loanWriteOffs) {
+            final Cell writeOffDateCell = loanWriteOffSheet.getRow(loanWriteOffData.getRowIndex())
+                    .createCell(LoanWriteOffConstants.WRITE_OFF_DATE_COL);
+            writeOffDateCell.setCellStyle(dateCellStyle);
+            writeOffDateCell.setCellValue(transactionDate);
             try {
                 final JsonObject loanRepaymentJsonObj = gsonBuilder.create().toJsonTree(loanWriteOffData).getAsJsonObject();
                 loanRepaymentJsonObj.remove("manuallyReversed");
@@ -110,20 +146,48 @@ public class LoanWriteOffImportHandler implements ImportHandler {
                         .createCell(LoanWriteOffConstants.STATUS_COL);
                 statusCell.setCellValue(TemplatePopulateImportConstants.STATUS_CELL_IMPORTED);
                 statusCell.setCellStyle(ImportHandlerUtils.getCellStyle(workbook, IndexedColors.LIGHT_GREEN));
+                loanWriteOffSheet.setColumnWidth(LoanWriteOffConstants.STATUS_COL, TemplatePopulateImportConstants.MEDIUM_COL_SIZE);
             } catch (RuntimeException ex) {
                 errorCount++;
                 LOG.error("Problem occurred in importEntity function", ex);
                 errorMessage = ImportHandlerUtils.getErrorMessage(ex);
+                if (ex instanceof GeneralPlatformDomainRuleException generalPlatformDomainRuleException) {
+                    final String globalisationMessageCode = generalPlatformDomainRuleException.getGlobalisationMessageCode();
+                    if (globalisationMessageCode != null
+                            && globalisationMessageCode.equals("error.msg.loan.write.off.amount.is.greater.than.outstanding.loan.amount")) {
+                        final Object[] defaultUserMessageArgs = generalPlatformDomainRuleException.getDefaultUserMessageArgs();
+                        if (defaultUserMessageArgs != null && defaultUserMessageArgs.length > 2) {
+                            final BigDecimal outstandingLoanAmount = (BigDecimal) defaultUserMessageArgs[2];
+                            final Cell outstandingAmountCell = loanWriteOffSheet.getRow(loanWriteOffData.getRowIndex())
+                                    .createCell(LoanWriteOffConstants.OUTSTANDING_AMOUNT_COL);
+                            outstandingAmountCell.setCellValue(outstandingLoanAmount.doubleValue());
+                        }
+                    }
+                    errorMessage = generalPlatformDomainRuleException.getDefaultUserMessage();
+                } else if (ex instanceof PlatformApiDataValidationException platformApiDataValidationException) {
+                    errorMessage = platformApiDataValidationException.getDefaultUserMessage();
+                    final List<ApiParameterError> errors = platformApiDataValidationException.getErrors();
+                    if (CollectionUtils.isNotEmpty(errors)) {
+                        errorMessage = errorMessage + ": "
+                                + errors.stream().map(ApiParameterError::getDefaultUserMessage).collect(Collectors.joining(", "));
+                    }
+                }
                 ImportHandlerUtils.writeErrorMessage(loanWriteOffSheet, loanWriteOffData.getRowIndex(), errorMessage,
                         LoanWriteOffConstants.STATUS_COL);
+                loanWriteOffSheet.setColumnWidth(LoanWriteOffConstants.STATUS_COL, TemplatePopulateImportConstants.EXTRALARGE_COL_SIZE);
             }
 
         }
-        loanWriteOffSheet.setColumnWidth(LoanWriteOffConstants.STATUS_COL, TemplatePopulateImportConstants.MEDIUM_COL_SIZE);
-        ImportHandlerUtils.writeString(LoanWriteOffConstants.STATUS_COL,
-                loanWriteOffSheet.getRow(TemplatePopulateImportConstants.ROWHEADER_INDEX),
-                TemplatePopulateImportConstants.STATUS_COL_REPORT_HEADER);
         return Count.instance(successCount, errorCount);
+    }
+
+    private CellStyle headerStyle(final Workbook workbook) {
+        final Font headerFont = workbook.createFont();
+        headerFont.setBold(true);
+        headerFont.setFontHeightInPoints((short) 11);
+        final CellStyle headerStyle = workbook.createCellStyle();
+        headerStyle.setFont(headerFont);
+        return headerStyle;
     }
 
 }

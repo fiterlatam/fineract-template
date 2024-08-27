@@ -28,11 +28,11 @@ import org.apache.fineract.infrastructure.core.exception.AbstractPlatformResourc
 public class LoanNotFoundException extends AbstractPlatformResourceNotFoundException {
 
     public LoanNotFoundException(final Long id) {
-        super("error.msg.loan.id.invalid", "Loan with identifier " + id + " does not exist", id);
+        super("error.msg.loan.id.invalid", "El préstamo " + id + " no existe", id);
     }
 
     public LoanNotFoundException(Long id, Exception e) {
-        super("error.msg.loan.id.invalid", "Loan with identifier " + id + " does not exist", id, e);
+        super("error.msg.loan.id.invalid", "El préstamo " + id + " no existe", id, e);
     }
 
     public LoanNotFoundException(String accountId) {

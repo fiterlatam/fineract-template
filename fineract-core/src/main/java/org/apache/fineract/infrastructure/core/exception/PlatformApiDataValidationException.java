@@ -36,12 +36,12 @@ public class PlatformApiDataValidationException extends AbstractPlatformExceptio
      *            list of {@link ApiParameterError} to throw
      */
     public PlatformApiDataValidationException(List<ApiParameterError> errors) {
-        super("validation.msg.validation.errors.exist", "Validation errors exist.");
+        super("validation.msg.validation.errors.exist", "Existe error de validación");
         this.errors = errors;
     }
 
     public PlatformApiDataValidationException(final List<ApiParameterError> errors, Throwable cause) {
-        super("validation.msg.validation.errors.exist", "Validation errors exist.", cause);
+        super("validation.msg.validation.errors.exist", "Existe error de validaciónt", cause);
         this.errors = errors;
     }
 

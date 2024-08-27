@@ -126,7 +126,9 @@ public class LoanChargeAssembler {
                     final Long id = this.fromApiJsonHelper.extractLongNamed("id", loanChargeElement);
                     final Long chargeId = this.fromApiJsonHelper.extractLongNamed("chargeId", loanChargeElement);
                     BigDecimal amount = this.fromApiJsonHelper.extractBigDecimalNamed("amount", loanChargeElement, locale);
-
+                    // if loan product has grace on charge , apply to the
+                    Integer graceOnCharge = loanProduct.getLoanProductRelatedDetail().getGraceOnChargesPayment();
+                    Integer applicableFromInstallment = graceOnCharge != null ? graceOnCharge + 1 : 1;
                     final Integer chargeTimeType = this.fromApiJsonHelper.extractIntegerNamed("chargeTimeType", loanChargeElement, locale);
                     final Integer chargeCalculationType = this.fromApiJsonHelper.extractIntegerNamed("chargeCalculationType",
                             loanChargeElement, locale);
@@ -182,7 +184,7 @@ public class LoanChargeAssembler {
                         if (!isMultiDisbursal) {
                             final LoanCharge loanCharge = createNewWithoutLoan(chargeDefinition, principal, amount, chargeTime,
                                     chargeCalculation, dueDate, chargePaymentModeEnum, numberOfRepayments, externalId,
-                                    getPercentageAmountFromTable);
+                                    getPercentageAmountFromTable, applicableFromInstallment);
 
                             loanCharges.add(loanCharge);
                         } else {
@@ -203,7 +205,7 @@ public class LoanChargeAssembler {
                                             && disbursementDetail.expectedDisbursementDateAsLocalDate().equals(expectedDisbursementDate)) {
                                         final LoanCharge loanCharge = createNewWithoutLoan(chargeDefinition, principal, amount, chargeTime,
                                                 chargeCalculation, dueDate, chargePaymentModeEnum, numberOfRepayments, externalId,
-                                                getPercentageAmountFromTable);
+                                                getPercentageAmountFromTable, applicableFromInstallment);
                                         loanCharges.add(loanCharge);
                                         if (loanCharge.isTrancheDisbursementCharge()) {
                                             loanTrancheDisbursementCharge = new LoanTrancheDisbursementCharge(loanCharge,
@@ -215,7 +217,8 @@ public class LoanChargeAssembler {
                                             final LoanCharge loanCharge = createNewWithoutLoan(chargeDefinition,
                                                     disbursementDetail.principal(), amount, chargeTime, chargeCalculation,
                                                     disbursementDetail.expectedDisbursementDateAsLocalDate(), chargePaymentModeEnum,
-                                                    numberOfRepayments, externalId, getPercentageAmountFromTable);
+                                                    numberOfRepayments, externalId, getPercentageAmountFromTable,
+                                                    applicableFromInstallment);
                                             loanCharges.add(loanCharge);
                                             if (loanCharge.isTrancheDisbursementCharge()) {
                                                 loanTrancheDisbursementCharge = new LoanTrancheDisbursementCharge(loanCharge,
@@ -232,7 +235,7 @@ public class LoanChargeAssembler {
                                         final LoanCharge loanCharge = createNewWithoutLoan(chargeDefinition, disbursementDetail.principal(),
                                                 amount, chargeTime, chargeCalculation,
                                                 disbursementDetail.expectedDisbursementDateAsLocalDate(), chargePaymentModeEnum,
-                                                numberOfRepayments, externalId, getPercentageAmountFromTable);
+                                                numberOfRepayments, externalId, getPercentageAmountFromTable, applicableFromInstallment);
                                         loanCharges.add(loanCharge);
                                         loanTrancheDisbursementCharge = new LoanTrancheDisbursementCharge(loanCharge, disbursementDetail);
                                         loanCharge.updateLoanTrancheDisbursementCharge(loanTrancheDisbursementCharge);
@@ -241,7 +244,7 @@ public class LoanChargeAssembler {
                             } else {
                                 final LoanCharge loanCharge = createNewWithoutLoan(chargeDefinition, principal, amount, chargeTime,
                                         chargeCalculation, dueDate, chargePaymentModeEnum, numberOfRepayments, externalId,
-                                        getPercentageAmountFromTable);
+                                        getPercentageAmountFromTable, applicableFromInstallment);
                                 loanCharges.add(loanCharge);
                             }
                         }
@@ -444,9 +447,16 @@ public class LoanChargeAssembler {
     public LoanCharge createNewWithoutLoan(final Charge chargeDefinition, final BigDecimal loanPrincipal, final BigDecimal amount,
             final ChargeTimeType chargeTime, final ChargeCalculationType chargeCalculation, final LocalDate dueDate,
             final ChargePaymentMode chargePaymentMode, final Integer numberOfRepayments, final ExternalId externalId,
-            boolean getPercentageAmountFromTable) {
+            boolean getPercentageAmountFromTable, Integer applicableFromInstallment) {
+        // if applicableFromInstallment is not null and applicableFromInstallment is greater than one . it means number
+        // of repayments should be reduced for the charge calculation
+        Integer applicableNumberOfRepayments = numberOfRepayments;
+        if (applicableFromInstallment != null && applicableFromInstallment > 1) {
+            applicableNumberOfRepayments = numberOfRepayments - applicableFromInstallment + 1;
+        }
+
         return new LoanCharge(null, chargeDefinition, loanPrincipal, amount, chargeTime, chargeCalculation, dueDate, chargePaymentMode,
-                numberOfRepayments, BigDecimal.ZERO, externalId, getPercentageAmountFromTable, null);
+                applicableNumberOfRepayments, BigDecimal.ZERO, externalId, getPercentageAmountFromTable, null, applicableFromInstallment);
     }
 
     private BigDecimal percentageOf(final BigDecimal value, final BigDecimal percentage) {

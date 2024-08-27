@@ -61,7 +61,8 @@ public enum JobName {
     BLOCK_INACTIVE_CLIENTS("Block Inactive Clients"), //
     LOAN_CUSTOM_CHARGE_HONORARIO_UPDATE("Loans - Custom Charge Honorario Update"), //
     LIQUIDACION_DE_RECAUDOS("Liquidacion de Recaudos"), RECALCULATE_LOAN_INTEREST_AFTER_MAXIMUM_LEGAL_RATE_CHANGE(
-            "Recalculate Loan Interest After Maximum Legal Rate Change"), LIQUIDACION_DE_COMPRAS("Liquidacion de Compras");
+            "Recalculate Loan Interest After Maximum Legal Rate Change"), LIQUIDACION_DE_COMPRAS(
+                    "Liquidacion de Compras"), COMPENSATION("Compensation");
 
     private final String name;
 
