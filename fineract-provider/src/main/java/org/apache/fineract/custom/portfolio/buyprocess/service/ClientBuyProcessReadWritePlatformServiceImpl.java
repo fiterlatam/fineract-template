@@ -233,15 +233,17 @@ public class ClientBuyProcessReadWritePlatformServiceImpl implements ClientBuyPr
             }
         }
         final ClientData clientData = getClientExtras(entity.getClientId());
-        final ClientAllyPointOfSales clientAllyPointOfSales = this.clientAllyPointOfSalesRepository.findById(entity.getPointOfSalesId())
-                .orElse(null);
         String pointOfSaleCode = null;
         String clientIdNumber = null;
         if (clientData != null) {
             clientIdNumber = clientData.getIdNumber();
         }
-        if (clientAllyPointOfSales != null) {
-            pointOfSaleCode = clientAllyPointOfSales.getCode();
+        if (entity.getPointOfSalesId() != null) {
+            final ClientAllyPointOfSales clientAllyPointOfSales = this.clientAllyPointOfSalesRepository.findById(entity.getPointOfSalesId())
+                    .orElse(null);
+            if (clientAllyPointOfSales != null) {
+                pointOfSaleCode = clientAllyPointOfSales.getCode();
+            }
         }
 
         final CreateLoanPayloadData payloadData = CreateLoanPayloadData.builder().productId(entity.getProductId())
