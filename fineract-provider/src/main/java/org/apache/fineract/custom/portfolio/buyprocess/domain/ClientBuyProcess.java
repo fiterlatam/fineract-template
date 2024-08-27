@@ -115,6 +115,9 @@ public class ClientBuyProcess {
     @Transient
     private Client client;
 
+    @Transient
+    private boolean isSaleOfInsuranceOrAssistance;
+
     public ClientBuyProcess(Long channelId, String channelName, Long clientId, Long pointOfSalesId, Long productId, Long creditId,
             LocalDate requestedDate, BigDecimal amount, Long term, LocalDateTime createdAt, Long createdBy, String ipDetails,
             Long codigoSeguro, Long cedulaSeguroVoluntario) {

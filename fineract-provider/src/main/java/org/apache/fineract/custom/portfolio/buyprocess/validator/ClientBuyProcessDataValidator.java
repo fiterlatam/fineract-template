@@ -24,12 +24,8 @@ import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.custom.infrastructure.dataqueries.domain.ClientAdditionalInformation;
 import org.apache.fineract.custom.infrastructure.dataqueries.domain.ClientAdditionalInformationRepository;
@@ -49,9 +45,15 @@ import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidati
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
+import org.apache.fineract.portfolio.charge.data.ChargeData;
+import org.apache.fineract.portfolio.charge.data.ChargeInsuranceDetailData;
+import org.apache.fineract.portfolio.charge.domain.ChargeInsuranceType;
+import org.apache.fineract.portfolio.charge.service.ChargeReadPlatformService;
 import org.apache.fineract.portfolio.client.domain.Client;
 import org.apache.fineract.portfolio.client.domain.ClientRepository;
 import org.apache.fineract.portfolio.loanaccount.api.LoanApiConstants;
+import org.apache.fineract.portfolio.loanproduct.domain.LoanProduct;
+import org.apache.fineract.portfolio.loanproduct.domain.LoanProductRepository;
 import org.apache.http.HttpStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -65,19 +67,24 @@ public class ClientBuyProcessDataValidator {
     private final ClientAdditionalInformationRepository camposClienteEmpresaRepository;
     private final IndividualAdditionalInformationRepository individualAdditionalInformationRepository;
     private final ClientRepository clientRepository;
+    private final LoanProductRepository loanProductRepository;
+    private final ChargeReadPlatformService chargeReadPlatformService;
 
     @Autowired
     public ClientBuyProcessDataValidator(final FromJsonHelper fromApiJsonHelper, final PlatformSecurityContext platformSecurityContext,
             final ClientAllyPointOfSalesRepository clientAllyPointOfSalesRepository,
             final ClientAdditionalInformationRepository camposClienteEmpresaRepository,
             final IndividualAdditionalInformationRepository individualAdditionalInformationRepository,
-            final ClientRepository clientRepository) {
+            final ClientRepository clientRepository, final LoanProductRepository loanProductRepository,
+            final ChargeReadPlatformService chargeReadPlatformService) {
         this.fromApiJsonHelper = fromApiJsonHelper;
         this.platformSecurityContext = platformSecurityContext;
         this.clientAllyPointOfSalesRepository = clientAllyPointOfSalesRepository;
         this.camposClienteEmpresaRepository = camposClienteEmpresaRepository;
         this.individualAdditionalInformationRepository = individualAdditionalInformationRepository;
         this.clientRepository = clientRepository;
+        this.loanProductRepository = loanProductRepository;
+        this.chargeReadPlatformService = chargeReadPlatformService;
     }
 
     @Autowired
@@ -97,6 +104,12 @@ public class ClientBuyProcessDataValidator {
 
         final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors)
                 .resource(ClientBuyProcessApiConstants.RESOURCE_NAME);
+
+        boolean isSaleOfInsuranceOrAssistance = false;
+        if (this.fromApiJsonHelper.parameterExists(ClientBuyProcessApiConstants.isSaleOfInsruanceOrAssistanceParamName, element)) {
+            isSaleOfInsuranceOrAssistance = this.fromApiJsonHelper
+                    .extractBooleanNamed(ClientBuyProcessApiConstants.isSaleOfInsruanceOrAssistanceParamName, element);
+        }
 
         Long clientId = 0L;
         String clientDocumentId;
@@ -145,22 +158,24 @@ public class ClientBuyProcessDataValidator {
             }
 
         } else {
-            baseDataValidator.reset().parameter(ClientBuyProcessApiConstants.pointOfSalesCodeParamName).value(null).notNull();
+            if (isSaleOfInsuranceOrAssistance) {
+                pointOfSalesId = null;
+            } else {
+                baseDataValidator.reset().parameter(ClientBuyProcessApiConstants.pointOfSalesCodeParamName).value(null).notNull();
+            }
         }
 
         final Long productId = this.fromApiJsonHelper.extractLongNamed(ClientBuyProcessApiConstants.productIdParamName, element);
         baseDataValidator.reset().parameter(ClientBuyProcessApiConstants.productIdParamName).value(productId).notNull();
 
         final Long creditId = this.fromApiJsonHelper.extractLongNamed(ClientBuyProcessApiConstants.creditIdParamName, element);
-        baseDataValidator.reset().parameter(ClientBuyProcessApiConstants.creditIdParamName).value(creditId).notNull();
+        if (!isSaleOfInsuranceOrAssistance) {
+            baseDataValidator.reset().parameter(ClientBuyProcessApiConstants.creditIdParamName).value(creditId).notNull();
+        }
 
         final LocalDate requestedDate = this.fromApiJsonHelper.extractLocalDateNamed(ClientBuyProcessApiConstants.requestedDateParamName,
                 element);
         baseDataValidator.reset().parameter(ClientBuyProcessApiConstants.requestedDateParamName).value(requestedDate).notNull();
-
-        final BigDecimal amount = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed(ClientBuyProcessApiConstants.amountParamName,
-                element);
-        baseDataValidator.reset().parameter(ClientBuyProcessApiConstants.amountParamName).value(amount).notNull();
 
         final Long term = this.fromApiJsonHelper.extractLongNamed(ClientBuyProcessApiConstants.termParamName, element);
         baseDataValidator.reset().parameter(ClientBuyProcessApiConstants.termParamName).value(term).notNull();
@@ -172,13 +187,22 @@ public class ClientBuyProcessDataValidator {
         final String ipDetails = platformSecurityContext.getApiRequestClientIP();
 
         final Long codigoSeguro = this.fromApiJsonHelper.extractLongNamed(ClientBuyProcessApiConstants.codigoSeguroParamName, element);
-        baseDataValidator.reset().parameter(ClientBuyProcessApiConstants.codigoSeguroParamName).value(codigoSeguro).ignoreIfNull()
-                .longZeroOrGreater();
+        if (!isSaleOfInsuranceOrAssistance) {
+            baseDataValidator.reset().parameter(ClientBuyProcessApiConstants.codigoSeguroParamName).value(codigoSeguro).ignoreIfNull()
+                    .longZeroOrGreater();
+        } else {
+            baseDataValidator.reset().parameter(ClientBuyProcessApiConstants.codigoSeguroParamName).value(codigoSeguro).longZeroOrGreater();
+        }
 
         final Long cedulaSeguroVoluntario = this.fromApiJsonHelper
                 .extractLongNamed(ClientBuyProcessApiConstants.cedulaSeguroVoluntarioParamName, element);
-        baseDataValidator.reset().parameter(ClientBuyProcessApiConstants.cedulaSeguroVoluntarioParamName).value(cedulaSeguroVoluntario)
-                .ignoreIfNull().longZeroOrGreater();
+        if (!isSaleOfInsuranceOrAssistance) {
+            baseDataValidator.reset().parameter(ClientBuyProcessApiConstants.cedulaSeguroVoluntarioParamName).value(cedulaSeguroVoluntario)
+                    .ignoreIfNull().longZeroOrGreater();
+        } else {
+            baseDataValidator.reset().parameter(ClientBuyProcessApiConstants.cedulaSeguroVoluntarioParamName).value(cedulaSeguroVoluntario)
+                    .longZeroOrGreater();
+        }
 
         final Integer interestRatePoints = this.fromApiJsonHelper.extractIntegerWithLocaleNamed(LoanApiConstants.INTEREST_RATE_POINTS,
                 element);
@@ -188,10 +212,44 @@ public class ClientBuyProcessDataValidator {
             channelHash = this.platformSecurityContext.getApiRequestChannel();
         }
 
+        BigDecimal amount = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed(ClientBuyProcessApiConstants.amountParamName, element);
+        if (!isSaleOfInsuranceOrAssistance) {
+            baseDataValidator.reset().parameter(ClientBuyProcessApiConstants.amountParamName).value(amount).notNull();
+        } else {
+            Optional<LoanProduct> entityOpt = loanProductRepository.findById(productId);
+            if (entityOpt.isPresent()) {
+                LoanProduct productEntity = entityOpt.get();
+                if ((codigoSeguro != null && codigoSeguro > 0) && (cedulaSeguroVoluntario != null && cedulaSeguroVoluntario > 0)) {
+                    final Collection<ChargeData> insuranceCharges = this.chargeReadPlatformService
+                            .retrieveChargesByInsuranceCode(codigoSeguro);
+                    if (CollectionUtils.isNotEmpty(insuranceCharges)) {
+                        final ChargeData chargeData = insuranceCharges.iterator().next();
+                        final ChargeInsuranceDetailData chargeInsuranceDetailData = chargeData.getChargeInsuranceDetailData();
+                        if (chargeInsuranceDetailData != null) {
+                            final ChargeInsuranceType chargeInsuranceType = ChargeInsuranceType
+                                    .fromInt(chargeInsuranceDetailData.getInsuranceChargedAs() != null
+                                            ? chargeInsuranceDetailData.getInsuranceChargedAs().intValue()
+                                            : 0);
+                            if (chargeInsuranceType.isCargo() || !productEntity.isPurChaseCharge()) {
+                                baseDataValidator.reset().parameter("loanProductCharge").failWithCode("loan.product.charge.is.cargo",
+                                        "El tipo de cargo del producto de préstamo es carga.");
+                            } else if (!productEntity.isPurChaseCharge()) {
+                                baseDataValidator.reset().parameter("loanProduct").failWithCode("loan.product.is.not.purchase.charge",
+                                        "El producto de préstamo no es un cargo de compra");
+                            } else if (chargeInsuranceType.isCompra() && productEntity.isPurChaseCharge()) {
+                                amount = chargeInsuranceDetailData.getTotalValue();
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         ClientBuyProcess ret = new ClientBuyProcess(null, clientId, pointOfSalesId, productId, creditId, requestedDate, amount, term,
                 createdAt, createdBy, ipDetails, codigoSeguro, cedulaSeguroVoluntario, channelHash);
         ret.setClient(client);
         ret.setInterestRatePoints(interestRatePoints);
+        ret.setSaleOfInsuranceOrAssistance(isSaleOfInsuranceOrAssistance);
 
         // If there is no primary errors, then execute second level validation chain
         if (dataValidationErrors.isEmpty()) {

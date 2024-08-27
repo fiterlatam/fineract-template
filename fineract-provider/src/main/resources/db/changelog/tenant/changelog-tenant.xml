@@ -266,4 +266,5 @@
     <include file="parts/20242604011009111_SU_311_update_report.xml" relativeToChangelogFile="true"/>
     <include file="parts/20242008011009110_SU_309_add-days-in-arrears-to-charge.xml" relativeToChangelogFile="true"/>
     <include file="parts/20242604011009113_SU-190_add_compensation_table.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20242608011009111_SU_169_remove-not-null-constraint.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

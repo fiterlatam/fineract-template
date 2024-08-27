@@ -65,6 +65,7 @@ import org.apache.fineract.infrastructure.bulkimport.populator.loanwriteoff.Loan
 import org.apache.fineract.infrastructure.bulkimport.populator.office.OfficeWorkbookPopulator;
 import org.apache.fineract.infrastructure.bulkimport.populator.recurringdeposit.RecurringDepositTransactionWorkbookPopulator;
 import org.apache.fineract.infrastructure.bulkimport.populator.recurringdeposit.RecurringDepositWorkbookPopulator;
+import org.apache.fineract.infrastructure.bulkimport.populator.saleofinsuranceorassistance.SaleOfInsuranceOrAssistanceWorkbookPopulator;
 import org.apache.fineract.infrastructure.bulkimport.populator.savings.SavingsTransactionsWorkbookPopulator;
 import org.apache.fineract.infrastructure.bulkimport.populator.savings.SavingsWorkbookPopulator;
 import org.apache.fineract.infrastructure.bulkimport.populator.shareaccount.SharedAccountWorkBookPopulator;
@@ -236,6 +237,8 @@ public class BulkImportWorkbookPopulatorServiceImpl implements BulkImportWorkboo
                 populator = populateClientVipWorkbook();
             } else if (entityType.trim().equalsIgnoreCase(GlobalEntityType.COMMERCE_POINT_OF_SALE.toString())) {
                 populator = populateCommercePointOfSaleWorkbook();
+            } else if (entityType.trim().equalsIgnoreCase(GlobalEntityType.SALES_OF_INSURANCE_OR_ASSISTANCE.toString())) {
+                populator = populateSaleOfInsuranceOrAssistanceWorkbook();
             } else {
                 throw new GeneralPlatformDomainRuleException("error.msg.unable.to.find.resource", "Unable to find requested resource");
             }
@@ -710,6 +713,13 @@ public class BulkImportWorkbookPopulatorServiceImpl implements BulkImportWorkboo
 
     private WorkbookPopulator populateCommercePointOfSaleWorkbook() {
         return new CommercePointOfSaleControlWorkbookPopulator();
+    }
+
+    private WorkbookPopulator populateSaleOfInsuranceOrAssistanceWorkbook() {
+        this.context.authenticatedUser().validateHasReadPermission(TemplatePopulateImportConstants.LOAN_PRODUCT_ENTITY_TYPE);
+        List<LoanProductData> loanproducts = fetchLoanProducts();
+        return new SaleOfInsuranceOrAssistanceWorkbookPopulator(new LoanProductSheetPopulator(loanproducts));
+
     }
 
 }
