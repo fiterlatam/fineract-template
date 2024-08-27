@@ -71,7 +71,7 @@ public class CompensationOfSettlementTasklet implements Tasklet {
                 allyCompensation.setSettlementStatus(false);
 
                 if (!compensationCheck.isPresent()) {
-                    Optional<AllyCompensation> check = allyCompensationRepository.findByNit(allyCompensation.getNit());
+                    Optional<AllyCompensation> check = allyCompensationRepository.findFirst1ByNit(allyCompensation.getNit());
                     if (check.isPresent()) {
                         LocalDate newstartDate = check.get().getEndDate();
                         allyCompensation.setStartDate(newstartDate.plusDays(1));
