@@ -131,11 +131,9 @@ public class PurchaseOfSettlementTasklet implements Tasklet {
                         allyPurchaseSettlementReadWritePlatformService.create(allyPurchaseSettlement);
                     } else {
                         if (purchase.get().getSettlementStatus() == false && collectionData.getLoanStatusId() == 600) {
-                            System.out.println("hre");
                             AllyPurchaseSettlement allypurchase = purchase.get();
                             allypurchase.setSettlementStatus(true);
                             allyPurchaseSettlementReadWritePlatformService.update(allypurchase);
-
                         }
 
                     }
