@@ -123,7 +123,8 @@ public class PurchaseOfSettlementTasklet implements Tasklet {
                         allyPurchaseSettlement.setAmountComission(amountComission.setScale(2, BigDecimal.ROUND_HALF_EVEN));
                         allyPurchaseSettlement.setAmountVaCommision(amountVaCommision.setScale(2, BigDecimal.ROUND_HALF_EVEN));
                         allyPurchaseSettlement.setAmountToPay(amountToPay.setScale(2, BigDecimal.ROUND_HALF_EVEN));
-                        boolean status = false;if (collectionData.getLoanStatusId() == 600) {
+                        boolean status = false;
+                        if (collectionData.getLoanStatusId() == 600) {
                             status = true;
                         }
                         allyPurchaseSettlement.setSettlementStatus(status);
