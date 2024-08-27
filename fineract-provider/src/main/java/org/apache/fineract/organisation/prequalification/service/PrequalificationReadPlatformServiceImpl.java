@@ -312,7 +312,11 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
 
 
         if (agencyId != null) {
-            extraCriteria += " and ma.id = ? ";
+            if (StringUtils.equalsIgnoreCase(groupingType, "individual")) {
+                extraCriteria += " and individualOffice.agency_id = ? ";
+            }else {
+                extraCriteria += " and ma.id = ? ";
+            }
             paramList.add(agencyId);
         }
 
