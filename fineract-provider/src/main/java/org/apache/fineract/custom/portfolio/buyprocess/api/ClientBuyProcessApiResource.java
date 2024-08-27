@@ -29,6 +29,7 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
+import java.io.InputStream;
 import org.apache.fineract.commands.domain.CommandWrapper;
 import org.apache.fineract.commands.service.CommandWrapperBuilder;
 import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformService;
@@ -49,8 +50,6 @@ import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
-
-import java.io.InputStream;
 
 @Path("/v1/clientbuyprocess")
 @Component
@@ -122,7 +121,8 @@ public class ClientBuyProcessApiResource {
     @Path("downloadtemplate")
     @Produces("application/vnd.ms-excel")
     public Response getSaleOfInsuranceOrAssistanceTemplate(@QueryParam("dateFormat") final String dateFormat) {
-        return bulkImportWorkbookPopulatorService.getTemplate(GlobalEntityType.SALES_OF_INSURANCE_OR_ASSISTANCE.toString(), null, null, dateFormat);
+        return bulkImportWorkbookPopulatorService.getTemplate(GlobalEntityType.SALES_OF_INSURANCE_OR_ASSISTANCE.toString(), null, null,
+                dateFormat);
     }
 
     @POST
@@ -131,10 +131,10 @@ public class ClientBuyProcessApiResource {
     @RequestBody(description = "Upload Sale Of Insurance or assistance template", content = {
             @Content(mediaType = MediaType.MULTIPART_FORM_DATA, schema = @Schema(implementation = UploadRequest.class)) })
     public String postSaleOfInsuranceOrAssistanceTemplate(@FormDataParam("file") InputStream uploadedInputStream,
-                                   @FormDataParam("file") FormDataContentDisposition fileDetail, @FormDataParam("locale") final String locale,
-                                   @FormDataParam("dateFormat") final String dateFormat) {
-        final Long importDocumentId = this.bulkImportWorkbookService.importWorkbook(GlobalEntityType.SALES_OF_INSURANCE_OR_ASSISTANCE.toString(), uploadedInputStream,
-                fileDetail, locale, dateFormat, null);
+            @FormDataParam("file") FormDataContentDisposition fileDetail, @FormDataParam("locale") final String locale,
+            @FormDataParam("dateFormat") final String dateFormat) {
+        final Long importDocumentId = this.bulkImportWorkbookService.importWorkbook(
+                GlobalEntityType.SALES_OF_INSURANCE_OR_ASSISTANCE.toString(), uploadedInputStream, fileDetail, locale, dateFormat, null);
         return this.toApiJsonSerializer.serialize(importDocumentId);
     }
 }

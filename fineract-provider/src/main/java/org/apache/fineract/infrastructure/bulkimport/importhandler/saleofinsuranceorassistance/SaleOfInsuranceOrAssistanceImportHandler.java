@@ -1,8 +1,12 @@
 package org.apache.fineract.infrastructure.bulkimport.importhandler.saleofinsuranceorassistance;
 
-import com.google.common.base.Splitter;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.commands.domain.CommandWrapper;
@@ -12,7 +16,6 @@ import org.apache.fineract.custom.infrastructure.channel.domain.Channel;
 import org.apache.fineract.custom.infrastructure.channel.domain.ChannelRepository;
 import org.apache.fineract.custom.portfolio.buyprocess.data.ClientBuyProcessData;
 import org.apache.fineract.infrastructure.bulkimport.constants.GuarantorConstants;
-import org.apache.fineract.infrastructure.bulkimport.constants.LoanConstants;
 import org.apache.fineract.infrastructure.bulkimport.constants.SaleOfInsuranceOrAssistanceConstants;
 import org.apache.fineract.infrastructure.bulkimport.constants.TemplatePopulateImportConstants;
 import org.apache.fineract.infrastructure.bulkimport.data.Count;
@@ -20,28 +23,21 @@ import org.apache.fineract.infrastructure.bulkimport.importhandler.ImportHandler
 import org.apache.fineract.infrastructure.bulkimport.importhandler.ImportHandlerUtils;
 import org.apache.fineract.infrastructure.bulkimport.importhandler.helper.DateSerializer;
 import org.apache.fineract.infrastructure.core.serialization.GoogleGsonSerializerHelper;
-import org.apache.fineract.portfolio.loanaccount.guarantor.data.GuarantorData;
 import org.apache.poi.ss.usermodel.*;
 import org.springframework.stereotype.Service;
-
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 
 @Slf4j
 @RequiredArgsConstructor
 @Service
 public class SaleOfInsuranceOrAssistanceImportHandler implements ImportHandler {
+
     public static final String EMPTY_STR = "";
     private final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService;
     private final ChannelRepository channelRepository;
 
     @Override
     public Count process(final Workbook workbook, final String locale, final String dateFormat,
-                         final Map<String, Object> importAttributes) {
+            final Map<String, Object> importAttributes) {
         List<ClientBuyProcessData> saleOfInsuranceData = readExcelFile(workbook, locale, dateFormat);
         return importEntity(workbook, saleOfInsuranceData, dateFormat);
     }
@@ -49,7 +45,8 @@ public class SaleOfInsuranceOrAssistanceImportHandler implements ImportHandler {
     private List<ClientBuyProcessData> readExcelFile(final Workbook workbook, final String locale, final String dateFormat) {
         List<ClientBuyProcessData> saleOfInsuranceData = new ArrayList<>();
         Sheet saleOfInsuranceSheet = workbook.getSheet(TemplatePopulateImportConstants.SALE_OF_INSURANCE_OR_ASSISTANCE_SHEET_NAME);
-        Integer noOfEntries = ImportHandlerUtils.getNumberOfRows(saleOfInsuranceSheet, SaleOfInsuranceOrAssistanceConstants.CUSTOMER_ID_COL);
+        Integer noOfEntries = ImportHandlerUtils.getNumberOfRows(saleOfInsuranceSheet,
+                SaleOfInsuranceOrAssistanceConstants.CUSTOMER_ID_COL);
         for (int rowIndex = 1; rowIndex <= noOfEntries; rowIndex++) {
             Row row;
             row = saleOfInsuranceSheet.getRow(rowIndex);
@@ -61,7 +58,7 @@ public class SaleOfInsuranceOrAssistanceImportHandler implements ImportHandler {
     }
 
     private ClientBuyProcessData readInsuranceSaleData(final Workbook workbook, final Row row, final String locale,
-                                        final String dateFormat) {
+            final String dateFormat) {
         String clientId = ImportHandlerUtils.readAsString(SaleOfInsuranceOrAssistanceConstants.CUSTOMER_ID_COL, row);
         String productName = ImportHandlerUtils.readAsString(SaleOfInsuranceOrAssistanceConstants.INSURANCE_PRODUCT_COL, row);
         Long productId = ImportHandlerUtils.getIdByName(workbook.getSheet(TemplatePopulateImportConstants.PRODUCT_SHEET_NAME), productName);
@@ -122,7 +119,8 @@ public class SaleOfInsuranceOrAssistanceImportHandler implements ImportHandler {
             }
 
         }
-        saleOfInsuranceSheet.setColumnWidth(SaleOfInsuranceOrAssistanceConstants.STATUS_COL, TemplatePopulateImportConstants.SMALL_COL_SIZE);
+        saleOfInsuranceSheet.setColumnWidth(SaleOfInsuranceOrAssistanceConstants.STATUS_COL,
+                TemplatePopulateImportConstants.SMALL_COL_SIZE);
         ImportHandlerUtils.writeString(SaleOfInsuranceOrAssistanceConstants.STATUS_COL,
                 saleOfInsuranceSheet.getRow(TemplatePopulateImportConstants.ROWHEADER_INDEX),
                 TemplatePopulateImportConstants.STATUS_COL_REPORT_HEADER);

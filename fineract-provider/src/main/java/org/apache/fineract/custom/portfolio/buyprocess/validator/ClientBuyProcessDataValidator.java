@@ -25,7 +25,6 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
-
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.custom.infrastructure.dataqueries.domain.ClientAdditionalInformation;
@@ -53,7 +52,6 @@ import org.apache.fineract.portfolio.charge.service.ChargeReadPlatformService;
 import org.apache.fineract.portfolio.client.domain.Client;
 import org.apache.fineract.portfolio.client.domain.ClientRepository;
 import org.apache.fineract.portfolio.loanaccount.api.LoanApiConstants;
-import org.apache.fineract.portfolio.loanaccount.data.LoanChargeData;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProduct;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductRepository;
 import org.apache.http.HttpStatus;
@@ -109,7 +107,8 @@ public class ClientBuyProcessDataValidator {
 
         boolean isSaleOfInsuranceOrAssistance = false;
         if (this.fromApiJsonHelper.parameterExists(ClientBuyProcessApiConstants.isSaleOfInsruanceOrAssistanceParamName, element)) {
-            isSaleOfInsuranceOrAssistance = this.fromApiJsonHelper.extractBooleanNamed(ClientBuyProcessApiConstants.isSaleOfInsruanceOrAssistanceParamName, element);
+            isSaleOfInsuranceOrAssistance = this.fromApiJsonHelper
+                    .extractBooleanNamed(ClientBuyProcessApiConstants.isSaleOfInsruanceOrAssistanceParamName, element);
         }
 
         Long clientId = 0L;
@@ -213,8 +212,7 @@ public class ClientBuyProcessDataValidator {
             channelHash = this.platformSecurityContext.getApiRequestChannel();
         }
 
-        BigDecimal amount = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed(ClientBuyProcessApiConstants.amountParamName,
-                element);
+        BigDecimal amount = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed(ClientBuyProcessApiConstants.amountParamName, element);
         if (!isSaleOfInsuranceOrAssistance) {
             baseDataValidator.reset().parameter(ClientBuyProcessApiConstants.amountParamName).value(amount).notNull();
         } else {
@@ -222,7 +220,8 @@ public class ClientBuyProcessDataValidator {
             if (entityOpt.isPresent()) {
                 LoanProduct productEntity = entityOpt.get();
                 if ((codigoSeguro != null && codigoSeguro > 0) && (cedulaSeguroVoluntario != null && cedulaSeguroVoluntario > 0)) {
-                    final Collection<ChargeData> insuranceCharges = this.chargeReadPlatformService.retrieveChargesByInsuranceCode(codigoSeguro);
+                    final Collection<ChargeData> insuranceCharges = this.chargeReadPlatformService
+                            .retrieveChargesByInsuranceCode(codigoSeguro);
                     if (CollectionUtils.isNotEmpty(insuranceCharges)) {
                         final ChargeData chargeData = insuranceCharges.iterator().next();
                         final ChargeInsuranceDetailData chargeInsuranceDetailData = chargeData.getChargeInsuranceDetailData();
@@ -232,14 +231,12 @@ public class ClientBuyProcessDataValidator {
                                             ? chargeInsuranceDetailData.getInsuranceChargedAs().intValue()
                                             : 0);
                             if (chargeInsuranceType.isCargo() || !productEntity.isPurChaseCharge()) {
-                                baseDataValidator.reset().parameter("loanProductCharge").failWithCode(
-                                        "loan.product.charge.is.cargo",
+                                baseDataValidator.reset().parameter("loanProductCharge").failWithCode("loan.product.charge.is.cargo",
                                         "El tipo de cargo del producto de préstamo es carga.");
                             } else if (!productEntity.isPurChaseCharge()) {
-                                baseDataValidator.reset().parameter("loanProduct").failWithCode(
-                                        "loan.product.is.not.purchase.charge",
+                                baseDataValidator.reset().parameter("loanProduct").failWithCode("loan.product.is.not.purchase.charge",
                                         "El producto de préstamo no es un cargo de compra");
-                            }else if (chargeInsuranceType.isCompra() && productEntity.isPurChaseCharge()) {
+                            } else if (chargeInsuranceType.isCompra() && productEntity.isPurChaseCharge()) {
                                 amount = chargeInsuranceDetailData.getTotalValue();
                             }
                         }

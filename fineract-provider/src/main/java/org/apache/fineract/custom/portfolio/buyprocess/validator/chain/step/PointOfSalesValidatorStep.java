@@ -34,7 +34,8 @@ public class PointOfSalesValidatorStep extends BuyProcessAbstractStepProcessor i
 
         // Custom validation comes here
         if (!clientBuyProcess.isSaleOfInsuranceOrAssistance()) {
-            Optional<ClientAllyPointOfSales> pointOfSalesOpt = clientAllyPointOfSalesRepository.findById(clientBuyProcess.getPointOfSalesId());
+            Optional<ClientAllyPointOfSales> pointOfSalesOpt = clientAllyPointOfSalesRepository
+                    .findById(clientBuyProcess.getPointOfSalesId());
             if (pointOfSalesOpt.isPresent()) {
 
                 ClientAllyPointOfSales pointOfSales = pointOfSalesOpt.get();

@@ -19,23 +19,18 @@
 
 package org.apache.fineract.infrastructure.bulkimport.populator.saleofinsuranceorassistance;
 
-import lombok.RequiredArgsConstructor;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.infrastructure.bulkimport.constants.CommercePointOfSaleConstants;
-import org.apache.fineract.infrastructure.bulkimport.constants.FixedDepositConstants;
 import org.apache.fineract.infrastructure.bulkimport.constants.SaleOfInsuranceOrAssistanceConstants;
 import org.apache.fineract.infrastructure.bulkimport.constants.TemplatePopulateImportConstants;
 import org.apache.fineract.infrastructure.bulkimport.populator.*;
 import org.apache.fineract.portfolio.loanproduct.data.LoanProductData;
-import org.apache.fineract.portfolio.products.data.ProductData;
-import org.apache.fineract.portfolio.savings.data.FixedDepositProductData;
 import org.apache.poi.hssf.usermodel.HSSFDataValidationHelper;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
 import org.apache.poi.ss.SpreadsheetVersion;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddressList;
-
-import java.util.List;
 
 @Slf4j
 public class SaleOfInsuranceOrAssistanceWorkbookPopulator extends AbstractWorkbookPopulator {
@@ -48,7 +43,8 @@ public class SaleOfInsuranceOrAssistanceWorkbookPopulator extends AbstractWorkbo
 
     @Override
     public void populate(Workbook workbook, String dateFormat) {
-        Sheet saleOfInsuranceOrAssistance = workbook.createSheet(TemplatePopulateImportConstants.SALE_OF_INSURANCE_OR_ASSISTANCE_SHEET_NAME);
+        Sheet saleOfInsuranceOrAssistance = workbook
+                .createSheet(TemplatePopulateImportConstants.SALE_OF_INSURANCE_OR_ASSISTANCE_SHEET_NAME);
         productSheetPopulator.populate(workbook, dateFormat);
         setLayout(saleOfInsuranceOrAssistance);
         setRules(saleOfInsuranceOrAssistance);
@@ -65,14 +61,14 @@ public class SaleOfInsuranceOrAssistanceWorkbookPopulator extends AbstractWorkbo
         DataValidation productNameValidation = validationHelper.createValidation(productNameConstraint, productNameRange);
         worksheet.addValidationData(productNameValidation);
 
-
     }
 
     private void setLayout(Sheet worksheet) {
         Row rowHeader = worksheet.createRow(TemplatePopulateImportConstants.ROWHEADER_INDEX);
         rowHeader.setHeight(TemplatePopulateImportConstants.ROW_HEADER_HEIGHT);
         worksheet.setColumnWidth(SaleOfInsuranceOrAssistanceConstants.CUSTOMER_ID_COL, TemplatePopulateImportConstants.SMALL_COL_SIZE);
-        worksheet.setColumnWidth(SaleOfInsuranceOrAssistanceConstants.INSURANCE_PRODUCT_COL, TemplatePopulateImportConstants.EXTRALARGE_COL_SIZE);
+        worksheet.setColumnWidth(SaleOfInsuranceOrAssistanceConstants.INSURANCE_PRODUCT_COL,
+                TemplatePopulateImportConstants.EXTRALARGE_COL_SIZE);
         worksheet.setColumnWidth(SaleOfInsuranceOrAssistanceConstants.TERM_COL, TemplatePopulateImportConstants.SMALL_COL_SIZE);
         worksheet.setColumnWidth(SaleOfInsuranceOrAssistanceConstants.INSURANCE_CODE_COL, TemplatePopulateImportConstants.SMALL_COL_SIZE);
         worksheet.setColumnWidth(SaleOfInsuranceOrAssistanceConstants.ADVISOR_ID_COL, TemplatePopulateImportConstants.SMALL_COL_SIZE);
