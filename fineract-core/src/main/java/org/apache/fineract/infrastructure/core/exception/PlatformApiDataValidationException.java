@@ -18,7 +18,6 @@
  */
 package org.apache.fineract.infrastructure.core.exception;
 
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import org.apache.fineract.infrastructure.core.data.ApiParameterError;
 import org.apache.fineract.infrastructure.core.data.DataValidatorBuilder;
@@ -37,8 +36,7 @@ public class PlatformApiDataValidationException extends AbstractPlatformExceptio
      *            list of {@link ApiParameterError} to throw
      */
     public PlatformApiDataValidationException(List<ApiParameterError> errors) {
-        super("validation.msg.validation.errors.exist",
-                new String("Existe error de validación".getBytes(StandardCharsets.ISO_8859_1), StandardCharsets.UTF_8));
+        super("validation.msg.validation.errors.exist", "Existe error de validación");
         this.errors = errors;
     }
 
