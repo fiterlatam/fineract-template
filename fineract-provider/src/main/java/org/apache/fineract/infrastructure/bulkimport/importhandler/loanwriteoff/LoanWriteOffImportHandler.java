@@ -25,6 +25,8 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.fineract.commands.domain.CommandWrapper;
 import org.apache.fineract.commands.service.CommandWrapperBuilder;
 import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformService;
@@ -34,7 +36,9 @@ import org.apache.fineract.infrastructure.bulkimport.data.Count;
 import org.apache.fineract.infrastructure.bulkimport.importhandler.ImportHandler;
 import org.apache.fineract.infrastructure.bulkimport.importhandler.ImportHandlerUtils;
 import org.apache.fineract.infrastructure.bulkimport.importhandler.helper.DateSerializer;
-import org.apache.fineract.infrastructure.core.exception.AbstractPlatformException;
+import org.apache.fineract.infrastructure.core.data.ApiParameterError;
+import org.apache.fineract.infrastructure.core.exception.GeneralPlatformDomainRuleException;
+import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidationException;
 import org.apache.fineract.infrastructure.core.serialization.GoogleGsonSerializerHelper;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.portfolio.loanaccount.data.LoanTransactionData;
@@ -147,11 +151,11 @@ public class LoanWriteOffImportHandler implements ImportHandler {
                 errorCount++;
                 LOG.error("Problem occurred in importEntity function", ex);
                 errorMessage = ImportHandlerUtils.getErrorMessage(ex);
-                if (ex instanceof AbstractPlatformException abstractPlatformException) {
-                    final String globalisationMessageCode = abstractPlatformException.getGlobalisationMessageCode();
+                if (ex instanceof GeneralPlatformDomainRuleException generalPlatformDomainRuleException) {
+                    final String globalisationMessageCode = generalPlatformDomainRuleException.getGlobalisationMessageCode();
                     if (globalisationMessageCode != null
                             && globalisationMessageCode.equals("error.msg.loan.write.off.amount.is.greater.than.outstanding.loan.amount")) {
-                        final Object[] defaultUserMessageArgs = abstractPlatformException.getDefaultUserMessageArgs();
+                        final Object[] defaultUserMessageArgs = generalPlatformDomainRuleException.getDefaultUserMessageArgs();
                         if (defaultUserMessageArgs != null && defaultUserMessageArgs.length > 2) {
                             final BigDecimal outstandingLoanAmount = (BigDecimal) defaultUserMessageArgs[2];
                             final Cell outstandingAmountCell = loanWriteOffSheet.getRow(loanWriteOffData.getRowIndex())
@@ -159,12 +163,18 @@ public class LoanWriteOffImportHandler implements ImportHandler {
                             outstandingAmountCell.setCellValue(outstandingLoanAmount.doubleValue());
                         }
                     }
-                    errorMessage = abstractPlatformException.getDefaultUserMessage();
+                    errorMessage = generalPlatformDomainRuleException.getDefaultUserMessage();
+                } else if (ex instanceof PlatformApiDataValidationException platformApiDataValidationException) {
+                    errorMessage = platformApiDataValidationException.getDefaultUserMessage();
+                    final List<ApiParameterError> errors = platformApiDataValidationException.getErrors();
+                    if (CollectionUtils.isNotEmpty(errors)) {
+                        errorMessage = errorMessage + ": "
+                                + errors.stream().map(ApiParameterError::getDefaultUserMessage).collect(Collectors.joining(", "));
+                    }
                 }
-
                 ImportHandlerUtils.writeErrorMessage(loanWriteOffSheet, loanWriteOffData.getRowIndex(), errorMessage,
                         LoanWriteOffConstants.STATUS_COL);
-                loanWriteOffSheet.setColumnWidth(LoanWriteOffConstants.STATUS_COL, TemplatePopulateImportConstants.LARGE_COL_SIZE);
+                loanWriteOffSheet.setColumnWidth(LoanWriteOffConstants.STATUS_COL, TemplatePopulateImportConstants.EXTRALARGE_COL_SIZE);
             }
 
         }
