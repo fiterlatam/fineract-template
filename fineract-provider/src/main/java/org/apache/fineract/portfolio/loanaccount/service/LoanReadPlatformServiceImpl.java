@@ -143,6 +143,7 @@ import org.apache.fineract.portfolio.loanaccount.loanschedule.data.LoanScheduleP
 import org.apache.fineract.portfolio.loanaccount.loanschedule.data.OverdueLoanScheduleData;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleProcessingType;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleType;
+import org.apache.fineract.portfolio.loanaccount.loanschedule.service.LoanScheduleHistoryReadPlatformService;
 import org.apache.fineract.portfolio.loanaccount.mapper.LoanTransactionRelationMapper;
 import org.apache.fineract.portfolio.loanproduct.data.LoanProductData;
 import org.apache.fineract.portfolio.loanproduct.data.TransactionProcessingStrategyData;
@@ -207,6 +208,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
     private final LoanChargePaidByReadPlatformService loanChargePaidByReadPlatformService;
     private final ChannelReadWritePlatformService channelReadWritePlatformService;
     private final GlobalConfigurationRepository globalConfigurationRepository;
+    private final LoanScheduleHistoryReadPlatformService loanScheduleHistoryReadPlatformService;
 
     @Override
     public LoanAccountData retrieveOne(final Long loanId) {
@@ -3046,6 +3048,106 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         renderer.setDocumentFromString(html);
         renderer.layout();
         final String filename = "Reporte_de_desembolso_" + new SimpleDateFormat("yyyyMMddHHmmss").format(new Date()) + ".pdf";
+        httpServletResponse.setContentType("application/pdf");
+        httpServletResponse.setHeader("Content-Disposition", "inline; filename=" + filename);
+        httpServletResponse.setStatus(HttpServletResponse.SC_OK);
+        final OutputStream outputStream = httpServletResponse.getOutputStream();
+        renderer.createPDF(outputStream);
+        outputStream.close();
+    }
+
+    @Override
+    public void exportLoanSchedulePDF(Long loanId, String scheduleType, HttpServletResponse httpServletResponse)
+            throws DocumentException, IOException {
+
+        boolean isRepaymentSchedule = scheduleType.equalsIgnoreCase("repayment");
+        final LoanAccountData loanBasicDetails = retrieveOne(loanId);
+        final ClientAdditionalFieldsData loanAdditionalFieldsData = this.clientReadPlatformService
+                .retrieveClientAdditionalData(loanBasicDetails.getClientId());
+        final String nit = loanAdditionalFieldsData.getNit();
+        final String cedula = loanAdditionalFieldsData.getCedula();
+        String clientFullName = loanBasicDetails.getClientName();
+        String clientNit = Objects.toString(nit, cedula);
+        Collection<DisbursementData> disbursementData = retrieveLoanDisbursementDetails(loanId);
+        LoanApplicationTimelineData timeline = loanBasicDetails.getTimeline();
+        final LocalDate disbursementDate = timeline.getDisbursementDate() != null ? timeline.getActualDisbursementDate()
+                : timeline.getExpectedDisbursementDate();
+        final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd MMMM yyyy").withLocale(Locale.forLanguageTag("es-ES"));
+        final String disbursementDateString = disbursementDate != null ? disbursementDate.format(dateFormatter) : "N/A";
+        final BigDecimal disbursementAmount = loanBasicDetails.getNetDisbursalAmount();
+
+        final String disbursementAmountString = Money.of(loanBasicDetails.getCurrency(), disbursementAmount).toString();
+
+        final RepaymentScheduleRelatedLoanData repaymentScheduleRelatedData = timeline.repaymentScheduleRelatedData(
+                loanBasicDetails.getCurrency(), loanBasicDetails.getPrincipal(), loanBasicDetails.getApprovedPrincipal(),
+                loanBasicDetails.getInArrearsTolerance(), loanBasicDetails.getFeeChargesAtDisbursementCharged());
+        final Map<String, String> amortizationTypes = Map.of("Equal installments", "Pagos de cuotas iguales - Sistema Frances",
+                "Equal principal payments", "Pagos de capital iguales - Sistema Aleman", "Capital at end",
+                "Capital al final - Sistema Americano");
+        LoanScheduleData repaymentSchedule;
+        String templateName;
+        String fileType;
+        String reportTitle;
+        String amortizationType = amortizationTypes.getOrDefault(loanBasicDetails.getAmortizationType().getValue(), "");
+        String settlementSystem = "";
+        if (StringUtils.isNotBlank(amortizationType)) {
+            // get the second part of the hyphen . e.g Sistema Frances
+            settlementSystem = amortizationType.substring(amortizationType.indexOf("-") + 1).trim();
+        }
+        String interestRatePerPeriod = loanBasicDetails.getInterestRatePerPeriod().toString();
+        if (interestRatePerPeriod != null) {
+            // remove the decimal
+            interestRatePerPeriod = interestRatePerPeriod.substring(0, interestRatePerPeriod.indexOf("."));
+        }
+        String loanRate = String.format("%s%% %s", interestRatePerPeriod, loanBasicDetails.getInterestRateFrequencyType().getValue());
+        if (isRepaymentSchedule) {
+            repaymentSchedule = retrieveRepaymentSchedule(loanId, repaymentScheduleRelatedData, disbursementData,
+                    loanBasicDetails.isInterestRecalculationEnabled(),
+                    LoanScheduleType.fromEnumOptionData(loanBasicDetails.getLoanScheduleType()));
+            templateName = "LoanRepaymentScheduleReport";
+            fileType = "Reported_calendario_de_pago";
+            reportTitle = "Calendario de Pagos";
+        } else {
+            repaymentSchedule = this.loanScheduleHistoryReadPlatformService.retrieveRepaymentArchiveSchedule(loanId,
+                    repaymentScheduleRelatedData, disbursementData,
+                    LoanScheduleType.fromEnumOptionData(loanBasicDetails.getLoanScheduleType()));
+            templateName = "LoanOriginalScheduleReport";
+            reportTitle = "Calendario Original o";
+            fileType = "Reported_calendario_de_original";
+        }
+        final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy MMMM dd HH:mm:ss")
+                .withLocale(Locale.forLanguageTag("es-ES"));
+        final String generatedOnDateTime = DateUtils.getLocalDateTimeOfTenant().format(dateTimeFormatter);
+        final Map<String, Object> variables = new HashMap<>();
+        variables.put("clientFullName", clientFullName);
+        variables.put("clientNit", clientNit);
+        variables.put("disbursementDate", disbursementDateString);
+        variables.put("reportTitle", reportTitle);
+        variables.put("disbursementAmount", disbursementAmountString);
+        variables.put("generatedOnDateTime", generatedOnDateTime);
+        variables.put("generatedByUsername", this.context.authenticatedUser().getDisplayName());
+        variables.put("originalScheduleDetails", repaymentSchedule);
+        variables.put("loanRate", loanRate);
+        variables.put("settlementSystem", settlementSystem);
+        final org.thymeleaf.context.Context thymeleafContext = new org.thymeleaf.context.Context(Locale.forLanguageTag("es-ES"), variables);
+        ClassLoaderTemplateResolver templateResolver = new ClassLoaderTemplateResolver();
+        Locale.setDefault(new Locale("es", "ES"));
+        templateResolver.setPrefix("templates/");
+        templateResolver.setSuffix(".html");
+        templateResolver.setCharacterEncoding("UTF-8");
+        templateResolver.setCacheable(false);
+        templateResolver.setTemplateMode(TemplateMode.HTML);
+        templateResolver.setOrder(0);
+        templateResolver.setCheckExistence(true);
+        final TemplateEngine thymeleafTemplateEngine = new SpringTemplateEngine();
+        thymeleafTemplateEngine.setTemplateResolver(templateResolver);
+
+        final String html = thymeleafTemplateEngine.process(templateName, thymeleafContext);
+        final ITextRenderer renderer = new ITextRenderer();
+        renderer.setDocumentFromString(html);
+        renderer.layout();
+
+        final String filename = fileType + new SimpleDateFormat("yyyyMMddHHmmss").format(new Date()) + ".pdf";
         httpServletResponse.setContentType("application/pdf");
         httpServletResponse.setHeader("Content-Disposition", "inline; filename=" + filename);
         httpServletResponse.setStatus(HttpServletResponse.SC_OK);
