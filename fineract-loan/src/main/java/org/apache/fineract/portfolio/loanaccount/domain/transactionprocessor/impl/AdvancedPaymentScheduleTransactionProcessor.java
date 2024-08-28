@@ -594,7 +594,9 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
     protected void handleWriteOff(final LoanTransaction loanTransaction, final MonetaryCurrency currency,
             final List<LoanRepaymentScheduleInstallment> installments, final Set<LoanCharge> charges, final MoneyHolder overpaymentHolder) {
         if (loanTransaction.isRepaymentLikeType() || loanTransaction.isInterestWaiver() || loanTransaction.isRecoveryRepayment()) {
-            loanTransaction.resetDerivedComponents();
+            if (!loanTransaction.isSpecialWriteOff()) {
+                loanTransaction.resetDerivedComponents();
+            }
         }
         Money transactionAmountUnprocessed = loanTransaction.getAmount(currency);
         processTransaction(loanTransaction, currency, installments, transactionAmountUnprocessed, charges, overpaymentHolder);
@@ -962,33 +964,36 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
     private void processTransaction(LoanTransaction loanTransaction, MonetaryCurrency currency,
             List<LoanRepaymentScheduleInstallment> installments, Money transactionAmountUnprocessed, Set<LoanCharge> charges,
             MoneyHolder overpaymentHolder) {
-        Money zero = Money.zero(currency);
-        List<LoanTransactionToRepaymentScheduleMapping> transactionMappings = new ArrayList<>();
+        if (!loanTransaction.isSpecialWriteOff()) {
+            Money zero = Money.zero(currency);
+            List<LoanTransactionToRepaymentScheduleMapping> transactionMappings = new ArrayList<>();
 
-        List<LoanPaymentAllocationRule> paymentAllocationRules = loanTransaction.getLoan().getPaymentAllocationRules();
-        LoanPaymentAllocationRule defaultPaymentAllocationRule = paymentAllocationRules.stream()
-                .filter(e -> PaymentAllocationTransactionType.DEFAULT.equals(e.getTransactionType())).findFirst().orElseThrow();
-        LoanPaymentAllocationRule paymentAllocationRule = paymentAllocationRules.stream()
-                .filter(e -> loanTransaction.getTypeOf().equals(e.getTransactionType().getLoanTransactionType())).findFirst()
-                .orElse(defaultPaymentAllocationRule);
-        Balances balances = new Balances(zero, zero, zero, zero);
+            List<LoanPaymentAllocationRule> paymentAllocationRules = loanTransaction.getLoan().getPaymentAllocationRules();
+            LoanPaymentAllocationRule defaultPaymentAllocationRule = paymentAllocationRules.stream()
+                    .filter(e -> PaymentAllocationTransactionType.DEFAULT.equals(e.getTransactionType())).findFirst().orElseThrow();
+            LoanPaymentAllocationRule paymentAllocationRule = paymentAllocationRules.stream()
+                    .filter(e -> loanTransaction.getTypeOf().equals(e.getTransactionType().getLoanTransactionType())).findFirst()
+                    .orElse(defaultPaymentAllocationRule);
+            Balances balances = new Balances(zero, zero, zero, zero);
 
-        LoanScheduleProcessingType loanScheduleProcessingType = loanTransaction.getLoan().getLoanProductRelatedDetail()
-                .getLoanScheduleProcessingType();
-        LoanScheduleProcessingType transactionScheduleProcessingType = loanTransaction.getLoanScheduleProcessingType();
-        if (loanTransaction.getLoanScheduleProcessingType() != null) {
-            loanScheduleProcessingType = loanTransaction.getLoanScheduleProcessingType();
+            LoanScheduleProcessingType loanScheduleProcessingType = loanTransaction.getLoan().getLoanProductRelatedDetail()
+                    .getLoanScheduleProcessingType();
+            if (loanTransaction.getLoanScheduleProcessingType() != null) {
+                loanScheduleProcessingType = loanTransaction.getLoanScheduleProcessingType();
+            }
+            if (LoanScheduleProcessingType.HORIZONTAL.equals(loanScheduleProcessingType)) {
+                transactionAmountUnprocessed = processPeriodsHorizontally(loanTransaction, currency, installments,
+                        transactionAmountUnprocessed, paymentAllocationRule, transactionMappings, charges, balances);
+            } else if (LoanScheduleProcessingType.VERTICAL.equals(loanScheduleProcessingType)) {
+                transactionAmountUnprocessed = processPeriodsVertically(loanTransaction, currency, installments,
+                        transactionAmountUnprocessed, paymentAllocationRule, transactionMappings, charges, balances);
+            }
+            loanTransaction.updateComponents(balances.getAggregatedPrincipalPortion(), balances.getAggregatedInterestPortion(),
+                    balances.getAggregatedFeeChargesPortion(), balances.getAggregatedPenaltyChargesPortion());
+            loanTransaction.updateLoanTransactionToRepaymentScheduleMappings(transactionMappings);
+        } else {
+            transactionAmountUnprocessed = processSpecialWriteOff(loanTransaction, currency, installments);
         }
-        if (LoanScheduleProcessingType.HORIZONTAL.equals(loanScheduleProcessingType)) {
-            transactionAmountUnprocessed = processPeriodsHorizontally(loanTransaction, currency, installments, transactionAmountUnprocessed,
-                    paymentAllocationRule, transactionMappings, charges, balances);
-        } else if (LoanScheduleProcessingType.VERTICAL.equals(loanScheduleProcessingType)) {
-            transactionAmountUnprocessed = processPeriodsVertically(loanTransaction, currency, installments, transactionAmountUnprocessed,
-                    paymentAllocationRule, transactionMappings, charges, balances);
-        }
-        loanTransaction.updateComponents(balances.getAggregatedPrincipalPortion(), balances.getAggregatedInterestPortion(),
-                balances.getAggregatedFeeChargesPortion(), balances.getAggregatedPenaltyChargesPortion());
-        loanTransaction.updateLoanTransactionToRepaymentScheduleMappings(transactionMappings);
 
         handleOverpayment(transactionAmountUnprocessed, loanTransaction, overpaymentHolder);
     }
