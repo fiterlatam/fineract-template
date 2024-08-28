@@ -22,6 +22,10 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.apache.fineract.infrastructure.core.data.EnumOptionData;
+import org.apache.fineract.portfolio.insurance.domain.InsuranceIncidentType;
+
+import java.util.List;
 
 @Getter
 @Setter
@@ -36,4 +40,10 @@ public class InsuranceIncidentData {
     private boolean isMandatory;
 
     private boolean isVoluntary;
+
+    private String incidentTypeName;
+
+    private Integer incidentTypeId;
+
+    private List<EnumOptionData> incidentTypeOptions;
 }

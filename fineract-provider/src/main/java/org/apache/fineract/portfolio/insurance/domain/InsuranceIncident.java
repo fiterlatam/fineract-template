@@ -46,8 +46,11 @@ public class InsuranceIncident extends AbstractAuditableWithUTCDateTimeCustom {
     @Column(name = "is_voluntary")
     private boolean isVoluntary;
 
+    @Column(name = "incident_type")
+    private InsuranceIncidentType incidentType;
+
     public InsuranceIncidentData toData() {
-        return InsuranceIncidentData.instance(this.getId(), this.name, this.isMandatory, this.isVoluntary);
+        return InsuranceIncidentData.instance(this.getId(), this.name, this.isMandatory, this.isVoluntary, this.incidentType.getCode(), this.incidentType.getValue(), null);
     }
 
 }
