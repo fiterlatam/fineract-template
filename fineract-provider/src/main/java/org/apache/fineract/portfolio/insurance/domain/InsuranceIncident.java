@@ -50,7 +50,14 @@ public class InsuranceIncident extends AbstractAuditableWithUTCDateTimeCustom {
     private InsuranceIncidentType incidentType;
 
     public InsuranceIncidentData toData() {
-        return InsuranceIncidentData.instance(this.getId(), this.name, this.isMandatory, this.isVoluntary, this.incidentType.getCode(), this.incidentType.getValue(), null);
+        String code = "";
+        Integer value = null;
+        if (this.incidentType != null) {
+            code = this.incidentType.getCode();
+            value = this.incidentType.getValue();
+        }
+
+        return InsuranceIncidentData.instance(this.getId(), this.name, this.isMandatory, this.isVoluntary, code, value, null);
     }
 
 }
