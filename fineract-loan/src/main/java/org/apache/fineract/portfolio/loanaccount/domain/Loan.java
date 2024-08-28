@@ -2603,9 +2603,10 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             if (TemporaryConfigurationServiceContainer.isExternalIdAutoGenerationEnabled()) {
                 externalId = ExternalId.generate();
             }
-            final LoanTransaction interestAppliedTransaction = LoanTransaction.accrueInterest(getOffice(), this, interestApplied,
-                    actualDisbursementDate, externalId);
-            addLoanTransaction(interestAppliedTransaction);
+            // Farooq is  working
+//            final LoanTransaction interestAppliedTransaction = LoanTransaction.accrueInterest(getOffice(), this, interestApplied,
+//                    actualDisbursementDate, externalId);
+//            addLoanTransaction(interestAppliedTransaction);
         }
 
         ChangedTransactionDetail result = reprocessTransactionForDisbursement();
